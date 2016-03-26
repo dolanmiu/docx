@@ -1,0 +1,12 @@
+{
+    "compilerOptions": {
+        "target": "es6",
+        "sourceMap": true,
+        "removeComments": true,
+        "preserveConstEnums": true,
+        "outDir": "../build",
+        "outFile": "./build/build.js",
+        "sourceRoot": "./",
+        "rootDir": "./"
+    }
+}
