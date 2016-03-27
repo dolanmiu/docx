@@ -4,8 +4,8 @@
   "description": "Generate .docx documents with JavaScript (formerly Office-Clippy)",
   "main": "build/build.js",
   "scripts": {
-    "pretest": "tsc ts/test/*Test.ts --module commonjs",
-    "test": "test"
+    "pretest": "tsc ts/tests/*Test.ts --module commonjs --outDir ./build/tests",
+    "test": "mocha ./build/tests/*.js"
   },
   "repository": {
     "type": "git",
