@@ -4,8 +4,7 @@
         "sourceMap": true,
         "removeComments": true,
         "preserveConstEnums": true,
-        "outDir": "../build",
-        "outFile": "./build/build.js",
+        "outFile": "../build/build.js",
         "sourceRoot": "./",
         "rootDir": "./"
     }
