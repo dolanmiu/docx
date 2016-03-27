@@ -7,6 +7,9 @@
   "installed": {
     "mocha/mocha.d.ts": {
       "commit": "299b5caa22876ef27dc8e9a5b7fd7bf93457b6f4"
+    },
+    "lodash/lodash.d.ts": {
+      "commit": "299b5caa22876ef27dc8e9a5b7fd7bf93457b6f4"
     }
   }
 }

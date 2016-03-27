@@ -1,7 +1,8 @@
-/// <reference path="../docx/docx.ts" />
 /// <reference path="../typings/mocha/mocha.d.ts" />
+import * as docx from "../docx";
+
 describe('Calculator', () => {
-    var document : docx.Docx;
+    var document : docx.Document;
 
     /*beforeEach(function () {
         subject = new Calculator();
@@ -16,6 +17,10 @@ describe('Calculator', () => {
         });
     });*/
     describe('#test', () => {
-        console.log(new docx.Docx);
+        var document = new docx.Document();
+        var paragraph = new docx.Paragraph();
+        //var body = new docx.Body();
+        console.log(JSON.stringify(paragraph));
+        console.log(document.test());
     });
 });

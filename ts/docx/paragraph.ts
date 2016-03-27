@@ -1,5 +1,7 @@
-module docx {
-    export class Paragraph {
-        
+export class Paragraph {
+    private p: Array<string>;
+    
+    constructor() {
+        this.p = ['stuff']
     }
 }
