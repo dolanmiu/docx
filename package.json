@@ -29,6 +29,7 @@
   },
   "homepage": "https://github.com/dolanmiu/docx#readme",
   "devDependencies": {
+    "chai": "^3.5.0",
     "mocha": "^2.4.5"
   }
 }

@@ -1,8 +1,10 @@
 /// <reference path="../typings/mocha/mocha.d.ts" />
+/// <reference path="../typings/chai/chai.d.ts" />
 import * as docx from "../docx";
+import {assert, } from "chai";
 
 describe('Calculator', () => {
-    var document : docx.Document;
+    var document: docx.Document;
 
     /*beforeEach(function () {
         subject = new Calculator();
@@ -23,5 +25,17 @@ describe('Calculator', () => {
         console.log(paragraph);
         console.log(JSON.stringify(paragraph, null, "    "));
         console.log(document.test());
+
+        it("should create valid JSON", () => {
+            var stringifiedJson = JSON.stringify(document);
+            var newJson;
+
+            try {
+                newJson = JSON.parse(stringifiedJson);
+            } catch (e) {
+                assert.isTrue(false);
+            }
+            assert.isTrue(true);
+        });
     });
 });

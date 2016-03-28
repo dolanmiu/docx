@@ -10,6 +10,12 @@
     },
     "lodash/lodash.d.ts": {
       "commit": "299b5caa22876ef27dc8e9a5b7fd7bf93457b6f4"
+    },
+    "chai/chai.d.ts": {
+      "commit": "80057d687aefa736511e434cd2a6c0e9a6bb02bc"
+    },
+    "assertion-error/assertion-error.d.ts": {
+      "commit": "80057d687aefa736511e434cd2a6c0e9a6bb02bc"
     }
   }
 }
