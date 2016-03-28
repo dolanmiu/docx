@@ -6,7 +6,7 @@ export class Formatter {
         var stringified = JSON.stringify(input);
         var newJson = JSON.parse(stringified);
         this.deepTraverseJson(newJson, (parent, value, key) => {
-                parent.blah = parent[key];
+                //parent.blah = parent[key];
 
         });
 

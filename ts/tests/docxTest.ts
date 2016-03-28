@@ -20,7 +20,8 @@ describe('Calculator', () => {
         var document = new docx.Document();
         var paragraph = new docx.Paragraph();
         //var body = new docx.Body();
-        console.log(JSON.stringify(paragraph));
+        console.log(paragraph);
+        console.log(JSON.stringify(paragraph, null, "    "));
         console.log(document.test());
     });
 });
