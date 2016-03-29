@@ -1,4 +1,4 @@
-import {P, Attributes, ParagraphProperties, Run} from "./xml-components/p";
+import {P, Attributes, ParagraphProperties, Run} from "./xml-components";
 
 class Style {
     private pStyle: Array<P>;
