@@ -90,8 +90,16 @@ export class Paragraph {
         return this;
     }
 
-    pageBreak() {
+    thematicBreak() {
         this.properties.push(new ThematicBreak());
         return this;
     }
+    
+            pageBreak () {
+                   this.properties.push(new ThematicBreak());
+
+                
+            paragraphProperties.push(pBreak);
+            return this;
+        }
 }

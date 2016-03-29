@@ -77,9 +77,9 @@ describe('Paragraph', () => {
         });
     });
 
-    describe("#pageBreak()", () => {
+    describe("#thematicBreak()", () => {
         it("should add thematic break to JSON", () => {
-            paragraph.pageBreak();
+            paragraph.thematicBreak();
             var newJson = jsonify(paragraph);
             
             assert.isDefined(newJson.p[1].pPr[1].pBdr);
