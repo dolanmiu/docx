@@ -76,4 +76,13 @@ describe('Paragraph', () => {
             assert(newJson.p[1].pPr[1].jc[0]._attrs.val === "center");
         });
     });
+
+    describe("#pageBreak()", () => {
+        it("should add thematic break to JSON", () => {
+            paragraph.pageBreak();
+            var newJson = jsonify(paragraph);
+            
+            assert.isDefined(newJson.p[1].pPr[1].pBdr);
+        });
+    });
 });

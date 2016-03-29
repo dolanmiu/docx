@@ -1,4 +1,5 @@
 import {P, Attributes, ParagraphProperties, Run} from "./xml-components";
+import {ThematicBreak} from "./border";
 
 class Style {
     private pStyle: Array<P>;
@@ -86,6 +87,11 @@ export class Paragraph {
 
     justified() {
         this.properties.push(new Alignment("both"));
+        return this;
+    }
+
+    pageBreak() {
+        this.properties.push(new ThematicBreak());
         return this;
     }
 }
