@@ -1,6 +1,6 @@
 /// <reference path="../typings/mocha/mocha.d.ts" />
 /// <reference path="../typings/chai/chai.d.ts" />
-import {Attributes} from "../docx/xml-components/p";
+import {Attributes} from "../docx/xml-components";
 import {assert} from "chai";
 
 describe('Attribute', () => {
@@ -20,7 +20,9 @@ describe('Attribute', () => {
         });
 
         it("should have val as defined with populated constructor", () => {
-            var newAttrs = new Attributes("test");
+            var newAttrs = new Attributes({
+                val: "test"
+            });
             var stringifiedJson = JSON.stringify(newAttrs);
             var newJson = JSON.parse(stringifiedJson);
             assert(newJson._attrs.val === "test");

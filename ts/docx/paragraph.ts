@@ -5,7 +5,9 @@ class Style {
 
     constructor(type: string) {
         this.pStyle = new Array<P>();
-        this.pStyle.push(new Attributes(type));
+        this.pStyle.push(new Attributes({
+            val: type
+        }));
     }
 }
 
@@ -14,7 +16,9 @@ class Alignment {
 
     constructor(type: string) {
         this.jc = new Array<P>();
-        this.jc.push(new Attributes(type));
+        this.jc.push(new Attributes({
+            val: type
+        }));
     }
 }
 

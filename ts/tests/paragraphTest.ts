@@ -67,4 +67,13 @@ describe('Paragraph', () => {
             assert(newJson.p[1].pPr[1].pStyle[0]._attrs.val === "Title");
         });
     });
+
+    describe("#center()", () => {
+        it("should add center alignment to JSON", () => {
+            paragraph.center();
+            var newJson = jsonify(paragraph);
+
+            assert(newJson.p[1].pPr[1].jc[0]._attrs.val === "center");
+        });
+    });
 });

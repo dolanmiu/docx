@@ -2,24 +2,33 @@ export interface P {
 
 }
 
+interface AttributesProperties {
+    val?: string;
+    color?: string;
+    space?: string;
+    sz?: string;
+}
+
 export class Attributes implements P {
     private _attrs: Object;
 
-    constructor(value?: string) {
-        this._attrs = {
-            val: value
-        };
+    constructor(properties?: AttributesProperties) {
+        this._attrs = properties
+        
+        if (!properties) {
+            this._attrs = {};
+        }
     }
 }
 
-export class ParagraphProperties implements P{
+export class ParagraphProperties implements P {
     private pPr: Array<P>;
 
     constructor() {
         this.pPr = new Array<P>();
         this.pPr.push(new Attributes());
     }
-    
+
     push(item: P) {
         this.pPr.push(item);
     }
