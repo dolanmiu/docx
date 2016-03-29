@@ -1,11 +1,11 @@
-import {P, Attributes, ParagraphProperties, Run} from "./xml-components";
+import {XmlComponent, Attributes, ParagraphProperties, Run} from "./xml-components";
 import {ThematicBreak} from "./border";
 
 class Style {
-    private pStyle: Array<P>;
+    private pStyle: Array<XmlComponent>;
 
     constructor(type: string) {
-        this.pStyle = new Array<P>();
+        this.pStyle = new Array<XmlComponent>();
         this.pStyle.push(new Attributes({
             val: type
         }));
@@ -13,10 +13,10 @@ class Style {
 }
 
 class Alignment {
-    private jc: Array<P>;
+    private jc: Array<XmlComponent>;
 
     constructor(type: string) {
-        this.jc = new Array<P>();
+        this.jc = new Array<XmlComponent>();
         this.jc.push(new Attributes({
             val: type
         }));
@@ -24,11 +24,11 @@ class Alignment {
 }
 
 export class Paragraph {
-    private p: Array<P>;
+    private p: Array<XmlComponent>;
     private properties: ParagraphProperties;
 
     constructor(text?: string) {
-        this.p = new Array<P>();
+        this.p = new Array<XmlComponent>();
         this.p.push(new Attributes());
         this.properties = new ParagraphProperties();
         this.p.push(this.properties);
