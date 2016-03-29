@@ -1,5 +1,8 @@
-import {XmlComponent, Attributes, ParagraphProperties, Run} from "./xml-components";
+import {XmlComponent, Attributes} from "../xml-components";
 import {ThematicBreak} from "./border";
+import {PageBreak} from "./page-break";
+import {TextRun} from "./text-run";
+import {ParagraphProperties} from "./properties";
 
 class Style {
     private pStyle: Array<XmlComponent>;
@@ -32,10 +35,10 @@ export class Paragraph {
         this.p.push(new Attributes());
         this.properties = new ParagraphProperties();
         this.p.push(this.properties);
-        this.p.push(new Run(text));
+        this.p.push(new TextRun(text));
     }
 
-    addText(run: Run) {
+    addText(run: TextRun) {
         this.p.push(run);
         return this;
     }
@@ -94,12 +97,9 @@ export class Paragraph {
         this.properties.push(new ThematicBreak());
         return this;
     }
-    
-            pageBreak () {
-                   this.properties.push(new ThematicBreak());
 
-                
-            paragraphProperties.push(pBreak);
-            return this;
-        }
+    pageBreak() {
+        this.properties.push(new PageBreak());
+        return this;
+    }
 }

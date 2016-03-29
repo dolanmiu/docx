@@ -81,8 +81,22 @@ describe('Paragraph', () => {
         it("should add thematic break to JSON", () => {
             paragraph.thematicBreak();
             var newJson = jsonify(paragraph);
-            
+
             assert.isDefined(newJson.p[1].pPr[1].pBdr);
+        });
+    });
+
+    describe("#pageBreak()", () => {
+        it("should add page break to JSON", () => {
+            paragraph.pageBreak();
+            var newJson = jsonify(paragraph);
+            assert.isDefined(newJson.p[1].pPr[1].r[0].br);
+        });
+
+        it("should add page break with 'page' type", () => {
+            paragraph.pageBreak();
+            var newJson = jsonify(paragraph);
+            assert(newJson.p[1].pPr[1].r[0].br[0]._attrs.type === "page");
         });
     });
 });

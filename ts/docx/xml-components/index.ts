@@ -7,6 +7,7 @@ interface AttributesProperties {
     color?: string;
     space?: string;
     sz?: string;
+    type?: string;
 }
 
 export class Attributes implements XmlComponent {
@@ -21,26 +22,11 @@ export class Attributes implements XmlComponent {
     }
 }
 
-export class ParagraphProperties implements XmlComponent {
-    private pPr: Array<XmlComponent>;
+export class Run implements XmlComponent {
+    protected r: Array<XmlComponent>;
 
     constructor() {
-        this.pPr = new Array<XmlComponent>();
-        this.pPr.push(new Attributes());
-    }
-
-    push(item: XmlComponent) {
-        this.pPr.push(item);
-    }
-}
-
-export class Run implements XmlComponent {
-    private r: Array<XmlComponent>;
-
-    constructor(text: string) {
         this.r = new Array<XmlComponent>();
-        this.r.push(new ParagraphProperties());
-        this.r.push(new Text(text));
     }
 }
 

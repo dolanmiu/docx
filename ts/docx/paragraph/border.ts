@@ -1,4 +1,4 @@
-import {XmlComponent, Attributes} from "./xml-components";
+import {XmlComponent, Attributes} from "../xml-components";
 
 class Border implements XmlComponent {
     private bottom: Array<XmlComponent>;
