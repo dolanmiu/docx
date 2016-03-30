@@ -1,3 +1,3 @@
-    export class TapStop {
-        
-    }
+export class TabStop {
+
+}

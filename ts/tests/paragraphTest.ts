@@ -99,4 +99,18 @@ describe('Paragraph', () => {
             assert(newJson.p[1].pPr[1].r[0].br[0]._attrs.type === "page");
         });
     });
+
+    describe("#bullet()", () => {
+        it("should add list paragraph style to JSON", () => {
+            paragraph.bullet();
+            var newJson = jsonify(paragraph);
+            assert(newJson.p[1].pPr[1].pStyle[0]._attrs.val === "ListParagraph");
+        });
+
+        it("it should add numbered properties", () => {
+            paragraph.bullet();
+            var newJson = jsonify(paragraph);
+            assert.isDefined(newJson.p[1].pPr[2].numPr);
+        });
+    });
 });

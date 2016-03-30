@@ -3,17 +3,9 @@ import {ThematicBreak} from "./border";
 import {PageBreak} from "./page-break";
 import {TextRun} from "./text-run";
 import {ParagraphProperties} from "./properties";
-
-class Style {
-    private pStyle: Array<XmlComponent>;
-
-    constructor(type: string) {
-        this.pStyle = new Array<XmlComponent>();
-        this.pStyle.push(new Attributes({
-            val: type
-        }));
-    }
-}
+import {TabStop} from "../tab-stop";
+import {Style} from "./style";
+import {NumberProperties} from "./unordered-list";
 
 class Alignment {
     private jc: Array<XmlComponent>;
@@ -100,6 +92,17 @@ export class Paragraph {
 
     pageBreak() {
         this.properties.push(new PageBreak());
+        return this;
+    }
+
+    addTabStop(tabStop: TabStop) {
+        this.properties.push(tabStop);
+        return this;
+    }
+
+    bullet() {
+        this.properties.push(new Style("ListParagraph"));
+        this.properties.push(new NumberProperties());
         return this;
     }
 }

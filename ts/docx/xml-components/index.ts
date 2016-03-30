@@ -3,7 +3,7 @@ export interface XmlComponent {
 }
 
 interface AttributesProperties {
-    val?: string;
+    val?: any;
     color?: string;
     space?: string;
     sz?: string;
