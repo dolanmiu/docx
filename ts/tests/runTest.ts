@@ -16,10 +16,27 @@ describe('Run', () => {
         run = new Run();
     });
 
-    describe('#constructor()', () => {
+    describe('#bold()', () => {
+        it("it should add bold to the properties", () => {
+            run.bold();
+            var newJson = jsonify(run);
+            assert.isDefined(newJson.r[0].rPr[0].b);
+        });
+    });
 
-        it("", () => {
-            
+    describe('#italics()', () => {
+        it("it should add italics to the properties", () => {
+            run.italics();
+            var newJson = jsonify(run);
+            assert.isDefined(newJson.r[0].rPr[0].i);
+        });
+    });
+
+    describe('#underline()', () => {
+        it("it should add underline to the properties", () => {
+            run.underline();
+            var newJson = jsonify(run);
+            assert.isDefined(newJson.r[0].rPr[0].u);
         });
     });
 });
