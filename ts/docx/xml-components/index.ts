@@ -22,14 +22,6 @@ export class Attributes implements XmlComponent {
     }
 }
 
-export class Run implements XmlComponent {
-    protected r: Array<XmlComponent>;
-
-    constructor() {
-        this.r = new Array<XmlComponent>();
-    }
-}
-
 export class Text implements XmlComponent {
     private t: string;
 

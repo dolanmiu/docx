@@ -1,7 +1,7 @@
 import {XmlComponent, Attributes} from "../xml-components";
 import {ThematicBreak} from "./border";
 import {PageBreak} from "./page-break";
-import {TextRun} from "./text-run";
+import {TextRun} from "../run/text-run";
 import {ParagraphProperties} from "./properties";
 import {TabStop} from "../tab-stop";
 import {Style} from "./style";

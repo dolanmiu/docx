@@ -27,5 +27,14 @@ describe('Attribute', () => {
             var newJson = JSON.parse(stringifiedJson);
             assert(newJson._attrs.val === "test");
         });
+
+        it("should have space value as defined with populated constructor", () => {
+            var newAttrs = new Attributes({
+                space: "spaceTest"
+            });
+            var stringifiedJson = JSON.stringify(newAttrs);
+            var newJson = JSON.parse(stringifiedJson);
+            assert(newJson._attrs.space === "spaceTest");
+        });
     });
 });

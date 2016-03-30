@@ -1,4 +1,5 @@
-import {XmlComponent, Attributes, Run} from "../xml-components";
+import {XmlComponent, Attributes} from "../xml-components";
+import {Run} from "../run";
 
 class Break implements XmlComponent {
     private br: Array<XmlComponent>;
