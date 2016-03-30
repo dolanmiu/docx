@@ -1,5 +1,6 @@
 import {XmlComponent, Attributes} from "../xml-components";
 import {RunProperties} from "./properties";
+import {Bold} from "./emphasis";
 
 export class Run implements XmlComponent {
     protected r: Array<XmlComponent>;
@@ -11,5 +12,8 @@ export class Run implements XmlComponent {
         this.r.push(this.properties);
     }
     
-    
+    bold(): Run {
+        this.properties.push(new Bold());
+        return this;
+    }
 }

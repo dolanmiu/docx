@@ -6,4 +6,8 @@ export class RunProperties {
     constructor() {
         this.rPr = new Array<XmlComponent>();
     }
+    
+    push(item: XmlComponent) {
+        this.rPr.push(item);
+    }
 }
