@@ -3,17 +3,17 @@
 import * as docx from "../docx";
 import {assert} from "chai";
 
+function jsonify(obj: Object) {
+    var stringifiedJson = JSON.stringify(obj);
+    return JSON.parse(stringifiedJson);
+}
+
 describe('Paragraph', () => {
     var paragraph: docx.Paragraph;
 
     beforeEach(() => {
         paragraph = new docx.Paragraph();
     });
-
-    function jsonify(obj: Object) {
-        var stringifiedJson = JSON.stringify(obj);
-        return JSON.parse(stringifiedJson);
-    }
 
     describe('#constructor()', () => {
 
