@@ -16,9 +16,30 @@ describe.only('Body', () => {
     });
 
     describe('#constructor()', () => {
-        
-        it("should create the correct xml components", () => {
-           console.log(body); 
+
+        it("should create the Section Properties", () => {
+            var newJson = jsonify(body);
+            assert.isDefined(newJson.body[0].sectPr);
+        });
+
+        it("should create the Page Size", () => {
+            var newJson = jsonify(body);
+            assert.isDefined(newJson.body[1].pgSz);
+        });
+
+        it("should create the Page Margin", () => {
+            var newJson = jsonify(body);
+            assert.isDefined(newJson.body[2].pgMar);
+        });
+
+        it("should create the Columns", () => {
+            var newJson = jsonify(body);
+            assert.isDefined(newJson.body[3].cols);
+        });
+
+        it("should create the Document Grid", () => {
+            var newJson = jsonify(body);
+            assert.isDefined(newJson.body[4].docGrid);
         });
     });
 });
