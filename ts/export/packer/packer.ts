@@ -1,10 +1,13 @@
 import * as archiver from "archiver";
-import * as fs from 'fs';
+import * as fs from "fs";
+import {Formatter} from "../formatter";
 
-export class Packer {
+export abstract class Packer {
     protected archive: any;
+    private formatter: Formatter;
 
     constructor() {
+        this.formatter = new Formatter();
         this.archive = archiver.create("zip", {});
 
         this.archive.on('error', (err) => {
@@ -12,7 +15,7 @@ export class Packer {
         });
     }
 
-    pack(output: fs.WriteStream): void {
+    pack(output: any): void {
         this.archive.pipe(output);
 
         this.archive.bulk([
