@@ -4,12 +4,14 @@
 
 import {LocalPacker} from "../export/packer/local";
 import {assert} from "chai";
+import {Document} from "../docx/document"
 
-describe.only('Packer', () => {
+describe('Packer', () => {
     var packer: LocalPacker;
 
     beforeEach(() => {
-        packer = new LocalPacker("test.zip");
+        var document = new Document();
+        packer = new LocalPacker(document, "build/tests/test.zip");
     });
 
     describe('#pack()', () => {

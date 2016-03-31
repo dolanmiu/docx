@@ -8,7 +8,7 @@ function jsonify(obj: Object) {
     return JSON.parse(stringifiedJson);
 }
 
-describe('Body', () => {
+describe.only('Body', () => {
     var body: Body;
 
     beforeEach(() => {
@@ -16,6 +16,9 @@ describe('Body', () => {
     });
 
     describe('#constructor()', () => {
-
+        
+        it("should create the correct xml components", () => {
+           console.log(body); 
+        });
     });
 });

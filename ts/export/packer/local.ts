@@ -1,11 +1,12 @@
 import {Packer} from "./packer";
 import * as fs from 'fs';
+import {Document} from "../../docx/document";
 
 export class LocalPacker extends Packer {
     private stream: fs.WriteStream
     
-    constructor(path: string) {
-        super();
+    constructor(document: Document, path: string) {
+        super(document);
         this.stream = fs.createWriteStream(path);
     }
    

@@ -1,12 +1,13 @@
 import {Packer} from "./packer";
 import * as fs from "fs";
 import * as express from "express";
+import {Document} from "../../docx/document";
 
 export class ExpressPacker extends Packer {
     private res: express.Response;
 
-    constructor(res: express.Response) {
-        super();
+    constructor(document: Document, res: express.Response) {
+        super(document);
         this.res = res;
 
         this.res.on('close', () => {
