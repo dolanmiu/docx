@@ -16,6 +16,12 @@
     },
     "assertion-error/assertion-error.d.ts": {
       "commit": "80057d687aefa736511e434cd2a6c0e9a6bb02bc"
+    },
+    "archiver/archiver.d.ts": {
+      "commit": "e937b3e64af586d19f2ea29fdf771e9dc4feecc8"
+    },
+    "node/node.d.ts": {
+      "commit": "e937b3e64af586d19f2ea29fdf771e9dc4feecc8"
     }
   }
 }
