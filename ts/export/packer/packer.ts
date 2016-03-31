@@ -1,11 +1,11 @@
-import {archiver, Zip} from "archiver";
+import * as archiver from "archiver";
 import * as fs from 'fs';
 
 export class Packer {
-    protected archive: Zip;
+    protected archive: any;
 
     constructor() {
-        this.archive = archiver.create("fgf", {});
+        this.archive = archiver.create("zip", {});
     }
 
     pack(output: fs.WriteStream): void {
