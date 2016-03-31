@@ -1,4 +1,5 @@
 import {XmlComponent, Attributes} from "../xml-components";
+import {Body} from "./body";
 
 export class Document {
     private document: Array<XmlComponent>;
@@ -6,7 +7,7 @@ export class Document {
     constructor() {
         this.document = new Array<XmlComponent>();
         this.document.push(new Attributes({}));
-        this.
+        this.document.push(new Body());
     }
 
     test() {
