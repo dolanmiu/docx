@@ -8,6 +8,19 @@ interface AttributesProperties {
     space?: string;
     sz?: string;
     type?: string;
+    rsidR?: string;
+    rsidRPr?: string;
+    rsidSect?: string;
+    w?: string;
+    h?: string;
+    top?: string,
+    right?: string,
+    bottom?: string,
+    left?: string,
+    header?: string,
+    footer?: string,
+    gutter?: string,
+    linePitch?: string
 }
 
 export class Attributes implements XmlComponent {
