@@ -1,8 +1,10 @@
 /// <reference path="../typings/mocha/mocha.d.ts" />
 /// <reference path="../typings/lodash/lodash.d.ts" />
+/// <reference path="../typings/chai/chai.d.ts" />
 
 import {Formatter} from "../export/Formatter";
 import * as docx from "../docx";
+import {assert} from "chai";
 
 function jsonify(obj: Object) {
     var stringifiedJson = JSON.stringify(obj);
@@ -26,6 +28,7 @@ describe.only('Formatter', () => {
 
         it("should should change 'p' tag into 'w:p' tag", () => {
             var newJson = formatter.format({ "p": "test" });
+            assert.isDefined(newJson["w:p"]);
         });
     });
 });
