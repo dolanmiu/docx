@@ -22,21 +22,20 @@ declare module "archiver" {
         name?: string;
     }
         
-    interface Archiver extends STREAM.Transform {
+    export interface Zip extends STREAM.Transform {
         pipe(writeStream: FS.WriteStream): void;
         append(readStream: FS.ReadStream, name: nameInterface): void;
         finalize(): void;
+        bulk(mappings: any): void;
     }
     
     interface Options {
         
     }
     
-    function archiver(format: string, options?: Options): Archiver;
+    function archiver(format: string, options?: Options): Zip;
     
-    namespace archiver {
-        function create(format: string, options?: Options): Archiver;
+    export namespace archiver {
+        function create(format: string, options?: Options): Zip;
     }
-    
-    export = archiver;
 }
