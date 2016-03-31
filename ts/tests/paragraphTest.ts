@@ -18,8 +18,6 @@ describe('Paragraph', () => {
     describe('#constructor()', () => {
 
         it("should create valid JSON", () => {
-            console.log(JSON.stringify(paragraph, null, "    "));
-
             var stringifiedJson = JSON.stringify(paragraph);
             var newJson;
 

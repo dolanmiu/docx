@@ -3,7 +3,7 @@
 
 import {Formatter} from "../export/Formatter";
 
-describe('Formatter', () => {
+describe.only('Formatter', () => {
     var formatter: Formatter;
 
     beforeEach(() => {
@@ -12,8 +12,11 @@ describe('Formatter', () => {
 
     describe('#format()', () => {
         it("should work", () => {
-            var newJson = formatter.format('{"p":["stuff"]}');
-            console.log(newJson);
+            var newJson = formatter.format({ "p": [{ "t": "test" }] });
+        });
+
+        it("should should change 'p' tag into 'w:p' tag", () => {
+            var newJson = formatter.format({ "p": "test" });
         });
     });
 });

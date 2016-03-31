@@ -13,7 +13,7 @@ describe('Document', () => {
     describe('#constructor()', () => {
         
         it("should create valid JSON", () => {
-            console.log(JSON.stringify(document, null, "    "));
+            //console.log(JSON.stringify(document, null, "    "));
             var stringifiedJson = JSON.stringify(document);
             var newJson;
 
