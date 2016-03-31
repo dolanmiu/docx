@@ -22,6 +22,18 @@
     },
     "node/node.d.ts": {
       "commit": "e937b3e64af586d19f2ea29fdf771e9dc4feecc8"
+    },
+    "express/express.d.ts": {
+      "commit": "e937b3e64af586d19f2ea29fdf771e9dc4feecc8"
+    },
+    "express-serve-static-core/express-serve-static-core.d.ts": {
+      "commit": "e937b3e64af586d19f2ea29fdf771e9dc4feecc8"
+    },
+    "serve-static/serve-static.d.ts": {
+      "commit": "e937b3e64af586d19f2ea29fdf771e9dc4feecc8"
+    },
+    "mime/mime.d.ts": {
+      "commit": "e937b3e64af586d19f2ea29fdf771e9dc4feecc8"
     }
   }
 }
