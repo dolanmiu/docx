@@ -6,6 +6,10 @@ export class Packer {
 
     constructor() {
         this.archive = archiver.create("zip", {});
+
+        this.archive.on('error', (err) => {
+            throw err;
+        });
     }
 
     pack(output: fs.WriteStream): void {
@@ -18,5 +22,9 @@ export class Packer {
                 src: ['**', '**/.rels']
             }
         ]);
+
+        //this.archive.directory(__dirname + "/template", "/");
+
+        this.archive.finalize();
     }
 }
