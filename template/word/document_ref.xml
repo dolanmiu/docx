@@ -1,0 +1,243 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<w:document xmlns:wpc="http://schemas.microsoft.com/office/word/2010/wordprocessingCanvas" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordprocessingDrawing" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:w10="urn:schemas-microsoft-com:office:word" xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml" xmlns:w15="http://schemas.microsoft.com/office/word/2012/wordml" xmlns:wpg="http://schemas.microsoft.com/office/word/2010/wordprocessingGroup" xmlns:wpi="http://schemas.microsoft.com/office/word/2010/wordprocessingInk" xmlns:wne="http://schemas.microsoft.com/office/word/2006/wordml" xmlns:wps="http://schemas.microsoft.com/office/word/2010/wordprocessingShape" mc:Ignorable="w14 w15 wp14">
+    <w:body>
+        <w:p w:rsidR="00EF3F67" w:rsidRDefault="00840B81" w:rsidP="00840B81">
+            <w:pPr>
+                <w:pStyle w:val="Title" /></w:pPr>
+            <w:r>
+                <w:t>Title</w:t>
+            </w:r>
+        </w:p>
+        <w:p w:rsidR="00840B81" w:rsidRDefault="00840B81" w:rsidP="00840B81">
+            <w:pPr>
+                <w:pStyle w:val="Heading1" /></w:pPr>
+            <w:r>
+                <w:t>Heading</w:t>
+            </w:r>
+        </w:p>
+        <w:p w:rsidR="00840B81" w:rsidRDefault="00840B81" w:rsidP="00840B81">
+            <w:pPr>
+                <w:pStyle w:val="Heading2" /></w:pPr>
+            <w:r>
+                <w:t>Heading 2</w:t>
+            </w:r>
+        </w:p>
+        <w:p w:rsidR="00840B81" w:rsidRDefault="00840B81" w:rsidP="00840B81">
+            <w:r>
+                <w:t>Trying to burn things in</w:t>
+            </w:r>
+        </w:p>
+        <w:p w:rsidR="00840B81" w:rsidRDefault="00840B81" w:rsidP="00840B81">
+            <w:r w:rsidRPr="00840B81">
+                <w:t>Steps</w:t>
+            </w:r>
+            <w:r>
+                <w:t>:</w:t>
+            </w:r>
+        </w:p>
+        <w:p w:rsidR="00840B81" w:rsidRDefault="00840B81" w:rsidP="00840B81">
+            <w:pPr>
+                <w:pStyle w:val="ListParagraph" />
+                <w:numPr>
+                    <w:ilvl w:val="0" />
+                    <w:numId w:val="2" /></w:numPr>
+            </w:pPr>
+            <w:r>
+                <w:t>Clean oven</w:t>
+            </w:r>
+        </w:p>
+        <w:p w:rsidR="00840B81" w:rsidRDefault="00840B81" w:rsidP="00840B81">
+            <w:pPr>
+                <w:pStyle w:val="ListParagraph" />
+                <w:numPr>
+                    <w:ilvl w:val="0" />
+                    <w:numId w:val="2" /></w:numPr>
+            </w:pPr>
+            <w:r>
+                <w:t>Clean kitchen</w:t>
+            </w:r>
+        </w:p>
+        <w:p w:rsidR="00840B81" w:rsidRDefault="00840B81" w:rsidP="00840B81">
+            <w:pPr>
+                <w:pStyle w:val="ListParagraph" />
+                <w:numPr>
+                    <w:ilvl w:val="0" />
+                    <w:numId w:val="2" /></w:numPr>
+            </w:pPr>
+            <w:r>
+                <w:t>Clean Living room</w:t>
+            </w:r>
+        </w:p>
+        <w:p w:rsidR="00840B81" w:rsidRDefault="00840B81" w:rsidP="00840B81">
+            <w:r>
+                <w:t>How to:</w:t>
+            </w:r>
+        </w:p>
+        <w:p w:rsidR="00840B81" w:rsidRDefault="00840B81" w:rsidP="00840B81">
+            <w:pPr>
+                <w:pStyle w:val="ListParagraph" />
+                <w:numPr>
+                    <w:ilvl w:val="0" />
+                    <w:numId w:val="3" /></w:numPr>
+            </w:pPr>
+            <w:r>
+                <w:t>Buy brush</w:t>
+            </w:r>
+        </w:p>
+        <w:p w:rsidR="00840B81" w:rsidRDefault="00840B81" w:rsidP="00840B81">
+            <w:pPr>
+                <w:pStyle w:val="ListParagraph" />
+                <w:numPr>
+                    <w:ilvl w:val="0" />
+                    <w:numId w:val="3" /></w:numPr>
+            </w:pPr>
+            <w:r>
+                <w:t xml:space="preserve">Buy </w:t>
+            </w:r>
+            <w:proofErr w:type="spellStart" />
+            <w:r>
+                <w:t>tv</w:t>
+            </w:r>
+            <w:proofErr w:type="spellEnd" /></w:p>
+        <w:p w:rsidR="00840B81" w:rsidRDefault="00840B81" w:rsidP="00840B81">
+            <w:pPr>
+                <w:pStyle w:val="ListParagraph" />
+                <w:numPr>
+                    <w:ilvl w:val="0" />
+                    <w:numId w:val="3" /></w:numPr>
+            </w:pPr>
+            <w:r>
+                <w:t>Buy sofa</w:t>
+            </w:r>
+        </w:p>
+        <w:p w:rsidR="00840B81" w:rsidRDefault="00840B81" w:rsidP="00840B81">
+            <w:r>
+                <w:t>How to play piano:</w:t>
+            </w:r>
+        </w:p>
+        <w:p w:rsidR="00840B81" w:rsidRDefault="00840B81" w:rsidP="00840B81">
+            <w:pPr>
+                <w:pStyle w:val="ListParagraph" />
+                <w:numPr>
+                    <w:ilvl w:val="0" />
+                    <w:numId w:val="4" /></w:numPr>
+            </w:pPr>
+            <w:r>
+                <w:t>Learn it</w:t>
+            </w:r>
+        </w:p>
+        <w:p w:rsidR="00840B81" w:rsidRDefault="00840B81" w:rsidP="00840B81">
+            <w:pPr>
+                <w:pStyle w:val="ListParagraph" />
+                <w:numPr>
+                    <w:ilvl w:val="0" />
+                    <w:numId w:val="4" /></w:numPr>
+            </w:pPr>
+            <w:r>
+                <w:t>Get Lessons</w:t>
+            </w:r>
+        </w:p>
+        <w:p w:rsidR="00840B81" w:rsidRDefault="00840B81" w:rsidP="00840B81">
+            <w:pPr>
+                <w:pStyle w:val="ListParagraph" />
+                <w:numPr>
+                    <w:ilvl w:val="0" />
+                    <w:numId w:val="4" /></w:numPr>
+            </w:pPr>
+            <w:r>
+                <w:t>Practice</w:t>
+            </w:r>
+        </w:p>
+        <w:tbl>
+            <w:tblPr>
+                <w:tblStyle w:val="TableGrid" />
+                <w:tblW w:w="0" w:type="auto" />
+                <w:tblLook w:val="04A0" w:firstRow="1" w:lastRow="0" w:firstColumn="1" w:lastColumn="0" w:noHBand="0" w:noVBand="1" /></w:tblPr>
+            <w:tblGrid>
+                <w:gridCol w:w="3005" />
+                <w:gridCol w:w="3005" />
+                <w:gridCol w:w="3006" /></w:tblGrid>
+            <w:tr w:rsidR="00840B81" w:rsidTr="00840B81">
+                <w:tc>
+                    <w:tcPr>
+                        <w:tcW w:w="3005" w:type="dxa" /></w:tcPr>
+                    <w:p w:rsidR="00840B81" w:rsidRDefault="00840B81" w:rsidP="00840B81">
+                        <w:r>
+                            <w:t>Table</w:t>
+                        </w:r>
+                    </w:p>
+                </w:tc>
+                <w:tc>
+                    <w:tcPr>
+                        <w:tcW w:w="3005" w:type="dxa" /></w:tcPr>
+                    <w:p w:rsidR="00840B81" w:rsidRDefault="00840B81" w:rsidP="00840B81">
+                        <w:r>
+                            <w:t>Goes</w:t>
+                        </w:r>
+                    </w:p>
+                </w:tc>
+                <w:tc>
+                    <w:tcPr>
+                        <w:tcW w:w="3006" w:type="dxa" /></w:tcPr>
+                    <w:p w:rsidR="00840B81" w:rsidRDefault="00840B81" w:rsidP="00840B81">
+                        <w:r>
+                            <w:t>Here</w:t>
+                        </w:r>
+                    </w:p>
+                </w:tc>
+            </w:tr>
+            <w:tr w:rsidR="00840B81" w:rsidTr="00840B81">
+                <w:tc>
+                    <w:tcPr>
+                        <w:tcW w:w="3005" w:type="dxa" /></w:tcPr>
+                    <w:p w:rsidR="00840B81" w:rsidRDefault="00840B81" w:rsidP="00840B81">
+                        <w:r>
+                            <w:t>1</w:t>
+                        </w:r>
+                    </w:p>
+                </w:tc>
+                <w:tc>
+                    <w:tcPr>
+                        <w:tcW w:w="3005" w:type="dxa" /></w:tcPr>
+                    <w:p w:rsidR="00840B81" w:rsidRDefault="00840B81" w:rsidP="00840B81">
+                        <w:r>
+                            <w:t>2</w:t>
+                        </w:r>
+                    </w:p>
+                </w:tc>
+                <w:tc>
+                    <w:tcPr>
+                        <w:tcW w:w="3006" w:type="dxa" /></w:tcPr>
+                    <w:p w:rsidR="00840B81" w:rsidRDefault="00840B81" w:rsidP="00840B81">
+                        <w:r>
+                            <w:t>3</w:t>
+                        </w:r>
+                    </w:p>
+                </w:tc>
+            </w:tr>
+            <w:tr w:rsidR="00840B81" w:rsidTr="00840B81">
+                <w:tc>
+                    <w:tcPr>
+                        <w:tcW w:w="3005" w:type="dxa" /></w:tcPr>
+                    <w:p w:rsidR="00840B81" w:rsidRDefault="00840B81" w:rsidP="00840B81" /></w:tc>
+                <w:tc>
+                    <w:tcPr>
+                        <w:tcW w:w="3005" w:type="dxa" /></w:tcPr>
+                    <w:p w:rsidR="00840B81" w:rsidRDefault="00840B81" w:rsidP="00840B81" /></w:tc>
+                <w:tc>
+                    <w:tcPr>
+                        <w:tcW w:w="3006" w:type="dxa" /></w:tcPr>
+                    <w:p w:rsidR="00840B81" w:rsidRDefault="00840B81" w:rsidP="00840B81" /></w:tc>
+            </w:tr>
+        </w:tbl>
+        <w:p w:rsidR="00840B81" w:rsidRPr="00840B81" w:rsidRDefault="00840B81" w:rsidP="00840B81">
+            <w:bookmarkStart w:id="0" w:name="_GoBack" />
+            <w:bookmarkEnd w:id="0" /></w:p>
+        <w:sectPr w:rsidR="00840B81" w:rsidRPr="00840B81">
+            <w:headerReference w:type="default" r:id="rId7" />
+            <w:pgSz w:w="11906" w:h="16838" />
+            <w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440" w:header="708" w:footer="708" w:gutter="0" />
+            <w:cols w:space="708" />
+            <w:docGrid w:linePitch="360" /></w:sectPr>
+    </w:body>
+</w:document>
