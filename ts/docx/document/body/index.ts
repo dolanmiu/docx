@@ -16,4 +16,8 @@ export class Body {
         this.body.push(new Columns());
         this.body.push(new DocumentGrid());
     }
+    
+    push(component: XmlComponent) {
+        this.body.push(component);
+    }
 }

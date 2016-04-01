@@ -2,13 +2,15 @@ import * as archiver from "archiver";
 import * as fs from "fs";
 import {Formatter} from "../formatter";
 import {Document} from "../../docx";
+import {Style} from "../../style";
+import {Properties} from "../../properties";
 
 export abstract class Packer {
     protected archive: any;
     private formatter: Formatter;
     protected document: Document;
 
-    constructor(document: Document) {
+    constructor(document: Document, style: Style, properties: Properties) {
         this.formatter = new Formatter();
         this.document = document;
         this.archive = archiver.create("zip", {});
