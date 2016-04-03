@@ -1,7 +1,11 @@
 import {XmlComponent, Attributes} from "../../xml-components";
 
-export class Columns {
+export class Columns implements XmlComponent {
     private cols: Array<XmlComponent>;
+    
+    xmlKeys = {
+        cols: 'w:cols'
+    }
 
     constructor() {
         this.cols = new Array<XmlComponent>();

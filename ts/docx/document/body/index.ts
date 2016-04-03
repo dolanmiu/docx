@@ -5,9 +5,13 @@ import {PageMargin} from "./page-margin";
 import {Columns} from "./columns";
 import {DocumentGrid} from "./doc-grid";
 
-export class Body {
+export class Body implements XmlComponent {
     private body: Array<XmlComponent>;
-    
+
+    xmlKeys = {
+        body: 'w:body'
+    }
+
     constructor() {
         this.body = new Array<XmlComponent>();
         this.body.push(new SectionProperties());
@@ -16,7 +20,7 @@ export class Body {
         this.body.push(new Columns());
         this.body.push(new DocumentGrid());
     }
-    
+
     push(component: XmlComponent) {
         this.body.push(component);
     }

@@ -19,7 +19,7 @@ describe('Formatter', () => {
     });
 
     describe('#format()', () => {
-        it("should format simple paragraph", () => {
+        it.only("should format simple paragraph", () => {
             var paragraph = new docx.Paragraph();
             var newJson = formatter.format(paragraph);
             newJson = jsonify(newJson);

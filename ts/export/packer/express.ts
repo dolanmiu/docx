@@ -7,7 +7,7 @@ export class ExpressPacker extends Packer {
     private res: express.Response;
 
     constructor(document: Document, res: express.Response) {
-        super(document);
+        super(document, null, null);
         this.res = res;
 
         this.res.on('close', () => {

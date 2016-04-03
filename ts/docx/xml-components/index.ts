@@ -1,5 +1,5 @@
 export interface XmlComponent {
-
+    xmlKeys: Object;
 }
 
 interface AttributesProperties {
@@ -26,6 +26,8 @@ interface AttributesProperties {
 export class Attributes implements XmlComponent {
     private _attrs: Object;
 
+    xmlKeys = {};
+
     constructor(properties?: AttributesProperties) {
         this._attrs = properties
 
@@ -37,6 +39,10 @@ export class Attributes implements XmlComponent {
 
 export class Text implements XmlComponent {
     private t: string;
+
+    xmlKeys = {
+        t: 'w:t'
+    }
 
     constructor(text: string) {
         this.t = text;

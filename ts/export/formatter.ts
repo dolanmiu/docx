@@ -2,57 +2,36 @@ import * as _ from "lodash";
 
 export class Formatter {
 
-    private xmlKeyDictionary = {
-        p: 'w:p',
-        t: 'w:t',
-        color: 'w:color',
-        space: 'w:space',
-        sz: 'w:sz',
-        val: 'w:val',
-        type: 'w:type',
-        ilvl: 'w:ilvl',
-        numId: 'w:numId',
-        pBdr: 'w:pBdr',
-        jc: 'w:jc',
-        r: 'w:r',
-        pPr: 'w:pPr',
-        pStyle: 'w:pStyle',
-        numPr: 'w:numPr',
-        b: 'w:b',
-        i: 'w:i',
-        u: 'w:u',
-        rPr: 'w:rPr'
-    };
-
     format(input: any): Object {
-        var newJson = this.jsonify(input);
-
-        this.deepTraverseJson(newJson, (parent, value, key) => {
+        this.deepTraverseJson(input, (parent, value, key) => {
             if (isNaN(key)) {
-                var newKey = this.getReplacementKey(key);
-                parent[newKey] = parent[key];
+                var newKey = this.getReplacementKey(parent, key);
                 if (newKey !== key) {
+                    parent[newKey] = parent[key];
                     delete parent[key];
                 } else {
-                    console.error("Key is not in dictionary:" + key);
+                    //console.error("Key is not in dictionary:" + key);
                 }
             }
         });
-        
-        newJson = this.clenseProperties(newJson);
+
+        var newJson = this.clense(input);
 
         return newJson;
     }
 
-    private clenseProperties(input: any): Object {
+    private clense(input: any): Object {
         var newJson = this.jsonify(input);
 
         this.deepTraverseJson(newJson, (parent, value, key) => {
             if (key === "properties") {
                 delete parent[key];
             }
+            if (key === "xmlKeys") {
+                delete parent[key];
+            }
         });
-        
+
         return newJson
     }
 
@@ -63,15 +42,15 @@ export class Formatter {
 
     private deepTraverseJson(json: Object, lambda: (json: any, value: any, key: any) => void): void {
         _.forOwn(json, (value, key) => {
-            if (_.isObject(value)) {
+            if (_.isObject(value) && key !== "xmlKeys") {
                 this.deepTraverseJson(value, lambda);
             }
             lambda(json, value, key);
         });
     }
 
-    private getReplacementKey(key: string): string {
-        var newKey = this.xmlKeyDictionary[key];
+    private getReplacementKey(input: any, key: string): string {
+        var newKey = input.xmlKeys[key];
 
         if (newKey !== undefined) {
             return newKey;

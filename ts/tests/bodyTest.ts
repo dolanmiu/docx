@@ -8,7 +8,7 @@ function jsonify(obj: Object) {
     return JSON.parse(stringifiedJson);
 }
 
-describe.only('Body', () => {
+describe('Body', () => {
     var body: Body;
 
     beforeEach(() => {

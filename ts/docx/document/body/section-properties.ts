@@ -1,7 +1,11 @@
 import {XmlComponent, Attributes} from "../../xml-components";
 
-export class SectionProperties {
+export class SectionProperties implements XmlComponent {
     private sectPr: Array<XmlComponent>;
+    
+    xmlKeys = {
+        sectPr: 'sectPr'
+    }
     
     constructor() {
         this.sectPr = new Array<XmlComponent>();

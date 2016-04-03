@@ -7,8 +7,12 @@ import {TabStop} from "../tab-stop";
 import {Style} from "./style";
 import {NumberProperties} from "./unordered-list";
 
-class Alignment {
+class Alignment implements XmlComponent {
     private jc: Array<XmlComponent>;
+    
+    xmlKeys = {
+        jc: 'w:jc'
+    }
 
     constructor(type: string) {
         this.jc = new Array<XmlComponent>();
@@ -18,9 +22,13 @@ class Alignment {
     }
 }
 
-export class Paragraph {
+export class Paragraph implements XmlComponent {
     private p: Array<XmlComponent>;
     private properties: ParagraphProperties;
+    
+    xmlKeys = {
+        p: 'w:p'
+    }
 
     constructor(text?: string) {
         this.p = new Array<XmlComponent>();

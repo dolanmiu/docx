@@ -5,6 +5,10 @@ import {Bold, Italics, Underline} from "./emphasis";
 export class Run implements XmlComponent {
     protected r: Array<XmlComponent>;
     private properties: RunProperties;
+    
+    xmlKeys = {
+        r: 'w:r'
+    }
 
     constructor() {
         this.r = new Array<XmlComponent>();
