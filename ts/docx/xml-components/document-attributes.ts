@@ -18,6 +18,12 @@ interface DocumentAttributesProperties {
     wne?: string;
     wps?: string;
     Ignorable?: string;
+    cp?: string;
+    dc?: string;
+    dcterms?: string;
+    dcmitype?: string;
+    xsi?: string;
+    type?: string;
 }
 
 export class DocumentAttributes implements XmlComponent {
@@ -40,7 +46,13 @@ export class DocumentAttributes implements XmlComponent {
         wpi: 'xmlns:wpi',
         wne: 'xmlns:wne',
         wps: 'xmlns:wps',
-        Ignorable: 'mc:Ignorable'
+        Ignorable: 'mc:Ignorable',
+        cp: 'xmlns:cp',
+        dc: 'xmlns:dc',
+        dcterms: 'xmlns:dcterms',
+        dcmitype: 'xmlns:dcmitype',
+        xsi: 'xmlns:xsi',
+        type: 'xsi:type'
     };
 
     constructor(properties?: DocumentAttributesProperties) {

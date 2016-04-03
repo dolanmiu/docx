@@ -13,7 +13,7 @@ function jsonify(obj: Object) {
     return JSON.parse(stringifiedJson);
 }
 
-describe.only("Formatter", () => {
+describe("Formatter", () => {
     var formatter: Formatter;
 
     beforeEach(() => {

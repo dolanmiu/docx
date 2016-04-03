@@ -12,7 +12,7 @@ export abstract class Packer {
     private style: Style;
     private properties: Properties;
 
-    constructor(document: Document, style: Style, properties: Properties) {
+    constructor(document: Document, style: any, properties: Properties) {
         this.formatter = new Formatter();
         this.document = document;
         this.style = style;
