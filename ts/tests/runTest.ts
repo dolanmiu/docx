@@ -9,7 +9,7 @@ function jsonify(obj: Object) {
     return JSON.parse(stringifiedJson);
 }
 
-describe('Run', () => {
+describe("Run", () => {
     var run: Run;
 
     beforeEach(() => {

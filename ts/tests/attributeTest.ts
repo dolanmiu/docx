@@ -3,7 +3,7 @@
 import {Attributes} from "../docx/xml-components";
 import {assert} from "chai";
 
-describe('Attribute', () => {
+describe("Attribute", () => {
     var attributes: Attributes;
 
     beforeEach(() => {

@@ -3,7 +3,7 @@
 import * as docx from "../docx";
 import {assert} from "chai";
 
-describe('Document', () => {
+describe("Document", () => {
     var document: docx.Document;
 
     beforeEach(() => {

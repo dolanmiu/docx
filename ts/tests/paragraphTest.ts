@@ -8,7 +8,7 @@ function jsonify(obj: Object) {
     return JSON.parse(stringifiedJson);
 }
 
-describe('Paragraph', () => {
+describe("Paragraph", () => {
     var paragraph: docx.Paragraph;
 
     beforeEach(() => {

@@ -6,7 +6,7 @@ import {LocalPacker} from "../export/packer/local";
 import {assert} from "chai";
 import {Document} from "../docx/document"
 
-describe('Packer', () => {
+describe("Packer", () => {
     var packer: LocalPacker;
 
     beforeEach(() => {
