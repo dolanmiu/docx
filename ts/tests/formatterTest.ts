@@ -4,6 +4,8 @@
 
 import {Formatter} from "../export/Formatter";
 import * as docx from "../docx";
+import {Attributes} from "../docx/xml-components";
+
 import {assert} from "chai";
 
 function jsonify(obj: Object) {
@@ -11,7 +13,7 @@ function jsonify(obj: Object) {
     return JSON.parse(stringifiedJson);
 }
 
-describe('Formatter', () => {
+describe.only('Formatter', () => {
     var formatter: Formatter;
 
     beforeEach(() => {
@@ -19,15 +21,41 @@ describe('Formatter', () => {
     });
 
     describe('#format()', () => {
-        it.only("should format simple paragraph", () => {
+        it("should format simple paragraph", () => {
             var paragraph = new docx.Paragraph();
             var newJson = formatter.format(paragraph);
             newJson = jsonify(newJson);
-            console.log(newJson);
+            assert.isDefined(newJson["w:p"]);
+        });
+
+        it("should format simple paragraph with bold text", () => {
+            var paragraph = new docx.Paragraph();
+            paragraph.addText(new docx.TextRun("test").bold());
+            var newJson = formatter.format(paragraph);
+            newJson = jsonify(newJson);
+            assert.isDefined(newJson["w:p"][3]["w:r"][0]["w:rPr"][0]["w:b"][0]["_attrs"]["w:val"]);
+        });
+
+        it("should format attributes (rsidSect)", () => {
+            var attributes = new Attributes({
+                rsidSect: "test2"
+            });
+            var newJson = formatter.format(attributes);
+            newJson = jsonify(newJson);
+            assert.isDefined(newJson["_attrs"]["w:rsidSect"]);
+        });
+
+        it("should format attributes (val)", () => {
+            var attributes = new Attributes({
+                val: "test"
+            });
+            var newJson = formatter.format(attributes);
+            newJson = jsonify(newJson);
+            assert.isDefined(newJson["_attrs"]["w:val"]);
         });
 
         it("should should change 'p' tag into 'w:p' tag", () => {
-            var newJson = formatter.format({ "p": "test" });
+            var newJson = formatter.format({ "p": "test", "xmlKeys": { "p": "w:p" } });
             assert.isDefined(newJson["w:p"]);
         });
     });

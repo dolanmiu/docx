@@ -13,20 +13,39 @@ interface AttributesProperties {
     rsidSect?: string;
     w?: string;
     h?: string;
-    top?: string,
-    right?: string,
-    bottom?: string,
-    left?: string,
-    header?: string,
-    footer?: string,
-    gutter?: string,
-    linePitch?: string
+    top?: string;
+    right?: string;
+    bottom?: string;
+    left?: string;
+    header?: string;
+    footer?: string;
+    gutter?: string;
+    linePitch?: string;
 }
 
 export class Attributes implements XmlComponent {
     private _attrs: Object;
 
-    xmlKeys = {};
+    xmlKeys = {
+        val: "w:val",
+        color: "w:color",
+        space: "w:space",
+        sz: "w:sz",
+        type: "w:type",
+        rsidR: "w:rsidR",
+        rsidRPr: "w:rsidRPr",
+        rsidSect: "w:rsidSect",
+        w: "w:w",
+        h: "w:h",
+        top: "w:top",
+        right: "w:right",
+        bottom: "w:bottom",
+        left: "w:left",
+        header: "w:header",
+        footer: "w:footer",
+        gutter: "w:gutter",
+        linePitch: "w:linePitch"
+    };
 
     constructor(properties?: AttributesProperties) {
         this._attrs = properties
@@ -34,6 +53,8 @@ export class Attributes implements XmlComponent {
         if (!properties) {
             this._attrs = {};
         }
+
+        this._attrs["xmlKeys"] = this.xmlKeys;
     }
 }
 
