@@ -126,7 +126,7 @@ export class Created extends DateComponent implements XmlComponent {
     private created: Array<XmlComponent>;
 
     xmlKeys = {
-        revision: "dcterms:created"
+        created: "dcterms:created"
     }
 
     constructor() {

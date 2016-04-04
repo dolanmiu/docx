@@ -5,6 +5,7 @@
 import {Formatter} from "../export/Formatter";
 import * as docx from "../docx";
 import {Attributes} from "../docx/xml-components";
+import {Properties} from "../properties";
 
 import {assert} from "chai";
 
@@ -25,6 +26,8 @@ describe("Formatter", () => {
             var paragraph = new docx.Paragraph();
             var newJson = formatter.format(paragraph);
             newJson = jsonify(newJson);
+            console.log(JSON.stringify(newJson, null, "  "));
+
             assert.isDefined(newJson["w:p"]);
         });
 
@@ -57,6 +60,16 @@ describe("Formatter", () => {
         it("should should change 'p' tag into 'w:p' tag", () => {
             var newJson = formatter.format({ "p": "test", "xmlKeys": { "p": "w:p" } });
             assert.isDefined(newJson["w:p"]);
+        });
+
+        it.only("should format Properties object correctly", () => {
+            var properties = new Properties({
+                title: "test document",
+                creator: "Dolan"
+            });
+            var newJson = formatter.format(properties);
+            newJson = jsonify(newJson);
+            console.log(JSON.stringify(newJson, null, "  "));
         });
     });
 });

@@ -15,7 +15,7 @@ describe("Body", () => {
         body = new Body();
     });
 
-    describe('#constructor()', () => {
+    describe("#constructor()", () => {
 
         it("should create the Section Properties", () => {
             var newJson = jsonify(body);
