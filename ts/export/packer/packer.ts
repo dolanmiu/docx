@@ -28,22 +28,29 @@ export abstract class Packer {
 
     pack(output: any): void {
         this.archive.pipe(output);
-console.log(appRoot.path);
+        console.log(appRoot.path + "/template");
         this.archive.bulk([
             {
                 expand: true,
-                cwd: appRoot.path + '/template',
+                cwd: appRoot.path + "/template",
                 src: ['**', '**/.rels']
             }
         ]);
 
-        //this.archive.directory(__dirname + "/template", "/");
+        //this.archive.file(appRoot.path + "/template/[Content_Types].xml", { name: "[Content_Types].xml" });
+        //console.log(__dirname + "/packer.js");
+        //this.archive.file(__dirname + "/packer.js", { name: "/[Content_Types].xml" });
+
+        /*this.archive.directory(appRoot.path + "/template", {
+            name: "/root/g.txt",
+            prefix: "root"
+        });*/
         var xmlDocument = xml(this.formatter.format(this.document));
         var xmlStyle = xml(this.style);
         var xmlProperties = xml(this.formatter.format(this.properties));
 
-        console.log(JSON.stringify(this.formatter.format(this.document), null, "  "));
-        console.log(xmlDocument);
+        //console.log(JSON.stringify(this.formatter.format(this.document), null, "  "));
+        //console.log(xmlDocument);
 
         this.archive.append(xmlDocument, {
             name: 'word/document.xml'
@@ -58,5 +65,6 @@ console.log(appRoot.path);
         });
 
         this.archive.finalize();
+        console.log("done");
     }
 }

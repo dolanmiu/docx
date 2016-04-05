@@ -8,12 +8,15 @@ import {assert} from "chai";
 import {Document} from "../docx/document"
 import {Properties} from "../properties"
 import {DefaultStyle} from "../style/default"
+import {Paragraph} from "../docx/paragraph"
 
 describe.only("Packer", () => {
     var packer: LocalPacker;
 
     beforeEach(() => {
         var document = new Document();
+        var paragraph = new Paragraph("test text");
+        document.addParagraph(paragraph);
         var properties = new Properties({
             title: "test document"
         });
@@ -22,8 +25,9 @@ describe.only("Packer", () => {
 
     describe('#pack()', () => {
         
-        it("should create a standard docx file", () => {
+        it("should create a standard docx file", (done) => {            
             packer.pack();
+            setTimeout(done, 3000);
         });
     });
 });
