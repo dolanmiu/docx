@@ -7,6 +7,7 @@ import {LocalPacker} from "../export/packer/local";
 import {assert} from "chai";
 import {Document} from "../docx/document"
 import {Properties} from "../properties"
+import {DefaultStyle} from "../style/default"
 
 describe.only("Packer", () => {
     var packer: LocalPacker;
@@ -16,7 +17,7 @@ describe.only("Packer", () => {
         var properties = new Properties({
             title: "test document"
         });
-        packer = new LocalPacker(document, undefined, properties, "build/tests/test.zip");
+        packer = new LocalPacker(document, DefaultStyle(), properties, "build/tests/test.zip");
     });
 
     describe('#pack()', () => {

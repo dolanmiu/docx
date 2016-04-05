@@ -5,6 +5,7 @@ import {Formatter} from "../formatter";
 import {Document} from "../../docx";
 import {Style} from "../../style";
 import {Properties} from "../../properties";
+var appRoot = require('app-root-path');
 
 export abstract class Packer {
     protected archive: any;
@@ -27,28 +28,30 @@ export abstract class Packer {
 
     pack(output: any): void {
         this.archive.pipe(output);
-
+console.log(appRoot.path);
         this.archive.bulk([
             {
                 expand: true,
-                cwd: __dirname + '/template',
+                cwd: appRoot.path + '/template',
                 src: ['**', '**/.rels']
             }
         ]);
 
         //this.archive.directory(__dirname + "/template", "/");
         var xmlDocument = xml(this.formatter.format(this.document));
-        //var xmlStyle = xml(this.style);
+        var xmlStyle = xml(this.style);
         var xmlProperties = xml(this.formatter.format(this.properties));
+
         console.log(JSON.stringify(this.formatter.format(this.document), null, "  "));
         console.log(xmlDocument);
+
         this.archive.append(xmlDocument, {
             name: 'word/document.xml'
         });
 
-        //this.archive.append(xmlStyle, {
-        //    name: 'word/newStyle.xml'
-        //});
+        this.archive.append(xmlStyle, {
+            name: 'word/newStyle.xml'
+        });
 
         this.archive.append(xmlProperties, {
             name: 'docProps/core.xml'

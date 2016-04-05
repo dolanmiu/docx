@@ -7,7 +7,7 @@ export class LocalPacker extends Packer {
     private stream: fs.WriteStream
     
     constructor(document: Document, style: any, properties: Properties, path: string) {
-        super(document, null, properties);
+        super(document, style, properties);
         this.stream = fs.createWriteStream(path);
     }
    
