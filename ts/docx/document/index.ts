@@ -3,9 +3,14 @@ import {DocumentAttributes} from "../xml-components/document-attributes"
 import {Body} from "./body";
 import {Paragraph} from "../paragraph";
 
-export class Document {
+export class Document implements XmlComponent {
     private document: Array<XmlComponent>;
     private body: Body;
+    
+    xmlKeys = {
+        document: "w:document",
+        body: "w:body"
+    };
 
     constructor() {
         this.document = new Array<XmlComponent>();

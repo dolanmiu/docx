@@ -24,7 +24,7 @@ interface AttributesProperties {
 }
 
 export class Attributes implements XmlComponent {
-    private _attrs: Object;
+    private _attr: Object;
 
     xmlKeys = {
         val: "w:val",
@@ -48,13 +48,13 @@ export class Attributes implements XmlComponent {
     };
 
     constructor(properties?: AttributesProperties) {
-        this._attrs = properties
+        this._attr = properties
 
         if (!properties) {
-            this._attrs = {};
+            this._attr = {};
         }
 
-        this._attrs["xmlKeys"] = this.xmlKeys;
+        this._attr["xmlKeys"] = this.xmlKeys;
     }
 }
 

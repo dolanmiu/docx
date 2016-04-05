@@ -26,9 +26,14 @@ describe("Formatter", () => {
             var paragraph = new docx.Paragraph();
             var newJson = formatter.format(paragraph);
             newJson = jsonify(newJson);
-            console.log(JSON.stringify(newJson, null, "  "));
-
             assert.isDefined(newJson["w:p"]);
+        });
+
+        it("should remove xmlKeys", () => {
+            var paragraph = new docx.Paragraph();
+            var newJson = formatter.format(paragraph);
+            var stringifiedJson = JSON.stringify(newJson);
+            assert(stringifiedJson.indexOf("xmlKeys") < 0);
         });
 
         it("should format simple paragraph with bold text", () => {
@@ -62,14 +67,14 @@ describe("Formatter", () => {
             assert.isDefined(newJson["w:p"]);
         });
 
-        it.only("should format Properties object correctly", () => {
+        it("should format Properties object correctly", () => {
             var properties = new Properties({
                 title: "test document",
                 creator: "Dolan"
             });
             var newJson = formatter.format(properties);
             newJson = jsonify(newJson);
-            console.log(JSON.stringify(newJson, null, "  "));
+            assert.isDefined(newJson["cp:coreProperties"]);
         });
     });
 });

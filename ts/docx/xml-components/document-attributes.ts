@@ -27,7 +27,7 @@ interface DocumentAttributesProperties {
 }
 
 export class DocumentAttributes implements XmlComponent {
-    private _attrs: Object;
+    private _attr: Object;
 
     xmlKeys = {
         wpc: 'xmlns:wpc',
@@ -56,11 +56,11 @@ export class DocumentAttributes implements XmlComponent {
     };
 
     constructor(properties?: DocumentAttributesProperties) {
-        this._attrs = properties
+        this._attr = properties
 
         if (!properties) {
-            this._attrs = {};
+            this._attr = {};
         }
-        this._attrs["xmlKeys"] = this.xmlKeys;
+        this._attr["xmlKeys"] = this.xmlKeys;
     }
 }

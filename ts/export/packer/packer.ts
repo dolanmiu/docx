@@ -1,5 +1,6 @@
 import * as archiver from "archiver";
 import * as fs from "fs";
+import * as xml from "xml";
 import {Formatter} from "../formatter";
 import {Document} from "../../docx";
 import {Style} from "../../style";
@@ -36,16 +37,20 @@ export abstract class Packer {
         ]);
 
         //this.archive.directory(__dirname + "/template", "/");
-
-        this.archive.append(this.document, {
+        var xmlDocument = xml(this.formatter.format(this.document));
+        //var xmlStyle = xml(this.style);
+        var xmlProperties = xml(this.formatter.format(this.properties));
+        console.log(JSON.stringify(this.formatter.format(this.document), null, "  "));
+        console.log(xmlDocument);
+        this.archive.append(xmlDocument, {
             name: 'word/document.xml'
         });
 
-        this.archive.append(this.style, {
-            name: 'word/newStyle.xml'
-        });
+        //this.archive.append(xmlStyle, {
+        //    name: 'word/newStyle.xml'
+        //});
 
-        this.archive.append(this.properties, {
+        this.archive.append(xmlProperties, {
             name: 'docProps/core.xml'
         });
 

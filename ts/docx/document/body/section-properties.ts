@@ -4,7 +4,7 @@ export class SectionProperties implements XmlComponent {
     private sectPr: Array<XmlComponent>;
     
     xmlKeys = {
-        sectPr: 'sectPr'
+        sectPr: 'w:sectPr'
     }
     
     constructor() {
