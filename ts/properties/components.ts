@@ -56,7 +56,7 @@ export class Keywords extends Component implements XmlComponent {
     private keywords: Object;
 
     xmlKeys = {
-        keywords: "dc:keywords"
+        keywords: "cp:keywords"
     }
 
     constructor(value: string) {
@@ -84,7 +84,7 @@ export class LastModifiedBy extends Component implements XmlComponent {
     private lastModifiedBy: Object;
 
     xmlKeys = {
-        lastModifiedBy: "dc:lastModifiedBy"
+        lastModifiedBy: "cp:lastModifiedBy"
     }
 
     constructor(value: string) {
@@ -98,7 +98,7 @@ export class Revision extends Component implements XmlComponent {
     private revision: Object;
 
     xmlKeys = {
-        revision: "dc:revision"
+        revision: "cp:revision"
     }
 
     constructor(value: string) {
