@@ -10,7 +10,7 @@ export class Body implements XmlComponent {
 
     constructor() {
         this.body = new Array<XmlComponent>();
-        //this.body.push(new SectionProperties());
+        //this.body.push(new SectionProperties()); not actually needed
     }
 
     push(component: XmlComponent) {
