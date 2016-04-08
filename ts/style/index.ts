@@ -1,8 +1,12 @@
 import {XmlComponent} from "../docx/xml-components";
 import {DocumentAttributes} from "../docx/xml-components/document-attributes"
 
-export class Style {
+export class Style implements XmlComponent {
     private styles: Array<XmlComponent>;
+    
+    xmlKeys = {
+        styles: 'w:styles'
+    }
 
     constructor() {
         this.styles = new Array<XmlComponent>();
