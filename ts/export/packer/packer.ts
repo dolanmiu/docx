@@ -56,9 +56,9 @@ export abstract class Packer {
             name: 'word/document.xml'
         });
 
-        this.archive.append(xmlStyle, {
-            name: 'word/newStyle.xml'
-        });
+        //this.archive.append(xmlStyle, {
+        //    name: 'word/newStyle.xml'
+        //});
 
         this.archive.append(xmlProperties, {
             name: 'docProps/core.xml'
