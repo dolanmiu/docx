@@ -18,9 +18,11 @@ describe.only("Packer", () => {
         var paragraph = new Paragraph("test text");
         document.addParagraph(paragraph);
         var properties = new Properties({
-            title: "test document"
+            creator: "Shan Fu",
+            revision: "1",
+            lastModifiedBy: "Shan Fu"
         });
-        packer = new LocalPacker(document, DefaultStyle(), properties, "build/tests/test.zip");
+        packer = new LocalPacker(document, DefaultStyle(), properties, "build/tests/test.docx");
     });
 
     describe('#pack()', () => {
