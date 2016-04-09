@@ -4,8 +4,9 @@ export class Formatter {
 
     format(input: any): Object {
         this.deepTraverseJson(input, (parent, value, key) => {
-            if (isNaN(key)) {
-                var newKey = this.getReplacementKey(parent, key);
+            if (isNaN(key) && key !== "rootKey") {
+                var newKey = parent.rootKey;
+                console.log(key);
                 if (newKey !== key) {
                     parent[newKey] = parent[key];
                     delete parent[key];
@@ -30,6 +31,9 @@ export class Formatter {
             if (key === "xmlKeys") {
                 delete parent[key];
             }
+            if (key === "rootKey") {
+                delete parent[key];
+            }
         });
 
         return newJson
@@ -42,21 +46,11 @@ export class Formatter {
 
     private deepTraverseJson(json: Object, lambda: (json: any, value: any, key: any) => void): void {
         _.forOwn(json, (value, key) => {
-            if (_.isObject(value) && key !== "xmlKeys") {
+            if (_.isObject(value) && key !== "xmlKeys" && key != "rootKey") {
                 this.deepTraverseJson(value, lambda);
             }
             lambda(json, value, key);
         });
-    }
-
-    private getReplacementKey(input: any, key: string): string {
-        var newKey = input.xmlKeys[key];
-
-        if (newKey !== undefined) {
-            return newKey;
-        } else {
-            return key;
-        }
     }
 
 }

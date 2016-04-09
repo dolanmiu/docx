@@ -35,7 +35,7 @@ describe("Paragraph", () => {
             paragraph.heading1();
             var newJson = jsonify(paragraph);
 
-            assert(newJson.p[1].pPr[1].pStyle[0]._attr.val === "Heading1");
+            assert(newJson.root[1].root[1].root[0]._attr.val === "Heading1");
         });
     });
 

@@ -36,11 +36,12 @@ describe("Formatter", () => {
             assert(stringifiedJson.indexOf("xmlKeys") < 0);
         });
 
-        it("should format simple paragraph with bold text", () => {
+        it.only("should format simple paragraph with bold text", () => {
             var paragraph = new docx.Paragraph();
             paragraph.addText(new docx.TextRun("test").bold());
             var newJson = formatter.format(paragraph);
             newJson = jsonify(newJson);
+                        console.log(JSON.stringify(newJson, null, "  "));
             assert.isDefined(newJson["w:p"][3]["w:r"][0]["w:rPr"][0]["w:b"][0]["_attr"]["w:val"]);
         });
 

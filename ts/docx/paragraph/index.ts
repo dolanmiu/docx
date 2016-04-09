@@ -22,7 +22,6 @@ export class Paragraph extends XmlComponent {
     
     constructor(text?: string) {
         super("w:p");
-        this.root.push(new Attributes());
         this.properties = new ParagraphProperties();
         this.root.push(this.properties);
         this.root.push(new TextRun(text));
