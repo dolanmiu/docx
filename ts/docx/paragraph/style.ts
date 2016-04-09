@@ -1,15 +1,10 @@
 import {XmlComponent, Attributes} from "../xml-components";
 
-export class Style implements XmlComponent {
-    private pStyle: Array<XmlComponent>;
-    
-    xmlKeys = {
-        pStyle: 'w:pStyle'
-    }
+export class Style extends XmlComponent {
 
     constructor(type: string) {
-        this.pStyle = new Array<XmlComponent>();
-        this.pStyle.push(new Attributes({
+        super("w:pStyle");
+        this.root.push(new Attributes({
             val: type
         }));
     }

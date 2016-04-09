@@ -2,18 +2,14 @@ import {XmlComponent, Attributes} from "../xml-components";
 import {RunProperties} from "./properties";
 import {Bold, Italics, Underline} from "./emphasis";
 
-export class Run implements XmlComponent {
-    protected r: Array<XmlComponent>;
+export class Run extends XmlComponent {
     private properties: RunProperties;
     
-    xmlKeys = {
-        r: 'w:r'
-    }
 
     constructor() {
-        this.r = new Array<XmlComponent>();
+        super("w:r");
         this.properties = new RunProperties();
-        this.r.push(this.properties);
+        this.root.push(this.properties);
     }
 
     bold(): Run {

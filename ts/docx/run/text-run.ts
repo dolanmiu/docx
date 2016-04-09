@@ -5,6 +5,6 @@ export class TextRun extends Run {
 
     constructor(text: string) {
         super();
-        this.r.push(new Text(text));
+        this.root.push(new Text(text));
     }
 }

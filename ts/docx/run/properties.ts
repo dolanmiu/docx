@@ -1,17 +1,12 @@
 import {XmlComponent, Attributes} from "../xml-components";
 
-export class RunProperties implements XmlComponent {
-    private rPr: Array<XmlComponent>;
-    
-    xmlKeys = {
-        rPr: 'w:rPr'
-    }
+export class RunProperties extends XmlComponent {
 
     constructor() {
-        this.rPr = new Array<XmlComponent>();
+        super("w:rPr");
     }
 
     push(item: XmlComponent): void {
-        this.rPr.push(item);
+        this.root.push(item);
     }
 }

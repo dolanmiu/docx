@@ -1,15 +1,10 @@
 import {XmlComponent, Attributes} from "../../xml-components";
 
-export class PageMargin implements XmlComponent {
-    private pgMar: Array<XmlComponent>;
-    
-    xmlKeys = {
-        pgMar: 'w:pgMar'
-    }
+export class PageMargin extends XmlComponent {
 
     constructor() {
-        this.pgMar = new Array<XmlComponent>();
-        this.pgMar.push(new Attributes({
+        super("w:pgMar");
+        this.root.push(new Attributes({
             top: "1440",
             right: "1440",
             bottom: "1440",

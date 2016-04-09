@@ -1,114 +1,74 @@
 import {XmlComponent} from "../docx/xml-components";
 import {DocumentAttributes} from "../docx/xml-components/document-attributes";
 
-abstract class Component {
-    protected createNullBlockOrValue(value: string): Object {
-        if (value === undefined) {
+abstract class Component extends XmlComponent {
+    protected createNullBlockOrValue(value: string): XmlComponent {
+        /*if (value === undefined) {
             return [{}];
         } else {
             return value;
-        }
+        }*/
+        return null;
     }
 }
-export class Title extends Component implements XmlComponent {
-    private title: Object;
-
-    xmlKeys = {
-        title: "dc:title"
-    }
+export class Title extends Component {
 
     constructor(value: string) {
-        super();
-        var title = this.createNullBlockOrValue(value);
-        this.title = title;
+        super("dc:title");
+        this.root.push(this.createNullBlockOrValue(value));
     }
 }
 
-export class Subject extends Component implements XmlComponent {
-    private subject: Object;
-
-    xmlKeys = {
-        subject: "dc:subject"
-    }
+export class Subject extends Component {
 
     constructor(value: string) {
-        super();
-        var subject = this.createNullBlockOrValue(value);
-        this.subject = subject;
+        super("dc:subject");
+        this.root.push(this.createNullBlockOrValue(value));
     }
 }
 
-export class Creator extends Component implements XmlComponent {
-    private creator: Object;
-
-    xmlKeys = {
-        creator: "dc:creator"
-    }
+export class Creator extends Component {
 
     constructor(value: string) {
-        super();
-        var creator = this.createNullBlockOrValue(value);
-        this.creator = creator;
+        super("dc:creator");
+        this.root.push(this.createNullBlockOrValue(value));
     }
 }
 
-export class Keywords extends Component implements XmlComponent {
-    private keywords: Object;
-
-    xmlKeys = {
-        keywords: "cp:keywords"
-    }
+export class Keywords extends Component {
 
     constructor(value: string) {
-        super();
-        var keywords = this.createNullBlockOrValue(value);
-        this.keywords = keywords;
+        super("cp:keywords");
+        this.root.push(this.createNullBlockOrValue(value));
     }
 }
 
-export class Description extends Component implements XmlComponent {
-    private description: Object;
-
-    xmlKeys = {
-        description: "dc:description"
-    }
+export class Description extends Component {
 
     constructor(value: string) {
-        super();
-        var description = this.createNullBlockOrValue(value);
-        this.description = description;
+        super("dc:description");
+        this.root.push(this.createNullBlockOrValue(value));
     }
 }
 
-export class LastModifiedBy extends Component implements XmlComponent {
-    private lastModifiedBy: Object;
-
-    xmlKeys = {
-        lastModifiedBy: "cp:lastModifiedBy"
-    }
-
+export class LastModifiedBy extends Component {
+    
     constructor(value: string) {
-        super();
-        var lastModifiedBy = this.createNullBlockOrValue(value);
-        this.lastModifiedBy = lastModifiedBy;
+        super("cp:lastModifiedBy");
+        this.root.push(this.createNullBlockOrValue(value));
     }
 }
 
-export class Revision extends Component implements XmlComponent {
-    private revision: Object;
-
-    xmlKeys = {
-        revision: "cp:revision"
-    }
+export class Revision extends Component {
 
     constructor(value: string) {
-        super();
+        super("cp:revision");
         var revision = this.createNullBlockOrValue(value);
-        this.revision = revision;
+        this.root.push(this.createNullBlockOrValue(value));
     }
 }
 
-abstract class DateComponent {
+abstract class DateComponent extends XmlComponent {
     protected getCurrentDate(): any {
         var date = new Date(),
             year = date.getFullYear(),
@@ -122,36 +82,24 @@ abstract class DateComponent {
     }
 }
 
-export class Created extends DateComponent implements XmlComponent {
-    private created: Array<XmlComponent>;
-
-    xmlKeys = {
-        created: "dcterms:created"
-    }
+export class Created extends DateComponent {
 
     constructor() {
-        super();
-        this.created = new Array<XmlComponent>();
-        this.created.push(new DocumentAttributes({
+        super("dcterms:created");
+        this.root.push(new DocumentAttributes({
             type: "dcterms:W3CDTF"
         }));
-        this.created.push(this.getCurrentDate());
+        this.root.push(this.getCurrentDate());
     }
 }
 
 export class Modified extends DateComponent implements XmlComponent {
-    private modified: Array<XmlComponent>;
-
-    xmlKeys = {
-        modified: "dcterms:modified"
-    }
 
     constructor() {
-        super();
-        this.modified = new Array<XmlComponent>();
-        this.modified.push(new DocumentAttributes({
+        super("dcterms:modified");
+        this.root.push(new DocumentAttributes({
             type: "dcterms:W3CDTF"
         }));
-        this.modified.push(this.getCurrentDate());
+        this.root.push(this.getCurrentDate());
     }
 }

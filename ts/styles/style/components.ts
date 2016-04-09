@@ -1,14 +1,9 @@
 import {XmlComponent} from "../../docx/xml-components";
 
-export class Name implements XmlComponent {
-    private name: Array<XmlComponent>;
-    
-    xmlKeys = {
-        
-    }
+export class Name extends XmlComponent {
     
     constructor() {
-        this.name = new Array<XmlComponent>();
+        super("w:name");
     }
 }
 

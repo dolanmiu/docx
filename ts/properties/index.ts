@@ -12,30 +12,25 @@ interface PropertiesOptions {
     revision?: string;
 }
 
-export class Properties implements XmlComponent {
-    private coreProperties: Array<XmlComponent>;
-
-    xmlKeys = {
-        coreProperties: "cp:coreProperties"
-    }
+export class Properties extends XmlComponent {
 
     constructor(options: PropertiesOptions) {
-        this.coreProperties = new Array<XmlComponent>();
-        this.coreProperties.push(new DocumentAttributes({
+        super("cp:coreProperties");
+        this.root.push(new DocumentAttributes({
             cp: "http://schemas.openxmlformats.org/package/2006/metadata/core-properties",
             dc: "http://purl.org/dc/elements/1.1/",
             dcterms: "http://purl.org/dc/terms/",
             dcmitype: "http://purl.org/dc/dcmitype/",
             xsi: "http://www.w3.org/2001/XMLSchema-instance"
         }));
-        this.coreProperties.push(new Title(options.title));
-        this.coreProperties.push(new Subject(options.subject));
-        this.coreProperties.push(new Creator(options.creator));
-        this.coreProperties.push(new Keywords(options.keywords));
-        this.coreProperties.push(new Description(options.description));
-        this.coreProperties.push(new LastModifiedBy(options.lastModifiedBy));
-        this.coreProperties.push(new Revision(options.revision));
-        this.coreProperties.push(new Created());
-        this.coreProperties.push(new Modified());
+        this.root.push(new Title(options.title));
+        this.root.push(new Subject(options.subject));
+        this.root.push(new Creator(options.creator));
+        this.root.push(new Keywords(options.keywords));
+        this.root.push(new Description(options.description));
+        this.root.push(new LastModifiedBy(options.lastModifiedBy));
+        this.root.push(new Revision(options.revision));
+        this.root.push(new Created());
+        this.root.push(new Modified());
     }
 }

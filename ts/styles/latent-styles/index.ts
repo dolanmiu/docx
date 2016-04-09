@@ -1,18 +1,13 @@
 import {XmlComponent} from "../../docx/xml-components";
 import {LatentStyleException} from "./exceptions";
 
-export class LatentStyles implements XmlComponent {
-    private latentStyles: Array<XmlComponent>;
-    
-    xmlKeys = {
-        latentStyles: "w:latentStyles"
-    }
+export class LatentStyles extends XmlComponent {
     
     constructor() {
-        this.latentStyles = new Array<XmlComponent>();
+        super("w:latentStyles");
     }
     
     push(latentException: LatentStyleException): void {
-        this.latentStyles.push(latentException);
+        this.root.push(latentException);
     }
 }

@@ -26,7 +26,7 @@ interface DocumentAttributesProperties {
     type?: string;
 }
 
-export class DocumentAttributes implements XmlComponent {
+export class DocumentAttributes extends XmlComponent {
     private _attr: Object;
 
     xmlKeys = {
@@ -56,6 +56,7 @@ export class DocumentAttributes implements XmlComponent {
     };
 
     constructor(properties?: DocumentAttributesProperties) {
+        super("_attr");
         this._attr = properties
 
         if (!properties) {

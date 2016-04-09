@@ -1,45 +1,30 @@
 import {XmlComponent, Attributes} from "../xml-components";
 
-export class Bold implements XmlComponent {
-    private b: Array<XmlComponent>;
-
-    xmlKeys = {
-        b: 'w:b'
-    }
-
+export class Bold extends XmlComponent {
+    
     constructor() {
-        this.b = new Array<XmlComponent>();
-        this.b.push(new Attributes({
+        super("w:b");
+        this.root.push(new Attributes({
             val: true
         }));
     }
 }
 
-export class Italics {
-    private i: Array<XmlComponent>;
-
-    xmlKeys = {
-        i: 'w:i'
-    }
+export class Italics extends XmlComponent {
 
     constructor() {
-        this.i = new Array<XmlComponent>();
-        this.i.push(new Attributes({
+        super("w:i");
+        this.root.push(new Attributes({
             val: true
         }));
     }
 }
 
-export class Underline {
-    private u: Array<XmlComponent>;
-
-    xmlKeys = {
-        u: 'w:u'
-    }
+export class Underline extends XmlComponent {
 
     constructor() {
-        this.u = new Array<XmlComponent>();
-        this.u.push(new Attributes({
+        super("w:u");
+        this.root.push(new Attributes({
             val: true
         }));
     }

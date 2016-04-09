@@ -1,15 +1,10 @@
 import {XmlComponent, Attributes} from "../xml-components";
 
-class Border implements XmlComponent {
-    private bottom: Array<XmlComponent>;
-
-    xmlKeys = {
-        bottom: 'w:bottom'
-    }
+class Border extends XmlComponent {
 
     constructor() {
-        this.bottom = new Array<XmlComponent>();
-        this.bottom.push(new Attributes({
+        super("w:bottom");
+        this.root.push(new Attributes({
             color: "auto",
             space: "1",
             val: "single",
@@ -18,15 +13,10 @@ class Border implements XmlComponent {
     }
 }
 
-export class ThematicBreak implements XmlComponent {
-    private pBdr: Array<XmlComponent>;
-
-    xmlKeys = {
-        pBdr: 'w:pBdr'
-    }
+export class ThematicBreak extends XmlComponent {
     
     constructor() {
-        this.pBdr = new Array<XmlComponent>();
-        this.pBdr.push(new Border());
+        super("w:pBdr");
+        this.root.push(new Border());
     }
 }

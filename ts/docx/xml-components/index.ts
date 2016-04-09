@@ -1,5 +1,11 @@
-export interface XmlComponent {
-    xmlKeys: Object;
+export abstract class XmlComponent {
+    protected root: Array<XmlComponent>;
+    protected rootKey: string;
+
+    constructor(rootKey: string) {
+        this.root = new Array<XmlComponent>();
+        this.rootKey = rootKey;
+    }
 }
 
 interface AttributesProperties {
@@ -23,7 +29,7 @@ interface AttributesProperties {
     linePitch?: string;
 }
 
-export class Attributes implements XmlComponent {
+export class Attributes extends XmlComponent {
     private _attr: Object;
 
     xmlKeys = {
@@ -48,6 +54,7 @@ export class Attributes implements XmlComponent {
     };
 
     constructor(properties?: AttributesProperties) {
+        super("_attr");
         this._attr = properties
 
         if (!properties) {
@@ -58,7 +65,7 @@ export class Attributes implements XmlComponent {
     }
 }
 
-export class Text implements XmlComponent {
+export class Text extends XmlComponent {
     private t: string;
 
     xmlKeys = {
@@ -66,6 +73,7 @@ export class Text implements XmlComponent {
     }
 
     constructor(text: string) {
+        super("w:t");
         this.t = text;
     }
 }

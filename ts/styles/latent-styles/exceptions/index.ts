@@ -1,15 +1,10 @@
 import {XmlComponent} from "../../../docx/xml-components";
 import {LatentStyleExceptionAttributes} from "./attributes";
 
-export class LatentStyleException implements XmlComponent {
-    private lsdException: Array<XmlComponent>;
-
-    xmlKeys = {
-        lsdException: "w:lsdException"
-    }
+export class LatentStyleException extends XmlComponent {
 
     constructor(attributes: LatentStyleExceptionAttributes) {
-        this.lsdException = new Array<XmlComponent>();
-        this.lsdException.push(attributes);
+        super("w:lsdException");
+        this.root.push(attributes);
     }
 }

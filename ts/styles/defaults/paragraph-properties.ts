@@ -1,15 +1,10 @@
 import {XmlComponent} from "../../docx/xml-components";
 import {ParagraphProperties} from "../../docx/paragraph/properties";
 
-export class ParagraphPropertiesDefaults implements XmlComponent {
-    private pPrDefault: Array<XmlComponent>;
-
-    xmlKeys = {
-        pPrDefault: "w:pPrDefault"
-    }
+export class ParagraphPropertiesDefaults extends XmlComponent {
 
     constructor() {
-        this.pPrDefault = new Array<XmlComponent>();
-        this.pPrDefault.push(new ParagraphProperties());
+        super("w:pPrDefault");
+        this.root.push(new ParagraphProperties());
     }
 }

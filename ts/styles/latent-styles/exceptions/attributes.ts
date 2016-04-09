@@ -8,7 +8,7 @@ interface LatentStyleExceptionAttributesProperties {
     unhideWhenUsed?: string
 }
 
-export class LatentStyleExceptionAttributes implements XmlComponent {
+export class LatentStyleExceptionAttributes extends XmlComponent {
     private _attr: Object;
 
     xmlKeys = {
@@ -20,6 +20,7 @@ export class LatentStyleExceptionAttributes implements XmlComponent {
     };
 
     constructor(properties?: LatentStyleExceptionAttributesProperties) {
+        super("_attr");
         this._attr = properties
 
         if (!properties) {

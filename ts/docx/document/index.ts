@@ -3,8 +3,7 @@ import {DocumentAttributes} from "../xml-components/document-attributes"
 import {Body} from "./body";
 import {Paragraph} from "../paragraph";
 
-export class Document implements XmlComponent {
-    private document: Array<XmlComponent>;
+export class Document extends XmlComponent {
     private body: Body;
     
     xmlKeys = {
@@ -13,8 +12,8 @@ export class Document implements XmlComponent {
     };
 
     constructor() {
-        this.document = new Array<XmlComponent>();
-        this.document.push(new DocumentAttributes({
+        super("w:document");
+        this.root.push(new DocumentAttributes({
             wpc: 'http://schemas.microsoft.com/office/word/2010/wordprocessingCanvas',
             mc: 'http://schemas.openxmlformats.org/markup-compatibility/2006',
             o: 'urn:schemas-microsoft-com:office:office',
@@ -34,7 +33,7 @@ export class Document implements XmlComponent {
             Ignorable: 'w14 w15 wp14'
         }));
         this.body = new Body();
-        this.document.push(this.body);
+        this.root.push(this.body);
     }
 
     addParagraph(paragraph: Paragraph) {

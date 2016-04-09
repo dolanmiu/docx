@@ -7,39 +7,29 @@ import {TabStop} from "../tab-stop";
 import {Style} from "./style";
 import {NumberProperties} from "./unordered-list";
 
-class Alignment implements XmlComponent {
-    private jc: Array<XmlComponent>;
-    
-    xmlKeys = {
-        jc: 'w:jc'
-    }
+class Alignment extends XmlComponent {
 
     constructor(type: string) {
-        this.jc = new Array<XmlComponent>();
-        this.jc.push(new Attributes({
+        super("w:jc");
+        this.root.push(new Attributes({
             val: type
         }));
     }
 }
 
-export class Paragraph implements XmlComponent {
-    private p: Array<XmlComponent>;
+export class Paragraph extends XmlComponent {
     private properties: ParagraphProperties;
     
-    xmlKeys = {
-        p: 'w:p'
-    }
-
     constructor(text?: string) {
-        this.p = new Array<XmlComponent>();
-        this.p.push(new Attributes());
+        super("w:p");
+        this.root.push(new Attributes());
         this.properties = new ParagraphProperties();
-        this.p.push(this.properties);
-        this.p.push(new TextRun(text));
+        this.root.push(this.properties);
+        this.root.push(new TextRun(text));
     }
 
     addText(run: TextRun): Paragraph {
-        this.p.push(run);
+        this.root.push(run);
         return this;
     }
 

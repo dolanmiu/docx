@@ -7,7 +7,7 @@ interface StyleAttributesProperties {
     customStyle?: string;
 }
 
-export class StyleAttributes implements XmlComponent {
+export class StyleAttributes extends XmlComponent {
     private _attr: Object;
 
     xmlKeys = {
@@ -18,6 +18,7 @@ export class StyleAttributes implements XmlComponent {
     };
 
     constructor(properties?: StyleAttributesProperties) {
+        super("_attr");
         this._attr = properties
 
         if (!properties) {

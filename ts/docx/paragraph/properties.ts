@@ -1,18 +1,13 @@
 import {XmlComponent, Attributes} from "../xml-components";
 
-export class ParagraphProperties implements XmlComponent {
-    private pPr: Array<XmlComponent>;
-    
-    xmlKeys = {
-        pPr: 'w:rPr'
-    }
+export class ParagraphProperties extends XmlComponent {
 
     constructor() {
-        this.pPr = new Array<XmlComponent>();
-        this.pPr.push(new Attributes());
+        super("w:rPr");
+        this.root.push(new Attributes());
     }
 
     push(item: XmlComponent): void {
-        this.pPr.push(item);
+        this.root.push(item);
     }
 }

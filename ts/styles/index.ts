@@ -5,16 +5,11 @@ import {LatentStyles} from "./latent-styles";
 import {LatentStyleException} from "./latent-styles/exceptions";
 import {LatentStyleExceptionAttributes} from "./latent-styles/exceptions/attributes";
 
-export class Styles implements XmlComponent {
-    private styles: Array<XmlComponent>;
-
-    xmlKeys = {
-        styles: 'w:styles'
-    }
+export class Styles extends XmlComponent {
 
     constructor() {
-        this.styles = new Array<XmlComponent>();
-        this.styles.push(new DocumentAttributes({
+        super("w:styles");
+        this.root.push(new DocumentAttributes({
             mc: 'http://schemas.openxmlformats.org/markup-compatibility/2006',
             r: 'http://schemas.openxmlformats.org/officeDocument/2006/relationships',
             w: 'http://schemas.openxmlformats.org/wordprocessingml/2006/main',
@@ -22,15 +17,15 @@ export class Styles implements XmlComponent {
             w15: 'http://schemas.microsoft.com/office/word/2012/wordml',
             Ignorable: 'w14 w15'
         }))
-        this.styles.push(new DocumentDefaults());
+        this.root.push(new DocumentDefaults());
         var latentStyles = new LatentStyles();
         //latentStyles.push(new LatentStyleException(new LatentStyleExceptionAttributes({
         //    name: "Normal"
         //})));
-        this.styles.push(latentStyles);
+        this.root.push(latentStyles);
     }
 
     push(style: XmlComponent): void {
-        this.styles.push(style);
+        this.root.push(style);
     }
 }
