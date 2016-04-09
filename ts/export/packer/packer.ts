@@ -3,7 +3,7 @@ import * as fs from "fs";
 import * as xml from "xml";
 import {Formatter} from "../formatter";
 import {Document} from "../../docx";
-import {Style} from "../../style";
+import {Styles} from "../../styles";
 import {Properties} from "../../properties";
 var appRoot = require('app-root-path');
 
@@ -11,7 +11,7 @@ export abstract class Packer {
     protected archive: any;
     private formatter: Formatter;
     protected document: Document;
-    private style: Style;
+    private style: Styles;
     private properties: Properties;
 
     constructor(document: Document, style: any, properties: Properties) {

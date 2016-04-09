@@ -7,10 +7,10 @@ import {LocalPacker} from "../export/packer/local";
 import {assert} from "chai";
 import {Document} from "../docx/document"
 import {Properties} from "../properties"
-import {DefaultStyle} from "../style/default"
+import {DefaultStyle} from "../styles/sample"
 import {Paragraph} from "../docx/paragraph"
 
-describe.only("Packer", () => {
+describe("Packer", () => {
     var packer: LocalPacker;
 
     beforeEach(() => {

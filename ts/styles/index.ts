@@ -5,7 +5,7 @@ import {LatentStyles} from "./latent-styles";
 import {LatentStyleException} from "./latent-styles/exceptions";
 import {LatentStyleExceptionAttributes} from "./latent-styles/exceptions/attributes";
 
-export class Style implements XmlComponent {
+export class Styles implements XmlComponent {
     private styles: Array<XmlComponent>;
 
     xmlKeys = {
