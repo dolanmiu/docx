@@ -14,6 +14,7 @@ export class Body implements XmlComponent {
     }
 
     push(component: XmlComponent) {
-        this.body.splice(this.body.length - 1, 0, component);
+        //this.body.splice(this.body.length - 1, 0, component);
+        this.body.push(component);
     }
 }

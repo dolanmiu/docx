@@ -41,7 +41,7 @@ describe("Formatter", () => {
             paragraph.addText(new docx.TextRun("test").bold());
             var newJson = formatter.format(paragraph);
             newJson = jsonify(newJson);
-            assert.isDefined(newJson["w:p"][3]["w:r"][0]["w:rPr"][0]["w:b"][0]["_attrs"]["w:val"]);
+            assert.isDefined(newJson["w:p"][3]["w:r"][0]["w:rPr"][0]["w:b"][0]["_attr"]["w:val"]);
         });
 
         it("should format attributes (rsidSect)", () => {
@@ -50,7 +50,7 @@ describe("Formatter", () => {
             });
             var newJson = formatter.format(attributes);
             newJson = jsonify(newJson);
-            assert.isDefined(newJson["_attrs"]["w:rsidSect"]);
+            assert.isDefined(newJson["_attr"]["w:rsidSect"]);
         });
 
         it("should format attributes (val)", () => {
@@ -59,7 +59,7 @@ describe("Formatter", () => {
             });
             var newJson = formatter.format(attributes);
             newJson = jsonify(newJson);
-            assert.isDefined(newJson["_attrs"]["w:val"]);
+            assert.isDefined(newJson["_attr"]["w:val"]);
         });
 
         it("should should change 'p' tag into 'w:p' tag", () => {

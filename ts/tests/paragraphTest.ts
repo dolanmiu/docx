@@ -35,7 +35,7 @@ describe("Paragraph", () => {
             paragraph.heading1();
             var newJson = jsonify(paragraph);
 
-            assert(newJson.p[1].pPr[1].pStyle[0]._attrs.val === "Heading1");
+            assert(newJson.p[1].pPr[1].pStyle[0]._attr.val === "Heading1");
         });
     });
 
@@ -44,7 +44,7 @@ describe("Paragraph", () => {
             paragraph.heading2();
             var newJson = jsonify(paragraph);
 
-            assert(newJson.p[1].pPr[1].pStyle[0]._attrs.val === "Heading2");
+            assert(newJson.p[1].pPr[1].pStyle[0]._attr.val === "Heading2");
         });
     });
 
@@ -53,7 +53,7 @@ describe("Paragraph", () => {
             paragraph.heading3();
             var newJson = jsonify(paragraph);
 
-            assert(newJson.p[1].pPr[1].pStyle[0]._attrs.val === "Heading3");
+            assert(newJson.p[1].pPr[1].pStyle[0]._attr.val === "Heading3");
         });
     });
 
@@ -62,7 +62,7 @@ describe("Paragraph", () => {
             paragraph.title();
             var newJson = jsonify(paragraph);
 
-            assert(newJson.p[1].pPr[1].pStyle[0]._attrs.val === "Title");
+            assert(newJson.p[1].pPr[1].pStyle[0]._attr.val === "Title");
         });
     });
 
@@ -71,7 +71,7 @@ describe("Paragraph", () => {
             paragraph.center();
             var newJson = jsonify(paragraph);
 
-            assert(newJson.p[1].pPr[1].jc[0]._attrs.val === "center");
+            assert(newJson.p[1].pPr[1].jc[0]._attr.val === "center");
         });
     });
 
@@ -94,7 +94,7 @@ describe("Paragraph", () => {
         it("should add page break with 'page' type", () => {
             paragraph.pageBreak();
             var newJson = jsonify(paragraph);
-            assert(newJson.p[1].pPr[1].r[1].br[0]._attrs.type === "page");
+            assert(newJson.p[1].pPr[1].r[1].br[0]._attr.type === "page");
         });
     });
 
@@ -102,7 +102,7 @@ describe("Paragraph", () => {
         it("should add list paragraph style to JSON", () => {
             paragraph.bullet();
             var newJson = jsonify(paragraph);
-            assert(newJson.p[1].pPr[1].pStyle[0]._attrs.val === "ListParagraph");
+            assert(newJson.p[1].pPr[1].pStyle[0]._attr.val === "ListParagraph");
         });
 
         it("it should add numbered properties", () => {

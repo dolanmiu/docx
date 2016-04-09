@@ -8,20 +8,20 @@ function jsonify(obj: Object) {
     return JSON.parse(stringifiedJson);
 }
 
-describe("Style", () => {
+describe("ParagraphStyle", () => {
     var style: Style;
 
     describe("#constructor()", () => {
         it("should create a style with given value", () => {
             style = new Style("test");
             var newJson = jsonify(style);
-            assert(newJson.pStyle[0]._attrs.val === "test");
+            assert(newJson.pStyle[0]._attr.val === "test");
         });
 
         it("should create a style with blank val", () => {
             style = new Style("");
             var newJson = jsonify(style);
-            assert(newJson.pStyle[0]._attrs.val === "");
+            assert(newJson.pStyle[0]._attr.val === "");
         });
     });
 

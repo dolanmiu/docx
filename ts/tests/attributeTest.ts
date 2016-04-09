@@ -16,7 +16,7 @@ describe("Attribute", () => {
             var newAttrs = new Attributes();
             var stringifiedJson = JSON.stringify(newAttrs);
             var newJson = JSON.parse(stringifiedJson);
-            assert.isUndefined(newJson._attrs.val);
+            assert.isUndefined(newJson._attr.val);
         });
 
         it("should have val as defined with populated constructor", () => {
@@ -25,7 +25,7 @@ describe("Attribute", () => {
             });
             var stringifiedJson = JSON.stringify(newAttrs);
             var newJson = JSON.parse(stringifiedJson);
-            assert(newJson._attrs.val === "test");
+            assert(newJson._attr.val === "test");
         });
 
         it("should have space value as defined with populated constructor", () => {
@@ -34,7 +34,7 @@ describe("Attribute", () => {
             });
             var stringifiedJson = JSON.stringify(newAttrs);
             var newJson = JSON.parse(stringifiedJson);
-            assert(newJson._attrs.space === "spaceTest");
+            assert(newJson._attr.space === "spaceTest");
         });
     });
 });

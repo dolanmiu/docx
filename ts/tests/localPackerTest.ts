@@ -29,7 +29,7 @@ describe("Packer", () => {
         
         it("should create a standard docx file", (done) => {            
             packer.pack();
-            setTimeout(done, 3000);
+            setTimeout(done, 1900);
         });
     });
 });

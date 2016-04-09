@@ -28,8 +28,8 @@ describe("ThematicBreak", () => {
                 val: "single",
                 sz: "6"
             };
-            delete newJson.pBdr[0].bottom[0]._attrs.xmlKeys;
-            assert(JSON.stringify(newJson.pBdr[0].bottom[0]._attrs) === JSON.stringify(attributes));
+            delete newJson.pBdr[0].bottom[0]._attr.xmlKeys;
+            assert(JSON.stringify(newJson.pBdr[0].bottom[0]._attr) === JSON.stringify(attributes));
         });
     })
 });
