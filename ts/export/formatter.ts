@@ -1,24 +1,33 @@
 import * as _ from "lodash";
+import {XmlComponent} from "../docx/xml-components";
 
 export class Formatter {
 
     format(input: any): Object {
+        this.replaceKeys(input);
+        var newJson = this.clense(input);
+
+        return newJson;
+    }
+
+    private replaceKeys(input: XmlComponent): Object {
+        input.replaceKey();
         this.deepTraverseJson(input, (parent, value, key) => {
-            if (isNaN(key) && key !== "rootKey") {
+            /*if (isNaN(key) && key !== "rootKey") {
                 var newKey = parent.rootKey;
                 console.log(key);
-                if (newKey !== key) {
+                if (newKey) {
                     parent[newKey] = parent[key];
                     delete parent[key];
                 } else {
                     //console.error("Key is not in dictionary:" + key);
                 }
-            }
+            }*/
+            //console.log(value);
+            //parent.replaceKey();
         });
-
-        var newJson = this.clense(input);
-
-        return newJson;
+        
+        return input;
     }
 
     private clense(input: any): Object {

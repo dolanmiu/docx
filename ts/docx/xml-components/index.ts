@@ -6,6 +6,19 @@ export abstract class XmlComponent {
         this.root = new Array<XmlComponent>();
         this.rootKey = rootKey;
     }
+
+    replaceKey() {
+        console.log(this.rootKey);
+        console.log(this.root);
+        if (this.root !== undefined) {
+            this.root.forEach(root => {
+                root.replaceKey();
+            });
+        }
+        this[this.rootKey] = this.root;
+        //Object(this)[this.rootKey]
+        delete this.root;
+    }
 }
 
 interface AttributesProperties {
