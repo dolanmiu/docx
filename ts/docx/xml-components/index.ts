@@ -1,23 +1,46 @@
-export abstract class XmlComponent {
-    protected root: Array<XmlComponent>;
+export abstract class BaseXmlComponent {
     protected rootKey: string;
 
     constructor(rootKey: string) {
-        this.root = new Array<XmlComponent>();
         this.rootKey = rootKey;
     }
 
-    replaceKey() {
-        console.log(this.rootKey);
-        console.log(this.root);
+    abstract replaceKey(): void;
+}
+
+export abstract class XmlComponent extends BaseXmlComponent {
+    protected root: Array<BaseXmlComponent>;
+
+    constructor(rootKey: string) {
+        super(rootKey);
+        this.root = new Array<BaseXmlComponent>();
+    }
+
+    replaceKey(): void {
+        //console.log(this.rootKey);
+        //console.log(this.root);
         if (this.root !== undefined) {
             this.root.forEach(root => {
                 root.replaceKey();
             });
+            this[this.rootKey] = this.root;
+            delete this.root;
         }
-        this[this.rootKey] = this.root;
-        //Object(this)[this.rootKey]
-        delete this.root;
+    }
+}
+
+export abstract class XmlUnitComponent extends BaseXmlComponent {
+    protected root: string;
+
+    constructor(rootKey: string) {
+        super(rootKey);
+    }
+
+    replaceKey(): void {
+        if (this.root !== undefined) {
+            this[this.rootKey] = this.root;
+            delete this.root;
+        }
     }
 }
 
@@ -78,15 +101,10 @@ export class Attributes extends XmlComponent {
     }
 }
 
-export class Text extends XmlComponent {
-    private t: string;
-
-    xmlKeys = {
-        t: 'w:t'
-    }
+export class Text extends XmlUnitComponent {
 
     constructor(text: string) {
-        super("w:t");
-        this.t = text;
+        super("w:t"); //need special xml component
+        this.root = text;
     }
 }
