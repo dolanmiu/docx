@@ -19,12 +19,14 @@ class Alignment extends XmlComponent {
 
 export class Paragraph extends XmlComponent {
     private properties: ParagraphProperties;
-    
+
     constructor(text?: string) {
         super("w:p");
         this.properties = new ParagraphProperties();
         this.root.push(this.properties);
-        this.root.push(new TextRun(text));
+        if (text !== undefined) {
+            this.root.push(new TextRun(text));
+        }
     }
 
     addText(run: TextRun): Paragraph {
