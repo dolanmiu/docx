@@ -42,7 +42,7 @@ describe("Formatter", () => {
             var newJson = formatter.format(paragraph);
             newJson = jsonify(newJson);
                         console.log(JSON.stringify(newJson, null, "  "));
-            assert.isDefined(newJson["w:p"][3]["w:r"][0]["w:rPr"][0]["w:b"][0]["_attr"]["w:val"]);
+            assert.isDefined(newJson["w:p"][1]["w:r"][0]["w:rPr"][0]["w:b"][0]["_attr"]["w:val"]);
         });
 
         it("should format attributes (rsidSect)", () => {
