@@ -15,13 +15,14 @@ describe("ParagraphStyle", () => {
         it("should create a style with given value", () => {
             style = new Style("test");
             var newJson = jsonify(style);
-            assert(newJson.pStyle[0]._attr.val === "test");
+            console.log(newJson.root[0].root.val);
+            assert.equal(newJson.root[0].root.val, "test");
         });
 
         it("should create a style with blank val", () => {
             style = new Style("");
             var newJson = jsonify(style);
-            assert(newJson.pStyle[0]._attr.val === "");
+            assert.equal(newJson.root[0].root.val, "");
         });
     });
 

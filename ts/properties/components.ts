@@ -2,13 +2,13 @@ import {XmlComponent} from "../docx/xml-components";
 import {DocumentAttributes} from "../docx/xml-components/document-attributes";
 
 abstract class Component extends XmlComponent {
-    protected createNullBlockOrValue(value: string): XmlComponent {
-        /*if (value === undefined) {
+    protected createNullBlockOrValue(value: string): any {
+        if (value === undefined) {
             return [{}];
         } else {
             return value;
-        }*/
-        return null;
+        }
+        //return null;
     }
 }
 export class Title extends Component {

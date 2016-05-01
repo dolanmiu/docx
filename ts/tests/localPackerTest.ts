@@ -25,7 +25,7 @@ describe("Packer", () => {
         packer = new LocalPacker(document, DefaultStyle(), properties, "build/tests/test.docx");
     });
 
-    describe('#pack()', () => {
+    describe.only('#pack()', () => {
         
         it("should create a standard docx file", (done) => {            
             packer.pack();

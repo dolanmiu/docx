@@ -8,6 +8,8 @@ export abstract class BaseXmlComponent {
     }
 
     abstract replaceKey(): void;
+    clearVariables(): void {
+    };
 }
 
 export abstract class XmlComponent extends BaseXmlComponent {
@@ -23,7 +25,9 @@ export abstract class XmlComponent extends BaseXmlComponent {
         //console.log(this.root);
         if (this.root !== undefined) {
             this.root.forEach(root => {
-                root.replaceKey();
+                if (root && root instanceof BaseXmlComponent) {
+                    root.replaceKey();
+                }
             });
             this[this.rootKey] = this.root;
             delete this.root;

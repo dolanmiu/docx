@@ -46,6 +46,7 @@ export abstract class Packer {
             prefix: "root"
         });*/
         var xmlDocument = xml(this.formatter.format(this.document));
+        console.log(xmlDocument);
         var xmlStyle = xml(this.style);
         var xmlProperties = xml(this.formatter.format(this.properties), { declaration: { standalone: 'yes', encoding: 'UTF-8' } });
 

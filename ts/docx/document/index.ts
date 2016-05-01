@@ -5,11 +5,6 @@ import {Paragraph} from "../paragraph";
 
 export class Document extends XmlComponent {
     private body: Body;
-    
-    xmlKeys = {
-        document: "w:document",
-        body: "w:body"
-    };
 
     constructor() {
         super("w:document");
@@ -36,7 +31,13 @@ export class Document extends XmlComponent {
         this.root.push(this.body);
     }
 
-    addParagraph(paragraph: Paragraph) {
+    addParagraph(paragraph: Paragraph): void {
         this.body.push(paragraph);
+    }
+    
+    clearVariables(): void {
+        console.log("clearing");
+        this.body.clearVariables();
+        delete this.body;
     }
 }

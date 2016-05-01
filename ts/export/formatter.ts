@@ -5,8 +5,9 @@ export class Formatter {
 
     format(input: any): Object {
         this.replaceKeys(input);
+        input.clearVariables();
         var newJson = this.clense(input);
-
+        console.log(JSON.stringify(newJson, null, "  "));
         return newJson;
     }
 
@@ -26,7 +27,7 @@ export class Formatter {
             //console.log(value);
             //parent.replaceKey();
         });
-        
+
         return input;
     }
 

@@ -34,8 +34,7 @@ describe("Paragraph", () => {
         it("should add heading style to JSON", () => {
             paragraph.heading1();
             var newJson = jsonify(paragraph);
-
-            assert(newJson.root[1].root[1].root[0]._attr.val === "Heading1");
+            assert.equal(newJson.root[0].root[1].root[0].root.val, "Heading1");
         });
     });
 
@@ -44,7 +43,7 @@ describe("Paragraph", () => {
             paragraph.heading2();
             var newJson = jsonify(paragraph);
 
-            assert(newJson.p[1].pPr[1].pStyle[0]._attr.val === "Heading2");
+            assert.equal(newJson.root[0].root[1].root[0].root.val, "Heading2");
         });
     });
 
@@ -53,7 +52,7 @@ describe("Paragraph", () => {
             paragraph.heading3();
             var newJson = jsonify(paragraph);
 
-            assert(newJson.p[1].pPr[1].pStyle[0]._attr.val === "Heading3");
+            assert.equal(newJson.root[0].root[1].root[0].root.val, "Heading3");
         });
     });
 
@@ -62,7 +61,7 @@ describe("Paragraph", () => {
             paragraph.title();
             var newJson = jsonify(paragraph);
 
-            assert(newJson.p[1].pPr[1].pStyle[0]._attr.val === "Title");
+            assert.equal(newJson.root[0].root[1].root[0].root.val, "Title");
         });
     });
 
@@ -71,7 +70,7 @@ describe("Paragraph", () => {
             paragraph.center();
             var newJson = jsonify(paragraph);
 
-            assert(newJson.p[1].pPr[1].jc[0]._attr.val === "center");
+            assert.equal(newJson.root[0].root[1].root[0].root.val, "center");
         });
     });
 
@@ -79,8 +78,7 @@ describe("Paragraph", () => {
         it("should add thematic break to JSON", () => {
             paragraph.thematicBreak();
             var newJson = jsonify(paragraph);
-
-            assert.isDefined(newJson.p[1].pPr[1].pBdr);
+            assert.equal(newJson.root[0].root[1].rootKey, "w:pBdr");
         });
     });
 
@@ -88,13 +86,13 @@ describe("Paragraph", () => {
         it("should add page break to JSON", () => {
             paragraph.pageBreak();
             var newJson = jsonify(paragraph);
-            assert.isDefined(newJson.p[1].pPr[1].r[1].br);
+            assert.equal(newJson.root[0].root[1].root[1].rootKey, "w:br");
         });
 
         it("should add page break with 'page' type", () => {
             paragraph.pageBreak();
             var newJson = jsonify(paragraph);
-            assert(newJson.p[1].pPr[1].r[1].br[0]._attr.type === "page");
+            assert.equal(newJson.root[0].root[1].root[1].root[0].root.type, "page");
         });
     });
 
@@ -102,13 +100,13 @@ describe("Paragraph", () => {
         it("should add list paragraph style to JSON", () => {
             paragraph.bullet();
             var newJson = jsonify(paragraph);
-            assert(newJson.p[1].pPr[1].pStyle[0]._attr.val === "ListParagraph");
+            assert.equal(newJson.root[0].root[1].root[0].root.val, "ListParagraph");
         });
 
         it("it should add numbered properties", () => {
             paragraph.bullet();
             var newJson = jsonify(paragraph);
-            assert.isDefined(newJson.p[1].pPr[2].numPr);
+            assert.isDefined(newJson.root[0].root[2]);
         });
     });
 });
