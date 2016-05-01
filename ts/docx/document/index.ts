@@ -36,7 +36,6 @@ export class Document extends XmlComponent {
     }
     
     clearVariables(): void {
-        console.log("clearing");
         this.body.clearVariables();
         delete this.body;
     }

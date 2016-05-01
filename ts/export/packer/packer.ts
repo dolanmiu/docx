@@ -66,6 +66,5 @@ export abstract class Packer {
         });
 
         this.archive.finalize();
-        console.log("done");
     }
 }

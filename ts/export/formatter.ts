@@ -13,20 +13,6 @@ export class Formatter {
 
     private replaceKeys(input: XmlComponent): Object {
         input.replaceKey();
-        this.deepTraverseJson(input, (parent, value, key) => {
-            /*if (isNaN(key) && key !== "rootKey") {
-                var newKey = parent.rootKey;
-                console.log(key);
-                if (newKey) {
-                    parent[newKey] = parent[key];
-                    delete parent[key];
-                } else {
-                    //console.error("Key is not in dictionary:" + key);
-                }
-            }*/
-            //console.log(value);
-            //parent.replaceKey();
-        });
 
         return input;
     }

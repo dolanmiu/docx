@@ -15,7 +15,6 @@ describe("ParagraphStyle", () => {
         it("should create a style with given value", () => {
             style = new Style("test");
             var newJson = jsonify(style);
-            console.log(newJson.root[0].root.val);
             assert.equal(newJson.root[0].root.val, "test");
         });
 
