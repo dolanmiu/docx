@@ -2,66 +2,60 @@ import {XmlUnitComponent} from "../docx/xml-components";
 import {XmlComponent} from "../docx/xml-components";
 import {DocumentAttributes} from "../docx/document/document-attributes";
 
-abstract class Component extends XmlUnitComponent {
-    protected createNullBlockOrValue(value: string): any {
-        return value;
-        //return null;
-    }
-}
-export class Title extends Component {
+export class Title extends XmlUnitComponent {
 
     constructor(value: string) {
         super("dc:title");
-        this.root = this.createNullBlockOrValue(value);
+        this.root = value;
     }
 }
 
-export class Subject extends Component {
+export class Subject extends XmlUnitComponent {
 
     constructor(value: string) {
         super("dc:subject");
-        this.root = this.createNullBlockOrValue(value);
+        this.root = value;
     }
 }
 
-export class Creator extends Component {
+export class Creator extends XmlUnitComponent {
 
     constructor(value: string) {
         super("dc:creator");
-        this.root = this.createNullBlockOrValue(value);
+        this.root = value;
     }
 }
 
-export class Keywords extends Component {
+export class Keywords extends XmlUnitComponent {
 
     constructor(value: string) {
         super("cp:keywords");
-        this.root = this.createNullBlockOrValue(value);
+        this.root = value;
     }
 }
 
-export class Description extends Component {
+export class Description extends XmlUnitComponent {
 
     constructor(value: string) {
         super("dc:description");
-        this.root = this.createNullBlockOrValue(value);
+        this.root = value;
     }
 }
 
-export class LastModifiedBy extends Component {
+export class LastModifiedBy extends XmlUnitComponent {
     
     constructor(value: string) {
         super("cp:lastModifiedBy");
-        this.root = this.createNullBlockOrValue(value);
+        this.root = value;
     }
 }
 
-export class Revision extends Component {
+export class Revision extends XmlUnitComponent {
 
     constructor(value: string) {
         super("cp:revision");
-        var revision = this.createNullBlockOrValue(value);
-        this.root = this.createNullBlockOrValue(value);
+        var revision = value;
+        this.root = value;
     }
 }
 
@@ -90,7 +84,7 @@ export class Created extends DateComponent {
     }
 }
 
-export class Modified extends DateComponent implements XmlComponent {
+export class Modified extends DateComponent {
 
     constructor() {
         super("dcterms:modified");
