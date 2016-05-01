@@ -1,5 +1,5 @@
 import {XmlComponent} from "../docx/xml-components";
-import {DocumentAttributes} from "../docx/xml-components/document-attributes"
+import {DocumentAttributes} from "../docx/document/document-attributes"
 import {DocumentDefaults} from "./defaults";
 import {LatentStyles} from "./latent-styles";
 import {LatentStyleException} from "./latent-styles/exceptions";

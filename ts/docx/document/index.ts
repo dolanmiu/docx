@@ -1,5 +1,5 @@
 import {XmlComponent} from "../xml-components";
-import {DocumentAttributes} from "../xml-components/document-attributes"
+import {DocumentAttributes} from "./document-attributes"
 import {Body} from "./body";
 import {Paragraph} from "../paragraph";
 

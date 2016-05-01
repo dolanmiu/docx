@@ -1,5 +1,5 @@
 import {XmlComponent} from "../docx/xml-components";
-import {DocumentAttributes} from "../docx/xml-components/document-attributes";
+import {DocumentAttributes} from "../docx/document/document-attributes";
 
 abstract class Component extends XmlComponent {
     protected createNullBlockOrValue(value: string): any {
