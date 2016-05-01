@@ -1,13 +1,10 @@
+import {XmlUnitComponent} from "../docx/xml-components";
 import {XmlComponent} from "../docx/xml-components";
 import {DocumentAttributes} from "../docx/document/document-attributes";
 
-abstract class Component extends XmlComponent {
+abstract class Component extends XmlUnitComponent {
     protected createNullBlockOrValue(value: string): any {
-        if (value === undefined) {
-            return [{}];
-        } else {
-            return value;
-        }
+        return value;
         //return null;
     }
 }
@@ -15,7 +12,7 @@ export class Title extends Component {
 
     constructor(value: string) {
         super("dc:title");
-        this.root.push(this.createNullBlockOrValue(value));
+        this.root = this.createNullBlockOrValue(value);
     }
 }
 
@@ -23,7 +20,7 @@ export class Subject extends Component {
 
     constructor(value: string) {
         super("dc:subject");
-        this.root.push(this.createNullBlockOrValue(value));
+        this.root = this.createNullBlockOrValue(value);
     }
 }
 
@@ -31,7 +28,7 @@ export class Creator extends Component {
 
     constructor(value: string) {
         super("dc:creator");
-        this.root.push(this.createNullBlockOrValue(value));
+        this.root = this.createNullBlockOrValue(value);
     }
 }
 
@@ -39,7 +36,7 @@ export class Keywords extends Component {
 
     constructor(value: string) {
         super("cp:keywords");
-        this.root.push(this.createNullBlockOrValue(value));
+        this.root = this.createNullBlockOrValue(value);
     }
 }
 
@@ -47,7 +44,7 @@ export class Description extends Component {
 
     constructor(value: string) {
         super("dc:description");
-        this.root.push(this.createNullBlockOrValue(value));
+        this.root = this.createNullBlockOrValue(value);
     }
 }
 
@@ -55,7 +52,7 @@ export class LastModifiedBy extends Component {
     
     constructor(value: string) {
         super("cp:lastModifiedBy");
-        this.root.push(this.createNullBlockOrValue(value));
+        this.root = this.createNullBlockOrValue(value);
     }
 }
 
@@ -64,7 +61,7 @@ export class Revision extends Component {
     constructor(value: string) {
         super("cp:revision");
         var revision = this.createNullBlockOrValue(value);
-        this.root.push(this.createNullBlockOrValue(value));
+        this.root = this.createNullBlockOrValue(value);
     }
 }
 
