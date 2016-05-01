@@ -127,7 +127,7 @@ export class Attributes extends XmlAttributeComponent {
 export class Text extends XmlUnitComponent {
 
     constructor(text: string) {
-        super("w:t"); //need special xml component
+        super("w:t");
         this.root = text;
     }
 }
