@@ -20,7 +20,7 @@ describe("Run", () => {
         it("it should add bold to the properties", () => {
             run.bold();
             var newJson = jsonify(run);
-            assert.isDefined(newJson.r[0].rPr[0].b);
+            assert.equal(newJson.root[0].root[0].rootKey, "w:b");
         });
     });
 
@@ -28,7 +28,7 @@ describe("Run", () => {
         it("it should add italics to the properties", () => {
             run.italics();
             var newJson = jsonify(run);
-            assert.isDefined(newJson.r[0].rPr[0].i);
+            assert.equal(newJson.root[0].root[0].rootKey, "w:i");
         });
     });
 
@@ -36,7 +36,7 @@ describe("Run", () => {
         it("it should add underline to the properties", () => {
             run.underline();
             var newJson = jsonify(run);
-            assert.isDefined(newJson.r[0].rPr[0].u);
+            assert.equal(newJson.root[0].root[0].rootKey, "w:u");
         });
     });
 });
@@ -49,7 +49,8 @@ describe('TextRun', () => {
         it("should add text into run", () => {
             run = new TextRun("test");
             var newJson = jsonify(run);
-            assert(newJson.r[1].t === "test");
+            console.log(newJson.root[1].root)
+            assert.equal(newJson.root[1].root, "test");
         });
     });
 });

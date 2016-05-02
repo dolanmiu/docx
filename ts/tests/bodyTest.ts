@@ -29,28 +29,27 @@ describe("Body", () => {
 
         it("should create the Section Properties", () => {
             var newJson = jsonify(body);
-            console.log(newJson);
-            assert.isDefined(newJson.body[0].sectPr);
+            assert.equal(newJson.root[0].rootKey, "w:sectPr");
         });
 
         it("should create the Page Size", () => {
             var newJson = jsonify(body);
-            assert.isDefined(newJson.body[1].pgSz);
+            assert.equal(newJson.root[1].rootKey, "w:pgSz");
         });
 
         it("should create the Page Margin", () => {
             var newJson = jsonify(body);
-            assert.isDefined(newJson.body[2].pgMar);
+            assert.equal(newJson.root[2].rootKey, "w:pgMar");
         });
 
         it("should create the Columns", () => {
             var newJson = jsonify(body);
-            assert.isDefined(newJson.body[3].cols);
+            assert.equal(newJson.root[3].rootKey, "w:cols");
         });
 
         it("should create the Document Grid", () => {
             var newJson = jsonify(body);
-            assert.isDefined(newJson.body[4].docGrid);
+            assert.equal(newJson.root[4].rootKey, "w:docGrid");
         });
     });
 });

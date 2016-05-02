@@ -21,8 +21,7 @@ describe("Properties", () => {
                 title: "test document"
             });
             var newJson = jsonify(properties);
-            
-            assert(newJson.coreProperties[1].title === "test document");
+            assert(newJson.root[1].root === "test document");
         });
     })
 });
