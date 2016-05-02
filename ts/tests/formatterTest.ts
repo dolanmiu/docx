@@ -63,7 +63,8 @@ describe("Formatter", () => {
         });
 
         it("should should change 'p' tag into 'w:p' tag", () => {
-            var newJson = formatter.format({ "p": "test", "xmlKeys": { "p": "w:p" } });
+            var paragraph = new docx.Paragraph();
+            var newJson = formatter.format(paragraph);
             assert.isDefined(newJson["w:p"]);
         });
 

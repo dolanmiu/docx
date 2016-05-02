@@ -7,7 +7,7 @@ export class Formatter {
         this.replaceKeys(input);
         input.clearVariables();
         var newJson = this.clense(input);
-        console.log(JSON.stringify(newJson, null, "  "));
+        //console.log(JSON.stringify(newJson, null, "  "));
         return newJson;
     }
 
