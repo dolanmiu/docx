@@ -1,29 +1,30 @@
 import {XmlComponent} from "../../docx/xml-components";
+import {XmlAttributeComponent} from "../../docx/xml-components";
 
 interface StyleAttributesProperties {
     type?: string;
     styleId?: string;
     default?: string;
     customStyle?: string;
+    val?: string;
 }
 
-export class StyleAttributes extends XmlComponent {
+export class StyleAttributes extends XmlAttributeComponent {
     private _attr: Object;
 
-    xmlKeys = {
-        type: "w:type",
-        styleId: "w:styleId",
-        default: "w:default",
-        customStyle: "w:customStyle"
-    };
-
     constructor(properties?: StyleAttributesProperties) {
-        super("_attr");
-        this._attr = properties
+        super({
+            type: "w:type",
+            styleId: "w:styleId",
+            default: "w:default",
+            customStyle: "w:customStyle",
+            val: "w:val"
+        });
+        
+        this.root = properties;
 
         if (!properties) {
-            this._attr = {};
+            this.root = {};
         }
-        this._attr["xmlKeys"] = this.xmlKeys;
     }
 }
