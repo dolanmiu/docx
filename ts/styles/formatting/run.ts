@@ -1,4 +1,4 @@
-import {XmlComponent, Attributes} from "../xml-components";
+import {XmlComponent, Attributes} from "../../docx/xml-components";
 
 export class Bold extends XmlComponent {
     
@@ -21,6 +21,16 @@ export class Italics extends XmlComponent {
 }
 
 export class Underline extends XmlComponent {
+
+    constructor() {
+        super("w:u");
+        this.root.push(new Attributes({
+            val: true
+        }));
+    }
+}
+
+export class Caps extends XmlComponent {
 
     constructor() {
         super("w:u");

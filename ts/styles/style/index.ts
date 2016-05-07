@@ -12,3 +12,7 @@ export class Style extends XmlComponent {
         this.root.push(styleSegment);
     }
 }
+
+export class ParagraphStyle extends XmlComponent {
+    
+}

@@ -1,6 +1,6 @@
 import {XmlComponent, Attributes} from "../xml-components";
 import {RunProperties} from "./properties";
-import {Bold, Italics, Underline} from "./emphasis";
+import {Bold, Italics, Underline} from "../../styles/formatting/run";
 
 export class Run extends XmlComponent {
     private properties: RunProperties;
