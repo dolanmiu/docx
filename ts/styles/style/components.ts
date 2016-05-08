@@ -56,8 +56,11 @@ export class UnhideWhenUsed extends XmlComponent {
 
 }
 
-export class QFormat extends XmlComponent {
-
+export class QuickFormat extends XmlComponent {
+    
+    constructor() {
+        super("w:qFormat");
+    }
 }
 
 export class TableProperties extends XmlComponent {

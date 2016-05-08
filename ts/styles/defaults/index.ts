@@ -4,9 +4,9 @@ import {RunPropertiesDefaults} from "./run-properties";
 
 export class DocumentDefaults extends XmlComponent {
     
-    constructor() {
+    constructor(runPropertiesDefaults: RunPropertiesDefaults, paragraphPropertiesDefaults: ParagraphPropertiesDefaults) {
         super("w:docDefaults");
-        this.root.push(new RunPropertiesDefaults());
-        this.root.push(new ParagraphPropertiesDefaults());
+        this.root.push(runPropertiesDefaults);
+        this.root.push(paragraphPropertiesDefaults);
     }
 }

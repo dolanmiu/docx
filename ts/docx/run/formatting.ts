@@ -1,4 +1,4 @@
-import {XmlComponent, Attributes} from "../../docx/xml-components";
+import {XmlComponent, Attributes} from "../xml-components";
 
 export class Bold extends XmlComponent {
     
@@ -121,7 +121,7 @@ export class Size extends XmlComponent {
     }
 }
 
-// needs work
+// needs work. Add more types of vertical align
 export class VerticalAlign extends XmlComponent {
 
     constructor() {
