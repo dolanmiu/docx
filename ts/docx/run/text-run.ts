@@ -1,4 +1,4 @@
-import {Text} from "../xml-components";
+import {Text} from "./text";
 import {Run} from "../run";
 
 export class TextRun extends Run {
