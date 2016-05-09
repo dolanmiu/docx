@@ -28,6 +28,13 @@ describe("Paragraph", () => {
             }
             assert.isTrue(true);
         });
+
+        it("should create have valid properties", () => {
+            var stringifiedJson = JSON.stringify(paragraph);
+            var newJson = JSON.parse(stringifiedJson);
+
+            assert.equal(newJson.root[1].root[0].rootKey, "w:pPr");
+        });
     });
 
     describe("#heading1()", () => {
