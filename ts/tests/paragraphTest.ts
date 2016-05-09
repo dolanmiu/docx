@@ -32,8 +32,7 @@ describe("Paragraph", () => {
         it("should create have valid properties", () => {
             var stringifiedJson = JSON.stringify(paragraph);
             var newJson = JSON.parse(stringifiedJson);
-
-            assert.equal(newJson.root[1].root[0].rootKey, "w:pPr");
+            assert.equal(newJson.root[0].rootKey, "w:pPr");
         });
     });
 
