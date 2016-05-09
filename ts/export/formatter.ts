@@ -4,8 +4,8 @@ import {XmlComponent} from "../docx/xml-components";
 export class Formatter {
 
     format(input: any): Object {
-        this.replaceKeys(input);
         input.clearVariables();
+        this.replaceKeys(input);
         var newJson = this.clense(input);
         //console.log(JSON.stringify(newJson, null, "  "));
         return newJson;
