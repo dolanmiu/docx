@@ -83,8 +83,6 @@ export function DefaultStyle() {
             }, {
                 'w:lsdException': createLsdException('Normal', 0, 1)
             }, {
-                'w:lsdException': createLsdException("heading 1", 9, 1)
-            }, {
                 'w:lsdException': createLsdException("heading 1", 9, 1, 1, 1)
             }, {
                 'w:lsdException': createLsdException("heading 2", 9, 1, 1, 1)

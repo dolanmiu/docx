@@ -3,7 +3,7 @@ import {XmlComponent, Attributes} from "../xml-components";
 export class ParagraphProperties extends XmlComponent {
 
     constructor() {
-        super("w:rPr");
+        super("w:pPr");
         this.root.push(new Attributes());
     }
 

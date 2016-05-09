@@ -17,12 +17,11 @@ export class Styles extends XmlComponent {
             w15: 'http://schemas.microsoft.com/office/word/2012/wordml',
             Ignorable: 'w14 w15'
         }))
-        this.root.push(new DocumentDefaults());
-        var latentStyles = new LatentStyles();
+        //var latentStyles = new LatentStyles();
         //latentStyles.push(new LatentStyleException(new LatentStyleExceptionAttributes({
         //    name: "Normal"
         //})));
-        this.root.push(latentStyles);
+        //this.root.push(latentStyles);
     }
 
     push(style: XmlComponent): void {

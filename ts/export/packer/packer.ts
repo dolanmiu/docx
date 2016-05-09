@@ -46,10 +46,11 @@ export abstract class Packer {
             prefix: "root"
         });*/
         var xmlDocument = xml(this.formatter.format(this.document));
-        console.log(xmlDocument);
-        var xmlStyle = xml(this.style);
+        var xmlStyle = xml(this.formatter.format(this.style));
+        //var xmlStyle = xml(this.style);
         var xmlProperties = xml(this.formatter.format(this.properties), { declaration: { standalone: 'yes', encoding: 'UTF-8' } });
 
+        console.log(xmlStyle);
         //console.log(JSON.stringify(this.formatter.format(this.document), null, "  "));
         //console.log(xmlDocument);
 
@@ -57,9 +58,9 @@ export abstract class Packer {
             name: 'word/document.xml'
         });
 
-        //this.archive.append(xmlStyle, {
-        //    name: 'word/newStyle.xml'
-        //});
+        this.archive.append(xmlStyle, {
+            name: 'word/styles.xml'
+        });
 
         this.archive.append(xmlProperties, {
             name: 'docProps/core.xml'
