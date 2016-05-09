@@ -18,21 +18,42 @@ export class Style extends XmlComponent {
 
 export class ParagraphStyle extends Style {
 
-    constructor(styleId: string, paragraphProperties: ParagraphProperties, runProperties: RunProperties) {
+    private paragraphProperties: ParagraphProperties;
+    private runProperties: RunProperties;
+
+    constructor(styleId: string) {
+
         var attributes = new StyleAttributes({
             type: "paragraph",
             styleId: styleId
         });
         super(attributes);
-        this.root.push(paragraphProperties);
-        this.root.push(runProperties);
+        this.paragraphProperties = new ParagraphProperties();
+        this.runProperties = new RunProperties();
+        this.root.push(this.paragraphProperties);
+        this.root.push(this.runProperties);
+    }
+
+    clearVariables(): void {
+        this.paragraphProperties.clearVariables();
+        this.runProperties.clearVariables();
+        delete this.paragraphProperties;
+        delete this.runProperties;
+    }
+
+    addParagraphProperty(property: XmlComponent): void {
+        this.paragraphProperties.push(property);
+    }
+
+    addRunProperty(property: XmlComponent): void {
+        this.runProperties.push(property);
     }
 }
 
 export class HeadingStyle extends ParagraphStyle {
 
-    constructor(styleId: string, name: string, paragraphProperties: ParagraphProperties, runProperties: RunProperties) {
-        super(styleId, paragraphProperties, runProperties);
+    constructor(styleId: string, name: string) {
+        super(styleId);
         this.root.push(new Name(name));
         this.root.push(new BasedOn("Normal"));
         this.root.push(new Next("Normal"));
@@ -40,44 +61,51 @@ export class HeadingStyle extends ParagraphStyle {
     }
 }
 
+export class TitleStyle extends HeadingStyle {
+
+    constructor() {
+        super("Title", "Title");
+    }
+}
+
 export class Heading1Style extends HeadingStyle {
-    
-    constructor(paragraphProperties: ParagraphProperties, runProperties: RunProperties) {
-        super("Heading1", "Heading 1", paragraphProperties, runProperties);
+
+    constructor() {
+        super("Heading1", "Heading 1");
     }
 }
 
 export class Heading2Style extends HeadingStyle {
-    
-    constructor(paragraphProperties: ParagraphProperties, runProperties: RunProperties) {
-        super("Heading2", "Heading 2", paragraphProperties, runProperties);
+
+    constructor() {
+        super("Heading2", "Heading 2");
     }
 }
 
 export class Heading3Style extends HeadingStyle {
-    
-    constructor(paragraphProperties: ParagraphProperties, runProperties: RunProperties) {
-        super("Heading3", "Heading 3", paragraphProperties, runProperties);
+
+    constructor() {
+        super("Heading3", "Heading 3");
     }
 }
 
 export class Heading4Style extends HeadingStyle {
-    
-    constructor(paragraphProperties: ParagraphProperties, runProperties: RunProperties) {
-        super("Heading4", "Heading 4", paragraphProperties, runProperties);
+
+    constructor() {
+        super("Heading4", "Heading 4");
     }
 }
 
 export class Heading5Style extends HeadingStyle {
-    
-    constructor(paragraphProperties: ParagraphProperties, runProperties: RunProperties) {
-        super("Heading5", "Heading 5", paragraphProperties, runProperties);
+
+    constructor() {
+        super("Heading5", "Heading 5");
     }
 }
 
 export class Heading6Style extends HeadingStyle {
-    
-    constructor(paragraphProperties: ParagraphProperties, runProperties: RunProperties) {
-        super("Heading6", "Heading 6", paragraphProperties, runProperties);
+
+    constructor() {
+        super("Heading6", "Heading 6");
     }
 }

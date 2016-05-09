@@ -11,7 +11,7 @@ import {DefaultStyle} from "../styles/sample"
 import {Paragraph} from "../docx/paragraph"
 import {DefaultStylesFactory} from "../styles/factory"
 
-describe("Packer", () => {
+describe.only("Packer", () => {
     var packer: LocalPacker;
     var stylesFactory: DefaultStylesFactory;
 
@@ -19,7 +19,9 @@ describe("Packer", () => {
         var document = new Document();
         var paragraph = new Paragraph("test text");
         var heading = new Paragraph("Hello world").heading1();
+        document.addParagraph(new Paragraph("title").title());
         document.addParagraph(heading);
+        document.addParagraph(new Paragraph("heading 2").heading2());
         document.addParagraph(paragraph);
         var properties = new Properties({
             creator: "Shan Fu",

@@ -4,9 +4,21 @@ import {RunPropertiesDefaults} from "./run-properties";
 
 export class DocumentDefaults extends XmlComponent {
     
-    constructor(runPropertiesDefaults: RunPropertiesDefaults, paragraphPropertiesDefaults: ParagraphPropertiesDefaults) {
+    private runPropertiesDefaults: RunPropertiesDefaults;
+    private paragraphPropertiesDefaults: ParagraphPropertiesDefaults;
+    
+    constructor() {
         super("w:docDefaults");
-        this.root.push(runPropertiesDefaults);
-        this.root.push(paragraphPropertiesDefaults);
+        this.runPropertiesDefaults = new RunPropertiesDefaults();
+        this.paragraphPropertiesDefaults = new ParagraphPropertiesDefaults();
+        this.root.push(this.runPropertiesDefaults);
+        this.root.push(this.paragraphPropertiesDefaults);
+    }
+    
+    clearVariables(): void {
+        this.runPropertiesDefaults.clearVariables();
+        this.paragraphPropertiesDefaults.clearVariables();
+        delete this.runPropertiesDefaults;
+        delete this.paragraphPropertiesDefaults;
     }
 }
