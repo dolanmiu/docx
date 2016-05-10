@@ -2,10 +2,11 @@
   "name": "docx",
   "version": "0.0.0",
   "description": "Generate .docx documents with JavaScript (formerly Office-Clippy)",
-  "main": "build/build.js",
+  "main": "build/index.js",
   "scripts": {
-    "pretest": "tsc ts/tests/*Test.ts --module commonjs --outDir ./build/tests;",
-    "test": "mocha ./build/tests/**/*Test.js"
+    "pretest": "tsc ts/tests/*Test.ts --module commonjs --outDir ./build/tests",
+    "test": "./node_modules/.bin/mocha ./build/tests/**/*Test.js",
+    "prepublish": "tsc ts/"
   },
   "repository": {
     "type": "git",
@@ -21,6 +22,9 @@
     "archiver": "^0.21.0",
     "lodash": "^4.6.1",
     "xml": "^1.0.1"
+  },
+  "typescript": {
+    "definition": "typings/index.d.ts"
   },
   "author": "Dolan Miu",
   "license": "MIT",
