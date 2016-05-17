@@ -12,11 +12,12 @@ describe("Styles", () => {
 
     describe('#constructor()', () => {
 
-        it("should not add val with empty constructor", () => {
-            var newAttrs = new Styles();
-            var stringifiedJson = JSON.stringify(newAttrs);
+        it("should create styles with correct rootKey", () => {
+            var styles = new Styles();
+            var stringifiedJson = JSON.stringify(styles);
             var newJson = JSON.parse(stringifiedJson);
-            assert.isUndefined(newJson.root.val);
+            
+            assert.equal(newJson.rootKey, "w:styles");
         });
     });
 });
