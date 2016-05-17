@@ -26,4 +26,9 @@ export class Run extends XmlComponent {
         this.properties.push(new Underline());
         return this;
     }
+    
+    break() : Run {
+        // TODO
+        return this;
+    }
 }
