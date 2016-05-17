@@ -19,12 +19,13 @@
     "doc"
   ],
   "dependencies": {
+    "app-root-path": "^1.0.0",
     "archiver": "^0.21.0",
     "lodash": "^4.6.1",
     "xml": "^1.0.1"
   },
   "typescript": {
-    "definition": "typings/index.d.ts"
+    "definition": "ts/typings/index.d.ts"
   },
   "author": "Dolan Miu",
   "license": "MIT",
