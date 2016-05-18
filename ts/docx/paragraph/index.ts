@@ -3,7 +3,7 @@ import {ThematicBreak} from "./border";
 import {PageBreak} from "./page-break";
 import {TextRun} from "../run/text-run";
 import {ParagraphProperties} from "./properties";
-import {TabStop} from "../tab-stop";
+import {MaxRightTabStop, LeftTabStop} from "./tab-stop";
 import {Style} from "./style";
 import {NumberProperties} from "./unordered-list";
 
@@ -94,8 +94,13 @@ export class Paragraph extends XmlComponent {
         return this;
     }
 
-    addTabStop(tabStop: TabStop): Paragraph {
-        this.properties.push(tabStop);
+    maxRightTabStop(): Paragraph {
+        this.properties.push(new MaxRightTabStop());
+        return this;
+    }
+    
+    leftTabStop(position: number): Paragraph {
+        this.properties.push(new LeftTabStop(position))
         return this;
     }
 
