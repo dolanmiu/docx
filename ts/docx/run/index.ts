@@ -17,7 +17,7 @@ export class Run extends XmlComponent {
         return this;
     }
 
-    italics(): Run {
+    italic(): Run {
         this.properties.push(new Italics());
         return this;
     }
@@ -27,7 +27,12 @@ export class Run extends XmlComponent {
         return this;
     }
     
-    break() : Run {
+    break(): Run {
+        // TODO
+        return this;
+    }
+    
+    tab(): Run {
         // TODO
         return this;
     }
