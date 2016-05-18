@@ -91,6 +91,7 @@ interface AttributesProperties {
     footer?: string;
     gutter?: string;
     linePitch?: string;
+    pos?: string;
 }
 
 export class Attributes extends XmlAttributeComponent {
