@@ -109,3 +109,13 @@ export class Heading6Style extends HeadingStyle {
         super("Heading6", "Heading 6");
     }
 }
+
+export class ListParagraph extends ParagraphStyle {
+    
+    constructor() {
+        super("ListParagraph");
+        this.root.push(new Name("List Paragraph"));
+        this.root.push(new BasedOn("Normal"));
+        this.root.push(new QuickFormat());
+    }
+}

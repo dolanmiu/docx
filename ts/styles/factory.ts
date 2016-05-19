@@ -2,7 +2,7 @@ import {Styles} from "./";
 import {DocumentDefaults} from "./defaults";
 import {ParagraphPropertiesDefaults} from "./defaults/paragraph-properties";
 import {RunPropertiesDefaults} from "./defaults/run-properties";
-import {Heading1Style, Heading2Style, TitleStyle, Heading3Style, Heading4Style, Heading5Style, Heading6Style} from "./style";
+import {Heading1Style, Heading2Style, TitleStyle, Heading3Style, Heading4Style, Heading5Style, Heading6Style, ListParagraph} from "./style";
 //import {StyleAttributes} from "./style/attributes";
 import {ParagraphProperties} from "../docx/paragraph/properties";
 import {RunProperties} from "../docx/run/properties";
@@ -45,6 +45,10 @@ export class DefaultStylesFactory {
         var heading6Style = new Heading6Style();
         heading6Style.addRunProperty(new Color("1F4D78"));
         styles.push(heading6Style);
+        
+        var listParagraph = new ListParagraph();
+        //listParagraph.addParagraphProperty();
+        styles.push(listParagraph);
 
         console.log(JSON.stringify(styles, null, "  "));
         return styles;
