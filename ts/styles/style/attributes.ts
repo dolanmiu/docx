@@ -12,19 +12,13 @@ interface StyleAttributesProperties {
 export class StyleAttributes extends XmlAttributeComponent {
     private _attr: Object;
 
-    constructor(properties?: StyleAttributesProperties) {
+    constructor(properties: StyleAttributesProperties) {
         super({
             type: "w:type",
             styleId: "w:styleId",
             default: "w:default",
             customStyle: "w:customStyle",
             val: "w:val"
-        });
-        
-        this.root = properties;
-
-        if (!properties) {
-            this.root = {};
-        }
+        }, properties);
     }
 }
