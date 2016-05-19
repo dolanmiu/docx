@@ -1,4 +1,6 @@
 import * as _ from "lodash";
+import {ParagraphProperties} from "../paragraph/properties";
+import {RunProperties} from "../run/properties";
 
 export abstract class BaseXmlComponent {
     protected rootKey: string;
@@ -54,9 +56,15 @@ export abstract class XmlAttributeComponent extends BaseXmlComponent {
     protected root: Object;
     private xmlKeys: Object;
 
-    constructor(xmlKeys: Object) {
+    constructor(xmlKeys: Object, properties: Object) {
         super("_attr");
         this.xmlKeys = xmlKeys;
+
+        this.root = properties
+
+        if (!properties) {
+            this.root = {};
+        }
     }
 
     replaceKey(): void {
