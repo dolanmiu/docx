@@ -1,7 +1,6 @@
 import * as _ from "lodash";
 import {BaseXmlComponent} from "./base";
 
-
 export abstract class XmlComponent extends BaseXmlComponent {
     protected root: Array<BaseXmlComponent>;
 
