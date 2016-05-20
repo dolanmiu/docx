@@ -16,8 +16,6 @@ class LevelAttributes extends XmlAttributeComponent {
             tentative: "w15:tentative"
         }, properties);
     }
-
-    properties
 }
 
 class Start extends XmlComponent {
