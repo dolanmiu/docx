@@ -5,6 +5,8 @@ import {Formatter} from "../formatter";
 import {Document} from "../../docx";
 import {Styles} from "../../styles";
 import {Properties} from "../../properties";
+import {Numbering} from "../../numbering";
+
 var appRoot = require('app-root-path');
 
 export abstract class Packer {
@@ -13,12 +15,14 @@ export abstract class Packer {
     protected document: Document;
     private style: Styles;
     private properties: Properties;
-
-    constructor(document: Document, style: any, properties: Properties) {
+    private numbering: Numbering;
+    
+    constructor(document: Document, style: any, properties: Properties, numbering: Numbering) {
         this.formatter = new Formatter();
         this.document = document;
         this.style = style;
         this.properties = properties;
+        this.numbering = numbering;
         this.archive = archiver.create("zip", {});
 
         this.archive.on('error', (err) => {
@@ -46,25 +50,24 @@ export abstract class Packer {
             prefix: "root"
         });*/
         var xmlDocument = xml(this.formatter.format(this.document));
-        var xmlStyle = xml(this.formatter.format(this.style));
-        //var xmlStyle = xml(this.style);
+        var xmlStyles = xml(this.formatter.format(this.style));
         var xmlProperties = xml(this.formatter.format(this.properties), { declaration: { standalone: 'yes', encoding: 'UTF-8' } });
-
-        console.log(xmlStyle);
-        //console.log(JSON.stringify(this.formatter.format(this.document), null, "  "));
-        //console.log(xmlDocument);
-
+        var xmlNumbering = xml(this.formatter.format(this.numbering));
         this.archive.append(xmlDocument, {
             name: 'word/document.xml'
         });
 
-        this.archive.append(xmlStyle, {
+        this.archive.append(xmlStyles, {
             name: 'word/styles.xml'
         });
 
         this.archive.append(xmlProperties, {
             name: 'docProps/core.xml'
         });
+        
+        this.archive.append(xmlNumbering, {
+            name: 'word/numbering.xml'
+        })
 
         this.archive.finalize();
     }
