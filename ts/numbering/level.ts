@@ -88,8 +88,8 @@ export class Level extends XmlComponent {
         delete this.paragraphProperties;
         delete this.runProperties;
     }
-    
-        addParagraphProperty(property: XmlComponent): void {
+
+    addParagraphProperty(property: XmlComponent): void {
         this.paragraphProperties.push(property);
     }
 

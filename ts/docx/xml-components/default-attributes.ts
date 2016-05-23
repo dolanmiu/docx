@@ -1,4 +1,5 @@
 import {BaseXmlComponent} from "./base";
+import * as _ from "lodash";
 
 export abstract class XmlAttributeComponent extends BaseXmlComponent {
     protected root: Object;

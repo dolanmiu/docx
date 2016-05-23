@@ -5,6 +5,7 @@ import {Level} from "./level";
 import {Indent} from "./indent";
 import {RunFonts} from "./run-fonts";
 import {Num} from "./num";
+import * as _ from "lodash";
 
 export class Numbering extends MultiPropertyXmlComponent {
     
@@ -79,5 +80,11 @@ export class Numbering extends MultiPropertyXmlComponent {
         
         this.root.push(abstractNumbering);
         this.root.push(new Num(1, 0));
+    }
+    
+    clearVariables() {
+        _.forEach(this.root, element => {
+           element.clearVariables(); 
+        });
     }
 }

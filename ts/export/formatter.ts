@@ -32,7 +32,7 @@ export class Formatter {
             }
         });
 
-        return newJson
+        return newJson;
     }
 
     private jsonify(obj: Object): Object {

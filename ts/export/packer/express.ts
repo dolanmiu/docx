@@ -4,11 +4,12 @@ import * as express from "express";
 import {Document} from "../../docx/document";
 import {Properties} from "../../properties";
 import {DefaultStylesFactory} from "../../styles/factory"
+import {Numbering} from "../../numbering";
 
 export class ExpressPacker extends Packer {
     private res: express.Response;
 
-    constructor(document: Document, res: express.Response, styles?: any, properties?: Properties) {
+    constructor(document: Document, res: express.Response, styles?: any, properties?: Properties, numbering?: Numbering) {
         if (!styles) {
             var stylesFactory = new DefaultStylesFactory();
             styles = stylesFactory.newInstance()
@@ -22,7 +23,11 @@ export class ExpressPacker extends Packer {
             });
         }
         
-        super(document, styles, properties);
+        if (!numbering) {
+            numbering = new Numbering();
+        }
+
+        super(document, styles, properties, numbering);
         this.res = res;
 
         this.res.on('close', () => {

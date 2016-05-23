@@ -29,8 +29,6 @@ export class Styles extends XmlComponent {
     }
     
     clearVariables() {
-        console.log(this);
-        console.log(this.root);
         this.root.forEach(element => {
             element.clearVariables();
         })
