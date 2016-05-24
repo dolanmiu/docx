@@ -2,6 +2,7 @@ import {XmlComponent} from "../docx/xml-components";
 import {XmlAttributeComponent} from "../docx/xml-components";
 import {Level} from "./level";
 import {MultiLevelType} from "./multi-level-type";
+import * as _ from "lodash";
 
 interface AbstractNumberingAttributesProperties {
     abstractNumId?: Number,
@@ -31,5 +32,11 @@ export class AbstractNumbering extends XmlComponent {
     
     addLevel(level: Level): void {
         this.root.push(level);
+    }
+    
+    clearVariables() {
+        _.forEach(this.root, element => {
+            element.clearVariables();
+        });
     }
 }

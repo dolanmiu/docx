@@ -83,8 +83,10 @@ export class Numbering extends MultiPropertyXmlComponent {
     }
     
     clearVariables() {
+        super.clearVariables();
         _.forEach(this.root, element => {
-           element.clearVariables(); 
+            console.log(element);
+            element.clearVariables();
         });
     }
 }

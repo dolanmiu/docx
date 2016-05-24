@@ -24,9 +24,9 @@ describe("Run", () => {
         });
     });
 
-    describe('#italics()', () => {
+    describe('#italic()', () => {
         it("it should add italics to the properties", () => {
-            run.italics();
+            run.italic();
             var newJson = jsonify(run);
             assert.equal(newJson.root[0].root[0].rootKey, "w:i");
         });

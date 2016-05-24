@@ -53,8 +53,8 @@ export abstract class Packer {
         var xmlStyles = xml(this.formatter.format(this.style));
         var xmlProperties = xml(this.formatter.format(this.properties), { declaration: { standalone: 'yes', encoding: 'UTF-8' } });
         var xmlNumbering = xml(this.formatter.format(this.numbering));
-                console.log(xmlNumbering);
-                
+        //console.log(JSON.stringify(this.numbering, null, " "));
+        console.log(xmlNumbering);        
         this.archive.append(xmlDocument, {
             name: 'word/document.xml'
         });
