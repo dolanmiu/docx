@@ -5,6 +5,6 @@ export class RunPropertiesDefaults extends XmlComponent {
 
     constructor() {
         super("w:rPrDefault");
-        this.root.push(new RunProperties());    
+        this.root.push(new RunProperties());
     }
 }

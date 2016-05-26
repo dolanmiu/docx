@@ -3,7 +3,7 @@ import * as fs from "fs";
 import * as express from "express";
 import {Document} from "../../docx/document";
 import {Properties} from "../../properties";
-import {DefaultStylesFactory} from "../../styles/factory"
+import {DefaultStylesFactory} from "../../styles/factory";
 import {Numbering} from "../../numbering";
 
 export class ExpressPacker extends Packer {
@@ -11,8 +11,8 @@ export class ExpressPacker extends Packer {
 
     constructor(document: Document, res: express.Response, styles?: any, properties?: Properties, numbering?: Numbering) {
         if (!styles) {
-            var stylesFactory = new DefaultStylesFactory();
-            styles = stylesFactory.newInstance()
+            let stylesFactory = new DefaultStylesFactory();
+            styles = stylesFactory.newInstance();
         }
 
         if (!properties) {
@@ -22,7 +22,7 @@ export class ExpressPacker extends Packer {
                 lastModifiedBy: "Shan Fu"
             });
         }
-        
+
         if (!numbering) {
             numbering = new Numbering();
         }
@@ -30,8 +30,8 @@ export class ExpressPacker extends Packer {
         super(document, styles, properties, numbering);
         this.res = res;
 
-        this.res.on('close', () => {
-            return res.status(200).send('OK').end();
+        this.res.on("close", () => {
+            return res.status(200).send("OK").end();
         });
     }
 

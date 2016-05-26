@@ -1,5 +1,5 @@
 import {XmlComponent} from "../docx/xml-components";
-import {DocumentAttributes} from "../docx/document/document-attributes"
+import {DocumentAttributes} from "../docx/document/document-attributes";
 import {DocumentDefaults} from "./defaults";
 import {LatentStyles} from "./latent-styles";
 import {LatentStyleException} from "./latent-styles/exceptions";
@@ -16,21 +16,21 @@ export class Styles extends XmlComponent {
             w14: "http://schemas.microsoft.com/office/word/2010/wordml",
             w15: "http://schemas.microsoft.com/office/word/2012/wordml",
             Ignorable: "w14 w15"
-        }))
-        //var latentStyles = new LatentStyles();
-        //latentStyles.push(new LatentStyleException(new LatentStyleExceptionAttributes({
+        }));
+        // let latentStyles = new LatentStyles();
+        // latentStyles.push(new LatentStyleException(new LatentStyleExceptionAttributes({
         //    name: "Normal"
-        //})));
-        //this.root.push(latentStyles);
+        // })));
+        // this.root.push(latentStyles);
     }
 
     push(style: XmlComponent): void {
         this.root.push(style);
     }
-    
+
     clearVariables() {
         this.root.forEach(element => {
             element.clearVariables();
-        })
+        });
     }
 }

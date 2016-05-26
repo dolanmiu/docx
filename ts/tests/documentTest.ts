@@ -4,18 +4,17 @@ import * as docx from "../docx";
 import {assert} from "chai";
 
 describe("Document", () => {
-    var document: docx.Document;
+    let document: docx.Document;
 
     beforeEach(() => {
         document = new docx.Document();
     });
 
-    describe('#constructor()', () => {
-        
+    describe("#constructor()", () => {
+
         it("should create valid JSON", () => {
-            //console.log(JSON.stringify(document, null, "    "));
-            var stringifiedJson = JSON.stringify(document);
-            var newJson;
+            let stringifiedJson = JSON.stringify(document);
+            let newJson;
 
             try {
                 newJson = JSON.parse(stringifiedJson);

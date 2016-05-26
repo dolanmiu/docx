@@ -4,19 +4,19 @@ import {Styles} from "../styles";
 import {assert} from "chai";
 
 describe("Styles", () => {
-    var styles: Styles;
+    let styles: Styles;
 
     beforeEach(() => {
         styles = new Styles();
     });
 
-    describe('#constructor()', () => {
+    describe("#constructor()", () => {
 
         it("should create styles with correct rootKey", () => {
-            var styles = new Styles();
-            var stringifiedJson = JSON.stringify(styles);
-            var newJson = JSON.parse(stringifiedJson);
-            
+            let styles = new Styles();
+            let stringifiedJson = JSON.stringify(styles);
+            let newJson = JSON.parse(stringifiedJson);
+
             assert.equal(newJson.rootKey, "w:styles");
         });
     });

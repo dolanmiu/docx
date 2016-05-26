@@ -10,8 +10,8 @@ export abstract class XmlComponent extends BaseXmlComponent {
     }
 
     replaceKey(): void {
-        //console.log(this.rootKey);
-        //console.log(this.root);
+        // console.log(this.rootKey);
+        // console.log(this.root);
         if (this.root !== undefined) {
             this.root.forEach(root => {
                 if (root && root instanceof BaseXmlComponent) {

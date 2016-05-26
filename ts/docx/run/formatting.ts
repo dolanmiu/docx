@@ -1,7 +1,7 @@
 import {XmlComponent, Attributes} from "../xml-components";
 
 export class Bold extends XmlComponent {
-    
+
     constructor() {
         super("w:b");
         this.root.push(new Attributes({
@@ -20,7 +20,7 @@ export class Italics extends XmlComponent {
     }
 }
 
-// needs work. add more types of underline
+// TODO needs work. add more types of underline
 export class Underline extends XmlComponent {
 
     constructor() {
@@ -121,7 +121,7 @@ export class Size extends XmlComponent {
     }
 }
 
-// needs work. Add more types of vertical align
+// TODO needs work. Add more types of vertical align
 export class VerticalAlign extends XmlComponent {
 
     constructor() {

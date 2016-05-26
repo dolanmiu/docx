@@ -9,7 +9,7 @@ export abstract class XmlAttributeComponent extends BaseXmlComponent {
         super("_attr");
         this.xmlKeys = xmlKeys;
 
-        this.root = properties
+        this.root = properties;
 
         if (!properties) {
             this.root = {};
@@ -19,7 +19,7 @@ export abstract class XmlAttributeComponent extends BaseXmlComponent {
     replaceKey(): void {
         if (this.root !== undefined) {
             _.forOwn(this.root, (value, key) => {
-                var newKey = this.xmlKeys[key];
+                let newKey = this.xmlKeys[key];
                 this.root[newKey] = value;
                 delete this.root[key];
             });

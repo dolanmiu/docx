@@ -98,9 +98,9 @@ export class Paragraph extends XmlComponent {
         this.properties.push(new MaxRightTabStop());
         return this;
     }
-    
+
     leftTabStop(position: number): Paragraph {
-        this.properties.push(new LeftTabStop(position))
+        this.properties.push(new LeftTabStop(position));
         return this;
     }
 

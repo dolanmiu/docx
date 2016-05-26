@@ -23,7 +23,7 @@ export class ParagraphStyle extends Style {
 
     constructor(styleId: string) {
 
-        var attributes = new StyleAttributes({
+        let attributes = new StyleAttributes({
             type: "paragraph",
             styleId: styleId
         });
@@ -111,7 +111,7 @@ export class Heading6Style extends HeadingStyle {
 }
 
 export class ListParagraph extends ParagraphStyle {
-    
+
     constructor() {
         super("ListParagraph");
         this.root.push(new Name("List Paragraph"));

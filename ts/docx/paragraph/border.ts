@@ -14,7 +14,7 @@ class Border extends XmlComponent {
 }
 
 export class ThematicBreak extends XmlComponent {
-    
+
     constructor() {
         super("w:pBdr");
         this.root.push(new Border());

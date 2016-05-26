@@ -54,8 +54,8 @@ export class DocumentAttributes extends XmlAttributeComponent {
             xsi: "xmlns:xsi",
             type: "xsi:type"
         }, properties);
-        
-        this.root = properties
+
+        this.root = properties;
 
         if (!properties) {
             this.root = {};

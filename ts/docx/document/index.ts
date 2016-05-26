@@ -1,5 +1,5 @@
 import {XmlComponent} from "../xml-components";
-import {DocumentAttributes} from "./document-attributes"
+import {DocumentAttributes} from "./document-attributes";
 import {Body} from "./body";
 import {Paragraph} from "../paragraph";
 
@@ -34,7 +34,7 @@ export class Document extends XmlComponent {
     addParagraph(paragraph: Paragraph): void {
         this.body.push(paragraph);
     }
-    
+
     clearVariables(): void {
         this.body.clearVariables();
         delete this.body;

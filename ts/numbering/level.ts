@@ -4,8 +4,8 @@ import {RunProperties} from "../docx/run/properties";
 import {ParagraphProperties} from "../docx/paragraph/properties";
 
 interface LevelAttributesProperties {
-    ilvl?: number,
-    tentative?: number
+    ilvl?: number;
+    tentative?: number;
 }
 
 class LevelAttributes extends XmlAttributeComponent {

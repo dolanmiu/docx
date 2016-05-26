@@ -4,12 +4,12 @@ import {Properties} from "../properties";
 import {assert} from "chai";
 
 function jsonify(obj: Object) {
-    var stringifiedJson = JSON.stringify(obj);
+    let stringifiedJson = JSON.stringify(obj);
     return JSON.parse(stringifiedJson);
 }
 
 describe("Properties", () => {
-    var properties: Properties;
+    let properties: Properties;
 
     beforeEach(() => {
 
@@ -20,8 +20,8 @@ describe("Properties", () => {
             properties = new Properties({
                 title: "test document"
             });
-            var newJson = jsonify(properties);
+            let newJson = jsonify(properties);
             assert(newJson.root[1].root === "test document");
         });
-    })
+    });
 });

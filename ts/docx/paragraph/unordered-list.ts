@@ -2,7 +2,7 @@ import {XmlComponent, Attributes} from "../xml-components";
 import {Style} from "./style";
 
 export class NumberProperties extends XmlComponent {
-    
+
     constructor() {
         super("w:numPr");
         this.root.push(new IndentLevel(0));

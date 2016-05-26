@@ -43,7 +43,7 @@ export class Description extends XmlUnitComponent {
 }
 
 export class LastModifiedBy extends XmlUnitComponent {
-    
+
     constructor(value: string) {
         super("cp:lastModifiedBy");
         this.root = value;
@@ -54,22 +54,22 @@ export class Revision extends XmlUnitComponent {
 
     constructor(value: string) {
         super("cp:revision");
-        var revision = value;
+        let revision = value;
         this.root = value;
     }
 }
 
 abstract class DateComponent extends XmlComponent {
     protected getCurrentDate(): any {
-        var date = new Date(),
+        let date = new Date(),
             year = date.getFullYear(),
-            month = ('0' + (date.getMonth() + 1)).slice(-2),
-            day = ('0' + date.getDate()).slice(-2),
-            hours = ('0' + date.getHours()).slice(-2),
-            minutes = ('0' + date.getMinutes()).slice(-2),
-            seconds = ('0' + date.getSeconds()).slice(-2);
+            month = ("0" + (date.getMonth() + 1)).slice(-2),
+            day = ("0" + date.getDate()).slice(-2),
+            hours = ("0" + date.getHours()).slice(-2),
+            minutes = ("0" + date.getMinutes()).slice(-2),
+            seconds = ("0" + date.getSeconds()).slice(-2);
 
-        return year + '-' + month + '-' + day + 'T' + hours + ':' + minutes + ':' + seconds + 'Z';
+        return year + "-" + month + "-" + day + "T" + hours + ":" + minutes + ":" + seconds + "Z";
     }
 }
 

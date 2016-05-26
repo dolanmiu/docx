@@ -2,10 +2,10 @@ import {XmlComponent} from "../../../docx/xml-components";
 
 interface LatentStyleExceptionAttributesProperties {
     name?: string;
-    uiPriority?: string,
-    qFormat?: string,
-    semiHidden?: string,
-    unhideWhenUsed?: string
+    uiPriority?: string;
+    qFormat?: string;
+    semiHidden?: string;
+    unhideWhenUsed?: string;
 }
 
 export class LatentStyleExceptionAttributes extends XmlComponent {
@@ -21,7 +21,7 @@ export class LatentStyleExceptionAttributes extends XmlComponent {
 
     constructor(properties?: LatentStyleExceptionAttributesProperties) {
         super("_attr");
-        this._attr = properties
+        this._attr = properties;
 
         if (!properties) {
             this._attr = {};

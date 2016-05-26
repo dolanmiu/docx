@@ -9,12 +9,12 @@ import {Columns} from "../docx/document/body/columns";
 import {DocumentGrid} from "../docx/document/body/doc-grid";
 
 function jsonify(obj: Object) {
-    var stringifiedJson = JSON.stringify(obj);
+    let stringifiedJson = JSON.stringify(obj);
     return JSON.parse(stringifiedJson);
 }
 
 describe("Body", () => {
-    var body: Body;
+    let body: Body;
 
     beforeEach(() => {
         body = new Body();
@@ -28,27 +28,27 @@ describe("Body", () => {
     describe("#constructor()", () => {
 
         it("should create the Section Properties", () => {
-            var newJson = jsonify(body);
+            let newJson = jsonify(body);
             assert.equal(newJson.root[0].rootKey, "w:sectPr");
         });
 
         it("should create the Page Size", () => {
-            var newJson = jsonify(body);
+            let newJson = jsonify(body);
             assert.equal(newJson.root[1].rootKey, "w:pgSz");
         });
 
         it("should create the Page Margin", () => {
-            var newJson = jsonify(body);
+            let newJson = jsonify(body);
             assert.equal(newJson.root[2].rootKey, "w:pgMar");
         });
 
         it("should create the Columns", () => {
-            var newJson = jsonify(body);
+            let newJson = jsonify(body);
             assert.equal(newJson.root[3].rootKey, "w:cols");
         });
 
         it("should create the Document Grid", () => {
-            var newJson = jsonify(body);
+            let newJson = jsonify(body);
             assert.equal(newJson.root[4].rootKey, "w:docGrid");
         });
     });

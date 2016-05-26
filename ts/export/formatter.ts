@@ -6,8 +6,8 @@ export class Formatter {
     format(input: any): Object {
         input.clearVariables();
         this.replaceKeys(input);
-        var newJson = this.clense(input);
-        //console.log(JSON.stringify(newJson, null, "  "));
+        let newJson = this.clense(input);
+        // console.log(JSON.stringify(newJson, null, "  "));
         return newJson;
     }
 
@@ -18,7 +18,7 @@ export class Formatter {
     }
 
     private clense(input: any): Object {
-        var newJson = this.jsonify(input);
+        let newJson = this.jsonify(input);
 
         this.deepTraverseJson(newJson, (parent, value, key) => {
             if (key === "properties") {
@@ -36,13 +36,13 @@ export class Formatter {
     }
 
     private jsonify(obj: Object): Object {
-        var stringifiedJson = JSON.stringify(obj);
+        let stringifiedJson = JSON.stringify(obj);
         return JSON.parse(stringifiedJson);
     }
 
     private deepTraverseJson(json: Object, lambda: (json: any, value: any, key: any) => void): void {
         _.forOwn(json, (value, key) => {
-            if (_.isObject(value) && key !== "xmlKeys" && key != "rootKey") {
+            if (_.isObject(value) && key !== "xmlKeys" && key !== "rootKey") {
                 this.deepTraverseJson(value, lambda);
             }
             lambda(json, value, key);

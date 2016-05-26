@@ -5,12 +5,12 @@ import {MultiLevelType} from "./multi-level-type";
 import * as _ from "lodash";
 
 interface AbstractNumberingAttributesProperties {
-    abstractNumId?: Number,
-    restartNumberingAfterBreak?: Number
+    abstractNumId?: number;
+    restartNumberingAfterBreak?: number;
 }
 
 class AbstractNumberingAttributes extends XmlAttributeComponent {
-    
+
     constructor(properties: AbstractNumberingAttributesProperties) {
         super({
             abstractNumId: "w:abstractNumId",
@@ -29,11 +29,11 @@ export class AbstractNumbering extends XmlComponent {
         }));
         this.root.push(new MultiLevelType("hybridMultilevel"));
     }
-    
+
     addLevel(level: Level): void {
         this.root.push(level);
     }
-    
+
     clearVariables() {
         _.forEach(this.root, element => {
             element.clearVariables();

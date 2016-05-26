@@ -7,7 +7,7 @@ import {Styles} from "../../styles";
 import {Properties} from "../../properties";
 import {Numbering} from "../../numbering";
 
-var appRoot = require('app-root-path');
+let appRoot = require("app-root-path");
 
 export abstract class Packer {
     protected archive: any;
@@ -16,7 +16,7 @@ export abstract class Packer {
     private style: Styles;
     private properties: Properties;
     private numbering: Numbering;
-    
+
     constructor(document: Document, style: any, properties: Properties, numbering: Numbering) {
         this.formatter = new Formatter();
         this.document = document;
@@ -25,7 +25,7 @@ export abstract class Packer {
         this.numbering = numbering;
         this.archive = archiver.create("zip", {});
 
-        this.archive.on('error', (err) => {
+        this.archive.on("error", (err) => {
             throw err;
         });
     }
@@ -37,39 +37,39 @@ export abstract class Packer {
             {
                 expand: true,
                 cwd: appRoot.path + "/template",
-                src: ['**', '**/.rels']
+                src: ["**", "**/.rels"]
             }
         ]);
 
-        //this.archive.file(appRoot.path + "/template/[Content_Types].xml", { name: "[Content_Types].xml" });
-        //console.log(__dirname + "/packer.js");
-        //this.archive.file(__dirname + "/packer.js", { name: "/[Content_Types].xml" });
+        // this.archive.file(appRoot.path + "/template/[Content_Types].xml", { name: "[Content_Types].xml" });
+        // console.log(__dirname + "/packer.js");
+        // this.archive.file(__dirname + "/packer.js", { name: "/[Content_Types].xml" });
 
         /*this.archive.directory(appRoot.path + "/template", {
             name: "/root/g.txt",
             prefix: "root"
         });*/
-        var xmlDocument = xml(this.formatter.format(this.document));
-        var xmlStyles = xml(this.formatter.format(this.style));
-        var xmlProperties = xml(this.formatter.format(this.properties), { declaration: { standalone: 'yes', encoding: 'UTF-8' } });
-        var xmlNumbering = xml(this.formatter.format(this.numbering));
-        //console.log(JSON.stringify(this.numbering, null, " "));
-        console.log(xmlNumbering);        
+        let xmlDocument = xml(this.formatter.format(this.document));
+        let xmlStyles = xml(this.formatter.format(this.style));
+        let xmlProperties = xml(this.formatter.format(this.properties), { declaration: { standalone: "yes", encoding: "UTF-8" } });
+        let xmlNumbering = xml(this.formatter.format(this.numbering));
+        // console.log(JSON.stringify(this.numbering, null, " "));
+        console.log(xmlNumbering);
         this.archive.append(xmlDocument, {
-            name: 'word/document.xml'
+            name: "word/document.xml"
         });
 
         this.archive.append(xmlStyles, {
-            name: 'word/styles.xml'
+            name: "word/styles.xml"
         });
 
         this.archive.append(xmlProperties, {
-            name: 'docProps/core.xml'
+            name: "docProps/core.xml"
         });
-        
+
         this.archive.append(xmlNumbering, {
-            name: 'word/numbering.xml'
-        })
+            name: "word/numbering.xml"
+        });
 
         this.archive.finalize();
     }

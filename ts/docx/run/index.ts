@@ -4,7 +4,7 @@ import {Bold, Italics, Underline} from "./formatting";
 
 export class Run extends XmlComponent {
     private properties: RunProperties;
-    
+
 
     constructor() {
         super("w:r");
@@ -26,12 +26,12 @@ export class Run extends XmlComponent {
         this.properties.push(new Underline());
         return this;
     }
-    
+
     break(): Run {
         // TODO
         return this;
     }
-    
+
     tab(): Run {
         // TODO
         return this;

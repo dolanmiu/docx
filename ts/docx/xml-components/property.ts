@@ -1,4 +1,4 @@
-import {XmlComponent} from "./"
+import {XmlComponent} from "./";
 import {ParagraphProperties} from "../paragraph/properties";
 import {RunProperties} from "../run/properties";
 
@@ -42,7 +42,7 @@ export class MultiPropertyXmlComponent extends XmlComponent {
         super(rootKey);
         this.runProperties = new RunProperties();
         this.root.push(this.runProperties);
-        
+
         this.paragraphProperties = new ParagraphProperties();
         this.root.push(this.paragraphProperties);
     }
