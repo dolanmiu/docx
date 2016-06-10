@@ -43,7 +43,8 @@ export class Attributes extends XmlAttributeComponent {
             header: "w:header",
             footer: "w:footer",
             gutter: "w:gutter",
-            linePitch: "w:linePitch"
+            linePitch: "w:linePitch",
+            pos: "w:pos"
         }, properties);
     }
 }

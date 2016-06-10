@@ -21,7 +21,7 @@ class Tab extends XmlComponent {
 
 export class MaxRightTabStop extends TabStop {
     constructor() {
-        super(new Tab("right", "RIGHT_MARGIN"));
+        super(new Tab("right", 9026));
     }
 }
 
