@@ -6,7 +6,7 @@
   "scripts": {
     "pretest": "tsc ts/tests/*Test.ts --module commonjs --outDir ./build/tests",
     "test": "./node_modules/.bin/mocha ./build/tests/**/*Test.js",
-    "prepublish": "tsc --rootDir='/ts'"
+    "prepublish": "tsc -p ts"
   },
   "repository": {
     "type": "git",
