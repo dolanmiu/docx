@@ -6,7 +6,7 @@
   "scripts": {
     "pretest": "tsc ts/tests/*Test.ts --module commonjs --outDir ./build/tests",
     "test": "./node_modules/.bin/mocha ./build/tests/**/*Test.js",
-    "prepublish": "tsc ts/"
+    "prepublish": "tsc --rootDir='/ts'"
   },
   "repository": {
     "type": "git",
@@ -35,6 +35,7 @@
   "homepage": "https://github.com/dolanmiu/docx#readme",
   "devDependencies": {
     "chai": "^3.5.0",
-    "mocha": "^2.4.5"
+    "mocha": "^2.4.5",
+    "typescript": "^1.8.10"
   }
 }
