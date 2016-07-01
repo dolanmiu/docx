@@ -4,7 +4,7 @@
   "description": "Generate .docx documents with JavaScript (formerly Office-Clippy)",
   "main": "build/index.js",
   "scripts": {
-    "pretest": "tsc -p ts/tests",
+    "pretest": "rimraf ./build/tests && tsc -p ts/tests",
     "test": "mocha ./build/tests/**/*.*",
     "prepublish": "tsc -p ts"
   },
@@ -36,6 +36,7 @@
   "devDependencies": {
     "chai": "^3.5.0",
     "mocha": "^2.4.5",
+    "rimraf": "^2.5.2",
     "typescript": "^1.8.10"
   }
 }
