@@ -1,7 +1,8 @@
-/// <reference path="../typings/mocha/mocha.d.ts" />
-/// <reference path="../typings/chai/chai.d.ts" />
-import {Run} from "../docx/run";
-import {TextRun} from "../docx//run/text-run";
+/// <reference path="../../../typings/mocha/mocha.d.ts" />
+/// <reference path="../../../typings/chai/chai.d.ts" />
+
+import {Run} from "../../../docx/run";
+import {TextRun} from "../../../docx/run/text-run";
 import {assert} from "chai";
 
 function jsonify(obj: Object) {

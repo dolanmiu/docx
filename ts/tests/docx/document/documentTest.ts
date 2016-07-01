@@ -1,6 +1,7 @@
-/// <reference path="../typings/mocha/mocha.d.ts" />
-/// <reference path="../typings/chai/chai.d.ts" />
-import * as docx from "../docx";
+/// <reference path="../../../typings/mocha/mocha.d.ts" />
+/// <reference path="../../../typings/chai/chai.d.ts" />
+
+import * as docx from "../../../docx";
 import {assert} from "chai";
 
 describe("Document", () => {

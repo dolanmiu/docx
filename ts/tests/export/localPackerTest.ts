@@ -1,17 +1,17 @@
-/// <reference path="../typings/mocha/mocha.d.ts" />
-/// <reference path="../typings/chai/chai.d.ts" />
-/// <reference path="../typings/archiver/archiver.d.ts" />
-/// <reference path="../typings/xml/xml.d.ts" />
+/// <reference path="../../typings/mocha/mocha.d.ts" />
+/// <reference path="../../typings/chai/chai.d.ts" />
+/// <reference path="../../typings/archiver/archiver.d.ts" />
+/// <reference path="../../typings/xml/xml.d.ts" />
 
-import {LocalPacker} from "../export/packer/local";
+import {LocalPacker} from "../../export/packer/local";
 import {assert} from "chai";
-import {Document} from "../docx/document";
-import {Properties} from "../properties";
-import {DefaultStyle} from "../styles/sample";
-import {Paragraph} from "../docx/paragraph";
-import {DefaultStylesFactory} from "../styles/factory";
+import {Document} from "../../docx/document";
+import {Properties} from "../../properties";
+import {DefaultStyle} from "../../styles/sample";
+import {Paragraph} from "../../docx/paragraph";
+import {DefaultStylesFactory} from "../../styles/factory";
 
-describe.only("Packer", () => {
+describe("Packer", () => {
     let packer: LocalPacker;
     let stylesFactory: DefaultStylesFactory;
 
@@ -34,8 +34,8 @@ describe.only("Packer", () => {
     });
 
     describe("#pack()", () => {
-
-        it("should create a standard docx file", (done) => {
+        it("should create a standard docx file", function (done) {
+            this.timeout(99999999);
             packer.pack();
             setTimeout(done, 1900);
         });

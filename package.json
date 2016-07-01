@@ -5,7 +5,7 @@
   "main": "build/index.js",
   "scripts": {
     "pretest": "tsc -p ts/tests",
-    "test": "./node_modules/.bin/mocha ./build/tests/**/*Test.js",
+    "test": "mocha ./build/tests/**/*.*",
     "prepublish": "tsc -p ts"
   },
   "repository": {

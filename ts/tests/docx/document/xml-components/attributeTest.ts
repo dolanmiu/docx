@@ -1,6 +1,7 @@
-/// <reference path="../typings/mocha/mocha.d.ts" />
-/// <reference path="../typings/chai/chai.d.ts" />
-import {Attributes} from "../docx/xml-components";
+/// <reference path="../../../../typings/mocha/mocha.d.ts" />
+/// <reference path="../../../../typings/chai/chai.d.ts" />
+
+import {Attributes} from "../../../../docx/xml-components";
 import {assert} from "chai";
 
 describe("Attribute", () => {

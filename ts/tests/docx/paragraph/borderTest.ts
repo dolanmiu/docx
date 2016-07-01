@@ -1,6 +1,7 @@
-/// <reference path="../typings/mocha/mocha.d.ts" />
-/// <reference path="../typings/chai/chai.d.ts" />
-import {ThematicBreak} from "../docx/paragraph/border";
+/// <reference path="../../../typings/mocha/mocha.d.ts" />
+/// <reference path="../../../typings/chai/chai.d.ts" />
+
+import {ThematicBreak} from "../../../docx/paragraph/border";
 import {assert} from "chai";
 
 function jsonify(obj: Object) {

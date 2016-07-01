@@ -1,6 +1,7 @@
-/// <reference path="../typings/mocha/mocha.d.ts" />
-/// <reference path="../typings/chai/chai.d.ts" />
-import {Style} from "../docx/paragraph/style";
+/// <reference path="../../../typings/mocha/mocha.d.ts" />
+/// <reference path="../../../typings/chai/chai.d.ts" />
+
+import {Style} from "../../../docx/paragraph/style";
 import {assert} from "chai";
 
 function jsonify(obj: Object) {
