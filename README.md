@@ -294,7 +294,7 @@ The example above will create a left aligned text, and a right aligned text on t
 var paragraph = new docx.Paragraph();
 paragraph.maxRightTabStop();
 paragraph.leftTabStop(1000);
-var text = docx.createText("Second tab stop here I come!").tab().tab();
+var text = new docx.TextRun("Second tab stop here I come!").tab().tab();
 paragraph.addText(text);
 ```
 The above shows the use of two tab stops, and how to select/use it.
