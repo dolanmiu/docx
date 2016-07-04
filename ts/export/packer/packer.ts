@@ -28,11 +28,11 @@ export abstract class Packer {
 
         if (!style) {
             let stylesFactory = new DefaultStylesFactory();
-            style = stylesFactory.newInstance();
+            this.style = stylesFactory.newInstance();
         }
 
         if (!properties) {
-            properties = new Properties({
+            this.properties = new Properties({
                 creator: "Shan Fu",
                 revision: "1",
                 lastModifiedBy: "Shan Fu"
@@ -40,7 +40,7 @@ export abstract class Packer {
         }
 
         if (!numbering) {
-            numbering = new Numbering();
+            this.numbering = new Numbering();
         }
 
         this.archive.on("error", (err) => {

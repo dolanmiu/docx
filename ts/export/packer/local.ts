@@ -14,6 +14,6 @@ export class LocalPacker extends Packer {
     pack(path: string): void {
         this.stream = fs.createWriteStream(path);
         super.pack(this.stream);
-        this.stream.close();
+        //this.stream.close();
     }
 }

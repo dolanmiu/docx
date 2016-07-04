@@ -30,7 +30,6 @@ describe("Packer", () => {
         });
         stylesFactory = new DefaultStylesFactory();
         packer = new LocalPacker(document, stylesFactory.newInstance(), properties);
-        // packer = new LocalPacker(document, DefaultStyle(), properties, "build/tests/test.docx");
     });
 
     describe("#pack()", () => {
