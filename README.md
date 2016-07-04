@@ -308,7 +308,7 @@ var docx = require('docx');
 
 var doc = new docx.Document();
 var exporter = new docx.ExpressPacker(doc, res);
-exporter.pack('Dolan Miu\'s Document');
+exporter.pack('My Document');
 ```
 where `res` is the response object obtained through the Express router. It is that simple. The file will begin downloading in the browser.
 
@@ -328,38 +328,37 @@ I used this library in my personal portfolio/CV website. Click generate CV for a
 ## General
 #### Simple paragraph
 ```js
-var doc = docx.create();
-var output = fs.createWriteStream(__dirname + '\\example.docx');
+var doc = new docx.Document();
 
-var paragraph = docx.createParagraph("Hello World");
-var institutionText = docx.createText("University College London").bold(),
-var dateText = docx.createText("5th Dec 2015").tab().bold();
+var paragraph = new docx.Paragraph("Hello World");
+var institutionText = new docx.TextRun("University College London").bold(),
+var dateText = new docx.TextRun("5th Dec 2015").tab().bold();
 paragraph.addText(institutionText);
 paragraph.addText(dateText);
 
 doc.addParagraph(paragraph);
-exporter.local(output, doc);
+var exporter = new docx.LocalPacker(doc);
+exporter.pack('My Document');
 ```
 
 Or:
 ```js
-var doc = docx.create();
-var output = fs.createWriteStream(__dirname + '\\example.docx');
+var doc = new docx.Document();
 
-var paragraph = docx.createParagraph("Hello World");
-var institutionText = docx.createText("University College London").bold(),
-var dateText = docx.createText("5th Dec 2015").tab().bold();
+var paragraph = new docx.Paragraph("Hello World");
+var institutionText = new docx.TextRun("University College London").bold(),
+var dateText = new docx.TextRun("5th Dec 2015").tab().bold();
 paragraph.addText(institutionText);
 paragraph.addText(dateText);
 
-doc.addParagraph(paragraph);
-exporter.local(output, doc);
+var exporter = new docx.ExpressPacker(doc, res);
+exporter.pack('My Document');
 ```
 Would produce:
 
-***Hello World***
+***University College London***
 
-***Lorem Ipsum foo bar***
+***5th Dec 2015***
 
 # License
 
