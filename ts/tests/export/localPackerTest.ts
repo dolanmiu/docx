@@ -29,14 +29,14 @@ describe("Packer", () => {
             lastModifiedBy: "Shan Fu"
         });
         stylesFactory = new DefaultStylesFactory();
-        packer = new LocalPacker(document, stylesFactory.newInstance(), properties, "build/tests/test.docx");
+        packer = new LocalPacker(document, stylesFactory.newInstance(), properties);
         // packer = new LocalPacker(document, DefaultStyle(), properties, "build/tests/test.docx");
     });
 
     describe("#pack()", () => {
         it("should create a standard docx file", function (done) {
             this.timeout(99999999);
-            packer.pack();
+            packer.pack("build/tests/test.docx");
             setTimeout(done, 1900);
         });
     });

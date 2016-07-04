@@ -6,6 +6,7 @@ import {Document} from "../../docx";
 import {Styles} from "../../styles";
 import {Properties} from "../../properties";
 import {Numbering} from "../../numbering";
+import {DefaultStylesFactory} from "../../styles/factory";
 
 let appRoot = require("app-root-path");
 
@@ -17,13 +18,30 @@ export abstract class Packer {
     private properties: Properties;
     private numbering: Numbering;
 
-    constructor(document: Document, style: any, properties: Properties, numbering: Numbering) {
+    constructor(document: Document, style?: any, properties?: Properties, numbering?: Numbering) {
         this.formatter = new Formatter();
         this.document = document;
         this.style = style;
         this.properties = properties;
         this.numbering = numbering;
         this.archive = archiver.create("zip", {});
+
+        if (!style) {
+            let stylesFactory = new DefaultStylesFactory();
+            style = stylesFactory.newInstance();
+        }
+
+        if (!properties) {
+            properties = new Properties({
+                creator: "Shan Fu",
+                revision: "1",
+                lastModifiedBy: "Shan Fu"
+            });
+        }
+
+        if (!numbering) {
+            numbering = new Numbering();
+        }
 
         this.archive.on("error", (err) => {
             throw err;

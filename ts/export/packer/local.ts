@@ -7,17 +7,13 @@ import {Numbering} from "../../numbering";
 export class LocalPacker extends Packer {
     private stream: fs.WriteStream;
 
-    constructor(document: Document, style: any, properties: Properties, path: string, numbering?: Numbering) {
-
-        if (!numbering) {
-            numbering = new Numbering();
-        }
-
-        super(document, style, properties, numbering);
-        this.stream = fs.createWriteStream(path);
+    constructor(document: Document, styles?: any, properties?: Properties, numbering?: Numbering) {
+        super(document, styles, properties, numbering);
     }
 
-    pack(): void {
+    pack(path: string): void {
+        this.stream = fs.createWriteStream(path);
         super.pack(this.stream);
+        this.stream.close();
     }
 }
