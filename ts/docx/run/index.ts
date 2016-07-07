@@ -2,6 +2,7 @@ import {XmlComponent, Attributes} from "../xml-components";
 import {RunProperties} from "./properties";
 import {Bold, Italics, Underline} from "./formatting";
 import {Tab} from "./tab";
+import {Break} from "./break";
 
 export class Run extends XmlComponent {
     private properties: RunProperties;
@@ -29,7 +30,7 @@ export class Run extends XmlComponent {
     }
 
     break(): Run {
-        // TODO
+        this.root.splice(1, 0, new Break());
         return this;
     }
 
