@@ -20,17 +20,6 @@ export class Italics extends XmlComponent {
     }
 }
 
-// TODO needs work. add more types of underline
-export class Underline extends XmlComponent {
-
-    constructor() {
-        super("w:u");
-        this.root.push(new Attributes({
-            val: true
-        }));
-    }
-}
-
 export class Caps extends XmlComponent {
 
     constructor() {

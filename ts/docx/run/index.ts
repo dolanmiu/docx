@@ -1,11 +1,12 @@
 import {XmlComponent, Attributes} from "../xml-components";
 import {RunProperties} from "./properties";
-import {Bold, Italics, Underline} from "./formatting";
+import {Bold, Italics} from "./formatting";
 import {Tab} from "./tab";
 import {Break} from "./break";
 import {SmallCaps, Caps} from "./caps";
 import {Strike, DoubleStrike} from "./strike";
 import {SubScript, SuperScript} from "./script";
+import {Underline} from "./underline"
 
 export class Run extends XmlComponent {
     private properties: RunProperties;
