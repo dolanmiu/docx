@@ -120,14 +120,3 @@ export class Size extends XmlComponent {
         }));
     }
 }
-
-// TODO needs work. Add more types of vertical align
-export class VerticalAlign extends XmlComponent {
-
-    constructor() {
-        super("w:vertAlign");
-        this.root.push(new Attributes({
-            val: "superscript"
-        }));
-    }
-}
