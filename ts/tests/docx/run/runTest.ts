@@ -10,7 +10,7 @@ function jsonify(obj: Object) {
     return JSON.parse(stringifiedJson);
 }
 
-describe("Run", () => {
+describe.only("Run", () => {
     let run: Run;
 
     beforeEach(() => {
@@ -40,17 +40,54 @@ describe("Run", () => {
             assert.equal(newJson.root[0].root[0].rootKey, "w:u");
         });
     });
-});
 
-describe("TextRun", () => {
-    let run: TextRun;
-
-    describe("#constructor()", () => {
-
-        it("should add text into run", () => {
-            run = new TextRun("test");
+    describe("#smallCaps()", () => {
+        it("it should add smallCaps to the properties", () => {
+            run.smallCaps();
             let newJson = jsonify(run);
-            assert.equal(newJson.root[1].root, "test");
+            assert.equal(newJson.root[0].root[0].rootKey, "w:smallCaps");
+        });
+    });
+
+    describe("#caps()", () => {
+        it("it should add caps to the properties", () => {
+            run.allCaps();
+            let newJson = jsonify(run);
+            assert.equal(newJson.root[0].root[0].rootKey, "w:caps");
+        });
+    });
+
+    describe("#strike()", () => {
+        it("it should add strike to the properties", () => {
+            run.strike();
+            let newJson = jsonify(run);
+            assert.equal(newJson.root[0].root[0].rootKey, "w:strike");
+        });
+    });
+
+    describe("#doubleStrike()", () => {
+        it("it should add caps to the properties", () => {
+            run.doubleStrike();
+            let newJson = jsonify(run);
+            assert.equal(newJson.root[0].root[0].rootKey, "w:dstrike");
+        });
+    });
+
+    describe("#break()", () => {
+        it("it should add break to the run", () => {
+            let run = new Run();
+            run.break();
+            let newJson = jsonify(run);
+            assert.equal(newJson.root[1].rootKey, "w:br");
+        });
+    });
+
+    describe("#tab()", () => {
+        it("it should add break to the run", () => {
+            let run = new Run();
+            run.tab();
+            let newJson = jsonify(run);
+            assert.equal(newJson.root[1].rootKey, "w:tab");
         });
     });
 });
