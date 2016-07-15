@@ -19,7 +19,7 @@ describe("Underline", () => {
     });
 });
 
-describe.only("DashDotDotHeavyUnderline", () => {
+describe("DashDotDotHeavyUnderline", () => {
 
     describe("#constructor()", () => {
         it("should have u:u as the rootKey", () => {
@@ -36,7 +36,7 @@ describe.only("DashDotDotHeavyUnderline", () => {
     });
 });
 
-describe.only("DashDotDotHeavyUnderline", () => {
+describe("DashDotDotHeavyUnderline", () => {
 
     describe("#constructor()", () => {
         it("should put value in attribute", () => {
@@ -47,7 +47,7 @@ describe.only("DashDotDotHeavyUnderline", () => {
     });
 });
 
-describe.only("DashDotDotHeavyUnderline", () => {
+describe("DashDotDotHeavyUnderline", () => {
 
     describe("#constructor()", () => {
         it("should put value in attribute", () => {
@@ -58,7 +58,7 @@ describe.only("DashDotDotHeavyUnderline", () => {
     });
 });
 
-describe.only("DashDotDotHeavyUnderline", () => {
+describe("DashDotDotHeavyUnderline", () => {
 
     describe("#constructor()", () => {
         it("should put value in attribute", () => {
@@ -69,7 +69,7 @@ describe.only("DashDotDotHeavyUnderline", () => {
     });
 });
 
-describe.only("DashDotDotHeavyUnderline", () => {
+describe("DashDotDotHeavyUnderline", () => {
 
     describe("#constructor()", () => {
         it("should put value in attribute", () => {
@@ -80,7 +80,7 @@ describe.only("DashDotDotHeavyUnderline", () => {
     });
 });
 
-describe.only("DashDotDotHeavyUnderline", () => {
+describe("DashDotDotHeavyUnderline", () => {
 
     describe("#constructor()", () => {
         it("should put value in attribute", () => {
@@ -91,7 +91,7 @@ describe.only("DashDotDotHeavyUnderline", () => {
     });
 });
 
-describe.only("DashDotDotHeavyUnderline", () => {
+describe("DashDotDotHeavyUnderline", () => {
 
     describe("#constructor()", () => {
         it("should put value in attribute", () => {
@@ -102,7 +102,7 @@ describe.only("DashDotDotHeavyUnderline", () => {
     });
 });
 
-describe.only("DashDotDotHeavyUnderline", () => {
+describe("DashDotDotHeavyUnderline", () => {
 
     describe("#constructor()", () => {
         it("should put value in attribute", () => {
@@ -113,7 +113,7 @@ describe.only("DashDotDotHeavyUnderline", () => {
     });
 });
 
-describe.only("DashDotDotHeavyUnderline", () => {
+describe("DashDotDotHeavyUnderline", () => {
 
     describe("#constructor()", () => {
         it("should put value in attribute", () => {
@@ -124,7 +124,7 @@ describe.only("DashDotDotHeavyUnderline", () => {
     });
 });
 
-describe.only("DashDotDotHeavyUnderline", () => {
+describe("DashDotDotHeavyUnderline", () => {
 
     describe("#constructor()", () => {
         it("should put value in attribute", () => {
@@ -135,7 +135,7 @@ describe.only("DashDotDotHeavyUnderline", () => {
     });
 });
 
-describe.only("DashDotDotHeavyUnderline", () => {
+describe("DashDotDotHeavyUnderline", () => {
 
     describe("#constructor()", () => {
         it("should put value in attribute", () => {
@@ -146,7 +146,7 @@ describe.only("DashDotDotHeavyUnderline", () => {
     });
 });
 
-describe.only("DashDotDotHeavyUnderline", () => {
+describe("DashDotDotHeavyUnderline", () => {
 
     describe("#constructor()", () => {
         it("should put value in attribute", () => {
@@ -157,7 +157,7 @@ describe.only("DashDotDotHeavyUnderline", () => {
     });
 });
 
-describe.only("DashDotDotHeavyUnderline", () => {
+describe("DashDotDotHeavyUnderline", () => {
 
     describe("#constructor()", () => {
         it("should put value in attribute", () => {
@@ -168,7 +168,7 @@ describe.only("DashDotDotHeavyUnderline", () => {
     });
 });
 
-describe.only("DashDotDotHeavyUnderline", () => {
+describe("DashDotDotHeavyUnderline", () => {
 
     describe("#constructor()", () => {
         it("should put value in attribute", () => {
@@ -179,7 +179,7 @@ describe.only("DashDotDotHeavyUnderline", () => {
     });
 });
 
-describe.only("DashDotDotHeavyUnderline", () => {
+describe("DashDotDotHeavyUnderline", () => {
 
     describe("#constructor()", () => {
         it("should put value in attribute", () => {
@@ -190,7 +190,7 @@ describe.only("DashDotDotHeavyUnderline", () => {
     });
 });
 
-describe.only("DashDotDotHeavyUnderline", () => {
+describe("DashDotDotHeavyUnderline", () => {
 
     describe("#constructor()", () => {
         it("should put value in attribute", () => {
