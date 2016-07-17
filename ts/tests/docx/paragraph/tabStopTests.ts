@@ -34,7 +34,7 @@ describe("RightTabStop", () => {
 
 });
 
-describe.only("MaxRightTabStop", () => {
+describe("MaxRightTabStop", () => {
     let tabStop: MaxRightTabStop;
 
     beforeEach(() => {
