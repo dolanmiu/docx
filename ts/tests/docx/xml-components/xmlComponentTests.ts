@@ -10,7 +10,7 @@ class TestComponent extends XmlComponent {
 
 }
 
-describe.only("XmlComponent", () => {
+describe("XmlComponent", () => {
     let xmlComponent: TestComponent;
 
     beforeEach(() => {
