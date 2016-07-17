@@ -10,7 +10,7 @@ export class NumberProperties extends XmlComponent {
     }
 }
 
-export class IndentLevel extends XmlComponent {
+class IndentLevel extends XmlComponent {
 
     constructor(level: number) {
         super("w:ilvl");
@@ -20,7 +20,7 @@ export class IndentLevel extends XmlComponent {
     }
 }
 
-export class NumberId extends XmlComponent {
+class NumberId extends XmlComponent {
     constructor(id: number) {
         super("w:numId");
         this.root.push(new Attributes({
