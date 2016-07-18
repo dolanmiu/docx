@@ -14,7 +14,7 @@ describe("PageBreak", () => {
     });
 
     describe("#constructor()", () => {
-        it("should create a Tab Stop with correct attributes", () => {
+        it("should create a Page Break with correct attributes", () => {
             let newJson = jsonify(pageBreak);
             let attributes = {
                 type: "page"

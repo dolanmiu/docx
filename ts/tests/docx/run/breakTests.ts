@@ -6,7 +6,7 @@ function jsonify(obj: Object) {
     return JSON.parse(stringifiedJson);
 }
 
-describe.only("Break", () => {
+describe("Break", () => {
     let currentBreak: Break;
 
     beforeEach(() => {

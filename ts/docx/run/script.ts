@@ -5,7 +5,7 @@ abstract class VerticalAlign extends XmlComponent {
     constructor(type: string) {
         super("w:vertAlign");
         this.root.push(new Attributes({
-            val: "superscript"
+            val: type
         }));
     }
 }
