@@ -373,6 +373,6 @@ THE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 [npm-image]: https://badge.fury.io/js/office-clippy.svg
 [npm-url]: https://npmjs.org/package/office-clippy
 [travis-image]: https://travis-ci.org/dolanmiu/office-clippy.svg?branch=master
-[travis-url]: https://travis-ci.org/dolanmiu/office-clippy
+[travis-url]: https://travis-ci.org/dolanmiu/docx
 [daviddm-image]: https://david-dm.org/dolanmiu/office-clippy.svg?theme=shields.io
 [daviddm-url]: https://david-dm.org/dolanmiu/office-clippy
