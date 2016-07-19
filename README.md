@@ -2,7 +2,7 @@
 
 > A tool to create Word Documents (.docx) with JS
 
-[![NPM](https://nodei.co/npm/office-clippy.png?downloads=true&downloadRank=true&stars=true)](https://nodei.co/npm/office-clippy/)
+[![NPM](https://nodei.co/npm/docx.png?downloads=true&downloadRank=true&stars=true)](https://nodei.co/npm/docx/)
 
 ![Clippy in Microsoft Office](http://i60.tinypic.com/339pvtt.png "Clippy in Microsoft Office")
 
@@ -47,7 +47,7 @@ $ npm install --save docx
 # Usage
 
 ```js
-var officeClippy = require('office-clippy');
+var officeClippy = require('docx');
 
 // Used to create docx files
 var docx = require('docx');
@@ -370,9 +370,9 @@ The above copyright notice and this permission notice shall be included in all c
 
 THE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-[npm-image]: https://badge.fury.io/js/office-clippy.svg
-[npm-url]: https://npmjs.org/package/office-clippy
-[travis-image]: https://travis-ci.org/dolanmiu/office-clippy.svg?branch=master
+[npm-image]: https://badge.fury.io/js/docx.svg
+[npm-url]: https://npmjs.org/package/docx
+[travis-image]: https://travis-ci.org/dolanmiu/docx.svg?branch=master
 [travis-url]: https://travis-ci.org/dolanmiu/docx
-[daviddm-image]: https://david-dm.org/dolanmiu/office-clippy.svg?theme=shields.io
-[daviddm-url]: https://david-dm.org/dolanmiu/office-clippy
+[daviddm-image]: https://david-dm.org/dolanmiu/docx.svg?theme=shields.io
+[daviddm-url]: https://david-dm.org/dolanmiu/docx

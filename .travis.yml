@@ -6,3 +6,5 @@ install:
   - npm install
 script:
   - npm test
+after_failure: 
+  - "cat /home/travis/builds/dolanmiu/docx/npm-debug.log"
