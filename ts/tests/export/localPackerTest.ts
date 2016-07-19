@@ -24,9 +24,9 @@ describe("Packer", () => {
         document.addParagraph(new Paragraph("heading 2").heading2());
         document.addParagraph(paragraph);
         let properties = new Properties({
-            creator: "Shan Fu",
+            creator: "Dolan Miu",
             revision: "1",
-            lastModifiedBy: "Shan Fu"
+            lastModifiedBy: "Dolan Miu"
         });
         stylesFactory = new DefaultStylesFactory();
         packer = new LocalPacker(document, stylesFactory.newInstance(), properties);
