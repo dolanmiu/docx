@@ -33,9 +33,9 @@ export abstract class Packer {
 
         if (!properties) {
             this.properties = new Properties({
-                creator: "Shan Fu",
+                creator: "Un-named",
                 revision: "1",
-                lastModifiedBy: "Shan Fu"
+                lastModifiedBy: "Un-named"
             });
         }
 
