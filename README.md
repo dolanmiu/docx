@@ -10,8 +10,6 @@
 [![NPM version][npm-image]][npm-url] [![Build Status][travis-image]][travis-url] [![Dependency Status][daviddm-image]][daviddm-url]
 
 # docx
-> A simple embeddable color picker component for Angular2 following best Angular2 practices, and good coding standards for easy use and easy contribution.
-
 > A tool to create Word Documents (.docx) with JS or TS, written in TS.
 
 [![NPM](https://nodei.co/npm/docx.png?downloads=true&downloadRank=true&stars=true)](https://nodei.co/npm/docx/)
