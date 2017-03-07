@@ -35,8 +35,8 @@
   "homepage": "https://github.com/dolanmiu/docx#readme",
   "devDependencies": {
     "chai": "^3.5.0",
-    "mocha": "^2.4.5",
+    "mocha": "^3.2.0",
     "rimraf": "^2.5.2",
-    "typescript": "^1.8.10"
+    "typescript": "^2.2.1"
   }
 }
