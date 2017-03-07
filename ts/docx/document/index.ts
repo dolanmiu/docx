@@ -1,7 +1,9 @@
 import { Paragraph } from "../paragraph";
+import { Table } from "../table";
 import { XmlComponent } from "../xml-components";
 import { Body } from "./body";
 import { DocumentAttributes } from "./document-attributes";
+
 export class Document extends XmlComponent {
     private body: Body;
 
@@ -38,5 +40,9 @@ export class Document extends XmlComponent {
         const para = new Paragraph(text);
         this.addParagraph(para);
         return para;
+    }
+
+    public addTable(table: Table): void {
+        this.body.push(table);
     }
 }
