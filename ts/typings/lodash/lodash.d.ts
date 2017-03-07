@@ -19169,4 +19169,4 @@ declare module "lodash" {
 interface Set<T> {}
 interface Map<K, V> {}
 interface WeakSet<T> {}
-interface WeakMap<K, V> {}
+// interface WeakMap<K, V> {}
