@@ -31,9 +31,6 @@
     "npm": "^4.3.0",
     "xml": "^1.0.1"
   },
-  "typescript": {
-    "definition": "ts/typings/index.d.ts"
-  },
   "author": "Dolan Miu",
   "license": "MIT",
   "bugs": {
