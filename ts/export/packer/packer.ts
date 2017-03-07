@@ -51,13 +51,15 @@ export abstract class Packer {
     pack(output: any): void {
         this.archive.pipe(output);
         console.log(appRoot.path + "/template");
-        this.archive.bulk([
-            {
-                expand: true,
-                cwd: appRoot.path + "/template",
-                src: ["**", "**/.rels"]
-            }
-        ]);
+        this.archive.glob("**", {
+            expand: true,
+            cwd: appRoot.path + "/template",
+        });
+
+        this.archive.glob("**/.rels", {
+            expand: true,
+            cwd: appRoot.path + "/template",
+        });
 
         // this.archive.file(appRoot.path + "/template/[Content_Types].xml", { name: "[Content_Types].xml" });
         // console.log(__dirname + "/packer.js");

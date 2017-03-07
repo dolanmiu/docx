@@ -34,6 +34,7 @@ node_modules
 
 # build
 build
+build-tests
 
 # vscode
 ts/.vscode
