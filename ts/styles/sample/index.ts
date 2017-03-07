@@ -1,3 +1,4 @@
+/* tslint:disable */
 function createLsdException(name, uiPriority, qFormat?, semiHidden?, unhideWhenUsed?) {
     'use strict';
 
