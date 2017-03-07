@@ -3,6 +3,7 @@
 /// <reference path="../../typings/archiver/archiver.d.ts" />
 /// <reference path="../../typings/xml/xml.d.ts" />
 
+import * as fs from "fs";
 import {LocalPacker} from "../../export/packer/local";
 import {assert} from "chai";
 import {Document} from "../../docx/document";
@@ -35,8 +36,23 @@ describe("Packer", () => {
     describe("#pack()", () => {
         it("should create a standard docx file", function (done) {
             this.timeout(99999999);
-            packer.pack("build/tests/test.docx");
-            setTimeout(done, 1900);
+            packer.pack("build-tests/tests/test.docx");
+            let int = setInterval(() => {
+                const stats = fs.statSync("build-tests/tests/test.docx");
+                if (stats.size > 2000) {
+                    clearInterval(int);
+                    clearTimeout(out);
+                    done();
+                }
+            }, 1000);
+            let out = setTimeout(() => {
+                clearInterval(int);
+                try {
+                    assert(false, 'did not create a file within the alloted time');
+                } catch (e){
+                    done(e);
+                }
+            }, 2000);
         });
     });
 });
