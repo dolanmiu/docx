@@ -1,12 +1,8 @@
-/// <reference path="../../typings/mocha/mocha.d.ts" />
-/// <reference path="../../typings/lodash/lodash.d.ts" />
-/// <reference path="../../typings/chai/chai.d.ts" />
-
-import {Formatter} from "../../export/formatter";
+import { Formatter } from "../../export/formatter";
 import * as docx from "../../docx";
-import {Attributes} from "../../docx/xml-components";
-import {Properties} from "../../properties";
-import {assert} from "chai";
+import { Attributes } from "../../docx/xml-components";
+import { Properties } from "../../properties";
+import { assert } from "chai";
 
 function jsonify(obj: Object) {
     let stringifiedJson = JSON.stringify(obj);

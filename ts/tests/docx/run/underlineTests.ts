@@ -1,6 +1,6 @@
 import * as u from "../../../docx/run/underline";
-import {TextRun} from "../../../docx/run/text-run";
-import {assert} from "chai";
+import { TextRun } from "../../../docx/run/text-run";
+import { assert } from "chai";
 
 function jsonify(obj: Object) {
     let stringifiedJson = JSON.stringify(obj);

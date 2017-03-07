@@ -1,5 +1,5 @@
-import {Tab} from "../../../docx/run/tab";
-import {assert} from "chai";
+import { Tab } from "../../../docx/run/tab";
+import { assert } from "chai";
 
 function jsonify(obj: Object) {
     let stringifiedJson = JSON.stringify(obj);

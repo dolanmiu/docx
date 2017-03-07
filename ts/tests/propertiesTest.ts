@@ -1,7 +1,5 @@
-/// <reference path="../typings/mocha/mocha.d.ts" />
-/// <reference path="../typings/chai/chai.d.ts" />
-import {Properties} from "../properties";
-import {assert} from "chai";
+import { Properties } from "../properties";
+import { assert } from "chai";
 
 function jsonify(obj: Object) {
     let stringifiedJson = JSON.stringify(obj);

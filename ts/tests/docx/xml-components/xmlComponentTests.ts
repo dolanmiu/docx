@@ -1,5 +1,5 @@
-import {XmlComponent} from "../../../docx/xml-components";
-import {assert} from "chai";
+import { XmlComponent } from "../../../docx/xml-components";
+import { assert } from "chai";
 
 function jsonify(obj: Object) {
     let stringifiedJson = JSON.stringify(obj);

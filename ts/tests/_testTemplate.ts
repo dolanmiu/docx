@@ -1,7 +1,4 @@
-/// <reference path="../typings/mocha/mocha.d.ts" />
-/// <reference path="../typings/chai/chai.d.ts" />
-
-import {assert} from "chai";
+import { assert } from "chai";
 
 function jsonify(obj: Object) {
     let stringifiedJson = JSON.stringify(obj);
@@ -11,7 +8,7 @@ function jsonify(obj: Object) {
 describe("", () => {
 
     beforeEach(() => {
-        
+
     });
 
     describe("#methodName()", () => {

@@ -1,5 +1,5 @@
-import {SubScript, SuperScript} from "../../../docx/run/script";
-import {assert} from "chai";
+import { SubScript, SuperScript } from "../../../docx/run/script";
+import { assert } from "chai";
 
 function jsonify(obj: Object) {
     let stringifiedJson = JSON.stringify(obj);

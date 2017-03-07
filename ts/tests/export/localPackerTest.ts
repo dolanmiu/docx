@@ -1,16 +1,11 @@
-/// <reference path="../../typings/mocha/mocha.d.ts" />
-/// <reference path="../../typings/chai/chai.d.ts" />
-/// <reference path="../../typings/archiver/archiver.d.ts" />
-/// <reference path="../../typings/xml/xml.d.ts" />
-
 import * as fs from "fs";
-import {LocalPacker} from "../../export/packer/local";
-import {assert} from "chai";
-import {Document} from "../../docx/document";
-import {Properties} from "../../properties";
-import {DefaultStyle} from "../../styles/sample";
-import {Paragraph} from "../../docx/paragraph";
-import {DefaultStylesFactory} from "../../styles/factory";
+import { LocalPacker } from "../../export/packer/local";
+import { Document } from "../../docx/document";
+import { Properties } from "../../properties";
+import { DefaultStyle } from "../../styles/sample";
+import { Paragraph } from "../../docx/paragraph";
+import { DefaultStylesFactory } from "../../styles/factory";
+import { assert } from "chai";
 
 describe("Packer", () => {
     let packer: LocalPacker;
@@ -49,7 +44,7 @@ describe("Packer", () => {
                 clearInterval(int);
                 try {
                     assert(false, 'did not create a file within the alloted time');
-                } catch (e){
+                } catch (e) {
                     done(e);
                 }
             }, 2000);

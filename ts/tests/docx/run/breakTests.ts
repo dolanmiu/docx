@@ -1,5 +1,5 @@
-import {Break} from "../../../docx/run/break";
-import {assert} from "chai";
+import { Break } from "../../../docx/run/break";
+import { assert } from "chai";
 
 function jsonify(obj: Object) {
     let stringifiedJson = JSON.stringify(obj);

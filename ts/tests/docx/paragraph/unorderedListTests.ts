@@ -1,5 +1,5 @@
-import {NumberProperties} from "../../../docx/paragraph/unordered-list";
-import {assert} from "chai";
+import { NumberProperties } from "../../../docx/paragraph/unordered-list";
+import { assert } from "chai";
 
 function jsonify(obj: Object) {
     let stringifiedJson = JSON.stringify(obj);

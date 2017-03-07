@@ -1,5 +1,5 @@
-import {Strike, DoubleStrike} from "../../../docx/run/strike";
-import {assert} from "chai";
+import { Strike, DoubleStrike } from "../../../docx/run/strike";
+import { assert } from "chai";
 
 function jsonify(obj: Object) {
     let stringifiedJson = JSON.stringify(obj);

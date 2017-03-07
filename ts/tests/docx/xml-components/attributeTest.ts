@@ -1,5 +1,5 @@
-import {Attributes} from "../../../docx/xml-components";
-import {assert} from "chai";
+import { Attributes } from "../../../docx/xml-components";
+import { assert } from "chai";
 
 describe("Attribute", () => {
     let attributes: Attributes;

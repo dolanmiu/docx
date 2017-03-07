@@ -1,5 +1,5 @@
-import {PageBreak} from "../../../docx/paragraph/page-break";
-import {assert} from "chai";
+import { PageBreak } from "../../../docx/paragraph/page-break";
+import { assert } from "chai";
 
 function jsonify(obj: Object) {
     let stringifiedJson = JSON.stringify(obj);
@@ -26,7 +26,7 @@ describe("PageBreak", () => {
             let newJson = jsonify(pageBreak);
             assert.equal(newJson.rootKey, "w:r");
         });
-        
+
         it("should create a Page Break with a Break inside", () => {
             let newJson = jsonify(pageBreak);
             assert.equal(newJson.root[1].rootKey, "w:br");

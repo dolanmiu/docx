@@ -1,5 +1,5 @@
-import {LeftTabStop, MaxRightTabStop} from "../../../docx/paragraph/tab-stop";
-import {assert} from "chai";
+import { LeftTabStop, MaxRightTabStop } from "../../../docx/paragraph/tab-stop";
+import { assert } from "chai";
 
 function jsonify(obj: Object) {
     let stringifiedJson = JSON.stringify(obj);

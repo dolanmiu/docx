@@ -1,12 +1,10 @@
-/// <reference path="../../../typings/mocha/mocha.d.ts" />
-/// <reference path="../../../typings/chai/chai.d.ts" />
-import {Body} from "../../../docx/document/body";
-import {assert} from "chai";
-import {SectionProperties} from "../../../docx/document/body/section-properties";
-import {PageSize} from "../../../docx/document/body/page-size";
-import {PageMargin} from "../../../docx/document/body/page-margin";
-import {Columns} from "../../../docx/document/body/columns";
-import {DocumentGrid} from "../../../docx/document/body/doc-grid";
+import { Body } from "../../../docx/document/body";
+import { assert } from "chai";
+import { SectionProperties } from "../../../docx/document/body/section-properties";
+import { PageSize } from "../../../docx/document/body/page-size";
+import { PageMargin } from "../../../docx/document/body/page-margin";
+import { Columns } from "../../../docx/document/body/columns";
+import { DocumentGrid } from "../../../docx/document/body/doc-grid";
 
 function jsonify(obj: Object) {
     let stringifiedJson = JSON.stringify(obj);
