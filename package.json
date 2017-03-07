@@ -6,7 +6,8 @@
   "scripts": {
     "pretest": "rimraf ./build-tests && tsc -p ts/test-tsconfig.json",
     "test": "mocha ./build-tests --recursive",
-    "prepublish": "tsc -p ts"
+    "prepublish": "tsc -p ts",
+    "lint": "tslint --project ./ts"
   },
   "repository": {
     "type": "git",
@@ -43,6 +44,7 @@
     "chai": "^3.5.0",
     "mocha": "^3.2.0",
     "rimraf": "^2.5.2",
+    "tslint": "^4.5.1",
     "typescript": "^2.2.1"
   }
 }
