@@ -1,10 +1,22 @@
-#  [![NPM version][npm-image]][npm-url] [![Build Status][travis-image]][travis-url] [![Dependency Status][daviddm-image]][daviddm-url]
+<p align="center">
+    <img alt="clippy the assistant" src="http://i60.tinypic.com/339pvtt.png">
+</p>
+
+<p align="center">
+    Generate `.docx` files with JS/TS very easily
+</p>
+
+<p align="center">
+	#  [![NPM version][npm-image]][npm-url] [![Build Status][travis-image]][travis-url] [![Dependency Status][daviddm-image]][daviddm-url]
+</p>
+---
+
+# docx
+> A simple embeddable color picker component for Angular2 following best Angular2 practices, and good coding standards for easy use and easy contribution.
 
 > A tool to create Word Documents (.docx) with JS or TS, written in TS.
 
 [![NPM](https://nodei.co/npm/docx.png?downloads=true&downloadRank=true&stars=true)](https://nodei.co/npm/docx/)
-
-![Clippy in Microsoft Office](http://i60.tinypic.com/339pvtt.png "Clippy in Microsoft Office")
 
 # Table of Contents
 - [Install](#)
