@@ -60,7 +60,7 @@ var docx = require('docx');
 ```js
 var doc = new docx.Document();
         
-var paragraph = new docx.Paragraph(),
+var paragraph = new docx.Paragraph();
 var text = new docx.TextRun('Hello World');
 paragraph.addText(text);
 doc.addParagraph(paragraph);
