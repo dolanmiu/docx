@@ -1,6 +1,6 @@
 #  [![NPM version][npm-image]][npm-url] [![Build Status][travis-image]][travis-url] [![Dependency Status][daviddm-image]][daviddm-url]
 
-> A tool to create Word Documents (.docx) with JS
+> A tool to create Word Documents (.docx) with JS or TS, written in TS.
 
 [![NPM](https://nodei.co/npm/docx.png?downloads=true&downloadRank=true&stars=true)](https://nodei.co/npm/docx/)
 
@@ -47,14 +47,16 @@ $ npm install --save docx
 # Usage
 
 ```js
-var officeClippy = require('docx');
-
 // Used to create docx files
 var docx = require('docx');
 
-// Used to export the file into a .docx file
-// var exporter = officeClippy.exporter;
+// Create document
+var doc = new docx.Document();
 
+// Used to export the file into a .docx file
+// res is express' Response object
+var exporter = new docx.ExpressPacker(doc, res);
+var exporter = new docx.LocalPacker(doc);
 ```
 ## Create simple Word Document
 ```js
@@ -359,6 +361,8 @@ Would produce:
 ***University College London***
 
 ***5th Dec 2015***
+
+Made with 💖 by Dolan Miu 🍆 💦 😝
 
 # License
 
