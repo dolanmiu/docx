@@ -7,5 +7,5 @@ export abstract class BaseXmlComponent {
 
     abstract replaceKey(): void;
     clearVariables(): void {
-    };
+    }
 }
