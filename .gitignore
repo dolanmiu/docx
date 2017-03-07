@@ -37,4 +37,4 @@ build
 build-tests
 
 # vscode
-ts/.vscode
+.vscode
