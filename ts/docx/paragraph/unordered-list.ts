@@ -3,10 +3,10 @@ import {Style} from "./style";
 
 export class NumberProperties extends XmlComponent {
 
-    constructor() {
+    constructor(numberId: number, indentLevel: number) {
         super("w:numPr");
-        this.root.push(new IndentLevel(0));
-        this.root.push(new NumberId(1));
+        this.root.push(new IndentLevel(indentLevel));
+        this.root.push(new NumberId(numberId));
     }
 }
 

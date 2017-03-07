@@ -106,7 +106,7 @@ export class Paragraph extends XmlComponent {
 
     bullet(): Paragraph {
         this.properties.push(new Style("ListParagraph"));
-        this.properties.push(new NumberProperties());
+        this.properties.push(new NumberProperties(1, 0));
         return this;
     }
 }
