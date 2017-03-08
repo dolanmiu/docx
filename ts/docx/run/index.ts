@@ -1,13 +1,14 @@
-import {XmlComponent, Attributes} from "../xml-components";
+import { Break } from "./break";
+import { Caps, SmallCaps } from "./caps";
+import { Bold, Italics } from "./formatting";
+import { RunProperties } from "./properties";
 import { RunFonts } from "./run-fonts";
-import {RunProperties} from "./properties";
-import {Bold, Italics} from "./formatting";
-import {Tab} from "./tab";
-import {Break} from "./break";
-import {SmallCaps, Caps} from "./caps";
-import {Strike, DoubleStrike} from "./strike";
-import {SubScript, SuperScript} from "./script";
-import {Underline} from "./underline"
+import { SubScript, SuperScript } from "./script";
+import { DoubleStrike, Strike } from "./strike";
+import { Tab } from "./tab";
+import { Underline } from "./underline";
+
+import { Attributes, XmlComponent } from "../xml-components";
 
 export class Run extends XmlComponent {
     private properties: RunProperties;
@@ -18,62 +19,62 @@ export class Run extends XmlComponent {
         this.root.push(this.properties);
     }
 
-    bold(): Run {
+    public bold(): Run {
         this.properties.push(new Bold());
         return this;
     }
 
-    italic(): Run {
+    public italic(): Run {
         this.properties.push(new Italics());
         return this;
     }
 
-    underline(): Run {
+    public underline(): Run {
         this.properties.push(new Underline());
         return this;
     }
 
-    break(): Run {
+    public break(): Run {
         this.root.splice(1, 0, new Break());
         return this;
     }
 
-    tab(): Run {
+    public tab(): Run {
         this.root.splice(1, 0, new Tab());
         return this;
     }
 
-    smallCaps(): Run {
+    public smallCaps(): Run {
         this.properties.push(new SmallCaps());
         return this;
     }
 
-    allCaps(): Run {
+    public allCaps(): Run {
         this.properties.push(new Caps());
         return this;
     }
 
-    strike(): Run {
+    public strike(): Run {
         this.properties.push(new Strike());
         return this;
     }
 
-    doubleStrike(): Run {
+    public doubleStrike(): Run {
         this.properties.push(new DoubleStrike());
         return this;
     }
 
-    subScript(): Run {
+    public subScript(): Run {
         this.properties.push(new SubScript());
         return this;
     }
 
-    superScript(): Run {
+    public superScript(): Run {
         this.properties.push(new SuperScript());
         return this;
     }
 
-    font(fontName: string): Run {
+    public font(fontName: string): Run {
         this.properties.push(new RunFonts(fontName));
         return this;
     }
