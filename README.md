@@ -7,7 +7,7 @@
 </p>
 ---
 
-[![NPM version][npm-image]][npm-url] [![Build Status][travis-image]][travis-url] [![Dependency Status][daviddm-image]][daviddm-url] [![Known Vulnerabilities](https://snyk.io/test/github/dolanmiu/docx/badge.svg)](https://snyk.io/test/github/dolanmiu/docx)
+[![NPM version][npm-image]][npm-url] [![Build Status][travis-image]][travis-url] [![Dependency Status][daviddm-image]][daviddm-url] [![Known Vulnerabilities][snky-image]][snky-url]
 
 # docx
 > A tool to create Word Documents (.docx) with JS or TS, written in TS.
@@ -388,3 +388,5 @@ THE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 [travis-url]: https://travis-ci.org/dolanmiu/docx
 [daviddm-image]: https://david-dm.org/dolanmiu/docx.svg?theme=shields.io
 [daviddm-url]: https://david-dm.org/dolanmiu/docx
+[snky-image]: https://snyk.io/test/github/dolanmiu/docx/badge.svg
+[snky-url]: https://snyk.io/test/github/dolanmiu/docx
