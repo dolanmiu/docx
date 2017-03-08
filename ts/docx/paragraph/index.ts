@@ -1,4 +1,4 @@
-import {XmlComponent, Attributes} from "../xml-components";
+import { Attributes, XmlComponent } from "../xml-components";
 import {ThematicBreak} from "./border";
 import {PageBreak} from "./page-break";
 import {TextRun} from "../run/text-run";

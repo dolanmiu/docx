@@ -1,6 +1,6 @@
-import {XmlAttributeComponent} from "../xml-components";
+import { XmlAttributeComponent } from "../xml-components";
 
-interface DocumentAttributesProperties {
+interface IDocumentAttributesProperties {
     wpc?: string;
     mc?: string;
     o?: string;
@@ -28,7 +28,7 @@ interface DocumentAttributesProperties {
 
 export class DocumentAttributes extends XmlAttributeComponent {
 
-    constructor(properties?: DocumentAttributesProperties) {
+    constructor(properties?: IDocumentAttributesProperties) {
         super({
             wpc: "xmlns:wpc",
             mc: "xmlns:mc",

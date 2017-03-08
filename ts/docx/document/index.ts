@@ -1,8 +1,7 @@
-import {XmlComponent} from "../xml-components";
-import {DocumentAttributes} from "./document-attributes";
-import {Body} from "./body";
-import {Paragraph} from "../paragraph";
-
+import { Paragraph } from "../paragraph";
+import { XmlComponent } from "../xml-components";
+import { Body } from "./body";
+import { DocumentAttributes } from "./document-attributes";
 export class Document extends XmlComponent {
     private body: Body;
 
@@ -25,17 +24,17 @@ export class Document extends XmlComponent {
             wpi: "http://schemas.microsoft.com/office/word/2010/wordprocessingInk",
             wne: "http://schemas.microsoft.com/office/word/2006/wordml",
             wps: "http://schemas.microsoft.com/office/word/2010/wordprocessingShape",
-            Ignorable: "w14 w15 wp14"
+            Ignorable: "w14 w15 wp14",
         }));
         this.body = new Body();
         this.root.push(this.body);
     }
 
-    addParagraph(paragraph: Paragraph): void {
+    public addParagraph(paragraph: Paragraph): void {
         this.body.push(paragraph);
     }
 
-    clearVariables(): void {
+    public clearVariables(): void {
         this.body.clearVariables();
         delete this.body;
     }

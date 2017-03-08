@@ -1,4 +1,4 @@
-import {XmlComponent, Attributes} from "../../xml-components";
+import { Attributes, XmlComponent } from "../../xml-components";
 import {PageSize} from "./page-size";
 import {PageMargin} from "./page-margin";
 import {Columns} from "./columns";
