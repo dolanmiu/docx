@@ -1,11 +1,11 @@
 import * as _ from "lodash";
 import { DocumentAttributes } from "../docx/document/document-attributes";
+import { RunFonts } from "../docx/run/run-fonts";
 import { MultiPropertyXmlComponent } from "../docx/xml-components";
 import { AbstractNumbering } from "./abstract-numbering";
 import { Indent } from "./indent";
 import { Level } from "./level";
 import { Num } from "./num";
-import { RunFonts } from "./run-fonts";
 
 export class Numbering extends MultiPropertyXmlComponent {
     private nextId: number;
