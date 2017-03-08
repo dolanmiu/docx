@@ -36,50 +36,41 @@ export class Numbering extends MultiPropertyXmlComponent {
 
         const abstractNumbering = this.createAbstractNumbering();
 
-        const level0 = new Level(0, "bullet", "•", "left");
-        level0.addParagraphProperty(new Indent(720, 360));
-        level0.addRunProperty(new RunFonts("Symbol", "default"));
-        abstractNumbering.addLevel(level0);
+        abstractNumbering.createLevel(0, "bullet", "•", "left")
+            .addParagraphProperty(new Indent(720, 360))
+            .addRunProperty(new RunFonts("Symbol", "default"));
 
-        const level1 = new Level(1, "bullet", "o", "left");
-        level1.addParagraphProperty(new Indent(1440, 360));
-        level1.addRunProperty(new RunFonts("Courier New", "default"));
-        abstractNumbering.addLevel(level1);
+        abstractNumbering.createLevel(1, "bullet", "o", "left")
+            .addParagraphProperty(new Indent(1440, 360))
+            .addRunProperty(new RunFonts("Courier New", "default"));
 
-        const level2 = new Level(2, "bullet", "•", "left");
-        level2.addParagraphProperty(new Indent(2160, 360));
-        level2.addRunProperty(new RunFonts("Wingdings", "default"));
-        abstractNumbering.addLevel(level2);
+        abstractNumbering.createLevel(2, "bullet", "•", "left")
+            .addParagraphProperty(new Indent(2160, 360))
+            .addRunProperty(new RunFonts("Wingdings", "default"));
 
-        const level3 = new Level(3, "bullet", "•", "left");
-        level3.addParagraphProperty(new Indent(2880, 360));
-        level3.addRunProperty(new RunFonts("Symbol", "default"));
-        abstractNumbering.addLevel(level3);
+        abstractNumbering.createLevel(3, "bullet", "•", "left")
+            .addParagraphProperty(new Indent(2880, 360))
+            .addRunProperty(new RunFonts("Symbol", "default"));
 
-        const level4 = new Level(4, "bullet", "o", "left");
-        level4.addParagraphProperty(new Indent(3600, 360));
-        level4.addRunProperty(new RunFonts("Courier New", "default"));
-        abstractNumbering.addLevel(level4);
+        abstractNumbering.createLevel(4, "bullet", "o", "left")
+            .addParagraphProperty(new Indent(3600, 360))
+            .addRunProperty(new RunFonts("Courier New", "default"));
 
-        const level5 = new Level(5, "bullet", "•", "left");
-        level5.addParagraphProperty(new Indent(4320, 360));
-        level5.addRunProperty(new RunFonts("Wingdings", "default"));
-        abstractNumbering.addLevel(level5);
+        abstractNumbering.createLevel(5, "bullet", "•", "left")
+            .addParagraphProperty(new Indent(4320, 360))
+            .addRunProperty(new RunFonts("Wingdings", "default"));
 
-        const level6 = new Level(6, "bullet", "•", "left");
-        level6.addParagraphProperty(new Indent(5040, 360));
-        level6.addRunProperty(new RunFonts("Symbol", "default"));
-        abstractNumbering.addLevel(level6);
+        abstractNumbering.createLevel(6, "bullet", "•", "left")
+            .addParagraphProperty(new Indent(5040, 360))
+            .addRunProperty(new RunFonts("Symbol", "default"));
 
-        const level7 = new Level(7, "bullet", "o", "left");
-        level7.addParagraphProperty(new Indent(5760, 360));
-        level7.addRunProperty(new RunFonts("Courier New", "default"));
-        abstractNumbering.addLevel(level7);
+        abstractNumbering.createLevel(7, "bullet", "o", "left")
+            .addParagraphProperty(new Indent(5760, 360))
+            .addRunProperty(new RunFonts("Courier New", "default"));
 
-        const level8 = new Level(8, "bullet", "•", "left");
-        level8.addParagraphProperty(new Indent(6480, 360));
-        level8.addRunProperty(new RunFonts("Wingdings", "default"));
-        abstractNumbering.addLevel(level8);
+        abstractNumbering.createLevel(8, "bullet", "•", "left")
+            .addParagraphProperty(new Indent(6480, 360))
+            .addRunProperty(new RunFonts("Wingdings", "default"));
 
         this.createConcreteNumbering(abstractNumbering);
     }
