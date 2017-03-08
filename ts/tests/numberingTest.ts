@@ -86,7 +86,18 @@ describe("AbstractNumbering", () => {
     describe("#createLevel", () => {
         it("creates a level with the given characteristics", () => {
             const abstractNumbering = new AbstractNumbering(1);
-            const level = abstractNumbering.createLevel(3, "lowerLetter", "%1)", "start");
+            const level = abstractNumbering.createLevel(3, "lowerLetter", "%1)", "end");
+            const tree = new Formatter().format(level);
+            expect(tree['w:lvl']).to.include({_attr: {"w:ilvl": 3, "w15:tentative": 1}})
+            expect(tree['w:lvl']).to.include({"w:start": [{_attr: {"w:val": 1}}]})
+            expect(tree['w:lvl']).to.include({"w:lvlJc": [{_attr: {"w:val": "end"}}]})
+            expect(tree['w:lvl']).to.include({"w:numFmt": [{_attr: {"w:val": "lowerLetter"}}]})
+            expect(tree['w:lvl']).to.include({"w:lvlText": [{"_attr": {"w:val": "%1)"}}]})
+        });
+
+        it("uses 'start' as the default alignment", () => {
+            const abstractNumbering = new AbstractNumbering(1);
+            const level = abstractNumbering.createLevel(3, "lowerLetter", "%1)");
             const tree = new Formatter().format(level);
             expect(tree['w:lvl']).to.include({_attr: {"w:ilvl": 3, "w15:tentative": 1}})
             expect(tree['w:lvl']).to.include({"w:start": [{_attr: {"w:val": 1}}]})
