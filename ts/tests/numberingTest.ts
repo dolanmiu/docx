@@ -1,5 +1,6 @@
 import { expect } from "chai";
 import { Numbering } from "../numbering";
+import { AbstractNumbering } from "../numbering/abstract-numbering";
 import { Formatter } from '../export/formatter';
 
 function jsonify(obj: Object) {
@@ -43,5 +44,12 @@ describe("Numbering", () => {
                 //            {"w:ind": [{"_attr": {"w:left": 720, "w:hanging": 360}}]}]},
             })
         });
+    });
+});
+
+describe("AbstractNumbering", () => {
+    it("stores its ID at its .id property", () => {
+        const abstractNumbering = new AbstractNumbering(5);
+        expect(abstractNumbering.id).to.equal(5);
     });
 });

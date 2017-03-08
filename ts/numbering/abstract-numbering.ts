@@ -19,6 +19,7 @@ class AbstractNumberingAttributes extends XmlAttributeComponent {
 }
 
 export class AbstractNumbering extends XmlComponent {
+    public id: number;
 
     constructor(id: number) {
         super("w:abstractNum");
@@ -27,6 +28,7 @@ export class AbstractNumbering extends XmlComponent {
             restartNumberingAfterBreak: 0,
         }));
         this.root.push(new MultiLevelType("hybridMultilevel"));
+        this.id = id;
     }
 
     public addLevel(level: Level): void {
@@ -37,5 +39,6 @@ export class AbstractNumbering extends XmlComponent {
         _.forEach(this.root, (element) => {
             element.clearVariables();
         });
+        delete this.id;
     }
 }
