@@ -1,19 +1,19 @@
 import * as archiver from "archiver";
 import * as fs from "fs";
 import * as xml from "xml";
-import {Formatter} from "../formatter";
-import {Document} from "../../docx";
-import {Styles} from "../../styles";
-import {Properties} from "../../properties";
-import {Numbering} from "../../numbering";
-import {DefaultStylesFactory} from "../../styles/factory";
+import { Document } from "../../docx";
+import { Numbering } from "../../numbering";
+import { Properties } from "../../properties";
+import { Styles } from "../../styles";
+import { DefaultStylesFactory } from "../../styles/factory";
+import { Formatter } from "../formatter";
 
-let appRoot = require("app-root-path");
+const appRoot = require("app-root-path");
 
 export abstract class Packer {
     protected archive: any;
-    private formatter: Formatter;
     protected document: Document;
+    private formatter: Formatter;
     private style: Styles;
     private properties: Properties;
     private numbering: Numbering;
@@ -27,7 +27,7 @@ export abstract class Packer {
         this.archive = archiver.create("zip", {});
 
         if (!style) {
-            let stylesFactory = new DefaultStylesFactory();
+            const stylesFactory = new DefaultStylesFactory();
             this.style = stylesFactory.newInstance();
         }
 
@@ -35,7 +35,7 @@ export abstract class Packer {
             this.properties = new Properties({
                 creator: "Un-named",
                 revision: "1",
-                lastModifiedBy: "Un-named"
+                lastModifiedBy: "Un-named",
             });
         }
 
@@ -48,7 +48,7 @@ export abstract class Packer {
         });
     }
 
-    pack(output: any): void {
+    public pack(output: any): void {
         this.archive.pipe(output);
         console.log(appRoot.path + "/template");
         this.archive.glob("**", {
@@ -69,26 +69,26 @@ export abstract class Packer {
             name: "/root/g.txt",
             prefix: "root"
         });*/
-        let xmlDocument = xml(this.formatter.format(this.document));
-        let xmlStyles = xml(this.formatter.format(this.style));
-        let xmlProperties = xml(this.formatter.format(this.properties), { declaration: { standalone: "yes", encoding: "UTF-8" } });
-        let xmlNumbering = xml(this.formatter.format(this.numbering));
+        const xmlDocument = xml(this.formatter.format(this.document));
+        const xmlStyles = xml(this.formatter.format(this.style));
+        const xmlProperties = xml(this.formatter.format(this.properties), { declaration: { standalone: "yes", encoding: "UTF-8" } });
+        const xmlNumbering = xml(this.formatter.format(this.numbering));
         // console.log(JSON.stringify(this.numbering, null, " "));
         console.log(xmlNumbering);
         this.archive.append(xmlDocument, {
-            name: "word/document.xml"
+            name: "word/document.xml",
         });
 
         this.archive.append(xmlStyles, {
-            name: "word/styles.xml"
+            name: "word/styles.xml",
         });
 
         this.archive.append(xmlProperties, {
-            name: "docProps/core.xml"
+            name: "docProps/core.xml",
         });
 
         this.archive.append(xmlNumbering, {
-            name: "word/numbering.xml"
+            name: "word/numbering.xml",
         });
 
         this.archive.finalize();

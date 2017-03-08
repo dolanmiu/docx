@@ -3,10 +3,10 @@ import {XmlComponent} from "../docx/xml-components";
 
 export class Formatter {
 
-    format(input: any): Object {
+    public format(input: any): Object {
         input.clearVariables();
         this.replaceKeys(input);
-        let newJson = this.clense(input);
+        const newJson = this.clense(input);
         // console.log(JSON.stringify(newJson, null, "  "));
         return newJson;
     }
@@ -18,7 +18,7 @@ export class Formatter {
     }
 
     private clense(input: any): Object {
-        let newJson = this.jsonify(input);
+        const newJson = this.jsonify(input);
 
         this.deepTraverseJson(newJson, (parent, value, key) => {
             if (key === "properties") {

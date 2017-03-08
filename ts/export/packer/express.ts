@@ -1,9 +1,10 @@
-import {Packer} from "./packer";
-import * as fs from "fs";
 import * as express from "express";
-import {Document} from "../../docx/document";
-import {Properties} from "../../properties";
-import {Numbering} from "../../numbering";
+import * as fs from "fs";
+import { Document } from "../../docx/document";
+import { Numbering } from "../../numbering";
+import { Properties } from "../../properties";
+import { Packer } from "./packer";
+
 
 export class ExpressPacker extends Packer {
     private res: express.Response;
@@ -17,7 +18,7 @@ export class ExpressPacker extends Packer {
         });
     }
 
-    pack(name: string): void {
+    public pack(name: string): void {
         this.res.attachment(name + ".docx");
         super.pack(this.res);
     }
