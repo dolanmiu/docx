@@ -1,4 +1,4 @@
-import {XmlComponent} from "../xml-components";
+import { XmlComponent } from "../xml-components";
 
 export class RunProperties extends XmlComponent {
 
@@ -6,7 +6,7 @@ export class RunProperties extends XmlComponent {
         super("w:rPr");
     }
 
-    push(item: XmlComponent): void {
+    public push(item: XmlComponent): void {
         this.root.push(item);
     }
 }

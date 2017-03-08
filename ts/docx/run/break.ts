@@ -1,4 +1,4 @@
-import {XmlComponent} from "../xml-components";
+import { XmlComponent } from "../xml-components";
 
 export class Break extends XmlComponent {
 

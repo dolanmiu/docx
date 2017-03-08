@@ -1,11 +1,11 @@
-import {XmlComponent, Attributes} from "../xml-components";
+import { Attributes, XmlComponent } from "../xml-components";
 
 abstract class VerticalAlign extends XmlComponent {
 
     constructor(type: string) {
         super("w:vertAlign");
         this.root.push(new Attributes({
-            val: type
+            val: type,
         }));
     }
 }
