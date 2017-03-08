@@ -7,7 +7,7 @@ export class ParagraphProperties extends XmlComponent {
         this.root.push(new Attributes());
     }
 
-    push(item: XmlComponent): void {
+    public push(item: XmlComponent): void {
         this.root.push(item);
     }
 }

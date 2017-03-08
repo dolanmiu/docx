@@ -1,19 +1,19 @@
-import { Attributes, XmlComponent } from "../xml-components";
-import {ThematicBreak} from "./border";
-import {PageBreak} from "./page-break";
-import {TextRun} from "../run/text-run";
-import {ParagraphProperties} from "./properties";
-import {MaxRightTabStop, LeftTabStop} from "./tab-stop";
-import {Style} from "./style";
-import {NumberProperties} from "./unordered-list";
 import { Num } from "../../numbering/num";
+import { TextRun } from "../run/text-run";
+import { Attributes, XmlComponent } from "../xml-components";
+import { ThematicBreak } from "./border";
+import { PageBreak } from "./page-break";
+import { ParagraphProperties } from "./properties";
+import { Style } from "./style";
+import { LeftTabStop, MaxRightTabStop } from "./tab-stop";
+import { NumberProperties } from "./unordered-list";
 
 class Alignment extends XmlComponent {
 
     constructor(type: string) {
         super("w:jc");
         this.root.push(new Attributes({
-            val: type
+            val: type,
         }));
     }
 }
@@ -30,82 +30,82 @@ export class Paragraph extends XmlComponent {
         }
     }
 
-    addText(run: TextRun): Paragraph {
+    public addText(run: TextRun): Paragraph {
         this.root.push(run);
         return this;
     }
 
-    heading1(): Paragraph {
+    public heading1(): Paragraph {
         this.properties.push(new Style("Heading1"));
         return this;
     }
 
-    heading2(): Paragraph {
+    public heading2(): Paragraph {
         this.properties.push(new Style("Heading2"));
         return this;
     }
 
-    heading3(): Paragraph {
+    public heading3(): Paragraph {
         this.properties.push(new Style("Heading3"));
         return this;
     }
 
-    heading4(): Paragraph {
+    public heading4(): Paragraph {
         this.properties.push(new Style("Heading4"));
         return this;
     }
 
-    heading5(): Paragraph {
+    public heading5(): Paragraph {
         this.properties.push(new Style("Heading5"));
         return this;
     }
 
-    title(): Paragraph {
+    public title(): Paragraph {
         this.properties.push(new Style("Title"));
         return this;
     }
 
-    center(): Paragraph {
+    public center(): Paragraph {
         this.properties.push(new Alignment("center"));
         return this;
     }
 
-    left(): Paragraph {
+    public left(): Paragraph {
         this.properties.push(new Alignment("left"));
         return this;
     }
 
-    right(): Paragraph {
+    public right(): Paragraph {
         this.properties.push(new Alignment("right"));
         return this;
     }
 
-    justified(): Paragraph {
+    public justified(): Paragraph {
         this.properties.push(new Alignment("both"));
         return this;
     }
 
-    thematicBreak(): Paragraph {
+    public thematicBreak(): Paragraph {
         this.properties.push(new ThematicBreak());
         return this;
     }
 
-    pageBreak(): Paragraph {
+    public pageBreak(): Paragraph {
         this.properties.push(new PageBreak());
         return this;
     }
 
-    maxRightTabStop(): Paragraph {
+    public maxRightTabStop(): Paragraph {
         this.properties.push(new MaxRightTabStop());
         return this;
     }
 
-    leftTabStop(position: number): Paragraph {
+    public leftTabStop(position: number): Paragraph {
         this.properties.push(new LeftTabStop(position));
         return this;
     }
 
-    bullet(): Paragraph {
+    public bullet(): Paragraph {
         this.properties.push(new Style("ListParagraph"));
         this.properties.push(new NumberProperties(1, 0));
         return this;

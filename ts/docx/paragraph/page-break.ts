@@ -1,12 +1,12 @@
+import { Run } from "../run";
 import { Attributes, XmlComponent } from "../xml-components";
-import {Run} from "../run";
 
 class Break extends XmlComponent {
 
     constructor() {
         super("w:br");
         this.root.push(new Attributes({
-            type: "page"
+            type: "page",
         }));
     }
 }

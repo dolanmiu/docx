@@ -8,7 +8,7 @@ class Border extends XmlComponent {
             color: "auto",
             space: "1",
             val: "single",
-            sz: "6"
+            sz: "6",
         }));
     }
 }

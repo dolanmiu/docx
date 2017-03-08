@@ -52,7 +52,7 @@ export class DocumentAttributes extends XmlAttributeComponent {
             dcterms: "xmlns:dcterms",
             dcmitype: "xmlns:dcmitype",
             xsi: "xmlns:xsi",
-            type: "xsi:type"
+            type: "xsi:type",
         }, properties);
 
         this.root = properties;

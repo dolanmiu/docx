@@ -1,5 +1,5 @@
 import { Attributes, XmlComponent } from "../xml-components";
-import {Style} from "./style";
+import { Style } from "./style";
 
 export class NumberProperties extends XmlComponent {
 
@@ -15,7 +15,7 @@ class IndentLevel extends XmlComponent {
     constructor(level: number) {
         super("w:ilvl");
         this.root.push(new Attributes({
-            val: level
+            val: level,
         }));
     }
 }
@@ -24,7 +24,7 @@ class NumberId extends XmlComponent {
     constructor(id: number) {
         super("w:numId");
         this.root.push(new Attributes({
-            val: id
+            val: id,
         }));
     }
 }
