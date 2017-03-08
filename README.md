@@ -7,7 +7,7 @@
 </p>
 ---
 
-[![NPM version][npm-image]][npm-url] [![Build Status][travis-image]][travis-url] [![Dependency Status][daviddm-image]][daviddm-url]
+[![NPM version][npm-image]][npm-url] [![Build Status][travis-image]][travis-url] [![Dependency Status][daviddm-image]][daviddm-url] [![Known Vulnerabilities](https://snyk.io/test/github/dolanmiu/docx/badge.svg)](https://snyk.io/test/github/dolanmiu/docx)
 
 # docx
 > A tool to create Word Documents (.docx) with JS or TS, written in TS.
