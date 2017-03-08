@@ -8,6 +8,7 @@ import {Num} from "./num";
 import * as _ from "lodash";
 
 export class Numbering extends MultiPropertyXmlComponent {
+    private nextId: number;
 
     constructor() {
         super("w:numbering");
@@ -31,7 +32,9 @@ export class Numbering extends MultiPropertyXmlComponent {
             Ignorable: "w14 w15 wp14"
         }));
 
-        let abstractNumbering = new AbstractNumbering(0);
+        this.nextId = 0;
+
+        let abstractNumbering = this.addAbstractNumbering();
 
         let level0 = new Level(0, "bullet", "•", "left");
         level0.addParagraphProperty(new Indent(720, 360));
@@ -78,8 +81,19 @@ export class Numbering extends MultiPropertyXmlComponent {
         level8.addRunProperty(new RunFonts("Wingdings", "default"));
         abstractNumbering.addLevel(level8);
 
-        this.root.push(abstractNumbering);
-        this.root.push(new Num(1, 0));
+        this.addConcreteNumbering(abstractNumbering);
+    }
+
+    public addAbstractNumbering(): AbstractNumbering {
+        const num = new AbstractNumbering(this.nextId++);
+        this.root.push(num);
+        return num;
+    }
+
+    public addConcreteNumbering(abstractNumbering: AbstractNumbering): Num {
+        const num = new Num(this.nextId++, abstractNumbering.id);
+        this.root.push(num);
+        return num;
     }
 
     clearVariables() {
@@ -88,5 +102,6 @@ export class Numbering extends MultiPropertyXmlComponent {
             console.log(element);
             element.clearVariables();
         });
+        delete this.nextId;
     }
 }
