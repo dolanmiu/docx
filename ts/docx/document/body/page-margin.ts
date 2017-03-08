@@ -11,7 +11,7 @@ export class PageMargin extends XmlComponent {
             left: "1440",
             header: "708",
             footer: "708",
-            gutter: "0"
+            gutter: "0",
         }));
     }
 }

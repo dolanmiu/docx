@@ -35,7 +35,7 @@ export class AbstractNumbering extends XmlComponent {
         this.root.push(level);
     }
 
-    public createLevel(num: number, format: string, text: string, align: string="start") {
+    public createLevel(num: number, format: string, text: string, align: string = "start"): Level {
         const level = new Level(num, format, text, align);
         this.addLevel(level);
         return level;
