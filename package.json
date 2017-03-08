@@ -9,6 +9,10 @@
     "prepublishOnly": "tsc -p ts",
     "lint": "tslint --project ./ts"
   },
+  "files": [
+    "ts",
+    "build"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/dolanmiu/docx.git"
