@@ -1,4 +1,5 @@
 import {XmlComponent, Attributes} from "../xml-components";
+import { RunFonts } from "./run-fonts";
 import {RunProperties} from "./properties";
 import {Bold, Italics} from "./formatting";
 import {Tab} from "./tab";
@@ -10,7 +11,6 @@ import {Underline} from "./underline"
 
 export class Run extends XmlComponent {
     private properties: RunProperties;
-
 
     constructor() {
         super("w:r");
@@ -70,6 +70,11 @@ export class Run extends XmlComponent {
 
     superScript(): Run {
         this.properties.push(new SuperScript());
+        return this;
+    }
+
+    font(fontName: string): Run {
+        this.properties.push(new RunFonts(fontName));
         return this;
     }
 }

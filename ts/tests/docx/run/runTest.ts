@@ -1,4 +1,4 @@
-import { assert } from "chai";
+import { assert, expect } from "chai";
 import { Run } from "../../../docx/run";
 import { TextRun } from "../../../docx/run/text-run";
 import { Formatter } from "../../../export/formatter";
@@ -83,6 +83,22 @@ describe("Run", () => {
             run.tab();
             const newJson = jsonify(run);
             assert.equal(newJson.root[1].rootKey, "w:tab");
+        });
+    });
+
+    describe("#font()", () => {
+        it("should allow chaining calls", () => {
+            expect(run.font("Times")).to.equal(run);
+        });
+
+        it("should set the font as named", () => {
+            run.font("Times");
+            const tree = new Formatter().format(run);
+            expect(tree).to.deep.equal({
+                "w:r": [
+                    {"w:rPr": [{"w:rFonts": [{_attr: {"w:ascii": "Times", "w:hAnsi": "Times"}}]}]},
+                ],
+            });
         });
     });
 });
