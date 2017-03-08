@@ -1,11 +1,11 @@
-import {MultiPropertyXmlComponent} from "../docx/xml-components";
-import {DocumentAttributes} from "../docx/document/document-attributes";
-import {AbstractNumbering} from "./abstract-numbering";
-import {Level} from "./level";
-import {Indent} from "./indent";
-import {RunFonts} from "./run-fonts";
-import {Num} from "./num";
 import * as _ from "lodash";
+import { DocumentAttributes } from "../docx/document/document-attributes";
+import { MultiPropertyXmlComponent } from "../docx/xml-components";
+import { AbstractNumbering } from "./abstract-numbering";
+import { Indent } from "./indent";
+import { Level } from "./level";
+import { Num } from "./num";
+import { RunFonts } from "./run-fonts";
 
 export class Numbering extends MultiPropertyXmlComponent {
     private nextId: number;
@@ -29,54 +29,54 @@ export class Numbering extends MultiPropertyXmlComponent {
             wpi: "http://schemas.microsoft.com/office/word/2010/wordprocessingInk",
             wne: "http://schemas.microsoft.com/office/word/2006/wordml",
             wps: "http://schemas.microsoft.com/office/word/2010/wordprocessingShape",
-            Ignorable: "w14 w15 wp14"
+            Ignorable: "w14 w15 wp14",
         }));
 
         this.nextId = 0;
 
-        let abstractNumbering = this.addAbstractNumbering();
+        const abstractNumbering = this.addAbstractNumbering();
 
-        let level0 = new Level(0, "bullet", "•", "left");
+        const level0 = new Level(0, "bullet", "•", "left");
         level0.addParagraphProperty(new Indent(720, 360));
         level0.addRunProperty(new RunFonts("Symbol", "default"));
         abstractNumbering.addLevel(level0);
 
-        let level1 = new Level(1, "bullet", "o", "left");
+        const level1 = new Level(1, "bullet", "o", "left");
         level1.addParagraphProperty(new Indent(1440, 360));
         level1.addRunProperty(new RunFonts("Courier New", "default"));
         abstractNumbering.addLevel(level1);
 
-        let level2 = new Level(2, "bullet", "•", "left");
+        const level2 = new Level(2, "bullet", "•", "left");
         level2.addParagraphProperty(new Indent(2160, 360));
         level2.addRunProperty(new RunFonts("Wingdings", "default"));
         abstractNumbering.addLevel(level2);
 
-        let level3 = new Level(3, "bullet", "•", "left");
+        const level3 = new Level(3, "bullet", "•", "left");
         level3.addParagraphProperty(new Indent(2880, 360));
         level3.addRunProperty(new RunFonts("Symbol", "default"));
         abstractNumbering.addLevel(level3);
 
-        let level4 = new Level(4, "bullet", "o", "left");
+        const level4 = new Level(4, "bullet", "o", "left");
         level4.addParagraphProperty(new Indent(3600, 360));
         level4.addRunProperty(new RunFonts("Courier New", "default"));
         abstractNumbering.addLevel(level4);
 
-        let level5 = new Level(5, "bullet", "•", "left");
+        const level5 = new Level(5, "bullet", "•", "left");
         level5.addParagraphProperty(new Indent(4320, 360));
         level5.addRunProperty(new RunFonts("Wingdings", "default"));
         abstractNumbering.addLevel(level5);
 
-        let level6 = new Level(6, "bullet", "•", "left");
+        const level6 = new Level(6, "bullet", "•", "left");
         level6.addParagraphProperty(new Indent(5040, 360));
         level6.addRunProperty(new RunFonts("Symbol", "default"));
         abstractNumbering.addLevel(level6);
 
-        let level7 = new Level(7, "bullet", "o", "left");
+        const level7 = new Level(7, "bullet", "o", "left");
         level7.addParagraphProperty(new Indent(5760, 360));
         level7.addRunProperty(new RunFonts("Courier New", "default"));
         abstractNumbering.addLevel(level7);
 
-        let level8 = new Level(8, "bullet", "•", "left");
+        const level8 = new Level(8, "bullet", "•", "left");
         level8.addParagraphProperty(new Indent(6480, 360));
         level8.addRunProperty(new RunFonts("Wingdings", "default"));
         abstractNumbering.addLevel(level8);
@@ -96,10 +96,9 @@ export class Numbering extends MultiPropertyXmlComponent {
         return num;
     }
 
-    clearVariables() {
+    public clearVariables(): void {
         super.clearVariables();
-        _.forEach(this.root, element => {
-            console.log(element);
+        _.forEach(this.root, (element) => {
             element.clearVariables();
         });
         delete this.nextId;
