@@ -6,7 +6,7 @@
   "scripts": {
     "pretest": "rimraf ./build-tests && tsc -p ts/test-tsconfig.json",
     "test": "mocha ./build-tests --recursive",
-    "prepublish": "tsc -p ts",
+    "prepublishOnly": "tsc -p ts",
     "lint": "tslint --project ./ts"
   },
   "repository": {
