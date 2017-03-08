@@ -82,4 +82,17 @@ describe("AbstractNumbering", () => {
         const abstractNumbering = new AbstractNumbering(5);
         expect(abstractNumbering.id).to.equal(5);
     });
+
+    describe("#createLevel", () => {
+        it("creates a level with the given characteristics", () => {
+            const abstractNumbering = new AbstractNumbering(1);
+            const level = abstractNumbering.createLevel(3, "lowerLetter", "%1)", "start");
+            const tree = new Formatter().format(level);
+            expect(tree['w:lvl']).to.include({_attr: {"w:ilvl": 3, "w15:tentative": 1}})
+            expect(tree['w:lvl']).to.include({"w:start": [{_attr: {"w:val": 1}}]})
+            expect(tree['w:lvl']).to.include({"w:lvlJc": [{_attr: {"w:val": "start"}}]})
+            expect(tree['w:lvl']).to.include({"w:numFmt": [{_attr: {"w:val": "lowerLetter"}}]})
+            expect(tree['w:lvl']).to.include({"w:lvlText": [{"_attr": {"w:val": "%1)"}}]})
+        });
+    });
 });
