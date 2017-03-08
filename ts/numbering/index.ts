@@ -34,7 +34,7 @@ export class Numbering extends MultiPropertyXmlComponent {
 
         this.nextId = 0;
 
-        const abstractNumbering = this.addAbstractNumbering();
+        const abstractNumbering = this.createAbstractNumbering();
 
         const level0 = new Level(0, "bullet", "•", "left");
         level0.addParagraphProperty(new Indent(720, 360));
@@ -81,16 +81,16 @@ export class Numbering extends MultiPropertyXmlComponent {
         level8.addRunProperty(new RunFonts("Wingdings", "default"));
         abstractNumbering.addLevel(level8);
 
-        this.addConcreteNumbering(abstractNumbering);
+        this.createConcreteNumbering(abstractNumbering);
     }
 
-    public addAbstractNumbering(): AbstractNumbering {
+    public createAbstractNumbering(): AbstractNumbering {
         const num = new AbstractNumbering(this.nextId++);
         this.root.push(num);
         return num;
     }
 
-    public addConcreteNumbering(abstractNumbering: AbstractNumbering): Num {
+    public createConcreteNumbering(abstractNumbering: AbstractNumbering): Num {
         const num = new Num(this.nextId++, abstractNumbering.id);
         this.root.push(num);
         return num;
