@@ -6,6 +6,7 @@ import {ParagraphProperties} from "./properties";
 import {MaxRightTabStop, LeftTabStop} from "./tab-stop";
 import {Style} from "./style";
 import {NumberProperties} from "./unordered-list";
+import { Num } from "../../numbering/num";
 
 class Alignment extends XmlComponent {
 
@@ -106,7 +107,13 @@ export class Paragraph extends XmlComponent {
 
     bullet(): Paragraph {
         this.properties.push(new Style("ListParagraph"));
-        this.properties.push(new NumberProperties());
+        this.properties.push(new NumberProperties(1, 0));
+        return this;
+    }
+
+    public setNumbering(numbering: Num, indentLevel: number): Paragraph {
+        this.properties.push(new Style("ListParagraph"));
+        this.properties.push(new NumberProperties(numbering.id, indentLevel));
         return this;
     }
 }

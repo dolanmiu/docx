@@ -1,5 +1,7 @@
 import * as docx from "../../../docx";
-import { assert } from "chai";
+import { Formatter } from "../../../export/formatter";
+import { Numbering } from "../../../numbering";
+import { assert, expect } from "chai";
 
 function jsonify(obj: Object) {
     let stringifiedJson = JSON.stringify(obj);
@@ -111,6 +113,46 @@ describe("Paragraph", () => {
             paragraph.bullet();
             let newJson = jsonify(paragraph);
             assert.isDefined(newJson.root[0].root[2]);
+        });
+    });
+
+    describe("#setNumbering", () => {
+        it("should add list paragraph style to JSON", () => {
+            const numbering = new Numbering();
+            const numberedAbstract = numbering.createAbstractNumbering();
+            numberedAbstract.createLevel(0, "lowerLetter", "%1)", "start");
+            const letterNumbering = numbering.createConcreteNumbering(numberedAbstract);
+
+            paragraph.setNumbering(letterNumbering, 0);
+            let newJson = jsonify(paragraph);
+            assert.equal(newJson.root[0].root[1].root[0].root.val, "ListParagraph");
+        });
+
+        it("it should add numbered properties", () => {
+            const numbering = new Numbering();
+            const numberedAbstract = numbering.createAbstractNumbering();
+            numberedAbstract.createLevel(0, "lowerLetter", "%1)", "start");
+            const letterNumbering = numbering.createConcreteNumbering(numberedAbstract);
+
+            paragraph.setNumbering(letterNumbering, 0);
+            const tree = new Formatter().format(paragraph);
+            console.log(JSON.stringify(tree, null, 2));
+            expect(tree).to.deep.equal({
+                "w:p": [
+                    {
+                        "w:pPr": [
+                            {"_attr": {}},
+                            {"w:pStyle": [{"_attr": {"w:val": "ListParagraph"}}]},
+                            {
+                                "w:numPr": [
+                                    {"w:ilvl": [{"_attr": {"w:val": 0}}]},
+                                    {"w:numId": [{"_attr": {"w:val": letterNumbering.id}}]}
+                                ]
+                            },
+                        ],
+                    },
+                ]
+            })
         });
     });
 });

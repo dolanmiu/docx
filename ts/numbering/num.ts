@@ -1,35 +1,42 @@
-import {XmlComponent, Attributes, XmlAttributeComponent} from "../docx/xml-components";
+import { Attributes, XmlAttributeComponent, XmlComponent } from "../docx/xml-components";
 
 class AbstractNumId extends XmlComponent {
 
     constructor(value: number) {
         super("w:abstractNumId");
         this.root.push(new Attributes({
-            val: value
+            val: value,
         }));
     }
 }
 
-interface NumAttributesProperties {
+interface INumAttributesProperties {
     numId: number;
 }
 
 class NumAttributes extends XmlAttributeComponent {
 
-    constructor(properties: NumAttributesProperties) {
+    constructor(properties: INumAttributesProperties) {
         super({
-            numId: "w:numId"
+            numId: "w:numId",
         }, properties);
     }
 }
 
 export class Num extends XmlComponent {
+    public id: number;
 
     constructor(numId: number, abstractNumId: number) {
         super("w:num");
         this.root.push(new NumAttributes({
-            numId: numId
+            numId: numId,
         }));
         this.root.push(new AbstractNumId(abstractNumId));
+        this.id = numId;
+    }
+
+    public clearVariables(): void {
+        super.clearVariables();
+        delete this.id;
     }
 }

@@ -1,19 +1,18 @@
-import {XmlComponent, Attributes, MultiPropertyXmlComponent} from "../docx/xml-components";
-import {XmlAttributeComponent} from "../docx/xml-components";
-import {RunProperties} from "../docx/run/properties";
-import {ParagraphProperties} from "../docx/paragraph/properties";
+import { ParagraphProperties } from "../docx/paragraph/properties";
+import { RunProperties } from "../docx/run/properties";
+import { Attributes, MultiPropertyXmlComponent, XmlAttributeComponent, XmlComponent } from "../docx/xml-components";
 
-interface LevelAttributesProperties {
+interface ILevelAttributesProperties {
     ilvl?: number;
     tentative?: number;
 }
 
 class LevelAttributes extends XmlAttributeComponent {
 
-    constructor(properties: LevelAttributesProperties) {
+    constructor(properties: ILevelAttributesProperties) {
         super({
             ilvl: "w:ilvl",
-            tentative: "w15:tentative"
+            tentative: "w15:tentative",
         }, properties);
     }
 }
@@ -23,7 +22,7 @@ class Start extends XmlComponent {
     constructor(value: number) {
         super("w:start");
         this.root.push(new Attributes({
-            val: value
+            val: value,
         }));
     }
 }
@@ -33,7 +32,7 @@ class NumberFormat extends XmlComponent {
     constructor(value: string) {
         super("w:numFmt");
         this.root.push(new Attributes({
-            val: value
+            val: value,
         }));
     }
 }
@@ -43,7 +42,7 @@ class LevelText extends XmlComponent {
     constructor(value: string) {
         super("w:lvlText");
         this.root.push(new Attributes({
-            val: value
+            val: value,
         }));
     }
 }
@@ -53,7 +52,7 @@ class LevelJc extends XmlComponent {
     constructor(value: string) {
         super("w:lvlJc");
         this.root.push(new Attributes({
-            val: value
+            val: value,
         }));
     }
 }
@@ -66,7 +65,7 @@ export class Level extends XmlComponent {
         super("w:lvl");
         this.root.push(new LevelAttributes({
             ilvl: level,
-            tentative: 1
+            tentative: 1,
         }));
 
         this.root.push(new Start(1));
@@ -81,7 +80,7 @@ export class Level extends XmlComponent {
         this.root.push(this.runProperties);
     }
 
-    clearVariables(): void {
+    public clearVariables(): void {
         this.paragraphProperties.clearVariables();
         this.runProperties.clearVariables();
 
@@ -89,11 +88,13 @@ export class Level extends XmlComponent {
         delete this.runProperties;
     }
 
-    addParagraphProperty(property: XmlComponent): void {
+    public addParagraphProperty(property: XmlComponent): Level {
         this.paragraphProperties.push(property);
+        return this;
     }
 
-    addRunProperty(property: XmlComponent): void {
+    public addRunProperty(property: XmlComponent): Level {
         this.runProperties.push(property);
+        return this;
     }
 }

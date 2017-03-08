@@ -1,6 +1,6 @@
-import {XmlComponent, XmlAttributeComponent} from "../docx/xml-components";
+import {XmlAttributeComponent, XmlComponent} from "../docx/xml-components";
 
-interface RunFontAttributesProperties {
+interface IRunFontAttributesProperties {
     ascii: string;
     hAnsi: string;
     hint: string;
@@ -8,10 +8,11 @@ interface RunFontAttributesProperties {
 
 class RunFontAttributes extends XmlAttributeComponent {
 
-    constructor(properties: RunFontAttributesProperties) {
+    constructor(properties: IRunFontAttributesProperties) {
         super({
-            left: "w:left",
-            hanging: "w:hanging"
+            ascii: "w:ascii",
+            hAnsi: "w:hAnsi",
+            hint: "w:hint",
         }, properties);
     }
 }
@@ -19,11 +20,11 @@ class RunFontAttributes extends XmlAttributeComponent {
 export class RunFonts extends XmlComponent {
 
     constructor(ascii: string, hint: string) {
-        super("w:ind");
+        super("w:rFonts");
         this.root.push(new RunFontAttributes({
             ascii: ascii,
             hAnsi: ascii,
-            hint: hint
+            hint: hint,
         }));
     }
 }
