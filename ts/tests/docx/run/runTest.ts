@@ -1,10 +1,10 @@
+import { assert } from "chai";
 import { Run } from "../../../docx/run";
 import { TextRun } from "../../../docx/run/text-run";
-import { assert } from "chai";
+import { Formatter } from "../../../export/formatter";
 
-function jsonify(obj: Object) {
-    let stringifiedJson = JSON.stringify(obj);
-    return JSON.parse(stringifiedJson);
+function jsonify(obj: object) {
+    return JSON.parse(JSON.stringify(obj));
 }
 
 describe("Run", () => {
@@ -17,7 +17,7 @@ describe("Run", () => {
     describe("#bold()", () => {
         it("it should add bold to the properties", () => {
             run.bold();
-            let newJson = jsonify(run);
+            const newJson = jsonify(run);
             assert.equal(newJson.root[0].root[0].rootKey, "w:b");
         });
     });
@@ -25,7 +25,7 @@ describe("Run", () => {
     describe("#italic()", () => {
         it("it should add italics to the properties", () => {
             run.italic();
-            let newJson = jsonify(run);
+            const newJson = jsonify(run);
             assert.equal(newJson.root[0].root[0].rootKey, "w:i");
         });
     });
@@ -33,7 +33,7 @@ describe("Run", () => {
     describe("#underline()", () => {
         it("it should add underline to the properties", () => {
             run.underline();
-            let newJson = jsonify(run);
+            const newJson = jsonify(run);
             assert.equal(newJson.root[0].root[0].rootKey, "w:u");
         });
     });
@@ -41,7 +41,7 @@ describe("Run", () => {
     describe("#smallCaps()", () => {
         it("it should add smallCaps to the properties", () => {
             run.smallCaps();
-            let newJson = jsonify(run);
+            const newJson = jsonify(run);
             assert.equal(newJson.root[0].root[0].rootKey, "w:smallCaps");
         });
     });
@@ -49,7 +49,7 @@ describe("Run", () => {
     describe("#caps()", () => {
         it("it should add caps to the properties", () => {
             run.allCaps();
-            let newJson = jsonify(run);
+            const newJson = jsonify(run);
             assert.equal(newJson.root[0].root[0].rootKey, "w:caps");
         });
     });
@@ -57,7 +57,7 @@ describe("Run", () => {
     describe("#strike()", () => {
         it("it should add strike to the properties", () => {
             run.strike();
-            let newJson = jsonify(run);
+            const newJson = jsonify(run);
             assert.equal(newJson.root[0].root[0].rootKey, "w:strike");
         });
     });
@@ -65,25 +65,23 @@ describe("Run", () => {
     describe("#doubleStrike()", () => {
         it("it should add caps to the properties", () => {
             run.doubleStrike();
-            let newJson = jsonify(run);
+            const newJson = jsonify(run);
             assert.equal(newJson.root[0].root[0].rootKey, "w:dstrike");
         });
     });
 
     describe("#break()", () => {
         it("it should add break to the run", () => {
-            let run = new Run();
             run.break();
-            let newJson = jsonify(run);
+            const newJson = jsonify(run);
             assert.equal(newJson.root[1].rootKey, "w:br");
         });
     });
 
     describe("#tab()", () => {
         it("it should add break to the run", () => {
-            let run = new Run();
             run.tab();
-            let newJson = jsonify(run);
+            const newJson = jsonify(run);
             assert.equal(newJson.root[1].rootKey, "w:tab");
         });
     });
