@@ -1,7 +1,7 @@
-import {XmlAttributeComponent} from "./default-attributes";
+import { XmlAttributeComponent } from "./default-attributes";
 
-interface AttributesProperties {
-    val?: any;
+interface IAttributesProperties {
+    val?: string | number | boolean;
     color?: string;
     space?: string;
     sz?: string;
@@ -24,7 +24,7 @@ interface AttributesProperties {
 
 export class Attributes extends XmlAttributeComponent {
 
-    constructor(properties?: AttributesProperties) {
+    constructor(properties?: IAttributesProperties) {
         super({
             val: "w:val",
             color: "w:color",
@@ -44,7 +44,7 @@ export class Attributes extends XmlAttributeComponent {
             footer: "w:footer",
             gutter: "w:gutter",
             linePitch: "w:linePitch",
-            pos: "w:pos"
+            pos: "w:pos",
         }, properties);
     }
 }

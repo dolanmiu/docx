@@ -1,19 +1,19 @@
 import * as _ from "lodash";
-import {BaseXmlComponent} from "./base";
+import { BaseXmlComponent } from "./base";
 
 export abstract class XmlComponent extends BaseXmlComponent {
-    protected root: Array<BaseXmlComponent>;
+    protected root: BaseXmlComponent[];
 
     constructor(rootKey: string) {
         super(rootKey);
         this.root = new Array<BaseXmlComponent>();
     }
 
-    replaceKey(): void {
+    public replaceKey(): void {
         // console.log(this.rootKey);
         // console.log(this.root);
         if (this.root !== undefined) {
-            this.root.forEach(root => {
+            this.root.forEach((root) => {
                 if (root && root instanceof BaseXmlComponent) {
                     root.replaceKey();
                 }

@@ -1,5 +1,5 @@
-import {Text} from "./text";
-import {Run} from "../run";
+import { Run } from "../run";
+import { Text } from "./text";
 
 export class TextRun extends Run {
 

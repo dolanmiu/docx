@@ -1,5 +1,5 @@
-import {BaseXmlComponent} from "./base";
 import * as _ from "lodash";
+import { BaseXmlComponent } from "./base";
 
 export abstract class XmlAttributeComponent extends BaseXmlComponent {
     protected root: Object;
@@ -16,10 +16,10 @@ export abstract class XmlAttributeComponent extends BaseXmlComponent {
         }
     }
 
-    replaceKey(): void {
+    public replaceKey(): void {
         if (this.root !== undefined) {
             _.forOwn(this.root, (value, key) => {
-                let newKey = this.xmlKeys[key];
+                const newKey = this.xmlKeys[key];
                 this.root[newKey] = value;
                 delete this.root[key];
             });

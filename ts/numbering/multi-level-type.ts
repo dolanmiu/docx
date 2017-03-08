@@ -1,4 +1,4 @@
-import {Attributes, XmlComponent} from "../docx/xml-components";
+import { Attributes, XmlComponent } from "../docx/xml-components";
 
 export class MultiLevelType extends XmlComponent {
 

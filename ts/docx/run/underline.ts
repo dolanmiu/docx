@@ -6,7 +6,7 @@ abstract class BaseUnderline extends XmlComponent {
         super("w:u");
         this.root.push(new Attributes({
             val: underlineType,
-            color: color
+            color: color,
         }));
     }
 }
@@ -87,7 +87,6 @@ export class DoubleUnderline extends BaseUnderline {
         super("double");
     }
 }
-
 
 export class SingleUnderline extends BaseUnderline {
 

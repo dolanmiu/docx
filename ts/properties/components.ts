@@ -1,6 +1,6 @@
-import {XmlUnitComponent} from "../docx/xml-components";
-import {XmlComponent} from "../docx/xml-components";
-import {DocumentAttributes} from "../docx/document/document-attributes";
+import { DocumentAttributes } from "../docx/document/document-attributes";
+import { XmlUnitComponent } from "../docx/xml-components";
+import { XmlComponent } from "../docx/xml-components";
 
 export class Title extends XmlUnitComponent {
 
@@ -54,20 +54,20 @@ export class Revision extends XmlUnitComponent {
 
     constructor(value: string) {
         super("cp:revision");
-        let revision = value;
+        const revision = value;
         this.root = value;
     }
 }
 
 abstract class DateComponent extends XmlComponent {
     protected getCurrentDate(): any {
-        let date = new Date(),
-            year = date.getFullYear(),
-            month = ("0" + (date.getMonth() + 1)).slice(-2),
-            day = ("0" + date.getDate()).slice(-2),
-            hours = ("0" + date.getHours()).slice(-2),
-            minutes = ("0" + date.getMinutes()).slice(-2),
-            seconds = ("0" + date.getSeconds()).slice(-2);
+        const date = new Date();
+        const year = date.getFullYear();
+        const month = ("0" + (date.getMonth() + 1)).slice(-2);
+        const day = ("0" + date.getDate()).slice(-2);
+        const hours = ("0" + date.getHours()).slice(-2);
+        const minutes = ("0" + date.getMinutes()).slice(-2);
+        const seconds = ("0" + date.getSeconds()).slice(-2);
 
         return year + "-" + month + "-" + day + "T" + hours + ":" + minutes + ":" + seconds + "Z";
     }
@@ -78,7 +78,7 @@ export class Created extends DateComponent {
     constructor() {
         super("dcterms:created");
         this.root.push(new DocumentAttributes({
-            type: "dcterms:W3CDTF"
+            type: "dcterms:W3CDTF",
         }));
         this.root.push(this.getCurrentDate());
     }
@@ -89,7 +89,7 @@ export class Modified extends DateComponent {
     constructor() {
         super("dcterms:modified");
         this.root.push(new DocumentAttributes({
-            type: "dcterms:W3CDTF"
+            type: "dcterms:W3CDTF",
         }));
         this.root.push(this.getCurrentDate());
     }

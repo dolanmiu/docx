@@ -1,8 +1,8 @@
-import {XmlComponent} from "../docx/xml-components";
-import {DocumentAttributes} from "../docx/document/document-attributes";
-import {Title, Subject, Creator, Keywords, Description, LastModifiedBy, Revision, Created, Modified} from "./components";
+import { DocumentAttributes } from "../docx/document/document-attributes";
+import { XmlComponent } from "../docx/xml-components";
+import { Created, Creator, Description, Keywords, LastModifiedBy, Modified, Revision, Subject, Title } from "./components";
 
-interface PropertiesOptions {
+interface IPropertiesOptions {
     title?: string;
     subject?: string;
     creator?: string;
@@ -14,14 +14,14 @@ interface PropertiesOptions {
 
 export class Properties extends XmlComponent {
 
-    constructor(options: PropertiesOptions) {
+    constructor(options: IPropertiesOptions) {
         super("cp:coreProperties");
         this.root.push(new DocumentAttributes({
             cp: "http://schemas.openxmlformats.org/package/2006/metadata/core-properties",
             dc: "http://purl.org/dc/elements/1.1/",
             dcterms: "http://purl.org/dc/terms/",
             dcmitype: "http://purl.org/dc/dcmitype/",
-            xsi: "http://www.w3.org/2001/XMLSchema-instance"
+            xsi: "http://www.w3.org/2001/XMLSchema-instance",
         }));
         this.root.push(new Title(options.title));
         this.root.push(new Subject(options.subject));

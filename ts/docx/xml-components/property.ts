@@ -1,17 +1,17 @@
-import {XmlComponent} from "./";
-import {ParagraphProperties} from "../paragraph/properties";
-import {RunProperties} from "../run/properties";
+import { ParagraphProperties } from "../paragraph/properties";
+import { RunProperties } from "../run/properties";
+import { XmlComponent } from "./";
 
 export class ParagraphPropertyXmlComponent extends XmlComponent {
     private paragraphProperties: ParagraphProperties;
 
-    constructor(rootKey) {
+    constructor(rootKey: string) {
         super(rootKey);
         this.paragraphProperties = new ParagraphProperties();
         this.root.push(this.paragraphProperties);
     }
 
-    clearVariables(): void {
+    public clearVariables(): void {
         this.paragraphProperties.clearVariables();
 
         delete this.paragraphProperties;
@@ -21,13 +21,13 @@ export class ParagraphPropertyXmlComponent extends XmlComponent {
 export class RunPropertyXmlComponent extends XmlComponent {
     private runProperties: RunProperties;
 
-    constructor(rootKey) {
+    constructor(rootKey: string) {
         super(rootKey);
         this.runProperties = new RunProperties();
         this.root.push(this.runProperties);
     }
 
-    clearVariables(): void {
+    public clearVariables(): void {
         this.runProperties.clearVariables();
 
         delete this.runProperties;
@@ -38,7 +38,7 @@ export class MultiPropertyXmlComponent extends XmlComponent {
     private runProperties: RunProperties;
     private paragraphProperties: ParagraphProperties;
 
-    constructor(rootKey) {
+    constructor(rootKey: string) {
         super(rootKey);
         this.runProperties = new RunProperties();
         this.root.push(this.runProperties);
@@ -47,7 +47,7 @@ export class MultiPropertyXmlComponent extends XmlComponent {
         this.root.push(this.paragraphProperties);
     }
 
-    clearVariables(): void {
+    public clearVariables(): void {
         this.runProperties.clearVariables();
         this.paragraphProperties.clearVariables();
 

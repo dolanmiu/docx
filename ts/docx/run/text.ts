@@ -1,4 +1,4 @@
-import {XmlUnitComponent} from "../xml-components"
+import { XmlUnitComponent } from "../xml-components";
 
 export class Text extends XmlUnitComponent {
 

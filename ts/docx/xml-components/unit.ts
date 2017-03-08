@@ -7,7 +7,7 @@ export abstract class XmlUnitComponent extends BaseXmlComponent {
         super(rootKey);
     }
 
-    replaceKey(): void {
+    public replaceKey(): void {
         if (this.root !== undefined) {
             this[this.rootKey] = this.root;
             delete this.root;
