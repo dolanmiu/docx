@@ -24,6 +24,7 @@ class NumAttributes extends XmlAttributeComponent {
 }
 
 export class Num extends XmlComponent {
+    public id: number;
 
     constructor(numId: number, abstractNumId: number) {
         super("w:num");
@@ -31,5 +32,11 @@ export class Num extends XmlComponent {
             numId: numId,
         }));
         this.root.push(new AbstractNumId(abstractNumId));
+        this.id = numId;
+    }
+
+    public clearVariables(): void {
+        super.clearVariables();
+        delete this.id;
     }
 }
