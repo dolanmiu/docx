@@ -68,12 +68,12 @@ export class Numbering extends MultiPropertyXmlComponent {
         level6.addRunProperty(new RunFonts("Symbol", "default"));
         abstractNumbering.addLevel(level6);
 
-        let level7 = new Level(4, "bullet", "o", "left");
+        let level7 = new Level(7, "bullet", "o", "left");
         level7.addParagraphProperty(new Indent(5760, 360));
         level7.addRunProperty(new RunFonts("Courier New", "default"));
         abstractNumbering.addLevel(level7);
 
-        let level8 = new Level(5, "bullet", "•", "left");
+        let level8 = new Level(8, "bullet", "•", "left");
         level8.addParagraphProperty(new Indent(6480, 360));
         level8.addRunProperty(new RunFonts("Wingdings", "default"));
         abstractNumbering.addLevel(level8);
