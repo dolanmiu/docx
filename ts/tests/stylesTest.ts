@@ -171,6 +171,22 @@ describe("ParagraphStyle", () => {
                 ],
             });
         });
+
+        it("#spacing", () => {
+            const style = new ParagraphStyle("myStyleId")
+                .spacing({before: 50, after: 150});
+            const tree = new Formatter().format(style);
+            expect(tree).to.deep.equal({
+                "w:style": [
+                    {_attr: {"w:type": "paragraph", "w:styleId": "myStyleId"}},
+                    {"w:pPr": [
+                        {_attr: {}},
+                        {"w:spacing": [{_attr: {"w:before": 50, "w:after": 150}}]},
+                    ]},
+                    {"w:rPr": []},
+                ],
+            });
+        });
     });
 
     describe("formatting methods: run properties", () => {

@@ -6,6 +6,7 @@ import { ThematicBreak } from "./border";
 import { Indent } from "./indent";
 import { PageBreak } from "./page-break";
 import { ParagraphProperties } from "./properties";
+import { ISpacingProperties, Spacing } from "./spacing";
 import { Style } from "./style";
 import { LeftTabStop, MaxRightTabStop } from "./tab-stop";
 import { NumberProperties } from "./unordered-list";
@@ -128,4 +129,9 @@ export class Paragraph extends XmlComponent {
         this.properties.push(new Indent(start, hanging));
         return this;
     }
+
+    public spacing(params: ISpacingProperties): Paragraph {
+        this.properties.push(new Spacing(params));
+        return this;
+    };
 }

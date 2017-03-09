@@ -188,4 +188,21 @@ describe("Paragraph", () => {
             })
         });
     });
+
+    describe("#spacing", () => {
+        it("should set the paragraph spacing to the given values", () => {
+            paragraph.spacing({before: 90, line: 50});
+            const tree = new Formatter().format(paragraph);
+            expect(tree).to.deep.equal({
+                "w:p": [
+                    {
+                        "w:pPr": [
+                            {"_attr": {}},
+                            {"w:spacing": [{"_attr": {"w:before": 90, "w:line": 50}}]},
+                        ],
+                    },
+                ]
+            })
+        });
+    });
 });

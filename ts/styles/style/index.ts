@@ -1,5 +1,6 @@
 import { Indent } from "../../docx/paragraph/indent";
 import { ParagraphProperties } from "../../docx/paragraph/properties";
+import { ISpacingProperties, Spacing } from "../../docx/paragraph/spacing";
 import * as formatting from "../../docx/run/formatting";
 import { RunProperties } from "../../docx/run/properties";
 import { XmlAttributeComponent, XmlComponent } from "../../docx/xml-components";
@@ -108,6 +109,11 @@ export class ParagraphStyle extends Style {
         this.addParagraphProperty(new Indent(left, hanging));
         return this;
     }
+
+    public spacing(params: ISpacingProperties): ParagraphStyle {
+        this.addParagraphProperty(new Spacing(params));
+        return this;
+    };
 }
 
 export class HeadingStyle extends ParagraphStyle {
