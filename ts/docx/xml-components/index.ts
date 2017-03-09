@@ -11,6 +11,7 @@ export abstract class XmlComponent extends BaseXmlComponent {
     }
 
     public toXml(): object {
+        // What does 'ret' stand for? Retain? Return?
         const ret = this.root.map((comp) => {
             if (comp instanceof BaseXmlComponent) {
                 return comp.toXml();
