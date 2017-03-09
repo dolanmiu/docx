@@ -27,4 +27,3 @@ export abstract class XmlComponent extends BaseXmlComponent {
 export * from "./attributes"
 export * from "./default-attributes";
 export * from "./unit";
-export * from "./property";

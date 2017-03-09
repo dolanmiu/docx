@@ -1,6 +1,6 @@
 import { ParagraphProperties } from "../docx/paragraph/properties";
 import { RunProperties } from "../docx/run/properties";
-import { Attributes, MultiPropertyXmlComponent, XmlAttributeComponent, XmlComponent } from "../docx/xml-components";
+import { Attributes, XmlAttributeComponent, XmlComponent } from "../docx/xml-components";
 
 interface ILevelAttributesProperties {
     ilvl?: number;
