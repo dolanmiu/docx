@@ -100,6 +100,11 @@ export class ParagraphStyle extends Style {
         return this;
     }
 
+    public underline(underlineType?: string, color?: string): ParagraphStyle {
+        this.addRunProperty(new formatting.Underline(underlineType, color));
+        return this;
+    }
+
     public color(color: string): ParagraphStyle {
         this.addRunProperty(new formatting.Color(color));
         return this;

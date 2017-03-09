@@ -235,6 +235,53 @@ describe("ParagraphStyle", () => {
             });
         });
 
+        describe("#underline", () => {
+            it("should set underline to 'single' if no arguments are given", () => {
+                const style = new ParagraphStyle("myStyleId")
+                    .underline();
+                const tree = new Formatter().format(style);
+                expect(tree).to.deep.equal({
+                    "w:style": [
+                        {_attr: {"w:type": "paragraph", "w:styleId": "myStyleId"}},
+                        {"w:pPr": [{_attr: {}}]},
+                        {"w:rPr": [
+                            {"w:u": [{_attr: {"w:val": "single"}}]},
+                        ]},
+                    ],
+                });
+            });
+
+            it("should set the style if given", () => {
+                const style = new ParagraphStyle("myStyleId")
+                    .underline("double");
+                const tree = new Formatter().format(style);
+                expect(tree).to.deep.equal({
+                    "w:style": [
+                        {_attr: {"w:type": "paragraph", "w:styleId": "myStyleId"}},
+                        {"w:pPr": [{_attr: {}}]},
+                        {"w:rPr": [
+                            {"w:u": [{_attr: {"w:val": "double"}}]},
+                        ]},
+                    ],
+                });
+            });
+
+            it("should set the style and color if given", () => {
+                const style = new ParagraphStyle("myStyleId")
+                    .underline("double", "005599");
+                const tree = new Formatter().format(style);
+                expect(tree).to.deep.equal({
+                    "w:style": [
+                        {_attr: {"w:type": "paragraph", "w:styleId": "myStyleId"}},
+                        {"w:pPr": [{_attr: {}}]},
+                        {"w:rPr": [
+                            {"w:u": [{_attr: {"w:val": "double", "w:color": "005599"}}]},
+                        ]},
+                    ],
+                });
+            });
+        });
+
         it("#color", () => {
             const style = new ParagraphStyle("myStyleId")
                 .color("123456");
