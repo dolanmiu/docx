@@ -1,15 +1,34 @@
 import { ParagraphProperties } from "../../docx/paragraph/properties";
 import { RunProperties } from "../../docx/run/properties";
-import { XmlComponent } from "../../docx/xml-components";
+import { XmlAttributeComponent, XmlComponent } from "../../docx/xml-components";
 
-import { StyleAttributes } from "./attributes";
 import { BasedOn, Name, Next, QuickFormat } from "./components";
+
+export interface IStyleAttributes {
+    type?: string;
+    styleId?: string;
+    default?: boolean;
+    customStyle?: string;
+}
+
+class StyleAttributes extends XmlAttributeComponent {
+    private _attr: IStyleAttributes;
+
+    constructor(properties: IStyleAttributes) {
+        super({
+            type: "w:type",
+            styleId: "w:styleId",
+            default: "w:default",
+            customStyle: "w:customStyle",
+        }, properties);
+    }
+}
 
 export class Style extends XmlComponent {
 
-    constructor(attributes: StyleAttributes) {
+    constructor(attributes: IStyleAttributes) {
         super("w:style");
-        this.root.push(attributes);
+        this.root.push(new StyleAttributes(attributes));
     }
 
     public push(styleSegment: XmlComponent): void {
@@ -23,12 +42,7 @@ export class ParagraphStyle extends Style {
     private runProperties: RunProperties;
 
     constructor(styleId: string) {
-
-        const attributes = new StyleAttributes({
-            type: "paragraph",
-            styleId: styleId,
-        });
-        super(attributes);
+        super({type: "paragraph", styleId: styleId});
         this.paragraphProperties = new ParagraphProperties();
         this.runProperties = new RunProperties();
         this.root.push(this.paragraphProperties);

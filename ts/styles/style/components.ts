@@ -1,13 +1,22 @@
-import { XmlComponent } from "../../docx/xml-components";
-import { StyleAttributes } from "./attributes";
+import { XmlAttributeComponent, XmlComponent } from "../../docx/xml-components";
+
+interface IComponentAttributes {
+    val: string;
+}
+
+class ComponentAttributes extends XmlAttributeComponent {
+    private _attr: IComponentAttributes;
+
+    constructor(properties: IComponentAttributes) {
+        super({val: "w:val"}, properties);
+    }
+}
 
 export class Name extends XmlComponent {
 
     constructor(value: string) {
         super("w:name");
-        this.root.push(new StyleAttributes({
-            val: value,
-        }));
+        this.root.push(new ComponentAttributes({val: value}));
     }
 }
 
@@ -15,9 +24,7 @@ export class BasedOn extends XmlComponent {
 
     constructor(value: string) {
         super("w:basedOn");
-        this.root.push(new StyleAttributes({
-            val: value,
-        }));
+        this.root.push(new ComponentAttributes({val: value}));
     }
 }
 
@@ -25,10 +32,7 @@ export class Next extends XmlComponent {
 
     constructor(value: string) {
         super("w:next");
-        this.root.push(new StyleAttributes({
-            styleId: "1",
-            val: value,
-        }));
+        this.root.push(new ComponentAttributes({val: value}));
     }
 }
 
@@ -36,9 +40,7 @@ export class Link extends XmlComponent {
 
     constructor(value: string) {
         super("w:link");
-        this.root.push(new StyleAttributes({
-            val: value,
-        }));
+        this.root.push(new ComponentAttributes({val: value}));
     }
 }
 
@@ -46,9 +48,8 @@ export class UiPriority extends XmlComponent {
 
     constructor(value: string) {
         super("w:uiPriority");
-        this.root.push(new StyleAttributes({
-            val: value,
-        }));
+        // TODO: this value should be a ST_DecimalNumber
+        this.root.push(new ComponentAttributes({val: value}));
     }
 }
 
