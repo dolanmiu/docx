@@ -4,7 +4,6 @@ import { Numbering } from "../../numbering";
 import { Properties } from "../../properties";
 import { Packer } from "./packer";
 
-
 export class LocalPacker extends Packer {
     private stream: fs.WriteStream;
 

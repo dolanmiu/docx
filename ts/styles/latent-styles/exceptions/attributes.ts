@@ -9,7 +9,9 @@ interface ILatentStyleExceptionAttributesProperties {
 }
 
 export class LatentStyleExceptionAttributes extends XmlComponent {
+    /* tslint:disable */
     private _attr: ILatentStyleExceptionAttributesProperties;
+    /* tslint:enable */
 
     private xmlKeys = {
         name: "w:name",
@@ -26,6 +28,6 @@ export class LatentStyleExceptionAttributes extends XmlComponent {
         if (!properties) {
             this._attr = {};
         }
-        //this._attr.xmlKeys = this.xmlKeys;
+        // this._attr.xmlKeys = this.xmlKeys;
     }
 }
