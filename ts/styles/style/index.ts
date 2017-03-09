@@ -26,9 +26,12 @@ class StyleAttributes extends XmlAttributeComponent {
 
 export class Style extends XmlComponent {
 
-    constructor(attributes: IStyleAttributes) {
+    constructor(attributes: IStyleAttributes, name?: string) {
         super("w:style");
         this.root.push(new StyleAttributes(attributes));
+        if (name) {
+            this.root.push(new Name(name));
+        }
     }
 
     public push(styleSegment: XmlComponent): void {
@@ -41,8 +44,8 @@ export class ParagraphStyle extends Style {
     private paragraphProperties: ParagraphProperties;
     private runProperties: RunProperties;
 
-    constructor(styleId: string) {
-        super({type: "paragraph", styleId: styleId});
+    constructor(styleId: string, name?: string) {
+        super({type: "paragraph", styleId: styleId}, name);
         this.paragraphProperties = new ParagraphProperties();
         this.runProperties = new RunProperties();
         this.root.push(this.paragraphProperties);

@@ -1,7 +1,7 @@
 import { assert, expect } from "chai";
 import { Formatter } from "../export/formatter";
 import { Styles } from "../styles";
-import { Style } from "../styles/style";
+import { ParagraphStyle, Style } from "../styles/style";
 import * as components from "../styles/style/components";
 
 describe("Styles", () => {
@@ -31,6 +31,20 @@ describe("Style", () => {
             expect(tree).to.deep.equal({
                 "w:style": [
                     {_attr: {"w:type": "paragraph", "w:styleId": "myStyleId", "w:default": true}},
+                ],
+            });
+        });
+
+        it("should set the name of the style, if given", () => {
+            const style = new Style({
+                type: "paragraph",
+                styleId: "myStyleId",
+            }, "Style Name");
+            const tree = new Formatter().format(style);
+            expect(tree).to.deep.equal({
+                "w:style": [
+                    {_attr: {"w:type": "paragraph", "w:styleId": "myStyleId"}},
+                    {"w:name": [{_attr: {"w:val": "Style Name"}}]},
                 ],
             });
         });
@@ -66,5 +80,35 @@ describe("Style components", () => {
         const style = new components.UiPriority("123");
         const tree = new Formatter().format(style);
         expect(tree).to.deep.equal({"w:uiPriority": [{_attr: {"w:val": "123"}}]});
+    });
+});
+
+
+describe("ParagraphStyle", () => {
+    describe("#constructor", () => {
+        it("should set the style type to paragraph and use the given style id", () => {
+            const style = new ParagraphStyle("myStyleId");
+            const tree = new Formatter().format(style);
+            expect(tree).to.deep.equal({
+                "w:style": [
+                    {_attr: {"w:type": "paragraph", "w:styleId": "myStyleId"}},
+                    {"w:pPr": [{_attr: {}}]},
+                    {"w:rPr": []},
+                ],
+            });
+        });
+
+        it("should set the name of the style, if given", () => {
+            const style = new ParagraphStyle("myStyleId", "Style Name");
+            const tree = new Formatter().format(style);
+            expect(tree).to.deep.equal({
+                "w:style": [
+                    {_attr: {"w:type": "paragraph", "w:styleId": "myStyleId"}},
+                    {"w:name": [{_attr: {"w:val": "Style Name"}}]},
+                    {"w:pPr": [{_attr: {}}]},
+                    {"w:rPr": []},
+                ],
+            });
+        });
     });
 });
