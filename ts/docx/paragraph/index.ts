@@ -119,6 +119,11 @@ export class Paragraph extends XmlComponent {
         return this;
     }
 
+    public style(styleId: string): Paragraph {
+        this.properties.push(new Style(styleId));
+        return this;
+    }
+
     public indent(start: number, hanging?: number): Paragraph {
         this.properties.push(new Indent(start, hanging));
         return this;

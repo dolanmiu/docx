@@ -155,6 +155,23 @@ describe("Paragraph", () => {
         });
     });
 
+    describe("#style", () => {
+        it("should set the paragraph style to the given styleId", () => {
+            paragraph.style('myFancyStyle');
+            const tree = new Formatter().format(paragraph);
+            expect(tree).to.deep.equal({
+                "w:p": [
+                    {
+                        "w:pPr": [
+                            {"_attr": {}},
+                            {"w:pStyle": [{"_attr": {"w:val": "myFancyStyle"}}]},
+                        ],
+                    },
+                ]
+            })
+        });
+    });
+
     describe("#indent", () => {
         it("should set the paragraph indent to the given values", () => {
             paragraph.indent(720);
