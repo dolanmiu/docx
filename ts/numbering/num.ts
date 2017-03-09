@@ -34,9 +34,4 @@ export class Num extends XmlComponent {
         this.root.push(new AbstractNumId(abstractNumId));
         this.id = numId;
     }
-
-    public clearVariables(): void {
-        super.clearVariables();
-        delete this.id;
-    }
 }

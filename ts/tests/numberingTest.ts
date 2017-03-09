@@ -65,7 +65,10 @@ describe("Numbering", () => {
             const n = numbering.createConcreteNumbering(a2);
             expect(n).to.be.instanceof(Num);
             const tree = new Formatter().format(numbering);
-            expect(n.id).to.equal(a2.id);
+            const serializedN = tree["w:numbering"].find(
+                (obj) => obj["w:num"] && obj["w:num"][0]._attr["w:numId"] === n.id
+            );
+            expect(serializedN["w:num"][1]["w:abstractNumId"][0]._attr["w:val"]).to.equal(a2.id);
         });
 
         it("assigns a unique ID to each concrete numbering it creates", () => {

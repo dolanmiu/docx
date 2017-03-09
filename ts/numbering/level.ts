@@ -1,6 +1,6 @@
 import { ParagraphProperties } from "../docx/paragraph/properties";
 import { RunProperties } from "../docx/run/properties";
-import { Attributes, MultiPropertyXmlComponent, XmlAttributeComponent, XmlComponent } from "../docx/xml-components";
+import { Attributes, XmlAttributeComponent, XmlComponent } from "../docx/xml-components";
 
 interface ILevelAttributesProperties {
     ilvl?: number;
@@ -78,14 +78,6 @@ export class Level extends XmlComponent {
 
         this.root.push(this.paragraphProperties);
         this.root.push(this.runProperties);
-    }
-
-    public clearVariables(): void {
-        this.paragraphProperties.clearVariables();
-        this.runProperties.clearVariables();
-
-        delete this.paragraphProperties;
-        delete this.runProperties;
     }
 
     public addParagraphProperty(property: XmlComponent): Level {

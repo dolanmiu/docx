@@ -1,9 +1,11 @@
-import { XmlUnitComponent } from "../xml-components";
+import { XmlComponent } from "../xml-components";
 
-export class Text extends XmlUnitComponent {
+export class Text extends XmlComponent {
 
     constructor(text: string) {
         super("w:t");
-        this.root = text;
+        if (text) {
+            this.root.push(text);
+        }
     }
 }

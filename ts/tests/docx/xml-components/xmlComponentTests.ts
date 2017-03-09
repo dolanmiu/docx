@@ -24,13 +24,4 @@ describe("XmlComponent", () => {
             assert.equal(newJson.rootKey, "w:test");
         });
     });
-
-    describe("#replaceKey", () => {
-
-        it("should replace the key to the specified root key", () => {
-            xmlComponent.replaceKey();
-            let newJson = jsonify(xmlComponent);
-            assert.isDefined(newJson["w:test"]);
-        });
-    });
 });

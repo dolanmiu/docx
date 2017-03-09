@@ -5,9 +5,5 @@ export abstract class BaseXmlComponent {
         this.rootKey = rootKey;
     }
 
-    public abstract replaceKey(): void;
-
-    public clearVariables(): void {
-        // Do Nothing
-    }
+    public abstract toXml(): object;
 }

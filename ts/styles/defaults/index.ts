@@ -14,11 +14,4 @@ export class DocumentDefaults extends XmlComponent {
         this.root.push(this.runPropertiesDefaults);
         this.root.push(this.paragraphPropertiesDefaults);
     }
-
-    public clearVariables(): void {
-        this.runPropertiesDefaults.clearVariables();
-        this.paragraphPropertiesDefaults.clearVariables();
-        delete this.runPropertiesDefaults;
-        delete this.paragraphPropertiesDefaults;
-    }
 }

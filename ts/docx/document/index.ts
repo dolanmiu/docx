@@ -33,9 +33,4 @@ export class Document extends XmlComponent {
     public addParagraph(paragraph: Paragraph): void {
         this.body.push(paragraph);
     }
-
-    public clearVariables(): void {
-        this.body.clearVariables();
-        delete this.body;
-    }
 }
