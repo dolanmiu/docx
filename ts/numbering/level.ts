@@ -80,14 +80,6 @@ export class Level extends XmlComponent {
         this.root.push(this.runProperties);
     }
 
-    public clearVariables(): void {
-        this.paragraphProperties.clearVariables();
-        this.runProperties.clearVariables();
-
-        delete this.paragraphProperties;
-        delete this.runProperties;
-    }
-
     public addParagraphProperty(property: XmlComponent): Level {
         this.paragraphProperties.push(property);
         return this;

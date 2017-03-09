@@ -40,13 +40,4 @@ export class AbstractNumbering extends XmlComponent {
         this.addLevel(level);
         return level;
     }
-
-    public clearVariables(): void {
-        _.forEach(this.root, (element) => {
-            if (element instanceof XmlComponent) {
-                element.clearVariables();
-            }
-        });
-        delete this.id;
-    }
 }

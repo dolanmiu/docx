@@ -86,14 +86,4 @@ export class Numbering extends XmlComponent {
         this.root.push(num);
         return num;
     }
-
-    public clearVariables(): void {
-        super.clearVariables();
-        _.forEach(this.root, (element) => {
-            if (element instanceof XmlComponent) {
-                element.clearVariables();
-            }
-        });
-        delete this.nextId;
-    }
 }

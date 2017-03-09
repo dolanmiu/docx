@@ -30,14 +30,6 @@ export class Styles extends XmlComponent {
         return this;
     }
 
-    public clearVariables(): void {
-        this.root.forEach((element) => {
-            if (element instanceof XmlComponent) {
-                element.clearVariables();
-            }
-        });
-    }
-
     public createParagraphStyle(styleId: string, name?: string): ParagraphStyle {
         const para = new ParagraphStyle(styleId, name);
         this.push(para);
