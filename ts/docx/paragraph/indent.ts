@@ -17,7 +17,7 @@ class IndentAttributes extends XmlAttributeComponent {
 
 export class Indent extends XmlComponent {
 
-    constructor(left: number, hanging: number) {
+    constructor(left: number, hanging?: number) {
         super("w:ind");
         this.root.push(new IndentAttributes({
             left: left,

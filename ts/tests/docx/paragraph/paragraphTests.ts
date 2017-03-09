@@ -136,7 +136,6 @@ describe("Paragraph", () => {
 
             paragraph.setNumbering(letterNumbering, 0);
             const tree = new Formatter().format(paragraph);
-            console.log(JSON.stringify(tree, null, 2));
             expect(tree).to.deep.equal({
                 "w:p": [
                     {
@@ -149,6 +148,23 @@ describe("Paragraph", () => {
                                     {"w:numId": [{"_attr": {"w:val": letterNumbering.id}}]}
                                 ]
                             },
+                        ],
+                    },
+                ]
+            })
+        });
+    });
+
+    describe("#indent", () => {
+        it("should set the paragraph indent to the given values", () => {
+            paragraph.indent(720);
+            const tree = new Formatter().format(paragraph);
+            expect(tree).to.deep.equal({
+                "w:p": [
+                    {
+                        "w:pPr": [
+                            {"_attr": {}},
+                            {"w:ind": [{"_attr": {"w:left": 720}}]},
                         ],
                     },
                 ]

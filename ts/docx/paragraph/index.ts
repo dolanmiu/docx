@@ -1,7 +1,9 @@
 import { Num } from "../../numbering/num";
 import { TextRun } from "../run/text-run";
 import { Attributes, XmlComponent } from "../xml-components";
+
 import { ThematicBreak } from "./border";
+import { Indent } from "./indent";
 import { PageBreak } from "./page-break";
 import { ParagraphProperties } from "./properties";
 import { Style } from "./style";
@@ -114,6 +116,11 @@ export class Paragraph extends XmlComponent {
     public setNumbering(numbering: Num, indentLevel: number): Paragraph {
         this.properties.push(new Style("ListParagraph"));
         this.properties.push(new NumberProperties(numbering.id, indentLevel));
+        return this;
+    }
+
+    public indent(start: number, hanging?: number): Paragraph {
+        this.properties.push(new Indent(start, hanging));
         return this;
     }
 }
