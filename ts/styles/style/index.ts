@@ -1,8 +1,9 @@
-import {XmlComponent} from "../../docx/xml-components";
-import {StyleAttributes} from "./attributes";
-import {ParagraphProperties} from "../../docx/paragraph/properties";
-import {RunProperties} from "../../docx/run/properties";
-import {Name, BasedOn, Next, QuickFormat} from "./components";
+import { ParagraphProperties } from "../../docx/paragraph/properties";
+import { RunProperties } from "../../docx/run/properties";
+import { XmlComponent } from "../../docx/xml-components";
+
+import { StyleAttributes } from "./attributes";
+import { BasedOn, Name, Next, QuickFormat } from "./components";
 
 export class Style extends XmlComponent {
 
@@ -11,7 +12,7 @@ export class Style extends XmlComponent {
         this.root.push(attributes);
     }
 
-    push(styleSegment: XmlComponent): void {
+    public push(styleSegment: XmlComponent): void {
         this.root.push(styleSegment);
     }
 }
@@ -23,9 +24,9 @@ export class ParagraphStyle extends Style {
 
     constructor(styleId: string) {
 
-        let attributes = new StyleAttributes({
+        const attributes = new StyleAttributes({
             type: "paragraph",
-            styleId: styleId
+            styleId: styleId,
         });
         super(attributes);
         this.paragraphProperties = new ParagraphProperties();
@@ -34,18 +35,18 @@ export class ParagraphStyle extends Style {
         this.root.push(this.runProperties);
     }
 
-    clearVariables(): void {
+    public clearVariables(): void {
         this.paragraphProperties.clearVariables();
         this.runProperties.clearVariables();
         delete this.paragraphProperties;
         delete this.runProperties;
     }
 
-    addParagraphProperty(property: XmlComponent): void {
+    public addParagraphProperty(property: XmlComponent): void {
         this.paragraphProperties.push(property);
     }
 
-    addRunProperty(property: XmlComponent): void {
+    public addRunProperty(property: XmlComponent): void {
         this.runProperties.push(property);
     }
 }

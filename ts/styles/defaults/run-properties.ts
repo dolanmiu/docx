@@ -1,5 +1,5 @@
-import {XmlComponent} from "../../docx/xml-components";
-import {RunProperties} from "../../docx/run/properties";
+import { RunProperties } from "../../docx/run/properties";
+import { XmlComponent } from "../../docx/xml-components";
 
 export class RunPropertiesDefaults extends XmlComponent {
 

@@ -1,9 +1,9 @@
-import {XmlComponent} from "../docx/xml-components";
-import {DocumentAttributes} from "../docx/document/document-attributes";
-import {DocumentDefaults} from "./defaults";
-import {LatentStyles} from "./latent-styles";
-import {LatentStyleException} from "./latent-styles/exceptions";
-import {LatentStyleExceptionAttributes} from "./latent-styles/exceptions/attributes";
+import { DocumentAttributes } from "../docx/document/document-attributes";
+import { XmlComponent } from "../docx/xml-components";
+import { DocumentDefaults } from "./defaults";
+import { LatentStyles } from "./latent-styles";
+import { LatentStyleException } from "./latent-styles/exceptions";
+import { LatentStyleExceptionAttributes } from "./latent-styles/exceptions/attributes";
 
 export class Styles extends XmlComponent {
 
@@ -15,7 +15,7 @@ export class Styles extends XmlComponent {
             w: "http://schemas.openxmlformats.org/wordprocessingml/2006/main",
             w14: "http://schemas.microsoft.com/office/word/2010/wordml",
             w15: "http://schemas.microsoft.com/office/word/2012/wordml",
-            Ignorable: "w14 w15"
+            Ignorable: "w14 w15",
         }));
         // let latentStyles = new LatentStyles();
         // latentStyles.push(new LatentStyleException(new LatentStyleExceptionAttributes({
@@ -24,12 +24,13 @@ export class Styles extends XmlComponent {
         // this.root.push(latentStyles);
     }
 
-    push(style: XmlComponent): void {
+    public push(style: XmlComponent): Styles {
         this.root.push(style);
+        return this;
     }
 
-    clearVariables() {
-        this.root.forEach(element => {
+    public clearVariables(): void {
+        this.root.forEach((element) => {
             element.clearVariables();
         });
     }

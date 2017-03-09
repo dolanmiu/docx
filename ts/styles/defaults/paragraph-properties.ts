@@ -1,5 +1,5 @@
-import {XmlComponent} from "../../docx/xml-components";
-import {ParagraphProperties} from "../../docx/paragraph/properties";
+import { ParagraphProperties } from "../../docx/paragraph/properties";
+import { XmlComponent } from "../../docx/xml-components";
 
 export class ParagraphPropertiesDefaults extends XmlComponent {
 

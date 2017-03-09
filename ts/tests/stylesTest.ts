@@ -1,5 +1,5 @@
-import { Styles } from "../styles";
 import { assert } from "chai";
+import { Styles } from "../styles";
 
 describe("Styles", () => {
     let styles: Styles;
@@ -11,10 +11,7 @@ describe("Styles", () => {
     describe("#constructor()", () => {
 
         it("should create styles with correct rootKey", () => {
-            let styles = new Styles();
-            let stringifiedJson = JSON.stringify(styles);
-            let newJson = JSON.parse(stringifiedJson);
-
+            const newJson = JSON.parse(JSON.stringify(styles));
             assert.equal(newJson.rootKey, "w:styles");
         });
     });

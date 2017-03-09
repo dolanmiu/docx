@@ -1,5 +1,5 @@
-import {XmlComponent} from "../../docx/xml-components";
-import {LatentStyleException} from "./exceptions";
+import { XmlComponent } from "../../docx/xml-components";
+import { LatentStyleException } from "./exceptions";
 
 export class LatentStyles extends XmlComponent {
 
@@ -7,7 +7,7 @@ export class LatentStyles extends XmlComponent {
         super("w:latentStyles");
     }
 
-    push(latentException: LatentStyleException): void {
+    public push(latentException: LatentStyleException): void {
         this.root.push(latentException);
     }
 }

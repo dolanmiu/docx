@@ -1,7 +1,6 @@
-import {XmlComponent} from "../../docx/xml-components";
-import {XmlAttributeComponent} from "../../docx/xml-components";
+import { XmlAttributeComponent, XmlComponent } from "../../docx/xml-components";
 
-interface StyleAttributesProperties {
+interface IStyleAttributesProperties {
     type?: string;
     styleId?: string;
     default?: string;
@@ -10,15 +9,15 @@ interface StyleAttributesProperties {
 }
 
 export class StyleAttributes extends XmlAttributeComponent {
-    private _attr: Object;
+    private _attr: IStyleAttributesProperties;
 
-    constructor(properties: StyleAttributesProperties) {
+    constructor(properties: IStyleAttributesProperties) {
         super({
             type: "w:type",
             styleId: "w:styleId",
             default: "w:default",
             customStyle: "w:customStyle",
-            val: "w:val"
+            val: "w:val",
         }, properties);
     }
 }
