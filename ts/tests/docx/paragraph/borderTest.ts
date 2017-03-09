@@ -1,13 +1,9 @@
-import { ThematicBreak } from "../../../docx/paragraph/border";
 import { assert } from "chai";
-
-function jsonify(obj: Object) {
-    let stringifiedJson = JSON.stringify(obj);
-    return JSON.parse(stringifiedJson);
-}
+import { ThematicBreak } from "../../../docx/paragraph/border";
+import { Utility } from "../../utility";
 
 describe("Border", () => {
-
+    // TODO: Need tests here
 });
 
 describe("ThematicBreak", () => {
@@ -19,12 +15,12 @@ describe("ThematicBreak", () => {
 
     describe("#constructor()", () => {
         it("should create a Thematic Break with correct border properties", () => {
-            let newJson = jsonify(thematicBreak);
-            let attributes = {
+            const newJson = Utility.jsonify(thematicBreak);
+            const attributes = {
                 color: "auto",
                 space: "1",
                 val: "single",
-                sz: "6"
+                sz: "6",
             };
             assert.equal(JSON.stringify(newJson.root[0].root[0].root), JSON.stringify(attributes));
         });

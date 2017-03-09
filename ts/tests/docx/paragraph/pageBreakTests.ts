@@ -1,10 +1,6 @@
-import { PageBreak } from "../../../docx/paragraph/page-break";
 import { assert } from "chai";
-
-function jsonify(obj: Object) {
-    let stringifiedJson = JSON.stringify(obj);
-    return JSON.parse(stringifiedJson);
-}
+import { PageBreak } from "../../../docx/paragraph/page-break";
+import { Utility } from "../../utility";
 
 describe("PageBreak", () => {
     let pageBreak: PageBreak;
@@ -15,20 +11,20 @@ describe("PageBreak", () => {
 
     describe("#constructor()", () => {
         it("should create a Page Break with correct attributes", () => {
-            let newJson = jsonify(pageBreak);
-            let attributes = {
-                type: "page"
+            const newJson = Utility.jsonify(pageBreak);
+            const attributes = {
+                type: "page",
             };
             assert.equal(JSON.stringify(newJson.root[1].root[0].root), JSON.stringify(attributes));
         });
 
         it("should create a Page Break with w:r", () => {
-            let newJson = jsonify(pageBreak);
+            const newJson = Utility.jsonify(pageBreak);
             assert.equal(newJson.rootKey, "w:r");
         });
 
         it("should create a Page Break with a Break inside", () => {
-            let newJson = jsonify(pageBreak);
+            const newJson = Utility.jsonify(pageBreak);
             assert.equal(newJson.root[1].rootKey, "w:br");
         });
     });

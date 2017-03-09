@@ -1,5 +1,4 @@
 import { expect } from "chai";
-
 import { Spacing } from "../../../docx/paragraph/spacing";
 import { Formatter } from "../../../export/formatter";
 

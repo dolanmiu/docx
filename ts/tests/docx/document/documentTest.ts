@@ -1,5 +1,5 @@
-import * as docx from "../../../docx";
 import { assert } from "chai";
+import * as docx from "../../../docx";
 
 describe("Document", () => {
     let document: docx.Document;
@@ -11,7 +11,7 @@ describe("Document", () => {
     describe("#constructor()", () => {
 
         it("should create valid JSON", () => {
-            let stringifiedJson = JSON.stringify(document);
+            const stringifiedJson = JSON.stringify(document);
             let newJson;
 
             try {

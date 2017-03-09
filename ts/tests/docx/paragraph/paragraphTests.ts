@@ -1,13 +1,8 @@
 import { assert, expect } from "chai";
-
 import * as docx from "../../../docx";
 import { Formatter } from "../../../export/formatter";
 import { Numbering } from "../../../numbering";
-
-function jsonify(obj: object) {
-    const stringifiedJson = JSON.stringify(obj);
-    return JSON.parse(stringifiedJson);
-}
+import { Utility } from "../../utility";
 
 describe("Paragraph", () => {
     let paragraph: docx.Paragraph;
@@ -40,7 +35,7 @@ describe("Paragraph", () => {
     describe("#heading1()", () => {
         it("should add heading style to JSON", () => {
             paragraph.heading1();
-            const newJson = jsonify(paragraph);
+            const newJson = Utility.jsonify(paragraph);
             assert.equal(newJson.root[0].root[1].root[0].root.val, "Heading1");
         });
     });
@@ -48,7 +43,7 @@ describe("Paragraph", () => {
     describe("#heading2()", () => {
         it("should add heading style to JSON", () => {
             paragraph.heading2();
-            const newJson = jsonify(paragraph);
+            const newJson = Utility.jsonify(paragraph);
 
             assert.equal(newJson.root[0].root[1].root[0].root.val, "Heading2");
         });
@@ -57,7 +52,7 @@ describe("Paragraph", () => {
     describe("#heading3()", () => {
         it("should add heading style to JSON", () => {
             paragraph.heading3();
-            const newJson = jsonify(paragraph);
+            const newJson = Utility.jsonify(paragraph);
 
             assert.equal(newJson.root[0].root[1].root[0].root.val, "Heading3");
         });
@@ -66,7 +61,7 @@ describe("Paragraph", () => {
     describe("#title()", () => {
         it("should add title style to JSON", () => {
             paragraph.title();
-            const newJson = jsonify(paragraph);
+            const newJson = Utility.jsonify(paragraph);
 
             assert.equal(newJson.root[0].root[1].root[0].root.val, "Title");
         });
@@ -75,7 +70,7 @@ describe("Paragraph", () => {
     describe("#center()", () => {
         it("should add center alignment to JSON", () => {
             paragraph.center();
-            const newJson = jsonify(paragraph);
+            const newJson = Utility.jsonify(paragraph);
 
             assert.equal(newJson.root[0].root[1].root[0].root.val, "center");
         });
@@ -84,7 +79,7 @@ describe("Paragraph", () => {
     describe("#thematicBreak()", () => {
         it("should add thematic break to JSON", () => {
             paragraph.thematicBreak();
-            const newJson = jsonify(paragraph);
+            const newJson = Utility.jsonify(paragraph);
             assert.equal(newJson.root[0].root[1].rootKey, "w:pBdr");
         });
     });
@@ -92,13 +87,13 @@ describe("Paragraph", () => {
     describe("#pageBreak()", () => {
         it("should add page break to JSON", () => {
             paragraph.pageBreak();
-            const newJson = jsonify(paragraph);
+            const newJson = Utility.jsonify(paragraph);
             assert.equal(newJson.root[0].root[1].root[1].rootKey, "w:br");
         });
 
         it("should add page break with 'page' type", () => {
             paragraph.pageBreak();
-            const newJson = jsonify(paragraph);
+            const newJson = Utility.jsonify(paragraph);
             assert.equal(newJson.root[0].root[1].root[1].root[0].root.type, "page");
         });
     });
@@ -106,13 +101,13 @@ describe("Paragraph", () => {
     describe("#bullet()", () => {
         it("should add list paragraph style to JSON", () => {
             paragraph.bullet();
-            const newJson = jsonify(paragraph);
+            const newJson = Utility.jsonify(paragraph);
             assert.equal(newJson.root[0].root[1].root[0].root.val, "ListParagraph");
         });
 
         it("it should add numbered properties", () => {
             paragraph.bullet();
-            const newJson = jsonify(paragraph);
+            const newJson = Utility.jsonify(paragraph);
             assert.isDefined(newJson.root[0].root[2]);
         });
     });
@@ -125,7 +120,7 @@ describe("Paragraph", () => {
             const letterNumbering = numbering.createConcreteNumbering(numberedAbstract);
 
             paragraph.setNumbering(letterNumbering, 0);
-            const newJson = jsonify(paragraph);
+            const newJson = Utility.jsonify(paragraph);
             assert.equal(newJson.root[0].root[1].root[0].root.val, "ListParagraph");
         });
 

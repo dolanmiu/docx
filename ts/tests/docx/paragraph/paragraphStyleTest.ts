@@ -1,10 +1,6 @@
-import { Style } from "../../../docx/paragraph/style";
 import { assert } from "chai";
-
-function jsonify(obj: Object) {
-    let stringifiedJson = JSON.stringify(obj);
-    return JSON.parse(stringifiedJson);
-}
+import { Style } from "../../../docx/paragraph/style";
+import { Utility } from "../../utility";
 
 describe("ParagraphStyle", () => {
     let style: Style;
@@ -12,15 +8,14 @@ describe("ParagraphStyle", () => {
     describe("#constructor()", () => {
         it("should create a style with given value", () => {
             style = new Style("test");
-            let newJson = jsonify(style);
+            const newJson = Utility.jsonify(style);
             assert.equal(newJson.root[0].root.val, "test");
         });
 
         it("should create a style with blank val", () => {
             style = new Style("");
-            let newJson = jsonify(style);
+            const newJson = Utility.jsonify(style);
             assert.equal(newJson.root[0].root.val, "");
         });
     });
-
 });
