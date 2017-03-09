@@ -1,10 +1,6 @@
-import { Strike, DoubleStrike } from "../../../docx/run/strike";
 import { assert } from "chai";
-
-function jsonify(obj: Object) {
-    let stringifiedJson = JSON.stringify(obj);
-    return JSON.parse(stringifiedJson);
-}
+import { DoubleStrike, Strike } from "../../../docx/run/strike";
+import { Utility } from "../../utility";
 
 describe("Strike", () => {
     let strike: Strike;
@@ -15,7 +11,7 @@ describe("Strike", () => {
 
     describe("#constructor()", () => {
         it("should create a Strike with correct root key", () => {
-            let newJson = jsonify(strike);
+            const newJson = Utility.jsonify(strike);
             assert.equal(newJson.rootKey, "w:strike");
         });
     });
@@ -30,7 +26,7 @@ describe("DoubleStrike", () => {
 
     describe("#constructor()", () => {
         it("should create a Double Strike with correct root key", () => {
-            let newJson = jsonify(strike);
+            const newJson = Utility.jsonify(strike);
             assert.equal(newJson.rootKey, "w:dstrike");
         });
     });

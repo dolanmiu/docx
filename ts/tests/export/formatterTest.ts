@@ -4,11 +4,7 @@ import * as docx from "../../docx";
 import { Attributes } from "../../docx/xml-components";
 import { Formatter } from "../../export/formatter";
 import { Properties } from "../../properties";
-
-function jsonify(obj: object): any {
-    const stringifiedJson = JSON.stringify(obj);
-    return JSON.parse(stringifiedJson);
-}
+import { Utility } from "../utility";
 
 describe("Formatter", () => {
     let formatter: Formatter;
@@ -43,7 +39,7 @@ describe("Formatter", () => {
                 rsidSect: "test2",
             });
             let newJson = formatter.format(attributes);
-            newJson = jsonify(newJson);
+            newJson = Utility.jsonify(newJson);
             assert.isDefined(newJson._attr["w:rsidSect"]);
         });
 
@@ -52,7 +48,7 @@ describe("Formatter", () => {
                 val: "test",
             });
             let newJson = formatter.format(attributes);
-            newJson = jsonify(newJson);
+            newJson = Utility.jsonify(newJson);
             assert.isDefined(newJson._attr["w:val"]);
         });
 

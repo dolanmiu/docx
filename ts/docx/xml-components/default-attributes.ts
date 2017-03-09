@@ -18,9 +18,9 @@ export abstract class XmlAttributeComponent extends BaseXmlComponent {
 
     public toXml(): object {
         const attrs = {};
-        if (this.root != undefined) {
+        if (this.root !== undefined) {
             _.forOwn(this.root, (value, key) => {
-                if (value != undefined) {
+                if (value !== undefined) {
                     const newKey = this.xmlKeys[key];
                     attrs[newKey] = value;
                 }

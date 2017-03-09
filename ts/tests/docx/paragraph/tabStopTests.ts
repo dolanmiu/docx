@@ -1,10 +1,6 @@
-import { LeftTabStop, MaxRightTabStop } from "../../../docx/paragraph/tab-stop";
 import { assert } from "chai";
-
-function jsonify(obj: Object) {
-    let stringifiedJson = JSON.stringify(obj);
-    return JSON.parse(stringifiedJson);
-}
+import { LeftTabStop, MaxRightTabStop } from "../../../docx/paragraph/tab-stop";
+import { Utility } from "../../utility";
 
 describe("LeftTabStop", () => {
     let tabStop: LeftTabStop;
@@ -15,23 +11,23 @@ describe("LeftTabStop", () => {
 
     describe("#constructor()", () => {
         it("should create a Tab Stop with correct attributes", () => {
-            let newJson = jsonify(tabStop);
-            let attributes = {
+            const newJson = Utility.jsonify(tabStop);
+            const attributes = {
                 val: "left",
-                pos: 100
+                pos: 100,
             };
             assert.equal(JSON.stringify(newJson.root[0].root[0].root), JSON.stringify(attributes));
         });
 
         it("should create a Tab Stop with w:tab", () => {
-            let newJson = jsonify(tabStop);
+            const newJson = Utility.jsonify(tabStop);
             assert.equal(newJson.root[0].rootKey, "w:tab");
         });
     });
 });
 
 describe("RightTabStop", () => {
-
+    // TODO
 });
 
 describe("MaxRightTabStop", () => {
@@ -43,17 +39,17 @@ describe("MaxRightTabStop", () => {
 
     describe("#constructor()", () => {
         it("should create a Tab Stop with correct attributes", () => {
-            let newJson = jsonify(tabStop);
+            const newJson = Utility.jsonify(tabStop);
 
-            let attributes = {
+            const attributes = {
                 val: "right",
-                pos: 9026
+                pos: 9026,
             };
             assert.equal(JSON.stringify(newJson.root[0].root[0].root), JSON.stringify(attributes));
         });
 
         it("should create a Tab Stop with w:tab", () => {
-            let newJson = jsonify(tabStop);
+            const newJson = Utility.jsonify(tabStop);
             assert.equal(newJson.root[0].rootKey, "w:tab");
         });
     });

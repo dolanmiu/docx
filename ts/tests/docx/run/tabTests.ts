@@ -1,10 +1,6 @@
-import { Tab } from "../../../docx/run/tab";
 import { assert } from "chai";
-
-function jsonify(obj: Object) {
-    let stringifiedJson = JSON.stringify(obj);
-    return JSON.parse(stringifiedJson);
-}
+import { Tab } from "../../../docx/run/tab";
+import { Utility } from "../../utility";
 
 describe("Tab", () => {
     let tab: Tab;
@@ -15,7 +11,7 @@ describe("Tab", () => {
 
     describe("#constructor()", () => {
         it("should create a Tab with correct root key", () => {
-            let newJson = jsonify(tab);
+            const newJson = Utility.jsonify(tab);
             assert.equal(newJson.rootKey, "w:tab");
         });
     });

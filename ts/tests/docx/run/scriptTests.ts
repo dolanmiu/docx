@@ -1,10 +1,6 @@
-import { SubScript, SuperScript } from "../../../docx/run/script";
 import { assert } from "chai";
-
-function jsonify(obj: Object) {
-    let stringifiedJson = JSON.stringify(obj);
-    return JSON.parse(stringifiedJson);
-}
+import { SubScript, SuperScript } from "../../../docx/run/script";
+import { Utility } from "../../utility";
 
 describe("SubScript", () => {
     let subScript: SubScript;
@@ -15,15 +11,15 @@ describe("SubScript", () => {
 
     describe("#constructor()", () => {
         it("should create a Sub Script with correct attributes", () => {
-            let newJson = jsonify(subScript);
-            let attributes = {
-                val: "subscript"
+            const newJson = Utility.jsonify(subScript);
+            const attributes = {
+                val: "subscript",
             };
             assert.equal(JSON.stringify(newJson.root[0].root), JSON.stringify(attributes));
         });
 
         it("should create a Sub Script with correct root key", () => {
-            let newJson = jsonify(subScript);
+            const newJson = Utility.jsonify(subScript);
             assert.equal(newJson.rootKey, "w:vertAlign");
         });
     });
@@ -38,15 +34,15 @@ describe("SuperScript", () => {
 
     describe("#constructor()", () => {
         it("should create a Super Script with correct attributes", () => {
-            let newJson = jsonify(superScript);
-            let attributes = {
-                val: "superscript"
+            const newJson = Utility.jsonify(superScript);
+            const attributes = {
+                val: "superscript",
             };
             assert.equal(JSON.stringify(newJson.root[0].root), JSON.stringify(attributes));
         });
 
         it("should create a Super Script with correct root key", () => {
-            let newJson = jsonify(superScript);
+            const newJson = Utility.jsonify(superScript);
             assert.equal(newJson.rootKey, "w:vertAlign");
         });
     });

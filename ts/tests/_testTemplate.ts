@@ -1,19 +1,15 @@
 import { assert } from "chai";
-
-function jsonify(obj: Object) {
-    let stringifiedJson = JSON.stringify(obj);
-    return JSON.parse(stringifiedJson);
-}
+import { Utility } from "./utility";
 
 describe("", () => {
 
     beforeEach(() => {
-
+        // TODO
     });
 
     describe("#methodName()", () => {
         it("should ", () => {
-
+            // TODO
         });
     });
 });

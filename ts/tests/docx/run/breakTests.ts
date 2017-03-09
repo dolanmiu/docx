@@ -1,10 +1,6 @@
-import { Break } from "../../../docx/run/break";
 import { assert } from "chai";
-
-function jsonify(obj: Object) {
-    let stringifiedJson = JSON.stringify(obj);
-    return JSON.parse(stringifiedJson);
-}
+import { Break } from "../../../docx/run/break";
+import { Utility } from "../../utility";
 
 describe("Break", () => {
     let currentBreak: Break;
@@ -15,7 +11,7 @@ describe("Break", () => {
 
     describe("#constructor()", () => {
         it("should create a Break with correct root key", () => {
-            let newJson = jsonify(currentBreak);
+            const newJson = Utility.jsonify(currentBreak);
             assert.equal(newJson.rootKey, "w:br");
         });
     });

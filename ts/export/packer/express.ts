@@ -5,7 +5,6 @@ import { Numbering } from "../../numbering";
 import { Properties } from "../../properties";
 import { Packer } from "./packer";
 
-
 export class ExpressPacker extends Packer {
     private res: express.Response;
 

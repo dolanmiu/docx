@@ -4,13 +4,10 @@ import { Numbering } from "../numbering";
 import { AbstractNumbering } from "../numbering/abstract-numbering";
 import { Num } from "../numbering/num";
 
-function jsonify(obj: object) {
-    return JSON.parse(JSON.stringify(obj));
-}
-
 describe("Numbering", () => {
 
     let numbering: Numbering;
+
     beforeEach(() => {
         numbering = new Numbering();
     });
@@ -22,8 +19,8 @@ describe("Numbering", () => {
             const abstractNums = tree["w:numbering"].filter((el) => el["w:abstractNum"]);
             expect(abstractNums).to.have.lengthOf(1);
             expect(abstractNums[0]["w:abstractNum"]).to.deep.include.members([
-                {_attr: {"w:abstractNumId": 0, "w15:restartNumberingAfterBreak": 0}},
-                {"w:multiLevelType": [{_attr: {"w:val": "hybridMultilevel"}}]},
+                { _attr: { "w:abstractNumId": 0, "w15:restartNumberingAfterBreak": 0 } },
+                { "w:multiLevelType": [{ _attr: { "w:val": "hybridMultilevel" } }] },
             ]);
 
             abstractNums.filter((el) => el["w:lvl"]).forEach((el, ix) => {
@@ -32,10 +29,10 @@ describe("Numbering", () => {
                     "_attr", "w:start", "w:lvlJc", "w:numFmt", "w:pPr", "w:rPr",
                 ]);
                 expect(el["w:lvl"]).to.have.deep.members([
-                    {_attr: {"w:ilvl": ix, "w15:tentative": 1}},
-                    {"w:start": [{_attr: {"w:val": 1}}]},
-                    {"w:lvlJc": [{_attr: {"w:val": "left"}}]},
-                    {"w:numFmt": [{_attr: {"w:val": "bullet"}}]},
+                    { _attr: { "w:ilvl": ix, "w15:tentative": 1 } },
+                    { "w:start": [{ _attr: { "w:val": 1 } }] },
+                    { "w:lvlJc": [{ _attr: { "w:val": "left" } }] },
+                    { "w:numFmt": [{ _attr: { "w:val": "bullet" } }] },
                 ]);
                 // Once chai 4.0.0 lands and #644 is resolved, we can add the following to the test:
                 // {"w:lvlText": [{"_attr": {"w:val": "•"}}]},
@@ -65,8 +62,8 @@ describe("Numbering", () => {
             const n = numbering.createConcreteNumbering(a2);
             expect(n).to.be.instanceof(Num);
             const tree = new Formatter().format(numbering);
-            const serializedN = tree["w:numbering"].find(
-                (obj) => obj["w:num"] && obj["w:num"][0]._attr["w:numId"] === n.id
+            const serializedN = tree["w:numbering"].find((obj) =>
+                obj["w:num"] && obj["w:num"][0]._attr["w:numId"] === n.id,
             );
             expect(serializedN["w:num"][1]["w:abstractNumId"][0]._attr["w:val"]).to.equal(a2.id);
         });
@@ -91,22 +88,22 @@ describe("AbstractNumbering", () => {
             const abstractNumbering = new AbstractNumbering(1);
             const level = abstractNumbering.createLevel(3, "lowerLetter", "%1)", "end");
             const tree = new Formatter().format(level);
-            expect(tree['w:lvl']).to.include({_attr: {"w:ilvl": 3, "w15:tentative": 1}})
-            expect(tree['w:lvl']).to.include({"w:start": [{_attr: {"w:val": 1}}]})
-            expect(tree['w:lvl']).to.include({"w:lvlJc": [{_attr: {"w:val": "end"}}]})
-            expect(tree['w:lvl']).to.include({"w:numFmt": [{_attr: {"w:val": "lowerLetter"}}]})
-            expect(tree['w:lvl']).to.include({"w:lvlText": [{"_attr": {"w:val": "%1)"}}]})
+            expect(tree["w:lvl"]).to.include({ _attr: { "w:ilvl": 3, "w15:tentative": 1 } });
+            expect(tree["w:lvl"]).to.include({ "w:start": [{ _attr: { "w:val": 1 } }] });
+            expect(tree["w:lvl"]).to.include({ "w:lvlJc": [{ _attr: { "w:val": "end" } }] });
+            expect(tree["w:lvl"]).to.include({ "w:numFmt": [{ _attr: { "w:val": "lowerLetter" } }] });
+            expect(tree["w:lvl"]).to.include({ "w:lvlText": [{ _attr: { "w:val": "%1)" } }] });
         });
 
         it("uses 'start' as the default alignment", () => {
             const abstractNumbering = new AbstractNumbering(1);
             const level = abstractNumbering.createLevel(3, "lowerLetter", "%1)");
             const tree = new Formatter().format(level);
-            expect(tree['w:lvl']).to.include({_attr: {"w:ilvl": 3, "w15:tentative": 1}})
-            expect(tree['w:lvl']).to.include({"w:start": [{_attr: {"w:val": 1}}]})
-            expect(tree['w:lvl']).to.include({"w:lvlJc": [{_attr: {"w:val": "start"}}]})
-            expect(tree['w:lvl']).to.include({"w:numFmt": [{_attr: {"w:val": "lowerLetter"}}]})
-            expect(tree['w:lvl']).to.include({"w:lvlText": [{"_attr": {"w:val": "%1)"}}]})
+            expect(tree["w:lvl"]).to.include({ _attr: { "w:ilvl": 3, "w15:tentative": 1 } });
+            expect(tree["w:lvl"]).to.include({ "w:start": [{ _attr: { "w:val": 1 } }] });
+            expect(tree["w:lvl"]).to.include({ "w:lvlJc": [{ _attr: { "w:val": "start" } }] });
+            expect(tree["w:lvl"]).to.include({ "w:numFmt": [{ _attr: { "w:val": "lowerLetter" } }] });
+            expect(tree["w:lvl"]).to.include({ "w:lvlText": [{ _attr: { "w:val": "%1)" } }] });
         });
     });
 });
