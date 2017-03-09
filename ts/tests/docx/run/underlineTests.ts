@@ -1,7 +1,8 @@
-import { assert } from "chai";
+import { assert, expect } from "chai";
 
 import { TextRun } from "../../../docx/run/text-run";
 import * as u from "../../../docx/run/underline";
+import { Formatter } from "../../../export/formatter";
 
 function jsonify(obj: object) {
     const stringifiedJson = JSON.stringify(obj);
@@ -16,6 +17,22 @@ describe("Underline", () => {
             const underline = new u.Underline();
             const newJson = jsonify(underline);
             assert.equal(newJson.rootKey, "w:u");
+        });
+
+        it("should default to 'single' and no color", () => {
+            const underline = new u.Underline();
+            const tree = new Formatter().format(underline);
+            expect(tree).to.deep.equal({
+                "w:u": [{_attr: {"w:val": "single"}}],
+            });
+        });
+
+        it("should use the given style type and color", () => {
+            const underline = new u.Underline("double", "FF00CC");
+            const tree = new Formatter().format(underline);
+            expect(tree).to.deep.equal({
+                "w:u": [{_attr: {"w:val": "double", "w:color": "FF00CC"}}],
+            });
         });
     });
 });

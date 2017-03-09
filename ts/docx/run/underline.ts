@@ -13,8 +13,8 @@ abstract class BaseUnderline extends XmlComponent {
 
 export class Underline extends BaseUnderline {
 
-    constructor() {
-        super("");
+    constructor(underlineType: string = "single", color?: string) {
+        super(underlineType, color);
     }
 }
 
