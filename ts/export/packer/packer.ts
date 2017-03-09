@@ -1,3 +1,4 @@
+import * as appRoot from "app-root-path";
 import * as archiver from "archiver";
 import * as fs from "fs";
 import * as xml from "xml";
@@ -7,8 +8,6 @@ import { Properties } from "../../properties";
 import { Styles } from "../../styles";
 import { DefaultStylesFactory } from "../../styles/factory";
 import { Formatter } from "../formatter";
-
-const appRoot = require("app-root-path");
 
 export abstract class Packer {
     protected archive: any;
