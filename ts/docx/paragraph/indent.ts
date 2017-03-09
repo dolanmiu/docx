@@ -1,4 +1,4 @@
-import { XmlAttributeComponent, XmlComponent } from "../docx/xml-components";
+import { XmlAttributeComponent, XmlComponent } from "../xml-components";
 
 interface IndentAttributesProperties {
     left: number;
@@ -17,7 +17,7 @@ class IndentAttributes extends XmlAttributeComponent {
 
 export class Indent extends XmlComponent {
 
-    constructor(left: number, hanging: number) {
+    constructor(left: number, hanging?: number) {
         super("w:ind");
         this.root.push(new IndentAttributes({
             left: left,

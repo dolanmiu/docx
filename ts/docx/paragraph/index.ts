@@ -1,9 +1,12 @@
 import { Num } from "../../numbering/num";
 import { TextRun } from "../run/text-run";
 import { Attributes, XmlComponent } from "../xml-components";
+
 import { ThematicBreak } from "./border";
+import { Indent } from "./indent";
 import { PageBreak } from "./page-break";
 import { ParagraphProperties } from "./properties";
+import { ISpacingProperties, Spacing } from "./spacing";
 import { Style } from "./style";
 import { LeftTabStop, MaxRightTabStop } from "./tab-stop";
 import { NumberProperties } from "./unordered-list";
@@ -116,4 +119,19 @@ export class Paragraph extends XmlComponent {
         this.properties.push(new NumberProperties(numbering.id, indentLevel));
         return this;
     }
+
+    public style(styleId: string): Paragraph {
+        this.properties.push(new Style(styleId));
+        return this;
+    }
+
+    public indent(start: number, hanging?: number): Paragraph {
+        this.properties.push(new Indent(start, hanging));
+        return this;
+    }
+
+    public spacing(params: ISpacingProperties): Paragraph {
+        this.properties.push(new Spacing(params));
+        return this;
+    };
 }

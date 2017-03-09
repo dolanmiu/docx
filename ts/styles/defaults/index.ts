@@ -1,6 +1,6 @@
-import {XmlComponent} from "../../docx/xml-components";
-import {ParagraphPropertiesDefaults} from "./paragraph-properties";
-import {RunPropertiesDefaults} from "./run-properties";
+import { XmlComponent } from "../../docx/xml-components";
+import { ParagraphPropertiesDefaults } from "./paragraph-properties";
+import { RunPropertiesDefaults } from "./run-properties";
 
 export class DocumentDefaults extends XmlComponent {
 
@@ -15,7 +15,7 @@ export class DocumentDefaults extends XmlComponent {
         this.root.push(this.paragraphPropertiesDefaults);
     }
 
-    clearVariables(): void {
+    public clearVariables(): void {
         this.runPropertiesDefaults.clearVariables();
         this.paragraphPropertiesDefaults.clearVariables();
         delete this.runPropertiesDefaults;

@@ -1,17 +1,43 @@
-import {XmlComponent} from "../../docx/xml-components";
-import {StyleAttributes} from "./attributes";
-import {ParagraphProperties} from "../../docx/paragraph/properties";
-import {RunProperties} from "../../docx/run/properties";
-import {Name, BasedOn, Next, QuickFormat} from "./components";
+import { Indent } from "../../docx/paragraph/indent";
+import { ParagraphProperties } from "../../docx/paragraph/properties";
+import { ISpacingProperties, Spacing } from "../../docx/paragraph/spacing";
+import * as formatting from "../../docx/run/formatting";
+import { RunProperties } from "../../docx/run/properties";
+import { XmlAttributeComponent, XmlComponent } from "../../docx/xml-components";
+
+import { BasedOn, Name, Next, QuickFormat } from "./components";
+
+export interface IStyleAttributes {
+    type?: string;
+    styleId?: string;
+    default?: boolean;
+    customStyle?: string;
+}
+
+class StyleAttributes extends XmlAttributeComponent {
+    private _attr: IStyleAttributes;
+
+    constructor(properties: IStyleAttributes) {
+        super({
+            type: "w:type",
+            styleId: "w:styleId",
+            default: "w:default",
+            customStyle: "w:customStyle",
+        }, properties);
+    }
+}
 
 export class Style extends XmlComponent {
 
-    constructor(attributes: StyleAttributes) {
+    constructor(attributes: IStyleAttributes, name?: string) {
         super("w:style");
-        this.root.push(attributes);
+        this.root.push(new StyleAttributes(attributes));
+        if (name) {
+            this.root.push(new Name(name));
+        }
     }
 
-    push(styleSegment: XmlComponent): void {
+    public push(styleSegment: XmlComponent): void {
         this.root.push(styleSegment);
     }
 }
@@ -21,43 +47,87 @@ export class ParagraphStyle extends Style {
     private paragraphProperties: ParagraphProperties;
     private runProperties: RunProperties;
 
-    constructor(styleId: string) {
-
-        let attributes = new StyleAttributes({
-            type: "paragraph",
-            styleId: styleId
-        });
-        super(attributes);
+    constructor(styleId: string, name?: string) {
+        super({type: "paragraph", styleId: styleId}, name);
         this.paragraphProperties = new ParagraphProperties();
         this.runProperties = new RunProperties();
         this.root.push(this.paragraphProperties);
         this.root.push(this.runProperties);
     }
 
-    clearVariables(): void {
+    public clearVariables(): void {
         this.paragraphProperties.clearVariables();
         this.runProperties.clearVariables();
         delete this.paragraphProperties;
         delete this.runProperties;
     }
 
-    addParagraphProperty(property: XmlComponent): void {
+    public addParagraphProperty(property: XmlComponent): void {
         this.paragraphProperties.push(property);
     }
 
-    addRunProperty(property: XmlComponent): void {
+    public addRunProperty(property: XmlComponent): void {
         this.runProperties.push(property);
     }
+
+    public basedOn(parentId: string): ParagraphStyle {
+        this.root.push(new BasedOn(parentId));
+        return this;
+    }
+
+    public quickFormat(): ParagraphStyle {
+        this.root.push(new QuickFormat());
+        return this;
+    }
+
+    public next(nextId: string): ParagraphStyle {
+        this.root.push(new Next(nextId));
+        return this;
+    }
+
+    public size(twips: number): ParagraphStyle {
+        this.addRunProperty(new formatting.Size(twips));
+        return this;
+    }
+
+    public bold(): ParagraphStyle {
+        this.addRunProperty(new formatting.Bold());
+        return this;
+    }
+
+    public italics(): ParagraphStyle {
+        this.addRunProperty(new formatting.Italics());
+        return this;
+    }
+
+    public underline(underlineType?: string, color?: string): ParagraphStyle {
+        this.addRunProperty(new formatting.Underline(underlineType, color));
+        return this;
+    }
+
+    public color(color: string): ParagraphStyle {
+        this.addRunProperty(new formatting.Color(color));
+        return this;
+    }
+
+    public indent(left: number, hanging?: number): ParagraphStyle {
+        this.addParagraphProperty(new Indent(left, hanging));
+        return this;
+    }
+
+    public spacing(params: ISpacingProperties): ParagraphStyle {
+        this.addParagraphProperty(new Spacing(params));
+        return this;
+    };
 }
 
 export class HeadingStyle extends ParagraphStyle {
 
     constructor(styleId: string, name: string) {
-        super(styleId);
-        this.root.push(new Name(name));
-        this.root.push(new BasedOn("Normal"));
-        this.root.push(new Next("Normal"));
-        this.root.push(new QuickFormat());
+        super(styleId, name);
+        this.basedOn("Normal");
+        this.next("Normal");
+        this.quickFormat();
     }
 }
 
