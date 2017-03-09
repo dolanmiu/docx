@@ -3,12 +3,13 @@ import * as fs from "fs";
 import { Document } from "../../docx/document";
 import { Numbering } from "../../numbering";
 import { Properties } from "../../properties";
+import { Styles } from "../../styles";
 import { Packer } from "./packer";
 
 export class ExpressPacker extends Packer {
     private res: express.Response;
 
-    constructor(document: Document, res: express.Response, styles?: any, properties?: Properties, numbering?: Numbering) {
+    constructor(document: Document, res: express.Response, styles?: Styles, properties?: Properties, numbering?: Numbering) {
         super(document, styles, properties, numbering);
         this.res = res;
 

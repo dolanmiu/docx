@@ -17,7 +17,7 @@ export abstract class Packer {
     private properties: Properties;
     private numbering: Numbering;
 
-    constructor(document: Document, style?: any, properties?: Properties, numbering?: Numbering) {
+    constructor(document: Document, style?: Styles, properties?: Properties, numbering?: Numbering) {
         this.formatter = new Formatter();
         this.document = document;
         this.style = style;

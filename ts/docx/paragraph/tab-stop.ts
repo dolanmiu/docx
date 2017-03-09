@@ -10,7 +10,7 @@ class TabStop extends XmlComponent {
 
 class Tab extends XmlComponent {
 
-    constructor(value: string, position: any) {
+    constructor(value: string, position: string | number) {
         super("w:tab");
         this.root.push(new Attributes({
             val: value,

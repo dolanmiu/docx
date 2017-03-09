@@ -19,7 +19,7 @@ interface IAttributesProperties {
     footer?: string;
     gutter?: string;
     linePitch?: string;
-    pos?: string;
+    pos?: string | number; // Little strange. Perhaps it is normal. Need to clarify in the spec.
 }
 
 export class Attributes extends XmlAttributeComponent {
