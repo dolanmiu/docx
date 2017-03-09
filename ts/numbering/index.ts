@@ -2,12 +2,12 @@ import * as _ from "lodash";
 import { DocumentAttributes } from "../docx/document/document-attributes";
 import { Indent } from "../docx/paragraph/indent";
 import { RunFonts } from "../docx/run/run-fonts";
-import { MultiPropertyXmlComponent } from "../docx/xml-components";
+import { XmlComponent } from "../docx/xml-components";
 import { AbstractNumbering } from "./abstract-numbering";
 import { Level } from "./level";
 import { Num } from "./num";
 
-export class Numbering extends MultiPropertyXmlComponent {
+export class Numbering extends XmlComponent {
     private nextId: number;
 
     constructor() {
