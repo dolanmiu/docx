@@ -4,6 +4,7 @@ import { DocumentDefaults } from "./defaults";
 import { LatentStyles } from "./latent-styles";
 import { LatentStyleException } from "./latent-styles/exceptions";
 import { LatentStyleExceptionAttributes } from "./latent-styles/exceptions/attributes";
+import { ParagraphStyle } from "./style";
 
 export class Styles extends XmlComponent {
 
@@ -33,5 +34,11 @@ export class Styles extends XmlComponent {
         this.root.forEach((element) => {
             element.clearVariables();
         });
+    }
+
+    public createParagraphStyle(styleId: string, name?: string): ParagraphStyle {
+        const para = new ParagraphStyle(styleId, name);
+        this.push(para);
+        return para;
     }
 }

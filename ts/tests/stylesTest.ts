@@ -17,6 +17,33 @@ describe("Styles", () => {
             assert.equal(newJson.rootKey, "w:styles");
         });
     });
+
+    describe("#createParagraphStyle", () => {
+        it("should create a new paragraph style and push it onto this collection", () => {
+            const ps = styles.createParagraphStyle("pStyleId");
+            const tree = new Formatter().format(styles)["w:styles"].filter((x) => !x._attr);
+            expect(tree).to.deep.equal([{
+                "w:style": [
+                    {_attr: {"w:type": "paragraph", "w:styleId": "pStyleId"}},
+                    {"w:pPr": [{_attr: {}}]},
+                    {"w:rPr": []},
+                ],
+            }]);
+        });
+
+        it("should set the paragraph name if given", () => {
+            const ps = styles.createParagraphStyle("pStyleId", "Paragraph Style");
+            const tree = new Formatter().format(styles)["w:styles"].filter((x) => !x._attr);
+            expect(tree).to.deep.equal([{
+                "w:style": [
+                    {_attr: {"w:type": "paragraph", "w:styleId": "pStyleId"}},
+                    {"w:name": [{_attr: {"w:val": "Paragraph Style"}}]},
+                    {"w:pPr": [{_attr: {}}]},
+                    {"w:rPr": []},
+                ],
+            }]);
+        });
+    });
 });
 
 describe("Style", () => {
