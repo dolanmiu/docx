@@ -83,7 +83,6 @@ describe("Style components", () => {
     });
 });
 
-
 describe("ParagraphStyle", () => {
     describe("#constructor", () => {
         it("should set the style type to paragraph and use the given style id", () => {
@@ -107,6 +106,130 @@ describe("ParagraphStyle", () => {
                     {"w:name": [{_attr: {"w:val": "Style Name"}}]},
                     {"w:pPr": [{_attr: {}}]},
                     {"w:rPr": []},
+                ],
+            });
+        });
+    });
+
+    describe("formatting methods: style attributes", () => {
+        it("#basedOn", () => {
+            const style = new ParagraphStyle("myStyleId")
+                .basedOn("otherId");
+            const tree = new Formatter().format(style);
+            expect(tree).to.deep.equal({
+                "w:style": [
+                    {_attr: {"w:type": "paragraph", "w:styleId": "myStyleId"}},
+                    {"w:pPr": [{_attr: {}}]},
+                    {"w:rPr": []},
+                    {"w:basedOn": [{_attr: {"w:val": "otherId"}}]},
+                ],
+            });
+        });
+
+        it("#quickFormat", () => {
+            const style = new ParagraphStyle("myStyleId")
+                .quickFormat();
+            const tree = new Formatter().format(style);
+            expect(tree).to.deep.equal({
+                "w:style": [
+                    {_attr: {"w:type": "paragraph", "w:styleId": "myStyleId"}},
+                    {"w:pPr": [{_attr: {}}]},
+                    {"w:rPr": []},
+                    {"w:qFormat": []},
+                ],
+            });
+        });
+
+        it("#next", () => {
+            const style = new ParagraphStyle("myStyleId")
+                .next("otherId");
+            const tree = new Formatter().format(style);
+            expect(tree).to.deep.equal({
+                "w:style": [
+                    {_attr: {"w:type": "paragraph", "w:styleId": "myStyleId"}},
+                    {"w:pPr": [{_attr: {}}]},
+                    {"w:rPr": []},
+                    {"w:next": [{_attr: {"w:val": "otherId"}}]},
+                ],
+            });
+        });
+    });
+
+    describe("formatting methods: paragraph properties", () => {
+        it("#indent", () => {
+            const style = new ParagraphStyle("myStyleId")
+                .indent(720);
+            const tree = new Formatter().format(style);
+            expect(tree).to.deep.equal({
+                "w:style": [
+                    {_attr: {"w:type": "paragraph", "w:styleId": "myStyleId"}},
+                    {"w:pPr": [
+                        {_attr: {}},
+                        {"w:ind": [{_attr: {"w:left": 720}}]},
+                    ]},
+                    {"w:rPr": []},
+                ],
+            });
+        });
+    });
+
+    describe("formatting methods: run properties", () => {
+        it("#size", () => {
+            const style = new ParagraphStyle("myStyleId")
+                .size(24);
+            const tree = new Formatter().format(style);
+            expect(tree).to.deep.equal({
+                "w:style": [
+                    {_attr: {"w:type": "paragraph", "w:styleId": "myStyleId"}},
+                    {"w:pPr": [{_attr: {}}]},
+                    {"w:rPr": [
+                        {"w:sz": [{_attr: {"w:val": 24}}]},
+                    ]},
+                ],
+            });
+        });
+
+        it("#bold", () => {
+            const style = new ParagraphStyle("myStyleId")
+                .bold();
+            const tree = new Formatter().format(style);
+            expect(tree).to.deep.equal({
+                "w:style": [
+                    {_attr: {"w:type": "paragraph", "w:styleId": "myStyleId"}},
+                    {"w:pPr": [{_attr: {}}]},
+                    {"w:rPr": [
+                        {"w:b": [{_attr: {"w:val": true}}]},
+                    ]},
+                ],
+            });
+        });
+
+        it("#italics", () => {
+            const style = new ParagraphStyle("myStyleId")
+                .italics();
+            const tree = new Formatter().format(style);
+            expect(tree).to.deep.equal({
+                "w:style": [
+                    {_attr: {"w:type": "paragraph", "w:styleId": "myStyleId"}},
+                    {"w:pPr": [{_attr: {}}]},
+                    {"w:rPr": [
+                        {"w:i": [{_attr: {"w:val": true}}]},
+                    ]},
+                ],
+            });
+        });
+
+        it("#color", () => {
+            const style = new ParagraphStyle("myStyleId")
+                .color("123456");
+            const tree = new Formatter().format(style);
+            expect(tree).to.deep.equal({
+                "w:style": [
+                    {_attr: {"w:type": "paragraph", "w:styleId": "myStyleId"}},
+                    {"w:pPr": [{_attr: {}}]},
+                    {"w:rPr": [
+                        {"w:color": [{_attr: {"w:val": "123456"}}]},
+                    ]},
                 ],
             });
         });

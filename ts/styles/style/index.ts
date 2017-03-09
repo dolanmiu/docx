@@ -1,4 +1,6 @@
+import { Indent } from "../../docx/paragraph/indent";
 import { ParagraphProperties } from "../../docx/paragraph/properties";
+import * as formatting from "../../docx/run/formatting";
 import { RunProperties } from "../../docx/run/properties";
 import { XmlAttributeComponent, XmlComponent } from "../../docx/xml-components";
 
@@ -66,16 +68,55 @@ export class ParagraphStyle extends Style {
     public addRunProperty(property: XmlComponent): void {
         this.runProperties.push(property);
     }
+
+    public basedOn(parentId: string): ParagraphStyle {
+        this.root.push(new BasedOn(parentId));
+        return this;
+    }
+
+    public quickFormat(): ParagraphStyle {
+        this.root.push(new QuickFormat());
+        return this;
+    }
+
+    public next(nextId: string): ParagraphStyle {
+        this.root.push(new Next(nextId));
+        return this;
+    }
+
+    public size(twips: number): ParagraphStyle {
+        this.addRunProperty(new formatting.Size(twips));
+        return this;
+    }
+
+    public bold(): ParagraphStyle {
+        this.addRunProperty(new formatting.Bold());
+        return this;
+    }
+
+    public italics(): ParagraphStyle {
+        this.addRunProperty(new formatting.Italics());
+        return this;
+    }
+
+    public color(color: string): ParagraphStyle {
+        this.addRunProperty(new formatting.Color(color));
+        return this;
+    }
+
+    public indent(left: number, hanging?: number): ParagraphStyle {
+        this.addParagraphProperty(new Indent(left, hanging));
+        return this;
+    }
 }
 
 export class HeadingStyle extends ParagraphStyle {
 
     constructor(styleId: string, name: string) {
-        super(styleId);
-        this.root.push(new Name(name));
-        this.root.push(new BasedOn("Normal"));
-        this.root.push(new Next("Normal"));
-        this.root.push(new QuickFormat());
+        super(styleId, name);
+        this.basedOn("Normal");
+        this.next("Normal");
+        this.quickFormat();
     }
 }
 
