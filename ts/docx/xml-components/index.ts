@@ -16,11 +16,11 @@ export abstract class XmlComponent extends BaseXmlComponent {
             if (comp instanceof BaseXmlComponent) {
                 return comp.toXml();
             }
-            return comp
+            return comp;
         }).filter((comp) => comp); // Exclude null, undefined, and empty strings
         return {
             [this.rootKey]: ret,
-        }
+        };
     }
 }
 
