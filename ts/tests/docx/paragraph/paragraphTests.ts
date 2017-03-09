@@ -1,10 +1,11 @@
+import { assert, expect } from "chai";
+
 import * as docx from "../../../docx";
 import { Formatter } from "../../../export/formatter";
 import { Numbering } from "../../../numbering";
-import { assert, expect } from "chai";
 
-function jsonify(obj: Object) {
-    let stringifiedJson = JSON.stringify(obj);
+function jsonify(obj: object) {
+    const stringifiedJson = JSON.stringify(obj);
     return JSON.parse(stringifiedJson);
 }
 
@@ -18,7 +19,7 @@ describe("Paragraph", () => {
     describe("#constructor()", () => {
 
         it("should create valid JSON", () => {
-            let stringifiedJson = JSON.stringify(paragraph);
+            const stringifiedJson = JSON.stringify(paragraph);
             let newJson;
 
             try {
@@ -30,8 +31,8 @@ describe("Paragraph", () => {
         });
 
         it("should create have valid properties", () => {
-            let stringifiedJson = JSON.stringify(paragraph);
-            let newJson = JSON.parse(stringifiedJson);
+            const stringifiedJson = JSON.stringify(paragraph);
+            const newJson = JSON.parse(stringifiedJson);
             assert.equal(newJson.root[0].rootKey, "w:pPr");
         });
     });
@@ -39,7 +40,7 @@ describe("Paragraph", () => {
     describe("#heading1()", () => {
         it("should add heading style to JSON", () => {
             paragraph.heading1();
-            let newJson = jsonify(paragraph);
+            const newJson = jsonify(paragraph);
             assert.equal(newJson.root[0].root[1].root[0].root.val, "Heading1");
         });
     });
@@ -47,7 +48,7 @@ describe("Paragraph", () => {
     describe("#heading2()", () => {
         it("should add heading style to JSON", () => {
             paragraph.heading2();
-            let newJson = jsonify(paragraph);
+            const newJson = jsonify(paragraph);
 
             assert.equal(newJson.root[0].root[1].root[0].root.val, "Heading2");
         });
@@ -56,7 +57,7 @@ describe("Paragraph", () => {
     describe("#heading3()", () => {
         it("should add heading style to JSON", () => {
             paragraph.heading3();
-            let newJson = jsonify(paragraph);
+            const newJson = jsonify(paragraph);
 
             assert.equal(newJson.root[0].root[1].root[0].root.val, "Heading3");
         });
@@ -65,7 +66,7 @@ describe("Paragraph", () => {
     describe("#title()", () => {
         it("should add title style to JSON", () => {
             paragraph.title();
-            let newJson = jsonify(paragraph);
+            const newJson = jsonify(paragraph);
 
             assert.equal(newJson.root[0].root[1].root[0].root.val, "Title");
         });
@@ -74,7 +75,7 @@ describe("Paragraph", () => {
     describe("#center()", () => {
         it("should add center alignment to JSON", () => {
             paragraph.center();
-            let newJson = jsonify(paragraph);
+            const newJson = jsonify(paragraph);
 
             assert.equal(newJson.root[0].root[1].root[0].root.val, "center");
         });
@@ -83,7 +84,7 @@ describe("Paragraph", () => {
     describe("#thematicBreak()", () => {
         it("should add thematic break to JSON", () => {
             paragraph.thematicBreak();
-            let newJson = jsonify(paragraph);
+            const newJson = jsonify(paragraph);
             assert.equal(newJson.root[0].root[1].rootKey, "w:pBdr");
         });
     });
@@ -91,13 +92,13 @@ describe("Paragraph", () => {
     describe("#pageBreak()", () => {
         it("should add page break to JSON", () => {
             paragraph.pageBreak();
-            let newJson = jsonify(paragraph);
+            const newJson = jsonify(paragraph);
             assert.equal(newJson.root[0].root[1].root[1].rootKey, "w:br");
         });
 
         it("should add page break with 'page' type", () => {
             paragraph.pageBreak();
-            let newJson = jsonify(paragraph);
+            const newJson = jsonify(paragraph);
             assert.equal(newJson.root[0].root[1].root[1].root[0].root.type, "page");
         });
     });
@@ -105,13 +106,13 @@ describe("Paragraph", () => {
     describe("#bullet()", () => {
         it("should add list paragraph style to JSON", () => {
             paragraph.bullet();
-            let newJson = jsonify(paragraph);
+            const newJson = jsonify(paragraph);
             assert.equal(newJson.root[0].root[1].root[0].root.val, "ListParagraph");
         });
 
         it("it should add numbered properties", () => {
             paragraph.bullet();
-            let newJson = jsonify(paragraph);
+            const newJson = jsonify(paragraph);
             assert.isDefined(newJson.root[0].root[2]);
         });
     });
@@ -124,7 +125,7 @@ describe("Paragraph", () => {
             const letterNumbering = numbering.createConcreteNumbering(numberedAbstract);
 
             paragraph.setNumbering(letterNumbering, 0);
-            let newJson = jsonify(paragraph);
+            const newJson = jsonify(paragraph);
             assert.equal(newJson.root[0].root[1].root[0].root.val, "ListParagraph");
         });
 
@@ -140,35 +141,35 @@ describe("Paragraph", () => {
                 "w:p": [
                     {
                         "w:pPr": [
-                            {"_attr": {}},
-                            {"w:pStyle": [{"_attr": {"w:val": "ListParagraph"}}]},
+                            {_attr: {}},
+                            {"w:pStyle": [{_attr: {"w:val": "ListParagraph"}}]},
                             {
                                 "w:numPr": [
-                                    {"w:ilvl": [{"_attr": {"w:val": 0}}]},
-                                    {"w:numId": [{"_attr": {"w:val": letterNumbering.id}}]}
-                                ]
+                                    {"w:ilvl": [{_attr: {"w:val": 0}}]},
+                                    {"w:numId": [{_attr: {"w:val": letterNumbering.id}}]},
+                                ],
                             },
                         ],
                     },
-                ]
-            })
+                ],
+            });
         });
     });
 
     describe("#style", () => {
         it("should set the paragraph style to the given styleId", () => {
-            paragraph.style('myFancyStyle');
+            paragraph.style("myFancyStyle");
             const tree = new Formatter().format(paragraph);
             expect(tree).to.deep.equal({
                 "w:p": [
                     {
                         "w:pPr": [
-                            {"_attr": {}},
-                            {"w:pStyle": [{"_attr": {"w:val": "myFancyStyle"}}]},
+                            {_attr: {}},
+                            {"w:pStyle": [{_attr: {"w:val": "myFancyStyle"}}]},
                         ],
                     },
-                ]
-            })
+                ],
+            });
         });
     });
 
@@ -180,12 +181,12 @@ describe("Paragraph", () => {
                 "w:p": [
                     {
                         "w:pPr": [
-                            {"_attr": {}},
-                            {"w:ind": [{"_attr": {"w:left": 720}}]},
+                            {_attr: {}},
+                            {"w:ind": [{_attr: {"w:left": 720}}]},
                         ],
                     },
-                ]
-            })
+                ],
+            });
         });
     });
 
@@ -197,12 +198,12 @@ describe("Paragraph", () => {
                 "w:p": [
                     {
                         "w:pPr": [
-                            {"_attr": {}},
-                            {"w:spacing": [{"_attr": {"w:before": 90, "w:line": 50}}]},
+                            {_attr: {}},
+                            {"w:spacing": [{_attr: {"w:before": 90, "w:line": 50}}]},
                         ],
                     },
-                ]
-            })
+                ],
+            });
         });
     });
 });
