@@ -2,7 +2,7 @@ import * as _ from "lodash";
 import { BaseXmlComponent } from "./base";
 
 export abstract class XmlComponent extends BaseXmlComponent {
-    protected root: BaseXmlComponent[];
+    protected root: Array<BaseXmlComponent | string>;
 
     constructor(rootKey: string) {
         super(rootKey);
@@ -26,4 +26,3 @@ export abstract class XmlComponent extends BaseXmlComponent {
 
 export * from "./attributes"
 export * from "./default-attributes";
-export * from "./unit";

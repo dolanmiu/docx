@@ -90,7 +90,9 @@ export class Numbering extends XmlComponent {
     public clearVariables(): void {
         super.clearVariables();
         _.forEach(this.root, (element) => {
-            element.clearVariables();
+            if (element instanceof XmlComponent) {
+                element.clearVariables();
+            }
         });
         delete this.nextId;
     }

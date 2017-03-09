@@ -32,7 +32,9 @@ export class Styles extends XmlComponent {
 
     public clearVariables(): void {
         this.root.forEach((element) => {
-            element.clearVariables();
+            if (element instanceof XmlComponent) {
+                element.clearVariables();
+            }
         });
     }
 

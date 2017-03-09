@@ -23,13 +23,27 @@ export class Properties extends XmlComponent {
             dcmitype: "http://purl.org/dc/dcmitype/",
             xsi: "http://www.w3.org/2001/XMLSchema-instance",
         }));
-        this.root.push(new Title(options.title));
-        this.root.push(new Subject(options.subject));
-        this.root.push(new Creator(options.creator));
-        this.root.push(new Keywords(options.keywords));
-        this.root.push(new Description(options.description));
-        this.root.push(new LastModifiedBy(options.lastModifiedBy));
-        this.root.push(new Revision(options.revision));
+        if (options.title) {
+            this.root.push(new Title(options.title));
+        }
+        if (options.subject) {
+            this.root.push(new Subject(options.subject));
+        }
+        if (options.creator) {
+            this.root.push(new Creator(options.creator));
+        }
+        if (options.keywords) {
+            this.root.push(new Keywords(options.keywords));
+        }
+        if (options.description) {
+            this.root.push(new Description(options.description));
+        }
+        if (options.lastModifiedBy) {
+            this.root.push(new LastModifiedBy(options.lastModifiedBy));
+        }
+        if (options.revision) {
+            this.root.push(new Revision(options.revision));
+        }
         this.root.push(new Created());
         this.root.push(new Modified());
     }

@@ -1,66 +1,64 @@
 import { DocumentAttributes } from "../docx/document/document-attributes";
-import { XmlUnitComponent } from "../docx/xml-components";
 import { XmlComponent } from "../docx/xml-components";
 
-export class Title extends XmlUnitComponent {
+export class Title extends XmlComponent {
 
     constructor(value: string) {
         super("dc:title");
-        this.root = value;
+        this.root.push(value);
     }
 }
 
-export class Subject extends XmlUnitComponent {
+export class Subject extends XmlComponent {
 
     constructor(value: string) {
         super("dc:subject");
-        this.root = value;
+        this.root.push(value);
     }
 }
 
-export class Creator extends XmlUnitComponent {
+export class Creator extends XmlComponent {
 
     constructor(value: string) {
         super("dc:creator");
-        this.root = value;
+        this.root.push(value);
     }
 }
 
-export class Keywords extends XmlUnitComponent {
+export class Keywords extends XmlComponent {
 
     constructor(value: string) {
         super("cp:keywords");
-        this.root = value;
+        this.root.push(value);
     }
 }
 
-export class Description extends XmlUnitComponent {
+export class Description extends XmlComponent {
 
     constructor(value: string) {
         super("dc:description");
-        this.root = value;
+        this.root.push(value);
     }
 }
 
-export class LastModifiedBy extends XmlUnitComponent {
+export class LastModifiedBy extends XmlComponent {
 
     constructor(value: string) {
         super("cp:lastModifiedBy");
-        this.root = value;
+        this.root.push(value);
     }
 }
 
-export class Revision extends XmlUnitComponent {
+export class Revision extends XmlComponent {
 
     constructor(value: string) {
         super("cp:revision");
-        const revision = value;
-        this.root = value;
+        this.root.push(value);
     }
 }
 
 abstract class DateComponent extends XmlComponent {
-    protected getCurrentDate(): any {
+    protected getCurrentDate(): string {
         const date = new Date();
         const year = date.getFullYear();
         const month = ("0" + (date.getMonth() + 1)).slice(-2);

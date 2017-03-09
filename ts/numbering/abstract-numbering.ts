@@ -43,7 +43,9 @@ export class AbstractNumbering extends XmlComponent {
 
     public clearVariables(): void {
         _.forEach(this.root, (element) => {
-            element.clearVariables();
+            if (element instanceof XmlComponent) {
+                element.clearVariables();
+            }
         });
         delete this.id;
     }

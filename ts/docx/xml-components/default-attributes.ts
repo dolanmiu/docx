@@ -2,10 +2,10 @@ import * as _ from "lodash";
 import { BaseXmlComponent } from "./base";
 
 export abstract class XmlAttributeComponent extends BaseXmlComponent {
-    protected root: Object;
-    private xmlKeys: Object;
+    protected root: object;
+    private xmlKeys: object;
 
-    constructor(xmlKeys: Object, properties: Object) {
+    constructor(xmlKeys: object, properties: object) {
         super("_attr");
         this.xmlKeys = xmlKeys;
 
