@@ -4,10 +4,8 @@ interface IComponentAttributes {
     val: string;
 }
 
-class ComponentAttributes extends XmlAttributeComponent {
-    constructor(properties: IComponentAttributes) {
-        super({val: "w:val"}, properties);
-    }
+class ComponentAttributes extends XmlAttributeComponent<IComponentAttributes> {
+    protected xmlKeys = {val: "w:val"};
 }
 
 export class Name extends XmlComponent {

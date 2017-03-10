@@ -6,14 +6,12 @@ export interface ISpacingProperties {
     line?: number;
 }
 
-class SpacingAttributes extends XmlAttributeComponent {
-    constructor(properties: ISpacingProperties) {
-        super({
-            after: "w:after",
-            before: "w:before",
-            line: "w:line",
-        }, properties);
-    }
+class SpacingAttributes extends XmlAttributeComponent<ISpacingProperties> {
+    protected xmlKeys = {
+        after: "w:after",
+        before: "w:before",
+        line: "w:line",
+    };
 }
 
 export class Spacing extends XmlComponent {

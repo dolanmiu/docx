@@ -14,13 +14,8 @@ interface INumAttributesProperties {
     numId: number;
 }
 
-class NumAttributes extends XmlAttributeComponent {
-
-    constructor(properties: INumAttributesProperties) {
-        super({
-            numId: "w:numId",
-        }, properties);
-    }
+class NumAttributes extends XmlAttributeComponent<INumAttributesProperties> {
+    protected xmlKeys = {numId: "w:numId"};
 }
 
 export class Num extends XmlComponent {

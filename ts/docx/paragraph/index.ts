@@ -38,6 +38,12 @@ export class Paragraph extends XmlComponent {
         return this;
     }
 
+    public createTextRun(text: string): TextRun {
+        const run = new TextRun(text);
+        this.addText(run);
+        return run;
+    }
+
     public heading1(): Paragraph {
         this.properties.push(new Style("Heading1"));
         return this;

@@ -30,12 +30,8 @@
     "@types/app-root-path": "^1.2.4",
     "@types/archiver": "^0.15.37",
     "@types/express": "^4.0.35",
-    "@types/lodash": "^4.14.54",
     "app-root-path": "^2.0.1",
     "archiver": "^1.3.0",
-    "install": "^0.8.7",
-    "lodash": "^4.6.1",
-    "npm": "^4.3.0",
     "xml": "^1.0.1"
   },
   "author": "Dolan Miu",

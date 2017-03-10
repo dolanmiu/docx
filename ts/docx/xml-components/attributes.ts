@@ -22,29 +22,26 @@ interface IAttributesProperties {
     pos?: string | number; // Little strange. Perhaps it is normal. Need to clarify in the spec.
 }
 
-export class Attributes extends XmlAttributeComponent {
-
-    constructor(properties?: IAttributesProperties) {
-        super({
-            val: "w:val",
-            color: "w:color",
-            space: "w:space",
-            sz: "w:sz",
-            type: "w:type",
-            rsidR: "w:rsidR",
-            rsidRPr: "w:rsidRPr",
-            rsidSect: "w:rsidSect",
-            w: "w:w",
-            h: "w:h",
-            top: "w:top",
-            right: "w:right",
-            bottom: "w:bottom",
-            left: "w:left",
-            header: "w:header",
-            footer: "w:footer",
-            gutter: "w:gutter",
-            linePitch: "w:linePitch",
-            pos: "w:pos",
-        }, properties);
-    }
+export class Attributes extends XmlAttributeComponent<IAttributesProperties> {
+    protected xmlKeys = {
+        val: "w:val",
+        color: "w:color",
+        space: "w:space",
+        sz: "w:sz",
+        type: "w:type",
+        rsidR: "w:rsidR",
+        rsidRPr: "w:rsidRPr",
+        rsidSect: "w:rsidSect",
+        w: "w:w",
+        h: "w:h",
+        top: "w:top",
+        right: "w:right",
+        bottom: "w:bottom",
+        left: "w:left",
+        header: "w:header",
+        footer: "w:footer",
+        gutter: "w:gutter",
+        linePitch: "w:linePitch",
+        pos: "w:pos",
+    };
 }

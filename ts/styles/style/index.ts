@@ -14,15 +14,13 @@ export interface IStyleAttributes {
     customStyle?: string;
 }
 
-class StyleAttributes extends XmlAttributeComponent {
-    constructor(properties: IStyleAttributes) {
-        super({
-            type: "w:type",
-            styleId: "w:styleId",
-            default: "w:default",
-            customStyle: "w:customStyle",
-        }, properties);
-    }
+class StyleAttributes extends XmlAttributeComponent<IStyleAttributes> {
+    protected xmlKeys = {
+        type: "w:type",
+        styleId: "w:styleId",
+        default: "w:default",
+        customStyle: "w:customStyle",
+    };
 }
 
 export class Style extends XmlComponent {

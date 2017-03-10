@@ -7,14 +7,11 @@ interface IAbstractNumberingAttributesProperties {
     restartNumberingAfterBreak?: number;
 }
 
-class AbstractNumberingAttributes extends XmlAttributeComponent {
-
-    constructor(properties: IAbstractNumberingAttributesProperties) {
-        super({
-            abstractNumId: "w:abstractNumId",
-            restartNumberingAfterBreak: "w15:restartNumberingAfterBreak",
-        }, properties);
-    }
+class AbstractNumberingAttributes extends XmlAttributeComponent<IAbstractNumberingAttributesProperties> {
+    protected xmlKeys = {
+        abstractNumId: "w:abstractNumId",
+        restartNumberingAfterBreak: "w15:restartNumberingAfterBreak",
+    };
 }
 
 export class AbstractNumbering extends XmlComponent {

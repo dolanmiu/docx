@@ -1,18 +1,15 @@
 import { XmlAttributeComponent, XmlComponent } from "../xml-components";
 
-interface IndentAttributesProperties {
-    left: number;
-    hanging: number;
+interface IIndentAttributesProperties {
+    left?: number;
+    hanging?: number;
 }
 
-class IndentAttributes extends XmlAttributeComponent {
-
-    constructor(properties: IndentAttributesProperties) {
-        super({
-            left: "w:left",
-            hanging: "w:hanging",
-        }, properties);
-    }
+class IndentAttributes extends XmlAttributeComponent<IIndentAttributesProperties> {
+    protected xmlKeys = {
+        left: "w:left",
+        hanging: "w:hanging",
+    };
 }
 
 export class Indent extends XmlComponent {

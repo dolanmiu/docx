@@ -6,15 +6,12 @@ interface IRunFontAttributesProperties {
     hint?: string;
 }
 
-class RunFontAttributes extends XmlAttributeComponent {
-
-    constructor(properties: IRunFontAttributesProperties) {
-        super({
-            ascii: "w:ascii",
-            hAnsi: "w:hAnsi",
-            hint: "w:hint",
-        }, properties);
-    }
+class RunFontAttributes extends XmlAttributeComponent<IRunFontAttributesProperties> {
+    protected xmlKeys = {
+        ascii: "w:ascii",
+        hAnsi: "w:hAnsi",
+        hint: "w:hint",
+    };
 }
 
 export class RunFonts extends XmlComponent {

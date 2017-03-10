@@ -3,7 +3,6 @@ import { XmlComponent } from "../docx/xml-components";
 import { DocumentDefaults } from "./defaults";
 import { LatentStyles } from "./latent-styles";
 import { LatentStyleException } from "./latent-styles/exceptions";
-import { LatentStyleExceptionAttributes } from "./latent-styles/exceptions/attributes";
 import { ParagraphStyle } from "./style";
 
 export class Styles extends XmlComponent {

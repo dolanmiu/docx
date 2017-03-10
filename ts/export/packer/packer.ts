@@ -20,17 +20,18 @@ export abstract class Packer {
     constructor(document: Document, style?: Styles, properties?: Properties, numbering?: Numbering) {
         this.formatter = new Formatter();
         this.document = document;
-        this.style = style;
-        this.properties = properties;
-        this.numbering = numbering;
         this.archive = archiver.create("zip", {});
 
-        if (!style) {
+        if (style) {
+            this.style = style;
+        } else {
             const stylesFactory = new DefaultStylesFactory();
             this.style = stylesFactory.newInstance();
         }
 
-        if (!properties) {
+        if (properties) {
+            this.properties = properties;
+        } else {
             this.properties = new Properties({
                 creator: "Un-named",
                 revision: "1",
@@ -38,7 +39,9 @@ export abstract class Packer {
             });
         }
 
-        if (!numbering) {
+        if (numbering) {
+            this.numbering = numbering;
+        } else {
             this.numbering = new Numbering();
         }
 
