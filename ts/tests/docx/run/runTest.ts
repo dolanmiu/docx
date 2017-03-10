@@ -1,6 +1,5 @@
 import { assert, expect } from "chai";
 import { Run } from "../../../docx/run";
-import { TextRun } from "../../../docx/run/text-run";
 import { Formatter } from "../../../export/formatter";
 import { Utility } from "../../utility";
 

@@ -6,7 +6,6 @@ import { Paragraph } from "../../docx/paragraph";
 import { LocalPacker } from "../../export/packer/local";
 import { Properties } from "../../properties";
 import { DefaultStylesFactory } from "../../styles/factory";
-import { DefaultStyle } from "../../styles/sample";
 
 describe("Packer", () => {
     let packer: LocalPacker;

@@ -1,6 +1,5 @@
 import * as appRoot from "app-root-path";
 import * as archiver from "archiver";
-import * as fs from "fs";
 import * as xml from "xml";
 import { Document } from "../../docx";
 import { Numbering } from "../../numbering";

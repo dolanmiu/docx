@@ -1,5 +1,4 @@
 import { assert, expect } from "chai";
-import { TextRun } from "../../../docx/run/text-run";
 import * as u from "../../../docx/run/underline";
 import { Formatter } from "../../../export/formatter";
 import { Utility } from "../../utility";

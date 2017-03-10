@@ -3,7 +3,6 @@ import { Indent } from "../docx/paragraph/indent";
 import { RunFonts } from "../docx/run/run-fonts";
 import { XmlComponent } from "../docx/xml-components";
 import { AbstractNumbering } from "./abstract-numbering";
-import { Level } from "./level";
 import { Num } from "./num";
 
 export class Numbering extends XmlComponent {
