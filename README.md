@@ -7,7 +7,7 @@
 </p>
 ---
 
-[![NPM version][npm-image]][npm-url] [![Build Status][travis-image]][travis-url] [![Dependency Status][daviddm-image]][daviddm-url] [![Known Vulnerabilities][snky-image]][snky-url]
+[![NPM version][npm-image]][npm-url] [![Build Status][travis-image]][travis-url] [![Dependency Status][daviddm-image]][daviddm-url] <a href="https://snyk.io/test/github/dolanmiu/docx"><img src="https://snyk.io/test/github/dolanmiu/docx/badge.svg" alt="Known Vulnerabilities" data-canonical-src="https://snyk.io/test/github/dolanmiu/docx" style="max-width:100%;"></a>
 
 # docx
 > A tool to create Word Documents (.docx) with JS or TS, written in TS.
