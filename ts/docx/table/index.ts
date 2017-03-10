@@ -1,7 +1,7 @@
 import { Paragraph } from "../paragraph";
 import { XmlComponent } from "../xml-components";
 
-import { GridCol, TableGrid } from "./grid";
+import { TableGrid } from "./grid";
 import { TableProperties } from "./properties";
 
 export class Table extends XmlComponent {
@@ -15,7 +15,7 @@ export class Table extends XmlComponent {
         this.root.push(this.properties);
 
         const gridCols: number[] = [];
-        for (let i = 0; i++; i < cols) {
+        for (let i = 0; i < cols; i++) {
             gridCols.push(0);
         }
         this.grid = new TableGrid(gridCols);
@@ -66,7 +66,7 @@ class TableRowProperties extends XmlComponent {
 }
 
 class TableCell extends XmlComponent {
-    public content: XmlComponent;
+    public content: Paragraph;
     private properties: TableCellProperties;
 
     constructor() {
