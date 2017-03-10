@@ -32,6 +32,20 @@ describe("Paragraph", () => {
         });
     });
 
+    describe("#createRun", () => {
+        it("should add a new run to the paragraph and return it", () => {
+            const run = paragraph.createRun("this is a test run");
+            expect(run).to.be.instanceof(docx.TextRun);
+            const tree = new Formatter().format(paragraph)["w:p"];
+            expect(tree).to.be.an("array").which.includes({
+                "w:r": [
+                    {"w:rPr": []},
+                    {"w:t": ["this is a test run"]},
+                ],
+            });
+        });
+    });
+
     describe("#heading1()", () => {
         it("should add heading style to JSON", () => {
             paragraph.heading1();
