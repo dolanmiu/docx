@@ -20,6 +20,7 @@ describe("Styles", () => {
 
     describe("#createParagraphStyle", () => {
         it("should create a new paragraph style and push it onto this collection", () => {
+            styles.createParagraphStyle("pStyleId");
             const tree = new Formatter().format(styles)["w:styles"].filter((x) => !x._attr);
             expect(tree).to.deep.equal([{
                 "w:style": [
@@ -31,6 +32,7 @@ describe("Styles", () => {
         });
 
         it("should set the paragraph name if given", () => {
+            styles.createParagraphStyle("pStyleId", "Paragraph Style");
             const tree = new Formatter().format(styles)["w:styles"].filter((x) => !x._attr);
             expect(tree).to.deep.equal([{
                 "w:style": [
