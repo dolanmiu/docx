@@ -311,26 +311,7 @@ paragraph.addText(text);
 The above shows the use of two tab stops, and how to select/use it.
 
 # Exporting
-I used the express exporter in my [website](http://www.dolan.bio). It's very useful, and is the preferred way if you want to make a downloadable file for a visitor. it is much better than generating a physical file on the server, and then passing a download link to that file.
-## Express
-Simply use the exporter, and pass in the necessary parameters:
-```js
-var docx = require('docx');
-
-var doc = new docx.Document();
-var exporter = new docx.ExpressPacker(doc, res);
-exporter.pack('My Document');
-```
-where `res` is the response object obtained through the Express router. It is that simple. The file will begin downloading in the browser.
-
-## Standalone .docx file
-```js
-var docx = require('docx');
-
-var doc = new docx.Document();
-var exporter = new docx.LocalPacker(doc);
-exporter.pack('My Document');
-```
+Check the Wiki for exporting guide
 
 # Examples
 Check the Wiki for examples
