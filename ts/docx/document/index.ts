@@ -33,4 +33,10 @@ export class Document extends XmlComponent {
     public addParagraph(paragraph: Paragraph): void {
         this.body.push(paragraph);
     }
+
+    public createParagraph(text?: string): Paragraph {
+        const para = new Paragraph(text);
+        this.addParagraph(para);
+        return para;
+    }
 }
