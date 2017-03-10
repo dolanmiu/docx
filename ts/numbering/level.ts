@@ -7,14 +7,11 @@ interface ILevelAttributesProperties {
     tentative?: number;
 }
 
-class LevelAttributes extends XmlAttributeComponent {
-
-    constructor(properties: ILevelAttributesProperties) {
-        super({
-            ilvl: "w:ilvl",
-            tentative: "w15:tentative",
-        }, properties);
-    }
+class LevelAttributes extends XmlAttributeComponent<ILevelAttributesProperties> {
+    protected xmlKeys = {
+        ilvl: "w:ilvl",
+        tentative: "w15:tentative",
+    };
 }
 
 class Start extends XmlComponent {
