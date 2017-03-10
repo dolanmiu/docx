@@ -2,7 +2,7 @@ import { Paragraph } from "../paragraph";
 import { XmlComponent } from "../xml-components";
 
 import { TableGrid } from "./grid";
-import { TableProperties } from "./properties";
+import { TableProperties, widthTypes } from "./properties";
 
 export class Table extends XmlComponent {
     private properties: TableProperties;
@@ -16,7 +16,17 @@ export class Table extends XmlComponent {
 
         const gridCols: number[] = [];
         for (let i = 0; i < cols; i++) {
-            gridCols.push(0);
+            /*
+              0-width columns don't get rendered correctly, so we need
+              to give them some value. A reasonable default would be
+              ~6in / numCols, but if we do that it becomes very hard
+              to resize the table using setWidth, unless the layout
+              algorithm is set to 'fixed'. Instead, the approach here
+              means even in 'auto' layout, setting a width on the
+              table will make it look reasonable, as the layout
+              algorithm will expand columns to fit its content
+             */
+            gridCols.push(1);
         }
         this.grid = new TableGrid(gridCols);
         this.root.push(this.grid);
@@ -39,6 +49,11 @@ export class Table extends XmlComponent {
 
     public getCell(row: number, col: number): TableCell {
         return this.getRow(row).getCell(col);
+    }
+
+    public setWidth(type: widthTypes, width: number | string): Table {
+        this.properties.setWidth(type, width);
+        return this;
     }
 }
 

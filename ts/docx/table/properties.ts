@@ -1,6 +1,6 @@
 import { XmlAttributeComponent, XmlComponent } from "../xml-components";
 
-type widthTypes = "dxa" | "pct" | "nil" | "auto";
+export type widthTypes = "dxa" | "pct" | "nil" | "auto";
 
 export class TableProperties extends XmlComponent {
     constructor() {
