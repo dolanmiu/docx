@@ -51,4 +51,33 @@ describe("Table", () => {
             });
         });
     });
+
+    describe("#getCell", () => {
+        it("returns the correct cell", () => {
+            const table = new Table(2, 2);
+            table.getCell(0, 0).content.createTextRun("A1");
+            table.getCell(0, 1).content.createTextRun("B1");
+            table.getCell(1, 0).content.createTextRun("A2");
+            table.getCell(1, 1).content.createTextRun("B2");
+            const tree = new Formatter().format(table);
+            const cell = (c) => ({"w:tc": [
+                {"w:tcPr": []},
+                {"w:p": [
+                    {"w:pPr": []},
+                    {"w:r": [{"w:rPr": []}, {"w:t": [c]}]},
+                ]},
+            ]});
+            expect(tree).to.deep.equal({
+                "w:tbl": [
+                    {"w:tblPr": []},
+                    {"w:tblGrid": [
+                        {"w:gridCol": [{_attr: {"w:w": 0}}]},
+                        {"w:gridCol": [{_attr: {"w:w": 0}}]},
+                    ]},
+                    {"w:tr": [{"w:trPr": []}, cell("A1"), cell("B1")]},
+                    {"w:tr": [{"w:trPr": []}, cell("A2"), cell("B2")]},
+                ],
+            });
+        });
+    });
 });
