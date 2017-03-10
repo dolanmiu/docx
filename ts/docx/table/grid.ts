@@ -14,6 +14,8 @@ class GridColAttributes extends XmlAttributeComponent<{w: number}> {
 export class GridCol extends XmlComponent {
     constructor(width?: number) {
         super("w:gridCol");
-        this.root.push(new GridColAttributes({w: width}));
+        if (width !== undefined) {
+            this.root.push(new GridColAttributes({w: width}));
+        }
     }
 }

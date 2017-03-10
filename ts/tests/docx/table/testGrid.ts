@@ -15,9 +15,7 @@ describe("GridCol", () => {
         it("does not set a width attribute if not given", () => {
             const grid = new GridCol();
             const tree = new Formatter().format(grid);
-            expect(tree).to.deep.equal({
-                "w:gridCol": [{_attr: {}}],
-            });
+            expect(tree).to.deep.equal({"w:gridCol": []});
         });
     });
 });
@@ -33,14 +31,6 @@ describe("TableGrid", () => {
                     {"w:gridCol": [{_attr: {"w:w": 321}}]},
                     {"w:gridCol": [{_attr: {"w:w": 123}}]},
                 ],
-            });
-        });
-
-        it("does not set a width attribute if not given", () => {
-            const grid = new GridCol();
-            const tree = new Formatter().format(grid);
-            expect(tree).to.deep.equal({
-                "w:gridCol": [{_attr: {}}],
             });
         });
     });

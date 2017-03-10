@@ -23,7 +23,7 @@ export class Table extends XmlComponent {
 
         this.rows = [];
         for (let i = 0; i < rows; i++) {
-            const cells = [];
+            const cells: TableCell[] = [];
             for (let j = 0; j < cols; j++) {
                 cells.push(new TableCell());
             }
