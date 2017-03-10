@@ -1,24 +1,30 @@
-import {XmlComponent, Attributes} from "../xml-components";
+import { XmlAttributeComponent, XmlComponent } from "../xml-components";
+
+type widthTypes = "dxa" | "pct" | "nil" | "auto";
 
 export class TableProperties extends XmlComponent {
-    private width: PreferredTableWidth;
-
     constructor() {
-        super('w:tblPr');
+        super("w:tblPr");
     }
 
-    setWidth(type: string, w: string) {
-        this.width = new PreferredTableWidth(type, w);
-        this.root.push(this.width);
+    public setWidth(type: widthTypes, w: number | string): TableProperties {
+        this.root.push(new PreferredTableWidth(type, w));
+        return this;
     }
 }
 
+interface ITableWidth {
+    type: widthTypes;
+    w: number | string;
+}
+
+class TableWidthAttributes extends XmlAttributeComponent<ITableWidth> {
+    protected xmlKeys = {type: "w:type", w: "w:w"};
+}
+
 class PreferredTableWidth extends XmlComponent {
-    constructor(type: string, w: string) {
-        super('w:tblW');
-        this.root.push(new Attributes({
-            type,
-            w,
-        }))
+    constructor(type: widthTypes, w: number | string) {
+        super("w:tblW");
+        this.root.push(new TableWidthAttributes({type, w}));
     }
 }

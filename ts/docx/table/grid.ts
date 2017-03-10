@@ -1,17 +1,19 @@
-import {XmlComponent, Attributes} from "../xml-components";
+import { XmlAttributeComponent, XmlComponent } from "../xml-components";
 
 export class TableGrid extends XmlComponent {
-    private cols: Array<GridCol>;
-    constructor(cols: Array<GridCol>) {
-        super('w:tblGrid');
-        this.cols = cols;
-        cols.forEach(col => this.root.push(col));
+    constructor(cols: number[]) {
+        super("w:tblGrid");
+        cols.forEach((col) => this.root.push(new GridCol(col)));
     }
+}
+
+class GridColAttributes extends XmlAttributeComponent<{w: number}> {
+    protected xmlKeys = {w: "w:w"};
 }
 
 export class GridCol extends XmlComponent {
     constructor(width?: number) {
-        super('w:gridCol');
-        this.root.push(new Attributes({w: width.toString()}))
+        super("w:gridCol");
+        this.root.push(new GridColAttributes({w: width}));
     }
 }
