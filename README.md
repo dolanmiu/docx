@@ -5,7 +5,8 @@
 <p align="center">
     Generate .docx files with JS/TS very easily
 </p>
----
+
+=====
 
 [![NPM version][npm-image]][npm-url] [![Build Status][travis-image]][travis-url] [![Dependency Status][daviddm-image]][daviddm-url] [![Known Vulnerabilities][snky-image]][snky-url]
 
@@ -334,11 +335,13 @@ exporter.pack('My Document');
 # Examples
 Check the Wiki for examples
 
-Made with 💖 by Dolan Miu 🍆 💦 😝
-
 # License
 
 MIT © [Dolan Miu](http://www.dolan.bio)
+
+=====
+
+Made with 💖 by Dolan Miu 🍆 💦 😝
 
 [npm-image]: https://badge.fury.io/js/docx.svg
 [npm-url]: https://npmjs.org/package/docx
