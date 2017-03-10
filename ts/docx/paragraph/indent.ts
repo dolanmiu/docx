@@ -1,8 +1,8 @@
 import { XmlAttributeComponent, XmlComponent } from "../xml-components";
 
 interface IIndentAttributesProperties {
-    left: number;
-    hanging: number;
+    left?: number;
+    hanging?: number;
 }
 
 class IndentAttributes extends XmlAttributeComponent<IIndentAttributesProperties> {
