@@ -1,4 +1,3 @@
-import * as _ from "lodash";
 import { BaseXmlComponent } from "./base";
 export { BaseXmlComponent };
 

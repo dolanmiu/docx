@@ -1,4 +1,3 @@
-import * as _ from "lodash";
 import { DocumentAttributes } from "../docx/document/document-attributes";
 import { Indent } from "../docx/paragraph/indent";
 import { RunFonts } from "../docx/run/run-fonts";
