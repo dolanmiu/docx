@@ -32,9 +32,9 @@ describe("Paragraph", () => {
         });
     });
 
-    describe("#createRun", () => {
+    describe("#createTextRun", () => {
         it("should add a new run to the paragraph and return it", () => {
-            const run = paragraph.createRun("this is a test run");
+            const run = paragraph.createTextRun("this is a test run");
             expect(run).to.be.instanceof(docx.TextRun);
             const tree = new Formatter().format(paragraph)["w:p"];
             expect(tree).to.be.an("array").which.includes({
