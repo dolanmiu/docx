@@ -1,4 +1,3 @@
-import * as _ from "lodash";
 import { XmlAttributeComponent, XmlComponent } from "../docx/xml-components";
 import { Level } from "./level";
 import { MultiLevelType } from "./multi-level-type";

@@ -54,7 +54,6 @@ export class DefaultStylesFactory {
         // listParagraph.addParagraphProperty();
         styles.push(listParagraph);
 
-        // console.log(JSON.stringify(styles, null, "  "));
         return styles;
     }
 }

@@ -25,7 +25,7 @@ describe("Styles", () => {
             expect(tree).to.deep.equal([{
                 "w:style": [
                     {_attr: {"w:type": "paragraph", "w:styleId": "pStyleId"}},
-                    {"w:pPr": [{_attr: {}}]},
+                    {"w:pPr": []},
                     {"w:rPr": []},
                 ],
             }]);
@@ -38,7 +38,7 @@ describe("Styles", () => {
                 "w:style": [
                     {_attr: {"w:type": "paragraph", "w:styleId": "pStyleId"}},
                     {"w:name": [{_attr: {"w:val": "Paragraph Style"}}]},
-                    {"w:pPr": [{_attr: {}}]},
+                    {"w:pPr": []},
                     {"w:rPr": []},
                 ],
             }]);
@@ -118,7 +118,7 @@ describe("ParagraphStyle", () => {
             expect(tree).to.deep.equal({
                 "w:style": [
                     {_attr: {"w:type": "paragraph", "w:styleId": "myStyleId"}},
-                    {"w:pPr": [{_attr: {}}]},
+                    {"w:pPr": []},
                     {"w:rPr": []},
                 ],
             });
@@ -131,7 +131,7 @@ describe("ParagraphStyle", () => {
                 "w:style": [
                     {_attr: {"w:type": "paragraph", "w:styleId": "myStyleId"}},
                     {"w:name": [{_attr: {"w:val": "Style Name"}}]},
-                    {"w:pPr": [{_attr: {}}]},
+                    {"w:pPr": []},
                     {"w:rPr": []},
                 ],
             });
@@ -146,7 +146,7 @@ describe("ParagraphStyle", () => {
             expect(tree).to.deep.equal({
                 "w:style": [
                     {_attr: {"w:type": "paragraph", "w:styleId": "myStyleId"}},
-                    {"w:pPr": [{_attr: {}}]},
+                    {"w:pPr": []},
                     {"w:rPr": []},
                     {"w:basedOn": [{_attr: {"w:val": "otherId"}}]},
                 ],
@@ -160,7 +160,7 @@ describe("ParagraphStyle", () => {
             expect(tree).to.deep.equal({
                 "w:style": [
                     {_attr: {"w:type": "paragraph", "w:styleId": "myStyleId"}},
-                    {"w:pPr": [{_attr: {}}]},
+                    {"w:pPr": []},
                     {"w:rPr": []},
                     {"w:qFormat": []},
                 ],
@@ -174,7 +174,7 @@ describe("ParagraphStyle", () => {
             expect(tree).to.deep.equal({
                 "w:style": [
                     {_attr: {"w:type": "paragraph", "w:styleId": "myStyleId"}},
-                    {"w:pPr": [{_attr: {}}]},
+                    {"w:pPr": []},
                     {"w:rPr": []},
                     {"w:next": [{_attr: {"w:val": "otherId"}}]},
                 ],
@@ -191,7 +191,6 @@ describe("ParagraphStyle", () => {
                 "w:style": [
                     {_attr: {"w:type": "paragraph", "w:styleId": "myStyleId"}},
                     {"w:pPr": [
-                        {_attr: {}},
                         {"w:ind": [{_attr: {"w:left": 720}}]},
                     ]},
                     {"w:rPr": []},
@@ -207,7 +206,6 @@ describe("ParagraphStyle", () => {
                 "w:style": [
                     {_attr: {"w:type": "paragraph", "w:styleId": "myStyleId"}},
                     {"w:pPr": [
-                        {_attr: {}},
                         {"w:spacing": [{_attr: {"w:before": 50, "w:after": 150}}]},
                     ]},
                     {"w:rPr": []},
@@ -224,7 +222,7 @@ describe("ParagraphStyle", () => {
             expect(tree).to.deep.equal({
                 "w:style": [
                     {_attr: {"w:type": "paragraph", "w:styleId": "myStyleId"}},
-                    {"w:pPr": [{_attr: {}}]},
+                    {"w:pPr": []},
                     {"w:rPr": [
                         {"w:sz": [{_attr: {"w:val": 24}}]},
                     ]},
@@ -239,7 +237,7 @@ describe("ParagraphStyle", () => {
             expect(tree).to.deep.equal({
                 "w:style": [
                     {_attr: {"w:type": "paragraph", "w:styleId": "myStyleId"}},
-                    {"w:pPr": [{_attr: {}}]},
+                    {"w:pPr": []},
                     {"w:rPr": [
                         {"w:b": [{_attr: {"w:val": true}}]},
                     ]},
@@ -254,7 +252,7 @@ describe("ParagraphStyle", () => {
             expect(tree).to.deep.equal({
                 "w:style": [
                     {_attr: {"w:type": "paragraph", "w:styleId": "myStyleId"}},
-                    {"w:pPr": [{_attr: {}}]},
+                    {"w:pPr": []},
                     {"w:rPr": [
                         {"w:i": [{_attr: {"w:val": true}}]},
                     ]},
@@ -270,7 +268,7 @@ describe("ParagraphStyle", () => {
                 expect(tree).to.deep.equal({
                     "w:style": [
                         {_attr: {"w:type": "paragraph", "w:styleId": "myStyleId"}},
-                        {"w:pPr": [{_attr: {}}]},
+                        {"w:pPr": []},
                         {"w:rPr": [
                             {"w:u": [{_attr: {"w:val": "single"}}]},
                         ]},
@@ -285,7 +283,7 @@ describe("ParagraphStyle", () => {
                 expect(tree).to.deep.equal({
                     "w:style": [
                         {_attr: {"w:type": "paragraph", "w:styleId": "myStyleId"}},
-                        {"w:pPr": [{_attr: {}}]},
+                        {"w:pPr": []},
                         {"w:rPr": [
                             {"w:u": [{_attr: {"w:val": "double"}}]},
                         ]},
@@ -300,7 +298,7 @@ describe("ParagraphStyle", () => {
                 expect(tree).to.deep.equal({
                     "w:style": [
                         {_attr: {"w:type": "paragraph", "w:styleId": "myStyleId"}},
-                        {"w:pPr": [{_attr: {}}]},
+                        {"w:pPr": []},
                         {"w:rPr": [
                             {"w:u": [{_attr: {"w:val": "double", "w:color": "005599"}}]},
                         ]},
@@ -316,7 +314,7 @@ describe("ParagraphStyle", () => {
             expect(tree).to.deep.equal({
                 "w:style": [
                     {_attr: {"w:type": "paragraph", "w:styleId": "myStyleId"}},
-                    {"w:pPr": [{_attr: {}}]},
+                    {"w:pPr": []},
                     {"w:rPr": [
                         {"w:color": [{_attr: {"w:val": "123456"}}]},
                     ]},

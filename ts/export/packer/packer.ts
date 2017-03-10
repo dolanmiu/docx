@@ -49,7 +49,6 @@ export abstract class Packer {
 
     public pack(output: any): void {
         this.archive.pipe(output);
-        console.log(appRoot.path + "/template");
         this.archive.glob("**", {
             expand: true,
             cwd: appRoot.path + "/template",
@@ -60,20 +59,10 @@ export abstract class Packer {
             cwd: appRoot.path + "/template",
         });
 
-        // this.archive.file(appRoot.path + "/template/[Content_Types].xml", { name: "[Content_Types].xml" });
-        // console.log(__dirname + "/packer.js");
-        // this.archive.file(__dirname + "/packer.js", { name: "/[Content_Types].xml" });
-
-        /*this.archive.directory(appRoot.path + "/template", {
-            name: "/root/g.txt",
-            prefix: "root"
-        });*/
         const xmlDocument = xml(this.formatter.format(this.document));
         const xmlStyles = xml(this.formatter.format(this.style));
         const xmlProperties = xml(this.formatter.format(this.properties), { declaration: { standalone: "yes", encoding: "UTF-8" } });
         const xmlNumbering = xml(this.formatter.format(this.numbering));
-        // console.log(JSON.stringify(this.numbering, null, " "));
-        console.log(xmlNumbering);
         this.archive.append(xmlDocument, {
             name: "word/document.xml",
         });

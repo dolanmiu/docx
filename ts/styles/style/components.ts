@@ -5,10 +5,6 @@ interface IComponentAttributes {
 }
 
 class ComponentAttributes extends XmlAttributeComponent {
-    /* tslint:disable */
-    private _attr: IComponentAttributes;
-    /* tslint:enable */
-
     constructor(properties: IComponentAttributes) {
         super({val: "w:val"}, properties);
     }

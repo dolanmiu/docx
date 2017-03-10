@@ -1,4 +1,3 @@
-import * as _ from "lodash";
 import { BaseXmlComponent } from "./base";
 export { BaseXmlComponent };
 
@@ -10,16 +9,15 @@ export abstract class XmlComponent extends BaseXmlComponent {
         this.root = new Array<BaseXmlComponent>();
     }
 
-    public toXml(): object {
-        // What does 'ret' stand for? Retain? Return?
-        const ret = this.root.map((comp) => {
+    public prepForXml(): object {
+        const children = this.root.map((comp) => {
             if (comp instanceof BaseXmlComponent) {
-                return comp.toXml();
+                return comp.prepForXml();
             }
             return comp;
         }).filter((comp) => comp); // Exclude null, undefined, and empty strings
         return {
-            [this.rootKey]: ret,
+            [this.rootKey]: children,
         };
     }
 }

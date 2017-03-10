@@ -15,10 +15,6 @@ export interface IStyleAttributes {
 }
 
 class StyleAttributes extends XmlAttributeComponent {
-    /* tslint:disable */
-    private _attr: IStyleAttributes;
-    /* tslint:enable */
-
     constructor(properties: IStyleAttributes) {
         super({
             type: "w:type",

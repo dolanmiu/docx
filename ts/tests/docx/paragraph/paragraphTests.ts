@@ -35,80 +35,135 @@ describe("Paragraph", () => {
     describe("#heading1()", () => {
         it("should add heading style to JSON", () => {
             paragraph.heading1();
-            const newJson = Utility.jsonify(paragraph);
-            assert.equal(newJson.root[0].root[1].root[0].root.val, "Heading1");
+            const tree = new Formatter().format(paragraph);
+            expect(tree).to.deep.equal({
+                "w:p": [
+                    {
+                        "w:pPr": [{"w:pStyle": [{_attr: {"w:val": "Heading1"}}]}],
+                    },
+                ],
+            });
         });
     });
 
     describe("#heading2()", () => {
         it("should add heading style to JSON", () => {
             paragraph.heading2();
-            const newJson = Utility.jsonify(paragraph);
-
-            assert.equal(newJson.root[0].root[1].root[0].root.val, "Heading2");
+            const tree = new Formatter().format(paragraph);
+            expect(tree).to.deep.equal({
+                "w:p": [
+                    {
+                        "w:pPr": [{"w:pStyle": [{_attr: {"w:val": "Heading2"}}]}],
+                    },
+                ],
+            });
         });
     });
 
     describe("#heading3()", () => {
         it("should add heading style to JSON", () => {
             paragraph.heading3();
-            const newJson = Utility.jsonify(paragraph);
-
-            assert.equal(newJson.root[0].root[1].root[0].root.val, "Heading3");
+            const tree = new Formatter().format(paragraph);
+            expect(tree).to.deep.equal({
+                "w:p": [
+                    {
+                        "w:pPr": [{"w:pStyle": [{_attr: {"w:val": "Heading3"}}]}],
+                    },
+                ],
+            });
         });
     });
 
     describe("#title()", () => {
         it("should add title style to JSON", () => {
             paragraph.title();
-            const newJson = Utility.jsonify(paragraph);
-
-            assert.equal(newJson.root[0].root[1].root[0].root.val, "Title");
+            const tree = new Formatter().format(paragraph);
+            expect(tree).to.deep.equal({
+                "w:p": [
+                    {
+                        "w:pPr": [{"w:pStyle": [{_attr: {"w:val": "Title"}}]}],
+                    },
+                ],
+            });
         });
     });
 
     describe("#center()", () => {
         it("should add center alignment to JSON", () => {
             paragraph.center();
-            const newJson = Utility.jsonify(paragraph);
-
-            assert.equal(newJson.root[0].root[1].root[0].root.val, "center");
+            const tree = new Formatter().format(paragraph);
+            expect(tree).to.deep.equal({
+                "w:p": [
+                    {
+                        "w:pPr": [{"w:jc": [{_attr: {"w:val": "center"}}]}],
+                    },
+                ],
+            });
         });
     });
 
     describe("#thematicBreak()", () => {
         it("should add thematic break to JSON", () => {
             paragraph.thematicBreak();
-            const newJson = Utility.jsonify(paragraph);
-            assert.equal(newJson.root[0].root[1].rootKey, "w:pBdr");
+            const tree = new Formatter().format(paragraph);
+            expect(tree).to.deep.equal({
+                "w:p": [{
+                    "w:pPr": [{
+                        "w:pBdr": [{
+                            "w:bottom": [{
+                                _attr: {
+                                    "w:val": "single",
+                                    "w:color": "auto",
+                                    "w:space": "1",
+                                    "w:sz": "6",
+                                },
+                            }],
+                        }],
+                    }],
+                }],
+            });
         });
     });
 
     describe("#pageBreak()", () => {
         it("should add page break to JSON", () => {
             paragraph.pageBreak();
-            const newJson = Utility.jsonify(paragraph);
-            assert.equal(newJson.root[0].root[1].root[1].rootKey, "w:br");
-        });
-
-        it("should add page break with 'page' type", () => {
-            paragraph.pageBreak();
-            const newJson = Utility.jsonify(paragraph);
-            assert.equal(newJson.root[0].root[1].root[1].root[0].root.type, "page");
+            const tree = new Formatter().format(paragraph);
+            expect(tree).to.deep.equal({
+                "w:p": [{
+                    "w:pPr": [{
+                        "w:r": [
+                            {"w:rPr": []},
+                            {"w:br": [{_attr: {"w:type": "page"}}]},
+                        ],
+                    }],
+                }],
+            });
         });
     });
 
     describe("#bullet()", () => {
         it("should add list paragraph style to JSON", () => {
             paragraph.bullet();
-            const newJson = Utility.jsonify(paragraph);
-            assert.equal(newJson.root[0].root[1].root[0].root.val, "ListParagraph");
+            const tree = new Formatter().format(paragraph);
+            expect(tree).to.have.property("w:p").which.is.an("array").which.has.length.at.least(1);
+            expect(tree["w:p"][0]).to.have.property("w:pPr").which.is.an("array").which.has.length.at.least(1);
+            expect(tree["w:p"][0]["w:pPr"][0]).to.deep.equal({
+                "w:pStyle": [{_attr: {"w:val": "ListParagraph"}}],
+            });
         });
 
         it("it should add numbered properties", () => {
             paragraph.bullet();
-            const newJson = Utility.jsonify(paragraph);
-            assert.isDefined(newJson.root[0].root[2]);
+            const tree = new Formatter().format(paragraph);
+            expect(tree).to.have.property("w:p").which.is.an("array").which.has.length.at.least(1);
+            expect(tree["w:p"][0]).to.have.property("w:pPr").which.is.an("array").which.has.length.at.least(2);
+            expect(tree["w:p"][0]["w:pPr"][1]).to.deep.equal({
+                "w:numPr": [
+                    {"w:ilvl": [{_attr: {"w:val": 0}}]},
+                    {"w:numId": [{_attr: {"w:val": 1}}]},
+                ],
+            });
         });
     });
 
@@ -120,8 +175,12 @@ describe("Paragraph", () => {
             const letterNumbering = numbering.createConcreteNumbering(numberedAbstract);
 
             paragraph.setNumbering(letterNumbering, 0);
-            const newJson = Utility.jsonify(paragraph);
-            assert.equal(newJson.root[0].root[1].root[0].root.val, "ListParagraph");
+            const tree = new Formatter().format(paragraph);
+            expect(tree).to.have.property("w:p").which.is.an("array").which.has.length.at.least(1);
+            expect(tree["w:p"][0]).to.have.property("w:pPr").which.is.an("array").which.has.length.at.least(1);
+            expect(tree["w:p"][0]["w:pPr"][0]).to.deep.equal({
+                "w:pStyle": [{_attr: {"w:val": "ListParagraph"}}],
+            });
         });
 
         it("it should add numbered properties", () => {
@@ -136,7 +195,6 @@ describe("Paragraph", () => {
                 "w:p": [
                     {
                         "w:pPr": [
-                            {_attr: {}},
                             {"w:pStyle": [{_attr: {"w:val": "ListParagraph"}}]},
                             {
                                 "w:numPr": [
@@ -159,7 +217,6 @@ describe("Paragraph", () => {
                 "w:p": [
                     {
                         "w:pPr": [
-                            {_attr: {}},
                             {"w:pStyle": [{_attr: {"w:val": "myFancyStyle"}}]},
                         ],
                     },
@@ -176,7 +233,6 @@ describe("Paragraph", () => {
                 "w:p": [
                     {
                         "w:pPr": [
-                            {_attr: {}},
                             {"w:ind": [{_attr: {"w:left": 720}}]},
                         ],
                     },
@@ -193,7 +249,6 @@ describe("Paragraph", () => {
                 "w:p": [
                     {
                         "w:pPr": [
-                            {_attr: {}},
                             {"w:spacing": [{_attr: {"w:before": 90, "w:line": 50}}]},
                         ],
                     },
