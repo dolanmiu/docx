@@ -16,7 +16,7 @@ export abstract class XmlAttributeComponent extends BaseXmlComponent {
         }
     }
 
-    public prepForXml(): object {
+    public prepForXml(): {_attr: {[key: string]: (string | number | boolean)}} {
         const attrs = {};
         if (this.root !== undefined) {
             _.forOwn(this.root, (value, key) => {
@@ -26,6 +26,6 @@ export abstract class XmlAttributeComponent extends BaseXmlComponent {
                 }
             });
         }
-        return {[this.rootKey]: attrs};
+        return {_attr: attrs};
     }
 }
