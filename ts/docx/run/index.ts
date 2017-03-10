@@ -8,7 +8,7 @@ import { DoubleStrike, Strike } from "./strike";
 import { Tab } from "./tab";
 import { Underline } from "./underline";
 
-import { Attributes, XmlComponent } from "../xml-components";
+import { XmlComponent } from "../xml-components";
 
 export class Run extends XmlComponent {
     private properties: RunProperties;

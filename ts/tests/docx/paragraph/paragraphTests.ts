@@ -2,7 +2,6 @@ import { assert, expect } from "chai";
 import * as docx from "../../../docx";
 import { Formatter } from "../../../export/formatter";
 import { Numbering } from "../../../numbering";
-import { Utility } from "../../utility";
 
 describe("Paragraph", () => {
     let paragraph: docx.Paragraph;

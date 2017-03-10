@@ -1,4 +1,4 @@
-import { Attributes, XmlComponent } from "../xml-components";
+import { XmlComponent } from "../xml-components";
 
 export class ParagraphProperties extends XmlComponent {
 

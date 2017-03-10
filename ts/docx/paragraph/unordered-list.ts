@@ -1,5 +1,4 @@
 import { Attributes, XmlComponent } from "../xml-components";
-import { Style } from "./style";
 
 export class NumberProperties extends XmlComponent {
 

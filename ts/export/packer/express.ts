@@ -1,5 +1,4 @@
 import * as express from "express";
-import * as fs from "fs";
 import { Document } from "../../docx/document";
 import { Numbering } from "../../numbering";
 import { Properties } from "../../properties";
