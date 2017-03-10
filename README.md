@@ -332,43 +332,7 @@ exporter.pack('My Document');
 ```
 
 # Examples
-## In practice
-I used this library in my personal portfolio/CV website. Click generate CV for a demonstration. [http://www.dolan.bio](http://www.dolan.bio)
-
-## General
-#### Simple paragraph
-```js
-var doc = new docx.Document();
-
-var paragraph = new docx.Paragraph("Hello World");
-var institutionText = new docx.TextRun("University College London").bold(),
-var dateText = new docx.TextRun("5th Dec 2015").tab().bold();
-paragraph.addText(institutionText);
-paragraph.addText(dateText);
-
-doc.addParagraph(paragraph);
-var exporter = new docx.LocalPacker(doc);
-exporter.pack('My Document');
-```
-
-Or:
-```js
-var doc = new docx.Document();
-
-var paragraph = new docx.Paragraph("Hello World");
-var institutionText = new docx.TextRun("University College London").bold(),
-var dateText = new docx.TextRun("5th Dec 2015").tab().bold();
-paragraph.addText(institutionText);
-paragraph.addText(dateText);
-
-var exporter = new docx.ExpressPacker(doc, res);
-exporter.pack('My Document');
-```
-Would produce:
-
-***University College London***
-
-***5th Dec 2015***
+Check the Wiki for examples
 
 Made with 💖 by Dolan Miu 🍆 💦 😝
 
