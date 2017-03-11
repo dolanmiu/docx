@@ -159,5 +159,27 @@ describe("Table", () => {
                 });
             });
         });
+
+        describe("#createParagraph", () => {
+            it("inserts a new paragraph in the cell", () => {
+                const table = new Table(1, 1);
+                const para = table.getCell(0, 0).createParagraph("Test paragraph");
+                expect(para).to.be.an.instanceof(Paragraph);
+                const tree = new Formatter().format(table);
+                expect(tree).to.have.property("w:tbl").which.is.an("array");
+                const row = tree["w:tbl"].find((x) => x["w:tr"]);
+                expect(row).not.to.be.undefined;
+                expect(row["w:tr"]).to.be.an("array").which.has.length.at.least(1);
+                expect(row["w:tr"].find((x) => x["w:tc"])).to.deep.equal({
+                    "w:tc": [
+                        {"w:tcPr": []},
+                        {"w:p": [
+                            {"w:pPr": []},
+                            {"w:r": [{"w:rPr": []}, {"w:t": ["Test paragraph"]}]},
+                        ]},
+                    ],
+                });
+            });
+        });
     });
 });

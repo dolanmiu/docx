@@ -108,6 +108,11 @@ class TableCell extends XmlComponent {
         }
         return retval
     }
+
+    public createParagraph(text?: string): Paragraph {
+        const para = new Paragraph(text);
+        this.push(para);
+        return para;
     }
 }
 
