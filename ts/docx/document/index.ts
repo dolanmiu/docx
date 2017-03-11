@@ -45,4 +45,11 @@ export class Document extends XmlComponent {
     public addTable(table: Table): void {
         this.body.push(table);
     }
+
+    public createTable(rows: number, cols: number): Table {
+        const table = new Table(rows, cols);
+        this.addTable(table);
+        return table;
+    }
+
 }
