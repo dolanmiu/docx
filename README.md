@@ -316,13 +316,9 @@ Check the Wiki for exporting guide
 # Examples
 Check the Wiki for examples
 
-# License
-
-MIT © [Dolan Miu](http://www.dolan.bio)
-
 =====
 
-Made with 💖 by Dolan Miu 🍆 💦 😝
+Made with 💖
 
 [npm-image]: https://badge.fury.io/js/docx.svg
 [npm-url]: https://npmjs.org/package/docx
