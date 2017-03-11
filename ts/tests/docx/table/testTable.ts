@@ -84,7 +84,7 @@ describe("Table", () => {
 
     describe("#setWidth", () => {
         it("sets the preferred width on the table", () => {
-            const table = new Table(2, 2).setWidth("pct", 1000)
+            const table = new Table(2, 2).setWidth("pct", 1000);
             const tree = new Formatter().format(table);
             expect(tree).to.have.property("w:tbl").which.is.an("array").with.has.length.at.least(1);
             expect(tree["w:tbl"][0]).to.deep.equal({

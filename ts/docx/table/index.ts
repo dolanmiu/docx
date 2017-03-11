@@ -96,7 +96,7 @@ class TableCell extends XmlComponent {
 
     public push(content: Paragraph | Table): TableCell {
         this.root.push(content);
-        return this
+        return this;
     }
 
     public prepForXml(): object {
@@ -106,7 +106,7 @@ class TableCell extends XmlComponent {
         if (!content[content.length - 1]["w:p"]) {
             content.push(new Paragraph().prepForXml());
         }
-        return retval
+        return retval;
     }
 
     public createParagraph(text?: string): Paragraph {

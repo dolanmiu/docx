@@ -57,7 +57,7 @@ describe("Document", () => {
         });
 
         it("should create a table with the correct dimensions", () => {
-            const table = document.createTable(2, 3);
+            document.createTable(2, 3);
             const body = new Formatter().format(document)["w:document"][1]["w:body"];
             expect(body).to.be.an("array").which.has.length.at.least(1);
             expect(body[0]).to.have.property("w:tbl").which.includes({
