@@ -86,17 +86,28 @@ class TableRowProperties extends XmlComponent {
 }
 
 class TableCell extends XmlComponent {
-    public content: Paragraph;
     private properties: TableCellProperties;
 
     constructor() {
         super("w:tc");
         this.properties = new TableCellProperties();
         this.root.push(this.properties);
-        // Table cells can have any block-level content, but for now
-        // we only allow a single paragraph:
-        this.content = new Paragraph();
-        this.root.push(this.content);
+    }
+
+    public push(content: Paragraph | Table): TableCell {
+        this.root.push(content);
+        return this
+    }
+
+    public prepForXml(): object {
+        // Cells must end with a paragraph
+        const retval = super.prepForXml();
+        const content = retval["w:tc"];
+        if (!content[content.length - 1]["w:p"]) {
+            content.push(new Paragraph().prepForXml());
+        }
+        return retval
+    }
     }
 }
 

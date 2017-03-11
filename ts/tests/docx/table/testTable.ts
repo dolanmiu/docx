@@ -1,4 +1,5 @@
 import { expect } from "chai";
+import { Paragraph } from "../../../docx/paragraph";
 import { Table } from "../../../docx/table";
 import { Formatter } from "../../../export/formatter";
 
@@ -26,10 +27,10 @@ describe("Table", () => {
     describe("#getRow and Row#getCell", () => {
         it("returns the correct row", () => {
             const table = new Table(2, 2);
-            table.getRow(0).getCell(0).content.createTextRun("A1");
-            table.getRow(0).getCell(1).content.createTextRun("B1");
-            table.getRow(1).getCell(0).content.createTextRun("A2");
-            table.getRow(1).getCell(1).content.createTextRun("B2");
+            table.getRow(0).getCell(0).push(new Paragraph("A1"));
+            table.getRow(0).getCell(1).push(new Paragraph("B1"));
+            table.getRow(1).getCell(0).push(new Paragraph("A2"));
+            table.getRow(1).getCell(1).push(new Paragraph("B2"));
             const tree = new Formatter().format(table);
             const cell = (c) => ({"w:tc": [
                 {"w:tcPr": []},
@@ -55,10 +56,10 @@ describe("Table", () => {
     describe("#getCell", () => {
         it("returns the correct cell", () => {
             const table = new Table(2, 2);
-            table.getCell(0, 0).content.createTextRun("A1");
-            table.getCell(0, 1).content.createTextRun("B1");
-            table.getCell(1, 0).content.createTextRun("A2");
-            table.getCell(1, 1).content.createTextRun("B2");
+            table.getCell(0, 0).push(new Paragraph("A1"));
+            table.getCell(0, 1).push(new Paragraph("B1"));
+            table.getCell(1, 0).push(new Paragraph("A2"));
+            table.getCell(1, 1).push(new Paragraph("B2"));
             const tree = new Formatter().format(table);
             const cell = (c) => ({"w:tc": [
                 {"w:tcPr": []},
@@ -103,6 +104,59 @@ describe("Table", () => {
                 "w:tblPr": [
                     {"w:tblLayout": [{_attr: {"w:type": "fixed"}}]},
                 ],
+            });
+        });
+    });
+
+    describe("Cell", () => {
+        describe("#prepForXml", () => {
+            it("inserts a paragraph at the end of the cell if it is empty", () => {
+                const table = new Table(1, 1);
+                const tree = new Formatter().format(table);
+                expect(tree).to.have.property("w:tbl").which.is.an("array");
+                const row = tree["w:tbl"].find((x) => x["w:tr"]);
+                expect(row).not.to.be.undefined;
+                expect(row["w:tr"]).to.be.an("array").which.has.length.at.least(1);
+                expect(row["w:tr"].find((x) => x["w:tc"])).to.deep.equal({
+                    "w:tc": [
+                        {"w:tcPr": []},
+                        {"w:p": [{"w:pPr": []}]},
+                    ],
+                });
+            });
+
+            it("inserts a paragraph at the end of the cell even if it has a child table", () => {
+                const parentTable = new Table(1, 1);
+                parentTable.getCell(0, 0).push(new Table(1, 1));
+                const tree = new Formatter().format(parentTable);
+                expect(tree).to.have.property("w:tbl").which.is.an("array");
+                const row = tree["w:tbl"].find((x) => x["w:tr"]);
+                expect(row).not.to.be.undefined;
+                expect(row["w:tr"]).to.be.an("array").which.has.length.at.least(1);
+                const cell = row["w:tr"].find((x) => x["w:tc"]);
+                expect(cell).not.to.be.undefined;
+                expect(cell["w:tc"][cell["w:tc"].length - 1]).to.deep.equal({
+                    "w:p": [{"w:pPr": []}],
+                });
+            });
+
+            it("does not insert a paragraph if it already ends with one", () => {
+                const parentTable = new Table(1, 1);
+                parentTable.getCell(0, 0).push(new Paragraph("Hello"));
+                const tree = new Formatter().format(parentTable);
+                expect(tree).to.have.property("w:tbl").which.is.an("array");
+                const row = tree["w:tbl"].find((x) => x["w:tr"]);
+                expect(row).not.to.be.undefined;
+                expect(row["w:tr"]).to.be.an("array").which.has.length.at.least(1);
+                expect(row["w:tr"].find((x) => x["w:tc"])).to.deep.equal({
+                    "w:tc": [
+                        {"w:tcPr": []},
+                        {"w:p": [
+                            {"w:pPr": []},
+                            {"w:r": [{"w:rPr": []}, {"w:t": ["Hello"]}]},
+                        ]},
+                    ],
+                });
             });
         });
     });
