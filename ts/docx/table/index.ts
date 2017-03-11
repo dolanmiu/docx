@@ -94,7 +94,7 @@ class TableCell extends XmlComponent {
         this.root.push(this.properties);
     }
 
-    public push(content: Paragraph | Table): TableCell {
+    public addContent(content: Paragraph | Table): TableCell {
         this.root.push(content);
         return this;
     }
@@ -111,7 +111,7 @@ class TableCell extends XmlComponent {
 
     public createParagraph(text?: string): Paragraph {
         const para = new Paragraph(text);
-        this.push(para);
+        this.addContent(para);
         return para;
     }
 }

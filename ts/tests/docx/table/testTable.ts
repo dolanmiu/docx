@@ -27,10 +27,10 @@ describe("Table", () => {
     describe("#getRow and Row#getCell", () => {
         it("returns the correct row", () => {
             const table = new Table(2, 2);
-            table.getRow(0).getCell(0).push(new Paragraph("A1"));
-            table.getRow(0).getCell(1).push(new Paragraph("B1"));
-            table.getRow(1).getCell(0).push(new Paragraph("A2"));
-            table.getRow(1).getCell(1).push(new Paragraph("B2"));
+            table.getRow(0).getCell(0).addContent(new Paragraph("A1"));
+            table.getRow(0).getCell(1).addContent(new Paragraph("B1"));
+            table.getRow(1).getCell(0).addContent(new Paragraph("A2"));
+            table.getRow(1).getCell(1).addContent(new Paragraph("B2"));
             const tree = new Formatter().format(table);
             const cell = (c) => ({"w:tc": [
                 {"w:tcPr": []},
@@ -56,10 +56,10 @@ describe("Table", () => {
     describe("#getCell", () => {
         it("returns the correct cell", () => {
             const table = new Table(2, 2);
-            table.getCell(0, 0).push(new Paragraph("A1"));
-            table.getCell(0, 1).push(new Paragraph("B1"));
-            table.getCell(1, 0).push(new Paragraph("A2"));
-            table.getCell(1, 1).push(new Paragraph("B2"));
+            table.getCell(0, 0).addContent(new Paragraph("A1"));
+            table.getCell(0, 1).addContent(new Paragraph("B1"));
+            table.getCell(1, 0).addContent(new Paragraph("A2"));
+            table.getCell(1, 1).addContent(new Paragraph("B2"));
             const tree = new Formatter().format(table);
             const cell = (c) => ({"w:tc": [
                 {"w:tcPr": []},
@@ -127,7 +127,7 @@ describe("Table", () => {
 
             it("inserts a paragraph at the end of the cell even if it has a child table", () => {
                 const parentTable = new Table(1, 1);
-                parentTable.getCell(0, 0).push(new Table(1, 1));
+                parentTable.getCell(0, 0).addContent(new Table(1, 1));
                 const tree = new Formatter().format(parentTable);
                 expect(tree).to.have.property("w:tbl").which.is.an("array");
                 const row = tree["w:tbl"].find((x) => x["w:tr"]);
@@ -142,7 +142,7 @@ describe("Table", () => {
 
             it("does not insert a paragraph if it already ends with one", () => {
                 const parentTable = new Table(1, 1);
-                parentTable.getCell(0, 0).push(new Paragraph("Hello"));
+                parentTable.getCell(0, 0).addContent(new Paragraph("Hello"));
                 const tree = new Formatter().format(parentTable);
                 expect(tree).to.have.property("w:tbl").which.is.an("array");
                 const row = tree["w:tbl"].find((x) => x["w:tr"]);
