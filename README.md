@@ -44,7 +44,6 @@
 	- [Express](#)
 	- [Standalone .docx file](#)
 - [Examples](#)
-- [License](#)
 
 # Install
 
