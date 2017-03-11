@@ -22,4 +22,16 @@ describe("TableProperties", () => {
             });
         });
     });
+
+    describe("#fixedWidthLayout", () => {
+        it("sets the table to fixed width layout", () => {
+            const tp = new TableProperties().fixedWidthLayout();
+            const tree = new Formatter().format(tp);
+            expect(tree).to.deep.equal({
+                "w:tblPr": [
+                    {"w:tblLayout": [{_attr: {"w:type": "fixed"}}]},
+                ],
+            });
+        });
+    });
 });

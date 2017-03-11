@@ -11,6 +11,11 @@ export class TableProperties extends XmlComponent {
         this.root.push(new PreferredTableWidth(type, w));
         return this;
     }
+
+    public fixedWidthLayout(): TableProperties {
+        this.root.push(new TableLayout("fixed"));
+        return this;
+    }
 }
 
 interface ITableWidth {
@@ -26,5 +31,18 @@ class PreferredTableWidth extends XmlComponent {
     constructor(type: widthTypes, w: number | string) {
         super("w:tblW");
         this.root.push(new TableWidthAttributes({type, w}));
+    }
+}
+
+type tableLayout = "autofit" | "fixed";
+
+class TableLayoutAttributes extends XmlAttributeComponent<{type: tableLayout}> {
+    protected xmlKeys = {type: "w:type"};
+}
+
+class TableLayout extends XmlComponent {
+    constructor(type: tableLayout) {
+        super("w:tblLayout");
+        this.root.push(new TableLayoutAttributes({type}));
     }
 }

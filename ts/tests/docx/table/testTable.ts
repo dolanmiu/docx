@@ -93,4 +93,17 @@ describe("Table", () => {
             });
         });
     });
+
+    describe("#fixedWidthLayout", () => {
+        it("sets the table to fixed width layout", () => {
+            const table = new Table(2, 2).fixedWidthLayout();
+            const tree = new Formatter().format(table);
+            expect(tree).to.have.property("w:tbl").which.is.an("array").with.has.length.at.least(1);
+            expect(tree["w:tbl"][0]).to.deep.equal({
+                "w:tblPr": [
+                    {"w:tblLayout": [{_attr: {"w:type": "fixed"}}]},
+                ],
+            });
+        });
+    });
 });
