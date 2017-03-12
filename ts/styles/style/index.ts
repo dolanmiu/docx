@@ -131,6 +131,13 @@ export class ParagraphStyle extends Style {
         return this;
     }
 
+    public font(fontName: string): ParagraphStyle {
+        this.addRunProperty(new formatting.RunFonts(fontName));
+        return this;
+    }
+
+    // --------------------- Paragraph formatting ------------------------ //
+
     public indent(left: number, hanging?: number): ParagraphStyle {
         this.addParagraphProperty(new Indent(left, hanging));
         return this;

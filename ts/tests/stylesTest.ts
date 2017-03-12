@@ -320,6 +320,19 @@ describe("ParagraphStyle", () => {
             });
         });
 
+        it("#font", () => {
+            const style = new ParagraphStyle("myStyleId")
+                .font("Times");
+            const tree = new Formatter().format(style);
+            expect(tree).to.deep.equal({
+                "w:style": [
+                    {_attr: {"w:type": "paragraph", "w:styleId": "myStyleId"}},
+                    {"w:pPr": []},
+                    {"w:rPr": [{"w:rFonts": [{_attr: {"w:ascii": "Times", "w:hAnsi": "Times"}}]}]},
+                ],
+            });
+        });
+
         it("#bold", () => {
             const style = new ParagraphStyle("myStyleId")
                 .bold();
