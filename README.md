@@ -51,6 +51,14 @@
 $ npm install --save docx
 ```
 
+# Demo
+
+```sh
+$ npm run demo
+```
+
+will run the demo app in the `demo` folder, which creates a file called "My Document.docx" in the root of the project
+
 
 # Usage
 
