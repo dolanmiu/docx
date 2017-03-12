@@ -1,7 +1,8 @@
 import { Num } from "../../numbering/num";
 import { TextRun } from "../run/text-run";
-import { Attributes, XmlComponent } from "../xml-components";
+import { XmlComponent } from "../xml-components";
 
+import { Alignment } from "./alignment";
 import { ThematicBreak } from "./border";
 import { Indent } from "./indent";
 import { PageBreak } from "./page-break";
@@ -10,16 +11,6 @@ import { ISpacingProperties, Spacing } from "./spacing";
 import { Style } from "./style";
 import { LeftTabStop, MaxRightTabStop } from "./tab-stop";
 import { NumberProperties } from "./unordered-list";
-
-class Alignment extends XmlComponent {
-
-    constructor(type: string) {
-        super("w:jc");
-        this.root.push(new Attributes({
-            val: type,
-        }));
-    }
-}
 
 export class Paragraph extends XmlComponent {
     private properties: ParagraphProperties;

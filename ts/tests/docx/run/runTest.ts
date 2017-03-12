@@ -32,6 +32,26 @@ describe("Run", () => {
             const newJson = Utility.jsonify(run);
             assert.equal(newJson.root[0].root[0].rootKey, "w:u");
         });
+
+        it("should default to 'single' and no color", () => {
+            run.underline();
+            const tree = new Formatter().format(run);
+            expect(tree).to.deep.equal({
+                "w:r": [
+                    {"w:rPr": [{"w:u": [{_attr: {"w:val": "single"}}]}]},
+                ],
+            });
+        });
+
+        it("should set the style type and color if given", () => {
+            run.underline("double", "990011");
+            const tree = new Formatter().format(run);
+            expect(tree).to.deep.equal({
+                "w:r": [
+                    {"w:rPr": [{"w:u": [{_attr: {"w:val": "double", "w:color": "990011"}}]}]},
+                ],
+            });
+        });
     });
 
     describe("#smallCaps()", () => {
@@ -93,6 +113,42 @@ describe("Run", () => {
             expect(tree).to.deep.equal({
                 "w:r": [
                     {"w:rPr": [{"w:rFonts": [{_attr: {"w:ascii": "Times", "w:hAnsi": "Times"}}]}]},
+                ],
+            });
+        });
+    });
+
+    describe("#color", () => {
+        it("should set the run to the color given", () => {
+            run.color("001122");
+            const tree = new Formatter().format(run);
+            expect(tree).to.deep.equal({
+                "w:r": [
+                    {"w:rPr": [{"w:color": [{_attr: {"w:val": "001122"}}]}]},
+                ],
+            });
+        });
+    });
+
+    describe("#size", () => {
+        it("should set the run to the given size", () => {
+            run.size(24);
+            const tree = new Formatter().format(run);
+            expect(tree).to.deep.equal({
+                "w:r": [
+                    {"w:rPr": [{"w:sz": [{_attr: {"w:val": 24}}]}]},
+                ],
+            });
+        });
+    });
+
+    describe("#style", () => {
+        it("should set the style to the given styleId", () => {
+            run.style("myRunStyle");
+            const tree = new Formatter().format(run);
+            expect(tree).to.deep.equal({
+                "w:r": [
+                    {"w:rPr": [{"w:rStyle": [{_attr: {"w:val": "myRunStyle"}}]}]},
                 ],
             });
         });
