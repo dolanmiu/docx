@@ -1,10 +1,9 @@
 import { Break } from "./break";
 import { Caps, SmallCaps } from "./caps";
-import { Bold, Color, Italics, Size } from "./formatting";
+import { Bold, Color, DoubleStrike, Italics, Size, Strike } from "./formatting";
 import { RunProperties } from "./properties";
 import { RunFonts } from "./run-fonts";
 import { SubScript, SuperScript } from "./script";
-import { DoubleStrike, Strike } from "./strike";
 import { Style } from "./style";
 import { Tab } from "./tab";
 import { Underline } from "./underline";
