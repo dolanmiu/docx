@@ -5,6 +5,7 @@ import { RunProperties } from "./properties";
 import { RunFonts } from "./run-fonts";
 import { SubScript, SuperScript } from "./script";
 import { DoubleStrike, Strike } from "./strike";
+import { Style } from "./style";
 import { Tab } from "./tab";
 import { Underline } from "./underline";
 
@@ -86,6 +87,11 @@ export class Run extends XmlComponent {
 
     public font(fontName: string): Run {
         this.properties.push(new RunFonts(fontName));
+        return this;
+    }
+
+    public style(styleId: string): Run {
+        this.properties.push(new Style(styleId));
         return this;
     }
 }

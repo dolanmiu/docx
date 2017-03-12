@@ -141,4 +141,16 @@ describe("Run", () => {
             });
         });
     });
+
+    describe("#style", () => {
+        it("should set the style to the given styleId", () => {
+            run.style("myRunStyle");
+            const tree = new Formatter().format(run);
+            expect(tree).to.deep.equal({
+                "w:r": [
+                    {"w:rPr": [{"w:rStyle": [{_attr: {"w:val": "myRunStyle"}}]}]},
+                ],
+            });
+        });
+    });
 });
