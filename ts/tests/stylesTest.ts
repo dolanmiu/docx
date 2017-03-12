@@ -230,6 +230,36 @@ describe("ParagraphStyle", () => {
             });
         });
 
+        it("#smallCaps", () => {
+            const style = new ParagraphStyle("myStyleId")
+                .smallCaps();
+            const tree = new Formatter().format(style);
+            expect(tree).to.deep.equal({
+                "w:style": [
+                    {_attr: {"w:type": "paragraph", "w:styleId": "myStyleId"}},
+                    {"w:pPr": []},
+                    {"w:rPr": [
+                        {"w:smallCaps": [{_attr: {"w:val": true}}]},
+                    ]},
+                ],
+            });
+        });
+
+        it("#allCaps", () => {
+            const style = new ParagraphStyle("myStyleId")
+                .allCaps();
+            const tree = new Formatter().format(style);
+            expect(tree).to.deep.equal({
+                "w:style": [
+                    {_attr: {"w:type": "paragraph", "w:styleId": "myStyleId"}},
+                    {"w:pPr": []},
+                    {"w:rPr": [
+                        {"w:caps": [{_attr: {"w:val": true}}]},
+                    ]},
+                ],
+            });
+        });
+
         it("#bold", () => {
             const style = new ParagraphStyle("myStyleId")
                 .bold();

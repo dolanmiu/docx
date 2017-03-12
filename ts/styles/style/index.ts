@@ -74,6 +74,8 @@ export class ParagraphStyle extends Style {
         return this;
     }
 
+    // ----------  Run formatting ---------------------- //
+
     public size(twips: number): ParagraphStyle {
         this.addRunProperty(new formatting.Size(twips));
         return this;
@@ -86,6 +88,16 @@ export class ParagraphStyle extends Style {
 
     public italics(): ParagraphStyle {
         this.addRunProperty(new formatting.Italics());
+        return this;
+    }
+
+    public smallCaps(): ParagraphStyle {
+        this.addRunProperty(new formatting.SmallCaps());
+        return this;
+    }
+
+    public allCaps(): ParagraphStyle {
+        this.addRunProperty(new formatting.Caps());
         return this;
     }
 
