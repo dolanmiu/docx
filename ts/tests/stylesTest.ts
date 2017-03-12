@@ -292,6 +292,40 @@ describe("ParagraphStyle", () => {
                 ],
             });
         });
+
+        it("#leftTabStop", () => {
+            const style = new ParagraphStyle("myStyleId")
+                .leftTabStop(1200);
+            const tree = new Formatter().format(style);
+            expect(tree).to.deep.equal({
+                "w:style": [
+                    {_attr: {"w:type": "paragraph", "w:styleId": "myStyleId"}},
+                    {"w:pPr": [
+                        {"w:tabs": [
+                            {"w:tab": [{_attr: {"w:val": "left", "w:pos": 1200}}]},
+                        ]},
+                    ]},
+                    {"w:rPr": []},
+                ],
+            });
+        });
+
+        it("#maxRightTabStop", () => {
+            const style = new ParagraphStyle("myStyleId")
+                .maxRightTabStop();
+            const tree = new Formatter().format(style);
+            expect(tree).to.deep.equal({
+                "w:style": [
+                    {_attr: {"w:type": "paragraph", "w:styleId": "myStyleId"}},
+                    {"w:pPr": [
+                        {"w:tabs": [
+                            {"w:tab": [{_attr: {"w:val": "right", "w:pos": 9026}}]},
+                        ]},
+                    ]},
+                    {"w:rPr": []},
+                ],
+            });
+        });
     });
 
     describe("formatting methods: run properties", () => {

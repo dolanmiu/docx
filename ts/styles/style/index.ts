@@ -161,6 +161,16 @@ export class ParagraphStyle extends Style {
         return this;
     }
 
+    public maxRightTabStop(): ParagraphStyle {
+        this.addParagraphProperty(new paragraph.MaxRightTabStop());
+        return this;
+    }
+
+    public leftTabStop(position: number): ParagraphStyle {
+        this.addParagraphProperty(new paragraph.LeftTabStop(position));
+        return this;
+    }
+
     public indent(left: number, hanging?: number): ParagraphStyle {
         this.addParagraphProperty(new paragraph.Indent(left, hanging));
         return this;
