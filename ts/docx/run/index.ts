@@ -29,8 +29,8 @@ export class Run extends XmlComponent {
         return this;
     }
 
-    public underline(): Run {
-        this.properties.push(new Underline());
+    public underline(underlineType?: string, color?: string): Run {
+        this.properties.push(new Underline(underlineType, color));
         return this;
     }
 

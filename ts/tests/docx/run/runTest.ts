@@ -32,6 +32,26 @@ describe("Run", () => {
             const newJson = Utility.jsonify(run);
             assert.equal(newJson.root[0].root[0].rootKey, "w:u");
         });
+
+        it("should default to 'single' and no color", () => {
+            run.underline();
+            const tree = new Formatter().format(run);
+            expect(tree).to.deep.equal({
+                "w:r": [
+                    {"w:rPr": [{"w:u": [{_attr: {"w:val": "single"}}]}]},
+                ],
+            });
+        });
+
+        it("should set the style type and color if given", () => {
+            run.underline("double", "990011");
+            const tree = new Formatter().format(run);
+            expect(tree).to.deep.equal({
+                "w:r": [
+                    {"w:rPr": [{"w:u": [{_attr: {"w:val": "double", "w:color": "990011"}}]}]},
+                ],
+            });
+        });
     });
 
     describe("#smallCaps()", () => {
