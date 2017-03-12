@@ -272,6 +272,26 @@ describe("ParagraphStyle", () => {
                 ],
             });
         });
+
+        it("#thematicBreak", () => {
+            const style = new ParagraphStyle("myStyleId")
+                .thematicBreak();
+            const tree = new Formatter().format(style);
+            expect(tree).to.deep.equal({
+                "w:style": [
+                    {_attr: {"w:type": "paragraph", "w:styleId": "myStyleId"}},
+                    {"w:pPr": [
+                        {"w:pBdr": [{"w:bottom": [{_attr: {
+                            "w:color": "auto",
+                            "w:space": "1",
+                            "w:val": "single",
+                            "w:sz": "6",
+                        }}]}]},
+                    ]},
+                    {"w:rPr": []},
+                ],
+            });
+        });
     });
 
     describe("formatting methods: run properties", () => {

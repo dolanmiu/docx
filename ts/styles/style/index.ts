@@ -156,6 +156,11 @@ export class ParagraphStyle extends Style {
         return this;
     }
 
+    public thematicBreak(): ParagraphStyle {
+        this.addParagraphProperty(new paragraph.ThematicBreak());
+        return this;
+    }
+
     public indent(left: number, hanging?: number): ParagraphStyle {
         this.addParagraphProperty(new paragraph.Indent(left, hanging));
         return this;
