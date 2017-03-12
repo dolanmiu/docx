@@ -117,4 +117,28 @@ describe("Run", () => {
             });
         });
     });
+
+    describe("#color", () => {
+        it("should set the run to the color given", () => {
+            run.color("001122");
+            const tree = new Formatter().format(run);
+            expect(tree).to.deep.equal({
+                "w:r": [
+                    {"w:rPr": [{"w:color": [{_attr: {"w:val": "001122"}}]}]},
+                ],
+            });
+        });
+    });
+
+    describe("#size", () => {
+        it("should set the run to the given size", () => {
+            run.size(24);
+            const tree = new Formatter().format(run);
+            expect(tree).to.deep.equal({
+                "w:r": [
+                    {"w:rPr": [{"w:sz": [{_attr: {"w:val": 24}}]}]},
+                ],
+            });
+        });
+    });
 });

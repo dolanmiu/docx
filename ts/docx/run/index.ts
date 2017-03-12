@@ -1,6 +1,6 @@
 import { Break } from "./break";
 import { Caps, SmallCaps } from "./caps";
-import { Bold, Italics } from "./formatting";
+import { Bold, Color, Italics, Size } from "./formatting";
 import { RunProperties } from "./properties";
 import { RunFonts } from "./run-fonts";
 import { SubScript, SuperScript } from "./script";
@@ -31,6 +31,16 @@ export class Run extends XmlComponent {
 
     public underline(underlineType?: string, color?: string): Run {
         this.properties.push(new Underline(underlineType, color));
+        return this;
+    }
+
+    public color(color: string): Run {
+        this.properties.push(new Color(color));
+        return this;
+    }
+
+    public size(size: number): Run {
+        this.properties.push(new Size(size));
         return this;
     }
 
