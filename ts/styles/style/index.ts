@@ -1,6 +1,4 @@
-import { Indent } from "../../docx/paragraph/indent";
-import { ParagraphProperties } from "../../docx/paragraph/properties";
-import { ISpacingProperties, Spacing } from "../../docx/paragraph/spacing";
+import * as paragraph from "../../docx/paragraph/formatting";
 import * as formatting from "../../docx/run/formatting";
 import { RunProperties } from "../../docx/run/properties";
 import { XmlAttributeComponent, XmlComponent } from "../../docx/xml-components";
@@ -40,12 +38,12 @@ export class Style extends XmlComponent {
 
 export class ParagraphStyle extends Style {
 
-    private paragraphProperties: ParagraphProperties;
+    private paragraphProperties: paragraph.ParagraphProperties;
     private runProperties: RunProperties;
 
     constructor(styleId: string, name?: string) {
         super({type: "paragraph", styleId: styleId}, name);
-        this.paragraphProperties = new ParagraphProperties();
+        this.paragraphProperties = new paragraph.ParagraphProperties();
         this.runProperties = new RunProperties();
         this.root.push(this.paragraphProperties);
         this.root.push(this.runProperties);
@@ -139,12 +137,12 @@ export class ParagraphStyle extends Style {
     // --------------------- Paragraph formatting ------------------------ //
 
     public indent(left: number, hanging?: number): ParagraphStyle {
-        this.addParagraphProperty(new Indent(left, hanging));
+        this.addParagraphProperty(new paragraph.Indent(left, hanging));
         return this;
     }
 
-    public spacing(params: ISpacingProperties): ParagraphStyle {
-        this.addParagraphProperty(new Spacing(params));
+    public spacing(params: paragraph.ISpacingProperties): ParagraphStyle {
+        this.addParagraphProperty(new paragraph.Spacing(params));
         return this;
     };
 }
