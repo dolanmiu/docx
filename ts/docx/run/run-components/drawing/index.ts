@@ -2,7 +2,7 @@ import { XmlComponent } from "../../../xml-components";
 
 export class Drawing extends XmlComponent {
 
-    constructor() {
+    constructor(imagePath: string) {
         super("w:drawing");
     }
 }
