@@ -260,6 +260,36 @@ describe("ParagraphStyle", () => {
             });
         });
 
+        it("#strike", () => {
+            const style = new ParagraphStyle("myStyleId")
+                .strike();
+            const tree = new Formatter().format(style);
+            expect(tree).to.deep.equal({
+                "w:style": [
+                    {_attr: {"w:type": "paragraph", "w:styleId": "myStyleId"}},
+                    {"w:pPr": []},
+                    {"w:rPr": [
+                        {"w:strike": [{_attr: {"w:val": true}}]},
+                    ]},
+                ],
+            });
+        });
+
+        it("#doubleStrike", () => {
+            const style = new ParagraphStyle("myStyleId")
+                .doubleStrike();
+            const tree = new Formatter().format(style);
+            expect(tree).to.deep.equal({
+                "w:style": [
+                    {_attr: {"w:type": "paragraph", "w:styleId": "myStyleId"}},
+                    {"w:pPr": []},
+                    {"w:rPr": [
+                        {"w:dstrike": [{_attr: {"w:val": true}}]},
+                    ]},
+                ],
+            });
+        });
+
         it("#bold", () => {
             const style = new ParagraphStyle("myStyleId")
                 .bold();

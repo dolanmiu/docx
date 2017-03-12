@@ -101,6 +101,16 @@ export class ParagraphStyle extends Style {
         return this;
     }
 
+    public strike(): ParagraphStyle {
+        this.addRunProperty(new formatting.Strike());
+        return this;
+    }
+
+    public doubleStrike(): ParagraphStyle {
+        this.addRunProperty(new formatting.DoubleStrike());
+        return this;
+    }
+
     public underline(underlineType?: string, color?: string): ParagraphStyle {
         this.addRunProperty(new formatting.Underline(underlineType, color));
         return this;
