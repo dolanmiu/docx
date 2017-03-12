@@ -8,7 +8,8 @@
     "test": "mocha ./build-tests --recursive",
     "prepublishOnly": "npm run build",
     "lint": "tslint --project ./ts",
-    "build": "rimraf ./build && tsc -p ts"
+    "build": "rimraf ./build && tsc -p ts",
+    "demo": "npm run build && node ./demo/demo.js"
   },
   "files": [
     "ts",

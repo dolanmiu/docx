@@ -1,5 +1,5 @@
 import { assert } from "chai";
-import { DoubleStrike, Strike } from "../../../docx/run/strike";
+import { DoubleStrike, Strike } from "../../../docx/run/formatting";
 import { Utility } from "../../utility";
 
 describe("Strike", () => {

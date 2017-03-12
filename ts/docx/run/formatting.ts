@@ -1,5 +1,7 @@
 import { Attributes, XmlComponent } from "../xml-components";
 export { Underline } from "./underline";
+export { SubScript, SuperScript } from "./script";
+export { RunFonts } from "./run-fonts";
 
 export class Bold extends XmlComponent {
 

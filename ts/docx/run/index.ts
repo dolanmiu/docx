@@ -1,10 +1,10 @@
 import { Break } from "./break";
 import { Caps, SmallCaps } from "./caps";
-import { Bold, Italics } from "./formatting";
+import { Bold, Color, DoubleStrike, Italics, Size, Strike } from "./formatting";
 import { RunProperties } from "./properties";
 import { RunFonts } from "./run-fonts";
 import { SubScript, SuperScript } from "./script";
-import { DoubleStrike, Strike } from "./strike";
+import { Style } from "./style";
 import { Tab } from "./tab";
 import { Underline } from "./underline";
 
@@ -29,8 +29,18 @@ export class Run extends XmlComponent {
         return this;
     }
 
-    public underline(): Run {
-        this.properties.push(new Underline());
+    public underline(underlineType?: string, color?: string): Run {
+        this.properties.push(new Underline(underlineType, color));
+        return this;
+    }
+
+    public color(color: string): Run {
+        this.properties.push(new Color(color));
+        return this;
+    }
+
+    public size(size: number): Run {
+        this.properties.push(new Size(size));
         return this;
     }
 
@@ -76,6 +86,11 @@ export class Run extends XmlComponent {
 
     public font(fontName: string): Run {
         this.properties.push(new RunFonts(fontName));
+        return this;
+    }
+
+    public style(styleId: string): Run {
+        this.properties.push(new Style(styleId));
         return this;
     }
 }

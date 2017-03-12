@@ -46,4 +46,28 @@ describe("Document", () => {
             });
         });
     });
+
+    describe("#createTable", () => {
+        it("should create a new table and append it to body", () => {
+            const table = document.createTable(2, 3);
+            expect(table).to.be.an.instanceof(docx.Table);
+            const body = new Formatter().format(document)["w:document"][1]["w:body"];
+            expect(body).to.be.an("array").which.has.length.at.least(1);
+            expect(body[0]).to.have.property("w:tbl");
+        });
+
+        it("should create a table with the correct dimensions", () => {
+            document.createTable(2, 3);
+            const body = new Formatter().format(document)["w:document"][1]["w:body"];
+            expect(body).to.be.an("array").which.has.length.at.least(1);
+            expect(body[0]).to.have.property("w:tbl").which.includes({
+                "w:tblGrid": [
+                    {"w:gridCol": [{_attr: {"w:w": 1}}]},
+                    {"w:gridCol": [{_attr: {"w:w": 1}}]},
+                    {"w:gridCol": [{_attr: {"w:w": 1}}]},
+                ],
+            });
+            expect(body[0]["w:tbl"].filter((x) => x["w:tr"])).to.have.length(2);
+        });
+    });
 });

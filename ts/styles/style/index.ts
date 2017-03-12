@@ -1,6 +1,4 @@
-import { Indent } from "../../docx/paragraph/indent";
-import { ParagraphProperties } from "../../docx/paragraph/properties";
-import { ISpacingProperties, Spacing } from "../../docx/paragraph/spacing";
+import * as paragraph from "../../docx/paragraph/formatting";
 import * as formatting from "../../docx/run/formatting";
 import { RunProperties } from "../../docx/run/properties";
 import { XmlAttributeComponent, XmlComponent } from "../../docx/xml-components";
@@ -40,12 +38,12 @@ export class Style extends XmlComponent {
 
 export class ParagraphStyle extends Style {
 
-    private paragraphProperties: ParagraphProperties;
+    private paragraphProperties: paragraph.ParagraphProperties;
     private runProperties: RunProperties;
 
     constructor(styleId: string, name?: string) {
         super({type: "paragraph", styleId: styleId}, name);
-        this.paragraphProperties = new ParagraphProperties();
+        this.paragraphProperties = new paragraph.ParagraphProperties();
         this.runProperties = new RunProperties();
         this.root.push(this.paragraphProperties);
         this.root.push(this.runProperties);
@@ -74,6 +72,8 @@ export class ParagraphStyle extends Style {
         return this;
     }
 
+    // ----------  Run formatting ---------------------- //
+
     public size(twips: number): ParagraphStyle {
         this.addRunProperty(new formatting.Size(twips));
         return this;
@@ -89,6 +89,36 @@ export class ParagraphStyle extends Style {
         return this;
     }
 
+    public smallCaps(): ParagraphStyle {
+        this.addRunProperty(new formatting.SmallCaps());
+        return this;
+    }
+
+    public allCaps(): ParagraphStyle {
+        this.addRunProperty(new formatting.Caps());
+        return this;
+    }
+
+    public strike(): ParagraphStyle {
+        this.addRunProperty(new formatting.Strike());
+        return this;
+    }
+
+    public doubleStrike(): ParagraphStyle {
+        this.addRunProperty(new formatting.DoubleStrike());
+        return this;
+    }
+
+    public subScript(): ParagraphStyle {
+        this.addRunProperty(new formatting.SubScript());
+        return this;
+    }
+
+    public superScript(): ParagraphStyle {
+        this.addRunProperty(new formatting.SuperScript());
+        return this;
+    }
+
     public underline(underlineType?: string, color?: string): ParagraphStyle {
         this.addRunProperty(new formatting.Underline(underlineType, color));
         return this;
@@ -99,13 +129,55 @@ export class ParagraphStyle extends Style {
         return this;
     }
 
-    public indent(left: number, hanging?: number): ParagraphStyle {
-        this.addParagraphProperty(new Indent(left, hanging));
+    public font(fontName: string): ParagraphStyle {
+        this.addRunProperty(new formatting.RunFonts(fontName));
         return this;
     }
 
-    public spacing(params: ISpacingProperties): ParagraphStyle {
-        this.addParagraphProperty(new Spacing(params));
+    // --------------------- Paragraph formatting ------------------------ //
+
+    public center(): ParagraphStyle {
+        this.addParagraphProperty(new paragraph.Alignment("center"));
+        return this;
+    }
+
+    public left(): ParagraphStyle {
+        this.addParagraphProperty(new paragraph.Alignment("left"));
+        return this;
+    }
+
+    public right(): ParagraphStyle {
+        this.addParagraphProperty(new paragraph.Alignment("right"));
+        return this;
+    }
+
+    public justified(): ParagraphStyle {
+        this.addParagraphProperty(new paragraph.Alignment("both"));
+        return this;
+    }
+
+    public thematicBreak(): ParagraphStyle {
+        this.addParagraphProperty(new paragraph.ThematicBreak());
+        return this;
+    }
+
+    public maxRightTabStop(): ParagraphStyle {
+        this.addParagraphProperty(new paragraph.MaxRightTabStop());
+        return this;
+    }
+
+    public leftTabStop(position: number): ParagraphStyle {
+        this.addParagraphProperty(new paragraph.LeftTabStop(position));
+        return this;
+    }
+
+    public indent(left: number, hanging?: number): ParagraphStyle {
+        this.addParagraphProperty(new paragraph.Indent(left, hanging));
+        return this;
+    }
+
+    public spacing(params: paragraph.ISpacingProperties): ParagraphStyle {
+        this.addParagraphProperty(new paragraph.Spacing(params));
         return this;
     };
 }

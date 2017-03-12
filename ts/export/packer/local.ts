@@ -13,7 +13,7 @@ export class LocalPacker extends Packer {
     }
 
     public pack(path: string): void {
-        this.stream = fs.createWriteStream(path);
+        this.stream = fs.createWriteStream(`${path}.docx`);
         super.pack(this.stream);
     }
 }
