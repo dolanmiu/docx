@@ -212,6 +212,66 @@ describe("ParagraphStyle", () => {
                 ],
             });
         });
+
+        it("#center", () => {
+            const style = new ParagraphStyle("myStyleId")
+                .center();
+            const tree = new Formatter().format(style);
+            expect(tree).to.deep.equal({
+                "w:style": [
+                    {_attr: {"w:type": "paragraph", "w:styleId": "myStyleId"}},
+                    {"w:pPr": [
+                        {"w:jc": [{_attr: {"w:val": "center"}}]},
+                    ]},
+                    {"w:rPr": []},
+                ],
+            });
+        });
+
+        it("#left", () => {
+            const style = new ParagraphStyle("myStyleId")
+                .left();
+            const tree = new Formatter().format(style);
+            expect(tree).to.deep.equal({
+                "w:style": [
+                    {_attr: {"w:type": "paragraph", "w:styleId": "myStyleId"}},
+                    {"w:pPr": [
+                        {"w:jc": [{_attr: {"w:val": "left"}}]},
+                    ]},
+                    {"w:rPr": []},
+                ],
+            });
+        });
+
+        it("#right", () => {
+            const style = new ParagraphStyle("myStyleId")
+                .right();
+            const tree = new Formatter().format(style);
+            expect(tree).to.deep.equal({
+                "w:style": [
+                    {_attr: {"w:type": "paragraph", "w:styleId": "myStyleId"}},
+                    {"w:pPr": [
+                        {"w:jc": [{_attr: {"w:val": "right"}}]},
+                    ]},
+                    {"w:rPr": []},
+                ],
+            });
+        });
+
+        it("#justified", () => {
+            const style = new ParagraphStyle("myStyleId")
+                .justified();
+            const tree = new Formatter().format(style);
+            expect(tree).to.deep.equal({
+                "w:style": [
+                    {_attr: {"w:type": "paragraph", "w:styleId": "myStyleId"}},
+                    {"w:pPr": [
+                        {"w:jc": [{_attr: {"w:val": "both"}}]},
+                    ]},
+                    {"w:rPr": []},
+                ],
+            });
+        });
     });
 
     describe("formatting methods: run properties", () => {

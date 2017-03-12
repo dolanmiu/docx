@@ -136,6 +136,26 @@ export class ParagraphStyle extends Style {
 
     // --------------------- Paragraph formatting ------------------------ //
 
+    public center(): ParagraphStyle {
+        this.addParagraphProperty(new paragraph.Alignment("center"));
+        return this;
+    }
+
+    public left(): ParagraphStyle {
+        this.addParagraphProperty(new paragraph.Alignment("left"));
+        return this;
+    }
+
+    public right(): ParagraphStyle {
+        this.addParagraphProperty(new paragraph.Alignment("right"));
+        return this;
+    }
+
+    public justified(): ParagraphStyle {
+        this.addParagraphProperty(new paragraph.Alignment("both"));
+        return this;
+    }
+
     public indent(left: number, hanging?: number): ParagraphStyle {
         this.addParagraphProperty(new paragraph.Indent(left, hanging));
         return this;
