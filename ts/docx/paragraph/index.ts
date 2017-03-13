@@ -1,4 +1,5 @@
 import { Num } from "../../numbering/num";
+import { Run } from "../run";
 import { TextRun } from "../run/text-run";
 import { XmlComponent } from "../xml-components";
 
@@ -24,14 +25,14 @@ export class Paragraph extends XmlComponent {
         }
     }
 
-    public addText(run: TextRun): Paragraph {
+    public addRun(run: Run): Paragraph {
         this.root.push(run);
         return this;
     }
 
     public createTextRun(text: string): TextRun {
         const run = new TextRun(text);
-        this.addText(run);
+        this.addRun(run);
         return run;
     }
 
