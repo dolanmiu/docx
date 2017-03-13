@@ -1,7 +1,7 @@
 import { XmlAttributeComponent, XmlComponent } from "../../../../../../../../xml-components";
 
-export interface IBlipProperties {
-    embed?: string;
+interface IBlipProperties {
+    embed: string;
 }
 
 class BlipAttributes extends XmlAttributeComponent<IBlipProperties> {
