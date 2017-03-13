@@ -13,7 +13,8 @@
   },
   "files": [
     "ts",
-    "build"
+    "build",
+    "template"
   ],
   "repository": {
     "type": "git",
