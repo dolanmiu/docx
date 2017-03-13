@@ -42,7 +42,7 @@ will run the demo app in the `demo` folder, which creates a file called "My Docu
 
 Please refer to [the Wiki](https://github.com/dolanmiu/docx/wiki) for details on how to use this library, examples and much more!
 
-# Usage
+# Simple Usage
 
 ```js
 // Used to create docx files
@@ -51,19 +51,24 @@ var docx = require('docx');
 // Create document
 var doc = new docx.Document();
 
+// Add some content in the document
+var paragraph = new docx.Paragraph("Some cool text here.");
+// Add more text into the paragraph if you wish
+paragraph.addText(new docx.TextRun('Lorem Ipsum Foo Bar'));
+doc.addParagraph(paragraph);
+
 // Used to export the file into a .docx file
+var exporter = new docx.LocalPacker(doc);
+
+// Or use the express packer to make the file downloadable.
 // res is express' Response object
 var exporter = new docx.ExpressPacker(doc, res);
-var exporter = new docx.LocalPacker(doc);
-```
-## Create simple Word Document
-```js
-var doc = new docx.Document();
-        
-var paragraph = new docx.Paragraph();
-var text = new docx.TextRun('Hello World');
-paragraph.addText(text);
-doc.addParagraph(paragraph);
+
+exporter.pack('My First Document');
+
+// done! A file called 'My First Document.docx'
+// will be in your file system if you used LocalPacker
+// Or it will start downloading if you are using Express
 ```
 
 ### Document properties
