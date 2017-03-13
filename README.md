@@ -33,7 +33,6 @@
 			- [Underline](#)
 		- [Break](#)
 		- [Chaining](#)
-	- [Bullet Points](#)
 - [Exporting](#)
 	- [Express](#)
 	- [Standalone .docx file](#)
@@ -53,6 +52,9 @@ $ npm run demo
 
 will run the demo app in the `demo` folder, which creates a file called "My Document.docx" in the root of the project
 
+# Guide
+
+Please refer to [the Wiki](https://github.com/dolanmiu/docx/wiki) for details on how to use this library, examples and much more!
 
 # Usage
 
@@ -242,22 +244,6 @@ What if you want to create a paragraph which is ***bold*** and ***italic***?
 ```js
 paragraph.bold().italic();
 ```
-
-## Bullet Points
-To make a bullet point, simply make a paragraph into a bullet point:
-```js
-var text = new docx.TextRun("Bullet points");
-var paragraph = new docx.Paragraph(text).bullet();
-
-var text2 = new docx.TextRun("Are awesome");
-var paragraph2 = new docx.Paragraph(text2).bullet();
-
-doc.addParagraph(paragraph);
-doc.addParagraph(paragraph2);
-```
-This will produce:
-* Bullet points
-* Are awesome
 
 # Exporting
 Check the Wiki for exporting guide
