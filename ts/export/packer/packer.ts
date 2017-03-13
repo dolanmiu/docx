@@ -10,15 +10,20 @@ import { Formatter } from "../formatter";
 
 export abstract class Packer {
     protected archive: any;
-    protected document: Document;
     private formatter: Formatter;
     private style: Styles;
-    private properties: Properties;
-    private numbering: Numbering;
 
-    constructor(document: Document, style?: Styles, properties?: Properties, numbering?: Numbering) {
+    constructor(
+        protected document: Document,
+        style?: Styles,
+        private properties: Properties = new Properties({
+            creator: "Un-named",
+            revision: "1",
+            lastModifiedBy: "Un-named",
+        }),
+        private numbering: Numbering = new Numbering(),
+    ) {
         this.formatter = new Formatter();
-        this.document = document;
         this.archive = archiver.create("zip", {});
 
         if (style) {
@@ -26,22 +31,6 @@ export abstract class Packer {
         } else {
             const stylesFactory = new DefaultStylesFactory();
             this.style = stylesFactory.newInstance();
-        }
-
-        if (properties) {
-            this.properties = properties;
-        } else {
-            this.properties = new Properties({
-                creator: "Un-named",
-                revision: "1",
-                lastModifiedBy: "Un-named",
-            });
-        }
-
-        if (numbering) {
-            this.numbering = numbering;
-        } else {
-            this.numbering = new Numbering();
         }
 
         this.archive.on("error", (err) => {
