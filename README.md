@@ -8,7 +8,7 @@
 
 =====
 
-[![NPM version][npm-image]][npm-url] [![Build Status][travis-image]][travis-url] [![Dependency Status][daviddm-image]][daviddm-url] [![Known Vulnerabilities][snky-image]][snky-url]
+[![NPM version][npm-image]][npm-url] [![Build Status][travis-image]][travis-url] [![Dependency Status][daviddm-image]][daviddm-url] [![Known Vulnerabilities][snky-image]][snky-url] [![Chat on Gitter][gitter-image]][gitter-url]
 
 [![NPM](https://nodei.co/npm/docx.png?downloads=true&downloadRank=true&stars=true)](https://nodei.co/npm/docx/)
 
@@ -78,3 +78,5 @@ Huge thanks to [@felipeochoa](https://github.com/felipeochoa) for awesome contri
 [daviddm-url]: https://david-dm.org/dolanmiu/docx
 [snky-image]: https://snyk.io/test/github/dolanmiu/docx/badge.svg
 [snky-url]: https://snyk.io/test/github/dolanmiu/docx
+[gitter-image]: https://badges.gitter.im/dolanmiu/docx.svg
+[gitter-url]: https://gitter.im/docx-lib/Lobby
