@@ -105,5 +105,122 @@ describe("AbstractNumbering", () => {
             expect(tree["w:lvl"]).to.include({ "w:numFmt": [{ _attr: { "w:val": "lowerLetter" } }] });
             expect(tree["w:lvl"]).to.include({ "w:lvlText": [{ _attr: { "w:val": "%1)" } }] });
         });
+
+        describe("formatting methods: paragraph properties", () => {
+            it("#indent", () => {
+                const abstractNumbering = new AbstractNumbering(1);
+                const level = abstractNumbering.createLevel(0, "lowerLetter", "%0.")
+                    .indent(720);
+                const tree = new Formatter().format(level);
+                expect(tree["w:lvl"]).to.include({
+                    "w:pPr": [{"w:ind": [{_attr: {"w:left": 720}}]}],
+                });
+            });
+
+            it("#spacing", () => {
+                const abstractNumbering = new AbstractNumbering(1);
+                const level = abstractNumbering.createLevel(0, "lowerLetter", "%0.")
+                    .spacing({before: 50, after: 150});
+                const tree = new Formatter().format(level);
+                expect(tree["w:lvl"]).to.include({
+                    "w:pPr": [
+                        {"w:spacing": [{_attr: {"w:before": 50, "w:after": 150}}]},
+                    ],
+                });
+            });
+
+            it("#center", () => {
+                const abstractNumbering = new AbstractNumbering(1);
+                const level = abstractNumbering.createLevel(0, "lowerLetter", "%0.")
+                    .center();
+                const tree = new Formatter().format(level);
+                expect(tree["w:lvl"]).to.include({
+                    "w:pPr": [
+                            {"w:jc": [{_attr: {"w:val": "center"}}]},
+                    ],
+                });
+            });
+
+            it("#left", () => {
+                const abstractNumbering = new AbstractNumbering(1);
+                const level = abstractNumbering.createLevel(0, "lowerRoman", "%0.", "left")
+                    .left();
+                const tree = new Formatter().format(level);
+                expect(tree["w:lvl"]).to.include({
+                    "w:pPr": [
+                        {"w:jc": [{_attr: {"w:val": "left"}}]},
+                    ],
+                });
+            });
+
+            it("#right", () => {
+                const abstractNumbering = new AbstractNumbering(1);
+                const level = abstractNumbering.createLevel(0, "lowerRoman", "%0.")
+                    .right();
+                const tree = new Formatter().format(level);
+                expect(tree["w:lvl"]).to.include({
+                    "w:pPr": [
+                            {"w:jc": [{_attr: {"w:val": "right"}}]},
+                    ],
+                });
+            });
+
+            it("#justified", () => {
+                const abstractNumbering = new AbstractNumbering(1);
+                const level = abstractNumbering.createLevel(0, "lowerRoman", "%0.")
+                    .justified();
+                const tree = new Formatter().format(level);
+                expect(tree["w:lvl"]).to.include({
+                    "w:pPr": [
+                        {"w:jc": [{_attr: {"w:val": "both"}}]},
+                    ],
+                });
+            });
+
+            it("#thematicBreak", () => {
+                const abstractNumbering = new AbstractNumbering(1);
+                const level = abstractNumbering.createLevel(0, "lowerRoman", "%0.")
+                    .thematicBreak();
+                const tree = new Formatter().format(level);
+                expect(tree["w:lvl"]).to.include({
+                    "w:pPr": [
+                        {"w:pBdr": [{"w:bottom": [{_attr: {
+                            "w:color": "auto",
+                            "w:space": "1",
+                            "w:val": "single",
+                            "w:sz": "6",
+                        }}]}]},
+                    ],
+                });
+            });
+
+            it("#leftTabStop", () => {
+                const abstractNumbering = new AbstractNumbering(1);
+                const level = abstractNumbering.createLevel(0, "lowerRoman", "%0.")
+                    .leftTabStop(1200);
+                const tree = new Formatter().format(level);
+                expect(tree["w:lvl"]).to.include({
+                    "w:pPr": [
+                        {"w:tabs": [
+                            {"w:tab": [{_attr: {"w:val": "left", "w:pos": 1200}}]},
+                        ]},
+                    ],
+                });
+            });
+
+            it("#maxRightTabStop", () => {
+                const abstractNumbering = new AbstractNumbering(1);
+                const level = abstractNumbering.createLevel(0, "lowerRoman", "%0.")
+                    .maxRightTabStop();
+                const tree = new Formatter().format(level);
+                expect(tree["w:lvl"]).to.include({
+                    "w:pPr": [
+                        {"w:tabs": [
+                            {"w:tab": [{_attr: {"w:val": "right", "w:pos": 9026}}]},
+                        ]},
+                    ],
+                });
+            });
+        });
     });
 });
