@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-    Generate .docx files with JS/TS very easily
+    Generate .docx files with JS/TS very easily, written in TS.
 </p>
 
 =====
@@ -11,18 +11,8 @@
 [![NPM version][npm-image]][npm-url] [![Build Status][travis-image]][travis-url] [![Dependency Status][daviddm-image]][daviddm-url] [![Known Vulnerabilities][snky-image]][snky-url]
 
 # docx
-> A tool to create Word Documents (.docx) with JS or TS, written in TS.
 
 [![NPM](https://nodei.co/npm/docx.png?downloads=true&downloadRank=true&stars=true)](https://nodei.co/npm/docx/)
-
-# Table of Contents
-- [Install](#)
-- [Usage](#)
-	- [Create simple Word Document](#)
-- [Exporting](#)
-	- [Express](#)
-	- [Standalone .docx file](#)
-- [Examples](#)
 
 # Install
 
@@ -71,38 +61,14 @@ exporter.pack('My First Document');
 // Or it will start downloading if you are using Express
 ```
 
-### Document properties
-You can add properties to the Word document by specifying options, for example:
-```js
-var doc = new docx.Document({
-    creator: 'Dolan Miu',
-    description: 'My extremely interesting document',
-    title: 'My Document'
-});
-```
-
-#### Full list of options:
-```
-creator
-description
-title
-subject
-keywords
-lastModifiedBy
-revision
-```
-
-You can mix and match whatever properties you want, or provide no properties.
-
-# Exporting
-Check the Wiki for exporting guide
-
 # Examples
-Check the Wiki for examples
+Check [the Wiki](https://github.com/dolanmiu/docx/wiki/Examples) for examples.
 
 =====
 
 Made with 💖
+
+Huge thanks to [@felipeochoa](https://github.com/felipeochoa) for awesome contributions to this project
 
 [npm-image]: https://badge.fury.io/js/docx.svg
 [npm-url]: https://npmjs.org/package/docx
