@@ -10,17 +10,17 @@
 
 [![NPM version][npm-image]][npm-url] [![Build Status][travis-image]][travis-url] [![Dependency Status][daviddm-image]][daviddm-url] [![Known Vulnerabilities][snky-image]][snky-url]
 
-# docx
-
 [![NPM](https://nodei.co/npm/docx.png?downloads=true&downloadRank=true&stars=true)](https://nodei.co/npm/docx/)
 
-# Install
+# docx
+
+## Install
 
 ```sh
 $ npm install --save docx
 ```
 
-# Demo
+## Demo
 
 ```sh
 $ npm run demo
@@ -28,11 +28,11 @@ $ npm run demo
 
 will run the demo app in the `demo` folder, which creates a file called "My Document.docx" in the root of the project
 
-# Guide
+## Guide
 
 Please refer to [the Wiki](https://github.com/dolanmiu/docx/wiki) for details on how to use this library, examples and much more!
 
-# Simple Usage
+## Simple Usage
 
 ```js
 // Used to create docx files
@@ -61,7 +61,7 @@ exporter.pack('My First Document');
 // Or it will start downloading if you are using Express
 ```
 
-# Examples
+## Examples
 Check [the Wiki](https://github.com/dolanmiu/docx/wiki/Examples) for examples.
 
 =====
