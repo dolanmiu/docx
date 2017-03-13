@@ -1,8 +1,10 @@
 import { XmlComponent } from "../../../../../../xml-components";
+import { Pic } from "./pic";
 
-export class Graphic extends XmlComponent {
+export class GraphicData extends XmlComponent {
 
-    constructor() {
+    constructor(referenceId: number) {
         super("a:graphicData");
+        this.root.push(new Pic(referenceId));
     }
 }

@@ -1,4 +1,4 @@
-import { assert, expect } from "chai";
+import { assert } from "chai";
 import { Drawing } from "../../../../docx/run/run-components/drawing";
 import { Utility } from "../../../utility";
 
@@ -13,6 +13,7 @@ describe.only("Drawing", () => {
         it("should create a Drawing with correct root key", () => {
             const newJson = Utility.jsonify(currentBreak);
             assert.equal(newJson.rootKey, "w:drawing");
+            console.log(JSON.stringify(newJson, null, 2));
         });
     });
 });
