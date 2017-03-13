@@ -1,5 +1,5 @@
-import * as appRoot from "app-root-path";
 import * as archiver from "archiver";
+import * as path from "path";
 import * as xml from "xml";
 import { Document } from "../../docx";
 import { Numbering } from "../../numbering";
@@ -7,6 +7,8 @@ import { Properties } from "../../properties";
 import { Styles } from "../../styles";
 import { DefaultStylesFactory } from "../../styles/factory";
 import { Formatter } from "../formatter";
+
+const templatePath = path.resolve(__dirname, "../../../template");
 
 export abstract class Packer {
     protected archive: any;
@@ -42,12 +44,12 @@ export abstract class Packer {
         this.archive.pipe(output);
         this.archive.glob("**", {
             expand: true,
-            cwd: appRoot.path + "/template",
+            cwd: templatePath,
         });
 
         this.archive.glob("**/.rels", {
             expand: true,
-            cwd: appRoot.path + "/template",
+            cwd: templatePath,
         });
 
         const xmlDocument = xml(this.formatter.format(this.document));
