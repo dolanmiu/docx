@@ -1,5 +1,6 @@
 import * as paragraph from "../docx/paragraph/formatting";
 import { ParagraphProperties } from "../docx/paragraph/properties";
+import * as formatting from "../docx/run/formatting";
 import { RunProperties } from "../docx/run/properties";
 import { Attributes, XmlAttributeComponent, XmlComponent } from "../docx/xml-components";
 
@@ -85,6 +86,68 @@ export class Level extends XmlComponent {
 
     public addRunProperty(property: XmlComponent): Level {
         this.runProperties.push(property);
+        return this;
+    }
+
+    // ----------  Run formatting ---------------------- //
+
+    public size(twips: number): Level {
+        this.addRunProperty(new formatting.Size(twips));
+        return this;
+    }
+
+    public bold(): Level {
+        this.addRunProperty(new formatting.Bold());
+        return this;
+    }
+
+    public italics(): Level {
+        this.addRunProperty(new formatting.Italics());
+        return this;
+    }
+
+    public smallCaps(): Level {
+        this.addRunProperty(new formatting.SmallCaps());
+        return this;
+    }
+
+    public allCaps(): Level {
+        this.addRunProperty(new formatting.Caps());
+        return this;
+    }
+
+    public strike(): Level {
+        this.addRunProperty(new formatting.Strike());
+        return this;
+    }
+
+    public doubleStrike(): Level {
+        this.addRunProperty(new formatting.DoubleStrike());
+        return this;
+    }
+
+    public subScript(): Level {
+        this.addRunProperty(new formatting.SubScript());
+        return this;
+    }
+
+    public superScript(): Level {
+        this.addRunProperty(new formatting.SuperScript());
+        return this;
+    }
+
+    public underline(underlineType?: string, color?: string): Level {
+        this.addRunProperty(new formatting.Underline(underlineType, color));
+        return this;
+    }
+
+    public color(color: string): Level {
+        this.addRunProperty(new formatting.Color(color));
+        return this;
+    }
+
+    public font(fontName: string): Level {
+        this.addRunProperty(new formatting.RunFonts(fontName));
         return this;
     }
 

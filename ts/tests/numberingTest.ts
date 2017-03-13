@@ -222,5 +222,175 @@ describe("AbstractNumbering", () => {
                 });
             });
         });
+
+        describe("formatting methods: run properties", () => {
+            it("#size", () => {
+                const abstractNumbering = new AbstractNumbering(1);
+                const level = abstractNumbering.createLevel(0, "lowerRoman", "%0.")
+                    .size(24);
+                const tree = new Formatter().format(level);
+                expect(tree["w:lvl"]).to.include({
+                    "w:rPr": [
+                        {"w:sz": [{_attr: {"w:val": 24}}]},
+                    ],
+                });
+            });
+
+            it("#smallCaps", () => {
+                const abstractNumbering = new AbstractNumbering(1);
+                const level = abstractNumbering.createLevel(0, "lowerRoman", "%0.")
+                    .smallCaps();
+                const tree = new Formatter().format(level);
+                expect(tree["w:lvl"]).to.include({
+                    "w:rPr": [
+                        {"w:smallCaps": [{_attr: {"w:val": true}}]},
+                    ],
+                });
+            });
+
+            it("#allCaps", () => {
+                const abstractNumbering = new AbstractNumbering(1);
+                const level = abstractNumbering.createLevel(0, "lowerRoman", "%0.")
+                    .allCaps();
+                const tree = new Formatter().format(level);
+                expect(tree["w:lvl"]).to.include({
+                    "w:rPr": [
+                        {"w:caps": [{_attr: {"w:val": true}}]},
+                    ],
+                });
+            });
+
+            it("#strike", () => {
+                const abstractNumbering = new AbstractNumbering(1);
+                const level = abstractNumbering.createLevel(0, "lowerRoman", "%0.")
+                    .strike();
+                const tree = new Formatter().format(level);
+                expect(tree["w:lvl"]).to.include({
+                    "w:rPr": [
+                        {"w:strike": [{_attr: {"w:val": true}}]},
+                    ],
+                });
+            });
+
+            it("#doubleStrike", () => {
+                const abstractNumbering = new AbstractNumbering(1);
+                const level = abstractNumbering.createLevel(0, "lowerRoman", "%0.")
+                    .doubleStrike();
+                const tree = new Formatter().format(level);
+                expect(tree["w:lvl"]).to.include({
+                    "w:rPr": [
+                        {"w:dstrike": [{_attr: {"w:val": true}}]},
+                    ],
+                });
+            });
+
+            it("#subScript", () => {
+                const abstractNumbering = new AbstractNumbering(1);
+                const level = abstractNumbering.createLevel(0, "lowerRoman", "%0.")
+                    .subScript();
+                const tree = new Formatter().format(level);
+                expect(tree["w:lvl"]).to.include({
+                    "w:rPr": [
+                        {"w:vertAlign": [{_attr: {"w:val": "subscript"}}]},
+                    ],
+                });
+            });
+
+            it("#superScript", () => {
+                const abstractNumbering = new AbstractNumbering(1);
+                const level = abstractNumbering.createLevel(0, "lowerRoman", "%0.")
+                    .superScript();
+                const tree = new Formatter().format(level);
+                expect(tree["w:lvl"]).to.include({
+                    "w:rPr": [
+                        {"w:vertAlign": [{_attr: {"w:val": "superscript"}}]},
+                    ],
+                });
+            });
+
+            it("#font", () => {
+                const abstractNumbering = new AbstractNumbering(1);
+                const level = abstractNumbering.createLevel(0, "lowerRoman", "%0.")
+                    .font("Times");
+                const tree = new Formatter().format(level);
+                expect(tree["w:lvl"]).to.include({
+                    "w:rPr": [{"w:rFonts": [{_attr: {"w:ascii": "Times", "w:hAnsi": "Times"}}]}],
+                });
+            });
+
+            it("#bold", () => {
+                const abstractNumbering = new AbstractNumbering(1);
+                const level = abstractNumbering.createLevel(0, "lowerRoman", "%0.")
+                    .bold();
+                const tree = new Formatter().format(level);
+                expect(tree["w:lvl"]).to.include({
+                    "w:rPr": [
+                        {"w:b": [{_attr: {"w:val": true}}]},
+                    ],
+                });
+            });
+
+            it("#italics", () => {
+                const abstractNumbering = new AbstractNumbering(1);
+                const level = abstractNumbering.createLevel(0, "lowerRoman", "%0.")
+                    .italics();
+                const tree = new Formatter().format(level);
+                expect(tree["w:lvl"]).to.include({
+                    "w:rPr": [
+                        {"w:i": [{_attr: {"w:val": true}}]},
+                    ],
+                });
+            });
+
+            describe("#underline", () => {
+                it("should set underline to 'single' if no arguments are given", () => {
+                    const abstractNumbering = new AbstractNumbering(1);
+                    const level = abstractNumbering.createLevel(0, "lowerRoman", "%0.")
+                        .underline();
+                    const tree = new Formatter().format(level);
+                    expect(tree["w:lvl"]).to.include({
+                        "w:rPr": [
+                            {"w:u": [{_attr: {"w:val": "single"}}]},
+                        ],
+                    });
+                });
+
+                it("should set the style if given", () => {
+                    const abstractNumbering = new AbstractNumbering(1);
+                    const level = abstractNumbering.createLevel(0, "lowerRoman", "%0.")
+                        .underline("double");
+                    const tree = new Formatter().format(level);
+                    expect(tree["w:lvl"]).to.include({
+                        "w:rPr": [
+                            {"w:u": [{_attr: {"w:val": "double"}}]},
+                        ],
+                    });
+                });
+
+                it("should set the style and color if given", () => {
+                    const abstractNumbering = new AbstractNumbering(1);
+                    const level = abstractNumbering.createLevel(0, "lowerRoman", "%0.")
+                        .underline("double", "005599");
+                    const tree = new Formatter().format(level);
+                    expect(tree["w:lvl"]).to.include({
+                        "w:rPr": [
+                            {"w:u": [{_attr: {"w:val": "double", "w:color": "005599"}}]},
+                        ],
+                    });
+                });
+            });
+
+            it("#color", () => {
+                const abstractNumbering = new AbstractNumbering(1);
+                const level = abstractNumbering.createLevel(0, "lowerRoman", "%0.")
+                    .color("123456");
+                const tree = new Formatter().format(level);
+                expect(tree["w:lvl"]).to.include({
+                    "w:rPr": [
+                        {"w:color": [{_attr: {"w:val": "123456"}}]},
+                    ],
+                });
+            });
+        });
     });
 });
