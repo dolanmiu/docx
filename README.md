@@ -44,7 +44,7 @@ var doc = new docx.Document();
 // Add some content in the document
 var paragraph = new docx.Paragraph("Some cool text here.");
 // Add more text into the paragraph if you wish
-paragraph.addText(new docx.TextRun('Lorem Ipsum Foo Bar'));
+paragraph.addRun(new docx.TextRun('Lorem Ipsum Foo Bar'));
 doc.addParagraph(paragraph);
 
 // Used to export the file into a .docx file
