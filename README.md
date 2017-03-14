@@ -6,7 +6,7 @@
     Generate .docx files with JS/TS very easily, written in TS.
 </p>
 
-=====
+-----
 
 [![NPM version][npm-image]][npm-url] [![Build Status][travis-image]][travis-url] [![Dependency Status][gemnasium-image]][gemnasium-url] [![Known Vulnerabilities][snky-image]][snky-url] [![Chat on Gitter][gitter-image]][gitter-url]
 
