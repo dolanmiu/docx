@@ -64,7 +64,7 @@ exporter.pack('My First Document');
 ## Examples
 Check [the Wiki](https://github.com/dolanmiu/docx/wiki/Examples) for examples.
 
-=====
+-----
 
 Made with 💖
 
