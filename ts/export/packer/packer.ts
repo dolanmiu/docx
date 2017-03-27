@@ -9,7 +9,7 @@ import { Styles } from "../../styles";
 import { DefaultStylesFactory } from "../../styles/factory";
 import { Formatter } from "../formatter";
 
-const templatePath = path.resolve(__dirname, "../../../template");
+const TEMPLATE_PATH = path.resolve(__dirname, "../../../template");
 
 export abstract class Packer {
     protected archive: any;
@@ -46,12 +46,12 @@ export abstract class Packer {
         this.archive.pipe(output);
         this.archive.glob("**", {
             expand: true,
-            cwd: templatePath,
+            cwd: TEMPLATE_PATH,
         });
 
         this.archive.glob("**/.rels", {
             expand: true,
-            cwd: templatePath,
+            cwd: TEMPLATE_PATH,
         });
 
         const xmlDocument = xml(this.formatter.format(this.document));
