@@ -1,12 +1,6 @@
 import * as fs from "fs";
 import * as path from "path";
-
-interface IData {
-    referenceId: number;
-    stream: fs.ReadStream;
-    path: string;
-    fileName: string;
-}
+import { IData } from "./data";
 
 export class Media {
     private map: Map<string, IData>;

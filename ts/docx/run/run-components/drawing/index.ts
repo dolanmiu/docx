@@ -1,13 +1,12 @@
+import { IData } from "../../../../media/data";
 import { XmlComponent } from "../../../xml-components";
 import { Inline } from "./inline";
 
 export class Drawing extends XmlComponent {
 
-    constructor(imagePath: string) {
+    constructor(imageData: IData) {
         super("w:drawing");
 
-        // store in the document, then get Id
-
-        this.root.push(new Inline(5));
+        this.root.push(new Inline(imageData.referenceId));
     }
 }
