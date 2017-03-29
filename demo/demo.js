@@ -12,7 +12,7 @@ doc.addParagraph(paragraph);
 
 var media = new docx.Media();
 media.addMedia("happy-penguins", "./demo/penguins.jpg");
-// var pictureRun = new docx.PictureRun("");
+var pictureRun = new docx.PictureRun(media.getMedia("happy-penguins"));
 
 var exporter = new docx.LocalPacker(doc, undefined, undefined, undefined, media);
 exporter.pack('My Document');

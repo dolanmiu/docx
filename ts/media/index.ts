@@ -9,8 +9,14 @@ export class Media {
         this.map = new Map<string, IData>();
     }
 
-    public getMedia(key: string): IData | undefined {
-        return this.map.get(key);
+    public getMedia(key: string): IData {
+        const data = this.map.get(key);
+
+        if (data === undefined) {
+            throw new Error(`Cannot find image with the key ${key}`);
+        }
+
+        return data;
     }
 
     public addMedia(key: string, filePath: string): void {
