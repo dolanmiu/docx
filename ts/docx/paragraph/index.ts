@@ -1,3 +1,4 @@
+import { IData } from "../../media/data";
 import { Num } from "../../numbering/num";
 import { Run } from "../run";
 import { PictureRun } from "../run/picture-run";
@@ -37,8 +38,8 @@ export class Paragraph extends XmlComponent {
         return run;
     }
 
-    public createPictureRun(imagePath: string): PictureRun {
-        const run = new PictureRun(imagePath);
+    public createPictureRun(imageData: IData): PictureRun {
+        const run = new PictureRun(imageData);
         this.addRun(run);
         return run;
     }

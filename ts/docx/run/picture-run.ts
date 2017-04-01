@@ -1,10 +1,16 @@
+import { IData } from "../../media/data";
 import { Run } from "../run";
 import { Drawing } from "./run-components/drawing";
 
 export class PictureRun extends Run {
 
-    constructor(imagePath: string) {
+    constructor(imageData: IData) {
         super();
-        this.root.push(new Drawing(imagePath));
+
+        if (imageData === undefined) {
+            throw new Error("imageData cannot be undefined");
+        }
+
+        this.root.push(new Drawing(imageData));
     }
 }
