@@ -10,11 +10,13 @@ paragraph.addRun(dateText);
 
 doc.addParagraph(paragraph);
 
-var media = new docx.Media();
-media.addMedia("happy-penguins", "./demo/penguins.jpg");
-var pictureRun = new docx.PictureRun(media.getMedia("happy-penguins"));
+// Feature coming soon
+// var media = new docx.Media();
+// media.addMedia("happy-penguins", "./demo/penguins.jpg");
+// var pictureRun = new docx.PictureRun(media.getMedia("happy-penguins"));
 
-var exporter = new docx.LocalPacker(doc, undefined, undefined, undefined, media);
+// var exporter = new docx.LocalPacker(doc);
+var exporter = new docx.LocalPacker(doc);
 exporter.pack('My Document');
 
 console.log('Document created succesfully at project root!');
