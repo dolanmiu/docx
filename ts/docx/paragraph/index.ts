@@ -1,5 +1,7 @@
+import { IData } from "../../media/data";
 import { Num } from "../../numbering/num";
 import { Run } from "../run";
+import { PictureRun } from "../run/picture-run";
 import { TextRun } from "../run/text-run";
 import { XmlComponent } from "../xml-components";
 
@@ -32,6 +34,12 @@ export class Paragraph extends XmlComponent {
 
     public createTextRun(text: string): TextRun {
         const run = new TextRun(text);
+        this.addRun(run);
+        return run;
+    }
+
+    public createPictureRun(imageData: IData): PictureRun {
+        const run = new PictureRun(imageData);
         this.addRun(run);
         return run;
     }
