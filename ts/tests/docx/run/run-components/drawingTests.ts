@@ -1,12 +1,19 @@
 import { assert } from "chai";
+import * as fs from "fs";
 import { Drawing } from "../../../../docx/run/run-components/drawing";
 import { Utility } from "../../../utility";
 
-describe.only("Drawing", () => {
+describe("Drawing", () => {
     let currentBreak: Drawing;
 
     beforeEach(() => {
-        currentBreak = new Drawing("test.jpg");
+        const path = "./demo/penguins.jpg";
+        currentBreak = new Drawing({
+            fileName: "test.jpg",
+            referenceId: 1,
+            stream: fs.createReadStream(path),
+            path: path,
+        });
     });
 
     describe("#constructor()", () => {
