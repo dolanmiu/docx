@@ -9,7 +9,8 @@
     "prepublishOnly": "npm run build",
     "lint": "tslint --project ./ts",
     "build": "rimraf ./build && tsc -p ts",
-    "demo": "npm run build && node ./demo/demo.js"
+    "demo": "npm run build && node ./demo/demo.js",
+    "demo2": "npm run build && node ./demo/demo2.js"
   },
   "files": [
     "ts",
