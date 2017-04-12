@@ -214,3 +214,5 @@ export class Level extends LevelBase {
         super(level, 1, numberFormat, levelText, lvlJc);
     }
 }
+
+export class LevelForOverride extends LevelBase {}
