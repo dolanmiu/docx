@@ -2,6 +2,7 @@ import { expect } from "chai";
 import { Formatter } from "../export/formatter";
 import { Numbering } from "../numbering";
 import { AbstractNumbering } from "../numbering/abstract-numbering";
+import { LevelForOverride } from "../numbering/level";
 import { Num } from "../numbering/num";
 
 describe("Numbering", () => {
@@ -390,6 +391,53 @@ describe("AbstractNumbering", () => {
                         {"w:color": [{_attr: {"w:val": "123456"}}]},
                     ],
                 });
+            });
+        });
+    });
+});
+
+describe("concrete numbering", () => {
+    describe("#overrideLevel", () => {
+        let numbering;
+        let abstractNumbering;
+        let concreteNumbering;
+        beforeEach(() => {
+            numbering = new Numbering();
+            abstractNumbering = numbering.createAbstractNumbering();
+            concreteNumbering = numbering.createConcreteNumbering(abstractNumbering);
+
+        });
+
+        it("sets a new override level for the given level number", () => {
+            concreteNumbering.overrideLevel(3);
+            const tree = new Formatter().format(concreteNumbering);
+            expect(tree["w:num"]).to.include({"w:lvlOverride": [{_attr: {"w:ilvl": 3}}]});
+        });
+
+        it("sets the startOverride element if start is given", () => {
+            concreteNumbering.overrideLevel(1, 9);
+            const tree = new Formatter().format(concreteNumbering);
+            expect(tree["w:num"]).to.include({
+                "w:lvlOverride": [
+                    {_attr: {"w:ilvl": 1}},
+                    {"w:startOverride": [{_attr: {"w:val": 9}}]},
+                ],
+            });
+        });
+
+        it("sets the lvl element if overrideLevel.level is accessed", () => {
+            const ol = concreteNumbering.overrideLevel(1);
+            expect(ol.level).to.be.instanceof(LevelForOverride);
+            const tree = new Formatter().format(concreteNumbering);
+            expect(tree["w:num"]).to.include({
+                "w:lvlOverride": [
+                    {_attr: {"w:ilvl": 1}},
+                    {"w:lvl": [
+                        {_attr: {"w15:tentative": 1, "w:ilvl": 1}},
+                        {"w:pPr": []},
+                        {"w:rPr": []},
+                    ]},
+                ],
             });
         });
     });

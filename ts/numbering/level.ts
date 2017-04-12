@@ -56,21 +56,29 @@ class LevelJc extends XmlComponent {
     }
 }
 
-export class Level extends XmlComponent {
+class LevelBase extends XmlComponent {
     private paragraphProperties: ParagraphProperties;
     private runProperties: RunProperties;
 
-    constructor(level: number, numberFormat: string, levelText: string, lvlJc: string) {
+    constructor(level: number, start?: number, numberFormat?: string, levelText?: string, lvlJc?: string) {
         super("w:lvl");
         this.root.push(new LevelAttributes({
             ilvl: level,
             tentative: 1,
         }));
 
-        this.root.push(new Start(1));
-        this.root.push(new NumberFormat(numberFormat));
-        this.root.push(new LevelText(levelText));
-        this.root.push(new LevelJc(lvlJc));
+        if (start !== undefined) {
+            this.root.push(new Start(start));
+        }
+        if (numberFormat !== undefined) {
+            this.root.push(new NumberFormat(numberFormat));
+        }
+        if (levelText !== undefined) {
+            this.root.push(new LevelText(levelText));
+        }
+        if (lvlJc !== undefined) {
+            this.root.push(new LevelJc(lvlJc));
+        }
 
         this.paragraphProperties = new ParagraphProperties();
         this.runProperties = new RunProperties();
@@ -198,3 +206,13 @@ export class Level extends XmlComponent {
         return this;
     };
 }
+
+export class Level extends LevelBase {
+    // This is the level that sits under abstractNum. We make a
+    // handful of properties required
+    constructor(level: number, numberFormat: string, levelText: string, lvlJc: string) {
+        super(level, 1, numberFormat, levelText, lvlJc);
+    }
+}
+
+export class LevelForOverride extends LevelBase {}

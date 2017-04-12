@@ -1,6 +1,6 @@
 {
   "name": "docx",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Generate .docx documents with JavaScript (formerly Office-Clippy)",
   "main": "build/index.js",
   "scripts": {
@@ -9,7 +9,8 @@
     "prepublishOnly": "npm run build",
     "lint": "tslint --project ./ts",
     "build": "rimraf ./build && tsc -p ts",
-    "demo": "npm run build && node ./demo/demo.js"
+    "demo": "npm run build && node ./demo/demo.js",
+    "demo2": "npm run build && node ./demo/demo2.js"
   },
   "files": [
     "ts",
