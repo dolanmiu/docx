@@ -326,6 +326,32 @@ describe("ParagraphStyle", () => {
                 ],
             });
         });
+
+        it("#keepLines", () => {
+            const style = new ParagraphStyle("myStyleId")
+                .keepLines();
+            const tree = new Formatter().format(style);
+            expect(tree).to.deep.equal({
+                "w:style": [
+                    {_attr: {"w:type": "paragraph", "w:styleId": "myStyleId"}},
+                    {"w:pPr": [{"w:keepLines": []}]},
+                    {"w:rPr": []},
+                ],
+            });
+        });
+
+        it("#keepNext", () => {
+            const style = new ParagraphStyle("myStyleId")
+                .keepNext();
+            const tree = new Formatter().format(style);
+            expect(tree).to.deep.equal({
+                "w:style": [
+                    {_attr: {"w:type": "paragraph", "w:styleId": "myStyleId"}},
+                    {"w:pPr": [{"w:keepNext": []}]},
+                    {"w:rPr": []},
+                ],
+            });
+        });
     });
 
     describe("formatting methods: run properties", () => {

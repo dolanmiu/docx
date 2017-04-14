@@ -205,6 +205,16 @@ class LevelBase extends XmlComponent {
         this.addParagraphProperty(new paragraph.Spacing(params));
         return this;
     };
+
+    public keepNext(): Level {
+        this.addParagraphProperty(new paragraph.KeepNext());
+        return this;
+    }
+
+    public keepLines(): Level {
+        this.addParagraphProperty(new paragraph.KeepLines());
+        return this;
+    }
 }
 
 export class Level extends LevelBase {

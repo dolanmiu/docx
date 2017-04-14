@@ -1,6 +1,7 @@
 export { Alignment } from "./alignment";
 export { ThematicBreak } from "./border";
 export { Indent } from "./indent";
+export { KeepLines, KeepNext } from "./keep";
 export { PageBreak } from "./page-break";
 export { ParagraphProperties } from "./properties";
 export { ISpacingProperties, Spacing } from "./spacing";

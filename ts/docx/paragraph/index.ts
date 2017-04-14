@@ -8,6 +8,7 @@ import { XmlComponent } from "../xml-components";
 import { Alignment } from "./alignment";
 import { ThematicBreak } from "./border";
 import { Indent } from "./indent";
+import { KeepLines, KeepNext } from "./keep";
 import { PageBreak } from "./page-break";
 import { ParagraphProperties } from "./properties";
 import { ISpacingProperties, Spacing } from "./spacing";
@@ -140,4 +141,14 @@ export class Paragraph extends XmlComponent {
         this.properties.push(new Spacing(params));
         return this;
     };
+
+    public keepNext(): Paragraph {
+        this.properties.push(new KeepNext());
+        return this;
+    }
+
+    public keepLines(): Paragraph {
+        this.properties.push(new KeepLines());
+        return this;
+    }
 }

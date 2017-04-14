@@ -180,6 +180,16 @@ export class ParagraphStyle extends Style {
         this.addParagraphProperty(new paragraph.Spacing(params));
         return this;
     };
+
+    public keepNext(): ParagraphStyle {
+        this.addParagraphProperty(new paragraph.KeepNext());
+        return this;
+    }
+
+    public keepLines(): ParagraphStyle {
+        this.addParagraphProperty(new paragraph.KeepLines());
+        return this;
+    }
 }
 
 export class HeadingStyle extends ParagraphStyle {

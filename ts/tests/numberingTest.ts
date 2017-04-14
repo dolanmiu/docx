@@ -222,6 +222,26 @@ describe("AbstractNumbering", () => {
                     ],
                 });
             });
+
+            it("#keepLines", () => {
+                const abstractNumbering = new AbstractNumbering(1);
+                const level = abstractNumbering.createLevel(0, "lowerRoman", "%0.")
+                    .keepLines();
+                const tree = new Formatter().format(level);
+                expect(tree["w:lvl"]).to.include({
+                    "w:pPr": [{"w:keepLines": []}],
+                });
+            });
+
+            it("#keepNext", () => {
+                const abstractNumbering = new AbstractNumbering(1);
+                const level = abstractNumbering.createLevel(0, "lowerRoman", "%0.")
+                    .keepNext();
+                const tree = new Formatter().format(level);
+                expect(tree["w:lvl"]).to.include({
+                    "w:pPr": [{"w:keepNext": []}],
+                });
+            });
         });
 
         describe("formatting methods: run properties", () => {
