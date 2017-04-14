@@ -9,8 +9,7 @@
     "prepublishOnly": "npm run build",
     "lint": "tslint --project ./ts",
     "build": "rimraf ./build && tsc -p ts",
-    "demo": "npm run build && node ./demo/demo.js",
-    "demo2": "npm run build && node ./demo/demo2.js"
+    "demo": "npm run build && node ./demo"
   },
   "files": [
     "ts",
@@ -49,7 +48,9 @@
     "@types/mocha": "^2.2.39",
     "chai": "^3.5.0",
     "mocha": "^3.2.0",
+    "prompt": "^1.0.0",
     "rimraf": "^2.5.2",
+    "shelljs": "^0.7.7",
     "tslint": "^4.5.1",
     "typescript": "^2.2.1"
   }
