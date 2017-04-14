@@ -41,7 +41,7 @@ describe("Document", () => {
             expect(body[0]).to.have.property("w:p").which.includes({
                 "w:r": [
                     {"w:rPr": []},
-                    {"w:t": ["sample paragraph text"]},
+                    {"w:t": [{_attr: {"xml:space": "preserve"}}, "sample paragraph text"]},
                 ],
             });
         });

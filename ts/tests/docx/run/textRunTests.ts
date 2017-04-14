@@ -1,6 +1,6 @@
-import { assert } from "chai";
+import { expect } from "chai";
 import { TextRun } from "../../../docx/run/text-run";
-import { Utility } from "../../utility";
+import { Formatter } from "../../../export/formatter";
 
 describe("TextRun", () => {
     let run: TextRun;
@@ -9,8 +9,11 @@ describe("TextRun", () => {
 
         it("should add text into run", () => {
             run = new TextRun("test");
-            const newJson = Utility.jsonify(run);
-            assert.equal(newJson.root[1].root, "test");
+            const f = new Formatter().format(run);
+            expect(f).to.deep.equal({"w:r": [
+                {"w:rPr": []},
+                {"w:t": [{_attr: {"xml:space": "preserve"}}, "test"]},
+            ]});
         });
     });
 });
