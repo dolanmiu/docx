@@ -39,7 +39,7 @@ describe("Paragraph", () => {
             expect(tree).to.be.an("array").which.includes({
                 "w:r": [
                     {"w:rPr": []},
-                    {"w:t": ["this is a test run"]},
+                    {"w:t": [{_attr: {"xml:space": "preserve"}}, "this is a test run"]},
                 ],
             });
         });

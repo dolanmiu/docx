@@ -36,7 +36,7 @@ describe("Table", () => {
                 {"w:tcPr": []},
                 {"w:p": [
                     {"w:pPr": []},
-                    {"w:r": [{"w:rPr": []}, {"w:t": [c]}]},
+                    {"w:r": [{"w:rPr": []}, {"w:t": [{_attr: {"xml:space": "preserve"}}, c]}]},
                 ]},
             ]});
             expect(tree).to.deep.equal({
@@ -65,7 +65,7 @@ describe("Table", () => {
                 {"w:tcPr": []},
                 {"w:p": [
                     {"w:pPr": []},
-                    {"w:r": [{"w:rPr": []}, {"w:t": [c]}]},
+                    {"w:r": [{"w:rPr": []}, {"w:t": [{_attr: {"xml:space": "preserve"}}, c]}]},
                 ]},
             ]});
             expect(tree).to.deep.equal({
@@ -153,7 +153,7 @@ describe("Table", () => {
                         {"w:tcPr": []},
                         {"w:p": [
                             {"w:pPr": []},
-                            {"w:r": [{"w:rPr": []}, {"w:t": ["Hello"]}]},
+                            {"w:r": [{"w:rPr": []}, {"w:t": [{_attr: {"xml:space": "preserve"}}, "Hello"]}]},
                         ]},
                     ],
                 });
@@ -175,7 +175,10 @@ describe("Table", () => {
                         {"w:tcPr": []},
                         {"w:p": [
                             {"w:pPr": []},
-                            {"w:r": [{"w:rPr": []}, {"w:t": ["Test paragraph"]}]},
+                            {"w:r": [
+                                {"w:rPr": []},
+                                {"w:t": [{_attr: {"xml:space": "preserve"}}, "Test paragraph"]},
+                            ]},
                         ]},
                     ],
                 });
