@@ -64,7 +64,11 @@ doc.createParagraph()
 
 doc.createParagraph('An aside, in light gray italics and indented').style('aside');
 doc.createParagraph('This is normal, but well-spaced text').style('wellSpaced');
-doc.createParagraph('This is normal');
+const para = doc.createParagraph();
+para.createTextRun('This is a bold run,').bold();
+para.createTextRun(' switching to normal ');
+para.createTextRun('and then underlined ').underline();
+para.createTextRun('and back to normal.');
 
 const exporter = new docx.LocalPacker(doc, styles, undefined, numbering);
 exporter.pack('test.docx');
