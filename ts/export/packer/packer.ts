@@ -1,4 +1,5 @@
 import * as archiver from "archiver";
+import * as fs from "fs";
 import * as path from "path";
 import * as xml from "xml";
 import { Document } from "../../docx";
@@ -42,7 +43,7 @@ export abstract class Packer {
         });
     }
 
-    public pack(output: any): void {
+    public pack(output: Express.Response | fs.WriteStream): void {
         this.archive.pipe(output);
         this.archive.glob("**", {
             expand: true,
