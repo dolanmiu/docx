@@ -10,6 +10,7 @@
     "lint": "tslint --project ./ts",
     "build": "rimraf ./build && tsc -p ts",
     "demo": "npm run build && node ./demo"
+    "typedoc": "rimraf ./docs && typedoc --out docs/ ts/ --module commonjs --target ES6"
   },
   "files": [
     "ts",
@@ -52,6 +53,7 @@
     "rimraf": "^2.5.2",
     "shelljs": "^0.7.7",
     "tslint": "^4.5.1",
+    "typedoc": "^0.5.10",
     "typescript": "^2.2.1"
   }
 }
