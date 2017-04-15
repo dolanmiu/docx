@@ -40,6 +40,10 @@ describe("Formatter", () => {
             });
             let newJson = formatter.format(attributes);
             newJson = Utility.jsonify(newJson);
+            if (newJson._attr === undefined) {
+                assert.fail();
+                return;
+            }
             assert.isDefined(newJson._attr["w:rsidSect"]);
         });
 
@@ -49,6 +53,10 @@ describe("Formatter", () => {
             });
             let newJson = formatter.format(attributes);
             newJson = Utility.jsonify(newJson);
+            if (newJson._attr === undefined) {
+                assert.fail();
+                return;
+            }
             assert.isDefined(newJson._attr["w:val"]);
         });
 
