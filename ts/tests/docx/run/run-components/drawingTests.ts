@@ -20,7 +20,7 @@ describe("Drawing", () => {
         it("should create a Drawing with correct root key", () => {
             const newJson = Utility.jsonify(currentBreak);
             assert.equal(newJson.rootKey, "w:drawing");
-            console.log(JSON.stringify(newJson, null, 2));
+            // console.log(JSON.stringify(newJson, null, 2));
         });
     });
 });

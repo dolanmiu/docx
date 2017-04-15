@@ -1,3 +1,4 @@
+/* tslint:disable:no-unused-expression */
 import { expect } from "chai";
 import { Paragraph } from "../../../docx/paragraph";
 import { Table } from "../../../docx/table";

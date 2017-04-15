@@ -1,7 +1,6 @@
 import { XmlAttributeComponent, XmlComponent } from "../../../../../xml-components";
 import { GraphicData } from "./graphic-data";
 
-
 interface IGraphicProperties {
     a: string;
 }

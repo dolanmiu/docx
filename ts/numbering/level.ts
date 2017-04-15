@@ -204,7 +204,7 @@ class LevelBase extends XmlComponent {
     public spacing(params: paragraph.ISpacingProperties): Level {
         this.addParagraphProperty(new paragraph.Spacing(params));
         return this;
-    };
+    }
 
     public keepNext(): Level {
         this.addParagraphProperty(new paragraph.KeepNext());

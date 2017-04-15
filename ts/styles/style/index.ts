@@ -179,7 +179,7 @@ export class ParagraphStyle extends Style {
     public spacing(params: paragraph.ISpacingProperties): ParagraphStyle {
         this.addParagraphProperty(new paragraph.Spacing(params));
         return this;
-    };
+    }
 
     public keepNext(): ParagraphStyle {
         this.addParagraphProperty(new paragraph.KeepNext());

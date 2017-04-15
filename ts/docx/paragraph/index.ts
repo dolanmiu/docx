@@ -140,7 +140,7 @@ export class Paragraph extends XmlComponent {
     public spacing(params: ISpacingProperties): Paragraph {
         this.properties.push(new Spacing(params));
         return this;
-    };
+    }
 
     public keepNext(): Paragraph {
         this.properties.push(new KeepNext());
