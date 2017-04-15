@@ -269,4 +269,24 @@ describe("Paragraph", () => {
             });
         });
     });
+
+    describe("#keepLines", () => {
+        it("should set the paragraph keepLines sub-component", () => {
+            paragraph.keepLines();
+            const tree = new Formatter().format(paragraph);
+            expect(tree).to.deep.equal({
+                "w:p": [{"w:pPr": [{"w:keepLines": []}]}],
+            });
+        });
+    });
+
+    describe("#keepNext", () => {
+        it("should set the paragraph keepNext sub-component", () => {
+            paragraph.keepNext();
+            const tree = new Formatter().format(paragraph);
+            expect(tree).to.deep.equal({
+                "w:p": [{"w:pPr": [{"w:keepNext": []}]}],
+            });
+        });
+    });
 });
