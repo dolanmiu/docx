@@ -38,3 +38,6 @@ build-tests
 
 # vscode
 .vscode
+
+# docs
+docs
