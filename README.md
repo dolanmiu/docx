@@ -32,6 +32,8 @@ will run the demo app in the `demo` folder, which creates a file called "My Docu
 
 Please refer to [the Wiki](https://github.com/dolanmiu/docx/wiki) for details on how to use this library, examples and much more!
 
+Full documentation can be found here: [http://dolanmiu.github.io/docx](http://dolanmiu.github.io/docx)
+
 ## Simple Usage
 
 ```js
