@@ -11,7 +11,7 @@ export abstract class XmlAttributeComponent<T> extends BaseXmlComponent {
         this.root = properties;
     }
 
-    public prepForXml(): {_attr: {[key: string]: (string | number | boolean)}} {
+    public prepForXml(): XmlableObject {
         const attrs = {};
         Object.keys(this.root).forEach((key) => {
             const value = this.root[key];

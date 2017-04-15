@@ -9,7 +9,7 @@ export abstract class XmlComponent extends BaseXmlComponent {
         this.root = new Array<BaseXmlComponent>();
     }
 
-    public prepForXml(): object {
+    public prepForXml(): XmlableObject {
         const children = this.root.map((comp) => {
             if (comp instanceof BaseXmlComponent) {
                 return comp.prepForXml();

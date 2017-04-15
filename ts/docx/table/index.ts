@@ -99,7 +99,7 @@ class TableCell extends XmlComponent {
         return this;
     }
 
-    public prepForXml(): object {
+    public prepForXml(): XmlableObject {
         // Cells must end with a paragraph
         const retval = super.prepForXml();
         const content = retval["w:tc"];
