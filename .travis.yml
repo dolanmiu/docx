@@ -8,10 +8,8 @@ script:
 after_failure: 
   - "cat /home/travis/builds/dolanmiu/docx/npm-debug.log"
 after_success:
-  - git fetch
-  - git checkout gh-pages
-  - git merge master --ff -m "merging with master"
-  - npm run typedoc
-  - git add .
-  - git commit -a -m 'updated documentation'
-  - git push
+  - bash ./deploy-docs.sh
+env:
+  global:
+  - ENCRYPTION_LABEL: "ad385fa3b525"
+  
