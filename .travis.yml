@@ -8,3 +8,10 @@ script:
   - npm test
 after_failure: 
   - "cat /home/travis/builds/dolanmiu/docx/npm-debug.log"
+after_success:
+  - git checkout gh-pages
+  - git merge master
+  - npm run typedoc
+  - git add .
+  - git commit -a -m 'updated documentation'
+  - git push
