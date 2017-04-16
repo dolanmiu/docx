@@ -9,6 +9,7 @@ script:
 after_failure: 
   - "cat /home/travis/builds/dolanmiu/docx/npm-debug.log"
 after_success:
+  - git fetch
   - git checkout gh-pages
   - git merge master --ff -m "merging with master"
   - npm run typedoc
