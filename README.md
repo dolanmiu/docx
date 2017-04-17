@@ -26,7 +26,7 @@ $ npm install --save docx
 $ npm run demo
 ```
 
-will run the demo app in the `demo` folder, which creates a file called "My Document.docx" in the root of the project
+will run the demo selector app in the `demo` folder. It will prompt you to select a demo number, which will run a demo from that folder.
 
 ## Guide
 
