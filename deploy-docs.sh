@@ -28,7 +28,9 @@ git checkout $TARGET_BRANCH || git checkout --orphan $TARGET_BRANCH
 cd ..
 
 # Clean out existing contents
+echo "Cleaning out existing contents."
 rm -rf docs/**/* || exit 0
+ls 
 
 # Run our compile script
 doCompile

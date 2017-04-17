@@ -10,7 +10,7 @@
     "lint": "tslint --project ./ts",
     "build": "rimraf ./build && tsc -p ts",
     "demo": "npm run build && node ./demo",
-    "typedoc": "typedoc --out docs/ ts/ --module commonjs --target ES6"
+    "typedoc": "typedoc --out docs/ ts/ --module commonjs --target ES6 --disableOutputCheck"
   },
   "files": [
     "ts",
