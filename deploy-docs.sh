@@ -30,7 +30,6 @@ cd ..
 # Clean out existing contents
 echo "Cleaning out existing contents."
 rm -rf docs/**/* || exit 0
-ls 
 
 # Run our compile script
 doCompile
@@ -39,6 +38,10 @@ doCompile
 cd docs
 git config user.name "Travis CI"
 git config user.email "dolan_miu@hotmail.com"
+ls
+
+# add .nojekyll file
+touch .nojekyll
 
 # If there are no changes to the compiled out (e.g. this is a README update) then just bail.
 if [ -z `git diff --exit-code` ]; then
