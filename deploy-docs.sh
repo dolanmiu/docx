@@ -28,8 +28,8 @@ git checkout $TARGET_BRANCH || git checkout --orphan $TARGET_BRANCH
 cd ..
 
 # Clean out existing contents
-echo "Cleaning out existing contents."
-rm -rf docs/*
+# echo "Cleaning out existing contents."
+# rm -rf docs/*
 
 # Run our compile script
 doCompile
