@@ -29,7 +29,7 @@ cd ..
 
 # Clean out existing contents
 echo "Cleaning out existing contents."
-rm -rf docs/* || exit 0
+rm -rf docs/*
 
 # Run our compile script
 doCompile
