@@ -16,6 +16,6 @@ export class LocalPacker extends Packer {
     public pack(path: string): void {
         path = path.replace(/.docx$/, "");
         this.stream = fs.createWriteStream(`${path}.docx`);
-        super.pack(this.stream);
+        super.compile(this.stream);
     }
 }

@@ -20,6 +20,6 @@ export class ExpressPacker extends Packer {
 
     public pack(name: string): void {
         this.res.attachment(`${name}.docx`);
-        super.pack(this.res);
+        super.compile(this.res);
     }
 }

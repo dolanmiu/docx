@@ -1,4 +1,5 @@
 import * as archiver from "archiver";
+import * as express from "express";
 import * as fs from "fs";
 import * as path from "path";
 import * as xml from "xml";
@@ -13,7 +14,7 @@ import { Formatter } from "../formatter";
 const TEMPLATE_PATH = path.resolve(__dirname, "../../../template");
 
 export abstract class Packer {
-    protected archive: any;
+    protected archive: archiver.Archiver;
     private formatter: Formatter;
     private style: Styles;
 
@@ -43,15 +44,13 @@ export abstract class Packer {
         });
     }
 
-    public pack(output: Express.Response | fs.WriteStream): void {
+    protected compile(output: fs.WriteStream | express.Response): void {
         this.archive.pipe(output);
         this.archive.glob("**", {
-            expand: true,
             cwd: TEMPLATE_PATH,
         });
 
         this.archive.glob("**/.rels", {
-            expand: true,
             cwd: TEMPLATE_PATH,
         });
 
