@@ -1,6 +1,6 @@
 import { Attributes, XmlComponent } from "../xml-components";
 
-abstract class VerticalAlign extends XmlComponent {
+export abstract class VerticalAlign extends XmlComponent {
 
     constructor(type: string) {
         super("w:vertAlign");

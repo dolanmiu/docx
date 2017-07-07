@@ -57,7 +57,7 @@ export class Revision extends XmlComponent {
     }
 }
 
-abstract class DateComponent extends XmlComponent {
+export abstract class DateComponent extends XmlComponent {
     protected getCurrentDate(): string {
         const date = new Date();
         const year = date.getFullYear();

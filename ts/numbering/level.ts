@@ -56,7 +56,7 @@ class LevelJc extends XmlComponent {
     }
 }
 
-class LevelBase extends XmlComponent {
+export class LevelBase extends XmlComponent {
     private paragraphProperties: ParagraphProperties;
     private runProperties: RunProperties;
 

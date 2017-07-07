@@ -1,6 +1,6 @@
 import { XmlAttributeComponent } from "../xml-components";
 
-interface IDocumentAttributesProperties {
+export interface IDocumentAttributesProperties {
     wpc?: string;
     mc?: string;
     o?: string;

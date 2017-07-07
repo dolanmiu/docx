@@ -1,6 +1,6 @@
 import { XmlAttributeComponent, XmlComponent } from "../../docx/xml-components";
 
-interface ILatentStyleExceptionAttributesProperties {
+export interface ILatentStyleExceptionAttributesProperties {
     name?: string;
     uiPriority?: string;
     qFormat?: string;
@@ -8,7 +8,7 @@ interface ILatentStyleExceptionAttributesProperties {
     unhideWhenUsed?: string;
 }
 
-class LatentStyleExceptionAttributes extends XmlAttributeComponent<ILatentStyleExceptionAttributesProperties> {
+export class LatentStyleExceptionAttributes extends XmlAttributeComponent<ILatentStyleExceptionAttributesProperties> {
     protected xmlKeys = {
         name: "w:name",
         uiPriority: "w:uiPriority",

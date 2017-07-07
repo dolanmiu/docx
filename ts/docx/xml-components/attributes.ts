@@ -1,6 +1,6 @@
 import { XmlAttributeComponent } from "./default-attributes";
 
-interface IAttributesProperties {
+export interface IAttributesProperties {
     val?: string | number | boolean;
     color?: string;
     space?: string;

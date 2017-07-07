@@ -1,6 +1,6 @@
 import { BaseXmlComponent } from "./base";
 
-type AttributeMap<T> = {[P in keyof T]: string};
+export type AttributeMap<T> = {[P in keyof T]: string};
 
 export abstract class XmlAttributeComponent<T> extends BaseXmlComponent {
     protected root: T;

@@ -1,13 +1,13 @@
 import { XmlAttributeComponent, XmlComponent } from "../xml-components";
 
-export type widthTypes = "dxa" | "pct" | "nil" | "auto";
+export type WidthTypes = "dxa" | "pct" | "nil" | "auto";
 
 export class TableProperties extends XmlComponent {
     constructor() {
         super("w:tblPr");
     }
 
-    public setWidth(type: widthTypes, w: number | string): TableProperties {
+    public setWidth(type: WidthTypes, w: number | string): TableProperties {
         this.root.push(new PreferredTableWidth(type, w));
         return this;
     }
@@ -19,7 +19,7 @@ export class TableProperties extends XmlComponent {
 }
 
 interface ITableWidth {
-    type: widthTypes;
+    type: WidthTypes;
     w: number | string;
 }
 
@@ -28,20 +28,20 @@ class TableWidthAttributes extends XmlAttributeComponent<ITableWidth> {
 }
 
 class PreferredTableWidth extends XmlComponent {
-    constructor(type: widthTypes, w: number | string) {
+    constructor(type: WidthTypes, w: number | string) {
         super("w:tblW");
         this.root.push(new TableWidthAttributes({type, w}));
     }
 }
 
-type tableLayout = "autofit" | "fixed";
+type TableLayoutOptions = "autofit" | "fixed";
 
-class TableLayoutAttributes extends XmlAttributeComponent<{type: tableLayout}> {
+class TableLayoutAttributes extends XmlAttributeComponent<{type: TableLayoutOptions}> {
     protected xmlKeys = {type: "w:type"};
 }
 
 class TableLayout extends XmlComponent {
-    constructor(type: tableLayout) {
+    constructor(type: TableLayoutOptions) {
         super("w:tblLayout");
         this.root.push(new TableLayoutAttributes({type}));
     }

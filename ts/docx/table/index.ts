@@ -2,7 +2,7 @@ import { Paragraph } from "../paragraph";
 import { XmlComponent } from "../xml-components";
 
 import { TableGrid } from "./grid";
-import { TableProperties, widthTypes } from "./properties";
+import { TableProperties, WidthTypes } from "./properties";
 
 export class Table extends XmlComponent {
     private properties: TableProperties;
@@ -51,7 +51,7 @@ export class Table extends XmlComponent {
         return this.getRow(row).getCell(col);
     }
 
-    public setWidth(type: widthTypes, width: number | string): Table {
+    public setWidth(type: WidthTypes, width: number | string): Table {
         this.properties.setWidth(type, width);
         return this;
     }
@@ -62,7 +62,7 @@ export class Table extends XmlComponent {
     }
 }
 
-class TableRow extends XmlComponent {
+export class TableRow extends XmlComponent {
     private properties: TableRowProperties;
     private cells: TableCell[];
 
@@ -79,13 +79,13 @@ class TableRow extends XmlComponent {
     }
 }
 
-class TableRowProperties extends XmlComponent {
+export class TableRowProperties extends XmlComponent {
     constructor() {
         super("w:trPr");
     }
 }
 
-class TableCell extends XmlComponent {
+export class TableCell extends XmlComponent {
     private properties: TableCellProperties;
 
     constructor() {
@@ -116,7 +116,7 @@ class TableCell extends XmlComponent {
     }
 }
 
-class TableCellProperties extends XmlComponent {
+export class TableCellProperties extends XmlComponent {
     constructor() {
         super("w:tcPr");
     }

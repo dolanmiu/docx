@@ -42,7 +42,7 @@ class LevelOverrideAttributes extends XmlAttributeComponent<{ilvl: number}> {
     protected xmlKeys = {ilvl: "w:ilvl"};
 }
 
-class LevelOverride extends XmlComponent {
+export class LevelOverride extends XmlComponent {
     private levelNum: number;
     private lvl?: LevelForOverride;
 

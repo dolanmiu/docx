@@ -2,7 +2,7 @@ import { DocumentAttributes } from "../docx/document/document-attributes";
 import { XmlComponent } from "../docx/xml-components";
 import { Created, Creator, Description, Keywords, LastModifiedBy, Modified, Revision, Subject, Title } from "./components";
 
-interface IPropertiesOptions {
+export interface IPropertiesOptions {
     title?: string;
     subject?: string;
     creator?: string;

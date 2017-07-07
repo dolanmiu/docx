@@ -1,6 +1,6 @@
 import { Attributes, XmlComponent } from "../xml-components";
 
-abstract class BaseUnderline extends XmlComponent {
+export abstract class BaseUnderline extends XmlComponent {
 
     constructor(underlineType: string, color?: string) {
         super("w:u");
