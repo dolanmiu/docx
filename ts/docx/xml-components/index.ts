@@ -1,4 +1,5 @@
 import { BaseXmlComponent } from "./base";
+import { IXmlableObject } from "./xmlable-object";
 export { BaseXmlComponent };
 
 export abstract class XmlComponent extends BaseXmlComponent {
@@ -9,7 +10,7 @@ export abstract class XmlComponent extends BaseXmlComponent {
         this.root = new Array<BaseXmlComponent>();
     }
 
-    public prepForXml(): XmlableObject {
+    public prepForXml(): IXmlableObject {
         const children = this.root.map((comp) => {
             if (comp instanceof BaseXmlComponent) {
                 return comp.prepForXml();

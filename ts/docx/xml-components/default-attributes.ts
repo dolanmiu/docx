@@ -1,4 +1,5 @@
 import { BaseXmlComponent } from "./base";
+import { IXmlableObject } from "./xmlable-object";
 
 export type AttributeMap<T> = {[P in keyof T]: string};
 
@@ -11,7 +12,7 @@ export abstract class XmlAttributeComponent<T> extends BaseXmlComponent {
         this.root = properties;
     }
 
-    public prepForXml(): XmlableObject {
+    public prepForXml(): IXmlableObject {
         const attrs = {};
         Object.keys(this.root).forEach((key) => {
             const value = this.root[key];

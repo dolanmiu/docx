@@ -1,6 +1,6 @@
 import { Paragraph } from "../paragraph";
 import { XmlComponent } from "../xml-components";
-
+import { IXmlableObject } from "../xml-components/xmlable-object";
 import { TableGrid } from "./grid";
 import { TableProperties, WidthTypes } from "./properties";
 
@@ -99,7 +99,7 @@ export class TableCell extends XmlComponent {
         return this;
     }
 
-    public prepForXml(): XmlableObject {
+    public prepForXml(): IXmlableObject {
         // Cells must end with a paragraph
         const retval = super.prepForXml();
         const content = retval["w:tc"];
