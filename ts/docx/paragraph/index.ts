@@ -16,6 +16,8 @@ import { Style } from "./style";
 import { LeftTabStop, MaxRightTabStop } from "./tab-stop";
 import { NumberProperties } from "./unordered-list";
 
+export * from "./formatting";
+
 export class Paragraph extends XmlComponent {
     private properties: ParagraphProperties;
 
