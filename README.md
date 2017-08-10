@@ -8,6 +8,8 @@
 
 -----
 
+[![Greenkeeper badge](https://badges.greenkeeper.io/dolanmiu/docx.svg)](https://greenkeeper.io/)
+
 [![NPM version][npm-image]][npm-url] [![Build Status][travis-image]][travis-url] [![Dependency Status][gemnasium-image]][gemnasium-url] [![Known Vulnerabilities][snky-image]][snky-url] [![Chat on Gitter][gitter-image]][gitter-url]
 
 [![NPM](https://nodei.co/npm/docx.png?downloads=true&downloadRank=true&stars=true)](https://nodei.co/npm/docx/)
