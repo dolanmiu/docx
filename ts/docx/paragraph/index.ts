@@ -103,7 +103,7 @@ export class Paragraph extends XmlComponent {
     }
 
     public pageBreak(): Paragraph {
-        this.properties.push(new PageBreak());
+        this.root.push(new PageBreak());
         return this;
     }
 
