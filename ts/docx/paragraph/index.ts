@@ -98,7 +98,7 @@ export class Paragraph extends XmlComponent {
     }
 
     public thematicBreak(): Paragraph {
-        this.root.push(new ThematicBreak());
+        this.properties.push(new ThematicBreak());
         return this;
     }
 

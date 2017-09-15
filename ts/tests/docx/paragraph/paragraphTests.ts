@@ -144,12 +144,10 @@ describe("Paragraph", () => {
             const tree = new Formatter().format(paragraph);
             expect(tree).to.deep.equal({
                 "w:p": [{
-                    "w:pPr": [{
-                        "w:r": [
-                            {"w:rPr": []},
-                            {"w:br": [{_attr: {"w:type": "page"}}]},
-                        ],
-                    }],
+                    "w:r": [
+                        {"w:rPr": []},
+                        {"w:br": [{_attr: {"w:type": "page"}}]},
+                    ],
                 }],
             });
         });
