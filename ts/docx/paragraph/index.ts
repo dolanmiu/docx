@@ -98,12 +98,12 @@ export class Paragraph extends XmlComponent {
     }
 
     public thematicBreak(): Paragraph {
-        this.properties.push(new ThematicBreak());
+        this.root.push(new ThematicBreak());
         return this;
     }
 
     public pageBreak(): Paragraph {
-        this.properties.push(new PageBreak());
+        this.root.push(new PageBreak());
         return this;
     }
 
