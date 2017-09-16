@@ -111,7 +111,7 @@ describe("AbstractNumbering", () => {
             it("#indent", () => {
                 const abstractNumbering = new AbstractNumbering(1);
                 const level = abstractNumbering.createLevel(0, "lowerLetter", "%0.")
-                    .indent(720);
+                    .indent({ left: 720 });
                 const tree = new Formatter().format(level);
                 expect(tree["w:lvl"]).to.include({
                     "w:pPr": [{"w:ind": [{_attr: {"w:left": 720}}]}],
