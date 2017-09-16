@@ -185,7 +185,7 @@ describe("ParagraphStyle", () => {
     describe("formatting methods: paragraph properties", () => {
         it("#indent", () => {
             const style = new ParagraphStyle("myStyleId")
-                .indent(720);
+                .indent({ left: 720 });
             const tree = new Formatter().format(style);
             expect(tree).to.deep.equal({
                 "w:style": [

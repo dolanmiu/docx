@@ -35,39 +35,39 @@ export class Numbering extends XmlComponent {
         const abstractNumbering = this.createAbstractNumbering();
 
         abstractNumbering.createLevel(0, "bullet", "•", "left")
-            .addParagraphProperty(new Indent(720, 360))
+            .addParagraphProperty(new Indent({ left: 720, hanging: 360 }))
             .addRunProperty(new RunFonts("Symbol", "default"));
 
         abstractNumbering.createLevel(1, "bullet", "o", "left")
-            .addParagraphProperty(new Indent(1440, 360))
+            .addParagraphProperty(new Indent({ left: 1440, hanging: 360 }))
             .addRunProperty(new RunFonts("Courier New", "default"));
 
         abstractNumbering.createLevel(2, "bullet", "•", "left")
-            .addParagraphProperty(new Indent(2160, 360))
+            .addParagraphProperty(new Indent({ left: 2160, hanging: 360 }))
             .addRunProperty(new RunFonts("Wingdings", "default"));
 
         abstractNumbering.createLevel(3, "bullet", "•", "left")
-            .addParagraphProperty(new Indent(2880, 360))
+            .addParagraphProperty(new Indent({ left: 2880, hanging: 360 }))
             .addRunProperty(new RunFonts("Symbol", "default"));
 
         abstractNumbering.createLevel(4, "bullet", "o", "left")
-            .addParagraphProperty(new Indent(3600, 360))
+            .addParagraphProperty(new Indent({ left: 3600, hanging: 360 }))
             .addRunProperty(new RunFonts("Courier New", "default"));
 
         abstractNumbering.createLevel(5, "bullet", "•", "left")
-            .addParagraphProperty(new Indent(4320, 360))
+            .addParagraphProperty(new Indent({ left: 4320, hanging: 360 }))
             .addRunProperty(new RunFonts("Wingdings", "default"));
 
         abstractNumbering.createLevel(6, "bullet", "•", "left")
-            .addParagraphProperty(new Indent(5040, 360))
+            .addParagraphProperty(new Indent({ left: 5040, hanging: 360 }))
             .addRunProperty(new RunFonts("Symbol", "default"));
 
         abstractNumbering.createLevel(7, "bullet", "o", "left")
-            .addParagraphProperty(new Indent(5760, 360))
+            .addParagraphProperty(new Indent({ left: 5760, hanging: 360 }))
             .addRunProperty(new RunFonts("Courier New", "default"));
 
         abstractNumbering.createLevel(8, "bullet", "•", "left")
-            .addParagraphProperty(new Indent(6480, 360))
+            .addParagraphProperty(new Indent({ left: 6480, hanging: 360 }))
             .addRunProperty(new RunFonts("Wingdings", "default"));
 
         this.createConcreteNumbering(abstractNumbering);

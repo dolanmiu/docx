@@ -171,8 +171,8 @@ export class ParagraphStyle extends Style {
         return this;
     }
 
-    public indent(left: number, hanging?: number): ParagraphStyle {
-        this.addParagraphProperty(new paragraph.Indent(left, hanging));
+    public indent(attrs: object): ParagraphStyle {
+        this.addParagraphProperty(new paragraph.Indent(attrs));
         return this;
     }
 

@@ -241,7 +241,7 @@ describe("Paragraph", () => {
 
     describe("#indent", () => {
         it("should set the paragraph indent to the given values", () => {
-            paragraph.indent(720);
+            paragraph.indent({ left: 720 });
             const tree = new Formatter().format(paragraph);
             expect(tree).to.deep.equal({
                 "w:p": [

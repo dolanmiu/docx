@@ -134,8 +134,8 @@ export class Paragraph extends XmlComponent {
         return this;
     }
 
-    public indent(start: number, hanging?: number): Paragraph {
-        this.properties.push(new Indent(start, hanging));
+    public indent(attrs: object): Paragraph {
+        this.properties.push(new Indent(attrs));
         return this;
     }
 

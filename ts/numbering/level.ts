@@ -196,8 +196,8 @@ export class LevelBase extends XmlComponent {
         return this;
     }
 
-    public indent(left: number, hanging?: number): Level {
-        this.addParagraphProperty(new paragraph.Indent(left, hanging));
+    public indent(attrs: object): Level {
+        this.addParagraphProperty(new paragraph.Indent(attrs));
         return this;
     }
 
