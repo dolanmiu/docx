@@ -12,6 +12,8 @@
         "declaration": true
     },
     "exclude": [
-        "tests"
+        "tests",
+        "**/*.spec.ts",
+        "**/_*"
     ]
 }

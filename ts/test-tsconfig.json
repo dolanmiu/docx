@@ -9,5 +9,9 @@
         "sourceRoot": "./",
         "rootDir": "./",
         "module": "commonjs"
-    }
+    },
+    "include": [
+        "**/*.spec.ts",
+        "**/*.d.ts"
+    ]
 }

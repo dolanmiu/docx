@@ -1,5 +1,6 @@
 /* tslint:disable */
 import { assert } from "chai";
+
 import { Utility } from "./utility";
 /* tslint:enable */
 
