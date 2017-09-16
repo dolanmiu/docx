@@ -1,6 +1,7 @@
 import { DocumentAttributes } from "../docx/document/document-attributes";
 import { XmlComponent } from "../docx/xml-components";
 import { ParagraphStyle } from "./style";
+import { DocumentDefaults } from "./defaults";
 
 export class Styles extends XmlComponent {
 
@@ -14,16 +15,18 @@ export class Styles extends XmlComponent {
             w15: "http://schemas.microsoft.com/office/word/2012/wordml",
             Ignorable: "w14 w15",
         }));
-        // let latentStyles = new LatentStyles();
-        // latentStyles.push(new LatentStyleException(new LatentStyleExceptionAttributes({
-        //    name: "Normal"
-        // })));
-        // this.root.push(latentStyles);
+
     }
 
     public push(style: XmlComponent): Styles {
         this.root.push(style);
         return this;
+    }
+
+    public createDocumentDefaults(): DocumentDefaults {
+        const defaults = new DocumentDefaults();
+        this.push(defaults);
+        return defaults;
     }
 
     public createParagraphStyle(styleId: string, name?: string): ParagraphStyle {

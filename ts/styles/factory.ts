@@ -11,7 +11,7 @@ export class DefaultStylesFactory {
 
     public newInstance(): Styles {
         const styles = new Styles();
-        styles.push(new DocumentDefaults());
+        styles.createDocumentDefaults();
 
         const titleStyle = new TitleStyle();
         titleStyle.addRunProperty(new Size(56));
