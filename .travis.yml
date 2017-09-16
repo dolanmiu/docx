@@ -4,6 +4,7 @@ node_js:
 install:
   - npm install
 script:
+  - npm run lint
   - npm test
 after_failure: 
   - "cat /home/travis/builds/dolanmiu/docx/npm-debug.log"

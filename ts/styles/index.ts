@@ -1,7 +1,7 @@
 import { DocumentAttributes } from "../docx/document/document-attributes";
 import { XmlComponent } from "../docx/xml-components";
-import { ParagraphStyle } from "./style";
 import { DocumentDefaults } from "./defaults";
+import { ParagraphStyle } from "./style";
 
 export class Styles extends XmlComponent {
 

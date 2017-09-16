@@ -1,7 +1,7 @@
 import { Color, Italics, Size } from "../docx/run/formatting";
 
 import { Styles } from "./";
-import { DocumentDefaults } from "./defaults";
+// import { DocumentDefaults } from "./defaults";
 import {
     Heading1Style, Heading2Style, Heading3Style, Heading4Style, Heading5Style, Heading6Style,
     ListParagraph, TitleStyle,
