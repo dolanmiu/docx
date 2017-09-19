@@ -66,6 +66,10 @@ exporter.pack('My First Document');
 ## Examples
 Check [the Wiki](https://github.com/dolanmiu/docx/wiki/Examples) for examples.
 
+# Contributing
+
+Read the contribution guidelines [here](https://github.com/dolanmiu/docx/wiki/Contributing-Guidelines).
+
 -----
 
 Made with 💖
