@@ -1,3 +1,4 @@
+// http://officeopenxml.com/WPtab.php
 import { XmlAttributeComponent, XmlComponent } from "../xml-components";
 
 export class TabStop extends XmlComponent {
