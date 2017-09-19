@@ -1,3 +1,3 @@
-export { LocalPacker } from "./packer/local";
-export { ExpressPacker } from "./packer/express";
-export { Packer } from "./packer/packer";
+export * from "./packer/local";
+export * from "./packer/express";
+export * from "./packer/packer";
