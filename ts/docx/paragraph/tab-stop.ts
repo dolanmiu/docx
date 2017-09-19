@@ -8,15 +8,15 @@ export class TabStop extends XmlComponent {
     }
 }
 
-export type TabOptions = "left" | "right";
+export type TabValue = "left" | "right" | "center" | "bar" | "clear" | "decimal" | "end" | "num" | "start";
 
-export class TabAttributes extends XmlAttributeComponent<{val: TabOptions, pos: string | number}> {
+export class TabAttributes extends XmlAttributeComponent<{val: TabValue, pos: string | number}> {
     protected xmlKeys = {val: "w:val", pos: "w:pos"};
 }
 
 export class Tab extends XmlComponent {
 
-    constructor(value: TabOptions, position: string | number) {
+    constructor(value: TabValue, position: string | number) {
         super("w:tab");
         this.root.push(new TabAttributes({
             val: value,
@@ -34,5 +34,17 @@ export class MaxRightTabStop extends TabStop {
 export class LeftTabStop extends TabStop {
     constructor(position: number) {
         super(new Tab("left", position));
+    }
+}
+
+export class RightTabStop extends TabStop {
+    constructor(position: number) {
+        super(new Tab("right", position));
+    }
+}
+
+export class CenterTabStop extends TabStop {
+    constructor(position: number) {
+        super(new Tab("center", position));
     }
 }

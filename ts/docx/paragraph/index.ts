@@ -13,7 +13,7 @@ import { PageBreak } from "./page-break";
 import { ParagraphProperties } from "./properties";
 import { ISpacingProperties, Spacing } from "./spacing";
 import { Style } from "./style";
-import { LeftTabStop, MaxRightTabStop } from "./tab-stop";
+import { CenterTabStop, LeftTabStop, MaxRightTabStop, RightTabStop } from "./tab-stop";
 import { NumberProperties } from "./unordered-list";
 
 export * from "./formatting";
@@ -114,6 +114,16 @@ export class Paragraph extends XmlComponent {
 
     public leftTabStop(position: number): Paragraph {
         this.properties.push(new LeftTabStop(position));
+        return this;
+    }
+
+    public rightTabStop(position: number): Paragraph {
+        this.properties.push(new RightTabStop(position));
+        return this;
+    }
+
+    public centerTabStop(position: number): Paragraph {
+        this.properties.push(new CenterTabStop(position));
         return this;
     }
 
