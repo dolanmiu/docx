@@ -1,3 +1,4 @@
+// http://officeopenxml.com/WPspacing.php
 import { XmlAttributeComponent, XmlComponent } from "../xml-components";
 
 export interface ISpacingProperties {

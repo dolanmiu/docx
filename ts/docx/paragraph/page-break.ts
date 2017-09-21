@@ -1,3 +1,4 @@
+// http://officeopenxml.com/WPtextSpecialContent-break.php
 import { Run } from "../run";
 import { Attributes, XmlComponent } from "../xml-components";
 

@@ -1,3 +1,4 @@
+// http://officeopenxml.com/WPindentation.php
 import { XmlAttributeComponent, XmlComponent } from "../xml-components";
 
 interface IIndentAttributesProperties {
