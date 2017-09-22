@@ -1,3 +1,4 @@
+// http://officeopenxml.com/WPborders.php
 import { Attributes, XmlComponent } from "../xml-components";
 
 class Border extends XmlComponent {

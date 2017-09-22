@@ -1,3 +1,4 @@
+// http://officeopenxml.com/WPalignment.php
 import { XmlAttributeComponent, XmlComponent } from "../xml-components";
 
 export type AlignmentOptions = "left" | "center" | "right" | "both";
