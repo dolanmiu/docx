@@ -6,16 +6,16 @@ import { PictureRun } from "../run/picture-run";
 import { TextRun } from "../run/text-run";
 import { XmlComponent } from "../xml-components";
 
-import { Alignment } from "./alignment";
-import { ThematicBreak } from "./border";
-import { Indent } from "./indent";
-import { KeepLines, KeepNext } from "./keep";
-import { PageBreak } from "./page-break";
+import { Alignment } from "./formatting/alignment";
+import { ThematicBreak } from "./formatting/border";
+import { Indent } from "./formatting/indent";
+import { KeepLines, KeepNext } from "./formatting/keep";
+import { PageBreak } from "./formatting/page-break";
+import { ISpacingProperties, Spacing } from "./formatting/spacing";
+import { Style } from "./formatting/style";
+import { CenterTabStop, LeftTabStop, MaxRightTabStop, RightTabStop } from "./formatting/tab-stop";
+import { NumberProperties } from "./formatting/unordered-list";
 import { ParagraphProperties } from "./properties";
-import { ISpacingProperties, Spacing } from "./spacing";
-import { Style } from "./style";
-import { CenterTabStop, LeftTabStop, MaxRightTabStop, RightTabStop } from "./tab-stop";
-import { NumberProperties } from "./unordered-list";
 
 export class Paragraph extends XmlComponent {
     private properties: ParagraphProperties;

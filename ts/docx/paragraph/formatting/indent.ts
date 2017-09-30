@@ -1,5 +1,5 @@
 // http://officeopenxml.com/WPindentation.php
-import { XmlAttributeComponent, XmlComponent } from "../xml-components";
+import { XmlAttributeComponent, XmlComponent } from "../../xml-components";
 
 interface IIndentAttributesProperties {
     left?: number;

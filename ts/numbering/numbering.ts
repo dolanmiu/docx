@@ -1,5 +1,5 @@
 import { DocumentAttributes } from "../docx/document/document-attributes";
-import { Indent } from "../docx/paragraph/indent";
+import { Indent } from "../docx/paragraph/formatting";
 import { RunFonts } from "../docx/run/run-fonts";
 import { XmlComponent } from "../docx/xml-components";
 import { AbstractNumbering } from "./abstract-numbering";

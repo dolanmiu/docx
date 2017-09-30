@@ -1,4 +1,4 @@
-import * as paragraph from "../../docx/paragraph/formatting";
+import * as paragraph from "../../docx/paragraph";
 import * as formatting from "../../docx/run/formatting";
 import { RunProperties } from "../../docx/run/properties";
 import { XmlAttributeComponent, XmlComponent } from "../../docx/xml-components";

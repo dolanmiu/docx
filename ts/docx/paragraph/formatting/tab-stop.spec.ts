@@ -1,6 +1,6 @@
 import { assert } from "chai";
 
-import { Utility } from "../../tests/utility";
+import { Utility } from "../../../tests/utility";
 import { LeftTabStop, MaxRightTabStop } from "./tab-stop";
 
 describe("LeftTabStop", () => {
