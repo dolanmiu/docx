@@ -15,6 +15,18 @@ describe("ThematicBreak", () => {
     });
 
     describe("#constructor()", () => {
+        it("should create valid JSON", () => {
+            const stringifiedJson = JSON.stringify(thematicBreak);
+            let newJson;
+
+            try {
+                newJson = JSON.parse(stringifiedJson);
+            } catch (e) {
+                assert.isTrue(false);
+            }
+            assert.isTrue(true);
+        });
+
         it("should create a Thematic Break with correct border properties", () => {
             const newJson = Utility.jsonify(thematicBreak);
             const attributes = {
