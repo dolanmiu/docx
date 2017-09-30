@@ -3,6 +3,7 @@ import * as express from "express";
 import * as fs from "fs";
 import * as path from "path";
 import * as xml from "xml";
+
 import { Document } from "../../docx";
 import { Media } from "../../media";
 import { Numbering } from "../../numbering";
@@ -10,6 +11,7 @@ import { Properties } from "../../properties";
 import { Styles } from "../../styles";
 import { DefaultStylesFactory } from "../../styles/factory";
 import { Formatter } from "../formatter";
+import { IPackOptions } from "./pack-options";
 
 const TEMPLATE_PATH = path.resolve(__dirname, "../../../template");
 
@@ -43,6 +45,8 @@ export abstract class Packer {
             throw err;
         });
     }
+
+    public abstract pack(path: string, options?: IPackOptions): void;
 
     protected compile(output: fs.WriteStream | express.Response): void {
         this.archive.pipe(output);
@@ -87,5 +91,9 @@ export abstract class Packer {
         }
 
         this.archive.finalize();
+    }
+
+    protected convertToPdf(): void {
+        // TODO
     }
 }

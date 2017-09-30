@@ -1,9 +1,11 @@
 import * as express from "express";
+
 import { Document } from "../../docx/document";
 import { Media } from "../../media";
 import { Numbering } from "../../numbering";
 import { Properties } from "../../properties";
 import { Styles } from "../../styles";
+import { IPackOptions } from "./pack-options";
 import { Packer } from "./packer";
 
 export class ExpressPacker extends Packer {
@@ -18,7 +20,7 @@ export class ExpressPacker extends Packer {
         });
     }
 
-    public pack(name: string): void {
+    public pack(name: string, options: IPackOptions): void {
         this.res.attachment(`${name}.docx`);
         super.compile(this.res);
     }
