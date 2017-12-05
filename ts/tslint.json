@@ -33,6 +33,7 @@
         ],
         "no-unused-variable": [
             true
-        ]
+        ],
+        "no-implicit-dependencies": false
     }
 }
