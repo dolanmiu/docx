@@ -6,8 +6,8 @@ export interface IConvertOutput {
 }
 
 export class PdfConvertWrapper {
-    public convert(): Promise<IConvertOutput> {
-        const buffer = fs.readFileSync("test.docx");
+    public convert(filePath: string): Promise<IConvertOutput> {
+        const buffer = fs.readFileSync(filePath);
 
         return new Promise<IConvertOutput>((resolve, reject) => {
             const r = request.post({

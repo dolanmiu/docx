@@ -1,3 +1,5 @@
+/* tslint:disable:typedef space-before-function-paren */
+
 import { assert } from "chai";
 import * as fs from "fs";
 
@@ -29,11 +31,10 @@ describe("Packer", () => {
     });
 
     describe("#pack()", () => {
-        /* tslint:disable */
         it("should create a standard docx file", function (done) {
-            /* tslint:enable */
             this.timeout(99999999);
-            packer.pack("build-tests/tests/test.docx");
+            packer.pack("build-tests/tests/test");
+
             const int = setInterval(() => {
                 const stats = fs.statSync("build-tests/tests/test.docx");
                 if (stats.size > 2000) {
@@ -50,6 +51,13 @@ describe("Packer", () => {
                     done(e);
                 }
             }, 2000);
+        });
+
+        it("should create a standard PDF file", async function () {
+            this.timeout(99999999);
+
+            await packer.packPdf("build-tests/tests/pdf-test");
+            fs.statSync("build-tests/tests/pdf-test.pdf");
         });
     });
 });

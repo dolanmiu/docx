@@ -21,6 +21,8 @@ export class ExpressPacker extends Packer {
     }
 
     public pack(name: string, options: IPackOptions): void {
+        name = name.replace(/.docx$/, "");
+
         this.res.attachment(`${name}.docx`);
         super.compile(this.res);
     }

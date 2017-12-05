@@ -48,7 +48,7 @@ export abstract class Packer {
 
     public abstract pack(path: string, options?: IPackOptions): void;
 
-    protected compile(output: fs.WriteStream | express.Response): void {
+    protected async compile(output: fs.WriteStream | express.Response): Promise<void> {
         this.archive.pipe(output);
         this.archive.glob("**", {
             cwd: TEMPLATE_PATH,
@@ -91,9 +91,12 @@ export abstract class Packer {
         }
 
         this.archive.finalize();
-    }
 
-    protected convertToPdf(): void {
-        // TODO
+        return new Promise<void>((resolve) => {
+            output.on("close", () => {
+                resolve();
+            });
+        });
+
     }
 }
