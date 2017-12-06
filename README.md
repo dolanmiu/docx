@@ -57,6 +57,8 @@ var exporter = new docx.LocalPacker(doc);
 var exporter = new docx.ExpressPacker(doc, res);
 
 exporter.pack('My First Document');
+// If you want to export it as a .pdf file instead
+exporter.packPdf('My First Document');
 
 // done! A file called 'My First Document.docx'
 // will be in your file system if you used LocalPacker
@@ -88,4 +90,3 @@ Huge thanks to [@felipeochoa](https://github.com/felipeochoa) for awesome contri
 [gitter-url]: https://gitter.im/docx-lib/Lobby
 [gemnasium-image]: https://gemnasium.com/badges/github.com/dolanmiu/docx.svg
 [gemnasium-url]: https://gemnasium.com/github.com/dolanmiu/docx
-
