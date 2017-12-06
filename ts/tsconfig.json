@@ -9,7 +9,8 @@
         "sourceRoot": "./",
         "rootDir": "./",
         "module": "commonjs",
-        "declaration": true
+        "declaration": true,
+        "noUnusedLocals": true
     },
     "exclude": [
         "tests",

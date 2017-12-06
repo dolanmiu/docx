@@ -1,32 +1,31 @@
 import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
-import * as util from "util";
 
 import { Document } from "../../docx/document";
 import { Media } from "../../media";
 import { Numbering } from "../../numbering";
 import { Properties } from "../../properties";
 import { Styles } from "../../styles";
-import { IPackOptions } from "./pack-options";
-import { Packer } from "./packer";
+import { Compiler } from "./compiler";
+import { IPacker } from "./packer";
 import { PdfConvertWrapper } from "./pdf-convert-wrapper";
 
-export class LocalPacker extends Packer {
+export class LocalPacker implements IPacker {
     private stream: fs.WriteStream;
     private pdfConverter: PdfConvertWrapper;
+    private packer: Compiler;
 
     constructor(document: Document, styles?: Styles, properties?: Properties, numbering?: Numbering, media?: Media) {
-        super(document, styles, properties, numbering, media);
-
         this.pdfConverter = new PdfConvertWrapper();
+        this.packer = new Compiler(document, styles, properties, numbering, media);
     }
 
     public pack(filePath: string): void {
         filePath = filePath.replace(/.docx$/, "");
 
         this.stream = fs.createWriteStream(`${filePath}.docx`);
-        super.compile(this.stream);
+        this.packer.compile(this.stream);
     }
 
     public async packPdf(filePath: string): Promise<void> {
@@ -35,7 +34,7 @@ export class LocalPacker extends Packer {
         const fileName = path.basename(filePath, path.extname(filePath));
         const tempPath = path.join(os.tmpdir(), `${fileName}.docx`);
         this.stream = fs.createWriteStream(tempPath);
-        await super.compile(this.stream);
+        await this.packer.compile(this.stream);
         const text = await this.pdfConverter.convert(tempPath);
         // const writeFile = util.promisify(fs.writeFile); --use this in future, in 3 years time. Only in node 8
         // return writeFile(`${filePath}.pdf`, text);

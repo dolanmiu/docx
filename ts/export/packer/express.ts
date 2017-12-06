@@ -5,14 +5,16 @@ import { Media } from "../../media";
 import { Numbering } from "../../numbering";
 import { Properties } from "../../properties";
 import { Styles } from "../../styles";
-import { IPackOptions } from "./pack-options";
-import { Packer } from "./packer";
+import { Compiler } from "./compiler";
+import { IPacker } from "./packer";
 
-export class ExpressPacker extends Packer {
+export class ExpressPacker implements IPacker {
     private res: express.Response;
+    private packer: Compiler;
 
     constructor(document: Document, res: express.Response, styles?: Styles, properties?: Properties, numbering?: Numbering, media?: Media) {
-        super(document, styles, properties, numbering, media);
+        this.packer = new Compiler(document, styles, properties, numbering, media);
+
         this.res = res;
 
         this.res.on("close", () => {
@@ -20,10 +22,10 @@ export class ExpressPacker extends Packer {
         });
     }
 
-    public pack(name: string, options: IPackOptions): void {
+    public pack(name: string): void {
         name = name.replace(/.docx$/, "");
 
         this.res.attachment(`${name}.docx`);
-        super.compile(this.res);
+        this.packer.compile(this.res);
     }
 }

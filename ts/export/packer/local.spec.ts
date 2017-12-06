@@ -9,7 +9,7 @@ import { LocalPacker } from "../../export/packer/local";
 import { Properties } from "../../properties";
 import { DefaultStylesFactory } from "../../styles/factory";
 
-describe("Packer", () => {
+describe("LocalPacker", () => {
     let packer: LocalPacker;
     let stylesFactory: DefaultStylesFactory;
 
@@ -52,7 +52,9 @@ describe("Packer", () => {
                 }
             }, 2000);
         });
+    });
 
+    describe("#packPdf", () => {
         it("should create a standard PDF file", async function () {
             this.timeout(99999999);
 
