@@ -21,11 +21,11 @@ export class LocalPacker implements IPacker {
         this.packer = new Compiler(document, styles, properties, numbering, media);
     }
 
-    public pack(filePath: string): void {
+    public async pack(filePath: string): Promise<void> {
         filePath = filePath.replace(/.docx$/, "");
 
         this.stream = fs.createWriteStream(`${filePath}.docx`);
-        this.packer.compile(this.stream);
+        await this.packer.compile(this.stream);
     }
 
     public async packPdf(filePath: string): Promise<void> {

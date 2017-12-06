@@ -22,10 +22,10 @@ export class ExpressPacker implements IPacker {
         });
     }
 
-    public pack(name: string): void {
+    public async pack(name: string): Promise<void> {
         name = name.replace(/.docx$/, "");
 
         this.res.attachment(`${name}.docx`);
-        this.packer.compile(this.res);
+        await this.packer.compile(this.res);
     }
 }

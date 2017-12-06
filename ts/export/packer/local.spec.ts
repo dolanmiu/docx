@@ -1,6 +1,4 @@
 /* tslint:disable:typedef space-before-function-paren */
-
-import { assert } from "chai";
 import * as fs from "fs";
 
 import { Document } from "../../docx/document";
@@ -31,26 +29,10 @@ describe("LocalPacker", () => {
     });
 
     describe("#pack()", () => {
-        it("should create a standard docx file", function (done) {
+        it("should create a standard docx file", async function () {
             this.timeout(99999999);
-            packer.pack("build-tests/tests/test");
-
-            const int = setInterval(() => {
-                const stats = fs.statSync("build-tests/tests/test.docx");
-                if (stats.size > 2000) {
-                    clearInterval(int);
-                    clearTimeout(out);
-                    done();
-                }
-            }, 1000);
-            const out = setTimeout(() => {
-                clearInterval(int);
-                try {
-                    assert(false, "did not create a file within the alloted time");
-                } catch (e) {
-                    done(e);
-                }
-            }, 2000);
+            await packer.pack("build-tests/tests/test");
+            fs.statSync("build-tests/tests/test.docx");
         });
     });
 
