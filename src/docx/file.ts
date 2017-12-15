@@ -1,8 +1,10 @@
 import { Media } from "../media";
 import { Numbering } from "../numbering";
-import { Properties } from "../properties";
+import { IPropertiesOptions, Properties } from "../properties";
 import { Styles } from "../styles";
+import { DefaultStylesFactory } from "../styles/factory";
 import { Document } from "./document";
+import { Paragraph, Table } from "./index";
 
 export class File {
 
@@ -12,15 +14,57 @@ export class File {
     private numbering: Numbering;
     private media: Media;
 
-    constructor() {
+    constructor(options?: IPropertiesOptions) {
         this.document = new Document();
-        this.styles = new Styles();
-        this.properties = new Properties({
-            creator: "Un-named",
-            revision: "1",
-            lastModifiedBy: "Un-named",
-        });
+        const stylesFactory = new DefaultStylesFactory();
+        this.styles = stylesFactory.newInstance();
+
+        if (!options) {
+            options = {
+                creator: "Un-named",
+                revision: "1",
+                lastModifiedBy: "Un-named",
+            };
+        }
+
+        this.properties = new Properties(options);
         this.numbering = new Numbering();
         this.media = new Media();
+    }
+
+    public addParagraph(paragraph: Paragraph): void {
+        this.document.addParagraph(paragraph);
+    }
+
+    public createParagraph(text?: string): Paragraph {
+        return this.document.createParagraph();
+    }
+
+    public addTable(table: Table): void {
+        return this.document.addTable(table);
+    }
+
+    public createTable(rows: number, cols: number): Table {
+        return this.document.createTable(rows, cols);
+    }
+
+    public get Document(): Document {
+        return this.document;
+    }
+
+    public get Styles(): Styles {
+        return this.styles;
+    }
+
+    public get Properties(): Properties {
+        return this.properties;
+    }
+
+    public get Numbering(): Numbering {
+        return this.numbering;
+    }
+
+    public get Media(): Media {
+        return this.media;
     }
 }

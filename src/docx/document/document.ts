@@ -52,5 +52,4 @@ export class Document extends XmlComponent {
         this.addTable(table);
         return table;
     }
-
 }
