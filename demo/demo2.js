@@ -1,7 +1,12 @@
 const docx = require('../build');
 
-const styles = new docx.Styles();
-styles.createParagraphStyle('Heading1', 'Heading 1')
+const doc = new docx.File({
+    creator: 'Clippy',
+    title: 'Sample Document',
+    description: 'A brief example of using docx',
+});
+
+doc.Styles.createParagraphStyle('Heading1', 'Heading 1')
     .basedOn("Normal")
     .next("Normal")
     .quickFormat()
@@ -10,7 +15,7 @@ styles.createParagraphStyle('Heading1', 'Heading 1')
     .italics()
     .spacing({after: 120});
 
-styles.createParagraphStyle('Heading2', 'Heading 2')
+doc.Styles.createParagraphStyle('Heading2', 'Heading 2')
     .basedOn("Normal")
     .next("Normal")
     .quickFormat()
@@ -19,7 +24,7 @@ styles.createParagraphStyle('Heading2', 'Heading 2')
     .underline('double', 'FF0000')
     .spacing({before: 240, after: 120});
 
-styles.createParagraphStyle('aside', 'Aside')
+doc.Styles.createParagraphStyle('aside', 'Aside')
     .basedOn('Normal')
     .next('Normal')
     .color('999999')
@@ -27,31 +32,24 @@ styles.createParagraphStyle('aside', 'Aside')
     .indent(720)
     .spacing({line: 276});
 
-styles.createParagraphStyle('wellSpaced', 'Well Spaced')
+doc.Styles.createParagraphStyle('wellSpaced', 'Well Spaced')
     .basedOn('Normal')
     .spacing({line: 276, before: 20 * 72 * .1, after: 20 * 72 * .05});
 
-styles.createParagraphStyle('ListParagraph', 'List Paragraph')
+doc.Styles.createParagraphStyle('ListParagraph', 'List Paragraph')
     .quickFormat()
     .basedOn('Normal');
 
 
-const numbering = new docx.Numbering();
-const numberedAbstract = numbering.createAbstractNumbering();
+const numberedAbstract = doc.Numbering.createAbstractNumbering();
 numberedAbstract.createLevel(0, "lowerLetter", "%1)", "left");
-
-const doc = new docx.Document({
-    creator: 'Clippy',
-    title: 'Sample Document',
-    description: 'A brief example of using docx',
-});
 
 doc.createParagraph('Test heading1, bold and italicized').heading1();
 doc.createParagraph('Some simple content');
 doc.createParagraph('Test heading2 with double red underline').heading2();
 
-const letterNumbering = numbering.createConcreteNumbering(numberedAbstract);
-const letterNumbering5 = numbering.createConcreteNumbering(numberedAbstract);
+const letterNumbering = doc.Numbering.createConcreteNumbering(numberedAbstract);
+const letterNumbering5 = doc.Numbering.createConcreteNumbering(numberedAbstract);
 letterNumbering5.overrideLevel(0, 5);
 
 doc.createParagraph('Option1').setNumbering(letterNumbering, 0);
@@ -70,5 +68,5 @@ para.createTextRun(' switching to normal ');
 para.createTextRun('and then underlined ').underline();
 para.createTextRun('and back to normal.');
 
-const exporter = new docx.LocalPacker(doc, styles, undefined, numbering);
-exporter.pack('test.docx');
+const exporter = new docx.LocalPacker(doc);
+exporter.pack('My Document');
