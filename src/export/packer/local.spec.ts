@@ -5,7 +5,7 @@ import { File } from "../../docx";
 import { Paragraph } from "../../docx/paragraph";
 import { LocalPacker } from "../../export/packer/local";
 
-describe.only("LocalPacker", () => {
+describe("LocalPacker", () => {
     let packer: LocalPacker;
 
     beforeEach(() => {

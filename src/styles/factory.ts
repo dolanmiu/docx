@@ -1,4 +1,4 @@
-import { Color, Italics, Size } from "../docx/run/formatting";
+import { Color, Italics, Size } from "../docx/paragraph/run/formatting";
 
 import { Styles } from "./";
 // import { DocumentDefaults } from "./defaults";

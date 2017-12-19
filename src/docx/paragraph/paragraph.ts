@@ -1,10 +1,8 @@
 // http://officeopenxml.com/WPparagraph.php
 import { IData } from "../../media/data";
 import { Num } from "../../numbering/num";
-import { Run } from "../run";
-import { PictureRun } from "../run/picture-run";
-import { TextRun } from "../run/text-run";
 import { XmlComponent } from "../xml-components";
+import { PictureRun, Run, TextRun } from "./run";
 
 import { Alignment } from "./formatting/alignment";
 import { ThematicBreak } from "./formatting/border";

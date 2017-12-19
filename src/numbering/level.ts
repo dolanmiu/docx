@@ -1,7 +1,7 @@
 import * as paragraph from "../docx/paragraph/formatting";
 import { ParagraphProperties } from "../docx/paragraph/properties";
-import * as formatting from "../docx/run/formatting";
-import { RunProperties } from "../docx/run/properties";
+import * as formatting from "../docx/paragraph/run/formatting";
+import { RunProperties } from "../docx/paragraph/run/properties";
 import { Attributes, XmlAttributeComponent, XmlComponent } from "../docx/xml-components";
 
 interface ILevelAttributesProperties {

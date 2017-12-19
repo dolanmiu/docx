@@ -1,6 +1,6 @@
-import { Size } from "../../docx/run/formatting";
-import { RunProperties } from "../../docx/run/properties";
-import { RunFonts } from "../../docx/run/run-fonts";
+import { Size } from "../../docx/paragraph/run/formatting";
+import { RunProperties } from "../../docx/paragraph/run/properties";
+import { RunFonts } from "../../docx/paragraph/run/run-fonts";
 import { XmlComponent } from "../../docx/xml-components";
 
 export class RunPropertiesDefaults extends XmlComponent {
