@@ -10,7 +10,13 @@
         "rootDir": "./",
         "module": "commonjs",
         "declaration": true,
-        "noUnusedLocals": true
+        "noUnusedLocals": true,
+        "baseUrl": "./",
+        "paths" : {
+          "/*": [
+              "./*"
+            ]
+        }
     },
     "exclude": [
         "tests",
