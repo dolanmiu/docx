@@ -1,8 +1,8 @@
-import { Media } from "../media";
 import { IPropertiesOptions, Properties } from "../properties";
 import { Styles } from "../styles";
 import { DefaultStylesFactory } from "../styles/factory";
 import { Document } from "./document";
+import { Media } from "./media";
 import { Numbering } from "./numbering";
 import { Paragraph } from "./paragraph";
 import { Table } from "./table";

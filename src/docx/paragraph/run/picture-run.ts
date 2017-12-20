@@ -1,5 +1,5 @@
-import { IData } from "../../../media/data";
 import { Drawing } from "../../drawing";
+import { IData } from "../../media/data";
 import { Run } from "../run";
 
 export class PictureRun extends Run {
