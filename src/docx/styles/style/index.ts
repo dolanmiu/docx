@@ -1,7 +1,7 @@
-import * as paragraph from "../../docx/paragraph";
-import * as formatting from "../../docx/paragraph/run/formatting";
-import { RunProperties } from "../../docx/paragraph/run/properties";
-import { XmlAttributeComponent, XmlComponent } from "../../docx/xml-components";
+import * as paragraph from "../../paragraph";
+import * as formatting from "../../paragraph/run/formatting";
+import { RunProperties } from "../../paragraph/run/properties";
+import { XmlAttributeComponent, XmlComponent } from "../../xml-components";
 
 import { BasedOn, Name, Next, QuickFormat } from "./components";
 

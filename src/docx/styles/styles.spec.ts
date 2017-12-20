@@ -1,5 +1,5 @@
 import { assert, expect } from "chai";
-import { Formatter } from "../export/formatter";
+import { Formatter } from "../../export/formatter";
 import { Styles } from "./";
 import { ParagraphStyle, Style } from "./style";
 import * as components from "./style/components";

@@ -1,4 +1,4 @@
-import { XmlComponent } from "../../docx/xml-components";
+import { XmlComponent } from "../../xml-components";
 import { ParagraphPropertiesDefaults } from "./paragraph-properties";
 import { RunPropertiesDefaults } from "./run-properties";
 
