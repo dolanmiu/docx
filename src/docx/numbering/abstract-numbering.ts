@@ -1,4 +1,4 @@
-import { XmlAttributeComponent, XmlComponent } from "../docx/xml-components";
+import { XmlAttributeComponent, XmlComponent } from "../xml-components";
 import { Level } from "./level";
 import { MultiLevelType } from "./multi-level-type";
 

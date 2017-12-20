@@ -1,4 +1,4 @@
-import { Attributes, XmlAttributeComponent, XmlComponent } from "../docx/xml-components";
+import { Attributes, XmlAttributeComponent, XmlComponent } from "../xml-components";
 import { LevelForOverride } from "./level";
 
 class AbstractNumId extends XmlComponent {

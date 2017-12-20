@@ -1,5 +1,5 @@
 import { expect } from "chai";
-import { Formatter } from "../export/formatter";
+import { Formatter } from "../../export/formatter";
 import { Numbering } from "./";
 import { AbstractNumbering } from "./abstract-numbering";
 import { LevelForOverride } from "./level";
