@@ -1,4 +1,4 @@
-import { XmlComponent } from "../docx/xml-components";
+import { XmlComponent } from "../xml-components";
 import { RelationshipsAttributes } from "./attributes";
 
 export class Relationships extends XmlComponent {

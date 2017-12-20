@@ -1,4 +1,4 @@
-import { XmlAttributeComponent } from "../docx/xml-components";
+import { XmlAttributeComponent } from "../xml-components";
 
 export interface IRelationshipsAttributesProperties {
     xmlns: string;

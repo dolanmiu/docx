@@ -1,4 +1,4 @@
-import { XmlComponent } from "../../docx/xml-components";
+import { XmlComponent } from "../../xml-components";
 import { LatentStyleException } from "./exceptions";
 
 export class LatentStyles extends XmlComponent {
