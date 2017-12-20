@@ -2,7 +2,7 @@ import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
 
-import { File } from "../../docx";
+import { File } from "../../file";
 import { Compiler } from "./compiler";
 import { IPacker } from "./packer";
 import { PdfConvertWrapper } from "./pdf-convert-wrapper";

@@ -1,5 +1,5 @@
-import { XmlComponent } from "../../docx/xml-components";
 import { IData } from "../media";
+import { XmlComponent } from "../xml-components";
 import { Inline } from "./inline";
 
 export class Drawing extends XmlComponent {

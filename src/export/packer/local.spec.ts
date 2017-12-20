@@ -1,9 +1,8 @@
 /* tslint:disable:typedef space-before-function-paren */
 import * as fs from "fs";
 
-import { File } from "../../docx";
-import { Paragraph } from "../../docx/paragraph";
 import { LocalPacker } from "../../export/packer/local";
+import { File, Paragraph } from "../../file";
 
 describe("LocalPacker", () => {
     let packer: LocalPacker;

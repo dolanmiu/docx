@@ -1,2 +1,2 @@
-export * from "./docx";
+export * from "./file";
 export * from "./export";

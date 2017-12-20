@@ -1,4 +1,4 @@
-import { XmlComponent } from "../../../docx/xml-components";
+import { XmlComponent } from "../../xml-components";
 import { Graphic } from "./graphic";
 
 export class Inline extends XmlComponent {

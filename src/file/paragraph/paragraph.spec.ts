@@ -1,14 +1,14 @@
 import { assert, expect } from "chai";
 
-import * as docx from "../../docx";
 import { Formatter } from "../../export/formatter";
+import * as file from "../../file";
 import { Numbering } from "../numbering";
 
 describe("Paragraph", () => {
-    let paragraph: docx.Paragraph;
+    let paragraph: file.Paragraph;
 
     beforeEach(() => {
-        paragraph = new docx.Paragraph();
+        paragraph = new file.Paragraph();
     });
 
     describe("#constructor()", () => {
@@ -35,7 +35,7 @@ describe("Paragraph", () => {
     describe("#createTextRun", () => {
         it("should add a new run to the paragraph and return it", () => {
             const run = paragraph.createTextRun("this is a test run");
-            expect(run).to.be.instanceof(docx.TextRun);
+            expect(run).to.be.instanceof(file.TextRun);
             const tree = new Formatter().format(paragraph)["w:p"];
             expect(tree).to.be.an("array").which.includes({
                 "w:r": [

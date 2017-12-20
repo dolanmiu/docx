@@ -1,4 +1,4 @@
-import { XmlAttributeComponent, XmlComponent } from "../../../../docx/xml-components";
+import { XmlAttributeComponent, XmlComponent } from "../../../xml-components";
 import { GraphicData } from "./graphic-data";
 
 interface IGraphicProperties {
