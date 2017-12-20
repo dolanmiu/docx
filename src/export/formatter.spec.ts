@@ -1,9 +1,9 @@
 import { assert } from "chai";
 
 import * as docx from "../docx";
+import { Properties } from "../docx/properties";
 import { Attributes } from "../docx/xml-components";
 import { Formatter } from "../export/formatter";
-import { Properties } from "../properties";
 import { Utility } from "../tests/utility";
 
 describe("Formatter", () => {

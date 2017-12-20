@@ -1,7 +1,7 @@
 import { expect } from "chai";
 
-import { Formatter } from "../export/formatter";
-import { Properties } from "./";
+import { Formatter } from "../../export/formatter";
+import { Properties } from "./properties";
 
 describe("Properties", () => {
 

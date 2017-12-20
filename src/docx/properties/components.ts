@@ -1,5 +1,5 @@
-import { DocumentAttributes } from "../docx/document/document-attributes";
-import { XmlComponent } from "../docx/xml-components";
+import { DocumentAttributes } from "../document/document-attributes";
+import { XmlComponent } from "../xml-components";
 
 export class Title extends XmlComponent {
 
