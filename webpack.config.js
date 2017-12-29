@@ -5,7 +5,8 @@ module.exports = {
 
     output: {
         path: path.resolve('build'),
-        filename: 'index.js'
+        filename: 'index.js',
+        library: true
     },
 
     resolve: {
