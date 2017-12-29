@@ -8,7 +8,7 @@
     "test": "mocha ./build-tests --recursive",
     "prepublishOnly": "npm run build",
     "lint": "tslint --project .",
-    "build": "npm run tsc",
+    "build": "npm run webpack",
     "tsc": "rimraf ./build && tsc -p .",
     "webpack": "rimraf ./build && webpack",
     "demo": "npm run build && node ./demo",
