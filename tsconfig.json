@@ -6,7 +6,6 @@
         "removeComments": true,
         "preserveConstEnums": true,
         "outDir": "./build",
-        "sourceRoot": "./src",
         "rootDir": "./src",
         "module": "commonjs",
         "declaration": true,
