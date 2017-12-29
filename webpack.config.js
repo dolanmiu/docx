@@ -23,5 +23,9 @@ module.exports = {
         ],
     },
 
-    target: 'node'
+    target: 'node',
+
+    node: {
+        __dirname: true
+    }
 };
