@@ -5,14 +5,17 @@
         "sourceMap": true,
         "removeComments": true,
         "preserveConstEnums": true,
-        "outDir": "../build-tests",
-        "sourceRoot": "./",
-        "rootDir": "./",
+        "outDir": "./build-tests",
+        "sourceRoot": "./src",
+        "rootDir": "./src",
         "module": "commonjs",
         "noUnusedLocals": true
     },
     "include": [
         "**/*.spec.ts",
         "**/*.d.ts"
+    ],
+    "exclude": [
+        "node_modules"
     ]
 }

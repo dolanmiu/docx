@@ -5,13 +5,13 @@
         "sourceMap": true,
         "removeComments": true,
         "preserveConstEnums": true,
-        "outDir": "../build",
-        "sourceRoot": "./",
-        "rootDir": "./",
+        "outDir": "./build",
+        "sourceRoot": "./src",
+        "rootDir": "./src",
         "module": "commonjs",
         "declaration": true,
         "noUnusedLocals": true,
-        "baseUrl": "./",
+        "baseUrl": "./src",
         "paths" : {
           "/*": [
               "./*"
@@ -19,6 +19,7 @@
         }
     },
     "exclude": [
+        "node_modules",
         "tests",
         "**/*.spec.ts",
         "**/_*"

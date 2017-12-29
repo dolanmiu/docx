@@ -1,31 +1,25 @@
 const path = require('path');
-const { TsConfigPathsPlugin } = require('awesome-typescript-loader');
 
 module.exports = {
     entry: './src/index.ts',
 
     output: {
         path: path.resolve('build'),
-        filename: 'bundle.js'
+        filename: 'index.js'
     },
 
     resolve: {
-        extensions: ['.ts', '.tsx', '.js'],
-        plugins: [
-            new TsConfigPathsPlugin(/* { configFileName, compiler } */)
-        ]
+        extensions: ['.tsx', '.ts', '.js']
     },
-
-    // Source maps support ('inline-source-map' also works)
-    devtool: 'source-map',
 
     module: {
         rules: [
             {
-                test: /\.ts|\.tsx$/,
-                loader: 'awesome-typescript-loader',
-                exclude: [/^(?!.*\.spec\.ts$).*\.ts$/]
+                test: /\.ts$/,
+                loaders: ["awesome-typescript-loader"],
             }
-        ]
+        ],
     },
+
+    target: 'node'
 };

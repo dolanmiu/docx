@@ -4,11 +4,12 @@
   "description": "Generate .docx documents with JavaScript (formerly Office-Clippy)",
   "main": "build/index.js",
   "scripts": {
-    "pretest": "rimraf ./build-tests && tsc -p src/test-tsconfig.json",
+    "pretest": "rimraf ./build-tests && tsc -p ./test-tsconfig.json",
     "test": "mocha ./build-tests --recursive",
     "prepublishOnly": "npm run build",
-    "lint": "tslint --project ./src",
-    "build": "rimraf ./build && tsc -p src",
+    "lint": "tslint --project .",
+    "build": "npm run tsc",
+    "tsc": "rimraf ./build && tsc -p .",
     "webpack": "rimraf ./build && webpack",
     "demo": "npm run build && node ./demo",
     "typedoc": "typedoc --out docs/ src/ --module commonjs --target ES6 --disableOutputCheck"
