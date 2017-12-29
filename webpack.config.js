@@ -6,7 +6,8 @@ module.exports = {
     output: {
         path: path.resolve('build'),
         filename: 'index.js',
-        library: true
+        library: 'docx',
+        libraryTarget: 'umd'
     },
 
     resolve: {
