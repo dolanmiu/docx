@@ -1,7 +1,7 @@
 // http://officeopenxml.com/WPparagraph.php
+import { XmlComponent } from "file/xml-components";
 import { IData } from "../media/data";
 import { Num } from "../numbering/num";
-import { XmlComponent } from "../xml-components";
 import { PictureRun, Run, TextRun } from "./run";
 
 import { Alignment } from "./formatting/alignment";
