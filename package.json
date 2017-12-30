@@ -11,7 +11,7 @@
     "tsc": "rimraf ./build && tsc -p .",
     "webpack": "rimraf ./build && webpack",
     "demo": "npm run build && node ./demo",
-    "typedoc": "typedoc --out docs/ src/ --module commonjs --target ES6 --disableOutputCheck"
+    "typedoc": "npm run build && typedoc --out docs/ src/ --module commonjs --target ES6 --disableOutputCheck"
   },
   "files": [
     "src",
