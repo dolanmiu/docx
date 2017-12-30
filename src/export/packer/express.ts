@@ -1,6 +1,6 @@
 import * as express from "express";
 
-import { File } from "../../file";
+import { File } from "file";
 import { Compiler } from "./compiler";
 import { IPacker } from "./packer";
 

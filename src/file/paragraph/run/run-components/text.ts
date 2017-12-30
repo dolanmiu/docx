@@ -1,4 +1,4 @@
-import { XmlAttributeComponent, XmlComponent } from "../../../xml-components";
+import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
 
 class TextAttributes extends XmlAttributeComponent<{space: "default" | "preserve"}> {
     protected xmlKeys = {space: "xml:space"};

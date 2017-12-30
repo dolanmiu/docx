@@ -1,4 +1,4 @@
-import { XmlAttributeComponent, XmlComponent } from "../xml-components";
+import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
 
 export type WidthTypes = "dxa" | "pct" | "nil" | "auto";
 

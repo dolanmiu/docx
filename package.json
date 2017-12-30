@@ -4,6 +4,7 @@
   "description": "Generate .docx documents with JavaScript (formerly Office-Clippy)",
   "main": "build/index.js",
   "scripts": {
+    "pretest": "rimraf ./build",
     "test": "mocha-webpack \"src/**/*.ts\"",
     "prepublishOnly": "npm run build",
     "lint": "tslint --project .",

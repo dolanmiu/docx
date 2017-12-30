@@ -1,4 +1,4 @@
-import { Attributes, XmlComponent } from "../../xml-components";
+import { Attributes, XmlComponent } from "file/xml-components";
 
 export class Columns extends XmlComponent {
 

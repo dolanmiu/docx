@@ -1,8 +1,8 @@
+import { Attributes, XmlAttributeComponent, XmlComponent } from "file/xml-components";
 import * as paragraph from "../paragraph/formatting";
 import { ParagraphProperties } from "../paragraph/properties";
 import * as formatting from "../paragraph/run/formatting";
 import { RunProperties } from "../paragraph/run/properties";
-import { Attributes, XmlAttributeComponent, XmlComponent } from "../xml-components";
 
 interface ILevelAttributesProperties {
     ilvl?: number;

@@ -1,5 +1,5 @@
 // http://officeopenxml.com/WPtextSpecialContent-break.php
-import { XmlComponent } from "../../xml-components";
+import { XmlComponent } from "file/xml-components";
 
 export class Break extends XmlComponent {
 

@@ -1,4 +1,4 @@
-import { XmlComponent } from "../../../../xml-components";
+import { XmlComponent } from "file/xml-components";
 import { Pic } from "./pic";
 
 export class GraphicData extends XmlComponent {

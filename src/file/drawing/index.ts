@@ -1,5 +1,5 @@
-import { IData } from "../media";
-import { XmlComponent } from "../xml-components";
+import { IData } from "file/media";
+import { XmlComponent } from "file/xml-components";
 import { Inline } from "./inline";
 
 export class Drawing extends XmlComponent {

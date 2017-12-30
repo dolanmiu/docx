@@ -1,5 +1,5 @@
 // http://officeopenxml.com/WPparagraphProperties.php
-import { XmlComponent } from "../xml-components";
+import { XmlComponent } from "file/xml-components";
 
 export class ParagraphProperties extends XmlComponent {
 

@@ -1,4 +1,4 @@
-import { XmlComponent } from "../xml-components";
+import { XmlComponent } from "file/xml-components";
 import { RelationshipsAttributes } from "./attributes";
 
 export class Relationships extends XmlComponent {

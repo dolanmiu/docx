@@ -1,4 +1,4 @@
-import { XmlComponent } from "../../../../../xml-components";
+import { XmlComponent } from "file/xml-components";
 import { BlipFill } from "./blip/blip-fill";
 
 export class Pic extends XmlComponent {

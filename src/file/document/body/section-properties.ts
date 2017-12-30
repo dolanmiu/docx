@@ -1,4 +1,4 @@
-import { Attributes, XmlComponent } from "../../xml-components";
+import { Attributes, XmlComponent } from "file/xml-components";
 import { Columns } from "./columns";
 import { DocumentGrid } from "./doc-grid";
 import { PageMargin } from "./page-margin";

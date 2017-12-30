@@ -1,5 +1,5 @@
+import { XmlComponent } from "file/xml-components";
 import { DocumentAttributes } from "../document/document-attributes";
-import { XmlComponent } from "../xml-components";
 import { DocumentDefaults } from "./defaults";
 import { ParagraphStyle } from "./style";
 

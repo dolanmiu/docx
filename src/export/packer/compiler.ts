@@ -4,7 +4,7 @@ import * as fs from "fs";
 import * as path from "path";
 import * as xml from "xml";
 
-import { File } from "../../file";
+import { File } from "file";
 import { Formatter } from "../formatter";
 
 const TEMPLATE_PATH = path.resolve(__dirname, "../../../template");

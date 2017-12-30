@@ -1,7 +1,7 @@
+import { XmlComponent } from "file/xml-components";
 import { DocumentAttributes } from "../document/document-attributes";
 import { Indent } from "../paragraph/formatting";
 import { RunFonts } from "../paragraph/run/run-fonts";
-import { XmlComponent } from "../xml-components";
 import { AbstractNumbering } from "./abstract-numbering";
 import { Num } from "./num";
 

@@ -1,4 +1,4 @@
-import { XmlComponent } from "../../../../../../xml-components";
+import { XmlComponent } from "file/xml-components";
 
 class FillRectangle extends XmlComponent {
 

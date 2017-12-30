@@ -1,4 +1,4 @@
-import { XmlAttributeComponent, XmlComponent } from "../../xml-components";
+import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
 
 class StyleAttributes extends XmlAttributeComponent<{val: string}> {
     protected xmlKeys = {val: "w:val"};

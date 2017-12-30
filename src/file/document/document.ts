@@ -1,7 +1,7 @@
 // http://officeopenxml.com/WPdocument.php
+import { XmlComponent } from "file/xml-components";
 import { Paragraph } from "../paragraph";
 import { Table } from "../table";
-import { XmlComponent } from "../xml-components";
 import { Body } from "./body";
 import { DocumentAttributes } from "./document-attributes";
 

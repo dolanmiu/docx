@@ -9,7 +9,7 @@ import { Style } from "./style";
 import { Tab } from "./tab";
 import { Underline } from "./underline";
 
-import { XmlComponent } from "../../xml-components";
+import { XmlComponent } from "file/xml-components";
 
 export class Run extends XmlComponent {
     private properties: RunProperties;

@@ -1,6 +1,6 @@
+import { XmlComponent } from "file/xml-components";
+import { IXmlableObject } from "file/xml-components/xmlable-object";
 import { Paragraph } from "../paragraph";
-import { XmlComponent } from "../xml-components";
-import { IXmlableObject } from "../xml-components/xmlable-object";
 import { TableGrid } from "./grid";
 import { TableProperties, WidthTypes } from "./properties";
 

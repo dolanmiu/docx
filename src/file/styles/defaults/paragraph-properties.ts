@@ -1,5 +1,5 @@
+import { XmlComponent } from "file/xml-components";
 import { ParagraphProperties } from "../../paragraph/properties";
-import { XmlComponent } from "../../xml-components";
 
 export class ParagraphPropertiesDefaults extends XmlComponent {
 
