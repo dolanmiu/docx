@@ -1,10 +1,10 @@
-import { IData } from "file/media";
+import { IMediaData } from "file/media";
 import { XmlComponent } from "file/xml-components";
 import { Inline } from "./inline";
 
 export class Drawing extends XmlComponent {
 
-    constructor(imageData: IData) {
+    constructor(imageData: IMediaData) {
         super("w:drawing");
 
         if (imageData === undefined) {

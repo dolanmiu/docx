@@ -1,5 +1,5 @@
 // http://officeopenxml.com/WPparagraph.php
-import { IData } from "file/media";
+import { IMediaData } from "file/media";
 import { Num } from "file/numbering/num";
 import { XmlComponent } from "file/xml-components";
 import { PictureRun, Run, TextRun } from "./run";
@@ -38,7 +38,7 @@ export class Paragraph extends XmlComponent {
         return run;
     }
 
-    public createPictureRun(imageData: IData): PictureRun {
+    public createPictureRun(imageData: IMediaData): PictureRun {
         const run = new PictureRun(imageData);
         this.addRun(run);
         return run;

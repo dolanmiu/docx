@@ -1,15 +1,15 @@
 import * as fs from "fs";
 import * as path from "path";
-import { IData } from "./data";
+import { IMediaData } from "./data";
 
 export class Media {
-    private map: Map<string, IData>;
+    private map: Map<string, IMediaData>;
 
     constructor() {
-        this.map = new Map<string, IData>();
+        this.map = new Map<string, IMediaData>();
     }
 
-    public getMedia(key: string): IData {
+    public getMedia(key: string): IMediaData {
         const data = this.map.get(key);
 
         if (data === undefined) {
@@ -28,8 +28,8 @@ export class Media {
         });
     }
 
-    public get array(): IData[] {
-        const array = new Array<IData>();
+    public get array(): IMediaData[] {
+        const array = new Array<IMediaData>();
 
         this.map.forEach((data) => {
             array.push(data);
