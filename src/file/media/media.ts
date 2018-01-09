@@ -19,13 +19,17 @@ export class Media {
         return data;
     }
 
-    public addMedia(key: string, filePath: string): void {
-        this.map.set(key, {
+    public addMedia(filePath: string): IMediaData {
+        const key = path.basename(filePath);
+        const imageData = {
             referenceId: this.map.values.length,
             stream: fs.createReadStream(filePath),
             path: filePath,
-            fileName: path.basename(filePath),
-        });
+            fileName: key,
+        };
+        this.map.set(key, imageData);
+
+        return imageData;
     }
 
     public get array(): IMediaData[] {
