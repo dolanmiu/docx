@@ -1,3 +1,4 @@
+import { Relationships } from "file/relationships";
 import { Document } from "./document";
 import { Media } from "./media";
 import { Numbering } from "./numbering";
@@ -14,6 +15,7 @@ export class File {
     private properties: Properties;
     private numbering: Numbering;
     private media: Media;
+    private relationships: Relationships;
 
     constructor(options?: IPropertiesOptions) {
         this.document = new Document();
@@ -31,6 +33,7 @@ export class File {
         this.properties = new Properties(options);
         this.numbering = new Numbering();
         this.media = new Media();
+        this.relationships = new Relationships();
     }
 
     public addParagraph(paragraph: Paragraph): void {
@@ -67,5 +70,9 @@ export class File {
 
     public get Media(): Media {
         return this.media;
+    }
+
+    public get Relationships(): Relationships {
+        return this.relationships;
     }
 }

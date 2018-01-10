@@ -41,6 +41,7 @@ export class Compiler {
             },
         });
         const xmlNumbering = xml(this.formatter.format(this.file.Numbering));
+        const xmlRelationships = xml(this.formatter.format(this.file.Relationships));
 
         this.archive.append(xmlDocument, {
             name: "word/document.xml",
@@ -56,6 +57,10 @@ export class Compiler {
 
         this.archive.append(xmlNumbering, {
             name: "word/numbering.xml",
+        });
+
+        this.archive.append(xmlRelationships, {
+            name: "word/_rels/document.xml.rels",
         });
 
         for (const data of this.file.Media.array) {
