@@ -22,7 +22,7 @@ export class Media {
     public addMedia(filePath: string): IMediaData {
         const key = path.basename(filePath);
         const imageData = {
-            referenceId: this.map.values.length,
+            referenceId: this.map.values.length + 3,
             stream: fs.createReadStream(filePath),
             path: filePath,
             fileName: key,
