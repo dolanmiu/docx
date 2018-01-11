@@ -52,6 +52,12 @@ export class File {
         return this.document.createTable(rows, cols);
     }
 
+    public createImage(image: string): void {
+        const mediaData = this.media.addMedia(image);
+        this.relationships.createRelationship(mediaData.referenceId, "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image", `media/${mediaData.fileName}`);
+        this.document.createDrawing(mediaData);
+    }
+
     public get Document(): Document {
         return this.document;
     }
