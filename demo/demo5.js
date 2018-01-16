@@ -2,8 +2,10 @@ const docx = require('../build');
 
 var doc = new docx.File();
 
-const image = doc.createImage("./demo/penguins.jpg");
+var paragraph = new docx.Paragraph("Hello World");
+doc.addParagraph(paragraph);
 
+const image = doc.createImage("./demo/image1.jpeg");
 
 var exporter = new docx.LocalPacker(doc);
 exporter.pack('My Document');
