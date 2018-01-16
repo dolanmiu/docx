@@ -1,8 +1,8 @@
 // http://officeopenxml.com/drwSp-SpPr.php
 import { XmlComponent } from "file/xml-components";
 import { Form } from "./form";
-import { NoFill } from "./no-fill";
-import { Outline } from "./outline/outline";
+// import { NoFill } from "./no-fill";
+// import { Outline } from "./outline/outline";
 import { PresetGeometry } from "./preset-geometry/preset-geometry";
 import { ShapePropertiesAttributes } from "./shape-properties-attributes";
 
@@ -17,7 +17,7 @@ export class ShapeProperties extends XmlComponent {
 
         this.root.push(new Form());
         this.root.push(new PresetGeometry());
-        this.root.push(new NoFill());
-        this.root.push(new Outline());
+        // this.root.push(new NoFill());
+        // this.root.push(new Outline());
     }
 }
