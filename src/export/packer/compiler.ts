@@ -65,7 +65,7 @@ export class Compiler {
 
         for (const data of this.file.Media.array) {
             this.archive.append(data.stream, {
-                name: `media/${data.fileName}`,
+                name: `word/media/${data.fileName}`,
             });
         }
 
