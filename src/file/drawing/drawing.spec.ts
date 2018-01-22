@@ -8,7 +8,7 @@ describe("Drawing", () => {
     let currentBreak: Drawing;
 
     beforeEach(() => {
-        const path = "./demo/penguins.jpg";
+        const path = "./demo/images/image1.jpeg";
         currentBreak = new Drawing({
             fileName: "test.jpg",
             referenceId: 1,

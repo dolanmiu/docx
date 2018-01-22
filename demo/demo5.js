@@ -5,7 +5,7 @@ var doc = new docx.File();
 var paragraph = new docx.Paragraph("Hello World");
 doc.addParagraph(paragraph);
 
-const image = doc.createImage("./demo/image1.jpeg");
+const image = doc.createImage("./demo/images/image1.jpeg");
 
 var exporter = new docx.LocalPacker(doc);
 exporter.pack('My Document');
