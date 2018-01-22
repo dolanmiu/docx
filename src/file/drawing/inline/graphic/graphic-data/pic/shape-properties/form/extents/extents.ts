@@ -4,12 +4,12 @@ import { ExtentsAttributes } from "./extents-attributes";
 
 export class Extents extends XmlComponent {
 
-    constructor() {
+    constructor(x: number, y: number) {
         super("a:ext");
 
         this.root.push(new ExtentsAttributes({
-            cx: 3162300,
-            cy: 2857500,
+            cx: x,
+            cy: y,
         }));
     }
 }

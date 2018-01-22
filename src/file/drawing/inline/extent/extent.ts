@@ -3,12 +3,12 @@ import { ExtentAttributes } from "./extent-attributes";
 
 export class Extent extends XmlComponent {
 
-    constructor() {
+    constructor(x: number, y: number) {
         super("wp:extent");
 
         this.root.push(new ExtentAttributes({
-            cx: 3162300,
-            cy: 2857500,
+            cx: x,
+            cy: y,
         }));
     }
 }

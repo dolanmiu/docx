@@ -6,7 +6,7 @@ import { PicAttributes } from "./pic-attributes";
 import { ShapeProperties } from "./shape-properties/shape-properties";
 
 export class Pic extends XmlComponent {
-    constructor(referenceId: number) {
+    constructor(referenceId: number, x: number, y: number) {
         super("pic:pic");
 
         this.root.push(new PicAttributes({
@@ -14,6 +14,6 @@ export class Pic extends XmlComponent {
         }));
         this.root.push(new NonVisualPicProperties());
         this.root.push(new BlipFill(referenceId));
-        this.root.push(new ShapeProperties());
+        this.root.push(new ShapeProperties(x, y));
     }
 }

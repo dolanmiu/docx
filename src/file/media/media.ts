@@ -1,6 +1,8 @@
 import * as fs from "fs";
+import * as sizeOf from "image-size";
 import * as path from "path";
-import { IMediaData } from "./data";
+
+import {IMediaData} from "./data";
 
 export class Media {
     private map: Map<string, IMediaData>;
@@ -21,11 +23,23 @@ export class Media {
 
     public addMedia(filePath: string): IMediaData {
         const key = path.basename(filePath);
+        const dimensions = sizeOf(filePath);
+
         const imageData = {
             referenceId: this.map.values.length + 3,
             stream: fs.createReadStream(filePath),
             path: filePath,
             fileName: key,
+            dimensions: {
+                pixels: {
+                    x: dimensions.width,
+                    y: dimensions.height,
+                },
+                emus: {
+                    x: dimensions.width * 9525,
+                    y: dimensions.height * 9525,
+                },
+            },
         };
         this.map.set(key, imageData);
 
