@@ -6,11 +6,12 @@ install:
 script:
   - npm run lint
   - npm test
-after_failure: 
+  - npm run style
+after_failure:
   - "cat /home/travis/builds/dolanmiu/docx/npm-debug.log"
 after_success:
   - bash ./deploy-docs.sh
 env:
   global:
   - ENCRYPTION_LABEL: "ad385fa3b525"
-  
+

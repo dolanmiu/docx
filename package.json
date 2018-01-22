@@ -12,7 +12,8 @@
     "tsc": "rimraf ./build && tsc -p .",
     "webpack": "rimraf ./build && webpack",
     "demo": "npm run build && node ./demo",
-    "typedoc": "npm run build && typedoc --out docs/ src/ --module commonjs --target ES6 --disableOutputCheck"
+    "typedoc": "npm run build && typedoc --out docs/ src/ --module commonjs --target ES6 --disableOutputCheck",
+    "style": "prettier -l --trailing-comma all --print-width 140 --arrow-parens always \"src/**/*.ts\""
   },
   "files": [
     "src",
@@ -61,6 +62,7 @@
     "chai": "^3.5.0",
     "mocha": "^3.2.0",
     "mocha-webpack": "^1.0.1",
+    "prettier": "^1.10.2",
     "prompt": "^1.0.0",
     "rimraf": "^2.5.2",
     "shelljs": "^0.7.7",
