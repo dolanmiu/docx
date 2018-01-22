@@ -26,7 +26,7 @@ export class Media {
         const dimensions = sizeOf(filePath);
 
         const imageData = {
-            referenceId: this.map.values.length + 3,
+            referenceId: this.map.size + 3,
             stream: fs.createReadStream(filePath),
             path: filePath,
             fileName: key,
