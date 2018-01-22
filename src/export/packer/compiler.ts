@@ -32,7 +32,7 @@ export class Compiler {
             cwd: TEMPLATE_PATH,
         });
 
-        const xmlDocument = xml(this.formatter.format(this.file.Document));
+        const xmlDocument = xml(this.formatter.format(this.file.Document), true);
         const xmlStyles = xml(this.formatter.format(this.file.Styles));
         const xmlProperties = xml(this.formatter.format(this.file.Properties), {
             declaration: {
@@ -41,6 +41,7 @@ export class Compiler {
             },
         });
         const xmlNumbering = xml(this.formatter.format(this.file.Numbering));
+        const xmlRelationships = xml(this.formatter.format(this.file.Relationships));
 
         this.archive.append(xmlDocument, {
             name: "word/document.xml",
@@ -58,9 +59,13 @@ export class Compiler {
             name: "word/numbering.xml",
         });
 
+        this.archive.append(xmlRelationships, {
+            name: "word/_rels/document.xml.rels",
+        });
+
         for (const data of this.file.Media.array) {
             this.archive.append(data.stream, {
-                name: `media/${data.fileName}`,
+                name: `word/media/${data.fileName}`,
             });
         }
 

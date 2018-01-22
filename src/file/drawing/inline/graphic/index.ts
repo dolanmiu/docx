@@ -13,11 +13,11 @@ class GraphicAttributes extends XmlAttributeComponent<IGraphicProperties> {
 
 export class Graphic extends XmlComponent {
 
-    constructor(referenceId: number) {
+    constructor(referenceId: number, x: number, y: number) {
         super("a:graphic");
         this.root.push(new GraphicAttributes({
             a: "http://schemas.openxmlformats.org/drawingml/2006/main",
         }));
-        this.root.push(new GraphicData(referenceId));
+        this.root.push(new GraphicData(referenceId, x, y));
     }
 }

@@ -1,15 +1,17 @@
 import * as fs from "fs";
+import * as sizeOf from "image-size";
 import * as path from "path";
-import { IData } from "./data";
+
+import {IMediaData} from "./data";
 
 export class Media {
-    private map: Map<string, IData>;
+    private map: Map<string, IMediaData>;
 
     constructor() {
-        this.map = new Map<string, IData>();
+        this.map = new Map<string, IMediaData>();
     }
 
-    public getMedia(key: string): IData {
+    public getMedia(key: string): IMediaData {
         const data = this.map.get(key);
 
         if (data === undefined) {
@@ -19,17 +21,33 @@ export class Media {
         return data;
     }
 
-    public addMedia(key: string, filePath: string): void {
-        this.map.set(key, {
-            referenceId: this.map.values.length,
+    public addMedia(filePath: string): IMediaData {
+        const key = path.basename(filePath);
+        const dimensions = sizeOf(filePath);
+
+        const imageData = {
+            referenceId: this.map.size + 3,
             stream: fs.createReadStream(filePath),
             path: filePath,
-            fileName: path.basename(filePath),
-        });
+            fileName: key,
+            dimensions: {
+                pixels: {
+                    x: dimensions.width,
+                    y: dimensions.height,
+                },
+                emus: {
+                    x: dimensions.width * 9525,
+                    y: dimensions.height * 9525,
+                },
+            },
+        };
+        this.map.set(key, imageData);
+
+        return imageData;
     }
 
-    public get array(): IData[] {
-        const array = new Array<IData>();
+    public get array(): IMediaData[] {
+        const array = new Array<IMediaData>();
 
         this.map.forEach((data) => {
             array.push(data);

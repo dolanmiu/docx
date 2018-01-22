@@ -1,3 +1,4 @@
+import { Relationships } from "file/relationships";
 import { Document } from "./document";
 import { Media } from "./media";
 import { Numbering } from "./numbering";
@@ -14,6 +15,7 @@ export class File {
     private properties: Properties;
     private numbering: Numbering;
     private media: Media;
+    private relationships: Relationships;
 
     constructor(options?: IPropertiesOptions) {
         this.document = new Document();
@@ -31,6 +33,7 @@ export class File {
         this.properties = new Properties(options);
         this.numbering = new Numbering();
         this.media = new Media();
+        this.relationships = new Relationships();
     }
 
     public addParagraph(paragraph: Paragraph): void {
@@ -47,6 +50,12 @@ export class File {
 
     public createTable(rows: number, cols: number): Table {
         return this.document.createTable(rows, cols);
+    }
+
+    public createImage(image: string): void {
+        const mediaData = this.media.addMedia(image);
+        this.relationships.createRelationship(mediaData.referenceId, "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image", `media/${mediaData.fileName}`);
+        this.document.createDrawing(mediaData);
     }
 
     public get Document(): Document {
@@ -67,5 +76,9 @@ export class File {
 
     public get Media(): Media {
         return this.media;
+    }
+
+    public get Relationships(): Relationships {
+        return this.relationships;
     }
 }
