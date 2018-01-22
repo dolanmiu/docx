@@ -2,11 +2,7 @@ import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
 
-import { Document } from "../../docx/document";
-import { Media } from "../../media";
-import { Numbering } from "../../numbering";
-import { Properties } from "../../properties";
-import { Styles } from "../../styles";
+import { File } from "../../file";
 import { Compiler } from "./compiler";
 import { IPacker } from "./packer";
 import { PdfConvertWrapper } from "./pdf-convert-wrapper";
@@ -16,9 +12,9 @@ export class LocalPacker implements IPacker {
     private pdfConverter: PdfConvertWrapper;
     private packer: Compiler;
 
-    constructor(document: Document, styles?: Styles, properties?: Properties, numbering?: Numbering, media?: Media) {
+    constructor(file: File) {
         this.pdfConverter = new PdfConvertWrapper();
-        this.packer = new Compiler(document, styles, properties, numbering, media);
+        this.packer = new Compiler(file);
     }
 
     public async pack(filePath: string): Promise<void> {

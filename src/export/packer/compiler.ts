@@ -4,12 +4,7 @@ import * as fs from "fs";
 import * as path from "path";
 import * as xml from "xml";
 
-import { Document } from "../../docx";
-import { Media } from "../../media";
-import { Numbering } from "../../numbering";
-import { Properties } from "../../properties";
-import { Styles } from "../../styles";
-import { DefaultStylesFactory } from "../../styles/factory";
+import { File } from "file";
 import { Formatter } from "../formatter";
 
 const TEMPLATE_PATH = path.resolve(__dirname, "../../../template");
@@ -17,28 +12,10 @@ const TEMPLATE_PATH = path.resolve(__dirname, "../../../template");
 export class Compiler {
     protected archive: archiver.Archiver;
     private formatter: Formatter;
-    private style: Styles;
 
-    constructor(
-        protected document: Document,
-        style?: Styles,
-        private properties: Properties = new Properties({
-            creator: "Un-named",
-            revision: "1",
-            lastModifiedBy: "Un-named",
-        }),
-        private numbering: Numbering = new Numbering(),
-        private media: Media = new Media(),
-    ) {
+    constructor(private file: File) {
         this.formatter = new Formatter();
         this.archive = archiver.create("zip", {});
-
-        if (style) {
-            this.style = style;
-        } else {
-            const stylesFactory = new DefaultStylesFactory();
-            this.style = stylesFactory.newInstance();
-        }
 
         this.archive.on("error", (err) => {
             throw err;
@@ -55,15 +32,15 @@ export class Compiler {
             cwd: TEMPLATE_PATH,
         });
 
-        const xmlDocument = xml(this.formatter.format(this.document));
-        const xmlStyles = xml(this.formatter.format(this.style));
-        const xmlProperties = xml(this.formatter.format(this.properties), {
+        const xmlDocument = xml(this.formatter.format(this.file.Document));
+        const xmlStyles = xml(this.formatter.format(this.file.Styles));
+        const xmlProperties = xml(this.formatter.format(this.file.Properties), {
             declaration: {
                 standalone: "yes",
                 encoding: "UTF-8",
             },
         });
-        const xmlNumbering = xml(this.formatter.format(this.numbering));
+        const xmlNumbering = xml(this.formatter.format(this.file.Numbering));
 
         this.archive.append(xmlDocument, {
             name: "word/document.xml",
@@ -81,7 +58,7 @@ export class Compiler {
             name: "word/numbering.xml",
         });
 
-        for (const data of this.media.array) {
+        for (const data of this.file.Media.array) {
             this.archive.append(data.stream, {
                 name: `media/${data.fileName}`,
             });

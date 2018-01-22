@@ -4,13 +4,15 @@
   "description": "Generate .docx documents with JavaScript (formerly Office-Clippy)",
   "main": "build/index.js",
   "scripts": {
-    "pretest": "rimraf ./build-tests && tsc -p src/test-tsconfig.json",
-    "test": "mocha ./build-tests --recursive",
+    "pretest": "rimraf ./build",
+    "test": "mocha-webpack \"src/**/*.ts\"",
     "prepublishOnly": "npm run build",
-    "lint": "tslint --project ./src",
-    "build": "rimraf ./build && tsc -p src",
+    "lint": "tslint --project .",
+    "build": "npm run webpack",
+    "tsc": "rimraf ./build && tsc -p .",
+    "webpack": "rimraf ./build && webpack",
     "demo": "npm run build && node ./demo",
-    "typedoc": "typedoc --out docs/ src/ --module commonjs --target ES6 --disableOutputCheck"
+    "typedoc": "npm run build && typedoc --out docs/ src/ --module commonjs --target ES6 --disableOutputCheck"
   },
   "files": [
     "src",
@@ -53,13 +55,16 @@
   "devDependencies": {
     "@types/chai": "^3.4.35",
     "@types/mocha": "^2.2.39",
+    "awesome-typescript-loader": "^3.4.1",
     "chai": "^3.5.0",
     "mocha": "^3.2.0",
+    "mocha-webpack": "^1.0.1",
     "prompt": "^1.0.0",
     "rimraf": "^2.5.2",
     "shelljs": "^0.7.7",
     "tslint": "^5.1.0",
-    "typedoc": "^0.5.10",
-    "typescript": "2.4.1"
+    "typedoc": "^0.9.0",
+    "typescript": "2.4.1",
+    "webpack": "^3.10.0"
   }
 }
