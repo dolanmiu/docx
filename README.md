@@ -8,7 +8,12 @@
 
 -----
 
-[![NPM version][npm-image]][npm-url] [![Build Status][travis-image]][travis-url] [![Dependency Status][gemnasium-image]][gemnasium-url] [![Known Vulnerabilities][snky-image]][snky-url] [![Chat on Gitter][gitter-image]][gitter-url]
+[![NPM version][npm-image]][npm-url]
+[![Build Status][travis-image]][travis-url]
+[![Dependency Status][gemnasium-image]][gemnasium-url]
+[![Known Vulnerabilities][snky-image]][snky-url]
+[![Chat on Gitter][gitter-image]][gitter-url]
+[![code style: prettier][prettier-image]][prettier-url]
 
 [![NPM](https://nodei.co/npm/docx.png?downloads=true&downloadRank=true&stars=true)](https://nodei.co/npm/docx/)
 
@@ -90,3 +95,5 @@ Huge thanks to [@felipeochoa](https://github.com/felipeochoa) for awesome contri
 [gitter-url]: https://gitter.im/docx-lib/Lobby
 [gemnasium-image]: https://gemnasium.com/badges/github.com/dolanmiu/docx.svg
 [gemnasium-url]: https://gemnasium.com/github.com/dolanmiu/docx
+[prettier-image]: https://img.shields.io/badge/code_style-prettier-ff69b4.svg
+[prettier-url]: https://github.com/prettier/prettier
