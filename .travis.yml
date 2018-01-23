@@ -7,6 +7,11 @@ script:
   - npm run lint
   - npm test
   - npm run style
+  - node ./demo/demo1.js
+  - node ./demo/demo2.js
+  - node ./demo/demo3.js
+  - node ./demo/demo4.js
+  - node ./demo/demo5.js
 after_failure:
   - "cat /home/travis/builds/dolanmiu/docx/npm-debug.log"
 after_success:
