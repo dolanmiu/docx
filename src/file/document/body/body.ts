@@ -1,7 +1,6 @@
 import { XmlComponent } from "file/xml-components";
 
 export class Body extends XmlComponent {
-
     constructor() {
         super("w:body");
     }

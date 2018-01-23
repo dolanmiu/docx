@@ -13,12 +13,13 @@ class BlipAttributes extends XmlAttributeComponent<IBlipProperties> {
 }
 
 export class Blip extends XmlComponent {
-
     constructor(referenceId: number) {
         super("a:blip");
-        this.root.push(new BlipAttributes({
-            embed: `rId${referenceId}`,
-            cstate: "none",
-        }));
+        this.root.push(
+            new BlipAttributes({
+                embed: `rId${referenceId}`,
+                cstate: "none",
+            }),
+        );
     }
 }

@@ -13,16 +13,17 @@ export interface IPropertiesOptions {
 }
 
 export class Properties extends XmlComponent {
-
     constructor(options: IPropertiesOptions) {
         super("cp:coreProperties");
-        this.root.push(new DocumentAttributes({
-            cp: "http://schemas.openxmlformats.org/package/2006/metadata/core-properties",
-            dc: "http://purl.org/dc/elements/1.1/",
-            dcterms: "http://purl.org/dc/terms/",
-            dcmitype: "http://purl.org/dc/dcmitype/",
-            xsi: "http://www.w3.org/2001/XMLSchema-instance",
-        }));
+        this.root.push(
+            new DocumentAttributes({
+                cp: "http://schemas.openxmlformats.org/package/2006/metadata/core-properties",
+                dc: "http://purl.org/dc/elements/1.1/",
+                dcterms: "http://purl.org/dc/terms/",
+                dcmitype: "http://purl.org/dc/dcmitype/",
+                xsi: "http://www.w3.org/2001/XMLSchema-instance",
+            }),
+        );
         if (options.title) {
             this.root.push(new Title(options.title));
         }

@@ -8,7 +8,7 @@ describe("TableProperties", () => {
         it("creates an initially empty property object", () => {
             const tp = new TableProperties();
             const tree = new Formatter().format(tp);
-            expect(tree).to.deep.equal({"w:tblPr": []});
+            expect(tree).to.deep.equal({ "w:tblPr": [] });
         });
     });
 
@@ -17,9 +17,7 @@ describe("TableProperties", () => {
             const tp = new TableProperties().setWidth("dxa", 1234);
             const tree = new Formatter().format(tp);
             expect(tree).to.deep.equal({
-                "w:tblPr": [
-                    {"w:tblW": [{_attr: {"w:type": "dxa", "w:w": 1234}}]},
-                ],
+                "w:tblPr": [{ "w:tblW": [{ _attr: { "w:type": "dxa", "w:w": 1234 } }] }],
             });
         });
     });
@@ -29,9 +27,7 @@ describe("TableProperties", () => {
             const tp = new TableProperties().fixedWidthLayout();
             const tree = new Formatter().format(tp);
             expect(tree).to.deep.equal({
-                "w:tblPr": [
-                    {"w:tblLayout": [{_attr: {"w:type": "fixed"}}]},
-                ],
+                "w:tblPr": [{ "w:tblLayout": [{ _attr: { "w:type": "fixed" } }] }],
             });
         });
     });

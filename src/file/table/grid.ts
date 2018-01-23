@@ -7,15 +7,15 @@ export class TableGrid extends XmlComponent {
     }
 }
 
-class GridColAttributes extends XmlAttributeComponent<{w: number}> {
-    protected xmlKeys = {w: "w:w"};
+class GridColAttributes extends XmlAttributeComponent<{ w: number }> {
+    protected xmlKeys = { w: "w:w" };
 }
 
 export class GridCol extends XmlComponent {
     constructor(width?: number) {
         super("w:gridCol");
         if (width !== undefined) {
-            this.root.push(new GridColAttributes({w: width}));
+            this.root.push(new GridColAttributes({ w: width }));
         }
     }
 }

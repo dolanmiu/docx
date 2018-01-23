@@ -2,7 +2,6 @@ import { XmlComponent } from "file/xml-components";
 import { DocumentAttributes } from "../document/document-attributes";
 
 export class Title extends XmlComponent {
-
     constructor(value: string) {
         super("dc:title");
         this.root.push(value);
@@ -10,7 +9,6 @@ export class Title extends XmlComponent {
 }
 
 export class Subject extends XmlComponent {
-
     constructor(value: string) {
         super("dc:subject");
         this.root.push(value);
@@ -18,7 +16,6 @@ export class Subject extends XmlComponent {
 }
 
 export class Creator extends XmlComponent {
-
     constructor(value: string) {
         super("dc:creator");
         this.root.push(value);
@@ -26,7 +23,6 @@ export class Creator extends XmlComponent {
 }
 
 export class Keywords extends XmlComponent {
-
     constructor(value: string) {
         super("cp:keywords");
         this.root.push(value);
@@ -34,7 +30,6 @@ export class Keywords extends XmlComponent {
 }
 
 export class Description extends XmlComponent {
-
     constructor(value: string) {
         super("dc:description");
         this.root.push(value);
@@ -42,7 +37,6 @@ export class Description extends XmlComponent {
 }
 
 export class LastModifiedBy extends XmlComponent {
-
     constructor(value: string) {
         super("cp:lastModifiedBy");
         this.root.push(value);
@@ -50,7 +44,6 @@ export class LastModifiedBy extends XmlComponent {
 }
 
 export class Revision extends XmlComponent {
-
     constructor(value: string) {
         super("cp:revision");
         this.root.push(value);
@@ -72,23 +65,25 @@ export abstract class DateComponent extends XmlComponent {
 }
 
 export class Created extends DateComponent {
-
     constructor() {
         super("dcterms:created");
-        this.root.push(new DocumentAttributes({
-            type: "dcterms:W3CDTF",
-        }));
+        this.root.push(
+            new DocumentAttributes({
+                type: "dcterms:W3CDTF",
+            }),
+        );
         this.root.push(this.getCurrentDate());
     }
 }
 
 export class Modified extends DateComponent {
-
     constructor() {
         super("dcterms:modified");
-        this.root.push(new DocumentAttributes({
-            type: "dcterms:W3CDTF",
-        }));
+        this.root.push(
+            new DocumentAttributes({
+                type: "dcterms:W3CDTF",
+            }),
+        );
         this.root.push(this.getCurrentDate());
     }
 }

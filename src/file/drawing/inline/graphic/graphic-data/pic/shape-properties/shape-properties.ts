@@ -7,13 +7,14 @@ import { PresetGeometry } from "./preset-geometry/preset-geometry";
 import { ShapePropertiesAttributes } from "./shape-properties-attributes";
 
 export class ShapeProperties extends XmlComponent {
-
     constructor(x: number, y: number) {
         super("pic:spPr");
 
-        this.root.push(new ShapePropertiesAttributes({
-            bwMode: "auto",
-        }));
+        this.root.push(
+            new ShapePropertiesAttributes({
+                bwMode: "auto",
+            }),
+        );
 
         this.root.push(new Form(x, y));
         this.root.push(new PresetGeometry());

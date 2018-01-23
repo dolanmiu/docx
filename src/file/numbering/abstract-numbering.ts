@@ -19,10 +19,12 @@ export class AbstractNumbering extends XmlComponent {
 
     constructor(id: number) {
         super("w:abstractNum");
-        this.root.push(new AbstractNumberingAttributes({
-            abstractNumId: id,
-            restartNumberingAfterBreak: 0,
-        }));
+        this.root.push(
+            new AbstractNumberingAttributes({
+                abstractNumId: id,
+                restartNumberingAfterBreak: 0,
+            }),
+        );
         this.root.push(new MultiLevelType("hybridMultilevel"));
         this.id = id;
     }

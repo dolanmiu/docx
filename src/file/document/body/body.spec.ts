@@ -21,7 +21,6 @@ describe("Body", () => {
     });
 
     describe("#constructor()", () => {
-
         it("should create the Section Properties", () => {
             const newJson = Utility.jsonify(body);
             assert.equal(newJson.root[0].rootKey, "w:sectPr");

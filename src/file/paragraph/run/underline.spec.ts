@@ -5,9 +5,7 @@ import { Utility } from "../../../tests/utility";
 import * as u from "./underline";
 
 describe("Underline", () => {
-
     describe("#constructor()", () => {
-
         it("should create a new Underline object with u:u as the rootKey", () => {
             const underline = new u.Underline();
             const newJson = Utility.jsonify(underline);
@@ -18,7 +16,7 @@ describe("Underline", () => {
             const underline = new u.Underline();
             const tree = new Formatter().format(underline);
             expect(tree).to.deep.equal({
-                "w:u": [{_attr: {"w:val": "single"}}],
+                "w:u": [{ _attr: { "w:val": "single" } }],
             });
         });
 
@@ -26,14 +24,13 @@ describe("Underline", () => {
             const underline = new u.Underline("double", "FF00CC");
             const tree = new Formatter().format(underline);
             expect(tree).to.deep.equal({
-                "w:u": [{_attr: {"w:val": "double", "w:color": "FF00CC"}}],
+                "w:u": [{ _attr: { "w:val": "double", "w:color": "FF00CC" } }],
             });
         });
     });
 });
 
 describe("DashDotDotHeavyUnderline", () => {
-
     describe("#constructor()", () => {
         it("should have u:u as the rootKey", () => {
             const underline = new u.DashDotDotHeavyUnderline();
@@ -50,7 +47,6 @@ describe("DashDotDotHeavyUnderline", () => {
 });
 
 describe("DashDotDotHeavyUnderline", () => {
-
     describe("#constructor()", () => {
         it("should put value in attribute", () => {
             const underline = new u.DashDotHeavyUnderline();
@@ -61,7 +57,6 @@ describe("DashDotDotHeavyUnderline", () => {
 });
 
 describe("DashDotDotHeavyUnderline", () => {
-
     describe("#constructor()", () => {
         it("should put value in attribute", () => {
             const underline = new u.DashLongHeavyUnderline();
@@ -72,7 +67,6 @@ describe("DashDotDotHeavyUnderline", () => {
 });
 
 describe("DashDotDotHeavyUnderline", () => {
-
     describe("#constructor()", () => {
         it("should put value in attribute", () => {
             const underline = new u.DashLongUnderline();
@@ -83,7 +77,6 @@ describe("DashDotDotHeavyUnderline", () => {
 });
 
 describe("DashDotDotHeavyUnderline", () => {
-
     describe("#constructor()", () => {
         it("should put value in attribute", () => {
             const underline = new u.DashUnderline();
@@ -94,7 +87,6 @@ describe("DashDotDotHeavyUnderline", () => {
 });
 
 describe("DashDotDotHeavyUnderline", () => {
-
     describe("#constructor()", () => {
         it("should put value in attribute", () => {
             const underline = new u.DotDashUnderline();
@@ -105,7 +97,6 @@ describe("DashDotDotHeavyUnderline", () => {
 });
 
 describe("DashDotDotHeavyUnderline", () => {
-
     describe("#constructor()", () => {
         it("should put value in attribute", () => {
             const underline = new u.DotDotDashUnderline();
@@ -116,7 +107,6 @@ describe("DashDotDotHeavyUnderline", () => {
 });
 
 describe("DashDotDotHeavyUnderline", () => {
-
     describe("#constructor()", () => {
         it("should put value in attribute", () => {
             const underline = new u.DottedHeavyUnderline();
@@ -127,7 +117,6 @@ describe("DashDotDotHeavyUnderline", () => {
 });
 
 describe("DashDotDotHeavyUnderline", () => {
-
     describe("#constructor()", () => {
         it("should put value in attribute", () => {
             const underline = new u.DottedUnderline();
@@ -138,7 +127,6 @@ describe("DashDotDotHeavyUnderline", () => {
 });
 
 describe("DashDotDotHeavyUnderline", () => {
-
     describe("#constructor()", () => {
         it("should put value in attribute", () => {
             const underline = new u.DoubleUnderline();
@@ -149,7 +137,6 @@ describe("DashDotDotHeavyUnderline", () => {
 });
 
 describe("DashDotDotHeavyUnderline", () => {
-
     describe("#constructor()", () => {
         it("should put value in attribute", () => {
             const underline = new u.SingleUnderline();
@@ -160,7 +147,6 @@ describe("DashDotDotHeavyUnderline", () => {
 });
 
 describe("DashDotDotHeavyUnderline", () => {
-
     describe("#constructor()", () => {
         it("should put value in attribute", () => {
             const underline = new u.ThickUnderline();
@@ -171,7 +157,6 @@ describe("DashDotDotHeavyUnderline", () => {
 });
 
 describe("DashDotDotHeavyUnderline", () => {
-
     describe("#constructor()", () => {
         it("should put value in attribute", () => {
             const underline = new u.WaveUnderline();
@@ -182,7 +167,6 @@ describe("DashDotDotHeavyUnderline", () => {
 });
 
 describe("DashDotDotHeavyUnderline", () => {
-
     describe("#constructor()", () => {
         it("should put value in attribute", () => {
             const underline = new u.WavyDoubleUnderline();
@@ -193,7 +177,6 @@ describe("DashDotDotHeavyUnderline", () => {
 });
 
 describe("DashDotDotHeavyUnderline", () => {
-
     describe("#constructor()", () => {
         it("should put value in attribute", () => {
             const underline = new u.WavyHeavyUnderline();
@@ -204,7 +187,6 @@ describe("DashDotDotHeavyUnderline", () => {
 });
 
 describe("DashDotDotHeavyUnderline", () => {
-
     describe("#constructor()", () => {
         it("should put value in attribute", () => {
             const underline = new u.WordsUnderline();

@@ -1,7 +1,6 @@
 import { XmlComponent } from "file/xml-components";
 
 export class RunProperties extends XmlComponent {
-
     constructor() {
         super("w:rPr");
     }

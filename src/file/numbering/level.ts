@@ -17,42 +17,46 @@ class LevelAttributes extends XmlAttributeComponent<ILevelAttributesProperties> 
 }
 
 class Start extends XmlComponent {
-
     constructor(value: number) {
         super("w:start");
-        this.root.push(new Attributes({
-            val: value,
-        }));
+        this.root.push(
+            new Attributes({
+                val: value,
+            }),
+        );
     }
 }
 
 class NumberFormat extends XmlComponent {
-
     constructor(value: string) {
         super("w:numFmt");
-        this.root.push(new Attributes({
-            val: value,
-        }));
+        this.root.push(
+            new Attributes({
+                val: value,
+            }),
+        );
     }
 }
 
 class LevelText extends XmlComponent {
-
     constructor(value: string) {
         super("w:lvlText");
-        this.root.push(new Attributes({
-            val: value,
-        }));
+        this.root.push(
+            new Attributes({
+                val: value,
+            }),
+        );
     }
 }
 
 class LevelJc extends XmlComponent {
-
     constructor(value: string) {
         super("w:lvlJc");
-        this.root.push(new Attributes({
-            val: value,
-        }));
+        this.root.push(
+            new Attributes({
+                val: value,
+            }),
+        );
     }
 }
 
@@ -62,10 +66,12 @@ export class LevelBase extends XmlComponent {
 
     constructor(level: number, start?: number, numberFormat?: string, levelText?: string, lvlJc?: string) {
         super("w:lvl");
-        this.root.push(new LevelAttributes({
-            ilvl: level,
-            tentative: 1,
-        }));
+        this.root.push(
+            new LevelAttributes({
+                ilvl: level,
+                tentative: 1,
+            }),
+        );
 
         if (start !== undefined) {
             this.root.push(new Start(start));

@@ -2,7 +2,6 @@ import { XmlComponent } from "file/xml-components";
 import { LatentStyleException } from "./exceptions";
 
 export class LatentStyles extends XmlComponent {
-
     constructor() {
         super("w:latentStyles");
     }

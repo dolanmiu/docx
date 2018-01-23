@@ -9,16 +9,17 @@ import { GraphicFrameProperties } from "./graphic-frame/graphic-frame-properties
 import { InlineAttributes } from "./inline-attributes";
 
 export class Inline extends XmlComponent {
-
     constructor(referenceId: number, dimensions: IMediaDataDimensions) {
         super("wp:inline");
 
-        this.root.push(new InlineAttributes({
-            distT: 0,
-            distB: 0,
-            distL: 0,
-            distR: 0,
-        }));
+        this.root.push(
+            new InlineAttributes({
+                distT: 0,
+                distB: 0,
+                distL: 0,
+                distR: 0,
+            }),
+        );
 
         this.root.push(new Extent(dimensions.emus.x, dimensions.emus.y));
         this.root.push(new EffectExtent());

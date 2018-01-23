@@ -9,7 +9,6 @@ import { DefaultStylesFactory } from "./styles/factory";
 import { Table } from "./table";
 
 export class File {
-
     private document: Document;
     private styles: Styles;
     private properties: Properties;
@@ -54,7 +53,11 @@ export class File {
 
     public createImage(image: string): void {
         const mediaData = this.media.addMedia(image);
-        this.relationships.createRelationship(mediaData.referenceId, "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image", `media/${mediaData.fileName}`);
+        this.relationships.createRelationship(
+            mediaData.referenceId,
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
+            `media/${mediaData.fileName}`,
+        );
         this.document.createDrawing(mediaData);
     }
 

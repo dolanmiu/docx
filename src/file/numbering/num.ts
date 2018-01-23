@@ -2,12 +2,13 @@ import { Attributes, XmlAttributeComponent, XmlComponent } from "file/xml-compon
 import { LevelForOverride } from "./level";
 
 class AbstractNumId extends XmlComponent {
-
     constructor(value: number) {
         super("w:abstractNumId");
-        this.root.push(new Attributes({
-            val: value,
-        }));
+        this.root.push(
+            new Attributes({
+                val: value,
+            }),
+        );
     }
 }
 
@@ -16,7 +17,7 @@ interface INumAttributesProperties {
 }
 
 class NumAttributes extends XmlAttributeComponent<INumAttributesProperties> {
-    protected xmlKeys = {numId: "w:numId"};
+    protected xmlKeys = { numId: "w:numId" };
 }
 
 export class Num extends XmlComponent {
@@ -24,9 +25,11 @@ export class Num extends XmlComponent {
 
     constructor(numId: number, abstractNumId: number) {
         super("w:num");
-        this.root.push(new NumAttributes({
-            numId: numId,
-        }));
+        this.root.push(
+            new NumAttributes({
+                numId: numId,
+            }),
+        );
         this.root.push(new AbstractNumId(abstractNumId));
         this.id = numId;
     }
@@ -38,8 +41,8 @@ export class Num extends XmlComponent {
     }
 }
 
-class LevelOverrideAttributes extends XmlAttributeComponent<{ilvl: number}> {
-    protected xmlKeys = {ilvl: "w:ilvl"};
+class LevelOverrideAttributes extends XmlAttributeComponent<{ ilvl: number }> {
+    protected xmlKeys = { ilvl: "w:ilvl" };
 }
 
 export class LevelOverride extends XmlComponent {
@@ -48,7 +51,7 @@ export class LevelOverride extends XmlComponent {
 
     constructor(levelNum: number, start?: number) {
         super("w:lvlOverride");
-        this.root.push(new LevelOverrideAttributes({ilvl: levelNum}));
+        this.root.push(new LevelOverrideAttributes({ ilvl: levelNum }));
         if (start !== undefined) {
             this.root.push(new StartOverride(start));
         }
@@ -68,13 +71,13 @@ export class LevelOverride extends XmlComponent {
     }
 }
 
-class StartOverrideAttributes extends XmlAttributeComponent<{val: number}> {
-    protected xmlKeys = {val: "w:val"};
+class StartOverrideAttributes extends XmlAttributeComponent<{ val: number }> {
+    protected xmlKeys = { val: "w:val" };
 }
 
 class StartOverride extends XmlComponent {
     constructor(start: number) {
         super("w:startOverride");
-        this.root.push(new StartOverrideAttributes({val: start}));
+        this.root.push(new StartOverrideAttributes({ val: start }));
     }
 }

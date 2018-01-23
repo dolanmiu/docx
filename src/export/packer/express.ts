@@ -14,7 +14,10 @@ export class ExpressPacker implements IPacker {
         this.res = res;
 
         this.res.on("close", () => {
-            return res.status(200).send("OK").end();
+            return res
+                .status(200)
+                .send("OK")
+                .end();
         });
     }
 

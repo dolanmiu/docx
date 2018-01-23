@@ -2,7 +2,7 @@ import * as fs from "fs";
 import * as sizeOf from "image-size";
 import * as path from "path";
 
-import {IMediaData} from "./data";
+import { IMediaData } from "./data";
 
 export class Media {
     private map: Map<string, IMediaData>;

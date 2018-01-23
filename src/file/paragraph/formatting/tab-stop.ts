@@ -2,7 +2,6 @@
 import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
 
 export class TabStop extends XmlComponent {
-
     constructor(tab: Tab) {
         super("w:tabs");
         this.root.push(tab);
@@ -11,18 +10,19 @@ export class TabStop extends XmlComponent {
 
 export type TabValue = "left" | "right" | "center" | "bar" | "clear" | "decimal" | "end" | "num" | "start";
 
-export class TabAttributes extends XmlAttributeComponent<{val: TabValue, pos: string | number}> {
-    protected xmlKeys = {val: "w:val", pos: "w:pos"};
+export class TabAttributes extends XmlAttributeComponent<{ val: TabValue; pos: string | number }> {
+    protected xmlKeys = { val: "w:val", pos: "w:pos" };
 }
 
 export class Tab extends XmlComponent {
-
     constructor(value: TabValue, position: string | number) {
         super("w:tab");
-        this.root.push(new TabAttributes({
-            val: value,
-            pos: position,
-        }));
+        this.root.push(
+            new TabAttributes({
+                val: value,
+                pos: position,
+            }),
+        );
     }
 }
 

@@ -4,7 +4,6 @@ import { Extents } from "./extents/extents";
 import { Offset } from "./offset/off";
 
 export class Form extends XmlComponent {
-
     constructor(x: number, y: number) {
         super("a:xfrm");
 

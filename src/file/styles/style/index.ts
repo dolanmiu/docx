@@ -22,7 +22,6 @@ class StyleAttributes extends XmlAttributeComponent<IStyleAttributes> {
 }
 
 export class Style extends XmlComponent {
-
     constructor(attributes: IStyleAttributes, name?: string) {
         super("w:style");
         this.root.push(new StyleAttributes(attributes));
@@ -37,12 +36,11 @@ export class Style extends XmlComponent {
 }
 
 export class ParagraphStyle extends Style {
-
     private paragraphProperties: paragraph.ParagraphProperties;
     private runProperties: RunProperties;
 
     constructor(styleId: string, name?: string) {
-        super({type: "paragraph", styleId: styleId}, name);
+        super({ type: "paragraph", styleId: styleId }, name);
         this.paragraphProperties = new paragraph.ParagraphProperties();
         this.runProperties = new RunProperties();
         this.root.push(this.paragraphProperties);
@@ -193,7 +191,6 @@ export class ParagraphStyle extends Style {
 }
 
 export class HeadingStyle extends ParagraphStyle {
-
     constructor(styleId: string, name: string) {
         super(styleId, name);
         this.basedOn("Normal");
@@ -203,56 +200,48 @@ export class HeadingStyle extends ParagraphStyle {
 }
 
 export class TitleStyle extends HeadingStyle {
-
     constructor() {
         super("Title", "Title");
     }
 }
 
 export class Heading1Style extends HeadingStyle {
-
     constructor() {
         super("Heading1", "Heading 1");
     }
 }
 
 export class Heading2Style extends HeadingStyle {
-
     constructor() {
         super("Heading2", "Heading 2");
     }
 }
 
 export class Heading3Style extends HeadingStyle {
-
     constructor() {
         super("Heading3", "Heading 3");
     }
 }
 
 export class Heading4Style extends HeadingStyle {
-
     constructor() {
         super("Heading4", "Heading 4");
     }
 }
 
 export class Heading5Style extends HeadingStyle {
-
     constructor() {
         super("Heading5", "Heading 5");
     }
 }
 
 export class Heading6Style extends HeadingStyle {
-
     constructor() {
         super("Heading6", "Heading 6");
     }
 }
 
 export class ListParagraph extends ParagraphStyle {
-
     constructor() {
         super("ListParagraph");
         this.root.push(new Name("List Paragraph"));

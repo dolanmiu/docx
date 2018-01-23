@@ -15,13 +15,14 @@ class RunFontAttributes extends XmlAttributeComponent<IRunFontAttributesProperti
 }
 
 export class RunFonts extends XmlComponent {
-
     constructor(ascii: string, hint?: string) {
         super("w:rFonts");
-        this.root.push(new RunFontAttributes({
-            ascii: ascii,
-            hAnsi: ascii,
-            hint: hint,
-        }));
+        this.root.push(
+            new RunFontAttributes({
+                ascii: ascii,
+                hAnsi: ascii,
+                hint: hint,
+            }),
+        );
     }
 }

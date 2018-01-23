@@ -2,7 +2,6 @@
 import { XmlComponent } from "file/xml-components";
 
 export class AdjustmentValues extends XmlComponent {
-
     constructor() {
         super("a:avLst");
     }

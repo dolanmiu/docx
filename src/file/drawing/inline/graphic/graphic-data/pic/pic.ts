@@ -9,9 +9,11 @@ export class Pic extends XmlComponent {
     constructor(referenceId: number, x: number, y: number) {
         super("pic:pic");
 
-        this.root.push(new PicAttributes({
-            xmlns: "http://schemas.openxmlformats.org/drawingml/2006/picture",
-        }));
+        this.root.push(
+            new PicAttributes({
+                xmlns: "http://schemas.openxmlformats.org/drawingml/2006/picture",
+            }),
+        );
         this.root.push(new NonVisualPicProperties());
         this.root.push(new BlipFill(referenceId));
         this.root.push(new ShapeProperties(x, y));

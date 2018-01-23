@@ -14,10 +14,12 @@ export class Relationship extends XmlComponent {
     constructor(id: string, type: RelationshipType, target: string) {
         super("Relationship");
 
-        this.root.push(new RelationshipAttributes({
-            id,
-            type,
-            target,
-        }));
+        this.root.push(
+            new RelationshipAttributes({
+                id,
+                type,
+                target,
+            }),
+        );
     }
 }

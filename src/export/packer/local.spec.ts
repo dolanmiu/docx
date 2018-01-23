@@ -24,7 +24,7 @@ describe("LocalPacker", () => {
     });
 
     describe("#pack()", () => {
-        it("should create a standard docx file", async function () {
+        it("should create a standard docx file", async function() {
             this.timeout(99999999);
             await packer.pack("build/tests/test");
             fs.statSync("build/tests/test.docx");
@@ -32,7 +32,7 @@ describe("LocalPacker", () => {
     });
 
     describe("#packPdf", () => {
-        it("should create a standard PDF file", async function () {
+        it("should create a standard PDF file", async function() {
             this.timeout(99999999);
 
             await packer.packPdf("build/tests/pdf-test");

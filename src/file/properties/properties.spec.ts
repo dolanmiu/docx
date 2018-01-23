@@ -4,7 +4,6 @@ import { Formatter } from "../../export/formatter";
 import { Properties } from "./properties";
 
 describe("Properties", () => {
-
     describe("#constructor()", () => {
         it("sets the appropriate attributes on the top-level", () => {
             const properties = new Properties({});
@@ -23,14 +22,12 @@ describe("Properties", () => {
         });
 
         it("should create properties with a title", () => {
-            const properties = new Properties({title: "test document"});
+            const properties = new Properties({ title: "test document" });
             const tree = new Formatter().format(properties);
             expect(Object.keys(tree)).to.deep.equal(["cp:coreProperties"]);
             expect(tree["cp:coreProperties"]).to.be.an.instanceof(Array);
             expect(Object.keys(tree["cp:coreProperties"][0])).to.deep.equal(["_attr"]);
-            expect(tree["cp:coreProperties"][1]).to.deep.equal(
-                {"dc:title": ["test document"]},
-            );
+            expect(tree["cp:coreProperties"][1]).to.deep.equal({ "dc:title": ["test document"] });
         });
 
         it("should create properties with all the attributes given", () => {
@@ -60,14 +57,14 @@ describe("Properties", () => {
                 "dcterms:created",
                 "dcterms:modified",
             ]);
-            expect(tree["cp:coreProperties"].slice(1, -2).sort((a, b) => key(a) < key(b) ? -1 : 1)).to.deep.equal([
-                {"cp:keywords": ["test docx"]},
-                {"cp:lastModifiedBy": ["the author"]},
-                {"cp:revision": ["123"]},
-                {"dc:creator": ["me"]},
-                {"dc:description": ["testing document"]},
-                {"dc:subject": ["test subject"]},
-                {"dc:title": ["test document"]},
+            expect(tree["cp:coreProperties"].slice(1, -2).sort((a, b) => (key(a) < key(b) ? -1 : 1))).to.deep.equal([
+                { "cp:keywords": ["test docx"] },
+                { "cp:lastModifiedBy": ["the author"] },
+                { "cp:revision": ["123"] },
+                { "dc:creator": ["me"] },
+                { "dc:description": ["testing document"] },
+                { "dc:subject": ["test subject"] },
+                { "dc:title": ["test document"] },
             ]);
         });
     });

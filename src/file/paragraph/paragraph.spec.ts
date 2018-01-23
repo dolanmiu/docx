@@ -12,7 +12,6 @@ describe("Paragraph", () => {
     });
 
     describe("#constructor()", () => {
-
         it("should create valid JSON", () => {
             const stringifiedJson = JSON.stringify(paragraph);
             let newJson;
@@ -37,12 +36,11 @@ describe("Paragraph", () => {
             const run = paragraph.createTextRun("this is a test run");
             expect(run).to.be.instanceof(file.TextRun);
             const tree = new Formatter().format(paragraph)["w:p"];
-            expect(tree).to.be.an("array").which.includes({
-                "w:r": [
-                    {"w:rPr": []},
-                    {"w:t": [{_attr: {"xml:space": "preserve"}}, "this is a test run"]},
-                ],
-            });
+            expect(tree)
+                .to.be.an("array")
+                .which.includes({
+                    "w:r": [{ "w:rPr": [] }, { "w:t": [{ _attr: { "xml:space": "preserve" } }, "this is a test run"] }],
+                });
         });
     });
 
@@ -53,7 +51,7 @@ describe("Paragraph", () => {
             expect(tree).to.deep.equal({
                 "w:p": [
                     {
-                        "w:pPr": [{"w:pStyle": [{_attr: {"w:val": "Heading1"}}]}],
+                        "w:pPr": [{ "w:pStyle": [{ _attr: { "w:val": "Heading1" } }] }],
                     },
                 ],
             });
@@ -67,7 +65,7 @@ describe("Paragraph", () => {
             expect(tree).to.deep.equal({
                 "w:p": [
                     {
-                        "w:pPr": [{"w:pStyle": [{_attr: {"w:val": "Heading2"}}]}],
+                        "w:pPr": [{ "w:pStyle": [{ _attr: { "w:val": "Heading2" } }] }],
                     },
                 ],
             });
@@ -81,7 +79,7 @@ describe("Paragraph", () => {
             expect(tree).to.deep.equal({
                 "w:p": [
                     {
-                        "w:pPr": [{"w:pStyle": [{_attr: {"w:val": "Heading3"}}]}],
+                        "w:pPr": [{ "w:pStyle": [{ _attr: { "w:val": "Heading3" } }] }],
                     },
                 ],
             });
@@ -95,7 +93,7 @@ describe("Paragraph", () => {
             expect(tree).to.deep.equal({
                 "w:p": [
                     {
-                        "w:pPr": [{"w:pStyle": [{_attr: {"w:val": "Title"}}]}],
+                        "w:pPr": [{ "w:pStyle": [{ _attr: { "w:val": "Title" } }] }],
                     },
                 ],
             });
@@ -109,7 +107,7 @@ describe("Paragraph", () => {
             expect(tree).to.deep.equal({
                 "w:p": [
                     {
-                        "w:pPr": [{"w:jc": [{_attr: {"w:val": "center"}}]}],
+                        "w:pPr": [{ "w:jc": [{ _attr: { "w:val": "center" } }] }],
                     },
                 ],
             });
@@ -121,20 +119,28 @@ describe("Paragraph", () => {
             paragraph.thematicBreak();
             const tree = new Formatter().format(paragraph);
             expect(tree).to.deep.equal({
-                "w:p": [{
-                    "w:pPr": [{
-                        "w:pBdr": [{
-                            "w:bottom": [{
-                                _attr: {
-                                    "w:val": "single",
-                                    "w:color": "auto",
-                                    "w:space": "1",
-                                    "w:sz": "6",
-                                },
-                            }],
-                        }],
-                    }],
-                }],
+                "w:p": [
+                    {
+                        "w:pPr": [
+                            {
+                                "w:pBdr": [
+                                    {
+                                        "w:bottom": [
+                                            {
+                                                _attr: {
+                                                    "w:val": "single",
+                                                    "w:color": "auto",
+                                                    "w:space": "1",
+                                                    "w:sz": "6",
+                                                },
+                                            },
+                                        ],
+                                    },
+                                ],
+                            },
+                        ],
+                    },
+                ],
             });
         });
     });
@@ -144,14 +150,14 @@ describe("Paragraph", () => {
             paragraph.pageBreak();
             const tree = new Formatter().format(paragraph);
             expect(tree).to.deep.equal({
-                "w:p": [{
-                    "w:pPr": [],
-                }, {
-                    "w:r": [
-                        {"w:rPr": []},
-                        {"w:br": [{_attr: {"w:type": "page"}}]},
-                    ],
-                }],
+                "w:p": [
+                    {
+                        "w:pPr": [],
+                    },
+                    {
+                        "w:r": [{ "w:rPr": [] }, { "w:br": [{ _attr: { "w:type": "page" } }] }],
+                    },
+                ],
             });
         });
     });
@@ -160,23 +166,32 @@ describe("Paragraph", () => {
         it("should add list paragraph style to JSON", () => {
             paragraph.bullet();
             const tree = new Formatter().format(paragraph);
-            expect(tree).to.have.property("w:p").which.is.an("array").which.has.length.at.least(1);
-            expect(tree["w:p"][0]).to.have.property("w:pPr").which.is.an("array").which.has.length.at.least(1);
+            expect(tree)
+                .to.have.property("w:p")
+                .which.is.an("array")
+                .which.has.length.at.least(1);
+            expect(tree["w:p"][0])
+                .to.have.property("w:pPr")
+                .which.is.an("array")
+                .which.has.length.at.least(1);
             expect(tree["w:p"][0]["w:pPr"][0]).to.deep.equal({
-                "w:pStyle": [{_attr: {"w:val": "ListParagraph"}}],
+                "w:pStyle": [{ _attr: { "w:val": "ListParagraph" } }],
             });
         });
 
         it("it should add numbered properties", () => {
             paragraph.bullet();
             const tree = new Formatter().format(paragraph);
-            expect(tree).to.have.property("w:p").which.is.an("array").which.has.length.at.least(1);
-            expect(tree["w:p"][0]).to.have.property("w:pPr").which.is.an("array").which.has.length.at.least(2);
+            expect(tree)
+                .to.have.property("w:p")
+                .which.is.an("array")
+                .which.has.length.at.least(1);
+            expect(tree["w:p"][0])
+                .to.have.property("w:pPr")
+                .which.is.an("array")
+                .which.has.length.at.least(2);
             expect(tree["w:p"][0]["w:pPr"][1]).to.deep.equal({
-                "w:numPr": [
-                    {"w:ilvl": [{_attr: {"w:val": 0}}]},
-                    {"w:numId": [{_attr: {"w:val": 1}}]},
-                ],
+                "w:numPr": [{ "w:ilvl": [{ _attr: { "w:val": 0 } }] }, { "w:numId": [{ _attr: { "w:val": 1 } }] }],
             });
         });
     });
@@ -190,10 +205,16 @@ describe("Paragraph", () => {
 
             paragraph.setNumbering(letterNumbering, 0);
             const tree = new Formatter().format(paragraph);
-            expect(tree).to.have.property("w:p").which.is.an("array").which.has.length.at.least(1);
-            expect(tree["w:p"][0]).to.have.property("w:pPr").which.is.an("array").which.has.length.at.least(1);
+            expect(tree)
+                .to.have.property("w:p")
+                .which.is.an("array")
+                .which.has.length.at.least(1);
+            expect(tree["w:p"][0])
+                .to.have.property("w:pPr")
+                .which.is.an("array")
+                .which.has.length.at.least(1);
             expect(tree["w:p"][0]["w:pPr"][0]).to.deep.equal({
-                "w:pStyle": [{_attr: {"w:val": "ListParagraph"}}],
+                "w:pStyle": [{ _attr: { "w:val": "ListParagraph" } }],
             });
         });
 
@@ -209,11 +230,11 @@ describe("Paragraph", () => {
                 "w:p": [
                     {
                         "w:pPr": [
-                            {"w:pStyle": [{_attr: {"w:val": "ListParagraph"}}]},
+                            { "w:pStyle": [{ _attr: { "w:val": "ListParagraph" } }] },
                             {
                                 "w:numPr": [
-                                    {"w:ilvl": [{_attr: {"w:val": 0}}]},
-                                    {"w:numId": [{_attr: {"w:val": letterNumbering.id}}]},
+                                    { "w:ilvl": [{ _attr: { "w:val": 0 } }] },
+                                    { "w:numId": [{ _attr: { "w:val": letterNumbering.id } }] },
                                 ],
                             },
                         ],
@@ -230,9 +251,7 @@ describe("Paragraph", () => {
             expect(tree).to.deep.equal({
                 "w:p": [
                     {
-                        "w:pPr": [
-                            {"w:pStyle": [{_attr: {"w:val": "myFancyStyle"}}]},
-                        ],
+                        "w:pPr": [{ "w:pStyle": [{ _attr: { "w:val": "myFancyStyle" } }] }],
                     },
                 ],
             });
@@ -246,9 +265,7 @@ describe("Paragraph", () => {
             expect(tree).to.deep.equal({
                 "w:p": [
                     {
-                        "w:pPr": [
-                            {"w:ind": [{_attr: {"w:left": 720}}]},
-                        ],
+                        "w:pPr": [{ "w:ind": [{ _attr: { "w:left": 720 } }] }],
                     },
                 ],
             });
@@ -257,14 +274,12 @@ describe("Paragraph", () => {
 
     describe("#spacing", () => {
         it("should set the paragraph spacing to the given values", () => {
-            paragraph.spacing({before: 90, line: 50});
+            paragraph.spacing({ before: 90, line: 50 });
             const tree = new Formatter().format(paragraph);
             expect(tree).to.deep.equal({
                 "w:p": [
                     {
-                        "w:pPr": [
-                            {"w:spacing": [{_attr: {"w:before": 90, "w:line": 50}}]},
-                        ],
+                        "w:pPr": [{ "w:spacing": [{ _attr: { "w:before": 90, "w:line": 50 } }] }],
                     },
                 ],
             });
@@ -276,7 +291,7 @@ describe("Paragraph", () => {
             paragraph.keepLines();
             const tree = new Formatter().format(paragraph);
             expect(tree).to.deep.equal({
-                "w:p": [{"w:pPr": [{"w:keepLines": []}]}],
+                "w:p": [{ "w:pPr": [{ "w:keepLines": [] }] }],
             });
         });
     });
@@ -286,7 +301,7 @@ describe("Paragraph", () => {
             paragraph.keepNext();
             const tree = new Formatter().format(paragraph);
             expect(tree).to.deep.equal({
-                "w:p": [{"w:pPr": [{"w:keepNext": []}]}],
+                "w:p": [{ "w:pPr": [{ "w:keepNext": [] }] }],
             });
         });
     });

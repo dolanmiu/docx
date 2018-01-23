@@ -3,7 +3,6 @@ import { IMediaData } from "../../media/data";
 import { Run } from "../run";
 
 export class PictureRun extends Run {
-
     constructor(imageData: IMediaData) {
         super();
 

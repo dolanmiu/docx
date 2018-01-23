@@ -20,7 +20,6 @@ class IndentAttributes extends XmlAttributeComponent<IIndentAttributesProperties
 }
 
 export class Indent extends XmlComponent {
-
     constructor(attrs: object) {
         super("w:ind");
         this.root.push(new IndentAttributes(attrs));

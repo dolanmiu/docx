@@ -1,7 +1,7 @@
 import { BaseXmlComponent } from "./base";
 import { IXmlableObject } from "./xmlable-object";
 
-export type AttributeMap<T> = {[P in keyof T]: string};
+export type AttributeMap<T> = { [P in keyof T]: string };
 
 export abstract class XmlAttributeComponent<T> extends BaseXmlComponent {
     protected root: T;
@@ -21,6 +21,6 @@ export abstract class XmlAttributeComponent<T> extends BaseXmlComponent {
                 attrs[newKey] = value;
             }
         });
-        return {_attr: attrs};
+        return { _attr: attrs };
     }
 }
