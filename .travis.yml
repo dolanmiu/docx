@@ -7,6 +7,7 @@ script:
   - npm run lint
   - npm test
   - npm run style
+  - npm run build
   - node ./demo/demo1.js
   - node ./demo/demo2.js
   - node ./demo/demo3.js
