@@ -6,6 +6,7 @@
   "scripts": {
     "pretest": "rimraf ./build",
     "test": "mocha-webpack \"src/**/*.ts\"",
+    "test-watch": "mocha-webpack \"src/**/*.ts\" --watch",
     "prepublishOnly": "npm run build",
     "lint": "tslint --project .",
     "build": "npm run webpack",
