@@ -13,7 +13,7 @@ describe("Body", () => {
 
     beforeEach(() => {
         body = new Body();
-        body.push(new SectionProperties(0));
+        body.push(new SectionProperties());
         body.push(new PageSize(0, 0));
         body.push(new PageMargin(0, 0, 0, 0, 0, 0, 0));
         body.push(new Columns(0));
