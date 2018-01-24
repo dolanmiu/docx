@@ -2,22 +2,22 @@ import { assert } from "chai";
 
 import { Utility } from "../../../tests/utility";
 import { Body } from "./";
-import { Columns } from "./columns";
-import { DocumentGrid } from "./doc-grid";
-import { PageMargin } from "./page-margin";
-import { PageSize } from "./page-size";
-import { SectionProperties } from "./section-properties";
+import { Columns } from "./section-properties/columns/columns";
+import { DocumentGrid } from "./section-properties/doc-grid/doc-grid";
+import { PageMargin } from "./section-properties/page-margin/page-margin";
+import { PageSize } from "./section-properties/page-size/page-size";
+import { SectionProperties } from "./section-properties/section-properties";
 
 describe("Body", () => {
     let body: Body;
 
     beforeEach(() => {
         body = new Body();
-        body.push(new SectionProperties());
-        body.push(new PageSize());
-        body.push(new PageMargin());
-        body.push(new Columns());
-        body.push(new DocumentGrid());
+        body.push(new SectionProperties(0));
+        body.push(new PageSize(0, 0));
+        body.push(new PageMargin(0, 0, 0, 0, 0, 0, 0));
+        body.push(new Columns(0));
+        body.push(new DocumentGrid(0));
     });
 
     describe("#constructor()", () => {
