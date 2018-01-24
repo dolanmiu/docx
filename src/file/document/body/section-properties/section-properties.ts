@@ -12,10 +12,29 @@ import { PageSize } from "./page-size/page-size";
 export type SectionPropertiesOptions = IPageSizeAttributes & IPageMarginAttributes & IColumnsAttributes & IDocGridAttributesProperties;
 
 export class SectionProperties extends XmlComponent {
-    constructor(options: SectionPropertiesOptions) {
+    constructor(options?: SectionPropertiesOptions) {
         super("w:sectPr");
 
-        this.root.push(new PageSize(11906, 16838));
+        const defaultOptions = {
+            width: 11906,
+            height: 16838,
+            top: 1440,
+            right: 1440,
+            bottom: 1440,
+            left: 1440,
+            header: 708,
+            footer: 708,
+            gutter: 0,
+            space: 708,
+            linePitch: 360,
+        };
+
+        const mergedOptions = {
+            ...defaultOptions,
+            ...options,
+        };
+
+        this.root.push(new PageSize(mergedOptions.width, mergedOptions.height));
         this.root.push(new PageMargin(1440, 1440, 1440, 1440, 708, 708, 0));
         this.root.push(new Columns(708));
         this.root.push(new DocumentGrid(308));

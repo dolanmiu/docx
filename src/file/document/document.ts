@@ -4,12 +4,13 @@ import { XmlComponent } from "file/xml-components";
 import { Paragraph, PictureRun } from "../paragraph";
 import { Table } from "../table";
 import { Body } from "./body";
+import { SectionPropertiesOptions } from "./body/section-properties/section-properties";
 import { DocumentAttributes } from "./document-attributes";
 
 export class Document extends XmlComponent {
     private body: Body;
 
-    constructor() {
+    constructor(sectionPropertiesOptions?: SectionPropertiesOptions) {
         super("w:document");
         this.root.push(
             new DocumentAttributes({
@@ -32,7 +33,7 @@ export class Document extends XmlComponent {
                 Ignorable: "w14 w15 wp14",
             }),
         );
-        this.body = new Body();
+        this.body = new Body(sectionPropertiesOptions);
         this.root.push(this.body);
     }
 

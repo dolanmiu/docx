@@ -1,8 +1,8 @@
 import { XmlComponent } from "file/xml-components";
-import { SectionProperties } from "./section-properties/section-properties";
+import { SectionProperties, SectionPropertiesOptions } from "./section-properties/section-properties";
 
 export class Body extends XmlComponent {
-    constructor() {
+    constructor(sectionPropertiesOptions?: SectionPropertiesOptions) {
         super("w:body");
     }
 

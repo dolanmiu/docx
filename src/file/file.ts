@@ -1,5 +1,6 @@
 import { Relationships } from "file/relationships";
 import { Document } from "./document";
+import { SectionPropertiesOptions } from "./document/body/section-properties/section-properties";
 import { Media } from "./media";
 import { Numbering } from "./numbering";
 import { Paragraph } from "./paragraph";
@@ -16,8 +17,8 @@ export class File {
     private media: Media;
     private relationships: Relationships;
 
-    constructor(options?: IPropertiesOptions) {
-        this.document = new Document();
+    constructor(options?: IPropertiesOptions, sectionPropertiesOptions?: SectionPropertiesOptions) {
+        this.document = new Document(sectionPropertiesOptions);
         const stylesFactory = new DefaultStylesFactory();
         this.styles = stylesFactory.newInstance();
 
