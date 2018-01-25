@@ -1,13 +1,13 @@
 import { XmlAttributeComponent } from "file/xml-components";
 
 export interface IPageMarginAttributes {
-    top: number;
-    right: number;
-    bottom: number;
-    left: number;
-    header: number;
-    footer: number;
-    gutter: number;
+    top?: number;
+    right?: number;
+    bottom?: number;
+    left?: number;
+    header?: number;
+    footer?: number;
+    gutter?: number;
 }
 
 export class PageMarginAttributes extends XmlAttributeComponent<IPageMarginAttributes> {

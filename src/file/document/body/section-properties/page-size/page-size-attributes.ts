@@ -1,8 +1,8 @@
 import { XmlAttributeComponent } from "file/xml-components";
 
 export interface IPageSizeAttributes {
-    width: number;
-    height: number;
+    width?: number;
+    height?: number;
 }
 
 export class PageSizeAttributes extends XmlAttributeComponent<IPageSizeAttributes> {

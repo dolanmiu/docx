@@ -35,8 +35,8 @@ export class SectionProperties extends XmlComponent {
         };
 
         this.root.push(new PageSize(mergedOptions.width, mergedOptions.height));
-        this.root.push(new PageMargin(1440, 1440, 1440, 1440, 708, 708, 0));
-        this.root.push(new Columns(708));
-        this.root.push(new DocumentGrid(308));
+        this.root.push(new PageMargin(mergedOptions.top, mergedOptions.right, mergedOptions.bottom, mergedOptions.left, mergedOptions.header, mergedOptions.footer, mergedOptions.gutter));
+        this.root.push(new Columns(mergedOptions.space));
+        this.root.push(new DocumentGrid(mergedOptions.linePitch));
     }
 }
