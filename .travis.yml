@@ -13,6 +13,8 @@ script:
   - node ./demo/demo3.js
   - node ./demo/demo4.js
   - node ./demo/demo5.js
+  - node ./demo/demo6.js
+  - node ./demo/demo7.js
 after_failure:
   - "cat /home/travis/builds/dolanmiu/docx/npm-debug.log"
 after_success:
