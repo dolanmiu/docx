@@ -27,6 +27,7 @@ export class SectionProperties extends XmlComponent {
             gutter: 0,
             space: 708,
             linePitch: 360,
+            orientation: "portrait",
         };
 
         const mergedOptions = {
@@ -34,7 +35,7 @@ export class SectionProperties extends XmlComponent {
             ...options,
         };
 
-        this.root.push(new PageSize(mergedOptions.width, mergedOptions.height));
+        this.root.push(new PageSize(mergedOptions.width, mergedOptions.height, mergedOptions.orientation));
         this.root.push(new PageMargin(mergedOptions.top, mergedOptions.right, mergedOptions.bottom, mergedOptions.left, mergedOptions.header, mergedOptions.footer, mergedOptions.gutter));
         this.root.push(new Columns(mergedOptions.space));
         this.root.push(new DocumentGrid(mergedOptions.linePitch));
