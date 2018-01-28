@@ -22,7 +22,7 @@ describe("SectionProperties", () => {
             const tree = new Formatter().format(properties);
             expect(Object.keys(tree)).to.deep.equal(["w:sectPr"]);
             expect(tree["w:sectPr"]).to.be.an.instanceof(Array);
-            expect(tree["w:sectPr"][0]).to.deep.equal({ "w:pgSz": [{ _attr: { "w:h": 16838, "w:w": 11906 } }] });
+            expect(tree["w:sectPr"][0]).to.deep.equal({ "w:pgSz": [{ _attr: { "w:h": 16838, "w:w": 11906, "w:orient": "portrait" } }] });
             expect(tree["w:sectPr"][1]).to.deep.equal({
                 "w:pgMar": [
                     {
@@ -45,7 +45,7 @@ describe("SectionProperties", () => {
             const tree = new Formatter().format(properties);
             expect(Object.keys(tree)).to.deep.equal(["w:sectPr"]);
             expect(tree["w:sectPr"]).to.be.an.instanceof(Array);
-            expect(tree["w:sectPr"][0]).to.deep.equal({ "w:pgSz": [{ _attr: { "w:h": 16838, "w:w": 11906 } }] });
+            expect(tree["w:sectPr"][0]).to.deep.equal({ "w:pgSz": [{ _attr: { "w:h": 16838, "w:w": 11906, "w:orient": "portrait" } }] });
             expect(tree["w:sectPr"][1]).to.deep.equal({
                 "w:pgMar": [
                     {
@@ -70,7 +70,7 @@ describe("SectionProperties", () => {
             const tree = new Formatter().format(properties);
             expect(Object.keys(tree)).to.deep.equal(["w:sectPr"]);
             expect(tree["w:sectPr"]).to.be.an.instanceof(Array);
-            expect(tree["w:sectPr"][0]).to.deep.equal({ "w:pgSz": [{ _attr: { "w:h": 16838, "w:w": 11906 } }] });
+            expect(tree["w:sectPr"][0]).to.deep.equal({ "w:pgSz": [{ _attr: { "w:h": 16838, "w:w": 11906, "w:orient": "portrait" } }] });
             expect(tree["w:sectPr"][1]).to.deep.equal({
                 "w:pgMar": [
                     {
@@ -95,7 +95,7 @@ describe("SectionProperties", () => {
             const tree = new Formatter().format(properties);
             expect(Object.keys(tree)).to.deep.equal(["w:sectPr"]);
             expect(tree["w:sectPr"]).to.be.an.instanceof(Array);
-            expect(tree["w:sectPr"][0]).to.deep.equal({ "w:pgSz": [{ _attr: { "w:h": 16838, "w:w": 11906 } }] });
+            expect(tree["w:sectPr"][0]).to.deep.equal({ "w:pgSz": [{ _attr: { "w:h": 16838, "w:w": 11906, "w:orient": "portrait" } }] });
             expect(tree["w:sectPr"][1]).to.deep.equal({
                 "w:pgMar": [
                     {
@@ -121,7 +121,7 @@ describe("SectionProperties", () => {
             const tree = new Formatter().format(properties);
             expect(Object.keys(tree)).to.deep.equal(["w:sectPr"]);
             expect(tree["w:sectPr"]).to.be.an.instanceof(Array);
-            expect(tree["w:sectPr"][0]).to.deep.equal({ "w:pgSz": [{ _attr: { "w:h": 0, "w:w": 0 } }] });
+            expect(tree["w:sectPr"][0]).to.deep.equal({ "w:pgSz": [{ _attr: { "w:h": 0, "w:w": 0, "w:orient": "portrait" } }] });
             expect(tree["w:sectPr"][1]).to.deep.equal({
                 "w:pgMar": [
                     {
