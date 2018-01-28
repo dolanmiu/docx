@@ -5,9 +5,7 @@ export class Body extends XmlComponent {
     constructor(sectionPropertiesOptions?: SectionPropertiesOptions) {
         super("w:body");
 
-        this.root.push(
-            new SectionProperties(sectionPropertiesOptions),
-        );
+        this.root.push(new SectionProperties(sectionPropertiesOptions));
     }
 
     public push(component: XmlComponent): void {
