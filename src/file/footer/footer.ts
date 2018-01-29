@@ -1,15 +1,15 @@
-// http://officeopenxml.com/WPheaders.php
+// http://officeopenxml.com/WPfooters.php
 import { IMediaData } from "file/media";
 import { XmlComponent } from "file/xml-components";
 import { Paragraph, PictureRun } from "../paragraph";
 import { Table } from "../table";
-import { HeaderAttributes } from "./header-attributes";
+import { FooterAttributes } from "./footer-attributes";
 
-export class Header extends XmlComponent {
+export class Footer extends XmlComponent {
     constructor() {
-        super("w:hdr");
+        super("w:ftr");
         this.root.push(
-            new HeaderAttributes({
+            new FooterAttributes({
                 wpc: "http://schemas.microsoft.com/office/word/2010/wordprocessingCanvas",
                 mc: "http://schemas.openxmlformats.org/markup-compatibility/2006",
                 o: "urn:schemas-microsoft-com:office:office",
