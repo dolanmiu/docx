@@ -1,21 +1,23 @@
-import { Relationships } from "file/relationships";
 import { Document } from "./document";
 import { SectionPropertiesOptions } from "./document/body/section-properties/section-properties";
+import { Header } from "./header/header";
 import { Media } from "./media";
 import { Numbering } from "./numbering";
 import { Paragraph } from "./paragraph";
 import { IPropertiesOptions, Properties } from "./properties";
+import { Relationships } from "./relationships";
 import { Styles } from "./styles";
 import { DefaultStylesFactory } from "./styles/factory";
 import { Table } from "./table";
 
 export class File {
-    private document: Document;
-    private styles: Styles;
-    private properties: Properties;
-    private numbering: Numbering;
-    private media: Media;
-    private relationships: Relationships;
+    private readonly document: Document;
+    private readonly styles: Styles;
+    private readonly properties: Properties;
+    private readonly numbering: Numbering;
+    private readonly media: Media;
+    private readonly relationships: Relationships;
+    private readonly header: Header;
 
     constructor(options?: IPropertiesOptions, sectionPropertiesOptions?: SectionPropertiesOptions) {
         this.document = new Document(sectionPropertiesOptions);
@@ -32,8 +34,9 @@ export class File {
 
         this.properties = new Properties(options);
         this.numbering = new Numbering();
-        this.media = new Media();
         this.relationships = new Relationships();
+        this.media = new Media();
+        this.header = new Header();
     }
 
     public addParagraph(paragraph: Paragraph): void {
@@ -53,7 +56,7 @@ export class File {
     }
 
     public createImage(image: string): void {
-        const mediaData = this.media.addMedia(image);
+        const mediaData = this.media.addMedia(image, this.relationships.RelationshipCount);
         this.relationships.createRelationship(
             mediaData.referenceId,
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
@@ -84,5 +87,9 @@ export class File {
 
     public get Relationships(): Relationships {
         return this.relationships;
+    }
+
+    public get Header(): Header {
+        return this.header;
     }
 }
