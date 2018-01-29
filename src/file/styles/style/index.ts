@@ -36,8 +36,8 @@ export class Style extends XmlComponent {
 }
 
 export class ParagraphStyle extends Style {
-    private paragraphProperties: paragraph.ParagraphProperties;
-    private runProperties: RunProperties;
+    private readonly paragraphProperties: paragraph.ParagraphProperties;
+    private readonly runProperties: RunProperties;
 
     constructor(styleId: string, name?: string) {
         super({ type: "paragraph", styleId: styleId }, name);

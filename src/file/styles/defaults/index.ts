@@ -3,8 +3,8 @@ import { ParagraphPropertiesDefaults } from "./paragraph-properties";
 import { RunPropertiesDefaults } from "./run-properties";
 
 export class DocumentDefaults extends XmlComponent {
-    private runPropertiesDefaults: RunPropertiesDefaults;
-    private paragraphPropertiesDefaults: ParagraphPropertiesDefaults;
+    private readonly runPropertiesDefaults: RunPropertiesDefaults;
+    private readonly paragraphPropertiesDefaults: ParagraphPropertiesDefaults;
 
     constructor() {
         super("w:docDefaults");

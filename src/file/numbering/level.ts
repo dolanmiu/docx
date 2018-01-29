@@ -61,8 +61,8 @@ class LevelJc extends XmlComponent {
 }
 
 export class LevelBase extends XmlComponent {
-    private paragraphProperties: ParagraphProperties;
-    private runProperties: RunProperties;
+    private readonly paragraphProperties: ParagraphProperties;
+    private readonly runProperties: RunProperties;
 
     constructor(level: number, start?: number, numberFormat?: string, levelText?: string, lvlJc?: string) {
         super("w:lvl");

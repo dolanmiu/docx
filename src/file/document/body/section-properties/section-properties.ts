@@ -1,13 +1,14 @@
 // http://officeopenxml.com/WPsection.php
-import { IColumnsAttributes } from "file/document/body/section-properties/columns/columns-attributes";
-import { IPageMarginAttributes } from "file/document/body/section-properties/page-margin/page-margin-attributes";
-import { IPageSizeAttributes } from "file/document/body/section-properties/page-size/page-size-attributes";
 import { XmlComponent } from "file/xml-components";
 import { Columns } from "./columns/columns";
+import { IColumnsAttributes } from "./columns/columns-attributes";
 import { DocumentGrid } from "./doc-grid/doc-grid";
 import { IDocGridAttributesProperties } from "./doc-grid/doc-grid-attributes";
+import { HeaderReference } from "./header-reference/header-reference";
 import { PageMargin } from "./page-margin/page-margin";
+import { IPageMarginAttributes } from "./page-margin/page-margin-attributes";
 import { PageSize } from "./page-size/page-size";
+import { IPageSizeAttributes } from "./page-size/page-size-attributes";
 
 export type SectionPropertiesOptions = IPageSizeAttributes & IPageMarginAttributes & IColumnsAttributes & IDocGridAttributesProperties;
 
@@ -49,5 +50,6 @@ export class SectionProperties extends XmlComponent {
         );
         this.root.push(new Columns(mergedOptions.space));
         this.root.push(new DocumentGrid(mergedOptions.linePitch));
+        this.root.push(new HeaderReference());
     }
 }

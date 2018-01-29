@@ -5,7 +5,7 @@ import * as path from "path";
 import { IMediaData } from "./data";
 
 export class Media {
-    private map: Map<string, IMediaData>;
+    private readonly map: Map<string, IMediaData>;
 
     constructor() {
         this.map = new Map<string, IMediaData>();
@@ -21,12 +21,12 @@ export class Media {
         return data;
     }
 
-    public addMedia(filePath: string): IMediaData {
+    public addMedia(filePath: string, relationshipsCount: number): IMediaData {
         const key = path.basename(filePath);
         const dimensions = sizeOf(filePath);
 
         const imageData = {
-            referenceId: this.map.size + 3,
+            referenceId: this.map.size + relationshipsCount,
             stream: fs.createReadStream(filePath),
             path: filePath,
             fileName: key,
