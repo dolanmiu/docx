@@ -4,7 +4,7 @@ import { RunProperties } from "../../paragraph/run/properties";
 import { RunFonts } from "../../paragraph/run/run-fonts";
 
 export class RunPropertiesDefaults extends XmlComponent {
-    private properties: RunProperties;
+    private readonly properties: RunProperties;
 
     constructor() {
         super("w:rPrDefault");

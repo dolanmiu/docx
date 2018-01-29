@@ -46,16 +46,14 @@ class LevelOverrideAttributes extends XmlAttributeComponent<{ ilvl: number }> {
 }
 
 export class LevelOverride extends XmlComponent {
-    private levelNum: number;
     private lvl?: LevelForOverride;
 
-    constructor(levelNum: number, start?: number) {
+    constructor(private readonly levelNum: number, start?: number) {
         super("w:lvlOverride");
         this.root.push(new LevelOverrideAttributes({ ilvl: levelNum }));
         if (start !== undefined) {
             this.root.push(new StartOverride(start));
         }
-        this.levelNum = levelNum;
     }
 
     get level(): LevelForOverride {

@@ -5,9 +5,9 @@ import { TableGrid } from "./grid";
 import { TableProperties, WidthTypes } from "./properties";
 
 export class Table extends XmlComponent {
-    private properties: TableProperties;
-    private rows: TableRow[];
-    private grid: TableGrid;
+    private readonly properties: TableProperties;
+    private readonly rows: TableRow[];
+    private readonly grid: TableGrid;
 
     constructor(rows: number, cols: number) {
         super("w:tbl");
@@ -63,14 +63,12 @@ export class Table extends XmlComponent {
 }
 
 export class TableRow extends XmlComponent {
-    private properties: TableRowProperties;
-    private cells: TableCell[];
+    private readonly properties: TableRowProperties;
 
-    constructor(cells: TableCell[]) {
+    constructor(private readonly cells: TableCell[]) {
         super("w:tr");
         this.properties = new TableRowProperties();
         this.root.push(this.properties);
-        this.cells = cells;
         cells.forEach((c) => this.root.push(c));
     }
 
@@ -86,7 +84,7 @@ export class TableRowProperties extends XmlComponent {
 }
 
 export class TableCell extends XmlComponent {
-    private properties: TableCellProperties;
+    private readonly properties: TableCellProperties;
 
     constructor() {
         super("w:tc");

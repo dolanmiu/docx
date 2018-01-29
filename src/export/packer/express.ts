@@ -5,10 +5,9 @@ import { Compiler } from "./compiler";
 import { IPacker } from "./packer";
 
 export class ExpressPacker implements IPacker {
-    private res: express.Response;
-    private packer: Compiler;
+    private readonly packer: Compiler;
 
-    constructor(file: File, res: express.Response) {
+    constructor(file: File, private readonly res: express.Response) {
         this.packer = new Compiler(file);
 
         this.res = res;

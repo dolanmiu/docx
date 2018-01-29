@@ -9,8 +9,8 @@ import { PdfConvertWrapper } from "./pdf-convert-wrapper";
 
 export class LocalPacker implements IPacker {
     private stream: fs.WriteStream;
-    private pdfConverter: PdfConvertWrapper;
-    private packer: Compiler;
+    private readonly pdfConverter: PdfConvertWrapper;
+    private readonly packer: Compiler;
 
     constructor(file: File) {
         this.pdfConverter = new PdfConvertWrapper();

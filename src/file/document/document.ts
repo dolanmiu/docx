@@ -8,7 +8,7 @@ import { SectionPropertiesOptions } from "./body/section-properties/section-prop
 import { DocumentAttributes } from "./document-attributes";
 
 export class Document extends XmlComponent {
-    private body: Body;
+    private readonly body: Body;
 
     constructor(sectionPropertiesOptions?: SectionPropertiesOptions) {
         super("w:document");

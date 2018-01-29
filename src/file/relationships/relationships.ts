@@ -13,6 +13,7 @@ export class Relationships extends XmlComponent {
 
         this.createRelationship(1, "http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles", "styles.xml");
         this.createRelationship(2, "http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering", "numbering.xml");
+        this.createRelationship(3, "http://schemas.openxmlformats.org/officeDocument/2006/relationships/header", "header1.xml");
     }
 
     public addRelationship(relationship: Relationship): void {
@@ -24,5 +25,9 @@ export class Relationships extends XmlComponent {
         this.addRelationship(relationship);
 
         return relationship;
+    }
+
+    public get RelationshipCount(): number {
+        return this.root.length - 1;
     }
 }
