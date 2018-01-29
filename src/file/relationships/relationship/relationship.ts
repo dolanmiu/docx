@@ -8,7 +8,8 @@ export type RelationshipType =
     | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles"
     | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/fontTable"
     | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/webSettings"
-    | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering";
+    | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering"
+    | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/header";
 
 export class Relationship extends XmlComponent {
     constructor(id: string, type: RelationshipType, target: string) {
