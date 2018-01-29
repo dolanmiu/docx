@@ -2,7 +2,6 @@ import * as fs from "fs";
 import * as sizeOf from "image-size";
 import * as path from "path";
 
-import { Relationships } from "file/relationships/relationships";
 import { IMediaData } from "./data";
 
 export class Media {

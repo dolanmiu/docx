@@ -44,7 +44,7 @@ export class File {
     }
 
     public createParagraph(text?: string): Paragraph {
-        return this.document.createParagraph();
+        return this.document.createParagraph(text);
     }
 
     public addTable(table: Table): void {
