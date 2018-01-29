@@ -1,6 +1,6 @@
 import { XmlAttributeComponent } from "file/xml-components";
 
-export interface IHeaderAttributesProperties {
+export interface IFooterAttributesProperties {
     wpc?: string;
     mc?: string;
     o?: string;
@@ -25,7 +25,7 @@ export interface IHeaderAttributesProperties {
     type?: string;
 }
 
-export class HeaderAttributes extends XmlAttributeComponent<IHeaderAttributesProperties> {
+export class FooterAttributes extends XmlAttributeComponent<IFooterAttributesProperties> {
     protected xmlKeys = {
         wpc: "xmlns:wpc",
         mc: "xmlns:mc",

@@ -4,6 +4,7 @@ import { Columns } from "./columns/columns";
 import { IColumnsAttributes } from "./columns/columns-attributes";
 import { DocumentGrid } from "./doc-grid/doc-grid";
 import { IDocGridAttributesProperties } from "./doc-grid/doc-grid-attributes";
+import { FooterReference } from "./footer-reference/footer-reference";
 import { HeaderReference } from "./header-reference/header-reference";
 import { PageMargin } from "./page-margin/page-margin";
 import { IPageMarginAttributes } from "./page-margin/page-margin-attributes";
@@ -51,5 +52,6 @@ export class SectionProperties extends XmlComponent {
         this.root.push(new Columns(mergedOptions.space));
         this.root.push(new DocumentGrid(mergedOptions.linePitch));
         this.root.push(new HeaderReference());
+        this.root.push(new FooterReference());
     }
 }

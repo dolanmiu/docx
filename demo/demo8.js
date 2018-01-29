@@ -5,6 +5,7 @@ var doc = new docx.File();
 doc.createParagraph("Hello World");
 
 doc.Header.createParagraph("Header text");
+doc.Footer.createParagraph("Footer text");
 
 var exporter = new docx.LocalPacker(doc);
 exporter.pack('My Document');
