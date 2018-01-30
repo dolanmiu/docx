@@ -57,10 +57,10 @@
   },
   "homepage": "https://github.com/dolanmiu/docx#readme",
   "devDependencies": {
-    "@types/chai": "^3.4.35",
+    "@types/chai": "^4.0.2",
     "@types/mocha": "^2.2.39",
     "awesome-typescript-loader": "^3.4.1",
-    "chai": "^3.5.0",
+    "chai": "^4.1.1",
     "mocha": "^3.2.0",
     "mocha-webpack": "^1.0.1",
     "prettier": "^1.10.2",

@@ -8,12 +8,14 @@
 
 -----
 
+
 [![NPM version][npm-image]][npm-url]
 [![Build Status][travis-image]][travis-url]
 [![Dependency Status][gemnasium-image]][gemnasium-url]
 [![Known Vulnerabilities][snky-image]][snky-url]
 [![Chat on Gitter][gitter-image]][gitter-url]
 [![code style: prettier][prettier-image]][prettier-url]
+[![Greenkeeper badge][greenkeeper-image]][greenkeeper-url]
 
 [![NPM](https://nodei.co/npm/docx.png?downloads=true&downloadRank=true&stars=true)](https://nodei.co/npm/docx/)
 
@@ -97,3 +99,6 @@ Huge thanks to [@felipeochoa](https://github.com/felipeochoa) for awesome contri
 [gemnasium-url]: https://gemnasium.com/github.com/dolanmiu/docx
 [prettier-image]: https://img.shields.io/badge/code_style-prettier-ff69b4.svg
 [prettier-url]: https://github.com/prettier/prettier
+[greenkeeper-image]: https://badges.greenkeeper.io/dolanmiu/docx.svg
+[greenkeeper-url]: https://greenkeeper.io
+
