@@ -70,3 +70,5 @@ para.createTextRun('and back to normal.');
 
 const exporter = new docx.LocalPacker(doc);
 exporter.pack('My Document');
+
+console.log('Document created successfully at project root!');

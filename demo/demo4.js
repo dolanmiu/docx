@@ -9,4 +9,4 @@ table.getCell(2, 2).addContent(new docx.Paragraph('Hello'));
 var exporter = new docx.LocalPacker(doc);
 exporter.pack('My Document');
 
-console.log('Document created succesfully at project root!');
+console.log('Document created successfully at project root!');

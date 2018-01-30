@@ -13,4 +13,4 @@ doc.addParagraph(paragraph);
 var exporter = new docx.LocalPacker(doc);
 exporter.pack('My Document');
 
-console.log('Document created succesfully at project root!');
+console.log('Document created successfully at project root!');

@@ -38,8 +38,8 @@ export class File {
         this.numbering = new Numbering();
         this.relationships = new Relationships();
         this.media = new Media();
-        this.header = new Header();
-        this.footer = new Footer();
+        this.header = new Header(this.media, this.relationships);
+        this.footer = new Footer(this.media, this.relationships);
     }
 
     public addParagraph(paragraph: Paragraph): void {

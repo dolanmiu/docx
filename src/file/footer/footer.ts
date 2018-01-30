@@ -1,12 +1,13 @@
 // http://officeopenxml.com/WPfooters.php
-import { IMediaData } from "file/media";
+import { IMediaData, Media } from "file/media";
+import { Relationships } from "file/relationships";
 import { XmlComponent } from "file/xml-components";
 import { Paragraph, PictureRun } from "../paragraph";
 import { Table } from "../table";
 import { FooterAttributes } from "./footer-attributes";
 
 export class Footer extends XmlComponent {
-    constructor() {
+    constructor(private readonly media: Media, private readonly relationships: Relationships) {
         super("w:ftr");
         this.root.push(
             new FooterAttributes({
@@ -58,9 +59,13 @@ export class Footer extends XmlComponent {
         this.root.push(paragraph);
     }
 
-    public createDrawing(imageData: IMediaData): void {
-        this.addDrawing(imageData);
-
-        return;
+    public createImage(image: string): void {
+        const mediaData = this.media.addMedia(image, this.relationships.RelationshipCount);
+        this.relationships.createRelationship(
+            mediaData.referenceId,
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
+            `media/${mediaData.fileName}`,
+        );
+        this.addDrawing(mediaData);
     }
 }
