@@ -1,0 +1,9 @@
+{
+    "cSpell.words": ["clippy", "docx", "dolan", "miu", "officegen", "typedoc"],
+    "prettier.trailingComma": "all",
+    "prettier.printWidth": 140,
+    "editor.formatOnSave": false,
+    "prettier.tabWidth": 4,
+    "prettier.arrowParens": "always",
+    "prettier.bracketSpacing": true
+}

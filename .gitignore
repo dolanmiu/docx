@@ -36,5 +36,13 @@ node_modules
 build
 build-tests
 
-# vscode
-.vscode
+# VSCode
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.history
+
+# Lock files
+package-lock.json

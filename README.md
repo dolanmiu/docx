@@ -8,9 +8,14 @@
 
 -----
 
-[![Greenkeeper badge](https://badges.greenkeeper.io/dolanmiu/docx.svg)](https://greenkeeper.io/)
 
-[![NPM version][npm-image]][npm-url] [![Build Status][travis-image]][travis-url] [![Dependency Status][gemnasium-image]][gemnasium-url] [![Known Vulnerabilities][snky-image]][snky-url] [![Chat on Gitter][gitter-image]][gitter-url]
+[![NPM version][npm-image]][npm-url]
+[![Build Status][travis-image]][travis-url]
+[![Dependency Status][gemnasium-image]][gemnasium-url]
+[![Known Vulnerabilities][snky-image]][snky-url]
+[![Chat on Gitter][gitter-image]][gitter-url]
+[![code style: prettier][prettier-image]][prettier-url]
+[![Greenkeeper badge][greenkeeper-image]][greenkeeper-url]
 
 [![NPM](https://nodei.co/npm/docx.png?downloads=true&downloadRank=true&stars=true)](https://nodei.co/npm/docx/)
 
@@ -59,6 +64,8 @@ var exporter = new docx.LocalPacker(doc);
 var exporter = new docx.ExpressPacker(doc, res);
 
 exporter.pack('My First Document');
+// If you want to export it as a .pdf file instead
+exporter.packPdf('My First Document');
 
 // done! A file called 'My First Document.docx'
 // will be in your file system if you used LocalPacker
@@ -67,6 +74,10 @@ exporter.pack('My First Document');
 
 ## Examples
 Check [the Wiki](https://github.com/dolanmiu/docx/wiki/Examples) for examples.
+
+# Contributing
+
+Read the contribution guidelines [here](https://github.com/dolanmiu/docx/wiki/Contributing-Guidelines).
 
 -----
 
@@ -86,4 +97,8 @@ Huge thanks to [@felipeochoa](https://github.com/felipeochoa) for awesome contri
 [gitter-url]: https://gitter.im/docx-lib/Lobby
 [gemnasium-image]: https://gemnasium.com/badges/github.com/dolanmiu/docx.svg
 [gemnasium-url]: https://gemnasium.com/github.com/dolanmiu/docx
+[prettier-image]: https://img.shields.io/badge/code_style-prettier-ff69b4.svg
+[prettier-url]: https://github.com/prettier/prettier
+[greenkeeper-image]: https://badges.greenkeeper.io/dolanmiu/docx.svg
+[greenkeeper-url]: https://greenkeeper.io
 

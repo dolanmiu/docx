@@ -4,12 +4,22 @@ node_js:
 install:
   - npm install
 script:
+  - npm run lint
   - npm test
-after_failure: 
+  - npm run style
+  - npm run build
+  - node ./demo/demo1.js
+  - node ./demo/demo2.js
+  - node ./demo/demo3.js
+  - node ./demo/demo4.js
+  - node ./demo/demo5.js
+  - node ./demo/demo6.js
+  - node ./demo/demo7.js
+after_failure:
   - "cat /home/travis/builds/dolanmiu/docx/npm-debug.log"
 after_success:
   - bash ./deploy-docs.sh
 env:
   global:
   - ENCRYPTION_LABEL: "ad385fa3b525"
-  
+
