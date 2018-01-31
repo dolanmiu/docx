@@ -18,3 +18,6 @@ export interface IMediaData {
     fileName: string;
     dimensions: IMediaDataDimensions;
 }
+
+// Needed because of: https://github.com/s-panferov/awesome-typescript-loader/issues/432
+export const WORKAROUND = "";
