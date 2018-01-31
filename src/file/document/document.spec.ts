@@ -1,13 +1,15 @@
 import { assert, expect } from "chai";
 
-import * as docx from "../../";
 import { Formatter } from "../../export/formatter";
+import { Paragraph } from "../paragraph";
+import { Table } from "../table";
+import { Document } from "./document";
 
 describe("Document", () => {
-    let document: docx.Document;
+    let document: Document;
 
     beforeEach(() => {
-        document = new docx.Document();
+        document = new Document();
     });
 
     describe("#constructor()", () => {
@@ -27,7 +29,7 @@ describe("Document", () => {
     describe("#createParagraph", () => {
         it("should create a new paragraph and append it to body", () => {
             const para = document.createParagraph();
-            expect(para).to.be.an.instanceof(docx.Paragraph);
+            expect(para).to.be.an.instanceof(Paragraph);
             const body = new Formatter().format(document)["w:document"][1]["w:body"];
             expect(body)
                 .to.be.an("array")
@@ -37,7 +39,7 @@ describe("Document", () => {
 
         it("should use the text given to create a run in the paragraph", () => {
             const para = document.createParagraph("sample paragraph text");
-            expect(para).to.be.an.instanceof(docx.Paragraph);
+            expect(para).to.be.an.instanceof(Paragraph);
             const body = new Formatter().format(document)["w:document"][1]["w:body"];
             expect(body)
                 .to.be.an("array")
@@ -53,7 +55,7 @@ describe("Document", () => {
     describe("#createTable", () => {
         it("should create a new table and append it to body", () => {
             const table = document.createTable(2, 3);
-            expect(table).to.be.an.instanceof(docx.Table);
+            expect(table).to.be.an.instanceof(Table);
             const body = new Formatter().format(document)["w:document"][1]["w:body"];
             expect(body)
                 .to.be.an("array")
