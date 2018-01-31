@@ -1,6 +1,6 @@
 const docx = require('../build');
 
-const doc = new docx.File({
+const doc = new docx.Document({
     creator: 'Clippy',
     title: 'Sample Document',
     description: 'A brief example of using docx',

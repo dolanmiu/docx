@@ -1,6 +1,6 @@
 const docx = require("../build");
 
-var doc = new docx.File(undefined, {
+var doc = new docx.Document(undefined, {
     top: 0,
     right: 0,
     bottom: 0,

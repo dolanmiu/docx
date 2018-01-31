@@ -1,11 +1,11 @@
 const docx = require('../build');
 
-var doc = new docx.File();
+var doc = new docx.Document();
 
 doc.createParagraph("Hello World");
 
 doc.Header.createImage("./demo/images/pizza.gif");
-// doc.Footer.createImage("./demo/images/pizza.gif");
+doc.Footer.createImage("./demo/images/pizza.gif");
 
 var exporter = new docx.LocalPacker(doc);
 exporter.pack('My Document');

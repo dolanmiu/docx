@@ -1,6 +1,6 @@
 const docx = require('../build');
 
-var doc = new docx.File();
+var doc = new docx.Document();
 
 const numbering = new docx.Numbering();
 

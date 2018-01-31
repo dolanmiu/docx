@@ -1,6 +1,6 @@
 const docx = require("../build");
 
-var doc = new docx.File(undefined, {
+var doc = new docx.Document(undefined, {
     orientation: "landscape",
 });
 

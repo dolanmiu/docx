@@ -1,6 +1,6 @@
 const docx = require('../build');
 
-var doc = new docx.File();
+var doc = new docx.Document();
 
 var paragraph = new docx.Paragraph("Hello World");
 var institutionText = new docx.TextRun("University College London").bold();
