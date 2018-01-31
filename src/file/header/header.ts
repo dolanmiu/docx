@@ -1,13 +1,12 @@
 // http://officeopenxml.com/WPheaders.php
-import { IMediaData, Media } from "file/media";
-import { Relationships } from "file/relationships";
+import { IMediaData } from "file/media";
 import { XmlComponent } from "file/xml-components";
 import { Paragraph, PictureRun } from "../paragraph";
 import { Table } from "../table";
 import { HeaderAttributes } from "./header-attributes";
 
 export class Header extends XmlComponent {
-    constructor(private readonly media: Media, private readonly relationships: Relationships) {
+    constructor() {
         super("w:hdr");
         this.root.push(
             new HeaderAttributes({
@@ -57,15 +56,5 @@ export class Header extends XmlComponent {
         paragraph.addRun(run);
 
         this.root.push(paragraph);
-    }
-
-    public createImage(image: string): void {
-        const mediaData = this.media.addMedia(image, this.relationships.RelationshipCount);
-        this.relationships.createRelationship(
-            mediaData.referenceId,
-            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
-            `media/${mediaData.fileName}`,
-        );
-        this.addDrawing(mediaData);
     }
 }

@@ -1,7 +1,7 @@
 import { Document } from "./document";
 import { SectionPropertiesOptions } from "./document/body/section-properties/section-properties";
-import { Footer } from "./footer/footer";
-import { Header } from "./header/header";
+import { FooterWrapper } from "./footer-wrapper";
+import { HeaderWrapper } from "./header-wrapper";
 import { Media } from "./media";
 import { Numbering } from "./numbering";
 import { Paragraph } from "./paragraph";
@@ -18,8 +18,8 @@ export class File {
     private readonly numbering: Numbering;
     private readonly media: Media;
     private readonly relationships: Relationships;
-    private readonly header: Header;
-    private readonly footer: Footer;
+    private readonly headerWrapper: HeaderWrapper;
+    private readonly footerWrapper: FooterWrapper;
 
     constructor(options?: IPropertiesOptions, sectionPropertiesOptions?: SectionPropertiesOptions) {
         this.document = new Document(sectionPropertiesOptions);
@@ -38,8 +38,8 @@ export class File {
         this.numbering = new Numbering();
         this.relationships = new Relationships();
         this.media = new Media();
-        this.header = new Header(this.media, this.relationships);
-        this.footer = new Footer(this.media, this.relationships);
+        this.headerWrapper = new HeaderWrapper(this.media);
+        this.footerWrapper = new FooterWrapper(this.media);
     }
 
     public addParagraph(paragraph: Paragraph): void {
@@ -92,11 +92,11 @@ export class File {
         return this.relationships;
     }
 
-    public get Header(): Header {
-        return this.header;
+    public get Header(): HeaderWrapper {
+        return this.headerWrapper;
     }
 
-    public get Footer(): Footer {
-        return this.footer;
+    public get Footer(): FooterWrapper {
+        return this.footerWrapper;
     }
 }
