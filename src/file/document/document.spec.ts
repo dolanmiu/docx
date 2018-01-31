@@ -15,10 +15,9 @@ describe("Document", () => {
     describe("#constructor()", () => {
         it("should create valid JSON", () => {
             const stringifiedJson = JSON.stringify(document);
-            let newJson;
 
             try {
-                newJson = JSON.parse(stringifiedJson);
+                JSON.parse(stringifiedJson);
             } catch (e) {
                 assert.isTrue(false);
             }

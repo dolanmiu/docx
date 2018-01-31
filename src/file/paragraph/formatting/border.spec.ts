@@ -17,10 +17,9 @@ describe("ThematicBreak", () => {
     describe("#constructor()", () => {
         it("should create valid JSON", () => {
             const stringifiedJson = JSON.stringify(thematicBreak);
-            let newJson;
 
             try {
-                newJson = JSON.parse(stringifiedJson);
+                JSON.parse(stringifiedJson);
             } catch (e) {
                 assert.isTrue(false);
             }

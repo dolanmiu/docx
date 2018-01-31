@@ -1,13 +1,13 @@
 // import { assert } from "chai";
 
 // import { Utility } from "../../../tests/utility";
-import { Body } from "./";
+// import { Body } from "./";
 
 describe("Body", () => {
-    let body: Body;
+    // let body: Body;
 
     beforeEach(() => {
-        body = new Body();
+        // body = new Body();
     });
 
     // describe("#constructor()", () => {

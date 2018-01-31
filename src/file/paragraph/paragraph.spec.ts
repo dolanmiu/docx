@@ -14,10 +14,9 @@ describe("Paragraph", () => {
     describe("#constructor()", () => {
         it("should create valid JSON", () => {
             const stringifiedJson = JSON.stringify(paragraph);
-            let newJson;
 
             try {
-                newJson = JSON.parse(stringifiedJson);
+                JSON.parse(stringifiedJson);
             } catch (e) {
                 assert.isTrue(false);
             }
