@@ -1,3 +1,4 @@
+import { ContentTypes } from "./content-types/content-types";
 import { Document } from "./document";
 import { SectionPropertiesOptions } from "./document/body/section-properties/section-properties";
 import { FooterWrapper } from "./footer-wrapper";
@@ -20,6 +21,7 @@ export class File {
     private readonly relationships: Relationships;
     private readonly headerWrapper: HeaderWrapper;
     private readonly footerWrapper: FooterWrapper;
+    private readonly contentTypes: ContentTypes;
 
     constructor(options?: IPropertiesOptions, sectionPropertiesOptions?: SectionPropertiesOptions) {
         this.document = new Document(sectionPropertiesOptions);
@@ -40,6 +42,7 @@ export class File {
         this.media = new Media();
         this.headerWrapper = new HeaderWrapper(this.media);
         this.footerWrapper = new FooterWrapper(this.media);
+        this.contentTypes = new ContentTypes();
     }
 
     public addParagraph(paragraph: Paragraph): void {
@@ -98,5 +101,9 @@ export class File {
 
     public get Footer(): FooterWrapper {
         return this.footerWrapper;
+    }
+
+    public get ContentTypes(): ContentTypes {
+        return this.contentTypes;
     }
 }

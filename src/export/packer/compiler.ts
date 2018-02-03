@@ -46,6 +46,7 @@ export class Compiler {
         const xmlFooter = xml(this.formatter.format(this.file.Footer.Footer));
         const xmlHeaderRelationships = xml(this.formatter.format(this.file.Header.Relationships));
         const xmlFooterRelationships = xml(this.formatter.format(this.file.Footer.Relationships));
+        const xmlContentTypes = xml(this.formatter.format(this.file.ContentTypes));
 
         this.archive.append(xmlDocument, {
             name: "word/document.xml",
@@ -81,6 +82,10 @@ export class Compiler {
 
         this.archive.append(xmlFooterRelationships, {
             name: "word/_rels/footer1.xml.rels",
+        });
+
+        this.archive.append(xmlContentTypes, {
+            name: "[Content_Types].xml",
         });
 
         for (const data of this.file.Media.array) {
