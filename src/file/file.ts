@@ -18,7 +18,8 @@ export class File {
     private readonly properties: Properties;
     private readonly numbering: Numbering;
     private readonly media: Media;
-    private readonly relationships: Relationships;
+    private readonly docRelationships: Relationships;
+    private readonly fileRelationships: Relationships;
     private readonly headerWrapper: HeaderWrapper;
     private readonly footerWrapper: FooterWrapper;
     private readonly contentTypes: ContentTypes;
@@ -38,11 +39,19 @@ export class File {
 
         this.properties = new Properties(options);
         this.numbering = new Numbering();
-        this.relationships = new Relationships();
+        this.docRelationships = new Relationships();
+        this.docRelationships.createRelationship(1, "http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles", "styles.xml");
+        this.docRelationships.createRelationship(2, "http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering", "numbering.xml");
+        this.docRelationships.createRelationship(3, "http://schemas.openxmlformats.org/officeDocument/2006/relationships/header", "header1.xml");
+        this.docRelationships.createRelationship(4, "http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer", "footer1.xml");
         this.media = new Media();
         this.headerWrapper = new HeaderWrapper(this.media);
         this.footerWrapper = new FooterWrapper(this.media);
         this.contentTypes = new ContentTypes();
+        this.fileRelationships = new Relationships();
+        this.fileRelationships.createRelationship(1, "http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument", "word/document.xml");
+        this.fileRelationships.createRelationship(2, "http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties", "docProps/core.xml");
+        this.fileRelationships.createRelationship(3, "http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties", "docProps/app.xml");
     }
 
     public addParagraph(paragraph: Paragraph): void {
@@ -62,8 +71,8 @@ export class File {
     }
 
     public createImage(image: string): void {
-        const mediaData = this.media.addMedia(image, this.relationships.RelationshipCount);
-        this.relationships.createRelationship(
+        const mediaData = this.media.addMedia(image, this.docRelationships.RelationshipCount);
+        this.docRelationships.createRelationship(
             mediaData.referenceId,
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
             `media/${mediaData.fileName}`,
@@ -91,8 +100,12 @@ export class File {
         return this.media;
     }
 
-    public get Relationships(): Relationships {
-        return this.relationships;
+    public get DocumentRelationships(): Relationships {
+        return this.docRelationships;
+    }
+
+    public get FileRelationships(): Relationships {
+        return this.fileRelationships;
     }
 
     public get Header(): HeaderWrapper {

@@ -41,12 +41,13 @@ export class Compiler {
             },
         });
         const xmlNumbering = xml(this.formatter.format(this.file.Numbering));
-        const xmlRelationships = xml(this.formatter.format(this.file.Relationships));
+        const xmlRelationships = xml(this.formatter.format(this.file.DocumentRelationships));
+        const xmlFileRelationships = xml(this.formatter.format(this.file.FileRelationships));
         const xmlHeader = xml(this.formatter.format(this.file.Header.Header));
         const xmlFooter = xml(this.formatter.format(this.file.Footer.Footer));
         const xmlHeaderRelationships = xml(this.formatter.format(this.file.Header.Relationships));
         const xmlFooterRelationships = xml(this.formatter.format(this.file.Footer.Relationships));
-        const xmlContentTypes = xml(this.formatter.format(this.file.ContentTypes));
+        // const xmlContentTypes = xml(this.formatter.format(this.file.ContentTypes));
 
         this.archive.append(xmlDocument, {
             name: "word/document.xml",
@@ -84,8 +85,12 @@ export class Compiler {
             name: "word/_rels/footer1.xml.rels",
         });
 
-        this.archive.append(xmlContentTypes, {
-            name: "[Content_Types].xml",
+        // this.archive.append(xmlContentTypes, {
+        //     name: "[Content_Types].xml",
+        // });
+
+        this.archive.append(xmlFileRelationships, {
+            name: "_rels/.rels",
         });
 
         for (const data of this.file.Media.array) {

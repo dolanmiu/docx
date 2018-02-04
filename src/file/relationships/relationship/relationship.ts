@@ -10,7 +10,10 @@ export type RelationshipType =
     | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/webSettings"
     | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering"
     | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/header"
-    | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer";
+    | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer"
+    | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument"
+    | "http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties"
+    | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties";
 
 export class Relationship extends XmlComponent {
     constructor(id: string, type: RelationshipType, target: string) {

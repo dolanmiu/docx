@@ -10,11 +10,6 @@ export class Relationships extends XmlComponent {
                 xmlns: "http://schemas.openxmlformats.org/package/2006/relationships",
             }),
         );
-
-        this.createRelationship(1, "http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles", "styles.xml");
-        this.createRelationship(2, "http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering", "numbering.xml");
-        this.createRelationship(3, "http://schemas.openxmlformats.org/officeDocument/2006/relationships/header", "header1.xml");
-        this.createRelationship(4, "http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer", "footer1.xml");
     }
 
     public addRelationship(relationship: Relationship): void {
