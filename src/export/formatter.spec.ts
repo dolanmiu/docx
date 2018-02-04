@@ -2,7 +2,7 @@ import { assert } from "chai";
 
 import { Formatter } from "../export/formatter";
 import * as file from "../file";
-import { Properties } from "../file/properties";
+import { CoreProperties } from "../file/core-properties";
 import { Attributes } from "../file/xml-components";
 import { Utility } from "../tests/utility";
 
@@ -67,7 +67,7 @@ describe("Formatter", () => {
         });
 
         it("should format Properties object correctly", () => {
-            const properties = new Properties({
+            const properties = new CoreProperties({
                 title: "test document",
                 creator: "Dolan",
             });

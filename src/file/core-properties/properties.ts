@@ -12,7 +12,7 @@ export interface IPropertiesOptions {
     revision?: string;
 }
 
-export class Properties extends XmlComponent {
+export class CoreProperties extends XmlComponent {
     constructor(options: IPropertiesOptions) {
         super("cp:coreProperties");
         this.root.push(

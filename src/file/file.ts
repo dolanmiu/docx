@@ -1,4 +1,5 @@
 import { ContentTypes } from "./content-types/content-types";
+import { CoreProperties, IPropertiesOptions } from "./core-properties";
 import { Document } from "./document";
 import { SectionPropertiesOptions } from "./document/body/section-properties/section-properties";
 import { FooterWrapper } from "./footer-wrapper";
@@ -6,7 +7,6 @@ import { HeaderWrapper } from "./header-wrapper";
 import { Media } from "./media";
 import { Numbering } from "./numbering";
 import { Paragraph } from "./paragraph";
-import { IPropertiesOptions, Properties } from "./properties";
 import { Relationships } from "./relationships";
 import { Styles } from "./styles";
 import { DefaultStylesFactory } from "./styles/factory";
@@ -15,7 +15,7 @@ import { Table } from "./table";
 export class File {
     private readonly document: Document;
     private readonly styles: Styles;
-    private readonly properties: Properties;
+    private readonly coreProperties: CoreProperties;
     private readonly numbering: Numbering;
     private readonly media: Media;
     private readonly docRelationships: Relationships;
@@ -37,7 +37,7 @@ export class File {
             };
         }
 
-        this.properties = new Properties(options);
+        this.coreProperties = new CoreProperties(options);
         this.numbering = new Numbering();
         this.docRelationships = new Relationships();
         this.docRelationships.createRelationship(1, "http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles", "styles.xml");
@@ -88,8 +88,8 @@ export class File {
         return this.styles;
     }
 
-    public get Properties(): Properties {
-        return this.properties;
+    public get CoreProperties(): CoreProperties {
+        return this.coreProperties;
     }
 
     public get Numbering(): Numbering {

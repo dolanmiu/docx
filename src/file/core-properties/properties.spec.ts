@@ -1,12 +1,12 @@
 import { expect } from "chai";
 
 import { Formatter } from "../../export/formatter";
-import { Properties } from "./properties";
+import { CoreProperties } from "./properties";
 
 describe("Properties", () => {
     describe("#constructor()", () => {
         it("sets the appropriate attributes on the top-level", () => {
-            const properties = new Properties({});
+            const properties = new CoreProperties({});
             const tree = new Formatter().format(properties);
             expect(Object.keys(tree)).to.deep.equal(["cp:coreProperties"]);
             expect(tree["cp:coreProperties"]).to.be.an.instanceof(Array);
@@ -22,7 +22,7 @@ describe("Properties", () => {
         });
 
         it("should create properties with a title", () => {
-            const properties = new Properties({ title: "test document" });
+            const properties = new CoreProperties({ title: "test document" });
             const tree = new Formatter().format(properties);
             expect(Object.keys(tree)).to.deep.equal(["cp:coreProperties"]);
             expect(tree["cp:coreProperties"]).to.be.an.instanceof(Array);
@@ -31,7 +31,7 @@ describe("Properties", () => {
         });
 
         it("should create properties with all the attributes given", () => {
-            const properties = new Properties({
+            const properties = new CoreProperties({
                 title: "test document",
                 subject: "test subject",
                 creator: "me",

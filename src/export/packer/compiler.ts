@@ -34,7 +34,7 @@ export class Compiler {
 
         const xmlDocument = xml(this.formatter.format(this.file.Document), true);
         const xmlStyles = xml(this.formatter.format(this.file.Styles));
-        const xmlProperties = xml(this.formatter.format(this.file.Properties), {
+        const xmlProperties = xml(this.formatter.format(this.file.CoreProperties), {
             declaration: {
                 standalone: "yes",
                 encoding: "UTF-8",
