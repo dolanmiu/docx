@@ -40,18 +40,46 @@ export class File {
         this.coreProperties = new CoreProperties(options);
         this.numbering = new Numbering();
         this.docRelationships = new Relationships();
-        this.docRelationships.createRelationship(1, "http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles", "styles.xml");
-        this.docRelationships.createRelationship(2, "http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering", "numbering.xml");
-        this.docRelationships.createRelationship(3, "http://schemas.openxmlformats.org/officeDocument/2006/relationships/header", "header1.xml");
-        this.docRelationships.createRelationship(4, "http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer", "footer1.xml");
+        this.docRelationships.createRelationship(
+            1,
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles",
+            "styles.xml",
+        );
+        this.docRelationships.createRelationship(
+            2,
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering",
+            "numbering.xml",
+        );
+        this.docRelationships.createRelationship(
+            3,
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/header",
+            "header1.xml",
+        );
+        this.docRelationships.createRelationship(
+            4,
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer",
+            "footer1.xml",
+        );
         this.media = new Media();
         this.headerWrapper = new HeaderWrapper(this.media);
         this.footerWrapper = new FooterWrapper(this.media);
         this.contentTypes = new ContentTypes();
         this.fileRelationships = new Relationships();
-        this.fileRelationships.createRelationship(1, "http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument", "word/document.xml");
-        this.fileRelationships.createRelationship(2, "http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties", "docProps/core.xml");
-        this.fileRelationships.createRelationship(3, "http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties", "docProps/app.xml");
+        this.fileRelationships.createRelationship(
+            1,
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument",
+            "word/document.xml",
+        );
+        this.fileRelationships.createRelationship(
+            2,
+            "http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties",
+            "docProps/core.xml",
+        );
+        this.fileRelationships.createRelationship(
+            3,
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties",
+            "docProps/app.xml",
+        );
     }
 
     public addParagraph(paragraph: Paragraph): void {
