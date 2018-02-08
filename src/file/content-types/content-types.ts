@@ -1,6 +1,7 @@
 import { XmlComponent } from "file/xml-components";
 import { ContentTypeAttributes } from "./content-types-attributes";
 import { Default } from "./default/default";
+import { Override } from "./override/override";
 
 export class ContentTypes extends XmlComponent {
     constructor() {
@@ -21,27 +22,13 @@ export class ContentTypes extends XmlComponent {
         this.root.push(new Default("application/xml", "xml"));
 
         this.root.push(
-            new Default(
-                "application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml",
-                undefined,
-                "/word/document.xml",
-            ),
+            new Override("application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml", "/word/document.xml"),
         );
-        this.root.push(
-            new Default("application/vnd.openxmlformats-officedocument.wordprocessingml.header+xml", undefined, "/word/header1.xml"),
-        );
-        this.root.push(
-            new Default("application/vnd.openxmlformats-officedocument.wordprocessingml.footer+xml", undefined, "/word/footer1.xml"),
-        );
-        this.root.push(
-            new Default("application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml", undefined, "/word/styles.xml"),
-        );
-        this.root.push(new Default("application/vnd.openxmlformats-package.core-properties+xml", undefined, "/docProps/core.xml"));
-        this.root.push(
-            new Default("application/vnd.openxmlformats-officedocument.extended-properties+xml", undefined, "/docProps/app.xml"),
-        );
-        this.root.push(
-            new Default("application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml", undefined, "/word/numbering.xml"),
-        );
+        this.root.push(new Override("application/vnd.openxmlformats-officedocument.wordprocessingml.header+xml", "/word/header1.xml"));
+        this.root.push(new Override("application/vnd.openxmlformats-officedocument.wordprocessingml.footer+xml", "/word/footer1.xml"));
+        this.root.push(new Override("application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml", "/word/styles.xml"));
+        this.root.push(new Override("application/vnd.openxmlformats-package.core-properties+xml", "/docProps/core.xml"));
+        this.root.push(new Override("application/vnd.openxmlformats-officedocument.extended-properties+xml", "/docProps/app.xml"));
+        this.root.push(new Override("application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml", "/word/numbering.xml"));
     }
 }

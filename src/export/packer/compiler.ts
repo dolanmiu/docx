@@ -1,13 +1,10 @@
 import * as archiver from "archiver";
 import * as express from "express";
 import * as fs from "fs";
-import * as path from "path";
 import * as xml from "xml";
 
 import { File } from "file";
 import { Formatter } from "../formatter";
-
-const TEMPLATE_PATH = path.resolve(__dirname, "../../../template");
 
 export class Compiler {
     protected archive: archiver.Archiver;
@@ -24,13 +21,6 @@ export class Compiler {
 
     public async compile(output: fs.WriteStream | express.Response): Promise<void> {
         this.archive.pipe(output);
-        this.archive.glob("**", {
-            cwd: TEMPLATE_PATH,
-        });
-
-        this.archive.glob("**/.rels", {
-            cwd: TEMPLATE_PATH,
-        });
 
         const xmlDocument = xml(this.formatter.format(this.file.Document), true);
         const xmlStyles = xml(this.formatter.format(this.file.Styles));
@@ -47,7 +37,8 @@ export class Compiler {
         const xmlFooter = xml(this.formatter.format(this.file.Footer.Footer));
         const xmlHeaderRelationships = xml(this.formatter.format(this.file.Header.Relationships));
         const xmlFooterRelationships = xml(this.formatter.format(this.file.Footer.Relationships));
-        // const xmlContentTypes = xml(this.formatter.format(this.file.ContentTypes));
+        const xmlContentTypes = xml(this.formatter.format(this.file.ContentTypes));
+        const xmlAppProperties = xml(this.formatter.format(this.file.AppProperties));
 
         this.archive.append(xmlDocument, {
             name: "word/document.xml",
@@ -59,6 +50,10 @@ export class Compiler {
 
         this.archive.append(xmlProperties, {
             name: "docProps/core.xml",
+        });
+
+        this.archive.append(xmlAppProperties, {
+            name: "docProps/app.xml",
         });
 
         this.archive.append(xmlNumbering, {
@@ -85,9 +80,9 @@ export class Compiler {
             name: "word/_rels/footer1.xml.rels",
         });
 
-        // this.archive.append(xmlContentTypes, {
-        //     name: "[Content_Types].xml",
-        // });
+        this.archive.append(xmlContentTypes, {
+            name: "[Content_Types].xml",
+        });
 
         this.archive.append(xmlFileRelationships, {
             name: "_rels/.rels",

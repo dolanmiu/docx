@@ -1,3 +1,4 @@
+import { AppProperties } from "./app-properties/app-properties";
 import { ContentTypes } from "./content-types/content-types";
 import { CoreProperties, IPropertiesOptions } from "./core-properties";
 import { Document } from "./document";
@@ -23,6 +24,7 @@ export class File {
     private readonly headerWrapper: HeaderWrapper;
     private readonly footerWrapper: FooterWrapper;
     private readonly contentTypes: ContentTypes;
+    private readonly appProperties: AppProperties;
 
     constructor(options?: IPropertiesOptions, sectionPropertiesOptions?: SectionPropertiesOptions) {
         this.document = new Document(sectionPropertiesOptions);
@@ -80,6 +82,7 @@ export class File {
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties",
             "docProps/app.xml",
         );
+        this.appProperties = new AppProperties();
     }
 
     public addParagraph(paragraph: Paragraph): void {
@@ -146,5 +149,9 @@ export class File {
 
     public get ContentTypes(): ContentTypes {
         return this.contentTypes;
+    }
+
+    public get AppProperties(): AppProperties {
+        return this.appProperties;
     }
 }
