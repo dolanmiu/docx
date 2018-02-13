@@ -6,7 +6,7 @@
     Generate .docx files with JS/TS very easily, written in TS.
 </p>
 
------
+---
 
 [![NPM version][npm-image]][npm-url]
 [![Build Status][travis-image]][travis-url]
@@ -26,6 +26,7 @@ $ npm install --save docx
 ```
 
 ## Demo
+
 Press `endpoint` on the `RunKit` website:
 
 https://runkit.com/dolanmiu/docx-demo1 - Simple paragraph and text
@@ -37,6 +38,7 @@ https://runkit.com/dolanmiu/docx-demo7 - Landscape
 https://runkit.com/dolanmiu/docx-demo8/1.0.1 - Header and Footer
 
 #### Run demos locally:
+
 ```sh
 $ npm run demo
 ```
@@ -53,7 +55,7 @@ Full documentation can be found here: [http://dolanmiu.github.io/docx](http://do
 
 ```js
 // Used to create docx files
-var docx = require('docx');
+var docx = require("docx");
 
 // Create document
 var doc = new docx.Document();
@@ -61,7 +63,7 @@ var doc = new docx.Document();
 // Add some content in the document
 var paragraph = new docx.Paragraph("Some cool text here.");
 // Add more text into the paragraph if you wish
-paragraph.addRun(new docx.TextRun('Lorem Ipsum Foo Bar'));
+paragraph.addRun(new docx.TextRun("Lorem Ipsum Foo Bar"));
 doc.addParagraph(paragraph);
 
 // Used to export the file into a .docx file
@@ -71,9 +73,9 @@ var exporter = new docx.LocalPacker(doc);
 // res is express' Response object
 var exporter = new docx.ExpressPacker(doc, res);
 
-exporter.pack('My First Document');
+exporter.pack("My First Document");
 // If you want to export it as a .pdf file instead
-exporter.packPdf('My First Document');
+exporter.packPdf("My First Document");
 
 // done! A file called 'My First Document.docx'
 // will be in your file system if you used LocalPacker
@@ -81,13 +83,14 @@ exporter.packPdf('My First Document');
 ```
 
 ## Examples
+
 Check [the Wiki](https://github.com/dolanmiu/docx/wiki/Examples) for examples.
 
 # Contributing
 
 Read the contribution guidelines [here](https://github.com/dolanmiu/docx/wiki/Contributing-Guidelines).
 
------
+---
 
 Made with 💖
 
