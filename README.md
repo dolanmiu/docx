@@ -36,6 +36,7 @@ Press `endpoint` on the `RunKit` website:
 * https://runkit.com/dolanmiu/docx-demo6 - Margins
 * https://runkit.com/dolanmiu/docx-demo7 - Landscape
 * https://runkit.com/dolanmiu/docx-demo8/1.0.1 - Header and Footer
+* https://runkit.com/dolanmiu/docx-demo10 - **My CV generated with docx**
 
 #### Run demos locally:
 
