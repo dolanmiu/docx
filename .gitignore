@@ -46,3 +46,6 @@ build-tests
 
 # Lock files
 package-lock.json
+
+# Documents
+My Document.docx
