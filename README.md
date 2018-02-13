@@ -26,12 +26,22 @@ $ npm install --save docx
 ```
 
 ## Demo
+Press `endpoint` on the `RunKit` website:
 
+https://runkit.com/dolanmiu/docx-demo1 - Simple paragraph and text
+https://runkit.com/dolanmiu/docx-demo2 - Advanced Paragraphs and text
+https://runkit.com/dolanmiu/docx-demo3 - Bullet points
+https://runkit.com/dolanmiu/docx-demo4 - Simple table
+https://runkit.com/dolanmiu/docx-demo6 - Margins
+https://runkit.com/dolanmiu/docx-demo7 - Landscape
+https://runkit.com/dolanmiu/docx-demo8/1.0.1 - Header and Footer
+
+#### Run demos locally:
 ```sh
 $ npm run demo
 ```
 
-will run the demo selector app in the `demo` folder. It will prompt you to select a demo number, which will run a demo from that folder.
+This command will run the demo selector app in the `demo` folder. It will prompt you to select a demo number, which will run a demo from that folder.
 
 ## Guide
 
