@@ -50,7 +50,7 @@ This command will run the demo selector app in the `demo` folder. It will prompt
 
 Please refer to [the Wiki](https://github.com/dolanmiu/docx/wiki) for details on how to use this library, examples and much more!
 
-Full documentation can be found here: [http://dolanmiu.github.io/docx](http://dolanmiu.github.io/docx)
+Full documentation can be found here: [http://dolanmiu.github.io/docx/index.html](http://dolanmiu.github.io/docx/index.html)
 
 ## Simple Usage
 
