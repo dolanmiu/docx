@@ -18,8 +18,16 @@ script:
 after_failure:
   - "cat /home/travis/builds/dolanmiu/docx/npm-debug.log"
 after_success:
-  - bash ./deploy-docs.sh
+  #- bash ./deploy-docs.sh
+  - npm run typedoc
 env:
   global:
   - ENCRYPTION_LABEL: "ad385fa3b525"
-
+deploy:
+  provider: pages
+  skip-cleanup: true
+  github-token: $GITHUB_TOKEN
+  keep-history: true
+  local-dir: docs
+  on:
+    branch: master
