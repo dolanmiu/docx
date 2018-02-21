@@ -18,11 +18,8 @@ script:
 after_failure:
   - "cat /home/travis/builds/dolanmiu/docx/npm-debug.log"
 after_success:
-  #- bash ./deploy-docs.sh
   - npm run typedoc
-env:
-  global:
-  - ENCRYPTION_LABEL: "ad385fa3b525"
+  - echo "janchi.co.uk" > docs/.nojekyll
 deploy:
   provider: pages
   skip-cleanup: true
