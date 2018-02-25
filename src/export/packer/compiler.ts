@@ -1,6 +1,6 @@
 import * as archiver from "archiver";
 import * as express from "express";
-import * as fs from "fs";
+import { Writable } from "stream";
 import * as xml from "xml";
 
 import { File } from "file";
@@ -19,7 +19,7 @@ export class Compiler {
         });
     }
 
-    public async compile(output: fs.WriteStream | express.Response): Promise<void> {
+    public async compile(output: Writable | express.Response): Promise<void> {
         this.archive.pipe(output);
 
         const xmlDocument = xml(this.formatter.format(this.file.Document), true);
