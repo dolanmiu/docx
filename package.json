@@ -1,5 +1,5 @@
 {
-  "name": "docx",
+  "name": "docx-h4",
   "version": "3.2.0",
   "description": "Generate .docx documents with JavaScript (formerly Office-Clippy)",
   "main": "build/index.js",
@@ -24,7 +24,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/dolanmiu/docx.git"
+    "url": "git+https://github.com:h4buli/docx.git"
   },
   "keywords": [
     "docx",
@@ -50,12 +50,8 @@
     "request-promise": "^4.2.2",
     "xml": "^1.0.1"
   },
-  "author": "Dolan Miu",
+  "author": "Igor Bulovski",
   "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/dolanmiu/docx/issues"
-  },
-  "homepage": "https://github.com/dolanmiu/docx#readme",
   "devDependencies": {
     "@types/chai": "^3.4.35",
     "@types/mocha": "^2.2.39",
