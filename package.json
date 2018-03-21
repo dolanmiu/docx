@@ -43,11 +43,8 @@
     "@types/archiver": "^2.1.0",
     "@types/express": "^4.0.35",
     "@types/image-size": "0.0.29",
-    "@types/request-promise": "^4.1.41",
     "archiver": "^2.1.1",
     "image-size": "^0.6.2",
-    "request": "^2.83.0",
-    "request-promise": "^4.2.2",
     "xml": "^1.0.1"
   },
   "author": "Igor Bulovski",
