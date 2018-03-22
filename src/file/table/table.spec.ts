@@ -5,6 +5,83 @@ import { Formatter } from "../../export/formatter";
 import { Paragraph } from "../paragraph";
 import { Table } from "./";
 
+const DEFAULT_TABLE_PROPERTIES = {
+    "w:tblBorders": [
+        {
+            "w:top": [
+                {
+                    _attr: {
+                        "w:color": "auto",
+                        "w:space": 0,
+                        "w:sz": 4,
+                        "w:val": "single",
+                    },
+                },
+            ],
+        },
+        {
+            "w:left": [
+                {
+                    _attr: {
+                        "w:color": "auto",
+                        "w:space": 0,
+                        "w:sz": 4,
+                        "w:val": "single",
+                    },
+                },
+            ],
+        },
+        {
+            "w:bottom": [
+                {
+                    _attr: {
+                        "w:color": "auto",
+                        "w:space": 0,
+                        "w:sz": 4,
+                        "w:val": "single",
+                    },
+                },
+            ],
+        },
+        {
+            "w:right": [
+                {
+                    _attr: {
+                        "w:color": "auto",
+                        "w:space": 0,
+                        "w:sz": 4,
+                        "w:val": "single",
+                    },
+                },
+            ],
+        },
+        {
+            "w:insideH": [
+                {
+                    _attr: {
+                        "w:color": "auto",
+                        "w:space": 0,
+                        "w:sz": 4,
+                        "w:val": "single",
+                    },
+                },
+            ],
+        },
+        {
+            "w:insideV": [
+                {
+                    _attr: {
+                        "w:color": "auto",
+                        "w:space": 0,
+                        "w:sz": 4,
+                        "w:val": "single",
+                    },
+                },
+            ],
+        },
+    ],
+};
+
 describe("Table", () => {
     describe("#constructor", () => {
         it("creates a table with the correct number of rows and columns", () => {
@@ -13,7 +90,7 @@ describe("Table", () => {
             const cell = { "w:tc": [{ "w:tcPr": [] }, { "w:p": [{ "w:pPr": [] }] }] };
             expect(tree).to.deep.equal({
                 "w:tbl": [
-                    { "w:tblPr": [] },
+                    { "w:tblPr": [DEFAULT_TABLE_PROPERTIES] },
                     {
                         "w:tblGrid": [{ "w:gridCol": [{ _attr: { "w:w": 1 } }] }, { "w:gridCol": [{ _attr: { "w:w": 1 } }] }],
                     },
@@ -55,7 +132,7 @@ describe("Table", () => {
             });
             expect(tree).to.deep.equal({
                 "w:tbl": [
-                    { "w:tblPr": [] },
+                    { "w:tblPr": [DEFAULT_TABLE_PROPERTIES] },
                     {
                         "w:tblGrid": [{ "w:gridCol": [{ _attr: { "w:w": 1 } }] }, { "w:gridCol": [{ _attr: { "w:w": 1 } }] }],
                     },
@@ -84,7 +161,7 @@ describe("Table", () => {
             });
             expect(tree).to.deep.equal({
                 "w:tbl": [
-                    { "w:tblPr": [] },
+                    { "w:tblPr": [DEFAULT_TABLE_PROPERTIES] },
                     {
                         "w:tblGrid": [{ "w:gridCol": [{ _attr: { "w:w": 1 } }] }, { "w:gridCol": [{ _attr: { "w:w": 1 } }] }],
                     },
@@ -104,7 +181,7 @@ describe("Table", () => {
                 .which.is.an("array")
                 .with.has.length.at.least(1);
             expect(tree["w:tbl"][0]).to.deep.equal({
-                "w:tblPr": [{ "w:tblW": [{ _attr: { "w:type": "pct", "w:w": 1000 } }] }],
+                "w:tblPr": [DEFAULT_TABLE_PROPERTIES, { "w:tblW": [{ _attr: { "w:type": "pct", "w:w": 1000 } }] }],
             });
         });
     });
@@ -118,7 +195,7 @@ describe("Table", () => {
                 .which.is.an("array")
                 .with.has.length.at.least(1);
             expect(tree["w:tbl"][0]).to.deep.equal({
-                "w:tblPr": [{ "w:tblLayout": [{ _attr: { "w:type": "fixed" } }] }],
+                "w:tblPr": [DEFAULT_TABLE_PROPERTIES, { "w:tblLayout": [{ _attr: { "w:type": "fixed" } }] }],
             });
         });
     });

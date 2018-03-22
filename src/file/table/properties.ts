@@ -5,7 +5,6 @@ export type WidthTypes = "dxa" | "pct" | "nil" | "auto";
 export class TableProperties extends XmlComponent {
     constructor() {
         super("w:tblPr");
-        this.root.push(new TableBorders());
     }
 
     public setWidth(type: WidthTypes, w: number | string): TableProperties {
@@ -15,6 +14,11 @@ export class TableProperties extends XmlComponent {
 
     public fixedWidthLayout(): TableProperties {
         this.root.push(new TableLayout("fixed"));
+        return this;
+    }
+
+    public setBorder(): TableProperties {
+        this.root.push(new TableBorders());
         return this;
     }
 }

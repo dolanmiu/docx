@@ -12,6 +12,7 @@ export class Table extends XmlComponent {
         super("w:tbl");
         this.properties = new TableProperties();
         this.root.push(this.properties);
+        this.properties.setBorder();
 
         const gridCols: number[] = [];
         for (let i = 0; i < cols; i++) {
