@@ -23,7 +23,7 @@ export class Compiler {
         this.archive.pipe(output);
 
         const xmlDocument = xml(this.formatter.format(this.file.Document), true);
-        const xmlStyles = xml(this.formatter.format(this.file.Styles));
+        const xmlStyles = this.resolveStyles();
         const xmlProperties = xml(this.formatter.format(this.file.CoreProperties), {
             declaration: {
                 standalone: "yes",
@@ -101,5 +101,14 @@ export class Compiler {
                 resolve();
             });
         });
+    }
+
+    private resolveStyles(): string {
+        if (this.file.ExternalStyles) {
+            return this.file.ExternalStyles;
+        } else {
+            return xml(this.formatter.format(this.file.Styles));
+        }
+        
     }
 }
