@@ -3,6 +3,8 @@ import { IMediaData } from "../../media/data";
 import { Run } from "../run";
 
 export class PictureRun extends Run {
+    private drawing: Drawing;
+
     constructor(imageData: IMediaData) {
         super();
 
@@ -10,6 +12,20 @@ export class PictureRun extends Run {
             throw new Error("imageData cannot be undefined");
         }
 
-        this.root.push(new Drawing(imageData));
+        this.drawing = new Drawing(imageData);
+
+        this.root.push(this.drawing);
+    }
+
+    public scale(factorX: number, factorY?: number): void {
+        if (!factorX) {
+            factorX = 1;
+        }
+
+        if (!factorY) {
+            factorY = factorX;
+        }
+
+        this.drawing.scale(factorX, factorY);
     }
 }

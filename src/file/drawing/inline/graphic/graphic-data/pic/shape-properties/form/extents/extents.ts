@@ -3,14 +3,23 @@ import { XmlComponent } from "file/xml-components";
 import { ExtentsAttributes } from "./extents-attributes";
 
 export class Extents extends XmlComponent {
+    private attributes: ExtentsAttributes;
+
     constructor(x: number, y: number) {
         super("a:ext");
 
-        this.root.push(
-            new ExtentsAttributes({
-                cx: x,
-                cy: y,
-            }),
-        );
+        this.attributes = new ExtentsAttributes({
+            cx: x,
+            cy: y,
+        });
+
+        this.root.push(this.attributes);
+    }
+
+    public setXY(x: number, y: number): void {
+        this.attributes.set({
+            cx: x,
+            cy: y,
+        });
     }
 }

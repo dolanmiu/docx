@@ -6,6 +6,8 @@ import { PicAttributes } from "./pic-attributes";
 import { ShapeProperties } from "./shape-properties/shape-properties";
 
 export class Pic extends XmlComponent {
+    private shapeProperties: ShapeProperties;
+
     constructor(referenceId: number, x: number, y: number) {
         super("pic:pic");
 
@@ -14,8 +16,15 @@ export class Pic extends XmlComponent {
                 xmlns: "http://schemas.openxmlformats.org/drawingml/2006/picture",
             }),
         );
+
+        this.shapeProperties = new ShapeProperties(x, y);
+
         this.root.push(new NonVisualPicProperties());
         this.root.push(new BlipFill(referenceId));
         this.root.push(new ShapeProperties(x, y));
+    }
+
+    public setXY(x: number, y: number): void {
+        this.shapeProperties.setXY(x, y);
     }
 }
