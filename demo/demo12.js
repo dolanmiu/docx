@@ -12,7 +12,7 @@ const image4 = doc.createImage("./demo/images/pizza.gif");
 
 image.scale(0.5);
 image2.scale(1)
-image4.scale(2.5);
+image3.scale(2.5);
 image4.scale(4);
 
 var exporter = new docx.LocalPacker(doc);
