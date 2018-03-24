@@ -9,7 +9,10 @@ import { GraphicFrameProperties } from "./graphic-frame/graphic-frame-properties
 import { InlineAttributes } from "./inline-attributes";
 
 export class Inline extends XmlComponent {
-    constructor(referenceId: number, dimensions: IMediaDataDimensions) {
+    private extent: Extent;
+    private graphic: Graphic;
+
+    constructor(referenceId: number, private dimensions: IMediaDataDimensions) {
         super("wp:inline");
 
         this.root.push(
@@ -21,10 +24,21 @@ export class Inline extends XmlComponent {
             }),
         );
 
-        this.root.push(new Extent(dimensions.emus.x, dimensions.emus.y));
+        this.extent = new Extent(dimensions.emus.x, dimensions.emus.y);
+        this.graphic = new Graphic(referenceId, dimensions.emus.x, dimensions.emus.y);
+
+        this.root.push(this.extent);
         this.root.push(new EffectExtent());
         this.root.push(new DocProperties());
         this.root.push(new GraphicFrameProperties());
-        this.root.push(new Graphic(referenceId, dimensions.emus.x, dimensions.emus.y));
+        this.root.push(this.graphic);
+    }
+
+    public scale(factorX: number, factorY: number): void {
+        const newX = this.dimensions.emus.x * factorX;
+        const newY = this.dimensions.emus.y * factorY;
+
+        this.extent.setXY(newX, newY);
+        this.graphic.setXY(newX, newY);
     }
 }

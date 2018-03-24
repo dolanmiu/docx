@@ -57,17 +57,17 @@ export class Document extends XmlComponent {
         return table;
     }
 
-    public addDrawing(imageData: IMediaData): void {
-        const paragraph = new Paragraph();
-        const run = new PictureRun(imageData);
-        paragraph.addRun(run);
-
-        this.body.push(paragraph);
+    public addDrawing(pictureParagraph: Paragraph): void {
+        this.body.push(pictureParagraph);
     }
 
-    public createDrawing(imageData: IMediaData): void {
-        this.addDrawing(imageData);
+    public createDrawing(imageData: IMediaData): PictureRun {
+        const paragraph = new Paragraph();
+        const run = new PictureRun(imageData);
 
-        return;
+        paragraph.addRun(run);
+        this.addDrawing(paragraph);
+
+        return run;
     }
 }

@@ -23,4 +23,8 @@ export abstract class XmlAttributeComponent<T> extends BaseXmlComponent {
         });
         return { _attr: attrs };
     }
+
+    public set(properties: T): void {
+        this.root = properties;
+    }
 }

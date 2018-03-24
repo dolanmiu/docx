@@ -7,7 +7,7 @@ import { FooterWrapper } from "./footer-wrapper";
 import { HeaderWrapper } from "./header-wrapper";
 import { Media } from "./media";
 import { Numbering } from "./numbering";
-import { Paragraph } from "./paragraph";
+import { Paragraph, PictureRun } from "./paragraph";
 import { Relationships } from "./relationships";
 import { Styles } from "./styles";
 import { DefaultStylesFactory } from "./styles/factory";
@@ -101,14 +101,14 @@ export class File {
         return this.document.createTable(rows, cols);
     }
 
-    public createImage(image: string): void {
+    public createImage(image: string): PictureRun {
         const mediaData = this.media.addMedia(image, this.docRelationships.RelationshipCount);
         this.docRelationships.createRelationship(
             mediaData.referenceId,
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
             `media/${mediaData.fileName}`,
         );
-        this.document.createDrawing(mediaData);
+        return this.document.createDrawing(mediaData);
     }
 
     public get Document(): Document {
