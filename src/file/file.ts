@@ -25,8 +25,6 @@ export class File {
     private readonly footerWrapper: FooterWrapper;
     private readonly contentTypes: ContentTypes;
     private readonly appProperties: AppProperties;
-    private externalStyles: string;    
-    
 
     constructor(options?: IPropertiesOptions, sectionPropertiesOptions?: SectionPropertiesOptions) {
         this.document = new Document(sectionPropertiesOptions);
@@ -113,10 +111,6 @@ export class File {
         this.document.createDrawing(mediaData);
     }
 
-    public setExternalStyles(styles: string): void {
-        this.externalStyles = styles;
-    }
-
     public get Document(): Document {
         return this.document;
     }
@@ -159,8 +153,5 @@ export class File {
 
     public get AppProperties(): AppProperties {
         return this.appProperties;
-    }
-    public get ExternalStyles(): string {
-        return this.externalStyles;
     }
 }
