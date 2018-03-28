@@ -1,21 +1,13 @@
-import { XmlComponent } from "file/xml-components";
-import { DocumentAttributes } from "../document/document-attributes";
+import { XmlComponent, BaseXmlComponent } from "file/xml-components";
 import { DocumentDefaults } from "./defaults";
 import { ParagraphStyle } from "./style";
 
 export class Styles extends XmlComponent {
-    constructor() {
+    constructor(_initialStyles?: BaseXmlComponent) {
         super("w:styles");
-        this.root.push(
-            new DocumentAttributes({
-                mc: "http://schemas.openxmlformats.org/markup-compatibility/2006",
-                r: "http://schemas.openxmlformats.org/officeDocument/2006/relationships",
-                w: "http://schemas.openxmlformats.org/wordprocessingml/2006/main",
-                w14: "http://schemas.microsoft.com/office/word/2010/wordml",
-                w15: "http://schemas.microsoft.com/office/word/2012/wordml",
-                Ignorable: "w14 w15",
-            }),
-        );
+        if (_initialStyles) {
+            this.root.push(_initialStyles);
+        }
     }
 
     public push(style: XmlComponent): Styles {
