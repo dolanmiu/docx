@@ -11,6 +11,7 @@ import { Paragraph } from "./paragraph";
 import { Relationships } from "./relationships";
 import { Styles } from "./styles";
 import { DefaultStylesFactory } from "./styles/factory";
+import { ExternalStylesFactory } from "./styles/external-styles-factory";
 import { Table } from "./table";
 
 export class File {
@@ -28,8 +29,6 @@ export class File {
 
     constructor(options?: IPropertiesOptions, sectionPropertiesOptions?: SectionPropertiesOptions) {
         this.document = new Document(sectionPropertiesOptions);
-        const stylesFactory = new DefaultStylesFactory();
-        this.styles = stylesFactory.newInstance();
 
         if (!options) {
             options = {
@@ -37,6 +36,14 @@ export class File {
                 revision: "1",
                 lastModifiedBy: "Un-named",
             };
+        }
+
+        if (options.externalStyles) {
+            const stylesFactory = new ExternalStylesFactory();
+            this.styles = stylesFactory.newInstance(options.externalStyles);
+        } else {
+            const stylesFactory = new DefaultStylesFactory();
+            this.styles = stylesFactory.newInstance();
         }
 
         this.coreProperties = new CoreProperties(options);
