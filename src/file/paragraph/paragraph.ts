@@ -69,6 +69,11 @@ export class Paragraph extends XmlComponent {
         return this;
     }
 
+    public heading6(): Paragraph {
+        this.properties.push(new Style("Heading6"));
+        return this;
+    }
+
     public title(): Paragraph {
         this.properties.push(new Style("Title"));
         return this;

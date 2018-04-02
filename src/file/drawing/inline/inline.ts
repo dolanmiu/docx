@@ -35,8 +35,8 @@ export class Inline extends XmlComponent {
     }
 
     public scale(factorX: number, factorY: number): void {
-        const newX = this.dimensions.emus.x * factorX;
-        const newY = this.dimensions.emus.y * factorY;
+        const newX = Math.round(this.dimensions.emus.x * factorX);
+        const newY = Math.round(this.dimensions.emus.y * factorY);
 
         this.extent.setXY(newX, newY);
         this.graphic.setXY(newX, newY);
