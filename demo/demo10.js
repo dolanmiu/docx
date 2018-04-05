@@ -67,7 +67,7 @@ const experiences = [
         company: {
             name: "Soundmouse",
         },
-    },
+    }
 ];
 
 const education = [
@@ -96,7 +96,7 @@ const education = [
         endDate: {
             year: 2012,
         },
-    },
+    }
 ];
 
 const skills = [
@@ -111,14 +111,14 @@ const skills = [
     },
     {
         name: "NodeJS",
-    },
+    }
 ];
 
 const achievements = [
     {
         issuer: "Oracle",
         name: "Oracle Certified Expert",
-    },
+    }
 ];
 
 class DocumentCreator {
@@ -135,7 +135,7 @@ class DocumentCreator {
 
         for (const education of educations) {
             document.addParagraph(
-                this.createInstitutionHeader(education.schoolName, `${education.startDate.year} - ${education.endDate.year}`),
+                this.createInstitutionHeader(education.schoolName, `${education.startDate.year} - ${education.endDate.year}`)
             );
             document.addParagraph(this.createRoleText(`${education.fieldOfStudy} - ${education.degree}`));
 
@@ -151,8 +151,8 @@ class DocumentCreator {
             document.addParagraph(
                 this.createInstitutionHeader(
                     position.company.name,
-                    this.createPositionDateText(position.startDate, position.endDate, position.isCurrent),
-                ),
+                    this.createPositionDateText(position.startDate, position.endDate, position.isCurrent)
+                )
             );
             document.addParagraph(this.createRoleText(position.title));
 
@@ -182,14 +182,14 @@ class DocumentCreator {
 
         document.addParagraph(
             new docx.Paragraph(
-                "Dr. Dean Mohamedally Director of Postgraduate Studies Department of Computer Science, University College London Malet Place, Bloomsbury, London WC1E d.mohamedally@ucl.ac.uk",
-            ),
+                "Dr. Dean Mohamedally Director of Postgraduate Studies Department of Computer Science, University College London Malet Place, Bloomsbury, London WC1E d.mohamedally@ucl.ac.uk"
+            )
         );
         document.addParagraph(new docx.Paragraph("More references upon request"));
         document.addParagraph(
             new docx.Paragraph(
-                "This CV was generated in real-time based on my Linked-In profile from my personal website www.dolan.bio.",
-            ).center(),
+                "This CV was generated in real-time based on my Linked-In profile from my personal website www.dolan.bio."
+            ).center()
         );
         return document;
     }

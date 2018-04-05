@@ -129,9 +129,10 @@ export class Paragraph extends XmlComponent {
         return this;
     }
 
-    public bullet(): Paragraph {
+    public bullet(indentLevel: number): Paragraph {
+        indentLevel = indentLevel || 0;
         this.properties.push(new Style("ListParagraph"));
-        this.properties.push(new NumberProperties(1, 0));
+        this.properties.push(new NumberProperties(1, indentLevel));
         return this;
     }
 

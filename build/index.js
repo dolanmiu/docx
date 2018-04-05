@@ -1134,7 +1134,7 @@ formats['pkcs1'] = __webpack_require__(78);
 formats['pkcs8'] = __webpack_require__(42);
 formats['rfc4253'] = __webpack_require__(27);
 formats['ssh'] = __webpack_require__(150);
-formats['ssh-private'] = __webpack_require__(54);
+formats['ssh-private'] = __webpack_require__(53);
 formats['openssh'] = formats['ssh-private'];
 formats['dnssec'] = __webpack_require__(79);
 
@@ -1592,7 +1592,7 @@ formats['pem'] = __webpack_require__(26);
 formats['pkcs1'] = __webpack_require__(78);
 formats['pkcs8'] = __webpack_require__(42);
 formats['rfc4253'] = __webpack_require__(27);
-formats['ssh-private'] = __webpack_require__(54);
+formats['ssh-private'] = __webpack_require__(53);
 formats['openssh'] = formats['ssh-private'];
 formats['ssh'] = formats['ssh-private'];
 formats['dnssec'] = __webpack_require__(79);
@@ -4816,9 +4816,9 @@ function __export(m) {
     for (var p in m) if (!exports.hasOwnProperty(p)) exports[p] = m[p];
 }
 Object.defineProperty(exports, "__esModule", { value: true });
-__export(__webpack_require__(55));
+__export(__webpack_require__(54));
 __export(__webpack_require__(230));
-__export(__webpack_require__(47));
+__export(__webpack_require__(46));
 __export(__webpack_require__(33));
 
 
@@ -6335,7 +6335,7 @@ var PrivateKey = __webpack_require__(8);
 
 var pkcs1 = __webpack_require__(78);
 var pkcs8 = __webpack_require__(42);
-var sshpriv = __webpack_require__(54);
+var sshpriv = __webpack_require__(53);
 var rfc4253 = __webpack_require__(27);
 
 var errors = __webpack_require__(18);
@@ -6843,7 +6843,7 @@ function objectToString(o) {
 
 /*<replacement>*/
 
-var pna = __webpack_require__(49);
+var pna = __webpack_require__(48);
 /*</replacement>*/
 
 /*<replacement>*/
@@ -7326,7 +7326,7 @@ exports.Underline = underline_1.Underline;
 var script_1 = __webpack_require__(94);
 exports.SubScript = script_1.SubScript;
 exports.SuperScript = script_1.SuperScript;
-var run_fonts_1 = __webpack_require__(45);
+var run_fonts_1 = __webpack_require__(55);
 exports.RunFonts = run_fonts_1.RunFonts;
 class Bold extends xml_components_1.XmlComponent {
     constructor() {
@@ -10818,37 +10818,6 @@ Identity._oldVersionDetect = function (obj) {
 
 Object.defineProperty(exports, "__esModule", { value: true });
 const xml_components_1 = __webpack_require__(0);
-class RunFontAttributes extends xml_components_1.XmlAttributeComponent {
-    constructor() {
-        super(...arguments);
-        this.xmlKeys = {
-            ascii: "w:ascii",
-            hAnsi: "w:hAnsi",
-            hint: "w:hint",
-        };
-    }
-}
-class RunFonts extends xml_components_1.XmlComponent {
-    constructor(ascii, hint) {
-        super("w:rFonts");
-        this.root.push(new RunFontAttributes({
-            ascii: ascii,
-            hAnsi: ascii,
-            hint: hint,
-        }));
-    }
-}
-exports.RunFonts = RunFonts;
-
-
-/***/ }),
-/* 46 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", { value: true });
-const xml_components_1 = __webpack_require__(0);
 class RunProperties extends xml_components_1.XmlComponent {
     constructor() {
         super("w:rPr");
@@ -10861,7 +10830,7 @@ exports.RunProperties = RunProperties;
 
 
 /***/ }),
-/* 47 */
+/* 46 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -10880,7 +10849,7 @@ exports.ParagraphProperties = ParagraphProperties;
 
 
 /***/ }),
-/* 48 */
+/* 47 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -10893,7 +10862,7 @@ __export(__webpack_require__(231));
 
 
 /***/ }),
-/* 49 */
+/* 48 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -10944,13 +10913,13 @@ function nextTick(fn, arg1, arg2, arg3) {
 
 
 /***/ }),
-/* 50 */
+/* 49 */
 /***/ (function(module, exports) {
 
 module.exports = require("https");
 
 /***/ }),
-/* 51 */
+/* 50 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -11143,13 +11112,13 @@ exports.unauthorized = function (message, attributes) {
 
 
 /***/ }),
-/* 52 */
+/* 51 */
 /***/ (function(module, exports) {
 
 module.exports = require("querystring");
 
 /***/ }),
-/* 53 */
+/* 52 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // Copyright 2012 Joyent, Inc.  All rights reserved.
@@ -11267,7 +11236,7 @@ module.exports = {
 
 
 /***/ }),
-/* 54 */
+/* 53 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // Copyright 2015 Joyent, Inc.
@@ -11534,7 +11503,7 @@ function write(key, options) {
 
 
 /***/ }),
-/* 55 */
+/* 54 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -11552,6 +11521,37 @@ __export(__webpack_require__(96));
 __export(__webpack_require__(97));
 __export(__webpack_require__(98));
 __export(__webpack_require__(99));
+
+
+/***/ }),
+/* 55 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+const xml_components_1 = __webpack_require__(0);
+class RunFontAttributes extends xml_components_1.XmlAttributeComponent {
+    constructor() {
+        super(...arguments);
+        this.xmlKeys = {
+            ascii: "w:ascii",
+            hAnsi: "w:hAnsi",
+            hint: "w:hint",
+        };
+    }
+}
+class RunFonts extends xml_components_1.XmlComponent {
+    constructor(ascii, hint) {
+        super("w:rFonts");
+        this.root.push(new RunFontAttributes({
+            ascii: ascii,
+            hAnsi: ascii,
+            hint: hint,
+        }));
+    }
+}
+exports.RunFonts = RunFonts;
 
 
 /***/ }),
@@ -31370,7 +31370,7 @@ exports.badImplementation = function (message, data) {
 
 const Crypto = __webpack_require__(4);
 const Url = __webpack_require__(16);
-const Utils = __webpack_require__(51);
+const Utils = __webpack_require__(50);
 
 
 // Declare internals
@@ -33172,7 +33172,7 @@ function __export(m) {
 }
 Object.defineProperty(exports, "__esModule", { value: true });
 __export(__webpack_require__(22));
-__export(__webpack_require__(48));
+__export(__webpack_require__(47));
 __export(__webpack_require__(234));
 __export(__webpack_require__(103));
 __export(__webpack_require__(100));
@@ -33805,10 +33805,10 @@ __export(__webpack_require__(288));
 
 Object.defineProperty(exports, "__esModule", { value: true });
 const xml_components_1 = __webpack_require__(0);
-const paragraph = __webpack_require__(55);
-const properties_1 = __webpack_require__(47);
+const paragraph = __webpack_require__(54);
+const properties_1 = __webpack_require__(46);
 const formatting = __webpack_require__(34);
-const properties_2 = __webpack_require__(46);
+const properties_2 = __webpack_require__(45);
 class LevelAttributes extends xml_components_1.XmlAttributeComponent {
     constructor() {
         super(...arguments);
@@ -34038,7 +34038,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const xml_components_1 = __webpack_require__(0);
 const paragraph = __webpack_require__(22);
 const formatting = __webpack_require__(34);
-const properties_1 = __webpack_require__(46);
+const properties_1 = __webpack_require__(45);
 const components_1 = __webpack_require__(296);
 class StyleAttributes extends xml_components_1.XmlAttributeComponent {
     constructor() {
@@ -34941,7 +34941,7 @@ module.exports = require("constants");
 
 /*<replacement>*/
 
-var pna = __webpack_require__(49);
+var pna = __webpack_require__(48);
 /*</replacement>*/
 
 module.exports = Readable;
@@ -35948,7 +35948,7 @@ module.exports = __webpack_require__(11);
 
 /*<replacement>*/
 
-var pna = __webpack_require__(49);
+var pna = __webpack_require__(48);
 /*</replacement>*/
 
 // undocumented cb() API, needed for core, not for public API
@@ -36053,7 +36053,7 @@ module.exports = {
 
 /*<replacement>*/
 
-var pna = __webpack_require__(49);
+var pna = __webpack_require__(48);
 /*</replacement>*/
 
 module.exports = Writable;
@@ -41829,7 +41829,7 @@ var utils = __webpack_require__(5);
 var Key = __webpack_require__(6);
 var PrivateKey = __webpack_require__(8);
 
-var sshpriv = __webpack_require__(54);
+var sshpriv = __webpack_require__(53);
 
 /*JSSTYLED*/
 var SSHKEY_RE = /^([a-z0-9-]+)[ \t]+([a-zA-Z0-9+\/]+[=]*)([ \t]+([^ \t][^\n]*[\n]*)?)?$/;
@@ -45199,8 +45199,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const break_1 = __webpack_require__(181);
 const caps_1 = __webpack_require__(182);
 const formatting_1 = __webpack_require__(34);
-const properties_1 = __webpack_require__(46);
-const run_fonts_1 = __webpack_require__(45);
+const properties_1 = __webpack_require__(45);
+const run_fonts_1 = __webpack_require__(55);
 const script_1 = __webpack_require__(94);
 const style_1 = __webpack_require__(183);
 const tab_1 = __webpack_require__(184);
@@ -46350,7 +46350,7 @@ const spacing_1 = __webpack_require__(96);
 const style_1 = __webpack_require__(97);
 const tab_stop_1 = __webpack_require__(98);
 const unordered_list_1 = __webpack_require__(99);
-const properties_1 = __webpack_require__(47);
+const properties_1 = __webpack_require__(46);
 class Paragraph extends xml_components_1.XmlComponent {
     constructor(text) {
         super("w:p");
@@ -46442,9 +46442,10 @@ class Paragraph extends xml_components_1.XmlComponent {
         this.properties.push(new tab_stop_1.CenterTabStop(position));
         return this;
     }
-    bullet() {
+    bullet(indentLevel) {
+        indentLevel = indentLevel || 0;
         this.properties.push(new style_1.Style("ListParagraph"));
-        this.properties.push(new unordered_list_1.NumberProperties(1, 0));
+        this.properties.push(new unordered_list_1.NumberProperties(1, indentLevel));
         return this;
     }
     setNumbering(numbering, indentLevel) {
@@ -47149,7 +47150,7 @@ __export(__webpack_require__(247));
 Object.defineProperty(exports, "__esModule", { value: true });
 const xml_components_1 = __webpack_require__(0);
 const paragraph_1 = __webpack_require__(22);
-const table_1 = __webpack_require__(48);
+const table_1 = __webpack_require__(47);
 const body_1 = __webpack_require__(248);
 const document_attributes_1 = __webpack_require__(35);
 class Document extends xml_components_1.XmlComponent {
@@ -47596,7 +47597,7 @@ exports.FooterWrapper = FooterWrapper;
 Object.defineProperty(exports, "__esModule", { value: true });
 const xml_components_1 = __webpack_require__(0);
 const paragraph_1 = __webpack_require__(22);
-const table_1 = __webpack_require__(48);
+const table_1 = __webpack_require__(47);
 const footer_attributes_1 = __webpack_require__(265);
 class Footer extends xml_components_1.XmlComponent {
     constructor() {
@@ -47837,7 +47838,7 @@ exports.HeaderWrapper = HeaderWrapper;
 Object.defineProperty(exports, "__esModule", { value: true });
 const xml_components_1 = __webpack_require__(0);
 const paragraph_1 = __webpack_require__(22);
-const table_1 = __webpack_require__(48);
+const table_1 = __webpack_require__(47);
 const header_attributes_1 = __webpack_require__(272);
 class Header extends xml_components_1.XmlComponent {
     constructor() {
@@ -48694,8 +48695,7 @@ exports.WORKAROUND2 = "";
 Object.defineProperty(exports, "__esModule", { value: true });
 const xml_components_1 = __webpack_require__(0);
 const document_attributes_1 = __webpack_require__(35);
-const formatting_1 = __webpack_require__(55);
-const run_fonts_1 = __webpack_require__(45);
+const formatting_1 = __webpack_require__(54);
 const abstract_numbering_1 = __webpack_require__(289);
 const num_1 = __webpack_require__(291);
 class Numbering extends xml_components_1.XmlComponent {
@@ -48723,41 +48723,32 @@ class Numbering extends xml_components_1.XmlComponent {
         this.nextId = 0;
         const abstractNumbering = this.createAbstractNumbering();
         abstractNumbering
-            .createLevel(0, "bullet", "•", "left")
-            .addParagraphProperty(new formatting_1.Indent({ left: 720, hanging: 360 }))
-            .addRunProperty(new run_fonts_1.RunFonts("Symbol", "default"));
+            .createLevel(0, "bullet", "\u25CF", "left")
+            .addParagraphProperty(new formatting_1.Indent({ left: 720, hanging: 360 }));
         abstractNumbering
-            .createLevel(1, "bullet", "o", "left")
-            .addParagraphProperty(new formatting_1.Indent({ left: 1440, hanging: 360 }))
-            .addRunProperty(new run_fonts_1.RunFonts("Courier New", "default"));
+            .createLevel(1, "bullet", "\u25CB", "left")
+            .addParagraphProperty(new formatting_1.Indent({ left: 1440, hanging: 360 }));
         abstractNumbering
-            .createLevel(2, "bullet", "•", "left")
-            .addParagraphProperty(new formatting_1.Indent({ left: 2160, hanging: 360 }))
-            .addRunProperty(new run_fonts_1.RunFonts("Wingdings", "default"));
+            .createLevel(2, "bullet", "\u25A0", "left")
+            .addParagraphProperty(new formatting_1.Indent({ left: 2160, hanging: 360 }));
         abstractNumbering
-            .createLevel(3, "bullet", "•", "left")
-            .addParagraphProperty(new formatting_1.Indent({ left: 2880, hanging: 360 }))
-            .addRunProperty(new run_fonts_1.RunFonts("Symbol", "default"));
+            .createLevel(3, "bullet", "\u25CF", "left")
+            .addParagraphProperty(new formatting_1.Indent({ left: 2880, hanging: 360 }));
         abstractNumbering
-            .createLevel(4, "bullet", "o", "left")
-            .addParagraphProperty(new formatting_1.Indent({ left: 3600, hanging: 360 }))
-            .addRunProperty(new run_fonts_1.RunFonts("Courier New", "default"));
+            .createLevel(4, "bullet", "\u25CB", "left")
+            .addParagraphProperty(new formatting_1.Indent({ left: 3600, hanging: 360 }));
         abstractNumbering
-            .createLevel(5, "bullet", "•", "left")
-            .addParagraphProperty(new formatting_1.Indent({ left: 4320, hanging: 360 }))
-            .addRunProperty(new run_fonts_1.RunFonts("Wingdings", "default"));
+            .createLevel(5, "bullet", "\u25A0", "left")
+            .addParagraphProperty(new formatting_1.Indent({ left: 4320, hanging: 360 }));
         abstractNumbering
-            .createLevel(6, "bullet", "•", "left")
-            .addParagraphProperty(new formatting_1.Indent({ left: 5040, hanging: 360 }))
-            .addRunProperty(new run_fonts_1.RunFonts("Symbol", "default"));
+            .createLevel(6, "bullet", "\u25CF", "left")
+            .addParagraphProperty(new formatting_1.Indent({ left: 5040, hanging: 360 }));
         abstractNumbering
-            .createLevel(7, "bullet", "o", "left")
-            .addParagraphProperty(new formatting_1.Indent({ left: 5760, hanging: 360 }))
-            .addRunProperty(new run_fonts_1.RunFonts("Courier New", "default"));
+            .createLevel(7, "bullet", "\u25CB", "left")
+            .addParagraphProperty(new formatting_1.Indent({ left: 5760, hanging: 360 }));
         abstractNumbering
-            .createLevel(8, "bullet", "•", "left")
-            .addParagraphProperty(new formatting_1.Indent({ left: 6480, hanging: 360 }))
-            .addRunProperty(new run_fonts_1.RunFonts("Wingdings", "default"));
+            .createLevel(8, "bullet", "\u25A0", "left")
+            .addParagraphProperty(new formatting_1.Indent({ left: 6480, hanging: 360 }));
         this.createConcreteNumbering(abstractNumbering);
     }
     createAbstractNumbering() {
@@ -48993,7 +48984,7 @@ exports.DocumentDefaults = DocumentDefaults;
 
 Object.defineProperty(exports, "__esModule", { value: true });
 const xml_components_1 = __webpack_require__(0);
-const properties_1 = __webpack_require__(47);
+const properties_1 = __webpack_require__(46);
 class ParagraphPropertiesDefaults extends xml_components_1.XmlComponent {
     constructor() {
         super("w:pPrDefault");
@@ -49012,8 +49003,8 @@ exports.ParagraphPropertiesDefaults = ParagraphPropertiesDefaults;
 Object.defineProperty(exports, "__esModule", { value: true });
 const xml_components_1 = __webpack_require__(0);
 const formatting_1 = __webpack_require__(34);
-const properties_1 = __webpack_require__(46);
-const run_fonts_1 = __webpack_require__(45);
+const properties_1 = __webpack_require__(45);
+const run_fonts_1 = __webpack_require__(55);
 class RunPropertiesDefaults extends xml_components_1.XmlComponent {
     constructor() {
         super("w:rPrDefault");
@@ -67042,7 +67033,7 @@ function serializer(replacer, cycleReplacer) {
 
 
 var http = __webpack_require__(37)
-var https = __webpack_require__(50)
+var https = __webpack_require__(49)
 var url = __webpack_require__(16)
 var util = __webpack_require__(1)
 var stream = __webpack_require__(11)
@@ -68608,7 +68599,7 @@ exports.sntp = __webpack_require__(144);
 exports.server = __webpack_require__(403);
 exports.client = __webpack_require__(406);
 exports.crypto = __webpack_require__(73);
-exports.utils = __webpack_require__(51);
+exports.utils = __webpack_require__(50);
 
 exports.uri = {
     authenticate: exports.server.authenticateBewit,
@@ -68817,7 +68808,7 @@ const Boom = __webpack_require__(72);
 const Hoek = __webpack_require__(38);
 const Cryptiles = __webpack_require__(145);
 const Crypto = __webpack_require__(73);
-const Utils = __webpack_require__(51);
+const Utils = __webpack_require__(50);
 
 
 // Declare internals
@@ -69844,7 +69835,7 @@ const Url = __webpack_require__(16);
 const Hoek = __webpack_require__(38);
 const Cryptiles = __webpack_require__(145);
 const Crypto = __webpack_require__(73);
-const Utils = __webpack_require__(51);
+const Utils = __webpack_require__(50);
 
 
 // Declare internals
@@ -70456,7 +70447,7 @@ module.exports.canonicalizeResource = canonicalizeResource
 
 var aws4 = exports,
     url = __webpack_require__(16),
-    querystring = __webpack_require__(52),
+    querystring = __webpack_require__(51),
     crypto = __webpack_require__(4),
     lru = __webpack_require__(409),
     credentialsCache = lru(1000)
@@ -70899,7 +70890,7 @@ function DoublyLinkedNode(key, val) {
 var parser = __webpack_require__(411);
 var signer = __webpack_require__(418);
 var verify = __webpack_require__(422);
-var utils = __webpack_require__(53);
+var utils = __webpack_require__(52);
 
 
 
@@ -70933,7 +70924,7 @@ module.exports = {
 
 var assert = __webpack_require__(2);
 var util = __webpack_require__(1);
-var utils = __webpack_require__(53);
+var utils = __webpack_require__(52);
 
 
 
@@ -72467,7 +72458,7 @@ var http = __webpack_require__(37);
 var util = __webpack_require__(1);
 var sshpk = __webpack_require__(74);
 var jsprim = __webpack_require__(419);
-var utils = __webpack_require__(53);
+var utils = __webpack_require__(52);
 
 var sprintf = __webpack_require__(1).format;
 
@@ -74349,7 +74340,7 @@ return exports;
 var assert = __webpack_require__(2);
 var crypto = __webpack_require__(4);
 var sshpk = __webpack_require__(74);
-var utils = __webpack_require__(53);
+var utils = __webpack_require__(52);
 
 var HASH_ALGOS = utils.HASH_ALGOS;
 var PK_ALGOS = utils.PK_ALGOS;
@@ -74576,7 +74567,7 @@ var util = __webpack_require__(1)
   , Agent = __webpack_require__(37).Agent
   , net = __webpack_require__(70)
   , tls = __webpack_require__(154)
-  , AgentSSL = __webpack_require__(50).Agent
+  , AgentSSL = __webpack_require__(49).Agent
   
 function getConnectionName(host, port) {  
   var name = ''
@@ -74717,7 +74708,7 @@ var CombinedStream = __webpack_require__(155);
 var util = __webpack_require__(1);
 var path = __webpack_require__(10);
 var http = __webpack_require__(37);
-var https = __webpack_require__(50);
+var https = __webpack_require__(49);
 var parseUrl = __webpack_require__(16).parse;
 var fs = __webpack_require__(9);
 var mime = __webpack_require__(153);
@@ -75590,7 +75581,7 @@ module.exports = getProxyFromURI
 
 
 var qs = __webpack_require__(163)
-var querystring = __webpack_require__(52)
+var querystring = __webpack_require__(51)
 
 function Querystring (request) {
   this.request = request
@@ -76045,7 +76036,7 @@ module.exports = function (str, opts) {
 
 
 var fs = __webpack_require__(9)
-var qs = __webpack_require__(52)
+var qs = __webpack_require__(51)
 var validate = __webpack_require__(441)
 var extend = __webpack_require__(69)
 
@@ -81072,7 +81063,7 @@ exports.OAuth = OAuth
 /***/ (function(module, exports, __webpack_require__) {
 
 var crypto = __webpack_require__(4)
-  , qs = __webpack_require__(52)
+  , qs = __webpack_require__(51)
   ;
 
 function sha1 (key, body) {
@@ -81681,7 +81672,7 @@ exports.Tunnel = Tunnel
 var net = __webpack_require__(70)
   , tls = __webpack_require__(154)
   , http = __webpack_require__(37)
-  , https = __webpack_require__(50)
+  , https = __webpack_require__(49)
   , events = __webpack_require__(60)
   , assert = __webpack_require__(23)
   , util = __webpack_require__(1)

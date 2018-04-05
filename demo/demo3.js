@@ -29,6 +29,16 @@ doc.addParagraph(subP);
 doc.addParagraph(secondSubP);
 doc.addParagraph(subSubP);
 
+var  bullet1 = new docx.Paragraph("Hey you").bullet();
+var  bullet2 = new docx.Paragraph("What's up fam").bullet(1);
+var  bullet3 = new docx.Paragraph("Hello World 2").bullet(2);
+var  bullet4 = new docx.Paragraph("Yeah boi").bullet(3);
+
+doc.addParagraph(bullet1);
+doc.addParagraph(bullet2);
+doc.addParagraph(bullet3);
+doc.addParagraph(bullet4);
+
 var exporter = new docx.LocalPacker(doc);
 exporter.pack('My Document');
 

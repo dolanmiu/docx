@@ -26,7 +26,7 @@ export declare class Paragraph extends XmlComponent {
     leftTabStop(position: number): Paragraph;
     rightTabStop(position: number): Paragraph;
     centerTabStop(position: number): Paragraph;
-    bullet(): Paragraph;
+    bullet(indentLevel: number): Paragraph;
     setNumbering(numbering: Num, indentLevel: number): Paragraph;
     style(styleId: string): Paragraph;
     indent(attrs: object): Paragraph;
