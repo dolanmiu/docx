@@ -14,7 +14,7 @@
     "webpack": "rimraf ./build && webpack",
     "demo": "npm run build && node ./demo",
     "typedoc": "typedoc --out docs/ src/ --module commonjs --target ES6 --disableOutputCheck --excludePrivate --externalPattern \"**/*.spec.ts\"",
-    "style": "prettier --debug-check \"src/**/*.ts\"",
+    "style": "prettier -l \"src/**/*.ts\"",
     "fix-types": "node types-absolute-fixer.js"
   },
   "files": [

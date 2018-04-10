@@ -311,4 +311,4 @@ const doc = documentCreator.create([experiences, education, skills, achievements
 var exporter = new docx.LocalPacker(doc);
 exporter.pack("Dolan Miu CV");
 
-console.log('Document created successfully at project root!');
+console.log("Document created successfully at project root!");
