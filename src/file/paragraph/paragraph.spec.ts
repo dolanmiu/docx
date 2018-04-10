@@ -162,6 +162,22 @@ describe("Paragraph", () => {
     });
 
     describe("#bullet()", () => {
+        it("should default to 0 indent level if no bullet was specified", () => {
+            paragraph.bullet();
+            const tree = new Formatter().format(paragraph);
+            expect(tree)
+                .to.have.property("w:p")
+                .which.is.an("array")
+                .which.has.length.at.least(1);
+            expect(tree["w:p"][0])
+                .to.have.property("w:pPr")
+                .which.is.an("array")
+                .which.has.length.at.least(1);
+            expect(tree["w:p"][0]["w:pPr"][0]).to.deep.equal({
+                "w:pStyle": [{ _attr: { "w:val": "ListParagraph" } }],
+            });
+        });
+
         it("should add list paragraph style to JSON", () => {
             paragraph.bullet(0);
             const tree = new Formatter().format(paragraph);
