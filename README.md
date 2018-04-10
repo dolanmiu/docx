@@ -29,6 +29,8 @@ $ npm install --save docx
 
 Press `endpoint` on the `RunKit` website:
 
+![RunKit Instructions](https://user-images.githubusercontent.com/2917613/38582539-f84311b6-3d07-11e8-90db-5885ae02c3c4.png)
+
 * https://runkit.com/dolanmiu/docx-demo1 - Simple paragraph and text
 * https://runkit.com/dolanmiu/docx-demo2 - Advanced Paragraphs and text
 * https://runkit.com/dolanmiu/docx-demo3 - Bullet points
