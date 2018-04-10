@@ -163,7 +163,7 @@ describe("Paragraph", () => {
 
     describe("#bullet()", () => {
         it("should add list paragraph style to JSON", () => {
-            paragraph.bullet();
+            paragraph.bullet(0);
             const tree = new Formatter().format(paragraph);
             expect(tree)
                 .to.have.property("w:p")
@@ -179,7 +179,7 @@ describe("Paragraph", () => {
         });
 
         it("it should add numbered properties", () => {
-            paragraph.bullet();
+            paragraph.bullet(1);
             const tree = new Formatter().format(paragraph);
             expect(tree)
                 .to.have.property("w:p")
@@ -190,7 +190,7 @@ describe("Paragraph", () => {
                 .which.is.an("array")
                 .which.has.length.at.least(2);
             expect(tree["w:p"][0]["w:pPr"][1]).to.deep.equal({
-                "w:numPr": [{ "w:ilvl": [{ _attr: { "w:val": 0 } }] }, { "w:numId": [{ _attr: { "w:val": 1 } }] }],
+                "w:numPr": [{ "w:ilvl": [{ _attr: { "w:val": 1 } }] }, { "w:numId": [{ _attr: { "w:val": 1 } }] }],
             });
         });
     });
