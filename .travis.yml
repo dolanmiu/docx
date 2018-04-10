@@ -15,6 +15,11 @@ script:
   - node ./demo/demo5.js
   - node ./demo/demo6.js
   - node ./demo/demo7.js
+  - node ./demo/demo8.js
+  - node ./demo/demo9.js
+  - node ./demo/demo10.js
+  - node ./demo/demo11.js
+  - node ./demo/demo12.js
 after_failure:
   - "cat /home/travis/builds/dolanmiu/docx/npm-debug.log"
 after_success:
