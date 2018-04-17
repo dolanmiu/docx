@@ -1,12 +1,13 @@
-import { XmlComponent } from "file/xml-components";
+import { XmlComponent, IXmlableObject } from "file/xml-components";
 import { DocumentAttributes } from "../document/document-attributes";
-import { Indent } from "../paragraph/formatting";
-import { RunFonts } from "../paragraph/run/run-fonts";
 import { AbstractNumbering } from "./abstract-numbering";
 import { Num } from "./num";
 
 export class Numbering extends XmlComponent {
     private nextId: number;
+
+    private abstractNumbering: Array<XmlComponent> = [];
+    private concreteNumbering: Array<XmlComponent> = [];
 
     constructor() {
         super("w:numbering");
@@ -33,66 +34,23 @@ export class Numbering extends XmlComponent {
         );
 
         this.nextId = 0;
-
-        const abstractNumbering = this.createAbstractNumbering();
-
-        abstractNumbering
-            .createLevel(0, "bullet", "•", "left")
-            .addParagraphProperty(new Indent({ left: 720, hanging: 360 }))
-            .addRunProperty(new RunFonts("Symbol", "default"));
-
-        abstractNumbering
-            .createLevel(1, "bullet", "o", "left")
-            .addParagraphProperty(new Indent({ left: 1440, hanging: 360 }))
-            .addRunProperty(new RunFonts("Courier New", "default"));
-
-        abstractNumbering
-            .createLevel(2, "bullet", "•", "left")
-            .addParagraphProperty(new Indent({ left: 2160, hanging: 360 }))
-            .addRunProperty(new RunFonts("Wingdings", "default"));
-
-        abstractNumbering
-            .createLevel(3, "bullet", "•", "left")
-            .addParagraphProperty(new Indent({ left: 2880, hanging: 360 }))
-            .addRunProperty(new RunFonts("Symbol", "default"));
-
-        abstractNumbering
-            .createLevel(4, "bullet", "o", "left")
-            .addParagraphProperty(new Indent({ left: 3600, hanging: 360 }))
-            .addRunProperty(new RunFonts("Courier New", "default"));
-
-        abstractNumbering
-            .createLevel(5, "bullet", "•", "left")
-            .addParagraphProperty(new Indent({ left: 4320, hanging: 360 }))
-            .addRunProperty(new RunFonts("Wingdings", "default"));
-
-        abstractNumbering
-            .createLevel(6, "bullet", "•", "left")
-            .addParagraphProperty(new Indent({ left: 5040, hanging: 360 }))
-            .addRunProperty(new RunFonts("Symbol", "default"));
-
-        abstractNumbering
-            .createLevel(7, "bullet", "o", "left")
-            .addParagraphProperty(new Indent({ left: 5760, hanging: 360 }))
-            .addRunProperty(new RunFonts("Courier New", "default"));
-
-        abstractNumbering
-            .createLevel(8, "bullet", "•", "left")
-            .addParagraphProperty(new Indent({ left: 6480, hanging: 360 }))
-            .addRunProperty(new RunFonts("Wingdings", "default"));
-
-        this.createConcreteNumbering(abstractNumbering);
     }
 
     public createAbstractNumbering(): AbstractNumbering {
         const num = new AbstractNumbering(this.nextId++);
-        this.root.push(num);
+        this.abstractNumbering.push(num);
         return num;
     }
 
     public createConcreteNumbering(abstractNumbering: AbstractNumbering): Num {
         const num = new Num(this.nextId++, abstractNumbering.id);
-        this.root.push(num);
+        this.concreteNumbering.push(num);
         return num;
+    }
+
+    public prepForXml(): IXmlableObject {
+        this.abstractNumbering.forEach(x => this.root.push(x));
+        this.concreteNumbering.forEach(x => this.root.push(x));
+        return super.prepForXml();
     }
 }
