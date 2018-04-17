@@ -136,6 +136,11 @@ export class Paragraph extends XmlComponent {
         return this;
     }
 
+    public setCustomNumbering(numberId: number, indentLevel: number): Paragraph {
+        this.properties.push(new NumberProperties(numberId, indentLevel));
+        return this;
+    }
+
     public style(styleId: string): Paragraph {
         this.properties.push(new Style(styleId));
         return this;
