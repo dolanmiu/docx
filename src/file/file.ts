@@ -13,6 +13,7 @@ import { Styles } from "./styles";
 import { DefaultStylesFactory } from "./styles/factory";
 import { ExternalStylesFactory } from "./styles/external-styles-factory";
 import { Table } from "./table";
+import { IMediaData } from "index";
 
 export class File {
     private readonly document: Document;
@@ -116,6 +117,16 @@ export class File {
             `media/${mediaData.fileName}`,
         );
         this.document.createDrawing(mediaData);
+    }
+
+    public createImageData(imageName: string, data: Buffer, width?: number, height?: number): IMediaData {
+        const mediaData = this.media.addMediaWithData(imageName, data, this.docRelationships.RelationshipCount, width, height);
+        this.docRelationships.createRelationship(
+            mediaData.referenceId,
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
+            `media/${mediaData.fileName}`,
+        );
+        return mediaData;
     }
 
     public get Document(): Document {
