@@ -13,8 +13,8 @@ export interface IMediaDataDimensions {
 
 export interface IMediaData {
     referenceId: number;
-    stream: fs.ReadStream;
-    path: string;
+    stream: fs.ReadStream | Buffer;
+    path?: string;
     fileName: string;
     dimensions: IMediaDataDimensions;
 }
