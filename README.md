@@ -14,6 +14,7 @@
 [![Known Vulnerabilities][snky-image]][snky-url]
 [![Chat on Gitter][gitter-image]][gitter-url]
 [![code style: prettier][prettier-image]][prettier-url]
+[![PRs Welcome][pr-image]][pr-url]
 
 [![NPM](https://nodei.co/npm/docx.png?downloads=true&downloadRank=true&stars=true)](https://nodei.co/npm/docx/)
 
@@ -114,3 +115,5 @@ Huge thanks to [@felipeochoa](https://github.com/felipeochoa) for awesome contri
 [gemnasium-url]: https://gemnasium.com/github.com/dolanmiu/docx
 [prettier-image]: https://img.shields.io/badge/code_style-prettier-ff69b4.svg
 [prettier-url]: https://github.com/prettier/prettier
+[pr-image]: https://img.shields.io/badge/PRs-welcome-brightgreen.svg
+[pr-url]: http://makeapullrequest.com
