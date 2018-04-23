@@ -23,4 +23,8 @@ export abstract class XmlComponent extends BaseXmlComponent {
             [this.rootKey]: children,
         };
     }
+
+    public addChildElement(child: XmlComponent | string) {
+        this.root.push(child);
+    }
 }
