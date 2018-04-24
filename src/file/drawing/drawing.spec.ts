@@ -12,7 +12,6 @@ describe("Drawing", () => {
         currentBreak = new Drawing({
             fileName: "test.jpg",
             referenceId: 1,
-            stream: fs.createReadStream(path),
             path: path,
             dimensions: {
                 pixels: {

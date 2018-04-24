@@ -1,5 +1,3 @@
-import * as fs from "fs";
-
 export interface IMediaDataDimensions {
     pixels: {
         x: number;
@@ -13,7 +11,6 @@ export interface IMediaDataDimensions {
 
 export interface IMediaData {
     referenceId: number;
-    stream: fs.ReadStream;
     path: string;
     fileName: string;
     dimensions: IMediaDataDimensions;

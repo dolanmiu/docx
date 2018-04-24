@@ -1,5 +1,6 @@
 import * as archiver from "archiver";
 import * as express from "express";
+import * as fs from "fs";
 import { Writable } from "stream";
 import * as xml from "xml";
 
@@ -89,7 +90,7 @@ export class Compiler {
         });
 
         for (const data of this.file.Media.array) {
-            this.archive.append(data.stream, {
+            this.archive.append(fs.createReadStream(data.path), {
                 name: `word/media/${data.fileName}`,
             });
         }

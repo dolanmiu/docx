@@ -1,4 +1,3 @@
-import * as fs from "fs";
 import * as sizeOf from "image-size";
 import * as path from "path";
 
@@ -27,7 +26,6 @@ export class Media {
 
         const imageData = {
             referenceId: this.map.size + relationshipsCount + 1,
-            stream: fs.createReadStream(filePath),
             path: filePath,
             fileName: key,
             dimensions: {

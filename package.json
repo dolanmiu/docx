@@ -12,6 +12,7 @@
     "build": "npm run webpack && npm run fix-types",
     "tsc": "rimraf ./build && tsc -p .",
     "webpack": "rimraf ./build && webpack",
+    "build.web": "webpack --config webpack.web.config.js",
     "demo": "npm run build && node ./demo",
     "typedoc": "typedoc --out docs/ src/ --module commonjs --target ES6 --disableOutputCheck --excludePrivate --externalPattern \"**/*.spec.ts\"",
     "style": "prettier -l \"src/**/*.ts\"",
