@@ -3,12 +3,11 @@ import * as os from "os";
 import * as path from "path";
 
 import { File } from "../../file";
-import { Compiler } from "./compiler";
+import { Compiler } from "./next-compiler";
 import { IPacker } from "./packer";
 import { PdfConvertWrapper } from "./pdf-convert-wrapper";
 
 export class LocalPacker implements IPacker {
-    private stream: fs.WriteStream;
     private readonly pdfConverter: PdfConvertWrapper;
     private readonly packer: Compiler;
 
@@ -20,8 +19,8 @@ export class LocalPacker implements IPacker {
     public async pack(filePath: string): Promise<void> {
         filePath = filePath.replace(/.docx$/, "");
 
-        this.stream = fs.createWriteStream(`${filePath}.docx`);
-        await this.packer.compile(this.stream);
+        const zipData = await this.packer.compile().generateAsync({ type: "base64" }) as string;
+        await this.writeToFile(`${filePath}.docx`, zipData);
     }
 
     public async packPdf(filePath: string): Promise<void> {
@@ -29,19 +28,27 @@ export class LocalPacker implements IPacker {
 
         const fileName = path.basename(filePath, path.extname(filePath));
         const tempPath = path.join(os.tmpdir(), `${fileName}.docx`);
-        this.stream = fs.createWriteStream(tempPath);
-        await this.packer.compile(this.stream);
+
+        const zipData = await this.packer.compile().generateAsync({ type: "base64" }) as string;
+        await this.writeToFile(tempPath, zipData);
+
         const text = await this.pdfConverter.convert(tempPath);
         // const writeFile = util.promisify(fs.writeFile); --use this in future, in 3 years time. Only in node 8
         // return writeFile(`${filePath}.pdf`, text);
-        return new Promise<void>((resolve, reject) => {
-            fs.writeFile(`${filePath}.pdf`, text, (err) => {
-                if (err) {
-                    reject(err);
-                    return;
-                }
+
+        await this.writeToFile(`${filePath}.pdf`, text);
+    }
+
+    private writeToFile(filePath: string, data: string): Promise<void> {
+        const file = fs.createWriteStream(filePath);
+
+        return new Promise((resolve, reject) => {
+            file.write(data, "base64");
+            file.end();
+            file.on("finish", () => {
                 resolve();
             });
+            file.on("error", reject);
         });
     }
 }
