@@ -11,6 +11,7 @@ paragraph.addRun(dateText);
 doc.addParagraph(paragraph);
 
 var exporter = new docx.LocalPacker(doc);
-exporter.packPdf('My Document');
+exporter.packPdf('My Document').then(() => {
+    console.log('Document created successfully at project root!');
+});
 
-console.log('Document created successfully at project root!');

@@ -19,7 +19,9 @@ export class LocalPacker implements IPacker {
     public async pack(filePath: string): Promise<void> {
         filePath = filePath.replace(/.docx$/, "");
 
-        const zipData = await this.packer.compile().generateAsync({ type: "base64" }) as string;
+        const zip = await this.packer.compile();
+        const zipData = await zip.generateAsync({ type: "base64" }) as string;
+
         await this.writeToFile(`${filePath}.docx`, zipData);
     }
 
@@ -29,7 +31,8 @@ export class LocalPacker implements IPacker {
         const fileName = path.basename(filePath, path.extname(filePath));
         const tempPath = path.join(os.tmpdir(), `${fileName}.docx`);
 
-        const zipData = await this.packer.compile().generateAsync({ type: "base64" }) as string;
+        const zip = await this.packer.compile();
+        const zipData = await zip.generateAsync({ type: "base64" }) as string;
         await this.writeToFile(tempPath, zipData);
 
         const text = await this.pdfConverter.convert(tempPath);

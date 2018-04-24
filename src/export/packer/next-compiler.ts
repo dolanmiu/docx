@@ -1,3 +1,4 @@
+import * as fs from "fs";
 import * as JSZip from "jszip";
 import * as xml from "xml";
 
@@ -31,7 +32,7 @@ export class Compiler {
         this.formatter = new Formatter();
     }
 
-    public compile(): JSZip {
+    public async compile(): Promise<JSZip> {
         const zip = new JSZip();
 
         const xmlifiedFileMapping = this.xmlifyFile(this.file);
@@ -46,13 +47,10 @@ export class Compiler {
             zip.file(xmlifiedFile.path, xmlifiedFile.data);
         }
 
-        // for (const data of file.Media.array) {
-        //     this.archive.append(data.stream, {
-        //         name: `word/media/${data.fileName}`,
-        //     });
-
-        //     zip.file(`word/media/${data.fileName}`, )
-        // }
+        for (const data of this.file.Media.array) {
+            const mediaData = await this.readFile(data.path);
+            zip.file(`word/media/${data.fileName}`, mediaData);
+        }
 
         return zip;
     }
@@ -113,5 +111,18 @@ export class Compiler {
                 path: "docProps/app.xml",
             },
         };
+    }
+
+    private readFile(path: string): Promise<Buffer> {
+        return new Promise((resolve, reject) => {
+            fs.readFile(path, (err, data) => {
+                if (err) {
+                    reject();
+                    return;
+                }
+
+                resolve(data);
+            });
+        });
     }
 }
