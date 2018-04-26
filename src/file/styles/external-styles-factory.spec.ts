@@ -51,6 +51,7 @@ describe("External styles factory", () => {
 
             expect(importedStyle.root.length).to.equal(5);
             expect(importedStyle.root[1]).to.eql({
+                deleted: false,
                 root: [],
                 rootKey: "w:docDefaults",
             });
@@ -59,6 +60,7 @@ describe("External styles factory", () => {
                     "w:defLockedState": "1",
                     "w:defUIPriority": "99",
                 },
+                deleted: false,
                 root: [],
                 rootKey: "w:latentStyles",
             });
@@ -74,15 +76,18 @@ describe("External styles factory", () => {
                     "w:styleId": "Normal",
                     "w:type": "paragraph",
                 },
+                deleted: false,
                 root: [
                     {
                         _attr: {
                             "w:val": "Normal",
                         },
+                        deleted: false,
                         root: [],
                         rootKey: "w:name",
                     },
                     {
+                        deleted: false,
                         root: [],
                         rootKey: "w:qFormat",
                     },
@@ -95,11 +100,13 @@ describe("External styles factory", () => {
                     "w:styleId": "Heading1",
                     "w:type": "paragraph",
                 },
+                deleted: false,
                 root: [
                     {
                         _attr: {
                             "w:val": "heading 1",
                         },
+                        deleted: false,
                         root: [],
                         rootKey: "w:name",
                     },
@@ -107,20 +114,25 @@ describe("External styles factory", () => {
                         _attr: {
                             "w:val": "Normal",
                         },
+                        deleted: false,
                         root: [],
                         rootKey: "w:basedOn",
                     },
                     {
+                        deleted: false,
                         root: [
                             {
+                                deleted: false,
                                 root: [],
                                 rootKey: "w:keepNext",
                             },
                             {
+                                deleted: false,
                                 root: [],
                                 rootKey: "w:keepLines",
                             },
                             {
+                                deleted: false,
                                 root: [
                                     {
                                         _attr: {
@@ -129,6 +141,7 @@ describe("External styles factory", () => {
                                             "w:sz": "4",
                                             "w:val": "single",
                                         },
+                                        deleted: false,
                                         root: [],
                                         rootKey: "w:bottom",
                                     },

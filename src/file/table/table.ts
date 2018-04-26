@@ -8,26 +8,31 @@ export class Table extends XmlComponent {
     private readonly rows: TableRow[];
     private readonly grid: TableGrid;
 
-    constructor(rows: number, cols: number) {
+    constructor(rows: number, cols: number, colSizes?: number[]) {
         super("w:tbl");
         this.properties = new TableProperties();
         this.root.push(this.properties);
 
-        const gridCols: number[] = [];
-        for (let i = 0; i < cols; i++) {
-            /*
-              0-width columns don't get rendered correctly, so we need
-              to give them some value. A reasonable default would be
-              ~6in / numCols, but if we do that it becomes very hard
-              to resize the table using setWidth, unless the layout
-              algorithm is set to 'fixed'. Instead, the approach here
-              means even in 'auto' layout, setting a width on the
-              table will make it look reasonable, as the layout
-              algorithm will expand columns to fit its content
-             */
-            gridCols.push(1);
+        if (colSizes && colSizes.length > 0) {
+            this.grid = new TableGrid(colSizes);
+        } else {
+            const gridCols: number[] = [];
+            for (let i = 0; i < cols; i++) {
+                /*
+                  0-width columns don't get rendered correctly, so we need
+                  to give them some value. A reasonable default would be
+                  ~6in / numCols, but if we do that it becomes very hard
+                  to resize the table using setWidth, unless the layout
+                  algorithm is set to 'fixed'. Instead, the approach here
+                  means even in 'auto' layout, setting a width on the
+                  table will make it look reasonable, as the layout
+                  algorithm will expand columns to fit its content
+                 */
+                gridCols.push(1);
+            }
+            this.grid = new TableGrid(gridCols);
         }
-        this.grid = new TableGrid(gridCols);
+
         this.root.push(this.grid);
 
         this.rows = [];
@@ -110,6 +115,10 @@ export class TableCell extends XmlComponent {
         const para = new Paragraph(text);
         this.addContent(para);
         return para;
+    }
+
+    get cellProperties() {
+        return this.properties;
     }
 }
 
