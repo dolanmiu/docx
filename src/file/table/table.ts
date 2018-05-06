@@ -2,33 +2,39 @@ import { IXmlableObject, XmlComponent } from "file/xml-components";
 import { Paragraph } from "../paragraph";
 import { TableGrid } from "./grid";
 import { TableProperties, WidthTypes } from "./properties";
+import { TableCellBorders, GridSpan, VMerge, VMergeType, VerticalAlign, VAlign, TableCellWidth, WidthType } from "file/table/table-cell";
 
 export class Table extends XmlComponent {
     private readonly properties: TableProperties;
     private readonly rows: TableRow[];
     private readonly grid: TableGrid;
 
-    constructor(rows: number, cols: number) {
+    constructor(rows: number, cols: number, colSizes?: number[]) {
         super("w:tbl");
         this.properties = new TableProperties();
         this.root.push(this.properties);
         this.properties.setBorder();
 
-        const gridCols: number[] = [];
-        for (let i = 0; i < cols; i++) {
-            /*
-              0-width columns don't get rendered correctly, so we need
-              to give them some value. A reasonable default would be
-              ~6in / numCols, but if we do that it becomes very hard
-              to resize the table using setWidth, unless the layout
-              algorithm is set to 'fixed'. Instead, the approach here
-              means even in 'auto' layout, setting a width on the
-              table will make it look reasonable, as the layout
-              algorithm will expand columns to fit its content
-             */
-            gridCols.push(1);
+        if (colSizes && colSizes.length > 0) {
+            this.grid = new TableGrid(colSizes);
+        } else {
+            const gridCols: number[] = [];
+            for (let i = 0; i < cols; i++) {
+                /*
+                  0-width columns don't get rendered correctly, so we need
+                  to give them some value. A reasonable default would be
+                  ~6in / numCols, but if we do that it becomes very hard
+                  to resize the table using setWidth, unless the layout
+                  algorithm is set to 'fixed'. Instead, the approach here
+                  means even in 'auto' layout, setting a width on the
+                  table will make it look reasonable, as the layout
+                  algorithm will expand columns to fit its content
+                 */
+                gridCols.push(1);
+            }
+            this.grid = new TableGrid(gridCols);
         }
-        this.grid = new TableGrid(gridCols);
+
         this.root.push(this.grid);
 
         this.rows = [];
@@ -112,10 +118,36 @@ export class TableCell extends XmlComponent {
         this.addContent(para);
         return para;
     }
+
+    get cellProperties() {
+        return this.properties;
+    }
 }
 
 export class TableCellProperties extends XmlComponent {
+    private cellBorder: TableCellBorders;
     constructor() {
         super("w:tcPr");
+        this.cellBorder = new TableCellBorders();
+        this.root.push(this.cellBorder);
+    }
+
+    get borders() {
+        return this.cellBorder;
+    }
+    addGridSpan(cellSpan: number) {
+        this.root.push(new GridSpan(cellSpan));
+    }
+
+    addVerticalMerge(type: VMergeType) {
+        this.root.push(new VMerge(type));
+    }
+
+    setVerticalAlign(vAlignType: VerticalAlign) {
+        this.root.push(new VAlign(vAlignType));
+    }
+
+    setWidth(width: string | number, type: WidthType) {
+        this.root.push(new TableCellWidth(width, type));
     }
 }

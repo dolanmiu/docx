@@ -10,6 +10,7 @@ export interface IPropertiesOptions {
     description?: string;
     lastModifiedBy?: string;
     revision?: string;
+    externalStyles?: string;
 }
 
 export class CoreProperties extends XmlComponent {

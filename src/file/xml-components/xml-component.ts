@@ -12,6 +12,12 @@ export abstract class XmlComponent extends BaseXmlComponent {
 
     public prepForXml(): IXmlableObject {
         const children = this.root
+            .filter(c => {
+                if (c instanceof BaseXmlComponent) {
+                    return !c.isDeleted;
+                }
+                return true;
+            })
             .map((comp) => {
                 if (comp instanceof BaseXmlComponent) {
                     return comp.prepForXml();
@@ -22,5 +28,13 @@ export abstract class XmlComponent extends BaseXmlComponent {
         return {
             [this.rootKey]: children,
         };
+    }
+
+    public addChildElement(child: XmlComponent | string) {
+        this.root.push(child);
+    }
+
+    public delete() {
+        this.deleted = true;
     }
 }

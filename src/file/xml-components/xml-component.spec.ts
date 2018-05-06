@@ -18,4 +18,15 @@ describe("XmlComponent", () => {
             assert.equal(newJson.rootKey, "w:test");
         });
     });
+
+    describe("#prepForXml()", () => {
+        it("should skip deleted elements", () => {
+            const child = new TestComponent("w:test1");
+            child.delete();
+            xmlComponent.addChildElement(child);
+           
+            const xml = xmlComponent.prepForXml();
+            assert.equal(xml['w:test'].length, 0); 
+        });
+    });
 });
