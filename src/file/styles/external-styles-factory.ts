@@ -45,9 +45,7 @@ export class ExternalStylesFactory {
             });
 
         // convert the styles one by one
-        xmlStyles["w:style"]
-            .map((style) => this.convertElement("w:style", style))
-            .forEach(importedStyle.push.bind(importedStyle));
+        xmlStyles["w:style"].map((style) => this.convertElement("w:style", style)).forEach(importedStyle.push.bind(importedStyle));
 
         return importedStyle;
     }
