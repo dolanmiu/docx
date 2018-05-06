@@ -169,12 +169,12 @@ describe("TableCellWidth", () => {
             expect(tree).to.deep.equal({
                 "w:tcW": [
                     {
-                        "_attr": {
+                        _attr: {
                             "w:type": "dxa",
-                            "w:w": 100
-                        }
-                    }
-                ]
+                            "w:w": 100,
+                        },
+                    },
+                ],
             });
         });
     });

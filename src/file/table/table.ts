@@ -1,8 +1,8 @@
+import { GridSpan, TableCellBorders, TableCellWidth, VAlign, VerticalAlign, VMerge, VMergeType, WidthType } from "file/table/table-cell";
 import { IXmlableObject, XmlComponent } from "file/xml-components";
 import { Paragraph } from "../paragraph";
 import { TableGrid } from "./grid";
 import { TableProperties, WidthTypes } from "./properties";
-import { TableCellBorders, GridSpan, VMerge, VMergeType, VerticalAlign, VAlign, TableCellWidth, WidthType } from "file/table/table-cell";
 
 export class Table extends XmlComponent {
     private readonly properties: TableProperties;
@@ -119,7 +119,7 @@ export class TableCell extends XmlComponent {
         return para;
     }
 
-    get cellProperties() {
+    get cellProperties(): TableCellProperties {
         return this.properties;
     }
 }
@@ -132,22 +132,31 @@ export class TableCellProperties extends XmlComponent {
         this.root.push(this.cellBorder);
     }
 
-    get borders() {
+    get borders(): TableCellBorders {
         return this.cellBorder;
     }
-    addGridSpan(cellSpan: number) {
+
+    public addGridSpan(cellSpan: number): TableCellProperties {
         this.root.push(new GridSpan(cellSpan));
+
+        return this;
     }
 
-    addVerticalMerge(type: VMergeType) {
+    public addVerticalMerge(type: VMergeType): TableCellProperties {
         this.root.push(new VMerge(type));
+
+        return this;
     }
 
-    setVerticalAlign(vAlignType: VerticalAlign) {
+    public setVerticalAlign(vAlignType: VerticalAlign): TableCellProperties {
         this.root.push(new VAlign(vAlignType));
+
+        return this;
     }
 
-    setWidth(width: string | number, type: WidthType) {
+    public setWidth(width: string | number, type: WidthType): TableCellProperties {
         this.root.push(new TableCellWidth(width, type));
+
+        return this;
     }
 }

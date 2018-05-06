@@ -154,7 +154,6 @@ describe("External styles factory", () => {
                 ],
                 rootKey: "w:style",
             });
-
         });
     });
 });

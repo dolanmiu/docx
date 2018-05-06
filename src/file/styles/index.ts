@@ -1,12 +1,12 @@
-import { XmlComponent, BaseXmlComponent } from "file/xml-components";
+import { BaseXmlComponent, XmlComponent } from "file/xml-components";
 import { DocumentDefaults } from "./defaults";
 import { ParagraphStyle } from "./style";
 
 export class Styles extends XmlComponent {
-    constructor(_initialStyles?: BaseXmlComponent) {
+    constructor(initialStyles?: BaseXmlComponent) {
         super("w:styles");
-        if (_initialStyles) {
-            this.root.push(_initialStyles);
+        if (initialStyles) {
+            this.root.push(initialStyles);
         }
     }
 

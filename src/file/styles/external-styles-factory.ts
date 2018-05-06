@@ -1,6 +1,7 @@
-import { Styles } from "./";
 import * as fastXmlParser from "fast-xml-parser";
-import { ImportedXmlComponent, ImportedRootElementAttributes } from "./../../file/xml-components";
+
+import { Styles } from "./";
+import { ImportedRootElementAttributes, ImportedXmlComponent } from "./../../file/xml-components";
 
 const parseOptions = {
     ignoreAttributes: false,
@@ -51,7 +52,8 @@ export class ExternalStylesFactory {
         return importedStyle;
     }
 
-    convertElement(elementName: string, element: any): ImportedXmlComponent {
+    // tslint:disable-next-line:no-any
+    public convertElement(elementName: string, element: any): ImportedXmlComponent {
         const xmlElement = new ImportedXmlComponent(elementName, element._attr);
         if (typeof element === "object") {
             Object.keys(element)

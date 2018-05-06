@@ -1,7 +1,6 @@
-import { Color, Italics, Size } from "../paragraph/run/formatting";
-
-import { Styles } from "./";
 import { DocumentAttributes } from "../document/document-attributes";
+import { Color, Italics, Size } from "../paragraph/run/formatting";
+import { Styles } from "./";
 
 import {
     Heading1Style,

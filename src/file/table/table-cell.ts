@@ -1,4 +1,4 @@
-import { XmlComponent, XmlAttributeComponent, IXmlableObject } from "file/xml-components";
+import { IXmlableObject, XmlAttributeComponent, XmlComponent } from "file/xml-components";
 
 export enum BorderStyle {
     SINGLE = "single",
@@ -41,13 +41,15 @@ class CellBorderAttributes extends XmlAttributeComponent<ICellBorder> {
 }
 
 class BaseTableCellBorder extends XmlComponent {
-    setProperties(style: BorderStyle, size: number, color: string) {
-        let attrs = new CellBorderAttributes({
+    public setProperties(style: BorderStyle, size: number, color: string): BaseTableCellBorder {
+        const attrs = new CellBorderAttributes({
             style: style,
             size: size,
             color: color,
         });
         this.root.push(attrs);
+
+        return this;
     }
 }
 
@@ -60,28 +62,36 @@ export class TableCellBorders extends XmlComponent {
         return this.root.length > 0 ? super.prepForXml() : "";
     }
 
-    addTopBorder(style: BorderStyle, size: number, color: string) {
+    public addTopBorder(style: BorderStyle, size: number, color: string): TableCellBorders {
         const top = new BaseTableCellBorder("w:top");
         top.setProperties(style, size, color);
         this.root.push(top);
+
+        return this;
     }
 
-    addStartBorder(style: BorderStyle, size: number, color: string) {
+    public addStartBorder(style: BorderStyle, size: number, color: string): TableCellBorders {
         const start = new BaseTableCellBorder("w:start");
         start.setProperties(style, size, color);
         this.root.push(start);
+
+        return this;
     }
 
-    addBottomBorder(style: BorderStyle, size: number, color: string) {
+    public addBottomBorder(style: BorderStyle, size: number, color: string): TableCellBorders {
         const bottom = new BaseTableCellBorder("w:bottom");
         bottom.setProperties(style, size, color);
         this.root.push(bottom);
+
+        return this;
     }
 
-    addEndBorder(style: BorderStyle, size: number, color: string) {
+    public addEndBorder(style: BorderStyle, size: number, color: string): TableCellBorders {
         const end = new BaseTableCellBorder("w:end");
         end.setProperties(style, size, color);
         this.root.push(end);
+
+        return this;
     }
 }
 

@@ -10,7 +10,7 @@ export abstract class BaseXmlComponent {
 
     public abstract prepForXml(): IXmlableObject;
 
-    get isDeleted() {
+    public get isDeleted(): boolean {
         return this.deleted;
     }
 }

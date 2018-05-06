@@ -12,7 +12,7 @@ export abstract class XmlComponent extends BaseXmlComponent {
 
     public prepForXml(): IXmlableObject {
         const children = this.root
-            .filter(c => {
+            .filter((c) => {
                 if (c instanceof BaseXmlComponent) {
                     return !c.isDeleted;
                 }
@@ -30,11 +30,14 @@ export abstract class XmlComponent extends BaseXmlComponent {
         };
     }
 
-    public addChildElement(child: XmlComponent | string) {
+    // TODO: Unused method
+    public addChildElement(child: XmlComponent | string): XmlComponent {
         this.root.push(child);
+
+        return this;
     }
 
-    public delete() {
+    public delete(): void {
         this.deleted = true;
     }
 }

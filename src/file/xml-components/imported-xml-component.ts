@@ -1,15 +1,17 @@
-import { XmlComponent, IXmlableObject } from ".";
+// tslint:disable:no-any
+import { IXmlableObject, XmlComponent } from "./";
 
 /**
  * Represents imported xml component from xml file.
  */
 export class ImportedXmlComponent extends XmlComponent {
-    private _attr: any;
+    private attr: any;
 
-    constructor(rootKey: string, _attr?: any) {
+    constructor(rootKey: string, attr?: any) {
         super(rootKey);
-        if (_attr) {
-            this._attr = _attr;
+
+        if (attr) {
+            this.attr = attr;
         }
     }
 
@@ -39,18 +41,18 @@ export class ImportedXmlComponent extends XmlComponent {
      *    ]
      * }
      */
-    prepForXml(): IXmlableObject {
+    public prepForXml(): IXmlableObject {
         const result = super.prepForXml();
-        if (!!this._attr) {
+        if (!!this.attr) {
             if (!Array.isArray(result[this.rootKey])) {
                 result[this.rootKey] = [result[this.rootKey]];
             }
-            result[this.rootKey].unshift({ _attr: this._attr });
+            result[this.rootKey].unshift({ _attr: this.attr });
         }
         return result;
     }
 
-    push(xmlComponent: XmlComponent) {
+    public push(xmlComponent: XmlComponent): void {
         this.root.push(xmlComponent);
     }
 }
@@ -59,13 +61,13 @@ export class ImportedXmlComponent extends XmlComponent {
  * Used for the attributes of root element that is being imported.
  */
 export class ImportedRootElementAttributes extends XmlComponent {
-    constructor(private _attr: any) {
+    constructor(private attr: any) {
         super("");
     }
 
     public prepForXml(): IXmlableObject {
         return {
-            _attr: this._attr,
+            _attr: this.attr,
         };
     }
 }
