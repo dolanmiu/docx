@@ -1,3 +1,4 @@
+import { IMediaData } from "file/media";
 import { AppProperties } from "./app-properties/app-properties";
 import { ContentTypes } from "./content-types/content-types";
 import { CoreProperties, IPropertiesOptions } from "./core-properties";
@@ -10,10 +11,9 @@ import { Numbering } from "./numbering";
 import { Paragraph, PictureRun } from "./paragraph";
 import { Relationships } from "./relationships";
 import { Styles } from "./styles";
-import { DefaultStylesFactory } from "./styles/factory";
 import { ExternalStylesFactory } from "./styles/external-styles-factory";
+import { DefaultStylesFactory } from "./styles/factory";
 import { Table } from "./table";
-import { IMediaData } from "index";
 
 export class File {
     private readonly document: Document;
