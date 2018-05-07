@@ -7,15 +7,17 @@ import { Hyperlink } from "./";
 describe("Hyperlink", () => {
     let hyperlink: Hyperlink;
 
+    beforeEach(() => {
+        hyperlink = new Hyperlink("https://example.com", 0);
+    });
+
     describe("#constructor()", () => {
         it("should create a hyperlink with correct root key", () => {
-            hyperlink = new Hyperlink("https://example.com", 0);
             const newJson = Utility.jsonify(hyperlink);
             assert.equal(newJson.rootKey, "w:hyperlink");
         });
 
         it("should create a hyperlink with right attributes", () => {
-            hyperlink = new Hyperlink("https://example.com", 0);
             const newJson = Utility.jsonify(hyperlink);
             const attributes = {
                 id: "rId1",
@@ -25,13 +27,14 @@ describe("Hyperlink", () => {
         });
 
         it("should create a hyperlink with a run component", () => {
-            hyperlink = new Hyperlink("https://example.com", 0);
             const tree = new Formatter().format(hyperlink);
-            expect(tree["w:hyperlink"][1]).to.deep.equal({
+            const runJson = {
                 "w:r": [
-                    { "w:rPr": [{ "w:rStyle": [{ _attr: { "w:val": "Hyperlink"} }] }] },
-                    { "w:t": [{_attr: {"xml:space": "preserve"}}, "https://example.com"]},
-                ]});
+                    { "w:rPr": [{ "w:rStyle": [{ _attr: { "w:val": "Hyperlink" } }] }] },
+                    { "w:t": [{ _attr: { "xml:space": "preserve" } }, "https://example.com"] },
+                ],
+            };
+            expect(tree["w:hyperlink"][1]).to.deep.equal(runJson);
         });
     });
 });
