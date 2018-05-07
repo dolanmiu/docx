@@ -9,6 +9,7 @@ import {
     Heading4Style,
     Heading5Style,
     Heading6Style,
+    HyperlinkStyle,
     ListParagraph,
     TitleStyle,
 } from "./style";
@@ -54,6 +55,8 @@ export class DefaultStylesFactory {
         // listParagraph.addParagraphProperty();
         styles.push(listParagraph);
 
+        const hyperLinkStyle = new HyperlinkStyle();
+        styles.push(hyperLinkStyle);
         return styles;
     }
 }
