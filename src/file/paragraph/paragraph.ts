@@ -13,6 +13,7 @@ import { ISpacingProperties, Spacing } from "./formatting/spacing";
 import { Style } from "./formatting/style";
 import { CenterTabStop, LeftTabStop, MaxRightTabStop, RightTabStop } from "./formatting/tab-stop";
 import { NumberProperties } from "./formatting/unordered-list";
+import { Hyperlink } from "./links";
 import { ParagraphProperties } from "./properties";
 
 export class Paragraph extends XmlComponent {
@@ -29,6 +30,11 @@ export class Paragraph extends XmlComponent {
 
     public addRun(run: Run): Paragraph {
         this.root.push(run);
+        return this;
+    }
+
+    public addHyperLink(hyperlink: Hyperlink): Paragraph {
+        this.root.push(hyperlink);
         return this;
     }
 
