@@ -60,6 +60,7 @@
   "devDependencies": {
     "@types/chai": "^3.4.35",
     "@types/mocha": "^2.2.39",
+    "@types/sinon": "^4.3.1",
     "awesome-typescript-loader": "^3.4.1",
     "chai": "^3.5.0",
     "glob": "^7.1.2",
@@ -70,6 +71,7 @@
     "replace-in-file": "^3.1.0",
     "rimraf": "^2.5.2",
     "shelljs": "^0.7.7",
+    "sinon": "^5.0.7",
     "tslint": "^5.1.0",
     "typedoc": "^0.9.0",
     "typescript": "2.6.2",
