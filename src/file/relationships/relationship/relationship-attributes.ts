@@ -4,6 +4,7 @@ export interface IRelationshipAttributesProperties {
     id: string;
     type: string;
     target: string;
+    targetMode?: string;
 }
 
 export class RelationshipAttributes extends XmlAttributeComponent<IRelationshipAttributesProperties> {
@@ -11,5 +12,6 @@ export class RelationshipAttributes extends XmlAttributeComponent<IRelationshipA
         id: "Id",
         type: "Type",
         target: "Target",
+        targetMode: "TargetMode",
     };
 }
