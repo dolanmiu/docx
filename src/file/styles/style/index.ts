@@ -3,7 +3,7 @@ import * as paragraph from "../../paragraph";
 import * as formatting from "../../paragraph/run/formatting";
 import { RunProperties } from "../../paragraph/run/properties";
 
-import { BasedOn, Name, Next, QuickFormat } from "./components";
+import { BasedOn, Name, Next, QuickFormat, UiPriority, UnhideWhenUsed } from "./components";
 
 export interface IStyleAttributes {
     type?: string;
@@ -247,5 +247,45 @@ export class ListParagraph extends ParagraphStyle {
         this.root.push(new Name("List Paragraph"));
         this.root.push(new BasedOn("Normal"));
         this.root.push(new QuickFormat());
+    }
+}
+
+export class CharacterStyle extends Style {
+    private readonly runProperties: RunProperties;
+
+    constructor(styleId: string, name?: string) {
+        super({ type: "character", styleId: styleId }, name);
+        this.runProperties = new RunProperties();
+        this.root.push(this.runProperties);
+        this.root.push(new UiPriority("99"));
+        this.root.push(new UnhideWhenUsed(""));
+    }
+
+    public basedOn(parentId: string): CharacterStyle {
+        this.root.push(new BasedOn(parentId));
+        return this;
+    }
+
+    public addRunProperty(property: XmlComponent): void {
+        this.runProperties.push(property);
+    }
+
+    public color(color: string): CharacterStyle {
+        this.addRunProperty(new formatting.Color(color));
+        return this;
+    }
+
+    public underline(underlineType?: string, color?: string): CharacterStyle {
+        this.addRunProperty(new formatting.Underline(underlineType, color));
+        return this;
+    }
+}
+
+export class HyperlinkStyle extends CharacterStyle {
+    constructor() {
+        super("Hyperlink", "Hyperlink");
+        this.basedOn("DefaultParagraphFont")
+            .color("0563C1")
+            .underline("single");
     }
 }

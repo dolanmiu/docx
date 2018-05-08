@@ -8,7 +8,7 @@ import { FooterWrapper } from "./footer-wrapper";
 import { HeaderWrapper } from "./header-wrapper";
 import { Media } from "./media";
 import { Numbering } from "./numbering";
-import { Paragraph, PictureRun } from "./paragraph";
+import { Hyperlink, Paragraph, PictureRun } from "./paragraph";
 import { Relationships } from "./relationships";
 import { Styles } from "./styles";
 import { ExternalStylesFactory } from "./styles/external-styles-factory";
@@ -127,6 +127,18 @@ export class File {
             `media/${mediaData.fileName}`,
         );
         return mediaData;
+    }
+
+    public createHyperlink(link: string, text?: string): Hyperlink {
+        text = text === undefined ? link : text;
+        const hyperlink = new Hyperlink(text, this.docRelationships.RelationshipCount);
+        this.docRelationships.createRelationship(
+            hyperlink.linkId,
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink",
+            link,
+            "External",
+        );
+        return hyperlink;
     }
 
     public get Document(): Document {
