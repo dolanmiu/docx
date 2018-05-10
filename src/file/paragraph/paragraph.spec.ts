@@ -161,6 +161,22 @@ describe("Paragraph", () => {
         });
     });
 
+    describe("#pageBreakBefore()", () => {
+        it("should add page break before to JSON", () => {
+            paragraph.pageBreakBefore();
+            const tree = new Formatter().format(paragraph);
+            expect(tree).to.deep.equal({
+                "w:p": [
+                    {
+                        "w:pPr": [{
+                            "w:pageBreakBefore": []
+                        }],
+                    }
+                ],
+            });
+        });
+    });
+
     describe("#bullet()", () => {
         it("should add list paragraph style to JSON", () => {
             paragraph.bullet();
