@@ -10,6 +10,7 @@ import { PageMargin } from "./page-margin/page-margin";
 import { IPageMarginAttributes } from "./page-margin/page-margin-attributes";
 import { PageSize } from "./page-size/page-size";
 import { IPageSizeAttributes } from "./page-size/page-size-attributes";
+import { TitlePage } from "./titlepage/titlepage";
 
 export type SectionPropertiesOptions = IPageSizeAttributes & IPageMarginAttributes & IColumnsAttributes & IDocGridAttributesProperties;
 
@@ -51,7 +52,9 @@ export class SectionProperties extends XmlComponent {
         );
         this.root.push(new Columns(mergedOptions.space));
         this.root.push(new DocumentGrid(mergedOptions.linePitch));
-        this.root.push(new HeaderReference());
+        this.root.push(new HeaderReference("default",3));
+        this.root.push(new HeaderReference("first",5));
+        this.root.push(new TitlePage());
         this.root.push(new FooterReference());
     }
 }

@@ -5,6 +5,9 @@ import { Document } from "./document";
 import { SectionPropertiesOptions } from "./document/body/section-properties/section-properties";
 import { FooterWrapper } from "./footer-wrapper";
 import { HeaderWrapper } from "./header-wrapper";
+
+import { HeaderWrapper2 } from "./header-wrapper2";
+
 import { Media } from "./media";
 import { Numbering } from "./numbering";
 import { Hyperlink, Paragraph, PictureRun } from "./paragraph";
@@ -22,6 +25,9 @@ export class File {
     private readonly docRelationships: Relationships;
     private readonly fileRelationships: Relationships;
     private readonly headerWrapper: HeaderWrapper;
+
+    private readonly headerWrapper2: HeaderWrapper2;
+
     private readonly footerWrapper: FooterWrapper;
     private readonly contentTypes: ContentTypes;
     private readonly appProperties: AppProperties;
@@ -57,13 +63,23 @@ export class File {
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/header",
             "header1.xml",
         );
+
+        this.docRelationships.createRelationship(
+            5,
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/header",
+            "header2.xml",
+        );
+
         this.docRelationships.createRelationship(
             4,
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer",
             "footer1.xml",
         );
         this.media = new Media();
+
         this.headerWrapper = new HeaderWrapper(this.media);
+        this.headerWrapper2 = new HeaderWrapper2(this.media);
+
         this.footerWrapper = new FooterWrapper(this.media);
         this.contentTypes = new ContentTypes();
         this.fileRelationships = new Relationships();
@@ -154,6 +170,11 @@ export class File {
     public get Header(): HeaderWrapper {
         return this.headerWrapper;
     }
+
+    public get Header2(): HeaderWrapper2 {
+        return this.headerWrapper2;
+    }
+
 
     public get Footer(): FooterWrapper {
         return this.footerWrapper;

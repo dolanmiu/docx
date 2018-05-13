@@ -8,6 +8,7 @@ import { SubScript, SuperScript } from "./script";
 import { Style } from "./style";
 import { Tab } from "./tab";
 import { Underline } from "./underline";
+import { Begin, Page, End, Separate } from "./pagenumber";
 
 import { XmlComponent } from "file/xml-components";
 
@@ -52,6 +53,14 @@ export class Run extends XmlComponent {
 
     public tab(): Run {
         this.root.splice(1, 0, new Tab());
+        return this;
+    }
+
+    public pageNumber(): Run {
+        this.root.push(new Begin());
+        this.root.push(new Page());
+        this.root.push(new Separate());
+        this.root.push(new End());
         return this;
     }
 

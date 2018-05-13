@@ -34,11 +34,15 @@ export class Compiler {
         const xmlRelationships = xml(this.formatter.format(this.file.DocumentRelationships));
         const xmlFileRelationships = xml(this.formatter.format(this.file.FileRelationships));
         const xmlHeader = xml(this.formatter.format(this.file.Header.Header));
+
+        const xmlHeader2 = xml(this.formatter.format(this.file.Header2.Header));
+
         const xmlFooter = xml(this.formatter.format(this.file.Footer.Footer));
         const xmlHeaderRelationships = xml(this.formatter.format(this.file.Header.Relationships));
         const xmlFooterRelationships = xml(this.formatter.format(this.file.Footer.Relationships));
         const xmlContentTypes = xml(this.formatter.format(this.file.ContentTypes));
         const xmlAppProperties = xml(this.formatter.format(this.file.AppProperties));
+
 
         this.archive.append(xmlDocument, {
             name: "word/document.xml",
@@ -63,6 +67,14 @@ export class Compiler {
         this.archive.append(xmlHeader, {
             name: "word/header1.xml",
         });
+
+
+
+        this.archive.append(xmlHeader2, {
+            name: "word/header2.xml",
+        });
+        
+
 
         this.archive.append(xmlFooter, {
             name: "word/footer1.xml",
