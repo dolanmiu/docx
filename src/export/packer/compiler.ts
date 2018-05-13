@@ -35,7 +35,7 @@ export class Compiler {
         const xmlFileRelationships = xml(this.formatter.format(this.file.FileRelationships));
         const xmlHeader = xml(this.formatter.format(this.file.Header.Header));
 
-        const xmlHeader2 = xml(this.formatter.format(this.file.Header2.Header));
+        const xmlHeader2 = xml(this.formatter.format(this.file.firstPageHeader.Header));
 
         const xmlFooter = xml(this.formatter.format(this.file.Footer.Footer));
         const xmlHeaderRelationships = xml(this.formatter.format(this.file.Header.Relationships));

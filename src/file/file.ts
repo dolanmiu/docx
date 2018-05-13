@@ -4,9 +4,9 @@ import { CoreProperties, IPropertiesOptions } from "./core-properties";
 import { Document } from "./document";
 import { SectionPropertiesOptions } from "./document/body/section-properties/section-properties";
 import { FooterWrapper } from "./footer-wrapper";
-import { HeaderWrapper } from "./header-wrapper";
+import { HeaderWrapper, FirstPageHeaderWrapper } from "./header-wrapper";
 
-import { HeaderWrapper2 } from "./header-wrapper2";
+//import { HeaderWrapper2 } from "./header-wrapper2";
 
 import { Media } from "./media";
 import { Numbering } from "./numbering";
@@ -26,7 +26,7 @@ export class File {
     private readonly fileRelationships: Relationships;
     private readonly headerWrapper: HeaderWrapper;
 
-    private readonly headerWrapper2: HeaderWrapper2;
+    private readonly firstPageHeaderWrapper: FirstPageHeaderWrapper;
 
     private readonly footerWrapper: FooterWrapper;
     private readonly contentTypes: ContentTypes;
@@ -78,7 +78,7 @@ export class File {
         this.media = new Media();
 
         this.headerWrapper = new HeaderWrapper(this.media);
-        this.headerWrapper2 = new HeaderWrapper2(this.media);
+        this.firstPageHeaderWrapper = new FirstPageHeaderWrapper(this.media);
 
         this.footerWrapper = new FooterWrapper(this.media);
         this.contentTypes = new ContentTypes();
@@ -171,10 +171,9 @@ export class File {
         return this.headerWrapper;
     }
 
-    public get Header2(): HeaderWrapper2 {
-        return this.headerWrapper2;
+    public get firstPageHeader(): FirstPageHeaderWrapper {
+        return this.firstPageHeaderWrapper;
     }
-
 
     public get Footer(): FooterWrapper {
         return this.footerWrapper;
