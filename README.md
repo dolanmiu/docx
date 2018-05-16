@@ -9,14 +9,13 @@
 ---
 
 [![NPM version][npm-image]][npm-url]
+[![Downloads per month][downloads-image]][downloads-url]
 [![Build Status][travis-image]][travis-url]
 [![Dependency Status][daviddm-image]][daviddm-url]
 [![Known Vulnerabilities][snky-image]][snky-url]
 [![Chat on Gitter][gitter-image]][gitter-url]
 [![code style: prettier][prettier-image]][prettier-url]
 [![PRs Welcome][pr-image]][pr-url]
-
-[![NPM](https://nodei.co/npm/docx.png?downloads=true&downloadRank=true&stars=true)](https://nodei.co/npm/docx/)
 
 # docx
 
@@ -103,6 +102,8 @@ Huge thanks to [@felipeochoa](https://github.com/felipeochoa) for awesome contri
 
 [npm-image]: https://badge.fury.io/js/docx.svg
 [npm-url]: https://npmjs.org/package/docx
+[downloads-image]: https://img.shields.io/npm/dm/docx.svg
+[downloads-url]: https://npmjs.org/package/docx
 [travis-image]: https://travis-ci.org/dolanmiu/docx.svg?branch=master
 [travis-url]: https://travis-ci.org/dolanmiu/docx
 [daviddm-image]: https://david-dm.org/dolanmiu/docx.svg?theme=shields.io
