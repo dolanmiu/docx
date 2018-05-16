@@ -46,6 +46,7 @@
     "@types/image-size": "0.0.29",
     "@types/request-promise": "^4.1.41",
     "archiver": "^2.1.1",
+    "fast-xml-parser": "^3.3.6",
     "image-size": "^0.6.2",
     "request": "^2.83.0",
     "request-promise": "^4.2.2",

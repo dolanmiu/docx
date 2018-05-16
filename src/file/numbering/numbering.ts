@@ -1,11 +1,14 @@
-import { XmlComponent } from "file/xml-components";
+import { Indent } from "file/paragraph";
+import { IXmlableObject, XmlComponent } from "file/xml-components";
 import { DocumentAttributes } from "../document/document-attributes";
-import { Indent } from "../paragraph/formatting";
 import { AbstractNumbering } from "./abstract-numbering";
 import { Num } from "./num";
 
 export class Numbering extends XmlComponent {
     private nextId: number;
+
+    private abstractNumbering: XmlComponent[] = [];
+    private concreteNumbering: XmlComponent[] = [];
 
     constructor() {
         super("w:numbering");
@@ -58,13 +61,19 @@ export class Numbering extends XmlComponent {
 
     public createAbstractNumbering(): AbstractNumbering {
         const num = new AbstractNumbering(this.nextId++);
-        this.root.push(num);
+        this.abstractNumbering.push(num);
         return num;
     }
 
     public createConcreteNumbering(abstractNumbering: AbstractNumbering): Num {
         const num = new Num(this.nextId++, abstractNumbering.id);
-        this.root.push(num);
+        this.concreteNumbering.push(num);
         return num;
+    }
+
+    public prepForXml(): IXmlableObject {
+        this.abstractNumbering.forEach((x) => this.root.push(x));
+        this.concreteNumbering.forEach((x) => this.root.push(x));
+        return super.prepForXml();
     }
 }

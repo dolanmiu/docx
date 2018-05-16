@@ -24,10 +24,34 @@ export class Media {
     public addMedia(filePath: string, relationshipsCount: number): IMediaData {
         const key = path.basename(filePath);
         const dimensions = sizeOf(filePath);
+        return this.createMedia(key, relationshipsCount, dimensions, fs.createReadStream(filePath), filePath);
+    }
 
+    public addMediaWithData(fileName: string, data: Buffer, relationshipsCount: number, width?: number, height?: number): IMediaData {
+        const key = fileName;
+        let dimensions;
+        if (width && height) {
+            dimensions = {
+                width: width,
+                height: height,
+            };
+        } else {
+            dimensions = sizeOf(data);
+        }
+
+        return this.createMedia(key, relationshipsCount, dimensions, data);
+    }
+
+    private createMedia(
+        key: string,
+        relationshipsCount: number,
+        dimensions: { width: number; height: number },
+        data: fs.ReadStream | Buffer,
+        filePath?: string,
+    ): IMediaData {
         const imageData = {
             referenceId: this.map.size + relationshipsCount + 1,
-            stream: fs.createReadStream(filePath),
+            stream: data,
             path: filePath,
             fileName: key,
             dimensions: {

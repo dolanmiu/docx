@@ -1,3 +1,4 @@
+import { IMediaData } from "file/media";
 import { AppProperties } from "./app-properties/app-properties";
 import { ContentTypes } from "./content-types/content-types";
 import { CoreProperties, IPropertiesOptions } from "./core-properties";
@@ -10,6 +11,7 @@ import { Numbering } from "./numbering";
 import { Hyperlink, Paragraph, PictureRun } from "./paragraph";
 import { Relationships } from "./relationships";
 import { Styles } from "./styles";
+import { ExternalStylesFactory } from "./styles/external-styles-factory";
 import { DefaultStylesFactory } from "./styles/factory";
 import { Table } from "./table";
 
@@ -28,8 +30,6 @@ export class File {
 
     constructor(options?: IPropertiesOptions, sectionPropertiesOptions?: SectionPropertiesOptions) {
         this.document = new Document(sectionPropertiesOptions);
-        const stylesFactory = new DefaultStylesFactory();
-        this.styles = stylesFactory.newInstance();
 
         if (!options) {
             options = {
@@ -37,6 +37,14 @@ export class File {
                 revision: "1",
                 lastModifiedBy: "Un-named",
             };
+        }
+
+        if (options.externalStyles) {
+            const stylesFactory = new ExternalStylesFactory();
+            this.styles = stylesFactory.newInstance(options.externalStyles);
+        } else {
+            const stylesFactory = new DefaultStylesFactory();
+            this.styles = stylesFactory.newInstance();
         }
 
         this.coreProperties = new CoreProperties(options);
@@ -109,6 +117,16 @@ export class File {
             `media/${mediaData.fileName}`,
         );
         return this.document.createDrawing(mediaData);
+    }
+
+    public createImageData(imageName: string, data: Buffer, width?: number, height?: number): IMediaData {
+        const mediaData = this.media.addMediaWithData(imageName, data, this.docRelationships.RelationshipCount, width, height);
+        this.docRelationships.createRelationship(
+            mediaData.referenceId,
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
+            `media/${mediaData.fileName}`,
+        );
+        return mediaData;
     }
 
     public createHyperlink(link: string, text?: string): Hyperlink {
