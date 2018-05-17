@@ -11,7 +11,7 @@ export class Media {
         this.map = new Map<string, IMediaData>();
     }
 
-    private createMedia(key: string, relationshipsCount, dimensions,  data: fs.ReadStream | Buffer, filePath?: string, ) {
+    private createMedia(key: string, relationshipsCount, dimensions, data: fs.ReadStream | Buffer, filePath?: string) {
         const imageData = {
             referenceId: this.map.size + relationshipsCount + 1,
             stream: data,
@@ -54,12 +54,12 @@ export class Media {
         if (width && height) {
             dimensions = {
                 width: width,
-                height: height
-            }
+                height: height,
+            };
         } else {
             dimensions = sizeOf(data);
         }
-        
+
         return this.createMedia(key, relationshipsCount, dimensions, data);
     }
 

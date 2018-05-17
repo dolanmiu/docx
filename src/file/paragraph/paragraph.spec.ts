@@ -168,10 +168,12 @@ describe("Paragraph", () => {
             expect(tree).to.deep.equal({
                 "w:p": [
                     {
-                        "w:pPr": [{
-                            "w:pageBreakBefore": []
-                        }],
-                    }
+                        "w:pPr": [
+                            {
+                                "w:pageBreakBefore": [],
+                            },
+                        ],
+                    },
                 ],
             });
         });

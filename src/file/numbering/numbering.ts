@@ -49,8 +49,8 @@ export class Numbering extends XmlComponent {
     }
 
     public prepForXml(): IXmlableObject {
-        this.abstractNumbering.forEach(x => this.root.push(x));
-        this.concreteNumbering.forEach(x => this.root.push(x));
+        this.abstractNumbering.forEach((x) => this.root.push(x));
+        this.concreteNumbering.forEach((x) => this.root.push(x));
         return super.prepForXml();
     }
 }

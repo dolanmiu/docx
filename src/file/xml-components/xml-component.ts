@@ -12,7 +12,7 @@ export abstract class XmlComponent extends BaseXmlComponent {
 
     public prepForXml(): IXmlableObject {
         const children = this.root
-            .filter(c => {
+            .filter((c) => {
                 if (c instanceof BaseXmlComponent) {
                     return !c.isDeleted;
                 }

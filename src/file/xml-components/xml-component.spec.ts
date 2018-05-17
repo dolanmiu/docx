@@ -24,9 +24,9 @@ describe("XmlComponent", () => {
             const child = new TestComponent("w:test1");
             child.delete();
             xmlComponent.addChildElement(child);
-           
+
             const xml = xmlComponent.prepForXml();
-            assert.equal(xml['w:test'].length, 0); 
+            assert.equal(xml["w:test"].length, 0);
         });
     });
 });
