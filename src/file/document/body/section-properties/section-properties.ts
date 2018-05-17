@@ -31,6 +31,7 @@ export class SectionProperties extends XmlComponent {
             space: 708,
             linePitch: 360,
             orientation: "portrait",
+            differentFirstPageHeader: false,
         };
 
         const mergedOptions = {
@@ -53,8 +54,12 @@ export class SectionProperties extends XmlComponent {
         this.root.push(new Columns(mergedOptions.space));
         this.root.push(new DocumentGrid(mergedOptions.linePitch));
         this.root.push(new HeaderReference("default",3));
-        this.root.push(new HeaderReference("first",5));
-        this.root.push(new TitlePage());
+        
+        if (mergedOptions.differentFirstPageHeader) {
+            this.root.push(new HeaderReference("first",5));
+            this.root.push(new TitlePage());
+        }
+        
         this.root.push(new FooterReference());
     }
 }

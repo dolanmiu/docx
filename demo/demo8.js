@@ -1,14 +1,14 @@
 const docx = require('../build');
 
-var doc = new docx.Document();
+var doc = new docx.Document(undefined,{differentFirstPageHeader:true});
 
 doc.createParagraph("First Page").pageBreak()
 doc.createParagraph("Second Page");
 
-
-var pageoneheader = new docx.Paragraph("Running head: My Title").maxRightTabStop();
 var tab = new docx.TextRun().tab()
 var pageNumber = new docx.TextRun().pageNumber()
+
+var pageoneheader = new docx.Paragraph("Running head: My Title").maxRightTabStop();
 
 pageoneheader.addRun(tab);
 pageoneheader.addRun(pageNumber);
