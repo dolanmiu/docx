@@ -10,7 +10,7 @@ import { PageMargin } from "./page-margin/page-margin";
 import { IPageMarginAttributes } from "./page-margin/page-margin-attributes";
 import { PageSize } from "./page-size/page-size";
 import { IPageSizeAttributes } from "./page-size/page-size-attributes";
-import { TitlePage } from "./titlepage/titlepage";
+import { TitlePage } from "./title-page/title-page";
 
 export type SectionPropertiesOptions = IPageSizeAttributes & IPageMarginAttributes & IColumnsAttributes & IDocGridAttributesProperties;
 
