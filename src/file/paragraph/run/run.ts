@@ -8,7 +8,7 @@ import { SubScript, SuperScript } from "./script";
 import { Style } from "./style";
 import { Tab } from "./tab";
 import { Underline } from "./underline";
-import { Begin, Page, End, Separate } from "./pagenumber";
+import { Begin, Page, End, Separate } from "./page-number";
 
 import { XmlComponent } from "file/xml-components";
 

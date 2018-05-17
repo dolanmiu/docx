@@ -1,5 +1,5 @@
 import { XmlComponent } from "file/xml-components";
-import { TitlePageAttributes } from "./titlepage-attributes";
+import { TitlePageAttributes } from "./title-page-attributes";
 
 export class TitlePage extends XmlComponent {
     constructor() {
