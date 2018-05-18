@@ -53,13 +53,13 @@ export class SectionProperties extends XmlComponent {
         );
         this.root.push(new Columns(mergedOptions.space));
         this.root.push(new DocumentGrid(mergedOptions.linePitch));
-        this.root.push(new HeaderReference("default",3));
-        
+        this.root.push(new HeaderReference("default", 3));
+
         if (mergedOptions.differentFirstPageHeader) {
-            this.root.push(new HeaderReference("first",5));
+            this.root.push(new HeaderReference("first", 5));
             this.root.push(new TitlePage());
         }
-        
+
         this.root.push(new FooterReference());
     }
 }

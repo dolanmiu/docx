@@ -68,7 +68,7 @@ export class Compiler {
         this.archive.append(xmlHeader2, {
             name: "word/header2.xml",
         });
-        
+
         this.archive.append(xmlFooter, {
             name: "word/footer1.xml",
         });

@@ -4,10 +4,7 @@ import { CoreProperties, IPropertiesOptions } from "./core-properties";
 import { Document } from "./document";
 import { SectionPropertiesOptions } from "./document/body/section-properties/section-properties";
 import { FooterWrapper } from "./footer-wrapper";
-import { HeaderWrapper, FirstPageHeaderWrapper } from "./header-wrapper";
-
-//import { HeaderWrapper2 } from "./header-wrapper2";
-
+import { FirstPageHeaderWrapper, HeaderWrapper } from "./header-wrapper";
 import { Media } from "./media";
 import { Numbering } from "./numbering";
 import { Hyperlink, Paragraph, PictureRun } from "./paragraph";

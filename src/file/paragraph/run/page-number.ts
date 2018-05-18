@@ -1,6 +1,6 @@
 import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
 
-class fidCharAttrs extends XmlAttributeComponent<{ type: "begin" | "end" | "separate" }> {
+class FidCharAttrs extends XmlAttributeComponent<{ type: "begin" | "end" | "separate" }> {
     protected xmlKeys = { type: "w:fldCharType" };
 }
 
@@ -11,7 +11,7 @@ class TextAttributes extends XmlAttributeComponent<{ space: "default" | "preserv
 export class Begin extends XmlComponent {
     constructor() {
         super("w:fldChar");
-        this.root.push(new fidCharAttrs({ type: "begin" }));
+        this.root.push(new FidCharAttrs({ type: "begin" }));
     }
 }
 
@@ -26,13 +26,13 @@ export class Page extends XmlComponent {
 export class Separate extends XmlComponent {
     constructor() {
         super("w:fldChar");
-        this.root.push(new fidCharAttrs({ type: "separate" }));
+        this.root.push(new FidCharAttrs({ type: "separate" }));
     }
 }
 
 export class End extends XmlComponent {
     constructor() {
         super("w:fldChar");
-        this.root.push(new fidCharAttrs({ type: "end" }));
+        this.root.push(new FidCharAttrs({ type: "end" }));
     }
 }
