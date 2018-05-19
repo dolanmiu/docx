@@ -4,7 +4,7 @@ import { Paragraph } from "./paragraph";
 import { Relationships } from "./relationships";
 import { Table } from "./table";
 
-export class HeaderWrapper {
+export class FirstPageHeaderWrapper {
     private readonly header: Header;
     private readonly relationships: Relationships;
 
@@ -47,6 +47,62 @@ export class HeaderWrapper {
 
     public get Header(): Header {
         return this.header;
+    }
+
+    public get Relationships(): Relationships {
+        return this.relationships;
+    }
+}
+
+export class HeaderWrapper {
+    private readonly header: Header;
+    private readonly header2: Header;
+    private readonly relationships: Relationships;
+
+    constructor(private readonly media: Media) {
+        this.header = new Header();
+        this.header2 = new Header();
+        this.relationships = new Relationships();
+    }
+
+    public addParagraph(paragraph: Paragraph): void {
+        this.header.addParagraph(paragraph);
+    }
+
+    public createParagraph(text?: string): Paragraph {
+        const para = new Paragraph(text);
+        this.addParagraph(para);
+        return para;
+    }
+
+    public addTable(table: Table): void {
+        this.header.addTable(table);
+    }
+
+    public createTable(rows: number, cols: number): Table {
+        return this.header.createTable(rows, cols);
+    }
+
+    public addDrawing(imageData: IMediaData): void {
+        this.header.addDrawing(imageData);
+    }
+
+    public createImage(image: string): void {
+        const mediaData = this.media.addMedia(image, this.relationships.RelationshipCount);
+        this.relationships.createRelationship(
+            mediaData.referenceId,
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
+            `media/${mediaData.fileName}`,
+        );
+        this.addDrawing(mediaData);
+    }
+
+    public get Header(): Header {
+        return this.header;
+    }
+
+    public get Header2(): Header {
+        return this.header2;
     }
 
     public get Relationships(): Relationships {

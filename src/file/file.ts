@@ -5,7 +5,7 @@ import { CoreProperties, IPropertiesOptions } from "./core-properties";
 import { Document } from "./document";
 import { SectionPropertiesOptions } from "./document/body/section-properties/section-properties";
 import { FooterWrapper } from "./footer-wrapper";
-import { HeaderWrapper } from "./header-wrapper";
+import { FirstPageHeaderWrapper, HeaderWrapper } from "./header-wrapper";
 import { Media } from "./media";
 import { Numbering } from "./numbering";
 import { Hyperlink, Paragraph, PictureRun } from "./paragraph";
@@ -24,6 +24,9 @@ export class File {
     private readonly docRelationships: Relationships;
     private readonly fileRelationships: Relationships;
     private readonly headerWrapper: HeaderWrapper;
+
+    private readonly firstPageHeaderWrapper: FirstPageHeaderWrapper;
+
     private readonly footerWrapper: FooterWrapper;
     private readonly contentTypes: ContentTypes;
     private readonly appProperties: AppProperties;
@@ -65,13 +68,23 @@ export class File {
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/header",
             "header1.xml",
         );
+
+        this.docRelationships.createRelationship(
+            5,
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/header",
+            "header2.xml",
+        );
+
         this.docRelationships.createRelationship(
             4,
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer",
             "footer1.xml",
         );
         this.media = new Media();
+
         this.headerWrapper = new HeaderWrapper(this.media);
+        this.firstPageHeaderWrapper = new FirstPageHeaderWrapper(this.media);
+
         this.footerWrapper = new FooterWrapper(this.media);
         this.contentTypes = new ContentTypes();
         this.fileRelationships = new Relationships();
@@ -171,6 +184,10 @@ export class File {
 
     public get Header(): HeaderWrapper {
         return this.headerWrapper;
+    }
+
+    public get firstPageHeader(): FirstPageHeaderWrapper {
+        return this.firstPageHeaderWrapper;
     }
 
     public get Footer(): FooterWrapper {

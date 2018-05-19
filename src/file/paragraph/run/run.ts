@@ -2,6 +2,7 @@
 import { Break } from "./break";
 import { Caps, SmallCaps } from "./caps";
 import { Bold, Color, DoubleStrike, Italics, Size, Strike } from "./formatting";
+import { Begin, End, Page, Separate } from "./page-number";
 import { RunProperties } from "./properties";
 import { RunFonts } from "./run-fonts";
 import { SubScript, SuperScript } from "./script";
@@ -52,6 +53,14 @@ export class Run extends XmlComponent {
 
     public tab(): Run {
         this.root.splice(1, 0, new Tab());
+        return this;
+    }
+
+    public pageNumber(): Run {
+        this.root.push(new Begin());
+        this.root.push(new Page());
+        this.root.push(new Separate());
+        this.root.push(new End());
         return this;
     }
 
