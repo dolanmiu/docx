@@ -56,12 +56,10 @@ export class FirstPageHeaderWrapper {
 
 export class HeaderWrapper {
     private readonly header: Header;
-    private readonly header2: Header;
     private readonly relationships: Relationships;
 
     constructor(private readonly media: Media) {
         this.header = new Header();
-        this.header2 = new Header();
         this.relationships = new Relationships();
     }
 
@@ -99,10 +97,6 @@ export class HeaderWrapper {
 
     public get Header(): Header {
         return this.header;
-    }
-
-    public get Header2(): Header {
-        return this.header2;
     }
 
     public get Relationships(): Relationships {
