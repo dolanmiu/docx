@@ -1,12 +1,6 @@
 import { Styles } from "./";
 import * as fastXmlParser from "fast-xml-parser";
-import { ImportedXmlComponent, ImportedRootElementAttributes } from "./../../file/xml-components";
-
-const parseOptions = {
-    ignoreAttributes: false,
-    attributeNamePrefix: "",
-    attrNodeName: "_attr",
-};
+import { ImportedXmlComponent, ImportedRootElementAttributes, parseOptions, convertToXmlComponent } from "./../../file/xml-components";
 
 export class ExternalStylesFactory {
     /**
@@ -44,19 +38,7 @@ export class ExternalStylesFactory {
             });
 
         // convert the styles one by one
-        xmlStyles["w:style"].map((style) => this.convertElement("w:style", style)).forEach(importedStyle.push.bind(importedStyle));
-
+        xmlStyles["w:style"].map((style) => convertToXmlComponent("w:style", style)).forEach(importedStyle.push.bind(importedStyle));
         return importedStyle;
-    }
-
-    convertElement(elementName: string, element: any): ImportedXmlComponent {
-        const xmlElement = new ImportedXmlComponent(elementName, element._attr);
-        if (typeof element === "object") {
-            Object.keys(element)
-                .filter((key) => key !== "_attr")
-                .map((item) => this.convertElement(item, element[item]))
-                .forEach(xmlElement.push.bind(xmlElement));
-        }
-        return xmlElement;
     }
 }
