@@ -8,7 +8,7 @@ import { Alignment } from "./formatting/alignment";
 import { ThematicBreak } from "./formatting/border";
 import { Indent } from "./formatting/indent";
 import { KeepLines, KeepNext } from "./formatting/keep";
-import { PageBreak } from "./formatting/page-break";
+import { PageBreak, PageBreakBefore } from "./formatting/page-break";
 import { ISpacingProperties, Spacing } from "./formatting/spacing";
 import { Style } from "./formatting/style";
 import { CenterTabStop, LeftTabStop, MaxRightTabStop, RightTabStop } from "./formatting/tab-stop";
@@ -112,6 +112,11 @@ export class Paragraph extends XmlComponent {
 
     public pageBreak(): Paragraph {
         this.root.push(new PageBreak());
+        return this;
+    }
+
+    public pageBreakBefore(): Paragraph {
+        this.properties.push(new PageBreakBefore());
         return this;
     }
 

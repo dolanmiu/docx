@@ -161,6 +161,24 @@ describe("Paragraph", () => {
         });
     });
 
+    describe("#pageBreakBefore()", () => {
+        it("should add page break before to JSON", () => {
+            paragraph.pageBreakBefore();
+            const tree = new Formatter().format(paragraph);
+            expect(tree).to.deep.equal({
+                "w:p": [
+                    {
+                        "w:pPr": [
+                            {
+                                "w:pageBreakBefore": [],
+                            },
+                        ],
+                    },
+                ],
+            });
+        });
+    });
+
     describe("#bullet()", () => {
         it("should default to 0 indent level if no bullet was specified", () => {
             paragraph.bullet();
