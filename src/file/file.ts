@@ -5,6 +5,7 @@ import { CoreProperties, IPropertiesOptions } from "./core-properties";
 import { Document } from "./document";
 import { SectionPropertiesOptions } from "./document/body/section-properties/section-properties";
 import { FooterWrapper } from "./footer-wrapper";
+import { FootNotes } from "./footnotes";
 import { FirstPageHeaderWrapper, HeaderWrapper } from "./header-wrapper";
 import { Media } from "./media";
 import { Numbering } from "./numbering";
@@ -24,6 +25,7 @@ export class File {
     private readonly docRelationships: Relationships;
     private readonly fileRelationships: Relationships;
     private readonly headerWrapper: HeaderWrapper;
+    private readonly footNotes: FootNotes;
 
     private readonly firstPageHeaderWrapper: FirstPageHeaderWrapper;
 
@@ -104,6 +106,7 @@ export class File {
             "docProps/app.xml",
         );
         this.appProperties = new AppProperties();
+        this.footNotes = new FootNotes();
     }
 
     public addParagraph(paragraph: Paragraph): void {
@@ -200,5 +203,9 @@ export class File {
 
     public get AppProperties(): AppProperties {
         return this.appProperties;
+    }
+
+    public get FootNotes(): FootNotes {
+        return this.footNotes;
     }
 }
