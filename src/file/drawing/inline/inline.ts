@@ -1,11 +1,11 @@
 // http://officeopenxml.com/drwPicInline.php
 import { IMediaDataDimensions } from "file/media";
 import { XmlComponent } from "file/xml-components";
-import { DocProperties } from "./doc-properties/doc-properties";
-import { EffectExtent } from "./effect-extent/effect-extent";
-import { Extent } from "./extent/extent";
-import { Graphic } from "./graphic";
-import { GraphicFrameProperties } from "./graphic-frame/graphic-frame-properties";
+import { DocProperties } from "./../doc-properties/doc-properties";
+import { EffectExtent } from "./../effect-extent/effect-extent";
+import { Extent } from "./../extent/extent";
+import { Graphic } from "./../graphic";
+import { GraphicFrameProperties } from "./../graphic-frame/graphic-frame-properties";
 import { InlineAttributes } from "./inline-attributes";
 
 export class Inline extends XmlComponent {

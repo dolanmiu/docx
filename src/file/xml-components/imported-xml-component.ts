@@ -111,10 +111,10 @@ export class ImportedXmlComponent extends XmlComponent {
     static fromXmlString(importedContent: string): ImportedXmlComponent {
         const imported = fastXmlParser.parse(importedContent, parseOptions);
         const elementName = Object.keys(imported)[0];
-        
+
         const converted = convertToXmlComponent(elementName, imported[elementName]);
 
-        if (Array.isArray(converted) && converted.length > 1)  {
+        if (Array.isArray(converted) && converted.length > 1) {
             throw new Error("Invalid conversion, input must be one element.");
         }
         return Array.isArray(converted) ? converted[0] : converted;
