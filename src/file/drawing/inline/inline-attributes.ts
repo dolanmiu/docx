@@ -1,11 +1,7 @@
 import { XmlAttributeComponent } from "file/xml-components";
+import { Distance } from "../drawing";
 
-export interface IInlineAttributes {
-    distT?: number;
-    distB?: number;
-    distL?: number;
-    distR?: number;
-}
+export interface IInlineAttributes extends Distance {}
 
 export class InlineAttributes extends XmlAttributeComponent<IInlineAttributes> {
     protected xmlKeys = {
