@@ -3,6 +3,7 @@ import { IMediaData, Media } from "./media";
 import { Paragraph } from "./paragraph";
 import { Relationships } from "./relationships";
 import { Table } from "./table";
+import { XmlComponent } from ".";
 
 export class FirstPageHeaderWrapper {
     private readonly header: Header;
@@ -83,6 +84,10 @@ export class HeaderWrapper {
 
     public addDrawing(imageData: IMediaData): void {
         this.header.addDrawing(imageData);
+    }
+
+    public addChildElement(childElement: XmlComponent | string) {
+        this.header.addChildElement(childElement);
     }
 
     public createImage(image: string): void {

@@ -11,6 +11,7 @@ export class Media {
         this.map = new Map<string, IMediaData>();
     }
 
+    private createMedia(key: string, relationshipsCount, dimensions, data: fs.ReadStream | Buffer, filePath?: string) {
     public getMedia(key: string): IMediaData {
         const data = this.map.get(key);
 
