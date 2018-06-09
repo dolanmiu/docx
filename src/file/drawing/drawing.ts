@@ -28,6 +28,8 @@ const defaultDrawingOptions: DrawingOptions = {
 };
 
 export class Drawing extends XmlComponent {
+    private inline: Inline;
+
     constructor(imageData: IMediaData, drawingOptions?: DrawingOptions) {
         super("w:drawing");
 
@@ -40,10 +42,16 @@ export class Drawing extends XmlComponent {
             ...drawingOptions,
         };
 
+
         if (mergedOptions.position === PlacementPosition.INLINE) {
-            this.root.push(new Inline(imageData.referenceId, imageData.dimensions));
+            this.inline = new Inline(imageData.referenceId, imageData.dimensions);
+            this.root.push(this.inline);
         } else if (mergedOptions.position === PlacementPosition.FLOATING) {
             this.root.push(new Anchor(imageData.referenceId, imageData.dimensions, mergedOptions));
         }
+    }
+
+    public scale(factorX: number, factorY: number): void {
+        this.inline.scale(factorX, factorY);
     }
 }
