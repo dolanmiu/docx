@@ -1,9 +1,9 @@
+import { XmlComponent } from "file/xml-components";
 import { Header } from "./header/header";
 import { IMediaData, Media } from "./media";
 import { Paragraph } from "./paragraph";
 import { Relationships } from "./relationships";
 import { Table } from "./table";
-import { XmlComponent } from ".";
 
 export class FirstPageHeaderWrapper {
     private readonly header: Header;
@@ -86,7 +86,7 @@ export class HeaderWrapper {
         this.header.addDrawing(imageData);
     }
 
-    public addChildElement(childElement: XmlComponent | string) {
+    public addChildElement(childElement: XmlComponent | string): void {
         this.header.addChildElement(childElement);
     }
 

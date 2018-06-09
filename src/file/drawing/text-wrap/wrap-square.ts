@@ -1,9 +1,9 @@
 // http://officeopenxml.com/drwPicFloating-textWrap.php
-import { XmlComponent, XmlAttributeComponent } from "file/xml-components";
-import { TextWrapping, WrapTextOption } from ".";
-import { Distance } from "../drawing";
+import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
+import { ITextWrapping, WrapTextOption } from ".";
+import { IDistance } from "../drawing";
 
-interface IWrapSquareAttributes extends Distance {
+interface IWrapSquareAttributes extends IDistance {
     wrapText?: WrapTextOption;
 }
 
@@ -18,7 +18,7 @@ class WrapSquareAttributes extends XmlAttributeComponent<IWrapSquareAttributes> 
 }
 
 export class WrapSquare extends XmlComponent {
-    constructor(textWrapping: TextWrapping) {
+    constructor(textWrapping: ITextWrapping) {
         super("wp:wrapSquare");
 
         this.root.push(

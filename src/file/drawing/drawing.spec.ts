@@ -2,9 +2,9 @@ import { assert } from "chai";
 import * as fs from "fs";
 
 import { Utility } from "../../tests/utility";
-import { Drawing, DrawingOptions, PlacementPosition } from "./";
+import { Drawing, IDrawingOptions, PlacementPosition } from "./";
 
-function createDrawing(drawingOptions?: DrawingOptions) {
+function createDrawing(drawingOptions?: IDrawingOptions): Drawing {
     const path = "./demo/images/image1.jpeg";
     return new Drawing(
         {

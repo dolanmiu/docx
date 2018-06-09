@@ -1,8 +1,8 @@
 import { assert } from "chai";
 
-import { VerticalPosition } from "./vertical-position";
+import { VerticalPositionAlign, VerticalPositionRelativeFrom } from ".";
 import { Utility } from "../../../tests/utility";
-import { VerticalPositionRelativeFrom, VerticalPositionAlign } from ".";
+import { VerticalPosition } from "./vertical-position";
 
 describe("VerticalPosition", () => {
     describe("#constructor()", () => {

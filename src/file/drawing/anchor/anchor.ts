@@ -1,24 +1,24 @@
 // http://officeopenxml.com/drwPicFloating.php
 import { IMediaDataDimensions } from "file/media";
 import { XmlComponent } from "file/xml-components";
+import { IDrawingOptions } from "../drawing";
+import {
+    HorizontalPosition,
+    HorizontalPositionRelativeFrom,
+    IFloating,
+    SimplePos,
+    VerticalPosition,
+    VerticalPositionRelativeFrom,
+} from "../floating";
+import { Graphic } from "../inline/graphic";
+import { TextWrapStyle, WrapNone, WrapSquare, WrapTight, WrapTopAndBottom } from "../text-wrap";
 import { DocProperties } from "./../doc-properties/doc-properties";
 import { EffectExtent } from "./../effect-extent/effect-extent";
 import { Extent } from "./../extent/extent";
-import { Graphic } from "./../graphic";
 import { GraphicFrameProperties } from "./../graphic-frame/graphic-frame-properties";
 import { AnchorAttributes } from "./anchor-attributes";
-import { DrawingOptions } from "../drawing";
-import {
-    SimplePos,
-    HorizontalPosition,
-    VerticalPosition,
-    Floating,
-    VerticalPositionRelativeFrom,
-    HorizontalPositionRelativeFrom,
-} from "../floating";
-import { WrapNone, TextWrapStyle, WrapSquare, WrapTight, WrapTopAndBottom } from "../text-wrap";
 
-const defaultOptions: Floating = {
+const defaultOptions: IFloating = {
     allowOverlap: true,
     behindDocument: false,
     lockAnchor: false,
@@ -34,7 +34,7 @@ const defaultOptions: Floating = {
 };
 
 export class Anchor extends XmlComponent {
-    constructor(referenceId: number, dimensions: IMediaDataDimensions, drawingOptions: DrawingOptions) {
+    constructor(referenceId: number, dimensions: IMediaDataDimensions, drawingOptions: IDrawingOptions) {
         super("wp:anchor");
 
         const floating = {

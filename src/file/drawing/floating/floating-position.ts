@@ -38,21 +38,21 @@ export enum VerticalPositionAlign {
     TOP = "top",
 }
 
-export interface HorizontalPositionOptions {
+export interface IHorizontalPositionOptions {
     relative: HorizontalPositionRelativeFrom;
     align?: HorizontalPositionAlign;
     offset?: number;
 }
 
-export interface VerticalPositionOptions {
+export interface IVerticalPositionOptions {
     relative: VerticalPositionRelativeFrom;
     align?: VerticalPositionAlign;
     offset?: number;
 }
 
-export interface Floating {
-    horizontalPosition: HorizontalPositionOptions;
-    verticalPosition: VerticalPositionOptions;
+export interface IFloating {
+    horizontalPosition: IHorizontalPositionOptions;
+    verticalPosition: IVerticalPositionOptions;
     allowOverlap?: boolean;
     lockAnchor?: boolean;
     behindDocument?: boolean;

@@ -1,6 +1,6 @@
 // http://officeopenxml.com/drwPicFloating-textWrap.php
-import { XmlComponent, XmlAttributeComponent } from "file/xml-components";
-import { Distance } from "../drawing";
+import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
+import { IDistance } from "../drawing";
 
 interface IWrapTightAttributes {
     distT?: number;
@@ -15,7 +15,7 @@ class WrapTightAttributes extends XmlAttributeComponent<IWrapTightAttributes> {
 }
 
 export class WrapTight extends XmlComponent {
-    constructor(distanceFromText?: Distance) {
+    constructor(distanceFromText?: IDistance) {
         super("wp:wrapTight");
 
         distanceFromText = distanceFromText || {

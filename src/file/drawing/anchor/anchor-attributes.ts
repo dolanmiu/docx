@@ -1,7 +1,7 @@
 import { XmlAttributeComponent } from "file/xml-components";
-import { Distance } from "../drawing";
+import { IDistance } from "../drawing";
 
-export interface IAnchorAttributes extends Distance {
+export interface IAnchorAttributes extends IDistance {
     allowOverlap?: "0" | "1";
     behindDoc?: "0" | "1";
     layoutInCell?: "0" | "1";

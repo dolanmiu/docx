@@ -1,12 +1,12 @@
 import { Drawing } from "../../drawing";
-import { DrawingOptions } from "../../drawing/drawing";
+import { IDrawingOptions } from "../../drawing/drawing";
 import { IMediaData } from "../../media/data";
 import { Run } from "../run";
 
 export class PictureRun extends Run {
     private drawing: Drawing;
 
-    constructor(imageData: IMediaData, drawingOptions?: DrawingOptions) {
+    constructor(imageData: IMediaData, drawingOptions?: IDrawingOptions) {
         super();
 
         if (imageData === undefined) {

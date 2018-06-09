@@ -1,6 +1,6 @@
 // http://officeopenxml.com/drwPicFloating-textWrap.php
-import { XmlComponent, XmlAttributeComponent } from "file/xml-components";
-import { Distance } from "../drawing";
+import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
+import { IDistance } from "../drawing";
 
 interface IWrapTopAndBottomAttributes {
     distT?: number;
@@ -15,7 +15,7 @@ class WrapTopAndBottomAttributes extends XmlAttributeComponent<IWrapTopAndBottom
 }
 
 export class WrapTopAndBottom extends XmlComponent {
-    constructor(distanceFromText?: Distance) {
+    constructor(distanceFromText?: IDistance) {
         super("wp:wrapTopAndBottom");
 
         distanceFromText = distanceFromText || {

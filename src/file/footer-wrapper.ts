@@ -1,9 +1,9 @@
+import { XmlComponent } from "file/xml-components";
 import { Footer } from "./footer/footer";
 import { IMediaData, Media } from "./media";
 import { Paragraph } from "./paragraph";
 import { Relationships } from "./relationships";
 import { Table } from "./table";
-import { XmlComponent } from ".";
 
 export class FooterWrapper {
     private readonly footer: Footer;
@@ -36,7 +36,7 @@ export class FooterWrapper {
         this.footer.addDrawing(imageData);
     }
 
-    public addChildElement(childElement: XmlComponent | string) {
+    public addChildElement(childElement: XmlComponent | string): void {
         this.footer.addChildElement(childElement);
     }
 

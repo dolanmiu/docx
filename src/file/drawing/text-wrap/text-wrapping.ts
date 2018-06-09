@@ -1,5 +1,5 @@
 // http://officeopenxml.com/drwPicFloating-textWrap.php
-import { Distance } from "../drawing";
+import { IDistance } from "../drawing";
 
 export enum TextWrapStyle {
     NONE,
@@ -15,8 +15,8 @@ export enum WrapTextOption {
     LARGEST = "largest",
 }
 
-export interface TextWrapping {
+export interface ITextWrapping {
     textWrapStyle: TextWrapStyle;
     wrapTextOption?: WrapTextOption;
-    distanceFromText?: Distance;
+    distanceFromText?: IDistance;
 }

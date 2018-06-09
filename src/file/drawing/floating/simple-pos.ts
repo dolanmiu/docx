@@ -1,5 +1,5 @@
 // http://officeopenxml.com/drwPicFloating-position.php
-import { XmlComponent, XmlAttributeComponent } from "file/xml-components";
+import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
 
 interface ISimplePosAttributes {
     x: number;

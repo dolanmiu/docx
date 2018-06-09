@@ -1,8 +1,8 @@
 import { assert } from "chai";
 
-import { HorizontalPosition } from "./horizontal-position";
+import { HorizontalPositionAlign, HorizontalPositionRelativeFrom } from ".";
 import { Utility } from "../../../tests/utility";
-import { HorizontalPositionRelativeFrom, HorizontalPositionAlign } from ".";
+import { HorizontalPosition } from "./horizontal-position";
 
 describe("HorizontalPosition", () => {
     describe("#constructor()", () => {

@@ -1,3 +1,4 @@
+/* tslint:disable */
 import { XmlComponent, IXmlableObject } from ".";
 import * as fastXmlParser from "fast-xml-parser";
 import { flatMap } from "lodash";

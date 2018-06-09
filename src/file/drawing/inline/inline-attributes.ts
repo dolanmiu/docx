@@ -1,7 +1,8 @@
 import { XmlAttributeComponent } from "file/xml-components";
-import { Distance } from "../drawing";
+import { IDistance } from "../drawing";
 
-export interface IInlineAttributes extends Distance {}
+// tslint:disable-next-line:no-empty-interface
+export interface IInlineAttributes extends IDistance {}
 
 export class InlineAttributes extends XmlAttributeComponent<IInlineAttributes> {
     protected xmlKeys = {

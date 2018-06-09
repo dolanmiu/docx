@@ -1,36 +1,36 @@
 import { IMediaData } from "file/media";
 import { XmlComponent } from "file/xml-components";
-import { Inline } from "./inline";
 import { Anchor } from "./anchor";
-import { TextWrapping } from "./text-wrap";
-import { Floating } from "./floating";
+import { IFloating } from "./floating";
+import { Inline } from "./inline";
+import { ITextWrapping } from "./text-wrap";
 
 export enum PlacementPosition {
     INLINE,
     FLOATING,
 }
 
-export interface Distance {
+export interface IDistance {
     distT?: number;
     distB?: number;
     distL?: number;
     distR?: number;
 }
 
-export interface DrawingOptions {
+export interface IDrawingOptions {
     position?: PlacementPosition;
-    textWrapping?: TextWrapping;
-    floating?: Floating;
+    textWrapping?: ITextWrapping;
+    floating?: IFloating;
 }
 
-const defaultDrawingOptions: DrawingOptions = {
+const defaultDrawingOptions: IDrawingOptions = {
     position: PlacementPosition.INLINE,
 };
 
 export class Drawing extends XmlComponent {
     private inline: Inline;
 
-    constructor(imageData: IMediaData, drawingOptions?: DrawingOptions) {
+    constructor(imageData: IMediaData, drawingOptions?: IDrawingOptions) {
         super("w:drawing");
 
         if (imageData === undefined) {
@@ -41,7 +41,6 @@ export class Drawing extends XmlComponent {
             ...defaultDrawingOptions,
             ...drawingOptions,
         };
-
 
         if (mergedOptions.position === PlacementPosition.INLINE) {
             this.inline = new Inline(imageData.referenceId, imageData.dimensions);
