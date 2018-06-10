@@ -84,7 +84,7 @@ export class File {
         );
 
         this.docRelationships.createRelationship(
-            5,
+            6,
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/footnotes",
             "footnotes.xml",
         );
