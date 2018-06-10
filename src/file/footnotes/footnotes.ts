@@ -1,7 +1,7 @@
 import { XmlComponent } from "file/xml-components";
+import { Paragraph } from "../paragraph";
 import { FootNote } from "./footnote/footnote";
 import { FootnotesAttributes } from "./footnotes-attributes";
-import { Paragraph } from "../paragraph";
 
 export class FootNotes extends XmlComponent {
     constructor() {
