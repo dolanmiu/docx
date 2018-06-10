@@ -82,6 +82,12 @@ export class File {
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer",
             "footer1.xml",
         );
+
+        this.docRelationships.createRelationship(
+            5,
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/footnotes",
+            "footnotes.xml",
+        );
         this.media = new Media();
 
         this.headerWrapper = new HeaderWrapper(this.media);
