@@ -11,9 +11,9 @@ export class Media {
         this.map = new Map<string, IMediaData>();
     }
 
-    private createMedia(key: string, relationshipsCount, dimensions, data: fs.ReadStream | Buffer, filePath?: string) {
+    private createMedia(key: string, referenceId, dimensions, data: fs.ReadStream | Buffer, filePath?: string) {
         const imageData = {
-            referenceId: this.map.size + relationshipsCount + 1,
+            referenceId: referenceId,
             stream: data,
             path: filePath,
             fileName: key,
@@ -42,13 +42,13 @@ export class Media {
         return data;
     }
 
-    public addMedia(filePath: string, relationshipsCount: number): IMediaData {
+    public addMedia(filePath: string, referenceId: number): IMediaData {
         const key = path.basename(filePath);
         const dimensions = sizeOf(filePath);
-        return this.createMedia(key, relationshipsCount, dimensions, fs.createReadStream(filePath), filePath);
+        return this.createMedia(key, referenceId, dimensions, fs.createReadStream(filePath), filePath);
     }
 
-    public addMediaWithData(fileName: string, data: Buffer, relationshipsCount: number, width?, height?): IMediaData {
+    public addMediaWithData(fileName: string, data: Buffer, referenceId: number, width?, height?): IMediaData {
         const key = fileName;
         let dimensions;
         if (width && height) {
@@ -60,7 +60,7 @@ export class Media {
             dimensions = sizeOf(data);
         }
 
-        return this.createMedia(key, relationshipsCount, dimensions, data);
+        return this.createMedia(key, referenceId, dimensions, data);
     }
 
     public get array(): IMediaData[] {

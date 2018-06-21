@@ -4,5 +4,6 @@ export * from "./file";
 export * from "./numbering";
 export * from "./media";
 export * from "./drawing";
+export * from "./document";
 export * from "./styles";
 export * from "./xml-components";

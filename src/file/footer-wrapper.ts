@@ -9,8 +9,8 @@ export class FooterWrapper {
     private readonly footer: Footer;
     private readonly relationships: Relationships;
 
-    constructor(private readonly media: Media) {
-        this.footer = new Footer();
+    constructor(private readonly media: Media, referenceId: number) {
+        this.footer = new Footer(referenceId);
         this.relationships = new Relationships();
     }
 

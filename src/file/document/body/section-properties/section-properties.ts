@@ -4,16 +4,25 @@ import { Columns } from "./columns/columns";
 import { IColumnsAttributes } from "./columns/columns-attributes";
 import { DocumentGrid } from "./doc-grid/doc-grid";
 import { IDocGridAttributesProperties } from "./doc-grid/doc-grid-attributes";
-import { FooterReference } from "./footer-reference/footer-reference";
-import { HeaderReference } from "./header-reference/header-reference";
+import { FooterReference, FooterOptions } from "./footer-reference/footer-reference";
+import { HeaderReference, HeaderOptions } from "./header-reference/header-reference";
 import { PageMargin } from "./page-margin/page-margin";
 import { IPageMarginAttributes } from "./page-margin/page-margin-attributes";
 import { PageSize } from "./page-size/page-size";
-import { IPageSizeAttributes } from "./page-size/page-size-attributes";
+import { IPageSizeAttributes, PageOrientation } from "./page-size/page-size-attributes";
+import { FooterReferenceType, IPageNumberTypeAttributes, PageNumberType, PageNumberFormat } from ".";
+import { HeaderReferenceType } from "./header-reference/header-reference-attributes";
 
-export type SectionPropertiesOptions = IPageSizeAttributes & IPageMarginAttributes & IColumnsAttributes & IDocGridAttributesProperties;
+export type SectionPropertiesOptions = IPageSizeAttributes &
+    IPageMarginAttributes &
+    IColumnsAttributes &
+    IDocGridAttributesProperties &
+    HeaderOptions &
+    FooterOptions &
+    IPageNumberTypeAttributes;
 
 export class SectionProperties extends XmlComponent {
+    private options: SectionPropertiesOptions;
     constructor(options?: SectionPropertiesOptions) {
         super("w:sectPr");
 
@@ -29,7 +38,13 @@ export class SectionProperties extends XmlComponent {
             gutter: 0,
             space: 708,
             linePitch: 360,
-            orientation: "portrait",
+            orientation: PageOrientation.PORTRAIT,
+            headerType: HeaderReferenceType.DEFAULT,
+            headerId: 0,
+            footerType: FooterReferenceType.DEFAULT,
+            footerId: 0,
+            pageNumberStart: undefined,
+            pageNumberFormatType: PageNumberFormat.DECIMAL,
         };
 
         const mergedOptions = {
@@ -51,7 +66,25 @@ export class SectionProperties extends XmlComponent {
         );
         this.root.push(new Columns(mergedOptions.space));
         this.root.push(new DocumentGrid(mergedOptions.linePitch));
-        this.root.push(new HeaderReference());
-        this.root.push(new FooterReference());
+        this.root.push(
+            new HeaderReference({
+                headerType: mergedOptions.headerType,
+                headerId: mergedOptions.headerId,
+            }),
+        );
+        this.root.push(
+            new FooterReference({
+                footerType: mergedOptions.footerType,
+                footerId: mergedOptions.footerId,
+            }),
+        );
+
+        this.root.push(new PageNumberType(mergedOptions.pageNumberStart, mergedOptions.pageNumberFormatType));
+
+        this.options = mergedOptions;
+    }
+
+    get Options() {
+        return this.options;
     }
 }
