@@ -1,3 +1,4 @@
+import { XmlComponent } from "file/xml-components";
 import { Footer } from "./footer/footer";
 import { IMediaData, Media } from "./media";
 import { Paragraph } from "./paragraph";
@@ -33,6 +34,10 @@ export class FooterWrapper {
 
     public addDrawing(imageData: IMediaData): void {
         this.footer.addDrawing(imageData);
+    }
+
+    public addChildElement(childElement: XmlComponent | string): void {
+        this.footer.addChildElement(childElement);
     }
 
     public createImage(image: string): void {

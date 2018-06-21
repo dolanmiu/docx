@@ -1,3 +1,4 @@
+import { XmlComponent } from "file/xml-components";
 import { Header } from "./header/header";
 import { IMediaData, Media } from "./media";
 import { Paragraph } from "./paragraph";
@@ -83,6 +84,10 @@ export class HeaderWrapper {
 
     public addDrawing(imageData: IMediaData): void {
         this.header.addDrawing(imageData);
+    }
+
+    public addChildElement(childElement: XmlComponent | string): void {
+        this.header.addChildElement(childElement);
     }
 
     public createImage(image: string): void {
