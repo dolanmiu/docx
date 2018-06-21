@@ -9,8 +9,8 @@ export class HeaderWrapper {
     private readonly header: Header;
     private readonly relationships: Relationships;
 
-    constructor(private readonly media: Media) {
-        this.header = new Header();
+    constructor(private readonly media: Media, referenceId: number) {
+        this.header = new Header(referenceId);
         this.relationships = new Relationships();
     }
 

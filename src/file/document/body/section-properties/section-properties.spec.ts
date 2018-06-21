@@ -2,6 +2,7 @@ import { expect } from "chai";
 
 import { Formatter } from "../../../../export/formatter";
 import { SectionProperties } from "./section-properties";
+import { FooterReferenceType, PageNumberFormat } from ".";
 
 describe("SectionProperties", () => {
     describe("#constructor()", () => {
@@ -18,6 +19,11 @@ describe("SectionProperties", () => {
                 gutter: 0,
                 space: 708,
                 linePitch: 360,
+                headerId: 100,
+                footerId: 200,
+                footerType: FooterReferenceType.EVEN,
+                pageNumberStart: 10,
+                pageNumberFormatType: PageNumberFormat.CARDINAL_TEXT,
             });
             const tree = new Formatter().format(properties);
             expect(Object.keys(tree)).to.deep.equal(["w:sectPr"]);
@@ -38,6 +44,12 @@ describe("SectionProperties", () => {
                     },
                 ],
             });
+
+            expect(tree["w:sectPr"][2]).to.deep.equal({ "w:cols": [{ _attr: { "w:space": 708 } }] });
+            expect(tree["w:sectPr"][3]).to.deep.equal({ "w:docGrid": [{ _attr: { "w:linePitch": 360 } }] });
+            expect(tree["w:sectPr"][4]).to.deep.equal({ "w:headerReference": [{ _attr: { "r:id": "rId100", "w:type": "default" } }] });
+            expect(tree["w:sectPr"][5]).to.deep.equal({ "w:footerReference": [{ _attr: { "r:id": "rId200", "w:type": "even" } }] });
+            expect(tree["w:sectPr"][6]).to.deep.equal({ "w:pgNumType": [{ _attr: { "w:fmt": "cardinalText", "w:start": 10 } }] });
         });
 
         it("should create section properties with no options", () => {
@@ -61,6 +73,11 @@ describe("SectionProperties", () => {
                     },
                 ],
             });
+            expect(tree["w:sectPr"][2]).to.deep.equal({ "w:cols": [{ _attr: { "w:space": 708 } }] });
+            expect(tree["w:sectPr"][3]).to.deep.equal({ "w:docGrid": [{ _attr: { "w:linePitch": 360 } }] });
+            expect(tree["w:sectPr"][4]).to.deep.equal({ "w:headerReference": [{ _attr: { "r:id": "rId0", "w:type": "default" } }] });
+            expect(tree["w:sectPr"][5]).to.deep.equal({ "w:footerReference": [{ _attr: { "r:id": "rId0", "w:type": "default" } }] });
+            expect(tree["w:sectPr"][6]).to.deep.equal({ "w:pgNumType": [{ _attr: { "w:fmt": "decimal" } }] });
         });
 
         it("should create section properties with changed options", () => {

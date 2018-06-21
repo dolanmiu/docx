@@ -24,11 +24,21 @@ export class ContentTypes extends XmlComponent {
         this.root.push(
             new Override("application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml", "/word/document.xml"),
         );
-        this.root.push(new Override("application/vnd.openxmlformats-officedocument.wordprocessingml.header+xml", "/word/header1.xml"));
-        this.root.push(new Override("application/vnd.openxmlformats-officedocument.wordprocessingml.footer+xml", "/word/footer1.xml"));
         this.root.push(new Override("application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml", "/word/styles.xml"));
         this.root.push(new Override("application/vnd.openxmlformats-package.core-properties+xml", "/docProps/core.xml"));
         this.root.push(new Override("application/vnd.openxmlformats-officedocument.extended-properties+xml", "/docProps/app.xml"));
         this.root.push(new Override("application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml", "/word/numbering.xml"));
+    }
+
+    addFooter(index: number) {
+        this.root.push(
+            new Override("application/vnd.openxmlformats-officedocument.wordprocessingml.footer+xml", `/word/footer${index}.xml`),
+        );
+    }
+
+    addHeader(index: number) {
+        this.root.push(
+            new Override("application/vnd.openxmlformats-officedocument.wordprocessingml.header+xml", `/word/header${index}.xml`),
+        );
     }
 }
