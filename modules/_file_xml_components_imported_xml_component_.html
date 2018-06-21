@@ -77,7 +77,115 @@
 								<li class="tsd-kind-class tsd-parent-kind-external-module"><a href="../classes/_file_xml_components_imported_xml_component_.importedxmlcomponent.html" class="tsd-kind-icon">Imported<wbr>Xml<wbr>Component</a></li>
 							</ul>
 						</section>
+						<section class="tsd-index-section ">
+							<h3>Functions</h3>
+							<ul class="tsd-index-list">
+								<li class="tsd-kind-function tsd-parent-kind-external-module"><a href="_file_xml_components_imported_xml_component_.html#converttoxmlcomponent" class="tsd-kind-icon">convert<wbr>ToXml<wbr>Component</a></li>
+							</ul>
+						</section>
+						<section class="tsd-index-section ">
+							<h3>Object literals</h3>
+							<ul class="tsd-index-list">
+								<li class="tsd-kind-object-literal tsd-parent-kind-external-module"><a href="_file_xml_components_imported_xml_component_.html#parseoptions" class="tsd-kind-icon">parse<wbr>Options</a></li>
+							</ul>
+						</section>
 					</div>
+				</section>
+			</section>
+			<section class="tsd-panel-group tsd-member-group ">
+				<h2>Functions</h2>
+				<section class="tsd-panel tsd-member tsd-kind-function tsd-parent-kind-external-module">
+					<a name="converttoxmlcomponent" class="tsd-anchor"></a>
+					<h3>convert<wbr>ToXml<wbr>Component</h3>
+					<ul class="tsd-signatures tsd-kind-function tsd-parent-kind-external-module">
+						<li class="tsd-signature tsd-kind-icon">convert<wbr>ToXml<wbr>Component<span class="tsd-signature-symbol">(</span>elementName<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>, element<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="../classes/_file_xml_components_imported_xml_component_.importedxmlcomponent.html" class="tsd-signature-type">ImportedXmlComponent</a><span class="tsd-signature-symbol"> | </span><a href="../classes/_file_xml_components_imported_xml_component_.importedxmlcomponent.html" class="tsd-signature-type">ImportedXmlComponent</a><span class="tsd-signature-symbol">[]</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/8b3cf8c/src/file/xml-components/imported-xml-component.ts#L28">file/xml-components/imported-xml-component.ts:28</a></li>
+								</ul>
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Converts the given xml element (in json format) into XmlComponent.
+										Note: If element is array, them it will return ImportedXmlComponent[]. Example for given:
+										element = [
+										{ w:t: &quot;val 1&quot;},
+										{ w:t: &quot;val 2&quot;}
+										]
+										will return
+										[
+										ImportedXmlComponent { rootKey: &quot;w:t&quot;, root: [ &quot;val 1&quot; ]},
+										ImportedXmlComponent { rootKey: &quot;w:t&quot;, root: [ &quot;val 2&quot; ]}
+									]</p>
+								</div>
+							</div>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>elementName: <span class="tsd-signature-type">string</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>name (rootKey) of the XmlComponent</p>
+									</div>
+								</li>
+								<li>
+									<h5>element: <span class="tsd-signature-type">any</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>the xml element in json presentation</p>
+									</div>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <a href="../classes/_file_xml_components_imported_xml_component_.importedxmlcomponent.html" class="tsd-signature-type">ImportedXmlComponent</a>
+								<span class="tsd-signature-symbol"> | </span>
+								<a href="../classes/_file_xml_components_imported_xml_component_.importedxmlcomponent.html" class="tsd-signature-type">ImportedXmlComponent</a><span class="tsd-signature-symbol">[]</span>
+							</h4>
+						</li>
+					</ul>
+				</section>
+			</section>
+			<section class="tsd-panel-group tsd-member-group ">
+				<h2>Object literals</h2>
+				<section class="tsd-panel tsd-member tsd-kind-object-literal tsd-parent-kind-external-module">
+					<a name="parseoptions" class="tsd-anchor"></a>
+					<h3>parse<wbr>Options</h3>
+					<div class="tsd-signature tsd-kind-icon">parse<wbr>Options<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">object</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/8b3cf8c/src/file/xml-components/imported-xml-component.ts#L6">file/xml-components/imported-xml-component.ts:6</a></li>
+						</ul>
+					</aside>
+					<section class="tsd-panel tsd-member tsd-kind-variable tsd-parent-kind-object-literal">
+						<a name="parseoptions.attrnodename" class="tsd-anchor"></a>
+						<h3>attr<wbr>Node<wbr>Name</h3>
+						<div class="tsd-signature tsd-kind-icon">attr<wbr>Node<wbr>Name<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> =&nbsp;&quot;_attr&quot;</span></div>
+						<aside class="tsd-sources">
+							<ul>
+								<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/8b3cf8c/src/file/xml-components/imported-xml-component.ts#L9">file/xml-components/imported-xml-component.ts:9</a></li>
+							</ul>
+						</aside>
+					</section>
+					<section class="tsd-panel tsd-member tsd-kind-variable tsd-parent-kind-object-literal">
+						<a name="parseoptions.attributenameprefix" class="tsd-anchor"></a>
+						<h3>attribute<wbr>Name<wbr>Prefix</h3>
+						<div class="tsd-signature tsd-kind-icon">attribute<wbr>Name<wbr>Prefix<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> =&nbsp;&quot;&quot;</span></div>
+						<aside class="tsd-sources">
+							<ul>
+								<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/8b3cf8c/src/file/xml-components/imported-xml-component.ts#L8">file/xml-components/imported-xml-component.ts:8</a></li>
+							</ul>
+						</aside>
+					</section>
+					<section class="tsd-panel tsd-member tsd-kind-variable tsd-parent-kind-object-literal">
+						<a name="parseoptions.ignoreattributes" class="tsd-anchor"></a>
+						<h3>ignore<wbr>Attributes</h3>
+						<div class="tsd-signature tsd-kind-icon">ignore<wbr>Attributes<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol"> =&nbsp;false</span></div>
+						<aside class="tsd-sources">
+							<ul>
+								<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/8b3cf8c/src/file/xml-components/imported-xml-component.ts#L7">file/xml-components/imported-xml-component.ts:7</a></li>
+							</ul>
+						</aside>
+					</section>
 				</section>
 			</section>
 		</div>
@@ -99,6 +207,12 @@
 					</li>
 					<li class=" tsd-kind-class tsd-parent-kind-external-module">
 						<a href="../classes/_file_xml_components_imported_xml_component_.importedxmlcomponent.html" class="tsd-kind-icon">Imported<wbr>Xml<wbr>Component</a>
+					</li>
+					<li class=" tsd-kind-function tsd-parent-kind-external-module">
+						<a href="_file_xml_components_imported_xml_component_.html#converttoxmlcomponent" class="tsd-kind-icon">convert<wbr>ToXml<wbr>Component</a>
+					</li>
+					<li class=" tsd-kind-object-literal tsd-parent-kind-external-module">
+						<a href="_file_xml_components_imported_xml_component_.html#parseoptions" class="tsd-kind-icon">parse<wbr>Options</a>
 					</li>
 				</ul>
 			</nav>
