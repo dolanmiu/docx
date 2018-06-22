@@ -5,8 +5,8 @@ import { Columns } from "./columns/columns";
 import { IColumnsAttributes } from "./columns/columns-attributes";
 import { DocumentGrid } from "./doc-grid/doc-grid";
 import { IDocGridAttributesProperties } from "./doc-grid/doc-grid-attributes";
-import { FooterOptions, FooterReference } from "./footer-reference/footer-reference";
-import { HeaderOptions, HeaderReference } from "./header-reference/header-reference";
+import { FooterReference, IFooterOptions } from "./footer-reference/footer-reference";
+import { HeaderReference, IHeaderOptions } from "./header-reference/header-reference";
 import { HeaderReferenceType } from "./header-reference/header-reference-attributes";
 import { PageMargin } from "./page-margin/page-margin";
 import { IPageMarginAttributes } from "./page-margin/page-margin-attributes";
@@ -18,8 +18,8 @@ export type SectionPropertiesOptions = IPageSizeAttributes &
     IPageMarginAttributes &
     IColumnsAttributes &
     IDocGridAttributesProperties &
-    HeaderOptions &
-    FooterOptions &
+    IHeaderOptions &
+    IFooterOptions &
     IPageNumberTypeAttributes;
 
 export class SectionProperties extends XmlComponent {

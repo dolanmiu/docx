@@ -1,6 +1,6 @@
-import { XmlComponent, IXmlableObject } from "file/xml-components";
-import { SectionProperties, SectionPropertiesOptions } from "./section-properties/section-properties";
+import { IXmlableObject, XmlComponent } from "file/xml-components";
 import { Paragraph, ParagraphProperties } from "../..";
+import { SectionProperties, SectionPropertiesOptions } from "./section-properties/section-properties";
 
 export class Body extends XmlComponent {
     private defaultSection: SectionProperties;
@@ -22,7 +22,7 @@ export class Body extends XmlComponent {
      *  - last section should be direct child of body
      * @param section new section
      */
-    addSection(section: SectionPropertiesOptions | SectionProperties) {
+    public addSection(section: SectionPropertiesOptions | SectionProperties): void {
         const currentSection = this.sections.pop() as SectionProperties;
         this.root.push(this.createSectionParagraph(currentSection));
         if (section instanceof SectionProperties) {
@@ -45,11 +45,11 @@ export class Body extends XmlComponent {
         this.root.push(component);
     }
 
-    get DefaultSection() {
+    get DefaultSection(): SectionProperties {
         return this.defaultSection;
     }
 
-    private createSectionParagraph(section: SectionProperties) {
+    private createSectionParagraph(section: SectionProperties): Paragraph {
         const paragraph = new Paragraph();
         const properties = new ParagraphProperties();
         properties.addChildElement(section);

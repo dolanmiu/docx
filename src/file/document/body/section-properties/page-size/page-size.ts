@@ -1,5 +1,5 @@
 import { XmlComponent } from "file/xml-components";
-import { PageSizeAttributes, PageOrientation } from "./page-size-attributes";
+import { PageOrientation, PageSizeAttributes } from "./page-size-attributes";
 
 export class PageSize extends XmlComponent {
     constructor(width: number, height: number, orientation: PageOrientation) {

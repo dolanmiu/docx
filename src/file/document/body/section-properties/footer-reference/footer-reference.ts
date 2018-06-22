@@ -1,13 +1,13 @@
 import { XmlComponent } from "file/xml-components";
 import { FooterReferenceAttributes, FooterReferenceType } from "./footer-reference-attributes";
 
-export interface FooterOptions {
+export interface IFooterOptions {
     footerType?: FooterReferenceType;
     footerId?: number;
 }
 
 export class FooterReference extends XmlComponent {
-    constructor(options: FooterOptions) {
+    constructor(options: IFooterOptions) {
         super("w:footerReference");
 
         this.root.push(

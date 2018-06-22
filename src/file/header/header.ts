@@ -32,7 +32,7 @@ export class Header extends XmlComponent {
         );
     }
 
-    get referenceId() {
+    get referenceId(): number {
         return this.refId;
     }
 
