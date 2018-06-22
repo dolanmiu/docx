@@ -1,11 +1,10 @@
 /* tslint:disable:typedef space-before-function-paren */
 import * as fs from "fs";
-
-import { Compiler } from "./compiler";
-import { File } from "../../file";
-import { expect } from "chai";
-
 import * as JSZip from "jszip";
+
+import { expect } from "chai";
+import { File } from "../../file";
+import { Compiler } from "./compiler";
 
 describe("Compiler", () => {
     let compiler: Compiler;
