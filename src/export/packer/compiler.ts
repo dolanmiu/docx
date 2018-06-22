@@ -57,15 +57,15 @@ export class Compiler {
             name: "word/numbering.xml",
         });
 
+        this.archive.append(xmlHeader2, {
+            name: "word/header2.xml",
+        });
+
         // headers
         for (let i = 0; i < this.file.Headers.length; i++) {
             const element = this.file.Headers[i];
             this.archive.append(xml(this.formatter.format(element.Header)), {
                 name: `word/header${i + 1}.xml`,
-        });
-
-        this.archive.append(xmlHeader2, {
-            name: "word/header2.xml",
             });
 
             this.archive.append(xml(this.formatter.format(element.Relationships)), {
