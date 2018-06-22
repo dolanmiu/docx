@@ -65,6 +65,7 @@
     "awesome-typescript-loader": "^3.4.1",
     "chai": "^3.5.0",
     "glob": "^7.1.2",
+    "jszip": "^3.1.5",
     "mocha": "^3.2.0",
     "mocha-webpack": "^1.0.1",
     "prettier": "^1.12.1",

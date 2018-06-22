@@ -70,4 +70,8 @@ export class Document extends XmlComponent {
 
         return run;
     }
+
+    get Body() {
+        return this.body;
+    }
 }

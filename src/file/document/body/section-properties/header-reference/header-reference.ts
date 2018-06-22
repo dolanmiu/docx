@@ -1,13 +1,18 @@
 import { XmlComponent } from "file/xml-components";
-import { HeaderReferenceAttributes } from "./header-reference-attributes";
+import { HeaderReferenceAttributes, HeaderReferenceType } from "./header-reference-attributes";
+
+export interface HeaderOptions {
+    headerType?: HeaderReferenceType;
+    headerId?: number;
+}
 
 export class HeaderReference extends XmlComponent {
-    constructor(order: string, refID: number) {
+    constructor(options: HeaderOptions) {
         super("w:headerReference");
         this.root.push(
             new HeaderReferenceAttributes({
-                type: order,
-                id: `rId${refID}`,
+                type: options.headerType || HeaderReferenceType.DEFAULT,
+                id: `rId${options.headerId}`,
             }),
         );
     }

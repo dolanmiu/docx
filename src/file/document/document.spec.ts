@@ -23,6 +23,11 @@ describe("Document", () => {
             }
             assert.isTrue(true);
         });
+
+        it("should create default section", () => {
+            const body = new Formatter().format(document)["w:document"][1]["w:body"];
+            expect(body[0]).to.have.property("w:sectPr");
+        });
     });
 
     describe("#createParagraph", () => {
@@ -33,7 +38,7 @@ describe("Document", () => {
             expect(body)
                 .to.be.an("array")
                 .which.has.length.at.least(1);
-            expect(body[1]).to.have.property("w:p");
+            expect(body[0]).to.have.property("w:p");
         });
 
         it("should use the text given to create a run in the paragraph", () => {
@@ -43,7 +48,7 @@ describe("Document", () => {
             expect(body)
                 .to.be.an("array")
                 .which.has.length.at.least(1);
-            expect(body[1])
+            expect(body[0])
                 .to.have.property("w:p")
                 .which.includes({
                     "w:r": [{ "w:rPr": [] }, { "w:t": [{ _attr: { "xml:space": "preserve" } }, "sample paragraph text"] }],
@@ -59,7 +64,7 @@ describe("Document", () => {
             expect(body)
                 .to.be.an("array")
                 .which.has.length.at.least(1);
-            expect(body[1]).to.have.property("w:tbl");
+            expect(body[0]).to.have.property("w:tbl");
         });
 
         it("should create a table with the correct dimensions", () => {
@@ -68,7 +73,7 @@ describe("Document", () => {
             expect(body)
                 .to.be.an("array")
                 .which.has.length.at.least(1);
-            expect(body[1])
+            expect(body[0])
                 .to.have.property("w:tbl")
                 .which.includes({
                     "w:tblGrid": [
@@ -77,7 +82,7 @@ describe("Document", () => {
                         { "w:gridCol": [{ _attr: { "w:w": 1 } }] },
                     ],
                 });
-            expect(body[1]["w:tbl"].filter((x) => x["w:tr"])).to.have.length(2);
+            expect(body[0]["w:tbl"].filter((x) => x["w:tr"])).to.have.length(2);
         });
     });
 });

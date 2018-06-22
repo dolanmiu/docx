@@ -21,13 +21,13 @@ export class Media {
         return data;
     }
 
-    public addMedia(filePath: string, relationshipsCount: number): IMediaData {
+    public addMedia(filePath: string, referenceId: number): IMediaData {
         const key = path.basename(filePath);
         const dimensions = sizeOf(filePath);
-        return this.createMedia(key, relationshipsCount, dimensions, fs.createReadStream(filePath), filePath);
+        return this.createMedia(key, referenceId, dimensions, fs.createReadStream(filePath), filePath);
     }
 
-    public addMediaWithData(fileName: string, data: Buffer, relationshipsCount: number, width?: number, height?: number): IMediaData {
+    public addMediaWithData(fileName: string, data: Buffer, referenceId: number, width?: number, height?: number): IMediaData {
         const key = fileName;
         let dimensions;
         if (width && height) {
@@ -39,7 +39,7 @@ export class Media {
             dimensions = sizeOf(data);
         }
 
-        return this.createMedia(key, relationshipsCount, dimensions, data);
+        return this.createMedia(key, referenceId, dimensions, data);
     }
 
     private createMedia(
