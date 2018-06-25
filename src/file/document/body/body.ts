@@ -1,6 +1,6 @@
 import { IXmlableObject, XmlComponent } from "file/xml-components";
 import { Paragraph, ParagraphProperties } from "../..";
-import { SectionProperties, SectionPropertiesOptions } from "./section-properties/section-properties";
+import { SectionProperties, SectionPropertiesOptions } from "./section-properties";
 
 export class Body extends XmlComponent {
     private defaultSection: SectionProperties;
