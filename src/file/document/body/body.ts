@@ -28,7 +28,11 @@ export class Body extends XmlComponent {
         if (section instanceof SectionProperties) {
             this.sections.push(section);
         } else {
-            this.sections.push(new SectionProperties(section));
+            const params = {
+                ...this.defaultSection.Options,
+                ...section,
+            };
+            this.sections.push(new SectionProperties(params));
         }
     }
     public prepForXml(): IXmlableObject {
