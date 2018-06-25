@@ -163,6 +163,10 @@ export class File {
         return hyperlink;
     }
 
+    public createFootnote(paragraph: Paragraph): void {
+        this.footNotes.createFootNote(paragraph);
+    }
+
     public get Document(): Document {
         return this.document;
     }
