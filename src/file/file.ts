@@ -2,7 +2,6 @@ import { AppProperties } from "./app-properties/app-properties";
 import { ContentTypes } from "./content-types/content-types";
 import { CoreProperties, IPropertiesOptions } from "./core-properties";
 import { Document } from "./document";
-import { SectionPropertiesOptions } from "./document/body/section-properties/section-properties";
 import { FooterWrapper } from "./footer-wrapper";
 import { HeaderWrapper } from "./header-wrapper";
 import { Media } from "./media";
@@ -14,7 +13,7 @@ import { DefaultStylesFactory } from "./styles/factory";
 import { ExternalStylesFactory } from "./styles/external-styles-factory";
 import { Table } from "./table";
 import { IMediaData } from "index";
-import { FooterReferenceType, HeaderReferenceType } from "./document/body/section-properties";
+import { FooterReferenceType, HeaderReferenceType, SectionPropertiesOptions } from "./document/body/section-properties";
 
 export class File {
     private readonly document: Document;
