@@ -40,7 +40,6 @@ export class SectionProperties extends XmlComponent {
             space: 708,
             linePitch: 360,
             orientation: PageOrientation.PORTRAIT,
-            differentFirstPageHeader: false,
             headerType: HeaderReferenceType.DEFAULT,
             headerId: 0,
             footerType: FooterReferenceType.DEFAULT,
@@ -68,17 +67,6 @@ export class SectionProperties extends XmlComponent {
         );
         this.root.push(new Columns(mergedOptions.space));
         this.root.push(new DocumentGrid(mergedOptions.linePitch));
-
-        // TODO
-        // if (mergedOptions.differentFirstPageHeader) {
-        //     this.root.push(
-        //         new HeaderReference({
-        //             headerType: HeaderReferenceType.FIRST,
-        //             headerId: 5,
-        //         }),
-        //     );
-        //     this.root.push(new TitlePage());
-        // }
 
         this.root.push(
             new HeaderReference({

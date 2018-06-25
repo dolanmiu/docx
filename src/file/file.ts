@@ -3,7 +3,7 @@ import { AppProperties } from "./app-properties/app-properties";
 import { ContentTypes } from "./content-types/content-types";
 import { CoreProperties, IPropertiesOptions } from "./core-properties";
 import { Document } from "./document";
-import { FooterReferenceType, HeaderReferenceType } from "./document/body/section-properties";
+import { FooterReferenceType, HeaderReference, HeaderReferenceType } from "./document/body/section-properties";
 import { SectionPropertiesOptions } from "./document/body/section-properties/section-properties";
 import { FooterWrapper } from "./footer-wrapper";
 import { HeaderWrapper } from "./header-wrapper";
@@ -65,24 +65,8 @@ export class File {
         this.contentTypes = new ContentTypes();
         this.media = new Media();
 
-        const header = new HeaderWrapper(this.media, this.nextId++);
-        this.headerWrapper.push(header);
-        this.docRelationships.createRelationship(
-            header.Header.referenceId,
-            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/header",
-            `header1.xml`,
-        );
-        this.contentTypes.addHeader(this.headerWrapper.length);
-
-        const footer = new FooterWrapper(this.media, this.nextId++);
-        this.footerWrapper.push(footer);
-
-        this.docRelationships.createRelationship(
-            footer.Footer.referenceId,
-            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer",
-            "footer1.xml",
-        );
-        this.contentTypes.addFooter(this.footerWrapper.length);
+        const header = this.createHeader();
+        const footer = this.createFooter();
 
         this.fileRelationships = new Relationships();
         this.fileRelationships.createRelationship(
@@ -196,6 +180,17 @@ export class File {
         );
         this.contentTypes.addFooter(this.footerWrapper.length);
         return footer;
+    }
+
+    public createFirstPageHeader(): HeaderWrapper {
+        const headerWrapper = this.createHeader();
+
+        this.document.Body.DefaultSection.addChildElement(new HeaderReference({
+            headerType: HeaderReferenceType.FIRST,
+            headerId: headerWrapper.Header.referenceId,
+        }));
+
+        return headerWrapper;
     }
 
     public get Document(): Document {
