@@ -6,7 +6,7 @@ import { Document } from "./document";
 import { FooterReferenceType, HeaderReferenceType } from "./document/body/section-properties";
 import { SectionPropertiesOptions } from "./document/body/section-properties/section-properties";
 import { FooterWrapper } from "./footer-wrapper";
-import { FirstPageHeaderWrapper, HeaderWrapper } from "./header-wrapper";
+import { HeaderWrapper } from "./header-wrapper";
 import { Media } from "./media";
 import { Numbering } from "./numbering";
 import { Hyperlink, Paragraph, PictureRun } from "./paragraph";
@@ -26,7 +26,6 @@ export class File {
     private readonly fileRelationships: Relationships;
     private readonly headerWrapper: HeaderWrapper[] = [];
     private readonly footerWrapper: FooterWrapper[] = [];
-    private readonly firstPageHeaderWrapper: FirstPageHeaderWrapper;
 
     private readonly contentTypes: ContentTypes;
     private readonly appProperties: AppProperties;
@@ -79,19 +78,11 @@ export class File {
         this.footerWrapper.push(footer);
 
         this.docRelationships.createRelationship(
-            5,
-            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/header",
-            "header2.xml",
-        );
-
-        this.docRelationships.createRelationship(
             footer.Footer.referenceId,
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer",
             "footer1.xml",
         );
         this.contentTypes.addFooter(this.footerWrapper.length);
-
-        this.firstPageHeaderWrapper = new FirstPageHeaderWrapper(this.media, this.nextId++);
 
         this.fileRelationships = new Relationships();
         this.fileRelationships.createRelationship(
@@ -241,10 +232,6 @@ export class File {
 
     public get Headers(): HeaderWrapper[] {
         return this.headerWrapper;
-    }
-
-    public get firstPageHeader(): FirstPageHeaderWrapper {
-        return this.firstPageHeaderWrapper;
     }
 
     public HeaderByRefNumber(refId: number): HeaderWrapper {

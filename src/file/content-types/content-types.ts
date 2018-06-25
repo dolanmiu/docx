@@ -25,7 +25,6 @@ export class ContentTypes extends XmlComponent {
             new Override("application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml", "/word/document.xml"),
         );
 
-        this.root.push(new Override("application/vnd.openxmlformats-officedocument.wordprocessingml.header+xml", "/word/header2.xml"));
         this.root.push(new Override("application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml", "/word/styles.xml"));
         this.root.push(new Override("application/vnd.openxmlformats-package.core-properties+xml", "/docProps/core.xml"));
         this.root.push(new Override("application/vnd.openxmlformats-officedocument.extended-properties+xml", "/docProps/app.xml"));

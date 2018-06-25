@@ -33,7 +33,6 @@ export class Compiler {
         const xmlNumbering = xml(this.formatter.format(this.file.Numbering));
         const xmlRelationships = xml(this.formatter.format(this.file.DocumentRelationships));
         const xmlFileRelationships = xml(this.formatter.format(this.file.FileRelationships));
-        const xmlHeader2 = xml(this.formatter.format(this.file.firstPageHeader.Header));
         const xmlContentTypes = xml(this.formatter.format(this.file.ContentTypes));
         const xmlAppProperties = xml(this.formatter.format(this.file.AppProperties));
 
@@ -55,10 +54,6 @@ export class Compiler {
 
         this.archive.append(xmlNumbering, {
             name: "word/numbering.xml",
-        });
-
-        this.archive.append(xmlHeader2, {
-            name: "word/header2.xml",
         });
 
         // headers
