@@ -185,10 +185,12 @@ export class File {
     public createFirstPageHeader(): HeaderWrapper {
         const headerWrapper = this.createHeader();
 
-        this.document.Body.DefaultSection.addChildElement(new HeaderReference({
-            headerType: HeaderReferenceType.FIRST,
-            headerId: headerWrapper.Header.referenceId,
-        }));
+        this.document.Body.DefaultSection.addChildElement(
+            new HeaderReference({
+                headerType: HeaderReferenceType.FIRST,
+                headerId: headerWrapper.Header.referenceId,
+            }),
+        );
 
         return headerWrapper;
     }
