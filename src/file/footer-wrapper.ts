@@ -1,3 +1,4 @@
+import { XmlComponent } from "file/xml-components";
 import { Footer } from "./footer/footer";
 import { IMediaData, Media } from "./media";
 import { Paragraph } from "./paragraph";
@@ -8,8 +9,8 @@ export class FooterWrapper {
     private readonly footer: Footer;
     private readonly relationships: Relationships;
 
-    constructor(private readonly media: Media) {
-        this.footer = new Footer();
+    constructor(private readonly media: Media, referenceId: number) {
+        this.footer = new Footer(referenceId);
         this.relationships = new Relationships();
     }
 
@@ -33,6 +34,10 @@ export class FooterWrapper {
 
     public addDrawing(imageData: IMediaData): void {
         this.footer.addDrawing(imageData);
+    }
+
+    public addChildElement(childElement: XmlComponent | string): void {
+        this.footer.addChildElement(childElement);
     }
 
     public createImage(image: string): void {

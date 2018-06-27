@@ -1,6 +1,6 @@
 const docx = require('../build');
 
-var doc = new docx.Document(undefined,{differentFirstPageHeader:true});
+var doc = new docx.Document();
 
 doc.createParagraph("First Page").pageBreak()
 doc.createParagraph("Second Page");
@@ -10,7 +10,8 @@ var pageNumber = new docx.TextRun().pageNumber()
 var pageoneheader = new docx.Paragraph("First Page Header ").right();
 
 pageoneheader.addRun(pageNumber);
-doc.firstPageHeader.addParagraph(pageoneheader);
+var firstPageHeader = doc.createFirstPageHeader();
+firstPageHeader.addParagraph(pageoneheader);
 
 var pagetwoheader = new docx.Paragraph("My Title ").right();
 

@@ -88,17 +88,21 @@ exporter.packPdf("My First Document");
 
 ## Examples
 
-Check [the Wiki](https://github.com/dolanmiu/docx/wiki/Examples) for examples.
+Check [the Wiki](https://github.com/dolanmiu/docx/wiki/Examples) and the [demo folder](https://github.com/dolanmiu/docx/tree/master/demo) for examples.
 
 # Contributing
 
 Read the contribution guidelines [here](https://github.com/dolanmiu/docx/wiki/Contributing-Guidelines).
 
+# Honoured Mentions
+
+[@felipeochoa](https://github.com/felipeochoa)
+
+[@h4buli](https://github.com/h4buli)
+
 ---
 
 Made with 💖
-
-Huge thanks to [@felipeochoa](https://github.com/felipeochoa) for awesome contributions to this project
 
 [npm-image]: https://badge.fury.io/js/docx.svg
 [npm-url]: https://npmjs.org/package/docx

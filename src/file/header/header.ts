@@ -6,8 +6,10 @@ import { Table } from "../table";
 import { HeaderAttributes } from "./header-attributes";
 
 export class Header extends XmlComponent {
-    constructor() {
+    private refId: number;
+    constructor(referenceNumber: number) {
         super("w:hdr");
+        this.refId = referenceNumber;
         this.root.push(
             new HeaderAttributes({
                 wpc: "http://schemas.microsoft.com/office/word/2010/wordprocessingCanvas",
@@ -28,6 +30,10 @@ export class Header extends XmlComponent {
                 wps: "http://schemas.microsoft.com/office/word/2010/wordprocessingShape",
             }),
         );
+    }
+
+    get referenceId(): number {
+        return this.refId;
     }
 
     public addParagraph(paragraph: Paragraph): void {
