@@ -2,11 +2,12 @@ import { expect } from "chai";
 
 import { Formatter } from "../../../../../export/formatter";
 import { PageSize } from "./page-size";
+import { PageOrientation } from "./page-size-attributes";
 
 describe("PageSize", () => {
     describe("#constructor()", () => {
         it("should create page size with portrait", () => {
-            const properties = new PageSize(100, 200, "portrait");
+            const properties = new PageSize(100, 200, PageOrientation.PORTRAIT);
             const tree = new Formatter().format(properties);
 
             expect(Object.keys(tree)).to.deep.equal(["w:pgSz"]);
@@ -15,7 +16,7 @@ describe("PageSize", () => {
         });
 
         it("should create page size with horizontal and invert the lengths", () => {
-            const properties = new PageSize(100, 200, "landscape");
+            const properties = new PageSize(100, 200, PageOrientation.LANDSCAPE);
             const tree = new Formatter().format(properties);
 
             expect(Object.keys(tree)).to.deep.equal(["w:pgSz"]);

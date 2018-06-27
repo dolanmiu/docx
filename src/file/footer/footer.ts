@@ -6,8 +6,10 @@ import { Table } from "../table";
 import { FooterAttributes } from "./footer-attributes";
 
 export class Footer extends XmlComponent {
-    constructor() {
+    private refId: number;
+    constructor(referenceNumber: number) {
         super("w:ftr");
+        this.refId = referenceNumber;
         this.root.push(
             new FooterAttributes({
                 wpc: "http://schemas.microsoft.com/office/word/2010/wordprocessingCanvas",
@@ -28,6 +30,10 @@ export class Footer extends XmlComponent {
                 wps: "http://schemas.microsoft.com/office/word/2010/wordprocessingShape",
             }),
         );
+    }
+
+    public get referenceId(): number {
+        return this.refId;
     }
 
     public addParagraph(paragraph: Paragraph): void {
