@@ -44,7 +44,11 @@ export class UiPriority extends XmlComponent {
     }
 }
 
-export class UnhideWhenUsed extends XmlComponent {}
+export class UnhideWhenUsed extends XmlComponent {
+    constructor() {
+        super("w:unhideWhenUsed");
+    }
+}
 
 export class QuickFormat extends XmlComponent {
     constructor() {
@@ -56,4 +60,8 @@ export class TableProperties extends XmlComponent {}
 
 export class RsId extends XmlComponent {}
 
-export class SemiHidden extends XmlComponent {}
+export class SemiHidden extends XmlComponent {
+    constructor() {
+        super("w:semiHidden");
+    }
+}

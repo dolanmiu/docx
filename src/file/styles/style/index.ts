@@ -3,7 +3,7 @@ import * as paragraph from "../../paragraph";
 import * as formatting from "../../paragraph/run/formatting";
 import { RunProperties } from "../../paragraph/run/properties";
 
-import { BasedOn, Name, Next, QuickFormat, UiPriority, UnhideWhenUsed } from "./components";
+import { BasedOn, Link, Name, Next, QuickFormat, SemiHidden, UiPriority, UnhideWhenUsed } from "./components";
 
 export interface IStyleAttributes {
     type?: string;
@@ -258,7 +258,7 @@ export class CharacterStyle extends Style {
         this.runProperties = new RunProperties();
         this.root.push(this.runProperties);
         this.root.push(new UiPriority("99"));
-        this.root.push(new UnhideWhenUsed(""));
+        this.root.push(new UnhideWhenUsed());
     }
 
     public basedOn(parentId: string): CharacterStyle {
@@ -279,6 +279,11 @@ export class CharacterStyle extends Style {
         this.addRunProperty(new formatting.Underline(underlineType, color));
         return this;
     }
+
+    public size(twips: number): CharacterStyle {
+        this.addRunProperty(new formatting.Size(twips));
+        return this;
+    }
 }
 
 export class HyperlinkStyle extends CharacterStyle {
@@ -287,5 +292,51 @@ export class HyperlinkStyle extends CharacterStyle {
         this.basedOn("DefaultParagraphFont")
             .color("0563C1")
             .underline("single");
+    }
+}
+
+export class FootnoteReferenceStyle extends Style {
+    private readonly runProperties: RunProperties;
+
+    constructor() {
+        super({ type: "character", styleId: "FootnoteReference" });
+        this.root.push(new Name("footnote reference"));
+        this.root.push(new BasedOn("DefaultParagraphFont"));
+        this.root.push(new UiPriority("99"));
+        this.root.push(new SemiHidden());
+        this.root.push(new UnhideWhenUsed());
+
+        this.runProperties = new RunProperties();
+        this.runProperties.addChildElement(new formatting.SuperScript());
+        this.root.push(this.runProperties);
+    }
+}
+
+export class FootnoteText extends ParagraphStyle {
+    constructor() {
+        super("FootnoteText");
+        this.root.push(new Name("footnote text"));
+        this.root.push(new BasedOn("Normal"));
+        this.root.push(new Link("FootnoteTextChar"));
+        this.root.push(new UiPriority("99"));
+        this.root.push(new SemiHidden());
+        this.root.push(new UnhideWhenUsed());
+        this.spacing({
+            after: 0,
+            line: 240,
+            lineRule: "auto",
+        });
+        this.size(20);
+    }
+}
+
+export class FootnoteTextChar extends CharacterStyle {
+    constructor() {
+        super("FootnoteTextChar", "Footnote Text Char");
+        this.basedOn("DefaultParagraphFont");
+        this.root.push(new Link("FootnoteText"));
+        this.root.push(new UiPriority("99"));
+        this.root.push(new SemiHidden());
+        this.size(20);
     }
 }

@@ -187,4 +187,9 @@ export class Paragraph extends XmlComponent {
         this.root.push(new FootnoteReferenceRun(id));
         return this;
     }
+
+    public addRunToFront(run: Run): Paragraph {
+        this.root.splice(1, 0, run);
+        return this;
+    }
 }
