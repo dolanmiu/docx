@@ -3,7 +3,6 @@ import { Formatter } from "../../../export/formatter";
 import { Footnote, FootnoteType } from "./footnote";
 
 describe("Footnote", () => {
-
     describe("#constructor", () => {
         it("should create a footnote with a footnote type", () => {
             const footnote = new Footnote(1, FootnoteType.SEPERATOR);

@@ -6,8 +6,13 @@ import { SeperatorRun } from "./footnote/run/seperator-run";
 import { FootnotesAttributes } from "./footnotes-attributes";
 
 export class FootNotes extends XmlComponent {
+    private counter: number;
+
     constructor() {
         super("w:footnotes");
+
+        this.counter = 1;
+
         this.root.push(
             new FootnotesAttributes({
                 wpc: "http://schemas.microsoft.com/office/word/2010/wordprocessingCanvas",
@@ -32,28 +37,34 @@ export class FootNotes extends XmlComponent {
 
         const begin = new Footnote(-1, FootnoteType.SEPERATOR);
         begin.addParagraph(
-            new Paragraph().spacing({
-                after: 0,
-                line: 240,
-                lineRule: "auto",
-            }).addRun(new SeperatorRun()),
+            new Paragraph()
+                .spacing({
+                    after: 0,
+                    line: 240,
+                    lineRule: "auto",
+                })
+                .addRun(new SeperatorRun()),
         );
         this.root.push(begin);
 
         const spacing = new Footnote(0, FootnoteType.CONTINUATION_SEPERATOR);
         spacing.addParagraph(
-            new Paragraph().spacing({
-                after: 0,
-                line: 240,
-                lineRule: "auto",
-            }).addRun(new ContinuationSeperatorRun()),
+            new Paragraph()
+                .spacing({
+                    after: 0,
+                    line: 240,
+                    lineRule: "auto",
+                })
+                .addRun(new ContinuationSeperatorRun()),
         );
         this.root.push(spacing);
     }
 
     public createFootNote(paragraph: Paragraph): void {
-        const footnote = new Footnote(1);
+        const footnote = new Footnote(this.counter);
         footnote.addParagraph(paragraph);
         this.root.push(footnote);
+
+        this.counter++;
     }
 }
