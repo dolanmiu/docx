@@ -35,6 +35,7 @@ export class Compiler {
         const xmlFileRelationships = xml(this.formatter.format(this.file.FileRelationships));
         const xmlContentTypes = xml(this.formatter.format(this.file.ContentTypes));
         const xmlAppProperties = xml(this.formatter.format(this.file.AppProperties));
+        const xmlFootnotes = xml(this.formatter.format(this.file.FootNotes));
 
         this.archive.append(xmlDocument, {
             name: "word/document.xml",
@@ -79,6 +80,10 @@ export class Compiler {
                 name: `word/_rels/footer${i + 1}.xml.rels`,
             });
         }
+
+        this.archive.append(xmlFootnotes, {
+            name: "word/footnotes.xml",
+        });
 
         this.archive.append(xmlRelationships, {
             name: "word/_rels/document.xml.rels",

@@ -13,7 +13,7 @@ import { Underline } from "./underline";
 import { XmlComponent } from "file/xml-components";
 
 export class Run extends XmlComponent {
-    private properties: RunProperties;
+    protected properties: RunProperties;
 
     constructor() {
         super("w:r");

@@ -3,6 +3,9 @@ import { Color, Italics, Size } from "../paragraph/run/formatting";
 import { Styles } from "./";
 
 import {
+    FootnoteReferenceStyle,
+    FootnoteText,
+    FootnoteTextChar,
     Heading1Style,
     Heading2Style,
     Heading3Style,
@@ -65,6 +68,16 @@ export class DefaultStylesFactory {
 
         const hyperLinkStyle = new HyperlinkStyle();
         styles.push(hyperLinkStyle);
+
+        const footnoteReferenceStyle = new FootnoteReferenceStyle();
+        styles.push(footnoteReferenceStyle);
+
+        const footnoteTextStyle = new FootnoteText();
+        styles.push(footnoteTextStyle);
+
+        const footnoteTextCharStyle = new FootnoteTextChar();
+        styles.push(footnoteTextCharStyle);
+
         return styles;
     }
 }

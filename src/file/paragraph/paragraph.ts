@@ -1,8 +1,8 @@
 // http://officeopenxml.com/WPparagraph.php
+import { FootnoteReferenceRun } from "file/footnotes/footnote/run/reference-run";
 import { IMediaData } from "file/media";
 import { Num } from "file/numbering/num";
 import { XmlComponent } from "file/xml-components";
-import { PictureRun, Run, TextRun } from "./run";
 
 import { Alignment } from "./formatting/alignment";
 import { ThematicBreak } from "./formatting/border";
@@ -15,6 +15,7 @@ import { CenterTabStop, LeftTabStop, MaxRightTabStop, RightTabStop } from "./for
 import { NumberProperties } from "./formatting/unordered-list";
 import { Hyperlink } from "./links";
 import { ParagraphProperties } from "./properties";
+import { PictureRun, Run, TextRun } from "./run";
 
 export class Paragraph extends XmlComponent {
     private properties: ParagraphProperties;
@@ -179,6 +180,16 @@ export class Paragraph extends XmlComponent {
 
     public keepLines(): Paragraph {
         this.properties.push(new KeepLines());
+        return this;
+    }
+
+    public referenceFootnote(id: number): Paragraph {
+        this.root.push(new FootnoteReferenceRun(id));
+        return this;
+    }
+
+    public addRunToFront(run: Run): Paragraph {
+        this.root.splice(1, 0, run);
         return this;
     }
 }

@@ -6,6 +6,7 @@ import { Document } from "./document";
 import { FooterReferenceType, HeaderReference, HeaderReferenceType } from "./document/body/section-properties";
 import { SectionPropertiesOptions } from "./document/body/section-properties/section-properties";
 import { FooterWrapper } from "./footer-wrapper";
+import { FootNotes } from "./footnotes";
 import { HeaderWrapper } from "./header-wrapper";
 import { Media } from "./media";
 import { Numbering } from "./numbering";
@@ -26,6 +27,7 @@ export class File {
     private readonly fileRelationships: Relationships;
     private readonly headerWrapper: HeaderWrapper[] = [];
     private readonly footerWrapper: FooterWrapper[] = [];
+    private readonly footNotes: FootNotes;
 
     private readonly contentTypes: ContentTypes;
     private readonly appProperties: AppProperties;
@@ -63,6 +65,12 @@ export class File {
             "numbering.xml",
         );
         this.contentTypes = new ContentTypes();
+
+        this.docRelationships.createRelationship(
+            this.nextId++,
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/footnotes",
+            "footnotes.xml",
+        );
         this.media = new Media();
 
         const header = this.createHeader();
@@ -86,6 +94,7 @@ export class File {
         );
         this.appProperties = new AppProperties();
 
+        this.footNotes = new FootNotes();
         if (!sectionPropertiesOptions) {
             sectionPropertiesOptions = {
                 footerType: FooterReferenceType.DEFAULT,
@@ -150,6 +159,10 @@ export class File {
 
     public addSection(sectionPropertiesOptions: SectionPropertiesOptions): void {
         this.document.Body.addSection(sectionPropertiesOptions);
+    }
+
+    public createFootnote(paragraph: Paragraph): void {
+        this.footNotes.createFootNote(paragraph);
     }
 
     /**
@@ -261,5 +274,9 @@ export class File {
 
     public get AppProperties(): AppProperties {
         return this.appProperties;
+    }
+
+    public get FootNotes(): FootNotes {
+        return this.footNotes;
     }
 }
