@@ -26,7 +26,7 @@ describe("Compiler", () => {
             const fileNames = Object.keys(zipFile.files).map((f) => zipFile.files[f].name);
 
             expect(fileNames).is.an.instanceof(Array);
-            expect(fileNames).has.length(12);
+            expect(fileNames).has.length(13);
             expect(fileNames).to.include("word/document.xml");
             expect(fileNames).to.include("word/styles.xml");
             expect(fileNames).to.include("docProps/core.xml");
@@ -35,6 +35,7 @@ describe("Compiler", () => {
             expect(fileNames).to.include("word/header1.xml");
             expect(fileNames).to.include("word/_rels/header1.xml.rels");
             expect(fileNames).to.include("word/footer1.xml");
+            expect(fileNames).to.include("word/footnotes.xml");
             expect(fileNames).to.include("word/_rels/footer1.xml.rels");
             expect(fileNames).to.include("word/_rels/document.xml.rels");
             expect(fileNames).to.include("[Content_Types].xml");
@@ -56,7 +57,7 @@ describe("Compiler", () => {
             const fileNames = Object.keys(zipFile.files).map((f) => zipFile.files[f].name);
 
             expect(fileNames).is.an.instanceof(Array);
-            expect(fileNames).has.length(20);
+            expect(fileNames).has.length(21);
 
             expect(fileNames).to.include("word/header1.xml");
             expect(fileNames).to.include("word/_rels/header1.xml.rels");

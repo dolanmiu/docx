@@ -83,7 +83,7 @@ describe("ContentTypes", () => {
             contentTypes.addFooter(102);
             const tree = new Formatter().format(contentTypes);
 
-            expect(tree["Types"][13]).to.deep.equal({
+            expect(tree["Types"][14]).to.deep.equal({
                 Override: [
                     {
                         _attr: {
@@ -94,7 +94,7 @@ describe("ContentTypes", () => {
                 ],
             });
 
-            expect(tree["Types"][14]).to.deep.equal({
+            expect(tree["Types"][15]).to.deep.equal({
                 Override: [
                     {
                         _attr: {
@@ -113,7 +113,7 @@ describe("ContentTypes", () => {
             contentTypes.addHeader(202);
             const tree = new Formatter().format(contentTypes);
 
-            expect(tree["Types"][13]).to.deep.equal({
+            expect(tree["Types"][14]).to.deep.equal({
                 Override: [
                     {
                         _attr: {
@@ -124,7 +124,7 @@ describe("ContentTypes", () => {
                 ],
             });
 
-            expect(tree["Types"][14]).to.deep.equal({
+            expect(tree["Types"][15]).to.deep.equal({
                 Override: [
                     {
                         _attr: {
