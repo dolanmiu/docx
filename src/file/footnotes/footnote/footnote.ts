@@ -3,8 +3,13 @@ import { Paragraph } from "../../paragraph";
 import { FootnoteAttributes } from "./footnote-attributes";
 import { FootnoteRefRun } from "./run/footnote-ref-run";
 
-export class FootNote extends XmlComponent {
-    constructor(id: number, type?: string) {
+export enum FootnoteType {
+    SEPERATOR = "separator",
+    CONTINUATION_SEPERATOR = "continuationSeparator",
+}
+
+export class Footnote extends XmlComponent {
+    constructor(id: number, type?: FootnoteType) {
         super("w:footnote");
         this.root.push(
             new FootnoteAttributes({

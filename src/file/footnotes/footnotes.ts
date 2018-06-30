@@ -1,6 +1,6 @@
 import { XmlComponent } from "file/xml-components";
 import { Paragraph } from "../paragraph";
-import { FootNote } from "./footnote/footnote";
+import { Footnote, FootnoteType } from "./footnote/footnote";
 import { ContinuationSeperatorRun } from "./footnote/run/continuation-seperator-run";
 import { SeperatorRun } from "./footnote/run/seperator-run";
 import { FootnotesAttributes } from "./footnotes-attributes";
@@ -30,7 +30,7 @@ export class FootNotes extends XmlComponent {
             }),
         );
 
-        const begin = new FootNote(-1, "separator");
+        const begin = new Footnote(-1, FootnoteType.SEPERATOR);
         begin.addParagraph(
             new Paragraph().spacing({
                 after: 0,
@@ -40,7 +40,7 @@ export class FootNotes extends XmlComponent {
         );
         this.root.push(begin);
 
-        const spacing = new FootNote(0, "continuationSeparator");
+        const spacing = new Footnote(0, FootnoteType.CONTINUATION_SEPERATOR);
         spacing.addParagraph(
             new Paragraph().spacing({
                 after: 0,
@@ -52,7 +52,7 @@ export class FootNotes extends XmlComponent {
     }
 
     public createFootNote(paragraph: Paragraph): void {
-        const footnote = new FootNote(1);
+        const footnote = new Footnote(1);
         footnote.addParagraph(paragraph);
         this.root.push(footnote);
     }
