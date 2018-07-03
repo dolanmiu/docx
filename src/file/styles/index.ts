@@ -1,6 +1,7 @@
 import { XmlComponent, BaseXmlComponent } from "file/xml-components";
 import { DocumentDefaults } from "./defaults";
 import { ParagraphStyle } from "./style";
+export * from "./border";
 
 export class Styles extends XmlComponent {
     constructor(_initialStyles?: BaseXmlComponent) {

@@ -2,7 +2,7 @@ import { expect } from "chai";
 
 import { Formatter } from "../../../../export/formatter";
 import { SectionProperties } from "./section-properties";
-import { FooterReferenceType, PageNumberFormat } from ".";
+import { FooterReferenceType, PageNumberFormat, PageBorderOffsetFrom } from ".";
 
 describe("SectionProperties", () => {
     describe("#constructor()", () => {
@@ -153,6 +153,19 @@ describe("SectionProperties", () => {
                         },
                     },
                 ],
+            });
+        });
+
+        it("should create section properties with page borders", () => {
+            const properties = new SectionProperties({
+                pageBorders: {
+                    offsetFrom: PageBorderOffsetFrom.PAGE,
+                },
+            });
+            const tree = new Formatter().format(properties);
+            expect(Object.keys(tree)).to.deep.equal(["w:sectPr"]);
+            expect(tree["w:sectPr"][7]).to.deep.equal({
+                "w:pgBorders": [{ _attr: { "w:offsetFrom": "page" } }],
             });
         });
     });
