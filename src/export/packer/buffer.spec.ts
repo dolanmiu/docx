@@ -5,7 +5,7 @@ import { stub } from "sinon";
 import { BufferPacker } from "../../export/packer/buffer";
 import { File, Paragraph } from "../../file";
 
-describe.only("BufferPacker", () => {
+describe("BufferPacker", () => {
     let packer: BufferPacker;
 
     beforeEach(() => {
