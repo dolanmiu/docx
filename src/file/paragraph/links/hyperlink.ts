@@ -2,19 +2,27 @@
 
 import { XmlComponent } from "file/xml-components";
 import { TextRun } from "../run";
-import { HyperlinkAttributes } from "./hyperlink-attributes";
+import { HyperlinkAttributes, IHyperlinkAttributesProperties } from "./hyperlink-attributes";
 
 export class Hyperlink extends XmlComponent {
     public linkId: number;
 
-    constructor(text: string, relationshipsCount: number) {
+    constructor(text: string, relationshipsCount: number, anchor?: string) {
         super("w:hyperlink");
 
         this.linkId = relationshipsCount + 1;
-        const attributes = new HyperlinkAttributes({
-            id: `rId${this.linkId}`,
+
+        const props: IHyperlinkAttributesProperties = {
             history: 1,
-        });
+        };
+
+        if (anchor) {
+            props.anchor = anchor;
+        } else {
+            props.id = `rId${this.linkId}`;
+        }
+
+        const attributes = new HyperlinkAttributes(props);
         this.root.push(attributes);
         this.root.push(new TextRun(text).style("Hyperlink"));
     }

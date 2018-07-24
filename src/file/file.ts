@@ -10,7 +10,7 @@ import { FootNotes } from "./footnotes";
 import { HeaderWrapper } from "./header-wrapper";
 import { Media } from "./media";
 import { Numbering } from "./numbering";
-import { Hyperlink, Paragraph, PictureRun } from "./paragraph";
+import { Bookmark, Hyperlink, Paragraph, PictureRun } from "./paragraph";
 import { Relationships } from "./relationships";
 import { Styles } from "./styles";
 import { ExternalStylesFactory } from "./styles/external-styles-factory";
@@ -155,6 +155,18 @@ export class File {
             "External",
         );
         return hyperlink;
+    }
+
+    public createInternalHyperLink(anchor: string, text?: string): Hyperlink {
+        text = text === undefined ? anchor : text;
+        const hyperlink = new Hyperlink(text, this.docRelationships.RelationshipCount, anchor);
+        return hyperlink;
+    }
+
+    public createBookmark(name: string, text?: string): Bookmark {
+        text = text === undefined ? name : text;
+        const bookmark = new Bookmark(name, text, this.docRelationships.RelationshipCount);
+        return bookmark;
     }
 
     public addSection(sectionPropertiesOptions: SectionPropertiesOptions): void {
