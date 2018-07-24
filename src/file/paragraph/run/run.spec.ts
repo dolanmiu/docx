@@ -144,7 +144,7 @@ describe("Run", () => {
             run.rtl();
             const tree = new Formatter().format(run);
             expect(tree).to.deep.equal({
-                "w:r": [{ "w:rPr": [{ "w:rtl": [{ _attr: { "w:val": true } }]}]}],
+                "w:r": [{ "w:rPr": [{ "w:rtl": [{ _attr: { "w:val": true } }] }] }],
             });
         });
     });

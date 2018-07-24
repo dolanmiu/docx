@@ -16,7 +16,7 @@
     "typedoc": "typedoc --out docs/ src/ --module commonjs --target ES6 --disableOutputCheck --excludePrivate --externalPattern \"**/*.spec.ts\"",
     "style": "prettier -l \"src/**/*.ts\"",
     "style.fix": "prettier \"src/**/*.ts\" --write",
-    "fix-types": "node types-absolute-fixer.js",
+    "fix-types": "node types-absolute-fixer.js"
   },
   "files": [
     "src",

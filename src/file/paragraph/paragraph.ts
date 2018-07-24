@@ -13,7 +13,7 @@ import { ISpacingProperties, Spacing } from "./formatting/spacing";
 import { Style } from "./formatting/style";
 import { CenterTabStop, LeftTabStop, MaxRightTabStop, RightTabStop } from "./formatting/tab-stop";
 import { NumberProperties } from "./formatting/unordered-list";
-import { Bidi} from "./formatting/bidi"
+import { Bidi } from "./formatting/bidi";
 import { Hyperlink } from "./links";
 import { ParagraphProperties } from "./properties";
 import { PictureRun, Run, TextRun } from "./run";
