@@ -17,7 +17,6 @@
     "style": "prettier -l \"src/**/*.ts\"",
     "style.fix": "prettier \"src/**/*.ts\" --write",
     "fix-types": "node types-absolute-fixer.js",
-    "postinstall" : "npm run build"
   },
   "files": [
     "src",
