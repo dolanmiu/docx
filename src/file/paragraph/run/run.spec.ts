@@ -108,7 +108,13 @@ describe("Run", () => {
             run.font("Times");
             const tree = new Formatter().format(run);
             expect(tree).to.deep.equal({
-                "w:r": [{ "w:rPr": [{ "w:rFonts": [{ _attr: { "w:ascii": "Times", "w:hAnsi": "Times" } }] }] }],
+                "w:r": [
+                    {
+                        "w:rPr": [
+                            { "w:rFonts": [{ _attr: { "w:ascii": "Times", "w:cs": "Times", "w:eastAsia": "Times", "w:hAnsi": "Times" } }] },
+                        ],
+                    },
+                ],
             });
         });
     });
@@ -129,6 +135,16 @@ describe("Run", () => {
             const tree = new Formatter().format(run);
             expect(tree).to.deep.equal({
                 "w:r": [{ "w:rPr": [{ "w:sz": [{ _attr: { "w:val": 24 } }] }] }],
+            });
+        });
+    });
+
+    describe("#rtl", () => {
+        it("should set the run to the RTL mode", () => {
+            run.rtl();
+            const tree = new Formatter().format(run);
+            expect(tree).to.deep.equal({
+                "w:r": [{ "w:rPr": [{ "w:rtl": [{ _attr: { "w:val": true } }]}]}],
             });
         });
     });
