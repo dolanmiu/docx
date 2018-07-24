@@ -297,7 +297,9 @@ describe("AbstractNumbering", () => {
                 const level = abstractNumbering.createLevel(0, "lowerRoman", "%0.").font("Times");
                 const tree = new Formatter().format(level);
                 expect(tree["w:lvl"]).to.include({
-                    "w:rPr": [{ "w:rFonts": [{ _attr: { "w:ascii": "Times", "w:cs": "Times", "w:eastAsia": "Times", "w:hAnsi": "Times" } }] }],
+                    "w:rPr": [
+                        { "w:rFonts": [{ _attr: { "w:ascii": "Times", "w:cs": "Times", "w:eastAsia": "Times", "w:hAnsi": "Times" } }] },
+                    ],
                 });
             });
 

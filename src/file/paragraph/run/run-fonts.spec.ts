@@ -15,7 +15,9 @@ describe("RunFonts", () => {
         it("uses hint if given", () => {
             const tree = new Formatter().format(new RunFonts("Times", "default"));
             expect(tree).to.deep.equal({
-                "w:rFonts": [{ _attr: { "w:ascii": "Times", "w:cs": "Times", "w:eastAsia": "Times", "w:hAnsi": "Times", "w:hint": "default" } }],
+                "w:rFonts": [
+                    { _attr: { "w:ascii": "Times", "w:cs": "Times", "w:eastAsia": "Times", "w:hAnsi": "Times", "w:hint": "default" } },
+                ],
             });
         });
     });
