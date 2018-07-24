@@ -1,7 +1,7 @@
 // http://officeopenxml.com/WPtext.php
 import { Break } from "./break";
 import { Caps, SmallCaps } from "./caps";
-import { Bold, Color, DoubleStrike, Italics, Size, RTL, Strike } from "./formatting";
+import { Bold, Color, DoubleStrike, Italics, RTL, Size, Strike } from "./formatting";
 import { Begin, End, Page, Separate } from "./page-number";
 import { RunProperties } from "./properties";
 import { RunFonts } from "./run-fonts";
