@@ -139,6 +139,16 @@ describe("Run", () => {
         });
     });
 
+    describe("#rtl", () => {
+        it("should set the run to the RTL mode", () => {
+            run.rtl();
+            const tree = new Formatter().format(run);
+            expect(tree).to.deep.equal({
+                "w:r": [{ "w:rPr": [{ "w:rtl": [{ _attr: { "w:val": true } }] }] }],
+            });
+        });
+    });
+
     describe("#style", () => {
         it("should set the style to the given styleId", () => {
             run.style("myRunStyle");
