@@ -16,7 +16,7 @@ export class Bookmark {
     constructor(name: string, text: string, relationshipsCount: number) {
         this.linkId = relationshipsCount + 1;
 
-        this.start = new BookmarkStart(name, text, this.linkId);
+        this.start = new BookmarkStart(name, this.linkId);
         this.text = new TextRun(text);
         this.end = new BookmarkEnd(this.linkId);
     }
@@ -25,7 +25,7 @@ export class Bookmark {
 export class BookmarkStart extends XmlComponent {
     public linkId: number;
 
-    constructor(name: string, text: string, relationshipsCount: number) {
+    constructor(name: string, relationshipsCount: number) {
         super("w:bookmarkStart");
 
         this.linkId = relationshipsCount;

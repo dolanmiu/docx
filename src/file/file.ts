@@ -160,6 +160,8 @@ export class File {
     public createInternalHyperLink(anchor: string, text?: string): Hyperlink {
         text = text === undefined ? anchor : text;
         const hyperlink = new Hyperlink(text, this.docRelationships.RelationshipCount, anchor);
+        // NOTE: unlike File#createHyperlink(), since the link is to an internal bookmark
+        // we don't need to create a new relationship.
         return hyperlink;
     }
 
