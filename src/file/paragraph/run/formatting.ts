@@ -123,3 +123,14 @@ export class Size extends XmlComponent {
         );
     }
 }
+
+export class RTL extends XmlComponent {
+    constructor() {
+        super("w:rtl");
+        this.root.push(
+            new Attributes({
+                val: true,
+            }),
+        );
+    }
+}
