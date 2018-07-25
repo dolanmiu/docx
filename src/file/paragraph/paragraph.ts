@@ -14,7 +14,7 @@ import { Style } from "./formatting/style";
 import { CenterTabStop, LeftTabStop, MaxRightTabStop, RightTabStop } from "./formatting/tab-stop";
 import { NumberProperties } from "./formatting/unordered-list";
 import { Bidi} from "./formatting/bidi"
-import { Hyperlink } from "./links";
+import { Bookmark, Hyperlink } from "./links";
 import { ParagraphProperties } from "./properties";
 import { PictureRun, Run, TextRun } from "./run";
 
@@ -37,6 +37,14 @@ export class Paragraph extends XmlComponent {
 
     public addHyperLink(hyperlink: Hyperlink): Paragraph {
         this.root.push(hyperlink);
+        return this;
+    }
+
+    public addBookmark(bookmark: Bookmark): Paragraph {
+        // Bookmarks by spec have three components, a start, text, and end
+        this.root.push(bookmark.start);
+        this.root.push(bookmark.text);
+        this.root.push(bookmark.end);
         return this;
     }
 
