@@ -5,6 +5,7 @@ import { Num } from "file/numbering/num";
 import { XmlComponent } from "file/xml-components";
 
 import { Alignment } from "./formatting/alignment";
+import { Bidi } from "./formatting/bidi";
 import { ThematicBreak } from "./formatting/border";
 import { Indent } from "./formatting/indent";
 import { KeepLines, KeepNext } from "./formatting/keep";
@@ -13,7 +14,6 @@ import { ISpacingProperties, Spacing } from "./formatting/spacing";
 import { Style } from "./formatting/style";
 import { CenterTabStop, LeftTabStop, MaxRightTabStop, RightTabStop } from "./formatting/tab-stop";
 import { NumberProperties } from "./formatting/unordered-list";
-import { Bidi} from "./formatting/bidi"
 import { Bookmark, Hyperlink } from "./links";
 import { ParagraphProperties } from "./properties";
 import { PictureRun, Run, TextRun } from "./run";
