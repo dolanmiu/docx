@@ -1,5 +1,5 @@
 import { XmlComponent } from "file/xml-components";
-import { Size } from "../../paragraph/run/formatting";
+import { Size, SizeCs } from "../../paragraph/run/formatting";
 import { RunProperties } from "../../paragraph/run/properties";
 import { RunFonts } from "../../paragraph/run/run-fonts";
 
@@ -14,6 +14,7 @@ export class RunPropertiesDefaults extends XmlComponent {
 
     public size(size: number): RunPropertiesDefaults {
         this.properties.push(new Size(size));
+        this.properties.push(new SizeCs(size));
         return this;
     }
 

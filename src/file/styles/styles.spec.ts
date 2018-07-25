@@ -362,7 +362,7 @@ describe("ParagraphStyle", () => {
                     { _attr: { "w:type": "paragraph", "w:styleId": "myStyleId" } },
                     { "w:pPr": [] },
                     {
-                        "w:rPr": [{ "w:sz": [{ _attr: { "w:val": 24 } }] }],
+                        "w:rPr": [{ "w:sz": [{ _attr: { "w:val": 24 } }] }, { "w:szCs": [{ _attr: { "w:val": 24 } }] }],
                     },
                 ],
             });
