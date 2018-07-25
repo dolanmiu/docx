@@ -338,4 +338,14 @@ describe("Paragraph", () => {
             });
         });
     });
+
+    describe("#bidi", () => {
+        it("set paragraph right to left layout", () => {
+            paragraph.bidi();
+            const tree = new Formatter().format(paragraph);
+            expect(tree).to.deep.equal({
+                "w:p": [{ "w:pPr": [{ "w:bidi": [] }] }],
+            });
+        });
+    });
 });
