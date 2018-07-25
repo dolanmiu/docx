@@ -13,6 +13,7 @@ import { ISpacingProperties, Spacing } from "./formatting/spacing";
 import { Style } from "./formatting/style";
 import { CenterTabStop, LeftTabStop, MaxRightTabStop, RightTabStop } from "./formatting/tab-stop";
 import { NumberProperties } from "./formatting/unordered-list";
+import { Bidi} from "./formatting/bidi"
 import { Bookmark, Hyperlink } from "./links";
 import { ParagraphProperties } from "./properties";
 import { PictureRun, Run, TextRun } from "./run";
@@ -198,6 +199,11 @@ export class Paragraph extends XmlComponent {
 
     public addRunToFront(run: Run): Paragraph {
         this.root.splice(1, 0, run);
+        return this;
+    }
+
+    public bidi(): Paragraph {
+        this.properties.push(new Bidi());
         return this;
     }
 }
