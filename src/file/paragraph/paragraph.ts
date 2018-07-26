@@ -5,6 +5,7 @@ import { Num } from "file/numbering/num";
 import { XmlComponent } from "file/xml-components";
 
 import { Alignment } from "./formatting/alignment";
+import { Bidi } from "./formatting/bidi";
 import { ThematicBreak } from "./formatting/border";
 import { Indent } from "./formatting/indent";
 import { KeepLines, KeepNext } from "./formatting/keep";
@@ -109,6 +110,21 @@ export class Paragraph extends XmlComponent {
         return this;
     }
 
+    public start(): Paragraph {
+        this.properties.push(new Alignment("start"));
+        return this;
+    }
+
+    public end(): Paragraph {
+        this.properties.push(new Alignment("end"));
+        return this;
+    }
+
+    public distribute(): Paragraph {
+        this.properties.push(new Alignment("distribute"));
+        return this;
+    }
+
     public justified(): Paragraph {
         this.properties.push(new Alignment("both"));
         return this;
@@ -198,6 +214,11 @@ export class Paragraph extends XmlComponent {
 
     public addRunToFront(run: Run): Paragraph {
         this.root.splice(1, 0, run);
+        return this;
+    }
+
+    public bidi(): Paragraph {
+        this.properties.push(new Bidi());
         return this;
     }
 }

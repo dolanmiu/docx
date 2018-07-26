@@ -134,7 +134,21 @@ describe("Run", () => {
             run.size(24);
             const tree = new Formatter().format(run);
             expect(tree).to.deep.equal({
-                "w:r": [{ "w:rPr": [{ "w:sz": [{ _attr: { "w:val": 24 } }] }] }],
+                "w:r": [
+                    {
+                        "w:rPr": [{ "w:sz": [{ _attr: { "w:val": 24 } }] }, { "w:szCs": [{ _attr: { "w:val": 24 } }] }],
+                    },
+                ],
+            });
+        });
+    });
+
+    describe("#rtl", () => {
+        it("should set the run to the RTL mode", () => {
+            run.rtl();
+            const tree = new Formatter().format(run);
+            expect(tree).to.deep.equal({
+                "w:r": [{ "w:rPr": [{ "w:rtl": [{ _attr: { "w:val": true } }] }] }],
             });
         });
     });
