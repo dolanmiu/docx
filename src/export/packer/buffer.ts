@@ -1,8 +1,9 @@
 import { File } from "../../file";
 import { BufferStream } from "./buffer-stream";
 import { Compiler } from "./compiler";
+import { IPacker } from "./packer";
 
-export class BufferPacker {
+export class BufferPacker implements IPacker {
     private readonly packer: Compiler;
 
     constructor(file: File) {
