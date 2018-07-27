@@ -1,4 +1,4 @@
-import { GridSpan, TableCellBorders, TableCellWidth, VAlign, VerticalAlign, VMerge, VMergeType, WidthType } from "file/table/table-cell";
+import { GridSpan, TableCellBorders, TableCellWidth, TableCellShading, VAlign, VerticalAlign, VMerge, VMergeType, WidthType } from "file/table/table-cell";
 import { IXmlableObject, XmlComponent } from "file/xml-components";
 import { Paragraph } from "../paragraph";
 import { TableGrid } from "./grid";
@@ -156,6 +156,12 @@ export class TableCellProperties extends XmlComponent {
 
     public setWidth(width: string | number, type: WidthType): TableCellProperties {
         this.root.push(new TableCellWidth(width, type));
+
+        return this;
+    }
+
+    public setShading(attrs: object): TableCellProperties {
+        this.root.push(new TableCellShading(attrs));
 
         return this;
     }
