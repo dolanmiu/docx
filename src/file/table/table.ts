@@ -88,7 +88,7 @@ export class TableRow extends XmlComponent {
         this.cells.splice(ix + 1, cellSpan - 1);
         this.root.splice(ix + 2, cellSpan - 1);
 
-        return remainCell
+        return remainCell;
     }
 }
 
