@@ -81,6 +81,15 @@ export class TableRow extends XmlComponent {
     public getCell(ix: number): TableCell {
         return this.cells[ix];
     }
+
+    public addGridSpan(ix: number, cellSpan: number): TableCell {
+        const remainCell = this.cells[ix];
+        remainCell.cellProperties.addGridSpan(cellSpan);
+        this.cells.splice(ix + 1, cellSpan - 1);
+        this.root.splice(ix + 2, cellSpan - 1);
+
+        return remainCell
+    }
 }
 
 export class TableRowProperties extends XmlComponent {
