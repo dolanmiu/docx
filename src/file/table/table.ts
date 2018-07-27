@@ -1,4 +1,14 @@
-import { GridSpan, TableCellBorders, TableCellWidth, TableCellShading, VAlign, VerticalAlign, VMerge, VMergeType, WidthType } from "file/table/table-cell";
+import {
+    GridSpan,
+    TableCellBorders,
+    TableCellShading,
+    TableCellWidth,
+    VAlign,
+    VerticalAlign,
+    VMerge,
+    VMergeType,
+    WidthType,
+} from "file/table/table-cell";
 import { IXmlableObject, XmlComponent } from "file/xml-components";
 import { Paragraph } from "../paragraph";
 import { TableGrid } from "./grid";
