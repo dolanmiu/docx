@@ -161,7 +161,7 @@
 							<aside class="tsd-sources">
 								<p>Overrides Writable.__constructor</p>
 								<ul>
-									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/1aa592b/src/export/packer/buffer-stream.ts#L4">export/packer/buffer-stream.ts:4</a></li>
+									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/5232c05/src/export/packer/buffer-stream.ts#L4">export/packer/buffer-stream.ts:4</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-returns-title">Returns <a href="_export_packer_buffer_stream_.bufferstream.html" class="tsd-signature-type">BufferStream</a></h4>
@@ -228,7 +228,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/1aa592b/src/export/packer/buffer-stream.ts#L25">export/packer/buffer-stream.ts:25</a></li>
+									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/5232c05/src/export/packer/buffer-stream.ts#L25">export/packer/buffer-stream.ts:25</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Buffer</span></h4>
@@ -242,7 +242,7 @@
 					<a name="_destroy" class="tsd-anchor"></a>
 					<h3>_destroy</h3>
 					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
-						<li class="tsd-signature tsd-kind-icon">_destroy<span class="tsd-signature-symbol">(</span>err<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Error</span>, callback<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Function</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+						<li class="tsd-signature tsd-kind-icon">_destroy<span class="tsd-signature-symbol">(</span>error<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Error</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">null</span>, callback<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">function</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
@@ -255,10 +255,28 @@
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
-									<h5>err: <span class="tsd-signature-type">Error</span></h5>
+									<h5>error: <span class="tsd-signature-type">Error</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">null</span></h5>
 								</li>
 								<li>
-									<h5>callback: <span class="tsd-signature-type">Function</span></h5>
+									<h5>callback: <span class="tsd-signature-type">function</span></h5>
+									<ul class="tsd-parameters">
+										<li class="tsd-parameter-siganture">
+											<ul class="tsd-signatures tsd-kind-type-literal tsd-is-not-exported">
+												<li class="tsd-signature tsd-kind-icon"><span class="tsd-signature-symbol">(</span>error<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">Error</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+											</ul>
+											<ul class="tsd-descriptions">
+												<li class="tsd-description">
+													<h4 class="tsd-parameters-title">Parameters</h4>
+													<ul class="tsd-parameters">
+														<li>
+															<h5><span class="tsd-flag ts-flagOptional">Optional</span> error: <span class="tsd-signature-type">Error</span></h5>
+														</li>
+													</ul>
+													<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
+												</li>
+											</ul>
+										</li>
+									</ul>
 								</li>
 							</ul>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
@@ -300,7 +318,7 @@
 							<aside class="tsd-sources">
 								<p>Overrides Writable._write</p>
 								<ul>
-									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/1aa592b/src/export/packer/buffer-stream.ts#L13">export/packer/buffer-stream.ts:13</a></li>
+									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/5232c05/src/export/packer/buffer-stream.ts#L13">export/packer/buffer-stream.ts:13</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -847,7 +865,7 @@
 							<aside class="tsd-sources">
 								<p>Overrides Writable.end</p>
 								<ul>
-									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/1aa592b/src/export/packer/buffer-stream.ts#L19">export/packer/buffer-stream.ts:19</a></li>
+									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/5232c05/src/export/packer/buffer-stream.ts#L19">export/packer/buffer-stream.ts:19</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
