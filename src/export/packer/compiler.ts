@@ -22,7 +22,7 @@ export class Compiler {
     public async compile(output: Writable | express.Response): Promise<void> {
         this.archive.pipe(output);
 
-        const xmlDocument = xml(this.formatter.format(this.file.Document), true);
+        const xmlDocument = xml(this.formatter.format(this.file.Document));
         const xmlStyles = xml(this.formatter.format(this.file.Styles));
         const xmlProperties = xml(this.formatter.format(this.file.CoreProperties), {
             declaration: {
