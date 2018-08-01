@@ -123,3 +123,25 @@ export class Size extends XmlComponent {
         );
     }
 }
+
+export class SizeCs extends XmlComponent {
+    constructor(size: number) {
+        super("w:szCs");
+        this.root.push(
+            new Attributes({
+                val: size,
+            }),
+        );
+    }
+}
+
+export class RTL extends XmlComponent {
+    constructor() {
+        super("w:rtl");
+        this.root.push(
+            new Attributes({
+                val: true,
+            }),
+        );
+    }
+}

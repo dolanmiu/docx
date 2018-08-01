@@ -5,6 +5,7 @@ import { Num } from "file/numbering/num";
 import { XmlComponent } from "file/xml-components";
 
 import { Alignment } from "./formatting/alignment";
+import { Bidi } from "./formatting/bidi";
 import { ThematicBreak } from "./formatting/border";
 import { Indent } from "./formatting/indent";
 import { KeepLines, KeepNext } from "./formatting/keep";
@@ -13,7 +14,7 @@ import { ISpacingProperties, Spacing } from "./formatting/spacing";
 import { Style } from "./formatting/style";
 import { CenterTabStop, LeftTabStop, MaxRightTabStop, RightTabStop } from "./formatting/tab-stop";
 import { NumberProperties } from "./formatting/unordered-list";
-import { Hyperlink } from "./links";
+import { Bookmark, Hyperlink } from "./links";
 import { ParagraphProperties } from "./properties";
 import { PictureRun, Run, TextRun } from "./run";
 
@@ -36,6 +37,14 @@ export class Paragraph extends XmlComponent {
 
     public addHyperLink(hyperlink: Hyperlink): Paragraph {
         this.root.push(hyperlink);
+        return this;
+    }
+
+    public addBookmark(bookmark: Bookmark): Paragraph {
+        // Bookmarks by spec have three components, a start, text, and end
+        this.root.push(bookmark.start);
+        this.root.push(bookmark.text);
+        this.root.push(bookmark.end);
         return this;
     }
 
@@ -98,6 +107,21 @@ export class Paragraph extends XmlComponent {
 
     public right(): Paragraph {
         this.properties.push(new Alignment("right"));
+        return this;
+    }
+
+    public start(): Paragraph {
+        this.properties.push(new Alignment("start"));
+        return this;
+    }
+
+    public end(): Paragraph {
+        this.properties.push(new Alignment("end"));
+        return this;
+    }
+
+    public distribute(): Paragraph {
+        this.properties.push(new Alignment("distribute"));
         return this;
     }
 
@@ -190,6 +214,11 @@ export class Paragraph extends XmlComponent {
 
     public addRunToFront(run: Run): Paragraph {
         this.root.splice(1, 0, run);
+        return this;
+    }
+
+    public bidi(): Paragraph {
+        this.properties.push(new Bidi());
         return this;
     }
 }
