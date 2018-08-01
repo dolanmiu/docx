@@ -135,8 +135,8 @@ export class File {
         return this.document.createDrawing(mediaData);
     }
 
-    public createImageData(imageName: string, data: Buffer, width?: number, height?: number): IMediaData {
-        const mediaData = this.media.addMediaWithData(imageName, data, this.nextId++, width, height);
+    public createImageFromBuffer(key: string, data: Buffer, width?: number, height?: number): IMediaData {
+        const mediaData = this.media.addMediaWithData(key, data, this.nextId++, width, height);
         this.docRelationships.createRelationship(
             mediaData.referenceId,
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
@@ -179,9 +179,6 @@ export class File {
         this.footNotes.createFootNote(paragraph);
     }
 
-    /**
-     * Creates new header.
-     */
     public createHeader(): HeaderWrapper {
         const header = new HeaderWrapper(this.media, this.nextId++);
         this.headerWrapper.push(header);
@@ -194,9 +191,6 @@ export class File {
         return header;
     }
 
-    /**
-     * Creates new footer.
-     */
     public createFooter(): FooterWrapper {
         const footer = new FooterWrapper(this.media, this.nextId++);
         this.footerWrapper.push(footer);

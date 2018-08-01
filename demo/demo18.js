@@ -8,8 +8,8 @@ const imageBase64Data = `iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAMAAAD04JH5AAACzVBMVEU
 
 // var buff = fs.readFileSync("./demo/images/image1.jpeg");
 // console.log(buff);
-// const image = doc.createImageData("image1.jpeg", buff);
-const image = doc.createImageData("image.png", Buffer.from(imageBase64Data, 'base64'), 100, 100);
+// const image = doc.createImageFromBuffer("image1.jpeg", buff);
+const image = doc.createImageFromBuffer("image.png", Buffer.from(imageBase64Data, 'base64'), 100, 100);
 doc.Document.createDrawing(image);
 
 var exporter = new docx.LocalPacker(doc);
