@@ -1,7 +1,6 @@
 // http://officeopenxml.com/WPdocument.php
-import { IMediaData } from "file/media";
 import { XmlComponent } from "file/xml-components";
-import { Image, Paragraph } from "../paragraph";
+import { Paragraph } from "../paragraph";
 import { Table } from "../table";
 import { Body } from "./body";
 import { SectionPropertiesOptions } from "./body/section-properties/section-properties";
@@ -37,8 +36,9 @@ export class Document extends XmlComponent {
         this.root.push(this.body);
     }
 
-    public addParagraph(paragraph: Paragraph): void {
+    public addParagraph(paragraph: Paragraph): Document {
         this.body.push(paragraph);
+        return this;
     }
 
     public createParagraph(text?: string): Paragraph {
@@ -55,13 +55,6 @@ export class Document extends XmlComponent {
         const table = new Table(rows, cols);
         this.addTable(table);
         return table;
-    }
-
-    public createDrawing(imageData: IMediaData): Image {
-        const image = new Image(imageData);
-        this.addParagraph(image);
-
-        return image;
     }
 
     get Body(): Body {

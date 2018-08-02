@@ -1,4 +1,3 @@
-import { IMediaData } from "file/media";
 import { AppProperties } from "./app-properties/app-properties";
 import { ContentTypes } from "./content-types/content-types";
 import { CoreProperties, IPropertiesOptions } from "./core-properties";
@@ -126,18 +125,22 @@ export class File {
     }
 
     public createImage(filePath: string): Image {
-        const mediaData = Media.addImage(this, filePath);
-        return this.document.createDrawing(mediaData);
+        const image = Media.addImage(this, filePath);
+        this.document.addParagraph(image);
+
+        return image;
     }
 
-    public insertImage(mediaData: IMediaData): File {
-        this.document.createDrawing(mediaData);
+    public insertImage(image: Image): File {
+        this.document.addParagraph(image);
         return this;
     }
 
     public createImageFromBuffer(buffer: Buffer, width?: number, height?: number): Image {
-        const mediaData = Media.addImageFromBuffer(this, buffer, width, height);
-        return this.document.createDrawing(mediaData);
+        const image = Media.addImageFromBuffer(this, buffer, width, height);
+        this.document.addParagraph(image);
+
+        return image;
     }
 
     public createHyperlink(link: string, text?: string): Hyperlink {
