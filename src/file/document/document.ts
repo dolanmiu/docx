@@ -61,14 +61,14 @@ export class Document extends XmlComponent {
         this.body.push(pictureParagraph);
     }
 
-    public createDrawing(imageData: IMediaData): PictureRun {
+    public createDrawing(imageData: IMediaData): Paragraph {
         const paragraph = new Paragraph();
         const run = new PictureRun(imageData);
 
         paragraph.addRun(run);
         this.addDrawing(paragraph);
 
-        return run;
+        return paragraph;
     }
 
     get Body(): Body {

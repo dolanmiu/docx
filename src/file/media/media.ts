@@ -2,9 +2,43 @@ import * as fs from "fs";
 import * as sizeOf from "image-size";
 import * as path from "path";
 
+import { File } from "../file";
 import { IMediaData } from "./data";
 
+interface IHackedFile {
+    currentRelationshipId: number;
+}
+
 export class Media {
+    public static addImage(file: File, filePath: string): IMediaData {
+        // Workaround to expose id without exposing to API
+        const exposedFile = (file as {}) as IHackedFile;
+        const mediaData = file.Media.addMedia(filePath, exposedFile.currentRelationshipId++);
+        file.DocumentRelationships.createRelationship(
+            mediaData.referenceId,
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
+            `media/${mediaData.fileName}`,
+        );
+        return mediaData;
+    }
+
+    public static addImageFromBuffer(file: File, data: Buffer, width?: number, height?: number): IMediaData {
+        // Workaround to expose id without exposing to API
+        const exposedFile = (file as {}) as IHackedFile;
+        const mediaData = file.Media.addMediaWithData(`${Media.generateId()}.png`, data, exposedFile.currentRelationshipId++, width, height);
+        file.DocumentRelationships.createRelationship(
+            mediaData.referenceId,
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
+            `media/${mediaData.fileName}`,
+        );
+        return mediaData;
+    }
+
+    private static generateId(): string {
+        // https://gist.github.com/6174/6062387
+        return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    }
+
     private readonly map: Map<string, IMediaData>;
 
     constructor() {
@@ -65,6 +99,7 @@ export class Media {
                 },
             },
         };
+
         this.map.set(key, imageData);
 
         return imageData;

@@ -10,7 +10,7 @@ import { FootNotes } from "./footnotes";
 import { HeaderWrapper } from "./header-wrapper";
 import { Media } from "./media";
 import { Numbering } from "./numbering";
-import { Bookmark, Hyperlink, Paragraph, PictureRun } from "./paragraph";
+import { Bookmark, Hyperlink, Paragraph } from "./paragraph";
 import { Relationships } from "./relationships";
 import { Styles } from "./styles";
 import { ExternalStylesFactory } from "./styles/external-styles-factory";
@@ -32,7 +32,7 @@ export class File {
     private readonly contentTypes: ContentTypes;
     private readonly appProperties: AppProperties;
 
-    private nextId: number = 1;
+    private currentRelationshipId: number = 1;
 
     constructor(options?: IPropertiesOptions, sectionPropertiesOptions?: SectionPropertiesOptions) {
         if (!options) {
@@ -55,19 +55,19 @@ export class File {
         this.numbering = new Numbering();
         this.docRelationships = new Relationships();
         this.docRelationships.createRelationship(
-            this.nextId++,
+            this.currentRelationshipId++,
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles",
             "styles.xml",
         );
         this.docRelationships.createRelationship(
-            this.nextId++,
+            this.currentRelationshipId++,
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering",
             "numbering.xml",
         );
         this.contentTypes = new ContentTypes();
 
         this.docRelationships.createRelationship(
-            this.nextId++,
+            this.currentRelationshipId++,
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/footnotes",
             "footnotes.xml",
         );
@@ -125,24 +125,19 @@ export class File {
         return this.document.createTable(rows, cols);
     }
 
-    public createImage(image: string): PictureRun {
-        const mediaData = this.media.addMedia(image, this.nextId++);
-        this.docRelationships.createRelationship(
-            mediaData.referenceId,
-            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
-            `media/${mediaData.fileName}`,
-        );
+    public createImage(filePath: string): Paragraph {
+        const mediaData = Media.addImage(this, filePath);
         return this.document.createDrawing(mediaData);
     }
 
-    public createImageFromBuffer(key: string, data: Buffer, width?: number, height?: number): IMediaData {
-        const mediaData = this.media.addMediaWithData(key, data, this.nextId++, width, height);
-        this.docRelationships.createRelationship(
-            mediaData.referenceId,
-            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
-            `media/${mediaData.fileName}`,
-        );
-        return mediaData;
+    public insertImage(mediaData: IMediaData): File {
+        this.document.createDrawing(mediaData);
+        return this;
+    }
+
+    public createImageFromBuffer(data: Buffer, width?: number, height?: number): Paragraph {
+        const mediaData = Media.addImageFromBuffer(this, data, width, height);
+        return this.document.createDrawing(mediaData);
     }
 
     public createHyperlink(link: string, text?: string): Hyperlink {
@@ -180,7 +175,7 @@ export class File {
     }
 
     public createHeader(): HeaderWrapper {
-        const header = new HeaderWrapper(this.media, this.nextId++);
+        const header = new HeaderWrapper(this.media, this.currentRelationshipId++);
         this.headerWrapper.push(header);
         this.docRelationships.createRelationship(
             header.Header.referenceId,
@@ -192,7 +187,7 @@ export class File {
     }
 
     public createFooter(): FooterWrapper {
-        const footer = new FooterWrapper(this.media, this.nextId++);
+        const footer = new FooterWrapper(this.media, this.currentRelationshipId++);
         this.footerWrapper.push(footer);
         this.docRelationships.createRelationship(
             footer.Footer.referenceId,
