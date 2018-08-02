@@ -25,7 +25,13 @@ export class Media {
     public static addImageFromBuffer(file: File, buffer: Buffer, width?: number, height?: number): IMediaData {
         // Workaround to expose id without exposing to API
         const exposedFile = (file as {}) as IHackedFile;
-        const mediaData = file.Media.addMediaFromBuffer(`${Media.generateId()}.png`, buffer, exposedFile.currentRelationshipId++, width, height);
+        const mediaData = file.Media.addMediaFromBuffer(
+            `${Media.generateId()}.png`,
+            buffer,
+            exposedFile.currentRelationshipId++,
+            width,
+            height,
+        );
         file.DocumentRelationships.createRelationship(
             mediaData.referenceId,
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
@@ -36,7 +42,14 @@ export class Media {
 
     private static generateId(): string {
         // https://gist.github.com/6174/6062387
-        return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+        return (
+            Math.random()
+                .toString(36)
+                .substring(2, 15) +
+            Math.random()
+                .toString(36)
+                .substring(2, 15)
+        );
     }
 
     private readonly map: Map<string, IMediaData>;
