@@ -10,7 +10,7 @@ import { FootNotes } from "./footnotes";
 import { HeaderWrapper } from "./header-wrapper";
 import { Media } from "./media";
 import { Numbering } from "./numbering";
-import { Bookmark, Hyperlink, Paragraph } from "./paragraph";
+import { Bookmark, Hyperlink, Paragraph, PictureRun } from "./paragraph";
 import { Relationships } from "./relationships";
 import { Styles } from "./styles";
 import { ExternalStylesFactory } from "./styles/external-styles-factory";
@@ -125,7 +125,7 @@ export class File {
         return this.document.createTable(rows, cols);
     }
 
-    public createImage(filePath: string): Paragraph {
+    public createImage(filePath: string): PictureRun {
         const mediaData = Media.addImage(this, filePath);
         return this.document.createDrawing(mediaData);
     }
@@ -135,7 +135,7 @@ export class File {
         return this;
     }
 
-    public createImageFromBuffer(buffer: Buffer, width?: number, height?: number): Paragraph {
+    public createImageFromBuffer(buffer: Buffer, width?: number, height?: number): PictureRun {
         const mediaData = Media.addImageFromBuffer(this, buffer, width, height);
         return this.document.createDrawing(mediaData);
     }
