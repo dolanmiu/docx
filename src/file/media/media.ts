@@ -22,10 +22,10 @@ export class Media {
         return mediaData;
     }
 
-    public static addImageFromBuffer(file: File, data: Buffer, width?: number, height?: number): IMediaData {
+    public static addImageFromBuffer(file: File, buffer: Buffer, width?: number, height?: number): IMediaData {
         // Workaround to expose id without exposing to API
         const exposedFile = (file as {}) as IHackedFile;
-        const mediaData = file.Media.addMediaWithData(`${Media.generateId()}.png`, data, exposedFile.currentRelationshipId++, width, height);
+        const mediaData = file.Media.addMediaFromBuffer(`${Media.generateId()}.png`, buffer, exposedFile.currentRelationshipId++, width, height);
         file.DocumentRelationships.createRelationship(
             mediaData.referenceId,
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
@@ -61,7 +61,7 @@ export class Media {
         return this.createMedia(key, referenceId, dimensions, fs.createReadStream(filePath), filePath);
     }
 
-    public addMediaWithData(fileName: string, data: Buffer, referenceId: number, width?: number, height?: number): IMediaData {
+    public addMediaFromBuffer(fileName: string, buffer: Buffer, referenceId: number, width?: number, height?: number): IMediaData {
         const key = fileName;
         let dimensions;
         if (width && height) {
@@ -70,10 +70,10 @@ export class Media {
                 height: height,
             };
         } else {
-            dimensions = sizeOf(data);
+            dimensions = sizeOf(buffer);
         }
 
-        return this.createMedia(key, referenceId, dimensions, data);
+        return this.createMedia(key, referenceId, dimensions, buffer);
     }
 
     private createMedia(

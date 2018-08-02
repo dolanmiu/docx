@@ -135,8 +135,8 @@ export class File {
         return this;
     }
 
-    public createImageFromBuffer(data: Buffer, width?: number, height?: number): Paragraph {
-        const mediaData = Media.addImageFromBuffer(this, data, width, height);
+    public createImageFromBuffer(buffer: Buffer, width?: number, height?: number): Paragraph {
+        const mediaData = Media.addImageFromBuffer(this, buffer, width, height);
         return this.document.createDrawing(mediaData);
     }
 
