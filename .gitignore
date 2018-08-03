@@ -36,6 +36,10 @@ node_modules
 build
 build-tests
 
+# Documentation
+docs/api/
+docs/.nojekyll
+
 # VSCode
 .vscode/*
 !.vscode/settings.json
