@@ -97,8 +97,10 @@
 							<h3>Methods</h3>
 							<ul class="tsd-index-list">
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_file_media_media_.media.html#addmedia" class="tsd-kind-icon">add<wbr>Media</a></li>
-								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_file_media_media_.media.html#addmediawithdata" class="tsd-kind-icon">add<wbr>Media<wbr>With<wbr>Data</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_file_media_media_.media.html#addmediafrombuffer" class="tsd-kind-icon">add<wbr>Media<wbr>From<wbr>Buffer</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_file_media_media_.media.html#getmedia" class="tsd-kind-icon">get<wbr>Media</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-static"><a href="_file_media_media_.media.html#addimage" class="tsd-kind-icon">add<wbr>Image</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-static"><a href="_file_media_media_.media.html#addimagefrombuffer" class="tsd-kind-icon">add<wbr>Image<wbr>From<wbr>Buffer</a></li>
 							</ul>
 						</section>
 					</div>
@@ -116,7 +118,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/817356f/src/file/media/media.ts#L8">file/media/media.ts:8</a></li>
+									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/b7a4ca9/src/file/media/media.ts#L57">file/media/media.ts:57</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-returns-title">Returns <a href="_file_media_media_.media.html" class="tsd-signature-type">Media</a></h4>
@@ -136,7 +138,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/817356f/src/file/media/media.ts#L73">file/media/media.ts:73</a></li>
+									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/b7a4ca9/src/file/media/media.ts#L123">file/media/media.ts:123</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-returns-title">Returns <a href="../interfaces/_file_media_data_.imediadata.html" class="tsd-signature-type">IMediaData</a><span class="tsd-signature-symbol">[]</span></h4>
@@ -156,7 +158,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/817356f/src/file/media/media.ts#L24">file/media/media.ts:24</a></li>
+									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/b7a4ca9/src/file/media/media.ts#L73">file/media/media.ts:73</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -173,16 +175,16 @@
 					</ul>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
-					<a name="addmediawithdata" class="tsd-anchor"></a>
-					<h3>add<wbr>Media<wbr>With<wbr>Data</h3>
+					<a name="addmediafrombuffer" class="tsd-anchor"></a>
+					<h3>add<wbr>Media<wbr>From<wbr>Buffer</h3>
 					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-						<li class="tsd-signature tsd-kind-icon">add<wbr>Media<wbr>With<wbr>Data<span class="tsd-signature-symbol">(</span>fileName<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>, data<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Buffer</span>, referenceId<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span>, width<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">number</span>, height<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="../interfaces/_file_media_data_.imediadata.html" class="tsd-signature-type">IMediaData</a></li>
+						<li class="tsd-signature tsd-kind-icon">add<wbr>Media<wbr>From<wbr>Buffer<span class="tsd-signature-symbol">(</span>fileName<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>, buffer<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Buffer</span>, referenceId<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span>, width<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">number</span>, height<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="../interfaces/_file_media_data_.imediadata.html" class="tsd-signature-type">IMediaData</a></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/817356f/src/file/media/media.ts#L30">file/media/media.ts:30</a></li>
+									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/b7a4ca9/src/file/media/media.ts#L79">file/media/media.ts:79</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -191,7 +193,7 @@
 									<h5>fileName: <span class="tsd-signature-type">string</span></h5>
 								</li>
 								<li>
-									<h5>data: <span class="tsd-signature-type">Buffer</span></h5>
+									<h5>buffer: <span class="tsd-signature-type">Buffer</span></h5>
 								</li>
 								<li>
 									<h5>referenceId: <span class="tsd-signature-type">number</span></h5>
@@ -217,7 +219,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/817356f/src/file/media/media.ts#L14">file/media/media.ts:14</a></li>
+									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/b7a4ca9/src/file/media/media.ts#L63">file/media/media.ts:63</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -227,6 +229,64 @@
 								</li>
 							</ul>
 							<h4 class="tsd-returns-title">Returns <a href="../interfaces/_file_media_data_.imediadata.html" class="tsd-signature-type">IMediaData</a></h4>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-static">
+					<a name="addimage" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagStatic">Static</span> add<wbr>Image</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-static">
+						<li class="tsd-signature tsd-kind-icon">add<wbr>Image<span class="tsd-signature-symbol">(</span>file<span class="tsd-signature-symbol">: </span><a href="_file_file_.file.html" class="tsd-signature-type">File</a>, filePath<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_file_paragraph_image_.image.html" class="tsd-signature-type">Image</a></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/b7a4ca9/src/file/media/media.ts#L14">file/media/media.ts:14</a></li>
+								</ul>
+							</aside>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>file: <a href="_file_file_.file.html" class="tsd-signature-type">File</a></h5>
+								</li>
+								<li>
+									<h5>filePath: <span class="tsd-signature-type">string</span></h5>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <a href="_file_paragraph_image_.image.html" class="tsd-signature-type">Image</a></h4>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-static">
+					<a name="addimagefrombuffer" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagStatic">Static</span> add<wbr>Image<wbr>From<wbr>Buffer</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-static">
+						<li class="tsd-signature tsd-kind-icon">add<wbr>Image<wbr>From<wbr>Buffer<span class="tsd-signature-symbol">(</span>file<span class="tsd-signature-symbol">: </span><a href="_file_file_.file.html" class="tsd-signature-type">File</a>, buffer<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Buffer</span>, width<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">number</span>, height<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_file_paragraph_image_.image.html" class="tsd-signature-type">Image</a></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/b7a4ca9/src/file/media/media.ts#L26">file/media/media.ts:26</a></li>
+								</ul>
+							</aside>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>file: <a href="_file_file_.file.html" class="tsd-signature-type">File</a></h5>
+								</li>
+								<li>
+									<h5>buffer: <span class="tsd-signature-type">Buffer</span></h5>
+								</li>
+								<li>
+									<h5><span class="tsd-flag ts-flagOptional">Optional</span> width: <span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">number</span></h5>
+								</li>
+								<li>
+									<h5><span class="tsd-flag ts-flagOptional">Optional</span> height: <span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">number</span></h5>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <a href="_file_paragraph_image_.image.html" class="tsd-signature-type">Image</a></h4>
 						</li>
 					</ul>
 				</section>
@@ -260,15 +320,24 @@
 								<a href="_file_media_media_.media.html#addmedia" class="tsd-kind-icon">add<wbr>Media</a>
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class">
-								<a href="_file_media_media_.media.html#addmediawithdata" class="tsd-kind-icon">add<wbr>Media<wbr>With<wbr>Data</a>
+								<a href="_file_media_media_.media.html#addmediafrombuffer" class="tsd-kind-icon">add<wbr>Media<wbr>From<wbr>Buffer</a>
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class">
 								<a href="_file_media_media_.media.html#getmedia" class="tsd-kind-icon">get<wbr>Media</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-static">
+								<a href="_file_media_media_.media.html#addimage" class="tsd-kind-icon">add<wbr>Image</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-static">
+								<a href="_file_media_media_.media.html#addimagefrombuffer" class="tsd-kind-icon">add<wbr>Image<wbr>From<wbr>Buffer</a>
 							</li>
 						</ul>
 					</li>
 				</ul>
 				<ul class="after-current">
+					<li class=" tsd-kind-interface tsd-parent-kind-external-module tsd-is-not-exported">
+						<a href="../interfaces/_file_media_media_.ihackedfile.html" class="tsd-kind-icon">IHacked<wbr>File</a>
+					</li>
 				</ul>
 			</nav>
 		</div>
