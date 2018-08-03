@@ -138,7 +138,7 @@ export class TableCell extends XmlComponent {
         return para;
     }
 
-    get cellProperties(): TableCellProperties {
+    public get cellProperties(): TableCellProperties {
         return this.properties;
     }
 }
@@ -151,7 +151,7 @@ export class TableCellProperties extends XmlComponent {
         this.root.push(this.cellBorder);
     }
 
-    get borders(): TableCellBorders {
+    public get borders(): TableCellBorders {
         return this.cellBorder;
     }
 

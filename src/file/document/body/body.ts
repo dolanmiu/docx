@@ -49,7 +49,7 @@ export class Body extends XmlComponent {
         this.root.push(component);
     }
 
-    get DefaultSection(): SectionProperties {
+    public get DefaultSection(): SectionProperties {
         return this.defaultSection;
     }
 

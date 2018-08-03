@@ -11,7 +11,8 @@
         ],
         "no-require-imports": true,
         "member-access": [
-            true
+            true,
+            "check-accessor"
         ],
         "indent": [
             true,

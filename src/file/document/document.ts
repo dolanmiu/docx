@@ -57,7 +57,7 @@ export class Document extends XmlComponent {
         return table;
     }
 
-    get Body(): Body {
+    public get Body(): Body {
         return this.body;
     }
 }

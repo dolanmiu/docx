@@ -56,7 +56,7 @@ export class LevelOverride extends XmlComponent {
         }
     }
 
-    get level(): LevelForOverride {
+    public get level(): LevelForOverride {
         let lvl: LevelForOverride;
         if (!this.lvl) {
             lvl = new LevelForOverride(this.levelNum);

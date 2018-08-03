@@ -86,7 +86,7 @@ export class SectionProperties extends XmlComponent {
         this.options = mergedOptions;
     }
 
-    get Options(): SectionPropertiesOptions {
+    public get Options(): SectionPropertiesOptions {
         return this.options;
     }
 }
