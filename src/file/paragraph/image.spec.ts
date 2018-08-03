@@ -1,3 +1,4 @@
+// tslint:disable:object-literal-key-quotes
 import { assert, expect } from "chai";
 
 import { Formatter } from "../../export/formatter";
@@ -103,7 +104,7 @@ describe("Image", () => {
                                                         "a:graphicFrameLocks": [
                                                             {
                                                                 _attr: {
-                                                                    "noChangeAspect": 1,
+                                                                    noChangeAspect: 1,
                                                                     "xmlns:a": "http://schemas.openxmlformats.org/drawingml/2006/main",
                                                                 },
                                                             },
@@ -168,7 +169,7 @@ describe("Image", () => {
                                                                                 "a:blip": [
                                                                                     {
                                                                                         _attr: {
-                                                                                            "cstate": "none",
+                                                                                            cstate: "none",
                                                                                             "r:embed": "rId0",
                                                                                         },
                                                                                     },
