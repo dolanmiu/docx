@@ -10,6 +10,24 @@
 
 # Welcome
 
+## Getting Started
+
+### Installation
+
+```sh
+$ npm install --save docx
+```
+Then you can `require` or `import` as usual:
+
+```
+let docx = require('docx');
+```
+
+```
+import * as docx from 'docx'
+```
+
+
 ---
 
 Made with 💖

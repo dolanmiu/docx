@@ -1,12 +1,17 @@
 # Paragraph
-> Everything (text, images, graphs etc) in OpenXML is organised in paragraphs. You can add more text to the paragraph by doing this:
+
+> Everything (text, images, graphs etc) in OpenXML is organised in paragraphs.
+
+## Example
+
+You can add more text to the paragraph by doing this:
 
 ```js
 var paragraph = new docx.Paragraph(),
 ```
 
 ```js
-var text = new docx.TextRun('Lorem Ipsum Foo Bar');
+var text = new docx.TextRun("Lorem Ipsum Foo Bar");
 var paragraph = new docx.Paragraph();
 paragraph.addRun(text);
 ```
@@ -54,6 +59,7 @@ paragraph.center();
 ```js
 paragraph.left();
 ```
+
 ```js
 paragraph.right();
 ```
@@ -71,6 +77,7 @@ paragraph.heading1().center();
 The above will create a `heading 1` which is `centered`.
 
 ## Thematic Break
+
 To add a break in the page, simply add `.thematicBreak()` on a paragraph:
 
 ```js
@@ -90,7 +97,8 @@ var paragraph = new docx.Paragraph("Amazing Heading").heading1().pageBreak();
 The above example will create a heading and start a new page immediately afterwards.
 
 ### Page break before:
-This option (available in word) will make sure that the paragraph will start on a new page (if it's not already on a new page). 
+
+This option (available in word) will make sure that the paragraph will start on a new page (if it's not already on a new page).
 
 ```js
 var paragraph = new docx.Paragraph("Hello World on another page").pageBreakBefore();

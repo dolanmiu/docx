@@ -1,6 +1,4 @@
-* Getting Started
-
-    * [Quick Start](quick-start.md)
+* [Getting Started](/)
 
 * API
 
@@ -12,14 +10,18 @@
 	* [Paragraph](usage/paragraph.md)
 	* [Text](usage/text.md)
 	* [Image](usage/images.md)
-	* [Headers & Footers](usage/header-and-footers.md)
+	* [Headers & Footers](usage/headers-and-footers.md)
 	* [Bullet Points](usage/bullet-points.md)
+    * [Numbering](usage/numbering.md)
 	* [Tab Stops](usage/tab-stops.md)
-	* [Styling](usage/styling.md)
-
+	* Styling
+        * [Styling with JS](usage/styling-with-js.md)
+        * [Styling with XML](usage/styling-with-xml.md)
 * Exporting
 
     * [Packers](usage/packers.md)
 
 * [Examples](usage/examples.md)
+
+* [Contribution Guidelines](contribution-guidelines.md)
 
