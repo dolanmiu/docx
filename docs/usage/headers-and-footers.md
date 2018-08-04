@@ -4,21 +4,21 @@
 
 Creating Headers and footers is simple. Access the `Header` and `Footer` by doing so like this:
 
-```ts
+```js
 doc.Header;
 doc.Footer;
 ```
 
 You can call the same methods as you would with a `File`:
 
-```ts
+```js
 doc.Header.createParagraph("Header text");
 doc.Footer.createParagraph("Footer text");
 ```
 
 Even add images:
 
-```ts
+```js
 doc.Header.createImage([PATH_TO_YOUR_IMAGE]);
 doc.Footer.createImage([PATH_TO_YOUR_IMAGE]);
 ```
@@ -31,7 +31,7 @@ Also all the supported section properties are implemented according to: http://o
 
 ### Example
 
-```ts
+```js
     const header = this.document.createHeader();
     const footer = this.document.createFooter();
 

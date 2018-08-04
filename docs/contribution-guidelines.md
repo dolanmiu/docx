@@ -4,7 +4,7 @@
 
 *   Include documentation reference(s) at the top of each file:
 
-    ```ts
+    ```js
     // http://officeopenxml.com/WPdocument.php
     ```
 
@@ -18,7 +18,7 @@ Please write a test of every file you make and suffix it with `.spec.ts`.
 
 Here is a template of a test:
 
-```ts
+```js
 import { assert } from "chai";
 
 describe("ClassName", () => {
