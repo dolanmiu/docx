@@ -2,7 +2,7 @@
 
 * API
 
-    * [Documentation](/api)
+    * [Documentation](https://docx.js.org/api/)
 
 * Usage
 
@@ -21,7 +21,7 @@
 
     * [Packers](usage/packers.md)
 
-* [Examples](usage/examples.md)
+* [Examples](examples.md)
 
 * [Contribution Guidelines](contribution-guidelines.md)
 

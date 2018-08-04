@@ -1,6 +1,6 @@
 # Packers
 
-I used the express exporter in my [website](http://www.dolan.bio). It's very useful, and is the preferred way if you want to make a downloadable file for a visitor. it is much better than generating a physical file on the server, and then passing a download link to that file.
+> Packers are the way in which `docx` turns your code into `.docx` format. It is completely decoupled from the `docx.Document`.
 
 ## File System Packer
 
@@ -37,7 +37,9 @@ const buffer = exporter.pack();
 
 ## Express Packer
 
-Simply use the exporter, and pass in the necessary parameters:
+I used the express exporter in my [website](http://www.dolan.bio).
+
+Pass in the necessary parameters:
 
 ```js
 const docx = require("docx");
