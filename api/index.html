@@ -101,41 +101,12 @@
 				<pre><code class="lang-sh">$ npm run demo
 </code></pre>
 				<p>This command will run the demo selector app in the <code>demo</code> folder. It will prompt you to select a demo number, which will run a demo from that folder.</p>
-				<h2 id="guide">Guide</h2>
-				<p>Please refer to <a href="https://github.com/dolanmiu/docx/wiki">the Wiki</a> for details on how to use this library, examples and much more!</p>
-				<p>Full documentation can be found here: <a href="http://dolanmiu.github.io/docx/index.html">http://dolanmiu.github.io/docx/index.html</a></p>
-				<h2 id="simple-usage">Simple Usage</h2>
-				<pre><code class="lang-js"><span class="hljs-comment">// Used to create docx files</span>
-<span class="hljs-keyword">var</span> docx = <span class="hljs-built_in">require</span>(<span class="hljs-string">"docx"</span>);
-
-<span class="hljs-comment">// Create document</span>
-<span class="hljs-keyword">var</span> doc = <span class="hljs-keyword">new</span> docx.Document();
-
-<span class="hljs-comment">// Add some content in the document</span>
-<span class="hljs-keyword">var</span> paragraph = <span class="hljs-keyword">new</span> docx.Paragraph(<span class="hljs-string">"Some cool text here."</span>);
-<span class="hljs-comment">// Add more text into the paragraph if you wish</span>
-paragraph.addRun(<span class="hljs-keyword">new</span> docx.TextRun(<span class="hljs-string">"Lorem Ipsum Foo Bar"</span>));
-doc.addParagraph(paragraph);
-
-<span class="hljs-comment">// Used to export the file into a .docx file</span>
-<span class="hljs-keyword">var</span> exporter = <span class="hljs-keyword">new</span> docx.LocalPacker(doc);
-
-<span class="hljs-comment">// Or use the express packer to make the file downloadable.</span>
-<span class="hljs-comment">// res is express' Response object</span>
-<span class="hljs-keyword">var</span> exporter = <span class="hljs-keyword">new</span> docx.ExpressPacker(doc, res);
-
-exporter.pack(<span class="hljs-string">"My First Document"</span>);
-<span class="hljs-comment">// If you want to export it as a .pdf file instead</span>
-exporter.packPdf(<span class="hljs-string">"My First Document"</span>);
-
-<span class="hljs-comment">// done! A file called 'My First Document.docx'</span>
-<span class="hljs-comment">// will be in your file system if you used LocalPacker</span>
-<span class="hljs-comment">// Or it will start downloading if you are using Express</span>
-</code></pre>
+				<h2 id="how-to">How to</h2>
+				<p>Please refer to <a href="https://docx.js.org/">https://docx.js.org/</a> for details on how to use this library, examples and much more!</p>
 				<h2 id="examples">Examples</h2>
-				<p>Check <a href="https://github.com/dolanmiu/docx/wiki/Examples">the Wiki</a> and the <a href="https://github.com/dolanmiu/docx/tree/master/demo">demo folder</a> for examples.</p>
+				<p>Check the examples section in the <a href="https://docx.js.org/#/usage/examples">documentation</a> and the <a href="https://github.com/dolanmiu/docx/tree/master/demo">demo folder</a> for examples.</p>
 				<h1 id="contributing">Contributing</h1>
-				<p>Read the contribution guidelines <a href="https://github.com/dolanmiu/docx/wiki/Contributing-Guidelines">here</a>.</p>
+				<p>Read the contribution guidelines <a href="https://docx.js.org/#/contribution-guidelines">here</a>.</p>
 				<h1 id="honoured-mentions">Honoured Mentions</h1>
 				<p><a href="https://github.com/felipeochoa">@felipeochoa</a></p>
 				<p><a href="https://github.com/h4buli">@h4buli</a></p>

@@ -6,7 +6,7 @@ Adding images is very simple
 
 Simply call the `createImage` method:
 
-```ts
+```js
 const image = doc.createImage([PATH_TO_YOUR_IMAGE]);
 ```
 
@@ -32,7 +32,7 @@ In Word this is found in:
 
 The `PictureRun` element support various options to define the positioning of the element in the document.
 
-```ts
+```js
 interface DrawingOptions {
     position?: PlacementPosition;
     textWrapping?: TextWrapping;
@@ -42,7 +42,7 @@ interface DrawingOptions {
 
 can be passed when creating `PictureRun()` for example:
 
-```ts
+```js
 const imageData = document.createImageData(filename, buffer, 903, 1149);
 
 new docx.PictureRun(imageData, {
@@ -68,7 +68,7 @@ When placement position is FLOATING then we can use two options:
 
 for `drawingOptions.textWrapping` we can define various options. `textWrapping` has the following properties:
 
-```ts
+```js
 interface TextWrapping {
     textWrapStyle: TextWrapStyle;
     wrapTextOption?: WrapTextOption;
@@ -94,7 +94,7 @@ enum WrapTextOption {
 
 When we want to position the image relative or absolute then we need to use option `drawingOptions.floating`:
 
-```ts
+```js
 export interface Floating {
     horizontalPosition: HorizontalPositionOptions;
     verticalPosition: VerticalPositionOptions;
