@@ -55,7 +55,7 @@ Please refer to [https://docx.js.org/](https://docx.js.org/) for details on how 
 
 ## Examples
 
-Check the examples section in the [documentation](https://docx.js.org/#/usage/examples) and the [demo folder](https://github.com/dolanmiu/docx/tree/master/demo) for examples.
+Check the examples section in the [documentation](https://docx.js.org/#/examples) and the [demo folder](https://github.com/dolanmiu/docx/tree/master/demo) for examples.
 
 # Contributing
 
