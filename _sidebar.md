@@ -1,5 +1,7 @@
 * [Getting Started](/)
 
+* [Examples](examples.md)
+
 * API
 
     * [Documentation](https://docx.js.org/api/)
@@ -20,8 +22,6 @@
 * Exporting
 
     * [Packers](usage/packers.md)
-
-* [Examples](examples.md)
 
 * [Contribution Guidelines](contribution-guidelines.md)
 
