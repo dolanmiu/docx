@@ -18,6 +18,10 @@
     "style.fix": "prettier \"src/**/*.ts\" --write",
     "fix-types": "node types-absolute-fixer.js"
   },
+  "pre-commit": [
+    "style",
+    "lint"
+  ],
   "files": [
     "src",
     "build",
@@ -69,6 +73,7 @@
     "jszip": "^3.1.5",
     "mocha": "^3.2.0",
     "mocha-webpack": "^1.0.1",
+    "pre-commit": "^1.2.2",
     "prettier": "^1.12.1",
     "prompt": "^1.0.0",
     "replace-in-file": "^3.1.0",
