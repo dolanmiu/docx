@@ -1,4 +1,4 @@
-/* tslint:disable:object-literal-key-quotes */
+// tslint:disable:object-literal-key-quotes
 // This tslint disable is needed, or it simply won't work
 import * as fs from "fs";
 import * as request from "request-promise";
@@ -11,6 +11,7 @@ export class PdfConvertWrapper {
     public convert(filePath: string): request.RequestPromise {
         return request.post({
             url: "http://mirror1.convertonlinefree.com",
+            // tslint:disable-next-line:no-null-keyword
             encoding: null,
             headers: {
                 "User-Agent":

@@ -62,7 +62,7 @@ export class Anchor extends XmlComponent {
         this.root.push(new Extent(dimensions.emus.x, dimensions.emus.y));
         this.root.push(new EffectExtent());
 
-        if (drawingOptions.textWrapping != null) {
+        if (drawingOptions.textWrapping !== undefined) {
             switch (drawingOptions.textWrapping.textWrapStyle) {
                 case TextWrapStyle.SQUARE:
                     this.root.push(new WrapSquare(drawingOptions.textWrapping));

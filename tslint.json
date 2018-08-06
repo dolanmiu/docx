@@ -36,6 +36,7 @@
             true
         ],
         "no-implicit-dependencies": false,
-        "no-submodule-imports": false
+        "no-submodule-imports": false,
+        "no-null-keyword": true
     }
 }
