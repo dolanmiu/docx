@@ -1,5 +1,3 @@
-// tslint:disable:object-literal-key-quotes
-// This tslint disable is needed, or it simply won't work
 import * as fs from "fs";
 import * as request from "request-promise";
 
