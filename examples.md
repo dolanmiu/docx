@@ -174,6 +174,14 @@ Example showing how to use the Buffer packer and then write that buffer to the f
 
 _Source: https://github.com/dolanmiu/docx/blob/master/demo/demo19.js_
 
+## PDF Packing
+
+Example of how to use the `LocalPacker` to create a PDF document
+
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/demo25.js ":include")
+
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/demo25.js_
+
 ## Bookmarks
 
 Example showing how to make bookmarks to make internal hyperlinks within the document
