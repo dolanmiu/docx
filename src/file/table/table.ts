@@ -144,7 +144,8 @@ export class TableCell extends XmlComponent {
 }
 
 export class TableCellProperties extends XmlComponent {
-    private cellBorder: TableCellBorders;
+    private readonly cellBorder: TableCellBorders;
+
     constructor() {
         super("w:tcPr");
         this.cellBorder = new TableCellBorders();

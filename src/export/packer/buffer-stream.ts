@@ -1,7 +1,7 @@
 import { Writable } from "stream";
 
 export class BufferStream extends Writable {
-    private data: Buffer[];
+    private readonly data: Buffer[];
 
     constructor() {
         super();
@@ -10,7 +10,7 @@ export class BufferStream extends Writable {
     }
 
     // tslint:disable-next-line:no-any
-    public _write(chunk: any, encoding: string, next: (err?: Error) => void): void {
+    public _write(chunk: any, _: string, next: (err?: Error) => void): void {
         this.data.push(Buffer.from(chunk));
         next();
     }

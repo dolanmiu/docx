@@ -19,7 +19,7 @@ import { ParagraphProperties } from "./properties";
 import { PictureRun, Run, TextRun } from "./run";
 
 export class Paragraph extends XmlComponent {
-    private properties: ParagraphProperties;
+    private readonly properties: ParagraphProperties;
 
     constructor(text?: string) {
         super("w:p");

@@ -4,7 +4,7 @@ import { IMediaData } from "../../media/data";
 import { Run } from "../run";
 
 export class PictureRun extends Run {
-    private drawing: Drawing;
+    private readonly drawing: Drawing;
 
     constructor(imageData: IMediaData, drawingOptions?: IDrawingOptions) {
         super();

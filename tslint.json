@@ -32,12 +32,10 @@
         "max-classes-per-file": [
             false
         ],
-        "no-unused-variable": [
-            true
-        ],
         "no-implicit-dependencies": false,
         "no-submodule-imports": false,
         "no-null-keyword": true,
-        "return-undefined": true
+        "return-undefined": true,
+        "prefer-readonly": true
     }
 }

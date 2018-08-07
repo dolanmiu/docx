@@ -7,8 +7,8 @@ import { Num } from "./num";
 export class Numbering extends XmlComponent {
     private nextId: number;
 
-    private abstractNumbering: XmlComponent[] = [];
-    private concreteNumbering: XmlComponent[] = [];
+    private readonly abstractNumbering: XmlComponent[] = [];
+    private readonly concreteNumbering: XmlComponent[] = [];
 
     constructor() {
         super("w:numbering");

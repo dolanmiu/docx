@@ -8,9 +8,9 @@ import { Formatter } from "../formatter";
 
 export class Compiler {
     protected archive: archiver.Archiver;
-    private formatter: Formatter;
+    private readonly formatter: Formatter;
 
-    constructor(private file: File) {
+    constructor(private readonly file: File) {
         this.formatter = new Formatter();
         this.archive = archiver.create("zip", {});
 

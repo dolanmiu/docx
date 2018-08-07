@@ -23,7 +23,8 @@ export type SectionPropertiesOptions = IPageSizeAttributes &
     IPageNumberTypeAttributes;
 
 export class SectionProperties extends XmlComponent {
-    private options: SectionPropertiesOptions;
+    private readonly options: SectionPropertiesOptions;
+
     constructor(options?: SectionPropertiesOptions) {
         super("w:sectPr");
 

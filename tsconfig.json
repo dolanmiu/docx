@@ -10,6 +10,7 @@
         "module": "commonjs",
         "declaration": true,
         "noUnusedLocals": true,
+        "noUnusedParameters": true,
         "baseUrl": "./src",
         "paths" : {
           "/*": [

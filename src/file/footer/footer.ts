@@ -5,7 +5,8 @@ import { Table } from "../table";
 import { FooterAttributes } from "./footer-attributes";
 
 export class Footer extends XmlComponent {
-    private refId: number;
+    private readonly refId: number;
+
     constructor(referenceNumber: number) {
         super("w:ftr");
         this.refId = referenceNumber;

@@ -7,7 +7,7 @@ import { PresetGeometry } from "./preset-geometry/preset-geometry";
 import { ShapePropertiesAttributes } from "./shape-properties-attributes";
 
 export class ShapeProperties extends XmlComponent {
-    private form: Form;
+    private readonly form: Form;
 
     constructor(x: number, y: number) {
         super("pic:spPr");
