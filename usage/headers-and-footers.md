@@ -37,8 +37,8 @@ Also all the supported section properties are implemented according to: http://o
 
     // Add new section with another header and footer
     doc.addSection({
-      headerId: header.Header.referenceId,
-      footerId: footer.Footer.referenceId,
+      headerId: header.Header.ReferenceId,
+      footerId: footer.Footer.ReferenceId,
       pageNumberStart: 1,
       pageNumberFormatType: docx.PageNumberFormat.DECIMAL,
     });
