@@ -4,6 +4,9 @@ import { File } from "file";
 import { Compiler } from "./compiler";
 import { IPacker } from "./packer";
 
+/**
+ * @deprecated ExpressPacker is now deprecated. Please use the StreamPacker instead and pipe that to `express`' `res` object
+ */
 export class ExpressPacker implements IPacker {
     private readonly packer: Compiler;
 
