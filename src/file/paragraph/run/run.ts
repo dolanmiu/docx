@@ -1,7 +1,7 @@
 // http://officeopenxml.com/WPtext.php
 import { Break } from "./break";
 import { Caps, SmallCaps } from "./caps";
-import { Bold, Color, DoubleStrike, Italics, RTL, Size, SizeCs, Strike } from "./formatting";
+import { Bold, BoldCs, Color, DoubleStrike, Italics, ItalicsCs, RTL, Size, SizeCs, Strike } from "./formatting";
 import { Begin, End, Page, Separate } from "./page-number";
 import { RunProperties } from "./properties";
 import { RunFonts } from "./run-fonts";
@@ -23,11 +23,13 @@ export class Run extends XmlComponent {
 
     public bold(): Run {
         this.properties.push(new Bold());
+        this.properties.push(new BoldCs());
         return this;
     }
 
     public italic(): Run {
         this.properties.push(new Italics());
+        this.properties.push(new ItalicsCs());
         return this;
     }
 
