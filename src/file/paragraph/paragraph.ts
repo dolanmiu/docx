@@ -5,7 +5,7 @@ import { Num } from "file/numbering/num";
 import { XmlComponent } from "file/xml-components";
 
 import { Alignment } from "./formatting/alignment";
-import { Bidi } from "./formatting/bidi";
+import { Bidirectional } from "./formatting/bidirectional";
 import { ThematicBreak } from "./formatting/border";
 import { Indent } from "./formatting/indent";
 import { KeepLines, KeepNext } from "./formatting/keep";
@@ -217,8 +217,8 @@ export class Paragraph extends XmlComponent {
         return this;
     }
 
-    public bidi(): Paragraph {
-        this.properties.push(new Bidi());
+    public bidirectional(): Paragraph {
+        this.properties.push(new Bidirectional());
         return this;
     }
 }

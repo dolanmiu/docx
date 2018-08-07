@@ -2,8 +2,8 @@ const docx = require('../build');
 
 var doc = new docx.Document();
 
-var textRun = new docx.TextRun("שלום עולם").rtl();
-var paragraph = new docx.Paragraph().bidi();
+var textRun = new docx.TextRun("שלום עולם").rightToLeft();
+var paragraph = new docx.Paragraph().bidirectional();
 paragraph.addRun(textRun);
 
 doc.addParagraph(paragraph);

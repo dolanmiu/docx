@@ -124,7 +124,7 @@ export class Size extends XmlComponent {
     }
 }
 
-export class SizeCs extends XmlComponent {
+export class SizeComplexScript extends XmlComponent {
     constructor(size: number) {
         super("w:szCs");
         this.root.push(
@@ -135,7 +135,7 @@ export class SizeCs extends XmlComponent {
     }
 }
 
-export class RTL extends XmlComponent {
+export class RightToLeft extends XmlComponent {
     constructor() {
         super("w:rtl");
         this.root.push(

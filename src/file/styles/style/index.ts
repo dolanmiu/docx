@@ -74,7 +74,7 @@ export class ParagraphStyle extends Style {
 
     public size(twips: number): ParagraphStyle {
         this.addRunProperty(new formatting.Size(twips));
-        this.addRunProperty(new formatting.SizeCs(twips));
+        this.addRunProperty(new formatting.SizeComplexScript(twips));
         return this;
     }
 
@@ -283,7 +283,7 @@ export class CharacterStyle extends Style {
 
     public size(twips: number): CharacterStyle {
         this.addRunProperty(new formatting.Size(twips));
-        this.addRunProperty(new formatting.SizeCs(twips));
+        this.addRunProperty(new formatting.SizeComplexScript(twips));
         return this;
     }
 }
