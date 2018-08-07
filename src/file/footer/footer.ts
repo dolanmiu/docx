@@ -31,7 +31,7 @@ export class Footer extends XmlComponent {
         );
     }
 
-    public get referenceId(): number {
+    public get ReferenceId(): number {
         return this.refId;
     }
 

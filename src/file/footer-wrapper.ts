@@ -43,10 +43,10 @@ export class FooterWrapper {
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
             `media/${mediaData.fileName}`,
         );
-        this.insertImage(new Image(mediaData));
+        this.addImage(new Image(mediaData));
     }
 
-    public insertImage(image: Image): FooterWrapper {
+    public addImage(image: Image): FooterWrapper {
         this.footer.addParagraph(image);
         return this;
     }

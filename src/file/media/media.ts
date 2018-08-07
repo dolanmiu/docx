@@ -120,7 +120,7 @@ export class Media {
         return imageData;
     }
 
-    public get array(): IMediaData[] {
+    public get Array(): IMediaData[] {
         const array = new Array<IMediaData>();
 
         this.map.forEach((data) => {

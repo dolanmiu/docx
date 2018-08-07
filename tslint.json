@@ -37,6 +37,7 @@
         ],
         "no-implicit-dependencies": false,
         "no-submodule-imports": false,
-        "no-null-keyword": true
+        "no-null-keyword": true,
+        "return-undefined": true
     }
 }

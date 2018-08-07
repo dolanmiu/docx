@@ -43,10 +43,10 @@ export class HeaderWrapper {
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
             `media/${mediaData.fileName}`,
         );
-        this.insertImage(new Image(mediaData));
+        this.addImage(new Image(mediaData));
     }
 
-    public insertImage(image: Image): HeaderWrapper {
+    public addImage(image: Image): HeaderWrapper {
         this.header.addParagraph(image);
         return this;
     }

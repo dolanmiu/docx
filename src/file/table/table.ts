@@ -72,8 +72,8 @@ export class Table extends XmlComponent {
         return this;
     }
 
-    public fixedWidthLayout(): Table {
-        this.properties.fixedWidthLayout();
+    public setFixedWidthLayout(): Table {
+        this.properties.setFixedWidthLayout();
         return this;
     }
 }
@@ -94,7 +94,7 @@ export class TableRow extends XmlComponent {
 
     public addGridSpan(ix: number, cellSpan: number): TableCell {
         const remainCell = this.cells[ix];
-        remainCell.cellProperties.addGridSpan(cellSpan);
+        remainCell.CellProperties.addGridSpan(cellSpan);
         this.cells.splice(ix + 1, cellSpan - 1);
         this.root.splice(ix + 2, cellSpan - 1);
 
@@ -138,7 +138,7 @@ export class TableCell extends XmlComponent {
         return para;
     }
 
-    public get cellProperties(): TableCellProperties {
+    public get CellProperties(): TableCellProperties {
         return this.properties;
     }
 }
@@ -151,7 +151,7 @@ export class TableCellProperties extends XmlComponent {
         this.root.push(this.cellBorder);
     }
 
-    public get borders(): TableCellBorders {
+    public get Borders(): TableCellBorders {
         return this.cellBorder;
     }
 
@@ -167,8 +167,8 @@ export class TableCellProperties extends XmlComponent {
         return this;
     }
 
-    public setVerticalAlign(vAlignType: VerticalAlign): TableCellProperties {
-        this.root.push(new VAlign(vAlignType));
+    public setVerticalAlign(type: VerticalAlign): TableCellProperties {
+        this.root.push(new VAlign(type));
 
         return this;
     }

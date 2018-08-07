@@ -97,7 +97,7 @@ export class Compiler {
             name: "_rels/.rels",
         });
 
-        for (const data of this.file.Media.array) {
+        for (const data of this.file.Media.Array) {
             this.archive.append(data.stream, {
                 name: `word/media/${data.fileName}`,
             });

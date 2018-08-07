@@ -387,9 +387,9 @@ describe("concrete numbering", () => {
             });
         });
 
-        it("sets the lvl element if overrideLevel.level is accessed", () => {
+        it("sets the lvl element if overrideLevel.Level is accessed", () => {
             const ol = concreteNumbering.overrideLevel(1);
-            expect(ol.level).to.be.instanceof(LevelForOverride);
+            expect(ol.Level).to.be.instanceof(LevelForOverride);
             const tree = new Formatter().format(concreteNumbering);
             expect(tree["w:num"]).to.include({
                 "w:lvlOverride": [

@@ -12,8 +12,8 @@ var footer = doc.createFooter();
 footer.createParagraph("Footer on another page");
 
 doc.addSection({
-    headerId: header.Header.referenceId,
-    footerId: footer.Footer.referenceId,
+    headerId: header.Header.ReferenceId,
+    footerId: footer.Footer.ReferenceId,
     pageNumberStart: 1,
     pageNumberFormatType: docx.PageNumberFormat.DECIMAL,
 });
@@ -21,8 +21,8 @@ doc.addSection({
 doc.createParagraph("hello");
 
 doc.addSection({
-    headerId: header.Header.referenceId,
-    footerId: footer.Footer.referenceId,
+    headerId: header.Header.ReferenceId,
+    footerId: footer.Footer.ReferenceId,
     pageNumberStart: 1,
     pageNumberFormatType: docx.PageNumberFormat.DECIMAL,
     orientation: docx.PageOrientation.LANDSCAPE,
