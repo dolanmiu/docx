@@ -13,7 +13,7 @@
     "tsc": "rimraf ./build && tsc -p .",
     "webpack": "rimraf ./build && webpack",
     "demo": "npm run build && node ./demo",
-    "typedoc": "typedoc --out docs/api/ src/ --module commonjs --target ES6 --disableOutputCheck --excludePrivate --externalPattern \"**/*.spec.ts\"",
+    "typedoc": "typedoc src/index.ts",
     "style": "prettier -l \"src/**/*.ts\"",
     "style.fix": "prettier \"src/**/*.ts\" --write",
     "fix-types": "node types-absolute-fixer.js"
