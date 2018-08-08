@@ -16,6 +16,7 @@ describe("Run", () => {
             run.bold();
             const newJson = Utility.jsonify(run);
             assert.equal(newJson.root[0].root[0].rootKey, "w:b");
+            assert.equal(newJson.root[0].root[1].rootKey, "w:bCs");
         });
     });
 
@@ -24,6 +25,7 @@ describe("Run", () => {
             run.italic();
             const newJson = Utility.jsonify(run);
             assert.equal(newJson.root[0].root[0].rootKey, "w:i");
+            assert.equal(newJson.root[0].root[1].rootKey, "w:iCs");
         });
     });
 

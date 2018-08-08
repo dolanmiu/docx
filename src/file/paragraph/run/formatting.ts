@@ -14,9 +14,31 @@ export class Bold extends XmlComponent {
     }
 }
 
+export class BoldComplexScript extends XmlComponent {
+    constructor() {
+        super("w:bCs");
+        this.root.push(
+            new Attributes({
+                val: true,
+            }),
+        );
+    }
+}
+
 export class Italics extends XmlComponent {
     constructor() {
         super("w:i");
+        this.root.push(
+            new Attributes({
+                val: true,
+            }),
+        );
+    }
+}
+
+export class ItalicsComplexScript extends XmlComponent {
+    constructor() {
+        super("w:iCs");
         this.root.push(
             new Attributes({
                 val: true,
