@@ -19,7 +19,7 @@
 
 # docx
 
-<img src="https://thumbs.gfycat.com/ComplexEminentEquine-size_restricted.gif" alt="drawing" width="500"/>
+<img src="https://thumbs.gfycat.com/ComplexEminentEquine-size_restricted.gif" alt="drawing" width="800"/>
 
 ## Install
 
