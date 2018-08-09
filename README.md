@@ -39,14 +39,6 @@ Press `endpoint` on the `RunKit` website:
 *   https://runkit.com/dolanmiu/docx-demo8/1.0.1 - Header and Footer
 *   https://runkit.com/dolanmiu/docx-demo10 - **My CV generated with docx**
 
-#### Run demos locally:
-
-```sh
-$ npm run demo
-```
-
-This command will run the demo selector app in the `demo` folder. It will prompt you to select a demo number, which will run a demo from that folder.
-
 ## How to
 
 Please refer to [https://docx.js.org/](https://docx.js.org/) for details on how to use this library, examples and much more!
