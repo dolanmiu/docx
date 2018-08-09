@@ -14,7 +14,7 @@ export class Bold extends XmlComponent {
     }
 }
 
-export class BoldCs extends XmlComponent {
+export class BoldComplexScript extends XmlComponent {
     constructor() {
         super("w:bCs");
         this.root.push(
@@ -36,7 +36,7 @@ export class Italics extends XmlComponent {
     }
 }
 
-export class ItalicsCs extends XmlComponent {
+export class ItalicsComplexScript extends XmlComponent {
     constructor() {
         super("w:iCs");
         this.root.push(
@@ -146,7 +146,7 @@ export class Size extends XmlComponent {
     }
 }
 
-export class SizeCs extends XmlComponent {
+export class SizeComplexScript extends XmlComponent {
     constructor(size: number) {
         super("w:szCs");
         this.root.push(
@@ -157,7 +157,7 @@ export class SizeCs extends XmlComponent {
     }
 }
 
-export class RTL extends XmlComponent {
+export class RightToLeft extends XmlComponent {
     constructor() {
         super("w:rtl");
         this.root.push(

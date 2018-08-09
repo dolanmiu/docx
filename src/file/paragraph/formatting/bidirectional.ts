@@ -1,6 +1,6 @@
 import { XmlComponent } from "file/xml-components";
 
-export class Bidi extends XmlComponent {
+export class Bidirectional extends XmlComponent {
     constructor() {
         super("w:bidi");
     }
