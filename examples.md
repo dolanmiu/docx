@@ -2,6 +2,14 @@
 
 > All examples can run independently and can be found in the `/demo` folder of the project
 
+All the examples below can be ran locally, to do so, run the following command:
+
+```sh
+npm run demo
+```
+
+This command will run the `demo selector app` in the `/demo` folder. It will prompt you to select a demo number, which will run a demo from that folder.
+
 ## Simple
 
 A simple hello world of the `docx` library:
