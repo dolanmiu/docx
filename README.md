@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-    Generate .docx files with JS/TS very easily, written in TS.
+    Easily generate .docx files with JS/TS.
 </p>
 
 ---
@@ -19,13 +19,9 @@
 
 # docx
 
-<img src="https://thumbs.gfycat.com/ComplexEminentEquine-size_restricted.gif" alt="drawing" width="800"/>
-
-## Install
-
-```sh
-$ npm install --save docx
-```
+<p align="center">
+    <img src="https://thumbs.gfycat.com/ComplexEminentEquine-size_restricted.gif" alt="drawing" width="800"/>
+</p>
 
 ## Demo
 
@@ -57,17 +53,11 @@ Please refer to [https://docx.js.org/](https://docx.js.org/) for details on how 
 
 ## Examples
 
-Check the examples section in the [documentation](https://docx.js.org/#/examples) and the [demo folder](https://github.com/dolanmiu/docx/tree/master/demo) for examples.
+Check the `examples` section in the [documentation](https://docx.js.org/#/examples) and the [demo folder](https://github.com/dolanmiu/docx/tree/master/demo) for examples.
 
-# Contributing
+## Contributing
 
 Read the contribution guidelines [here](https://docx.js.org/#/contribution-guidelines).
-
-# Honoured Mentions
-
-[@felipeochoa](https://github.com/felipeochoa)
-
-[@h4buli](https://github.com/h4buli)
 
 ---
 
