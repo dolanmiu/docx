@@ -1,6 +1,6 @@
 // http://officeopenxml.com/WPparagraph.php
 import { FootnoteReferenceRun } from "file/footnotes/footnote/run/reference-run";
-import { IMediaData } from "file/media";
+import { Image } from "file/media";
 import { Num } from "file/numbering/num";
 import { XmlComponent } from "file/xml-components";
 
@@ -54,9 +54,10 @@ export class Paragraph extends XmlComponent {
         return run;
     }
 
-    public createPictureRun(imageData: IMediaData): PictureRun {
-        const run = new PictureRun(imageData);
+    public addImage(image: Image): PictureRun {
+        const run = image.Run;
         this.addRun(run);
+
         return run;
     }
 
