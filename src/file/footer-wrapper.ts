@@ -1,7 +1,7 @@
 import { XmlComponent } from "file/xml-components";
 import { Footer } from "./footer/footer";
-import { Media } from "./media";
-import { Image, Paragraph } from "./paragraph";
+import { Image, Media } from "./media";
+import { ImageParagraph, Paragraph } from "./paragraph";
 import { Relationships } from "./relationships";
 import { Table } from "./table";
 
@@ -43,11 +43,11 @@ export class FooterWrapper {
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
             `media/${mediaData.fileName}`,
         );
-        this.addImage(new Image(mediaData));
+        this.addImage(new Image(new ImageParagraph(mediaData)));
     }
 
     public addImage(image: Image): FooterWrapper {
-        this.footer.addParagraph(image);
+        this.footer.addParagraph(image.Paragraph);
         return this;
     }
 

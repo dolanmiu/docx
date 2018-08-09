@@ -3,8 +3,9 @@ import * as sizeOf from "image-size";
 import * as path from "path";
 
 import { File } from "../file";
-import { Image } from "../paragraph";
+import { ImageParagraph } from "../paragraph";
 import { IMediaData } from "./data";
+import { Image } from "./image";
 
 interface IHackedFile {
     currentRelationshipId: number;
@@ -20,7 +21,7 @@ export class Media {
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
             `media/${mediaData.fileName}`,
         );
-        return new Image(mediaData);
+        return new Image(new ImageParagraph(mediaData));
     }
 
     public static addImageFromBuffer(file: File, buffer: Buffer, width?: number, height?: number): Image {
@@ -39,7 +40,7 @@ export class Media {
             `media/${mediaData.fileName}`,
         );
 
-        return new Image(mediaData);
+        return new Image(new ImageParagraph(mediaData));
     }
 
     private static generateId(): string {
