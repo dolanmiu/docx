@@ -28,7 +28,7 @@ This is just a guideline, and the rules can sometimes be broken.
 *   Use `add` if you add the element into the method as a parameter:
 
     ```js
-    public createParagraph(paragraph: Paragraph) {
+    public addParagraph(paragraph: Paragraph) {
         this.root.push(paragraph);
     }
     ```
