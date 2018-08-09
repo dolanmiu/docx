@@ -14,16 +14,13 @@
 [![Dependency Status][daviddm-image]][daviddm-url]
 [![Known Vulnerabilities][snky-image]][snky-url]
 [![Chat on Gitter][gitter-image]][gitter-url]
-[![code style: prettier][prettier-image]][prettier-url]
 [![PRs Welcome][pr-image]][pr-url]
-
-# docx
 
 <p align="center">
     <img src="https://thumbs.gfycat.com/ComplexEminentEquine-size_restricted.gif" alt="drawing" width="800"/>
 </p>
 
-## Demo
+# Demo
 
 Press `endpoint` on the `RunKit` website:
 
@@ -39,15 +36,15 @@ Press `endpoint` on the `RunKit` website:
 *   https://runkit.com/dolanmiu/docx-demo8/1.0.1 - Header and Footer
 *   https://runkit.com/dolanmiu/docx-demo10 - **My CV generated with docx**
 
-## How to
+# How to use & Documentation
 
-Please refer to [https://docx.js.org/](https://docx.js.org/) for details on how to use this library, examples and much more!
+Please refer to the [https://docx.js.org/](documentation - https://docx.js.org/) for details on how to use this library, examples and much more!
 
-## Examples
+# Examples
 
 Check the `examples` section in the [documentation](https://docx.js.org/#/examples) and the [demo folder](https://github.com/dolanmiu/docx/tree/master/demo) for examples.
 
-## Contributing
+# Contributing
 
 Read the contribution guidelines [here](https://docx.js.org/#/contribution-guidelines).
 
@@ -67,7 +64,5 @@ Made with 💖
 [snky-url]: https://snyk.io/test/github/dolanmiu/docx
 [gitter-image]: https://badges.gitter.im/dolanmiu/docx.svg
 [gitter-url]: https://gitter.im/docx-lib/Lobby
-[prettier-image]: https://img.shields.io/badge/code_style-prettier-ff69b4.svg
-[prettier-url]: https://github.com/prettier/prettier
 [pr-image]: https://img.shields.io/badge/PRs-welcome-brightgreen.svg
 [pr-url]: http://makeapullrequest.com
