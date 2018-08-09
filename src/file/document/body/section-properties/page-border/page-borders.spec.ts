@@ -1,8 +1,8 @@
 import { expect } from "chai";
 
 import { Formatter } from "../../../../../export/formatter";
-import { PageBorders, PageBorderDisplay, PageBorderZOrder } from "./page-borders";
 import { BorderStyle } from "../../../../styles";
+import { PageBorderDisplay, PageBorders, PageBorderZOrder } from "./page-borders";
 
 describe("PageBorders", () => {
     describe("#constructor()", () => {

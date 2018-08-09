@@ -110,7 +110,7 @@ export class LevelBase extends XmlComponent {
         this.root.push(this.runProperties);
     }
 
-    public setSuffix(value: LevelSuffix) {
+    public setSuffix(value: LevelSuffix): LevelBase {
         this.root.push(new Suffix(value));
         return this;
     }

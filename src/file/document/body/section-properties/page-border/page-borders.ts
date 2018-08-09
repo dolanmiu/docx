@@ -1,5 +1,5 @@
 // http://officeopenxml.com/WPsectionBorders.php
-import { XmlComponent, XmlAttributeComponent, IXmlableObject } from "file/xml-components";
+import { IXmlableObject, XmlAttributeComponent, XmlComponent } from "file/xml-components";
 import { BorderStyle } from "../../../../styles";
 
 export enum PageBorderDisplay {
@@ -24,22 +24,22 @@ export interface IPageBorderAttributes {
     zOrder?: PageBorderZOrder;
 }
 
-export interface PageBorderConfiguration {
+export interface IPageBorderConfiguration {
     style?: BorderStyle;
     size?: number;
     color?: string;
     space?: number;
 }
 
-export type PageBordersOptions = {
+export interface IPageBordersOptions {
     pageBorders?: IPageBorderAttributes;
-    pageBorderTop?: PageBorderConfiguration;
-    pageBorderRight?: PageBorderConfiguration;
-    pageBorderBottom?: PageBorderConfiguration;
-    pageBorderLeft?: PageBorderConfiguration;
-};
+    pageBorderTop?: IPageBorderConfiguration;
+    pageBorderRight?: IPageBorderConfiguration;
+    pageBorderBottom?: IPageBorderConfiguration;
+    pageBorderLeft?: IPageBorderConfiguration;
+}
 
-class PageBordeAttributes extends XmlAttributeComponent<PageBorderConfiguration> {
+class PageBordeAttributes extends XmlAttributeComponent<IPageBorderConfiguration> {
     protected xmlKeys = {
         style: "w:val",
         size: "w:size",
@@ -49,7 +49,7 @@ class PageBordeAttributes extends XmlAttributeComponent<PageBorderConfiguration>
 }
 
 class PageBorder extends XmlComponent {
-    constructor(key: string, options: PageBorderConfiguration) {
+    constructor(key: string, options: IPageBorderConfiguration) {
         super(key);
 
         this.root.push(new PageBordeAttributes(options));
@@ -65,10 +65,12 @@ class PageBordersAttributes extends XmlAttributeComponent<IPageBorderAttributes>
 }
 
 export class PageBorders extends XmlComponent {
-    constructor(options?: PageBordersOptions) {
+    constructor(options?: IPageBordersOptions) {
         super("w:pgBorders");
 
-        if (!options) return;
+        if (!options) {
+            return;
+        }
 
         let pageBordersAttributes = {};
 
@@ -82,10 +84,18 @@ export class PageBorders extends XmlComponent {
 
         this.root.push(new PageBordersAttributes(pageBordersAttributes));
 
-        if (options.pageBorderTop) this.root.push(new PageBorder("w:top", options.pageBorderTop));
-        if (options.pageBorderRight) this.root.push(new PageBorder("w:right", options.pageBorderRight));
-        if (options.pageBorderBottom) this.root.push(new PageBorder("w:bottom", options.pageBorderBottom));
-        if (options.pageBorderLeft) this.root.push(new PageBorder("w:left", options.pageBorderLeft));
+        if (options.pageBorderTop) {
+            this.root.push(new PageBorder("w:top", options.pageBorderTop));
+        }
+        if (options.pageBorderRight) {
+            this.root.push(new PageBorder("w:right", options.pageBorderRight));
+        }
+        if (options.pageBorderBottom) {
+            this.root.push(new PageBorder("w:bottom", options.pageBorderBottom));
+        }
+        if (options.pageBorderLeft) {
+            this.root.push(new PageBorder("w:left", options.pageBorderLeft));
+        }
     }
 
     public prepForXml(): IXmlableObject {

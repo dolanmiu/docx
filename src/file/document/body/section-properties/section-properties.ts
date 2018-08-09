@@ -1,6 +1,6 @@
 // http://officeopenxml.com/WPsection.php
 import { XmlComponent } from "file/xml-components";
-import { FooterReferenceType, IPageNumberTypeAttributes, PageNumberFormat, PageNumberType } from "./";
+import { FooterReferenceType, IPageBordersOptions, IPageNumberTypeAttributes, PageBorders, PageNumberFormat, PageNumberType } from "./";
 import { Columns } from "./columns/columns";
 import { IColumnsAttributes } from "./columns/columns-attributes";
 import { DocumentGrid } from "./doc-grid/doc-grid";
@@ -12,9 +12,6 @@ import { PageMargin } from "./page-margin/page-margin";
 import { IPageMarginAttributes } from "./page-margin/page-margin-attributes";
 import { PageSize } from "./page-size/page-size";
 import { IPageSizeAttributes, PageOrientation } from "./page-size/page-size-attributes";
-import { FooterReferenceType, IPageNumberTypeAttributes, PageNumberType, PageNumberFormat } from ".";
-// import { TitlePage } from "./title-page/title-page";
-import { FooterReferenceType, IPageNumberTypeAttributes, PageNumberType, PageNumberFormat, PageBordersOptions, PageBorders } from ".";
 
 export type SectionPropertiesOptions = IPageSizeAttributes &
     IPageMarginAttributes &
@@ -23,7 +20,7 @@ export type SectionPropertiesOptions = IPageSizeAttributes &
     IHeaderOptions &
     IFooterOptions &
     IPageNumberTypeAttributes &
-    PageBordersOptions;
+    IPageBordersOptions;
 
 export class SectionProperties extends XmlComponent {
     private readonly options: SectionPropertiesOptions;

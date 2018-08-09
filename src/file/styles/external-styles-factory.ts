@@ -1,7 +1,5 @@
 import * as fastXmlParser from "fast-xml-parser";
-import { ImportedXmlComponent, ImportedRootElementAttributes, parseOptions, convertToXmlComponent } from "./../../file/xml-components";
-import { convertToXmlComponent, ImportedRootElementAttributes, ImportedXmlComponent, parseOptions } from "file/xml-components";
-import { ImportedRootElementAttributes, parseOptions, convertToXmlComponent } from "./../../file/xml-components";
+import { convertToXmlComponent, ImportedRootElementAttributes, parseOptions } from "file/xml-components";
 import { Styles } from "./";
 
 export class ExternalStylesFactory {
