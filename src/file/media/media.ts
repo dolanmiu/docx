@@ -106,12 +106,12 @@ export class Media {
             fileName: key,
             dimensions: {
                 pixels: {
-                    x: dimensions.width,
-                    y: dimensions.height,
+                    x: Math.round(dimensions.width),
+                    y: Math.round(dimensions.height),
                 },
                 emus: {
-                    x: dimensions.width * 9525,
-                    y: dimensions.height * 9525,
+                    x: Math.round(dimensions.width * 9525),
+                    y: Math.round(dimensions.height * 9525),
                 },
             },
         };
