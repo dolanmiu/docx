@@ -61,6 +61,8 @@ export class Media {
         this.map = new Map<string, IMediaData>();
     }
 
+                    x: Math.round(dimensions.width * 9525),
+                    y: Math.round(dimensions.height * 9525),
     public getMedia(key: string): IMediaData {
         const data = this.map.get(key);
 

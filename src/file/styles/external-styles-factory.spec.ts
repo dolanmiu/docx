@@ -10,6 +10,17 @@ describe("External styles factory", () => {
         <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
         <w:styles xmlns:mc="first" xmlns:r="second">
             <w:docDefaults>
+            <w:rPrDefault>
+                <w:rPr>
+                    <w:rFonts w:ascii="Arial" w:eastAsiaTheme="minorHAnsi" w:hAnsi="Arial" w:cstheme="minorHAnsi"/>
+                    <w:lang w:val="en-US" w:eastAsia="en-US" w:bidi="ar-SA"/>
+                </w:rPr>
+            </w:rPrDefault>
+            <w:pPrDefault>
+                <w:pPr>
+                    <w:spacing w:after="160" w:line="259" w:lineRule="auto"/>
+                </w:pPr>
+            </w:pPrDefault>
             </w:docDefaults>
             
             <w:latentStyles w:defLockedState="1" w:defUIPriority="99">
@@ -52,7 +63,63 @@ describe("External styles factory", () => {
             expect(importedStyle.root.length).to.equal(5);
             expect(importedStyle.root[1]).to.eql({
                 deleted: false,
-                root: [],
+                root: [
+                    {
+                        deleted: false,
+                        root: [
+                            {
+                                deleted: false,
+                                root: [
+                                    {
+                                        _attr: {
+                                            "w:ascii": "Arial",
+                                            "w:cstheme": "minorHAnsi",
+                                            "w:eastAsiaTheme": "minorHAnsi",
+                                            "w:hAnsi": "Arial",
+                                        },
+                                        deleted: false,
+                                        root: [],
+                                        rootKey: "w:rFonts",
+                                    },
+                                    {
+                                        _attr: {
+                                            "w:bidi": "ar-SA",
+                                            "w:eastAsia": "en-US",
+                                            "w:val": "en-US",
+                                        },
+                                        deleted: false,
+                                        root: [],
+                                        rootKey: "w:lang",
+                                    },
+                                ],
+                                rootKey: "w:rPr",
+                            },
+                        ],
+                        rootKey: "w:rPrDefault",
+                    },
+                    {
+                        deleted: false,
+                        root: [
+                            {
+                                deleted: false,
+                                root: [
+                                    {
+                                        _attr: {
+                                            "w:after": "160",
+                                            "w:line": "259",
+                                            "w:lineRule": "auto",
+                                        },
+                                        deleted: false,
+                                        root: [],
+                                        rootKey: "w:spacing",
+                                    },
+                                ],
+                                rootKey: "w:pPr",
+                            },
+                        ],
+                        rootKey: "w:pPrDefault",
+                    },
+                ],
                 rootKey: "w:docDefaults",
             });
             expect(importedStyle.root[2]).to.eql({

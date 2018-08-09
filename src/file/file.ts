@@ -3,7 +3,6 @@ import { ContentTypes } from "./content-types/content-types";
 import { CoreProperties, IPropertiesOptions } from "./core-properties";
 import { Document } from "./document";
 import { FooterReferenceType, HeaderReference, HeaderReferenceType } from "./document/body/section-properties";
-import { SectionPropertiesOptions } from "./document/body/section-properties/section-properties";
 import { FooterWrapper } from "./footer-wrapper";
 import { FootNotes } from "./footnotes";
 import { HeaderWrapper } from "./header-wrapper";
@@ -15,6 +14,7 @@ import { Styles } from "./styles";
 import { ExternalStylesFactory } from "./styles/external-styles-factory";
 import { DefaultStylesFactory } from "./styles/factory";
 import { Table } from "./table";
+import { FooterReferenceType, HeaderReferenceType, SectionPropertiesOptions } from "./document/body/section-properties";
 
 export class File {
     private readonly document: Document;

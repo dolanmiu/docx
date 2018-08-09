@@ -1,5 +1,7 @@
 import * as fastXmlParser from "fast-xml-parser";
+import { ImportedXmlComponent, ImportedRootElementAttributes, parseOptions, convertToXmlComponent } from "./../../file/xml-components";
 import { convertToXmlComponent, ImportedRootElementAttributes, ImportedXmlComponent, parseOptions } from "file/xml-components";
+import { ImportedRootElementAttributes, parseOptions, convertToXmlComponent } from "./../../file/xml-components";
 import { Styles } from "./";
 
 export class ExternalStylesFactory {
@@ -34,7 +36,12 @@ export class ExternalStylesFactory {
         Object.keys(xmlStyles)
             .filter((element) => element !== "_attr" && element !== "w:style")
             .forEach((element) => {
-                importedStyle.push(new ImportedXmlComponent(element, xmlStyles[element]._attr));
+                const converted = convertToXmlComponent(element, xmlStyles[element]);
+                if (Array.isArray(converted)) {
+                    converted.forEach((c) => importedStyle.push(c));
+                } else {
+                    importedStyle.push(converted);
+                }
             });
 
         // convert the styles one by one

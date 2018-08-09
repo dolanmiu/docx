@@ -1,4 +1,5 @@
 import { IXmlableObject, XmlComponent } from "file/xml-components";
+import { SectionProperties, SectionPropertiesOptions } from "./section-properties/section-properties";
 import { Paragraph, ParagraphProperties } from "../..";
 import { SectionProperties, SectionPropertiesOptions } from "./section-properties";
 
