@@ -38,7 +38,7 @@ Press `endpoint` on the `RunKit` website:
 
 # How to use & Documentation
 
-Please refer to the [documentation - https://docx.js.org/](https://docx.js.org/) for details on how to use this library, examples and much more!
+Please refer to the [documentation at https://docx.js.org/](https://docx.js.org/) for details on how to use this library, examples and much more!
 
 # Examples
 
