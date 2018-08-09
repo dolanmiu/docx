@@ -5,10 +5,10 @@ import { Formatter } from "../../export/formatter";
 import { ImageParagraph } from "./image";
 
 describe("Image", () => {
-    let image: Image;
+    let image: ImageParagraph;
 
     beforeEach(() => {
-        image = new Image({
+        image = new ImageParagraph({
             referenceId: 0,
             stream: new Buffer(""),
             path: "",
