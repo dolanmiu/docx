@@ -1,8 +1,8 @@
 import { expect } from "chai";
 
-import { TableCellBorders, TableCellWidth, WidthType } from "./table-cell";
 import { Formatter } from "../../export/formatter";
 import { BorderStyle } from "../styles";
+import { TableCellBorders, TableCellWidth, WidthType } from "./table-cell";
 
 describe("TableCellBorders", () => {
     describe("#prepForXml", () => {

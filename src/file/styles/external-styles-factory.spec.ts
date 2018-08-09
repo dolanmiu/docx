@@ -22,7 +22,7 @@ describe("External styles factory", () => {
                 </w:pPr>
             </w:pPrDefault>
             </w:docDefaults>
-            
+
             <w:latentStyles w:defLockedState="1" w:defUIPriority="99">
             </w:latentStyles>
 
@@ -48,6 +48,7 @@ describe("External styles factory", () => {
 
     describe("#parse", () => {
         it("should parse w:styles attributes", () => {
+            // tslint:disable-next-line:no-any
             const importedStyle = new ExternalStylesFactory().newInstance(externalStyles) as any;
 
             expect(importedStyle.rootKey).to.equal("w:styles");
@@ -58,6 +59,7 @@ describe("External styles factory", () => {
         });
 
         it("should parse other child elements of w:styles", () => {
+            // tslint:disable-next-line:no-any
             const importedStyle = new ExternalStylesFactory().newInstance(externalStyles) as any;
 
             expect(importedStyle.root.length).to.equal(5);
@@ -134,6 +136,7 @@ describe("External styles factory", () => {
         });
 
         it("should parse styles elements", () => {
+            // tslint:disable-next-line:no-any
             const importedStyle = new ExternalStylesFactory().newInstance(externalStyles) as any;
 
             expect(importedStyle.root.length).to.equal(5);
