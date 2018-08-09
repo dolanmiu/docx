@@ -10,4 +10,8 @@ export class Image {
     public get Run(): PictureRun {
         return this.paragraph.Run;
     }
+
+    public scale(factorX: number, factorY?: number): void {
+        this.paragraph.Run.scale(factorX, factorY);
+    }
 }
