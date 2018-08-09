@@ -2,7 +2,7 @@
 import { assert, expect } from "chai";
 
 import { Formatter } from "../../export/formatter";
-import { Image } from "./image";
+import { ImageParagraph } from "./image";
 
 describe("Image", () => {
     let image: Image;
