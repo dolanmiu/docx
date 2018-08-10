@@ -1,4 +1,5 @@
 import { assert } from "chai";
+import * as fs from "fs";
 
 import { Utility } from "../../tests/utility";
 import { Drawing, IDrawingOptions, PlacementPosition } from "./";
@@ -9,6 +10,7 @@ function createDrawing(drawingOptions?: IDrawingOptions): Drawing {
         {
             fileName: "test.jpg",
             referenceId: 1,
+            stream: fs.createReadStream(path),
             path: path,
             dimensions: {
                 pixels: {
