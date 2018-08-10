@@ -16,6 +16,7 @@ describe("Run", () => {
             run.bold();
             const newJson = Utility.jsonify(run);
             assert.equal(newJson.root[0].root[0].rootKey, "w:b");
+            assert.equal(newJson.root[0].root[1].rootKey, "w:bCs");
         });
     });
 
@@ -24,6 +25,7 @@ describe("Run", () => {
             run.italic();
             const newJson = Utility.jsonify(run);
             assert.equal(newJson.root[0].root[0].rootKey, "w:i");
+            assert.equal(newJson.root[0].root[1].rootKey, "w:iCs");
         });
     });
 
@@ -108,7 +110,13 @@ describe("Run", () => {
             run.font("Times");
             const tree = new Formatter().format(run);
             expect(tree).to.deep.equal({
-                "w:r": [{ "w:rPr": [{ "w:rFonts": [{ _attr: { "w:ascii": "Times", "w:hAnsi": "Times" } }] }] }],
+                "w:r": [
+                    {
+                        "w:rPr": [
+                            { "w:rFonts": [{ _attr: { "w:ascii": "Times", "w:cs": "Times", "w:eastAsia": "Times", "w:hAnsi": "Times" } }] },
+                        ],
+                    },
+                ],
             });
         });
     });
@@ -128,7 +136,21 @@ describe("Run", () => {
             run.size(24);
             const tree = new Formatter().format(run);
             expect(tree).to.deep.equal({
-                "w:r": [{ "w:rPr": [{ "w:sz": [{ _attr: { "w:val": 24 } }] }] }],
+                "w:r": [
+                    {
+                        "w:rPr": [{ "w:sz": [{ _attr: { "w:val": 24 } }] }, { "w:szCs": [{ _attr: { "w:val": 24 } }] }],
+                    },
+                ],
+            });
+        });
+    });
+
+    describe("#rtl", () => {
+        it("should set the run to the RTL mode", () => {
+            run.rightToLeft();
+            const tree = new Formatter().format(run);
+            expect(tree).to.deep.equal({
+                "w:r": [{ "w:rPr": [{ "w:rtl": [{ _attr: { "w:val": true } }] }] }],
             });
         });
     });

@@ -1,6 +1,5 @@
 import * as archiver from "archiver";
 import * as express from "express";
-import * as fs from "fs";
 import { Writable } from "stream";
 import * as xml from "xml";
 
@@ -9,9 +8,9 @@ import { Formatter } from "../formatter";
 
 export class Compiler {
     protected archive: archiver.Archiver;
-    private formatter: Formatter;
+    private readonly formatter: Formatter;
 
-    constructor(private file: File) {
+    constructor(private readonly file: File) {
         this.formatter = new Formatter();
         this.archive = archiver.create("zip", {});
 
@@ -23,7 +22,7 @@ export class Compiler {
     public async compile(output: Writable | express.Response): Promise<void> {
         this.archive.pipe(output);
 
-        const xmlDocument = xml(this.formatter.format(this.file.Document), true);
+        const xmlDocument = xml(this.formatter.format(this.file.Document));
         const xmlStyles = xml(this.formatter.format(this.file.Styles));
         const xmlProperties = xml(this.formatter.format(this.file.CoreProperties), {
             declaration: {
@@ -34,12 +33,9 @@ export class Compiler {
         const xmlNumbering = xml(this.formatter.format(this.file.Numbering));
         const xmlRelationships = xml(this.formatter.format(this.file.DocumentRelationships));
         const xmlFileRelationships = xml(this.formatter.format(this.file.FileRelationships));
-        const xmlHeader = xml(this.formatter.format(this.file.Header.Header));
-        const xmlFooter = xml(this.formatter.format(this.file.Footer.Footer));
-        const xmlHeaderRelationships = xml(this.formatter.format(this.file.Header.Relationships));
-        const xmlFooterRelationships = xml(this.formatter.format(this.file.Footer.Relationships));
         const xmlContentTypes = xml(this.formatter.format(this.file.ContentTypes));
         const xmlAppProperties = xml(this.formatter.format(this.file.AppProperties));
+        const xmlFootnotes = xml(this.formatter.format(this.file.FootNotes));
 
         this.archive.append(xmlDocument, {
             name: "word/document.xml",
@@ -61,24 +57,36 @@ export class Compiler {
             name: "word/numbering.xml",
         });
 
-        this.archive.append(xmlHeader, {
-            name: "word/header1.xml",
-        });
+        // headers
+        for (let i = 0; i < this.file.Headers.length; i++) {
+            const element = this.file.Headers[i];
+            this.archive.append(xml(this.formatter.format(element.Header)), {
+                name: `word/header${i + 1}.xml`,
+            });
 
-        this.archive.append(xmlFooter, {
-            name: "word/footer1.xml",
+            this.archive.append(xml(this.formatter.format(element.Relationships)), {
+                name: `word/_rels/header${i + 1}.xml.rels`,
+            });
+        }
+
+        // footers
+        for (let i = 0; i < this.file.Footers.length; i++) {
+            const element = this.file.Footers[i];
+            this.archive.append(xml(this.formatter.format(element.Footer)), {
+                name: `word/footer${i + 1}.xml`,
+            });
+
+            this.archive.append(xml(this.formatter.format(element.Relationships)), {
+                name: `word/_rels/footer${i + 1}.xml.rels`,
+            });
+        }
+
+        this.archive.append(xmlFootnotes, {
+            name: "word/footnotes.xml",
         });
 
         this.archive.append(xmlRelationships, {
             name: "word/_rels/document.xml.rels",
-        });
-
-        this.archive.append(xmlHeaderRelationships, {
-            name: "word/_rels/header1.xml.rels",
-        });
-
-        this.archive.append(xmlFooterRelationships, {
-            name: "word/_rels/footer1.xml.rels",
         });
 
         this.archive.append(xmlContentTypes, {
@@ -89,8 +97,8 @@ export class Compiler {
             name: "_rels/.rels",
         });
 
-        for (const data of this.file.Media.array) {
-            this.archive.append(fs.createReadStream(data.path), {
+        for (const data of this.file.Media.Array) {
+            this.archive.append(data.stream, {
                 name: `word/media/${data.fileName}`,
             });
         }

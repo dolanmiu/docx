@@ -12,7 +12,7 @@ export class TableProperties extends XmlComponent {
         return this;
     }
 
-    public fixedWidthLayout(): TableProperties {
+    public setFixedWidthLayout(): TableProperties {
         this.root.push(new TableLayout("fixed"));
         return this;
     }

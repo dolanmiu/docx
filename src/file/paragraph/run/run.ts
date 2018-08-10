@@ -1,7 +1,19 @@
 // http://officeopenxml.com/WPtext.php
 import { Break } from "./break";
 import { Caps, SmallCaps } from "./caps";
-import { Bold, Color, DoubleStrike, Italics, Size, Strike } from "./formatting";
+import {
+    Bold,
+    BoldComplexScript,
+    Color,
+    DoubleStrike,
+    Italics,
+    ItalicsComplexScript,
+    RightToLeft,
+    Size,
+    SizeComplexScript,
+    Strike,
+} from "./formatting";
+import { Begin, End, Page, Separate } from "./page-number";
 import { RunProperties } from "./properties";
 import { RunFonts } from "./run-fonts";
 import { SubScript, SuperScript } from "./script";
@@ -12,7 +24,7 @@ import { Underline } from "./underline";
 import { XmlComponent } from "file/xml-components";
 
 export class Run extends XmlComponent {
-    private properties: RunProperties;
+    protected properties: RunProperties;
 
     constructor() {
         super("w:r");
@@ -22,11 +34,13 @@ export class Run extends XmlComponent {
 
     public bold(): Run {
         this.properties.push(new Bold());
+        this.properties.push(new BoldComplexScript());
         return this;
     }
 
     public italic(): Run {
         this.properties.push(new Italics());
+        this.properties.push(new ItalicsComplexScript());
         return this;
     }
 
@@ -42,6 +56,12 @@ export class Run extends XmlComponent {
 
     public size(size: number): Run {
         this.properties.push(new Size(size));
+        this.properties.push(new SizeComplexScript(size));
+        return this;
+    }
+
+    public rightToLeft(): Run {
+        this.properties.push(new RightToLeft());
         return this;
     }
 
@@ -52,6 +72,14 @@ export class Run extends XmlComponent {
 
     public tab(): Run {
         this.root.splice(1, 0, new Tab());
+        return this;
+    }
+
+    public pageNumber(): Run {
+        this.root.push(new Begin());
+        this.root.push(new Page());
+        this.root.push(new Separate());
+        this.root.push(new End());
         return this;
     }
 
@@ -85,8 +113,8 @@ export class Run extends XmlComponent {
         return this;
     }
 
-    public font(fontName: string): Run {
-        this.properties.push(new RunFonts(fontName));
+    public font(fontName: string, hint?: string | undefined): Run {
+        this.properties.push(new RunFonts(fontName, hint));
         return this;
     }
 

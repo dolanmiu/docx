@@ -12,7 +12,7 @@ class GraphicAttributes extends XmlAttributeComponent<IGraphicProperties> {
 }
 
 export class Graphic extends XmlComponent {
-    private data: GraphicData;
+    private readonly data: GraphicData;
 
     constructor(referenceId: number, x: number, y: number) {
         super("a:graphic");

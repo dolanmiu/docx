@@ -1,6 +1,7 @@
+import { XmlComponent } from "file/xml-components";
 import { Footer } from "./footer/footer";
-import { IMediaData, Media } from "./media";
-import { Paragraph } from "./paragraph";
+import { Image, Media } from "./media";
+import { ImageParagraph, Paragraph } from "./paragraph";
 import { Relationships } from "./relationships";
 import { Table } from "./table";
 
@@ -8,8 +9,8 @@ export class FooterWrapper {
     private readonly footer: Footer;
     private readonly relationships: Relationships;
 
-    constructor(private readonly media: Media) {
-        this.footer = new Footer();
+    constructor(private readonly media: Media, referenceId: number) {
+        this.footer = new Footer(referenceId);
         this.relationships = new Relationships();
     }
 
@@ -31,8 +32,8 @@ export class FooterWrapper {
         return this.footer.createTable(rows, cols);
     }
 
-    public addDrawing(imageData: IMediaData): void {
-        this.footer.addDrawing(imageData);
+    public addChildElement(childElement: XmlComponent | string): void {
+        this.footer.addChildElement(childElement);
     }
 
     public createImage(image: string): void {
@@ -42,7 +43,12 @@ export class FooterWrapper {
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
             `media/${mediaData.fileName}`,
         );
-        this.addDrawing(mediaData);
+        this.addImage(new Image(new ImageParagraph(mediaData)));
+    }
+
+    public addImage(image: Image): FooterWrapper {
+        this.footer.addParagraph(image.Paragraph);
+        return this;
     }
 
     public get Footer(): Footer {

@@ -1,21 +1,33 @@
+import { DocumentAttributes } from "../document/document-attributes";
 import { Color, Italics, Size } from "../paragraph/run/formatting";
-
 import { Styles } from "./";
-// import { DocumentDefaults } from "./defaults";
+
 import {
+    FootnoteReferenceStyle,
+    FootnoteText,
+    FootnoteTextChar,
     Heading1Style,
     Heading2Style,
     Heading3Style,
     Heading4Style,
     Heading5Style,
     Heading6Style,
+    HyperlinkStyle,
     ListParagraph,
     TitleStyle,
 } from "./style";
 
 export class DefaultStylesFactory {
     public newInstance(): Styles {
-        const styles = new Styles();
+        const documentAttributes = new DocumentAttributes({
+            mc: "http://schemas.openxmlformats.org/markup-compatibility/2006",
+            r: "http://schemas.openxmlformats.org/officeDocument/2006/relationships",
+            w: "http://schemas.openxmlformats.org/wordprocessingml/2006/main",
+            w14: "http://schemas.microsoft.com/office/word/2010/wordml",
+            w15: "http://schemas.microsoft.com/office/word/2012/wordml",
+            Ignorable: "w14 w15",
+        });
+        const styles = new Styles(documentAttributes);
         styles.createDocumentDefaults();
 
         const titleStyle = new TitleStyle();
@@ -53,6 +65,18 @@ export class DefaultStylesFactory {
         const listParagraph = new ListParagraph();
         // listParagraph.addParagraphProperty();
         styles.push(listParagraph);
+
+        const hyperLinkStyle = new HyperlinkStyle();
+        styles.push(hyperLinkStyle);
+
+        const footnoteReferenceStyle = new FootnoteReferenceStyle();
+        styles.push(footnoteReferenceStyle);
+
+        const footnoteTextStyle = new FootnoteText();
+        styles.push(footnoteTextStyle);
+
+        const footnoteTextCharStyle = new FootnoteTextChar();
+        styles.push(footnoteTextCharStyle);
 
         return styles;
     }

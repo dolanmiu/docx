@@ -19,3 +19,12 @@ export class PageBreak extends Run {
         this.root.push(new Break());
     }
 }
+
+/**
+ * Add page break before the paragraph if there is no one added before.
+ */
+export class PageBreakBefore extends XmlComponent {
+    constructor() {
+        super("w:pageBreakBefore");
+    }
+}

@@ -11,7 +11,8 @@
         ],
         "no-require-imports": true,
         "member-access": [
-            true
+            true,
+            "check-accessor"
         ],
         "indent": [
             true,
@@ -31,10 +32,10 @@
         "max-classes-per-file": [
             false
         ],
-        "no-unused-variable": [
-            true
-        ],
         "no-implicit-dependencies": false,
-        "no-submodule-imports": false
+        "no-submodule-imports": false,
+        "no-null-keyword": true,
+        "return-undefined": true,
+        "prefer-readonly": true
     }
 }

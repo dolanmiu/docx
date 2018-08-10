@@ -1,6 +1,6 @@
 language: node_js
 node_js:
-  - "stable"
+  - 9
 install:
   - npm install
 script:
@@ -24,7 +24,8 @@ after_failure:
   - "cat /home/travis/builds/dolanmiu/docx/npm-debug.log"
 after_success:
   - npm run typedoc
-  - echo "janchi.co.uk" > docs/.nojekyll
+  - echo "docx.js.org" > docs/.nojekyll
+  - echo "docx.js.org" > docs/CNAME
 deploy:
   provider: pages
   skip-cleanup: true

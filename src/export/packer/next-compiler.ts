@@ -1,4 +1,3 @@
-import * as fs from "fs";
 import * as JSZip from "jszip";
 import * as xml from "xml";
 
@@ -26,9 +25,9 @@ interface IXmlifyedFileMapping {
 }
 
 export class Compiler {
-    private formatter: Formatter;
+    private readonly formatter: Formatter;
 
-    constructor(private file: File) {
+    constructor(private readonly file: File) {
         this.formatter = new Formatter();
     }
 
@@ -47,8 +46,8 @@ export class Compiler {
             zip.file(xmlifiedFile.path, xmlifiedFile.data);
         }
 
-        for (const data of this.file.Media.array) {
-            const mediaData = await this.readFile(data.path);
+        for (const data of this.file.Media.Array) {
+            const mediaData = data.stream;
             zip.file(`word/media/${data.fileName}`, mediaData);
         }
 
@@ -111,18 +110,5 @@ export class Compiler {
                 path: "docProps/app.xml",
             },
         };
-    }
-
-    private readFile(path: string): Promise<Buffer> {
-        return new Promise((resolve, reject) => {
-            fs.readFile(path, (err, data) => {
-                if (err) {
-                    reject();
-                    return;
-                }
-
-                resolve(data);
-            });
-        });
     }
 }

@@ -34,7 +34,7 @@ describe("Numbering", () => {
                 ]);
                 // Once chai 4.0.0 lands and #644 is resolved, we can add the following to the test:
                 // {"w:lvlText": [{"_attr": {"w:val": "•"}}]},
-                // {"w:rPr": [{"w:rFonts": [{"_attr": {"w:ascii": "Symbol", "w:hAnsi": "Symbol", "w:hint": "default"}}]}]},
+                // {"w:rPr": [{"w:rFonts": [{"_attr": {"w:ascii": "Symbol", "w:cs": "Symbol", "w:eastAsia": "Symbol", "w:hAnsi": "Symbol", "w:hint": "default"}}]}]},
                 // {"w:pPr": [{"_attr": {}},
                 //            {"w:ind": [{"_attr": {"w:left": 720, "w:hanging": 360}}]}]},
             });
@@ -297,7 +297,9 @@ describe("AbstractNumbering", () => {
                 const level = abstractNumbering.createLevel(0, "lowerRoman", "%0.").font("Times");
                 const tree = new Formatter().format(level);
                 expect(tree["w:lvl"]).to.include({
-                    "w:rPr": [{ "w:rFonts": [{ _attr: { "w:ascii": "Times", "w:hAnsi": "Times" } }] }],
+                    "w:rPr": [
+                        { "w:rFonts": [{ _attr: { "w:ascii": "Times", "w:cs": "Times", "w:eastAsia": "Times", "w:hAnsi": "Times" } }] },
+                    ],
                 });
             });
 
@@ -385,9 +387,9 @@ describe("concrete numbering", () => {
             });
         });
 
-        it("sets the lvl element if overrideLevel.level is accessed", () => {
+        it("sets the lvl element if overrideLevel.Level is accessed", () => {
             const ol = concreteNumbering.overrideLevel(1);
-            expect(ol.level).to.be.instanceof(LevelForOverride);
+            expect(ol.Level).to.be.instanceof(LevelForOverride);
             const tree = new Formatter().format(concreteNumbering);
             expect(tree["w:num"]).to.include({
                 "w:lvlOverride": [

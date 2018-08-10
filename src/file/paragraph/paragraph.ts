@@ -1,22 +1,25 @@
 // http://officeopenxml.com/WPparagraph.php
-import { IMediaData } from "file/media";
+import { FootnoteReferenceRun } from "file/footnotes/footnote/run/reference-run";
+import { Image } from "file/media";
 import { Num } from "file/numbering/num";
 import { XmlComponent } from "file/xml-components";
-import { PictureRun, Run, TextRun } from "./run";
 
 import { Alignment } from "./formatting/alignment";
+import { Bidirectional } from "./formatting/bidirectional";
 import { ThematicBreak } from "./formatting/border";
 import { Indent } from "./formatting/indent";
 import { KeepLines, KeepNext } from "./formatting/keep";
-import { PageBreak } from "./formatting/page-break";
+import { PageBreak, PageBreakBefore } from "./formatting/page-break";
 import { ISpacingProperties, Spacing } from "./formatting/spacing";
 import { Style } from "./formatting/style";
 import { CenterTabStop, LeftTabStop, MaxRightTabStop, RightTabStop } from "./formatting/tab-stop";
 import { NumberProperties } from "./formatting/unordered-list";
+import { Bookmark, Hyperlink } from "./links";
 import { ParagraphProperties } from "./properties";
+import { PictureRun, Run, TextRun } from "./run";
 
 export class Paragraph extends XmlComponent {
-    private properties: ParagraphProperties;
+    private readonly properties: ParagraphProperties;
 
     constructor(text?: string) {
         super("w:p");
@@ -32,15 +35,29 @@ export class Paragraph extends XmlComponent {
         return this;
     }
 
+    public addHyperLink(hyperlink: Hyperlink): Paragraph {
+        this.root.push(hyperlink);
+        return this;
+    }
+
+    public addBookmark(bookmark: Bookmark): Paragraph {
+        // Bookmarks by spec have three components, a start, text, and end
+        this.root.push(bookmark.start);
+        this.root.push(bookmark.text);
+        this.root.push(bookmark.end);
+        return this;
+    }
+
     public createTextRun(text: string): TextRun {
         const run = new TextRun(text);
         this.addRun(run);
         return run;
     }
 
-    public createPictureRun(imageData: IMediaData): PictureRun {
-        const run = new PictureRun(imageData);
+    public addImage(image: Image): PictureRun {
+        const run = image.Run;
         this.addRun(run);
+
         return run;
     }
 
@@ -94,6 +111,21 @@ export class Paragraph extends XmlComponent {
         return this;
     }
 
+    public start(): Paragraph {
+        this.properties.push(new Alignment("start"));
+        return this;
+    }
+
+    public end(): Paragraph {
+        this.properties.push(new Alignment("end"));
+        return this;
+    }
+
+    public distribute(): Paragraph {
+        this.properties.push(new Alignment("distribute"));
+        return this;
+    }
+
     public justified(): Paragraph {
         this.properties.push(new Alignment("both"));
         return this;
@@ -106,6 +138,11 @@ export class Paragraph extends XmlComponent {
 
     public pageBreak(): Paragraph {
         this.root.push(new PageBreak());
+        return this;
+    }
+
+    public pageBreakBefore(): Paragraph {
+        this.properties.push(new PageBreakBefore());
         return this;
     }
 
@@ -141,6 +178,11 @@ export class Paragraph extends XmlComponent {
         return this;
     }
 
+    public setCustomNumbering(numberId: number, indentLevel: number): Paragraph {
+        this.properties.push(new NumberProperties(numberId, indentLevel));
+        return this;
+    }
+
     public style(styleId: string): Paragraph {
         this.properties.push(new Style(styleId));
         return this;
@@ -163,6 +205,21 @@ export class Paragraph extends XmlComponent {
 
     public keepLines(): Paragraph {
         this.properties.push(new KeepLines());
+        return this;
+    }
+
+    public referenceFootnote(id: number): Paragraph {
+        this.root.push(new FootnoteReferenceRun(id));
+        return this;
+    }
+
+    public addRunToFront(run: Run): Paragraph {
+        this.root.splice(1, 0, run);
+        return this;
+    }
+
+    public bidirectional(): Paragraph {
+        this.properties.push(new Bidirectional());
         return this;
     }
 }

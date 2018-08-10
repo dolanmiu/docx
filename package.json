@@ -1,6 +1,6 @@
 {
   "name": "docx",
-  "version": "3.4.0",
+  "version": "3.6.0",
   "description": "Generate .docx documents with JavaScript (formerly Office-Clippy)",
   "main": "build/index.js",
   "scripts": {
@@ -14,10 +14,15 @@
     "webpack": "rimraf ./build && webpack",
     "build.web": "webpack --config webpack.web.config.js",
     "demo": "npm run build && node ./demo",
-    "typedoc": "typedoc --out docs/ src/ --module commonjs --target ES6 --disableOutputCheck --excludePrivate --externalPattern \"**/*.spec.ts\"",
+    "typedoc": "typedoc src/index.ts",
     "style": "prettier -l \"src/**/*.ts\"",
+    "style.fix": "prettier \"src/**/*.ts\" --write",
     "fix-types": "node types-absolute-fixer.js"
   },
+  "pre-commit": [
+    "style",
+    "lint"
+  ],
   "files": [
     "src",
     "build",
@@ -42,11 +47,13 @@
   "types": "./build/index.d.ts",
   "dependencies": {
     "@types/archiver": "^2.1.0",
+    "@types/bluebird": "3.5.20",
     "@types/express": "^4.0.35",
     "@types/image-size": "0.0.29",
     "@types/jszip": "^3.1.3",
-    "@types/request-promise": "^4.1.41",
+    "@types/request-promise": "^4.1.42",
     "archiver": "^2.1.1",
+    "fast-xml-parser": "^3.3.6",
     "image-size": "^0.6.2",
     "jszip": "^3.1.5",
     "request": "^2.83.0",
@@ -62,19 +69,23 @@
   "devDependencies": {
     "@types/chai": "^3.4.35",
     "@types/mocha": "^2.2.39",
+    "@types/sinon": "^4.3.1",
     "awesome-typescript-loader": "^3.4.1",
     "chai": "^3.5.0",
     "glob": "^7.1.2",
+    "jszip": "^3.1.5",
     "mocha": "^3.2.0",
     "mocha-webpack": "^1.0.1",
-    "prettier": "^1.10.2",
+    "pre-commit": "^1.2.2",
+    "prettier": "^1.12.1",
     "prompt": "^1.0.0",
     "replace-in-file": "^3.1.0",
     "rimraf": "^2.5.2",
     "shelljs": "^0.7.7",
-    "tslint": "^5.1.0",
-    "typedoc": "^0.9.0",
-    "typescript": "2.6.2",
+    "sinon": "^5.0.7",
+    "tslint": "^5.11.0",
+    "typedoc": "^0.11.1",
+    "typescript": "2.9.2",
     "webpack": "^3.10.0"
   }
 }

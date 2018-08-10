@@ -1,6 +1,7 @@
+import { XmlComponent } from "file/xml-components";
 import { Header } from "./header/header";
-import { IMediaData, Media } from "./media";
-import { Paragraph } from "./paragraph";
+import { Image, Media } from "./media";
+import { ImageParagraph, Paragraph } from "./paragraph";
 import { Relationships } from "./relationships";
 import { Table } from "./table";
 
@@ -8,8 +9,8 @@ export class HeaderWrapper {
     private readonly header: Header;
     private readonly relationships: Relationships;
 
-    constructor(private readonly media: Media) {
-        this.header = new Header();
+    constructor(private readonly media: Media, referenceId: number) {
+        this.header = new Header(referenceId);
         this.relationships = new Relationships();
     }
 
@@ -31,8 +32,8 @@ export class HeaderWrapper {
         return this.header.createTable(rows, cols);
     }
 
-    public addDrawing(imageData: IMediaData): void {
-        this.header.addDrawing(imageData);
+    public addChildElement(childElement: XmlComponent | string): void {
+        this.header.addChildElement(childElement);
     }
 
     public createImage(image: string): void {
@@ -42,7 +43,12 @@ export class HeaderWrapper {
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
             `media/${mediaData.fileName}`,
         );
-        this.addDrawing(mediaData);
+        this.addImage(new Image(new ImageParagraph(mediaData)));
+    }
+
+    public addImage(image: Image): HeaderWrapper {
+        this.header.addParagraph(image.Paragraph);
+        return this;
     }
 
     public get Header(): Header {

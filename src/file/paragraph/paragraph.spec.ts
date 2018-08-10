@@ -161,6 +161,24 @@ describe("Paragraph", () => {
         });
     });
 
+    describe("#pageBreakBefore()", () => {
+        it("should add page break before to JSON", () => {
+            paragraph.pageBreakBefore();
+            const tree = new Formatter().format(paragraph);
+            expect(tree).to.deep.equal({
+                "w:p": [
+                    {
+                        "w:pPr": [
+                            {
+                                "w:pageBreakBefore": [],
+                            },
+                        ],
+                    },
+                ],
+            });
+        });
+    });
+
     describe("#bullet()", () => {
         it("should default to 0 indent level if no bullet was specified", () => {
             paragraph.bullet();
@@ -317,6 +335,16 @@ describe("Paragraph", () => {
             const tree = new Formatter().format(paragraph);
             expect(tree).to.deep.equal({
                 "w:p": [{ "w:pPr": [{ "w:keepNext": [] }] }],
+            });
+        });
+    });
+
+    describe("#bidirectional", () => {
+        it("set paragraph right to left layout", () => {
+            paragraph.bidirectional();
+            const tree = new Formatter().format(paragraph);
+            expect(tree).to.deep.equal({
+                "w:p": [{ "w:pPr": [{ "w:bidi": [] }] }],
             });
         });
     });

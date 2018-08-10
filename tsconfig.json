@@ -10,6 +10,7 @@
         "module": "commonjs",
         "declaration": true,
         "noUnusedLocals": true,
+        "noUnusedParameters": true,
         "baseUrl": "./src",
         "paths" : {
           "/*": [
@@ -22,5 +23,23 @@
         "tests",
         "**/*.spec.ts",
         "**/_*"
-    ]
+    ],
+    "typedocOptions": {
+        "mode": "file",
+        "out": "docs/api",
+        "exclude": "test",
+        "theme": "default",
+        "ignoreCompilerErrors": true,
+        "excludePrivate": true,
+        "excludeProtected": true,
+        "excludeNotExported": true,
+        "excludeExternals": false,
+        "target": "ES6",
+        "moduleResolution": "node",
+        "preserveConstEnums": true,
+        "stripInternal": true,
+        "suppressExcessPropertyErrors": true,
+        "suppressImplicitAnyIndexErrors": true,
+        "module": "commonjs"
+      }
 }

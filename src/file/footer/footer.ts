@@ -1,13 +1,15 @@
 // http://officeopenxml.com/WPfooters.php
-import { IMediaData } from "file/media";
 import { XmlComponent } from "file/xml-components";
-import { Paragraph, PictureRun } from "../paragraph";
+import { Paragraph } from "../paragraph";
 import { Table } from "../table";
 import { FooterAttributes } from "./footer-attributes";
 
 export class Footer extends XmlComponent {
-    constructor() {
+    private readonly refId: number;
+
+    constructor(referenceNumber: number) {
         super("w:ftr");
+        this.refId = referenceNumber;
         this.root.push(
             new FooterAttributes({
                 wpc: "http://schemas.microsoft.com/office/word/2010/wordprocessingCanvas",
@@ -30,8 +32,14 @@ export class Footer extends XmlComponent {
         );
     }
 
-    public addParagraph(paragraph: Paragraph): void {
+    public get ReferenceId(): number {
+        return this.refId;
+    }
+
+    public addParagraph(paragraph: Paragraph): Footer {
         this.root.push(paragraph);
+
+        return this;
     }
 
     public createParagraph(text?: string): Paragraph {
@@ -48,13 +56,5 @@ export class Footer extends XmlComponent {
         const table = new Table(rows, cols);
         this.addTable(table);
         return table;
-    }
-
-    public addDrawing(imageData: IMediaData): void {
-        const paragraph = new Paragraph();
-        const run = new PictureRun(imageData);
-        paragraph.addRun(run);
-
-        this.root.push(paragraph);
     }
 }

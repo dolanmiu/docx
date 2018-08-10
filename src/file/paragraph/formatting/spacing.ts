@@ -5,6 +5,7 @@ export interface ISpacingProperties {
     after?: number;
     before?: number;
     line?: number;
+    lineRule?: string;
 }
 
 class SpacingAttributes extends XmlAttributeComponent<ISpacingProperties> {
@@ -12,6 +13,7 @@ class SpacingAttributes extends XmlAttributeComponent<ISpacingProperties> {
         after: "w:after",
         before: "w:before",
         line: "w:line",
+        lineRule: "w:lineRule",
     };
 }
 

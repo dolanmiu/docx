@@ -1,13 +1,16 @@
 // http://officeopenxml.com/WPheaders.php
-import { IMediaData } from "file/media";
 import { XmlComponent } from "file/xml-components";
-import { Paragraph, PictureRun } from "../paragraph";
+import { Paragraph } from "../paragraph";
 import { Table } from "../table";
 import { HeaderAttributes } from "./header-attributes";
 
 export class Header extends XmlComponent {
-    constructor() {
+    private readonly refId: number;
+
+    constructor(referenceNumber: number) {
         super("w:hdr");
+
+        this.refId = referenceNumber;
         this.root.push(
             new HeaderAttributes({
                 wpc: "http://schemas.microsoft.com/office/word/2010/wordprocessingCanvas",
@@ -30,6 +33,10 @@ export class Header extends XmlComponent {
         );
     }
 
+    public get ReferenceId(): number {
+        return this.refId;
+    }
+
     public addParagraph(paragraph: Paragraph): void {
         this.root.push(paragraph);
     }
@@ -48,13 +55,5 @@ export class Header extends XmlComponent {
         const table = new Table(rows, cols);
         this.addTable(table);
         return table;
-    }
-
-    public addDrawing(imageData: IMediaData): void {
-        const paragraph = new Paragraph();
-        const run = new PictureRun(imageData);
-        paragraph.addRun(run);
-
-        this.root.push(paragraph);
     }
 }

@@ -1,18 +1,18 @@
 // http://officeopenxml.com/drwPicInline.php
 import { IMediaDataDimensions } from "file/media";
 import { XmlComponent } from "file/xml-components";
-import { DocProperties } from "./doc-properties/doc-properties";
-import { EffectExtent } from "./effect-extent/effect-extent";
-import { Extent } from "./extent/extent";
-import { Graphic } from "./graphic";
-import { GraphicFrameProperties } from "./graphic-frame/graphic-frame-properties";
+import { DocProperties } from "./../doc-properties/doc-properties";
+import { EffectExtent } from "./../effect-extent/effect-extent";
+import { Extent } from "./../extent/extent";
+import { GraphicFrameProperties } from "./../graphic-frame/graphic-frame-properties";
+import { Graphic } from "./../inline/graphic";
 import { InlineAttributes } from "./inline-attributes";
 
 export class Inline extends XmlComponent {
-    private extent: Extent;
-    private graphic: Graphic;
+    private readonly extent: Extent;
+    private readonly graphic: Graphic;
 
-    constructor(referenceId: number, private dimensions: IMediaDataDimensions) {
+    constructor(referenceId: number, private readonly dimensions: IMediaDataDimensions) {
         super("wp:inline");
 
         this.root.push(
