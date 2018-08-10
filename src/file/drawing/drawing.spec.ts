@@ -1,5 +1,4 @@
 import { assert } from "chai";
-import * as fs from "fs";
 
 import { Utility } from "../../tests/utility";
 import { Drawing, IDrawingOptions, PlacementPosition } from "./";
