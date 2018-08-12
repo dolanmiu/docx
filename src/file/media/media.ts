@@ -1,6 +1,4 @@
-import * as fs from "fs";
 import * as sizeOf from "image-size";
-import * as path from "path";
 
 import { File } from "../file";
 import { ImageParagraph } from "../paragraph";
@@ -12,28 +10,10 @@ interface IHackedFile {
 }
 
 export class Media {
-    public static addImage(file: File, filePath: string): Image {
+    public static addImage(file: File, buffer: Buffer, width?: number, height?: number): Image {
         // Workaround to expose id without exposing to API
         const exposedFile = (file as {}) as IHackedFile;
-        const mediaData = file.Media.addMedia(filePath, exposedFile.currentRelationshipId++);
-        file.DocumentRelationships.createRelationship(
-            mediaData.referenceId,
-            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
-            `media/${mediaData.fileName}`,
-        );
-        return new Image(new ImageParagraph(mediaData));
-    }
-
-    public static addImageFromBuffer(file: File, buffer: Buffer, width?: number, height?: number): Image {
-        // Workaround to expose id without exposing to API
-        const exposedFile = (file as {}) as IHackedFile;
-        const mediaData = file.Media.addMediaFromBuffer(
-            `${Media.generateId()}.png`,
-            buffer,
-            exposedFile.currentRelationshipId++,
-            width,
-            height,
-        );
+        const mediaData = file.Media.addMedia(buffer, exposedFile.currentRelationshipId++, width, height);
         file.DocumentRelationships.createRelationship(
             mediaData.referenceId,
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
@@ -71,14 +51,8 @@ export class Media {
         return data;
     }
 
-    public addMedia(filePath: string, referenceId: number): IMediaData {
-        const key = path.basename(filePath);
-        const dimensions = sizeOf(filePath);
-        return this.createMedia(key, referenceId, dimensions, fs.createReadStream(filePath), filePath);
-    }
-
-    public addMediaFromBuffer(fileName: string, buffer: Buffer, referenceId: number, width?: number, height?: number): IMediaData {
-        const key = fileName;
+    public addMedia(buffer: Buffer, referenceId: number, width?: number, height?: number): IMediaData {
+        const key = `${Media.generateId()}.png`;
         let dimensions;
         if (width && height) {
             dimensions = {
@@ -96,7 +70,7 @@ export class Media {
         key: string,
         relationshipsCount: number,
         dimensions: { width: number; height: number },
-        data: fs.ReadStream | Buffer,
+        data: Buffer,
         filePath?: string,
     ): IMediaData {
         const imageData = {

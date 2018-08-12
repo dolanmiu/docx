@@ -1,4 +1,5 @@
 const docx = require("../build");
+const fs = require('fs');
 
 const doc = new docx.Document(undefined, {
     top: 700,
@@ -80,7 +81,7 @@ doc.Styles.createParagraphStyle("ListParagraph", "List Paragraph")
     .quickFormat()
     .basedOn("Normal");
 
-doc.createImage("./demo/images/pizza.gif");
+doc.createImage(fs.readFileSync("./demo/images/pizza.gif"));
 doc
     .createParagraph("HEADING")
     .heading1()
@@ -122,7 +123,7 @@ var arrboth = [{
 
 arrboth.forEach(function(item) {
     const para = doc.createParagraph();
-    para.createTextRun(doc.createImage(item.image));
+    para.createTextRun(doc.createImage(fs.readFileSync(item.image)));
     para.properties.width = 60;
     para.properties.height = 90;
     doc.createParagraph(item.comment).style("normalPara2");
