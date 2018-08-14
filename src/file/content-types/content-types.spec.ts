@@ -1,6 +1,9 @@
+// tslint:disable:no-string-literal
+
 import { expect } from "chai";
 import { Formatter } from "../../export/formatter";
 import { ContentTypes } from "./content-types";
+
 describe("ContentTypes", () => {
     let contentTypes: ContentTypes;
 

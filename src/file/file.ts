@@ -2,14 +2,13 @@ import { AppProperties } from "./app-properties/app-properties";
 import { ContentTypes } from "./content-types/content-types";
 import { CoreProperties, IPropertiesOptions } from "./core-properties";
 import { Document } from "./document";
-import { FooterReferenceType, HeaderReference, HeaderReferenceType } from "./document/body/section-properties";
-import { SectionPropertiesOptions } from "./document/body/section-properties/section-properties";
+import { FooterReferenceType, HeaderReference, HeaderReferenceType, SectionPropertiesOptions } from "./document/body/section-properties";
 import { FooterWrapper } from "./footer-wrapper";
 import { FootNotes } from "./footnotes";
 import { HeaderWrapper } from "./header-wrapper";
-import { Media } from "./media";
+import { Image, Media } from "./media";
 import { Numbering } from "./numbering";
-import { Bookmark, Hyperlink, Image, Paragraph } from "./paragraph";
+import { Bookmark, Hyperlink, Paragraph } from "./paragraph";
 import { Relationships } from "./relationships";
 import { Styles } from "./styles";
 import { ExternalStylesFactory } from "./styles/external-styles-factory";
@@ -126,19 +125,19 @@ export class File {
 
     public createImage(filePath: string): Image {
         const image = Media.addImage(this, filePath);
-        this.document.addParagraph(image);
+        this.document.addParagraph(image.Paragraph);
 
         return image;
     }
 
     public addImage(image: Image): File {
-        this.document.addParagraph(image);
+        this.document.addParagraph(image.Paragraph);
         return this;
     }
 
     public createImageFromBuffer(buffer: Buffer, width?: number, height?: number): Image {
         const image = Media.addImageFromBuffer(this, buffer, width, height);
-        this.document.addParagraph(image);
+        this.document.addParagraph(image.Paragraph);
 
         return image;
     }

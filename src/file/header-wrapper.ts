@@ -1,7 +1,7 @@
 import { XmlComponent } from "file/xml-components";
 import { Header } from "./header/header";
-import { Media } from "./media";
-import { Image, Paragraph } from "./paragraph";
+import { Image, Media } from "./media";
+import { ImageParagraph, Paragraph } from "./paragraph";
 import { Relationships } from "./relationships";
 import { Table } from "./table";
 
@@ -43,11 +43,11 @@ export class HeaderWrapper {
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
             `media/${mediaData.fileName}`,
         );
-        this.addImage(new Image(mediaData));
+        this.addImage(new Image(new ImageParagraph(mediaData)));
     }
 
     public addImage(image: Image): HeaderWrapper {
-        this.header.addParagraph(image);
+        this.header.addParagraph(image.Paragraph);
         return this;
     }
 

@@ -1,7 +1,7 @@
 import { assert } from "chai";
 
-import { SimplePos } from "./simple-pos";
 import { Utility } from "../../../tests/utility";
+import { SimplePos } from "./simple-pos";
 
 describe("SimplePos", () => {
     describe("#constructor()", () => {

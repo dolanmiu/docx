@@ -339,9 +339,9 @@ describe("Paragraph", () => {
         });
     });
 
-    describe("#bidi", () => {
+    describe("#bidirectional", () => {
         it("set paragraph right to left layout", () => {
-            paragraph.bidi();
+            paragraph.bidirectional();
             const tree = new Formatter().format(paragraph);
             expect(tree).to.deep.equal({
                 "w:p": [{ "w:pPr": [{ "w:bidi": [] }] }],

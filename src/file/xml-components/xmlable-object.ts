@@ -3,4 +3,7 @@ export interface IXmlableObject extends Object {
 }
 
 // Needed because of: https://github.com/s-panferov/awesome-typescript-loader/issues/432
-export const WORKAROUND3 = "workaround";
+/**
+ * @ignore
+ */
+export const WORKAROUND3 = "";

@@ -4,8 +4,9 @@ import * as path from "path";
 
 import { File } from "../file";
 import { IDrawingOptions } from "../drawing";
-import { Image } from "../paragraph";
+import { ImageParagraph } from "../paragraph";
 import { IMediaData } from "./data";
+import { Image } from "./image";
 
 interface IHackedFile {
     currentRelationshipId: number;
@@ -21,7 +22,7 @@ export class Media {
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
             `media/${mediaData.fileName}`,
         );
-        return new Image(mediaData, drawingOptions);
+        return new Image(new ImageParagraph(mediaData, drawingOptions));
     }
 
     public static addImageFromBuffer(file: File, buffer: Buffer, width?: number, height?: number, drawingOptions?: IDrawingOptions): Image {
@@ -40,7 +41,7 @@ export class Media {
             `media/${mediaData.fileName}`,
         );
 
-        return new Image(mediaData, drawingOptions);
+        return new Image(new ImageParagraph(mediaData, drawingOptions));
     }
 
     private static generateId(): string {
@@ -106,12 +107,12 @@ export class Media {
             fileName: key,
             dimensions: {
                 pixels: {
-                    x: dimensions.width,
-                    y: dimensions.height,
+                    x: Math.round(dimensions.width),
+                    y: Math.round(dimensions.height),
                 },
                 emus: {
-                    x: dimensions.width * 9525,
-                    y: dimensions.height * 9525,
+                    x: Math.round(dimensions.width * 9525),
+                    y: Math.round(dimensions.height * 9525),
                 },
             },
         };
