@@ -16,37 +16,44 @@ interface IXmlifyedFileMapping {
     Numbering: IXmlifyedFile;
     Relationships: IXmlifyedFile;
     FileRelationships: IXmlifyedFile;
-    Header: IXmlifyedFile;
-    Footer: IXmlifyedFile;
-    HeaderRelationships: IXmlifyedFile;
-    FooterRelationships: IXmlifyedFile;
+    Headers: IXmlifyedFile[];
+    Footers: IXmlifyedFile[];
+    HeaderRelationships: IXmlifyedFile[];
+    FooterRelationships: IXmlifyedFile[];
     ContentTypes: IXmlifyedFile;
     AppProperties: IXmlifyedFile;
+    FootNotes: IXmlifyedFile;
 }
 
 export class Compiler {
     private readonly formatter: Formatter;
 
-    constructor(private readonly file: File) {
+    constructor() {
         this.formatter = new Formatter();
     }
 
-    public async compile(): Promise<JSZip> {
+    public async compile(file: File): Promise<JSZip> {
         const zip = new JSZip();
 
-        const xmlifiedFileMapping = this.xmlifyFile(this.file);
+        const xmlifiedFileMapping = this.xmlifyFile(file);
 
         for (const key in xmlifiedFileMapping) {
             if (!xmlifiedFileMapping[key]) {
                 continue;
             }
 
-            const xmlifiedFile = xmlifiedFileMapping[key];
+            const obj = xmlifiedFileMapping[key] as IXmlifyedFile | IXmlifyedFile[];
 
-            zip.file(xmlifiedFile.path, xmlifiedFile.data);
+            if (Array.isArray(obj)) {
+                for (const subFile of obj) {
+                    zip.file(subFile.path, subFile.data);
+                }
+            } else {
+                zip.file(obj.path, obj.data);
+            }
         }
 
-        for (const data of this.file.Media.Array) {
+        for (const data of file.Media.Array) {
             const mediaData = data.stream;
             zip.file(`word/media/${data.fileName}`, mediaData);
         }
@@ -85,22 +92,22 @@ export class Compiler {
                 data: xml(this.formatter.format(file.FileRelationships)),
                 path: "_rels/.rels",
             },
-            Header: {
-                data: xml(this.formatter.format(file.Header.Header)),
-                path: "word/header1.xml",
-            },
-            Footer: {
-                data: xml(this.formatter.format(file.Footer.Footer)),
-                path: "word/footer1.xml",
-            },
-            HeaderRelationships: {
-                data: xml(this.formatter.format(file.Header.Relationships)),
-                path: "word/_rels/header1.xml.rels",
-            },
-            FooterRelationships: {
-                data: xml(this.formatter.format(file.Footer.Relationships)),
-                path: "word/_rels/footer1.xml.rels",
-            },
+            Headers: file.Headers.map((headerWrapper, index) => ({
+                data: xml(this.formatter.format(headerWrapper.Header)),
+                path: `word/header${index + 1}.xml`,
+            })),
+            Footers: file.Footers.map((footerWrapper, index) => ({
+                data: xml(this.formatter.format(footerWrapper.Footer)),
+                path: `word/footer${index + 1}.xml`,
+            })),
+            HeaderRelationships: file.Headers.map((headerWrapper, index) => ({
+                data: xml(this.formatter.format(headerWrapper.Relationships)),
+                path: `word/_rels/header${index + 1}.xml.rels`,
+            })),
+            FooterRelationships: file.Footers.map((footerWrapper, index) => ({
+                data: xml(this.formatter.format(footerWrapper.Relationships)),
+                path: `word/_rels/footer${index + 1}.xml.rels`,
+            })),
             ContentTypes: {
                 data: xml(this.formatter.format(file.ContentTypes)),
                 path: "[Content_Types].xml",
@@ -108,6 +115,10 @@ export class Compiler {
             AppProperties: {
                 data: xml(this.formatter.format(file.AppProperties)),
                 path: "docProps/app.xml",
+            },
+            FootNotes: {
+                data: xml(this.formatter.format(file.FootNotes)),
+                path: "word/footnotes.xml",
             },
         };
     }

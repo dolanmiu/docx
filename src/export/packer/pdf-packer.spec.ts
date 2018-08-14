@@ -1,42 +1,46 @@
 /* tslint:disable:typedef space-before-function-paren */
-import { assert } from "chai";
+import { assert, expect } from "chai";
 import { stub } from "sinon";
 
-import { BufferPacker } from "../../export/packer/buffer";
 import { File, Paragraph } from "../../file";
+import { PdfPacker } from "./pdf-packer";
 
-describe("BufferPacker", () => {
-    let packer: BufferPacker;
+describe("PdfPacker", () => {
+    let packer: PdfPacker;
+    let file: File;
 
     beforeEach(() => {
-        const file = new File({
+        file = new File({
             creator: "Dolan Miu",
             revision: "1",
             lastModifiedBy: "Dolan Miu",
         });
         const paragraph = new Paragraph("test text");
         const heading = new Paragraph("Hello world").heading1();
+
         file.addParagraph(new Paragraph("title").title());
         file.addParagraph(heading);
         file.addParagraph(new Paragraph("heading 2").heading2());
         file.addParagraph(paragraph);
 
-        packer = new BufferPacker(file);
+        packer = new PdfPacker();
     });
 
-    describe("#pack()", () => {
-        it("should create a standard docx file", async function() {
+    describe("#packPdf", () => {
+        it("should create a standard PDF file", async function() {
             this.timeout(99999999);
-            const buffer = await packer.pack();
-            assert.isDefined(buffer);
-            assert.isTrue(buffer.byteLength > 0);
+            // tslint:disable-next-line:no-any
+            const pdfConverterConvert = stub((packer as any).pdfConverter, "convert");
+            pdfConverterConvert.returns(new Buffer(""));
+            const buffer = await packer.toBuffer(file);
+            expect(buffer).is.an.instanceof(Buffer);
         });
 
         it("should handle exception if it throws any", () => {
             // tslint:disable-next-line:no-any
-            const compiler = stub((packer as any).packer, "compile");
+            const compiler = stub((packer as any).packer, "toBuffer");
             compiler.throwsException();
-            return packer.pack().catch((error) => {
+            return packer.toBuffer(file).catch((error) => {
                 assert.isDefined(error);
             });
         });

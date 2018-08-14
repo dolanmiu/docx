@@ -11,10 +11,11 @@ paragraph.addRun(dateText);
 
 doc.addParagraph(paragraph);
 
-var packer = new docx.Packer();
+var packer = new docx.PdfPacker();
 
 packer.toBuffer(doc).then((buffer) => {
-    fs.writeFileSync('My Document.docx', buffer);
+    console.log(buffer);
+    fs.writeFileSync('My Document.pdf', buffer);
 });
 
 console.log('Document created successfully at project root!');

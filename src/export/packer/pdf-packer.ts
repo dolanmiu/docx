@@ -1,12 +1,23 @@
-import * as fs from "fs";
 import * as request from "request-promise";
 
-export interface IConvertOutput {
-    data: string;
-}
+import { File } from "file";
+import { Packer } from "./packer";
 
-export class PdfConvertWrapper {
-    public convert(filePath: string): request.RequestPromise {
+export class PdfPacker {
+    private readonly packer: Packer;
+
+    constructor() {
+        this.packer = new Packer();
+    }
+
+    public async toBuffer(file: File): Promise<Buffer> {
+        const buffer = await this.packer.toBuffer(file);
+        const text = await this.convert(buffer);
+
+        return text;
+    }
+
+    private convert(buffer: Buffer): request.RequestPromise {
         return request.post({
             url: "http://mirror1.convertonlinefree.com",
             // tslint:disable-next-line:no-null-keyword
@@ -20,7 +31,7 @@ export class PdfConvertWrapper {
                 __EVENTARGUMENT: "",
                 __VIEWSTATE: "",
                 ctl00$MainContent$fu: {
-                    value: fs.readFileSync(filePath),
+                    value: buffer,
                     options: {
                         filename: "output.docx",
                         contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",

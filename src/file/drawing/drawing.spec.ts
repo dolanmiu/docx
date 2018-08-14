@@ -10,7 +10,7 @@ function createDrawing(drawingOptions?: IDrawingOptions): Drawing {
         {
             fileName: "test.jpg",
             referenceId: 1,
-            stream: fs.createReadStream(path),
+            stream: fs.readFileSync(path),
             path: path,
             dimensions: {
                 pixels: {
