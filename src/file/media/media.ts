@@ -2,8 +2,8 @@ import * as fs from "fs";
 import * as sizeOf from "image-size";
 import * as path from "path";
 
-import { File } from "../file";
 import { IDrawingOptions } from "../drawing";
+import { File } from "../file";
 import { ImageParagraph } from "../paragraph";
 import { IMediaData } from "./data";
 import { Image } from "./image";
