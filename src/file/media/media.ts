@@ -3,6 +3,7 @@ import * as sizeOf from "image-size";
 import * as path from "path";
 
 import { File } from "../file";
+import { IDrawingOptions } from "../drawing";
 import { Image } from "../paragraph";
 import { IMediaData } from "./data";
 
@@ -11,7 +12,7 @@ interface IHackedFile {
 }
 
 export class Media {
-    public static addImage(file: File, filePath: string): Image {
+    public static addImage(file: File, filePath: string, drawingOptions?: IDrawingOptions): Image {
         // Workaround to expose id without exposing to API
         const exposedFile = (file as {}) as IHackedFile;
         const mediaData = file.Media.addMedia(filePath, exposedFile.currentRelationshipId++);
@@ -20,10 +21,10 @@ export class Media {
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
             `media/${mediaData.fileName}`,
         );
-        return new Image(mediaData);
+        return new Image(mediaData, drawingOptions);
     }
 
-    public static addImageFromBuffer(file: File, buffer: Buffer, width?: number, height?: number): Image {
+    public static addImageFromBuffer(file: File, buffer: Buffer, width?: number, height?: number, drawingOptions?: IDrawingOptions): Image {
         // Workaround to expose id without exposing to API
         const exposedFile = (file as {}) as IHackedFile;
         const mediaData = file.Media.addMediaFromBuffer(
@@ -39,7 +40,7 @@ export class Media {
             `media/${mediaData.fileName}`,
         );
 
-        return new Image(mediaData);
+        return new Image(mediaData, drawingOptions);
     }
 
     private static generateId(): string {
