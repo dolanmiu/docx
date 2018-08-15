@@ -11,7 +11,7 @@ export interface IMediaDataDimensions {
 
 export interface IMediaData {
     referenceId: number;
-    stream: Buffer;
+    stream: Buffer | Uint8Array | ArrayBuffer;
     path?: string;
     fileName: string;
     dimensions: IMediaDataDimensions;

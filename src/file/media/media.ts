@@ -1,5 +1,3 @@
-import * as sizeOf from "image-size";
-
 import { File } from "../file";
 import { ImageParagraph } from "../paragraph";
 import { IMediaData } from "./data";
@@ -10,7 +8,7 @@ interface IHackedFile {
 }
 
 export class Media {
-    public static addImage(file: File, buffer: Buffer, width?: number, height?: number): Image {
+    public static addImage(file: File, buffer: Buffer | string | Uint8Array | ArrayBuffer, width?: number, height?: number): Image {
         // Workaround to expose id without exposing to API
         const exposedFile = (file as {}) as IHackedFile;
         const mediaData = file.Media.addMedia(buffer, exposedFile.currentRelationshipId++, width, height);
@@ -51,28 +49,36 @@ export class Media {
         return data;
     }
 
-    public addMedia(buffer: Buffer, referenceId: number, width?: number, height?: number): IMediaData {
+    public addMedia(
+        buffer: Buffer | string | Uint8Array | ArrayBuffer,
+        referenceId: number,
+        width: number = 100,
+        height: number = 100,
+    ): IMediaData {
         const key = `${Media.generateId()}.png`;
-        let dimensions;
-        if (width && height) {
-            dimensions = {
+
+        return this.createMedia(
+            key,
+            referenceId,
+            {
                 width: width,
                 height: height,
-            };
-        } else {
-            dimensions = sizeOf(buffer);
-        }
-
-        return this.createMedia(key, referenceId, dimensions, buffer);
+            },
+            buffer,
+        );
     }
 
     private createMedia(
         key: string,
         relationshipsCount: number,
         dimensions: { width: number; height: number },
-        data: Buffer,
+        data: Buffer | string | Uint8Array | ArrayBuffer,
         filePath?: string,
     ): IMediaData {
+        if (typeof data === "string") {
+            data = this.convertDataURIToBinary(data);
+        }
+
         const imageData = {
             referenceId: this.map.size + relationshipsCount + 1,
             stream: data,
@@ -103,5 +109,24 @@ export class Media {
         });
 
         return array;
+    }
+
+    private convertDataURIToBinary(dataURI: string): Uint8Array {
+        // https://gist.github.com/borismus/1032746
+        // https://github.com/mafintosh/base64-to-uint8array
+        const BASE64_MARKER = ";base64,";
+
+        const base64Index = dataURI.indexOf(BASE64_MARKER) + BASE64_MARKER.length;
+
+        if (typeof atob === "function") {
+            return new Uint8Array(
+                atob(dataURI.substring(base64Index))
+                    .split("")
+                    .map((c) => c.charCodeAt(0)),
+            );
+        } else {
+            const b = require("buf" + "fer");
+            return new b.Buffer(dataURI, "base64");
+        }
     }
 }

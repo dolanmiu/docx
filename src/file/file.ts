@@ -129,7 +129,7 @@ export class File {
         return this;
     }
 
-    public createImage(buffer: Buffer, width?: number, height?: number): Image {
+    public createImage(buffer: Buffer | string | Uint8Array | ArrayBuffer, width?: number, height?: number): Image {
         const image = Media.addImage(this, buffer, width, height);
         this.document.addParagraph(image.Paragraph);
 
