@@ -4,10 +4,13 @@ import { Border } from "./formatting/border";
 
 export class ParagraphProperties extends XmlComponent {
     public paragraphBorder: Border;
-    
+
     constructor() {
         super("w:pPr");
         this.paragraphBorder = new Border();
+    }
+
+    public createBorder(): void {
         this.push(this.paragraphBorder);
     }
 

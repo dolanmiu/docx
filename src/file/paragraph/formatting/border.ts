@@ -2,11 +2,12 @@
 import { Attributes, XmlComponent } from "file/xml-components";
 
 class BorderProperty extends XmlComponent {
-    public setProperties(space: string, value: string, size: string): XmlComponent {
+    public setProperties(color: string, space: string, value: string, size: string): XmlComponent {
         const attrs = new Attributes({
+            color: color,
             space: space,
             val: value,
-            sz: size
+            sz: size,
         });
         this.root.push(attrs);
 
@@ -19,33 +20,33 @@ export class Border extends XmlComponent {
         super("w:pBdr");
     }
 
-    public addTopBorder(space: string = "1", value: string = "single", size: string = "6"): XmlComponent {
+    public addTopBorder(color: string = "auto", space: string = "1", value: string = "single", size: string = "6"): XmlComponent {
         const top = new BorderProperty("w:top");
-        top.setProperties(space, value, size);
+        top.setProperties(color, space, value, size);
         this.root.push(top);
 
         return this;
     }
 
-    public addBottomBorder(space: string = "1", value: string = "single", size: string = "6"): XmlComponent {
+    public addBottomBorder(color: string = "auto", space: string = "1", value: string = "single", size: string = "6"): XmlComponent {
         const bottom = new BorderProperty("w:bottom");
-        bottom.setProperties(space, value, size);
+        bottom.setProperties(color, space, value, size);
         this.root.push(bottom);
 
         return this;
     }
 
-    public addLeftBorder(space: string = "1", value: string = "single", size: string = "6"): XmlComponent {
+    public addLeftBorder(color: string = "auto", space: string = "1", value: string = "single", size: string = "6"): XmlComponent {
         const left = new BorderProperty("w:left");
-        left.setProperties(space, value, size);
+        left.setProperties(color, space, value, size);
         this.root.push(left);
 
         return this;
     }
 
-    public addRightBorder(space: string = "1", value: string = "single", size: string = "6"): XmlComponent {
+    public addRightBorder(color: string = "auto", space: string = "1", value: string = "single", size: string = "6"): XmlComponent {
         const right = new BorderProperty("w:right");
-        right.setProperties(space, value, size);
+        right.setProperties(color, space, value, size);
         this.root.push(right);
 
         return this;
@@ -56,6 +57,7 @@ export class ThematicBreak extends XmlComponent {
     constructor() {
         super("w:pBdr");
         const bottom = new BorderProperty("w:bottom");
+        bottom.setProperties("auto", "1", "single", "6");
         this.root.push(bottom);
     }
 }
