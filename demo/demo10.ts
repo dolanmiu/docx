@@ -3,6 +3,8 @@
 import * as fs from "fs";
 import { Document, Packer, Paragraph, TextRun } from "../build";
 
+// tslint:disable:no-shadowed-variable
+
 const PHONE_NUMBER = "07534563401";
 const PROFILE_URL = "https://www.linkedin.com/in/dolan1";
 const EMAIL = "docx@com";
@@ -125,11 +127,13 @@ const achievements = [
 ];
 
 class DocumentCreator {
-    public create(data): Document {
-        const experiences = data[0];
-        const educations = data[1];
-        const skills = data[2];
-        const achivements = data[3];
+    public create(data: object[]): Document {
+        // tslint:disable-next-line:no-any
+        const experiences = data[0] as any[];
+        // tslint:disable-next-line:no-any
+        const educations = data[1] as any[];
+        const skills = data[2] as object[];
+        const achivements = data[3] as object[];
         const document = new Document();
         document.addParagraph(new Paragraph("Dolan Miu").title());
 
@@ -197,7 +201,7 @@ class DocumentCreator {
         return document;
     }
 
-    createContactInfo(phoneNumber: string, profileUrl: string, email: string) {
+    public createContactInfo(phoneNumber: string, profileUrl: string, email: string): Paragraph {
         const paragraph = new Paragraph().center();
         const contactInfo = new TextRun(`Mobile: ${phoneNumber} | LinkedIn: ${profileUrl} | Email: ${email}`);
         const address = new TextRun("Address: 58 Elm Avenue, Kent ME4 6ER, UK").break();
@@ -208,15 +212,15 @@ class DocumentCreator {
         return paragraph;
     }
 
-    createHeading(text) {
+    public createHeading(text: string): Paragraph {
         return new Paragraph(text).heading1().thematicBreak();
     }
 
-    createSubHeading(text) {
+    public createSubHeading(text: string): Paragraph {
         return new Paragraph(text).heading2();
     }
 
-    createInstitutionHeader(institutionName, dateText) {
+    public createInstitutionHeader(institutionName: string, dateText: string): Paragraph {
         const paragraph = new Paragraph().maxRightTabStop();
         const institution = new TextRun(institutionName).bold();
         const date = new TextRun(dateText).tab().bold();
@@ -227,7 +231,7 @@ class DocumentCreator {
         return paragraph;
     }
 
-    createRoleText(roleText) {
+    public createRoleText(roleText: string): Paragraph {
         const paragraph = new Paragraph();
         const role = new TextRun(roleText).italic();
 
@@ -236,11 +240,12 @@ class DocumentCreator {
         return paragraph;
     }
 
-    createBullet(text) {
+    public createBullet(text: string): Paragraph {
         return new Paragraph(text).bullet();
     }
 
-    createSkillList(skills) {
+    // tslint:disable-next-line:no-any
+    public createSkillList(skills: any[]): Paragraph {
         const paragraph = new Paragraph();
         const skillConcat = skills.map((skill) => skill.name).join(", ") + ".";
 
@@ -249,35 +254,38 @@ class DocumentCreator {
         return paragraph;
     }
 
-    public createAchivementsList(achivements): Paragraph {
-        const arr = [];
+    // tslint:disable-next-line:no-any
+    public createAchivementsList(achivements: any[]): Paragraph[] {
+        const arr: Paragraph[] = [];
 
         for (const achievement of achivements) {
-            arr.push(new Paragraph(achievement.name).bullet());
+            const paragraph = new Paragraph(achievement.name).bullet();
+            arr.push(paragraph);
         }
 
         return arr;
     }
 
-    createInterests(interests) {
+    public createInterests(interests: string): Paragraph {
         const paragraph = new Paragraph();
 
         paragraph.addRun(new TextRun(interests));
         return paragraph;
     }
 
-    splitParagraphIntoBullets(text) {
+    public splitParagraphIntoBullets(text: string): string[] {
         return text.split("\n\n");
     }
 
-    createPositionDateText(startDate, endDate, isCurrent) {
+    // tslint:disable-next-line:no-any
+    public createPositionDateText(startDate: any, endDate: any, isCurrent: boolean): string {
         const startDateText = this.getMonthFromInt(startDate.month) + ". " + startDate.year;
         const endDateText = isCurrent ? "Present" : `${this.getMonthFromInt(endDate.month)}. ${endDate.year}`;
 
         return `${startDateText} - ${endDateText}`;
     }
 
-    getMonthFromInt(value) {
+    public getMonthFromInt(value: number): string {
         switch (value) {
             case 1:
                 return "Jan";
@@ -303,6 +311,8 @@ class DocumentCreator {
                 return "Nov";
             case 12:
                 return "Dec";
+            default:
+                return "N/A";
         }
     }
 }

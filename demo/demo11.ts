@@ -18,7 +18,7 @@ doc.Styles.createParagraphStyle("Heading1", "Heading 1")
     .size(52)
     .center()
     .bold()
-    .color(000000)
+    .color("000000")
     .spacing({ line: 340 })
     .underline("single", "000000");
 
@@ -112,7 +112,7 @@ table
     .getRow(0)
     .getCell(0)
     .addContent(new Paragraph("Pole No."));
-table.Properties.width = 10000;
+// table.Properties.width = 10000;
 doc.addTable(table);
 
 const arrboth = [
@@ -129,8 +129,8 @@ const arrboth = [
 arrboth.forEach((item) => {
     const para = doc.createParagraph();
     para.addImage(doc.createImage(fs.readFileSync(item.image)));
-    para.Properties.width = 60;
-    para.Properties.height = 90;
+    // para.Properties.width = 60;
+    // para.Properties.height = 90;
     doc.createParagraph(item.comment).style("normalPara2");
 });
 
