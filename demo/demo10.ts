@@ -1,8 +1,11 @@
-const docx = require("../build");
+// Add images to header and footer
+// Import from 'docx' rather than '../build' if you install from npm
+import * as fs from "fs";
+import { Document, Packer, Paragraph, TextRun } from "../build";
 
 const PHONE_NUMBER = "07534563401";
 const PROFILE_URL = "https://www.linkedin.com/in/dolan1";
-const EMAIL = "docx@docx.com";
+const EMAIL = "docx@com";
 
 const experiences = [
     {
@@ -122,13 +125,13 @@ const achievements = [
 ];
 
 class DocumentCreator {
-    create(data) {
+    public create(data): Document {
         const experiences = data[0];
         const educations = data[1];
         const skills = data[2];
         const achivements = data[3];
-        const document = new docx.Document();
-        document.addParagraph(new docx.Paragraph("Dolan Miu").title());
+        const document = new Document();
+        document.addParagraph(new Paragraph("Dolan Miu").title());
 
         document.addParagraph(this.createContactInfo(PHONE_NUMBER, PROFILE_URL, EMAIL));
         document.addParagraph(this.createHeading("Education"));
@@ -181,23 +184,23 @@ class DocumentCreator {
         document.addParagraph(this.createHeading("References"));
 
         document.addParagraph(
-            new docx.Paragraph(
+            new Paragraph(
                 "Dr. Dean Mohamedally Director of Postgraduate Studies Department of Computer Science, University College London Malet Place, Bloomsbury, London WC1E d.mohamedally@ucl.ac.uk",
             ),
         );
-        document.addParagraph(new docx.Paragraph("More references upon request"));
+        document.addParagraph(new Paragraph("More references upon request"));
         document.addParagraph(
-            new docx.Paragraph(
+            new Paragraph(
                 "This CV was generated in real-time based on my Linked-In profile from my personal website www.dolan.bio.",
             ).center(),
         );
         return document;
     }
 
-    createContactInfo(phoneNumber, profileUrl, email) {
-        const paragraph = new docx.Paragraph().center();
-        const contactInfo = new docx.TextRun(`Mobile: ${phoneNumber} | LinkedIn: ${profileUrl} | Email: ${email}`);
-        const address = new docx.TextRun("Address: 58 Elm Avenue, Kent ME4 6ER, UK").break();
+    createContactInfo(phoneNumber: string, profileUrl: string, email: string) {
+        const paragraph = new Paragraph().center();
+        const contactInfo = new TextRun(`Mobile: ${phoneNumber} | LinkedIn: ${profileUrl} | Email: ${email}`);
+        const address = new TextRun("Address: 58 Elm Avenue, Kent ME4 6ER, UK").break();
 
         paragraph.addRun(contactInfo);
         paragraph.addRun(address);
@@ -206,17 +209,17 @@ class DocumentCreator {
     }
 
     createHeading(text) {
-        return new docx.Paragraph(text).heading1().thematicBreak();
+        return new Paragraph(text).heading1().thematicBreak();
     }
 
     createSubHeading(text) {
-        return new docx.Paragraph(text).heading2();
+        return new Paragraph(text).heading2();
     }
 
     createInstitutionHeader(institutionName, dateText) {
-        const paragraph = new docx.Paragraph().maxRightTabStop();
-        const institution = new docx.TextRun(institutionName).bold();
-        const date = new docx.TextRun(dateText).tab().bold();
+        const paragraph = new Paragraph().maxRightTabStop();
+        const institution = new TextRun(institutionName).bold();
+        const date = new TextRun(dateText).tab().bold();
 
         paragraph.addRun(institution);
         paragraph.addRun(date);
@@ -225,8 +228,8 @@ class DocumentCreator {
     }
 
     createRoleText(roleText) {
-        const paragraph = new docx.Paragraph();
-        const role = new docx.TextRun(roleText).italic();
+        const paragraph = new Paragraph();
+        const role = new TextRun(roleText).italic();
 
         paragraph.addRun(role);
 
@@ -234,32 +237,32 @@ class DocumentCreator {
     }
 
     createBullet(text) {
-        return new docx.Paragraph(text).bullet();
+        return new Paragraph(text).bullet();
     }
 
     createSkillList(skills) {
-        const paragraph = new docx.Paragraph();
+        const paragraph = new Paragraph();
         const skillConcat = skills.map((skill) => skill.name).join(", ") + ".";
 
-        paragraph.addRun(new docx.TextRun(skillConcat));
+        paragraph.addRun(new TextRun(skillConcat));
 
         return paragraph;
     }
 
-    createAchivementsList(achivements) {
+    public createAchivementsList(achivements): Paragraph {
         const arr = [];
 
         for (const achievement of achivements) {
-            arr.push(new docx.Paragraph(achievement.name).bullet());
+            arr.push(new Paragraph(achievement.name).bullet());
         }
 
         return arr;
     }
 
     createInterests(interests) {
-        const paragraph = new docx.Paragraph();
+        const paragraph = new Paragraph();
 
-        paragraph.addRun(new docx.TextRun(interests));
+        paragraph.addRun(new TextRun(interests));
         return paragraph;
     }
 
@@ -308,7 +311,8 @@ const documentCreator = new DocumentCreator();
 
 const doc = documentCreator.create([experiences, education, skills, achievements]);
 
-var exporter = new docx.LocalPacker(doc);
-exporter.pack("Dolan Miu CV");
+const packer = new Packer();
 
-console.log("Document created successfully at project root!");
+packer.toBuffer(doc).then((buffer) => {
+    fs.writeFileSync("My Document.docx", buffer);
+});

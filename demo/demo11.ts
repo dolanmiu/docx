@@ -1,7 +1,9 @@
-const docx = require("../build");
-const fs = require('fs');
+// Setting styles with JavaScript configuration
+// Import from 'docx' rather than '../build' if you install from npm
+import * as fs from "fs";
+import { Document, Packer, Paragraph, Table } from "../build";
 
-const doc = new docx.Document(undefined, {
+const doc = new Document(undefined, {
     top: 700,
     right: 700,
     bottom: 700,
@@ -52,7 +54,7 @@ doc.Styles.createParagraphStyle("normalPara", "Normal Para")
     .font("Calibri")
     .quickFormat()
     .leftTabStop(453.543307087)
-    .maxRightTabStop(453.543307087)
+    .maxRightTabStop()
     .size(26)
     .spacing({ line: 276, before: 20 * 72 * 0.1, after: 20 * 72 * 0.05 });
 
@@ -70,7 +72,7 @@ doc.Styles.createParagraphStyle("aside", "Aside")
     .next("Normal")
     .color("999999")
     .italics()
-    .indent(720)
+    .indent({ left: 720 })
     .spacing({ line: 276 });
 
 doc.Styles.createParagraphStyle("wellSpaced", "Well Spaced")
@@ -105,29 +107,35 @@ doc.createParagraph("Sir,").style("normalPara");
 
 doc.createParagraph("BRIEF DESCRIPTION").style("normalPara");
 
-var table = new docx.Table(4, 4);
-var contentParagraph = table
+const table = new Table(4, 4);
+table
     .getRow(0)
     .getCell(0)
-    .addContent(new docx.Paragraph("Pole No."));
-table.properties.width = 10000;
+    .addContent(new Paragraph("Pole No."));
+table.Properties.width = 10000;
 doc.addTable(table);
 
-var arrboth = [{
-    image: "./demo/images/pizza.gif",
-    comment: "Test"
-}, {
-    image: "./demo/images/pizza.gif",
-    comment: "Test 2"
-}];
+const arrboth = [
+    {
+        image: "./demo/images/pizza.gif",
+        comment: "Test",
+    },
+    {
+        image: "./demo/images/pizza.gif",
+        comment: "Test 2",
+    },
+];
 
-arrboth.forEach(function(item) {
+arrboth.forEach((item) => {
     const para = doc.createParagraph();
-    para.createTextRun(doc.createImage(fs.readFileSync(item.image)));
-    para.properties.width = 60;
-    para.properties.height = 90;
+    para.addImage(doc.createImage(fs.readFileSync(item.image)));
+    para.Properties.width = 60;
+    para.Properties.height = 90;
     doc.createParagraph(item.comment).style("normalPara2");
 });
 
-var exporter = new docx.LocalPacker(doc);
-exporter.pack("My Document");
+const packer = new Packer();
+
+packer.toBuffer(doc).then((buffer) => {
+    fs.writeFileSync("My Document.docx", buffer);
+});

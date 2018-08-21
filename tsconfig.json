@@ -22,7 +22,8 @@
         "node_modules",
         "tests",
         "**/*.spec.ts",
-        "**/_*"
+        "**/_*",
+        "demo"
     ],
     "typedocOptions": {
         "mode": "file",
