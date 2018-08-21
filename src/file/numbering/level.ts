@@ -60,6 +60,23 @@ class LevelJc extends XmlComponent {
     }
 }
 
+export enum LevelSuffix {
+    NOTHING = "nothing",
+    SPACE = "space",
+    TAB = "tab",
+}
+
+class Suffix extends XmlComponent {
+    constructor(value: LevelSuffix) {
+        super("w:suff");
+        this.root.push(
+            new Attributes({
+                val: value,
+            }),
+        );
+    }
+}
+
 export class LevelBase extends XmlComponent {
     private readonly paragraphProperties: ParagraphProperties;
     private readonly runProperties: RunProperties;
@@ -91,6 +108,11 @@ export class LevelBase extends XmlComponent {
 
         this.root.push(this.paragraphProperties);
         this.root.push(this.runProperties);
+    }
+
+    public setSuffix(value: LevelSuffix): LevelBase {
+        this.root.push(new Suffix(value));
+        return this;
     }
 
     public addParagraphProperty(property: XmlComponent): Level {

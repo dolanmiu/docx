@@ -1,5 +1,5 @@
 import { expect } from "chai";
-import { ImportedXmlComponent, convertToXmlComponent } from "./";
+import { convertToXmlComponent, ImportedXmlComponent } from "./";
 
 const xmlString = `
         <w:p w:one="value 1" w:two="value 2">
@@ -11,10 +11,11 @@ const xmlString = `
             </w:r>
             <w:r active="true">
                 <w:t>Text 2</w:t>
-            </w:r>                
+            </w:r>
         </w:p>
     `;
 
+// tslint:disable:object-literal-key-quotes
 const importedXmlElement = {
     "w:p": {
         _attr: { "w:one": "value 1", "w:two": "value 2" },
@@ -22,6 +23,7 @@ const importedXmlElement = {
         "w:r": [{ _attr: { active: "true" }, "w:t": "Text 1" }, { _attr: { active: "true" }, "w:t": "Text 2" }],
     },
 };
+// tslint:enable:object-literal-key-quotes
 
 const convertedXmlElement = {
     deleted: false,
