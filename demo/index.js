@@ -18,12 +18,16 @@ prompt.start();
 
 prompt.get(schema, function (err, result) {
     var demoNumber = result.number;
-    var filePath = `./demo/demo${demoNumber}.js`;
+    var filePath = `./demo/demo${demoNumber}.ts`;
 
     if (!fs.existsSync(filePath)) {
         console.error(`demo${demoNumber} does not exist: ${filePath}`);
         return;
     }
     console.log(`Running demo ${demoNumber}`);
-    shelljs.exec(`node ${filePath}`);
+    if (shelljs.exec(`npm run ts-node -- ${filePath}`).code === 0) {
+        console.log("Document created successfully");
+    } else {
+        console.error('Something went wrong with the demo');
+    }
 });
