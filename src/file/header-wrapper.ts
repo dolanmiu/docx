@@ -36,8 +36,8 @@ export class HeaderWrapper {
         this.header.addChildElement(childElement);
     }
 
-    public createImage(image: string): void {
-        const mediaData = this.media.addMedia(image, this.relationships.RelationshipCount);
+    public createImage(image: Buffer, width?: number, height?: number): void {
+        const mediaData = this.media.addMedia(image, this.relationships.RelationshipCount, width, height);
         this.relationships.createRelationship(
             mediaData.referenceId,
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",

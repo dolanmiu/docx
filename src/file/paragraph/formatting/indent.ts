@@ -1,7 +1,7 @@
 // http://officeopenxml.com/WPindentation.php
 import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
 
-interface IIndentAttributesProperties {
+export interface IIndentAttributesProperties {
     left?: number;
     hanging?: number;
     firstLine?: number;
@@ -20,7 +20,7 @@ class IndentAttributes extends XmlAttributeComponent<IIndentAttributesProperties
 }
 
 export class Indent extends XmlComponent {
-    constructor(attrs: object) {
+    constructor(attrs: IIndentAttributesProperties) {
         super("w:ind");
         this.root.push(new IndentAttributes(attrs));
     }

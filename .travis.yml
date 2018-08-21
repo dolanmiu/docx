@@ -8,18 +8,30 @@ script:
   - npm test
   - npm run style
   - npm run build
-  - node ./demo/demo1.js
-  - node ./demo/demo2.js
-  - node ./demo/demo3.js
-  - node ./demo/demo4.js
-  - node ./demo/demo5.js
-  - node ./demo/demo6.js
-  - node ./demo/demo7.js
-  - node ./demo/demo8.js
-  - node ./demo/demo9.js
-  - node ./demo/demo10.js
-  - node ./demo/demo11.js
-  - node ./demo/demo12.js
+  - npm run ts-node -- ./demo/demo1.ts
+  - npm run ts-node -- ./demo/demo2.ts
+  - npm run ts-node -- ./demo/demo3.ts
+  - npm run ts-node -- ./demo/demo4.ts
+  - npm run ts-node -- ./demo/demo5.ts
+  - npm run ts-node -- ./demo/demo6.ts
+  - npm run ts-node -- ./demo/demo7.ts
+  - npm run ts-node -- ./demo/demo8.ts
+  - npm run ts-node -- ./demo/demo9.ts
+  - npm run ts-node -- ./demo/demo10.ts
+  - npm run ts-node -- ./demo/demo11.ts
+  - npm run ts-node -- ./demo/demo12.ts
+  - npm run ts-node -- ./demo/demo13.ts
+  - npm run ts-node -- ./demo/demo14.ts
+  - npm run ts-node -- ./demo/demo15.ts
+  - npm run ts-node -- ./demo/demo16.ts
+  - npm run ts-node -- ./demo/demo17.ts
+  - npm run ts-node -- ./demo/demo18.ts
+  - npm run ts-node -- ./demo/demo19.ts
+  - npm run ts-node -- ./demo/demo20.ts
+  - npm run ts-node -- ./demo/demo21.ts
+  - npm run ts-node -- ./demo/demo22.ts
+  - npm run ts-node -- ./demo/demo23.ts
+  - npm run ts-node -- ./demo/demo24.ts
 after_failure:
   - "cat /home/travis/builds/dolanmiu/docx/npm-debug.log"
 after_success:
