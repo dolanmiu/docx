@@ -6,8 +6,8 @@ import { XmlComponent } from "file/xml-components";
 
 import { Alignment } from "./formatting/alignment";
 import { Bidirectional } from "./formatting/bidirectional";
-import { ThematicBreak } from "./formatting/border";
-import { Indent } from "./formatting/indent";
+import { Border, ThematicBreak } from "./formatting/border";
+import { IIndentAttributesProperties, Indent } from "./formatting/indent";
 import { KeepLines, KeepNext } from "./formatting/keep";
 import { PageBreak, PageBreakBefore } from "./formatting/page-break";
 import { ISpacingProperties, Spacing } from "./formatting/spacing";
@@ -28,6 +28,15 @@ export class Paragraph extends XmlComponent {
         if (text !== undefined) {
             this.root.push(new TextRun(text));
         }
+    }
+
+    public get Borders(): Border {
+        return this.properties.paragraphBorder;
+    }
+
+    public createBorder(): Paragraph {
+        this.properties.createBorder();
+        return this;
     }
 
     public addRun(run: Run): Paragraph {
@@ -188,7 +197,7 @@ export class Paragraph extends XmlComponent {
         return this;
     }
 
-    public indent(attrs: object): Paragraph {
+    public indent(attrs: IIndentAttributesProperties): Paragraph {
         this.properties.push(new Indent(attrs));
         return this;
     }
@@ -221,5 +230,9 @@ export class Paragraph extends XmlComponent {
     public bidirectional(): Paragraph {
         this.properties.push(new Bidirectional());
         return this;
+    }
+
+    public get Properties(): ParagraphProperties {
+        return this.properties;
     }
 }

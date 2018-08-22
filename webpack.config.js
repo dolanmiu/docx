@@ -1,17 +1,17 @@
-const path = require('path');
+const path = require("path");
 
 module.exports = {
-    entry: './src/index.ts',
+    entry: "./src/index.ts",
 
     output: {
-        path: path.resolve('build'),
-        filename: 'index.js',
-        libraryTarget: 'umd'
+        path: path.resolve("build"),
+        filename: "index.js",
+        libraryTarget: "umd",
     },
 
     resolve: {
-        extensions: ['.tsx', '.ts', '.js'],
-        modules: [path.resolve('./src'), "node_modules"]
+        extensions: [".tsx", ".ts", ".js"],
+        modules: [path.resolve("./src"), "node_modules"],
     },
 
     module: {
@@ -19,13 +19,10 @@ module.exports = {
             {
                 test: /\.ts$/,
                 loaders: ["awesome-typescript-loader"],
-            }
+            },
         ],
     },
 
-    target: 'node',
-
-    node: {
-        __dirname: true
-    }
+    // Because docx is now targetting web
+    // target: 'node',
 };

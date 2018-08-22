@@ -19,8 +19,8 @@ doc.Footer.createParagraph("Footer text");
 Even add images:
 
 ```js
-doc.Header.createImage([PATH_TO_YOUR_IMAGE]);
-doc.Footer.createImage([PATH_TO_YOUR_IMAGE]);
+doc.Header.createImage([BUFFER_OF_YOUR_IMAGE]);
+doc.Footer.createImage([BUFFER_OF_YOUR_IMAGE]);
 ```
 
 Refer to `demo8.js` for more information

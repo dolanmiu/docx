@@ -7,7 +7,7 @@ Adding images is very simple
 Simply call the `createImage` method:
 
 ```js
-const image = doc.createImage([PATH_TO_YOUR_IMAGE]);
+const image = doc.createImage([BUFFER_OF_YOUR_IMAGE]);
 ```
 
 `docx` supports `jpeg`, `jpg`, `bmp`, `gif` and `png`
@@ -43,7 +43,7 @@ interface DrawingOptions {
 can be passed when creating `PictureRun()` for example:
 
 ```js
-const imageData = document.createImageData(filename, buffer, 903, 1149);
+const imageData = document.createImage(buffer, 903, 1149);
 
 new docx.PictureRun(imageData, {
     position: docx.PlacementPosition.FLOATING,

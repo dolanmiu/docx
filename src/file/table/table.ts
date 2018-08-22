@@ -76,6 +76,10 @@ export class Table extends XmlComponent {
         this.properties.setFixedWidthLayout();
         return this;
     }
+
+    public get Properties(): TableProperties {
+        return this.properties;
+    }
 }
 
 export class TableRow extends XmlComponent {
