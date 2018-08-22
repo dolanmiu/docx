@@ -1,3 +1,3 @@
-import { XmlComponent } from "file/xml-components";
-
-export class TableOfContentsProperties extends XmlComponent {}
+export class TableOfContentsProperties {
+    public headingRange = "1-6";
+}
