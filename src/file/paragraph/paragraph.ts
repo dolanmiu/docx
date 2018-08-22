@@ -6,7 +6,7 @@ import { XmlComponent } from "file/xml-components";
 
 import { Alignment } from "./formatting/alignment";
 import { Bidirectional } from "./formatting/bidirectional";
-import { ThematicBreak } from "./formatting/border";
+import { Border, ThematicBreak } from "./formatting/border";
 import { IIndentAttributesProperties, Indent } from "./formatting/indent";
 import { KeepLines, KeepNext } from "./formatting/keep";
 import { PageBreak, PageBreakBefore } from "./formatting/page-break";
@@ -28,6 +28,15 @@ export class Paragraph extends XmlComponent {
         if (text !== undefined) {
             this.root.push(new TextRun(text));
         }
+    }
+
+    public get Borders(): Border {
+        return this.properties.paragraphBorder;
+    }
+
+    public createBorder(): Paragraph {
+        this.properties.createBorder();
+        return this;
     }
 
     public addRun(run: Run): Paragraph {

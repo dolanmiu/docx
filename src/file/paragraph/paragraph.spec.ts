@@ -144,6 +144,51 @@ describe("Paragraph", () => {
         });
     });
 
+    describe("#paragraphBorders()", () => {
+        it("should add a left and right border to a paragraph", () => {
+            paragraph.createBorder();
+            paragraph.Borders.addLeftBorder();
+            paragraph.Borders.addRightBorder();
+            const tree = new Formatter().format(paragraph);
+            expect(tree).to.deep.equal({
+                "w:p": [
+                    {
+                        "w:pPr": [
+                            {
+                                "w:pBdr": [
+                                    {
+                                        "w:left": [
+                                            {
+                                                _attr: {
+                                                    "w:color": "auto",
+                                                    "w:space": "1",
+                                                    "w:sz": "6",
+                                                    "w:val": "single",
+                                                },
+                                            },
+                                        ],
+                                    },
+                                    {
+                                        "w:right": [
+                                            {
+                                                _attr: {
+                                                    "w:color": "auto",
+                                                    "w:space": "1",
+                                                    "w:sz": "6",
+                                                    "w:val": "single",
+                                                },
+                                            },
+                                        ],
+                                    },
+                                ],
+                            },
+                        ],
+                    },
+                ],
+            });
+        });
+    });
+
     describe("#pageBreak()", () => {
         it("should add page break to JSON", () => {
             paragraph.pageBreak();
