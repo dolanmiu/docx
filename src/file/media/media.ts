@@ -1,3 +1,4 @@
+import { IDrawingOptions } from "../drawing";
 import { File } from "../file";
 import { ImageParagraph } from "../paragraph";
 import { IMediaData } from "./data";
@@ -8,7 +9,13 @@ interface IHackedFile {
 }
 
 export class Media {
-    public static addImage(file: File, buffer: Buffer | string | Uint8Array | ArrayBuffer, width?: number, height?: number): Image {
+    public static addImage(
+        file: File,
+        buffer: Buffer | string | Uint8Array | ArrayBuffer,
+        width?: number,
+        height?: number,
+        drawingOptions?: IDrawingOptions,
+    ): Image {
         // Workaround to expose id without exposing to API
         const exposedFile = (file as {}) as IHackedFile;
         const mediaData = file.Media.addMedia(buffer, exposedFile.currentRelationshipId++, width, height);
@@ -18,7 +25,7 @@ export class Media {
             `media/${mediaData.fileName}`,
         );
 
-        return new Image(new ImageParagraph(mediaData));
+        return new Image(new ImageParagraph(mediaData, drawingOptions));
     }
 
     private static generateId(): string {
