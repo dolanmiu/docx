@@ -9,8 +9,13 @@ interface IHackedFile {
 }
 
 export class Media {
-
-    public static addImage(file: File, buffer: Buffer | string | Uint8Array | ArrayBuffer, width?: number, height?: number, drawingOptions?: IDrawingOptions): Image {
+    public static addImage(
+        file: File,
+        buffer: Buffer | string | Uint8Array | ArrayBuffer,
+        width?: number,
+        height?: number,
+        drawingOptions?: IDrawingOptions,
+    ): Image {
         // Workaround to expose id without exposing to API
         const exposedFile = (file as {}) as IHackedFile;
         const mediaData = file.Media.addMedia(buffer, exposedFile.currentRelationshipId++, width, height);
