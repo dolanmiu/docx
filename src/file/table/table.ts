@@ -12,7 +12,7 @@ import {
 import { IXmlableObject, XmlComponent } from "file/xml-components";
 import { Paragraph } from "../paragraph";
 import { TableGrid } from "./grid";
-import { TableProperties, WidthTypes } from "./properties";
+import { TableProperties } from "./properties";
 
 export class Table extends XmlComponent {
     private readonly properties: TableProperties;
@@ -67,7 +67,7 @@ export class Table extends XmlComponent {
         return this.getRow(row).getCell(col);
     }
 
-    public setWidth(type: WidthTypes, width: number | string): Table {
+    public setWidth(type: WidthType, width: number | string): Table {
         this.properties.setWidth(type, width);
         return this;
     }
@@ -75,6 +75,10 @@ export class Table extends XmlComponent {
     public setFixedWidthLayout(): Table {
         this.properties.setFixedWidthLayout();
         return this;
+    }
+
+    public get Properties(): TableProperties {
+        return this.properties;
     }
 }
 

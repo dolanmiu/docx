@@ -6,8 +6,13 @@ import { XmlComponent } from "file/xml-components";
 
 import { Alignment } from "./formatting/alignment";
 import { Bidirectional } from "./formatting/bidirectional";
+<<<<<<< HEAD
 import { Border, ThematicBreak } from "./formatting/border";
+import { Indent } from "./formatting/indent";
+=======
+import { ThematicBreak } from "./formatting/border";
 import { IIndentAttributesProperties, Indent } from "./formatting/indent";
+>>>>>>> a53818754a1c76b9930ee2ecc642570170fa3c06
 import { KeepLines, KeepNext } from "./formatting/keep";
 import { PageBreak, PageBreakBefore } from "./formatting/page-break";
 import { ISpacingProperties, Spacing } from "./formatting/spacing";

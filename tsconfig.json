@@ -21,7 +21,8 @@
     "exclude": [
         "node_modules",
         "tests",
-        "**/_*"
+        "**/_*",
+        "demo"
     ],
     "typedocOptions": {
         "mode": "file",

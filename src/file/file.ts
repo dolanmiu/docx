@@ -123,20 +123,13 @@ export class File {
         return this.document.createTable(rows, cols);
     }
 
-    public createImage(filePath: string): Image {
-        const image = Media.addImage(this, filePath);
-        this.document.addParagraph(image.Paragraph);
-
-        return image;
-    }
-
     public addImage(image: Image): File {
         this.document.addParagraph(image.Paragraph);
         return this;
     }
 
-    public createImageFromBuffer(buffer: Buffer, width?: number, height?: number): Image {
-        const image = Media.addImageFromBuffer(this, buffer, width, height);
+    public createImage(buffer: Buffer | string | Uint8Array | ArrayBuffer, width?: number, height?: number): Image {
+        const image = Media.addImage(this, buffer, width, height);
         this.document.addParagraph(image.Paragraph);
 
         return image;

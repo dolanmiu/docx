@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-    Easily generate .docx files with JS/TS.
+    Easily generate .docx files with JS/TS. Works for Node and on the Browser.
 </p>
 
 ---
