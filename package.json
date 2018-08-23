@@ -13,7 +13,7 @@
     "tsc": "rimraf ./build && tsc -p .",
     "webpack": "rimraf ./build && webpack",
     "build.web": "webpack --config webpack.web.config.js",
-    "demo": "npm run build && node ./demo",
+    "demo": "npm run build && npm run ts-node ./demo",
     "typedoc": "typedoc src/index.ts",
     "style": "prettier -l \"src/**/*.ts\"",
     "style.fix": "prettier \"src/**/*.ts\" --write",
