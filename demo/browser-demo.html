@@ -2,7 +2,8 @@
 <html>
 
 <head>
-    <script src="../build/index.web.js"></script>
+    <script src="../build/index.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/1.3.8/FileSaver.js"></script>
 </head>
 
 <body>
@@ -13,7 +14,23 @@
 
     <script>
         function generate() {
-            console.log('g');
+            const doc = new Document();
+
+            const paragraph = new Paragraph("Hello World");
+            const institutionText = new TextRun("Foo Bar").bold();
+            const dateText = new TextRun("Github is the best").tab().bold();
+            paragraph.addRun(institutionText);
+            paragraph.addRun(dateText);
+
+            doc.addParagraph(paragraph);
+
+            const packer = new Packer();
+
+            packer.toBlob(doc).then(blob => {
+                console.log(blob);
+                saveAs(blob, "example.docx");
+                console.log("Document created successfully");
+            });
         }
     </script>
 
