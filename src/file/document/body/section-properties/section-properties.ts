@@ -1,6 +1,6 @@
 // http://officeopenxml.com/WPsection.php
 import { XmlComponent } from "file/xml-components";
-import { FooterReferenceType, IPageNumberTypeAttributes, PageNumberFormat, PageNumberType } from "./";
+import { FooterReferenceType, IPageBordersOptions, IPageNumberTypeAttributes, PageBorders, PageNumberFormat, PageNumberType } from "./";
 import { Columns } from "./columns/columns";
 import { IColumnsAttributes } from "./columns/columns-attributes";
 import { DocumentGrid } from "./doc-grid/doc-grid";
@@ -12,7 +12,6 @@ import { PageMargin } from "./page-margin/page-margin";
 import { IPageMarginAttributes } from "./page-margin/page-margin-attributes";
 import { PageSize } from "./page-size/page-size";
 import { IPageSizeAttributes, PageOrientation } from "./page-size/page-size-attributes";
-// import { TitlePage } from "./title-page/title-page";
 
 export type SectionPropertiesOptions = IPageSizeAttributes &
     IPageMarginAttributes &
@@ -20,10 +19,12 @@ export type SectionPropertiesOptions = IPageSizeAttributes &
     IDocGridAttributesProperties &
     IHeaderOptions &
     IFooterOptions &
-    IPageNumberTypeAttributes;
+    IPageNumberTypeAttributes &
+    IPageBordersOptions;
 
 export class SectionProperties extends XmlComponent {
-    private options: SectionPropertiesOptions;
+    private readonly options: SectionPropertiesOptions;
+
     constructor(options?: SectionPropertiesOptions) {
         super("w:sectPr");
 
@@ -46,6 +47,11 @@ export class SectionProperties extends XmlComponent {
             footerId: 0,
             pageNumberStart: undefined,
             pageNumberFormatType: PageNumberFormat.DECIMAL,
+            pageBorders: undefined,
+            pageBorderTop: undefined,
+            pageBorderRight: undefined,
+            pageBorderBottom: undefined,
+            pageBorderLeft: undefined,
         };
 
         const mergedOptions = {
@@ -82,6 +88,24 @@ export class SectionProperties extends XmlComponent {
         );
 
         this.root.push(new PageNumberType(mergedOptions.pageNumberStart, mergedOptions.pageNumberFormatType));
+
+        if (
+            mergedOptions.pageBorders ||
+            mergedOptions.pageBorderTop ||
+            mergedOptions.pageBorderRight ||
+            mergedOptions.pageBorderBottom ||
+            mergedOptions.pageBorderLeft
+        ) {
+            this.root.push(
+                new PageBorders({
+                    pageBorders: mergedOptions.pageBorders,
+                    pageBorderTop: mergedOptions.pageBorderTop,
+                    pageBorderRight: mergedOptions.pageBorderRight,
+                    pageBorderBottom: mergedOptions.pageBorderBottom,
+                    pageBorderLeft: mergedOptions.pageBorderLeft,
+                }),
+            );
+        }
 
         this.options = mergedOptions;
     }

@@ -28,7 +28,7 @@ const defaultDrawingOptions: IDrawingOptions = {
 };
 
 export class Drawing extends XmlComponent {
-    private inline: Inline;
+    private readonly inline: Inline;
 
     constructor(imageData: IMediaData, drawingOptions?: IDrawingOptions) {
         super("w:drawing");

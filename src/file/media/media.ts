@@ -1,45 +1,31 @@
-import * as fs from "fs";
-import * as sizeOf from "image-size";
-import * as path from "path";
-
+import { IDrawingOptions } from "../drawing";
 import { File } from "../file";
-import { Image } from "../paragraph";
+import { ImageParagraph } from "../paragraph";
 import { IMediaData } from "./data";
+import { Image } from "./image";
 
 interface IHackedFile {
     currentRelationshipId: number;
 }
 
 export class Media {
-    public static addImage(file: File, filePath: string): Image {
+    public static addImage(
+        file: File,
+        buffer: Buffer | string | Uint8Array | ArrayBuffer,
+        width?: number,
+        height?: number,
+        drawingOptions?: IDrawingOptions,
+    ): Image {
         // Workaround to expose id without exposing to API
         const exposedFile = (file as {}) as IHackedFile;
-        const mediaData = file.Media.addMedia(filePath, exposedFile.currentRelationshipId++);
-        file.DocumentRelationships.createRelationship(
-            mediaData.referenceId,
-            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
-            `media/${mediaData.fileName}`,
-        );
-        return new Image(mediaData);
-    }
-
-    public static addImageFromBuffer(file: File, buffer: Buffer, width?: number, height?: number): Image {
-        // Workaround to expose id without exposing to API
-        const exposedFile = (file as {}) as IHackedFile;
-        const mediaData = file.Media.addMediaFromBuffer(
-            `${Media.generateId()}.png`,
-            buffer,
-            exposedFile.currentRelationshipId++,
-            width,
-            height,
-        );
+        const mediaData = file.Media.addMedia(buffer, exposedFile.currentRelationshipId++, width, height);
         file.DocumentRelationships.createRelationship(
             mediaData.referenceId,
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
             `media/${mediaData.fileName}`,
         );
 
-        return new Image(mediaData);
+        return new Image(new ImageParagraph(mediaData, drawingOptions));
     }
 
     private static generateId(): string {
@@ -70,34 +56,36 @@ export class Media {
         return data;
     }
 
-    public addMedia(filePath: string, referenceId: number): IMediaData {
-        const key = path.basename(filePath);
-        const dimensions = sizeOf(filePath);
-        return this.createMedia(key, referenceId, dimensions, fs.createReadStream(filePath), filePath);
-    }
+    public addMedia(
+        buffer: Buffer | string | Uint8Array | ArrayBuffer,
+        referenceId: number,
+        width: number = 100,
+        height: number = 100,
+    ): IMediaData {
+        const key = `${Media.generateId()}.png`;
 
-    public addMediaFromBuffer(fileName: string, buffer: Buffer, referenceId: number, width?: number, height?: number): IMediaData {
-        const key = fileName;
-        let dimensions;
-        if (width && height) {
-            dimensions = {
+        return this.createMedia(
+            key,
+            referenceId,
+            {
                 width: width,
                 height: height,
-            };
-        } else {
-            dimensions = sizeOf(buffer);
-        }
-
-        return this.createMedia(key, referenceId, dimensions, buffer);
+            },
+            buffer,
+        );
     }
 
     private createMedia(
         key: string,
         relationshipsCount: number,
         dimensions: { width: number; height: number },
-        data: fs.ReadStream | Buffer,
+        data: Buffer | string | Uint8Array | ArrayBuffer,
         filePath?: string,
     ): IMediaData {
+        if (typeof data === "string") {
+            data = this.convertDataURIToBinary(data);
+        }
+
         const imageData = {
             referenceId: this.map.size + relationshipsCount + 1,
             stream: data,
@@ -105,12 +93,12 @@ export class Media {
             fileName: key,
             dimensions: {
                 pixels: {
-                    x: dimensions.width,
-                    y: dimensions.height,
+                    x: Math.round(dimensions.width),
+                    y: Math.round(dimensions.height),
                 },
                 emus: {
-                    x: dimensions.width * 9525,
-                    y: dimensions.height * 9525,
+                    x: Math.round(dimensions.width * 9525),
+                    y: Math.round(dimensions.height * 9525),
                 },
             },
         };
@@ -120,7 +108,7 @@ export class Media {
         return imageData;
     }
 
-    public get array(): IMediaData[] {
+    public get Array(): IMediaData[] {
         const array = new Array<IMediaData>();
 
         this.map.forEach((data) => {
@@ -128,5 +116,24 @@ export class Media {
         });
 
         return array;
+    }
+
+    private convertDataURIToBinary(dataURI: string): Uint8Array {
+        // https://gist.github.com/borismus/1032746
+        // https://github.com/mafintosh/base64-to-uint8array
+        const BASE64_MARKER = ";base64,";
+
+        const base64Index = dataURI.indexOf(BASE64_MARKER) + BASE64_MARKER.length;
+
+        if (typeof atob === "function") {
+            return new Uint8Array(
+                atob(dataURI.substring(base64Index))
+                    .split("")
+                    .map((c) => c.charCodeAt(0)),
+            );
+        } else {
+            const b = require("buf" + "fer");
+            return new b.Buffer(dataURI, "base64");
+        }
     }
 }

@@ -6,7 +6,7 @@ import { PicAttributes } from "./pic-attributes";
 import { ShapeProperties } from "./shape-properties/shape-properties";
 
 export class Pic extends XmlComponent {
-    private shapeProperties: ShapeProperties;
+    private readonly shapeProperties: ShapeProperties;
 
     constructor(referenceId: number, x: number, y: number) {
         super("pic:pic");

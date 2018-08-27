@@ -5,9 +5,11 @@ import { Table } from "../table";
 import { HeaderAttributes } from "./header-attributes";
 
 export class Header extends XmlComponent {
-    private refId: number;
+    private readonly refId: number;
+
     constructor(referenceNumber: number) {
         super("w:hdr");
+
         this.refId = referenceNumber;
         this.root.push(
             new HeaderAttributes({
@@ -31,7 +33,7 @@ export class Header extends XmlComponent {
         );
     }
 
-    public get referenceId(): number {
+    public get ReferenceId(): number {
         return this.refId;
     }
 

@@ -14,7 +14,7 @@ export abstract class XmlComponent extends BaseXmlComponent {
         const children = this.root
             .filter((c) => {
                 if (c instanceof BaseXmlComponent) {
-                    return !c.isDeleted;
+                    return !c.IsDeleted;
                 }
                 return true;
             })

@@ -3,7 +3,7 @@ import { GraphicDataAttributes } from "./graphic-data-attribute";
 import { Pic } from "./pic";
 
 export class GraphicData extends XmlComponent {
-    private pic: Pic;
+    private readonly pic: Pic;
 
     constructor(referenceId: number, x: number, y: number) {
         super("a:graphicData");

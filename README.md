@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-    Generate .docx files with JS/TS very easily, written in TS.
+    Easily generate .docx files with JS/TS. Works for Node and on the Browser.
 </p>
 
 ---
@@ -14,18 +14,13 @@
 [![Dependency Status][daviddm-image]][daviddm-url]
 [![Known Vulnerabilities][snky-image]][snky-url]
 [![Chat on Gitter][gitter-image]][gitter-url]
-[![code style: prettier][prettier-image]][prettier-url]
 [![PRs Welcome][pr-image]][pr-url]
 
-# docx
+<p align="center">
+    <img src="https://thumbs.gfycat.com/ComplexEminentEquine-size_restricted.gif" alt="drawing" width="800"/>
+</p>
 
-## Install
-
-```sh
-$ npm install --save docx
-```
-
-## Demo
+# Demo
 
 Press `endpoint` on the `RunKit` website:
 
@@ -41,31 +36,17 @@ Press `endpoint` on the `RunKit` website:
 *   https://runkit.com/dolanmiu/docx-demo8/1.0.1 - Header and Footer
 *   https://runkit.com/dolanmiu/docx-demo10 - **My CV generated with docx**
 
-#### Run demos locally:
+# How to use & Documentation
 
-```sh
-$ npm run demo
-```
+Please refer to the [documentation at https://docx.js.org/](https://docx.js.org/) for details on how to use this library, examples and much more!
 
-This command will run the demo selector app in the `demo` folder. It will prompt you to select a demo number, which will run a demo from that folder.
+# Examples
 
-## How to
-
-Please refer to [https://docx.js.org/](https://docx.js.org/) for details on how to use this library, examples and much more!
-
-## Examples
-
-Check the examples section in the [documentation](https://docx.js.org/#/examples) and the [demo folder](https://github.com/dolanmiu/docx/tree/master/demo) for examples.
+Check the `examples` section in the [documentation](https://docx.js.org/#/examples) and the [demo folder](https://github.com/dolanmiu/docx/tree/master/demo) for examples.
 
 # Contributing
 
 Read the contribution guidelines [here](https://docx.js.org/#/contribution-guidelines).
-
-# Honoured Mentions
-
-[@felipeochoa](https://github.com/felipeochoa)
-
-[@h4buli](https://github.com/h4buli)
 
 ---
 
@@ -83,7 +64,5 @@ Made with 💖
 [snky-url]: https://snyk.io/test/github/dolanmiu/docx
 [gitter-image]: https://badges.gitter.im/dolanmiu/docx.svg
 [gitter-url]: https://gitter.im/docx-lib/Lobby
-[prettier-image]: https://img.shields.io/badge/code_style-prettier-ff69b4.svg
-[prettier-url]: https://github.com/prettier/prettier
 [pr-image]: https://img.shields.io/badge/PRs-welcome-brightgreen.svg
 [pr-url]: http://makeapullrequest.com

@@ -1,7 +1,7 @@
 import { XmlComponent } from "file/xml-components";
 import { Header } from "./header/header";
-import { Media } from "./media";
-import { Image, Paragraph } from "./paragraph";
+import { Image, Media } from "./media";
+import { ImageParagraph, Paragraph } from "./paragraph";
 import { Relationships } from "./relationships";
 import { Table } from "./table";
 
@@ -36,18 +36,18 @@ export class HeaderWrapper {
         this.header.addChildElement(childElement);
     }
 
-    public createImage(image: string): void {
-        const mediaData = this.media.addMedia(image, this.relationships.RelationshipCount);
+    public createImage(image: Buffer, width?: number, height?: number): void {
+        const mediaData = this.media.addMedia(image, this.relationships.RelationshipCount, width, height);
         this.relationships.createRelationship(
             mediaData.referenceId,
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
             `media/${mediaData.fileName}`,
         );
-        this.insertImage(new Image(mediaData));
+        this.addImage(new Image(new ImageParagraph(mediaData)));
     }
 
-    public insertImage(image: Image): HeaderWrapper {
-        this.header.addParagraph(image);
+    public addImage(image: Image): HeaderWrapper {
+        this.header.addParagraph(image.Paragraph);
         return this;
     }
 

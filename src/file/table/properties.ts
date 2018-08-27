@@ -1,18 +1,23 @@
 import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
-
-export type WidthTypes = "dxa" | "pct" | "nil" | "auto";
+import { WidthType } from "./table-cell";
+import { TableCellMargin } from "./table-cell-margin";
 
 export class TableProperties extends XmlComponent {
+    private readonly cellMargain: TableCellMargin;
+
     constructor() {
         super("w:tblPr");
+
+        this.cellMargain = new TableCellMargin();
+        this.root.push(this.cellMargain);
     }
 
-    public setWidth(type: WidthTypes, w: number | string): TableProperties {
+    public setWidth(type: WidthType, w: number | string): TableProperties {
         this.root.push(new PreferredTableWidth(type, w));
         return this;
     }
 
-    public fixedWidthLayout(): TableProperties {
+    public setFixedWidthLayout(): TableProperties {
         this.root.push(new TableLayout("fixed"));
         return this;
     }
@@ -21,10 +26,14 @@ export class TableProperties extends XmlComponent {
         this.root.push(new TableBorders());
         return this;
     }
+
+    public get CellMargin(): TableCellMargin {
+        return this.cellMargain;
+    }
 }
 
 interface ITableWidth {
-    type: WidthTypes;
+    type: WidthType;
     w: number | string;
 }
 
@@ -33,7 +42,7 @@ class TableWidthAttributes extends XmlAttributeComponent<ITableWidth> {
 }
 
 class PreferredTableWidth extends XmlComponent {
-    constructor(type: WidthTypes, w: number | string) {
+    constructor(type: WidthType, w: number | string) {
         super("w:tblW");
         this.root.push(new TableWidthAttributes({ type, w }));
     }

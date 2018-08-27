@@ -19,8 +19,8 @@ doc.Footer.createParagraph("Footer text");
 Even add images:
 
 ```js
-doc.Header.createImage([PATH_TO_YOUR_IMAGE]);
-doc.Footer.createImage([PATH_TO_YOUR_IMAGE]);
+doc.Header.createImage([BUFFER_OF_YOUR_IMAGE]);
+doc.Footer.createImage([BUFFER_OF_YOUR_IMAGE]);
 ```
 
 Refer to `demo8.js` for more information
@@ -37,8 +37,8 @@ Also all the supported section properties are implemented according to: http://o
 
     // Add new section with another header and footer
     doc.addSection({
-      headerId: header.Header.referenceId,
-      footerId: footer.Footer.referenceId,
+      headerId: header.Header.ReferenceId,
+      footerId: footer.Footer.ReferenceId,
       pageNumberStart: 1,
       pageNumberFormatType: docx.PageNumberFormat.DECIMAL,
     });

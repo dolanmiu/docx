@@ -3,7 +3,7 @@ import { XmlComponent } from "file/xml-components";
 import { Paragraph } from "../paragraph";
 import { Table } from "../table";
 import { Body } from "./body";
-import { SectionPropertiesOptions } from "./body/section-properties/section-properties";
+import { SectionPropertiesOptions } from "./body/section-properties";
 import { DocumentAttributes } from "./document-attributes";
 
 export class Document extends XmlComponent {

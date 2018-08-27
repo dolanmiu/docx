@@ -4,6 +4,7 @@ import { expect } from "chai";
 import { Formatter } from "../../export/formatter";
 import { Paragraph } from "../paragraph";
 import { Table } from "./";
+import { WidthType } from "./table-cell";
 
 const DEFAULT_TABLE_PROPERTIES = {
     "w:tblBorders": [
@@ -174,7 +175,7 @@ describe("Table", () => {
 
     describe("#setWidth", () => {
         it("sets the preferred width on the table", () => {
-            const table = new Table(2, 2).setWidth("pct", 1000);
+            const table = new Table(2, 2).setWidth(WidthType.PERCENTAGE, 1000);
             const tree = new Formatter().format(table);
             expect(tree)
                 .to.have.property("w:tbl")
@@ -186,9 +187,9 @@ describe("Table", () => {
         });
     });
 
-    describe("#fixedWidthLayout", () => {
+    describe("#setFixedWidthLayout", () => {
         it("sets the table to fixed width layout", () => {
-            const table = new Table(2, 2).fixedWidthLayout();
+            const table = new Table(2, 2).setFixedWidthLayout();
             const tree = new Formatter().format(table);
             expect(tree)
                 .to.have.property("w:tbl")

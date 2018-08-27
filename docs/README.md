@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-    Easily generate .docx files with JS/TS. :100:
+    Easily generate .docx files with JS/TS. Works for Node and on the Browser. :100:
 </p>
 
 ---
@@ -19,11 +19,11 @@ npm install --save docx
 Then you can `require` or `import` as usual:
 
 ```js
-let docx = require('docx');
+let docx = require("docx");
 ```
 
 ```js
-import * as docx from 'docx'
+import * as docx from "docx";
 ```
 
 ## Basic Usage
@@ -47,6 +47,12 @@ exporter.pack("My First Document");
 
 // Done! A file called 'My First Document.docx' will be in your file system if you used LocalPacker
 ```
+
+## Honoured Mentions
+
+[@felipeochoa](https://github.com/felipeochoa)
+
+[@h4buli](https://github.com/h4buli)
 
 ---
 

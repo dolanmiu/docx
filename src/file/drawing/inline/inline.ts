@@ -9,10 +9,10 @@ import { Graphic } from "./../inline/graphic";
 import { InlineAttributes } from "./inline-attributes";
 
 export class Inline extends XmlComponent {
-    private extent: Extent;
-    private graphic: Graphic;
+    private readonly extent: Extent;
+    private readonly graphic: Graphic;
 
-    constructor(referenceId: number, private dimensions: IMediaDataDimensions) {
+    constructor(referenceId: number, private readonly dimensions: IMediaDataDimensions) {
         super("wp:inline");
 
         this.root.push(

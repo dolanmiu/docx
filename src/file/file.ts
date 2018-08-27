@@ -2,14 +2,13 @@ import { AppProperties } from "./app-properties/app-properties";
 import { ContentTypes } from "./content-types/content-types";
 import { CoreProperties, IPropertiesOptions } from "./core-properties";
 import { Document } from "./document";
-import { FooterReferenceType, HeaderReference, HeaderReferenceType } from "./document/body/section-properties";
-import { SectionPropertiesOptions } from "./document/body/section-properties/section-properties";
+import { FooterReferenceType, HeaderReference, HeaderReferenceType, SectionPropertiesOptions } from "./document/body/section-properties";
 import { FooterWrapper } from "./footer-wrapper";
 import { FootNotes } from "./footnotes";
 import { HeaderWrapper } from "./header-wrapper";
-import { Media } from "./media";
+import { Image, Media } from "./media";
 import { Numbering } from "./numbering";
-import { Bookmark, Hyperlink, Image, Paragraph } from "./paragraph";
+import { Bookmark, Hyperlink, Paragraph } from "./paragraph";
 import { Relationships } from "./relationships";
 import { Styles } from "./styles";
 import { ExternalStylesFactory } from "./styles/external-styles-factory";
@@ -98,12 +97,12 @@ export class File {
             sectionPropertiesOptions = {
                 footerType: FooterReferenceType.DEFAULT,
                 headerType: HeaderReferenceType.DEFAULT,
-                headerId: header.Header.referenceId,
-                footerId: footer.Footer.referenceId,
+                headerId: header.Header.ReferenceId,
+                footerId: footer.Footer.ReferenceId,
             };
         } else {
-            sectionPropertiesOptions.headerId = header.Header.referenceId;
-            sectionPropertiesOptions.footerId = footer.Footer.referenceId;
+            sectionPropertiesOptions.headerId = header.Header.ReferenceId;
+            sectionPropertiesOptions.footerId = footer.Footer.ReferenceId;
         }
         this.document = new Document(sectionPropertiesOptions);
     }
@@ -124,21 +123,14 @@ export class File {
         return this.document.createTable(rows, cols);
     }
 
-    public createImage(filePath: string): Image {
-        const image = Media.addImage(this, filePath);
-        this.document.addParagraph(image);
-
-        return image;
-    }
-
-    public insertImage(image: Image): File {
-        this.document.addParagraph(image);
+    public addImage(image: Image): File {
+        this.document.addParagraph(image.Paragraph);
         return this;
     }
 
-    public createImageFromBuffer(buffer: Buffer, width?: number, height?: number): Image {
-        const image = Media.addImageFromBuffer(this, buffer, width, height);
-        this.document.addParagraph(image);
+    public createImage(buffer: Buffer | string | Uint8Array | ArrayBuffer, width?: number, height?: number): Image {
+        const image = Media.addImage(this, buffer, width, height);
+        this.document.addParagraph(image.Paragraph);
 
         return image;
     }
@@ -181,7 +173,7 @@ export class File {
         const header = new HeaderWrapper(this.media, this.currentRelationshipId++);
         this.headerWrapper.push(header);
         this.docRelationships.createRelationship(
-            header.Header.referenceId,
+            header.Header.ReferenceId,
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/header",
             `header${this.headerWrapper.length}.xml`,
         );
@@ -193,7 +185,7 @@ export class File {
         const footer = new FooterWrapper(this.media, this.currentRelationshipId++);
         this.footerWrapper.push(footer);
         this.docRelationships.createRelationship(
-            footer.Footer.referenceId,
+            footer.Footer.ReferenceId,
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer",
             `footer${this.footerWrapper.length}.xml`,
         );
@@ -207,7 +199,7 @@ export class File {
         this.document.Body.DefaultSection.addChildElement(
             new HeaderReference({
                 headerType: HeaderReferenceType.FIRST,
-                headerId: headerWrapper.Header.referenceId,
+                headerId: headerWrapper.Header.ReferenceId,
             }),
         );
 
@@ -251,7 +243,7 @@ export class File {
     }
 
     public HeaderByRefNumber(refId: number): HeaderWrapper {
-        const entry = this.headerWrapper.find((h) => h.Header.referenceId === refId);
+        const entry = this.headerWrapper.find((h) => h.Header.ReferenceId === refId);
         if (entry) {
             return entry;
         }
@@ -267,7 +259,7 @@ export class File {
     }
 
     public FooterByRefNumber(refId: number): FooterWrapper {
-        const entry = this.footerWrapper.find((h) => h.Footer.referenceId === refId);
+        const entry = this.footerWrapper.find((h) => h.Footer.ReferenceId === refId);
         if (entry) {
             return entry;
         }
