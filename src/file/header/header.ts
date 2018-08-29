@@ -7,10 +7,11 @@ import { HeaderAttributes } from "./header-attributes";
 export class Header extends XmlComponent {
     private readonly refId: number;
 
-    constructor(referenceNumber: number) {
-        super("w:hdr");
+    constructor(referenceNumber: number, initContent? : XmlComponent) {
+        super("w:hdr", initContent);
 
         this.refId = referenceNumber;
+
         this.root.push(
             new HeaderAttributes({
                 wpc: "http://schemas.microsoft.com/office/word/2010/wordprocessingCanvas",

@@ -14,6 +14,7 @@ import { Styles } from "./styles";
 import { ExternalStylesFactory } from "./styles/external-styles-factory";
 import { DefaultStylesFactory } from "./styles/factory";
 import { Table } from "./table";
+import { XmlComponent } from "./xml-components";
 
 export class File {
     private readonly document: Document;
@@ -71,7 +72,7 @@ export class File {
         );
         this.media = new Media();
 
-        const header = this.createHeader();
+        const header = this.createHeader(options.templateHeader);
         const footer = this.createFooter();
 
         this.fileRelationships = new Relationships();
@@ -169,8 +170,10 @@ export class File {
         this.footNotes.createFootNote(paragraph);
     }
 
-    public createHeader(): HeaderWrapper {
-        const header = new HeaderWrapper(this.media, this.currentRelationshipId++);
+    public createHeader(templateHeader? : XmlComponent): HeaderWrapper {
+        const header = new HeaderWrapper(this.media, this.currentRelationshipId++, templateHeader);
+        console.log('\n\n-------\n\n');
+        console.log('header', JSON.stringify(header.Header, null, 2));
         this.headerWrapper.push(header);
         this.docRelationships.createRelationship(
             header.Header.ReferenceId,

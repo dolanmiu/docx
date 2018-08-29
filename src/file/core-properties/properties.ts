@@ -11,6 +11,8 @@ export interface IPropertiesOptions {
     lastModifiedBy?: string;
     revision?: string;
     externalStyles?: string;
+
+    templateHeader? : XmlComponent;
 }
 
 export class CoreProperties extends XmlComponent {

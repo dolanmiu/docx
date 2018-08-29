@@ -3,11 +3,17 @@ import { IXmlableObject } from "./xmlable-object";
 export { BaseXmlComponent };
 
 export abstract class XmlComponent extends BaseXmlComponent {
-    protected root: Array<BaseXmlComponent | string>;
+    public root: Array<BaseXmlComponent | string>;
 
-    constructor(rootKey: string) {
+    constructor(rootKey: string, initContent? : XmlComponent) {
         super(rootKey);
-        this.root = new Array<BaseXmlComponent>();
+        this.root = initContent ? initContent.root : new Array<BaseXmlComponent>();
+        if (initContent) {
+            console.log('\n\n-------\n\n');
+            console.log('new root', JSON.stringify(initContent, null,2));
+            console.log('\n\n-------\n\n');
+        }
+       
     }
 
     public prepForXml(): IXmlableObject {

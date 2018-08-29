@@ -5,12 +5,13 @@ import { ImageParagraph, Paragraph } from "./paragraph";
 import { Relationships } from "./relationships";
 import { Table } from "./table";
 
+
 export class HeaderWrapper {
     private readonly header: Header;
     private readonly relationships: Relationships;
 
-    constructor(private readonly media: Media, referenceId: number) {
-        this.header = new Header(referenceId);
+    constructor(private readonly media: Media, referenceId: number, initContent? : XmlComponent) {
+        this.header = new Header(referenceId, initContent);
         this.relationships = new Relationships();
     }
 
