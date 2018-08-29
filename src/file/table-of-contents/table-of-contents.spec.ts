@@ -1,7 +1,26 @@
 import { expect } from "chai";
 
+import { Formatter } from "../../export/formatter";
+import { TableOfContents } from "./";
+
+const DEFAULT_TOC = {
+    "w:std": {
+        "w:sdtPr": {},
+        "w:sdtEndPr": {},
+        "w:sdtContent": {
+            "w:p": {
+                "w:pPr": {},
+            },
+        },
+    },
+};
+
 describe("Table of Contents", () => {
-    it("should be true", () => {
-        expect(1).to.be.equal(1);
+    describe("#constructor", () => {
+        it("should construct a TOC with default options", () => {
+            const toc = new TableOfContents();
+            const tree = new Formatter().format(toc);
+            expect(tree).to.be.deep.equal(DEFAULT_TOC);
+        });
     });
 });
