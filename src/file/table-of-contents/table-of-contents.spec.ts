@@ -4,15 +4,11 @@ import { Formatter } from "../../export/formatter";
 import { TableOfContents } from "./";
 
 const DEFAULT_TOC = {
-    "w:std": {
-        "w:sdtPr": {},
-        "w:sdtEndPr": {},
-        "w:sdtContent": {
-            "w:p": {
-                "w:pPr": {},
-            },
+    "w:p": [
+        {
+            "w:pPr": [],
         },
-    },
+    ],
 };
 
 describe("Table of Contents", () => {
