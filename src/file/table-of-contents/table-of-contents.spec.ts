@@ -8,6 +8,13 @@ const DEFAULT_TOC = {
         {
             "w:pPr": [],
         },
+        {
+            "w:r": [
+                {
+                    "w:fldChar": [],
+                },
+            ],
+        },
     ],
 };
 
