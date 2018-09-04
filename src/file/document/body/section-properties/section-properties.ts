@@ -1,24 +1,27 @@
 // http://officeopenxml.com/WPsection.php
 import { XmlComponent } from "file/xml-components";
-import { FooterReferenceType, IPageBordersOptions, IPageNumberTypeAttributes, PageBorders, PageNumberFormat, PageNumberType } from "./";
+import { IPageBordersOptions, IPageNumberTypeAttributes, PageBorders, PageNumberFormat, PageNumberType } from "./";
 import { Columns } from "./columns/columns";
 import { IColumnsAttributes } from "./columns/columns-attributes";
 import { DocumentGrid } from "./doc-grid/doc-grid";
 import { IDocGridAttributesProperties } from "./doc-grid/doc-grid-attributes";
 import { FooterReference, IFooterOptions } from "./footer-reference/footer-reference";
 import { HeaderReference, IHeaderOptions } from "./header-reference/header-reference";
-import { HeaderReferenceType } from "./header-reference/header-reference-attributes";
 import { PageMargin } from "./page-margin/page-margin";
 import { IPageMarginAttributes } from "./page-margin/page-margin-attributes";
 import { PageSize } from "./page-size/page-size";
 import { IPageSizeAttributes, PageOrientation } from "./page-size/page-size-attributes";
+import { TitlePage } from "./title-page/title-page";
+
+type IHeadersOptions = {headers? : IHeaderOptions[]}
+type IFootersOptions = {footers? : IFooterOptions[]}
 
 export type SectionPropertiesOptions = IPageSizeAttributes &
     IPageMarginAttributes &
     IColumnsAttributes &
     IDocGridAttributesProperties &
-    IHeaderOptions &
-    IFooterOptions &
+    IHeadersOptions &
+    IFootersOptions &
     IPageNumberTypeAttributes &
     IPageBordersOptions;
 
@@ -41,10 +44,8 @@ export class SectionProperties extends XmlComponent {
             space: 708,
             linePitch: 360,
             orientation: PageOrientation.PORTRAIT,
-            headerType: HeaderReferenceType.DEFAULT,
-            headerId: 0,
-            footerType: FooterReferenceType.DEFAULT,
-            footerId: 0,
+            headers: [],
+            footers: [],
             pageNumberStart: undefined,
             pageNumberFormatType: PageNumberFormat.DECIMAL,
             pageBorders: undefined,
@@ -52,12 +53,14 @@ export class SectionProperties extends XmlComponent {
             pageBorderRight: undefined,
             pageBorderBottom: undefined,
             pageBorderLeft: undefined,
+            titlePage : true
         };
 
         const mergedOptions = {
             ...defaultOptions,
             ...options,
         };
+
 
         this.root.push(new PageSize(mergedOptions.width, mergedOptions.height, mergedOptions.orientation));
         this.root.push(
@@ -74,19 +77,24 @@ export class SectionProperties extends XmlComponent {
         this.root.push(new Columns(mergedOptions.space));
         this.root.push(new DocumentGrid(mergedOptions.linePitch));
 
-        this.root.push(
-            new HeaderReference({
-                headerType: mergedOptions.headerType,
-                headerId: mergedOptions.headerId,
-            }),
-        );
-        this.root.push(
-            new FooterReference({
-                footerType: mergedOptions.footerType,
-                footerId: mergedOptions.footerId,
-            }),
-        );
+        for (let header of mergedOptions.headers) {
+            this.root.push(
+                new HeaderReference({
+                    headerType: header.headerType,
+                    headerId: header.headerId,
+                }),
+            );
+        }
 
+        for (let footer of mergedOptions.footers) {
+            this.root.push(
+                new FooterReference({
+                    footerType: footer.footerType,
+                    footerId: footer.footerId,
+                }),
+            );
+        }
+        
         this.root.push(new PageNumberType(mergedOptions.pageNumberStart, mergedOptions.pageNumberFormatType));
 
         if (
@@ -105,6 +113,10 @@ export class SectionProperties extends XmlComponent {
                     pageBorderLeft: mergedOptions.pageBorderLeft,
                 }),
             );
+        }
+
+        if (mergedOptions.titlePage) {
+            this.root.push(new TitlePage());
         }
 
         this.options = mergedOptions;

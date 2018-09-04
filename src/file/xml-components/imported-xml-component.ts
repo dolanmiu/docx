@@ -7,6 +7,8 @@ export const parseOptions = {
     ignoreAttributes: false,
     attributeNamePrefix: "",
     attrNodeName: "_attr",
+    textNodeName: '',
+    trimValues: false
 };
 
 /**
@@ -57,6 +59,7 @@ export class ImportedXmlComponent extends XmlComponent {
     private _attr: any;
 
     constructor(rootKey: string, _attr?: any) {
+
         super(rootKey);
         if (_attr) {
             this._attr = _attr;

@@ -1,26 +1,25 @@
 import { Document, Packer, Paragraph, ImportDocx } from "../build";
 import * as fs from "fs";
 
-console.log(process.cwd());
-
 let importDocx = new ImportDocx();
-fs.readFile("./src/importDocx/simple.dotx", (err, data) => {
+const filePath = "./demo/dotx/template.dotx";
+fs.readFile(filePath, (err, data) => {
     if (err) {
-        console.log(err);
+        console.error(`failed to read file ${filePath}.`);
     }
     else {
-        importDocx.read(data).then(xmlComp => {
-            console.log(xmlComp);
-            const doc = new Document({templateHeader : xmlComp});
-            // const doc = new Document();
+        importDocx.extract(data).then(templateDocument => {
+            let options = {};
+            options['templateDocument'] = templateDocument;
+            
+            const doc = new Document(options);
             const paragraph = new Paragraph("Hello World");
             doc.addParagraph(paragraph);
 
-            // console.log(JSON.stringify(xmlComp, null, 2));
             const packer = new Packer();
-
             packer.toBuffer(doc).then((buffer) => {
                 fs.writeFileSync("MyDocument.docx", buffer);
+                console.log('done. open MyDocument.docx');
             });
         
         });

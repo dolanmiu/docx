@@ -7,7 +7,7 @@ import { HeaderAttributes } from "./header-attributes";
 export class Header extends XmlComponent {
     private readonly refId: number;
 
-    constructor(referenceNumber: number, initContent? : XmlComponent) {
+    constructor(referenceNumber: number, initContent?: XmlComponent) {
         super("w:hdr", initContent);
 
         this.refId = referenceNumber;
@@ -30,6 +30,17 @@ export class Header extends XmlComponent {
                 wpi: "http://schemas.microsoft.com/office/word/2010/wordprocessingInk",
                 wne: "http://schemas.microsoft.com/office/word/2006/wordml",
                 wps: "http://schemas.microsoft.com/office/word/2010/wordprocessingShape",
+                cx: "http://schemas.microsoft.com/office/drawing/2014/chartex",
+                cx1: "http://schemas.microsoft.com/office/drawing/2015/9/8/chartex",
+                cx2: "http://schemas.microsoft.com/office/drawing/2015/10/21/chartex",
+                cx3: "http://schemas.microsoft.com/office/drawing/2016/5/9/chartex",
+                cx4: "http://schemas.microsoft.com/office/drawing/2016/5/10/chartex",
+                cx5: "http://schemas.microsoft.com/office/drawing/2016/5/11/chartex",
+                cx6: "http://schemas.microsoft.com/office/drawing/2016/5/12/chartex",
+                cx7: "http://schemas.microsoft.com/office/drawing/2016/5/13/chartex",
+                cx8: "http://schemas.microsoft.com/office/drawing/2016/5/14/chartex",
+                w16cid: "http://schemas.microsoft.com/office/word/2016/wordml/cid",	
+                w16se: "http://schemas.microsoft.com/office/word/2015/wordml/symex" 
             }),
         );
     }

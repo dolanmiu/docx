@@ -8,12 +8,6 @@ export abstract class XmlComponent extends BaseXmlComponent {
     constructor(rootKey: string, initContent? : XmlComponent) {
         super(rootKey);
         this.root = initContent ? initContent.root : new Array<BaseXmlComponent>();
-        if (initContent) {
-            console.log('\n\n-------\n\n');
-            console.log('new root', JSON.stringify(initContent, null,2));
-            console.log('\n\n-------\n\n');
-        }
-       
     }
 
     public prepForXml(): IXmlableObject {
@@ -30,7 +24,7 @@ export abstract class XmlComponent extends BaseXmlComponent {
                 }
                 return comp;
             })
-            .filter((comp) => comp); // Exclude null, undefined, and empty strings
+            .filter((comp) => comp !== null); // Exclude null, undefined, and empty strings
         return {
             [this.rootKey]: children,
         };

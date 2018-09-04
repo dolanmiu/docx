@@ -23,6 +23,17 @@ export interface IHeaderAttributesProperties {
     dcmitype?: string;
     xsi?: string;
     type?: string;
+    cx? : string,
+    cx1? : string,
+    cx2? : string,
+    cx3? : string,
+    cx4? : string,
+    cx5? : string,
+    cx6? : string,
+    cx7? : string,
+    cx8? : string,
+    w16cid: string,	
+    w16se: string
 }
 
 export class HeaderAttributes extends XmlAttributeComponent<IHeaderAttributesProperties> {
@@ -49,5 +60,16 @@ export class HeaderAttributes extends XmlAttributeComponent<IHeaderAttributesPro
         dcmitype: "xmlns:dcmitype",
         xsi: "xmlns:xsi",
         type: "xsi:type",
+        cx : "xmlns:cx",
+        cx1: "xmlns:cx1",
+        cx2: "xmlns:cx2",
+        cx3: "xmlns:cx3",
+        cx4: "xmlns:cx4",
+        cx5: "xmlns:cx5",
+        cx6: "xmlns:cx6",
+        cx7: "xmlns:cx7",
+        cx8: "xmlns:cx8",
+        w16cid: "xmlns:w16cid",	
+        w16se: "xmlns:w16se"
     };
 }

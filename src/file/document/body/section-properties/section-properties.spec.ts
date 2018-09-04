@@ -1,7 +1,7 @@
 import { expect } from "chai";
 
 import { Formatter } from "../../../../export/formatter";
-import { FooterReferenceType, PageBorderOffsetFrom, PageNumberFormat } from "./";
+import { PageBorderOffsetFrom, PageNumberFormat, FooterReferenceType, HeaderReferenceType } from "./";
 import { SectionProperties } from "./section-properties";
 
 describe("SectionProperties", () => {
@@ -19,9 +19,8 @@ describe("SectionProperties", () => {
                 gutter: 0,
                 space: 708,
                 linePitch: 360,
-                headerId: 100,
-                footerId: 200,
-                footerType: FooterReferenceType.EVEN,
+                headers: [{headerId: 100, headerType: HeaderReferenceType.DEFAULT}],
+                footers: [{footerId: 200, footerType: FooterReferenceType.EVEN}],
                 pageNumberStart: 10,
                 pageNumberFormatType: PageNumberFormat.CARDINAL_TEXT,
             });

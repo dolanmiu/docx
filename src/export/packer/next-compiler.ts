@@ -53,9 +53,20 @@ export class Compiler {
             }
         }
 
+        
         for (const data of file.Media.Array) {
             const mediaData = data.stream;
             zip.file(`word/media/${data.fileName}`, mediaData);
+        }
+        for (let header of file.Headers) {
+            for (const data of header.media.Array) {
+                zip.file(`word/media/${data.fileName}`, data.stream);
+            }
+        }
+        for (let footer of file.Footers) {
+            for (const data of footer.media.Array) {
+                zip.file(`word/media/${data.fileName}`, data.stream);
+            }
         }
 
         return zip;
@@ -121,5 +132,14 @@ export class Compiler {
                 path: "word/footnotes.xml",
             },
         };
+    }
+
+
+    /* By default docx collapse empty tags. <a></a> -> <a/>. this function mimic it
+       so comparing (diff) original docx file and the library output is easier */
+    collapseEmptyTags(xmlData : string) : string {
+        const regEx = /<(([^ <>]+)[^<>]*)><\/\2>/g;
+        let collapsed =  xmlData.replace(regEx, '<$1/>');
+        return collapsed;
     }
 }

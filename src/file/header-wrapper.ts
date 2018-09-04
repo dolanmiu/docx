@@ -4,13 +4,16 @@ import { Image, Media } from "./media";
 import { ImageParagraph, Paragraph } from "./paragraph";
 import { Relationships } from "./relationships";
 import { Table } from "./table";
+import { IMediaData } from 'file/media';
 
 
 export class HeaderWrapper {
     private readonly header: Header;
     private readonly relationships: Relationships;
+    public readonly media = new Media();
 
-    constructor(private readonly media: Media, referenceId: number, initContent? : XmlComponent) {
+    // constructor(private readonly media: Media, referenceId: number, initContent? : XmlComponent) {
+    constructor(referenceId: number, initContent? : XmlComponent) {
         this.header = new Header(referenceId, initContent);
         this.relationships = new Relationships();
     }
@@ -37,13 +40,18 @@ export class HeaderWrapper {
         this.header.addChildElement(childElement);
     }
 
-    public createImage(image: Buffer, width?: number, height?: number): void {
-        const mediaData = this.media.addMedia(image, this.relationships.RelationshipCount, width, height);
+    public addImageRelation(image: Buffer, refId : number, width?: number, height?: number) : IMediaData {
+        const mediaData = this.media.addMedia(image, refId, width, height);
         this.relationships.createRelationship(
-            mediaData.referenceId,
+            refId,
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
             `media/${mediaData.fileName}`,
         );
+        return mediaData;
+    }
+    
+    public createImage(image: Buffer, width?: number, height?: number): void {
+        let mediaData = this.addImageRelation(image, this.relationships.RelationshipCount, width, height);
         this.addImage(new Image(new ImageParagraph(mediaData)));
     }
 
