@@ -9,39 +9,53 @@ const DEFAULT_TOC = {
             "w:pPr": [],
         },
         {
-            "w:fldChar": [
+            "w:r": [
                 {
-                    _attr: {
-                        "w:fldCharType": "begin",
-                    },
+                    "w:rPr": [],
+                },
+                {
+                    "w:fldChar": [
+                        {
+                            _attr: {
+                                "w:fldCharType": "begin",
+                            },
+                        },
+                    ],
+                },
+                {
+                    "w:instrText": [
+                        {
+                            _attr: {
+                                "xml:space": "preserve",
+                            },
+                        },
+                        'TOC \\n "1-6"',
+                    ],
+                },
+                {
+                    "w:fldChar": [
+                        {
+                            _attr: {
+                                "w:fldCharType": "separate",
+                            },
+                        },
+                    ],
                 },
             ],
         },
         {
-            "w:fldChar": [
+            "w:r": [
                 {
-                    _attr: {
-                        "w:fldCharType": "separate",
-                    },
+                    "w:rPr": [],
                 },
-            ],
-        },
-        {
-            "w:instrText": [
                 {
-                    _attr: {
-                        "xml:space": "preserve",
-                    },
-                },
-                'TOC \\n "1-6"',
-            ],
-        },
-        {
-            "w:fldChar": [
-                {
-                    _attr: {
-                        "w:fldCharType": "end",
-                    },
+                    "w:fldChar": [
+                        {
+                            _attr: {
+                                "w:fldCharType": "end",
+                            },
+                        },
+                    ],
                 },
             ],
         },
