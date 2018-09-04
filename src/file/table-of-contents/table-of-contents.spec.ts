@@ -33,7 +33,7 @@ const DEFAULT_TOC = {
                         "xml:space": "preserve",
                     },
                 },
-                "TOC",
+                'TOC \n "1-6"',
             ],
         },
         {

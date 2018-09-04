@@ -5,6 +5,8 @@ import { Document, Packer, Paragraph, TableOfContents } from "../build";
 
 const doc = new Document();
 
+// WordprocessingML docs for TableOfContents can be found here:
+// http://officeopenxml.com/WPtableOfContents.php
 // Creates an table of contents with default properties
 const toc = new TableOfContents();
 
