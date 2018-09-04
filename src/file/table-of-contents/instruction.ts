@@ -37,20 +37,20 @@ export class TableOfContentsInstruction extends XmlComponent {
         this.root.push(new TextAttributes({ space: "preserve" }));
         let instruction = "TOC";
         if (this.properties.entriesFromSession) {
-            instruction = `${instruction} \b "${this.properties.entriesFromSession}"`;
+            instruction = `${instruction} \\b "${this.properties.entriesFromSession}"`;
         }
         if (this.properties.hiperlink) {
-            instruction = `${instruction} \h`;
+            instruction = `${instruction} \\h`;
         }
         if (this.properties.entryLevelsRange) {
-            instruction = `${instruction} \n "${this.properties.entryLevelsRange}"`;
+            instruction = `${instruction} \\n "${this.properties.entryLevelsRange}"`;
         }
         if (this.properties.headerRange) {
-            instruction = `${instruction} \o "${this.properties.headerRange}"`;
+            instruction = `${instruction} \\o "${this.properties.headerRange}"`;
         }
         if (this.properties.styles && this.properties.styles.length) {
             const styles = this.properties.styles.map((sl) => `${sl.styleName}, ${sl.level}`).join(", ");
-            instruction = `${instruction} \t "${styles}"`;
+            instruction = `${instruction} \\t "${styles}"`;
         }
         this.root.push(instruction);
     }
