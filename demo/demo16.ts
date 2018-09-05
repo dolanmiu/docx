@@ -1,7 +1,7 @@
 // Multiple sections and headers
 // Import from 'docx' rather than '../build' if you install from npm
 import * as fs from "fs";
-import { Document, Packer, PageNumberFormat, PageOrientation, Paragraph } from "../build";
+import { Document, Packer, PageNumberFormat, PageOrientation, Paragraph, HeaderReferenceType, FooterReferenceType } from "../build";
 
 const doc = new Document();
 
@@ -15,8 +15,8 @@ const footer = doc.createFooter();
 footer.createParagraph("Footer on another page");
 
 doc.addSection({
-    headerId: header.Header.ReferenceId,
-    footerId: footer.Footer.ReferenceId,
+    headers: [{headerId: header.Header.ReferenceId, headerType: HeaderReferenceType.FIRST}],
+    footers: [{footerId: footer.Footer.ReferenceId, footerType: FooterReferenceType.FIRST}],
     pageNumberStart: 1,
     pageNumberFormatType: PageNumberFormat.DECIMAL,
 });
@@ -24,8 +24,8 @@ doc.addSection({
 doc.createParagraph("hello");
 
 doc.addSection({
-    headerId: header.Header.ReferenceId,
-    footerId: footer.Footer.ReferenceId,
+    headers: [{headerId: header.Header.ReferenceId, headerType: HeaderReferenceType.FIRST}],
+    footers: [{footerId: footer.Footer.ReferenceId, footerType: FooterReferenceType.FIRST}],
     pageNumberStart: 1,
     pageNumberFormatType: PageNumberFormat.DECIMAL,
     orientation: PageOrientation.LANDSCAPE,
