@@ -6,9 +6,9 @@ import {
     FooterReferenceType,
     HeaderReference,
     HeaderReferenceType,
-    SectionPropertiesOptions,
-    IHeaderOptions,
     IFooterOptions,
+    IHeaderOptions,
+    SectionPropertiesOptions,
 } from "./document/body/section-properties";
 import { FooterWrapper } from "./footer-wrapper";
 import { FootNotes } from "./footnotes";
@@ -22,8 +22,8 @@ import { ExternalStylesFactory } from "./styles/external-styles-factory";
 import { DefaultStylesFactory } from "./styles/factory";
 import { Table } from "./table";
 
-type DocumentHeaders = { header: HeaderWrapper; type: HeaderReferenceType }[];
-type DocumentFooters = { footer: FooterWrapper; type: FooterReferenceType }[];
+type DocumentHeaders = Array<{ header: HeaderWrapper; type: HeaderReferenceType }>;
+type DocumentFooters = Array<{ footer: FooterWrapper; type: FooterReferenceType }>;
 
 export class File {
     private readonly document: Document;
