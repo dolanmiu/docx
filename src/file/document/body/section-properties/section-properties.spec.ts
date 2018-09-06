@@ -1,7 +1,7 @@
 import { expect } from "chai";
 
 import { Formatter } from "../../../../export/formatter";
-import { PageBorderOffsetFrom, PageNumberFormat, FooterReferenceType, HeaderReferenceType } from "./";
+import { FooterReferenceType, HeaderReferenceType, PageBorderOffsetFrom, PageNumberFormat } from "./";
 import { SectionProperties } from "./section-properties";
 
 describe("SectionProperties", () => {

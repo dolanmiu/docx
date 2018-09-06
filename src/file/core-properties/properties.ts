@@ -1,8 +1,7 @@
 import { XmlComponent } from "file/xml-components";
+import { ITemplateDocument } from "importDocx/importDocx";
 import { DocumentAttributes } from "../document/document-attributes";
 import { Created, Creator, Description, Keywords, LastModifiedBy, Modified, Revision, Subject, Title } from "./components";
-
-import { TemplateDocument } from 'importDocx/importDocx'
 
 export interface IPropertiesOptions {
     title?: string;
@@ -14,7 +13,7 @@ export interface IPropertiesOptions {
     revision?: string;
     externalStyles?: string;
 
-    templateDocument? : TemplateDocument;
+    templateDocument?: ITemplateDocument;
 }
 
 export class CoreProperties extends XmlComponent {

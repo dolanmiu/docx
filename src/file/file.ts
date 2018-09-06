@@ -93,7 +93,7 @@ export class File {
         if (!templateHeaders) {
             this.createHeader();
         } else {
-            for (let templateHeader of templateHeaders) {
+            for (const templateHeader of templateHeaders) {
                 this.addHeaderToDocument(templateHeader.header, templateHeader.type);
             }
         }
@@ -102,7 +102,7 @@ export class File {
         if (!templateFooters) {
             this.createFooter();
         } else {
-            for (let templateFooter of templateFooters) {
+            for (const templateFooter of templateFooters) {
                 this.addFooterToDocument(templateFooter.footer, templateFooter.type);
             }
         }
@@ -127,16 +127,16 @@ export class File {
 
         this.footNotes = new FootNotes();
 
-        let headersOptions: IHeaderOptions[] = [];
-        for (let documentHeader of this.documentHeaders) {
+        const headersOptions: IHeaderOptions[] = [];
+        for (const documentHeader of this.documentHeaders) {
             headersOptions.push({
                 headerId: documentHeader.header.Header.ReferenceId,
                 headerType: documentHeader.type,
             });
         }
 
-        let footersOptions: IFooterOptions[] = [];
-        for (let documentFooter of this.documentFooters) {
+        const footersOptions: IFooterOptions[] = [];
+        for (const documentFooter of this.documentFooters) {
             footersOptions.push({
                 footerId: documentFooter.footer.Footer.ReferenceId,
                 footerType: documentFooter.type,
@@ -148,8 +148,7 @@ export class File {
                 headers: headersOptions,
                 footers: footersOptions,
             };
-        }
-        else {
+        } else {
             sectionPropertiesOptions.headers = headersOptions;
             sectionPropertiesOptions.footers = footersOptions;
         }
@@ -225,7 +224,7 @@ export class File {
         return header;
     }
 
-    private addHeaderToDocument(header: HeaderWrapper, type: HeaderReferenceType = HeaderReferenceType.DEFAULT) {
+    private addHeaderToDocument(header: HeaderWrapper, type: HeaderReferenceType = HeaderReferenceType.DEFAULT): void {
         this.documentHeaders.push({ header, type });
         this.docRelationships.createRelationship(
             header.Header.ReferenceId,
@@ -241,7 +240,7 @@ export class File {
         return footer;
     }
 
-    private addFooterToDocument(footer: FooterWrapper, type: FooterReferenceType = FooterReferenceType.DEFAULT) {
+    private addFooterToDocument(footer: FooterWrapper, type: FooterReferenceType = FooterReferenceType.DEFAULT): void {
         this.documentFooters.push({ footer, type });
         this.docRelationships.createRelationship(
             footer.Footer.ReferenceId,

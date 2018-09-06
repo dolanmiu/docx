@@ -39,8 +39,8 @@ export class Header extends XmlComponent {
                 cx6: "http://schemas.microsoft.com/office/drawing/2016/5/12/chartex",
                 cx7: "http://schemas.microsoft.com/office/drawing/2016/5/13/chartex",
                 cx8: "http://schemas.microsoft.com/office/drawing/2016/5/14/chartex",
-                w16cid: "http://schemas.microsoft.com/office/word/2016/wordml/cid",	
-                w16se: "http://schemas.microsoft.com/office/word/2015/wordml/symex" 
+                w16cid: "http://schemas.microsoft.com/office/word/2016/wordml/cid",
+                w16se: "http://schemas.microsoft.com/office/word/2015/wordml/symex",
             }),
         );
     }
