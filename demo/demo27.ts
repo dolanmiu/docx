@@ -10,9 +10,10 @@ fs.readFile(filePath, (err, data) => {
     }
 
     importDocx.extract(data).then((templateDocument) => {
+        // This any needs fixing
         const options = {
             templateDocument,
-        };
+        } as any;
 
         const doc = new Document(options);
         const paragraph = new Paragraph("Hello World");
