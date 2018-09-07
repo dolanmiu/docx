@@ -87,7 +87,11 @@ export class ImportDocx {
         return templateDocument;
     }
 
-    public async addImagesToWrapper(relationFile: IRelationFileInfo, zipContent: JSZip, wrapper: HeaderWrapper | FooterWrapper): Promise<void> {
+    public async addImagesToWrapper(
+        relationFile: IRelationFileInfo,
+        zipContent: JSZip,
+        wrapper: HeaderWrapper | FooterWrapper,
+    ): Promise<void> {
         let wrapperImagesReferences: IRelationFileInfo[] = [];
         const refFile = zipContent.files[`word/_rels/${relationFile.targetFile}.rels`];
         if (refFile) {

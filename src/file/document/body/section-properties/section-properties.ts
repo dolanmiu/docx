@@ -13,8 +13,13 @@ import { PageSize } from "./page-size/page-size";
 import { IPageSizeAttributes, PageOrientation } from "./page-size/page-size-attributes";
 import { TitlePage } from "./title-page/title-page";
 
-type IHeadersOptions = {headers? : IHeaderOptions[]}
-type IFootersOptions = {footers? : IFooterOptions[]}
+interface IHeadersOptions {
+    headers?: IHeaderOptions[];
+}
+
+interface IFootersOptions {
+    footers?: IFooterOptions[];
+}
 
 export type SectionPropertiesOptions = IPageSizeAttributes &
     IPageMarginAttributes &
@@ -53,14 +58,13 @@ export class SectionProperties extends XmlComponent {
             pageBorderRight: undefined,
             pageBorderBottom: undefined,
             pageBorderLeft: undefined,
-            titlePage : true
+            titlePage: true,
         };
 
         const mergedOptions = {
             ...defaultOptions,
             ...options,
         };
-
 
         this.root.push(new PageSize(mergedOptions.width, mergedOptions.height, mergedOptions.orientation));
         this.root.push(
@@ -77,7 +81,7 @@ export class SectionProperties extends XmlComponent {
         this.root.push(new Columns(mergedOptions.space));
         this.root.push(new DocumentGrid(mergedOptions.linePitch));
 
-        for (let header of mergedOptions.headers) {
+        for (const header of mergedOptions.headers) {
             this.root.push(
                 new HeaderReference({
                     headerType: header.headerType,
@@ -86,7 +90,7 @@ export class SectionProperties extends XmlComponent {
             );
         }
 
-        for (let footer of mergedOptions.footers) {
+        for (const footer of mergedOptions.footers) {
             this.root.push(
                 new FooterReference({
                     footerType: footer.footerType,
@@ -94,7 +98,7 @@ export class SectionProperties extends XmlComponent {
                 }),
             );
         }
-        
+
         this.root.push(new PageNumberType(mergedOptions.pageNumberStart, mergedOptions.pageNumberFormatType));
 
         if (

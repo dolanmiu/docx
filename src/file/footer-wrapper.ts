@@ -1,20 +1,19 @@
+import { IMediaData } from "file/media";
 import { XmlComponent } from "file/xml-components";
 import { Footer } from "./footer/footer";
 import { Image, Media } from "./media";
 import { ImageParagraph, Paragraph } from "./paragraph";
 import { Relationships } from "./relationships";
 import { Table } from "./table";
-import { IMediaData } from 'file/media';
 
 export class FooterWrapper {
     private readonly footer: Footer;
     private readonly relationships: Relationships;
-    public readonly media = new Media();
+    private readonly media = new Media();
 
-    constructor(referenceId: number, initContent? : XmlComponent) {
+    constructor(referenceId: number, initContent?: XmlComponent) {
         this.footer = new Footer(referenceId, initContent);
         this.relationships = new Relationships();
-        
     }
 
     public addParagraph(paragraph: Paragraph): void {
@@ -39,7 +38,7 @@ export class FooterWrapper {
         this.footer.addChildElement(childElement);
     }
 
-    public addImageRelation(image: Buffer, refId : number, width?: number, height?: number) : IMediaData {
+    public addImageRelation(image: Buffer, refId: number, width?: number, height?: number): IMediaData {
         const mediaData = this.media.addMedia(image, refId, width, height);
         this.relationships.createRelationship(
             refId,
@@ -48,12 +47,11 @@ export class FooterWrapper {
         );
         return mediaData;
     }
-    
+
     public createImage(image: Buffer, width?: number, height?: number): void {
-        let mediaData = this.addImageRelation(image, this.relationships.RelationshipCount, width, height);
+        const mediaData = this.addImageRelation(image, this.relationships.RelationshipCount, width, height);
         this.addImage(new Image(new ImageParagraph(mediaData)));
     }
-
 
     public addImage(image: Image): FooterWrapper {
         this.footer.addParagraph(image.Paragraph);
@@ -66,5 +64,9 @@ export class FooterWrapper {
 
     public get Relationships(): Relationships {
         return this.relationships;
+    }
+
+    public get Media(): Media {
+        return this.media;
     }
 }

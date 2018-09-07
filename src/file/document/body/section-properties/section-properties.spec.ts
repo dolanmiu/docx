@@ -19,8 +19,8 @@ describe("SectionProperties", () => {
                 gutter: 0,
                 space: 708,
                 linePitch: 360,
-                headers: [{headerId: 100, headerType: HeaderReferenceType.DEFAULT}],
-                footers: [{footerId: 200, footerType: FooterReferenceType.EVEN}],
+                headers: [{ headerId: 100, headerType: HeaderReferenceType.DEFAULT }],
+                footers: [{ footerId: 200, footerType: FooterReferenceType.EVEN }],
                 pageNumberStart: 10,
                 pageNumberFormatType: PageNumberFormat.CARDINAL_TEXT,
             });

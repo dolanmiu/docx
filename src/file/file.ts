@@ -224,30 +224,10 @@ export class File {
         return header;
     }
 
-    private addHeaderToDocument(header: HeaderWrapper, type: HeaderReferenceType = HeaderReferenceType.DEFAULT): void {
-        this.documentHeaders.push({ header, type });
-        this.docRelationships.createRelationship(
-            header.Header.ReferenceId,
-            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/header",
-            `header${this.documentHeaders.length}.xml`,
-        );
-        this.contentTypes.addHeader(this.documentHeaders.length);
-    }
-
     public createFooter(): FooterWrapper {
         const footer = new FooterWrapper(this.currentRelationshipId++);
         this.addFooterToDocument(footer);
         return footer;
-    }
-
-    private addFooterToDocument(footer: FooterWrapper, type: FooterReferenceType = FooterReferenceType.DEFAULT): void {
-        this.documentFooters.push({ footer, type });
-        this.docRelationships.createRelationship(
-            footer.Footer.ReferenceId,
-            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer",
-            `footer${this.documentFooters.length}.xml`,
-        );
-        this.contentTypes.addFooter(this.documentFooters.length);
     }
 
     public createFirstPageHeader(): HeaderWrapper {
@@ -261,6 +241,42 @@ export class File {
         );
 
         return headerWrapper;
+    }
+
+    public getFooterByRefNumber(refId: number): FooterWrapper {
+        const entry = this.documentFooters.map((item) => item.footer).find((h) => h.Footer.ReferenceId === refId);
+        if (entry) {
+            return entry;
+        }
+        throw new Error(`There is no footer with given reference id ${refId}`);
+    }
+
+    public getHeaderByRefNumber(refId: number): HeaderWrapper {
+        const entry = this.documentHeaders.map((item) => item.header).find((h) => h.Header.ReferenceId === refId);
+        if (entry) {
+            return entry;
+        }
+        throw new Error(`There is no header with given reference id ${refId}`);
+    }
+
+    private addHeaderToDocument(header: HeaderWrapper, type: HeaderReferenceType = HeaderReferenceType.DEFAULT): void {
+        this.documentHeaders.push({ header, type });
+        this.docRelationships.createRelationship(
+            header.Header.ReferenceId,
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/header",
+            `header${this.documentHeaders.length}.xml`,
+        );
+        this.contentTypes.addHeader(this.documentHeaders.length);
+    }
+
+    private addFooterToDocument(footer: FooterWrapper, type: FooterReferenceType = FooterReferenceType.DEFAULT): void {
+        this.documentFooters.push({ footer, type });
+        this.docRelationships.createRelationship(
+            footer.Footer.ReferenceId,
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer",
+            `footer${this.documentFooters.length}.xml`,
+        );
+        this.contentTypes.addFooter(this.documentFooters.length);
     }
 
     public get Document(): Document {
@@ -299,28 +315,12 @@ export class File {
         return this.documentHeaders.map((item) => item.header);
     }
 
-    public HeaderByRefNumber(refId: number): HeaderWrapper {
-        const entry = this.documentHeaders.map((item) => item.header).find((h) => h.Header.ReferenceId === refId);
-        if (entry) {
-            return entry;
-        }
-        throw new Error(`There is no header with given reference id ${refId}`);
-    }
-
     public get Footer(): FooterWrapper {
         return this.documentFooters[0].footer;
     }
 
     public get Footers(): FooterWrapper[] {
         return this.documentFooters.map((item) => item.footer);
-    }
-
-    public FooterByRefNumber(refId: number): FooterWrapper {
-        const entry = this.documentFooters.map((item) => item.footer).find((h) => h.Footer.ReferenceId === refId);
-        if (entry) {
-            return entry;
-        }
-        throw new Error(`There is no footer with given reference id ${refId}`);
     }
 
     public get ContentTypes(): ContentTypes {

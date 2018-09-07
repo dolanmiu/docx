@@ -59,13 +59,13 @@ export class Compiler {
         }
 
         for (const header of file.Headers) {
-            for (const data of header.media.Array) {
+            for (const data of header.Media.Array) {
                 zip.file(`word/media/${data.fileName}`, data.stream);
             }
         }
 
         for (const footer of file.Footers) {
-            for (const data of footer.media.Array) {
+            for (const data of footer.Media.Array) {
                 zip.file(`word/media/${data.fileName}`, data.stream);
             }
         }

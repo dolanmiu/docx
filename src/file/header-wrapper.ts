@@ -9,7 +9,7 @@ import { Table } from "./table";
 export class HeaderWrapper {
     private readonly header: Header;
     private readonly relationships: Relationships;
-    public readonly media = new Media();
+    private readonly media = new Media();
 
     // constructor(private readonly media: Media, referenceId: number, initContent? : XmlComponent) {
     constructor(referenceId: number, initContent?: XmlComponent) {
@@ -65,5 +65,9 @@ export class HeaderWrapper {
 
     public get Relationships(): Relationships {
         return this.relationships;
+    }
+
+    public get Media(): Media {
+        return this.media;
     }
 }
