@@ -1,19 +1,53 @@
-// http://officeopenxml.com/WPdocument.php
-import { XmlComponent } from "file/xml-components";
-import { Paragraph } from "../paragraph";
-import { Table } from "../table";
-import { TableOfContents } from "../table-of-contents";
-import { Body } from "./body";
-import { SectionPropertiesOptions } from "./body/section-properties";
-import { DocumentAttributes } from "./document-attributes";
+import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
+import { UpdateFields } from "./update-fields";
 
-export class Document extends XmlComponent {
-    private readonly body: Body;
+export interface ISettingsAttributesProperties {
+    wpc?: string;
+    mc?: string;
+    o?: string;
+    r?: string;
+    m?: string;
+    v?: string;
+    wp14?: string;
+    wp?: string;
+    w10?: string;
+    w?: string;
+    w14?: string;
+    w15?: string;
+    wpg?: string;
+    wpi?: string;
+    wne?: string;
+    wps?: string;
+    Ignorable?: string;
+}
 
-    constructor(sectionPropertiesOptions?: SectionPropertiesOptions) {
-        super("w:document");
+export class SettingsAttributes extends XmlAttributeComponent<ISettingsAttributesProperties> {
+    protected xmlKeys = {
+        wpc: "xmlns:wpc",
+        mc: "xmlns:mc",
+        o: "xmlns:o",
+        r: "xmlns:r",
+        m: "xmlns:m",
+        v: "xmlns:v",
+        wp14: "xmlns:wp14",
+        wp: "xmlns:wp",
+        w10: "xmlns:w10",
+        w: "xmlns:w",
+        w14: "xmlns:w14",
+        w15: "xmlns:w15",
+        wpg: "xmlns:wpg",
+        wpi: "xmlns:wpi",
+        wne: "xmlns:wne",
+        wps: "xmlns:wps",
+        Ignorable: "mc:Ignorable",
+    };
+}
+
+export class Settings extends XmlComponent {
+    constructor() {
+        super("w:settings");
         this.root.push(
-            new DocumentAttributes({
+            new SettingsAttributes({
                 wpc: "http://schemas.microsoft.com/office/word/2010/wordprocessingCanvas",
                 mc: "http://schemas.openxmlformats.org/markup-compatibility/2006",
                 o: "urn:schemas-microsoft-com:office:office",
@@ -33,37 +67,11 @@ export class Document extends XmlComponent {
                 Ignorable: "w14 w15 wp14",
             }),
         );
-        this.body = new Body(sectionPropertiesOptions);
-        this.root.push(this.body);
     }
 
-    public addParagraph(paragraph: Paragraph): Document {
-        this.body.push(paragraph);
-        return this;
-    }
-
-    public addTableOfContents(toc: TableOfContents): Document {
-        this.body.push(toc);
-        return this;
-    }
-
-    public createParagraph(text?: string): Paragraph {
-        const para = new Paragraph(text);
-        this.addParagraph(para);
-        return para;
-    }
-
-    public addTable(table: Table): void {
-        this.body.push(table);
-    }
-
-    public createTable(rows: number, cols: number): Table {
-        const table = new Table(rows, cols);
-        this.addTable(table);
-        return table;
-    }
-
-    public get Body(): Body {
-        return this.body;
+    public addUpdateFields(): void {
+        if (!this.root.find((child) => child instanceof UpdateFields)) {
+            this.addChildElement(new UpdateFields());
+        }
     }
 }

@@ -19,9 +19,9 @@ export class TableOfContentsInstructionProperties {
     // \h option
     public hiperlink: true;
     // \n option
-    public entryLevelsRange = "1-6";
+    public entryLevelsRange: string;
     // \o option
-    public headerRange: string;
+    public headerRange = "1-6";
     // \t option
     public styles: StyleLevel[];
     // \z option
