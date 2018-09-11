@@ -1,5 +1,5 @@
 <p align="center">
-    <img alt="clippy the assistant" src="https://i.imgur.com/QlDWcOV.png">
+    <img alt="clippy the assistant" src="https://i.imgur.com/pwCV6L8.png">
 </p>
 
 <p align="center">
