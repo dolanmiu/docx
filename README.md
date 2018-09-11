@@ -17,7 +17,7 @@
 [![PRs Welcome][pr-image]][pr-url]
 
 <p align="center">
-    <img src="https://i.imgur.com/QlDWcOV.png" alt="drawing" width="800"/>
+    <img src="https://i.imgur.com/H5FA1Qy.gif" alt="drawing" width="800"/>
 </p>
 
 # Demo
