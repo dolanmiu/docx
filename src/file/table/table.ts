@@ -1,3 +1,4 @@
+// http://officeopenxml.com/WPtableGrid.php
 import {
     GridSpan,
     TableCellBorders,
@@ -51,7 +52,7 @@ export class Table extends XmlComponent {
         for (let i = 0; i < rows; i++) {
             const cells: TableCell[] = [];
             for (let j = 0; j < cols; j++) {
-                cells.push(new TableCell());
+                cells.push(new TableCell(this, i, j));
             }
             const row = new TableRow(cells);
             this.rows.push(row);
@@ -60,7 +61,13 @@ export class Table extends XmlComponent {
     }
 
     public getRow(ix: number): TableRow {
-        return this.rows[ix];
+        const row = this.rows[ix];
+
+        if (!row) {
+            throw Error("Index out of bounds when trying to get row on table");
+        }
+
+        return row;
     }
 
     public getCell(row: number, col: number): TableCell {
@@ -93,7 +100,13 @@ export class TableRow extends XmlComponent {
     }
 
     public getCell(ix: number): TableCell {
-        return this.cells[ix];
+        const cell = this.cells[ix];
+
+        if (!cell) {
+            throw Error("Index out of bounds when trying to get cell on row");
+        }
+
+        return cell;
     }
 
     public addGridSpan(ix: number, cellSpan: number): TableCell {
@@ -115,7 +128,7 @@ export class TableRowProperties extends XmlComponent {
 export class TableCell extends XmlComponent {
     private readonly properties: TableCellProperties;
 
-    constructor() {
+    constructor(private readonly tableReference: Table, private readonly x: number, private readonly y: number) {
         super("w:tc");
         this.properties = new TableCellProperties();
         this.root.push(this.properties);
@@ -140,6 +153,15 @@ export class TableCell extends XmlComponent {
         const para = new Paragraph(text);
         this.addContent(para);
         return para;
+    }
+
+    public setHorizontalSpan(span: number): TableCell {
+        for (let i = 1; i < span; i++) {
+            this.tableReference.getCell(this.x, this.y + i).delete();
+        }
+        this.properties.addGridSpan(span);
+
+        return this;
     }
 
     public get CellProperties(): TableCellProperties {

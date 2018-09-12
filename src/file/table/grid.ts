@@ -1,3 +1,4 @@
+// http://officeopenxml.com/WPtableGrid.php
 import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
 
 export class TableGrid extends XmlComponent {
