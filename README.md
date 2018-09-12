@@ -1,5 +1,5 @@
 <p align="center">
-    <img alt="clippy the assistant" src="http://i60.tinypic.com/339pvtt.png">
+    <img alt="clippy the assistant" src="https://i.imgur.com/pwCV6L8.png">
 </p>
 
 <p align="center">
@@ -53,6 +53,10 @@ exporter.pack("My First Document");
 [@felipeochoa](https://github.com/felipeochoa)
 
 [@h4buli](https://github.com/h4buli)
+
+<p align="center">
+    <img alt="clippy the assistant" src="http://i60.tinypic.com/339pvtt.png">
+</p>
 
 ---
 
