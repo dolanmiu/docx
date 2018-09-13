@@ -5,19 +5,32 @@ import { Document, Packer, Paragraph } from "../build";
 
 const doc = new Document();
 
-const table = doc.createTable(2, 2);
-table
+doc
+    .createTable(2, 2)
     .getCell(0, 0)
     .addContent(new Paragraph("Hello"))
     .setHorizontalSpan(2);
 
 doc.createParagraph("Another table").heading2();
 
-const table2 = doc.createTable(2, 3);
-table2
+doc
+    .createTable(2, 3)
     .getCell(0, 0)
     .addContent(new Paragraph("World"))
     .setHorizontalSpan(3);
+
+doc.createParagraph("Another table").heading2();
+
+const table = doc.createTable(2, 4);
+table
+    .getCell(0, 0)
+    .addContent(new Paragraph("Foo"))
+    .setHorizontalSpan(4);
+
+table.getCell(1, 0).addContent(new Paragraph("Bar1"));
+table.getCell(1, 1).addContent(new Paragraph("Bar2"));
+table.getCell(1, 2).addContent(new Paragraph("Bar3"));
+table.getCell(1, 3).addContent(new Paragraph("Bar4"));
 
 const packer = new Packer();
 
