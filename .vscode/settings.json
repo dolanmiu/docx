@@ -5,6 +5,5 @@
     "editor.formatOnSave": false,
     "prettier.tabWidth": 4,
     "prettier.arrowParens": "always",
-    "prettier.bracketSpacing": true,
-    "git.ignoreLimitWarning": true
+    "prettier.bracketSpacing": true
 }
