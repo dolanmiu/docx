@@ -243,7 +243,7 @@ export class File {
         return headerWrapper;
     }
 
-    public getFooterByRefNumber(refId: number): FooterWrapper {
+    public getFooterByReferenceNumber(refId: number): FooterWrapper {
         const entry = this.documentFooters.map((item) => item.footer).find((h) => h.Footer.ReferenceId === refId);
         if (entry) {
             return entry;
@@ -251,7 +251,7 @@ export class File {
         throw new Error(`There is no footer with given reference id ${refId}`);
     }
 
-    public getHeaderByRefNumber(refId: number): HeaderWrapper {
+    public getHeaderByReferenceNumber(refId: number): HeaderWrapper {
         const entry = this.documentHeaders.map((item) => item.header).find((h) => h.Header.ReferenceId === refId);
         if (entry) {
             return entry;
