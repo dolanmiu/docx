@@ -3,7 +3,7 @@ import { IXmlableObject } from "./xmlable-object";
 export { BaseXmlComponent };
 
 export abstract class XmlComponent extends BaseXmlComponent {
-    public root: Array<BaseXmlComponent | string>;
+    protected root: Array<BaseXmlComponent | string>;
 
     constructor(rootKey: string, initContent?: XmlComponent) {
         super(rootKey);
@@ -24,7 +24,7 @@ export abstract class XmlComponent extends BaseXmlComponent {
                 }
                 return comp;
             })
-            .filter((comp) => comp !== null); // Exclude null, undefined, and empty strings
+            .filter((comp) => comp); // Exclude null, undefined, and empty strings
         return {
             [this.rootKey]: children,
         };
