@@ -100,7 +100,7 @@ export class ImportDocx {
         }
         for (const r of wrapperImagesReferences) {
             const buffer = await zipContent.files[`word/${r.targetFile}`].async("nodebuffer");
-            wrapper.addImageRelation(buffer, r.id);
+            wrapper.addImageRelationship(buffer, r.id);
         }
     }
 

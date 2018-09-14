@@ -39,7 +39,7 @@ export class HeaderWrapper {
         this.header.addChildElement(childElement);
     }
 
-    public addImageRelation(image: Buffer, refId: number, width?: number, height?: number): IMediaData {
+    public addImageRelationship(image: Buffer, refId: number, width?: number, height?: number): IMediaData {
         const mediaData = this.media.addMedia(image, refId, width, height);
         this.relationships.createRelationship(
             refId,
@@ -50,7 +50,7 @@ export class HeaderWrapper {
     }
 
     public createImage(image: Buffer, width?: number, height?: number): void {
-        const mediaData = this.addImageRelation(image, this.relationships.RelationshipCount, width, height);
+        const mediaData = this.addImageRelationship(image, this.relationships.RelationshipCount, width, height);
         this.addImage(new Image(new ImageParagraph(mediaData)));
     }
 
