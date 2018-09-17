@@ -1,10 +1,10 @@
 // http://officeopenxml.com/WPheaders.php
-import { XmlComponent } from "file/xml-components";
+import { InitializableXmlComponent, XmlComponent } from "file/xml-components";
 import { Paragraph } from "../paragraph";
 import { Table } from "../table";
 import { HeaderAttributes } from "./header-attributes";
 
-export class Header extends XmlComponent {
+export class Header extends InitializableXmlComponent {
     private readonly refId: number;
 
     constructor(referenceNumber: number, initContent?: XmlComponent) {

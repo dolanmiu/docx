@@ -5,9 +5,9 @@ export { BaseXmlComponent };
 export abstract class XmlComponent extends BaseXmlComponent {
     protected root: Array<BaseXmlComponent | string>;
 
-    constructor(rootKey: string, initContent?: XmlComponent) {
+    constructor(rootKey: string) {
         super(rootKey);
-        this.root = initContent ? initContent.root : new Array<BaseXmlComponent>();
+        this.root = new Array<BaseXmlComponent>();
     }
 
     public prepForXml(): IXmlableObject {

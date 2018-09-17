@@ -1,10 +1,10 @@
 // http://officeopenxml.com/WPfooters.php
-import { XmlComponent } from "file/xml-components";
+import { InitializableXmlComponent, XmlComponent } from "file/xml-components";
 import { Paragraph } from "../paragraph";
 import { Table } from "../table";
 import { FooterAttributes } from "./footer-attributes";
 
-export class Footer extends XmlComponent {
+export class Footer extends InitializableXmlComponent {
     private readonly refId: number;
 
     constructor(referenceNumber: number, initContent?: XmlComponent) {
