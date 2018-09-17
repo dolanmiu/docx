@@ -12,7 +12,6 @@ export interface IPropertiesOptions {
     lastModifiedBy?: string;
     revision?: string;
     externalStyles?: string;
-
     templateDocument?: ITemplateDocument;
 }
 
