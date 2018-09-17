@@ -25,7 +25,6 @@ describe("SectionProperties", () => {
                 pageNumberFormatType: PageNumberFormat.CARDINAL_TEXT,
             });
             const tree = new Formatter().format(properties);
-            
             expect(Object.keys(tree)).to.deep.equal(["w:sectPr"]);
             expect(tree["w:sectPr"]).to.be.an.instanceof(Array);
             expect(tree["w:sectPr"][0]).to.deep.equal({ "w:pgSz": [{ _attr: { "w:h": 16838, "w:w": 11906, "w:orient": "portrait" } }] });
@@ -162,7 +161,7 @@ describe("SectionProperties", () => {
             });
             const tree = new Formatter().format(properties);
             expect(Object.keys(tree)).to.deep.equal(["w:sectPr"]);
-            let pgBorders = tree["w:sectPr"].find(item => item["w:pgBorders"] != null);
+            const pgBorders = tree["w:sectPr"].find((item) => item["w:pgBorders"] !== undefined);
             expect(pgBorders).to.deep.equal({
                 "w:pgBorders": [{ _attr: { "w:offsetFrom": "page" } }],
             });
