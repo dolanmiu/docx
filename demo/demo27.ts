@@ -15,7 +15,11 @@ fs.readFile(filePath, (err, data) => {
             templateDocument,
         } as any;
 
-        const doc = new Document(options);
+        const sectionProps = {
+            titlePage: true,
+        } as any;
+
+        const doc = new Document(options, sectionProps);
         const paragraph = new Paragraph("Hello World");
         doc.addParagraph(paragraph);
 
