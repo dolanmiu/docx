@@ -2,14 +2,7 @@ import { AppProperties } from "./app-properties/app-properties";
 import { ContentTypes } from "./content-types/content-types";
 import { CoreProperties, IPropertiesOptions } from "./core-properties";
 import { Document } from "./document";
-import {
-    FooterReferenceType,
-    HeaderReference,
-    HeaderReferenceType,
-    IFooterOptions,
-    IHeaderOptions,
-    SectionPropertiesOptions,
-} from "./document/body/section-properties";
+import { FooterReferenceType, HeaderReference, HeaderReferenceType, SectionPropertiesOptions } from "./document/body/section-properties";
 import { FooterWrapper, IDocumentFooter } from "./footer-wrapper";
 import { FootNotes } from "./footnotes";
 import { HeaderWrapper, IDocumentHeader } from "./header-wrapper";
@@ -40,7 +33,7 @@ export class File {
 
     private currentRelationshipId: number = 1;
 
-    constructor(options?: IPropertiesOptions, sectionPropertiesOptions?: SectionPropertiesOptions) {
+    constructor(options?: IPropertiesOptions, sectionPropertiesOptions: SectionPropertiesOptions = {}) {
         if (!options) {
             options = {
                 creator: "Un-named",
@@ -124,31 +117,17 @@ export class File {
 
         this.footNotes = new FootNotes();
 
-        const headersOptions: IHeaderOptions[] = [];
-        for (const documentHeader of this.headers) {
-            headersOptions.push({
-                headerId: documentHeader.header.Header.ReferenceId,
-                headerType: documentHeader.type,
-            });
-        }
-
-        const footersOptions: IFooterOptions[] = [];
-        for (const documentFooter of this.footers) {
-            footersOptions.push({
-                footerId: documentFooter.footer.Footer.ReferenceId,
-                footerType: documentFooter.type,
-            });
-        }
-
-        if (!sectionPropertiesOptions) {
-            sectionPropertiesOptions = {
-                headers: headersOptions,
-                footers: footersOptions,
-            };
-        } else {
-            sectionPropertiesOptions.headers = headersOptions;
-            sectionPropertiesOptions.footers = footersOptions;
-        }
+        sectionPropertiesOptions = {
+            ...sectionPropertiesOptions,
+            headers: this.headers.map((header) => ({
+                headerId: header.header.Header.ReferenceId,
+                headerType: header.type,
+            })),
+            footers: this.footers.map((footer) => ({
+                footerId: footer.footer.Footer.ReferenceId,
+                footerType: footer.type,
+            })),
+        };
 
         this.document = new Document(sectionPropertiesOptions);
     }
