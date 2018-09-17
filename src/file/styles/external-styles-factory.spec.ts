@@ -61,8 +61,6 @@ describe("External styles factory", () => {
         it("should parse other child elements of w:styles", () => {
             // tslint:disable-next-line:no-any
             const importedStyle = new ExternalStylesFactory().newInstance(externalStyles) as any;
-
-            expect(importedStyle.root.length).to.equal(5);
             expect(importedStyle.root[1]).to.eql({
                 deleted: false,
                 root: [
@@ -139,7 +137,7 @@ describe("External styles factory", () => {
             // tslint:disable-next-line:no-any
             const importedStyle = new ExternalStylesFactory().newInstance(externalStyles) as any;
 
-            expect(importedStyle.root.length).to.equal(5);
+            expect(importedStyle.root.length).to.equal(6);
             expect(importedStyle.root[3]).to.eql({
                 _attr: {
                     "w:default": "1",

@@ -25,6 +25,7 @@ describe("SectionProperties", () => {
                 pageNumberFormatType: PageNumberFormat.CARDINAL_TEXT,
             });
             const tree = new Formatter().format(properties);
+            
             expect(Object.keys(tree)).to.deep.equal(["w:sectPr"]);
             expect(tree["w:sectPr"]).to.be.an.instanceof(Array);
             expect(tree["w:sectPr"][0]).to.deep.equal({ "w:pgSz": [{ _attr: { "w:h": 16838, "w:w": 11906, "w:orient": "portrait" } }] });
@@ -74,9 +75,7 @@ describe("SectionProperties", () => {
             });
             expect(tree["w:sectPr"][2]).to.deep.equal({ "w:cols": [{ _attr: { "w:space": 708 } }] });
             expect(tree["w:sectPr"][3]).to.deep.equal({ "w:docGrid": [{ _attr: { "w:linePitch": 360 } }] });
-            // expect(tree["w:sectPr"][4]).to.deep.equal({ "w:headerReference": [{ _attr: { "r:id": "rId0", "w:type": "default" } }] });
-            // expect(tree["w:sectPr"][5]).to.deep.equal({ "w:footerReference": [{ _attr: { "r:id": "rId0", "w:type": "default" } }] });
-            expect(tree["w:sectPr"][6]).to.deep.equal({ "w:pgNumType": [{ _attr: { "w:fmt": "decimal" } }] });
+            expect(tree["w:sectPr"][4]).to.deep.equal({ "w:pgNumType": [{ _attr: { "w:fmt": "decimal" } }] });
         });
 
         it("should create section properties with changed options", () => {
@@ -163,7 +162,8 @@ describe("SectionProperties", () => {
             });
             const tree = new Formatter().format(properties);
             expect(Object.keys(tree)).to.deep.equal(["w:sectPr"]);
-            expect(tree["w:sectPr"][7]).to.deep.equal({
+            let pgBorders = tree["w:sectPr"].find(item => item["w:pgBorders"] != null);
+            expect(pgBorders).to.deep.equal({
                 "w:pgBorders": [{ _attr: { "w:offsetFrom": "page" } }],
             });
         });
