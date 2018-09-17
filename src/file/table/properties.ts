@@ -3,13 +3,13 @@ import { WidthType } from "./table-cell";
 import { TableCellMargin } from "./table-cell-margin";
 
 export class TableProperties extends XmlComponent {
-    private readonly cellMargain: TableCellMargin;
+    private readonly cellMargin: TableCellMargin;
 
     constructor() {
         super("w:tblPr");
 
-        this.cellMargain = new TableCellMargin();
-        this.root.push(this.cellMargain);
+        this.cellMargin = new TableCellMargin();
+        this.root.push(this.cellMargin);
     }
 
     public setWidth(type: WidthType, w: number | string): TableProperties {
@@ -28,7 +28,7 @@ export class TableProperties extends XmlComponent {
     }
 
     public get CellMargin(): TableCellMargin {
-        return this.cellMargain;
+        return this.cellMargin;
     }
 }
 
