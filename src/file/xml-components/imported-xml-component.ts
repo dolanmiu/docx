@@ -7,8 +7,6 @@ export const parseOptions = {
     ignoreAttributes: false,
     attributeNamePrefix: "",
     attrNodeName: "_attr",
-    textNodeName: "",
-    trimValues: false,
 };
 
 /**
