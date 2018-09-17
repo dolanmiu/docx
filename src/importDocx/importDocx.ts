@@ -7,6 +7,12 @@ import { FooterWrapper, IDocumentFooter } from "file/footer-wrapper";
 import { HeaderWrapper, IDocumentHeader } from "file/header-wrapper";
 import { convertToXmlComponent, ImportedXmlComponent, parseOptions } from "file/xml-components";
 
+const importParseOptions = {
+    ...parseOptions,
+    textNodeName: "",
+    trimValues: false,
+};
+
 const schemeToType = {
     "http://schemas.openxmlformats.org/officeDocument/2006/relationships/header": "header",
     "http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer": "footer",
@@ -55,7 +61,7 @@ export class ImportDocx {
             }
 
             const xmlData = await zipContent.files[`word/${relationFileInfo.targetFile}`].async("text");
-            const xmlObj = fastXmlParser.parse(xmlData, parseOptions);
+            const xmlObj = fastXmlParser.parse(xmlData, importParseOptions);
 
             const importedComp = convertToXmlComponent(headerKey, xmlObj[headerKey]) as ImportedXmlComponent;
 
@@ -72,7 +78,7 @@ export class ImportDocx {
                 throw new Error(`Can not find target file for id ${footerRef.id}`);
             }
             const xmlData = await zipContent.files[`word/${relationFileInfo.targetFile}`].async("text");
-            const xmlObj = fastXmlParser.parse(xmlData, parseOptions);
+            const xmlObj = fastXmlParser.parse(xmlData, importParseOptions);
             const importedComp = convertToXmlComponent(footerKey, xmlObj[footerKey]) as ImportedXmlComponent;
 
             const footer = new FooterWrapper(this.currentRelationshipId++, importedComp);
@@ -102,7 +108,7 @@ export class ImportDocx {
     }
 
     public findReferenceFiles(xmlData: string): IRelationshipFileInfo[] {
-        const xmlObj = fastXmlParser.parse(xmlData, parseOptions);
+        const xmlObj = fastXmlParser.parse(xmlData, importParseOptions);
         const relationXmlArray = Array.isArray(xmlObj.Relationships.Relationship)
             ? xmlObj.Relationships.Relationship
             : [xmlObj.Relationships.Relationship];
@@ -119,7 +125,7 @@ export class ImportDocx {
     }
 
     public extractDocumentRefs(xmlData: string): IDocumentRefs {
-        const xmlObj = fastXmlParser.parse(xmlData, parseOptions);
+        const xmlObj = fastXmlParser.parse(xmlData, importParseOptions);
         const sectionProp = xmlObj["w:document"]["w:body"]["w:sectPr"];
 
         const headersXmlArray = Array.isArray(sectionProp["w:headerReference"])
