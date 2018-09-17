@@ -3,8 +3,8 @@ import * as JSZip from "jszip";
 
 import { FooterReferenceType } from "file/document/body/section-properties/footer-reference";
 import { HeaderReferenceType } from "file/document/body/section-properties/header-reference";
-import { FooterWrapper } from "file/footer-wrapper";
-import { HeaderWrapper } from "file/header-wrapper";
+import { FooterWrapper, IDocumentFooter } from "file/footer-wrapper";
+import { HeaderWrapper, IDocumentHeader } from "file/header-wrapper";
 import { convertToXmlComponent, ImportedXmlComponent, parseOptions } from "file/xml-components";
 
 const schemeToType = {
@@ -18,19 +18,16 @@ interface IDocumentRefs {
     footers: Array<{ id: number; type: FooterReferenceType }>;
 }
 
-interface IRelationFileInfo {
+interface IRelationshipFileInfo {
     id: number;
     targetFile: string;
     type: "header" | "footer" | "image";
 }
 
-type DocumentHeaders = Array<{ type: HeaderReferenceType; header: HeaderWrapper }>;
-type DocumentFooters = Array<{ type: FooterReferenceType; footer: FooterWrapper }>;
-
 export interface ITemplateDocument {
     currentRelationshipId: number;
-    headers: DocumentHeaders;
-    footers: DocumentFooters;
+    headers: IDocumentHeader[];
+    footers: IDocumentFooter[];
 }
 
 export class ImportDocx {
@@ -47,12 +44,12 @@ export class ImportDocx {
         const documentRefs: IDocumentRefs = this.extractDocumentRefs(await documentContent.async("text"));
 
         const relationshipContent = zipContent.files["word/_rels/document.xml.rels"];
-        const documentRelations: IRelationFileInfo[] = this.findReferenceFiles(await relationshipContent.async("text"));
+        const documentRelationships: IRelationshipFileInfo[] = this.findReferenceFiles(await relationshipContent.async("text"));
 
-        const headers: DocumentHeaders = [];
+        const headers: IDocumentHeader[] = [];
         for (const headerRef of documentRefs.headers) {
             const headerKey = "w:hdr";
-            const relationFileInfo = documentRelations.find((rel) => rel.id === headerRef.id);
+            const relationFileInfo = documentRelationships.find((rel) => rel.id === headerRef.id);
             if (relationFileInfo === null || !relationFileInfo) {
                 throw new Error(`Can not find target file for id ${headerRef.id}`);
             }
@@ -67,10 +64,10 @@ export class ImportDocx {
             headers.push({ type: headerRef.type, header });
         }
 
-        const footers: DocumentFooters = [];
+        const footers: IDocumentFooter[] = [];
         for (const footerRef of documentRefs.footers) {
             const footerKey = "w:ftr";
-            const relationFileInfo = documentRelations.find((rel) => rel.id === footerRef.id);
+            const relationFileInfo = documentRelationships.find((rel) => rel.id === footerRef.id);
             if (relationFileInfo === null || !relationFileInfo) {
                 throw new Error(`Can not find target file for id ${footerRef.id}`);
             }
@@ -88,11 +85,11 @@ export class ImportDocx {
     }
 
     public async addImagesToWrapper(
-        relationFile: IRelationFileInfo,
+        relationFile: IRelationshipFileInfo,
         zipContent: JSZip,
         wrapper: HeaderWrapper | FooterWrapper,
     ): Promise<void> {
-        let wrapperImagesReferences: IRelationFileInfo[] = [];
+        let wrapperImagesReferences: IRelationshipFileInfo[] = [];
         const refFile = zipContent.files[`word/_rels/${relationFile.targetFile}.rels`];
         if (refFile) {
             const xmlRef = await refFile.async("text");
@@ -104,12 +101,12 @@ export class ImportDocx {
         }
     }
 
-    public findReferenceFiles(xmlData: string): IRelationFileInfo[] {
+    public findReferenceFiles(xmlData: string): IRelationshipFileInfo[] {
         const xmlObj = fastXmlParser.parse(xmlData, parseOptions);
         const relationXmlArray = Array.isArray(xmlObj.Relationships.Relationship)
             ? xmlObj.Relationships.Relationship
             : [xmlObj.Relationships.Relationship];
-        const relations: IRelationFileInfo[] = relationXmlArray
+        const relations: IRelationshipFileInfo[] = relationXmlArray
             .map((item) => {
                 return {
                     id: this.parseRefId(item._attr.Id),

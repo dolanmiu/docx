@@ -1,10 +1,16 @@
 import { IMediaData } from "file/media";
 import { XmlComponent } from "file/xml-components";
+import { FooterReferenceType } from "./document";
 import { Footer } from "./footer/footer";
 import { Image, Media } from "./media";
 import { ImageParagraph, Paragraph } from "./paragraph";
 import { Relationships } from "./relationships";
 import { Table } from "./table";
+
+export interface IDocumentFooter {
+    footer: FooterWrapper;
+    type: FooterReferenceType;
+}
 
 export class FooterWrapper {
     private readonly footer: Footer;

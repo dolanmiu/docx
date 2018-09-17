@@ -1,10 +1,16 @@
 import { IMediaData } from "file/media";
 import { XmlComponent } from "file/xml-components";
+import { HeaderReferenceType } from "./document";
 import { Header } from "./header/header";
 import { Image, Media } from "./media";
 import { ImageParagraph, Paragraph } from "./paragraph";
 import { Relationships } from "./relationships";
 import { Table } from "./table";
+
+export interface IDocumentHeader {
+    header: HeaderWrapper;
+    type: HeaderReferenceType;
+}
 
 export class HeaderWrapper {
     private readonly header: Header;
