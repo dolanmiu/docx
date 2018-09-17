@@ -58,7 +58,7 @@ export class SectionProperties extends XmlComponent {
             pageBorderRight: undefined,
             pageBorderBottom: undefined,
             pageBorderLeft: undefined,
-            titlePage: true,
+            titlePage: false,
         };
 
         const mergedOptions = {
