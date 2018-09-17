@@ -24,7 +24,7 @@ export abstract class XmlComponent extends BaseXmlComponent {
                 }
                 return comp;
             })
-            .filter((comp) => comp); // Exclude null, undefined, and empty strings
+            .filter((comp) => comp !== null); // Exclude null, undefined, and empty strings
         return {
             [this.rootKey]: children,
         };
