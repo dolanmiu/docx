@@ -10,7 +10,6 @@ import { Image, Media } from "./media";
 import { Numbering } from "./numbering";
 import { Bookmark, Hyperlink, Paragraph } from "./paragraph";
 import { Relationships } from "./relationships";
-import { Settings } from "./settings";
 import { Styles } from "./styles";
 import { ExternalStylesFactory } from "./styles/external-styles-factory";
 import { DefaultStylesFactory } from "./styles/factory";
@@ -28,7 +27,6 @@ export class File {
     private readonly headerWrapper: HeaderWrapper[] = [];
     private readonly footerWrapper: FooterWrapper[] = [];
     private readonly footNotes: FootNotes;
-    private readonly settings: Settings;
 
     private readonly contentTypes: ContentTypes;
     private readonly appProperties: AppProperties;
@@ -108,12 +106,10 @@ export class File {
             sectionPropertiesOptions.footerId = footer.Footer.ReferenceId;
         }
         this.document = new Document(sectionPropertiesOptions);
-        this.settings = new Settings();
     }
 
     public addTableOfContents(toc: TableOfContents): void {
         this.document.addTableOfContents(toc);
-        this.settings.addUpdateFields();
     }
 
     public addParagraph(paragraph: Paragraph): void {
@@ -287,7 +283,7 @@ export class File {
         return this.footNotes;
     }
 
-    public get Settings(): Settings {
-        return this.settings;
+    public generateTablesOfContents(): void {
+        
     }
 }
