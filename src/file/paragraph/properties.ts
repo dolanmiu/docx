@@ -1,6 +1,7 @@
 // http://officeopenxml.com/WPparagraphProperties.php
 import { XmlComponent } from "file/xml-components";
 import { Border } from "./formatting/border";
+import { Style } from "./formatting/style";
 
 export class ParagraphProperties extends XmlComponent {
     public paragraphBorder: Border;
@@ -16,5 +17,9 @@ export class ParagraphProperties extends XmlComponent {
 
     public push(item: XmlComponent): void {
         this.root.push(item);
+    }
+
+    public getStyles(): Style[] {
+        return this.root.filter((child) => child instanceof Style) as Style[];
     }
 }

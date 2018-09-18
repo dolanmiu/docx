@@ -54,4 +54,8 @@ export class TableOfContentsInstruction extends XmlComponent {
         }
         this.root.push(instruction);
     }
+
+    public getHeaderRange(): string {
+        return this.properties.headerRange;
+    }
 }

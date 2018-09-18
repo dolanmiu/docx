@@ -33,6 +33,8 @@ export class Compiler {
     }
 
     public async compile(file: File): Promise<JSZip> {
+        file.generateTablesOfContents();
+
         const zip = new JSZip();
 
         const xmlifiedFileMapping = this.xmlifyFile(file);

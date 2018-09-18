@@ -1,3 +1,4 @@
+import { cloneDeep } from "lodash";
 import { AppProperties } from "./app-properties/app-properties";
 import { ContentTypes } from "./content-types/content-types";
 import { CoreProperties, IPropertiesOptions } from "./core-properties";
@@ -8,13 +9,15 @@ import { FootNotes } from "./footnotes";
 import { HeaderWrapper } from "./header-wrapper";
 import { Image, Media } from "./media";
 import { Numbering } from "./numbering";
-import { Bookmark, Hyperlink, Paragraph } from "./paragraph";
+import { Bookmark, Hyperlink, Paragraph, Run } from "./paragraph";
+import { Begin, End, Separate } from "./paragraph/run/field";
+import { Tab } from "./paragraph/run/tab";
 import { Relationships } from "./relationships";
 import { Styles } from "./styles";
 import { ExternalStylesFactory } from "./styles/external-styles-factory";
 import { DefaultStylesFactory } from "./styles/factory";
 import { Table } from "./table";
-import { TableOfContents } from "./table-of-contents";
+import { PageReferenceInstruction, TableOfContents } from "./table-of-contents";
 
 export class File {
     private readonly document: Document;
@@ -32,6 +35,7 @@ export class File {
     private readonly appProperties: AppProperties;
 
     private currentRelationshipId: number = 1;
+    private currentTocBookmarkId: number = 1;
 
     constructor(options?: IPropertiesOptions, sectionPropertiesOptions?: SectionPropertiesOptions) {
         if (!options) {
@@ -284,6 +288,65 @@ export class File {
     }
 
     public generateTablesOfContents(): void {
-        
+        this.document.getTablesOfContents().forEach((child) => this.generateContent(child));
+    }
+
+    private generateContent(toc: TableOfContents): void {
+        // console.log("TOC", JSON.stringify(toc));
+        if (toc.getHeaderRange()) {
+            this.generateContentForHeaderRange(toc);
+        }
+    }
+
+    private generateContentForHeaderRange(toc: TableOfContents): void {
+        const headerRange = toc.getHeaderRange();
+        const hyphenIndex = headerRange.indexOf("-");
+        if (hyphenIndex !== -1) {
+            const rangeBegin = parseInt(headerRange.substring(0, hyphenIndex), 2);
+            const rangeEnd = parseInt(headerRange.substring(hyphenIndex + 1), 2);
+            const styles = new Array<string>();
+            for (let i = rangeBegin; i <= rangeEnd; i++) {
+                styles.push(`Heading${i}`);
+            }
+            // console.log("Find Headers for range ", rangeBegin, " - ", rangeEnd, styles.join(","));
+            this.document
+                .getParagraphs()
+                .filter((paragraph) => this.paragraphContainAnyStyle(paragraph, styles))
+                .forEach((paragraph) => this.generateContentForParagraph(paragraph, toc));
+        } else {
+            throw new Error(`Invalid headerRange: '${headerRange}'`);
+        }
+    }
+
+    private paragraphContainAnyStyle(paragraph: Paragraph, styles: string[]): boolean {
+        return paragraph.getStyles().some((style) => styles.indexOf(style.styleId) !== -1);
+    }
+
+    private generateContentForParagraph(paragraph: Paragraph, toc: TableOfContents): void {
+        const bookmarkId = `_TOC_${this.currentTocBookmarkId}`;
+        // console.log("Generating content for paragraph: ", bookmarkId);
+
+        const generatedParagraph = cloneDeep(paragraph);
+        generatedParagraph.rightTabStop(9016, "dot");
+
+        const tabRun = new Run();
+        tabRun.addChildElement(new Tab());
+        generatedParagraph.addChildElement(tabRun);
+
+        const beginRun = new Run();
+        beginRun.addChildElement(new Begin());
+        beginRun.addChildElement(new PageReferenceInstruction(bookmarkId));
+        beginRun.addChildElement(new Separate());
+        generatedParagraph.addRun(beginRun);
+
+        const endRun = new Run();
+        endRun.addChildElement(new End());
+        generatedParagraph.addRun(endRun);
+
+        toc.addGeneratedContent(generatedParagraph);
+
+        paragraph.addBookmark(this.createBookmark(bookmarkId, ""));
+        // console.log("Paragraph after content generation", JSON.stringify(paragraph, null, 2));
+        this.currentTocBookmarkId++;
     }
 }

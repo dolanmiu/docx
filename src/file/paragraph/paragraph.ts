@@ -12,7 +12,7 @@ import { KeepLines, KeepNext } from "./formatting/keep";
 import { PageBreak, PageBreakBefore } from "./formatting/page-break";
 import { ISpacingProperties, Spacing } from "./formatting/spacing";
 import { Style } from "./formatting/style";
-import { CenterTabStop, LeftTabStop, MaxRightTabStop, RightTabStop } from "./formatting/tab-stop";
+import { CenterTabStop, LeaderType, LeftTabStop, MaxRightTabStop, RightTabStop } from "./formatting/tab-stop";
 import { NumberProperties } from "./formatting/unordered-list";
 import { Bookmark, Hyperlink } from "./links";
 import { ParagraphProperties } from "./properties";
@@ -160,18 +160,18 @@ export class Paragraph extends XmlComponent {
         return this;
     }
 
-    public leftTabStop(position: number): Paragraph {
-        this.properties.push(new LeftTabStop(position));
+    public leftTabStop(position: number, leader?: LeaderType): Paragraph {
+        this.properties.push(new LeftTabStop(position, leader));
         return this;
     }
 
-    public rightTabStop(position: number): Paragraph {
-        this.properties.push(new RightTabStop(position));
+    public rightTabStop(position: number, leader?: LeaderType): Paragraph {
+        this.properties.push(new RightTabStop(position, leader));
         return this;
     }
 
-    public centerTabStop(position: number): Paragraph {
-        this.properties.push(new CenterTabStop(position));
+    public centerTabStop(position: number, leader?: LeaderType): Paragraph {
+        this.properties.push(new CenterTabStop(position, leader));
         return this;
     }
 
@@ -232,7 +232,12 @@ export class Paragraph extends XmlComponent {
         return this;
     }
 
-    public get Properties(): ParagraphProperties {
-        return this.properties;
+    public getStyles(): Style[] {
+        return this.properties.getStyles();
+    }
+
+    public addTabStop(run: Run): Paragraph {
+        this.root.splice(1, 0, run);
+        return this;
     }
 }
