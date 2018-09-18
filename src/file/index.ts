@@ -7,3 +7,4 @@ export * from "./drawing";
 export * from "./document";
 export * from "./styles";
 export * from "./xml-components";
+export * from "./templated-file";

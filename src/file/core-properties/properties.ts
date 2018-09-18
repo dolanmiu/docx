@@ -1,5 +1,4 @@
 import { XmlComponent } from "file/xml-components";
-import { ITemplateDocument } from "importDocx/importDocx";
 import { DocumentAttributes } from "../document/document-attributes";
 import { Created, Creator, Description, Keywords, LastModifiedBy, Modified, Revision, Subject, Title } from "./components";
 
@@ -12,7 +11,6 @@ export interface IPropertiesOptions {
     lastModifiedBy?: string;
     revision?: string;
     externalStyles?: string;
-    templateDocument?: ITemplateDocument;
 }
 
 export class CoreProperties extends XmlComponent {
