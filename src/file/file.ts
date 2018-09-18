@@ -288,6 +288,7 @@ export class File {
     }
 
     public generateTablesOfContents(): void {
+        // console.log("generateTablesOfContents");
         this.document.getTablesOfContents().forEach((child) => this.generateContent(child));
     }
 
@@ -301,9 +302,10 @@ export class File {
     private generateContentForHeaderRange(toc: TableOfContents): void {
         const headerRange = toc.getHeaderRange();
         const hyphenIndex = headerRange.indexOf("-");
+        // console.log("Hyphen Index: ", hyphenIndex);
         if (hyphenIndex !== -1) {
-            const rangeBegin = parseInt(headerRange.substring(0, hyphenIndex), 2);
-            const rangeEnd = parseInt(headerRange.substring(hyphenIndex + 1), 2);
+            const rangeBegin = parseInt(headerRange.substring(0, hyphenIndex), 10);
+            const rangeEnd = parseInt(headerRange.substring(hyphenIndex + 1), 10);
             const styles = new Array<string>();
             for (let i = rangeBegin; i <= rangeEnd; i++) {
                 styles.push(`Heading${i}`);
@@ -327,7 +329,7 @@ export class File {
         // console.log("Generating content for paragraph: ", bookmarkId);
 
         const generatedParagraph = cloneDeep(paragraph);
-        generatedParagraph.rightTabStop(9016, "dot");
+        generatedParagraph.clearPageBreaks().rightTabStop(9016, "dot");
 
         const tabRun = new Run();
         tabRun.addChildElement(new Tab());

@@ -240,4 +240,10 @@ export class Paragraph extends XmlComponent {
         this.root.splice(1, 0, run);
         return this;
     }
+
+    public clearPageBreaks(): Paragraph {
+        this.root = this.root.filter((child) => !(child instanceof PageBreak));
+        this.properties.clearPageBreaks();
+        return this;
+    }
 }
