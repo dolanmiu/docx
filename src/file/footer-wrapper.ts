@@ -15,9 +15,10 @@ export interface IDocumentFooter {
 export class FooterWrapper {
     private readonly footer: Footer;
     private readonly relationships: Relationships;
-    private readonly media = new Media();
+    private readonly media: Media;
 
     constructor(referenceId: number, initContent?: XmlComponent) {
+        this.media = new Media();
         this.footer = new Footer(referenceId, initContent);
         this.relationships = new Relationships();
     }

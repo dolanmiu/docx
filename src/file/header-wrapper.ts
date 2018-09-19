@@ -15,10 +15,10 @@ export interface IDocumentHeader {
 export class HeaderWrapper {
     private readonly header: Header;
     private readonly relationships: Relationships;
-    private readonly media = new Media();
+    private readonly media: Media;
 
-    // constructor(private readonly media: Media, referenceId: number, initContent? : XmlComponent) {
     constructor(referenceId: number, initContent?: XmlComponent) {
+        this.media = new Media();
         this.header = new Header(referenceId, initContent);
         this.relationships = new Relationships();
     }
