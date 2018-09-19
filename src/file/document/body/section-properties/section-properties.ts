@@ -38,6 +38,7 @@ export class SectionProperties extends XmlComponent {
             header: 708,
             footer: 708,
             gutter: 0,
+            mirror: false,
             space: 708,
             linePitch: 360,
             orientation: PageOrientation.PORTRAIT,
@@ -69,6 +70,7 @@ export class SectionProperties extends XmlComponent {
                 mergedOptions.header,
                 mergedOptions.footer,
                 mergedOptions.gutter,
+                mergedOptions.mirror,
             ),
         );
         this.root.push(new Columns(mergedOptions.space));
