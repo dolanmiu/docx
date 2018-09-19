@@ -200,6 +200,10 @@ export abstract class BaseFile {
         return this.styles;
     }
 
+    public set Styles(styles: Styles) {
+        this.styles = styles;
+    }
+
     public get CoreProperties(): CoreProperties {
         return this.coreProperties;
     }

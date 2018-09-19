@@ -1,5 +1,5 @@
 <p align="center">
-    <img alt="clippy the assistant" src="http://i60.tinypic.com/339pvtt.png">
+    <img alt="clippy the assistant" src="https://i.imgur.com/37uBGhO.gif">
 </p>
 
 <p align="center">
@@ -17,10 +17,19 @@
 [![PRs Welcome][pr-image]][pr-url]
 
 <p align="center">
-    <img src="https://thumbs.gfycat.com/ComplexEminentEquine-size_restricted.gif" alt="drawing" width="800"/>
+    <img src="https://i.imgur.com/H5FA1Qy.gif" alt="drawing" width="800"/>
 </p>
 
 # Demo
+
+## Browser
+
+Here are examples of `docx` being used with basic `HTML/JS` in a browser environment.
+
+*   https://codepen.io/anon/pen/dqoVgQ
+*   https://jsfiddle.net/3xhezb5w/2
+
+## Node
 
 Press `endpoint` on the `RunKit` website:
 
@@ -33,8 +42,10 @@ Press `endpoint` on the `RunKit` website:
 *   https://runkit.com/dolanmiu/docx-demo5 - Images
 *   https://runkit.com/dolanmiu/docx-demo6 - Margins
 *   https://runkit.com/dolanmiu/docx-demo7 - Landscape
-*   https://runkit.com/dolanmiu/docx-demo8/1.0.1 - Header and Footer
+*   https://runkit.com/dolanmiu/docx-demo8 - Header and Footer
 *   https://runkit.com/dolanmiu/docx-demo10 - **My CV generated with docx**
+
+More [here](https://docx.js.org/#/examples) and [here](https://github.com/dolanmiu/docx/tree/master/demo)
 
 # How to use & Documentation
 
