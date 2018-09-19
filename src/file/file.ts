@@ -9,7 +9,7 @@ import { FootNotes } from "./footnotes";
 import { HeaderWrapper } from "./header-wrapper";
 import { Image, Media } from "./media";
 import { Numbering } from "./numbering";
-import { Bookmark, Hyperlink, Paragraph, Run } from "./paragraph";
+import { Bookmark, Hyperlink, Paragraph, Run, TextRun } from "./paragraph";
 import { Begin, End, Separate } from "./paragraph/run/field";
 import { Tab } from "./paragraph/run/tab";
 import { Relationships } from "./relationships";
@@ -340,6 +340,8 @@ export class File {
         beginRun.addChildElement(new PageReferenceInstruction(bookmarkId));
         beginRun.addChildElement(new Separate());
         generatedParagraph.addRun(beginRun);
+
+        generatedParagraph.addRun(new TextRun("?"));
 
         const endRun = new Run();
         endRun.addChildElement(new End());

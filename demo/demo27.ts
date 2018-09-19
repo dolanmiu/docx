@@ -24,5 +24,5 @@ doc.addParagraph(new Paragraph("I'm a another text very nicely written.'"));
 const packer = new Packer();
 
 packer.toBuffer(doc).then((buffer) => {
-    fs.writeFileSync("My Document.docx", buffer);
+    fs.writeFileSync("tmp/My Document.docx", buffer);
 });
