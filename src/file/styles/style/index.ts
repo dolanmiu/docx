@@ -133,6 +133,11 @@ export class ParagraphStyle extends Style {
         return this;
     }
 
+    public characterSpacing(value: number): ParagraphStyle {
+        this.addRunProperty(new formatting.CharacterSpacing(value));
+        return this;
+    }
+
     // --------------------- Paragraph formatting ------------------------ //
 
     public center(): ParagraphStyle {
