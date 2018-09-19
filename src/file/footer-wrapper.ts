@@ -41,7 +41,7 @@ export class FooterWrapper {
         return this.footer.createTable(rows, cols);
     }
 
-    public addChildElement(childElement: XmlComponent | string): void {
+    public addChildElement(childElement: XmlComponent): void {
         this.footer.addChildElement(childElement);
     }
 

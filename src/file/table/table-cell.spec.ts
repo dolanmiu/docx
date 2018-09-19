@@ -8,8 +8,7 @@ describe("TableCellBorders", () => {
     describe("#prepForXml", () => {
         it("should not add empty borders element if there are no borders defined", () => {
             const tb = new TableCellBorders();
-            const tree = new Formatter().format(tb);
-            expect(tree).to.deep.equal("");
+            expect(() => new Formatter().format(tb)).to.throw();
         });
     });
 

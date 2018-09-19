@@ -126,9 +126,13 @@ export class TableCell extends XmlComponent {
         return this;
     }
 
-    public prepForXml(): IXmlableObject {
+    public prepForXml(): IXmlableObject | undefined {
         // Cells must end with a paragraph
         const retval = super.prepForXml();
+        if (!retval) {
+            return undefined;
+        }
+
         const content = retval["w:tc"];
         if (!content[content.length - 1]["w:p"]) {
             content.push(new Paragraph().prepForXml());

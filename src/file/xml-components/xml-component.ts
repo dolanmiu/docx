@@ -7,10 +7,10 @@ export abstract class XmlComponent extends BaseXmlComponent {
 
     constructor(rootKey: string) {
         super(rootKey);
-        this.root = new Array<BaseXmlComponent>();
+        this.root = new Array<BaseXmlComponent | string>();
     }
 
-    public prepForXml(): IXmlableObject {
+    public prepForXml(): IXmlableObject | undefined {
         const children = this.root
             .filter((c) => {
                 if (c instanceof BaseXmlComponent) {
@@ -24,13 +24,12 @@ export abstract class XmlComponent extends BaseXmlComponent {
                 }
                 return comp;
             })
-            .filter((comp) => comp); // Exclude null, undefined, and empty strings
+            .filter((comp) => comp !== undefined); // Exclude undefined
         return {
             [this.rootKey]: children,
         };
     }
 
-    // TODO: Unused method
     public addChildElement(child: XmlComponent | string): XmlComponent {
         this.root.push(child);
 

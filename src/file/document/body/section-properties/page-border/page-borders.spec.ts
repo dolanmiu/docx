@@ -8,9 +8,7 @@ describe("PageBorders", () => {
     describe("#constructor()", () => {
         it("should create empty element when no options are passed", () => {
             const properties = new PageBorders();
-            const tree = new Formatter().format(properties);
-
-            expect(tree).to.equal("");
+            expect(() => new Formatter().format(properties)).to.throw();
         });
 
         it("should create page borders with some configuration", () => {
