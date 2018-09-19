@@ -1,5 +1,5 @@
 import * as fs from "fs";
-import { ImportDocx, Packer, Paragraph, TemplatedDocument } from "../build";
+import { ImportDocx, Packer, Paragraph, Document } from "../build";
 
 const importDocx = new ImportDocx();
 const filePath = "./demo/dotx/template.dotx";
@@ -15,7 +15,9 @@ fs.readFile(filePath, (err, data) => {
             titlePage: true,
         } as any;
 
-        const doc = new TemplatedDocument(templateDocument, undefined, sectionProps);
+        const doc = new Document(undefined, sectionProps, {
+            template: templateDocument
+        });
         const paragraph = new Paragraph("Hello World");
         doc.addParagraph(paragraph);
 

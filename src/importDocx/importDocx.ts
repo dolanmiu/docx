@@ -30,7 +30,9 @@ interface IRelationshipFileInfo {
     type: "header" | "footer" | "image";
 }
 
-export interface ITemplateDocument {
+// Document Template
+// https://fileinfo.com/extension/dotx
+export interface IDocumentTemplate {
     currentRelationshipId: number;
     headers: IDocumentHeader[];
     footers: IDocumentFooter[];
@@ -43,7 +45,7 @@ export class ImportDocx {
         this.currentRelationshipId = 1;
     }
 
-    public async extract(data: Buffer): Promise<ITemplateDocument> {
+    public async extract(data: Buffer): Promise<IDocumentTemplate> {
         const zipContent = await JSZip.loadAsync(data);
 
         const documentContent = zipContent.files["word/document.xml"];
@@ -86,7 +88,7 @@ export class ImportDocx {
             footers.push({ type: footerRef.type, footer });
         }
 
-        const templateDocument: ITemplateDocument = { headers, footers, currentRelationshipId: this.currentRelationshipId };
+        const templateDocument: IDocumentTemplate = { headers, footers, currentRelationshipId: this.currentRelationshipId };
         return templateDocument;
     }
 
