@@ -12,6 +12,7 @@ import { Bookmark, Hyperlink, Paragraph, Run, TextRun } from "./paragraph";
 import { Begin, End, Separate } from "./paragraph/run/field";
 import { Tab } from "./paragraph/run/tab";
 import { Relationships } from "./relationships";
+import { Settings } from "./settings";
 import { Styles } from "./styles";
 import { ExternalStylesFactory } from "./styles/external-styles-factory";
 import { DefaultStylesFactory } from "./styles/factory";
@@ -29,6 +30,7 @@ export class File {
     private readonly headerWrapper: HeaderWrapper[] = [];
     private readonly footerWrapper: FooterWrapper[] = [];
     private readonly footNotes: FootNotes;
+    private readonly settings: Settings;
 
     private readonly contentTypes: ContentTypes;
     private readonly appProperties: AppProperties;
@@ -109,6 +111,7 @@ export class File {
             sectionPropertiesOptions.footerId = footer.Footer.ReferenceId;
         }
         this.document = new Document(sectionPropertiesOptions);
+        this.settings = new Settings();
     }
 
     public addTableOfContents(toc: TableOfContents): void {
@@ -286,9 +289,17 @@ export class File {
         return this.footNotes;
     }
 
+    public get Settings(): Settings {
+        return this.settings;
+    }
+
     public generateTablesOfContents(): void {
         // console.log("generateTablesOfContents");
-        this.document.getTablesOfContents().forEach((child) => this.generateContent(child));
+        const TOCs = this.document.getTablesOfContents();
+        if (TOCs && TOCs.length) {
+            this.settings.addUpdateFields();
+            TOCs.forEach((child) => this.generateContent(child));
+        }
     }
 
     private generateContent(toc: TableOfContents): void {
