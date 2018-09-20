@@ -393,4 +393,23 @@ describe("Paragraph", () => {
             });
         });
     });
+
+    describe("#clone", () => {
+        it("changes in a cloned paragraph must not affect the original paragraph", () => {
+            paragraph.pageBreakBefore();
+
+            const clonedParagraph = paragraph.clone() as file.Paragraph;
+            clonedParagraph.clearPageBreaks();
+
+            const tree = new Formatter().format(paragraph);
+            expect(tree).to.deep.equal({
+                "w:p": [{ "w:pPr": [{ "w:pageBreakBefore": [] }] }],
+            });
+
+            const clonedTree = new Formatter().format(clonedParagraph);
+            expect(clonedTree).to.deep.equal({
+                "w:p": [{ "w:pPr": [] }],
+            });
+        });
+    });
 });

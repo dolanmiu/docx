@@ -328,7 +328,7 @@ export class File {
         // console.log("Generating content for paragraph: ", bookmarkId);
 
         // deep clone the original paragraph
-        const generatedParagraph = Object.assign(Object.create(Object.getPrototypeOf(paragraph)), paragraph);
+        const generatedParagraph = paragraph.clone() as Paragraph;
 
         generatedParagraph.clearPageBreaks().rightTabStop(9016, "dot");
 
