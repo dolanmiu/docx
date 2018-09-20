@@ -75,9 +75,7 @@ export class ParagraphStyle extends Style {
     // ----------  Run formatting ---------------------- //
 
     public size(twips: number): ParagraphStyle {
-        return this
-            .addRunProperty(new formatting.Size(twips))
-            .addRunProperty(new formatting.SizeComplexScript(twips));
+        return this.addRunProperty(new formatting.Size(twips)).addRunProperty(new formatting.SizeComplexScript(twips));
     }
 
     public bold(): ParagraphStyle {
@@ -265,9 +263,7 @@ export class CharacterStyle extends Style {
     }
 
     public size(twips: number): CharacterStyle {
-        return this
-            .addRunProperty(new formatting.Size(twips))
-            .addRunProperty(new formatting.SizeComplexScript(twips));
+        return this.addRunProperty(new formatting.Size(twips)).addRunProperty(new formatting.SizeComplexScript(twips));
     }
 }
 
