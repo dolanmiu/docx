@@ -11,7 +11,7 @@ export class TabStop extends XmlComponent {
 export type TabValue = "left" | "right" | "center" | "bar" | "clear" | "decimal" | "end" | "num" | "start";
 export type LeaderType = "dot" | "hyphen" | "middleDot" | "none" | "underscore";
 
-export class TabAttributes extends XmlAttributeComponent<{ val: TabValue; pos: string | number; leader: LeaderType }> {
+export class TabAttributes extends XmlAttributeComponent<{ val: TabValue; pos: string | number; leader?: LeaderType }> {
     protected xmlKeys = { val: "w:val", pos: "w:pos", leader: "w:leader" };
 }
 
@@ -22,7 +22,7 @@ export class TabStopItem extends XmlComponent {
             new TabAttributes({
                 val: value,
                 pos: position,
-                leader: leader || "none",
+                leader,
             }),
         );
     }
