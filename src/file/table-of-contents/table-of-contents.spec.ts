@@ -4,39 +4,14 @@ import { Formatter } from "../../export/formatter";
 import { TableOfContents } from "./";
 
 const DEFAULT_TOC = {
-    "w:p": [
+    "w:sdt": [
         {
-            "w:pPr": [],
-        },
-        {
-            "w:r": [
+            "w:sdtPr": [
                 {
-                    "w:rPr": [],
-                },
-                {
-                    "w:fldChar": [
+                    "w:alias": [
                         {
                             _attr: {
-                                "w:fldCharType": "begin",
-                            },
-                        },
-                    ],
-                },
-                {
-                    "w:instrText": [
-                        {
-                            _attr: {
-                                "xml:space": "preserve",
-                            },
-                        },
-                        'TOC \\o "1-6"',
-                    ],
-                },
-                {
-                    "w:fldChar": [
-                        {
-                            _attr: {
-                                "w:fldCharType": "separate",
+                                "w:val": "Table of Contents",
                             },
                         },
                     ],
@@ -44,16 +19,69 @@ const DEFAULT_TOC = {
             ],
         },
         {
-            "w:r": [
+            "w:sdtContent": [
                 {
-                    "w:rPr": [],
+                    "w:p": [
+                        {
+                            "w:pPr": [],
+                        },
+                        {
+                            "w:r": [
+                                {
+                                    "w:rPr": [],
+                                },
+                                {
+                                    "w:fldChar": [
+                                        {
+                                            _attr: {
+                                                "w:fldCharType": "begin",
+                                            },
+                                        },
+                                    ],
+                                },
+                                {
+                                    "w:instrText": [
+                                        {
+                                            _attr: {
+                                                "xml:space": "preserve",
+                                            },
+                                        },
+                                        'TOC \\o "1-6"',
+                                    ],
+                                },
+                                {
+                                    "w:fldChar": [
+                                        {
+                                            _attr: {
+                                                "w:fldCharType": "separate",
+                                            },
+                                        },
+                                    ],
+                                },
+                            ],
+                        },
+                    ],
                 },
                 {
-                    "w:fldChar": [
+                    "w:p": [
                         {
-                            _attr: {
-                                "w:fldCharType": "end",
-                            },
+                            "w:pPr": [],
+                        },
+                        {
+                            "w:r": [
+                                {
+                                    "w:rPr": [],
+                                },
+                                {
+                                    "w:fldChar": [
+                                        {
+                                            _attr: {
+                                                "w:fldCharType": "end",
+                                            },
+                                        },
+                                    ],
+                                },
+                            ],
                         },
                     ],
                 },
