@@ -25,6 +25,17 @@ export class BoldComplexScript extends XmlComponent {
     }
 }
 
+export class CharacterSpacing extends XmlComponent {
+    constructor(value: number) {
+        super("w:spacing");
+        this.root.push(
+            new Attributes({
+                val: value,
+            }),
+        );
+    }
+}
+
 export class Italics extends XmlComponent {
     constructor() {
         super("w:i");
