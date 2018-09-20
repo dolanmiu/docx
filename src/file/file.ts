@@ -1,4 +1,3 @@
-import { cloneDeep } from "lodash";
 import { AppProperties } from "./app-properties/app-properties";
 import { ContentTypes } from "./content-types/content-types";
 import { CoreProperties, IPropertiesOptions } from "./core-properties";
@@ -328,7 +327,9 @@ export class File {
         const bookmarkId = `_TOC_${this.currentTocBookmarkId}`;
         // console.log("Generating content for paragraph: ", bookmarkId);
 
-        const generatedParagraph = cloneDeep(paragraph);
+        // deep clone the original paragraph
+        const generatedParagraph = Object.assign(Object.create(Object.getPrototypeOf(paragraph)), paragraph);
+
         generatedParagraph.clearPageBreaks().rightTabStop(9016, "dot");
 
         const tabRun = new Run();
