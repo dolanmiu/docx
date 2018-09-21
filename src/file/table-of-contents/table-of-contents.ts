@@ -3,22 +3,22 @@ import { Paragraph } from "file/paragraph";
 import { Run } from "file/paragraph/run";
 import { Begin, End, Separate } from "file/paragraph/run/field";
 import { XmlComponent } from "file/xml-components";
-import { StdContent } from "./std-content";
-import { StdProperties } from "./std-properties";
+import { SdtContent } from "./sdt-content";
+import { SdtProperties } from "./sdt-properties";
 import { TableOfContentsInstruction } from "./table-of-contents-instruction";
 
 export class TableOfContents extends XmlComponent {
     // private readonly tocProperties: TableOfContentsProperties;
-    private readonly properties: StdProperties;
+    private readonly properties: SdtProperties;
 
-    private readonly content: StdContent;
+    private readonly content: SdtContent;
 
     private readonly instruction: TableOfContentsInstruction;
 
     constructor(/*tocProperties?: TableOfContentsProperties*/) {
         super("w:sdt");
-        this.properties = new StdProperties("Table of Contents");
-        this.content = new StdContent();
+        this.properties = new SdtProperties("Table of Contents");
+        this.content = new SdtContent();
         this.instruction = new TableOfContentsInstruction();
         this.root.push(this.properties);
         this.root.push(this.content);

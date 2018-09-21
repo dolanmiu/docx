@@ -1,9 +1,9 @@
 import { Paragraph } from "file/paragraph";
 import { XmlComponent } from "file/xml-components";
 
-export class StdContent extends XmlComponent {
+export class SdtContent extends XmlComponent {
     constructor() {
-        super("w:stdContent");
+        super("w:sdtContent");
     }
 
     public addGeneratedContent(paragraph: Paragraph): void {
