@@ -219,6 +219,20 @@ describe("ParagraphStyle", () => {
             });
         });
 
+        it("#character spacing", () => {
+            const style = new ParagraphStyle("myStyleId").characterSpacing(24);
+            const tree = new Formatter().format(style);
+            expect(tree).to.deep.equal({
+                "w:style": [
+                    { _attr: { "w:type": "paragraph", "w:styleId": "myStyleId" } },
+                    { "w:pPr": [] },
+                    {
+                        "w:rPr": [{ "w:spacing": [{ _attr: { "w:val": 24 } }] }],
+                    },
+                ],
+            });
+        });
+
         it("#left", () => {
             const style = new ParagraphStyle("myStyleId").left();
             const tree = new Formatter().format(style);

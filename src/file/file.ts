@@ -21,7 +21,7 @@ import { PageReferenceInstruction, TableOfContents } from "./table-of-contents";
 
 export class File {
     private readonly document: Document;
-    private readonly styles: Styles;
+    private styles: Styles;
     private readonly coreProperties: CoreProperties;
     private readonly numbering: Numbering;
     private readonly media: Media;
@@ -223,6 +223,10 @@ export class File {
 
     public get Styles(): Styles {
         return this.styles;
+    }
+
+    public set Styles(styles: Styles) {
+        this.styles = styles;
     }
 
     public get CoreProperties(): CoreProperties {
