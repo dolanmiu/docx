@@ -1,6 +1,4 @@
 // http://officeopenxml.com/WPparagraph.php
-import * as cloneDeep from "lodash.clonedeep";
-
 import { FootnoteReferenceRun } from "file/footnotes/footnote/run/reference-run";
 import { Image } from "file/media";
 import { Num } from "file/numbering/num";
@@ -251,9 +249,5 @@ export class Paragraph extends XmlComponent {
         this.root = this.root.filter((child) => !(child instanceof PageBreak));
         this.properties.clearPageBreaks();
         return this;
-    }
-
-    public clone(): Paragraph {
-        return cloneDeep(this, false);
     }
 }

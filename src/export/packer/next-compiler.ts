@@ -34,8 +34,6 @@ export class Compiler {
     }
 
     public async compile(file: File): Promise<JSZip> {
-        file.generateTablesOfContents();
-
         const zip = new JSZip();
 
         const xmlifiedFileMapping = this.xmlifyFile(file);
@@ -65,6 +63,7 @@ export class Compiler {
     }
 
     private xmlifyFile(file: File): IXmlifyedFileMapping {
+        file.verifyUpdateFields();
         return {
             Document: {
                 data: xml(this.formatter.format(file.Document), true),
