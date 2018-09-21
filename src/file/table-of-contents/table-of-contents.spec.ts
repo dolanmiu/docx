@@ -35,6 +35,7 @@ const DEFAULT_TOC = {
                                         {
                                             _attr: {
                                                 "w:fldCharType": "begin",
+                                                "w:dirty": true,
                                             },
                                         },
                                     ],

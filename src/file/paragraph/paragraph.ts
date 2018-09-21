@@ -1,4 +1,6 @@
 // http://officeopenxml.com/WPparagraph.php
+import * as cloneDeep from "lodash.clonedeep";
+
 import { FootnoteReferenceRun } from "file/footnotes/footnote/run/reference-run";
 import { Image } from "file/media";
 import { Num } from "file/numbering/num";
@@ -28,6 +30,10 @@ export class Paragraph extends XmlComponent {
         if (text !== undefined) {
             this.root.push(new TextRun(text));
         }
+    }
+
+    public get paragraphProperties(): ParagraphProperties {
+        return this.properties;
     }
 
     public get Borders(): Border {
@@ -155,8 +161,8 @@ export class Paragraph extends XmlComponent {
         return this;
     }
 
-    public maxRightTabStop(): Paragraph {
-        this.properties.push(new MaxRightTabStop());
+    public maxRightTabStop(leader?: LeaderType): Paragraph {
+        this.properties.push(new MaxRightTabStop(leader));
         return this;
     }
 
@@ -245,5 +251,9 @@ export class Paragraph extends XmlComponent {
         this.root = this.root.filter((child) => !(child instanceof PageBreak));
         this.properties.clearPageBreaks();
         return this;
+    }
+
+    public clone(): Paragraph {
+        return cloneDeep(this, false);
     }
 }

@@ -29,8 +29,8 @@ export class TabStopItem extends XmlComponent {
 }
 
 export class MaxRightTabStop extends TabStop {
-    constructor() {
-        super(new TabStopItem("right", 9026));
+    constructor(leader?: LeaderType) {
+        super(new TabStopItem("right", 9026, leader));
     }
 }
 

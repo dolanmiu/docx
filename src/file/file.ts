@@ -345,14 +345,14 @@ export class File {
         // deep clone the original paragraph
         const generatedParagraph = paragraph.clone() as Paragraph;
 
-        generatedParagraph.clearPageBreaks().rightTabStop(9016, "dot");
+        generatedParagraph.clearPageBreaks().maxRightTabStop("dot");
 
         const tabRun = new Run();
         tabRun.addChildElement(new Tab());
         generatedParagraph.addChildElement(tabRun);
 
         const beginRun = new Run();
-        beginRun.addChildElement(new Begin());
+        beginRun.addChildElement(new Begin(true));
         beginRun.addChildElement(new PageReferenceInstruction(bookmarkId));
         beginRun.addChildElement(new Separate());
         generatedParagraph.addRun(beginRun);

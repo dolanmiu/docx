@@ -25,7 +25,7 @@ export class TableOfContents extends XmlComponent {
         // this.tocProperties = tocProperties || new TableOfContentsProperties();
         const beginParagraph = new Paragraph();
         const beginRun = new Run();
-        beginRun.addChildElement(new Begin());
+        beginRun.addChildElement(new Begin(true));
         beginRun.addChildElement(this.instruction);
         beginRun.addChildElement(new Separate());
         beginParagraph.addRun(beginRun);

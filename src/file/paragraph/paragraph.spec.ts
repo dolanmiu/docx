@@ -398,18 +398,38 @@ describe("Paragraph", () => {
         it("changes in a cloned paragraph must not affect the original paragraph", () => {
             paragraph.pageBreakBefore();
 
-            const clonedParagraph = paragraph.clone() as file.Paragraph;
-            clonedParagraph.clearPageBreaks();
-
             const tree = new Formatter().format(paragraph);
-            expect(tree).to.deep.equal({
-                "w:p": [{ "w:pPr": [{ "w:pageBreakBefore": [] }] }],
-            });
+            expect(tree).to.deep.equal({ "w:p": [{ "w:pPr": [{ "w:pageBreakBefore": [] }] }] }, "Paragraph with a page break before");
+
+            const clonedParagraph = paragraph.clone();
+            expect(clonedParagraph).to.be.instanceof(file.Paragraph);
+            expect(clonedParagraph.paragraphProperties).to.be.instanceof(file.ParagraphProperties);
 
             const clonedTree = new Formatter().format(clonedParagraph);
-            expect(clonedTree).to.deep.equal({
-                "w:p": [{ "w:pPr": [] }],
-            });
+            expect(clonedTree).to.deep.equal(
+                {
+                    "w:p": [{ "w:pPr": [{ "w:pageBreakBefore": [] }] }],
+                },
+                "Cloned Paragraph with page break before",
+            );
+
+            clonedParagraph.clearPageBreaks();
+
+            const clonedTreeAfter = new Formatter().format(clonedParagraph);
+            expect(clonedTreeAfter).to.deep.equal(
+                {
+                    "w:p": [{ "w:pPr": [] }],
+                },
+                "Cloned Paragraph after clearPageBreaks must have no properties",
+            );
+
+            const treeAfter = new Formatter().format(paragraph);
+            expect(treeAfter).to.deep.equal(
+                {
+                    "w:p": [{ "w:pPr": [{ "w:pageBreakBefore": [] }] }],
+                },
+                "Paragraph after clearPageBreaks in Cloned Paragraph must keep the properties.",
+            );
         });
     });
 });

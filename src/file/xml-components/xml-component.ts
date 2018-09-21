@@ -39,10 +39,4 @@ export abstract class XmlComponent extends BaseXmlComponent {
     public delete(): void {
         this.deleted = true;
     }
-
-    public clone(): XmlComponent {
-        const newXmlComponent = Object.assign(Object.create(Object.getPrototypeOf(this)), this);
-        newXmlComponent.root = newXmlComponent.root.map((child) => (child instanceof XmlComponent ? child.clone() : child));
-        return newXmlComponent as XmlComponent;
-    }
 }
