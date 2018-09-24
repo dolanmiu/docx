@@ -38,7 +38,7 @@ export interface IDocumentTemplate {
     footers: IDocumentFooter[];
 }
 
-export class ImportDocx {
+export class ImportDotx {
     private currentRelationshipId: number;
 
     constructor() {

@@ -1,7 +1,7 @@
 import * as fs from "fs";
-import { ImportDocx, Packer, Paragraph, Document } from "../build";
+import { Document, ImportDotx, Packer, Paragraph } from "../build";
 
-const importDocx = new ImportDocx();
+const importDotx = new ImportDotx();
 const filePath = "./demo/dotx/template.dotx";
 
 fs.readFile(filePath, (err, data) => {
@@ -9,7 +9,7 @@ fs.readFile(filePath, (err, data) => {
         throw new Error(`Failed to read file ${filePath}.`);
     }
 
-    importDocx.extract(data).then((templateDocument) => {
+    importDotx.extract(data).then((templateDocument) => {
         // This any needs fixing
         const sectionProps = {
             titlePage: true,
