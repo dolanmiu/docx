@@ -52,7 +52,8 @@
     "fast-xml-parser": "^3.3.6",
     "image-size": "^0.6.2",
     "jszip": "^3.1.5",
-    "xml": "^1.0.1"
+    "xml": "^1.0.1",
+    "babel-preset-es2015": "^6.24.1"
   },
   "author": "Dolan Miu",
   "license": "MIT",
@@ -68,6 +69,8 @@
     "chai": "^3.5.0",
     "glob": "^7.1.2",
     "jszip": "^3.1.5",
+    "babel-core": "^6.26.3",
+    "babel-loader": "7",
     "mocha": "^5.2.0",
     "mocha-webpack": "^1.0.1",
     "pre-commit": "^1.2.2",

@@ -20,6 +20,13 @@ module.exports = {
                 test: /\.ts$/,
                 loaders: ["awesome-typescript-loader"],
             },
+            {
+                test: /\.js$/,
+                use: {
+                    loader:'babel-loader',
+                    options: { presets: ['es2015'] }
+                },
+            }
         ],
     },
 
