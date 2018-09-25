@@ -11,18 +11,17 @@ doc.Styles.createParagraphStyle("MySpectacularStyle", "My Spectacular Style")
     .basedOn("Heading1")
     .next("Heading1")
     .color("990000")
-    .italics()
+    .italics();
 
 // WordprocessingML docs for TableOfContents can be found here:
 // http://officeopenxml.com/WPtableOfContents.php
 
-
 // Let's define the properties for generate a TOC for heading 1-5 and MySpectacularStyle,
-// making the entries be hiperlinks for the paragraph
+// making the entries be hyperlinks for the paragraph
 const props = new TableOfContentsProperties();
-props.hiperlink = true;
+props.hyperlink = true;
 props.headingStyleRange = "1-5";
-props.stylesWithLevels = [new StyleLevel("MySpectacularStyle",1)]
+props.stylesWithLevels = [new StyleLevel("MySpectacularStyle", 1)];
 const toc = new TableOfContents("Summary", props);
 
 doc.addTableOfContents(toc);
@@ -40,5 +39,5 @@ doc.addParagraph(new Paragraph("My Spectacular Style #1").style("MySpectacularSt
 const packer = new Packer();
 
 packer.toBuffer(doc).then((buffer) => {
-    fs.writeFileSync("tmp/My Document.docx", buffer);
+    fs.writeFileSync("My Document.docx", buffer);
 });

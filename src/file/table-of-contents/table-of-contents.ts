@@ -1,4 +1,3 @@
-// import { TableOfContentsProperties } from "./properties";
 import { Paragraph } from "file/paragraph";
 import { Run } from "file/paragraph/run";
 import { Begin, End, Separate } from "file/paragraph/run/field";

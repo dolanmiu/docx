@@ -29,7 +29,7 @@ export class TableOfContentsInstruction extends XmlComponent {
         if (this.properties.tcFieldIdentifier) {
             instruction = `${instruction} \\f "${this.properties.tcFieldIdentifier}"`;
         }
-        if (this.properties.hiperlink) {
+        if (this.properties.hyperlink) {
             instruction = `${instruction} \\h`;
         }
         if (this.properties.tcFieldLevelRange) {

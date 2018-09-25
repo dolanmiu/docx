@@ -53,7 +53,7 @@ export class TableOfContentsProperties {
     /**
      * \h option - Makes the table of contents entries hyperlinks.
      */
-    public hiperlink: boolean;
+    public hyperlink: boolean;
 
     /**
      * \l option - Includes TC fields that assign entries to one of the levels specified
