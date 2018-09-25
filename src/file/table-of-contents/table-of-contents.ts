@@ -6,18 +6,19 @@ import { XmlComponent } from "file/xml-components";
 import { SdtContent } from "./sdt-content";
 import { SdtProperties } from "./sdt-properties";
 import { TableOfContentsInstruction } from "./table-of-contents-instruction";
+import { TableOfContentsProperties } from "./table-of-contents-properties";
 
 export class TableOfContents extends XmlComponent {
-    constructor() {
+    constructor(alias: string = "Table of Contents", properties?: TableOfContentsProperties) {
         super("w:sdt");
-        this.root.push(new SdtProperties("Table of Contents"));
+        this.root.push(new SdtProperties(alias));
 
         const content = new SdtContent();
 
         const beginParagraph = new Paragraph();
         const beginRun = new Run();
         beginRun.addChildElement(new Begin(true));
-        beginRun.addChildElement(new TableOfContentsInstruction());
+        beginRun.addChildElement(new TableOfContentsInstruction(properties));
         beginRun.addChildElement(new Separate());
         beginParagraph.addRun(beginRun);
         content.addChildElement(beginParagraph);
