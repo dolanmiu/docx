@@ -25,7 +25,6 @@ props.headingStyleRange = "1-5";
 props.stylesWithLevels = [new StyleLevel("MySpectacularStyle",1)]
 const toc = new TableOfContents("Summary", props);
 
-// A TableOfContents must be added via File class.
 doc.addTableOfContents(toc);
 
 doc.addParagraph(new Paragraph("Header #1").heading1().pageBreakBefore());
