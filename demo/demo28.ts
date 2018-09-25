@@ -21,7 +21,7 @@ doc.Styles.createParagraphStyle("MySpectacularStyle", "My Spectacular Style")
 const toc = new TableOfContents("Summary", {
     hyperlink: true,
     headingStyleRange: "1-5",
-    stylesWithLevels: [new StyleLevel("MySpectacularStyle", 1)]
+    stylesWithLevels: [new StyleLevel("MySpectacularStyle", 1)],
 });
 
 doc.addTableOfContents(toc);

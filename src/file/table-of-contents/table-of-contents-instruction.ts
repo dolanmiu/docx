@@ -1,19 +1,24 @@
 import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
-import { ITableOfContentsProperties } from "./table-of-contents-properties";
+import { ITableOfContentsOptions } from "./table-of-contents-properties";
 
-class TextAttributes extends XmlAttributeComponent<{ space: "default" | "preserve" }> {
+enum SpaceType {
+    DEFAULT = "default",
+    PRESERVE = "preserve",
+}
+
+class TextAttributes extends XmlAttributeComponent<{ space: SpaceType }> {
     protected xmlKeys = { space: "xml:space" };
 }
 
 export class TableOfContentsInstruction extends XmlComponent {
-    private readonly properties: ITableOfContentsProperties;
+    private readonly properties: ITableOfContentsOptions;
 
-    constructor(properties: ITableOfContentsProperties = {}) {
+    constructor(properties: ITableOfContentsOptions = {}) {
         super("w:instrText");
 
         this.properties = properties;
 
-        this.root.push(new TextAttributes({ space: "preserve" }));
+        this.root.push(new TextAttributes({ space: SpaceType.PRESERVE }));
         let instruction = "TOC";
 
         if (this.properties.captionLabel) {

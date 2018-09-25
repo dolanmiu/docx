@@ -16,7 +16,7 @@ export class StyleLevel {
  * Short Guide:
  * http://officeopenxml.com/WPtableOfContents.php
  */
-export interface ITableOfContentsProperties {
+export interface ITableOfContentsOptions {
     /**
      * \a option - Includes captioned items, but omits caption labels and numbers.
      * The identifier designated by text in this switch's field-argument corresponds to the caption label.
