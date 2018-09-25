@@ -236,18 +236,8 @@ export class Paragraph extends XmlComponent {
         return this;
     }
 
-    public getStyles(): Style[] {
-        return this.properties.getStyles();
-    }
-
     public addTabStop(run: Run): Paragraph {
         this.root.splice(1, 0, run);
-        return this;
-    }
-
-    public clearPageBreaks(): Paragraph {
-        this.root = this.root.filter((child) => !(child instanceof PageBreak));
-        this.properties.clearPageBreaks();
         return this;
     }
 }
