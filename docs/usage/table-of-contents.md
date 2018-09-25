@@ -22,9 +22,9 @@ const toc = new TableOfContents("Summary", {
 doc.addTableOfContents(toc);
 ```
 
-## Table of Contents Properties
+## Table of Contents Options
 
-Here is the list of all properties that you can use to generate your tables of contents:
+Here is the list of all options that you can use to generate your tables of contents:
 
 | Option | Type | TOC Field Switch | Description |
 | --- | --- | --- | --- |
@@ -48,7 +48,7 @@ Here is the list of all properties that you can use to generate your tables of c
 ## Examples
 
 ```js
-// Let's define the properties for generate a TOC for heading 1-5 and MySpectacularStyle,
+// Let's define the options for generate a TOC for heading 1-5 and MySpectacularStyle,
 // making the entries be hyperlinks for the paragraph
 const toc = new TableOfContents("Summary", {
     hyperlink: true,
