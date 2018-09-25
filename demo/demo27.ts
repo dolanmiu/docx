@@ -30,5 +30,4 @@ const packer = new Packer();
 
 packer.toBuffer(doc).then((buffer) => {
     fs.writeFileSync("My Document.docx", buffer);
-    console.log("Document created successfully at project root!");
 });

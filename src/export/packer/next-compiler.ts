@@ -23,6 +23,7 @@ interface IXmlifyedFileMapping {
     ContentTypes: IXmlifyedFile;
     AppProperties: IXmlifyedFile;
     FootNotes: IXmlifyedFile;
+    Settings: IXmlifyedFile;
 }
 
 export class Compiler {
@@ -74,6 +75,7 @@ export class Compiler {
     }
 
     private xmlifyFile(file: File): IXmlifyedFileMapping {
+        file.verifyUpdateFields();
         return {
             Document: {
                 data: xml(this.formatter.format(file.Document), true),
@@ -131,6 +133,10 @@ export class Compiler {
             FootNotes: {
                 data: xml(this.formatter.format(file.FootNotes)),
                 path: "word/footnotes.xml",
+            },
+            Settings: {
+                data: xml(this.formatter.format(file.Settings)),
+                path: "word/settings.xml",
             },
         };
     }

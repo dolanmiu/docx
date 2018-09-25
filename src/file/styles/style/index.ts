@@ -47,12 +47,14 @@ export class ParagraphStyle extends Style {
         this.root.push(this.runProperties);
     }
 
-    public addParagraphProperty(property: XmlComponent): void {
+    public addParagraphProperty(property: XmlComponent): ParagraphStyle {
         this.paragraphProperties.push(property);
+        return this;
     }
 
-    public addRunProperty(property: XmlComponent): void {
+    public addRunProperty(property: XmlComponent): ParagraphStyle {
         this.runProperties.push(property);
+        return this;
     }
 
     public basedOn(parentId: string): ParagraphStyle {
@@ -73,121 +75,101 @@ export class ParagraphStyle extends Style {
     // ----------  Run formatting ---------------------- //
 
     public size(twips: number): ParagraphStyle {
-        this.addRunProperty(new formatting.Size(twips));
-        this.addRunProperty(new formatting.SizeComplexScript(twips));
-        return this;
+        return this.addRunProperty(new formatting.Size(twips)).addRunProperty(new formatting.SizeComplexScript(twips));
     }
 
     public bold(): ParagraphStyle {
-        this.addRunProperty(new formatting.Bold());
-        return this;
+        return this.addRunProperty(new formatting.Bold());
     }
 
     public italics(): ParagraphStyle {
-        this.addRunProperty(new formatting.Italics());
-        return this;
+        return this.addRunProperty(new formatting.Italics());
     }
 
     public smallCaps(): ParagraphStyle {
-        this.addRunProperty(new formatting.SmallCaps());
-        return this;
+        return this.addRunProperty(new formatting.SmallCaps());
     }
 
     public allCaps(): ParagraphStyle {
-        this.addRunProperty(new formatting.Caps());
-        return this;
+        return this.addRunProperty(new formatting.Caps());
     }
 
     public strike(): ParagraphStyle {
-        this.addRunProperty(new formatting.Strike());
-        return this;
+        return this.addRunProperty(new formatting.Strike());
     }
 
     public doubleStrike(): ParagraphStyle {
-        this.addRunProperty(new formatting.DoubleStrike());
-        return this;
+        return this.addRunProperty(new formatting.DoubleStrike());
     }
 
     public subScript(): ParagraphStyle {
-        this.addRunProperty(new formatting.SubScript());
-        return this;
+        return this.addRunProperty(new formatting.SubScript());
     }
 
     public superScript(): ParagraphStyle {
-        this.addRunProperty(new formatting.SuperScript());
-        return this;
+        return this.addRunProperty(new formatting.SuperScript());
     }
 
     public underline(underlineType?: string, color?: string): ParagraphStyle {
-        this.addRunProperty(new formatting.Underline(underlineType, color));
-        return this;
+        return this.addRunProperty(new formatting.Underline(underlineType, color));
     }
 
     public color(color: string): ParagraphStyle {
-        this.addRunProperty(new formatting.Color(color));
-        return this;
+        return this.addRunProperty(new formatting.Color(color));
     }
 
     public font(fontName: string): ParagraphStyle {
-        this.addRunProperty(new formatting.RunFonts(fontName));
-        return this;
+        return this.addRunProperty(new formatting.RunFonts(fontName));
+    }
+
+    public characterSpacing(value: number): ParagraphStyle {
+        return this.addRunProperty(new formatting.CharacterSpacing(value));
     }
 
     // --------------------- Paragraph formatting ------------------------ //
 
     public center(): ParagraphStyle {
-        this.addParagraphProperty(new paragraph.Alignment("center"));
-        return this;
+        return this.addParagraphProperty(new paragraph.Alignment("center"));
     }
 
     public left(): ParagraphStyle {
-        this.addParagraphProperty(new paragraph.Alignment("left"));
-        return this;
+        return this.addParagraphProperty(new paragraph.Alignment("left"));
     }
 
     public right(): ParagraphStyle {
-        this.addParagraphProperty(new paragraph.Alignment("right"));
-        return this;
+        return this.addParagraphProperty(new paragraph.Alignment("right"));
     }
 
     public justified(): ParagraphStyle {
-        this.addParagraphProperty(new paragraph.Alignment("both"));
-        return this;
+        return this.addParagraphProperty(new paragraph.Alignment("both"));
     }
 
     public thematicBreak(): ParagraphStyle {
-        this.addParagraphProperty(new paragraph.ThematicBreak());
-        return this;
+        return this.addParagraphProperty(new paragraph.ThematicBreak());
     }
 
     public maxRightTabStop(): ParagraphStyle {
-        this.addParagraphProperty(new paragraph.MaxRightTabStop());
-        return this;
+        return this.addParagraphProperty(new paragraph.MaxRightTabStop());
     }
 
     public leftTabStop(position: number): ParagraphStyle {
-        this.addParagraphProperty(new paragraph.LeftTabStop(position));
-        return this;
+        return this.addParagraphProperty(new paragraph.LeftTabStop(position));
     }
 
     public indent(attrs: object): ParagraphStyle {
-        this.addParagraphProperty(new paragraph.Indent(attrs));
-        return this;
+        return this.addParagraphProperty(new paragraph.Indent(attrs));
     }
 
     public spacing(params: paragraph.ISpacingProperties): ParagraphStyle {
-        this.addParagraphProperty(new paragraph.Spacing(params));
-        return this;
+        return this.addParagraphProperty(new paragraph.Spacing(params));
     }
 
     public keepNext(): ParagraphStyle {
-        this.addParagraphProperty(new paragraph.KeepNext());
-        return this;
+        return this.addParagraphProperty(new paragraph.KeepNext());
     }
 
     public keepLines(): ParagraphStyle {
-        this.addParagraphProperty(new paragraph.KeepLines());
-        return this;
+        return this.addParagraphProperty(new paragraph.KeepLines());
     }
 }
 
@@ -267,24 +249,21 @@ export class CharacterStyle extends Style {
         return this;
     }
 
-    public addRunProperty(property: XmlComponent): void {
+    public addRunProperty(property: XmlComponent): CharacterStyle {
         this.runProperties.push(property);
+        return this;
     }
 
     public color(color: string): CharacterStyle {
-        this.addRunProperty(new formatting.Color(color));
-        return this;
+        return this.addRunProperty(new formatting.Color(color));
     }
 
     public underline(underlineType?: string, color?: string): CharacterStyle {
-        this.addRunProperty(new formatting.Underline(underlineType, color));
-        return this;
+        return this.addRunProperty(new formatting.Underline(underlineType, color));
     }
 
     public size(twips: number): CharacterStyle {
-        this.addRunProperty(new formatting.Size(twips));
-        this.addRunProperty(new formatting.SizeComplexScript(twips));
-        return this;
+        return this.addRunProperty(new formatting.Size(twips)).addRunProperty(new formatting.SizeComplexScript(twips));
     }
 }
 

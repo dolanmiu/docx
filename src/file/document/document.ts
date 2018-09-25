@@ -2,6 +2,7 @@
 import { XmlComponent } from "file/xml-components";
 import { Paragraph } from "../paragraph";
 import { Table } from "../table";
+import { TableOfContents } from "../table-of-contents";
 import { Body } from "./body";
 import { SectionPropertiesOptions } from "./body/section-properties";
 import { DocumentAttributes } from "./document-attributes";
@@ -41,6 +42,11 @@ export class Document extends XmlComponent {
         return this;
     }
 
+    public addTableOfContents(toc: TableOfContents): Document {
+        this.body.push(toc);
+        return this;
+    }
+
     public createParagraph(text?: string): Paragraph {
         const para = new Paragraph(text);
         this.addParagraph(para);
@@ -59,5 +65,13 @@ export class Document extends XmlComponent {
 
     public get Body(): Body {
         return this.body;
+    }
+
+    public getTablesOfContents(): TableOfContents[] {
+        return this.body.getTablesOfContents();
+    }
+
+    public getParagraphs(): Paragraph[] {
+        return this.body.getParagraphs();
     }
 }

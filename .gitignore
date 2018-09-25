@@ -48,8 +48,15 @@ docs/.nojekyll
 !.vscode/extensions.json
 .history
 
+# IntelliJ
+.idea
+
 # Lock files
 package-lock.json
+yarn.lock
 
 # Documents
 My Document.docx
+
+# Temporary folder 
+tmp

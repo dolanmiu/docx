@@ -8,6 +8,7 @@ export interface IPageMarginAttributes {
     header?: number;
     footer?: number;
     gutter?: number;
+    mirror?: boolean;
 }
 
 export class PageMarginAttributes extends XmlAttributeComponent<IPageMarginAttributes> {
@@ -19,5 +20,6 @@ export class PageMarginAttributes extends XmlAttributeComponent<IPageMarginAttri
         header: "w:header",
         footer: "w:footer",
         gutter: "w:gutter",
+        mirror: "w:mirrorMargins",
     };
 }
