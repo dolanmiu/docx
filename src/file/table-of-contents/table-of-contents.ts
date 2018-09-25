@@ -5,10 +5,10 @@ import { XmlComponent } from "file/xml-components";
 import { SdtContent } from "./sdt-content";
 import { SdtProperties } from "./sdt-properties";
 import { TableOfContentsInstruction } from "./table-of-contents-instruction";
-import { TableOfContentsProperties } from "./table-of-contents-properties";
+import { ITableOfContentsProperties } from "./table-of-contents-properties";
 
 export class TableOfContents extends XmlComponent {
-    constructor(alias: string = "Table of Contents", properties?: TableOfContentsProperties) {
+    constructor(alias: string = "Table of Contents", properties?: ITableOfContentsProperties) {
         super("w:sdt");
         this.root.push(new SdtProperties(alias));
 

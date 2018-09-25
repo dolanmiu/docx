@@ -1,6 +1,6 @@
 # Table of Contents
 
-You can generate table of contents with `docx`.
+You can generate table of contents with `docx`. More information can be found [here](http://officeopenxml.com/WPtableOfContents.php).
 
 >Tables of Contents are fields and, by design, it's content is only generated or updated by Word. We can't do it programatically.
 >This is why, when you open a the file, Word you will prompt the message "This document contains fields that may refer to other files. Do you want to update the fields in this document?".
@@ -8,7 +8,19 @@ You can generate table of contents with `docx`.
 
 The complete documentation can be found [here](https://www.ecma-international.org/publications/standards/Ecma-376.htm) (at Part 1, Page 1251).
 
-A short guide can be found [here](http://officeopenxml.com/WPtableOfContents.php).
+## How to
+
+All you need to do is create a `TableOfContents` object and assign it to the document.
+
+```js
+const toc = new TableOfContents("Summary", {
+    hyperlink: true,
+    headingStyleRange: "1-5",
+    stylesWithLevels: [new StyleLevel("MySpectacularStyle", 1)]
+});
+
+doc.addTableOfContents(toc);
+```
 
 ## Table of Contents Properties
 
@@ -38,11 +50,11 @@ Here is the list of all properties that you can use to generate your tables of c
 ```js
 // Let's define the properties for generate a TOC for heading 1-5 and MySpectacularStyle,
 // making the entries be hyperlinks for the paragraph
-const props = new TableOfContentsProperties();
-props.hyperlink = true;
-props.headingStyleRange = "1-5";
-props.stylesWithLevels = [new StyleLevel("MySpectacularStyle",1)]
-const toc = new TableOfContents("Summary", props);
+const toc = new TableOfContents("Summary", {
+    hyperlink: true,
+    headingStyleRange: "1-5",
+    stylesWithLevels: [new StyleLevel("MySpectacularStyle", 1)]
+});
 
 doc.addTableOfContents(toc);
 

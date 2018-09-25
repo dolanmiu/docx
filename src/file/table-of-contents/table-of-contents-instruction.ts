@@ -1,19 +1,21 @@
 import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
-import { TableOfContentsProperties } from "./table-of-contents-properties";
+import { ITableOfContentsProperties } from "./table-of-contents-properties";
 
 class TextAttributes extends XmlAttributeComponent<{ space: "default" | "preserve" }> {
     protected xmlKeys = { space: "xml:space" };
 }
 
 export class TableOfContentsInstruction extends XmlComponent {
-    private readonly properties: TableOfContentsProperties;
+    private readonly properties: ITableOfContentsProperties;
 
-    constructor(properties?: TableOfContentsProperties) {
+    constructor(properties: ITableOfContentsProperties = {}) {
         super("w:instrText");
-        this.properties = properties || new TableOfContentsProperties();
+
+        this.properties = properties;
 
         this.root.push(new TextAttributes({ space: "preserve" }));
         let instruction = "TOC";
+
         if (this.properties.captionLabel) {
             instruction = `${instruction} \\a "${this.properties.captionLabel}"`;
         }

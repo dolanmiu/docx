@@ -1,7 +1,7 @@
 // Creates two paragraphs, one with a border and one without
 // Import from 'docx' rather than '../build' if you install from npm
 import * as fs from "fs";
-import { File, Packer, Paragraph, StyleLevel, TableOfContents, TableOfContentsProperties } from "../build";
+import { File, Packer, Paragraph, StyleLevel, TableOfContents } from "../build";
 
 const doc = new File();
 
@@ -18,11 +18,11 @@ doc.Styles.createParagraphStyle("MySpectacularStyle", "My Spectacular Style")
 
 // Let's define the properties for generate a TOC for heading 1-5 and MySpectacularStyle,
 // making the entries be hyperlinks for the paragraph
-const props = new TableOfContentsProperties();
-props.hyperlink = true;
-props.headingStyleRange = "1-5";
-props.stylesWithLevels = [new StyleLevel("MySpectacularStyle", 1)];
-const toc = new TableOfContents("Summary", props);
+const toc = new TableOfContents("Summary", {
+    hyperlink: true,
+    headingStyleRange: "1-5",
+    stylesWithLevels: [new StyleLevel("MySpectacularStyle", 1)]
+});
 
 doc.addTableOfContents(toc);
 

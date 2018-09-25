@@ -1,7 +1,7 @@
 import { expect } from "chai";
 
 import { Formatter } from "../../export/formatter";
-import { StyleLevel, TableOfContents, TableOfContentsProperties } from "./";
+import { ITableOfContentsProperties, StyleLevel, TableOfContents } from "./";
 
 describe("Table of Contents", () => {
     describe("#constructor", () => {
@@ -12,7 +12,7 @@ describe("Table of Contents", () => {
         });
 
         it("should construct a TOC with all the options and alias", () => {
-            const props = new TableOfContentsProperties();
+            const props: ITableOfContentsProperties = {};
 
             props.captionLabel = "A";
             props.entriesFromBookmark = "B";
