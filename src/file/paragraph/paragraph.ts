@@ -10,7 +10,7 @@ import { Border, ThematicBreak } from "./formatting/border";
 import { IIndentAttributesProperties, Indent } from "./formatting/indent";
 import { KeepLines, KeepNext } from "./formatting/keep";
 import { PageBreak, PageBreakBefore } from "./formatting/page-break";
-import { ISpacingProperties, Spacing } from "./formatting/spacing";
+import { ContextualSpacing, ISpacingProperties, Spacing } from "./formatting/spacing";
 import { Style } from "./formatting/style";
 import { CenterTabStop, LeaderType, LeftTabStop, MaxRightTabStop, RightTabStop } from "./formatting/tab-stop";
 import { NumberProperties } from "./formatting/unordered-list";
@@ -208,6 +208,11 @@ export class Paragraph extends XmlComponent {
 
     public spacing(params: ISpacingProperties): Paragraph {
         this.properties.push(new Spacing(params));
+        return this;
+    }
+
+    public contextualSpacing(value: boolean): Paragraph {
+        this.properties.push(new ContextualSpacing(value));
         return this;
     }
 
