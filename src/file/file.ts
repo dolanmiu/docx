@@ -53,6 +53,10 @@ export class File {
         this.footNotes = new FootNotes();
         this.contentTypes = new ContentTypes();
 
+        if (fileProperties.template) {
+            this.currentRelationshipId = fileProperties.template.currentRelationshipId + 1;
+        }
+
         if (options.externalStyles) {
             const stylesFactory = new ExternalStylesFactory();
             this.styles = stylesFactory.newInstance(options.externalStyles);
@@ -62,10 +66,6 @@ export class File {
         }
 
         this.addDefaultRelationships();
-
-        if (fileProperties.template) {
-            this.currentRelationshipId = fileProperties.template.currentRelationshipId + 1;
-        }
 
         if (fileProperties.template && fileProperties.template.headers) {
             for (const templateHeader of fileProperties.template.headers) {
