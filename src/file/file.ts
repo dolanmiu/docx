@@ -249,22 +249,6 @@ export class File {
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties",
             "docProps/app.xml",
         );
-
-        this.docRelationships.createRelationship(
-            this.currentRelationshipId++,
-            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles",
-            "styles.xml",
-        );
-        this.docRelationships.createRelationship(
-            this.currentRelationshipId++,
-            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering",
-            "numbering.xml",
-        );
-        this.docRelationships.createRelationship(
-            this.currentRelationshipId++,
-            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/footnotes",
-            "footnotes.xml",
-        );
     }
 
     public get Document(): Document {
