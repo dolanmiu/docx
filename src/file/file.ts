@@ -57,7 +57,13 @@ export class File {
             this.currentRelationshipId = fileProperties.template.currentRelationshipId + 1;
         }
 
-        if (options.externalStyles) {
+        // set up styles
+        if (fileProperties.template && options.externalStyles) {
+            throw Error("can not use both template and external styles");
+        }
+        if (fileProperties.template) {
+            this.styles = fileProperties.template.styles;
+        } else if (options.externalStyles) {
             const stylesFactory = new ExternalStylesFactory();
             this.styles = stylesFactory.newInstance(options.externalStyles);
         } else {

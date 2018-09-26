@@ -7,6 +7,9 @@ import { FooterWrapper, IDocumentFooter } from "file/footer-wrapper";
 import { HeaderWrapper, IDocumentHeader } from "file/header-wrapper";
 import { convertToXmlComponent, ImportedXmlComponent, parseOptions } from "file/xml-components";
 
+import { Styles } from "file/styles";
+import { ExternalStylesFactory } from "file/styles/external-styles-factory";
+
 const importParseOptions = {
     ...parseOptions,
     textNodeName: "",
@@ -36,6 +39,7 @@ export interface IDocumentTemplate {
     currentRelationshipId: number;
     headers: IDocumentHeader[];
     footers: IDocumentFooter[];
+    styles: Styles;
 }
 
 export class ImportDotx {
@@ -47,6 +51,10 @@ export class ImportDotx {
 
     public async extract(data: Buffer): Promise<IDocumentTemplate> {
         const zipContent = await JSZip.loadAsync(data);
+
+        const stylesContent = await zipContent.files["word/styles.xml"].async("text");
+        const stylesFactory = new ExternalStylesFactory();
+        const styles = stylesFactory.newInstance(stylesContent);
 
         const documentContent = zipContent.files["word/document.xml"];
         const documentRefs: IDocumentRefs = this.extractDocumentRefs(await documentContent.async("text"));
@@ -88,7 +96,7 @@ export class ImportDotx {
             footers.push({ type: footerRef.type, footer });
         }
 
-        const templateDocument: IDocumentTemplate = { headers, footers, currentRelationshipId: this.currentRelationshipId };
+        const templateDocument: IDocumentTemplate = { headers, footers, currentRelationshipId: this.currentRelationshipId, styles };
         return templateDocument;
     }
 
