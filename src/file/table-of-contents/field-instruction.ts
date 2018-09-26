@@ -1,3 +1,4 @@
+// http://officeopenxml.com/WPfieldInstructions.php
 import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
 import { ITableOfContentsOptions } from "./table-of-contents-properties";
 
@@ -10,7 +11,7 @@ class TextAttributes extends XmlAttributeComponent<{ space: SpaceType }> {
     protected xmlKeys = { space: "xml:space" };
 }
 
-export class TableOfContentsInstruction extends XmlComponent {
+export class FieldInstruction extends XmlComponent {
     private readonly properties: ITableOfContentsOptions;
 
     constructor(properties: ITableOfContentsOptions = {}) {
