@@ -30,7 +30,6 @@ export abstract class XmlComponent extends BaseXmlComponent {
         };
     }
 
-    // TODO: Unused method
     public addChildElement(child: XmlComponent | string): XmlComponent {
         this.root.push(child);
 

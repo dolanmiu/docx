@@ -20,6 +20,7 @@ const name = new TextRun("Name:")
     *   `.size(halfPts)`: Set the font size, measured in half-points
     *   `.font(name)`: Set the run's font
     *   `.style(name)`: Apply a named run style
+    *   `.characterSpacing(value)`: Set the character spacing adjustment (in TWIPs)
 *   For paragraph formatting:
     *   `.heading1()`, `.heading2()`, `.heading3()`, `.heading4()`, `.heading5()`, `.title()`: apply the appropriate style to the paragraph
     *   `.left()`, `.center()`, `.right()`, `.justified()`: set the paragraph's alignment
