@@ -41,6 +41,7 @@ export interface IDocumentTemplate {
     headers: IDocumentHeader[];
     footers: IDocumentFooter[];
     styles: Styles;
+    titlePageIsDefined: boolean;
 }
 
 export class ImportDotx {
@@ -59,6 +60,7 @@ export class ImportDotx {
 
         const documentContent = zipContent.files["word/document.xml"];
         const documentRefs: IDocumentRefs = this.extractDocumentRefs(await documentContent.async("text"));
+        const titlePageIsDefined = this.titlePageIsDefined(await documentContent.async("text"));
 
         const relationshipContent = zipContent.files["word/_rels/document.xml.rels"];
         const documentRelationships: IRelationshipFileInfo[] = this.findReferenceFiles(await relationshipContent.async("text"));
@@ -77,7 +79,7 @@ export class ImportDotx {
             const importedComp = convertToXmlComponent(headerKey, xmlObj[headerKey]) as ImportedXmlComponent;
 
             const header = new HeaderWrapper(this.currentRelationshipId++, importedComp);
-            await this.addImagesToWrapper(relationFileInfo, zipContent, header);
+            await this.addRelationToWrapper(relationFileInfo, zipContent, header);
             headers.push({ type: headerRef.type, header });
         }
 
@@ -93,15 +95,21 @@ export class ImportDotx {
             const importedComp = convertToXmlComponent(footerKey, xmlObj[footerKey]) as ImportedXmlComponent;
 
             const footer = new FooterWrapper(this.currentRelationshipId++, importedComp);
-            await this.addImagesToWrapper(relationFileInfo, zipContent, footer);
+            await this.addRelationToWrapper(relationFileInfo, zipContent, footer);
             footers.push({ type: footerRef.type, footer });
         }
 
-        const templateDocument: IDocumentTemplate = { headers, footers, currentRelationshipId: this.currentRelationshipId, styles };
+        const templateDocument: IDocumentTemplate = {
+            headers,
+            footers,
+            currentRelationshipId: this.currentRelationshipId,
+            styles,
+            titlePageIsDefined,
+        };
         return templateDocument;
     }
 
-    public async addImagesToWrapper(
+    public async addRelationToWrapper(
         relationFile: IRelationshipFileInfo,
         zipContent: JSZip,
         wrapper: HeaderWrapper | FooterWrapper,
@@ -181,6 +189,12 @@ export class ImportDotx {
         });
 
         return { headers, footers };
+    }
+
+    public titlePageIsDefined(xmlData: string): boolean {
+        const xmlObj = fastXmlParser.parse(xmlData, importParseOptions);
+        const sectionProp = xmlObj["w:document"]["w:body"]["w:sectPr"];
+        return sectionProp["w:titlePg"] !== undefined;
     }
 
     public parseRefId(str: string): number {

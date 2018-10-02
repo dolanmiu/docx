@@ -12,7 +12,7 @@ fs.readFile(filePath, (err, data) => {
     importDotx.extract(data).then((templateDocument) => {
         // This any needs fixing
         const sectionProps = {
-            titlePage: true,
+            titlePage: templateDocument.titlePageIsDefined,
         } as any;
 
         const doc = new Document(undefined, sectionProps, {
