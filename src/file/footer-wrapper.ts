@@ -55,6 +55,15 @@ export class FooterWrapper {
         return mediaData;
     }
 
+    public addHyperlinkRelationship(target: string, refId: number, targetMode?: "External" | undefined): void {
+        this.relationships.createRelationship(
+            refId,
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink",
+            target,
+            targetMode,
+        );
+    }
+
     public createImage(image: Buffer, width?: number, height?: number): void {
         const mediaData = this.addImageRelationship(image, this.relationships.RelationshipCount, width, height);
         this.addImage(new Image(new ImageParagraph(mediaData)));
