@@ -135,12 +135,21 @@ export class ImportDotx {
     }
 
     public extractDocumentRefs(xmlData: string): IDocumentRefs {
+        interface IAttributedXML {
+            _attr: object;
+        }
         const xmlObj = fastXmlParser.parse(xmlData, importParseOptions);
         const sectionProp = xmlObj["w:document"]["w:body"]["w:sectPr"];
 
-        const headersXmlArray = Array.isArray(sectionProp["w:headerReference"])
-            ? sectionProp["w:headerReference"]
-            : [sectionProp["w:headerReference"]];
+        const headerProps: undefined | IAttributedXML | IAttributedXML[] = sectionProp["w:headerReference"];
+        let headersXmlArray: IAttributedXML[];
+        if (headerProps === undefined) {
+            headersXmlArray = [];
+        } else if (Array.isArray(headerProps)) {
+            headersXmlArray = headerProps;
+        } else {
+            headersXmlArray = [headerProps];
+        }
         const headers = headersXmlArray.map((item) => {
             return {
                 type: item._attr["w:type"],
@@ -148,9 +157,16 @@ export class ImportDotx {
             };
         });
 
-        const footersXmlArray = Array.isArray(sectionProp["w:footerReference"])
-            ? sectionProp["w:footerReference"]
-            : [sectionProp["w:footerReference"]];
+        const footerProps: undefined | IAttributedXML | IAttributedXML[] = sectionProp["w:footerReference"];
+        let footersXmlArray: IAttributedXML[];
+        if (footerProps === undefined) {
+            footersXmlArray = [];
+        } else if (Array.isArray(footerProps)) {
+            footersXmlArray = footerProps;
+        } else {
+            footersXmlArray = [footerProps];
+        }
+
         const footers = footersXmlArray.map((item) => {
             return {
                 type: item._attr["w:type"],
