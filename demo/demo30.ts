@@ -16,7 +16,7 @@ fs.readFile(filePath, (err, data) => {
         } as any;
 
         const doc = new Document(undefined, sectionProps, {
-            template: templateDocument
+            template: templateDocument,
         });
         const paragraph = new Paragraph("Hello World");
         doc.addParagraph(paragraph);
@@ -26,5 +26,4 @@ fs.readFile(filePath, (err, data) => {
             fs.writeFileSync("My Document.docx", buffer);
         });
     });
-
 });
