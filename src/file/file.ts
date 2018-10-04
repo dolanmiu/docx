@@ -219,7 +219,7 @@ export class File {
         }
     }
 
-    protected addHeaderToDocument(header: HeaderWrapper, type: HeaderReferenceType = HeaderReferenceType.DEFAULT): void {
+    private addHeaderToDocument(header: HeaderWrapper, type: HeaderReferenceType = HeaderReferenceType.DEFAULT): void {
         this.headers.push({ header, type });
         this.docRelationships.createRelationship(
             header.Header.ReferenceId,
@@ -229,7 +229,7 @@ export class File {
         this.contentTypes.addHeader(this.headers.length);
     }
 
-    protected addFooterToDocument(footer: FooterWrapper, type: FooterReferenceType = FooterReferenceType.DEFAULT): void {
+    private addFooterToDocument(footer: FooterWrapper, type: FooterReferenceType = FooterReferenceType.DEFAULT): void {
         this.footers.push({ footer, type });
         this.docRelationships.createRelationship(
             footer.Footer.ReferenceId,
@@ -239,7 +239,7 @@ export class File {
         this.contentTypes.addFooter(this.footers.length);
     }
 
-    protected addDefaultRelationships(): void {
+    private addDefaultRelationships(): void {
         this.fileRelationships.createRelationship(
             1,
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument",
