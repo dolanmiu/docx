@@ -1,3 +1,4 @@
+// http://officeopenxml.com/WPtableGrid.php
 import {
     GridSpan,
     TableCellBorders,
@@ -60,7 +61,13 @@ export class Table extends XmlComponent {
     }
 
     public getRow(ix: number): TableRow {
-        return this.rows[ix];
+        const row = this.rows[ix];
+
+        if (!row) {
+            throw Error("Index out of bounds when trying to get row on table");
+        }
+
+        return row;
     }
 
     public getCell(row: number, col: number): TableCell {
@@ -93,16 +100,28 @@ export class TableRow extends XmlComponent {
     }
 
     public getCell(ix: number): TableCell {
-        return this.cells[ix];
+        const cell = this.cells[ix];
+
+        if (!cell) {
+            throw Error("Index out of bounds when trying to get cell on row");
+        }
+
+        return cell;
     }
 
-    public addGridSpan(ix: number, cellSpan: number): TableCell {
-        const remainCell = this.cells[ix];
+    public addGridSpan(index: number, cellSpan: number): TableCell {
+        const remainCell = this.cells[index];
         remainCell.CellProperties.addGridSpan(cellSpan);
-        this.cells.splice(ix + 1, cellSpan - 1);
-        this.root.splice(ix + 2, cellSpan - 1);
+        this.cells.splice(index + 1, cellSpan - 1);
+        this.root.splice(index + 2, cellSpan - 1);
 
         return remainCell;
+    }
+
+    public mergeCells(startIndex: number, endIndex: number): TableCell {
+        const cellSpan = endIndex - startIndex + 1;
+
+        return this.addGridSpan(startIndex, cellSpan);
     }
 }
 
