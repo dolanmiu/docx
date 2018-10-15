@@ -52,7 +52,7 @@ export class Table extends XmlComponent {
         for (let i = 0; i < rows; i++) {
             const cells: TableCell[] = [];
             for (let j = 0; j < cols; j++) {
-                cells.push(new TableCell(this, i, j));
+                cells.push(new TableCell());
             }
             const row = new TableRow(cells);
             this.rows.push(row);
@@ -109,13 +109,19 @@ export class TableRow extends XmlComponent {
         return cell;
     }
 
-    public addGridSpan(ix: number, cellSpan: number): TableCell {
-        const remainCell = this.cells[ix];
+    public addGridSpan(index: number, cellSpan: number): TableCell {
+        const remainCell = this.cells[index];
         remainCell.CellProperties.addGridSpan(cellSpan);
-        this.cells.splice(ix + 1, cellSpan - 1);
-        this.root.splice(ix + 2, cellSpan - 1);
+        this.cells.splice(index + 1, cellSpan - 1);
+        this.root.splice(index + 2, cellSpan - 1);
 
         return remainCell;
+    }
+
+    public mergeCells(startIndex: number, endIndex: number): TableCell {
+        const cellSpan = endIndex - startIndex + 1;
+
+        return this.addGridSpan(startIndex, cellSpan);
     }
 }
 
@@ -128,7 +134,7 @@ export class TableRowProperties extends XmlComponent {
 export class TableCell extends XmlComponent {
     private readonly properties: TableCellProperties;
 
-    constructor(private readonly tableReference: Table, private readonly x: number, private readonly y: number) {
+    constructor() {
         super("w:tc");
         this.properties = new TableCellProperties();
         this.root.push(this.properties);
@@ -153,15 +159,6 @@ export class TableCell extends XmlComponent {
         const para = new Paragraph(text);
         this.addContent(para);
         return para;
-    }
-
-    public setHorizontalSpan(span: number): TableCell {
-        for (let i = 1; i < span; i++) {
-            this.tableReference.getCell(this.x, this.y + i).delete();
-        }
-        this.properties.addGridSpan(span);
-
-        return this;
     }
 
     public get CellProperties(): TableCellProperties {
