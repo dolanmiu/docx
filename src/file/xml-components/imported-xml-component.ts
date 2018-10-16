@@ -1,13 +1,41 @@
 // tslint:disable:no-any
-import * as fastXmlParser from "fast-xml-parser";
+// import * as fastXmlParser from "fast-xml-parser";
 import { flatMap } from "lodash";
 import { IXmlableObject, XmlComponent } from ".";
+import { Element } from 'xml-js';
 
 export const parseOptions = {
     ignoreAttributes: false,
     attributeNamePrefix: "",
     attrNodeName: "_attr",
 };
+
+
+export function convertToXmlComponentOld(elementName: string, element: any): ImportedXmlComponent | ImportedXmlComponent[] {
+    const xmlElement = new ImportedXmlComponent(elementName, element._attr);
+    if (Array.isArray(element)) {
+        const out: any[] = [];
+        element.forEach((itemInArray) => {
+            out.push(convertToXmlComponentOld(elementName, itemInArray));
+        });
+        return flatMap(out);
+    } else if (typeof element === "object") {
+        Object.keys(element)
+            .filter((key) => key !== "_attr")
+            .map((item) => convertToXmlComponentOld(item, element[item]))
+            .forEach((converted) => {
+                if (Array.isArray(converted)) {
+                    converted.forEach(xmlElement.push.bind(xmlElement));
+                } else {
+                    xmlElement.push(converted);
+                }
+            });
+    } else if (element !== "") {
+        xmlElement.push(element);
+    }
+    return xmlElement;
+}
+
 
 /**
  * Converts the given xml element (in json format) into XmlComponent.
@@ -25,30 +53,30 @@ export const parseOptions = {
  * @param elementName name (rootKey) of the XmlComponent
  * @param element the xml element in json presentation
  */
-export function convertToXmlComponent(elementName: string, element: any): ImportedXmlComponent | ImportedXmlComponent[] {
-    const xmlElement = new ImportedXmlComponent(elementName, element._attr);
-    if (Array.isArray(element)) {
-        const out: any[] = [];
-        element.forEach((itemInArray) => {
-            out.push(convertToXmlComponent(elementName, itemInArray));
-        });
-        return flatMap(out);
-    } else if (typeof element === "object") {
-        Object.keys(element)
-            .filter((key) => key !== "_attr")
-            .map((item) => convertToXmlComponent(item, element[item]))
-            .forEach((converted) => {
-                if (Array.isArray(converted)) {
-                    converted.forEach(xmlElement.push.bind(xmlElement));
-                } else {
-                    xmlElement.push(converted);
-                }
-            });
-    } else if (element !== "") {
-        xmlElement.push(element);
+export function convertToXmlComponent(elementName: string, element: Element): ImportedXmlComponent {
+    const xmlComponent = new ImportedXmlComponent(elementName, element.attributes);
+    if (element.elements) {
+        for (const child of element.elements) {
+            if (child.type === undefined) {
+                continue;
+            }
+            switch (child.type) {
+                case 'element':
+                    if (child.name === undefined) {
+                        continue;
+                    }
+                    xmlComponent.push(convertToXmlComponent(child.name, child));
+                    break;
+                case 'text':
+                    xmlComponent.push(<string>(child.text));
+                    break;
+            } 
+            
+        }
     }
-    return xmlElement;
+    return xmlComponent;
 }
+
 
 /**
  * Represents imported xml component from xml file.
@@ -59,17 +87,6 @@ export class ImportedXmlComponent extends XmlComponent {
      *
      * @param importedContent xml content of the imported component
      */
-    public static fromXmlString(importedContent: string): ImportedXmlComponent {
-        const imported = fastXmlParser.parse(importedContent, parseOptions);
-        const elementName = Object.keys(imported)[0];
-
-        const converted = convertToXmlComponent(elementName, imported[elementName]);
-
-        if (Array.isArray(converted) && converted.length > 1) {
-            throw new Error("Invalid conversion, input must be one element.");
-        }
-        return Array.isArray(converted) ? converted[0] : converted;
-    }
 
     // tslint:disable-next-line:variable-name
     private readonly _attr: any;
@@ -123,7 +140,7 @@ export class ImportedXmlComponent extends XmlComponent {
         return result;
     }
 
-    public push(xmlComponent: XmlComponent): void {
+    public push(xmlComponent: XmlComponent | string): void {
         this.root.push(xmlComponent);
     }
 }

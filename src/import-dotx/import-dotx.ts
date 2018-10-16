@@ -1,11 +1,14 @@
 import * as fastXmlParser from "fast-xml-parser";
+import { xml2js, Element as XMLElement } from 'xml-js'
+// var convertXmlJs = require('xml-js');
 import * as JSZip from "jszip";
+
 
 import { FooterReferenceType } from "file/document/body/section-properties/footer-reference";
 import { HeaderReferenceType } from "file/document/body/section-properties/header-reference";
 import { FooterWrapper, IDocumentFooter } from "file/footer-wrapper";
 import { HeaderWrapper, IDocumentHeader } from "file/header-wrapper";
-import { convertToXmlComponent, ImportedXmlComponent, parseOptions } from "file/xml-components";
+import { convertToXmlComponent, ImportedXmlComponent, parseOptions, convertToXmlComponentOld } from "file/xml-components";
 
 import { Styles } from "file/styles";
 import { ExternalStylesFactory } from "file/styles/external-styles-factory";
@@ -74,11 +77,28 @@ export class ImportDotx {
             }
 
             const xmlData = await zipContent.files[`word/${relationFileInfo.target}`].async("text");
-            const xmlObj = fastXmlParser.parse(xmlData, importParseOptions);
+            const xmlObjOld = fastXmlParser.parse(xmlData, importParseOptions);
+            const xmlObj = xml2js(xmlData, {compact: false}) as XMLElement;
+            if (xmlObj.elements === undefined || xmlObj.elements[0].name !== headerKey) {
+                continue;
+            }
+            
+            console.log('=========== fast-xml-parser header =======');
+            console.log(JSON.stringify(xmlObjOld, null, 2));
+            console.log('=========== xml-js header =======');
+            console.log(JSON.stringify(xmlObj, null, 2));
 
-            const importedComp = convertToXmlComponent(headerKey, xmlObj[headerKey]) as ImportedXmlComponent;
+            const headerXmlElement = xmlObj.elements[0];
+            const importedComp = convertToXmlComponent(headerKey, headerXmlElement) as ImportedXmlComponent;
+            console.log('=========== importedComp header =======');
+            console.log(JSON.stringify(importedComp, null, 2));
+            
+            const importedCompOld = convertToXmlComponentOld(headerKey, xmlObjOld[headerKey]) as ImportedXmlComponent;
+            console.log('=========== importedCompOld header =======');
+            console.log(JSON.stringify(importedCompOld, null, 2));
 
-            const header = new HeaderWrapper(this.currentRelationshipId++, importedComp);
+            const header = new HeaderWrapper(this.currentRelationshipId++, importedCompOld);
+            // const header = new HeaderWrapper(this.currentRelationshipId++, importedComp);
             await this.addRelationToWrapper(relationFileInfo, zipContent, header);
             headers.push({ type: headerRef.type, header });
         }
