@@ -2,7 +2,7 @@ import * as fs from "fs";
 import { Document, ImportDotx, Packer, Paragraph } from "../build";
 
 const importDotx = new ImportDotx();
-const filePath = "./demo/dotx/f.dotx";
+const filePath = "./demo/dotx/template.dotx";
 
 fs.readFile(filePath, (err, data) => {
     if (err) {
