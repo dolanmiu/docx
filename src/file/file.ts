@@ -283,21 +283,25 @@ export class File {
                         ...newGroup,
                         default: header.header,
                     };
+                    break;
                 case HeaderReferenceType.FIRST:
                     newGroup = {
                         ...newGroup,
                         first: header.header,
                     };
+                    break;
                 case HeaderReferenceType.EVEN:
                     newGroup = {
                         ...newGroup,
                         even: header.header,
                     };
+                    break;
                 default:
                     newGroup = {
                         ...newGroup,
                         default: header.header,
                     };
+                    break;
             }
         }
 
@@ -314,21 +318,25 @@ export class File {
                         ...newGroup,
                         default: footer.footer,
                     };
+                    break;
                 case FooterReferenceType.FIRST:
                     newGroup = {
                         ...newGroup,
                         first: footer.footer,
                     };
+                    break;
                 case FooterReferenceType.EVEN:
                     newGroup = {
                         ...newGroup,
                         even: footer.footer,
                     };
+                    break;
                 default:
                     newGroup = {
                         ...newGroup,
                         default: footer.footer,
                     };
+                    break;
             }
         }
 
