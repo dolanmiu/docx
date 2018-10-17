@@ -1,82 +1,30 @@
 // tslint:disable:no-any
-// import * as fastXmlParser from "fast-xml-parser";
-import { flatMap } from "lodash";
+import { Element as XmlElement } from "xml-js";
 import { IXmlableObject, XmlComponent } from ".";
-import { Element } from 'xml-js';
-
-export const parseOptions = {
-    ignoreAttributes: false,
-    attributeNamePrefix: "",
-    attrNodeName: "_attr",
-};
-
-
-export function convertToXmlComponentOld(elementName: string, element: any): ImportedXmlComponent | ImportedXmlComponent[] {
-    const xmlElement = new ImportedXmlComponent(elementName, element._attr);
-    if (Array.isArray(element)) {
-        const out: any[] = [];
-        element.forEach((itemInArray) => {
-            out.push(convertToXmlComponentOld(elementName, itemInArray));
-        });
-        return flatMap(out);
-    } else if (typeof element === "object") {
-        Object.keys(element)
-            .filter((key) => key !== "_attr")
-            .map((item) => convertToXmlComponentOld(item, element[item]))
-            .forEach((converted) => {
-                if (Array.isArray(converted)) {
-                    converted.forEach(xmlElement.push.bind(xmlElement));
-                } else {
-                    xmlElement.push(converted);
-                }
-            });
-    } else if (element !== "") {
-        xmlElement.push(element);
-    }
-    return xmlElement;
-}
-
 
 /**
  * Converts the given xml element (in json format) into XmlComponent.
- * Note: If element is array, them it will return ImportedXmlComponent[]. Example for given:
- * element = [
- *  { w:t: "val 1"},
- *  { w:t: "val 2"}
- * ]
- * will return
- * [
- *   ImportedXmlComponent { rootKey: "w:t", root: [ "val 1" ]},
- *   ImportedXmlComponent { rootKey: "w:t", root: [ "val 2" ]}
- * ]
- *
- * @param elementName name (rootKey) of the XmlComponent
  * @param element the xml element in json presentation
  */
-export function convertToXmlComponent(elementName: string, element: Element): ImportedXmlComponent {
-    const xmlComponent = new ImportedXmlComponent(elementName, element.attributes);
-    if (element.elements) {
-        for (const child of element.elements) {
-            if (child.type === undefined) {
-                continue;
-            }
-            switch (child.type) {
-                case 'element':
-                    if (child.name === undefined) {
-                        continue;
-                    }
-                    xmlComponent.push(convertToXmlComponent(child.name, child));
-                    break;
-                case 'text':
-                    xmlComponent.push(<string>(child.text));
-                    break;
-            } 
-            
-        }
-    }
-    return xmlComponent;
-}
 
+export function convertToXmlComponent(element: XmlElement): ImportedXmlComponent | string | undefined {
+    switch (element.type) {
+        case "element":
+            const xmlComponent = new ImportedXmlComponent(element.name as string, element.attributes);
+            const childElments = element.elements || [];
+            for (const childElm of childElments) {
+                const child = convertToXmlComponent(childElm);
+                if (child !== undefined) {
+                    xmlComponent.push(child);
+                }
+            }
+            return xmlComponent;
+        case "text":
+            return element.text as string;
+        default:
+            return undefined;
+    }
+}
 
 /**
  * Represents imported xml component from xml file.

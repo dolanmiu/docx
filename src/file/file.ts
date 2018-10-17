@@ -283,16 +283,19 @@ export class File {
                         ...newGroup,
                         default: header.header,
                     };
+                    break;
                 case HeaderReferenceType.FIRST:
                     newGroup = {
                         ...newGroup,
                         first: header.header,
                     };
+                    break;
                 case HeaderReferenceType.EVEN:
                     newGroup = {
                         ...newGroup,
                         even: header.header,
                     };
+                    break;
                 default:
                     newGroup = {
                         ...newGroup,
