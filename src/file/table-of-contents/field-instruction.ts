@@ -41,19 +41,19 @@ export class FieldInstruction extends XmlComponent {
             instruction = `${instruction} \\h`;
         }
         if (this.properties.tcFieldLevelRange) {
-            instruction = `${instruction} \\l "${this.properties.tcFieldLevelRange}`;
+            instruction = `${instruction} \\l "${this.properties.tcFieldLevelRange}"`;
         }
         if (this.properties.pageNumbersEntryLevelsRange) {
-            instruction = `${instruction} \\n "${this.properties.pageNumbersEntryLevelsRange}`;
+            instruction = `${instruction} \\n "${this.properties.pageNumbersEntryLevelsRange}"`;
         }
         if (this.properties.headingStyleRange) {
-            instruction = `${instruction} \\o "${this.properties.headingStyleRange}`;
+            instruction = `${instruction} \\o "${this.properties.headingStyleRange}"`;
         }
         if (this.properties.entryAndPageNumberSeparator) {
-            instruction = `${instruction} \\p "${this.properties.entryAndPageNumberSeparator}`;
+            instruction = `${instruction} \\p "${this.properties.entryAndPageNumberSeparator}"`;
         }
         if (this.properties.seqFieldIdentifierForPrefix) {
-            instruction = `${instruction} \\s "${this.properties.seqFieldIdentifierForPrefix}`;
+            instruction = `${instruction} \\s "${this.properties.seqFieldIdentifierForPrefix}"`;
         }
         if (this.properties.stylesWithLevels && this.properties.stylesWithLevels.length) {
             const styles = this.properties.stylesWithLevels.map((sl) => `${sl.styleName},${sl.level}`).join(",");
