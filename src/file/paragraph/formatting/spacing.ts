@@ -1,5 +1,5 @@
 // http://officeopenxml.com/WPspacing.php
-import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
+import { Attributes, XmlAttributeComponent, XmlComponent } from "file/xml-components";
 
 export interface ISpacingProperties {
     after?: number;
@@ -21,5 +21,16 @@ export class Spacing extends XmlComponent {
     constructor(opts: ISpacingProperties) {
         super("w:spacing");
         this.root.push(new SpacingAttributes(opts));
+    }
+}
+
+export class ContextualSpacing extends XmlComponent {
+    constructor(value: boolean) {
+        super("w:contextualSpacing");
+        this.root.push(
+            new Attributes({
+                val: value === false ? 0 : 1,
+            }),
+        );
     }
 }

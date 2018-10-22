@@ -1,23 +1,25 @@
+// http://officeopenxml.com/WPtableOfContents.php
+// http://www.datypic.com/sc/ooxml/e-w_sdt-1.html
 import { Paragraph } from "file/paragraph";
 import { Run } from "file/paragraph/run";
 import { Begin, End, Separate } from "file/paragraph/run/field";
 import { XmlComponent } from "file/xml-components";
-import { SdtContent } from "./sdt-content";
-import { SdtProperties } from "./sdt-properties";
-import { TableOfContentsInstruction } from "./table-of-contents-instruction";
+import { FieldInstruction } from "./field-instruction";
+import { StructuredDocumentTagContent } from "./sdt-content";
+import { StructuredDocumentTagProperties } from "./sdt-properties";
 import { ITableOfContentsOptions } from "./table-of-contents-properties";
 
 export class TableOfContents extends XmlComponent {
     constructor(alias: string = "Table of Contents", properties?: ITableOfContentsOptions) {
         super("w:sdt");
-        this.root.push(new SdtProperties(alias));
+        this.root.push(new StructuredDocumentTagProperties(alias));
 
-        const content = new SdtContent();
+        const content = new StructuredDocumentTagContent();
 
         const beginParagraph = new Paragraph();
         const beginRun = new Run();
         beginRun.addChildElement(new Begin(true));
-        beginRun.addChildElement(new TableOfContentsInstruction(properties));
+        beginRun.addChildElement(new FieldInstruction(properties));
         beginRun.addChildElement(new Separate());
         beginParagraph.addRun(beginRun);
         content.addChildElement(beginParagraph);

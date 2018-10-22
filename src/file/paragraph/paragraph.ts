@@ -10,13 +10,13 @@ import { Border, ThematicBreak } from "./formatting/border";
 import { IIndentAttributesProperties, Indent } from "./formatting/indent";
 import { KeepLines, KeepNext } from "./formatting/keep";
 import { PageBreak, PageBreakBefore } from "./formatting/page-break";
-import { ISpacingProperties, Spacing } from "./formatting/spacing";
+import { ContextualSpacing, ISpacingProperties, Spacing } from "./formatting/spacing";
 import { Style } from "./formatting/style";
 import { CenterTabStop, LeaderType, LeftTabStop, MaxRightTabStop, RightTabStop } from "./formatting/tab-stop";
 import { NumberProperties } from "./formatting/unordered-list";
 import { Bookmark, Hyperlink } from "./links";
 import { ParagraphProperties } from "./properties";
-import { PictureRun, Run, TextRun } from "./run";
+import { PictureRun, Run, SequentialIdentifier, TextRun } from "./run";
 
 export class Paragraph extends XmlComponent {
     private readonly properties: ParagraphProperties;
@@ -211,6 +211,11 @@ export class Paragraph extends XmlComponent {
         return this;
     }
 
+    public contextualSpacing(value: boolean): Paragraph {
+        this.properties.push(new ContextualSpacing(value));
+        return this;
+    }
+
     public keepNext(): Paragraph {
         this.properties.push(new KeepNext());
         return this;
@@ -238,6 +243,11 @@ export class Paragraph extends XmlComponent {
 
     public addTabStop(run: Run): Paragraph {
         this.root.splice(1, 0, run);
+        return this;
+    }
+
+    public addSequentialIdentifier(identifier: string): Paragraph {
+        this.root.push(new SequentialIdentifier(identifier));
         return this;
     }
 }

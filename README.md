@@ -29,6 +29,10 @@ Here are examples of `docx` being used with basic `HTML/JS` in a browser environ
 *   https://codepen.io/anon/pen/dqoVgQ
 *   https://jsfiddle.net/3xhezb5w/2
 
+Here is an example of `docx` working in `Angular`:
+
+*   https://stackblitz.com/edit/angular-afvxtz
+
 ## Node
 
 Press `endpoint` on the `RunKit` website:

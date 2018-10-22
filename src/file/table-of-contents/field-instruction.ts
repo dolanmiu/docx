@@ -1,3 +1,4 @@
+// http://officeopenxml.com/WPfieldInstructions.php
 import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
 import { ITableOfContentsOptions } from "./table-of-contents-properties";
 
@@ -10,7 +11,7 @@ class TextAttributes extends XmlAttributeComponent<{ space: SpaceType }> {
     protected xmlKeys = { space: "xml:space" };
 }
 
-export class TableOfContentsInstruction extends XmlComponent {
+export class FieldInstruction extends XmlComponent {
     private readonly properties: ITableOfContentsOptions;
 
     constructor(properties: ITableOfContentsOptions = {}) {
@@ -40,19 +41,19 @@ export class TableOfContentsInstruction extends XmlComponent {
             instruction = `${instruction} \\h`;
         }
         if (this.properties.tcFieldLevelRange) {
-            instruction = `${instruction} \\l "${this.properties.tcFieldLevelRange}`;
+            instruction = `${instruction} \\l "${this.properties.tcFieldLevelRange}"`;
         }
         if (this.properties.pageNumbersEntryLevelsRange) {
-            instruction = `${instruction} \\n "${this.properties.pageNumbersEntryLevelsRange}`;
+            instruction = `${instruction} \\n "${this.properties.pageNumbersEntryLevelsRange}"`;
         }
         if (this.properties.headingStyleRange) {
-            instruction = `${instruction} \\o "${this.properties.headingStyleRange}`;
+            instruction = `${instruction} \\o "${this.properties.headingStyleRange}"`;
         }
         if (this.properties.entryAndPageNumberSeparator) {
-            instruction = `${instruction} \\p "${this.properties.entryAndPageNumberSeparator}`;
+            instruction = `${instruction} \\p "${this.properties.entryAndPageNumberSeparator}"`;
         }
         if (this.properties.seqFieldIdentifierForPrefix) {
-            instruction = `${instruction} \\s "${this.properties.seqFieldIdentifierForPrefix}`;
+            instruction = `${instruction} \\s "${this.properties.seqFieldIdentifierForPrefix}"`;
         }
         if (this.properties.stylesWithLevels && this.properties.stylesWithLevels.length) {
             const styles = this.properties.stylesWithLevels.map((sl) => `${sl.styleName},${sl.level}`).join(",");

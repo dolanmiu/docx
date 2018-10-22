@@ -16,6 +16,7 @@
 	* [Bullet Points](usage/bullet-points.md)
     * [Numbering](usage/numbering.md)
 	* [Tab Stops](usage/tab-stops.md)
+    * [Table of Contents](usage/table-of-contents.md)
 	* Styling
         * [Styling with JS](usage/styling-with-js.md)
         * [Styling with XML](usage/styling-with-xml.md)

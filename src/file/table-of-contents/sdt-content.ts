@@ -1,6 +1,6 @@
 import { XmlComponent } from "file/xml-components";
 
-export class SdtContent extends XmlComponent {
+export class StructuredDocumentTagContent extends XmlComponent {
     constructor() {
         super("w:sdtContent");
     }
