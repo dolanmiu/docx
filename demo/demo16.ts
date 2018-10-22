@@ -15,8 +15,12 @@ const footer = doc.createFooter();
 footer.createParagraph("Footer on another page");
 
 doc.addSection({
-    headerId: header.Header.ReferenceId,
-    footerId: footer.Footer.ReferenceId,
+    headers: {
+        default: header,
+    },
+    footers: {
+        default: footer,
+    },
     pageNumberStart: 1,
     pageNumberFormatType: PageNumberFormat.DECIMAL,
 });
@@ -24,8 +28,12 @@ doc.addSection({
 doc.createParagraph("hello");
 
 doc.addSection({
-    headerId: header.Header.ReferenceId,
-    footerId: footer.Footer.ReferenceId,
+    headers: {
+        default: header,
+    },
+    footers: {
+        default: footer,
+    },
     pageNumberStart: 1,
     pageNumberFormatType: PageNumberFormat.DECIMAL,
     orientation: PageOrientation.LANDSCAPE,

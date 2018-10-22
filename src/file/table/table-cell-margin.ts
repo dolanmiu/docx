@@ -21,8 +21,10 @@ export class TableCellMargin extends XmlComponent {
         super("w:tblCellMar");
     }
 
-    public prepForXml(): IXmlableObject {
-        return this.root.length > 0 ? super.prepForXml() : "";
+    public prepForXml(): IXmlableObject | undefined {
+        if (this.root.length > 0) {
+            return super.prepForXml();
+        }
     }
 
     public addTopMargin(value: number, type: WidthType = WidthType.DXA): void {

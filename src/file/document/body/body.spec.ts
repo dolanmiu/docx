@@ -16,7 +16,7 @@ describe("Body", () => {
             expect(formatted)
                 .to.have.property("w:sectPr")
                 .and.to.be.an.instanceof(Array);
-            expect(formatted["w:sectPr"]).to.have.length(7);
+            expect(formatted["w:sectPr"]).to.have.length(5);
         });
     });
 

@@ -26,6 +26,11 @@ describe("XmlComponent", () => {
             xmlComponent.addChildElement(child);
 
             const xml = xmlComponent.prepForXml();
+
+            if (!xml) {
+                return;
+            }
+
             assert.equal(xml["w:test"].length, 0);
         });
     });

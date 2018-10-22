@@ -1,7 +1,7 @@
-/* tslint:disable */
-import { XmlComponent, IXmlableObject } from ".";
+// tslint:disable:no-any
 import * as fastXmlParser from "fast-xml-parser";
 import { flatMap } from "lodash";
+import { IXmlableObject, XmlComponent } from ".";
 
 export const parseOptions = {
     ignoreAttributes: false,
@@ -54,8 +54,27 @@ export function convertToXmlComponent(elementName: string, element: any): Import
  * Represents imported xml component from xml file.
  */
 export class ImportedXmlComponent extends XmlComponent {
-    private _attr: any;
+    /**
+     * Converts the xml string to a XmlComponent tree.
+     *
+     * @param importedContent xml content of the imported component
+     */
+    public static fromXmlString(importedContent: string): ImportedXmlComponent {
+        const imported = fastXmlParser.parse(importedContent, parseOptions);
+        const elementName = Object.keys(imported)[0];
 
+        const converted = convertToXmlComponent(elementName, imported[elementName]);
+
+        if (Array.isArray(converted) && converted.length > 1) {
+            throw new Error("Invalid conversion, input must be one element.");
+        }
+        return Array.isArray(converted) ? converted[0] : converted;
+    }
+
+    // tslint:disable-next-line:variable-name
+    private readonly _attr: any;
+
+    // tslint:disable-next-line:variable-name
     constructor(rootKey: string, _attr?: any) {
         super(rootKey);
         if (_attr) {
@@ -89,8 +108,12 @@ export class ImportedXmlComponent extends XmlComponent {
      *    ]
      * }
      */
-    prepForXml(): IXmlableObject {
+    public prepForXml(): IXmlableObject | undefined {
         const result = super.prepForXml();
+        if (!result) {
+            return undefined;
+        }
+
         if (!!this._attr) {
             if (!Array.isArray(result[this.rootKey])) {
                 result[this.rootKey] = [result[this.rootKey]];
@@ -100,25 +123,8 @@ export class ImportedXmlComponent extends XmlComponent {
         return result;
     }
 
-    push(xmlComponent: XmlComponent) {
+    public push(xmlComponent: XmlComponent): void {
         this.root.push(xmlComponent);
-    }
-
-    /**
-     * Converts the xml string to a XmlComponent tree.
-     *
-     * @param importedContent xml content of the imported component
-     */
-    static fromXmlString(importedContent: string): ImportedXmlComponent {
-        const imported = fastXmlParser.parse(importedContent, parseOptions);
-        const elementName = Object.keys(imported)[0];
-
-        const converted = convertToXmlComponent(elementName, imported[elementName]);
-
-        if (Array.isArray(converted) && converted.length > 1) {
-            throw new Error("Invalid conversion, input must be one element.");
-        }
-        return Array.isArray(converted) ? converted[0] : converted;
     }
 }
 
@@ -126,7 +132,8 @@ export class ImportedXmlComponent extends XmlComponent {
  * Used for the attributes of root element that is being imported.
  */
 export class ImportedRootElementAttributes extends XmlComponent {
-    constructor(private _attr: any) {
+    // tslint:disable-next-line:variable-name
+    constructor(private readonly _attr: any) {
         super("");
     }
 

@@ -1,14 +1,14 @@
 // http://officeopenxml.com/WPfooters.php
-import { XmlComponent } from "file/xml-components";
+import { InitializableXmlComponent, XmlComponent } from "file/xml-components";
 import { Paragraph } from "../paragraph";
 import { Table } from "../table";
 import { FooterAttributes } from "./footer-attributes";
 
-export class Footer extends XmlComponent {
+export class Footer extends InitializableXmlComponent {
     private readonly refId: number;
 
-    constructor(referenceNumber: number) {
-        super("w:ftr");
+    constructor(referenceNumber: number, initContent?: XmlComponent) {
+        super("w:ftr", initContent);
         this.refId = referenceNumber;
         this.root.push(
             new FooterAttributes({

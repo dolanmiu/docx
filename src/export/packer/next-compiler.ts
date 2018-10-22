@@ -59,6 +59,18 @@ export class Compiler {
             zip.file(`word/media/${data.fileName}`, mediaData);
         }
 
+        for (const header of file.Headers) {
+            for (const data of header.Media.Array) {
+                zip.file(`word/media/${data.fileName}`, data.stream);
+            }
+        }
+
+        for (const footer of file.Footers) {
+            for (const data of footer.Media.Array) {
+                zip.file(`word/media/${data.fileName}`, data.stream);
+            }
+        }
+
         return zip;
     }
 
@@ -128,4 +140,13 @@ export class Compiler {
             },
         };
     }
+
+    /* By default docx collapse empty tags. <a></a> -> <a/>. this function mimic it
+       so comparing (diff) original docx file and the library output is easier
+       Currently not used, so commenting out */
+    // private collapseEmptyTags(xmlData: string): string {
+    //     const regEx = /<(([^ <>]+)[^<>]*)><\/\2>/g;
+    //     const collapsed = xmlData.replace(regEx, "<$1/>");
+    //     return collapsed;
+    // }
 }
