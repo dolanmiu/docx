@@ -5,7 +5,7 @@ import { FooterReferenceType } from "file/document/body/section-properties/foote
 import { HeaderReferenceType } from "file/document/body/section-properties/header-reference";
 import { FooterWrapper, IDocumentFooter } from "file/footer-wrapper";
 import { HeaderWrapper, IDocumentHeader } from "file/header-wrapper";
-import { Media } from "file/Media";
+import { Media } from "file/media";
 import { Styles } from "file/styles";
 import { ExternalStylesFactory } from "file/styles/external-styles-factory";
 import { convertToXmlComponent, ImportedXmlComponent, parseOptions } from "file/xml-components";
