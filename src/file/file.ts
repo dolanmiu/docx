@@ -173,13 +173,13 @@ export class File {
     }
 
     public createHeader(): HeaderWrapper {
-        const header = new HeaderWrapper(this.currentRelationshipId++);
+        const header = new HeaderWrapper(this.media, this.currentRelationshipId++);
         this.addHeaderToDocument(header);
         return header;
     }
 
     public createFooter(): FooterWrapper {
-        const footer = new FooterWrapper(this.currentRelationshipId++);
+        const footer = new FooterWrapper(this.media, this.currentRelationshipId++);
         this.addFooterToDocument(footer);
         return footer;
     }

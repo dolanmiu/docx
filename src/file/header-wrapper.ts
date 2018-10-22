@@ -1,8 +1,8 @@
-import { IMediaData } from "file/media";
 import { XmlComponent } from "file/xml-components";
+
 import { HeaderReferenceType } from "./document";
 import { Header } from "./header/header";
-import { Image, Media } from "./media";
+import { Image, IMediaData, Media } from "./media";
 import { ImageParagraph, Paragraph } from "./paragraph";
 import { Relationships } from "./relationships";
 import { Table } from "./table";
@@ -15,10 +15,8 @@ export interface IDocumentHeader {
 export class HeaderWrapper {
     private readonly header: Header;
     private readonly relationships: Relationships;
-    private readonly media: Media;
 
-    constructor(referenceId: number, initContent?: XmlComponent) {
-        this.media = new Media();
+    constructor(private readonly media: Media, referenceId: number, initContent?: XmlComponent) {
         this.header = new Header(referenceId, initContent);
         this.relationships = new Relationships();
     }
@@ -48,7 +46,7 @@ export class HeaderWrapper {
     public addImageRelationship(image: Buffer, refId: number, width?: number, height?: number): IMediaData {
         const mediaData = this.media.addMedia(image, refId, width, height);
         this.relationships.createRelationship(
-            refId,
+            mediaData.referenceId,
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
             `media/${mediaData.fileName}`,
         );
@@ -64,8 +62,10 @@ export class HeaderWrapper {
         );
     }
 
-    public createImage(image: Buffer, width?: number, height?: number): void {
-        const mediaData = this.addImageRelationship(image, this.relationships.RelationshipCount, width, height);
+    public createImage(image: Buffer | string | Uint8Array | ArrayBuffer, width?: number, height?: number): void {
+        // TODO
+        // tslint:disable-next-line:no-any
+        const mediaData = this.addImageRelationship(image as any, this.relationships.RelationshipCount, width, height);
         this.addImage(new Image(new ImageParagraph(mediaData)));
     }
 

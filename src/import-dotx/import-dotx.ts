@@ -5,10 +5,10 @@ import { FooterReferenceType } from "file/document/body/section-properties/foote
 import { HeaderReferenceType } from "file/document/body/section-properties/header-reference";
 import { FooterWrapper, IDocumentFooter } from "file/footer-wrapper";
 import { HeaderWrapper, IDocumentHeader } from "file/header-wrapper";
-import { convertToXmlComponent, ImportedXmlComponent, parseOptions } from "file/xml-components";
-
+import { Media } from "file/Media";
 import { Styles } from "file/styles";
 import { ExternalStylesFactory } from "file/styles/external-styles-factory";
+import { convertToXmlComponent, ImportedXmlComponent, parseOptions } from "file/xml-components";
 
 const importParseOptions = {
     ...parseOptions,
@@ -65,37 +65,39 @@ export class ImportDotx {
         const relationshipContent = zipContent.files["word/_rels/document.xml.rels"];
         const documentRelationships: IRelationshipFileInfo[] = this.findReferenceFiles(await relationshipContent.async("text"));
 
+        const media = new Media();
+
         const headers: IDocumentHeader[] = [];
         for (const headerRef of documentRefs.headers) {
             const headerKey = "w:hdr";
-            const relationFileInfo = documentRelationships.find((rel) => rel.id === headerRef.id);
-            if (relationFileInfo === null || !relationFileInfo) {
+            const relationshipFileInfo = documentRelationships.find((rel) => rel.id === headerRef.id);
+            if (!relationshipFileInfo) {
                 throw new Error(`Can not find target file for id ${headerRef.id}`);
             }
 
-            const xmlData = await zipContent.files[`word/${relationFileInfo.target}`].async("text");
+            const xmlData = await zipContent.files[`word/${relationshipFileInfo.target}`].async("text");
             const xmlObj = fastXmlParser.parse(xmlData, importParseOptions);
 
             const importedComp = convertToXmlComponent(headerKey, xmlObj[headerKey]) as ImportedXmlComponent;
 
-            const header = new HeaderWrapper(this.currentRelationshipId++, importedComp);
-            await this.addRelationToWrapper(relationFileInfo, zipContent, header);
+            const header = new HeaderWrapper(media, this.currentRelationshipId++, importedComp);
+            await this.addRelationToWrapper(relationshipFileInfo, zipContent, header);
             headers.push({ type: headerRef.type, header });
         }
 
         const footers: IDocumentFooter[] = [];
         for (const footerRef of documentRefs.footers) {
             const footerKey = "w:ftr";
-            const relationFileInfo = documentRelationships.find((rel) => rel.id === footerRef.id);
-            if (relationFileInfo === null || !relationFileInfo) {
+            const relationshipFileInfo = documentRelationships.find((rel) => rel.id === footerRef.id);
+            if (!relationshipFileInfo) {
                 throw new Error(`Can not find target file for id ${footerRef.id}`);
             }
-            const xmlData = await zipContent.files[`word/${relationFileInfo.target}`].async("text");
+            const xmlData = await zipContent.files[`word/${relationshipFileInfo.target}`].async("text");
             const xmlObj = fastXmlParser.parse(xmlData, importParseOptions);
             const importedComp = convertToXmlComponent(footerKey, xmlObj[footerKey]) as ImportedXmlComponent;
 
-            const footer = new FooterWrapper(this.currentRelationshipId++, importedComp);
-            await this.addRelationToWrapper(relationFileInfo, zipContent, footer);
+            const footer = new FooterWrapper(media, this.currentRelationshipId++, importedComp);
+            await this.addRelationToWrapper(relationshipFileInfo, zipContent, footer);
             footers.push({ type: footerRef.type, footer });
         }
 
@@ -110,13 +112,13 @@ export class ImportDotx {
     }
 
     public async addRelationToWrapper(
-        relationFile: IRelationshipFileInfo,
+        relationhipFile: IRelationshipFileInfo,
         zipContent: JSZip,
         wrapper: HeaderWrapper | FooterWrapper,
     ): Promise<void> {
         let wrapperImagesReferences: IRelationshipFileInfo[] = [];
         let hyperLinkReferences: IRelationshipFileInfo[] = [];
-        const refFile = zipContent.files[`word/_rels/${relationFile.target}.rels`];
+        const refFile = zipContent.files[`word/_rels/${relationhipFile.target}.rels`];
         if (refFile) {
             const xmlRef = await refFile.async("text");
             wrapperImagesReferences = this.findReferenceFiles(xmlRef).filter((r) => r.type === "image");
@@ -133,10 +135,10 @@ export class ImportDotx {
 
     public findReferenceFiles(xmlData: string): IRelationshipFileInfo[] {
         const xmlObj = fastXmlParser.parse(xmlData, importParseOptions);
-        const relationXmlArray = Array.isArray(xmlObj.Relationships.Relationship)
+        const relationshipXmlArray = Array.isArray(xmlObj.Relationships.Relationship)
             ? xmlObj.Relationships.Relationship
             : [xmlObj.Relationships.Relationship];
-        const relations: IRelationshipFileInfo[] = relationXmlArray
+        const relationships: IRelationshipFileInfo[] = relationshipXmlArray
             .map((item) => {
                 return {
                     id: this.parseRefId(item._attr.Id),
@@ -145,7 +147,7 @@ export class ImportDotx {
                 };
             })
             .filter((item) => item.type !== null);
-        return relations;
+        return relationships;
     }
 
     public extractDocumentRefs(xmlData: string): IDocumentRefs {

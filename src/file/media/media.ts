@@ -87,7 +87,7 @@ export class Media {
         }
 
         const imageData = {
-            referenceId: this.map.size + relationshipsCount + 1,
+            referenceId: relationshipsCount,
             stream: data,
             path: filePath,
             fileName: key,
