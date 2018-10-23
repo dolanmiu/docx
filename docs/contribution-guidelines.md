@@ -1,5 +1,15 @@
 # Contribution Guidelines
 
+*   Include documentation reference(s) at the top of each file:
+
+    ```js
+    // http://officeopenxml.com/WPdocument.php
+    ```
+
+*   Follow Prettier standards, and consider using the [Prettier VSCode](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode) plugin.
+
+*   Follow the `TSLint` rules
+
 ## Always think about the user
 
 The number one pillar for contribution is to **ALWAYS** think about how the user will use the library. 
@@ -25,17 +35,33 @@ demo updated // Getting better, but capitalize the first letter
 Unesesary coment removed // Make sure to use correct spelling
 ```
 
-## Writing Code
+## No leaky components in API interface
 
-*   Include documentation reference(s) at the top of each file:
+This mainly applies to the API the end user will consume.
 
-    ```js
-    // http://officeopenxml.com/WPdocument.php
-    ```
+Try to make method parameters accept primatives, or `json` objects, so that child components are created **inside** the component, rather than being **injected** in.
 
-*   Follow Prettier standards, and consider using the [Prettier VSCode](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode) plugin.
+This is so that:
 
-*   Follow the `TSLint` rules
+1. Imports are much cleaner, no need for:
+   ```js
+   import { ChildComponent } from "./my-feature/sub-component/deeper/.../my-deep.component";
+   ```
+   
+2. This is what I consider "leakage". The code is aware of the underlying implementation of the component.
+3. It means the end user does not need to import and create the child component to be injected.
+
+**Do not**
+`TableFloatProperties` is a class. The outside world would have to construct the object, and inject it in
+```js
+    public float(tableFloatProperties: TableFloatProperties): Table
+```
+
+**Do**
+`ITableFloatOptions` is an interface for a JSON of primatives.
+```js
+    public float(tableFloatOptions: ITableFloatOptions): Table
+```
 
 ## Add vs Create
 
@@ -64,7 +90,7 @@ Getters and Setters are done with a capital letter like so:
 
 ```js
 public get Level() {
-
+   ...
 }
 ```
 
@@ -130,7 +156,7 @@ enum WeaponType = {
 
 ## Spell correctly, full and in American English
 
-I am not sure where these habit in software development comes from, but I do not believe it is beneficial:
+I am not sure where these habits in software development come from, but I do not believe it is beneficial:
 
 **Do not:**
 ```js

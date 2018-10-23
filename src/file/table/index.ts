@@ -1,3 +1,3 @@
 export * from "./table";
 export * from "./table-cell";
-export * from "./table-float-properties";
+export * from "./table-properties";

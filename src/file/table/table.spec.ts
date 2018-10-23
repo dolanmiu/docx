@@ -5,7 +5,7 @@ import { Formatter } from "../../export/formatter";
 import { Paragraph } from "../paragraph";
 import { Table } from "./";
 import { WidthType } from "./table-cell";
-import { RelativeHorizontalPosition, RelativeVerticalPosition, TableAnchorType } from "./table-float-properties";
+import { RelativeHorizontalPosition, RelativeVerticalPosition, TableAnchorType } from "./table-properties";
 
 const DEFAULT_TABLE_PROPERTIES = {
     "w:tblBorders": [
