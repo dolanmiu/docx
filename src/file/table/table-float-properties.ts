@@ -1,0 +1,134 @@
+import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
+
+export enum TableAnchorType {
+    MARGIN = "margin",
+    PAGE = "page",
+    TEXT = "text",
+}
+
+export enum RelativeHorizontalPosition {
+    CENTER = "center",
+    INSIDE = "inside",
+    LEFT = "left",
+    OUTSIDE = "outside",
+    RIGHT = "right",
+}
+
+export enum RelativeVerticalPosition {
+    CENTER = "center",
+    INSIDE = "inside",
+    BOTTOM = "bottom",
+    OUTSIDE = "outside",
+    INLINE = "inline",
+    TOP = "top",
+}
+
+export interface ITableFloatOptions {
+    /**
+     * Specifies the horizontal anchor or the base object from which the horizontal positioning in the
+     * tblpX or tblpXSpec attribute should be determined.
+     * margin - relative to the vertical edge of the text margin before any text runs (left edge for left-to-right paragraphs)
+     * page - relative to the vertical edge of the page before any text runs (left edge for left-to-right paragraphs)
+     * text - relative to the vertical edge of the text margin for the column in which the anchor paragraph is located
+     * If omitted, the value is assumed to be page.
+     */
+    horizontalAnchor?: TableAnchorType;
+
+    /**
+     * Specifies an absolute horizontal position for the table, relative to the horizontalAnchor.
+     * The value is in twentieths of a point. Note that the value can be negative, in which case the
+     * table is positioned before the anchor object in the direction of horizontal text flow.
+     * If relativeHorizontalPosition is also specified, then the absoluteHorizontalPosition attribute is ignored.
+     * If the attribute is omitted, the value is assumed to be zero.
+     */
+    absoluteHorizontalPosition?: number;
+
+    /**
+     * Specifies a relative horizontal position for the table, relative to the horizontalAnchor attribute.
+     * This will supersede the absoluteHorizontalPosition attribute.
+     * Possible values are:
+     * center - the table should be horizontally centered with respect to the anchor
+     * inside - the table should be inside of the anchor
+     * left - the table should be left aligned with respect to the anchor
+     * outside - the table should be outside of the anchor
+     * right - the table should be right aligned with respect to the anchor
+     */
+    relativeHorizontalPosition?: RelativeHorizontalPosition;
+
+    /**
+     * Specifies the vertical anchor or the base object from which the vertical positioning
+     * in the absoluteVerticalPosition attribute should be determined. Possible values are:
+     * margin - relative to the horizontal edge of the text margin before any text runs (top edge for top-to-bottom paragraphs)
+     * page - relative to the horizontal edge of the page before any text runs (top edge for top-to-bottom paragraphs)
+     * text - relative to the horizontal edge of the text margin for the column in which the anchor paragraph is located
+     * If omitted, the value is assumed to be page.
+     */
+    verticalAnchor?: TableAnchorType;
+
+    /**
+     * Specifies an absolute vertical position for the table, relative to the verticalAnchor anchor.
+     * The value is in twentieths of a point. Note that the value can be negative, in which case the table is
+     * positioned before the anchor object in the direction of vertical text flow.
+     * If relativeVerticalPosition is also specified, then the absoluteVerticalPosition attribute is ignored.
+     * If the attribute is omitted, the value is assumed to be zero.
+     */
+    absoluteVerticalPosition?: number;
+
+    /**
+     * Specifies a relative vertical position for the table, relative to the verticalAnchor attribute.
+     * This will supersede the absoluteVerticalPosition attribute. Possible values are:
+     * center - the table should be vertically centered with respect to the anchor
+     * inside - the table should be vertically aligned to the edge of the anchor and inside the anchor
+     * bottom - the table should be vertically aligned to the bottom edge of the anchor
+     * outside - the table should be vertically aligned to the edge of the anchor and outside the anchor
+     * inline - the table should be vertically aligned in line with the surrounding text (so as to not allow any text wrapping around it)
+     * top - the table should be vertically aligned to the top edge of the anchor
+     */
+    relativeVerticalPosition?: RelativeVerticalPosition;
+
+    /**
+     * Specifies the minimun distance to be maintained between the table and the top of text in the paragraph
+     * below the table. The value is in twentieths of a point. If omitted, the value is assumed to be zero.
+     */
+    bottomFromText?: number;
+
+    /**
+     * Specifies the minimun distance to be maintained between the table and the bottom edge of text in the paragraph
+     * above the table. The value is in twentieths of a point. If omitted, the value is assumed to be zero.
+     */
+    topFromText?: number;
+
+    /**
+     * Specifies the minimun distance to be maintained between the table and the edge of text in the paragraph
+     * to the left of the table. The value is in twentieths of a point. If omitted, the value is assumed to be zero.
+     */
+    leftFromText?: number;
+
+    /**
+     * Specifies the minimun distance to be maintained between the table and the edge of text in the paragraph
+     * to the right of the table. The value is in twentieths of a point. If omitted, the value is assumed to be zero.
+     */
+    rightFromText?: number;
+}
+
+export class TableFloatOptionsAttributes extends XmlAttributeComponent<ITableFloatOptions> {
+    protected xmlKeys = {
+        horizontalAnchor: "w:horzAnchor",
+        verticalAnchor: "w:vertAnchor",
+        absoluteHorizontalPosition: "w:tblpX",
+        relativeHorizontalPosition: "w:tblpXSpec",
+        absoluteVerticalPosition: "w:tblpY",
+        relativeVerticalPosition: "w:tblpYSpec",
+        bottomFromText: "w:bottomFromText",
+        topFromText: "w:topFromText",
+        leftFromText: "w:leftFromText",
+        rightFromText: "w:rightFromText",
+    };
+}
+
+export class TableFloatProperties extends XmlComponent {
+    constructor(options: ITableFloatOptions) {
+        super("w:tblpPr");
+        this.root.push(new TableFloatOptionsAttributes(options));
+    }
+}
