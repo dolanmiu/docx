@@ -1,6 +1,7 @@
 import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
 import { WidthType } from "./table-cell";
 import { TableCellMargin } from "./table-cell-margin";
+import { TableFloatProperties } from "./table-float-properties";
 
 export class TableProperties extends XmlComponent {
     private readonly cellMargin: TableCellMargin;
@@ -29,6 +30,11 @@ export class TableProperties extends XmlComponent {
 
     public get CellMargin(): TableCellMargin {
         return this.cellMargin;
+    }
+
+    public setTableFloatProperties(tableFloatProperties: TableFloatProperties): TableProperties {
+        this.root.push(tableFloatProperties);
+        return this;
     }
 }
 

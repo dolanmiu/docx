@@ -14,6 +14,7 @@ import { IXmlableObject, XmlComponent } from "file/xml-components";
 import { Paragraph } from "../paragraph";
 import { TableGrid } from "./grid";
 import { TableProperties } from "./properties";
+import { TableFloatProperties } from "./table-float-properties";
 
 export class Table extends XmlComponent {
     private readonly properties: TableProperties;
@@ -86,6 +87,11 @@ export class Table extends XmlComponent {
 
     public get Properties(): TableProperties {
         return this.properties;
+    }
+
+    public setTableFloatProperties(tableFloatProperties: TableFloatProperties): Table {
+        this.properties.setTableFloatProperties(tableFloatProperties);
+        return this;
     }
 }
 
