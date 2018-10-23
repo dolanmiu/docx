@@ -5,7 +5,7 @@ import { Formatter } from "../../export/formatter";
 import { Paragraph } from "../paragraph";
 import { Table } from "./";
 import { WidthType } from "./table-cell";
-import { RelativeHorizontalPosition, RelativeVerticalPosition, TableAnchorType, TableFloatProperties } from "./table-float-properties";
+import { RelativeHorizontalPosition, RelativeVerticalPosition, TableAnchorType } from "./table-float-properties";
 
 const DEFAULT_TABLE_PROPERTIES = {
     "w:tblBorders": [
@@ -296,22 +296,20 @@ describe("Table", () => {
         });
     });
 
-    describe("#setTableFloatProperties", () => {
+    describe("#float", () => {
         it("sets the table float properties", () => {
-            const table = new Table(1, 1).setTableFloatProperties(
-                new TableFloatProperties({
-                    horizontalAnchor: TableAnchorType.MARGIN,
-                    verticalAnchor: TableAnchorType.PAGE,
-                    absoluteHorizontalPosition: 10,
-                    relativeHorizontalPosition: RelativeHorizontalPosition.CENTER,
-                    absoluteVerticalPosition: 20,
-                    relativeVerticalPosition: RelativeVerticalPosition.BOTTOM,
-                    bottomFromText: 30,
-                    topFromText: 40,
-                    leftFromText: 50,
-                    rightFromText: 60,
-                }),
-            );
+            const table = new Table(1, 1).float({
+                horizontalAnchor: TableAnchorType.MARGIN,
+                verticalAnchor: TableAnchorType.PAGE,
+                absoluteHorizontalPosition: 10,
+                relativeHorizontalPosition: RelativeHorizontalPosition.CENTER,
+                absoluteVerticalPosition: 20,
+                relativeVerticalPosition: RelativeVerticalPosition.BOTTOM,
+                bottomFromText: 30,
+                topFromText: 40,
+                leftFromText: 50,
+                rightFromText: 60,
+            });
             const tree = new Formatter().format(table);
             expect(tree)
                 .to.have.property("w:tbl")
