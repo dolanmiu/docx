@@ -1,5 +1,6 @@
 import { IXmlableObject, XmlAttributeComponent, XmlComponent } from "file/xml-components";
-import { WidthType } from "./table-cell";
+
+import { WidthType } from "../table-cell";
 
 class TableCellMarginAttributes extends XmlAttributeComponent<{ type: WidthType; value: number }> {
     protected xmlKeys = { value: "w:w", type: "w:sz" };

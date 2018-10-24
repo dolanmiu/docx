@@ -1,20 +1,10 @@
 // http://officeopenxml.com/WPtableGrid.php
-import {
-    GridSpan,
-    TableCellBorders,
-    TableCellShading,
-    TableCellWidth,
-    VAlign,
-    VerticalAlign,
-    VMerge,
-    VMergeType,
-    WidthType,
-} from "file/table/table-cell";
-import { IXmlableObject, XmlComponent } from "file/xml-components";
-import { Paragraph } from "../paragraph";
+import { XmlComponent } from "file/xml-components";
+
 import { TableGrid } from "./grid";
-import { TableProperties } from "./properties";
-import { ITableFloatOptions, TableFloatProperties } from "./table-float-properties";
+import { TableCell, WidthType } from "./table-cell";
+import { ITableFloatOptions, TableProperties } from "./table-properties";
+import { TableRow } from "./table-row";
 
 export class Table extends XmlComponent {
     private readonly properties: TableProperties;
@@ -85,137 +75,12 @@ export class Table extends XmlComponent {
         return this;
     }
 
-    public float(tableFloatProperties: ITableFloatOptions): Table {
-        this.properties.setTableFloatProperties(new TableFloatProperties(tableFloatProperties));
+    public float(tableFloatOptions: ITableFloatOptions): Table {
+        this.properties.setTableFloatProperties(tableFloatOptions);
         return this;
     }
 
     public get Properties(): TableProperties {
         return this.properties;
-    }
-}
-
-export class TableRow extends XmlComponent {
-    private readonly properties: TableRowProperties;
-
-    constructor(private readonly cells: TableCell[]) {
-        super("w:tr");
-        this.properties = new TableRowProperties();
-        this.root.push(this.properties);
-        cells.forEach((c) => this.root.push(c));
-    }
-
-    public getCell(ix: number): TableCell {
-        const cell = this.cells[ix];
-
-        if (!cell) {
-            throw Error("Index out of bounds when trying to get cell on row");
-        }
-
-        return cell;
-    }
-
-    public addGridSpan(index: number, cellSpan: number): TableCell {
-        const remainCell = this.cells[index];
-        remainCell.CellProperties.addGridSpan(cellSpan);
-        this.cells.splice(index + 1, cellSpan - 1);
-        this.root.splice(index + 2, cellSpan - 1);
-
-        return remainCell;
-    }
-
-    public mergeCells(startIndex: number, endIndex: number): TableCell {
-        const cellSpan = endIndex - startIndex + 1;
-
-        return this.addGridSpan(startIndex, cellSpan);
-    }
-}
-
-export class TableRowProperties extends XmlComponent {
-    constructor() {
-        super("w:trPr");
-    }
-}
-
-export class TableCell extends XmlComponent {
-    private readonly properties: TableCellProperties;
-
-    constructor() {
-        super("w:tc");
-        this.properties = new TableCellProperties();
-        this.root.push(this.properties);
-    }
-
-    public addContent(content: Paragraph | Table): TableCell {
-        this.root.push(content);
-        return this;
-    }
-
-    public prepForXml(): IXmlableObject | undefined {
-        // Cells must end with a paragraph
-        const retval = super.prepForXml();
-        if (!retval) {
-            return undefined;
-        }
-
-        const content = retval["w:tc"];
-        if (!content[content.length - 1]["w:p"]) {
-            content.push(new Paragraph().prepForXml());
-        }
-        return retval;
-    }
-
-    public createParagraph(text?: string): Paragraph {
-        const para = new Paragraph(text);
-        this.addContent(para);
-        return para;
-    }
-
-    public get CellProperties(): TableCellProperties {
-        return this.properties;
-    }
-}
-
-export class TableCellProperties extends XmlComponent {
-    private readonly cellBorder: TableCellBorders;
-
-    constructor() {
-        super("w:tcPr");
-        this.cellBorder = new TableCellBorders();
-        this.root.push(this.cellBorder);
-    }
-
-    public get Borders(): TableCellBorders {
-        return this.cellBorder;
-    }
-
-    public addGridSpan(cellSpan: number): TableCellProperties {
-        this.root.push(new GridSpan(cellSpan));
-
-        return this;
-    }
-
-    public addVerticalMerge(type: VMergeType): TableCellProperties {
-        this.root.push(new VMerge(type));
-
-        return this;
-    }
-
-    public setVerticalAlign(type: VerticalAlign): TableCellProperties {
-        this.root.push(new VAlign(type));
-
-        return this;
-    }
-
-    public setWidth(width: string | number, type: WidthType): TableCellProperties {
-        this.root.push(new TableCellWidth(width, type));
-
-        return this;
-    }
-
-    public setShading(attrs: object): TableCellProperties {
-        this.root.push(new TableCellShading(attrs));
-
-        return this;
     }
 }

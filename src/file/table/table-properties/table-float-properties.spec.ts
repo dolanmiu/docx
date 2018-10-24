@@ -1,6 +1,6 @@
 import { expect } from "chai";
 
-import { Formatter } from "../../export/formatter";
+import { Formatter } from "../../../export/formatter";
 import { RelativeHorizontalPosition, RelativeVerticalPosition, TableAnchorType, TableFloatProperties } from "./table-float-properties";
 
 describe("Table Float Properties", () => {
