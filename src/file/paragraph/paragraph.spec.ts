@@ -393,4 +393,27 @@ describe("Paragraph", () => {
             });
         });
     });
+
+    describe("#removeAllPageBreaks", () => {
+        it("should remove all page breaks", () => {
+            paragraph.pageBreak();
+            let tree = new Formatter().format(paragraph);
+            expect(tree).to.deep.equal({
+                "w:p": [
+                    {
+                        "w:pPr": [],
+                    },
+                    {
+                        "w:r": [{ "w:rPr": [] }, { "w:br": [{ _attr: { "w:type": "page" } }] }],
+                    },
+                ],
+            });
+
+            paragraph = paragraph.removeAllPageBreaks();
+            tree = new Formatter().format(paragraph);
+            expect(tree).to.deep.equal({
+                "w:p": [{ "w:pPr": [] }],
+            });
+        });
+    });
 });

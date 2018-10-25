@@ -250,4 +250,9 @@ export class Paragraph extends XmlComponent {
         this.root.push(new SequentialIdentifier(identifier));
         return this;
     }
+
+    public removeAllPageBreaks(): Paragraph {
+        this.root = this.root.filter((child) => !(child instanceof PageBreak));
+        return this;
+    }
 }
