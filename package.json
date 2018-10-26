@@ -18,7 +18,7 @@
     "style.fix": "npm run style -- --write",
     "fix-types": "node types-absolute-fixer.js",
     "ts-node": "ts-node",
-    "cover": "nyc npm run test"
+    "cover": "nyc npm test"
   },
   "pre-commit": [
     "style",

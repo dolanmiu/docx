@@ -8,7 +8,6 @@
     "src/**/*.ts"
   ],
   "exclude": [
-    "build/",
     "src/**/*.spec.ts"
   ],
   "reporter": [
