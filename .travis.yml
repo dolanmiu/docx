@@ -6,7 +6,7 @@ install:
   - npm install -g codecov
 script:
   - npm run lint
-  - npm test
+  - npm run test.coverage
   - npm run style
   - npm run build
   - npm run ts-node -- ./demo/demo1.ts

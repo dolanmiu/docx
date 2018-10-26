@@ -58,5 +58,8 @@ yarn.lock
 # Documents
 My Document.docx
 
-# Temporary folder 
+# Temporary folder
 tmp
+
+# nyc
+.nyc_output
