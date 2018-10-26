@@ -4,6 +4,7 @@ node_js:
 install:
   - npm install
   - npm install -g codecov
+  - npm install -g nyc
 script:
   - npm run lint
   - npm test
@@ -49,6 +50,7 @@ after_success:
   - npm run typedoc
   - echo "docx.js.org" > docs/.nojekyll
   - echo "docx.js.org" > docs/CNAME
+  - nyc report --reporter=json
   - codecov
 deploy:
   provider: pages
