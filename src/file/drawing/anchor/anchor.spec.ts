@@ -1,8 +1,10 @@
 import { assert } from "chai";
 
-import { Utility } from "../../../tests/utility";
-import { IDrawingOptions, TextWrapStyle } from ".././";
-import { Anchor } from "./";
+import { Utility } from "tests/utility";
+
+import { IDrawingOptions } from "../drawing";
+import { TextWrapStyle } from "../text-wrap";
+import { Anchor } from "./anchor";
 
 function createDrawing(drawingOptions: IDrawingOptions): Anchor {
     return new Anchor(

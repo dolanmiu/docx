@@ -1,6 +1,7 @@
 import { assert } from "chai";
 
-import { Utility } from "../../../tests/utility";
+import { Utility } from "tests/utility";
+
 import { PositionOffset } from "./position-offset";
 
 describe("PositionOffset", () => {

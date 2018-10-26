@@ -1,7 +1,8 @@
 // tslint:disable:no-string-literal
 import { expect } from "chai";
 
-import { Formatter } from "../../export/formatter";
+import { Formatter } from "export/formatter";
+
 import { Relationships } from "./relationships";
 
 describe("Relationships", () => {

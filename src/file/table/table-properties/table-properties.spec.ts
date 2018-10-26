@@ -1,6 +1,7 @@
 import { expect } from "chai";
 
-import { Formatter } from "../../../export/formatter";
+import { Formatter } from "export/formatter";
+
 import { WidthType } from "../table-cell";
 import { TableProperties } from "./table-properties";
 

@@ -1,7 +1,8 @@
 import { assert, expect } from "chai";
 
-import { Formatter } from "../../../export/formatter";
-import { Utility } from "../../../tests/utility";
+import { Formatter } from "export/formatter";
+import { Utility } from "tests/utility";
+
 import { Hyperlink } from "./";
 
 describe("Hyperlink", () => {

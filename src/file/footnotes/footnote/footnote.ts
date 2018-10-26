@@ -1,5 +1,6 @@
+import { Paragraph } from "file/paragraph";
 import { XmlComponent } from "file/xml-components";
-import { Paragraph } from "../../paragraph";
+
 import { FootnoteAttributes } from "./footnote-attributes";
 import { FootnoteRefRun } from "./run/footnote-ref-run";
 

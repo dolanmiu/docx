@@ -1,4 +1,5 @@
 import { XmlComponent } from "file/xml-components";
+
 import { ExtentAttributes } from "./extent-attributes";
 
 export class Extent extends XmlComponent {

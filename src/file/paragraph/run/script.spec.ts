@@ -1,6 +1,7 @@
 import { assert } from "chai";
 
-import { Utility } from "../../../tests/utility";
+import { Utility } from "tests/utility";
+
 import { SubScript, SuperScript } from "./script";
 
 describe("SubScript", () => {

@@ -1,7 +1,8 @@
 import { assert } from "chai";
 
-import { Utility } from "../../../tests/utility";
-import { Bookmark } from "./";
+import { Utility } from "tests/utility";
+
+import { Bookmark } from "./bookmark";
 
 describe("Bookmark", () => {
     let bookmark: Bookmark;

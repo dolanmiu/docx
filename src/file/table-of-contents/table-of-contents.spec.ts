@@ -1,7 +1,9 @@
 import { expect } from "chai";
 
-import { Formatter } from "../../export/formatter";
-import { ITableOfContentsOptions, StyleLevel, TableOfContents } from "./";
+import { Formatter } from "export/formatter";
+
+import { TableOfContents } from "./table-of-contents";
+import { ITableOfContentsOptions, StyleLevel } from "./table-of-contents-properties";
 
 describe("Table of Contents", () => {
     describe("#constructor", () => {

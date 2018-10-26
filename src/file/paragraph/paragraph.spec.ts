@@ -1,7 +1,8 @@
 import { assert, expect } from "chai";
 
-import { Formatter } from "../../export/formatter";
-import * as file from "../../file";
+import { Formatter } from "export/formatter";
+import * as file from "file";
+
 import { Numbering } from "../numbering";
 
 describe("Paragraph", () => {

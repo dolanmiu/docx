@@ -1,6 +1,7 @@
 import { expect } from "chai";
 
-import { Formatter } from "../../../../../export/formatter";
+import { Formatter } from "export/formatter";
+
 import { PageSize } from "./page-size";
 import { PageOrientation } from "./page-size-attributes";
 
