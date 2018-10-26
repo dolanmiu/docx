@@ -1,0 +1,26 @@
+{
+  "check-coverage": true,
+  "lines": 84.56,
+  "functions": 77.50,
+  "branches": 71.40,
+  "statements": 84.30,
+  "include": [
+    "src/**/*.ts"
+  ],
+  "exclude": [
+    "build/",
+    "src/**/*.spec.ts"
+  ],
+  "reporter": [
+    "lcov",
+    "text",
+    "json"
+  ],
+  "extension": [
+    ".ts"
+  ],
+  "cache": true,
+  "all": true,
+  "instrument": false,
+  "sourceMap": true
+}
