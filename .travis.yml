@@ -33,7 +33,7 @@ script:
   - npm run ts-node -- ./demo/demo22.ts
   - npm run ts-node -- ./demo/demo23.ts
   - npm run ts-node -- ./demo/demo24.ts
-  - npm run ts-node -- ./demo/demo25.ts
+#   - npm run ts-node -- ./demo/demo25.ts
   - npm run ts-node -- ./demo/demo26.ts
   - npm run ts-node -- ./demo/demo27.ts
   - npm run ts-node -- ./demo/demo28.ts
