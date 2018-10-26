@@ -1,9 +1,10 @@
 /* tslint:disable:no-unused-expression */
 import { expect } from "chai";
 
-import { Formatter } from "../../export/formatter";
+import { Formatter } from "export/formatter";
+
 import { Paragraph } from "../paragraph";
-import { Table } from "./";
+import { Table } from "./table";
 import { WidthType } from "./table-cell";
 import { RelativeHorizontalPosition, RelativeVerticalPosition, TableAnchorType } from "./table-properties";
 

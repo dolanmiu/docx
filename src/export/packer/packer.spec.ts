@@ -2,7 +2,8 @@
 import { assert } from "chai";
 import { stub } from "sinon";
 
-import { File, Paragraph } from "../../file";
+import { File, Paragraph } from "file";
+
 import { Packer } from "./packer";
 
 describe("Packer", () => {

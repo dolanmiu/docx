@@ -1,10 +1,12 @@
 import { expect } from "chai";
 
-import { Formatter } from "../../../../export/formatter";
-import { FooterWrapper } from "../../../footer-wrapper";
-import { HeaderWrapper } from "../../../header-wrapper";
-import { Media } from "../../../media";
-import { PageBorderOffsetFrom, PageNumberFormat } from "./";
+import { Formatter } from "export/formatter";
+import { FooterWrapper } from "file/footer-wrapper";
+import { HeaderWrapper } from "file/header-wrapper";
+import { Media } from "file/media";
+
+import { PageBorderOffsetFrom } from "./page-border";
+import { PageNumberFormat } from "./page-number";
 import { SectionProperties } from "./section-properties";
 
 describe("SectionProperties", () => {

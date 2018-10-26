@@ -1,6 +1,9 @@
 import { expect } from "chai";
-import { Formatter } from "../../export/formatter";
-import { Settings } from "./";
+
+import { Formatter } from "export/formatter";
+
+import { Settings } from "./settings";
+
 describe("Settings", () => {
     describe("#constructor", () => {
         it("should create a empty Settings with correct rootKey", () => {

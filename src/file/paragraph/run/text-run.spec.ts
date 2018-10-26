@@ -1,6 +1,7 @@
 import { expect } from "chai";
 
-import { Formatter } from "../../../export/formatter";
+import { Formatter } from "export/formatter";
+
 import { TextRun } from "./text-run";
 
 describe("TextRun", () => {

@@ -1,6 +1,8 @@
 /* tslint:disable:typedef space-before-function-paren */
 import { expect } from "chai";
-import { File } from "../../file";
+
+import { File } from "file";
+
 import { Compiler } from "./next-compiler";
 
 describe("Compiler", () => {

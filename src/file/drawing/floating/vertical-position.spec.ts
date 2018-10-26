@@ -1,7 +1,8 @@
 import { assert } from "chai";
 
-import { VerticalPositionAlign, VerticalPositionRelativeFrom } from ".";
-import { Utility } from "../../../tests/utility";
+import { Utility } from "tests/utility";
+
+import { VerticalPositionAlign, VerticalPositionRelativeFrom } from "./floating-position";
 import { VerticalPosition } from "./vertical-position";
 
 describe("VerticalPosition", () => {

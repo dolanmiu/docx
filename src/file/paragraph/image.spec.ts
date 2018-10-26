@@ -1,7 +1,8 @@
 // tslint:disable:object-literal-key-quotes
 import { assert, expect } from "chai";
 
-import { Formatter } from "../../export/formatter";
+import { Formatter } from "export/formatter";
+
 import { ImageParagraph } from "./image";
 
 describe("Image", () => {

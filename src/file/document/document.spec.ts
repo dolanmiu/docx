@@ -1,6 +1,7 @@
 import { assert, expect } from "chai";
 
-import { Formatter } from "../../export/formatter";
+import { Formatter } from "export/formatter";
+
 import { Paragraph } from "../paragraph";
 import { Table } from "../table";
 import { Document } from "./document";

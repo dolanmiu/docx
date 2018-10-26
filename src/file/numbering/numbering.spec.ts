@@ -1,9 +1,11 @@
 import { expect } from "chai";
-import { Formatter } from "../../export/formatter";
-import { Numbering } from "./";
+
+import { Formatter } from "export/formatter";
+
 import { AbstractNumbering } from "./abstract-numbering";
 import { LevelForOverride } from "./level";
 import { Num } from "./num";
+import { Numbering } from "./numbering";
 
 describe("Numbering", () => {
     let numbering: Numbering;

@@ -1,6 +1,7 @@
 import { assert } from "chai";
 
-import { Utility } from "../../../tests/utility";
+import { Utility } from "tests/utility";
+
 import { NumberProperties } from "./unordered-list";
 
 describe("NumberProperties", () => {
