@@ -6,6 +6,7 @@
   "scripts": {
     "pretest": "rimraf ./build",
     "test": "mocha-webpack \"src/**/*.ts\"",
+    "test.coverage": "nyc npm test",
     "test.watch": "npm test -- --watch",
     "prepublishOnly": "npm run build",
     "lint": "tslint --project .",
@@ -17,8 +18,7 @@
     "style": "prettier -l \"src/**/*.ts\"",
     "style.fix": "npm run style -- --write",
     "fix-types": "node types-absolute-fixer.js",
-    "ts-node": "ts-node",
-    "coverage": "nyc report"
+    "ts-node": "ts-node"
   },
   "pre-commit": [
     "style",

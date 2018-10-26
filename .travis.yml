@@ -6,7 +6,7 @@ install:
   - npm install -g codecov
 script:
   - npm run lint
-  - npm test
+  - npm run test.coverage
   - npm run style
   - npm run build
   - npm run ts-node -- ./demo/demo1.ts
@@ -49,7 +49,6 @@ after_success:
   - npm run typedoc
   - echo "docx.js.org" > docs/.nojekyll
   - echo "docx.js.org" > docs/CNAME
-  - npm run coverage
   - codecov
 deploy:
   provider: pages
