@@ -49,7 +49,7 @@ after_success:
   - npm run typedoc
   - echo "docx.js.org" > docs/.nojekyll
   - echo "docx.js.org" > docs/CNAME
-  - npm run cover
+  - npm run coverage
   - codecov
 deploy:
   provider: pages
