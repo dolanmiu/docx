@@ -15,6 +15,7 @@
 [![Known Vulnerabilities][snky-image]][snky-url]
 [![Chat on Gitter][gitter-image]][gitter-url]
 [![PRs Welcome][pr-image]][pr-url]
+[![codecov][codecov-image]][codecov-url]
 
 <p align="center">
     <img src="https://i.imgur.com/H5FA1Qy.gif" alt="drawing" width="800"/>
@@ -81,3 +82,5 @@ Made with 💖
 [gitter-url]: https://gitter.im/docx-lib/Lobby
 [pr-image]: https://img.shields.io/badge/PRs-welcome-brightgreen.svg
 [pr-url]: http://makeapullrequest.com
+[codecov-image]: https://codecov.io/gh/dolanmiu/docx/branch/master/graph/badge.svg
+[codecov-url]: https://codecov.io/gh/dolanmiu/docx
