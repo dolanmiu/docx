@@ -3,6 +3,7 @@ node_js:
   - 9
 install:
   - npm install
+  - npm install -g codecov
 script:
   - npm run lint
   - npm test
@@ -32,12 +33,23 @@ script:
   - npm run ts-node -- ./demo/demo22.ts
   - npm run ts-node -- ./demo/demo23.ts
   - npm run ts-node -- ./demo/demo24.ts
+#   - npm run ts-node -- ./demo/demo25.ts
+  - npm run ts-node -- ./demo/demo26.ts
+  - npm run ts-node -- ./demo/demo27.ts
+  - npm run ts-node -- ./demo/demo28.ts
+  - npm run ts-node -- ./demo/demo29.ts
+  - npm run ts-node -- ./demo/demo30.ts
+  - npm run ts-node -- ./demo/demo31.ts
+  - npm run ts-node -- ./demo/demo32.ts
+  - npm run ts-node -- ./demo/demo33.ts
+  - npm run ts-node -- ./demo/demo34.ts
 after_failure:
   - "cat /home/travis/builds/dolanmiu/docx/npm-debug.log"
 after_success:
   - npm run typedoc
   - echo "docx.js.org" > docs/.nojekyll
   - echo "docx.js.org" > docs/CNAME
+  - codecov
 deploy:
   provider: pages
   skip-cleanup: true
