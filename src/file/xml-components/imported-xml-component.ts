@@ -1,5 +1,5 @@
 // tslint:disable:no-any
-import { Element as XmlElement } from "xml-js";
+import { Element as XmlElement, xml2js } from "xml-js";
 import { IXmlableObject, XmlComponent } from ".";
 
 /**
@@ -9,6 +9,7 @@ import { IXmlableObject, XmlComponent } from ".";
 
 export function convertToXmlComponent(element: XmlElement): ImportedXmlComponent | string | undefined {
     switch (element.type) {
+        case undefined:
         case "element":
             const xmlComponent = new ImportedXmlComponent(element.name as string, element.attributes);
             const childElments = element.elements || [];
@@ -30,6 +31,15 @@ export function convertToXmlComponent(element: XmlElement): ImportedXmlComponent
  * Represents imported xml component from xml file.
  */
 export class ImportedXmlComponent extends XmlComponent {
+    /**
+     * Converts the xml string to a XmlComponent tree.
+     *
+     * @param importedContent xml content of the imported component
+     */
+    public static fromXmlString(importedContent: string): ImportedXmlComponent {
+        const xmlObj = xml2js(importedContent, { compact: false }) as XmlElement;
+        return convertToXmlComponent(xmlObj) as ImportedXmlComponent;
+    }
     /**
      * Converts the xml string to a XmlComponent tree.
      *
