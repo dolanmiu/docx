@@ -1,8 +1,8 @@
 // http://officeopenxml.com/WPsection.php
+import { FooterWrapper } from "file/footer-wrapper";
+import { HeaderWrapper } from "file/header-wrapper";
 import { XmlComponent } from "file/xml-components";
-import { FooterWrapper } from "../../../footer-wrapper";
-import { HeaderWrapper } from "../../../header-wrapper";
-import { IPageBordersOptions, IPageNumberTypeAttributes, PageBorders, PageNumberFormat, PageNumberType } from "./";
+
 import { Columns } from "./columns/columns";
 import { IColumnsAttributes } from "./columns/columns-attributes";
 import { DocumentGrid } from "./doc-grid/doc-grid";
@@ -11,8 +11,10 @@ import { FooterReferenceType } from "./footer-reference";
 import { FooterReference } from "./footer-reference/footer-reference";
 import { HeaderReferenceType } from "./header-reference";
 import { HeaderReference } from "./header-reference/header-reference";
+import { IPageBordersOptions, PageBorders } from "./page-border";
 import { PageMargin } from "./page-margin/page-margin";
 import { IPageMarginAttributes } from "./page-margin/page-margin-attributes";
+import { IPageNumberTypeAttributes, PageNumberFormat, PageNumberType } from "./page-number";
 import { PageSize } from "./page-size/page-size";
 import { IPageSizeAttributes, PageOrientation } from "./page-size/page-size-attributes";
 import { TitlePage } from "./title-page/title-page";

@@ -1,6 +1,7 @@
 import { expect } from "chai";
 
-import { Formatter } from "../../../export/formatter";
+import { Formatter } from "export/formatter";
+
 import { SequentialIdentifier } from "./sequential-identifier";
 
 describe("Sequential Identifier", () => {

@@ -1,5 +1,5 @@
+import { BorderStyle } from "file/styles";
 import { IXmlableObject, XmlAttributeComponent, XmlComponent } from "file/xml-components";
-import { BorderStyle } from "../styles";
 
 interface ICellBorder {
     style: BorderStyle;

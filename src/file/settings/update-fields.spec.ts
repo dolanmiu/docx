@@ -1,6 +1,9 @@
 import { expect } from "chai";
-import { Formatter } from "../../export/formatter";
-import { UpdateFields } from "./";
+
+import { Formatter } from "export/formatter";
+
+import { UpdateFields } from "./update-fields";
+
 const UF_TRUE = {
     "w:updateFields": [
         {

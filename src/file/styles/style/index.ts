@@ -1,7 +1,7 @@
+import * as paragraph from "file/paragraph";
+import * as formatting from "file/paragraph/run/formatting";
+import { RunProperties } from "file/paragraph/run/properties";
 import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
-import * as paragraph from "../../paragraph";
-import * as formatting from "../../paragraph/run/formatting";
-import { RunProperties } from "../../paragraph/run/properties";
 
 import { BasedOn, Link, Name, Next, QuickFormat, SemiHidden, UiPriority, UnhideWhenUsed } from "./components";
 

@@ -1,7 +1,9 @@
 import { expect } from "chai";
 
-import { Formatter } from "../../export/formatter";
-import { ITableOfContentsOptions, StyleLevel, TableOfContents } from "./";
+import { Formatter } from "export/formatter";
+
+import { TableOfContents } from "./table-of-contents";
+import { ITableOfContentsOptions, StyleLevel } from "./table-of-contents-properties";
 
 describe("Table of Contents", () => {
     describe("#constructor", () => {
@@ -174,7 +176,7 @@ const COMPLETE_TOC = {
                                                 "xml:space": "preserve",
                                             },
                                         },
-                                        'TOC \\a "A" \\b "B" \\c "C" \\d "D" \\f "F" \\h \\l "L" \\n "N" \\o "O" \\p "P" \\s "S" \\t "SL,1,SL,2" \\u \\w \\x \\z',
+                                        'TOC \\a "A" \\b "B" \\c "C" \\d "D" \\f "F" \\h \\l "L" \\n "N" \\o "O" \\p "P" \\s "S" \\t "SL;1;SL;2" \\u \\w \\x \\z',
                                     ],
                                 },
                                 {

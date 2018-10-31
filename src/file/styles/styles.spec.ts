@@ -1,8 +1,10 @@
 import { assert, expect } from "chai";
-import { Formatter } from "../../export/formatter";
-import { Styles } from "./";
+
+import { Formatter } from "export/formatter";
+
 import { ParagraphStyle, Style } from "./style";
 import * as components from "./style/components";
+import { Styles } from "./styles";
 
 describe("Styles", () => {
     let styles: Styles;

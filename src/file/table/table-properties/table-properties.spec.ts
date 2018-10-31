@@ -1,8 +1,9 @@
 import { expect } from "chai";
 
-import { Formatter } from "../../export/formatter";
-import { TableProperties } from "./properties";
-import { WidthType } from "./table-cell";
+import { Formatter } from "export/formatter";
+
+import { WidthType } from "../table-cell";
+import { TableProperties } from "./table-properties";
 
 describe("TableProperties", () => {
     describe("#constructor", () => {

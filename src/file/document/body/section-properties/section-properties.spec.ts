@@ -1,14 +1,19 @@
 import { expect } from "chai";
 
-import { Formatter } from "../../../../export/formatter";
-import { FooterWrapper } from "../../../footer-wrapper";
-import { HeaderWrapper } from "../../../header-wrapper";
-import { PageBorderOffsetFrom, PageNumberFormat } from "./";
+import { Formatter } from "export/formatter";
+import { FooterWrapper } from "file/footer-wrapper";
+import { HeaderWrapper } from "file/header-wrapper";
+import { Media } from "file/media";
+
+import { PageBorderOffsetFrom } from "./page-border";
+import { PageNumberFormat } from "./page-number";
 import { SectionProperties } from "./section-properties";
 
 describe("SectionProperties", () => {
     describe("#constructor()", () => {
         it("should create section properties with options", () => {
+            const media = new Media();
+
             const properties = new SectionProperties({
                 width: 11906,
                 height: 16838,
@@ -23,10 +28,10 @@ describe("SectionProperties", () => {
                 space: 708,
                 linePitch: 360,
                 headers: {
-                    default: new HeaderWrapper(100),
+                    default: new HeaderWrapper(media, 100),
                 },
                 footers: {
-                    even: new FooterWrapper(200),
+                    even: new FooterWrapper(media, 200),
                 },
                 pageNumberStart: 10,
                 pageNumberFormatType: PageNumberFormat.CARDINAL_TEXT,

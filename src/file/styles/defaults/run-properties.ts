@@ -1,7 +1,7 @@
+import { Size, SizeComplexScript } from "file/paragraph/run/formatting";
+import { RunProperties } from "file/paragraph/run/properties";
+import { RunFonts } from "file/paragraph/run/run-fonts";
 import { XmlComponent } from "file/xml-components";
-import { Size, SizeComplexScript } from "../../paragraph/run/formatting";
-import { RunProperties } from "../../paragraph/run/properties";
-import { RunFonts } from "../../paragraph/run/run-fonts";
 
 export class RunPropertiesDefaults extends XmlComponent {
     private readonly properties: RunProperties;

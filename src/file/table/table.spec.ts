@@ -1,10 +1,12 @@
 /* tslint:disable:no-unused-expression */
 import { expect } from "chai";
 
-import { Formatter } from "../../export/formatter";
+import { Formatter } from "export/formatter";
+
 import { Paragraph } from "../paragraph";
-import { Table } from "./";
+import { Table } from "./table";
 import { WidthType } from "./table-cell";
+import { RelativeHorizontalPosition, RelativeVerticalPosition, TableAnchorType } from "./table-properties";
 
 const DEFAULT_TABLE_PROPERTIES = {
     "w:tblBorders": [
@@ -291,6 +293,51 @@ describe("Table", () => {
                         },
                     ],
                 });
+            });
+        });
+    });
+
+    describe("#float", () => {
+        it("sets the table float properties", () => {
+            const table = new Table(1, 1).float({
+                horizontalAnchor: TableAnchorType.MARGIN,
+                verticalAnchor: TableAnchorType.PAGE,
+                absoluteHorizontalPosition: 10,
+                relativeHorizontalPosition: RelativeHorizontalPosition.CENTER,
+                absoluteVerticalPosition: 20,
+                relativeVerticalPosition: RelativeVerticalPosition.BOTTOM,
+                bottomFromText: 30,
+                topFromText: 40,
+                leftFromText: 50,
+                rightFromText: 60,
+            });
+            const tree = new Formatter().format(table);
+            expect(tree)
+                .to.have.property("w:tbl")
+                .which.is.an("array")
+                .with.has.length.at.least(1);
+            expect(tree["w:tbl"][0]).to.deep.equal({
+                "w:tblPr": [
+                    DEFAULT_TABLE_PROPERTIES,
+                    {
+                        "w:tblpPr": [
+                            {
+                                _attr: {
+                                    "w:horzAnchor": "margin",
+                                    "w:vertAnchor": "page",
+                                    "w:tblpX": 10,
+                                    "w:tblpXSpec": "center",
+                                    "w:tblpY": 20,
+                                    "w:tblpYSpec": "bottom",
+                                    "w:bottomFromText": 30,
+                                    "w:topFromText": 40,
+                                    "w:leftFromText": 50,
+                                    "w:rightFromText": 60,
+                                },
+                            },
+                        ],
+                    },
+                ],
             });
         });
     });
