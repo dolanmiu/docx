@@ -1,20 +1,15 @@
-import * as fastXmlParser from "fast-xml-parser";
 import * as JSZip from "jszip";
+import { Element as XMLElement, ElementCompact as XMLElementCompact, xml2js } from "xml-js";
 
 import { FooterReferenceType } from "file/document/body/section-properties/footer-reference";
 import { HeaderReferenceType } from "file/document/body/section-properties/header-reference";
 import { FooterWrapper, IDocumentFooter } from "file/footer-wrapper";
 import { HeaderWrapper, IDocumentHeader } from "file/header-wrapper";
+import { convertToXmlComponent, ImportedXmlComponent } from "file/xml-components";
+
 import { Media } from "file/media";
 import { Styles } from "file/styles";
 import { ExternalStylesFactory } from "file/styles/external-styles-factory";
-import { convertToXmlComponent, ImportedXmlComponent, parseOptions } from "file/xml-components";
-
-const importParseOptions = {
-    ...parseOptions,
-    textNodeName: "",
-    trimValues: false,
-};
 
 const schemeToType = {
     "http://schemas.openxmlformats.org/officeDocument/2006/relationships/header": "header",
@@ -69,35 +64,48 @@ export class ImportDotx {
 
         const headers: IDocumentHeader[] = [];
         for (const headerRef of documentRefs.headers) {
-            const headerKey = "w:hdr";
-            const relationshipFileInfo = documentRelationships.find((rel) => rel.id === headerRef.id);
-            if (!relationshipFileInfo) {
+            const relationFileInfo = documentRelationships.find((rel) => rel.id === headerRef.id);
+            if (relationFileInfo === null || !relationFileInfo) {
                 throw new Error(`Can not find target file for id ${headerRef.id}`);
             }
 
-            const xmlData = await zipContent.files[`word/${relationshipFileInfo.target}`].async("text");
-            const xmlObj = fastXmlParser.parse(xmlData, importParseOptions);
-
-            const importedComp = convertToXmlComponent(headerKey, xmlObj[headerKey]) as ImportedXmlComponent;
-
+            const xmlData = await zipContent.files[`word/${relationFileInfo.target}`].async("text");
+            const xmlObj = xml2js(xmlData, { compact: false, captureSpacesBetweenElements: true }) as XMLElement;
+            let headerXmlElement: XMLElement | undefined;
+            for (const xmlElm of xmlObj.elements || []) {
+                if (xmlElm.name === "w:hdr") {
+                    headerXmlElement = xmlElm;
+                }
+            }
+            if (headerXmlElement === undefined) {
+                continue;
+            }
+            const importedComp = convertToXmlComponent(headerXmlElement) as ImportedXmlComponent;
             const header = new HeaderWrapper(media, this.currentRelationshipId++, importedComp);
-            await this.addRelationToWrapper(relationshipFileInfo, zipContent, header);
+            await this.addRelationToWrapper(relationFileInfo, zipContent, header);
             headers.push({ type: headerRef.type, header });
         }
 
         const footers: IDocumentFooter[] = [];
         for (const footerRef of documentRefs.footers) {
-            const footerKey = "w:ftr";
-            const relationshipFileInfo = documentRelationships.find((rel) => rel.id === footerRef.id);
-            if (!relationshipFileInfo) {
+            const relationFileInfo = documentRelationships.find((rel) => rel.id === footerRef.id);
+            if (relationFileInfo === null || !relationFileInfo) {
                 throw new Error(`Can not find target file for id ${footerRef.id}`);
             }
-            const xmlData = await zipContent.files[`word/${relationshipFileInfo.target}`].async("text");
-            const xmlObj = fastXmlParser.parse(xmlData, importParseOptions);
-            const importedComp = convertToXmlComponent(footerKey, xmlObj[footerKey]) as ImportedXmlComponent;
-
+            const xmlData = await zipContent.files[`word/${relationFileInfo.target}`].async("text");
+            const xmlObj = xml2js(xmlData, { compact: false, captureSpacesBetweenElements: true }) as XMLElement;
+            let footerXmlElement: XMLElement | undefined;
+            for (const xmlElm of xmlObj.elements || []) {
+                if (xmlElm.name === "w:ftr") {
+                    footerXmlElement = xmlElm;
+                }
+            }
+            if (footerXmlElement === undefined) {
+                continue;
+            }
+            const importedComp = convertToXmlComponent(footerXmlElement) as ImportedXmlComponent;
             const footer = new FooterWrapper(media, this.currentRelationshipId++, importedComp);
-            await this.addRelationToWrapper(relationshipFileInfo, zipContent, footer);
+            await this.addRelationToWrapper(relationFileInfo, zipContent, footer);
             footers.push({ type: footerRef.type, footer });
         }
 
@@ -134,16 +142,19 @@ export class ImportDotx {
     }
 
     public findReferenceFiles(xmlData: string): IRelationshipFileInfo[] {
-        const xmlObj = fastXmlParser.parse(xmlData, importParseOptions);
-        const relationshipXmlArray = Array.isArray(xmlObj.Relationships.Relationship)
+        const xmlObj = xml2js(xmlData, { compact: true }) as XMLElementCompact;
+        const relationXmlArray = Array.isArray(xmlObj.Relationships.Relationship)
             ? xmlObj.Relationships.Relationship
             : [xmlObj.Relationships.Relationship];
-        const relationships: IRelationshipFileInfo[] = relationshipXmlArray
-            .map((item) => {
+        const relationships: IRelationshipFileInfo[] = relationXmlArray
+            .map((item: XMLElementCompact) => {
+                if (item._attributes === undefined) {
+                    throw Error("relationship element has no attributes");
+                }
                 return {
-                    id: this.parseRefId(item._attr.Id),
-                    type: schemeToType[item._attr.Type],
-                    target: item._attr.Target,
+                    id: this.parseRefId(item._attributes.Id as string),
+                    type: schemeToType[item._attributes.Type as string],
+                    target: item._attributes.Target as string,
                 };
             })
             .filter((item) => item.type !== null);
@@ -151,14 +162,11 @@ export class ImportDotx {
     }
 
     public extractDocumentRefs(xmlData: string): IDocumentRefs {
-        interface IAttributedXML {
-            _attr: object;
-        }
-        const xmlObj = fastXmlParser.parse(xmlData, importParseOptions);
+        const xmlObj = xml2js(xmlData, { compact: true }) as XMLElementCompact;
         const sectionProp = xmlObj["w:document"]["w:body"]["w:sectPr"];
 
-        const headerProps: undefined | IAttributedXML | IAttributedXML[] = sectionProp["w:headerReference"];
-        let headersXmlArray: IAttributedXML[];
+        const headerProps: XMLElementCompact = sectionProp["w:headerReference"];
+        let headersXmlArray: XMLElementCompact[];
         if (headerProps === undefined) {
             headersXmlArray = [];
         } else if (Array.isArray(headerProps)) {
@@ -167,14 +175,17 @@ export class ImportDotx {
             headersXmlArray = [headerProps];
         }
         const headers = headersXmlArray.map((item) => {
+            if (item._attributes === undefined) {
+                throw Error("header referecne element has no attributes");
+            }
             return {
-                type: item._attr["w:type"],
-                id: this.parseRefId(item._attr["r:id"]),
+                type: item._attributes["w:type"] as HeaderReferenceType,
+                id: this.parseRefId(item._attributes["r:id"] as string),
             };
         });
 
-        const footerProps: undefined | IAttributedXML | IAttributedXML[] = sectionProp["w:footerReference"];
-        let footersXmlArray: IAttributedXML[];
+        const footerProps: XMLElementCompact = sectionProp["w:footerReference"];
+        let footersXmlArray: XMLElementCompact[];
         if (footerProps === undefined) {
             footersXmlArray = [];
         } else if (Array.isArray(footerProps)) {
@@ -184,9 +195,12 @@ export class ImportDotx {
         }
 
         const footers = footersXmlArray.map((item) => {
+            if (item._attributes === undefined) {
+                throw Error("footer referecne element has no attributes");
+            }
             return {
-                type: item._attr["w:type"],
-                id: this.parseRefId(item._attr["r:id"]),
+                type: item._attributes["w:type"] as FooterReferenceType,
+                id: this.parseRefId(item._attributes["r:id"] as string),
             };
         });
 
@@ -194,7 +208,7 @@ export class ImportDotx {
     }
 
     public titlePageIsDefined(xmlData: string): boolean {
-        const xmlObj = fastXmlParser.parse(xmlData, importParseOptions);
+        const xmlObj = xml2js(xmlData, { compact: true }) as XMLElementCompact;
         const sectionProp = xmlObj["w:document"]["w:body"]["w:sectPr"];
         return sectionProp["w:titlePg"] !== undefined;
     }

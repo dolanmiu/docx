@@ -43,5 +43,14 @@ describe("TableProperties", () => {
                 "w:tblPr": [{ "w:tblCellMar": [{ "w:top": [{ _attr: { "w:sz": "dxa", "w:w": 1234 } }] }] }],
             });
         });
+
+        it("adds a table cell left margin", () => {
+            const tp = new TableProperties();
+            tp.CellMargin.addLeftMargin(1234, WidthType.DXA);
+            const tree = new Formatter().format(tp);
+            expect(tree).to.deep.equal({
+                "w:tblPr": [{ "w:tblCellMar": [{ "w:left": [{ _attr: { "w:sz": "dxa", "w:w": 1234 } }] }] }],
+            });
+        });
     });
 });

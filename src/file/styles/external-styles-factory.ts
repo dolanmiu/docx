@@ -1,5 +1,5 @@
-import * as fastXmlParser from "fast-xml-parser";
-import { convertToXmlComponent, ImportedRootElementAttributes, parseOptions } from "file/xml-components";
+import { convertToXmlComponent, ImportedRootElementAttributes, ImportedXmlComponent } from "file/xml-components";
+import { Element as XMLElement, xml2js } from "xml-js";
 import { Styles } from "./";
 
 export class ExternalStylesFactory {
@@ -25,25 +25,24 @@ export class ExternalStylesFactory {
      * </w:styles>
      * @param externalStyles context from styles.xml
      */
-    public newInstance(externalStyles: string): Styles {
-        const xmlStyles = fastXmlParser.parse(externalStyles, parseOptions)["w:styles"];
-        // create styles with attributes from the parsed xml
-        const importedStyle = new Styles(new ImportedRootElementAttributes(xmlStyles._attr));
+    public newInstance(xmlData: string): Styles {
+        const xmlObj = xml2js(xmlData, { compact: false }) as XMLElement;
 
-        // convert other elements (not styles definitions, but default styles and so on ...)
-        Object.keys(xmlStyles)
-            .filter((element) => element !== "_attr" && element !== "w:style")
-            .forEach((element) => {
-                const converted = convertToXmlComponent(element, xmlStyles[element]);
-                if (Array.isArray(converted)) {
-                    converted.forEach((c) => importedStyle.push(c));
-                } else {
-                    importedStyle.push(converted);
-                }
-            });
+        let stylesXmlElement: XMLElement | undefined;
+        for (const xmlElm of xmlObj.elements || []) {
+            if (xmlElm.name === "w:styles") {
+                stylesXmlElement = xmlElm;
+            }
+        }
+        if (stylesXmlElement === undefined) {
+            throw new Error("can not find styles element");
+        }
 
-        // convert the styles one by one
-        xmlStyles["w:style"].map((style) => convertToXmlComponent("w:style", style)).forEach(importedStyle.push.bind(importedStyle));
+        const importedStyle = new Styles(new ImportedRootElementAttributes(stylesXmlElement.attributes));
+        const stylesElements = stylesXmlElement.elements || [];
+        for (const childElm of stylesElements) {
+            importedStyle.push(convertToXmlComponent(childElm) as ImportedXmlComponent);
+        }
         return importedStyle;
     }
 }

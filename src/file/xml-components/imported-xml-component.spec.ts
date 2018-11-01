@@ -1,5 +1,8 @@
 import { expect } from "chai";
-import { convertToXmlComponent, ImportedXmlComponent } from "./";
+import { Element, xml2js } from "xml-js";
+
+import { ImportedXmlComponent } from "./";
+import { convertToXmlComponent } from "./imported-xml-component";
 
 const xmlString = `
         <w:p w:one="value 1" w:two="value 2">
@@ -15,39 +18,21 @@ const xmlString = `
         </w:p>
     `;
 
-// tslint:disable:object-literal-key-quotes
-const importedXmlElement = {
-    "w:p": {
-        _attr: { "w:one": "value 1", "w:two": "value 2" },
-        "w:rPr": { "w:noProof": "some value" },
-        "w:r": [{ _attr: { active: "true" }, "w:t": "Text 1" }, { _attr: { active: "true" }, "w:t": "Text 2" }],
-    },
-};
-// tslint:enable:object-literal-key-quotes
-
 const convertedXmlElement = {
     deleted: false,
-    rootKey: "w:p",
     root: [
         {
             deleted: false,
-            rootKey: "w:rPr",
-            root: [{ deleted: false, rootKey: "w:noProof", root: ["some value"] }],
-        },
-        {
-            deleted: false,
-            rootKey: "w:r",
-            root: [{ deleted: false, rootKey: "w:t", root: ["Text 1"] }],
-            _attr: { active: "true" },
-        },
-        {
-            deleted: false,
-            rootKey: "w:r",
-            root: [{ deleted: false, rootKey: "w:t", root: ["Text 2"] }],
-            _attr: { active: "true" },
+            rootKey: "w:p",
+            root: [
+                { deleted: false, rootKey: "w:rPr", root: [{ deleted: false, rootKey: "w:noProof", root: ["some value"] }] },
+                { deleted: false, rootKey: "w:r", root: [{ deleted: false, rootKey: "w:t", root: ["Text 1"] }], _attr: { active: "true" } },
+                { deleted: false, rootKey: "w:r", root: [{ deleted: false, rootKey: "w:t", root: ["Text 2"] }], _attr: { active: "true" } },
+            ],
+            _attr: { "w:one": "value 1", "w:two": "value 2" },
         },
     ],
-    _attr: { "w:one": "value 1", "w:two": "value 2" },
+    rootKey: undefined,
 };
 
 describe("ImportedXmlComponent", () => {
@@ -88,7 +73,8 @@ describe("ImportedXmlComponent", () => {
 
     describe("convertToXmlComponent", () => {
         it("should convert to xml component", () => {
-            const converted = convertToXmlComponent("w:p", importedXmlElement["w:p"]);
+            const xmlObj = xml2js(xmlString, { compact: false }) as Element;
+            const converted = convertToXmlComponent(xmlObj);
             expect(converted).to.eql(convertedXmlElement);
         });
     });
