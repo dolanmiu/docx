@@ -2,7 +2,7 @@ import { expect } from "chai";
 
 import { Formatter } from "export/formatter";
 
-import { Spacing } from "./spacing";
+import { ContextualSpacing, Spacing } from "./spacing";
 
 describe("Spacing", () => {
     describe("#constructor", () => {
@@ -19,6 +19,26 @@ describe("Spacing", () => {
             const tree = new Formatter().format(spacing);
             expect(tree).to.deep.equal({
                 "w:spacing": [{ _attr: { "w:before": 100 } }],
+            });
+        });
+    });
+});
+
+describe("ContextualSpacing", () => {
+    describe("#constructor", () => {
+        it("should create", () => {
+            const spacing = new ContextualSpacing(true);
+            const tree = new Formatter().format(spacing);
+            expect(tree).to.deep.equal({
+                "w:contextualSpacing": [{ _attr: { "w:val": 1 } }],
+            });
+        });
+
+        it("should create with value of 0 if param is false", () => {
+            const spacing = new ContextualSpacing(false);
+            const tree = new Formatter().format(spacing);
+            expect(tree).to.deep.equal({
+                "w:contextualSpacing": [{ _attr: { "w:val": 0 } }],
             });
         });
     });

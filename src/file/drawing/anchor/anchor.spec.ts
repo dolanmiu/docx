@@ -103,7 +103,7 @@ describe("Anchor", () => {
             assert.equal(graphic.rootKey, "a:graphic");
         });
 
-        it("should create a Drawing with text wrapping", () => {
+        it("should create a Drawing with square text wrapping", () => {
             anchor = createDrawing({
                 textWrapping: {
                     textWrapStyle: TextWrapStyle.SQUARE,
@@ -115,6 +115,45 @@ describe("Anchor", () => {
             // 6 text wrap: square
             const textWrap = newJson.root[6];
             assert.equal(textWrap.rootKey, "wp:wrapSquare");
+        });
+
+        it("should create a Drawing with no text wrapping", () => {
+            anchor = createDrawing({
+                textWrapping: {
+                    textWrapStyle: TextWrapStyle.NONE,
+                },
+            });
+            const newJson = Utility.jsonify(anchor);
+            assert.equal(newJson.root.length, 10);
+
+            const textWrap = newJson.root[6];
+            assert.equal(textWrap.rootKey, "wp:wrapNone");
+        });
+
+        it("should create a Drawing with tight text wrapping", () => {
+            anchor = createDrawing({
+                textWrapping: {
+                    textWrapStyle: TextWrapStyle.TIGHT,
+                },
+            });
+            const newJson = Utility.jsonify(anchor);
+            assert.equal(newJson.root.length, 10);
+
+            const textWrap = newJson.root[6];
+            assert.equal(textWrap.rootKey, "wp:wrapTight");
+        });
+
+        it("should create a Drawing with tight text wrapping", () => {
+            anchor = createDrawing({
+                textWrapping: {
+                    textWrapStyle: TextWrapStyle.TOP_AND_BOTTOM,
+                },
+            });
+            const newJson = Utility.jsonify(anchor);
+            assert.equal(newJson.root.length, 10);
+
+            const textWrap = newJson.root[6];
+            assert.equal(textWrap.rootKey, "wp:wrapTopAndBottom");
         });
     });
 });

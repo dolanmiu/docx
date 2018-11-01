@@ -179,7 +179,7 @@ export class TableCellWidth extends XmlComponent {
     }
 }
 
-interface ITableCellShadingAttributesProperties {
+export interface ITableCellShadingAttributesProperties {
     fill?: string;
     color?: string;
     val?: string;
@@ -197,7 +197,7 @@ class TableCellShadingAttributes extends XmlAttributeComponent<ITableCellShading
  * Table cell shading element.
  */
 export class TableCellShading extends XmlComponent {
-    constructor(attrs: object) {
+    constructor(attrs: ITableCellShadingAttributesProperties) {
         super("w:shd");
         this.root.push(new TableCellShadingAttributes(attrs));
     }

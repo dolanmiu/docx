@@ -2,6 +2,7 @@ import { XmlComponent } from "file/xml-components";
 
 import {
     GridSpan,
+    ITableCellShadingAttributesProperties,
     TableCellBorders,
     TableCellShading,
     TableCellWidth,
@@ -49,7 +50,7 @@ export class TableCellProperties extends XmlComponent {
         return this;
     }
 
-    public setShading(attrs: object): TableCellProperties {
+    public setShading(attrs: ITableCellShadingAttributesProperties): TableCellProperties {
         this.root.push(new TableCellShading(attrs));
 
         return this;

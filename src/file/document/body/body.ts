@@ -38,8 +38,6 @@ export class Body extends XmlComponent {
     public prepForXml(): IXmlableObject | undefined {
         if (this.sections.length === 1) {
             this.root.push(this.sections[0]);
-        } else if (this.sections.length > 1) {
-            throw new Error("Invalid usage of sections. At the end of the body element there must be ONE section.");
         }
 
         return super.prepForXml();
