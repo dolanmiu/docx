@@ -1,3 +1,4 @@
+// tslint:disable:object-literal-key-quotes
 import { expect } from "chai";
 
 import { Formatter } from "export/formatter";
@@ -7,8 +8,7 @@ import { Media } from "./media";
 
 describe("Media", () => {
     describe("#addImage", () => {
-        it("Add image", () => {
-            // tslint:disable-next-line:no-any
+        it("should add image", () => {
             const file = new File();
             const image = Media.addImage(file, "");
 
@@ -17,6 +17,34 @@ describe("Media", () => {
 
             tree = new Formatter().format(image.Run);
             expect(tree["w:r"]).to.be.an.instanceof(Array);
+        });
+
+        it("should ensure the correct relationship id is used when adding image", () => {
+            const file = new File();
+            const image1 = Media.addImage(file, "test");
+
+            const tree = new Formatter().format(image1.Paragraph);
+            const inlineElements = tree["w:p"][1]["w:r"][1]["w:drawing"][0]["wp:inline"];
+            const graphicData = inlineElements.find((x) => x["a:graphic"]);
+
+            expect(graphicData["a:graphic"][1]["a:graphicData"][1]["pic:pic"][2]["pic:blipFill"][0]["a:blip"][0]).to.deep.equal({
+                _attr: {
+                    "r:embed": `rId${file.DocumentRelationships.RelationshipCount}`,
+                    cstate: "none",
+                },
+            });
+
+            const image2 = Media.addImage(file, "test");
+            const tree2 = new Formatter().format(image2.Paragraph);
+            const inlineElements2 = tree2["w:p"][1]["w:r"][1]["w:drawing"][0]["wp:inline"];
+            const graphicData2 = inlineElements2.find((x) => x["a:graphic"]);
+
+            expect(graphicData2["a:graphic"][1]["a:graphicData"][1]["pic:pic"][2]["pic:blipFill"][0]["a:blip"][0]).to.deep.equal({
+                _attr: {
+                    "r:embed": `rId${file.DocumentRelationships.RelationshipCount}`,
+                    cstate: "none",
+                },
+            });
         });
     });
 
