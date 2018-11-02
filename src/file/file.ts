@@ -25,6 +25,7 @@ import { Table } from "./table";
 import { TableOfContents } from "./table-of-contents";
 
 export class File {
+    // tslint:disable-next-line:readonly-keyword
     private currentRelationshipId: number = 1;
 
     private readonly document: Document;
@@ -39,6 +40,7 @@ export class File {
     private readonly settings: Settings;
     private readonly contentTypes: ContentTypes;
     private readonly appProperties: AppProperties;
+    // tslint:disable-next-line:readonly-keyword
     private styles: Styles;
 
     constructor(
@@ -95,13 +97,13 @@ export class File {
             this.createFooter();
         }
 
-        sectionPropertiesOptions = {
+        const newSectionPropertiesOptions = {
             ...sectionPropertiesOptions,
             headers: this.groupHeaders(this.headers, sectionPropertiesOptions.headers),
             footers: this.groupFooters(this.footers, sectionPropertiesOptions.footers),
         };
 
-        this.document = new Document(sectionPropertiesOptions);
+        this.document = new Document(newSectionPropertiesOptions);
         this.settings = new Settings();
     }
 
@@ -139,8 +141,8 @@ export class File {
     }
 
     public createHyperlink(link: string, text?: string): Hyperlink {
-        text = text === undefined ? link : text;
-        const hyperlink = new Hyperlink(text, this.docRelationships.RelationshipCount);
+        const newText = text === undefined ? link : text;
+        const hyperlink = new Hyperlink(newText, this.docRelationships.RelationshipCount);
         this.docRelationships.createRelationship(
             hyperlink.linkId,
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink",
@@ -151,16 +153,16 @@ export class File {
     }
 
     public createInternalHyperLink(anchor: string, text?: string): Hyperlink {
-        text = text === undefined ? anchor : text;
-        const hyperlink = new Hyperlink(text, this.docRelationships.RelationshipCount, anchor);
+        const newText = text === undefined ? anchor : text;
+        const hyperlink = new Hyperlink(newText, this.docRelationships.RelationshipCount, anchor);
         // NOTE: unlike File#createHyperlink(), since the link is to an internal bookmark
         // we don't need to create a new relationship.
         return hyperlink;
     }
 
     public createBookmark(name: string, text?: string): Bookmark {
-        text = text === undefined ? name : text;
-        const bookmark = new Bookmark(name, text, this.docRelationships.RelationshipCount);
+        const newText = text === undefined ? name : text;
+        const bookmark = new Bookmark(name, newText, this.docRelationships.RelationshipCount);
         return bookmark;
     }
 

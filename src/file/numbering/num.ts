@@ -13,15 +13,15 @@ class AbstractNumId extends XmlComponent {
 }
 
 interface INumAttributesProperties {
-    numId: number;
+    readonly numId: number;
 }
 
 class NumAttributes extends XmlAttributeComponent<INumAttributesProperties> {
-    protected xmlKeys = { numId: "w:numId" };
+    protected readonly xmlKeys = { numId: "w:numId" };
 }
 
 export class Num extends XmlComponent {
-    public id: number;
+    public readonly id: number;
 
     constructor(numId: number, abstractNumId: number) {
         super("w:num");
@@ -41,12 +41,12 @@ export class Num extends XmlComponent {
     }
 }
 
-class LevelOverrideAttributes extends XmlAttributeComponent<{ ilvl: number }> {
-    protected xmlKeys = { ilvl: "w:ilvl" };
+class LevelOverrideAttributes extends XmlAttributeComponent<{ readonly ilvl: number }> {
+    protected readonly xmlKeys = { ilvl: "w:ilvl" };
 }
 
 export class LevelOverride extends XmlComponent {
-    private lvl?: LevelForOverride;
+    private readonly lvl: LevelForOverride;
 
     constructor(private readonly levelNum: number, start?: number) {
         super("w:lvlOverride");
@@ -54,23 +54,18 @@ export class LevelOverride extends XmlComponent {
         if (start !== undefined) {
             this.root.push(new StartOverride(start));
         }
+
+        this.lvl = new LevelForOverride(this.levelNum);
+        this.root.push(this.lvl);
     }
 
     public get Level(): LevelForOverride {
-        let lvl: LevelForOverride;
-        if (!this.lvl) {
-            lvl = new LevelForOverride(this.levelNum);
-            this.root.push(lvl);
-            this.lvl = lvl;
-        } else {
-            lvl = this.lvl;
-        }
-        return lvl;
+        return this.lvl;
     }
 }
 
-class StartOverrideAttributes extends XmlAttributeComponent<{ val: number }> {
-    protected xmlKeys = { val: "w:val" };
+class StartOverrideAttributes extends XmlAttributeComponent<{ readonly val: number }> {
+    protected readonly xmlKeys = { val: "w:val" };
 }
 
 class StartOverride extends XmlComponent {

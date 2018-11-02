@@ -1,12 +1,12 @@
 import { XmlAttributeComponent } from "file/xml-components";
 
 export interface IOverrideAttributes {
-    contentType: string;
-    partName?: string;
+    readonly contentType: string;
+    readonly partName?: string;
 }
 
 export class OverrideAttributes extends XmlAttributeComponent<IOverrideAttributes> {
-    protected xmlKeys = {
+    protected readonly xmlKeys = {
         contentType: "ContentType",
         partName: "PartName",
     };

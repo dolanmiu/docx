@@ -5,6 +5,7 @@ import { IMediaData } from "./data";
 import { Image } from "./image";
 
 interface IHackedFile {
+    // tslint:disable-next-line:readonly-keyword
     currentRelationshipId: number;
 }
 
@@ -78,17 +79,15 @@ export class Media {
     private createMedia(
         key: string,
         relationshipsCount: number,
-        dimensions: { width: number; height: number },
+        dimensions: { readonly width: number; readonly height: number },
         data: Buffer | string | Uint8Array | ArrayBuffer,
         filePath?: string,
     ): IMediaData {
-        if (typeof data === "string") {
-            data = this.convertDataURIToBinary(data);
-        }
+        const newData = typeof data === "string" ? this.convertDataURIToBinary(data) : data;
 
-        const imageData = {
+        const imageData: IMediaData = {
             referenceId: relationshipsCount,
-            stream: data,
+            stream: newData,
             path: filePath,
             fileName: key,
             dimensions: {

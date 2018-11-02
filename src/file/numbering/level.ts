@@ -1,16 +1,27 @@
 import { Attributes, XmlAttributeComponent, XmlComponent } from "file/xml-components";
-import * as paragraph from "../paragraph/formatting";
+import {
+    Alignment,
+    AlignmentOptions,
+    Indent,
+    ISpacingProperties,
+    KeepLines,
+    KeepNext,
+    LeftTabStop,
+    MaxRightTabStop,
+    Spacing,
+    ThematicBreak,
+} from "../paragraph/formatting";
 import { ParagraphProperties } from "../paragraph/properties";
 import * as formatting from "../paragraph/run/formatting";
 import { RunProperties } from "../paragraph/run/properties";
 
 interface ILevelAttributesProperties {
-    ilvl?: number;
-    tentative?: number;
+    readonly ilvl?: number;
+    readonly tentative?: number;
 }
 
 class LevelAttributes extends XmlAttributeComponent<ILevelAttributesProperties> {
-    protected xmlKeys = {
+    protected readonly xmlKeys = {
         ilvl: "w:ilvl",
         tentative: "w15:tentative",
     };
@@ -190,57 +201,57 @@ export class LevelBase extends XmlComponent {
     // --------------------- Paragraph formatting ------------------------ //
 
     public center(): Level {
-        this.addParagraphProperty(new paragraph.Alignment("center"));
+        this.addParagraphProperty(new Alignment(AlignmentOptions.CENTER));
         return this;
     }
 
     public left(): Level {
-        this.addParagraphProperty(new paragraph.Alignment("left"));
+        this.addParagraphProperty(new Alignment(AlignmentOptions.LEFT));
         return this;
     }
 
     public right(): Level {
-        this.addParagraphProperty(new paragraph.Alignment("right"));
+        this.addParagraphProperty(new Alignment(AlignmentOptions.RIGHT));
         return this;
     }
 
     public justified(): Level {
-        this.addParagraphProperty(new paragraph.Alignment("both"));
+        this.addParagraphProperty(new Alignment(AlignmentOptions.BOTH));
         return this;
     }
 
     public thematicBreak(): Level {
-        this.addParagraphProperty(new paragraph.ThematicBreak());
+        this.addParagraphProperty(new ThematicBreak());
         return this;
     }
 
     public maxRightTabStop(): Level {
-        this.addParagraphProperty(new paragraph.MaxRightTabStop());
+        this.addParagraphProperty(new MaxRightTabStop());
         return this;
     }
 
     public leftTabStop(position: number): Level {
-        this.addParagraphProperty(new paragraph.LeftTabStop(position));
+        this.addParagraphProperty(new LeftTabStop(position));
         return this;
     }
 
     public indent(attrs: object): Level {
-        this.addParagraphProperty(new paragraph.Indent(attrs));
+        this.addParagraphProperty(new Indent(attrs));
         return this;
     }
 
-    public spacing(params: paragraph.ISpacingProperties): Level {
-        this.addParagraphProperty(new paragraph.Spacing(params));
+    public spacing(params: ISpacingProperties): Level {
+        this.addParagraphProperty(new Spacing(params));
         return this;
     }
 
     public keepNext(): Level {
-        this.addParagraphProperty(new paragraph.KeepNext());
+        this.addParagraphProperty(new KeepNext());
         return this;
     }
 
     public keepLines(): Level {
-        this.addParagraphProperty(new paragraph.KeepLines());
+        this.addParagraphProperty(new KeepLines());
         return this;
     }
 }

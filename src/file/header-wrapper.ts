@@ -8,8 +8,8 @@ import { Relationships } from "./relationships";
 import { Table } from "./table";
 
 export interface IDocumentHeader {
-    header: HeaderWrapper;
-    type: HeaderReferenceType;
+    readonly header: HeaderWrapper;
+    readonly type: HeaderReferenceType;
 }
 
 export class HeaderWrapper {

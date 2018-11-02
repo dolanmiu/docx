@@ -1,12 +1,12 @@
 import { XmlAttributeComponent } from "file/xml-components";
 
 export interface IFootnoteAttributesProperties {
-    type?: string;
-    id: number;
+    readonly type?: string;
+    readonly id: number;
 }
 
 export class FootnoteAttributes extends XmlAttributeComponent<IFootnoteAttributesProperties> {
-    protected xmlKeys = {
+    protected readonly xmlKeys = {
         type: "w:type",
         id: "w:id",
     };

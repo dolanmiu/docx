@@ -1,12 +1,12 @@
 import { XmlAttributeComponent } from "file/xml-components";
 
 export interface IOffsetAttributes {
-    x?: number;
-    y?: number;
+    readonly x?: number;
+    readonly y?: number;
 }
 
 export class OffsetAttributes extends XmlAttributeComponent<IOffsetAttributes> {
-    protected xmlKeys = {
+    protected readonly xmlKeys = {
         x: "x",
         y: "y",
     };

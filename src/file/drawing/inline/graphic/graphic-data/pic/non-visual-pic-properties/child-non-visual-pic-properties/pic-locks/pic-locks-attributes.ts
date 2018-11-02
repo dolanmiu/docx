@@ -1,12 +1,12 @@
 import { XmlAttributeComponent } from "file/xml-components";
 
 export interface IPicLocksAttributes {
-    noChangeAspect?: number;
-    noChangeArrowheads?: number;
+    readonly noChangeAspect?: number;
+    readonly noChangeArrowheads?: number;
 }
 
 export class PicLocksAttributes extends XmlAttributeComponent<IPicLocksAttributes> {
-    protected xmlKeys = {
+    protected readonly xmlKeys = {
         noChangeAspect: "noChangeAspect",
         noChangeArrowheads: "noChangeArrowheads",
     };

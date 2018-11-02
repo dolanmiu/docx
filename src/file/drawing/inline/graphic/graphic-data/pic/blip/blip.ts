@@ -1,12 +1,12 @@
 import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
 
 interface IBlipProperties {
-    embed: string;
-    cstate: string;
+    readonly embed: string;
+    readonly cstate: string;
 }
 
 class BlipAttributes extends XmlAttributeComponent<IBlipProperties> {
-    protected xmlKeys = {
+    protected readonly xmlKeys = {
         embed: "r:embed",
         cstate: "cstate",
     };

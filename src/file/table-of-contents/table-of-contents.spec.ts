@@ -3,7 +3,7 @@ import { expect } from "chai";
 import { Formatter } from "export/formatter";
 
 import { TableOfContents } from "./table-of-contents";
-import { ITableOfContentsOptions, StyleLevel } from "./table-of-contents-properties";
+import { StyleLevel } from "./table-of-contents-properties";
 
 describe("Table of Contents", () => {
     describe("#constructor", () => {
@@ -14,28 +14,28 @@ describe("Table of Contents", () => {
         });
 
         it("should construct a TOC with all the options and alias", () => {
-            const props: ITableOfContentsOptions = {};
-
-            props.captionLabel = "A";
-            props.entriesFromBookmark = "B";
-            props.captionLabelIncludingNumbers = "C";
-            props.sequenceAndPageNumbersSeparator = "D";
-            props.tcFieldIdentifier = "F";
-            props.hyperlink = true;
-            props.tcFieldLevelRange = "L";
-            props.pageNumbersEntryLevelsRange = "N";
-            props.headingStyleRange = "O";
-            props.entryAndPageNumberSeparator = "P";
-            props.seqFieldIdentifierForPrefix = "S";
-
             const styles = new Array<StyleLevel>();
             styles.push(new StyleLevel("SL", 1));
             styles.push(new StyleLevel("SL", 2));
-            props.stylesWithLevels = styles;
-            props.useAppliedParagraphOutlineLevel = true;
-            props.preserveTabInEntries = true;
-            props.preserveNewLineInEntries = true;
-            props.hideTabAndPageNumbersInWebView = true;
+
+            const props = {
+                captionLabel: "A",
+                entriesFromBookmark: "B",
+                captionLabelIncludingNumbers: "C",
+                sequenceAndPageNumbersSeparator: "D",
+                tcFieldIdentifier: "F",
+                hyperlink: true,
+                tcFieldLevelRange: "L",
+                pageNumbersEntryLevelsRange: "N",
+                headingStyleRange: "O",
+                entryAndPageNumberSeparator: "P",
+                seqFieldIdentifierForPrefix: "S",
+                stylesWithLevels: styles,
+                useAppliedParagraphOutlineLevel: true,
+                preserveTabInEntries: true,
+                preserveNewLineInEntries: true,
+                hideTabAndPageNumbersInWebView: true,
+            };
 
             const toc = new TableOfContents("Summary", props);
             const tree = new Formatter().format(toc);

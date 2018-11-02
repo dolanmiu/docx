@@ -1,9 +1,9 @@
 import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
 export interface IUpdateFieldsAttributesProperties {
-    enabled: boolean;
+    readonly enabled: boolean;
 }
 export class UpdateFieldsAttributes extends XmlAttributeComponent<IUpdateFieldsAttributesProperties> {
-    protected xmlKeys = {
+    protected readonly xmlKeys = {
         enabled: "w:val",
     };
 }

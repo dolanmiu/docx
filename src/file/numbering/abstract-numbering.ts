@@ -3,19 +3,19 @@ import { Level } from "./level";
 import { MultiLevelType } from "./multi-level-type";
 
 interface IAbstractNumberingAttributesProperties {
-    abstractNumId?: number;
-    restartNumberingAfterBreak?: number;
+    readonly abstractNumId?: number;
+    readonly restartNumberingAfterBreak?: number;
 }
 
 class AbstractNumberingAttributes extends XmlAttributeComponent<IAbstractNumberingAttributesProperties> {
-    protected xmlKeys = {
+    protected readonly xmlKeys = {
         abstractNumId: "w:abstractNumId",
         restartNumberingAfterBreak: "w15:restartNumberingAfterBreak",
     };
 }
 
 export class AbstractNumbering extends XmlComponent {
-    public id: number;
+    public readonly id: number;
 
     constructor(id: number) {
         super("w:abstractNum");

@@ -2,8 +2,8 @@ import { XmlComponent } from "file/xml-components";
 import { FooterReferenceAttributes, FooterReferenceType } from "./footer-reference-attributes";
 
 export interface IFooterOptions {
-    footerType?: FooterReferenceType;
-    footerId?: number;
+    readonly footerType?: FooterReferenceType;
+    readonly footerId?: number;
 }
 
 export class FooterReference extends XmlComponent {

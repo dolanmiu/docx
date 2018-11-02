@@ -17,12 +17,12 @@ export enum PageNumberFormat {
 }
 
 export interface IPageNumberTypeAttributes {
-    pageNumberStart?: number;
-    pageNumberFormatType?: PageNumberFormat;
+    readonly pageNumberStart?: number;
+    readonly pageNumberFormatType?: PageNumberFormat;
 }
 
 export class PageNumberTypeAttributes extends XmlAttributeComponent<IPageNumberTypeAttributes> {
-    protected xmlKeys = {
+    protected readonly xmlKeys = {
         pageNumberStart: "w:start",
         pageNumberFormatType: "w:fmt",
     };

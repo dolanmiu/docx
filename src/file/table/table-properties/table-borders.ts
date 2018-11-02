@@ -26,8 +26,13 @@ class TableBordersElement extends XmlComponent {
     }
 }
 
-class TableBordersAttributes extends XmlAttributeComponent<{ value: string; size: number; space: number; color: string }> {
-    protected xmlKeys = {
+class TableBordersAttributes extends XmlAttributeComponent<{
+    readonly value: string;
+    readonly size: number;
+    readonly space: number;
+    readonly color: string;
+}> {
+    protected readonly xmlKeys = {
         value: "w:val",
         size: "w:sz",
         space: "w:space",

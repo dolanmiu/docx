@@ -5,25 +5,25 @@ import { File } from "file";
 import { Formatter } from "../formatter";
 
 interface IXmlifyedFile {
-    data: string;
-    path: string;
+    readonly data: string;
+    readonly path: string;
 }
 
 interface IXmlifyedFileMapping {
-    Document: IXmlifyedFile;
-    Styles: IXmlifyedFile;
-    Properties: IXmlifyedFile;
-    Numbering: IXmlifyedFile;
-    Relationships: IXmlifyedFile;
-    FileRelationships: IXmlifyedFile;
-    Headers: IXmlifyedFile[];
-    Footers: IXmlifyedFile[];
-    HeaderRelationships: IXmlifyedFile[];
-    FooterRelationships: IXmlifyedFile[];
-    ContentTypes: IXmlifyedFile;
-    AppProperties: IXmlifyedFile;
-    FootNotes: IXmlifyedFile;
-    Settings: IXmlifyedFile;
+    readonly Document: IXmlifyedFile;
+    readonly Styles: IXmlifyedFile;
+    readonly Properties: IXmlifyedFile;
+    readonly Numbering: IXmlifyedFile;
+    readonly Relationships: IXmlifyedFile;
+    readonly FileRelationships: IXmlifyedFile;
+    readonly Headers: IXmlifyedFile[];
+    readonly Footers: IXmlifyedFile[];
+    readonly HeaderRelationships: IXmlifyedFile[];
+    readonly FooterRelationships: IXmlifyedFile[];
+    readonly ContentTypes: IXmlifyedFile;
+    readonly AppProperties: IXmlifyedFile;
+    readonly FootNotes: IXmlifyedFile;
+    readonly Settings: IXmlifyedFile;
 }
 
 export class Compiler {

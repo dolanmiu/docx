@@ -5,7 +5,7 @@ import { IDistance } from "../drawing";
 export interface IInlineAttributes extends IDistance {}
 
 export class InlineAttributes extends XmlAttributeComponent<IInlineAttributes> {
-    protected xmlKeys = {
+    protected readonly xmlKeys = {
         distT: "distT",
         distB: "distB",
         distL: "distL",

@@ -32,7 +32,7 @@ export interface ITableFloatOptions {
      * text - relative to the vertical edge of the text margin for the column in which the anchor paragraph is located
      * If omitted, the value is assumed to be page.
      */
-    horizontalAnchor?: TableAnchorType;
+    readonly horizontalAnchor?: TableAnchorType;
 
     /**
      * Specifies an absolute horizontal position for the table, relative to the horizontalAnchor.
@@ -41,7 +41,7 @@ export interface ITableFloatOptions {
      * If relativeHorizontalPosition is also specified, then the absoluteHorizontalPosition attribute is ignored.
      * If the attribute is omitted, the value is assumed to be zero.
      */
-    absoluteHorizontalPosition?: number;
+    readonly absoluteHorizontalPosition?: number;
 
     /**
      * Specifies a relative horizontal position for the table, relative to the horizontalAnchor attribute.
@@ -53,7 +53,7 @@ export interface ITableFloatOptions {
      * outside - the table should be outside of the anchor
      * right - the table should be right aligned with respect to the anchor
      */
-    relativeHorizontalPosition?: RelativeHorizontalPosition;
+    readonly relativeHorizontalPosition?: RelativeHorizontalPosition;
 
     /**
      * Specifies the vertical anchor or the base object from which the vertical positioning
@@ -63,7 +63,7 @@ export interface ITableFloatOptions {
      * text - relative to the horizontal edge of the text margin for the column in which the anchor paragraph is located
      * If omitted, the value is assumed to be page.
      */
-    verticalAnchor?: TableAnchorType;
+    readonly verticalAnchor?: TableAnchorType;
 
     /**
      * Specifies an absolute vertical position for the table, relative to the verticalAnchor anchor.
@@ -72,7 +72,7 @@ export interface ITableFloatOptions {
      * If relativeVerticalPosition is also specified, then the absoluteVerticalPosition attribute is ignored.
      * If the attribute is omitted, the value is assumed to be zero.
      */
-    absoluteVerticalPosition?: number;
+    readonly absoluteVerticalPosition?: number;
 
     /**
      * Specifies a relative vertical position for the table, relative to the verticalAnchor attribute.
@@ -84,35 +84,35 @@ export interface ITableFloatOptions {
      * inline - the table should be vertically aligned in line with the surrounding text (so as to not allow any text wrapping around it)
      * top - the table should be vertically aligned to the top edge of the anchor
      */
-    relativeVerticalPosition?: RelativeVerticalPosition;
+    readonly relativeVerticalPosition?: RelativeVerticalPosition;
 
     /**
      * Specifies the minimun distance to be maintained between the table and the top of text in the paragraph
      * below the table. The value is in twentieths of a point. If omitted, the value is assumed to be zero.
      */
-    bottomFromText?: number;
+    readonly bottomFromText?: number;
 
     /**
      * Specifies the minimun distance to be maintained between the table and the bottom edge of text in the paragraph
      * above the table. The value is in twentieths of a point. If omitted, the value is assumed to be zero.
      */
-    topFromText?: number;
+    readonly topFromText?: number;
 
     /**
      * Specifies the minimun distance to be maintained between the table and the edge of text in the paragraph
      * to the left of the table. The value is in twentieths of a point. If omitted, the value is assumed to be zero.
      */
-    leftFromText?: number;
+    readonly leftFromText?: number;
 
     /**
      * Specifies the minimun distance to be maintained between the table and the edge of text in the paragraph
      * to the right of the table. The value is in twentieths of a point. If omitted, the value is assumed to be zero.
      */
-    rightFromText?: number;
+    readonly rightFromText?: number;
 }
 
 export class TableFloatOptionsAttributes extends XmlAttributeComponent<ITableFloatOptions> {
-    protected xmlKeys = {
+    protected readonly xmlKeys = {
         horizontalAnchor: "w:horzAnchor",
         verticalAnchor: "w:vertAnchor",
         absoluteHorizontalPosition: "w:tblpX",

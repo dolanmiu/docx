@@ -378,14 +378,69 @@ describe("concrete numbering", () => {
         it("sets a new override level for the given level number", () => {
             concreteNumbering.overrideLevel(3);
             const tree = new Formatter().format(concreteNumbering);
-            expect(tree["w:num"]).to.include({ "w:lvlOverride": [{ _attr: { "w:ilvl": 3 } }] });
+            expect(tree["w:num"]).to.include({
+                "w:lvlOverride": [
+                    {
+                        _attr: {
+                            "w:ilvl": 3,
+                        },
+                    },
+                    {
+                        "w:lvl": [
+                            {
+                                _attr: {
+                                    "w:ilvl": 3,
+                                    "w15:tentative": 1,
+                                },
+                            },
+                            {
+                                "w:pPr": [],
+                            },
+                            {
+                                "w:rPr": [],
+                            },
+                        ],
+                    },
+                ],
+            });
         });
 
         it("sets the startOverride element if start is given", () => {
             concreteNumbering.overrideLevel(1, 9);
             const tree = new Formatter().format(concreteNumbering);
             expect(tree["w:num"]).to.include({
-                "w:lvlOverride": [{ _attr: { "w:ilvl": 1 } }, { "w:startOverride": [{ _attr: { "w:val": 9 } }] }],
+                "w:lvlOverride": [
+                    {
+                        _attr: {
+                            "w:ilvl": 1,
+                        },
+                    },
+                    {
+                        "w:startOverride": [
+                            {
+                                _attr: {
+                                    "w:val": 9,
+                                },
+                            },
+                        ],
+                    },
+                    {
+                        "w:lvl": [
+                            {
+                                _attr: {
+                                    "w:ilvl": 1,
+                                    "w15:tentative": 1,
+                                },
+                            },
+                            {
+                                "w:pPr": [],
+                            },
+                            {
+                                "w:rPr": [],
+                            },
+                        ],
+                    },
+                ],
             });
         });
 

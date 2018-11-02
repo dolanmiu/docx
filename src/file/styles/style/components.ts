@@ -1,11 +1,11 @@
 import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
 
 interface IComponentAttributes {
-    val: string;
+    readonly val: string;
 }
 
 class ComponentAttributes extends XmlAttributeComponent<IComponentAttributes> {
-    protected xmlKeys = { val: "w:val" };
+    protected readonly xmlKeys = { val: "w:val" };
 }
 
 export class Name extends XmlComponent {

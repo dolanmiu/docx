@@ -2,7 +2,7 @@ import { assert } from "chai";
 
 import { Utility } from "tests/utility";
 
-import { LeftTabStop, MaxRightTabStop, RightTabStop } from "./tab-stop";
+import { LeaderType, LeftTabStop, MaxRightTabStop, RightTabStop } from "./tab-stop";
 
 describe("LeftTabStop", () => {
     let tabStop: LeftTabStop;
@@ -32,7 +32,7 @@ describe("RightTabStop", () => {
     let tabStop: RightTabStop;
 
     beforeEach(() => {
-        tabStop = new RightTabStop(100, "dot");
+        tabStop = new RightTabStop(100, LeaderType.DOT);
     });
 
     describe("#constructor()", () => {

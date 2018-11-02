@@ -5,6 +5,7 @@ import { AbstractNumbering } from "./abstract-numbering";
 import { Num } from "./num";
 
 export class Numbering extends XmlComponent {
+    // tslint:disable-next-line:readonly-keyword
     private nextId: number;
 
     private readonly abstractNumbering: XmlComponent[] = [];

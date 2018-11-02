@@ -1,20 +1,20 @@
 export interface IMediaDataDimensions {
-    pixels: {
-        x: number;
-        y: number;
+    readonly pixels: {
+        readonly x: number;
+        readonly y: number;
     };
-    emus: {
-        x: number;
-        y: number;
+    readonly emus: {
+        readonly x: number;
+        readonly y: number;
     };
 }
 
 export interface IMediaData {
-    referenceId: number;
-    stream: Buffer | Uint8Array | ArrayBuffer;
-    path?: string;
-    fileName: string;
-    dimensions: IMediaDataDimensions;
+    readonly referenceId: number;
+    readonly stream: Buffer | Uint8Array | ArrayBuffer;
+    readonly path?: string;
+    readonly fileName: string;
+    readonly dimensions: IMediaDataDimensions;
 }
 
 // Needed because of: https://github.com/s-panferov/awesome-typescript-loader/issues/432

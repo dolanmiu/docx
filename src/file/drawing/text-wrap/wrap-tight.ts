@@ -3,25 +3,25 @@ import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
 import { IDistance } from "../drawing";
 
 interface IWrapTightAttributes {
-    distT?: number;
-    distB?: number;
+    readonly distT?: number;
+    readonly distB?: number;
 }
 
 class WrapTightAttributes extends XmlAttributeComponent<IWrapTightAttributes> {
-    protected xmlKeys = {
+    protected readonly xmlKeys = {
         distT: "distT",
         distB: "distB",
     };
 }
 
 export class WrapTight extends XmlComponent {
-    constructor(distanceFromText?: IDistance) {
-        super("wp:wrapTight");
-
-        distanceFromText = distanceFromText || {
+    constructor(
+        distanceFromText: IDistance = {
             distT: 0,
             distB: 0,
-        };
+        },
+    ) {
+        super("wp:wrapTight");
 
         this.root.push(
             new WrapTightAttributes({

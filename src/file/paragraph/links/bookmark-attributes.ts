@@ -1,23 +1,23 @@
 import { XmlAttributeComponent } from "file/xml-components";
 
 export interface IBookmarkStartAttributesProperties {
-    id: string;
-    name: string;
+    readonly id: string;
+    readonly name: string;
 }
 
 export class BookmarkStartAttributes extends XmlAttributeComponent<IBookmarkStartAttributesProperties> {
-    protected xmlKeys = {
+    protected readonly xmlKeys = {
         id: "w:id",
         name: "w:name",
     };
 }
 
 export interface IBookmarkEndAttributesProperties {
-    id: string;
+    readonly id: string;
 }
 
 export class BookmarkEndAttributes extends XmlAttributeComponent<IBookmarkEndAttributesProperties> {
-    protected xmlKeys = {
+    protected readonly xmlKeys = {
         id: "w:id",
     };
 }

@@ -5,11 +5,11 @@ import { IVerticalPositionOptions, VerticalPositionRelativeFrom } from "./floati
 import { PositionOffset } from "./position-offset";
 
 interface IVerticalPositionAttributes {
-    relativeFrom: VerticalPositionRelativeFrom;
+    readonly relativeFrom: VerticalPositionRelativeFrom;
 }
 
 class VerticalPositionAttributes extends XmlAttributeComponent<IVerticalPositionAttributes> {
-    protected xmlKeys = {
+    protected readonly xmlKeys = {
         relativeFrom: "relativeFrom",
     };
 }

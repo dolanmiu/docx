@@ -3,6 +3,7 @@ import { IXmlableObject } from "./xmlable-object";
 export { BaseXmlComponent };
 
 export abstract class XmlComponent extends BaseXmlComponent {
+    // tslint:disable-next-line:readonly-keyword
     protected root: Array<BaseXmlComponent | string>;
 
     constructor(rootKey: string) {

@@ -1,11 +1,10 @@
 // http://officeopenxml.com/WPhyperlink.php
-
 import { XmlComponent } from "file/xml-components";
 import { TextRun } from "../run";
 import { HyperlinkAttributes, IHyperlinkAttributesProperties } from "./hyperlink-attributes";
 
 export class Hyperlink extends XmlComponent {
-    public linkId: number;
+    public readonly linkId: number;
 
     constructor(text: string, relationshipsCount: number, anchor?: string) {
         super("w:hyperlink");
@@ -14,13 +13,9 @@ export class Hyperlink extends XmlComponent {
 
         const props: IHyperlinkAttributesProperties = {
             history: 1,
+            anchor: anchor ? anchor : undefined,
+            id: !anchor ? `rId${this.linkId}` : undefined,
         };
-
-        if (anchor) {
-            props.anchor = anchor;
-        } else {
-            props.id = `rId${this.linkId}`;
-        }
 
         const attributes = new HyperlinkAttributes(props);
         this.root.push(attributes);

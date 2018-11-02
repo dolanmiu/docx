@@ -1,12 +1,12 @@
 import { XmlAttributeComponent } from "file/xml-components";
 
 export interface IExtentAttributes {
-    cx?: number;
-    cy?: number;
+    readonly cx?: number;
+    readonly cy?: number;
 }
 
 export class ExtentAttributes extends XmlAttributeComponent<IExtentAttributes> {
-    protected xmlKeys = {
+    protected readonly xmlKeys = {
         cx: "cx",
         cy: "cy",
     };

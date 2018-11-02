@@ -1,11 +1,11 @@
 import { XmlAttributeComponent } from "file/xml-components";
 
 export interface IShapePropertiesAttributes {
-    bwMode?: string;
+    readonly bwMode?: string;
 }
 
 export class ShapePropertiesAttributes extends XmlAttributeComponent<IShapePropertiesAttributes> {
-    protected xmlKeys = {
+    protected readonly xmlKeys = {
         bwMode: "bwMode",
     };
 }

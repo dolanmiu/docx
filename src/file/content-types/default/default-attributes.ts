@@ -1,12 +1,12 @@
 import { XmlAttributeComponent } from "file/xml-components";
 
 export interface IDefaultAttributes {
-    contentType: string;
-    extension?: string;
+    readonly contentType: string;
+    readonly extension?: string;
 }
 
 export class DefaultAttributes extends XmlAttributeComponent<IDefaultAttributes> {
-    protected xmlKeys = {
+    protected readonly xmlKeys = {
         contentType: "ContentType",
         extension: "Extension",
     };

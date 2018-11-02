@@ -5,8 +5,8 @@ export enum TableLayoutType {
     FIXED = "fixed",
 }
 
-class TableLayoutAttributes extends XmlAttributeComponent<{ type: TableLayoutType }> {
-    protected xmlKeys = { type: "w:type" };
+class TableLayoutAttributes extends XmlAttributeComponent<{ readonly type: TableLayoutType }> {
+    protected readonly xmlKeys = { type: "w:type" };
 }
 
 export class TableLayout extends XmlComponent {

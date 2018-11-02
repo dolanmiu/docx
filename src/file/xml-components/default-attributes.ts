@@ -4,8 +4,9 @@ import { IXmlableObject } from "./xmlable-object";
 export type AttributeMap<T> = { [P in keyof T]: string };
 
 export abstract class XmlAttributeComponent<T> extends BaseXmlComponent {
+    // tslint:disable-next-line:readonly-keyword
     protected root: T;
-    protected xmlKeys: AttributeMap<T>;
+    protected readonly xmlKeys: AttributeMap<T>;
 
     constructor(properties: T) {
         super("_attr");

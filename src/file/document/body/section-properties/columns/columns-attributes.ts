@@ -1,11 +1,11 @@
 import { XmlAttributeComponent } from "file/xml-components";
 
 export interface IColumnsAttributes {
-    space?: number;
+    readonly space?: number;
 }
 
 export class ColumnsAttributes extends XmlAttributeComponent<IColumnsAttributes> {
-    protected xmlKeys = {
+    protected readonly xmlKeys = {
         space: "w:space",
     };
 }

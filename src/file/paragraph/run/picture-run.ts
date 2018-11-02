@@ -18,15 +18,7 @@ export class PictureRun extends Run {
         this.root.push(this.drawing);
     }
 
-    public scale(factorX: number, factorY?: number): void {
-        if (!factorX) {
-            factorX = 1;
-        }
-
-        if (!factorY) {
-            factorY = factorX;
-        }
-
+    public scale(factorX: number = 1, factorY: number = factorX): void {
         this.drawing.scale(factorX, factorY);
     }
 }

@@ -1,11 +1,11 @@
 import { XmlAttributeComponent } from "file/xml-components";
 
 export interface IDocGridAttributesProperties {
-    linePitch?: number;
+    readonly linePitch?: number;
 }
 
 export class DocGridAttributes extends XmlAttributeComponent<IDocGridAttributesProperties> {
-    protected xmlKeys = {
+    protected readonly xmlKeys = {
         linePitch: "w:linePitch",
     };
 }

@@ -1,18 +1,18 @@
 import { XmlAttributeComponent } from "file/xml-components";
 
 export interface IPageMarginAttributes {
-    top?: number;
-    right?: number;
-    bottom?: number;
-    left?: number;
-    header?: number;
-    footer?: number;
-    gutter?: number;
-    mirror?: boolean;
+    readonly top?: number;
+    readonly right?: number;
+    readonly bottom?: number;
+    readonly left?: number;
+    readonly header?: number;
+    readonly footer?: number;
+    readonly gutter?: number;
+    readonly mirror?: boolean;
 }
 
 export class PageMarginAttributes extends XmlAttributeComponent<IPageMarginAttributes> {
-    protected xmlKeys = {
+    protected readonly xmlKeys = {
         top: "w:top",
         right: "w:right",
         bottom: "w:bottom",
