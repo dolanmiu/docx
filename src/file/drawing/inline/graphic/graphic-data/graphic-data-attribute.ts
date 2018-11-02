@@ -1,11 +1,11 @@
 import { XmlAttributeComponent } from "file/xml-components";
 
 export interface IGraphicDataAttributes {
-    uri?: string;
+    readonly uri?: string;
 }
 
 export class GraphicDataAttributes extends XmlAttributeComponent<IGraphicDataAttributes> {
-    protected xmlKeys = {
+    protected readonly xmlKeys = {
         uri: "uri",
     };
 }

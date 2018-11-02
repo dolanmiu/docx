@@ -2,15 +2,15 @@
 import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
 
 export interface IIndentAttributesProperties {
-    left?: number;
-    hanging?: number;
-    firstLine?: number;
-    start?: number;
-    end?: number;
+    readonly left?: number;
+    readonly hanging?: number;
+    readonly firstLine?: number;
+    readonly start?: number;
+    readonly end?: number;
 }
 
 class IndentAttributes extends XmlAttributeComponent<IIndentAttributesProperties> {
-    protected xmlKeys = {
+    protected readonly xmlKeys = {
         left: "w:left",
         hanging: "w:hanging",
         firstLine: "w:firstLine",

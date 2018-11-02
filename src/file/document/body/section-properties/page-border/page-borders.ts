@@ -19,28 +19,28 @@ export enum PageBorderZOrder {
 }
 
 export interface IPageBorderAttributes {
-    display?: PageBorderDisplay;
-    offsetFrom?: PageBorderOffsetFrom;
-    zOrder?: PageBorderZOrder;
+    readonly display?: PageBorderDisplay;
+    readonly offsetFrom?: PageBorderOffsetFrom;
+    readonly zOrder?: PageBorderZOrder;
 }
 
 export interface IPageBorderConfiguration {
-    style?: BorderStyle;
-    size?: number;
-    color?: string;
-    space?: number;
+    readonly style?: BorderStyle;
+    readonly size?: number;
+    readonly color?: string;
+    readonly space?: number;
 }
 
 export interface IPageBordersOptions {
-    pageBorders?: IPageBorderAttributes;
-    pageBorderTop?: IPageBorderConfiguration;
-    pageBorderRight?: IPageBorderConfiguration;
-    pageBorderBottom?: IPageBorderConfiguration;
-    pageBorderLeft?: IPageBorderConfiguration;
+    readonly pageBorders?: IPageBorderAttributes;
+    readonly pageBorderTop?: IPageBorderConfiguration;
+    readonly pageBorderRight?: IPageBorderConfiguration;
+    readonly pageBorderBottom?: IPageBorderConfiguration;
+    readonly pageBorderLeft?: IPageBorderConfiguration;
 }
 
 class PageBordeAttributes extends XmlAttributeComponent<IPageBorderConfiguration> {
-    protected xmlKeys = {
+    protected readonly xmlKeys = {
         style: "w:val",
         size: "w:size",
         color: "w:color",
@@ -57,7 +57,7 @@ class PageBorder extends XmlComponent {
 }
 
 class PageBordersAttributes extends XmlAttributeComponent<IPageBorderAttributes> {
-    protected xmlKeys = {
+    protected readonly xmlKeys = {
         display: "w:display",
         offsetFrom: "w:offsetFrom",
         zOrder: "w:zOrder",

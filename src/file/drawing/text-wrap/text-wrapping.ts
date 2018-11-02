@@ -16,7 +16,7 @@ export enum WrapTextOption {
 }
 
 export interface ITextWrapping {
-    textWrapStyle: TextWrapStyle;
-    wrapTextOption?: WrapTextOption;
-    distanceFromText?: IDistance;
+    readonly textWrapStyle: TextWrapStyle;
+    readonly wrapTextOption?: WrapTextOption;
+    readonly distanceFromText?: IDistance;
 }

@@ -19,27 +19,28 @@ const schemeToType = {
 };
 
 interface IDocumentRefs {
-    headers: Array<{ id: number; type: HeaderReferenceType }>;
-    footers: Array<{ id: number; type: FooterReferenceType }>;
+    readonly headers: Array<{ readonly id: number; readonly type: HeaderReferenceType }>;
+    readonly footers: Array<{ readonly id: number; readonly type: FooterReferenceType }>;
 }
 
 interface IRelationshipFileInfo {
-    id: number;
-    target: string;
-    type: "header" | "footer" | "image" | "hyperlink";
+    readonly id: number;
+    readonly target: string;
+    readonly type: "header" | "footer" | "image" | "hyperlink";
 }
 
 // Document Template
 // https://fileinfo.com/extension/dotx
 export interface IDocumentTemplate {
-    currentRelationshipId: number;
-    headers: IDocumentHeader[];
-    footers: IDocumentFooter[];
-    styles: Styles;
-    titlePageIsDefined: boolean;
+    readonly currentRelationshipId: number;
+    readonly headers: IDocumentHeader[];
+    readonly footers: IDocumentFooter[];
+    readonly styles: Styles;
+    readonly titlePageIsDefined: boolean;
 }
 
 export class ImportDotx {
+    // tslint:disable-next-line:readonly-keyword
     private currentRelationshipId: number;
 
     constructor() {

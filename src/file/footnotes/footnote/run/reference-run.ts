@@ -3,11 +3,11 @@ import { Style } from "file/paragraph/run/style";
 import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
 
 export interface IFootNoteReferenceRunAttributesProperties {
-    id: number;
+    readonly id: number;
 }
 
 export class FootNoteReferenceRunAttributes extends XmlAttributeComponent<IFootNoteReferenceRunAttributesProperties> {
-    protected xmlKeys = {
+    protected readonly xmlKeys = {
         id: "w:id",
     };
 }

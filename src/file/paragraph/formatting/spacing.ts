@@ -2,14 +2,14 @@
 import { Attributes, XmlAttributeComponent, XmlComponent } from "file/xml-components";
 
 export interface ISpacingProperties {
-    after?: number;
-    before?: number;
-    line?: number;
-    lineRule?: string;
+    readonly after?: number;
+    readonly before?: number;
+    readonly line?: number;
+    readonly lineRule?: string;
 }
 
 class SpacingAttributes extends XmlAttributeComponent<ISpacingProperties> {
-    protected xmlKeys = {
+    protected readonly xmlKeys = {
         after: "w:after",
         before: "w:before",
         line: "w:line",

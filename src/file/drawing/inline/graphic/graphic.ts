@@ -2,11 +2,11 @@ import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
 import { GraphicData } from "./graphic-data";
 
 interface IGraphicProperties {
-    a: string;
+    readonly a: string;
 }
 
 class GraphicAttributes extends XmlAttributeComponent<IGraphicProperties> {
-    protected xmlKeys = {
+    protected readonly xmlKeys = {
         a: "xmlns:a",
     };
 }

@@ -1,15 +1,15 @@
 import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
 
 interface IRunFontAttributesProperties {
-    ascii: string;
-    cs: string;
-    eastAsia: string;
-    hAnsi: string;
-    hint?: string;
+    readonly ascii: string;
+    readonly cs: string;
+    readonly eastAsia: string;
+    readonly hAnsi: string;
+    readonly hint?: string;
 }
 
 class RunFontAttributes extends XmlAttributeComponent<IRunFontAttributesProperties> {
-    protected xmlKeys = {
+    protected readonly xmlKeys = {
         ascii: "w:ascii",
         cs: "w:cs",
         eastAsia: "w:eastAsia",

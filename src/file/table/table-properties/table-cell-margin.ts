@@ -2,8 +2,8 @@ import { IXmlableObject, XmlAttributeComponent, XmlComponent } from "file/xml-co
 
 import { WidthType } from "../table-cell";
 
-class TableCellMarginAttributes extends XmlAttributeComponent<{ type: WidthType; value: number }> {
-    protected xmlKeys = { value: "w:w", type: "w:sz" };
+class TableCellMarginAttributes extends XmlAttributeComponent<{ readonly type: WidthType; readonly value: number }> {
+    protected readonly xmlKeys = { value: "w:w", type: "w:sz" };
 }
 
 class BaseTableCellMargin extends XmlComponent {

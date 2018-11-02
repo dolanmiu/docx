@@ -6,12 +6,13 @@ import { SeperatorRun } from "./footnote/run/seperator-run";
 import { FootnotesAttributes } from "./footnotes-attributes";
 
 export class FootNotes extends XmlComponent {
-    private counter: number;
+    // tslint:disable-next-line:readonly-keyword
+    private currentId: number;
 
     constructor() {
         super("w:footnotes");
 
-        this.counter = 1;
+        this.currentId = 1;
 
         this.root.push(
             new FootnotesAttributes({
@@ -61,10 +62,10 @@ export class FootNotes extends XmlComponent {
     }
 
     public createFootNote(paragraph: Paragraph): void {
-        const footnote = new Footnote(this.counter);
+        const footnote = new Footnote(this.currentId);
         footnote.addParagraph(paragraph);
         this.root.push(footnote);
 
-        this.counter++;
+        this.currentId++;
     }
 }

@@ -1,26 +1,32 @@
 import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
 
-class FidCharAttrs extends XmlAttributeComponent<{ type: "begin" | "end" | "separate"; dirty?: boolean }> {
-    protected xmlKeys = { type: "w:fldCharType", dirty: "w:dirty" };
+enum FieldCharacterType {
+    BEGIN = "begin",
+    END = "end",
+    SEPARATE = "separate",
+}
+
+class FidCharAttrs extends XmlAttributeComponent<{ readonly type: FieldCharacterType; readonly dirty?: boolean }> {
+    protected readonly xmlKeys = { type: "w:fldCharType", dirty: "w:dirty" };
 }
 
 export class Begin extends XmlComponent {
     constructor(dirty?: boolean) {
         super("w:fldChar");
-        this.root.push(new FidCharAttrs({ type: "begin", dirty }));
+        this.root.push(new FidCharAttrs({ type: FieldCharacterType.BEGIN, dirty }));
     }
 }
 
 export class Separate extends XmlComponent {
     constructor(dirty?: boolean) {
         super("w:fldChar");
-        this.root.push(new FidCharAttrs({ type: "separate", dirty }));
+        this.root.push(new FidCharAttrs({ type: FieldCharacterType.SEPARATE, dirty }));
     }
 }
 
 export class End extends XmlComponent {
     constructor(dirty?: boolean) {
         super("w:fldChar");
-        this.root.push(new FidCharAttrs({ type: "end", dirty }));
+        this.root.push(new FidCharAttrs({ type: FieldCharacterType.END, dirty }));
     }
 }

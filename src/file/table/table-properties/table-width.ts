@@ -3,12 +3,12 @@ import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
 import { WidthType } from "../table-cell";
 
 interface ITableWidth {
-    type: WidthType;
-    w: number | string;
+    readonly type: WidthType;
+    readonly w: number | string;
 }
 
 class TableWidthAttributes extends XmlAttributeComponent<ITableWidth> {
-    protected xmlKeys = { type: "w:type", w: "w:w" };
+    protected readonly xmlKeys = { type: "w:type", w: "w:w" };
 }
 
 export class PreferredTableWidth extends XmlComponent {

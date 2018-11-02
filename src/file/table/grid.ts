@@ -8,8 +8,8 @@ export class TableGrid extends XmlComponent {
     }
 }
 
-class GridColAttributes extends XmlAttributeComponent<{ w: number }> {
-    protected xmlKeys = { w: "w:w" };
+class GridColAttributes extends XmlAttributeComponent<{ readonly w: number }> {
+    protected readonly xmlKeys = { w: "w:w" };
 }
 
 export class GridCol extends XmlComponent {

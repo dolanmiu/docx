@@ -1,41 +1,29 @@
 {
-    "extends": "tslint:latest",
+    "extends": ["tslint:latest", "tslint-immutable"],
     "rules": {
         "curly": true,
-        "one-variable-per-declaration": [
-            true
-        ],
+        "one-variable-per-declaration": [true],
         "no-any": true,
-        "no-consecutive-blank-lines": [
-            true
-        ],
+        "no-consecutive-blank-lines": [true],
         "no-require-imports": true,
-        "member-access": [
-            true,
-            "check-accessor"
-        ],
-        "indent": [
-            true,
-            "spaces"
-        ],
+        "member-access": [true, "check-accessor"],
+        "indent": [true, "spaces"],
         "object-literal-sort-keys": false,
         "object-literal-shorthand": false,
-        "typedef": [
-            true,
-            "call-signature",
-            "parameter",
-            "property-declaration"
-        ],
-        "max-line-length": [
-            false
-        ],
-        "max-classes-per-file": [
-            false
-        ],
+        "typedef": [true, "call-signature", "parameter", "property-declaration"],
+        "max-line-length": [false],
+        "max-classes-per-file": [false],
         "no-implicit-dependencies": false,
         "no-submodule-imports": false,
         "no-null-keyword": true,
         "return-undefined": true,
-        "prefer-readonly": true
+        "prefer-readonly": true,
+        // Functional Programming Rules
+        "no-parameter-reassignment": true,
+        "readonly-keyword": true,
+        "no-delete": true,
+        "no-method-signature": true,
+        "no-mixed-interface": true
+        // "no-expression-statement": [true, { "ignore-prefix": ["console.", "describe", "it", "super", "expect"] }]
     }
 }

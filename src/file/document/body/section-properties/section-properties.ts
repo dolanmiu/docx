@@ -20,21 +20,21 @@ import { IPageSizeAttributes, PageOrientation } from "./page-size/page-size-attr
 import { TitlePage } from "./title-page/title-page";
 
 export interface IHeaderFooterGroup<T> {
-    default?: T;
-    first?: T;
-    even?: T;
+    readonly default?: T;
+    readonly first?: T;
+    readonly even?: T;
 }
 
 interface IHeadersOptions {
-    headers?: IHeaderFooterGroup<HeaderWrapper>;
+    readonly headers?: IHeaderFooterGroup<HeaderWrapper>;
 }
 
 interface IFootersOptions {
-    footers?: IHeaderFooterGroup<FooterWrapper>;
+    readonly footers?: IHeaderFooterGroup<FooterWrapper>;
 }
 
 interface ITitlePageOptions {
-    titlePage?: boolean;
+    readonly titlePage?: boolean;
 }
 
 export type SectionPropertiesOptions = IPageSizeAttributes &

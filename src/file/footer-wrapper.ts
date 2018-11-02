@@ -8,8 +8,8 @@ import { Relationships } from "./relationships";
 import { Table } from "./table";
 
 export interface IDocumentFooter {
-    footer: FooterWrapper;
-    type: FooterReferenceType;
+    readonly footer: FooterWrapper;
+    readonly type: FooterReferenceType;
 }
 
 export class FooterWrapper {

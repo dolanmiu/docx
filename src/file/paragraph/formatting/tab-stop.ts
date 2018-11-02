@@ -8,11 +8,32 @@ export class TabStop extends XmlComponent {
     }
 }
 
-export type TabValue = "left" | "right" | "center" | "bar" | "clear" | "decimal" | "end" | "num" | "start";
-export type LeaderType = "dot" | "hyphen" | "middleDot" | "none" | "underscore";
+export enum TabValue {
+    LEFT = "left",
+    RIGHT = "right",
+    CENTER = "center",
+    BAR = "bar",
+    CLEAR = "clear",
+    DECIMAL = "decimal",
+    END = "end",
+    NUM = "num",
+    START = "start",
+}
 
-export class TabAttributes extends XmlAttributeComponent<{ val: TabValue; pos: string | number; leader?: LeaderType }> {
-    protected xmlKeys = { val: "w:val", pos: "w:pos", leader: "w:leader" };
+export enum LeaderType {
+    DOT = "dot",
+    HYPHEN = "hyphen",
+    MIDDLE_DOT = "middleDot",
+    NONE = "none",
+    UNDERSCORE = "underscore",
+}
+
+export class TabAttributes extends XmlAttributeComponent<{
+    readonly val: TabValue;
+    readonly pos: string | number;
+    readonly leader?: LeaderType;
+}> {
+    protected readonly xmlKeys = { val: "w:val", pos: "w:pos", leader: "w:leader" };
 }
 
 export class TabStopItem extends XmlComponent {
@@ -30,24 +51,24 @@ export class TabStopItem extends XmlComponent {
 
 export class MaxRightTabStop extends TabStop {
     constructor(leader?: LeaderType) {
-        super(new TabStopItem("right", 9026, leader));
+        super(new TabStopItem(TabValue.RIGHT, 9026, leader));
     }
 }
 
 export class LeftTabStop extends TabStop {
     constructor(position: number, leader?: LeaderType) {
-        super(new TabStopItem("left", position, leader));
+        super(new TabStopItem(TabValue.LEFT, position, leader));
     }
 }
 
 export class RightTabStop extends TabStop {
     constructor(position: number, leader?: LeaderType) {
-        super(new TabStopItem("right", position, leader));
+        super(new TabStopItem(TabValue.RIGHT, position, leader));
     }
 }
 
 export class CenterTabStop extends TabStop {
     constructor(position: number, leader?: LeaderType) {
-        super(new TabStopItem("center", position, leader));
+        super(new TabStopItem(TabValue.CENTER, position, leader));
     }
 }

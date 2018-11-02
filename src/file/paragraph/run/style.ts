@@ -1,7 +1,7 @@
 import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
 
-class StyleAttributes extends XmlAttributeComponent<{ val: string }> {
-    protected xmlKeys = { val: "w:val" };
+class StyleAttributes extends XmlAttributeComponent<{ readonly val: string }> {
+    protected readonly xmlKeys = { val: "w:val" };
 }
 
 export class Style extends XmlComponent {

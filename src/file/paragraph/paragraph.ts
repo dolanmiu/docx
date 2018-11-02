@@ -4,7 +4,7 @@ import { Image } from "file/media";
 import { Num } from "file/numbering/num";
 import { XmlComponent } from "file/xml-components";
 
-import { Alignment } from "./formatting/alignment";
+import { Alignment, AlignmentOptions } from "./formatting/alignment";
 import { Bidirectional } from "./formatting/bidirectional";
 import { Border, ThematicBreak } from "./formatting/border";
 import { IIndentAttributesProperties, Indent } from "./formatting/indent";
@@ -110,37 +110,37 @@ export class Paragraph extends XmlComponent {
     }
 
     public center(): Paragraph {
-        this.properties.push(new Alignment("center"));
+        this.properties.push(new Alignment(AlignmentOptions.CENTER));
         return this;
     }
 
     public left(): Paragraph {
-        this.properties.push(new Alignment("left"));
+        this.properties.push(new Alignment(AlignmentOptions.LEFT));
         return this;
     }
 
     public right(): Paragraph {
-        this.properties.push(new Alignment("right"));
+        this.properties.push(new Alignment(AlignmentOptions.RIGHT));
         return this;
     }
 
     public start(): Paragraph {
-        this.properties.push(new Alignment("start"));
+        this.properties.push(new Alignment(AlignmentOptions.START));
         return this;
     }
 
     public end(): Paragraph {
-        this.properties.push(new Alignment("end"));
+        this.properties.push(new Alignment(AlignmentOptions.END));
         return this;
     }
 
     public distribute(): Paragraph {
-        this.properties.push(new Alignment("distribute"));
+        this.properties.push(new Alignment(AlignmentOptions.DISTRIBUTE));
         return this;
     }
 
     public justified(): Paragraph {
-        this.properties.push(new Alignment("both"));
+        this.properties.push(new Alignment(AlignmentOptions.BOTH));
         return this;
     }
 

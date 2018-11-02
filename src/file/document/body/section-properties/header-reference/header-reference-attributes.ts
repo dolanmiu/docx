@@ -7,12 +7,12 @@ export enum HeaderReferenceType {
 }
 
 export interface IHeaderReferenceAttributes {
-    type: string;
-    id: string;
+    readonly type: string;
+    readonly id: string;
 }
 
 export class HeaderReferenceAttributes extends XmlAttributeComponent<IHeaderReferenceAttributes> {
-    protected xmlKeys = {
+    protected readonly xmlKeys = {
         type: "w:type",
         id: "r:id",
     };

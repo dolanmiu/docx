@@ -1,16 +1,12 @@
 // http://officeopenxml.com/WPbookmark.php
-
 import { XmlComponent } from "file/xml-components";
 import { TextRun } from "../run";
 import { BookmarkEndAttributes, BookmarkStartAttributes } from "./bookmark-attributes";
 
 export class Bookmark {
-    public linkId: number;
-
+    public readonly linkId: number;
     public readonly start: BookmarkStart;
-
     public readonly text: TextRun;
-
     public readonly end: BookmarkEnd;
 
     constructor(name: string, text: string, relationshipsCount: number) {
@@ -23,7 +19,7 @@ export class Bookmark {
 }
 
 export class BookmarkStart extends XmlComponent {
-    public linkId: number;
+    public readonly linkId: number;
 
     constructor(name: string, relationshipsCount: number) {
         super("w:bookmarkStart");
@@ -39,7 +35,7 @@ export class BookmarkStart extends XmlComponent {
 }
 
 export class BookmarkEnd extends XmlComponent {
-    public linkId: number;
+    public readonly linkId: number;
 
     constructor(relationshipsCount: number) {
         super("w:bookmarkEnd");

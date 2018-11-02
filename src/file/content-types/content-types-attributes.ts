@@ -1,11 +1,11 @@
 import { XmlAttributeComponent } from "file/xml-components";
 
 export interface IContentTypeAttributes {
-    xmlns?: string;
+    readonly xmlns?: string;
 }
 
 export class ContentTypeAttributes extends XmlAttributeComponent<IContentTypeAttributes> {
-    protected xmlKeys = {
+    protected readonly xmlKeys = {
         xmlns: "xmlns",
     };
 }

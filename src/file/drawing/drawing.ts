@@ -11,16 +11,16 @@ export enum PlacementPosition {
 }
 
 export interface IDistance {
-    distT?: number;
-    distB?: number;
-    distL?: number;
-    distR?: number;
+    readonly distT?: number;
+    readonly distB?: number;
+    readonly distL?: number;
+    readonly distR?: number;
 }
 
 export interface IDrawingOptions {
-    position?: PlacementPosition;
-    textWrapping?: ITextWrapping;
-    floating?: IFloating;
+    readonly position?: PlacementPosition;
+    readonly textWrapping?: ITextWrapping;
+    readonly floating?: IFloating;
 }
 
 const defaultDrawingOptions: IDrawingOptions = {

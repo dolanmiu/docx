@@ -7,12 +7,12 @@ export enum FooterReferenceType {
 }
 
 export interface IFooterReferenceAttributes {
-    type: string;
-    id: string;
+    readonly type: string;
+    readonly id: string;
 }
 
 export class FooterReferenceAttributes extends XmlAttributeComponent<IFooterReferenceAttributes> {
-    protected xmlKeys = {
+    protected readonly xmlKeys = {
         type: "w:type",
         id: "r:id",
     };

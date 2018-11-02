@@ -1,15 +1,15 @@
 import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
 
 export interface ILatentStyleExceptionAttributesProperties {
-    name?: string;
-    uiPriority?: string;
-    qFormat?: string;
-    semiHidden?: string;
-    unhideWhenUsed?: string;
+    readonly name?: string;
+    readonly uiPriority?: string;
+    readonly qFormat?: string;
+    readonly semiHidden?: string;
+    readonly unhideWhenUsed?: string;
 }
 
 export class LatentStyleExceptionAttributes extends XmlAttributeComponent<ILatentStyleExceptionAttributesProperties> {
-    protected xmlKeys = {
+    protected readonly xmlKeys = {
         name: "w:name",
         uiPriority: "w:uiPriority",
         qFormat: "w:qFormat",

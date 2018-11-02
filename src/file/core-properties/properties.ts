@@ -3,14 +3,14 @@ import { DocumentAttributes } from "../document/document-attributes";
 import { Created, Creator, Description, Keywords, LastModifiedBy, Modified, Revision, Subject, Title } from "./components";
 
 export interface IPropertiesOptions {
-    title?: string;
-    subject?: string;
-    creator?: string;
-    keywords?: string;
-    description?: string;
-    lastModifiedBy?: string;
-    revision?: string;
-    externalStyles?: string;
+    readonly title?: string;
+    readonly subject?: string;
+    readonly creator?: string;
+    readonly keywords?: string;
+    readonly description?: string;
+    readonly lastModifiedBy?: string;
+    readonly revision?: string;
+    readonly externalStyles?: string;
 }
 
 export class CoreProperties extends XmlComponent {

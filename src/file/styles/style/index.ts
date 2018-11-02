@@ -1,4 +1,16 @@
-import * as paragraph from "file/paragraph";
+import {
+    Alignment,
+    AlignmentOptions,
+    Indent,
+    ISpacingProperties,
+    KeepLines,
+    KeepNext,
+    LeftTabStop,
+    MaxRightTabStop,
+    ParagraphProperties,
+    Spacing,
+    ThematicBreak,
+} from "file/paragraph";
 import * as formatting from "file/paragraph/run/formatting";
 import { RunProperties } from "file/paragraph/run/properties";
 import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
@@ -6,14 +18,14 @@ import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
 import { BasedOn, Link, Name, Next, QuickFormat, SemiHidden, UiPriority, UnhideWhenUsed } from "./components";
 
 export interface IStyleAttributes {
-    type?: string;
-    styleId?: string;
-    default?: boolean;
-    customStyle?: string;
+    readonly type?: string;
+    readonly styleId?: string;
+    readonly default?: boolean;
+    readonly customStyle?: string;
 }
 
 class StyleAttributes extends XmlAttributeComponent<IStyleAttributes> {
-    protected xmlKeys = {
+    protected readonly xmlKeys = {
         type: "w:type",
         styleId: "w:styleId",
         default: "w:default",
@@ -36,12 +48,12 @@ export class Style extends XmlComponent {
 }
 
 export class ParagraphStyle extends Style {
-    private readonly paragraphProperties: paragraph.ParagraphProperties;
+    private readonly paragraphProperties: ParagraphProperties;
     private readonly runProperties: RunProperties;
 
     constructor(styleId: string, name?: string) {
         super({ type: "paragraph", styleId: styleId }, name);
-        this.paragraphProperties = new paragraph.ParagraphProperties();
+        this.paragraphProperties = new ParagraphProperties();
         this.runProperties = new RunProperties();
         this.root.push(this.paragraphProperties);
         this.root.push(this.runProperties);
@@ -129,47 +141,47 @@ export class ParagraphStyle extends Style {
     // --------------------- Paragraph formatting ------------------------ //
 
     public center(): ParagraphStyle {
-        return this.addParagraphProperty(new paragraph.Alignment("center"));
+        return this.addParagraphProperty(new Alignment(AlignmentOptions.CENTER));
     }
 
     public left(): ParagraphStyle {
-        return this.addParagraphProperty(new paragraph.Alignment("left"));
+        return this.addParagraphProperty(new Alignment(AlignmentOptions.LEFT));
     }
 
     public right(): ParagraphStyle {
-        return this.addParagraphProperty(new paragraph.Alignment("right"));
+        return this.addParagraphProperty(new Alignment(AlignmentOptions.RIGHT));
     }
 
     public justified(): ParagraphStyle {
-        return this.addParagraphProperty(new paragraph.Alignment("both"));
+        return this.addParagraphProperty(new Alignment(AlignmentOptions.BOTH));
     }
 
     public thematicBreak(): ParagraphStyle {
-        return this.addParagraphProperty(new paragraph.ThematicBreak());
+        return this.addParagraphProperty(new ThematicBreak());
     }
 
     public maxRightTabStop(): ParagraphStyle {
-        return this.addParagraphProperty(new paragraph.MaxRightTabStop());
+        return this.addParagraphProperty(new MaxRightTabStop());
     }
 
     public leftTabStop(position: number): ParagraphStyle {
-        return this.addParagraphProperty(new paragraph.LeftTabStop(position));
+        return this.addParagraphProperty(new LeftTabStop(position));
     }
 
     public indent(attrs: object): ParagraphStyle {
-        return this.addParagraphProperty(new paragraph.Indent(attrs));
+        return this.addParagraphProperty(new Indent(attrs));
     }
 
-    public spacing(params: paragraph.ISpacingProperties): ParagraphStyle {
-        return this.addParagraphProperty(new paragraph.Spacing(params));
+    public spacing(params: ISpacingProperties): ParagraphStyle {
+        return this.addParagraphProperty(new Spacing(params));
     }
 
     public keepNext(): ParagraphStyle {
-        return this.addParagraphProperty(new paragraph.KeepNext());
+        return this.addParagraphProperty(new KeepNext());
     }
 
     public keepLines(): ParagraphStyle {
-        return this.addParagraphProperty(new paragraph.KeepLines());
+        return this.addParagraphProperty(new KeepLines());
     }
 }
 

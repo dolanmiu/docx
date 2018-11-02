@@ -2,8 +2,8 @@ import { XmlComponent } from "file/xml-components";
 import { HeaderReferenceAttributes, HeaderReferenceType } from "./header-reference-attributes";
 
 export interface IHeaderOptions {
-    headerType?: HeaderReferenceType;
-    headerId?: number;
+    readonly headerType?: HeaderReferenceType;
+    readonly headerId?: number;
 }
 
 export class HeaderReference extends XmlComponent {

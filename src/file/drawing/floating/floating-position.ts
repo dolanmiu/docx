@@ -39,22 +39,22 @@ export enum VerticalPositionAlign {
 }
 
 export interface IHorizontalPositionOptions {
-    relative: HorizontalPositionRelativeFrom;
-    align?: HorizontalPositionAlign;
-    offset?: number;
+    readonly relative: HorizontalPositionRelativeFrom;
+    readonly align?: HorizontalPositionAlign;
+    readonly offset?: number;
 }
 
 export interface IVerticalPositionOptions {
-    relative: VerticalPositionRelativeFrom;
-    align?: VerticalPositionAlign;
-    offset?: number;
+    readonly relative: VerticalPositionRelativeFrom;
+    readonly align?: VerticalPositionAlign;
+    readonly offset?: number;
 }
 
 export interface IFloating {
-    horizontalPosition: IHorizontalPositionOptions;
-    verticalPosition: IVerticalPositionOptions;
-    allowOverlap?: boolean;
-    lockAnchor?: boolean;
-    behindDocument?: boolean;
-    layoutInCell?: boolean;
+    readonly horizontalPosition: IHorizontalPositionOptions;
+    readonly verticalPosition: IVerticalPositionOptions;
+    readonly allowOverlap?: boolean;
+    readonly lockAnchor?: boolean;
+    readonly behindDocument?: boolean;
+    readonly layoutInCell?: boolean;
 }

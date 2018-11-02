@@ -1,13 +1,13 @@
 import { XmlAttributeComponent } from "file/xml-components";
 
 export interface INonVisualPropertiesAttributes {
-    id?: number;
-    name?: string;
-    descr?: string;
+    readonly id?: number;
+    readonly name?: string;
+    readonly descr?: string;
 }
 
 export class NonVisualPropertiesAttributes extends XmlAttributeComponent<INonVisualPropertiesAttributes> {
-    protected xmlKeys = {
+    protected readonly xmlKeys = {
         id: "id",
         name: "name",
         descr: "desc",

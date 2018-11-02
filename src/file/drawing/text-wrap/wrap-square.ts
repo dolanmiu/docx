@@ -4,11 +4,11 @@ import { ITextWrapping, WrapTextOption } from ".";
 import { IDistance } from "../drawing";
 
 interface IWrapSquareAttributes extends IDistance {
-    wrapText?: WrapTextOption;
+    readonly wrapText?: WrapTextOption;
 }
 
 class WrapSquareAttributes extends XmlAttributeComponent<IWrapSquareAttributes> {
-    protected xmlKeys = {
+    protected readonly xmlKeys = {
         distT: "distT",
         distB: "distB",
         distL: "distL",

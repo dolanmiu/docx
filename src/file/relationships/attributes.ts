@@ -1,11 +1,11 @@
 import { XmlAttributeComponent } from "file/xml-components";
 
 export interface IRelationshipsAttributesProperties {
-    xmlns: string;
+    readonly xmlns: string;
 }
 
 export class RelationshipsAttributes extends XmlAttributeComponent<IRelationshipsAttributesProperties> {
-    protected xmlKeys = {
+    protected readonly xmlKeys = {
         xmlns: "xmlns",
     };
 }

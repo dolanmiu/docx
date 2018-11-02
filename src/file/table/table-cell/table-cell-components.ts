@@ -2,13 +2,13 @@ import { BorderStyle } from "file/styles";
 import { IXmlableObject, XmlAttributeComponent, XmlComponent } from "file/xml-components";
 
 interface ICellBorder {
-    style: BorderStyle;
-    size: number;
-    color: string;
+    readonly style: BorderStyle;
+    readonly size: number;
+    readonly color: string;
 }
 
 class CellBorderAttributes extends XmlAttributeComponent<ICellBorder> {
-    protected xmlKeys = { style: "w:val", size: "w:sz", color: "w:color" };
+    protected readonly xmlKeys = { style: "w:val", size: "w:sz", color: "w:color" };
 }
 
 class BaseTableCellBorder extends XmlComponent {
@@ -71,8 +71,8 @@ export class TableCellBorders extends XmlComponent {
 /**
  * Attributes fot the GridSpan element.
  */
-class GridSpanAttributes extends XmlAttributeComponent<{ val: number }> {
-    protected xmlKeys = { val: "w:val" };
+class GridSpanAttributes extends XmlAttributeComponent<{ readonly val: number }> {
+    protected readonly xmlKeys = { val: "w:val" };
 }
 
 /**
@@ -104,8 +104,8 @@ export enum VMergeType {
     RESTART = "restart",
 }
 
-class VMergeAttributes extends XmlAttributeComponent<{ val: VMergeType }> {
-    protected xmlKeys = { val: "w:val" };
+class VMergeAttributes extends XmlAttributeComponent<{ readonly val: VMergeType }> {
+    protected readonly xmlKeys = { val: "w:val" };
 }
 
 /**
@@ -129,8 +129,8 @@ export enum VerticalAlign {
     TOP = "top",
 }
 
-class VAlignAttributes extends XmlAttributeComponent<{ val: VerticalAlign }> {
-    protected xmlKeys = { val: "w:val" };
+class VAlignAttributes extends XmlAttributeComponent<{ readonly val: VerticalAlign }> {
+    protected readonly xmlKeys = { val: "w:val" };
 }
 
 /**
@@ -159,8 +159,8 @@ export enum WidthType {
     PERCENTAGE = "pct",
 }
 
-class TableCellWidthAttributes extends XmlAttributeComponent<{ type: WidthType; width: string | number }> {
-    protected xmlKeys = { width: "w:w", type: "w:type" };
+class TableCellWidthAttributes extends XmlAttributeComponent<{ readonly type: WidthType; readonly width: string | number }> {
+    protected readonly xmlKeys = { width: "w:w", type: "w:type" };
 }
 
 /**
@@ -180,13 +180,13 @@ export class TableCellWidth extends XmlComponent {
 }
 
 export interface ITableCellShadingAttributesProperties {
-    fill?: string;
-    color?: string;
-    val?: string;
+    readonly fill?: string;
+    readonly color?: string;
+    readonly val?: string;
 }
 
 class TableCellShadingAttributes extends XmlAttributeComponent<ITableCellShadingAttributesProperties> {
-    protected xmlKeys = {
+    protected readonly xmlKeys = {
         fill: "w:fill",
         color: "w:color",
         val: "w:val",

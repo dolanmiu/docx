@@ -25,7 +25,7 @@ import { Underline } from "./underline";
 import { XmlComponent } from "file/xml-components";
 
 export class Run extends XmlComponent {
-    protected properties: RunProperties;
+    protected readonly properties: RunProperties;
 
     constructor() {
         super("w:r");

@@ -1,7 +1,8 @@
 import { IXmlableObject } from "./xmlable-object";
 
 export abstract class BaseXmlComponent {
-    protected rootKey: string;
+    protected readonly rootKey: string;
+    // tslint:disable-next-line:readonly-keyword
     protected deleted: boolean = false;
 
     constructor(rootKey: string) {

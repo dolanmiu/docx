@@ -1,12 +1,12 @@
 import { XmlAttributeComponent } from "file/xml-components";
 
 export interface IGraphicFrameLockAttributes {
-    xmlns?: string;
-    noChangeAspect?: number;
+    readonly xmlns?: string;
+    readonly noChangeAspect?: number;
 }
 
 export class GraphicFrameLockAttributes extends XmlAttributeComponent<IGraphicFrameLockAttributes> {
-    protected xmlKeys = {
+    protected readonly xmlKeys = {
         xmlns: "xmlns:a",
         noChangeAspect: "noChangeAspect",
     };

@@ -1,13 +1,13 @@
 import { XmlAttributeComponent } from "file/xml-components";
 
 export interface IDocPropertiesAttributes {
-    id?: number;
-    name?: string;
-    descr?: string;
+    readonly id?: number;
+    readonly name?: string;
+    readonly descr?: string;
 }
 
 export class DocPropertiesAttributes extends XmlAttributeComponent<IDocPropertiesAttributes> {
-    protected xmlKeys = {
+    protected readonly xmlKeys = {
         id: "id",
         name: "name",
         descr: "descr",

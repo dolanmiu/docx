@@ -6,13 +6,13 @@ export enum PageOrientation {
 }
 
 export interface IPageSizeAttributes {
-    width?: number;
-    height?: number;
-    orientation?: PageOrientation;
+    readonly width?: number;
+    readonly height?: number;
+    readonly orientation?: PageOrientation;
 }
 
 export class PageSizeAttributes extends XmlAttributeComponent<IPageSizeAttributes> {
-    protected xmlKeys = {
+    protected readonly xmlKeys = {
         width: "w:w",
         height: "w:h",
         orientation: "w:orient",

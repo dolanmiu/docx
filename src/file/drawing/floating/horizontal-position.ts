@@ -5,11 +5,11 @@ import { HorizontalPositionRelativeFrom, IHorizontalPositionOptions } from "./fl
 import { PositionOffset } from "./position-offset";
 
 interface IHorizontalPositionAttributes {
-    relativeFrom: HorizontalPositionRelativeFrom;
+    readonly relativeFrom: HorizontalPositionRelativeFrom;
 }
 
 class HorizontalPositionAttributes extends XmlAttributeComponent<IHorizontalPositionAttributes> {
-    protected xmlKeys = {
+    protected readonly xmlKeys = {
         relativeFrom: "relativeFrom",
     };
 }

@@ -3,7 +3,7 @@ import { XmlComponent } from "file/xml-components";
 import { Border } from "./formatting/border";
 
 export class ParagraphProperties extends XmlComponent {
-    public paragraphBorder: Border;
+    public readonly paragraphBorder: Border;
 
     constructor() {
         super("w:pPr");
