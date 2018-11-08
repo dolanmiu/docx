@@ -75,7 +75,7 @@ abstractNum.createLevel(0, "upperRoman", "%1", "start").addParagraphProperty(new
 abstractNum.createLevel(1, "decimal", "%2.", "start").addParagraphProperty(new Indent(1440, 980));
 abstractNum.createLevel(2, "lowerLetter", "%3)", "start").addParagraphProperty(new Indent(2160, 1700));
 
-const concrete = numbering.createConcreteNumbering(numberedAbstract);
+const concrete = numbering.createConcreteNumbering(abstractNum);
 ```
 
 You can then apply your concrete style to paragraphs using their
