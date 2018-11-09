@@ -158,7 +158,8 @@ _Source: https://github.com/dolanmiu/docx/blob/master/demo/demo15.ts_
 
 ## Sections
 
-Example of how sections work. Sections allow multiple headers and footers, and `landscape`/`portrait` inside the same document
+Example of how sections work. Sections allow multiple headers and footers, and `landscape`/`portrait` inside the same document. 
+Also you can have different page number formats and starts for different sections.
 
 [Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/demo16.ts ":include")
 
