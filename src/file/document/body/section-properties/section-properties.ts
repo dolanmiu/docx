@@ -14,7 +14,7 @@ import { HeaderReference } from "./header-reference/header-reference";
 import { IPageBordersOptions, PageBorders } from "./page-border";
 import { PageMargin } from "./page-margin/page-margin";
 import { IPageMarginAttributes } from "./page-margin/page-margin-attributes";
-import { IPageNumberTypeAttributes, PageNumberFormat, PageNumberType } from "./page-number";
+import { IPageNumberTypeAttributes, PageNumberType } from "./page-number";
 import { PageSize } from "./page-size/page-size";
 import { IPageSizeAttributes, PageOrientation } from "./page-size/page-size-attributes";
 import { TitlePage } from "./title-page/title-page";
@@ -69,7 +69,7 @@ export class SectionProperties extends XmlComponent {
             orientation = PageOrientation.PORTRAIT,
             headers,
             footers,
-            pageNumberFormatType = PageNumberFormat.DECIMAL,
+            pageNumberFormatType,
             pageNumberStart,
             pageBorders,
             pageBorderTop,
@@ -88,7 +88,9 @@ export class SectionProperties extends XmlComponent {
         this.addHeaders(headers);
         this.addFooters(footers);
 
-        this.root.push(new PageNumberType(pageNumberStart, pageNumberFormatType));
+        if (pageNumberStart || pageNumberFormatType) {
+            this.root.push(new PageNumberType(pageNumberStart, pageNumberFormatType));
+        }
 
         if (pageBorders || pageBorderTop || pageBorderRight || pageBorderBottom || pageBorderLeft) {
             this.root.push(
