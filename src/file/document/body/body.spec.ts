@@ -17,7 +17,7 @@ describe("Body", () => {
             expect(formatted)
                 .to.have.property("w:sectPr")
                 .and.to.be.an.instanceof(Array);
-            expect(formatted["w:sectPr"]).to.have.length(5);
+            expect(formatted["w:sectPr"]).to.have.length(4);
         });
     });
 
@@ -76,7 +76,6 @@ describe("Body", () => {
                                             },
                                             { "w:cols": [{ _attr: { "w:space": 708 } }] },
                                             { "w:docGrid": [{ _attr: { "w:linePitch": 360 } }] },
-                                            { "w:pgNumType": [{ _attr: { "w:fmt": "decimal" } }] },
                                         ],
                                     },
                                 ],
@@ -104,7 +103,6 @@ describe("Body", () => {
                             },
                             { "w:cols": [{ _attr: { "w:space": 708 } }] },
                             { "w:docGrid": [{ _attr: { "w:linePitch": 360 } }] },
-                            { "w:pgNumType": [{ _attr: { "w:fmt": "decimal" } }] },
                         ],
                     },
                 ],
