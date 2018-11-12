@@ -33,7 +33,7 @@ export class Compiler {
         this.formatter = new Formatter();
     }
 
-    public async compile(file: File): Promise<JSZip> {
+    public compile(file: File): JSZip {
         const zip = new JSZip();
 
         const xmlifiedFileMapping = this.xmlifyFile(file);
