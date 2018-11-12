@@ -46,4 +46,24 @@ describe("Packer", () => {
             });
         });
     });
+
+    describe("#toBase64String()", () => {
+        it("should create a standard docx file", async function() {
+            this.timeout(99999999);
+            const str = await packer.toBase64String(file);
+
+            assert.isDefined(str);
+            assert.isTrue(str.length > 0);
+        });
+
+        it("should handle exception if it throws any", () => {
+            // tslint:disable-next-line:no-any
+            const compiler = stub((packer as any).compiler, "compile");
+
+            compiler.throwsException();
+            return packer.toBase64String(file).catch((error) => {
+                assert.isDefined(error);
+            });
+        });
+    });
 });
