@@ -12,7 +12,7 @@
 
 ## Always think about the user
 
-The number one pillar for contribution is to **ALWAYS** think about how the user will use the library. 
+The number one pillar for contribution to `docx` is to **ALWAYS** think about how the user will use `docx`. 
 
 Put yourself in their position, and imagine how they would feel about your feature you wrote.
 
@@ -37,13 +37,13 @@ Unesesary coment removed // Make sure to use correct spelling
 
 ## No leaky components in API interface
 
-This mainly applies to the API the end user will consume.
+> This mainly applies to the API the end user will consume.
 
-Try to make method parameters accept primatives, or `json` objects, so that child components are created **inside** the component, rather than being **injected** in.
+Try to make method parameters of the outside API accept primatives, or `json` objects, so that child components are created **inside** the component, rather than being **injected** in.
 
 This is so that:
 
-1. Imports are much cleaner, no need for:
+1. Imports are much cleaner for the end user, no need for:
    ```js
    import { ChildComponent } from "./my-feature/sub-component/deeper/.../my-deep.component";
    ```
@@ -52,13 +52,17 @@ This is so that:
 3. It means the end user does not need to import and create the child component to be injected.
 
 **Do not**
-`TableFloatProperties` is a class. The outside world would have to construct the object, and inject it in
+
+`TableFloatProperties` is a class. The outside world would have to `new` up the object, and inject it in like so:
+
 ```js
     public float(tableFloatProperties: TableFloatProperties): Table
 ```
 
 **Do**
-`ITableFloatOptions` is an interface for a JSON of primatives.
+
+`ITableFloatOptions` is an interface for a JSON of primatives. The end user would need to pass in a json object and not need to worry about the internals:
+
 ```js
     public float(tableFloatOptions: ITableFloatOptions): Table
 ```
@@ -76,7 +80,8 @@ This is just a guideline, and the rules can sometimes be broken.
     }
     ```
 
-*   Use `add` if you add the element into the method as a parameter:
+*   Use `add` if you add the element into the method as a parameter. 
+    *Note:* This may look like its breaking the previous guideline, but it has semantically different meanings. The previous one is using data to construct an object, whereas this one is simply adding elements into the document:
 
     ```js
     public addParagraph(paragraph: Paragraph) {
