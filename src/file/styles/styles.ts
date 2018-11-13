@@ -1,6 +1,6 @@
 import { BaseXmlComponent, XmlComponent } from "file/xml-components";
 import { DocumentDefaults } from "./defaults";
-import { ParagraphStyle } from "./style";
+import { CharacterStyle, ParagraphStyle } from "./style";
 export * from "./border";
 
 export class Styles extends XmlComponent {
@@ -23,8 +23,14 @@ export class Styles extends XmlComponent {
     }
 
     public createParagraphStyle(styleId: string, name?: string): ParagraphStyle {
-        const para = new ParagraphStyle(styleId, name);
-        this.push(para);
-        return para;
+        const paragraphStyle = new ParagraphStyle(styleId, name);
+        this.push(paragraphStyle);
+        return paragraphStyle;
+    }
+
+    public createCharacterStyle(styleId: string, name?: string): CharacterStyle {
+        const characterStyle = new CharacterStyle(styleId, name);
+        this.push(characterStyle);
+        return characterStyle;
     }
 }
