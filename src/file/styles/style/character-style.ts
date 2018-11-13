@@ -1,7 +1,7 @@
-import { XmlComponent } from "file/xml-components";
-import { BasedOn, UiPriority, UnhideWhenUsed, Link, SemiHidden } from "./components";
 import * as formatting from "file/paragraph/run/formatting";
 import { RunProperties } from "file/paragraph/run/properties";
+import { XmlComponent } from "file/xml-components";
+import { BasedOn, Link, SemiHidden, UiPriority, UnhideWhenUsed } from "./components";
 import { Style } from "./style";
 
 export class CharacterStyle extends Style {

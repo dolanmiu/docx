@@ -1,4 +1,3 @@
-import { XmlComponent } from "file/xml-components";
 import {
     Alignment,
     AlignmentOptions,
@@ -14,7 +13,8 @@ import {
 } from "file/paragraph";
 import * as formatting from "file/paragraph/run/formatting";
 import { RunProperties } from "file/paragraph/run/properties";
-import { BasedOn, QuickFormat, Next, Link, SemiHidden, UnhideWhenUsed, UiPriority } from "./components";
+import { XmlComponent } from "file/xml-components";
+import { BasedOn, Link, Next, QuickFormat, SemiHidden, UiPriority, UnhideWhenUsed } from "./components";
 import { Style } from "./style";
 
 export class ParagraphStyle extends Style {
