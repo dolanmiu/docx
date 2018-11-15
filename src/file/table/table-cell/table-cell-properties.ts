@@ -44,7 +44,7 @@ export class TableCellProperties extends XmlComponent {
         return this;
     }
 
-    public setWidth(width: string | number, type: WidthType): TableCellProperties {
+    public setWidth(width: string | number, type: WidthType = WidthType.AUTO): TableCellProperties {
         this.root.push(new TableCellWidth(width, type));
 
         return this;
