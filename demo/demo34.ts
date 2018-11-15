@@ -20,7 +20,7 @@ const table = doc.createTable(2, 2).float({
     relativeVerticalPosition: RelativeVerticalPosition.BOTTOM,
 });
 table.setFixedWidthLayout();
-table.setWidth(WidthType.DXA, 4535);
+table.setWidth(4535, WidthType.DXA);
 
 table.getCell(0, 0).addContent(new Paragraph("Hello"));
 table.getRow(0).mergeCells(0, 1);

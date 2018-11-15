@@ -1,6 +1,7 @@
 import { expect } from "chai";
 
 import { Formatter } from "export/formatter";
+import { BorderStyle } from "file/styles";
 
 import { VerticalAlign, VMergeType, WidthType } from "./table-cell-components";
 import { TableCellProperties } from "./table-cell-properties";
@@ -42,11 +43,18 @@ describe("TableCellProperties", () => {
     });
 
     describe("#setWidth", () => {
-        it("sets width", () => {
+        it("should set width", () => {
             const cellMargain = new TableCellProperties();
             cellMargain.setWidth(1, WidthType.DXA);
             const tree = new Formatter().format(cellMargain);
             expect(tree).to.deep.equal({ "w:tcPr": [{ "w:tcW": [{ _attr: { "w:type": "dxa", "w:w": 1 } }] }] });
+        });
+
+        it("should set width using default of AUTO", () => {
+            const cellMargain = new TableCellProperties();
+            cellMargain.setWidth(1);
+            const tree = new Formatter().format(cellMargain);
+            expect(tree).to.deep.equal({ "w:tcPr": [{ "w:tcW": [{ _attr: { "w:type": "auto", "w:w": 1 } }] }] });
         });
     });
 
@@ -59,6 +67,20 @@ describe("TableCellProperties", () => {
             });
             const tree = new Formatter().format(cellMargain);
             expect(tree).to.deep.equal({ "w:tcPr": [{ "w:shd": [{ _attr: { "w:fill": "test", "w:color": "000" } }] }] });
+        });
+    });
+
+    describe("#Borders", () => {
+        it("should return the TableCellBorders if Border has borders", () => {
+            const cellMargain = new TableCellProperties();
+            cellMargain.Borders.addTopBorder(BorderStyle.DASH_DOT_STROKED, 3, "red");
+            const borders = cellMargain.Borders;
+
+            const tree = new Formatter().format(borders);
+
+            expect(tree).to.deep.equal({
+                "w:tcBorders": [{ "w:top": [{ _attr: { "w:val": "dashDotStroked", "w:sz": 3, "w:color": "red" } }] }],
+            });
         });
     });
 });

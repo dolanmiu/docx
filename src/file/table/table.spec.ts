@@ -176,8 +176,8 @@ describe("Table", () => {
     });
 
     describe("#setWidth", () => {
-        it("sets the preferred width on the table", () => {
-            const table = new Table(2, 2).setWidth(WidthType.PERCENTAGE, 1000);
+        it("should set the preferred width on the table", () => {
+            const table = new Table(2, 2).setWidth(1000, WidthType.PERCENTAGE);
             const tree = new Formatter().format(table);
             expect(tree)
                 .to.have.property("w:tbl")
@@ -185,6 +185,15 @@ describe("Table", () => {
                 .with.has.length.at.least(1);
             expect(tree["w:tbl"][0]).to.deep.equal({
                 "w:tblPr": [DEFAULT_TABLE_PROPERTIES, { "w:tblW": [{ _attr: { "w:type": "pct", "w:w": 1000 } }] }],
+            });
+        });
+
+        it("sets the preferred width on the table with a default of AUTO", () => {
+            const table = new Table(2, 2).setWidth(1000);
+            const tree = new Formatter().format(table);
+
+            expect(tree["w:tbl"][0]).to.deep.equal({
+                "w:tblPr": [DEFAULT_TABLE_PROPERTIES, { "w:tblW": [{ _attr: { "w:type": "auto", "w:w": 1000 } }] }],
             });
         });
     });
