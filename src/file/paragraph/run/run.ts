@@ -39,7 +39,7 @@ export class Run extends XmlComponent {
         return this;
     }
 
-    public italic(): Run {
+    public italics(): Run {
         this.properties.push(new Italics());
         this.properties.push(new ItalicsComplexScript());
         return this;

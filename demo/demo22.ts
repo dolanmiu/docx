@@ -16,7 +16,7 @@ paragraph2.addRun(textRun2);
 doc.addParagraph(paragraph2);
 
 const paragraph3 = new Paragraph().bidirectional();
-const textRun3 = new TextRun("שלום עולם").italic().rightToLeft();
+const textRun3 = new TextRun("שלום עולם").italics().rightToLeft();
 paragraph3.addRun(textRun3);
 doc.addParagraph(paragraph3);
 

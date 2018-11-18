@@ -14,7 +14,7 @@ const name = new TextRun("Name:")
 ## Available methods
 
 *   For run formatting:
-    *   `.bold()`, `.italic()`, `.smallCaps()`, `.allCaps()`, `.strike()`, `.doubleStrike()`, `.subScript()`, `.superScript()`: Set the formatting property to true
+    *   `.bold()`, `.italics()`, `.smallCaps()`, `.allCaps()`, `.strike()`, `.doubleStrike()`, `.subScript()`, `.superScript()`: Set the formatting property to true
     *   `.underline(style="single", color=null)`: Set the underline style and color
     *   `.color(color)`: Set the text color, using 6 hex characters for RRGGBB (no leading `#`)
     *   `.size(halfPts)`: Set the font size, measured in half-points

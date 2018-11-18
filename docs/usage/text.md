@@ -22,7 +22,7 @@ text.bold();
 ### Italics
 
 ```js
-text.italic();
+text.italics();
 ```
 
 ### Underline
@@ -80,5 +80,5 @@ text.break();
 What if you want to create a paragraph which is **_bold_** and **_italic_**?
 
 ```js
-paragraph.bold().italic();
+paragraph.bold().italics();
 ```
