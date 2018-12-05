@@ -36,6 +36,10 @@ export class Compiler {
     public async compile(file: File): Promise<JSZip> {
         const zip = new JSZip();
 
+        // Run precompile steps
+        file.onCompile();
+        file.Headers.forEach((header) => header.onCompile());
+
         const xmlifiedFileMapping = this.xmlifyFile(file);
 
         for (const key in xmlifiedFileMapping) {

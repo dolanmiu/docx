@@ -2,7 +2,8 @@ import { XmlComponent } from "file/xml-components";
 
 import { FooterReferenceType } from "./document";
 import { Footer } from "./footer/footer";
-import { Image, IMediaData, Media } from "./media";
+import { IOnCompile } from "./life-cycles";
+import { Image, Media } from "./media";
 import { ImageParagraph, Paragraph } from "./paragraph";
 import { Relationships } from "./relationships";
 import { Table } from "./table";
@@ -12,7 +13,7 @@ export interface IDocumentFooter {
     readonly type: FooterReferenceType;
 }
 
-export class FooterWrapper {
+export class FooterWrapper implements IOnCompile {
     private readonly footer: Footer;
     private readonly relationships: Relationships;
 
@@ -43,35 +44,24 @@ export class FooterWrapper {
         this.footer.addChildElement(childElement);
     }
 
-    public addImageRelationship(image: Buffer, refId: number, width?: number, height?: number): IMediaData {
-        const mediaData = this.media.addMedia(image, refId, width, height);
-        this.relationships.createRelationship(
-            mediaData.referenceId,
-            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
-            `media/${mediaData.fileName}`,
-        );
-        return mediaData;
-    }
-
-    public addHyperlinkRelationship(target: string, refId: number, targetMode?: "External" | undefined): void {
-        this.relationships.createRelationship(
-            refId,
-            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink",
-            target,
-            targetMode,
-        );
-    }
-
     public createImage(image: Buffer | string | Uint8Array | ArrayBuffer, width?: number, height?: number): void {
-        // TODO
-        // tslint:disable-next-line:no-any
-        const mediaData = this.addImageRelationship(image as any, this.relationships.RelationshipCount, width, height);
+        const mediaData = this.media.addMedia(image, this.relationships.RelationshipCount, width, height);
         this.addImage(new Image(new ImageParagraph(mediaData)));
     }
 
     public addImage(image: Image): FooterWrapper {
         this.footer.addParagraph(image.Paragraph);
         return this;
+    }
+
+    public onCompile(): void {
+        this.media.Array.forEach((mediaData) => {
+            this.relationships.createRelationship(
+                mediaData.referenceId,
+                "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
+                `media/${mediaData.fileName}`,
+            );
+        });
     }
 
     public get Footer(): Footer {
