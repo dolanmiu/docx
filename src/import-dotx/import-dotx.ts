@@ -124,6 +124,7 @@ export class ImportDotx {
             styles,
             titlePageIsDefined,
         };
+
         return templateDocument;
     }
 
