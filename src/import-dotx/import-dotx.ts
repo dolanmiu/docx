@@ -233,6 +233,7 @@ export class ImportDotx {
     private titlePageIsDefined(xmlData: string): boolean {
         const xmlObj = xml2js(xmlData, { compact: true }) as XMLElementCompact;
         const sectionProp = xmlObj["w:document"]["w:body"]["w:sectPr"];
+
         return sectionProp["w:titlePg"] !== undefined;
     }
 
