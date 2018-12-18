@@ -58,19 +58,69 @@ export class ImportDotx {
         const zipContent = await JSZip.loadAsync(data);
 
         const stylesContent = await zipContent.files["word/styles.xml"].async("text");
+        const documentContent = await zipContent.files["word/document.xml"].async("text");
+        const relationshipContent = await zipContent.files["word/_rels/document.xml.rels"].async("text");
+
         const stylesFactory = new ExternalStylesFactory();
-        const styles = stylesFactory.newInstance(stylesContent);
-
-        const documentContent = zipContent.files["word/document.xml"];
-        const documentRefs: IDocumentRefs = this.extractDocumentRefs(await documentContent.async("text"));
-        const titlePageIsDefined = this.titlePageIsDefined(await documentContent.async("text"));
-
-        const relationshipContent = zipContent.files["word/_rels/document.xml.rels"];
-        const documentRelationships: IRelationshipFileInfo[] = this.findReferenceFiles(await relationshipContent.async("text"));
+        const documentRefs = this.extractDocumentRefs(documentContent);
+        const documentRelationships = this.findReferenceFiles(relationshipContent);
 
         const media = new Media();
 
+        const templateDocument: IDocumentTemplate = {
+            headers: await this.createHeaders(zipContent, documentRefs, documentRelationships, media),
+            footers: await this.createFooters(zipContent, documentRefs, documentRelationships, media),
+            currentRelationshipId: this.currentRelationshipId,
+            styles: stylesFactory.newInstance(stylesContent),
+            titlePageIsDefined: this.checkIfTitlePageIsDefined(documentContent),
+        };
+
+        return templateDocument;
+    }
+
+    private async createFooters(
+        zipContent: JSZip,
+        documentRefs: IDocumentRefs,
+        documentRelationships: IRelationshipFileInfo[],
+        media: Media,
+    ): Promise<IDocumentFooter[]> {
+        const footers: IDocumentFooter[] = [];
+
+        for (const footerRef of documentRefs.footers) {
+            const relationFileInfo = documentRelationships.find((rel) => rel.id === footerRef.id);
+
+            if (relationFileInfo === null || !relationFileInfo) {
+                throw new Error(`Can not find target file for id ${footerRef.id}`);
+            }
+
+            const xmlData = await zipContent.files[`word/${relationFileInfo.target}`].async("text");
+            const xmlObj = xml2js(xmlData, { compact: false, captureSpacesBetweenElements: true }) as XMLElement;
+            let footerXmlElement: XMLElement | undefined;
+            for (const xmlElm of xmlObj.elements || []) {
+                if (xmlElm.name === "w:ftr") {
+                    footerXmlElement = xmlElm;
+                }
+            }
+            if (footerXmlElement === undefined) {
+                continue;
+            }
+            const importedComp = convertToXmlComponent(footerXmlElement) as ImportedXmlComponent;
+            const footer = new FooterWrapper(media, this.currentRelationshipId++, importedComp);
+            await this.addRelationshipToWrapper(relationFileInfo, zipContent, footer, media);
+            footers.push({ type: footerRef.type, footer });
+        }
+
+        return footers;
+    }
+
+    private async createHeaders(
+        zipContent: JSZip,
+        documentRefs: IDocumentRefs,
+        documentRelationships: IRelationshipFileInfo[],
+        media: Media,
+    ): Promise<IDocumentHeader[]> {
         const headers: IDocumentHeader[] = [];
+
         for (const headerRef of documentRefs.headers) {
             const relationFileInfo = documentRelationships.find((rel) => rel.id === headerRef.id);
             if (relationFileInfo === null || !relationFileInfo) {
@@ -90,42 +140,12 @@ export class ImportDotx {
             }
             const importedComp = convertToXmlComponent(headerXmlElement) as ImportedXmlComponent;
             const header = new HeaderWrapper(media, this.currentRelationshipId++, importedComp);
+            // await this.addMedia(zipContent, media, documentRefs, documentRelationships);
             await this.addRelationshipToWrapper(relationFileInfo, zipContent, header, media);
             headers.push({ type: headerRef.type, header });
         }
 
-        const footers: IDocumentFooter[] = [];
-        for (const footerRef of documentRefs.footers) {
-            const relationFileInfo = documentRelationships.find((rel) => rel.id === footerRef.id);
-            if (relationFileInfo === null || !relationFileInfo) {
-                throw new Error(`Can not find target file for id ${footerRef.id}`);
-            }
-            const xmlData = await zipContent.files[`word/${relationFileInfo.target}`].async("text");
-            const xmlObj = xml2js(xmlData, { compact: false, captureSpacesBetweenElements: true }) as XMLElement;
-            let footerXmlElement: XMLElement | undefined;
-            for (const xmlElm of xmlObj.elements || []) {
-                if (xmlElm.name === "w:ftr") {
-                    footerXmlElement = xmlElm;
-                }
-            }
-            if (footerXmlElement === undefined) {
-                continue;
-            }
-            const importedComp = convertToXmlComponent(footerXmlElement) as ImportedXmlComponent;
-            const footer = new FooterWrapper(media, this.currentRelationshipId++, importedComp);
-            await this.addRelationshipToWrapper(relationFileInfo, zipContent, footer, media);
-            footers.push({ type: footerRef.type, footer });
-        }
-
-        const templateDocument: IDocumentTemplate = {
-            headers,
-            footers,
-            currentRelationshipId: this.currentRelationshipId,
-            styles,
-            titlePageIsDefined,
-        };
-
-        return templateDocument;
+        return headers;
     }
 
     private async addRelationshipToWrapper(
@@ -147,6 +167,7 @@ export class ImportDotx {
         for (const r of wrapperImagesReferences) {
             const buffer = await zipContent.files[`word/${r.target}`].async("nodebuffer");
             const mediaData = media.addMedia(buffer, r.id);
+
             wrapper.Relationships.createRelationship(
                 mediaData.referenceId,
                 "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
@@ -230,7 +251,7 @@ export class ImportDotx {
         return { headers, footers };
     }
 
-    private titlePageIsDefined(xmlData: string): boolean {
+    private checkIfTitlePageIsDefined(xmlData: string): boolean {
         const xmlObj = xml2js(xmlData, { compact: true }) as XMLElementCompact;
         const sectionProp = xmlObj["w:document"]["w:body"]["w:sectPr"];
 
