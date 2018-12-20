@@ -11,6 +11,7 @@ export interface IPropertiesOptions {
     readonly lastModifiedBy?: string;
     readonly revision?: string;
     readonly externalStyles?: string;
+    readonly trackRevisions?: boolean;
 }
 
 export class CoreProperties extends XmlComponent {

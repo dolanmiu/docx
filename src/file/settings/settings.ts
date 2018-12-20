@@ -41,7 +41,7 @@ export class SettingsAttributes extends XmlAttributeComponent<ISettingsAttribute
     };
 }
 export class Settings extends XmlComponent {
-    constructor(trackChanges?: boolean) {
+    constructor(trackRevisions?: boolean) {
         super("w:settings");
         this.root.push(
             new SettingsAttributes({
@@ -63,7 +63,7 @@ export class Settings extends XmlComponent {
                 wps: "http://schemas.microsoft.com/office/word/2010/wordprocessingShape",
                 Ignorable: "w14 w15 wp14",
             }),
-            new TrackChangesComponent(trackChanges),
+            new TrackRevisionsComponent(trackRevisions),
         );
     }
     public addUpdateFields(): void {
@@ -72,7 +72,7 @@ export class Settings extends XmlComponent {
         }
     }
 }
-class TrackChangesComponent extends XmlComponent {
+class TrackRevisionsComponent extends XmlComponent {
     constructor(value?: boolean) {
         super("w:trackRevisions");
         this.root.push(

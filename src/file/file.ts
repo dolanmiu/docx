@@ -51,6 +51,7 @@ export class File {
         },
         sectionPropertiesOptions: SectionPropertiesOptions = {},
         fileProperties: IFileProperties = {},
+        trackRevisions?: boolean,
     ) {
         this.coreProperties = new CoreProperties(options);
         this.numbering = new Numbering();
@@ -104,7 +105,7 @@ export class File {
         };
 
         this.document = new Document(newSectionPropertiesOptions);
-        this.settings = new Settings();
+        this.settings = new Settings(trackRevisions);
     }
 
     public addTableOfContents(toc: TableOfContents): void {
