@@ -14,7 +14,7 @@ describe("Settings", () => {
             expect(keys).has.length(1);
             expect(keys[0]).to.be.equal("w:settings");
             expect(tree["w:settings"]).is.an.instanceof(Array);
-            expect(tree["w:settings"]).has.length(1);
+            expect(tree["w:settings"]).has.length(2);
             keys = Object.keys(tree["w:settings"][0]);
             expect(keys).is.an.instanceof(Array);
             expect(keys).has.length(1);
@@ -30,7 +30,7 @@ describe("Settings", () => {
             expect(keys[0]).to.be.equal("w:settings");
             const rootArray = tree["w:settings"];
             expect(rootArray).is.an.instanceof(Array);
-            expect(rootArray).has.length(2);
+            expect(rootArray).has.length(3);
             keys = Object.keys(rootArray[0]);
             expect(keys).is.an.instanceof(Array);
             expect(keys).has.length(1);
@@ -38,8 +38,12 @@ describe("Settings", () => {
             keys = Object.keys(rootArray[1]);
             expect(keys).is.an.instanceof(Array);
             expect(keys).has.length(1);
+            expect(keys[0]).to.be.equal("w:trackRevisions");
+            keys = Object.keys(rootArray[2]);
+            expect(keys).is.an.instanceof(Array);
+            expect(keys).has.length(1);
             expect(keys[0]).to.be.equal("w:updateFields");
-            const updateFieldsArray = rootArray[1]["w:updateFields"];
+            const updateFieldsArray = rootArray[2]["w:updateFields"];
             keys = Object.keys(updateFieldsArray[0]);
             expect(keys).is.an.instanceof(Array);
             expect(keys).has.length(1);
