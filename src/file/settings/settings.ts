@@ -41,7 +41,7 @@ export class SettingsAttributes extends XmlAttributeComponent<ISettingsAttribute
     };
 }
 export class Settings extends XmlComponent {
-    constructor() {
+    constructor(trackChanges?: boolean) {
         super("w:settings");
         this.root.push(
             new SettingsAttributes({
@@ -63,11 +63,22 @@ export class Settings extends XmlComponent {
                 wps: "http://schemas.microsoft.com/office/word/2010/wordprocessingShape",
                 Ignorable: "w14 w15 wp14",
             }),
+            new TrackChangesComponent(trackChanges),
         );
     }
     public addUpdateFields(): void {
         if (!this.root.find((child) => child instanceof UpdateFields)) {
             this.addChildElement(new UpdateFields());
         }
+    }
+}
+class TrackChangesComponent extends XmlComponent {
+    constructor(value?: boolean) {
+        super("w:trackRevisions");
+        this.root.push(
+            new Attributes({
+                val: !!value ? "true" : "false",
+            }),
+        );
     }
 }
