@@ -13,7 +13,6 @@ import { IFileProperties } from "./file-properties";
 import { FooterWrapper, IDocumentFooter } from "./footer-wrapper";
 import { FootNotes } from "./footnotes";
 import { HeaderWrapper, IDocumentHeader } from "./header-wrapper";
-import { IOnCompile } from "./life-cycles";
 import { Image, Media } from "./media";
 import { Numbering } from "./numbering";
 import { Bookmark, Hyperlink, Paragraph } from "./paragraph";
@@ -26,7 +25,7 @@ import { DefaultStylesFactory } from "./styles/factory";
 import { Table } from "./table";
 import { TableOfContents } from "./table-of-contents";
 
-export class File implements IOnCompile {
+export class File {
     // tslint:disable-next-line:readonly-keyword
     private currentRelationshipId: number = 1;
 
@@ -221,11 +220,6 @@ export class File implements IOnCompile {
         if (this.document.getTablesOfContents().length) {
             this.settings.addUpdateFields();
         }
-    }
-
-    public onCompile(): void {
-        // this.media.Array.forEach((media) => {
-        // });
     }
 
     private addHeaderToDocument(header: HeaderWrapper, type: HeaderReferenceType = HeaderReferenceType.DEFAULT): void {

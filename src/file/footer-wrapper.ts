@@ -2,7 +2,6 @@ import { XmlComponent } from "file/xml-components";
 
 import { FooterReferenceType } from "./document";
 import { Footer } from "./footer/footer";
-import { IOnCompile } from "./life-cycles";
 import { Image, Media } from "./media";
 import { ImageParagraph, Paragraph } from "./paragraph";
 import { Relationships } from "./relationships";
@@ -13,7 +12,7 @@ export interface IDocumentFooter {
     readonly type: FooterReferenceType;
 }
 
-export class FooterWrapper implements IOnCompile {
+export class FooterWrapper {
     private readonly footer: Footer;
     private readonly relationships: Relationships;
 
@@ -45,23 +44,13 @@ export class FooterWrapper implements IOnCompile {
     }
 
     public createImage(image: Buffer | string | Uint8Array | ArrayBuffer, width?: number, height?: number): void {
-        const mediaData = this.media.addMedia(image, this.relationships.RelationshipCount, width, height);
+        const mediaData = this.media.addMedia(image, width, height);
         this.addImage(new Image(new ImageParagraph(mediaData)));
     }
 
     public addImage(image: Image): FooterWrapper {
         this.footer.addParagraph(image.Paragraph);
         return this;
-    }
-
-    public onCompile(): void {
-        this.media.Array.forEach((mediaData) => {
-            this.relationships.createRelationship(
-                mediaData.referenceId,
-                "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
-                `media/${mediaData.fileName}`,
-            );
-        });
     }
 
     public get Footer(): Footer {

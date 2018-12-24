@@ -166,10 +166,10 @@ export class ImportDotx {
 
         for (const r of wrapperImagesReferences) {
             const buffer = await zipContent.files[`word/${r.target}`].async("nodebuffer");
-            const mediaData = media.addMedia(buffer, r.id);
+            const mediaData = media.addMedia(buffer);
 
             wrapper.Relationships.createRelationship(
-                mediaData.referenceId,
+                r.id,
                 "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
                 `media/${mediaData.fileName}`,
             );

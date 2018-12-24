@@ -9,7 +9,6 @@ import { Anchor } from "./anchor";
 function createDrawing(drawingOptions: IDrawingOptions): Anchor {
     return new Anchor(
         {
-            referenceId: 1,
             fileName: "test.png",
             stream: new Buffer(""),
             dimensions: {
