@@ -10,10 +10,9 @@ describe("Image", () => {
 
     beforeEach(() => {
         image = new ImageParagraph({
-            referenceId: 0,
             stream: new Buffer(""),
             path: "",
-            fileName: "",
+            fileName: "test.png",
             dimensions: {
                 pixels: {
                     x: 10,
@@ -171,7 +170,7 @@ describe("Image", () => {
                                                                                     {
                                                                                         _attr: {
                                                                                             cstate: "none",
-                                                                                            "r:embed": "rId0",
+                                                                                            "r:embed": "rId{test.png}",
                                                                                         },
                                                                                     },
                                                                                 ],

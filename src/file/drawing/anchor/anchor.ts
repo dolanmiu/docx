@@ -1,5 +1,5 @@
 // http://officeopenxml.com/drwPicFloating.php
-import { IMediaDataDimensions } from "file/media";
+import { IMediaData, IMediaDataDimensions } from "file/media";
 import { XmlComponent } from "file/xml-components";
 import { IDrawingOptions } from "../drawing";
 import {
@@ -34,7 +34,7 @@ const defaultOptions: IFloating = {
 };
 
 export class Anchor extends XmlComponent {
-    constructor(referenceId: number, dimensions: IMediaDataDimensions, drawingOptions: IDrawingOptions) {
+    constructor(mediaData: IMediaData, dimensions: IMediaDataDimensions, drawingOptions: IDrawingOptions) {
         super("wp:anchor");
 
         const floating = {
@@ -83,6 +83,6 @@ export class Anchor extends XmlComponent {
 
         this.root.push(new DocProperties());
         this.root.push(new GraphicFrameProperties());
-        this.root.push(new Graphic(referenceId, dimensions.emus.x, dimensions.emus.y));
+        this.root.push(new Graphic(mediaData, dimensions.emus.x, dimensions.emus.y));
     }
 }

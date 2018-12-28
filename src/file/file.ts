@@ -17,6 +17,7 @@ import { Image, Media } from "./media";
 import { Numbering } from "./numbering";
 import { Bookmark, Hyperlink, Paragraph } from "./paragraph";
 import { Relationships } from "./relationships";
+import { TargetModeType } from "./relationships/relationship/relationship";
 import { Settings } from "./settings";
 import { Styles } from "./styles";
 import { ExternalStylesFactory } from "./styles/external-styles-factory";
@@ -147,7 +148,7 @@ export class File {
             hyperlink.linkId,
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink",
             link,
-            "External",
+            TargetModeType.EXTERNAL,
         );
         return hyperlink;
     }

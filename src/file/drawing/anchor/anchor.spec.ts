@@ -8,7 +8,20 @@ import { Anchor } from "./anchor";
 
 function createDrawing(drawingOptions: IDrawingOptions): Anchor {
     return new Anchor(
-        1,
+        {
+            fileName: "test.png",
+            stream: new Buffer(""),
+            dimensions: {
+                pixels: {
+                    x: 0,
+                    y: 0,
+                },
+                emus: {
+                    x: 0,
+                    y: 0,
+                },
+            },
+        },
         {
             pixels: {
                 x: 100,
