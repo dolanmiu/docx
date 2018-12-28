@@ -87,6 +87,12 @@
 								<li class="tsd-kind-constructor tsd-parent-kind-class tsd-is-overwrite tsd-is-external"><a href="inline.html#constructor" class="tsd-kind-icon">constructor</a></li>
 							</ul>
 						</section>
+						<section class="tsd-index-section tsd-is-external">
+							<h3>Properties</h3>
+							<ul class="tsd-index-list">
+								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-external"><a href="inline.html#mediadata" class="tsd-kind-icon">media<wbr>Data</a></li>
+							</ul>
+						</section>
 						<section class="tsd-index-section tsd-is-inherited tsd-is-external">
 							<h3>Accessors</h3>
 							<ul class="tsd-index-list">
@@ -111,20 +117,20 @@
 					<a name="constructor" class="tsd-anchor"></a>
 					<h3>constructor</h3>
 					<ul class="tsd-signatures tsd-kind-constructor tsd-parent-kind-class tsd-is-overwrite tsd-is-external">
-						<li class="tsd-signature tsd-kind-icon">new <wbr>Inline<span class="tsd-signature-symbol">(</span>referenceId<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span>, dimensions<span class="tsd-signature-symbol">: </span><a href="../interfaces/imediadatadimensions.html" class="tsd-signature-type">IMediaDataDimensions</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="inline.html" class="tsd-signature-type">Inline</a></li>
+						<li class="tsd-signature tsd-kind-icon">new <wbr>Inline<span class="tsd-signature-symbol">(</span>mediaData<span class="tsd-signature-symbol">: </span><a href="../interfaces/imediadata.html" class="tsd-signature-type">IMediaData</a>, dimensions<span class="tsd-signature-symbol">: </span><a href="../interfaces/imediadatadimensions.html" class="tsd-signature-type">IMediaDataDimensions</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="inline.html" class="tsd-signature-type">Inline</a></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<p>Overrides <a href="xmlcomponent.html">XmlComponent</a>.<a href="xmlcomponent.html#constructor">constructor</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/3b6aca2/src/file/drawing/inline/inline.ts#L13">file/drawing/inline/inline.ts:13</a></li>
+									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/c70c147/src/file/drawing/inline/inline.ts#L13">file/drawing/inline/inline.ts:13</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
-									<h5>referenceId: <span class="tsd-signature-type">number</span></h5>
+									<h5>mediaData: <a href="../interfaces/imediadata.html" class="tsd-signature-type">IMediaData</a></h5>
 								</li>
 								<li>
 									<h5>dimensions: <a href="../interfaces/imediadatadimensions.html" class="tsd-signature-type">IMediaDataDimensions</a></h5>
@@ -133,6 +139,19 @@
 							<h4 class="tsd-returns-title">Returns <a href="inline.html" class="tsd-signature-type">Inline</a></h4>
 						</li>
 					</ul>
+				</section>
+			</section>
+			<section class="tsd-panel-group tsd-member-group tsd-is-external">
+				<h2>Properties</h2>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-external">
+					<a name="mediadata" class="tsd-anchor"></a>
+					<h3>media<wbr>Data</h3>
+					<div class="tsd-signature tsd-kind-icon">media<wbr>Data<span class="tsd-signature-symbol">:</span> <a href="../interfaces/imediadata.html" class="tsd-signature-type">IMediaData</a></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/c70c147/src/file/drawing/inline/inline.ts#L15">file/drawing/inline/inline.ts:15</a></li>
+						</ul>
+					</aside>
 				</section>
 			</section>
 			<section class="tsd-panel-group tsd-member-group tsd-is-inherited tsd-is-external">
@@ -148,7 +167,7 @@
 							<aside class="tsd-sources">
 								<p>Inherited from <a href="basexmlcomponent.html">BaseXmlComponent</a>.<a href="basexmlcomponent.html#isdeleted">IsDeleted</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/3b6aca2/src/file/xml-components/base.ts#L14">file/xml-components/base.ts:14</a></li>
+									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/c70c147/src/file/xml-components/base.ts#L14">file/xml-components/base.ts:14</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">boolean</span></h4>
@@ -169,7 +188,7 @@
 							<aside class="tsd-sources">
 								<p>Inherited from <a href="xmlcomponent.html">XmlComponent</a>.<a href="xmlcomponent.html#addchildelement">addChildElement</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/3b6aca2/src/file/xml-components/xml-component.ts#L34">file/xml-components/xml-component.ts:34</a></li>
+									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/c70c147/src/file/xml-components/xml-component.ts#L34">file/xml-components/xml-component.ts:34</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -193,7 +212,7 @@
 							<aside class="tsd-sources">
 								<p>Inherited from <a href="xmlcomponent.html">XmlComponent</a>.<a href="xmlcomponent.html#delete">delete</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/3b6aca2/src/file/xml-components/xml-component.ts#L40">file/xml-components/xml-component.ts:40</a></li>
+									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/c70c147/src/file/xml-components/xml-component.ts#L40">file/xml-components/xml-component.ts:40</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
@@ -212,7 +231,7 @@
 								<p>Inherited from <a href="xmlcomponent.html">XmlComponent</a>.<a href="xmlcomponent.html#prepforxml">prepForXml</a></p>
 								<p>Overrides <a href="basexmlcomponent.html">BaseXmlComponent</a>.<a href="basexmlcomponent.html#prepforxml">prepForXml</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/3b6aca2/src/file/xml-components/xml-component.ts#L14">file/xml-components/xml-component.ts:14</a></li>
+									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/c70c147/src/file/xml-components/xml-component.ts#L14">file/xml-components/xml-component.ts:14</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-returns-title">Returns <a href="../interfaces/ixmlableobject.html" class="tsd-signature-type">IXmlableObject</a>
@@ -232,7 +251,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/3b6aca2/src/file/drawing/inline/inline.ts#L37">file/drawing/inline/inline.ts:37</a></li>
+									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/c70c147/src/file/drawing/inline/inline.ts#L37">file/drawing/inline/inline.ts:37</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -267,6 +286,9 @@
 						<ul>
 							<li class=" tsd-kind-constructor tsd-parent-kind-class tsd-is-overwrite tsd-is-external">
 								<a href="inline.html#constructor" class="tsd-kind-icon">constructor</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-external">
+								<a href="inline.html#mediadata" class="tsd-kind-icon">media<wbr>Data</a>
 							</li>
 							<li class=" tsd-kind-get-signature tsd-parent-kind-class tsd-is-inherited tsd-is-external">
 								<a href="inline.html#isdeleted" class="tsd-kind-icon">Is<wbr>Deleted</a>
