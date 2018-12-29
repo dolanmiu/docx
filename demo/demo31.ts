@@ -8,12 +8,12 @@ const doc = new Document();
 const table = doc.createTable(2, 2);
 table
     .getCell(1, 1)
-    .addContent(new Paragraph("This text should be in the middle of the cell"))
-    .CellProperties.setVerticalAlign(VerticalAlign.CENTER);
+    .addParagraph(new Paragraph("This text should be in the middle of the cell"))
+    .Properties.setVerticalAlign(VerticalAlign.CENTER);
 
 table
     .getCell(1, 0)
-    .addContent(
+    .addParagraph(
         new Paragraph(
             "Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah",
         ).heading1(),

@@ -14,7 +14,12 @@ export class TableCell extends XmlComponent {
         this.root.push(this.properties);
     }
 
-    public addContent(content: Paragraph | Table): TableCell {
+    public addParagraph(content: Paragraph): TableCell {
+        this.root.push(content);
+        return this;
+    }
+
+    public addTable(content: Table): TableCell {
         this.root.push(content);
         return this;
     }
@@ -35,11 +40,12 @@ export class TableCell extends XmlComponent {
 
     public createParagraph(text?: string): Paragraph {
         const para = new Paragraph(text);
-        this.addContent(para);
+        this.addParagraph(para);
+
         return para;
     }
 
-    public get CellProperties(): TableCellProperties {
+    public get Properties(): TableCellProperties {
         return this.properties;
     }
 }
