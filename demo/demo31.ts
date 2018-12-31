@@ -9,7 +9,7 @@ const table = doc.createTable(2, 2);
 table
     .getCell(1, 1)
     .addParagraph(new Paragraph("This text should be in the middle of the cell"))
-    .Properties.setVerticalAlign(VerticalAlign.CENTER);
+    .setVerticalAlign(VerticalAlign.CENTER);
 
 table
     .getCell(1, 0)

@@ -40,14 +40,6 @@ const cell = table.getCell([ROW INDEX], [COLUMN INDEX]);
 const cell = table.getCell(0, 2);
 ```
 
-### Cell Properties & Styling
-
-With the cell's `Properties`, you csn change it's borders, set it's vertical alignment
-
-```ts
-cell.Properties;
-```
-
 ## Borders
 
 BorderStyle can be imported from `docx`. Size determines the thickness. HTML color can be a hex code or alias such as `red`.
@@ -80,8 +72,12 @@ cell.Borders.addStartBorder(BorderStyle.DOT_DOT_DASH, 3, "#ff8000");
 ## Set Width
 
 ```ts
-table.setWidth([WIDTH], [OPTIONAL WidthType]);
+import { WidthType } from "docx";
+
+table.setWidth([WIDTH], [OPTIONAL WidthType. Defaults to DXA]);
 ```
+
+For example:
 
 ```ts
 table.setWidth(4535, WidthType.DXA);
@@ -89,7 +85,19 @@ table.setWidth(4535, WidthType.DXA);
 
 ## Vertical Align
 
-## Borders
+Sets the vertical alignment of the contents of the cell
+
+```ts
+import { VerticalAlign } from "docx";
+
+cell.setVerticalAlign([VerticalAlign TYPE]);
+```
+
+For example, to center align a cell:
+
+```ts
+cell.setVerticalAlign(VerticalAlign.CENTER);
+```
 
 ## Rows
 

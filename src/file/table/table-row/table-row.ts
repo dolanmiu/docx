@@ -25,7 +25,7 @@ export class TableRow extends XmlComponent {
 
     public addGridSpan(index: number, cellSpan: number): TableCell {
         const remainCell = this.cells[index];
-        remainCell.Properties.addGridSpan(cellSpan);
+        remainCell.addGridSpan(cellSpan);
         this.cells.splice(index + 1, cellSpan - 1);
         this.root.splice(index + 2, cellSpan - 1);
 

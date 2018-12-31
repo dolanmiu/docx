@@ -9,7 +9,7 @@ const table = doc.createTable(4, 4);
 table
     .getCell(2, 2)
     .addParagraph(new Paragraph("Hello"))
-    .Properties.Borders.addTopBorder(BorderStyle.DASH_DOT_STROKED, 3, "red")
+    .Borders.addTopBorder(BorderStyle.DASH_DOT_STROKED, 3, "red")
     .addBottomBorder(BorderStyle.DOUBLE, 3, "blue")
     .addStartBorder(BorderStyle.DOT_DOT_DASH, 3, "green")
     .addEndBorder(BorderStyle.DOT_DOT_DASH, 3, "#ff8000");
