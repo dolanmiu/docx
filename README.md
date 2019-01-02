@@ -29,6 +29,7 @@ import * as docx from "docx";
 ## Basic Usage
 
 ```js
+var fs = require("fs");
 var docx = require("docx");
 
 // Create document
@@ -41,11 +42,12 @@ paragraph.addRun(new docx.TextRun("Lorem Ipsum Foo Bar"));
 doc.addParagraph(paragraph);
 
 // Used to export the file into a .docx file
-var exporter = new docx.LocalPacker(doc);
+var packer = new docx.Packer();
+packer.toBuffer(doc).then((buffer) => {
+    fs.writeFileSync("My First Document.docx", buffer);
+});
 
-exporter.pack("My First Document");
-
-// Done! A file called 'My First Document.docx' will be in your file system if you used LocalPacker
+// Done! A file called 'My First Document.docx' will be in your file system.
 ```
 
 ## Honoured Mentions
