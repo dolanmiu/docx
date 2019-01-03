@@ -281,12 +281,6 @@ export class File {
 
         for (const header of headers) {
             switch (header.type) {
-                case HeaderReferenceType.DEFAULT:
-                    newGroup = {
-                        ...newGroup,
-                        default: header.header,
-                    };
-                    break;
                 case HeaderReferenceType.FIRST:
                     newGroup = {
                         ...newGroup,
@@ -299,6 +293,7 @@ export class File {
                         even: header.header,
                     };
                     break;
+                case HeaderReferenceType.DEFAULT:
                 default:
                     newGroup = {
                         ...newGroup,
@@ -316,12 +311,6 @@ export class File {
 
         for (const footer of footers) {
             switch (footer.type) {
-                case FooterReferenceType.DEFAULT:
-                    newGroup = {
-                        ...newGroup,
-                        default: footer.footer,
-                    };
-                    break;
                 case FooterReferenceType.FIRST:
                     newGroup = {
                         ...newGroup,
@@ -334,6 +323,7 @@ export class File {
                         even: footer.footer,
                     };
                     break;
+                case FooterReferenceType.DEFAULT:
                 default:
                     newGroup = {
                         ...newGroup,
