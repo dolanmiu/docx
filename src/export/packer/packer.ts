@@ -9,7 +9,7 @@ export class Packer {
     }
 
     public async toBuffer(file: File): Promise<Buffer> {
-        const zip = await this.compiler.compile(file);
+        const zip = this.compiler.compile(file);
         const zipData = (await zip.generateAsync({
             type: "nodebuffer",
             mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -19,7 +19,7 @@ export class Packer {
     }
 
     public async toBase64String(file: File): Promise<string> {
-        const zip = await this.compiler.compile(file);
+        const zip = this.compiler.compile(file);
         const zipData = (await zip.generateAsync({
             type: "base64",
             mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -29,7 +29,7 @@ export class Packer {
     }
 
     public async toBlob(file: File): Promise<Blob> {
-        const zip = await this.compiler.compile(file);
+        const zip = this.compiler.compile(file);
         const zipData = (await zip.generateAsync({
             type: "blob",
             mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
