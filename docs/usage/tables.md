@@ -2,15 +2,15 @@
 
 You can create tables with `docx`. More information can be found [here](http://officeopenxml.com/WPtable.php).
 
-## How to
+## Create Table
 
-To create a table, simply use the `createTable` method on a `document`.
+To create a table, simply use the `createTable()` method on a `document`.
 
 ```ts
 const table = doc.createTable([NUMBER OF ROWS], [NUMBER OF COLUMNS]);
 ```
 
-Alternatively, you can create a table object directly, and then add it in the document
+Alternatively, you can create a table object directly, and then add it in the `document`
 
 ```ts
 const table = new Table(4, 4);
@@ -36,8 +36,18 @@ The above section created a table with cells. To access the cell, use the `getCe
 const cell = table.getCell([ROW INDEX], [COLUMN INDEX]);
 ```
 
+For example:
+
 ```ts
 const cell = table.getCell(0, 2);
+```
+
+### Add paragraph to a cell
+
+Once you have got the cell, you can add data to it with the `addParagraph` method.
+
+```ts
+cell.addParagraph(new Paragraph("Hello"));
 ```
 
 ## Borders
@@ -105,14 +115,6 @@ To get a row, use the `getRow` method on a `table`. There are a handful of metho
 
 ```ts
 table.getRow([ROW INDEX]);
-```
-
-### Add paragraph to a cell
-
-Once you have got the cell, you can add data to it with the `addParagraph` method.
-
-```ts
-cell.addParagraph(new Paragraph("Hello"));
 ```
 
 ## Merge cells together
