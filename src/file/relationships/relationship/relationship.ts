@@ -17,7 +17,9 @@ export type RelationshipType =
     | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink"
     | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/footnotes";
 
-export type TargetModeType = "External";
+export enum TargetModeType {
+    EXTERNAL = "External",
+}
 
 export class Relationship extends XmlComponent {
     constructor(id: string, type: RelationshipType, target: string, targetMode?: TargetModeType) {

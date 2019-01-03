@@ -4,11 +4,6 @@ import { ImageParagraph } from "../paragraph";
 import { IMediaData } from "./data";
 import { Image } from "./image";
 
-interface IHackedFile {
-    // tslint:disable-next-line:readonly-keyword
-    currentRelationshipId: number;
-}
-
 export class Media {
     public static addImage(
         file: File,
@@ -18,14 +13,7 @@ export class Media {
         drawingOptions?: IDrawingOptions,
     ): Image {
         // Workaround to expose id without exposing to API
-        const exposedFile = (file as {}) as IHackedFile;
-        const mediaData = file.Media.addMedia(buffer, exposedFile.currentRelationshipId++, width, height);
-        file.DocumentRelationships.createRelationship(
-            mediaData.referenceId,
-            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
-            `media/${mediaData.fileName}`,
-        );
-
+        const mediaData = file.Media.addMedia(buffer, width, height);
         return new Image(new ImageParagraph(mediaData, drawingOptions));
     }
 
@@ -57,17 +45,11 @@ export class Media {
         return data;
     }
 
-    public addMedia(
-        buffer: Buffer | string | Uint8Array | ArrayBuffer,
-        referenceId: number,
-        width: number = 100,
-        height: number = 100,
-    ): IMediaData {
+    public addMedia(buffer: Buffer | string | Uint8Array | ArrayBuffer, width: number = 100, height: number = 100): IMediaData {
         const key = `${Media.generateId()}.png`;
 
         return this.createMedia(
             key,
-            referenceId,
             {
                 width: width,
                 height: height,
@@ -78,7 +60,6 @@ export class Media {
 
     private createMedia(
         key: string,
-        relationshipsCount: number,
         dimensions: { readonly width: number; readonly height: number },
         data: Buffer | string | Uint8Array | ArrayBuffer,
         filePath?: string,
@@ -86,7 +67,6 @@ export class Media {
         const newData = typeof data === "string" ? this.convertDataURIToBinary(data) : data;
 
         const imageData: IMediaData = {
-            referenceId: relationshipsCount,
             stream: newData,
             path: filePath,
             fileName: key,

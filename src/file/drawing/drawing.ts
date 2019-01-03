@@ -33,20 +33,16 @@ export class Drawing extends XmlComponent {
     constructor(imageData: IMediaData, drawingOptions?: IDrawingOptions) {
         super("w:drawing");
 
-        if (imageData === undefined) {
-            throw new Error("imageData cannot be undefined");
-        }
-
         const mergedOptions = {
             ...defaultDrawingOptions,
             ...drawingOptions,
         };
 
         if (mergedOptions.position === PlacementPosition.INLINE) {
-            this.inline = new Inline(imageData.referenceId, imageData.dimensions);
+            this.inline = new Inline(imageData, imageData.dimensions);
             this.root.push(this.inline);
         } else if (mergedOptions.position === PlacementPosition.FLOATING) {
-            this.root.push(new Anchor(imageData.referenceId, imageData.dimensions, mergedOptions));
+            this.root.push(new Anchor(imageData, imageData.dimensions, mergedOptions));
         }
     }
 
