@@ -6,10 +6,10 @@ import { Document, Media, Packer, Paragraph } from "../build";
 const doc = new Document();
 
 const table = doc.createTable(4, 4);
-table.getCell(2, 2).addContent(new Paragraph("Hello"));
+table.getCell(2, 2).addParagraph(new Paragraph("Hello"));
 
 const image = Media.addImage(doc, fs.readFileSync("./demo/images/image1.jpeg"));
-table.getCell(1, 1).addContent(image.Paragraph);
+table.getCell(1, 1).addParagraph(image.Paragraph);
 
 const packer = new Packer();
 

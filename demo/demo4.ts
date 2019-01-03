@@ -6,7 +6,7 @@ import { Document, Packer, Paragraph } from "../build";
 const doc = new Document();
 
 const table = doc.createTable(4, 4);
-table.getCell(2, 2).addContent(new Paragraph("Hello"));
+table.getCell(2, 2).addParagraph(new Paragraph("Hello"));
 
 const packer = new Packer();
 
