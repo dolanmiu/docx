@@ -53,8 +53,9 @@ export class Document extends XmlComponent {
         return para;
     }
 
-    public addTable(table: Table): void {
+    public addTable(table: Table): Document {
         this.body.push(table);
+        return this;
     }
 
     public createTable(rows: number, cols: number): Table {

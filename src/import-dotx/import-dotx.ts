@@ -44,6 +44,7 @@ export interface IDocumentTemplate {
     readonly footers: IDocumentFooter[];
     readonly styles: Styles;
     readonly titlePageIsDefined: boolean;
+    readonly media: Media;
 }
 
 export class ImportDotx {
@@ -73,6 +74,7 @@ export class ImportDotx {
             currentRelationshipId: this.currentRelationshipId,
             styles: stylesFactory.newInstance(stylesContent),
             titlePageIsDefined: this.checkIfTitlePageIsDefined(documentContent),
+            media: media,
         };
 
         return templateDocument;

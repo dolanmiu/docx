@@ -15,10 +15,22 @@ const item2 = new Paragraph("line with contextual spacing");
 const item3 = new Paragraph("line without contextual spacing");
 const item4 = new Paragraph("line without contextual spacing");
 
-item1.setNumbering(concrete, 0).spacing({before: 200}).contextualSpacing(true);
-item2.setNumbering(concrete, 0).spacing({before: 200}).contextualSpacing(true);
-item3.setNumbering(concrete, 0).spacing({before: 200}).contextualSpacing(false);
-item4.setNumbering(concrete, 0).spacing({before: 200}).contextualSpacing(false);
+item1
+    .setNumbering(concrete, 0)
+    .spacing({ before: 200 })
+    .contextualSpacing(true);
+item2
+    .setNumbering(concrete, 0)
+    .spacing({ before: 200 })
+    .contextualSpacing(true);
+item3
+    .setNumbering(concrete, 0)
+    .spacing({ before: 200 })
+    .contextualSpacing(false);
+item4
+    .setNumbering(concrete, 0)
+    .spacing({ before: 200 })
+    .contextualSpacing(false);
 
 doc.addParagraph(item1);
 doc.addParagraph(item2);
