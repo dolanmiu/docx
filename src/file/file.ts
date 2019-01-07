@@ -72,7 +72,8 @@ export class File {
             throw Error("can not use both template and external styles");
         }
         if (fileProperties.template) {
-            this.styles = fileProperties.template.styles;
+            const stylesFactory = new ExternalStylesFactory();
+            this.styles = stylesFactory.newInstance(fileProperties.template.styles);
         } else if (options.externalStyles) {
             const stylesFactory = new ExternalStylesFactory();
             this.styles = stylesFactory.newInstance(options.externalStyles);
