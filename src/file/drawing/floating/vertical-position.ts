@@ -20,7 +20,7 @@ export class VerticalPosition extends XmlComponent {
 
         this.root.push(
             new VerticalPositionAttributes({
-                relativeFrom: verticalPosition.relative,
+                relativeFrom: verticalPosition.relative || VerticalPositionRelativeFrom.PAGE,
             }),
         );
 

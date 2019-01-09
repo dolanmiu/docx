@@ -6,7 +6,7 @@ import { IDrawingOptions } from "../drawing";
 import { TextWrapStyle } from "../text-wrap";
 import { Anchor } from "./anchor";
 
-function createDrawing(drawingOptions: IDrawingOptions): Anchor {
+function createAnchor(drawingOptions: IDrawingOptions): Anchor {
     return new Anchor(
         {
             fileName: "test.png",
@@ -41,14 +41,32 @@ describe("Anchor", () => {
 
     describe("#constructor()", () => {
         it("should create a Drawing with correct root key", () => {
-            anchor = createDrawing({});
+            anchor = createAnchor({
+                floating: {
+                    verticalPosition: {
+                        offset: 0,
+                    },
+                    horizontalPosition: {
+                        offset: 0,
+                    },
+                },
+            });
             const newJson = Utility.jsonify(anchor);
             assert.equal(newJson.rootKey, "wp:anchor");
             assert.equal(newJson.root.length, 10);
         });
 
         it("should create a Drawing with all default options", () => {
-            anchor = createDrawing({});
+            anchor = createAnchor({
+                floating: {
+                    verticalPosition: {
+                        offset: 0,
+                    },
+                    horizontalPosition: {
+                        offset: 0,
+                    },
+                },
+            });
             const newJson = Utility.jsonify(anchor);
             assert.equal(newJson.root.length, 10);
 
@@ -73,7 +91,7 @@ describe("Anchor", () => {
             const horizontalPosition = newJson.root[2];
             assert.equal(horizontalPosition.rootKey, "wp:positionH");
             assert.include(horizontalPosition.root[0].root, {
-                relativeFrom: "column",
+                relativeFrom: "page",
             });
             assert.equal(horizontalPosition.root[1].rootKey, "wp:posOffset");
             assert.include(horizontalPosition.root[1].root[0], 0);
@@ -82,7 +100,7 @@ describe("Anchor", () => {
             const verticalPosition = newJson.root[3];
             assert.equal(verticalPosition.rootKey, "wp:positionV");
             assert.include(verticalPosition.root[0].root, {
-                relativeFrom: "paragraph",
+                relativeFrom: "page",
             });
             assert.equal(verticalPosition.root[1].rootKey, "wp:posOffset");
             assert.include(verticalPosition.root[1].root[0], 0);
@@ -117,9 +135,17 @@ describe("Anchor", () => {
         });
 
         it("should create a Drawing with square text wrapping", () => {
-            anchor = createDrawing({
+            anchor = createAnchor({
                 textWrapping: {
                     textWrapStyle: TextWrapStyle.SQUARE,
+                },
+                floating: {
+                    verticalPosition: {
+                        offset: 0,
+                    },
+                    horizontalPosition: {
+                        offset: 0,
+                    },
                 },
             });
             const newJson = Utility.jsonify(anchor);
@@ -131,9 +157,17 @@ describe("Anchor", () => {
         });
 
         it("should create a Drawing with no text wrapping", () => {
-            anchor = createDrawing({
+            anchor = createAnchor({
                 textWrapping: {
                     textWrapStyle: TextWrapStyle.NONE,
+                },
+                floating: {
+                    verticalPosition: {
+                        offset: 0,
+                    },
+                    horizontalPosition: {
+                        offset: 0,
+                    },
                 },
             });
             const newJson = Utility.jsonify(anchor);
@@ -144,9 +178,17 @@ describe("Anchor", () => {
         });
 
         it("should create a Drawing with tight text wrapping", () => {
-            anchor = createDrawing({
+            anchor = createAnchor({
                 textWrapping: {
                     textWrapStyle: TextWrapStyle.TIGHT,
+                },
+                floating: {
+                    horizontalPosition: {
+                        offset: 0,
+                    },
+                    verticalPosition: {
+                        offset: 0,
+                    },
                 },
             });
             const newJson = Utility.jsonify(anchor);
@@ -157,9 +199,17 @@ describe("Anchor", () => {
         });
 
         it("should create a Drawing with tight text wrapping", () => {
-            anchor = createDrawing({
+            anchor = createAnchor({
                 textWrapping: {
                     textWrapStyle: TextWrapStyle.TOP_AND_BOTTOM,
+                },
+                floating: {
+                    verticalPosition: {
+                        offset: 0,
+                    },
+                    horizontalPosition: {
+                        offset: 0,
+                    },
                 },
             });
             const newJson = Utility.jsonify(anchor);

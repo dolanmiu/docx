@@ -1,70 +1,134 @@
 # Images
 
-## Intro
+To create a `floating` image on top of text:
 
-Adding images is very simple
-
-Simply call the `createImage` method:
-
-```js
-const image = doc.createImage([BUFFER_OF_YOUR_IMAGE]);
-```
-
-`docx` supports `jpeg`, `jpg`, `bmp`, `gif` and `png`
-
-Check `demo5.js` for an example
-
-## Positioning
-
-Images can be:
-
-*   floating position of images
-*   Wrapped around the text
-*   Inline
-
-By default, picture are exported as `INLINE` elements.
-
-In Word this is found in:
-
-![Word Image Positiong](https://user-images.githubusercontent.com/34742290/41765548-b0946302-7604-11e8-96f9-166a9f0b8f39.png)
-
-### Usage
-
-The `PictureRun` element support various options to define the positioning of the element in the document.
-
-```js
-interface DrawingOptions {
-    position?: PlacementPosition;
-    textWrapping?: TextWrapping;
-    floating?: Floating;
-}
-```
-
-can be passed when creating `PictureRun()` for example:
-
-```js
-const imageData = document.createImage(buffer, 903, 1149);
-
-new docx.PictureRun(imageData, {
-    position: docx.PlacementPosition.FLOATING,
+```ts
+doc.createImage(fs.readFileSync("./demo/images/pizza.gif"), 200, 200, {
     floating: {
         horizontalPosition: {
-            relative: HorizontalPositionRelativeFrom.PAGE,
-            align: HorizontalPositionAlign.LEFT,
+            offset: 1014400,
         },
         verticalPosition: {
-            relative: VerticalPositionRelativeFrom.PAGE,
-            align: VerticalPositionAlign.TOP,
+            offset: 1014400,
         },
     },
 });
 ```
 
-So, the first thing is to define the placement position: `INLINE` or `FLOATING`. Inline is the default one so there is no need to pass drawing options for inline.
+By default with no arguments, its an `inline` image:
 
-When placement position is FLOATING then we can use two options:
+```ts
+doc.createImage(fs.readFileSync("./demo/images/parrots.bmp"));
+```
+
+You can also create images manually and add them later:
+
+```ts
+const image = Media.addImage(doc, fs.readFileSync("./demo/images/pizza.gif"));
+doc.addImage(image);
+```
+
+## Intro
+
+Adding images can be done in two ways:
+
+1. Call the `createImage` method to add the image directly into the `document`:
+
+    ```js
+    doc.createImage([IMAGE_BUFFER], [WIDTH], [HEIGHT], [POSITION_OPTIONS]);
+    ```
+
+2. Create an `image` first, then add it into the `document`:
+
+    ```ts
+    const image = Media.addImage(doc, [IMAGE_BUFFER]);
+    doc.addImage(image);
+    ```
+
+`docx` supports `jpeg`, `jpg`, `bmp`, `gif` and `png`
+
+## Positioning
+
+> Positioning is the method on how to place the image on the document
+
+![Word Image Positiong](https://user-images.githubusercontent.com/34742290/41765548-b0946302-7604-11e8-96f9-166a9f0b8f39.png)
+
+Three types of image positioning is supported:
+
+-   Floating
+-   Wrapped around the text
+-   Inline
+
+By default, picture are exported as `Inline` elements.
+
+### Usage
+
+Pass `options` into the `[POSITION_OPTIONS]` metioned in the [Intro above](#Intro).
+
+### Floating
+
+To change the position the image to be on top of the text, simply add the `floating` property to the last argument. By default, the offsets are relative to the top left corner of the `page`. Offset units are in [emus](https://startbigthinksmall.wordpress.com/2010/01/04/points-inches-and-emus-measuring-units-in-office-open-xml/):
+
+```ts
+const imageData = document.createImage(buffer, 903, 1149, {
+    floating: {
+        horizontalPosition: {
+            offset: 1014400, // relative: HorizontalPositionRelativeFrom.PAGE by default
+        },
+        verticalPosition: {
+            offset: 1014400, // relative: VerticalPositionRelativeFrom.PAGE by default
+        },
+    },
+});
+```
+
+```ts
+const imageData = document.createImage(buffer, 903, 1149, {
+    floating: {
+        horizontalPosition: {
+            relative: HorizontalPositionRelativeFrom.RIGHT_MARGIN,
+            offset: 1014400,
+        },
+        verticalPosition: {
+            relative: VerticalPositionRelativeFrom.BOTTOM_MARGIN,
+            offset: 1014400,
+        },
+    },
+});
+```
+
+#### Options
+
+Full options you can pass into `floating` are:
+
+| Property           | Type                        | Notes    |
+| ------------------ | --------------------------- | -------- |
+| horizontalPosition | `HorizontalPositionOptions` | Required |
+| verticalPosition   | `VerticalPositionOptions`   | Required |
+| allowOverlap       | `boolean`                   | Optional |
+| lockAnchor         | `boolean`                   | Optional |
+| behindDocument     | `boolean`                   | Optional |
+| layoutInCell       | `boolean`                   | Optional |
+
+`HorizontalPositionOptions` are:
+
+| Property | Type                             | Notes                                             | Possible Values                                                                                           |
+| -------- | -------------------------------- | ------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| relative | `HorizontalPositionRelativeFrom` | Required                                          | `CHARACTER`, `COLUMN`, `INSIDE_MARGIN`, `LEFT_MARGIN`, `MARGIN`, `OUTSIDE_MARGIN`, `PAGE`, `RIGHT_MARGIN` |
+| align    | `HorizontalPositionAlign`        | You can either have `align` or `offset`, not both | `CENTER`, `INSIDE`, `LEFT`, `OUTSIDE`, `RIGHT`                                                            |
+| offset   | `number`                         | You can either have `align` or `offset`, not both | `0` to `Infinity`                                                                                         |
+
+`VerticalPositionOptions` are:
+
+| Property | Type                           | Notes                                             | Possible Values                                                                                         |
+| -------- | ------------------------------ | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| relative | `VerticalPositionRelativeFrom` | Required                                          | `BOTTOM_MARGIN`, `INSIDE_MARGIN`, `LINE`, `MARGIN`, `OUTSIDE_MARGIN`, `PAGE`, `PARAGRAPH`, `TOP_MARGIN` |
+| align    | `VerticalPositionAlign`        | You can either have `align` or `offset`, not both | `BOTTOM`, `CENTER`, `INSIDE`, `OUTSIDE`, `TOP`                                                          |
+| offset   | `number`                       | You can either have `align` or `offset`, not both | `0` to `Infinity`                                                                                       |
 
 ### Wrap text
+
+!> **In progress** Documentation may potentially be changing
 
 for `drawingOptions.textWrapping` we can define various options. `textWrapping` has the following properties:
 
@@ -90,67 +154,20 @@ enum WrapTextOption {
 }
 ```
 
-### Floating position
+## Examples
 
-When we want to position the image relative or absolute then we need to use option `drawingOptions.floating`:
+### Add image to the document
 
-```js
-export interface Floating {
-    horizontalPosition: HorizontalPositionOptions;
-    verticalPosition: VerticalPositionOptions;
-    allowOverlap?: boolean;
-    lockAnchor?: boolean;
-    behindDocument?: boolean;
-    layoutInCell?: boolean;
-}
+Importing Images from file system path
 
-export interface HorizontalPositionOptions {
-    relative: HorizontalPositionRelativeFrom;
-    align?: HorizontalPositionAlign;
-    offset?: number;
-}
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/demo5.ts ":include")
 
-export interface VerticalPositionOptions {
-    relative: VerticalPositionRelativeFrom;
-    align?: VerticalPositionAlign;
-    offset?: number;
-}
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/demo5.ts_
 
-export enum HorizontalPositionRelativeFrom {
-    CHARACTER = "character",
-    COLUMN = "column",
-    INSIDE_MARGIN = "insideMargin",
-    LEFT_MARGIN = "leftMargin",
-    MARGIN = "margin",
-    OUTSIDE_MARGIN = "outsideMargin",
-    PAGE = "page",
-    RIGHT_MARGIN = "rightMargin",
-}
+### Add images to header and footer
 
-export enum VerticalPositionRelativeFrom {
-    BOTTOM_MARGIN = "bottomMargin",
-    INSIDE_MARGIN = "insideMargin",
-    LINE = "line",
-    MARGIN = "margin",
-    OUTSIDE_MARGIN = "outsideMargin",
-    PAGE = "page",
-    PARAGRAPH = "paragraph",
-    TOP_MARGIN = "topMargin",
-}
+Example showing how to add image to headers and footers
 
-export enum HorizontalPositionAlign {
-    CENTER = "center",
-    INSIDE = "inside",
-    LEFT = "left",
-    OUTSIDE = "outside",
-    RIGHT = "right",
-}
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/demo9.ts ":include")
 
-export enum VerticalPositionAlign {
-    BOTTOM = "bottom",
-    CENTER = "center",
-    INSIDE = "inside",
-    OUTSIDE = "outside",
-    TOP = "top",
-}
-```
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/demo9.ts_

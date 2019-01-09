@@ -39,13 +39,13 @@ export enum VerticalPositionAlign {
 }
 
 export interface IHorizontalPositionOptions {
-    readonly relative: HorizontalPositionRelativeFrom;
+    readonly relative?: HorizontalPositionRelativeFrom;
     readonly align?: HorizontalPositionAlign;
     readonly offset?: number;
 }
 
 export interface IVerticalPositionOptions {
-    readonly relative: VerticalPositionRelativeFrom;
+    readonly relative?: VerticalPositionRelativeFrom;
     readonly align?: VerticalPositionAlign;
     readonly offset?: number;
 }
