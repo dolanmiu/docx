@@ -20,7 +20,7 @@ export class HorizontalPosition extends XmlComponent {
 
         this.root.push(
             new HorizontalPositionAttributes({
-                relativeFrom: horizontalPosition.relative,
+                relativeFrom: horizontalPosition.relative || HorizontalPositionRelativeFrom.PAGE,
             }),
         );
 

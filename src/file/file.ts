@@ -9,6 +9,7 @@ import {
     IHeaderFooterGroup,
     SectionPropertiesOptions,
 } from "./document/body/section-properties";
+import { IDrawingOptions } from "./drawing";
 import { IFileProperties } from "./file-properties";
 import { FooterWrapper, IDocumentFooter } from "./footer-wrapper";
 import { FootNotes } from "./footnotes";
@@ -133,8 +134,13 @@ export class File {
         return this;
     }
 
-    public createImage(buffer: Buffer | string | Uint8Array | ArrayBuffer, width?: number, height?: number): Image {
-        const image = Media.addImage(this, buffer, width, height);
+    public createImage(
+        buffer: Buffer | string | Uint8Array | ArrayBuffer,
+        width?: number,
+        height?: number,
+        drawingOptions?: IDrawingOptions,
+    ): Image {
+        const image = Media.addImage(this, buffer, width, height, drawingOptions);
         this.document.addParagraph(image.Paragraph);
 
         return image;

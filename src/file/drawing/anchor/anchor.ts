@@ -2,14 +2,7 @@
 import { IMediaDataDimensions } from "file/media";
 import { XmlComponent } from "file/xml-components";
 import { IDrawingOptions } from "../drawing";
-import {
-    HorizontalPosition,
-    HorizontalPositionRelativeFrom,
-    IFloating,
-    SimplePos,
-    VerticalPosition,
-    VerticalPositionRelativeFrom,
-} from "../floating";
+import { HorizontalPosition, IFloating, SimplePos, VerticalPosition } from "../floating";
 import { Graphic } from "../inline/graphic";
 import { TextWrapStyle, WrapNone, WrapSquare, WrapTight, WrapTopAndBottom } from "../text-wrap";
 import { DocProperties } from "./../doc-properties/doc-properties";
@@ -23,14 +16,8 @@ const defaultOptions: IFloating = {
     behindDocument: false,
     lockAnchor: false,
     layoutInCell: true,
-    verticalPosition: {
-        relative: VerticalPositionRelativeFrom.PARAGRAPH,
-        offset: 0,
-    },
-    horizontalPosition: {
-        relative: HorizontalPositionRelativeFrom.COLUMN,
-        offset: 0,
-    },
+    verticalPosition: {},
+    horizontalPosition: {},
 };
 
 export class Anchor extends XmlComponent {
