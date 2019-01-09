@@ -205,6 +205,19 @@ export class File {
         return headerWrapper;
     }
 
+    public createEvenPageHeader(): HeaderWrapper {
+        const headerWrapper = this.createHeader();
+
+        this.document.Body.DefaultSection.addChildElement(
+            new HeaderReference({
+                headerType: HeaderReferenceType.EVEN,
+                headerId: headerWrapper.Header.ReferenceId,
+            }),
+        );
+
+        return headerWrapper;
+    }
+
     public getFooterByReferenceNumber(refId: number): FooterWrapper {
         const entry = this.footers.map((item) => item.footer).find((h) => h.Footer.ReferenceId === refId);
         if (entry) {
