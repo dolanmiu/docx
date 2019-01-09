@@ -23,10 +23,6 @@ export class Drawing extends XmlComponent {
     constructor(imageData: IMediaData, drawingOptions: IDrawingOptions = {}) {
         super("w:drawing");
 
-        if (imageData === undefined) {
-            throw new Error("imageData cannot be undefined");
-        }
-
         if (!drawingOptions.floating) {
             this.inline = new Inline(imageData, imageData.dimensions);
             this.root.push(this.inline);
