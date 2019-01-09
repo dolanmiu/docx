@@ -84,8 +84,7 @@ doc.Styles.createParagraphStyle("ListParagraph", "List Paragraph")
     .basedOn("Normal");
 
 doc.createImage(fs.readFileSync("./demo/images/pizza.gif"));
-doc
-    .createParagraph("HEADING")
+doc.createParagraph("HEADING")
     .heading1()
     .center();
 
@@ -111,8 +110,8 @@ const table = new Table(4, 4);
 table
     .getRow(0)
     .getCell(0)
-    .addContent(new Paragraph("Pole No."));
-// table.Properties.width = 10000;
+    .addParagraph(new Paragraph("Pole No."));
+
 doc.addTable(table);
 
 const arrboth = [
@@ -129,8 +128,6 @@ const arrboth = [
 arrboth.forEach((item) => {
     const para = doc.createParagraph();
     para.addImage(doc.createImage(fs.readFileSync(item.image)));
-    // para.Properties.width = 60;
-    // para.Properties.height = 90;
     doc.createParagraph(item.comment).style("normalPara2");
 });
 

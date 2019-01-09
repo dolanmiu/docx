@@ -1,5 +1,7 @@
 // http://officeopenxml.com/drwPic.php
+import { IMediaData } from "file/media";
 import { XmlComponent } from "file/xml-components";
+
 import { BlipFill } from "./blip/blip-fill";
 import { NonVisualPicProperties } from "./non-visual-pic-properties/non-visual-pic-properties";
 import { PicAttributes } from "./pic-attributes";
@@ -8,7 +10,7 @@ import { ShapeProperties } from "./shape-properties/shape-properties";
 export class Pic extends XmlComponent {
     private readonly shapeProperties: ShapeProperties;
 
-    constructor(referenceId: number, x: number, y: number) {
+    constructor(mediaData: IMediaData, x: number, y: number) {
         super("pic:pic");
 
         this.root.push(
@@ -20,7 +22,7 @@ export class Pic extends XmlComponent {
         this.shapeProperties = new ShapeProperties(x, y);
 
         this.root.push(new NonVisualPicProperties());
-        this.root.push(new BlipFill(referenceId));
+        this.root.push(new BlipFill(mediaData));
         this.root.push(new ShapeProperties(x, y));
     }
 

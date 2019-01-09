@@ -1,3 +1,4 @@
+import { IMediaData } from "file/media";
 import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
 
 interface IBlipProperties {
@@ -13,11 +14,11 @@ class BlipAttributes extends XmlAttributeComponent<IBlipProperties> {
 }
 
 export class Blip extends XmlComponent {
-    constructor(referenceId: number) {
+    constructor(mediaData: IMediaData) {
         super("a:blip");
         this.root.push(
             new BlipAttributes({
-                embed: `rId${referenceId}`,
+                embed: `rId{${mediaData.fileName}}`,
                 cstate: "none",
             }),
         );

@@ -21,9 +21,9 @@ describe("Run", () => {
         });
     });
 
-    describe("#italic()", () => {
+    describe("#italics()", () => {
         it("it should add italics to the properties", () => {
-            run.italic();
+            run.italics();
             const newJson = Utility.jsonify(run);
             assert.equal(newJson.root[0].root[0].rootKey, "w:i");
             assert.equal(newJson.root[0].root[1].rootKey, "w:iCs");

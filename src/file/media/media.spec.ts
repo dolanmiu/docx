@@ -1,5 +1,6 @@
 // tslint:disable:object-literal-key-quotes
 import { expect } from "chai";
+import { stub } from "sinon";
 
 import { Formatter } from "export/formatter";
 
@@ -20,16 +21,18 @@ describe("Media", () => {
         });
 
         it("should ensure the correct relationship id is used when adding image", () => {
+            // tslint:disable-next-line:no-any
+            stub(Media as any, "generateId").callsFake(() => "testId");
+
             const file = new File();
             const image1 = Media.addImage(file, "test");
-
             const tree = new Formatter().format(image1.Paragraph);
             const inlineElements = tree["w:p"][1]["w:r"][1]["w:drawing"][0]["wp:inline"];
             const graphicData = inlineElements.find((x) => x["a:graphic"]);
 
             expect(graphicData["a:graphic"][1]["a:graphicData"][1]["pic:pic"][2]["pic:blipFill"][0]["a:blip"][0]).to.deep.equal({
                 _attr: {
-                    "r:embed": `rId${file.DocumentRelationships.RelationshipCount}`,
+                    "r:embed": `rId{testId.png}`,
                     cstate: "none",
                 },
             });
@@ -41,7 +44,7 @@ describe("Media", () => {
 
             expect(graphicData2["a:graphic"][1]["a:graphicData"][1]["pic:pic"][2]["pic:blipFill"][0]["a:blip"][0]).to.deep.equal({
                 _attr: {
-                    "r:embed": `rId${file.DocumentRelationships.RelationshipCount}`,
+                    "r:embed": `rId{testId.png}`,
                     cstate: "none",
                 },
             });
@@ -53,9 +56,8 @@ describe("Media", () => {
             // tslint:disable-next-line:no-any
             (Media as any).generateId = () => "test";
 
-            const image = new Media().addMedia("", 1);
+            const image = new Media().addMedia("");
             expect(image.fileName).to.equal("test.png");
-            expect(image.referenceId).to.equal(1);
             expect(image.dimensions).to.deep.equal({
                 pixels: {
                     x: 100,
@@ -74,7 +76,7 @@ describe("Media", () => {
             // tslint:disable-next-line:no-any
             (Media as any).generateId = () => "test";
 
-            const image = new Media().addMedia("", 1);
+            const image = new Media().addMedia("");
             expect(image.stream).to.be.an.instanceof(Uint8Array);
         });
     });
@@ -85,12 +87,11 @@ describe("Media", () => {
             (Media as any).generateId = () => "test";
 
             const media = new Media();
-            media.addMedia("", 1);
+            media.addMedia("");
 
             const image = media.getMedia("test.png");
 
             expect(image.fileName).to.equal("test.png");
-            expect(image.referenceId).to.equal(1);
             expect(image.dimensions).to.deep.equal({
                 pixels: {
                     x: 100,
@@ -116,7 +117,7 @@ describe("Media", () => {
             (Media as any).generateId = () => "test";
 
             const media = new Media();
-            media.addMedia("", 1);
+            media.addMedia("");
 
             const array = media.Array;
             expect(array).to.be.an.instanceof(Array);
@@ -124,7 +125,6 @@ describe("Media", () => {
 
             const image = array[0];
             expect(image.fileName).to.equal("test.png");
-            expect(image.referenceId).to.equal(1);
             expect(image.dimensions).to.deep.equal({
                 pixels: {
                     x: 100,

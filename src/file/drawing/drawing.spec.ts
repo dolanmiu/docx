@@ -11,7 +11,6 @@ function createDrawing(drawingOptions?: IDrawingOptions): Drawing {
     return new Drawing(
         {
             fileName: "test.jpg",
-            referenceId: 1,
             stream: Buffer.from(imageBase64Data, "base64"),
             path: path,
             dimensions: {

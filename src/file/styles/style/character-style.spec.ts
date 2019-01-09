@@ -1,0 +1,296 @@
+import { expect } from "chai";
+
+import { Formatter } from "export/formatter";
+
+import { CharacterStyle } from "./character-style";
+
+describe("CharacterStyle", () => {
+    describe("#constructor", () => {
+        it("should set the style type to character and use the given style id", () => {
+            const style = new CharacterStyle("myStyleId");
+            const tree = new Formatter().format(style);
+            expect(tree).to.deep.equal({
+                "w:style": [
+                    { _attr: { "w:type": "character", "w:styleId": "myStyleId" } },
+                    { "w:rPr": [] },
+                    {
+                        "w:uiPriority": [
+                            {
+                                _attr: {
+                                    "w:val": "99",
+                                },
+                            },
+                        ],
+                    },
+                    {
+                        "w:unhideWhenUsed": [],
+                    },
+                ],
+            });
+        });
+
+        it("should set the name of the style, if given", () => {
+            const style = new CharacterStyle("myStyleId", "Style Name");
+            const tree = new Formatter().format(style);
+            expect(tree).to.deep.equal({
+                "w:style": [
+                    { _attr: { "w:type": "character", "w:styleId": "myStyleId" } },
+                    { "w:name": [{ _attr: { "w:val": "Style Name" } }] },
+                    { "w:rPr": [] },
+                    {
+                        "w:uiPriority": [
+                            {
+                                _attr: {
+                                    "w:val": "99",
+                                },
+                            },
+                        ],
+                    },
+                    {
+                        "w:unhideWhenUsed": [],
+                    },
+                ],
+            });
+        });
+    });
+
+    describe("formatting methods: style attributes", () => {
+        it("#basedOn", () => {
+            const style = new CharacterStyle("myStyleId").basedOn("otherId");
+            const tree = new Formatter().format(style);
+            expect(tree).to.deep.equal({
+                "w:style": [
+                    { _attr: { "w:type": "character", "w:styleId": "myStyleId" } },
+                    { "w:rPr": [] },
+                    {
+                        "w:uiPriority": [
+                            {
+                                _attr: {
+                                    "w:val": "99",
+                                },
+                            },
+                        ],
+                    },
+                    {
+                        "w:unhideWhenUsed": [],
+                    },
+                    { "w:basedOn": [{ _attr: { "w:val": "otherId" } }] },
+                ],
+            });
+        });
+    });
+
+    describe("formatting methods: run properties", () => {
+        it("#size", () => {
+            const style = new CharacterStyle("myStyleId").size(24);
+            const tree = new Formatter().format(style);
+            expect(tree).to.deep.equal({
+                "w:style": [
+                    { _attr: { "w:type": "character", "w:styleId": "myStyleId" } },
+                    {
+                        "w:rPr": [{ "w:sz": [{ _attr: { "w:val": 24 } }] }, { "w:szCs": [{ _attr: { "w:val": 24 } }] }],
+                    },
+                    {
+                        "w:uiPriority": [
+                            {
+                                _attr: {
+                                    "w:val": "99",
+                                },
+                            },
+                        ],
+                    },
+                    {
+                        "w:unhideWhenUsed": [],
+                    },
+                ],
+            });
+        });
+
+        describe("#underline", () => {
+            it("should set underline to 'single' if no arguments are given", () => {
+                const style = new CharacterStyle("myStyleId").underline();
+                const tree = new Formatter().format(style);
+                expect(tree).to.deep.equal({
+                    "w:style": [
+                        { _attr: { "w:type": "character", "w:styleId": "myStyleId" } },
+                        {
+                            "w:rPr": [{ "w:u": [{ _attr: { "w:val": "single" } }] }],
+                        },
+                        {
+                            "w:uiPriority": [
+                                {
+                                    _attr: {
+                                        "w:val": "99",
+                                    },
+                                },
+                            ],
+                        },
+                        {
+                            "w:unhideWhenUsed": [],
+                        },
+                    ],
+                });
+            });
+
+            it("should set the style if given", () => {
+                const style = new CharacterStyle("myStyleId").underline("double");
+                const tree = new Formatter().format(style);
+                expect(tree).to.deep.equal({
+                    "w:style": [
+                        { _attr: { "w:type": "character", "w:styleId": "myStyleId" } },
+                        {
+                            "w:rPr": [{ "w:u": [{ _attr: { "w:val": "double" } }] }],
+                        },
+                        {
+                            "w:uiPriority": [
+                                {
+                                    _attr: {
+                                        "w:val": "99",
+                                    },
+                                },
+                            ],
+                        },
+                        {
+                            "w:unhideWhenUsed": [],
+                        },
+                    ],
+                });
+            });
+
+            it("should set the style and color if given", () => {
+                const style = new CharacterStyle("myStyleId").underline("double", "005599");
+                const tree = new Formatter().format(style);
+                expect(tree).to.deep.equal({
+                    "w:style": [
+                        { _attr: { "w:type": "character", "w:styleId": "myStyleId" } },
+                        {
+                            "w:rPr": [{ "w:u": [{ _attr: { "w:val": "double", "w:color": "005599" } }] }],
+                        },
+                        {
+                            "w:uiPriority": [
+                                {
+                                    _attr: {
+                                        "w:val": "99",
+                                    },
+                                },
+                            ],
+                        },
+                        {
+                            "w:unhideWhenUsed": [],
+                        },
+                    ],
+                });
+            });
+        });
+
+        it("#superScript", () => {
+            const style = new CharacterStyle("myStyleId").superScript();
+            const tree = new Formatter().format(style);
+            expect(tree).to.deep.equal({
+                "w:style": [
+                    { _attr: { "w:type": "character", "w:styleId": "myStyleId" } },
+                    {
+                        "w:rPr": [
+                            {
+                                "w:vertAlign": [
+                                    {
+                                        _attr: {
+                                            "w:val": "superscript",
+                                        },
+                                    },
+                                ],
+                            },
+                        ],
+                    },
+                    {
+                        "w:uiPriority": [
+                            {
+                                _attr: {
+                                    "w:val": "99",
+                                },
+                            },
+                        ],
+                    },
+                    {
+                        "w:unhideWhenUsed": [],
+                    },
+                ],
+            });
+        });
+
+        it("#color", () => {
+            const style = new CharacterStyle("myStyleId").color("123456");
+            const tree = new Formatter().format(style);
+            expect(tree).to.deep.equal({
+                "w:style": [
+                    { _attr: { "w:type": "character", "w:styleId": "myStyleId" } },
+                    {
+                        "w:rPr": [{ "w:color": [{ _attr: { "w:val": "123456" } }] }],
+                    },
+                    {
+                        "w:uiPriority": [
+                            {
+                                _attr: {
+                                    "w:val": "99",
+                                },
+                            },
+                        ],
+                    },
+                    {
+                        "w:unhideWhenUsed": [],
+                    },
+                ],
+            });
+        });
+
+        it("#link", () => {
+            const style = new CharacterStyle("myStyleId").link("MyLink");
+            const tree = new Formatter().format(style);
+            expect(tree).to.deep.equal({
+                "w:style": [
+                    { _attr: { "w:type": "character", "w:styleId": "myStyleId" } },
+                    {
+                        "w:rPr": [],
+                    },
+                    {
+                        "w:uiPriority": [
+                            {
+                                _attr: {
+                                    "w:val": "99",
+                                },
+                            },
+                        ],
+                    },
+                    {
+                        "w:unhideWhenUsed": [],
+                    },
+                    { "w:link": [{ _attr: { "w:val": "MyLink" } }] },
+                ],
+            });
+        });
+
+        it("#semiHidden", () => {
+            const style = new CharacterStyle("myStyleId").semiHidden();
+            const tree = new Formatter().format(style);
+            expect(tree).to.deep.equal({
+                "w:style": [
+                    { _attr: { "w:type": "character", "w:styleId": "myStyleId" } },
+                    {
+                        "w:rPr": [],
+                    },
+                    {
+                        "w:uiPriority": [
+                            {
+                                _attr: {
+                                    "w:val": "99",
+                                },
+                            },
+                        ],
+                    },
+                    { "w:unhideWhenUsed": [] },
+                    { "w:semiHidden": [] },
+                ],
+            });
+        });
+    });
+});

@@ -233,7 +233,7 @@ class DocumentCreator {
 
     public createRoleText(roleText: string): Paragraph {
         const paragraph = new Paragraph();
-        const role = new TextRun(roleText).italic();
+        const role = new TextRun(roleText).italics();
 
         paragraph.addRun(role);
 

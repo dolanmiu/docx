@@ -88,7 +88,6 @@ describe("SectionProperties", () => {
             });
             expect(tree["w:sectPr"][2]).to.deep.equal({ "w:cols": [{ _attr: { "w:space": 708 } }] });
             expect(tree["w:sectPr"][3]).to.deep.equal({ "w:docGrid": [{ _attr: { "w:linePitch": 360 } }] });
-            expect(tree["w:sectPr"][4]).to.deep.equal({ "w:pgNumType": [{ _attr: { "w:fmt": "decimal" } }] });
         });
 
         it("should create section properties with changed options", () => {
@@ -182,6 +181,26 @@ describe("SectionProperties", () => {
             expect(pgBorders).to.deep.equal({
                 "w:pgBorders": [{ _attr: { "w:offsetFrom": "page" } }],
             });
+        });
+
+        it("should create section properties with page number type, but without start attribute", () => {
+            const properties = new SectionProperties({
+                pageNumberFormatType: PageNumberFormat.UPPER_ROMAN,
+            });
+            const tree = new Formatter().format(properties);
+            expect(Object.keys(tree)).to.deep.equal(["w:sectPr"]);
+            const pgNumType = tree["w:sectPr"].find((item) => item["w:pgNumType"] !== undefined);
+            expect(pgNumType).to.deep.equal({
+                "w:pgNumType": [{ _attr: { "w:fmt": "upperRoman" } }],
+            });
+        });
+
+        it("should create section properties without page number type", () => {
+            const properties = new SectionProperties({});
+            const tree = new Formatter().format(properties);
+            expect(Object.keys(tree)).to.deep.equal(["w:sectPr"]);
+            const pgNumType = tree["w:sectPr"].find((item) => item["w:pgNumType"] !== undefined);
+            expect(pgNumType).to.equal(undefined);
         });
     });
 });

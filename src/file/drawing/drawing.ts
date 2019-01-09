@@ -28,10 +28,10 @@ export class Drawing extends XmlComponent {
         }
 
         if (!drawingOptions.floating) {
-            this.inline = new Inline(imageData.referenceId, imageData.dimensions);
+            this.inline = new Inline(imageData, imageData.dimensions);
             this.root.push(this.inline);
         } else {
-            this.root.push(new Anchor(imageData.referenceId, imageData.dimensions, drawingOptions));
+            this.root.push(new Anchor(imageData, imageData.dimensions, drawingOptions));
         }
     }
 

@@ -18,6 +18,7 @@ import { Image, Media } from "./media";
 import { Numbering } from "./numbering";
 import { Bookmark, Hyperlink, Paragraph } from "./paragraph";
 import { Relationships } from "./relationships";
+import { TargetModeType } from "./relationships/relationship/relationship";
 import { Settings } from "./settings";
 import { Styles } from "./styles";
 import { ExternalStylesFactory } from "./styles/external-styles-factory";
@@ -153,7 +154,7 @@ export class File {
             hyperlink.linkId,
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink",
             link,
-            "External",
+            TargetModeType.EXTERNAL,
         );
         return hyperlink;
     }
@@ -299,12 +300,6 @@ export class File {
 
         for (const header of headers) {
             switch (header.type) {
-                case HeaderReferenceType.DEFAULT:
-                    newGroup = {
-                        ...newGroup,
-                        default: header.header,
-                    };
-                    break;
                 case HeaderReferenceType.FIRST:
                     newGroup = {
                         ...newGroup,
@@ -317,6 +312,7 @@ export class File {
                         even: header.header,
                     };
                     break;
+                case HeaderReferenceType.DEFAULT:
                 default:
                     newGroup = {
                         ...newGroup,
@@ -334,12 +330,6 @@ export class File {
 
         for (const footer of footers) {
             switch (footer.type) {
-                case FooterReferenceType.DEFAULT:
-                    newGroup = {
-                        ...newGroup,
-                        default: footer.footer,
-                    };
-                    break;
                 case FooterReferenceType.FIRST:
                     newGroup = {
                         ...newGroup,
@@ -352,6 +342,7 @@ export class File {
                         even: footer.footer,
                     };
                     break;
+                case FooterReferenceType.DEFAULT:
                 default:
                     newGroup = {
                         ...newGroup,

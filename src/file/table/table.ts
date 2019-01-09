@@ -65,8 +65,8 @@ export class Table extends XmlComponent {
         return this.getRow(row).getCell(col);
     }
 
-    public setWidth(type: WidthType, width: number | string): Table {
-        this.properties.setWidth(type, width);
+    public setWidth(width: number | string, type: WidthType = WidthType.AUTO): Table {
+        this.properties.setWidth(width, type);
         return this;
     }
 

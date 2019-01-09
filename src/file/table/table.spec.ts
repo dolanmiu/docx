@@ -111,19 +111,19 @@ describe("Table", () => {
             table
                 .getRow(0)
                 .getCell(0)
-                .addContent(new Paragraph("A1"));
+                .addParagraph(new Paragraph("A1"));
             table
                 .getRow(0)
                 .getCell(1)
-                .addContent(new Paragraph("B1"));
+                .addParagraph(new Paragraph("B1"));
             table
                 .getRow(1)
                 .getCell(0)
-                .addContent(new Paragraph("A2"));
+                .addParagraph(new Paragraph("A2"));
             table
                 .getRow(1)
                 .getCell(1)
-                .addContent(new Paragraph("B2"));
+                .addParagraph(new Paragraph("B2"));
             const tree = new Formatter().format(table);
             const cell = (c) => ({
                 "w:tc": [
@@ -149,10 +149,10 @@ describe("Table", () => {
     describe("#getCell", () => {
         it("returns the correct cell", () => {
             const table = new Table(2, 2);
-            table.getCell(0, 0).addContent(new Paragraph("A1"));
-            table.getCell(0, 1).addContent(new Paragraph("B1"));
-            table.getCell(1, 0).addContent(new Paragraph("A2"));
-            table.getCell(1, 1).addContent(new Paragraph("B2"));
+            table.getCell(0, 0).addParagraph(new Paragraph("A1"));
+            table.getCell(0, 1).addParagraph(new Paragraph("B1"));
+            table.getCell(1, 0).addParagraph(new Paragraph("A2"));
+            table.getCell(1, 1).addParagraph(new Paragraph("B2"));
             const tree = new Formatter().format(table);
             const cell = (c) => ({
                 "w:tc": [
@@ -176,8 +176,8 @@ describe("Table", () => {
     });
 
     describe("#setWidth", () => {
-        it("sets the preferred width on the table", () => {
-            const table = new Table(2, 2).setWidth(WidthType.PERCENTAGE, 1000);
+        it("should set the preferred width on the table", () => {
+            const table = new Table(2, 2).setWidth(1000, WidthType.PERCENTAGE);
             const tree = new Formatter().format(table);
             expect(tree)
                 .to.have.property("w:tbl")
@@ -185,6 +185,15 @@ describe("Table", () => {
                 .with.has.length.at.least(1);
             expect(tree["w:tbl"][0]).to.deep.equal({
                 "w:tblPr": [DEFAULT_TABLE_PROPERTIES, { "w:tblW": [{ _attr: { "w:type": "pct", "w:w": 1000 } }] }],
+            });
+        });
+
+        it("sets the preferred width on the table with a default of AUTO", () => {
+            const table = new Table(2, 2).setWidth(1000);
+            const tree = new Formatter().format(table);
+
+            expect(tree["w:tbl"][0]).to.deep.equal({
+                "w:tblPr": [DEFAULT_TABLE_PROPERTIES, { "w:tblW": [{ _attr: { "w:type": "auto", "w:w": 1000 } }] }],
             });
         });
     });
@@ -223,7 +232,7 @@ describe("Table", () => {
 
             it("inserts a paragraph at the end of the cell even if it has a child table", () => {
                 const parentTable = new Table(1, 1);
-                parentTable.getCell(0, 0).addContent(new Table(1, 1));
+                parentTable.getCell(0, 0).addTable(new Table(1, 1));
                 const tree = new Formatter().format(parentTable);
                 expect(tree)
                     .to.have.property("w:tbl")
@@ -242,7 +251,7 @@ describe("Table", () => {
 
             it("does not insert a paragraph if it already ends with one", () => {
                 const parentTable = new Table(1, 1);
-                parentTable.getCell(0, 0).addContent(new Paragraph("Hello"));
+                parentTable.getCell(0, 0).addParagraph(new Paragraph("Hello"));
                 const tree = new Formatter().format(parentTable);
                 expect(tree)
                     .to.have.property("w:tbl")

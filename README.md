@@ -64,6 +64,12 @@ Check the `examples` section in the [documentation](https://docx.js.org/#/exampl
 
 Read the contribution guidelines [here](https://docx.js.org/#/contribution-guidelines).
 
+# Used by
+
+[<img src="https://i.imgur.com/zy5qWmI.png" alt="drawing" height="200"/>](https://hfour.com/)
+[<img src="https://i.imgur.com/OYP5tgS.png" alt="drawing" height="200"/>](https://fuzzproductions.com/)
+[<img src="https://i.imgur.com/zUDMfZ3.png" alt="drawing" height="200"/>](https://www.mettzer.com/)
+
 ---
 
 Made with 💖

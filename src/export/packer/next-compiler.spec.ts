@@ -17,7 +17,7 @@ describe("Compiler", () => {
     describe("#compile()", () => {
         it("should pack all the content", async function() {
             this.timeout(99999999);
-            const zipFile = await compiler.compile(file);
+            const zipFile = compiler.compile(file);
             const fileNames = Object.keys(zipFile.files).map((f) => zipFile.files[f].name);
 
             expect(fileNames).is.an.instanceof(Array);
@@ -46,7 +46,7 @@ describe("Compiler", () => {
 
             this.timeout(99999999);
 
-            const zipFile = await compiler.compile(file);
+            const zipFile = compiler.compile(file);
             const fileNames = Object.keys(zipFile.files).map((f) => zipFile.files[f].name);
 
             expect(fileNames).is.an.instanceof(Array);
