@@ -3,6 +3,7 @@ import { ContentTypes } from "./content-types/content-types";
 import { CoreProperties, IPropertiesOptions } from "./core-properties";
 import { Document } from "./document";
 import {
+    FooterReference,
     FooterReferenceType,
     HeaderReference,
     HeaderReferenceType,
@@ -216,6 +217,32 @@ export class File {
         );
 
         return headerWrapper;
+    }
+
+    public createFirstPageFooter(): FooterWrapper {
+        const footerWrapper = this.createFooter();
+
+        this.document.Body.DefaultSection.addChildElement(
+            new FooterReference({
+                footerType: FooterReferenceType.FIRST,
+                footerId: footerWrapper.Footer.ReferenceId,
+            }),
+        );
+
+        return footerWrapper;
+    }
+
+    public createEvenPageFooter(): FooterWrapper {
+        const footerWrapper = this.createFooter();
+
+        this.document.Body.DefaultSection.addChildElement(
+            new FooterReference({
+                footerType: FooterReferenceType.EVEN,
+                footerId: footerWrapper.Footer.ReferenceId,
+            }),
+        );
+
+        return footerWrapper;
     }
 
     public getFooterByReferenceNumber(refId: number): FooterWrapper {
