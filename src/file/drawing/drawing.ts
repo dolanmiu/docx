@@ -3,7 +3,6 @@ import { XmlComponent } from "file/xml-components";
 import { Anchor } from "./anchor";
 import { IFloating } from "./floating";
 import { Inline } from "./inline";
-import { ITextWrapping } from "./text-wrap";
 
 export interface IDistance {
     readonly distT?: number;
@@ -13,7 +12,6 @@ export interface IDistance {
 }
 
 export interface IDrawingOptions {
-    readonly textWrapping?: ITextWrapping;
     readonly floating?: IFloating;
 }
 

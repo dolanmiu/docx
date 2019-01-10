@@ -3,7 +3,7 @@ import { assert } from "chai";
 import { Utility } from "tests/utility";
 
 import { IDrawingOptions } from "../drawing";
-import { TextWrapStyle } from "../text-wrap";
+import { TextWrappingType } from "../text-wrap";
 import { Anchor } from "./anchor";
 
 function createAnchor(drawingOptions: IDrawingOptions): Anchor {
@@ -123,15 +123,15 @@ describe("Anchor", () => {
 
         it("should create a Drawing with square text wrapping", () => {
             anchor = createAnchor({
-                textWrapping: {
-                    textWrapStyle: TextWrapStyle.SQUARE,
-                },
                 floating: {
                     verticalPosition: {
                         offset: 0,
                     },
                     horizontalPosition: {
                         offset: 0,
+                    },
+                    wrap: {
+                        type: TextWrappingType.SQUARE,
                     },
                 },
             });
@@ -145,15 +145,15 @@ describe("Anchor", () => {
 
         it("should create a Drawing with no text wrapping", () => {
             anchor = createAnchor({
-                textWrapping: {
-                    textWrapStyle: TextWrapStyle.NONE,
-                },
                 floating: {
                     verticalPosition: {
                         offset: 0,
                     },
                     horizontalPosition: {
                         offset: 0,
+                    },
+                    wrap: {
+                        type: TextWrappingType.NONE,
                     },
                 },
             });
@@ -166,15 +166,15 @@ describe("Anchor", () => {
 
         it("should create a Drawing with tight text wrapping", () => {
             anchor = createAnchor({
-                textWrapping: {
-                    textWrapStyle: TextWrapStyle.TIGHT,
-                },
                 floating: {
                     horizontalPosition: {
                         offset: 0,
                     },
                     verticalPosition: {
                         offset: 0,
+                    },
+                    wrap: {
+                        type: TextWrappingType.TIGHT,
                     },
                 },
             });
@@ -187,15 +187,15 @@ describe("Anchor", () => {
 
         it("should create a Drawing with tight text wrapping", () => {
             anchor = createAnchor({
-                textWrapping: {
-                    textWrapStyle: TextWrapStyle.TOP_AND_BOTTOM,
-                },
                 floating: {
                     verticalPosition: {
                         offset: 0,
                     },
                     horizontalPosition: {
                         offset: 0,
+                    },
+                    wrap: {
+                        type: TextWrappingType.TOP_AND_BOTTOM,
                     },
                 },
             });

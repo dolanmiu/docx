@@ -4,7 +4,7 @@ import { XmlComponent } from "file/xml-components";
 import { IDrawingOptions } from "../drawing";
 import { HorizontalPosition, IFloating, SimplePos, VerticalPosition } from "../floating";
 import { Graphic } from "../inline/graphic";
-import { TextWrapStyle, WrapNone, WrapSquare, WrapTight, WrapTopAndBottom } from "../text-wrap";
+import { TextWrappingType, WrapNone, WrapSquare, WrapTight, WrapTopAndBottom } from "../text-wrap";
 import { DocProperties } from "./../doc-properties/doc-properties";
 import { EffectExtent } from "./../effect-extent/effect-extent";
 import { Extent } from "./../extent/extent";
@@ -25,15 +25,22 @@ export class Anchor extends XmlComponent {
         super("wp:anchor");
 
         const floating = {
+            margins: {
+                top: 0,
+                bottom: 0,
+                left: 0,
+                right: 0,
+            },
             ...defaultOptions,
             ...drawingOptions.floating,
         };
+
         this.root.push(
             new AnchorAttributes({
-                distT: 0,
-                distB: 0,
-                distL: 0,
-                distR: 0,
+                distT: floating.margins.top || 0,
+                distB: floating.margins.bottom || 0,
+                distL: floating.margins.left || 0,
+                distR: floating.margins.right || 0,
                 simplePos: "0", // note: word doesn't fully support - so we use 0
                 allowOverlap: floating.allowOverlap === true ? "1" : "0",
                 behindDoc: floating.behindDocument === true ? "1" : "0",
@@ -49,18 +56,18 @@ export class Anchor extends XmlComponent {
         this.root.push(new Extent(dimensions.emus.x, dimensions.emus.y));
         this.root.push(new EffectExtent());
 
-        if (drawingOptions.textWrapping !== undefined) {
-            switch (drawingOptions.textWrapping.textWrapStyle) {
-                case TextWrapStyle.SQUARE:
-                    this.root.push(new WrapSquare(drawingOptions.textWrapping));
+        if (drawingOptions.floating !== undefined && drawingOptions.floating.wrap !== undefined) {
+            switch (drawingOptions.floating.wrap.type) {
+                case TextWrappingType.SQUARE:
+                    this.root.push(new WrapSquare(drawingOptions.floating.wrap, drawingOptions.floating.margins));
                     break;
-                case TextWrapStyle.TIGHT:
-                    this.root.push(new WrapTight(drawingOptions.textWrapping.distanceFromText));
+                case TextWrappingType.TIGHT:
+                    this.root.push(new WrapTight(drawingOptions.floating.margins));
                     break;
-                case TextWrapStyle.TOP_AND_BOTTOM:
-                    this.root.push(new WrapTopAndBottom(drawingOptions.textWrapping.distanceFromText));
+                case TextWrappingType.TOP_AND_BOTTOM:
+                    this.root.push(new WrapTopAndBottom(drawingOptions.floating.margins));
                     break;
-                case TextWrapStyle.NONE:
+                case TextWrappingType.NONE:
                 default:
                     this.root.push(new WrapNone());
             }

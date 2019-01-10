@@ -1,4 +1,5 @@
 // http://officeopenxml.com/drwPicFloating-position.php
+import { ITextWrapping } from "../text-wrap";
 
 export enum HorizontalPositionRelativeFrom {
     CHARACTER = "character",
@@ -50,6 +51,13 @@ export interface IVerticalPositionOptions {
     readonly offset?: number;
 }
 
+export interface IMargins {
+    readonly left?: number;
+    readonly bottom?: number;
+    readonly top?: number;
+    readonly right?: number;
+}
+
 export interface IFloating {
     readonly horizontalPosition: IHorizontalPositionOptions;
     readonly verticalPosition: IVerticalPositionOptions;
@@ -57,4 +65,6 @@ export interface IFloating {
     readonly lockAnchor?: boolean;
     readonly behindDocument?: boolean;
     readonly layoutInCell?: boolean;
+    readonly margins?: IMargins;
+    readonly wrap?: ITextWrapping;
 }
