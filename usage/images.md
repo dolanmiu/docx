@@ -56,7 +56,6 @@ Adding images can be done in two ways:
 Three types of image positioning is supported:
 
 -   Floating
--   Wrapped around the text
 -   Inline
 
 By default, picture are exported as `Inline` elements.
@@ -65,7 +64,7 @@ By default, picture are exported as `Inline` elements.
 
 Pass `options` into the `[POSITION_OPTIONS]` metioned in the [Intro above](#Intro).
 
-### Floating
+## Floating
 
 To change the position the image to be on top of the text, simply add the `floating` property to the last argument. By default, the offsets are relative to the top left corner of the `page`. Offset units are in [emus](https://startbigthinksmall.wordpress.com/2010/01/04/points-inches-and-emus-measuring-units-in-office-open-xml/):
 
@@ -97,7 +96,7 @@ const imageData = document.createImage(buffer, 903, 1149, {
 });
 ```
 
-#### Options
+### Options
 
 Full options you can pass into `floating` are:
 
@@ -126,32 +125,83 @@ Full options you can pass into `floating` are:
 | align    | `VerticalPositionAlign`        | You can either have `align` or `offset`, not both | `BOTTOM`, `CENTER`, `INSIDE`, `OUTSIDE`, `TOP`                                                          |
 | offset   | `number`                       | You can either have `align` or `offset`, not both | `0` to `Infinity`                                                                                       |
 
-### Wrap text
+## Wrap text
 
-!> **In progress** Documentation may potentially be changing
+Wrapping only works for floating elements. Text will "wrap" around the floating `image`.
 
-for `drawingOptions.textWrapping` we can define various options. `textWrapping` has the following properties:
+Add `wrap` options inside the `floating` options:
 
-```js
-interface TextWrapping {
-    textWrapStyle: TextWrapStyle;
-    wrapTextOption?: WrapTextOption;
-    distanceFromText?: Distance;
-}
+```ts
+wrap: {
+    type: [TextWrappingType],
+    side: [TextWrappingSide],
+},
+```
 
-enum TextWrapStyle {
-    NONE,
-    SQUARE,
-    TIGHT,
-    TOP_AND_BOTTOM,
-}
+For example:
 
-enum WrapTextOption {
-    BOTH_SIDES = "bothSides",
-    LEFT = "left",
-    RIGHT = "right",
-    LARGEST = "largest",
-}
+```ts
+doc.createImage(fs.readFileSync("./demo/images/pizza.gif"), 200, 200, {
+    floating: {
+        horizontalPosition: {
+            offset: 2014400,
+        },
+        verticalPosition: {
+            offset: 2014400,
+        },
+        wrap: {
+            type: TextWrappingType.SQUARE,
+            side: TextWrappingSide.BOTH_SIDES,
+        },
+    },
+});
+```
+
+Wrap options have the following properties are:
+
+| Property | Type               | Notes    | Possible Values                             |
+| -------- | ------------------ | -------- | ------------------------------------------- |
+| type     | `TextWrappingType` | Optional | `NONE`, `SQUARE`, `TIGHT`, `TOP_AND_BOTTOM` |
+| side     | `TextWrappingSide` | Optional | `BOTH_SIDES`, `LEFT`, `RIGHT`, `LARGEST`    |
+
+## Margins
+
+Margins give some space between the text and the image. Margins [only work for floating elements](http://officeopenxml.com/drwPicInline.php). Additionally, the image must also be in wrap mode (see above).
+
+?> Be sure to also set `wrap` in your options!
+
+To use, add the `margins` options inside the `floating` options:
+
+```ts
+margins: {
+    top: number,
+    bottom: number,
+    left: number,
+    right: number
+},
+```
+
+For example:
+
+```ts
+doc.createImage(fs.readFileSync("./demo/images/pizza.gif"), 200, 200, {
+    floating: {
+        horizontalPosition: {
+            offset: 2014400,
+        },
+        verticalPosition: {
+            offset: 2014400,
+        },
+        wrap: {
+            type: TextWrappingType.SQUARE,
+            side: TextWrappingSide.BOTH_SIDES,
+        },
+        margins: {
+            top: 201440,
+            bottom: 201440,
+        },
+    },
+});
 ```
 
 ## Examples
@@ -171,3 +221,11 @@ Example showing how to add image to headers and footers
 [Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/demo9.ts ":include")
 
 _Source: https://github.com/dolanmiu/docx/blob/master/demo/demo9.ts_
+
+### Floating images
+
+Example showing how to float images on top of text and optimally give a `margin`
+
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/demo38.ts ":include")
+
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/demo38.ts_
