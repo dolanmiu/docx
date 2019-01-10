@@ -1,14 +1,14 @@
 // http://officeopenxml.com/drwPicFloating-textWrap.php
 import { IDistance } from "../drawing";
 
-export enum TextWrapStyle {
+export enum TextWrappingType {
     NONE,
     SQUARE,
     TIGHT,
     TOP_AND_BOTTOM,
 }
 
-export enum WrapTextOption {
+export enum TextWrappingSide {
     BOTH_SIDES = "bothSides",
     LEFT = "left",
     RIGHT = "right",
@@ -16,7 +16,7 @@ export enum WrapTextOption {
 }
 
 export interface ITextWrapping {
-    readonly textWrapStyle: TextWrapStyle;
-    readonly wrapTextOption?: WrapTextOption;
-    readonly distanceFromText?: IDistance;
+    readonly type: TextWrappingType;
+    readonly side?: TextWrappingSide;
+    readonly margins?: IDistance;
 }
