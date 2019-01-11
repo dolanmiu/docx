@@ -4,6 +4,7 @@ import { Formatter } from "export/formatter";
 import * as file from "file";
 
 import { Numbering } from "../numbering";
+import { LeaderType } from "./formatting";
 
 describe("Paragraph", () => {
     let paragraph: file.Paragraph;
@@ -86,6 +87,48 @@ describe("Paragraph", () => {
         });
     });
 
+    describe("#heading4()", () => {
+        it("should add heading style to JSON", () => {
+            paragraph.heading4();
+            const tree = new Formatter().format(paragraph);
+            expect(tree).to.deep.equal({
+                "w:p": [
+                    {
+                        "w:pPr": [{ "w:pStyle": [{ _attr: { "w:val": "Heading4" } }] }],
+                    },
+                ],
+            });
+        });
+    });
+
+    describe("#heading5()", () => {
+        it("should add heading style to JSON", () => {
+            paragraph.heading5();
+            const tree = new Formatter().format(paragraph);
+            expect(tree).to.deep.equal({
+                "w:p": [
+                    {
+                        "w:pPr": [{ "w:pStyle": [{ _attr: { "w:val": "Heading5" } }] }],
+                    },
+                ],
+            });
+        });
+    });
+
+    describe("#heading6()", () => {
+        it("should add heading style to JSON", () => {
+            paragraph.heading6();
+            const tree = new Formatter().format(paragraph);
+            expect(tree).to.deep.equal({
+                "w:p": [
+                    {
+                        "w:pPr": [{ "w:pStyle": [{ _attr: { "w:val": "Heading6" } }] }],
+                    },
+                ],
+            });
+        });
+    });
+
     describe("#title()", () => {
         it("should add title style to JSON", () => {
             paragraph.title();
@@ -108,6 +151,235 @@ describe("Paragraph", () => {
                 "w:p": [
                     {
                         "w:pPr": [{ "w:jc": [{ _attr: { "w:val": "center" } }] }],
+                    },
+                ],
+            });
+        });
+    });
+
+    describe("#left()", () => {
+        it("should add left alignment to JSON", () => {
+            paragraph.left();
+            const tree = new Formatter().format(paragraph);
+            expect(tree).to.deep.equal({
+                "w:p": [
+                    {
+                        "w:pPr": [{ "w:jc": [{ _attr: { "w:val": "left" } }] }],
+                    },
+                ],
+            });
+        });
+    });
+
+    describe("#right()", () => {
+        it("should add right alignment to JSON", () => {
+            paragraph.right();
+            const tree = new Formatter().format(paragraph);
+            expect(tree).to.deep.equal({
+                "w:p": [
+                    {
+                        "w:pPr": [{ "w:jc": [{ _attr: { "w:val": "right" } }] }],
+                    },
+                ],
+            });
+        });
+    });
+
+    describe("#start()", () => {
+        it("should add start alignment to JSON", () => {
+            paragraph.start();
+            const tree = new Formatter().format(paragraph);
+            expect(tree).to.deep.equal({
+                "w:p": [
+                    {
+                        "w:pPr": [{ "w:jc": [{ _attr: { "w:val": "start" } }] }],
+                    },
+                ],
+            });
+        });
+    });
+
+    describe("#end()", () => {
+        it("should add end alignment to JSON", () => {
+            paragraph.end();
+            const tree = new Formatter().format(paragraph);
+            expect(tree).to.deep.equal({
+                "w:p": [
+                    {
+                        "w:pPr": [{ "w:jc": [{ _attr: { "w:val": "end" } }] }],
+                    },
+                ],
+            });
+        });
+    });
+
+    describe("#distribute()", () => {
+        it("should add distribute alignment to JSON", () => {
+            paragraph.distribute();
+            const tree = new Formatter().format(paragraph);
+            expect(tree).to.deep.equal({
+                "w:p": [
+                    {
+                        "w:pPr": [{ "w:jc": [{ _attr: { "w:val": "distribute" } }] }],
+                    },
+                ],
+            });
+        });
+    });
+
+    describe("#justified()", () => {
+        it("should add justified alignment to JSON", () => {
+            paragraph.justified();
+            const tree = new Formatter().format(paragraph);
+            expect(tree).to.deep.equal({
+                "w:p": [
+                    {
+                        "w:pPr": [{ "w:jc": [{ _attr: { "w:val": "both" } }] }],
+                    },
+                ],
+            });
+        });
+    });
+
+    describe("#maxRightTabStop()", () => {
+        it("should add maxRightTabStop to JSON", () => {
+            paragraph.maxRightTabStop();
+            const tree = new Formatter().format(paragraph);
+            expect(tree).to.deep.equal({
+                "w:p": [
+                    {
+                        "w:pPr": [
+                            {
+                                "w:tabs": [
+                                    {
+                                        "w:tab": [
+                                            {
+                                                _attr: {
+                                                    "w:pos": 9026,
+                                                    "w:val": "right",
+                                                },
+                                            },
+                                        ],
+                                    },
+                                ],
+                            },
+                        ],
+                    },
+                ],
+            });
+        });
+    });
+
+    describe("#leftTabStop()", () => {
+        it("should add leftTabStop to JSON", () => {
+            paragraph.leftTabStop(100, LeaderType.HYPHEN);
+            const tree = new Formatter().format(paragraph);
+            expect(tree).to.deep.equal({
+                "w:p": [
+                    {
+                        "w:pPr": [
+                            {
+                                "w:tabs": [
+                                    {
+                                        "w:tab": [
+                                            {
+                                                _attr: {
+                                                    "w:pos": 100,
+                                                    "w:val": "left",
+                                                    "w:leader": "hyphen",
+                                                },
+                                            },
+                                        ],
+                                    },
+                                ],
+                            },
+                        ],
+                    },
+                ],
+            });
+        });
+    });
+
+    describe("#rightTabStop()", () => {
+        it("should add rightTabStop to JSON", () => {
+            paragraph.rightTabStop(100, LeaderType.DOT);
+            const tree = new Formatter().format(paragraph);
+            expect(tree).to.deep.equal({
+                "w:p": [
+                    {
+                        "w:pPr": [
+                            {
+                                "w:tabs": [
+                                    {
+                                        "w:tab": [
+                                            {
+                                                _attr: {
+                                                    "w:pos": 100,
+                                                    "w:val": "right",
+                                                    "w:leader": "dot",
+                                                },
+                                            },
+                                        ],
+                                    },
+                                ],
+                            },
+                        ],
+                    },
+                ],
+            });
+        });
+    });
+
+    describe("#centerTabStop()", () => {
+        it("should add centerTabStop to JSON", () => {
+            paragraph.centerTabStop(100, LeaderType.MIDDLE_DOT);
+            const tree = new Formatter().format(paragraph);
+            expect(tree).to.deep.equal({
+                "w:p": [
+                    {
+                        "w:pPr": [
+                            {
+                                "w:tabs": [
+                                    {
+                                        "w:tab": [
+                                            {
+                                                _attr: {
+                                                    "w:pos": 100,
+                                                    "w:val": "center",
+                                                    "w:leader": "middleDot",
+                                                },
+                                            },
+                                        ],
+                                    },
+                                ],
+                            },
+                        ],
+                    },
+                ],
+            });
+        });
+    });
+
+    describe("#contextualSpacing()", () => {
+        it("should add contextualSpacing to JSON, and set 1 if true", () => {
+            paragraph.contextualSpacing(true);
+            const tree = new Formatter().format(paragraph);
+            expect(tree).to.deep.equal({
+                "w:p": [
+                    {
+                        "w:pPr": [{ "w:contextualSpacing": [{ _attr: { "w:val": 1 } }] }],
+                    },
+                ],
+            });
+        });
+
+        it("should add contextualSpacing to JSON, and set 0 if false", () => {
+            paragraph.contextualSpacing(false);
+            const tree = new Formatter().format(paragraph);
+            expect(tree).to.deep.equal({
+                "w:p": [
+                    {
+                        "w:pPr": [{ "w:contextualSpacing": [{ _attr: { "w:val": 0 } }] }],
                     },
                 ],
             });

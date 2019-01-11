@@ -241,11 +241,6 @@ export class Paragraph extends XmlComponent {
         return this;
     }
 
-    public addTabStop(run: Run): Paragraph {
-        this.root.splice(1, 0, run);
-        return this;
-    }
-
     public addSequentialIdentifier(identifier: string): Paragraph {
         this.root.push(new SequentialIdentifier(identifier));
         return this;
