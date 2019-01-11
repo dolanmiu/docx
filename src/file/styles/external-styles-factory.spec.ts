@@ -52,7 +52,7 @@ describe("External styles factory", () => {
             const importedStyle = new ExternalStylesFactory().newInstance(externalStyles) as any;
 
             expect(importedStyle.rootKey).to.equal("w:styles");
-            expect(importedStyle.root[0]._attr).to.eql({
+            expect(importedStyle.root[0]._attr).to.deep.equal({
                 "xmlns:mc": "first",
                 "xmlns:r": "second",
             });
@@ -61,7 +61,7 @@ describe("External styles factory", () => {
         it("should parse other child elements of w:styles", () => {
             // tslint:disable-next-line:no-any
             const importedStyle = new ExternalStylesFactory().newInstance(externalStyles) as any;
-            expect(importedStyle.root[1]).to.eql({
+            expect(importedStyle.root[1]).to.deep.equal({
                 deleted: false,
                 root: [
                     {
@@ -122,7 +122,7 @@ describe("External styles factory", () => {
                 ],
                 rootKey: "w:docDefaults",
             });
-            expect(importedStyle.root[2]).to.eql({
+            expect(importedStyle.root[2]).to.deep.equal({
                 _attr: {
                     "w:defLockedState": "1",
                     "w:defUIPriority": "99",
@@ -138,7 +138,7 @@ describe("External styles factory", () => {
             const importedStyle = new ExternalStylesFactory().newInstance(externalStyles) as any;
 
             expect(importedStyle.root.length).to.equal(5);
-            expect(importedStyle.root[3]).to.eql({
+            expect(importedStyle.root[3]).to.deep.equal({
                 _attr: {
                     "w:default": "1",
                     "w:styleId": "Normal",
@@ -163,7 +163,7 @@ describe("External styles factory", () => {
                 rootKey: "w:style",
             });
 
-            expect(importedStyle.root[4]).to.eql({
+            expect(importedStyle.root[4]).to.deep.equal({
                 _attr: {
                     "w:styleId": "Heading1",
                     "w:type": "paragraph",

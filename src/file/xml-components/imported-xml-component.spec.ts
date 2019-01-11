@@ -50,7 +50,7 @@ describe("ImportedXmlComponent", () => {
     describe("#prepForXml()", () => {
         it("should transform for xml", () => {
             const converted = importedXmlComponent.prepForXml();
-            expect(converted).to.eql({
+            expect(converted).to.deep.equal({
                 "w:test": [
                     {
                         _attr: {
@@ -68,14 +68,14 @@ describe("ImportedXmlComponent", () => {
 
     it("should create XmlComponent from xml string", () => {
         const converted = ImportedXmlComponent.fromXmlString(xmlString);
-        expect(converted).to.eql(convertedXmlElement);
+        expect(converted).to.deep.equal(convertedXmlElement);
     });
 
     describe("convertToXmlComponent", () => {
         it("should convert to xml component", () => {
             const xmlObj = xml2js(xmlString, { compact: false }) as Element;
             const converted = convertToXmlComponent(xmlObj);
-            expect(converted).to.eql(convertedXmlElement);
+            expect(converted).to.deep.equal(convertedXmlElement);
         });
     });
 });
