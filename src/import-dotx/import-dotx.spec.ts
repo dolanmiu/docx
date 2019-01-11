@@ -7,7 +7,7 @@ describe("ImportDotx", () => {
         it("should create", () => {
             const file = new ImportDotx();
 
-            expect(file).to.deep.equal({ currentRelationshipId: 1 });
+            expect(file).to.deep.equal({});
         });
     });
 

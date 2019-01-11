@@ -1,11 +1,12 @@
 // Simple example to add text to a document
 // Import from 'docx' rather than '../build' if you install from npm
 import * as fs from "fs";
-import { Document, Packer, Paragraph, TextRun } from "../build";
+import { Document, Packer, Paragraph } from "../build";
 
-var doc = new Document();
-var paragraph = new Paragraph();
-var link = doc.createHyperlink('http://www.example.com', 'Hyperlink');
+const doc = new Document();
+const paragraph = new Paragraph();
+const link = doc.createHyperlink("http://www.example.com", "Hyperlink");
+
 link.bold();
 paragraph.addHyperLink(link);
 doc.addParagraph(paragraph);

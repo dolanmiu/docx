@@ -58,11 +58,12 @@ export class File {
         this.coreProperties = new CoreProperties(options);
         this.numbering = new Numbering();
         this.docRelationships = new Relationships();
-        this.media = new Media();
         this.fileRelationships = new Relationships();
         this.appProperties = new AppProperties();
         this.footNotes = new FootNotes();
         this.contentTypes = new ContentTypes();
+
+        this.media = fileProperties.template && fileProperties.template.media ? fileProperties.template.media : new Media();
 
         if (fileProperties.template) {
             this.currentRelationshipId = fileProperties.template.currentRelationshipId + 1;
@@ -73,7 +74,8 @@ export class File {
             throw Error("can not use both template and external styles");
         }
         if (fileProperties.template) {
-            this.styles = fileProperties.template.styles;
+            const stylesFactory = new ExternalStylesFactory();
+            this.styles = stylesFactory.newInstance(fileProperties.template.styles);
         } else if (options.externalStyles) {
             const stylesFactory = new ExternalStylesFactory();
             this.styles = stylesFactory.newInstance(options.externalStyles);
@@ -110,8 +112,9 @@ export class File {
         this.settings = new Settings();
     }
 
-    public addTableOfContents(toc: TableOfContents): void {
+    public addTableOfContents(toc: TableOfContents): File {
         this.document.addTableOfContents(toc);
+        return this;
     }
 
     public addParagraph(paragraph: Paragraph): File {
@@ -123,8 +126,9 @@ export class File {
         return this.document.createParagraph(text);
     }
 
-    public addTable(table: Table): void {
-        return this.document.addTable(table);
+    public addTable(table: Table): File {
+        this.document.addTable(table);
+        return this;
     }
 
     public createTable(rows: number, cols: number): Table {
