@@ -22,7 +22,8 @@
         "node_modules",
         "tests",
         "**/_*",
-        "demo"
+        "demo",
+        "scripts"
     ],
     "typedocOptions": {
         "mode": "file",
