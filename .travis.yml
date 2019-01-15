@@ -41,9 +41,9 @@ script:
   - npm run ts-node -- ./demo/demo28.ts
   - npm run ts-node -- ./demo/demo29.ts
   - npm run ts-node -- ./demo/demo30.ts
-  - npm run e2e "My Document.docx"
   - npm run ts-node -- ./demo/demo31.ts
   - npm run ts-node -- ./demo/demo32.ts
+  - npm run e2e "My Document.docx"
   - npm run ts-node -- ./demo/demo33.ts
   - npm run ts-node -- ./demo/demo34.ts
 after_failure:
