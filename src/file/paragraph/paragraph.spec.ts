@@ -666,4 +666,18 @@ describe("Paragraph", () => {
             });
         });
     });
+
+    describe("#outlineLevel", () => {
+        it("should set paragraph outline level to the given value", () => {
+            paragraph.outlineLevel("0");
+            const tree = new Formatter().format(paragraph);
+            expect(tree).to.deep.equal({
+                "w:p": [
+                    {
+                        "w:pPr": [{ "w:outlineLvl": [{ _attr: { "w:val": "0" } }] }],
+                    },
+                ],
+            });
+        });
+    });
 });
