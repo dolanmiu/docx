@@ -42,7 +42,7 @@ doc.addSection({
 doc.createParagraph("hello in landscape");
 
 const header2 = doc.createHeader();
-const pageNumber = new TextRun("Page number: ").pageNumber(); 
+const pageNumber = new TextRun("Page number: ").pageNumber();
 header2.createParagraph().addRun(pageNumber);
 
 doc.addSection({
@@ -62,7 +62,9 @@ doc.addSection({
     orientation: PageOrientation.PORTRAIT,
 });
 
-doc.createParagraph("Page number in the header must be III, because it continues from the previous section, but is defined as upper roman.");
+doc.createParagraph(
+    "Page number in the header must be III, because it continues from the previous section, but is defined as upper roman.",
+);
 
 doc.addSection({
     headers: {

@@ -17,7 +17,8 @@
     "typedoc": "typedoc src/index.ts",
     "style": "prettier -l \"src/**/*.ts\"",
     "style.fix": "npm run style -- --write",
-    "fix-types": "node types-absolute-fixer.js",
+    "fix-types": "ts-node scripts/types-absolute-fixer.ts",
+    "e2e": "ts-node scripts/e2e.ts \"Dolan Miu CV.docx\"",
     "ts-node": "ts-node"
   },
   "pre-commit": [
@@ -61,6 +62,7 @@
   "devDependencies": {
     "@types/chai": "^3.4.35",
     "@types/mocha": "^2.2.39",
+    "@types/request-promise": "^4.1.42",
     "@types/sinon": "^4.3.1",
     "awesome-typescript-loader": "^3.4.1",
     "chai": "^3.5.0",
@@ -74,6 +76,8 @@
     "prettier": "^1.15.2",
     "prompt": "^1.0.0",
     "replace-in-file": "^3.1.0",
+    "request": "^2.88.0",
+    "request-promise": "^4.2.2",
     "rimraf": "^2.5.2",
     "shelljs": "^0.7.7",
     "sinon": "^5.0.7",

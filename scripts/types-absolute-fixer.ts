@@ -1,5 +1,5 @@
-const glob = require("glob");
-const replace = require("replace-in-file");
+import * as glob from "glob";
+import * as replace from "replace-in-file";
 
 const files = glob.sync("build/**/*.d.ts");
 
@@ -14,7 +14,7 @@ for (const file of files) {
                 .fill("../")
                 .join("");
 
-           return `"${backLevels}${matchSlug}"`;
+            return `"${backLevels}${matchSlug}"`;
         },
     });
 }

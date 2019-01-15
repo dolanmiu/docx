@@ -126,8 +126,7 @@ const arrboth = [
 ];
 
 arrboth.forEach((item) => {
-    const para = doc.createParagraph();
-    para.addImage(doc.createImage(fs.readFileSync(item.image)));
+    doc.createImage(fs.readFileSync(item.image));
     doc.createParagraph(item.comment).style("normalPara2");
 });
 
