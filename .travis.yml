@@ -10,7 +10,7 @@ script:
   - npm run style
   - npm run build
   - npm run ts-node -- ./demo/demo1.ts
-  - npm run e2e "My Document.docx"
+  - npm run e2e "/My Document.docx"
   - npm run ts-node -- ./demo/demo2.ts
   - npm run ts-node -- ./demo/demo3.ts
   - npm run ts-node -- ./demo/demo4.ts
@@ -20,7 +20,7 @@ script:
   - npm run ts-node -- ./demo/demo8.ts
   - npm run ts-node -- ./demo/demo9.ts
   - npm run ts-node -- ./demo/demo10.ts
-  - npm run e2e "My Document.docx"
+  - npm run e2e "/My Document.docx"
   - npm run ts-node -- ./demo/demo11.ts
   - npm run ts-node -- ./demo/demo12.ts
   - npm run ts-node -- ./demo/demo13.ts
@@ -41,7 +41,7 @@ script:
   - npm run ts-node -- ./demo/demo28.ts
   - npm run ts-node -- ./demo/demo29.ts
   - npm run ts-node -- ./demo/demo30.ts
-  - npm run e2e "My Document.docx"
+  - npm run e2e "/My Document.docx"
   - npm run ts-node -- ./demo/demo31.ts
   - npm run ts-node -- ./demo/demo32.ts
   - npm run ts-node -- ./demo/demo33.ts
