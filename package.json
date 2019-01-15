@@ -18,7 +18,7 @@
     "style": "prettier -l \"src/**/*.ts\"",
     "style.fix": "npm run style -- --write",
     "fix-types": "ts-node scripts/types-absolute-fixer.ts",
-    "e2e": "ts-node scripts/e2e.ts \"Dolan Miu CV.docx\"",
+    "e2e": "ts-node scripts/e2e.ts",
     "ts-node": "ts-node"
   },
   "pre-commit": [
