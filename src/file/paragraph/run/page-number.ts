@@ -12,3 +12,11 @@ export class Page extends XmlComponent {
         this.root.push("PAGE");
     }
 }
+
+export class NumberOfPages extends XmlComponent {
+    constructor() {
+        super("w:instrText");
+        this.root.push(new TextAttributes({ space: SpaceType.PRESERVE }));
+        this.root.push("NUMPAGES");
+    }
+}
