@@ -156,6 +156,38 @@ describe("Run", () => {
         });
     });
 
+    describe("#numberOfTotalPages", () => {
+        it("should set the run to the RTL mode", () => {
+            run.numberOfTotalPages();
+            const tree = new Formatter().format(run);
+            expect(tree).to.deep.equal({
+                "w:r": [
+                    { "w:rPr": [] },
+                    { "w:fldChar": [{ _attr: { "w:fldCharType": "begin" } }] },
+                    { "w:instrText": [{ _attr: { "xml:space": "preserve" } }, "NUMPAGES"] },
+                    { "w:fldChar": [{ _attr: { "w:fldCharType": "separate" } }] },
+                    { "w:fldChar": [{ _attr: { "w:fldCharType": "end" } }] },
+                ],
+            });
+        });
+    });
+
+    describe("#pageNumber", () => {
+        it("should set the run to the RTL mode", () => {
+            run.pageNumber();
+            const tree = new Formatter().format(run);
+            expect(tree).to.deep.equal({
+                "w:r": [
+                    { "w:rPr": [] },
+                    { "w:fldChar": [{ _attr: { "w:fldCharType": "begin" } }] },
+                    { "w:instrText": [{ _attr: { "xml:space": "preserve" } }, "PAGE"] },
+                    { "w:fldChar": [{ _attr: { "w:fldCharType": "separate" } }] },
+                    { "w:fldChar": [{ _attr: { "w:fldCharType": "end" } }] },
+                ],
+            });
+        });
+    });
+
     describe("#style", () => {
         it("should set the style to the given styleId", () => {
             run.style("myRunStyle");
