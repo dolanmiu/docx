@@ -13,5 +13,4 @@ export class OutlineLevel extends XmlComponent {
             }),
         );
     }
-
 }
