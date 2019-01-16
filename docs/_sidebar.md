@@ -17,6 +17,7 @@
     * [Numbering](usage/numbering.md)
 	* [Tab Stops](usage/tab-stops.md)
     * [Table of Contents](usage/table-of-contents.md)
+    * [Page Numbers](usage/page-numbers.md)
 	* Styling
         * [Styling with JS](usage/styling-with-js.md)
         * [Styling with XML](usage/styling-with-xml.md)
