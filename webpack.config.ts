@@ -1,4 +1,4 @@
-const path = require("path");
+import * as path from "path";
 
 module.exports = {
     entry: "./src/index.ts",
@@ -27,7 +27,7 @@ module.exports = {
                 loader: "istanbul-instrumenter-loader",
                 enforce: "post",
                 exclude: [/node_modules/],
-            }
+            },
         ],
     },
 
