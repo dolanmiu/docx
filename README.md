@@ -72,6 +72,8 @@ Read the contribution guidelines [here](https://docx.js.org/#/contribution-guide
 
 ---
 
+[![patreon][patreon-image]][patreon-url]
+
 Made with 💖
 
 [npm-image]: https://badge.fury.io/js/docx.svg
@@ -90,3 +92,5 @@ Made with 💖
 [pr-url]: http://makeapullrequest.com
 [codecov-image]: https://codecov.io/gh/dolanmiu/docx/branch/master/graph/badge.svg
 [codecov-url]: https://codecov.io/gh/dolanmiu/docx
+[patreon-image]: https://user-images.githubusercontent.com/2917613/51251459-4e880480-1991-11e9-92bf-38b96675a9e2.png
+[patreon-url]: https://www.patreon.com/dolanmiu
