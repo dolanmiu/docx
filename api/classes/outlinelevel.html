@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>Link | docx</title>
+	<title>OutlineLevel | docx</title>
 	<meta name="description" content="">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="../assets/css/main.css">
@@ -54,10 +54,10 @@
 					<a href="../globals.html">Globals</a>
 				</li>
 				<li>
-					<a href="link.html">Link</a>
+					<a href="outlinelevel.html">OutlineLevel</a>
 				</li>
 			</ul>
-			<h1>Class Link</h1>
+			<h1>Class OutlineLevel</h1>
 		</div>
 	</div>
 </header>
@@ -71,7 +71,7 @@
 						<a href="xmlcomponent.html" class="tsd-signature-type">XmlComponent</a>
 						<ul class="tsd-hierarchy">
 							<li>
-								<span class="target">Link</span>
+								<span class="target">OutlineLevel</span>
 							</li>
 						</ul>
 					</li>
@@ -84,21 +84,27 @@
 						<section class="tsd-index-section tsd-is-external">
 							<h3>Constructors</h3>
 							<ul class="tsd-index-list">
-								<li class="tsd-kind-constructor tsd-parent-kind-class tsd-is-overwrite tsd-is-external"><a href="link.html#constructor" class="tsd-kind-icon">constructor</a></li>
+								<li class="tsd-kind-constructor tsd-parent-kind-class tsd-is-overwrite tsd-is-external"><a href="outlinelevel.html#constructor" class="tsd-kind-icon">constructor</a></li>
+							</ul>
+						</section>
+						<section class="tsd-index-section tsd-is-external">
+							<h3>Properties</h3>
+							<ul class="tsd-index-list">
+								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-external"><a href="outlinelevel.html#level" class="tsd-kind-icon">level</a></li>
 							</ul>
 						</section>
 						<section class="tsd-index-section tsd-is-inherited tsd-is-external">
 							<h3>Accessors</h3>
 							<ul class="tsd-index-list">
-								<li class="tsd-kind-get-signature tsd-parent-kind-class tsd-is-inherited tsd-is-external"><a href="link.html#isdeleted" class="tsd-kind-icon">Is<wbr>Deleted</a></li>
+								<li class="tsd-kind-get-signature tsd-parent-kind-class tsd-is-inherited tsd-is-external"><a href="outlinelevel.html#isdeleted" class="tsd-kind-icon">Is<wbr>Deleted</a></li>
 							</ul>
 						</section>
 						<section class="tsd-index-section tsd-is-inherited tsd-is-external">
 							<h3>Methods</h3>
 							<ul class="tsd-index-list">
-								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-external"><a href="link.html#addchildelement" class="tsd-kind-icon">add<wbr>Child<wbr>Element</a></li>
-								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-external"><a href="link.html#delete" class="tsd-kind-icon">delete</a></li>
-								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-overwrite tsd-is-inherited tsd-is-external"><a href="link.html#prepforxml" class="tsd-kind-icon">prep<wbr>For<wbr>Xml</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-external"><a href="outlinelevel.html#addchildelement" class="tsd-kind-icon">add<wbr>Child<wbr>Element</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-external"><a href="outlinelevel.html#delete" class="tsd-kind-icon">delete</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-overwrite tsd-is-inherited tsd-is-external"><a href="outlinelevel.html#prepforxml" class="tsd-kind-icon">prep<wbr>For<wbr>Xml</a></li>
 							</ul>
 						</section>
 					</div>
@@ -110,25 +116,38 @@
 					<a name="constructor" class="tsd-anchor"></a>
 					<h3>constructor</h3>
 					<ul class="tsd-signatures tsd-kind-constructor tsd-parent-kind-class tsd-is-overwrite tsd-is-external">
-						<li class="tsd-signature tsd-kind-icon">new <wbr>Link<span class="tsd-signature-symbol">(</span>value<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="link.html" class="tsd-signature-type">Link</a></li>
+						<li class="tsd-signature tsd-kind-icon">new <wbr>Outline<wbr>Level<span class="tsd-signature-symbol">(</span>level<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="outlinelevel.html" class="tsd-signature-type">OutlineLevel</a></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<p>Overrides <a href="xmlcomponent.html">XmlComponent</a>.<a href="xmlcomponent.html#constructor">constructor</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/d6c2c96/src/file/styles/style/components.ts#L32">file/styles/style/components.ts:32</a></li>
+									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/d6c2c96/src/file/paragraph/links/outline-level.ts#L5">file/paragraph/links/outline-level.ts:5</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
-									<h5>value: <span class="tsd-signature-type">string</span></h5>
+									<h5>level: <span class="tsd-signature-type">string</span></h5>
 								</li>
 							</ul>
-							<h4 class="tsd-returns-title">Returns <a href="link.html" class="tsd-signature-type">Link</a></h4>
+							<h4 class="tsd-returns-title">Returns <a href="outlinelevel.html" class="tsd-signature-type">OutlineLevel</a></h4>
 						</li>
 					</ul>
+				</section>
+			</section>
+			<section class="tsd-panel-group tsd-member-group tsd-is-external">
+				<h2>Properties</h2>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-external">
+					<a name="level" class="tsd-anchor"></a>
+					<h3>level</h3>
+					<div class="tsd-signature tsd-kind-icon">level<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/d6c2c96/src/file/paragraph/links/outline-level.ts#L5">file/paragraph/links/outline-level.ts:5</a></li>
+						</ul>
+					</aside>
 				</section>
 			</section>
 			<section class="tsd-panel-group tsd-member-group tsd-is-inherited tsd-is-external">
@@ -233,22 +252,25 @@
 				</ul>
 				<ul class="current">
 					<li class="current tsd-kind-class tsd-is-external">
-						<a href="link.html" class="tsd-kind-icon">Link</a>
+						<a href="outlinelevel.html" class="tsd-kind-icon">Outline<wbr>Level</a>
 						<ul>
 							<li class=" tsd-kind-constructor tsd-parent-kind-class tsd-is-overwrite tsd-is-external">
-								<a href="link.html#constructor" class="tsd-kind-icon">constructor</a>
+								<a href="outlinelevel.html#constructor" class="tsd-kind-icon">constructor</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-external">
+								<a href="outlinelevel.html#level" class="tsd-kind-icon">level</a>
 							</li>
 							<li class=" tsd-kind-get-signature tsd-parent-kind-class tsd-is-inherited tsd-is-external">
-								<a href="link.html#isdeleted" class="tsd-kind-icon">Is<wbr>Deleted</a>
+								<a href="outlinelevel.html#isdeleted" class="tsd-kind-icon">Is<wbr>Deleted</a>
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-external">
-								<a href="link.html#addchildelement" class="tsd-kind-icon">add<wbr>Child<wbr>Element</a>
+								<a href="outlinelevel.html#addchildelement" class="tsd-kind-icon">add<wbr>Child<wbr>Element</a>
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-external">
-								<a href="link.html#delete" class="tsd-kind-icon">delete</a>
+								<a href="outlinelevel.html#delete" class="tsd-kind-icon">delete</a>
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-overwrite tsd-is-inherited tsd-is-external">
-								<a href="link.html#prepforxml" class="tsd-kind-icon">prep<wbr>For<wbr>Xml</a>
+								<a href="outlinelevel.html#prepforxml" class="tsd-kind-icon">prep<wbr>For<wbr>Xml</a>
 							</li>
 						</ul>
 					</li>
