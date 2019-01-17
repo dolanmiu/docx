@@ -14,7 +14,7 @@ import { ContextualSpacing, ISpacingProperties, Spacing } from "./formatting/spa
 import { Style } from "./formatting/style";
 import { CenterTabStop, LeaderType, LeftTabStop, MaxRightTabStop, RightTabStop } from "./formatting/tab-stop";
 import { NumberProperties } from "./formatting/unordered-list";
-import { Bookmark, Hyperlink } from "./links";
+import { Bookmark, Hyperlink, OutlineLevel } from "./links";
 import { ParagraphProperties } from "./properties";
 import { PictureRun, Run, SequentialIdentifier, TextRun } from "./run";
 
@@ -243,6 +243,11 @@ export class Paragraph extends XmlComponent {
 
     public addSequentialIdentifier(identifier: string): Paragraph {
         this.root.push(new SequentialIdentifier(identifier));
+        return this;
+    }
+
+    public outlineLevel(level: string): Paragraph {
+        this.properties.push(new OutlineLevel(level));
         return this;
     }
 }
