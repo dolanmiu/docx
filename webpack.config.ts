@@ -1,4 +1,6 @@
+// tslint:disable:no-object-literal-type-assertion
 import * as path from "path";
+import { Configuration } from "webpack";
 
 module.exports = {
     entry: "./src/index.ts",
@@ -33,4 +35,4 @@ module.exports = {
 
     // Because docx is now targetting web
     // target: 'node',
-};
+} as Configuration;
