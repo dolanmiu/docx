@@ -23,7 +23,8 @@
         "tests",
         "**/_*",
         "demo",
-        "scripts"
+        "scripts",
+        "webpack.config.ts"
     ],
     "typedocOptions": {
         "mode": "file",

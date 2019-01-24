@@ -64,6 +64,7 @@
     "@types/mocha": "^2.2.39",
     "@types/request-promise": "^4.1.42",
     "@types/sinon": "^4.3.1",
+    "@types/webpack": "^4.4.24",
     "awesome-typescript-loader": "^3.4.1",
     "chai": "^3.5.0",
     "glob": "^7.1.2",

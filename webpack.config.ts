@@ -1,4 +1,6 @@
-const path = require("path");
+// tslint:disable:no-object-literal-type-assertion
+import * as path from "path";
+import { Configuration } from "webpack";
 
 module.exports = {
     entry: "./src/index.ts",
@@ -27,10 +29,10 @@ module.exports = {
                 loader: "istanbul-instrumenter-loader",
                 enforce: "post",
                 exclude: [/node_modules/],
-            }
+            },
         ],
     },
 
     // Because docx is now targetting web
     // target: 'node',
-};
+} as Configuration;
