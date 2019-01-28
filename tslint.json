@@ -18,6 +18,9 @@
         "no-null-keyword": true,
         "return-undefined": true,
         "prefer-readonly": true,
+        "no-duplicate-imports": true,
+        "unnecessary-constructor": true,
+        "file-name-casing": [true, "kebab-case"],
         // Functional Programming Rules
         "no-parameter-reassignment": true,
         "readonly-keyword": true,
