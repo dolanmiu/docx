@@ -15,6 +15,7 @@ import { IPageBordersOptions, PageBorders } from "./page-border";
 import { PageMargin } from "./page-margin/page-margin";
 import { IPageMarginAttributes } from "./page-margin/page-margin-attributes";
 import { IPageNumberTypeAttributes, PageNumberType } from "./page-number";
+import { ILineNumberAttributes, LineNumberType } from "./line-number";
 import { PageSize } from "./page-size/page-size";
 import { IPageSizeAttributes, PageOrientation } from "./page-size/page-size-attributes";
 import { TitlePage } from "./title-page/title-page";
@@ -44,6 +45,7 @@ export type SectionPropertiesOptions = IPageSizeAttributes &
     IHeadersOptions &
     IFootersOptions &
     IPageNumberTypeAttributes &
+    ILineNumberAttributes &
     IPageBordersOptions &
     ITitlePageOptions;
 
@@ -71,6 +73,10 @@ export class SectionProperties extends XmlComponent {
             footers,
             pageNumberFormatType,
             pageNumberStart,
+            lineNumberCountBy,
+            lineNumberStart,
+            lineNumberRestart,
+            lineNumberDistance,
             pageBorders,
             pageBorderTop,
             pageBorderRight,
@@ -90,6 +96,10 @@ export class SectionProperties extends XmlComponent {
 
         if (pageNumberStart || pageNumberFormatType) {
             this.root.push(new PageNumberType(pageNumberStart, pageNumberFormatType));
+        }
+
+        if (lineNumberCountBy || lineNumberStart || lineNumberRestart || lineNumberDistance) {
+            this.root.push(new LineNumberType(lineNumberCountBy, lineNumberStart, lineNumberRestart, lineNumberDistance));
         }
 
         if (pageBorders || pageBorderTop || pageBorderRight || pageBorderBottom || pageBorderLeft) {
