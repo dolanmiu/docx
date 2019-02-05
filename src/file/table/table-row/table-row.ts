@@ -37,4 +37,16 @@ export class TableRow extends XmlComponent {
 
         return this.addGridSpan(startIndex, cellSpan);
     }
+
+    public setCantSplit(): TableRow {
+        this.properties.setCantSplit();
+
+        return this;
+    }
+
+    public setTableHeader(): TableRow {
+        this.properties.setTableHeader();
+
+        return this;
+    }
 }
