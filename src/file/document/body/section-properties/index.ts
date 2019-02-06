@@ -4,3 +4,4 @@ export * from "./header-reference";
 export * from "./page-size";
 export * from "./page-number";
 export * from "./page-border";
+export * from "./line-number";
