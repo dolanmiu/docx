@@ -8,7 +8,7 @@
     "test": "mocha-webpack \"src/**/*.ts\"",
     "test.coverage": "nyc npm test",
     "test.watch": "npm test -- --watch",
-    "prepublishOnly": "npm run build",
+    "prepublishOnly": "npm run build --production",
     "lint": "tslint --project .",
     "build": "npm run webpack && npm run fix-types",
     "tsc": "rimraf ./build && tsc -p .",
