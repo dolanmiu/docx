@@ -22,17 +22,18 @@ module.exports = {
                 test: /\.ts$/,
                 loaders: ["awesome-typescript-loader"],
             },
-            {
-                // For coverage testing
-                test: /\.(ts)/,
-                include: path.resolve("src"),
-                loader: "istanbul-instrumenter-loader",
-                enforce: "post",
-                exclude: [/node_modules/],
-            },
+            ...(process.env.NODE_ENV === 'coverage'
+              ? [{
+                  test: /\.(ts)/,
+                  include: path.resolve("src"),
+                  loader: "istanbul-instrumenter-loader",
+                  enforce: "post",
+                  exclude: [/node_modules/],
+              }]
+              : []
+            )
         ],
     },
-
-    // Because docx is now targetting web
-    // target: 'node',
+  // Because docx is now targetting web
+  // target: 'node',
 } as Configuration;
