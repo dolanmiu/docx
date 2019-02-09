@@ -22,14 +22,17 @@ module.exports = {
                 test: /\.ts$/,
                 loaders: ["awesome-typescript-loader"],
             },
-            {
-                // For coverage testing
-                test: /\.(ts)/,
-                include: path.resolve("src"),
-                loader: "istanbul-instrumenter-loader",
-                enforce: "post",
-                exclude: [/node_modules/],
-            },
+            // For coverage testing
+            ...(process.env.NODE_ENV !== "production"
+                ? [{
+                    test: /\.(ts)/,
+                    include: path.resolve("src"),
+                    loader: "istanbul-instrumenter-loader",
+                    enforce: "post",
+                    exclude: [/node_modules/],
+                }]
+                : []
+            )
         ],
     },
 
