@@ -7,6 +7,7 @@ import {
     KeepNext,
     LeftTabStop,
     MaxRightTabStop,
+    OutlineLevel,
     ParagraphProperties,
     Spacing,
     ThematicBreak,
@@ -31,6 +32,11 @@ export class ParagraphStyle extends Style {
 
     public addParagraphProperty(property: XmlComponent): ParagraphStyle {
         this.paragraphProperties.push(property);
+        return this;
+    }
+
+    public outlineLevel(level: string): ParagraphStyle {
+        this.paragraphProperties.push(new OutlineLevel(level));
         return this;
     }
 

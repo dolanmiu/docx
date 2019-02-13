@@ -258,6 +258,18 @@ describe("ParagraphStyle", () => {
                 ],
             });
         });
+
+        it("#outlineLevel", () => {
+            const style = new ParagraphStyle("myStyleId").outlineLevel("1");
+            const tree = new Formatter().format(style);
+            expect(tree).to.deep.equal({
+                "w:style": [
+                    { _attr: { "w:type": "paragraph", "w:styleId": "myStyleId" } },
+                    { "w:pPr": [{ "w:outlineLvl": [{ _attr: { "w:val": "1" } }] }] },
+                    { "w:rPr": [] },
+                ],
+            });
+        });
     });
 
     describe("formatting methods: run properties", () => {
