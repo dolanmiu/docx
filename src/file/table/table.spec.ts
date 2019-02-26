@@ -95,7 +95,7 @@ describe("Table", () => {
                 "w:tbl": [
                     { "w:tblPr": [DEFAULT_TABLE_PROPERTIES] },
                     {
-                        "w:tblGrid": [{ "w:gridCol": [{ _attr: { "w:w": 1 } }] }, { "w:gridCol": [{ _attr: { "w:w": 1 } }] }],
+                        "w:tblGrid": [{ "w:gridCol": [{ _attr: { "w:w": 100 } }] }, { "w:gridCol": [{ _attr: { "w:w": 100 } }] }],
                     },
                     { "w:tr": [{ "w:trPr": [] }, cell, cell] },
                     { "w:tr": [{ "w:trPr": [] }, cell, cell] },
@@ -137,7 +137,7 @@ describe("Table", () => {
                 "w:tbl": [
                     { "w:tblPr": [DEFAULT_TABLE_PROPERTIES] },
                     {
-                        "w:tblGrid": [{ "w:gridCol": [{ _attr: { "w:w": 1 } }] }, { "w:gridCol": [{ _attr: { "w:w": 1 } }] }],
+                        "w:tblGrid": [{ "w:gridCol": [{ _attr: { "w:w": 100 } }] }, { "w:gridCol": [{ _attr: { "w:w": 100 } }] }],
                     },
                     { "w:tr": [{ "w:trPr": [] }, cell("A1"), cell("B1")] },
                     { "w:tr": [{ "w:trPr": [] }, cell("A2"), cell("B2")] },
@@ -166,7 +166,7 @@ describe("Table", () => {
                 "w:tbl": [
                     { "w:tblPr": [DEFAULT_TABLE_PROPERTIES] },
                     {
-                        "w:tblGrid": [{ "w:gridCol": [{ _attr: { "w:w": 1 } }] }, { "w:gridCol": [{ _attr: { "w:w": 1 } }] }],
+                        "w:tblGrid": [{ "w:gridCol": [{ _attr: { "w:w": 100 } }] }, { "w:gridCol": [{ _attr: { "w:w": 100 } }] }],
                     },
                     { "w:tr": [{ "w:trPr": [] }, cell("A1"), cell("B1")] },
                     { "w:tr": [{ "w:trPr": [] }, cell("A2"), cell("B2")] },
