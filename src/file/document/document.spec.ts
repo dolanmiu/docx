@@ -78,9 +78,9 @@ describe("Document", () => {
                 .to.have.property("w:tbl")
                 .which.includes({
                     "w:tblGrid": [
-                        { "w:gridCol": [{ _attr: { "w:w": 1 } }] },
-                        { "w:gridCol": [{ _attr: { "w:w": 1 } }] },
-                        { "w:gridCol": [{ _attr: { "w:w": 1 } }] },
+                        { "w:gridCol": [{ _attr: { "w:w": 100 } }] },
+                        { "w:gridCol": [{ _attr: { "w:w": 100 } }] },
+                        { "w:gridCol": [{ _attr: { "w:w": 100 } }] },
                     ],
                 });
             expect(body[0]["w:tbl"].filter((x) => x["w:tr"])).to.have.length(2);
