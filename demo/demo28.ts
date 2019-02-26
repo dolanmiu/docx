@@ -1,4 +1,4 @@
-// Creates two paragraphs, one with a border and one without
+// Table of contents
 // Import from 'docx' rather than '../build' if you install from npm
 import * as fs from "fs";
 import { File, Packer, Paragraph, StyleLevel, TableOfContents } from "../build";

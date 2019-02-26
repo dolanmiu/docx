@@ -1,4 +1,4 @@
-// Scaling images
+// Example how to display page numbers
 // Import from 'docx' rather than '../build' if you install from npm
 import * as fs from "fs";
 import { Document, Packer, PageNumberFormat, TextRun } from "../build";

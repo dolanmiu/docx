@@ -1,4 +1,4 @@
-// Add images to header and footer
+// Generate a CV
 // Import from 'docx' rather than '../build' if you install from npm
 import * as fs from "fs";
 import { Document, Packer, Paragraph, TextRun } from "../build";

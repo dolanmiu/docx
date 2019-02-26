@@ -1,4 +1,4 @@
-// Example of how to add images to the document - You can use Buffers, UInt8Arrays or Base64 strings
+// Example of how to "wrap" text around an image
 // Import from 'docx' rather than '../build' if you install from npm
 import * as fs from "fs";
 // import { Document, Packer, Paragraph } from "../build";
