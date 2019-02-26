@@ -32,7 +32,7 @@ export class Table extends XmlComponent {
                   table will make it look reasonable, as the layout
                   algorithm will expand columns to fit its content
                  */
-                gridCols.push(1);
+                gridCols.push(100);
             }
             this.grid = new TableGrid(gridCols);
         }
