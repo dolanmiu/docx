@@ -184,7 +184,7 @@ describe("Table", () => {
                 .which.is.an("array")
                 .with.has.length.at.least(1);
             expect(tree["w:tbl"][0]).to.deep.equal({
-                "w:tblPr": [DEFAULT_TABLE_PROPERTIES, { "w:tblW": [{ _attr: { "w:type": "pct", "w:w": 10000000 } }] }],
+                "w:tblPr": [DEFAULT_TABLE_PROPERTIES, { "w:tblW": [{ _attr: { "w:type": "pct", "w:w": 1000 } }] }],
             });
         });
     });
