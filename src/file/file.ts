@@ -324,6 +324,11 @@ export class File {
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/footnotes",
             "footnotes.xml",
         );
+        this.docRelationships.createRelationship(
+            this.currentRelationshipId++,
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/settings",
+            "settings.xml",
+        );
     }
 
     private groupHeaders(headers: IDocumentHeader[], group: IHeaderFooterGroup<HeaderWrapper> = {}): IHeaderFooterGroup<HeaderWrapper> {
