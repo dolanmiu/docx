@@ -3,7 +3,7 @@ import { Paragraph } from "file/paragraph";
 import { IXmlableObject, XmlComponent } from "file/xml-components";
 
 import { Table } from "../table";
-import { TableCellBorders, VerticalAlign } from "./table-cell-components";
+import { TableCellBorders, VerticalAlign, VMergeType } from "./table-cell-components";
 import { TableCellProperties } from "./table-cell-properties";
 
 export class TableCell extends XmlComponent {
@@ -54,6 +54,12 @@ export class TableCell extends XmlComponent {
 
     public addGridSpan(cellSpan: number): TableCell {
         this.properties.addGridSpan(cellSpan);
+
+        return this;
+    }
+
+    public addVerticalMerge(type: VMergeType): TableCell {
+        this.properties.addVerticalMerge(type);
 
         return this;
     }
