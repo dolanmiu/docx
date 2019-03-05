@@ -1,5 +1,7 @@
 import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
+import { Compatibility } from "./compatibility";
 import { UpdateFields } from "./update-fields";
+
 export interface ISettingsAttributesProperties {
     readonly wpc?: string;
     readonly mc?: string;
@@ -19,6 +21,7 @@ export interface ISettingsAttributesProperties {
     readonly wps?: string;
     readonly Ignorable?: string;
 }
+
 export class SettingsAttributes extends XmlAttributeComponent<ISettingsAttributesProperties> {
     protected readonly xmlKeys = {
         wpc: "xmlns:wpc",
@@ -40,7 +43,10 @@ export class SettingsAttributes extends XmlAttributeComponent<ISettingsAttribute
         Ignorable: "mc:Ignorable",
     };
 }
+
 export class Settings extends XmlComponent {
+    private readonly compatibility;
+
     constructor() {
         super("w:settings");
         this.root.push(
@@ -64,10 +70,20 @@ export class Settings extends XmlComponent {
                 Ignorable: "w14 w15 wp14",
             }),
         );
+        this.compatibility = new Compatibility();
     }
+
     public addUpdateFields(): void {
         if (!this.root.find((child) => child instanceof UpdateFields)) {
             this.addChildElement(new UpdateFields());
         }
+    }
+
+    public addCompatibility(): Compatibility {
+        if (!this.root.find((child) => child instanceof Compatibility)) {
+            this.addChildElement(this.compatibility);
+        }
+
+        return this.compatibility;
     }
 }
