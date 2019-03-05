@@ -15,6 +15,7 @@
 	* [Headers & Footers](usage/headers-and-footers.md)
 	* [Bullet Points](usage/bullet-points.md)
     * [Numbering](usage/numbering.md)
+    * [Tables](usage/tables.md)
 	* [Tab Stops](usage/tab-stops.md)
     * [Table of Contents](usage/table-of-contents.md)
     * [Page Numbers](usage/page-numbers.md)

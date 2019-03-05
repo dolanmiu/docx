@@ -28,23 +28,69 @@ const table = new Table(2, 4);
 doc.addTable(table);
 ```
 
+## Rows and Columns
+
+You can get a row or a column from a table like so, where `index` is a number:
+
+### Get Row
+
+```ts
+const row = doc.getRow(index);
+```
+
+With this, you can merge a row by using the `mergeCells()` method, where `startIndex` is the row number you want to merge from, and `endIndex` is where you want it to merge to:
+
+```ts
+row.mergeCells(startIndex, endIndex);
+```
+
+You can get a cell from a `row` by using the `getCell()` method, where `index` is the row index:
+
+```ts
+row.getCell(index);
+```
+
+### Get Column
+
+```ts
+const column = doc.getColumn(index);
+```
+
+Again, you can merge a row by using the `mergeCells()` method, where `startIndex` is the row number you want to merge from, and `endIndex` is where you want it to merge to:
+
+```ts
+column.mergeCells(startIndex, endIndex);
+```
+
+You can get a cell from a `column` by using the `getCell()` method, where `index` is the column index:
+
+```ts
+column.getCell(index);
+```
+
 ## Cells
 
-The above section created a table with cells. To access the cell, use the `getCell` method.
+The `createTable()` method created a table with cells. To access the cell, use the `getCell()` method.
 
 ```ts
 const cell = table.getCell([ROW INDEX], [COLUMN INDEX]);
 ```
 
+You can also get a cell from a `column` or a `row` with `getCell()`, mentioned previously.
+
 For example:
 
 ```ts
 const cell = table.getCell(0, 2);
+
+const cell = row.getCell(0);
+
+const cell = column.getCell(2);
 ```
 
 ### Add paragraph to a cell
 
-Once you have got the cell, you can add data to it with the `addParagraph` method.
+Once you have got the cell, you can add data to it with the `addParagraph()` method.
 
 ```ts
 cell.addParagraph(new Paragraph("Hello"));
