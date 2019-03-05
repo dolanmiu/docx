@@ -22,6 +22,12 @@ describe("TableColumn", () => {
 
             expect(cell2).to.deep.equal(cells[1]);
         });
+
+        it("should throw an error if index is out of bounds", () => {
+            const tableColumn = new TableColumn(cells);
+
+            expect(() => tableColumn.getCell(9)).to.throw();
+        });
     });
 
     describe("#mergeCells", () => {
