@@ -66,6 +66,22 @@ export class TableCellBorders extends XmlComponent {
 
         return this;
     }
+
+    public addLeftBorder(style: BorderStyle, size: number, color: string): TableCellBorders {
+        const left = new BaseTableCellBorder("w:left");
+        left.setProperties(style, size, color);
+        this.root.push(left);
+
+        return this;
+    }
+
+    public addRightBorder(style: BorderStyle, size: number, color: string): TableCellBorders {
+        const right = new BaseTableCellBorder("w:right");
+        right.setProperties(style, size, color);
+        this.root.push(right);
+
+        return this;
+    }
 }
 
 /**
