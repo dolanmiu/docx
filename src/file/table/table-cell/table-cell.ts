@@ -61,4 +61,8 @@ export class TableCell extends XmlComponent {
     public get Borders(): TableCellBorders {
         return this.properties.Borders;
     }
+
+    public get Properties(): TableCellProperties {
+        return this.properties;
+    }
 }
