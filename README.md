@@ -25,7 +25,7 @@
 
 ## Browser
 
-Here are examples of `docx` being used with basic `HTML/JS` in a browser environment.
+Here are examples of `docx` being used with basic `HTML/JS` in a browser environment:
 
 *   https://codepen.io/anon/pen/dqoVgQ
 *   https://jsfiddle.net/3xhezb5w/2
