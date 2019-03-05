@@ -5,6 +5,7 @@ import { HyperlinkAttributes, IHyperlinkAttributesProperties } from "./hyperlink
 
 export class Hyperlink extends XmlComponent {
     public readonly linkId: number;
+    private readonly textRun: TextRun;
 
     constructor(text: string, relationshipsCount: number, anchor?: string) {
         super("w:hyperlink");
@@ -19,6 +20,11 @@ export class Hyperlink extends XmlComponent {
 
         const attributes = new HyperlinkAttributes(props);
         this.root.push(attributes);
-        this.root.push(new TextRun(text).style("Hyperlink"));
+        this.textRun = new TextRun(text).style("Hyperlink");
+        this.root.push(this.textRun);
+    }
+
+    public get TextRun(): TextRun {
+        return this.textRun;
     }
 }

@@ -243,6 +243,56 @@ describe("CharacterStyle", () => {
             });
         });
 
+        it("#bold", () => {
+            const style = new CharacterStyle("myStyleId").bold();
+            const tree = new Formatter().format(style);
+            expect(tree).to.deep.equal({
+                "w:style": [
+                    { _attr: { "w:type": "character", "w:styleId": "myStyleId" } },
+                    {
+                        "w:rPr": [{ "w:b": [{ _attr: { "w:val": true } }] }],
+                    },
+                    {
+                        "w:uiPriority": [
+                            {
+                                _attr: {
+                                    "w:val": "99",
+                                },
+                            },
+                        ],
+                    },
+                    {
+                        "w:unhideWhenUsed": [],
+                    },
+                ],
+            });
+        });
+
+        it("#italics", () => {
+            const style = new CharacterStyle("myStyleId").italics();
+            const tree = new Formatter().format(style);
+            expect(tree).to.deep.equal({
+                "w:style": [
+                    { _attr: { "w:type": "character", "w:styleId": "myStyleId" } },
+                    {
+                        "w:rPr": [{ "w:i": [{ _attr: { "w:val": true } }] }],
+                    },
+                    {
+                        "w:uiPriority": [
+                            {
+                                _attr: {
+                                    "w:val": "99",
+                                },
+                            },
+                        ],
+                    },
+                    {
+                        "w:unhideWhenUsed": [],
+                    },
+                ],
+            });
+        });
+
         it("#link", () => {
             const style = new CharacterStyle("myStyleId").link("MyLink");
             const tree = new Formatter().format(style);

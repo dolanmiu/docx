@@ -29,6 +29,14 @@ export class CharacterStyle extends Style {
         return this.addRunProperty(new formatting.Color(color));
     }
 
+    public bold(): CharacterStyle {
+        return this.addRunProperty(new formatting.Bold());
+    }
+
+    public italics(): CharacterStyle {
+        return this.addRunProperty(new formatting.Italics());
+    }
+
     public underline(underlineType?: string, color?: string): CharacterStyle {
         return this.addRunProperty(new formatting.Underline(underlineType, color));
     }
