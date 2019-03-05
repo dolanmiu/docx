@@ -59,12 +59,20 @@ This is so that:
     public float(tableFloatProperties: TableFloatProperties): Table
 ```
 
+```ts
+    table.float(new TableFloatProperties(...));
+```
+
 **Do**
 
 `ITableFloatOptions` is an interface for a JSON of primatives. The end user would need to pass in a json object and not need to worry about the internals:
 
 ```js
     public float(tableFloatOptions: ITableFloatOptions): Table
+```
+
+```ts
+    table.float({...});
 ```
 
 ## Add vs Create
@@ -159,7 +167,7 @@ enum WeaponType = {
 }
 ```
 
-## Spell correctly, full and in American English
+## Spell correctly, in full and in American English
 
 I am not sure where these habits in software development come from, but I do not believe it is beneficial:
 
