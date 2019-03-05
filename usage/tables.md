@@ -28,23 +28,69 @@ const table = new Table(2, 4);
 doc.addTable(table);
 ```
 
+## Rows and Columns
+
+You can get a row or a column from a table like so, where `index` is a number:
+
+### Get Row
+
+```ts
+const row = doc.getRow(index);
+```
+
+With this, you can merge a row by using the `mergeCells()` method, where `startIndex` is the row number you want to merge from, and `endIndex` is where you want it to merge to:
+
+```ts
+row.mergeCells(startIndex, endIndex);
+```
+
+You can get a cell from a `row` by using the `getCell()` method, where `index` is the row index:
+
+```ts
+row.getCell(index);
+```
+
+### Get Column
+
+```ts
+const column = doc.getColumn(index);
+```
+
+Again, you can merge a row by using the `mergeCells()` method, where `startIndex` is the row number you want to merge from, and `endIndex` is where you want it to merge to:
+
+```ts
+column.mergeCells(startIndex, endIndex);
+```
+
+You can get a cell from a `column` by using the `getCell()` method, where `index` is the column index:
+
+```ts
+column.getCell(index);
+```
+
 ## Cells
 
-The above section created a table with cells. To access the cell, use the `getCell` method.
+The `createTable()` method created a table with cells. To access the cell, use the `getCell()` method.
 
 ```ts
 const cell = table.getCell([ROW INDEX], [COLUMN INDEX]);
 ```
 
+You can also get a cell from a `column` or a `row` with `getCell()`, mentioned previously.
+
 For example:
 
 ```ts
 const cell = table.getCell(0, 2);
+
+const cell = row.getCell(0);
+
+const cell = column.getCell(2);
 ```
 
 ### Add paragraph to a cell
 
-Once you have got the cell, you can add data to it with the `addParagraph` method.
+Once you have got the cell, you can add data to it with the `addParagraph()` method.
 
 ```ts
 cell.addParagraph(new Paragraph("Hello"));
@@ -152,3 +198,58 @@ cell.addTable(new Table(1, 1));
 [Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/demo4.ts ":include")
 
 _Source: https://github.com/dolanmiu/docx/blob/master/demo/demo4.ts_
+
+### Custom borders
+
+Example showing how to add colourful borders to tables
+
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/demo20.ts ":include")
+
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/demo20.ts_
+
+### Adding images
+
+Example showing how to add images to tables
+
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/demo24.ts ":include")
+
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/demo24.ts_
+
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/36.ts ":include")
+
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/36.ts_
+
+### Alignment of text in a cell
+
+Example showing how align text in a table cell
+
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/demo31.ts ":include")
+
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/demo31.ts_
+
+### Merging rows
+
+Example showing merging of `rows`
+
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/demo32.ts ":include")
+
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/demo32.ts_
+
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/demo41.ts ":include")
+
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/demo41.ts_
+
+### Merging columns
+
+Example showing merging of `columns`
+
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/demo43.ts ":include")
+
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/demo43.ts_
+
+### Floating tables
+
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/demo34.ts ":include")
+
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/demo34.ts_
+
