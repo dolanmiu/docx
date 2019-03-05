@@ -3,6 +3,7 @@ import { XmlComponent } from "file/xml-components";
 
 import { TableGrid } from "./grid";
 import { TableCell, WidthType } from "./table-cell";
+import { TableColumn } from "./table-column";
 import { ITableFloatOptions, TableProperties } from "./table-properties";
 import { TableRow } from "./table-row";
 
@@ -51,8 +52,8 @@ export class Table extends XmlComponent {
         }
     }
 
-    public getRow(ix: number): TableRow {
-        const row = this.rows[ix];
+    public getRow(index: number): TableRow {
+        const row = this.rows[index];
 
         if (!row) {
             throw Error("Index out of bounds when trying to get row on table");
@@ -61,11 +62,17 @@ export class Table extends XmlComponent {
         return row;
     }
 
+    public getColumn(index: number): TableColumn {
+        // This is a convinence method for people who like to work with columns
+        const cells = this.rows.map((row) => row.getCell(index));
+        return new TableColumn(cells);
+    }
+
     public getCell(row: number, col: number): TableCell {
         return this.getRow(row).getCell(col);
     }
 
-    public setWidth(width: number | string, type: WidthType = WidthType.AUTO): Table {
+    public setWidth(width: number, type: WidthType = WidthType.AUTO): Table {
         this.properties.setWidth(width, type);
         return this;
     }

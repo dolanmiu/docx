@@ -1,3 +1,4 @@
+// http://officeopenxml.com/WPtableWidth.php
 import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
 
 import { WidthType } from "../table-cell";
@@ -12,7 +13,7 @@ class TableWidthAttributes extends XmlAttributeComponent<ITableWidth> {
 }
 
 export class PreferredTableWidth extends XmlComponent {
-    constructor(type: WidthType, w: number | string) {
+    constructor(type: WidthType, w: number) {
         super("w:tblW");
         this.root.push(new TableWidthAttributes({ type, w }));
     }

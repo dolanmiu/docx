@@ -17,7 +17,7 @@ export class TableProperties extends XmlComponent {
         this.root.push(this.cellMargin);
     }
 
-    public setWidth(width: number | string, type: WidthType = WidthType.AUTO): TableProperties {
+    public setWidth(width: number, type: WidthType = WidthType.AUTO): TableProperties {
         this.root.push(new PreferredTableWidth(type, width));
         return this;
     }
