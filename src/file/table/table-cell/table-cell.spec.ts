@@ -102,12 +102,58 @@ describe("TableCellBorders", () => {
             });
         });
 
+        it("should add left border", () => {
+            const tb = new TableCellBorders();
+            tb.addLeftBorder(BorderStyle.THICK, 3, "FF00FF");
+
+            const tree = new Formatter().format(tb);
+            expect(tree).to.deep.equal({
+                "w:tcBorders": [
+                    {
+                        "w:left": [
+                            {
+                                _attr: {
+                                    "w:color": "FF00FF",
+                                    "w:sz": 3,
+                                    "w:val": "thick",
+                                },
+                            },
+                        ],
+                    },
+                ],
+            });
+        });
+
+        it("should add right border", () => {
+            const tb = new TableCellBorders();
+            tb.addRightBorder(BorderStyle.THICK, 3, "FF00FF");
+
+            const tree = new Formatter().format(tb);
+            expect(tree).to.deep.equal({
+                "w:tcBorders": [
+                    {
+                        "w:right": [
+                            {
+                                _attr: {
+                                    "w:color": "FF00FF",
+                                    "w:sz": 3,
+                                    "w:val": "thick",
+                                },
+                            },
+                        ],
+                    },
+                ],
+            });
+        });
+
         it("should add multiple borders", () => {
             const tb = new TableCellBorders();
             tb.addTopBorder(BorderStyle.DOTTED, 1, "FF00FF");
             tb.addEndBorder(BorderStyle.THICK, 3, "FF00FF");
             tb.addBottomBorder(BorderStyle.DOUBLE, 1, "FF00FF");
             tb.addStartBorder(BorderStyle.SINGLE, 2, "FF00FF");
+            tb.addLeftBorder(BorderStyle.SINGLE, 2, "FF00FF");
+            tb.addRightBorder(BorderStyle.SINGLE, 2, "FF00FF");
 
             const tree = new Formatter().format(tb);
             expect(tree).to.deep.equal({
@@ -147,6 +193,28 @@ describe("TableCellBorders", () => {
                     },
                     {
                         "w:start": [
+                            {
+                                _attr: {
+                                    "w:color": "FF00FF",
+                                    "w:sz": 2,
+                                    "w:val": "single",
+                                },
+                            },
+                        ],
+                    },
+                    {
+                        "w:left": [
+                            {
+                                _attr: {
+                                    "w:color": "FF00FF",
+                                    "w:sz": 2,
+                                    "w:val": "single",
+                                },
+                            },
+                        ],
+                    },
+                    {
+                        "w:right": [
                             {
                                 _attr: {
                                     "w:color": "FF00FF",
