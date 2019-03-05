@@ -106,8 +106,9 @@ describe("Table", () => {
     });
 
     describe("#getRow and Row#getCell", () => {
-        it("returns the correct row", () => {
-            const table = new Table(2, 2);
+        const table = new Table(2, 2);
+
+        it("should return the correct row", () => {
             table
                 .getRow(0)
                 .getCell(0)
@@ -144,10 +145,25 @@ describe("Table", () => {
                 ],
             });
         });
+
+        it("throws an exception if index is out of bounds", () => {
+            expect(() => table.getCell(9, 9)).to.throw();
+        });
+    });
+
+    describe("#getColumn", () => {
+        const table = new Table(2, 2);
+
+        it("should get correct row", () => {
+            const column = table.getColumn(0);
+
+            expect(column.getCell(0)).to.equal(table.getCell(0, 0));
+            expect(column.getCell(1)).to.equal(table.getCell(1, 0));
+        });
     });
 
     describe("#getCell", () => {
-        it("returns the correct cell", () => {
+        it("should returns the correct cell", () => {
             const table = new Table(2, 2);
             table.getCell(0, 0).addParagraph(new Paragraph("A1"));
             table.getCell(0, 1).addParagraph(new Paragraph("B1"));
