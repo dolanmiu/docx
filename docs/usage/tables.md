@@ -198,3 +198,58 @@ cell.addTable(new Table(1, 1));
 [Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/demo4.ts ":include")
 
 _Source: https://github.com/dolanmiu/docx/blob/master/demo/demo4.ts_
+
+### Custom borders
+
+Example showing how to add colourful borders to tables
+
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/demo20.ts ":include")
+
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/demo20.ts_
+
+### Adding images
+
+Example showing how to add images to tables
+
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/demo24.ts ":include")
+
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/demo24.ts_
+
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/36.ts ":include")
+
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/36.ts_
+
+### Alignment of text in a cell
+
+Example showing how align text in a table cell
+
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/demo31.ts ":include")
+
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/demo31.ts_
+
+### Merging rows
+
+Example showing merging of `rows`
+
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/demo32.ts ":include")
+
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/demo32.ts_
+
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/demo41.ts ":include")
+
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/demo41.ts_
+
+### Merging columns
+
+Example showing merging of `columns`
+
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/demo43.ts ":include")
+
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/demo43.ts_
+
+### Floating tables
+
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/demo34.ts ":include")
+
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/demo34.ts_
+
