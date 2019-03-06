@@ -15,6 +15,7 @@ class TableWidthAttributes extends XmlAttributeComponent<ITableWidth> {
 export class PreferredTableWidth extends XmlComponent {
     constructor(type: WidthType, w: number) {
         super("w:tblW");
-        this.root.push(new TableWidthAttributes({ type, w }));
+        const width: number | string = type === WidthType.PERCENTAGE ? `${w}%` : w;
+        this.root.push(new TableWidthAttributes({ type: type, w: width }));
     }
 }
