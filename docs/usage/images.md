@@ -210,7 +210,7 @@ doc.createImage(fs.readFileSync("./demo/images/pizza.gif"), 200, 200, {
 
 Importing Images from file system path
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/demo5.ts ":include")
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/demo5.ts ':include')
 
 _Source: https://github.com/dolanmiu/docx/blob/master/demo/demo5.ts_
 
@@ -218,7 +218,7 @@ _Source: https://github.com/dolanmiu/docx/blob/master/demo/demo5.ts_
 
 Example showing how to add image to headers and footers
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/demo9.ts ":include")
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/demo9.ts ':include')
 
 _Source: https://github.com/dolanmiu/docx/blob/master/demo/demo9.ts_
 
@@ -226,6 +226,6 @@ _Source: https://github.com/dolanmiu/docx/blob/master/demo/demo9.ts_
 
 Example showing how to float images on top of text and optimally give a `margin`
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/demo38.ts ":include")
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/demo38.ts ':include')
 
 _Source: https://github.com/dolanmiu/docx/blob/master/demo/demo38.ts_

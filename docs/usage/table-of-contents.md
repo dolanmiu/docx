@@ -71,6 +71,6 @@ doc.addParagraph(new Paragraph("My Spectacular Style #1").style("MySpectacularSt
 
 ### Complete example
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/demo28.ts ":include")
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/demo28.ts ':include')
 
 _Source: https://github.com/dolanmiu/docx/blob/master/demo/demo28.ts_
