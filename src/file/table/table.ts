@@ -86,8 +86,4 @@ export class Table extends XmlComponent {
         this.properties.setTableFloatProperties(tableFloatOptions);
         return this;
     }
-
-    public get Properties(): TableProperties {
-        return this.properties;
-    }
 }

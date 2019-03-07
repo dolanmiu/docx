@@ -121,6 +121,28 @@ private get _level: string;
 private get level: string;
 ```
 
+## Temporal Methods
+
+Some methods  are `non-temporal`, which means regardless of when you call the method, it will have the same affect on the document. For example, setting the width of a table at the end of the document will have the same effect as setting the width at the start:
+
+```ts
+table.setWidth(1000); // now removed as of version 5.0.0
+```
+
+Whereas some methods are `temporal`, which means depending on the time-frame they are called, it would produce a difference result. For example, moving `createParagraph()` around your code will physically alter the document.
+
+```ts
+doc.createParagraph("hello");
+```
+
+If a method is `non-temporal`, put it in the objects `constructor`. For example:
+
+```ts
+const table = new Table(width: number);
+```
+
+I am not sure what the real term is, but this will do.
+
 ## Interfaces over type alias
 
 Do not use `type`, but rather use `Interfaces`. `type` cannot be extended, and a class cannot implement it.
