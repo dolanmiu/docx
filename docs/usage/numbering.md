@@ -26,7 +26,7 @@ _levels_ which form a sequence starting at 0 indicating the top-level
 list look and increasing from there to descibe the sublists, then
 sub-sublists, etc. Each level includes the following properties:
 
-*   **level**: This its 0-based index in the defintion stack
+*   **level**: This is its 0-based index in the defintion stack
 *   **numberFormat**: This indicates how the bullet or number should be
     generated. Options include `bullet` (meaning don't count), `decimal`
     (arabic numerals), `upperRoman`, `lowerRoman`, `hex`, and many
