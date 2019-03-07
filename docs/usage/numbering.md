@@ -78,8 +78,8 @@ abstractNum.createLevel(2, "lowerLetter", "%3)", "start").addParagraphProperty(n
 const concrete = numbering.createConcreteNumbering(abstractNum);
 ```
 
-You can then apply your concrete style to paragraphs using their
-`#setNumbering` method:
+You can then apply your concrete style to paragraphs using the
+`setNumbering` method:
 
 ```js
 topLevelP.setNumbering(concrete, 0);
