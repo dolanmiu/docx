@@ -64,8 +64,8 @@ styles or numbering of any kind, you'll have to use the
 `docx.Numbering` class.
 
 First you need to create a new numbering container class and use it to
-create your abstract numbering style, define your levels, and creat
-your concreate numbering style:
+create your abstract numbering style, define your levels, and create
+your concrete numbering style:
 
 ```js
 const numbering = new docx.Numbering();
