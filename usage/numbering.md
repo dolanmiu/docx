@@ -26,7 +26,7 @@ _levels_ which form a sequence starting at 0 indicating the top-level
 list look and increasing from there to descibe the sublists, then
 sub-sublists, etc. Each level includes the following properties:
 
-*   **level**: This its 0-based index in the defintion stack
+*   **level**: This is its 0-based index in the definition stack
 *   **numberFormat**: This indicates how the bullet or number should be
     generated. Options include `bullet` (meaning don't count), `decimal`
     (arabic numerals), `upperRoman`, `lowerRoman`, `hex`, and many
@@ -64,8 +64,8 @@ styles or numbering of any kind, you'll have to use the
 `docx.Numbering` class.
 
 First you need to create a new numbering container class and use it to
-create your abstract numbering style, define your levels, and creat
-your concreate numbering style:
+create your abstract numbering style, define your levels, and create
+your concrete numbering style:
 
 ```js
 const numbering = new docx.Numbering();
@@ -78,8 +78,8 @@ abstractNum.createLevel(2, "lowerLetter", "%3)", "start").addParagraphProperty(n
 const concrete = numbering.createConcreteNumbering(abstractNum);
 ```
 
-You can then apply your concrete style to paragraphs using their
-`#setNumbering` method:
+You can then apply your concrete style to paragraphs using the
+`setNumbering` method:
 
 ```js
 topLevelP.setNumbering(concrete, 0);
