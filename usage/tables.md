@@ -215,9 +215,9 @@ Example showing how to add images to tables
 
 _Source: https://github.com/dolanmiu/docx/blob/master/demo/demo24.ts_
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/36.ts ':include')
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/demo36.ts ':include')
 
-_Source: https://github.com/dolanmiu/docx/blob/master/demo/36.ts_
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/demo36.ts_
 
 ### Alignment of text in a cell
 
