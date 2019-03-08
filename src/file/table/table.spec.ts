@@ -5,7 +5,7 @@ import { Formatter } from "export/formatter";
 
 import { Paragraph } from "../paragraph";
 import { Table } from "./table";
-import { WidthType } from "./table-cell";
+// import { WidthType } from "./table-cell";
 import { RelativeHorizontalPosition, RelativeVerticalPosition, TableAnchorType } from "./table-properties";
 
 const DEFAULT_TABLE_PROPERTIES = {
@@ -191,28 +191,28 @@ describe("Table", () => {
         });
     });
 
-    describe("#setWidth", () => {
-        it("should set the preferred width on the table", () => {
-            const table = new Table(2, 2).setWidth(1000, WidthType.PERCENTAGE);
-            const tree = new Formatter().format(table);
-            expect(tree)
-                .to.have.property("w:tbl")
-                .which.is.an("array")
-                .with.has.length.at.least(1);
-            expect(tree["w:tbl"][0]).to.deep.equal({
-                "w:tblPr": [DEFAULT_TABLE_PROPERTIES, { "w:tblW": [{ _attr: { "w:type": "pct", "w:w": "1000%" } }] }],
-            });
-        });
+    // describe("#setWidth", () => {
+    //     it("should set the preferred width on the table", () => {
+    //         const table = new Table(2, 2).setWidth(1000, WidthType.PERCENTAGE);
+    //         const tree = new Formatter().format(table);
+    //         expect(tree)
+    //             .to.have.property("w:tbl")
+    //             .which.is.an("array")
+    //             .with.has.length.at.least(1);
+    //         expect(tree["w:tbl"][0]).to.deep.equal({
+    //             "w:tblPr": [DEFAULT_TABLE_PROPERTIES, { "w:tblW": [{ _attr: { "w:type": "pct", "w:w": "1000%" } }] }],
+    //         });
+    //     });
 
-        it("sets the preferred width on the table with a default of AUTO", () => {
-            const table = new Table(2, 2).setWidth(1000);
-            const tree = new Formatter().format(table);
+    //     it("sets the preferred width on the table with a default of AUTO", () => {
+    //         const table = new Table(2, 2).setWidth(1000);
+    //         const tree = new Formatter().format(table);
 
-            expect(tree["w:tbl"][0]).to.deep.equal({
-                "w:tblPr": [DEFAULT_TABLE_PROPERTIES, { "w:tblW": [{ _attr: { "w:type": "auto", "w:w": 1000 } }] }],
-            });
-        });
-    });
+    //         expect(tree["w:tbl"][0]).to.deep.equal({
+    //             "w:tblPr": [DEFAULT_TABLE_PROPERTIES, { "w:tblW": [{ _attr: { "w:type": "auto", "w:w": 1000 } }] }],
+    //         });
+    //     });
+    // });
 
     describe("#setFixedWidthLayout", () => {
         it("sets the table to fixed width layout", () => {

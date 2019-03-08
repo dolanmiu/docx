@@ -21,12 +21,12 @@ doc.createParagraph("Another table").heading2();
 table = doc.createTable(2, 4);
 table.getCell(0, 0).addParagraph(new Paragraph("Foo"));
 
-table.getCell(1, 0).addParagraph(new Paragraph("Bar1"));
-table.getCell(1, 1).addParagraph(new Paragraph("Bar2"));
-table.getCell(1, 2).addParagraph(new Paragraph("Bar3"));
-table.getCell(1, 3).addParagraph(new Paragraph("Bar4"));
+// table.getCell(1, 0).addParagraph(new Paragraph("Bar1"));
+// table.getCell(1, 1).addParagraph(new Paragraph("Bar2"));
+// table.getCell(1, 2).addParagraph(new Paragraph("Bar3"));
+// table.getCell(1, 3).addParagraph(new Paragraph("Bar4"));
 
-table.getRow(0).mergeCells(0, 3);
+// table.getRow(0).mergeCells(0, 3);
 
 const packer = new Packer();
 
