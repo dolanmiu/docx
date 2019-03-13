@@ -93,7 +93,12 @@ describe("File", () => {
         it("should call the underlying document's addTable", () => {
             const wrapper = new File();
             const spy = sinon.spy(wrapper.Document, "addTable");
-            wrapper.addTable(new Table(1, 1));
+            wrapper.addTable(
+                new Table({
+                    rows: 1,
+                    columns: 1,
+                }),
+            );
 
             expect(spy.called).to.equal(true);
         });
@@ -103,7 +108,10 @@ describe("File", () => {
         it("should call the underlying document's createTable", () => {
             const wrapper = new File();
             const spy = sinon.spy(wrapper.Document, "createTable");
-            wrapper.createTable(1, 1);
+            wrapper.createTable({
+                rows: 1,
+                columns: 1,
+            });
 
             expect(spy.called).to.equal(true);
         });

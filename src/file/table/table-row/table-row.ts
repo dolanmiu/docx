@@ -13,8 +13,8 @@ export class TableRow extends XmlComponent {
         cells.forEach((c) => this.root.push(c));
     }
 
-    public getCell(ix: number): TableCell {
-        const cell = this.cells[ix];
+    public getCell(index: number): TableCell {
+        const cell = this.cells[index];
 
         if (!cell) {
             throw Error("Index out of bounds when trying to get cell on row");
