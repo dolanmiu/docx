@@ -9,15 +9,23 @@ import { Table } from "./table";
 import { RelativeHorizontalPosition, RelativeVerticalPosition, TableAnchorType } from "./table-properties";
 
 const DEFAULT_TABLE_PROPERTIES = {
-    "w:tblBorders": [
+    "w:tblCellMar": [
+        {
+            "w:bottom": [
+                {
+                    _attr: {
+                        "w:sz": "auto",
+                        "w:w": 0,
+                    },
+                },
+            ],
+        },
         {
             "w:top": [
                 {
                     _attr: {
-                        "w:color": "auto",
-                        "w:space": 0,
-                        "w:sz": 4,
-                        "w:val": "single",
+                        "w:sz": "auto",
+                        "w:w": 0,
                     },
                 },
             ],
@@ -26,22 +34,8 @@ const DEFAULT_TABLE_PROPERTIES = {
             "w:left": [
                 {
                     _attr: {
-                        "w:color": "auto",
-                        "w:space": 0,
-                        "w:sz": 4,
-                        "w:val": "single",
-                    },
-                },
-            ],
-        },
-        {
-            "w:bottom": [
-                {
-                    _attr: {
-                        "w:color": "auto",
-                        "w:space": 0,
-                        "w:sz": 4,
-                        "w:val": "single",
+                        "w:sz": "auto",
+                        "w:w": 0,
                     },
                 },
             ],
@@ -50,34 +44,8 @@ const DEFAULT_TABLE_PROPERTIES = {
             "w:right": [
                 {
                     _attr: {
-                        "w:color": "auto",
-                        "w:space": 0,
-                        "w:sz": 4,
-                        "w:val": "single",
-                    },
-                },
-            ],
-        },
-        {
-            "w:insideH": [
-                {
-                    _attr: {
-                        "w:color": "auto",
-                        "w:space": 0,
-                        "w:sz": 4,
-                        "w:val": "single",
-                    },
-                },
-            ],
-        },
-        {
-            "w:insideV": [
-                {
-                    _attr: {
-                        "w:color": "auto",
-                        "w:space": 0,
-                        "w:sz": 4,
-                        "w:val": "single",
+                        "w:sz": "auto",
+                        "w:w": 0,
                     },
                 },
             ],
@@ -85,15 +53,88 @@ const DEFAULT_TABLE_PROPERTIES = {
     ],
 };
 
+const BORDERS = {
+    "w:tblBorders": [
+        { "w:top": [{ _attr: { "w:val": "single", "w:sz": 4, "w:space": 0, "w:color": "auto" } }] },
+        { "w:left": [{ _attr: { "w:val": "single", "w:sz": 4, "w:space": 0, "w:color": "auto" } }] },
+        { "w:bottom": [{ _attr: { "w:val": "single", "w:sz": 4, "w:space": 0, "w:color": "auto" } }] },
+        { "w:right": [{ _attr: { "w:val": "single", "w:sz": 4, "w:space": 0, "w:color": "auto" } }] },
+        { "w:insideH": [{ _attr: { "w:val": "single", "w:sz": 4, "w:space": 0, "w:color": "auto" } }] },
+        { "w:insideV": [{ _attr: { "w:val": "single", "w:sz": 4, "w:space": 0, "w:color": "auto" } }] },
+    ],
+};
+
+const WIDTHS = {
+    "w:tblW": [
+        {
+            _attr: {
+                "w:type": "auto",
+                "w:w": 100,
+            },
+        },
+    ],
+};
+
+// const f = {
+//     "w:tbl": [
+//         {
+//             "w:tblPr": [
+//                 {
+//                     "w:tblCellMar": [
+//                         { "w:bottom": [{ _attr: { "w:sz": "auto", "w:w": 0 } }] },
+//                         { "w:top": [{ _attr: { "w:sz": "auto", "w:w": 0 } }] },
+//                         { "w:left": [{ _attr: { "w:sz": "auto", "w:w": 0 } }] },
+//                         { "w:right": [{ _attr: { "w:sz": "auto", "w:w": 0 } }] },
+//                     ],
+//                 },
+//                 {
+//                     "w:tblBorders": [
+//                         { "w:top": [{ _attr: { "w:val": "single", "w:sz": 4, "w:space": 0, "w:color": "auto" } }] },
+//                         { "w:left": [{ _attr: { "w:val": "single", "w:sz": 4, "w:space": 0, "w:color": "auto" } }] },
+//                         { "w:bottom": [{ _attr: { "w:val": "single", "w:sz": 4, "w:space": 0, "w:color": "auto" } }] },
+//                         { "w:right": [{ _attr: { "w:val": "single", "w:sz": 4, "w:space": 0, "w:color": "auto" } }] },
+//                         { "w:insideH": [{ _attr: { "w:val": "single", "w:sz": 4, "w:space": 0, "w:color": "auto" } }] },
+//                         { "w:insideV": [{ _attr: { "w:val": "single", "w:sz": 4, "w:space": 0, "w:color": "auto" } }] },
+//                     ],
+//                 },
+//                 { "w:tblW": [{ _attr: { "w:type": "auto", "w:w": 100 } }] },
+//                 {
+//                     "w:tblpPr": [
+//                         {
+//                             _attr: {
+//                                 "w:horzAnchor": "margin",
+//                                 "w:vertAnchor": "page",
+//                                 "w:tblpX": 10,
+//                                 "w:tblpXSpec": "center",
+//                                 "w:tblpY": 20,
+//                                 "w:tblpYSpec": "bottom",
+//                                 "w:bottomFromText": 30,
+//                                 "w:topFromText": 40,
+//                                 "w:leftFromText": 50,
+//                                 "w:rightFromText": 60,
+//                             },
+//                         },
+//                     ],
+//                 },
+//             ],
+//         },
+//         { "w:tblGrid": [{ "w:gridCol": [{ _attr: { "w:w": 100 } }] }] },
+//         { "w:tr": [{ "w:trPr": [] }, { "w:tc": [{ "w:tcPr": [] }, { "w:p": [{ "w:pPr": [] }] }] }] },
+//     ],
+// };
+
 describe("Table", () => {
     describe("#constructor", () => {
         it("creates a table with the correct number of rows and columns", () => {
-            const table = new Table(3, 2);
+            const table = new Table({
+                rows: 3,
+                columns: 2,
+            });
             const tree = new Formatter().format(table);
             const cell = { "w:tc": [{ "w:tcPr": [] }, { "w:p": [{ "w:pPr": [] }] }] };
             expect(tree).to.deep.equal({
                 "w:tbl": [
-                    { "w:tblPr": [DEFAULT_TABLE_PROPERTIES] },
+                    { "w:tblPr": [DEFAULT_TABLE_PROPERTIES, BORDERS, WIDTHS] },
                     {
                         "w:tblGrid": [{ "w:gridCol": [{ _attr: { "w:w": 100 } }] }, { "w:gridCol": [{ _attr: { "w:w": 100 } }] }],
                     },
@@ -106,7 +147,10 @@ describe("Table", () => {
     });
 
     describe("#getRow and Row#getCell", () => {
-        const table = new Table(2, 2);
+        const table = new Table({
+            rows: 2,
+            columns: 2,
+        });
 
         it("should return the correct row", () => {
             table
@@ -136,7 +180,7 @@ describe("Table", () => {
             });
             expect(tree).to.deep.equal({
                 "w:tbl": [
-                    { "w:tblPr": [DEFAULT_TABLE_PROPERTIES] },
+                    { "w:tblPr": [DEFAULT_TABLE_PROPERTIES, BORDERS, WIDTHS] },
                     {
                         "w:tblGrid": [{ "w:gridCol": [{ _attr: { "w:w": 100 } }] }, { "w:gridCol": [{ _attr: { "w:w": 100 } }] }],
                     },
@@ -152,9 +196,12 @@ describe("Table", () => {
     });
 
     describe("#getColumn", () => {
-        const table = new Table(2, 2);
+        const table = new Table({
+            rows: 2,
+            columns: 2,
+        });
 
-        it("should get correct row", () => {
+        it("should get correct cell", () => {
             const column = table.getColumn(0);
 
             expect(column.getCell(0)).to.equal(table.getCell(0, 0));
@@ -164,7 +211,10 @@ describe("Table", () => {
 
     describe("#getCell", () => {
         it("should returns the correct cell", () => {
-            const table = new Table(2, 2);
+            const table = new Table({
+                rows: 2,
+                columns: 2,
+            });
             table.getCell(0, 0).addParagraph(new Paragraph("A1"));
             table.getCell(0, 1).addParagraph(new Paragraph("B1"));
             table.getCell(1, 0).addParagraph(new Paragraph("A2"));
@@ -180,7 +230,7 @@ describe("Table", () => {
             });
             expect(tree).to.deep.equal({
                 "w:tbl": [
-                    { "w:tblPr": [DEFAULT_TABLE_PROPERTIES] },
+                    { "w:tblPr": [DEFAULT_TABLE_PROPERTIES, BORDERS, WIDTHS] },
                     {
                         "w:tblGrid": [{ "w:gridCol": [{ _attr: { "w:w": 100 } }] }, { "w:gridCol": [{ _attr: { "w:w": 100 } }] }],
                     },
@@ -193,7 +243,7 @@ describe("Table", () => {
 
     // describe("#setWidth", () => {
     //     it("should set the preferred width on the table", () => {
-    //         const table = new Table(2, 2).setWidth(1000, WidthType.PERCENTAGE);
+    //         const table = new Table({rows: 1,columns: 1,}).setWidth(1000, WidthType.PERCENTAGE);
     //         const tree = new Formatter().format(table);
     //         expect(tree)
     //             .to.have.property("w:tbl")
@@ -205,7 +255,7 @@ describe("Table", () => {
     //     });
 
     //     it("sets the preferred width on the table with a default of AUTO", () => {
-    //         const table = new Table(2, 2).setWidth(1000);
+    //         const table = new Table({rows: 1,columns: 1,}).setWidth(1000);
     //         const tree = new Formatter().format(table);
 
     //         expect(tree["w:tbl"][0]).to.deep.equal({
@@ -216,14 +266,17 @@ describe("Table", () => {
 
     describe("#setFixedWidthLayout", () => {
         it("sets the table to fixed width layout", () => {
-            const table = new Table(2, 2).setFixedWidthLayout();
+            const table = new Table({
+                rows: 1,
+                columns: 1,
+            }).setFixedWidthLayout();
             const tree = new Formatter().format(table);
             expect(tree)
                 .to.have.property("w:tbl")
                 .which.is.an("array")
                 .with.has.length.at.least(1);
             expect(tree["w:tbl"][0]).to.deep.equal({
-                "w:tblPr": [DEFAULT_TABLE_PROPERTIES, { "w:tblLayout": [{ _attr: { "w:type": "fixed" } }] }],
+                "w:tblPr": [DEFAULT_TABLE_PROPERTIES, BORDERS, WIDTHS, { "w:tblLayout": [{ _attr: { "w:type": "fixed" } }] }],
             });
         });
     });
@@ -231,7 +284,10 @@ describe("Table", () => {
     describe("Cell", () => {
         describe("#prepForXml", () => {
             it("inserts a paragraph at the end of the cell if it is empty", () => {
-                const table = new Table(1, 1);
+                const table = new Table({
+                    rows: 1,
+                    columns: 1,
+                });
                 const tree = new Formatter().format(table);
                 expect(tree)
                     .to.have.property("w:tbl")
@@ -247,8 +303,16 @@ describe("Table", () => {
             });
 
             it("inserts a paragraph at the end of the cell even if it has a child table", () => {
-                const parentTable = new Table(1, 1);
-                parentTable.getCell(0, 0).addTable(new Table(1, 1));
+                const parentTable = new Table({
+                    rows: 1,
+                    columns: 1,
+                });
+                parentTable.getCell(0, 0).addTable(
+                    new Table({
+                        rows: 1,
+                        columns: 1,
+                    }),
+                );
                 const tree = new Formatter().format(parentTable);
                 expect(tree)
                     .to.have.property("w:tbl")
@@ -266,7 +330,10 @@ describe("Table", () => {
             });
 
             it("does not insert a paragraph if it already ends with one", () => {
-                const parentTable = new Table(1, 1);
+                const parentTable = new Table({
+                    rows: 1,
+                    columns: 1,
+                });
                 parentTable.getCell(0, 0).addParagraph(new Paragraph("Hello"));
                 const tree = new Formatter().format(parentTable);
                 expect(tree)
@@ -293,7 +360,10 @@ describe("Table", () => {
 
         describe("#createParagraph", () => {
             it("inserts a new paragraph in the cell", () => {
-                const table = new Table(1, 1);
+                const table = new Table({
+                    rows: 1,
+                    columns: 1,
+                });
                 const para = table.getCell(0, 0).createParagraph("Test paragraph");
                 expect(para).to.be.an.instanceof(Paragraph);
                 const tree = new Formatter().format(table);
@@ -324,17 +394,21 @@ describe("Table", () => {
 
     describe("#float", () => {
         it("sets the table float properties", () => {
-            const table = new Table(1, 1).float({
-                horizontalAnchor: TableAnchorType.MARGIN,
-                verticalAnchor: TableAnchorType.PAGE,
-                absoluteHorizontalPosition: 10,
-                relativeHorizontalPosition: RelativeHorizontalPosition.CENTER,
-                absoluteVerticalPosition: 20,
-                relativeVerticalPosition: RelativeVerticalPosition.BOTTOM,
-                bottomFromText: 30,
-                topFromText: 40,
-                leftFromText: 50,
-                rightFromText: 60,
+            const table = new Table({
+                rows: 1,
+                columns: 1,
+                float: {
+                    horizontalAnchor: TableAnchorType.MARGIN,
+                    verticalAnchor: TableAnchorType.PAGE,
+                    absoluteHorizontalPosition: 10,
+                    relativeHorizontalPosition: RelativeHorizontalPosition.CENTER,
+                    absoluteVerticalPosition: 20,
+                    relativeVerticalPosition: RelativeVerticalPosition.BOTTOM,
+                    bottomFromText: 30,
+                    topFromText: 40,
+                    leftFromText: 50,
+                    rightFromText: 60,
+                },
             });
             const tree = new Formatter().format(table);
             expect(tree)
@@ -344,6 +418,8 @@ describe("Table", () => {
             expect(tree["w:tbl"][0]).to.deep.equal({
                 "w:tblPr": [
                     DEFAULT_TABLE_PROPERTIES,
+                    BORDERS,
+                    WIDTHS,
                     {
                         "w:tblpPr": [
                             {

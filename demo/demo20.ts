@@ -5,7 +5,10 @@ import { BorderStyle, Document, Packer, Paragraph } from "../build";
 
 const doc = new Document();
 
-const table = doc.createTable(4, 4);
+const table = doc.createTable({
+    rows: 4,
+    columns: 4,
+});
 table
     .getCell(2, 2)
     .addParagraph(new Paragraph("Hello"))

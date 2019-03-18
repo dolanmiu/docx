@@ -5,14 +5,19 @@ import { Document, Packer, Paragraph, RelativeHorizontalPosition, RelativeVertic
 
 const doc = new Document();
 
-const table = doc.createTable(2, 2).float({
-    horizontalAnchor: TableAnchorType.MARGIN,
-    verticalAnchor: TableAnchorType.MARGIN,
-    relativeHorizontalPosition: RelativeHorizontalPosition.RIGHT,
-    relativeVerticalPosition: RelativeVerticalPosition.BOTTOM,
+const table = doc.createTable({
+    rows: 2,
+    columns: 2,
+    float: {
+        horizontalAnchor: TableAnchorType.MARGIN,
+        verticalAnchor: TableAnchorType.MARGIN,
+        relativeHorizontalPosition: RelativeHorizontalPosition.RIGHT,
+        relativeVerticalPosition: RelativeVerticalPosition.BOTTOM,
+    },
+    width: 4535,
+    widthUnitType: WidthType.DXA,
 });
 table.setFixedWidthLayout();
-table.setWidth(4535, WidthType.DXA);
 
 table.getCell(0, 0).addParagraph(new Paragraph("Hello"));
 table.getRow(0).mergeCells(0, 1);

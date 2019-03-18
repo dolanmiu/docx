@@ -106,7 +106,10 @@ doc.createParagraph("Sir,").style("normalPara");
 
 doc.createParagraph("BRIEF DESCRIPTION").style("normalPara");
 
-const table = new Table(4, 4);
+const table = new Table({
+    rows: 4,
+    columns: 4,
+});
 table
     .getRow(0)
     .getCell(0)

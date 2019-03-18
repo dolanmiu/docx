@@ -3,6 +3,7 @@ import { Paragraph } from "file/paragraph";
 import { IXmlableObject, XmlComponent } from "file/xml-components";
 
 import { Table } from "../table";
+import { ITableCellMargainOptions } from "./cell-margain/table-cell-margains";
 import { TableCellBorders, VerticalAlign, VMergeType } from "./table-cell-components";
 import { TableCellProperties } from "./table-cell-properties";
 
@@ -11,6 +12,7 @@ export class TableCell extends XmlComponent {
 
     constructor() {
         super("w:tc");
+
         this.properties = new TableCellProperties();
         this.root.push(this.properties);
     }
@@ -60,6 +62,12 @@ export class TableCell extends XmlComponent {
 
     public addVerticalMerge(type: VMergeType): TableCell {
         this.properties.addVerticalMerge(type);
+
+        return this;
+    }
+
+    public setMargains(margains: ITableCellMargainOptions): TableCell {
+        this.properties.addMargains(margains);
 
         return this;
     }

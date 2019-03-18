@@ -5,7 +5,10 @@ import { Document, Packer, Paragraph, VerticalAlign } from "../build";
 
 const doc = new Document();
 
-const table = doc.createTable(2, 2);
+const table = doc.createTable({
+    rows: 2,
+    columns: 2,
+});
 table
     .getCell(1, 1)
     .addParagraph(new Paragraph("This text should be in the middle of the cell"))

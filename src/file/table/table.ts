@@ -16,11 +16,6 @@ import { TableRow } from "./table-row";
     table will make it look reasonable, as the layout
     algorithm will expand columns to fit its content
  */
-export interface IWidthOptions {
-    readonly width: number;
-    readonly type?: WidthType;
-}
-
 export interface ITableOptions {
     readonly rows: number;
     readonly columns: number;
@@ -102,11 +97,6 @@ export class Table extends XmlComponent {
 
     public setFixedWidthLayout(): Table {
         this.properties.setFixedWidthLayout();
-        return this;
-    }
-
-    public float(tableFloatOptions: ITableFloatOptions): Table {
-        this.properties.setTableFloatProperties(tableFloatOptions);
         return this;
     }
 }

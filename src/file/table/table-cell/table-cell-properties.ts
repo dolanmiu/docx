@@ -1,5 +1,6 @@
 import { XmlComponent } from "file/xml-components";
 
+import { ITableCellMargainOptions, TableCellMargain } from "./cell-margain/table-cell-margains";
 import {
     GridSpan,
     ITableCellShadingAttributesProperties,
@@ -52,6 +53,12 @@ export class TableCellProperties extends XmlComponent {
 
     public setShading(attrs: ITableCellShadingAttributesProperties): TableCellProperties {
         this.root.push(new TableCellShading(attrs));
+
+        return this;
+    }
+
+    public addMargains(options: ITableCellMargainOptions): TableCellProperties {
+        this.root.push(new TableCellMargain(options));
 
         return this;
     }
