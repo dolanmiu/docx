@@ -21,7 +21,12 @@ describe("HeaderWrapper", () => {
         it("should call the underlying header's addTable", () => {
             const wrapper = new HeaderWrapper(new Media(), 1);
             const spy = sinon.spy(wrapper.Header, "addTable");
-            wrapper.addTable(new Table(1, 1));
+            wrapper.addTable(
+                new Table({
+                    rows: 1,
+                    columns: 1,
+                }),
+            );
 
             expect(spy.called).to.equal(true);
         });

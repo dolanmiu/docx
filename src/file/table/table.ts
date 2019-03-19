@@ -6,49 +6,72 @@ import { TableCell, WidthType } from "./table-cell";
 import { TableColumn } from "./table-column";
 import { ITableFloatOptions, TableProperties } from "./table-properties";
 import { TableRow } from "./table-row";
+/*
+    0-width columns don't get rendered correctly, so we need
+    to give them some value. A reasonable default would be
+    ~6in / numCols, but if we do that it becomes very hard
+    to resize the table using setWidth, unless the layout
+    algorithm is set to 'fixed'. Instead, the approach here
+    means even in 'auto' layout, setting a width on the
+    table will make it look reasonable, as the layout
+    algorithm will expand columns to fit its content
+ */
+export interface ITableOptions {
+    readonly rows: number;
+    readonly columns: number;
+    readonly width?: number;
+    readonly widthUnitType?: WidthType;
+    readonly columnWidths?: number[];
+    readonly margains?: {
+        readonly margainUnitType?: WidthType;
+        readonly top?: number;
+        readonly bottom?: number;
+        readonly right?: number;
+        readonly left?: number;
+    };
+    readonly float?: ITableFloatOptions;
+}
 
 export class Table extends XmlComponent {
     private readonly properties: TableProperties;
     private readonly rows: TableRow[];
-    private readonly grid: TableGrid;
 
-    constructor(rows: number, cols: number, colSizes?: number[]) {
+    constructor({
+        rows,
+        columns,
+        width = 100,
+        widthUnitType = WidthType.AUTO,
+        columnWidths = Array<number>(columns).fill(100),
+        margains: { margainUnitType, top, bottom, right, left } = { margainUnitType: WidthType.AUTO, top: 0, bottom: 0, right: 0, left: 0 },
+        float,
+    }: ITableOptions) {
         super("w:tbl");
         this.properties = new TableProperties();
         this.root.push(this.properties);
         this.properties.setBorder();
+        this.properties.setWidth(width, widthUnitType);
+        this.properties.CellMargin.addBottomMargin(bottom || 0, margainUnitType);
+        this.properties.CellMargin.addTopMargin(top || 0, margainUnitType);
+        this.properties.CellMargin.addLeftMargin(left || 0, margainUnitType);
+        this.properties.CellMargin.addRightMargin(right || 0, margainUnitType);
+        const grid = new TableGrid(columnWidths);
 
-        if (colSizes && colSizes.length > 0) {
-            this.grid = new TableGrid(colSizes);
-        } else {
-            const gridCols: number[] = [];
-            for (let i = 0; i < cols; i++) {
-                /*
-                  0-width columns don't get rendered correctly, so we need
-                  to give them some value. A reasonable default would be
-                  ~6in / numCols, but if we do that it becomes very hard
-                  to resize the table using setWidth, unless the layout
-                  algorithm is set to 'fixed'. Instead, the approach here
-                  means even in 'auto' layout, setting a width on the
-                  table will make it look reasonable, as the layout
-                  algorithm will expand columns to fit its content
-                 */
-                gridCols.push(100);
-            }
-            this.grid = new TableGrid(gridCols);
-        }
+        this.root.push(grid);
 
-        this.root.push(this.grid);
+        this.rows = Array(rows)
+            .fill(0)
+            .map(() => {
+                const cells = Array(columns)
+                    .fill(0)
+                    .map(() => new TableCell());
+                const row = new TableRow(cells);
+                return row;
+            });
 
-        this.rows = [];
-        for (let i = 0; i < rows; i++) {
-            const cells: TableCell[] = [];
-            for (let j = 0; j < cols; j++) {
-                cells.push(new TableCell());
-            }
-            const row = new TableRow(cells);
-            this.rows.push(row);
-            this.root.push(row);
+        this.rows.forEach((x) => this.root.push(x));
+
+        if (float) {
+            this.properties.setTableFloatProperties(float);
         }
     }
 
@@ -72,18 +95,8 @@ export class Table extends XmlComponent {
         return this.getRow(row).getCell(col);
     }
 
-    public setWidth(width: number, type: WidthType = WidthType.AUTO): Table {
-        this.properties.setWidth(width, type);
-        return this;
-    }
-
     public setFixedWidthLayout(): Table {
         this.properties.setFixedWidthLayout();
-        return this;
-    }
-
-    public float(tableFloatOptions: ITableFloatOptions): Table {
-        this.properties.setTableFloatProperties(tableFloatOptions);
         return this;
     }
 }

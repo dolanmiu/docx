@@ -5,7 +5,10 @@ import { Document, Packer, Paragraph } from "../build";
 
 const doc = new Document();
 
-const table = doc.createTable(13, 6);
+const table = doc.createTable({
+    rows: 13,
+    columns: 6,
+});
 let row = 0;
 table.getCell(row, 0).addContent(new Paragraph("0,0"));
 table.getCell(row, 1).addContent(new Paragraph("0,1"));

@@ -59,7 +59,10 @@ describe("Document", () => {
 
     describe("#createTable", () => {
         it("should create a new table and append it to body", () => {
-            const table = document.createTable(2, 3);
+            const table = document.createTable({
+                rows: 2,
+                columns: 3,
+            });
             expect(table).to.be.an.instanceof(Table);
             const body = new Formatter().format(document)["w:document"][1]["w:body"];
             expect(body)
@@ -69,7 +72,10 @@ describe("Document", () => {
         });
 
         it("should create a table with the correct dimensions", () => {
-            document.createTable(2, 3);
+            document.createTable({
+                rows: 2,
+                columns: 3,
+            });
             const body = new Formatter().format(document)["w:document"][1]["w:body"];
             expect(body)
                 .to.be.an("array")

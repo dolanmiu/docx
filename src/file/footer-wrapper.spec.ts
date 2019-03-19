@@ -21,7 +21,12 @@ describe("FooterWrapper", () => {
         it("should call the underlying footer's addParagraph", () => {
             const file = new FooterWrapper(new Media(), 1);
             const spy = sinon.spy(file.Footer, "addTable");
-            file.addTable(new Table(1, 1));
+            file.addTable(
+                new Table({
+                    rows: 1,
+                    columns: 1,
+                }),
+            );
 
             expect(spy.called).to.equal(true);
         });

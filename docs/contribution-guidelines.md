@@ -141,6 +141,8 @@ If a method is `non-temporal`, put it in the objects `constructor`. For example:
 const table = new Table(width: number);
 ```
 
+`Non-temporal` methods are usually methods which can only be used one time and one time only. For example, `.float()`. It does not make sense to call `.float()` again if its already floating.
+
 I am not sure what the real term is, but this will do.
 
 ## Interfaces over type alias

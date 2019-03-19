@@ -6,7 +6,10 @@ import { Document, Media, Packer, Table } from "../build";
 const doc = new Document();
 const image = Media.addImage(doc, fs.readFileSync("./demo/images/image1.jpeg"));
 
-const table = new Table(2, 2);
+const table = new Table({
+    rows: 2,
+    columns: 2,
+});
 table.getCell(1, 1).addParagraph(image.Paragraph);
 
 // doc.createParagraph("Hello World");
