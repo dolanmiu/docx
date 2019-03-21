@@ -194,27 +194,3 @@ export class TableCellWidth extends XmlComponent {
         );
     }
 }
-
-export interface ITableCellShadingAttributesProperties {
-    readonly fill?: string;
-    readonly color?: string;
-    readonly val?: string;
-}
-
-class TableCellShadingAttributes extends XmlAttributeComponent<ITableCellShadingAttributesProperties> {
-    protected readonly xmlKeys = {
-        fill: "w:fill",
-        color: "w:color",
-        val: "w:val",
-    };
-}
-
-/**
- * Table cell shading element.
- */
-export class TableCellShading extends XmlComponent {
-    constructor(attrs: ITableCellShadingAttributesProperties) {
-        super("w:shd");
-        this.root.push(new TableCellShadingAttributes(attrs));
-    }
-}
