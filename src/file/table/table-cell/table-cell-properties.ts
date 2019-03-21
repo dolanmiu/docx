@@ -1,18 +1,8 @@
 import { XmlComponent } from "file/xml-components";
 
+import { ITableShadingAttributesProperties, TableShading } from "../shading";
 import { ITableCellMargainOptions, TableCellMargain } from "./cell-margain/table-cell-margains";
-import {
-    GridSpan,
-    ITableCellShadingAttributesProperties,
-    TableCellBorders,
-    TableCellShading,
-    TableCellWidth,
-    VAlign,
-    VerticalAlign,
-    VMerge,
-    VMergeType,
-    WidthType,
-} from "./table-cell-components";
+import { GridSpan, TableCellBorders, TableCellWidth, VAlign, VerticalAlign, VMerge, VMergeType, WidthType } from "./table-cell-components";
 
 export class TableCellProperties extends XmlComponent {
     private readonly cellBorder: TableCellBorders;
@@ -51,8 +41,8 @@ export class TableCellProperties extends XmlComponent {
         return this;
     }
 
-    public setShading(attrs: ITableCellShadingAttributesProperties): TableCellProperties {
-        this.root.push(new TableCellShading(attrs));
+    public setShading(attrs: ITableShadingAttributesProperties): TableCellProperties {
+        this.root.push(new TableShading(attrs));
 
         return this;
     }

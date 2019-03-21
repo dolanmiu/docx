@@ -2,6 +2,7 @@
 import { Paragraph } from "file/paragraph";
 import { IXmlableObject, XmlComponent } from "file/xml-components";
 
+import { ITableShadingAttributesProperties } from "../shading";
 import { Table } from "../table";
 import { ITableCellMargainOptions } from "./cell-margain/table-cell-margains";
 import { TableCellBorders, VerticalAlign, VMergeType } from "./table-cell-components";
@@ -68,6 +69,12 @@ export class TableCell extends XmlComponent {
 
     public setMargains(margains: ITableCellMargainOptions): TableCell {
         this.properties.addMargains(margains);
+
+        return this;
+    }
+
+    public setShading(attrs: ITableShadingAttributesProperties): TableCell {
+        this.properties.setShading(attrs);
 
         return this;
     }

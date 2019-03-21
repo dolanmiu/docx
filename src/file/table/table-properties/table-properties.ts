@@ -1,5 +1,6 @@
 import { XmlComponent } from "file/xml-components";
 
+import { ITableShadingAttributesProperties, TableShading } from "../shading";
 import { WidthType } from "../table-cell";
 import { TableBorders } from "./table-borders";
 import { TableCellMargin } from "./table-cell-margin";
@@ -38,6 +39,12 @@ export class TableProperties extends XmlComponent {
 
     public setTableFloatProperties(tableFloatOptions: ITableFloatOptions): TableProperties {
         this.root.push(new TableFloatProperties(tableFloatOptions));
+        return this;
+    }
+
+    public setShading(attrs: ITableShadingAttributesProperties): TableProperties {
+        this.root.push(new TableShading(attrs));
+
         return this;
     }
 }
