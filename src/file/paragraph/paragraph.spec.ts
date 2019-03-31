@@ -10,7 +10,7 @@ describe("Paragraph", () => {
     let paragraph: file.Paragraph;
 
     beforeEach(() => {
-        paragraph = new file.Paragraph();
+        paragraph = new file.Paragraph("");
     });
 
     describe("#constructor()", () => {
@@ -669,7 +669,7 @@ describe("Paragraph", () => {
 
     describe("#outlineLevel", () => {
         it("should set paragraph outline level to the given value", () => {
-            paragraph.outlineLevel("0");
+            paragraph.outlineLevel(0);
             const tree = new Formatter().format(paragraph);
             expect(tree).to.deep.equal({
                 "w:p": [
