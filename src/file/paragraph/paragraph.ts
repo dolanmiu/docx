@@ -46,13 +46,17 @@ export interface IParagraphOptions {
 export class Paragraph extends XmlComponent {
     private readonly properties: ParagraphProperties;
 
-    constructor(text: string | IParagraphOptions) {
+    constructor(options: string | IParagraphOptions) {
         super("w:p");
         this.properties = new ParagraphProperties();
         this.root.push(this.properties);
 
-        if (typeof text === "string") {
-            this.root.push(new TextRun(text));
+        if (typeof options === "string") {
+            this.root.push(new TextRun(options));
+        } else {
+            if (options.headingLevel) {
+                this.properties.push(new Style(options.headingLevel));
+            }
         }
     }
 
