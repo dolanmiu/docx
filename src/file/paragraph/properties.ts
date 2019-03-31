@@ -3,18 +3,22 @@ import { XmlComponent } from "file/xml-components";
 import { Border } from "./formatting/border";
 
 export class ParagraphProperties extends XmlComponent {
-    public readonly paragraphBorder: Border;
+    private readonly border: Border;
 
     constructor() {
         super("w:pPr");
-        this.paragraphBorder = new Border();
+        this.border = new Border();
     }
 
     public createBorder(): void {
-        this.push(this.paragraphBorder);
+        this.push(this.border);
     }
 
     public push(item: XmlComponent): void {
         this.root.push(item);
+    }
+
+    public get Border(): Border {
+        return this.border;
     }
 }

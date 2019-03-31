@@ -2,11 +2,9 @@
 import { Attributes, XmlComponent } from "file/xml-components";
 
 export class OutlineLevel extends XmlComponent {
-    public readonly level: string;
-
-    constructor(level: string) {
+    constructor(level: number) {
         super("w:outlineLvl");
-        this.level = level;
+
         this.root.push(
             new Attributes({
                 val: level,

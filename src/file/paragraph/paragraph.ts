@@ -4,7 +4,7 @@ import { Image } from "file/media";
 import { Num } from "file/numbering/num";
 import { XmlComponent } from "file/xml-components";
 
-import { Alignment, AlignmentOptions } from "./formatting/alignment";
+import { Alignment, AlignmentType } from "./formatting/alignment";
 import { Bidirectional } from "./formatting/bidirectional";
 import { Border, ThematicBreak } from "./formatting/border";
 import { IIndentAttributesProperties, Indent } from "./formatting/indent";
@@ -18,14 +18,40 @@ import { Bookmark, Hyperlink, OutlineLevel } from "./links";
 import { ParagraphProperties } from "./properties";
 import { PictureRun, Run, SequentialIdentifier, TextRun } from "./run";
 
+export enum HeadingLevel {
+    HEADING_1 = "Heading1",
+    HEADING_2 = "Heading2",
+    HEADING_3 = "Heading3",
+    HEADING_4 = "Heading4",
+    HEADING_5 = "Heading5",
+    HEADING_6 = "Heading6",
+    TITLE = "Title",
+}
+
+export interface IParagraphOptions {
+    readonly text: string;
+    readonly headingLevel?: HeadingLevel;
+    readonly outlineLevel?: number;
+    readonly alignment?: AlignmentType;
+    readonly biDirectional?: boolean;
+    readonly keepLines?: boolean;
+    readonly keepNext?: boolean;
+    readonly contextualSpacing?: boolean;
+    readonly spacing?: ISpacingProperties;
+    readonly pageBreakBefore?: boolean;
+    readonly thematicBreak?: boolean;
+    readonly style?: number;
+}
+
 export class Paragraph extends XmlComponent {
     private readonly properties: ParagraphProperties;
 
-    constructor(text?: string) {
+    constructor(text: string | IParagraphOptions) {
         super("w:p");
         this.properties = new ParagraphProperties();
         this.root.push(this.properties);
-        if (text !== undefined) {
+
+        if (typeof text === "string") {
             this.root.push(new TextRun(text));
         }
     }
@@ -35,7 +61,7 @@ export class Paragraph extends XmlComponent {
     }
 
     public get Borders(): Border {
-        return this.properties.paragraphBorder;
+        return this.properties.Border;
     }
 
     public createBorder(): Paragraph {
@@ -110,37 +136,37 @@ export class Paragraph extends XmlComponent {
     }
 
     public center(): Paragraph {
-        this.properties.push(new Alignment(AlignmentOptions.CENTER));
+        this.properties.push(new Alignment(AlignmentType.CENTER));
         return this;
     }
 
     public left(): Paragraph {
-        this.properties.push(new Alignment(AlignmentOptions.LEFT));
+        this.properties.push(new Alignment(AlignmentType.LEFT));
         return this;
     }
 
     public right(): Paragraph {
-        this.properties.push(new Alignment(AlignmentOptions.RIGHT));
+        this.properties.push(new Alignment(AlignmentType.RIGHT));
         return this;
     }
 
     public start(): Paragraph {
-        this.properties.push(new Alignment(AlignmentOptions.START));
+        this.properties.push(new Alignment(AlignmentType.START));
         return this;
     }
 
     public end(): Paragraph {
-        this.properties.push(new Alignment(AlignmentOptions.END));
+        this.properties.push(new Alignment(AlignmentType.END));
         return this;
     }
 
     public distribute(): Paragraph {
-        this.properties.push(new Alignment(AlignmentOptions.DISTRIBUTE));
+        this.properties.push(new Alignment(AlignmentType.DISTRIBUTE));
         return this;
     }
 
     public justified(): Paragraph {
-        this.properties.push(new Alignment(AlignmentOptions.BOTH));
+        this.properties.push(new Alignment(AlignmentType.BOTH));
         return this;
     }
 
@@ -246,7 +272,7 @@ export class Paragraph extends XmlComponent {
         return this;
     }
 
-    public outlineLevel(level: string): Paragraph {
+    public outlineLevel(level: number): Paragraph {
         this.properties.push(new OutlineLevel(level));
         return this;
     }
