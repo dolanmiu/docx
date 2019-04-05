@@ -37,7 +37,7 @@ export class Body extends XmlComponent {
     }
     public prepForXml(): IXmlableObject | undefined {
         if (this.sections.length === 1) {
-            this.root.push(this.sections[0]);
+            this.root.push(this.sections.pop() as SectionProperties);
         }
 
         return super.prepForXml();
