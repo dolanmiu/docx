@@ -12,13 +12,13 @@
 
 ## Always think about the user
 
-The number one pillar for contribution to `docx` is to **ALWAYS** think about how the user will use `docx`. 
+The number one pillar for contribution to `docx` is to **ALWAYS** think about how the user will use `docx`.
 
 Put yourself in their position, and imagine how they would feel about your feature you wrote.
 
-1. Is it easy to use? 
+1. Is it easy to use?
 2. Has it been documented well?
-3. Is it intuative?
+3. Is it intuitive?
 4. Is it consistent with the rest of the API?
 5. Is it fun to use?
 
@@ -39,7 +39,7 @@ Unesesary coment removed // Make sure to use correct spelling
 
 > This mainly applies to the API the end user will consume.
 
-Try to make method parameters of the outside API accept primatives, or `json` objects, so that child components are created **inside** the component, rather than being **injected** in.
+Try to make method parameters of the outside API accept primitives, or `json` objects, so that child components are created **inside** the component, rather than being **injected** in.
 
 This is so that:
 
@@ -47,7 +47,7 @@ This is so that:
    ```js
    import { ChildComponent } from "./my-feature/sub-component/deeper/.../my-deep.component";
    ```
-   
+
 2. This is what I consider "leakage". The code is aware of the underlying implementation of the component.
 3. It means the end user does not need to import and create the child component to be injected.
 
@@ -65,7 +65,7 @@ This is so that:
 
 **Do**
 
-`ITableFloatOptions` is an interface for a JSON of primatives. The end user would need to pass in a json object and not need to worry about the internals:
+`ITableFloatOptions` is an interface for a JSON of primitives. The end user would need to pass in a json object and not need to worry about the internals:
 
 ```js
     public float(tableFloatOptions: ITableFloatOptions): Table
@@ -88,7 +88,7 @@ This is just a guideline, and the rules can sometimes be broken.
     }
     ```
 
-*   Use `add` if you add the element into the method as a parameter. 
+*   Use `add` if you add the element into the method as a parameter.
     *Note:* This may look like its breaking the previous guideline, but it has semantically different meanings. The previous one is using data to construct an object, whereas this one is simply adding elements into the document:
 
     ```js
