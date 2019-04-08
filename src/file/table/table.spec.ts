@@ -14,7 +14,7 @@ const DEFAULT_TABLE_PROPERTIES = {
             "w:bottom": [
                 {
                     _attr: {
-                        "w:sz": "auto",
+                        "w:type": "auto",
                         "w:w": 0,
                     },
                 },
@@ -24,7 +24,7 @@ const DEFAULT_TABLE_PROPERTIES = {
             "w:top": [
                 {
                     _attr: {
-                        "w:sz": "auto",
+                        "w:type": "auto",
                         "w:w": 0,
                     },
                 },
@@ -34,7 +34,7 @@ const DEFAULT_TABLE_PROPERTIES = {
             "w:left": [
                 {
                     _attr: {
-                        "w:sz": "auto",
+                        "w:type": "auto",
                         "w:w": 0,
                     },
                 },
@@ -44,7 +44,7 @@ const DEFAULT_TABLE_PROPERTIES = {
             "w:right": [
                 {
                     _attr: {
-                        "w:sz": "auto",
+                        "w:type": "auto",
                         "w:w": 0,
                     },
                 },
@@ -81,10 +81,10 @@ const WIDTHS = {
 //             "w:tblPr": [
 //                 {
 //                     "w:tblCellMar": [
-//                         { "w:bottom": [{ _attr: { "w:sz": "auto", "w:w": 0 } }] },
-//                         { "w:top": [{ _attr: { "w:sz": "auto", "w:w": 0 } }] },
-//                         { "w:left": [{ _attr: { "w:sz": "auto", "w:w": 0 } }] },
-//                         { "w:right": [{ _attr: { "w:sz": "auto", "w:w": 0 } }] },
+//                         { "w:bottom": [{ _attr: { "w:type": "auto", "w:w": 0 } }] },
+//                         { "w:top": [{ _attr: { "w:type": "auto", "w:w": 0 } }] },
+//                         { "w:left": [{ _attr: { "w:type": "auto", "w:w": 0 } }] },
+//                         { "w:right": [{ _attr: { "w:type": "auto", "w:w": 0 } }] },
 //                     ],
 //                 },
 //                 {

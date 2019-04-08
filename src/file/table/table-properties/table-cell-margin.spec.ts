@@ -18,7 +18,7 @@ describe("TableCellMargin", () => {
             const cellMargain = new TableCellMargin();
             cellMargain.addTopMargin(1234, WidthType.DXA);
             const tree = new Formatter().format(cellMargain);
-            expect(tree).to.deep.equal({ "w:tblCellMar": [{ "w:top": [{ _attr: { "w:sz": "dxa", "w:w": 1234 } }] }] });
+            expect(tree).to.deep.equal({ "w:tblCellMar": [{ "w:top": [{ _attr: { "w:type": "dxa", "w:w": 1234 } }] }] });
         });
     });
 
@@ -27,7 +27,7 @@ describe("TableCellMargin", () => {
             const cellMargain = new TableCellMargin();
             cellMargain.addLeftMargin(1234, WidthType.DXA);
             const tree = new Formatter().format(cellMargain);
-            expect(tree).to.deep.equal({ "w:tblCellMar": [{ "w:left": [{ _attr: { "w:sz": "dxa", "w:w": 1234 } }] }] });
+            expect(tree).to.deep.equal({ "w:tblCellMar": [{ "w:left": [{ _attr: { "w:type": "dxa", "w:w": 1234 } }] }] });
         });
     });
 
@@ -36,7 +36,7 @@ describe("TableCellMargin", () => {
             const cellMargain = new TableCellMargin();
             cellMargain.addBottomMargin(1234, WidthType.DXA);
             const tree = new Formatter().format(cellMargain);
-            expect(tree).to.deep.equal({ "w:tblCellMar": [{ "w:bottom": [{ _attr: { "w:sz": "dxa", "w:w": 1234 } }] }] });
+            expect(tree).to.deep.equal({ "w:tblCellMar": [{ "w:bottom": [{ _attr: { "w:type": "dxa", "w:w": 1234 } }] }] });
         });
     });
 
@@ -45,7 +45,7 @@ describe("TableCellMargin", () => {
             const cellMargain = new TableCellMargin();
             cellMargain.addRightMargin(1234, WidthType.DXA);
             const tree = new Formatter().format(cellMargain);
-            expect(tree).to.deep.equal({ "w:tblCellMar": [{ "w:right": [{ _attr: { "w:sz": "dxa", "w:w": 1234 } }] }] });
+            expect(tree).to.deep.equal({ "w:tblCellMar": [{ "w:right": [{ _attr: { "w:type": "dxa", "w:w": 1234 } }] }] });
         });
     });
 });
