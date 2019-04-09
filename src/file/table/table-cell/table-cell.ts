@@ -30,16 +30,10 @@ export class TableCell extends XmlComponent {
 
     public prepForXml(): IXmlableObject | undefined {
         // Cells must end with a paragraph
-        const retval = super.prepForXml();
-        if (!retval) {
-            return undefined;
+        if (!(this.root[this.root.length - 1] instanceof Paragraph)) {
+            this.createParagraph();
         }
-
-        const content = retval["w:tc"];
-        if (!content[content.length - 1]["w:p"]) {
-            content.push(new Paragraph().prepForXml());
-        }
-        return retval;
+        return super.prepForXml();
     }
 
     public createParagraph(text?: string): Paragraph {

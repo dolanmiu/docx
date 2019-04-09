@@ -17,7 +17,7 @@ export abstract class XmlComponent extends BaseXmlComponent {
                 if (c instanceof BaseXmlComponent) {
                     return !c.IsDeleted;
                 }
-                return true;
+                return c !== undefined;
             })
             .map((comp) => {
                 if (comp instanceof BaseXmlComponent) {
@@ -26,8 +26,15 @@ export abstract class XmlComponent extends BaseXmlComponent {
                 return comp;
             })
             .filter((comp) => comp !== undefined); // Exclude undefined
+        // If we only have a single IXmlableObject in our children array and it
+        // represents our attributes, use the object itself as our children to
+        // avoid an unneeded XML close element.  (Note: We have to use this
+        // function to get typescript to allow our check.)
+        // Additionally, if the array is empty, use null as our children to
+        // get an empty XML element generated.
+        const onlyAttrs = (c) => typeof c === "object" && c._attr;
         return {
-            [this.rootKey]: children,
+            [this.rootKey]: children.length ? (children.length === 1 && onlyAttrs(children[0]) ? children[0] : children) : null,
         };
     }
 
@@ -39,5 +46,14 @@ export abstract class XmlComponent extends BaseXmlComponent {
 
     public delete(): void {
         this.deleted = true;
+    }
+}
+
+export abstract class IgnoreIfEmptyXmlComponent extends XmlComponent {
+    public prepForXml(): IXmlableObject | undefined {
+        const result = super.prepForXml();
+        if (result && result[this.rootKey]) {
+            return result;
+        }
     }
 }

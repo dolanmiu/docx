@@ -6,7 +6,7 @@ export type AttributeMap<T> = { [P in keyof T]: string };
 export abstract class XmlAttributeComponent<T> extends BaseXmlComponent {
     // tslint:disable-next-line:readonly-keyword
     protected root: T;
-    protected readonly xmlKeys: AttributeMap<T>;
+    protected readonly xmlKeys?: AttributeMap<T>;
 
     constructor(properties: T) {
         super("_attr");
@@ -18,7 +18,7 @@ export abstract class XmlAttributeComponent<T> extends BaseXmlComponent {
         Object.keys(this.root).forEach((key) => {
             const value = this.root[key];
             if (value !== undefined) {
-                const newKey = this.xmlKeys[key];
+                const newKey = (this.xmlKeys && this.xmlKeys[key]) || key;
                 attrs[newKey] = value;
             }
         });

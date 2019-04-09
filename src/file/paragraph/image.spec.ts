@@ -46,13 +46,7 @@ describe("Image", () => {
             expect(tree).to.deep.equal({
                 "w:p": [
                     {
-                        "w:pPr": [],
-                    },
-                    {
                         "w:r": [
-                            {
-                                "w:rPr": [],
-                            },
                             {
                                 "w:drawing": [
                                     {
@@ -66,49 +60,41 @@ describe("Image", () => {
                                                 },
                                             },
                                             {
-                                                "wp:extent": [
-                                                    {
-                                                        _attr: {
-                                                            cx: 20,
-                                                            cy: 20,
-                                                        },
+                                                "wp:extent": {
+                                                    _attr: {
+                                                        cx: 20,
+                                                        cy: 20,
                                                     },
-                                                ],
+                                                },
                                             },
                                             {
-                                                "wp:effectExtent": [
-                                                    {
-                                                        _attr: {
-                                                            b: 0,
-                                                            l: 0,
-                                                            r: 0,
-                                                            t: 0,
-                                                        },
+                                                "wp:effectExtent": {
+                                                    _attr: {
+                                                        b: 0,
+                                                        l: 0,
+                                                        r: 0,
+                                                        t: 0,
                                                     },
-                                                ],
+                                                },
                                             },
                                             {
-                                                "wp:docPr": [
-                                                    {
-                                                        _attr: {
-                                                            descr: "",
-                                                            id: 0,
-                                                            name: "",
-                                                        },
+                                                "wp:docPr": {
+                                                    _attr: {
+                                                        descr: "",
+                                                        id: 0,
+                                                        name: "",
                                                     },
-                                                ],
+                                                },
                                             },
                                             {
                                                 "wp:cNvGraphicFramePr": [
                                                     {
-                                                        "a:graphicFrameLocks": [
-                                                            {
-                                                                _attr: {
-                                                                    noChangeAspect: 1,
-                                                                    "xmlns:a": "http://schemas.openxmlformats.org/drawingml/2006/main",
-                                                                },
+                                                        "a:graphicFrameLocks": {
+                                                            _attr: {
+                                                                noChangeAspect: 1,
+                                                                "xmlns:a": "http://schemas.openxmlformats.org/drawingml/2006/main",
                                                             },
-                                                        ],
+                                                        },
                                                     },
                                                 ],
                                             },
@@ -137,27 +123,23 @@ describe("Image", () => {
                                                                     {
                                                                         "pic:nvPicPr": [
                                                                             {
-                                                                                "pic:cNvPr": [
-                                                                                    {
-                                                                                        _attr: {
-                                                                                            desc: "",
-                                                                                            id: 0,
-                                                                                            name: "",
-                                                                                        },
+                                                                                "pic:cNvPr": {
+                                                                                    _attr: {
+                                                                                        desc: "",
+                                                                                        id: 0,
+                                                                                        name: "",
                                                                                     },
-                                                                                ],
+                                                                                },
                                                                             },
                                                                             {
                                                                                 "pic:cNvPicPr": [
                                                                                     {
-                                                                                        "a:picLocks": [
-                                                                                            {
-                                                                                                _attr: {
-                                                                                                    noChangeArrowheads: 1,
-                                                                                                    noChangeAspect: 1,
-                                                                                                },
+                                                                                        "a:picLocks": {
+                                                                                            _attr: {
+                                                                                                noChangeArrowheads: 1,
+                                                                                                noChangeAspect: 1,
                                                                                             },
-                                                                                        ],
+                                                                                        },
                                                                                     },
                                                                                 ],
                                                                             },
@@ -166,22 +148,20 @@ describe("Image", () => {
                                                                     {
                                                                         "pic:blipFill": [
                                                                             {
-                                                                                "a:blip": [
-                                                                                    {
-                                                                                        _attr: {
-                                                                                            cstate: "none",
-                                                                                            "r:embed": "rId{test.png}",
-                                                                                        },
+                                                                                "a:blip": {
+                                                                                    _attr: {
+                                                                                        cstate: "none",
+                                                                                        "r:embed": "rId{test.png}",
                                                                                     },
-                                                                                ],
+                                                                                },
                                                                             },
                                                                             {
-                                                                                "a:srcRect": [],
+                                                                                "a:srcRect": null,
                                                                             },
                                                                             {
                                                                                 "a:stretch": [
                                                                                     {
-                                                                                        "a:fillRect": [],
+                                                                                        "a:fillRect": null,
                                                                                     },
                                                                                 ],
                                                                             },
@@ -197,24 +177,20 @@ describe("Image", () => {
                                                                             {
                                                                                 "a:xfrm": [
                                                                                     {
-                                                                                        "a:ext": [
-                                                                                            {
-                                                                                                _attr: {
-                                                                                                    cx: 10,
-                                                                                                    cy: 10,
-                                                                                                },
+                                                                                        "a:ext": {
+                                                                                            _attr: {
+                                                                                                cx: 10,
+                                                                                                cy: 10,
                                                                                             },
-                                                                                        ],
+                                                                                        },
                                                                                     },
                                                                                     {
-                                                                                        "a:off": [
-                                                                                            {
-                                                                                                _attr: {
-                                                                                                    x: 0,
-                                                                                                    y: 0,
-                                                                                                },
+                                                                                        "a:off": {
+                                                                                            _attr: {
+                                                                                                x: 0,
+                                                                                                y: 0,
                                                                                             },
-                                                                                        ],
+                                                                                        },
                                                                                     },
                                                                                 ],
                                                                             },
@@ -226,7 +202,7 @@ describe("Image", () => {
                                                                                         },
                                                                                     },
                                                                                     {
-                                                                                        "a:avLst": [],
+                                                                                        "a:avLst": null,
                                                                                     },
                                                                                 ],
                                                                             },

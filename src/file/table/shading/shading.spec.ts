@@ -7,30 +7,26 @@ import { ShadingType, TableShading } from "./shading";
 describe("TableShading", () => {
     describe("#constructor", () => {
         it("should create", () => {
-            const cellMargain = new TableShading({});
-            const tree = new Formatter().format(cellMargain);
+            const shading = new TableShading({});
+            const tree = new Formatter().format(shading);
             expect(tree).to.deep.equal({
-                "w:shd": [
-                    {
-                        _attr: {},
-                    },
-                ],
+                "w:shd": {
+                    _attr: {},
+                },
             });
         });
 
         it("should create with params", () => {
-            const cellMargain = new TableShading({ val: ShadingType.PERCENT_40, color: "FF0000", fill: "555555" });
-            const tree = new Formatter().format(cellMargain);
+            const shading = new TableShading({ val: ShadingType.PERCENT_40, color: "FF0000", fill: "555555" });
+            const tree = new Formatter().format(shading);
             expect(tree).to.deep.equal({
-                "w:shd": [
-                    {
-                        _attr: {
-                            "w:color": "FF0000",
-                            "w:fill": "555555",
-                            "w:val": "pct40",
-                        },
+                "w:shd": {
+                    _attr: {
+                        "w:color": "FF0000",
+                        "w:fill": "555555",
+                        "w:val": "pct40",
                     },
-                ],
+                },
             });
         });
     });

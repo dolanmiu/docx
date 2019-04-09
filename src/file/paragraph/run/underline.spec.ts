@@ -17,7 +17,7 @@ describe("Underline", () => {
             const underline = new u.Underline();
             const tree = new Formatter().format(underline);
             expect(tree).to.deep.equal({
-                "w:u": [{ _attr: { "w:val": "single" } }],
+                "w:u": { _attr: { "w:val": "single" } },
             });
         });
 
@@ -25,7 +25,7 @@ describe("Underline", () => {
             const underline = new u.Underline("double", "FF00CC");
             const tree = new Formatter().format(underline);
             expect(tree).to.deep.equal({
-                "w:u": [{ _attr: { "w:val": "double", "w:color": "FF00CC" } }],
+                "w:u": { _attr: { "w:val": "double", "w:color": "FF00CC" } },
             });
         });
     });

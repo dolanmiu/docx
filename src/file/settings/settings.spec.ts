@@ -13,9 +13,7 @@ describe("Settings", () => {
             expect(keys).is.an.instanceof(Array);
             expect(keys).has.length(1);
             expect(keys[0]).to.be.equal("w:settings");
-            expect(tree["w:settings"]).is.an.instanceof(Array);
-            expect(tree["w:settings"]).has.length(1);
-            keys = Object.keys(tree["w:settings"][0]);
+            keys = Object.keys(tree["w:settings"]);
             expect(keys).is.an.instanceof(Array);
             expect(keys).has.length(1);
             expect(keys[0]).to.be.equal("_attr");
@@ -39,12 +37,12 @@ describe("Settings", () => {
             expect(keys).is.an.instanceof(Array);
             expect(keys).has.length(1);
             expect(keys[0]).to.be.equal("w:updateFields");
-            const updateFieldsArray = rootArray[1]["w:updateFields"];
-            keys = Object.keys(updateFieldsArray[0]);
+            const updateFields = rootArray[1]["w:updateFields"];
+            keys = Object.keys(updateFields);
             expect(keys).is.an.instanceof(Array);
             expect(keys).has.length(1);
             expect(keys[0]).to.be.equal("_attr");
-            const updateFieldsAttr = updateFieldsArray[0]._attr;
+            const updateFieldsAttr = updateFields._attr;
             expect(updateFieldsAttr["w:val"]).to.be.equal(true);
         };
         it("should add a UpdateFields with value true", () => {

@@ -31,7 +31,7 @@ describe("XmlComponent", () => {
                 return;
             }
 
-            assert.equal(xml["w:test"].length, 0);
+            assert.isNull(xml["w:test"]);
         });
     });
 });

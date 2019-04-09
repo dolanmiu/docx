@@ -37,15 +37,15 @@ describe("TableColumn", () => {
 
             const tree = new Formatter().format(cells[0]);
             expect(tree).to.deep.equal({
-                "w:tc": [{ "w:tcPr": [{ "w:vMerge": [{ _attr: { "w:val": "restart" } }] }] }, { "w:p": [{ "w:pPr": [] }] }],
+                "w:tc": [{ "w:tcPr": [{ "w:vMerge": { _attr: { "w:val": "restart" } } }] }, { "w:p": null }],
             });
 
             const tree2 = new Formatter().format(cells[1]);
-            expect(tree2).to.deep.equal({ "w:tc": [{ "w:tcPr": [] }, { "w:p": [{ "w:pPr": [] }] }] });
+            expect(tree2).to.deep.equal({ "w:tc": [{ "w:p": null }] });
 
             const tree3 = new Formatter().format(cells[2]);
             expect(tree3).to.deep.equal({
-                "w:tc": [{ "w:tcPr": [{ "w:vMerge": [{ _attr: { "w:val": "continue" } }] }] }, { "w:p": [{ "w:pPr": [] }] }],
+                "w:tc": [{ "w:tcPr": [{ "w:vMerge": { _attr: { "w:val": "continue" } } }] }, { "w:p": null }],
             });
         });
     });

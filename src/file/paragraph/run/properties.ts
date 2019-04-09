@@ -1,6 +1,6 @@
-import { XmlComponent } from "file/xml-components";
+import { IgnoreIfEmptyXmlComponent, XmlComponent } from "file/xml-components";
 
-export class RunProperties extends XmlComponent {
+export class RunProperties extends IgnoreIfEmptyXmlComponent {
     constructor() {
         super("w:rPr");
     }

@@ -12,7 +12,7 @@ describe("Style", () => {
             });
             const tree = new Formatter().format(style);
             expect(tree).to.deep.equal({
-                "w:style": [{ _attr: { "w:type": "paragraph", "w:styleId": "myStyleId", "w:default": true } }],
+                "w:style": { _attr: { "w:type": "paragraph", "w:styleId": "myStyleId", "w:default": true } },
             });
         });
 
@@ -28,7 +28,7 @@ describe("Style", () => {
             expect(tree).to.deep.equal({
                 "w:style": [
                     { _attr: { "w:type": "paragraph", "w:styleId": "myStyleId" } },
-                    { "w:name": [{ _attr: { "w:val": "Style Name" } }] },
+                    { "w:name": { _attr: { "w:val": "Style Name" } } },
                 ],
             });
         });

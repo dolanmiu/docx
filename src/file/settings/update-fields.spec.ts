@@ -5,22 +5,18 @@ import { Formatter } from "export/formatter";
 import { UpdateFields } from "./update-fields";
 
 const UF_TRUE = {
-    "w:updateFields": [
-        {
-            _attr: {
-                "w:val": true,
-            },
+    "w:updateFields": {
+        _attr: {
+            "w:val": true,
         },
-    ],
+    },
 };
 const UF_FALSE = {
-    "w:updateFields": [
-        {
-            _attr: {
-                "w:val": false,
-            },
+    "w:updateFields": {
+        _attr: {
+            "w:val": false,
         },
-    ],
+    },
 };
 describe("Update Fields", () => {
     describe("#constructor", () => {

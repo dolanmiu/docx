@@ -27,10 +27,10 @@ describe("Media", () => {
             const file = new File();
             const image1 = Media.addImage(file, "test");
             const tree = new Formatter().format(image1.Paragraph);
-            const inlineElements = tree["w:p"][1]["w:r"][1]["w:drawing"][0]["wp:inline"];
+            const inlineElements = tree["w:p"][0]["w:r"][0]["w:drawing"][0]["wp:inline"];
             const graphicData = inlineElements.find((x) => x["a:graphic"]);
 
-            expect(graphicData["a:graphic"][1]["a:graphicData"][1]["pic:pic"][2]["pic:blipFill"][0]["a:blip"][0]).to.deep.equal({
+            expect(graphicData["a:graphic"][1]["a:graphicData"][1]["pic:pic"][2]["pic:blipFill"][0]["a:blip"]).to.deep.equal({
                 _attr: {
                     "r:embed": `rId{testId.png}`,
                     cstate: "none",
@@ -39,10 +39,10 @@ describe("Media", () => {
 
             const image2 = Media.addImage(file, "test");
             const tree2 = new Formatter().format(image2.Paragraph);
-            const inlineElements2 = tree2["w:p"][1]["w:r"][1]["w:drawing"][0]["wp:inline"];
+            const inlineElements2 = tree2["w:p"][0]["w:r"][0]["w:drawing"][0]["wp:inline"];
             const graphicData2 = inlineElements2.find((x) => x["a:graphic"]);
 
-            expect(graphicData2["a:graphic"][1]["a:graphicData"][1]["pic:pic"][2]["pic:blipFill"][0]["a:blip"][0]).to.deep.equal({
+            expect(graphicData2["a:graphic"][1]["a:graphicData"][1]["pic:pic"][2]["pic:blipFill"][0]["a:blip"]).to.deep.equal({
                 _attr: {
                     "r:embed": `rId{testId.png}`,
                     cstate: "none",

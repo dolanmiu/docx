@@ -1,6 +1,6 @@
 // http://officeopenxml.com/WPsectionBorders.php
 import { BorderStyle } from "file/styles";
-import { IXmlableObject, XmlAttributeComponent, XmlComponent } from "file/xml-components";
+import { IgnoreIfEmptyXmlComponent, XmlAttributeComponent, XmlComponent } from "file/xml-components";
 
 export enum PageBorderDisplay {
     ALL_PAGES = "allPages",
@@ -64,7 +64,7 @@ class PageBordersAttributes extends XmlAttributeComponent<IPageBorderAttributes>
     };
 }
 
-export class PageBorders extends XmlComponent {
+export class PageBorders extends IgnoreIfEmptyXmlComponent {
     constructor(options?: IPageBordersOptions) {
         super("w:pgBorders");
 
@@ -95,12 +95,6 @@ export class PageBorders extends XmlComponent {
         }
         if (options.pageBorderLeft) {
             this.root.push(new PageBorder("w:left", options.pageBorderLeft));
-        }
-    }
-
-    public prepForXml(): IXmlableObject | undefined {
-        if (this.root.length > 0) {
-            return super.prepForXml();
         }
     }
 }

@@ -27,7 +27,7 @@ describe("Styles", () => {
             const tree = new Formatter().format(styles)["w:styles"].filter((x) => !x._attr);
             expect(tree).to.deep.equal([
                 {
-                    "w:style": [{ _attr: { "w:type": "paragraph", "w:styleId": "pStyleId" } }, { "w:pPr": [] }, { "w:rPr": [] }],
+                    "w:style": { _attr: { "w:type": "paragraph", "w:styleId": "pStyleId" } },
                 },
             ]);
         });
@@ -40,9 +40,7 @@ describe("Styles", () => {
                 {
                     "w:style": [
                         { _attr: { "w:type": "paragraph", "w:styleId": "pStyleId" } },
-                        { "w:name": [{ _attr: { "w:val": "Paragraph Style" } }] },
-                        { "w:pPr": [] },
-                        { "w:rPr": [] },
+                        { "w:name": { _attr: { "w:val": "Paragraph Style" } } },
                     ],
                 },
             ]);
@@ -58,18 +56,15 @@ describe("Styles", () => {
                 {
                     "w:style": [
                         { _attr: { "w:type": "character", "w:styleId": "pStyleId" } },
-                        { "w:rPr": [] },
                         {
-                            "w:uiPriority": [
-                                {
-                                    _attr: {
-                                        "w:val": "99",
-                                    },
+                            "w:uiPriority": {
+                                _attr: {
+                                    "w:val": "99",
                                 },
-                            ],
+                            },
                         },
                         {
-                            "w:unhideWhenUsed": [],
+                            "w:unhideWhenUsed": null,
                         },
                     ],
                 },
@@ -84,19 +79,16 @@ describe("Styles", () => {
                 {
                     "w:style": [
                         { _attr: { "w:type": "character", "w:styleId": "pStyleId" } },
-                        { "w:name": [{ _attr: { "w:val": "Character Style" } }] },
-                        { "w:rPr": [] },
+                        { "w:name": { _attr: { "w:val": "Character Style" } } },
                         {
-                            "w:uiPriority": [
-                                {
-                                    _attr: {
-                                        "w:val": "99",
-                                    },
+                            "w:uiPriority": {
+                                _attr: {
+                                    "w:val": "99",
                                 },
-                            ],
+                            },
                         },
                         {
-                            "w:unhideWhenUsed": [],
+                            "w:unhideWhenUsed": null,
                         },
                     ],
                 },

@@ -31,7 +31,7 @@ describe("Hyperlink", () => {
             const tree = new Formatter().format(hyperlink);
             const runJson = {
                 "w:r": [
-                    { "w:rPr": [{ "w:rStyle": [{ _attr: { "w:val": "Hyperlink" } }] }] },
+                    { "w:rPr": [{ "w:rStyle": { _attr: { "w:val": "Hyperlink" } } }] },
                     { "w:t": [{ _attr: { "xml:space": "preserve" } }, "https://example.com"] },
                 ],
             };

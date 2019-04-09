@@ -9,77 +9,80 @@ import { TableCellProperties } from "./table-cell-properties";
 describe("TableCellProperties", () => {
     describe("#constructor", () => {
         it("creates an initially empty property object", () => {
-            const cellMargain = new TableCellProperties();
-            const tree = new Formatter().format(cellMargain);
-            expect(tree).to.deep.equal({ "w:tcPr": [] });
+            const properties = new TableCellProperties();
+            // The TableCellProperties is ignorable if there are no attributes,
+            // which results in prepForXml returning undefined, which causes
+            // the formatter to throw an error if that is the only object it
+            // has been asked to format.
+            expect(() => new Formatter().format(properties)).to.throw("XMLComponent did not format correctly");
         });
     });
 
     describe("#addGridSpan", () => {
         it("adds grid span", () => {
-            const cellMargain = new TableCellProperties();
-            cellMargain.addGridSpan(1);
-            const tree = new Formatter().format(cellMargain);
-            expect(tree).to.deep.equal({ "w:tcPr": [{ "w:gridSpan": [{ _attr: { "w:val": 1 } }] }] });
+            const properties = new TableCellProperties();
+            properties.addGridSpan(1);
+            const tree = new Formatter().format(properties);
+            expect(tree).to.deep.equal({ "w:tcPr": [{ "w:gridSpan": { _attr: { "w:val": 1 } } }] });
         });
     });
 
     describe("#addVerticalMerge", () => {
         it("adds vertical merge", () => {
-            const cellMargain = new TableCellProperties();
-            cellMargain.addVerticalMerge(VMergeType.CONTINUE);
-            const tree = new Formatter().format(cellMargain);
-            expect(tree).to.deep.equal({ "w:tcPr": [{ "w:vMerge": [{ _attr: { "w:val": "continue" } }] }] });
+            const properties = new TableCellProperties();
+            properties.addVerticalMerge(VMergeType.CONTINUE);
+            const tree = new Formatter().format(properties);
+            expect(tree).to.deep.equal({ "w:tcPr": [{ "w:vMerge": { _attr: { "w:val": "continue" } } }] });
         });
     });
 
     describe("#setVerticalAlign", () => {
         it("sets vertical align", () => {
-            const cellMargain = new TableCellProperties();
-            cellMargain.setVerticalAlign(VerticalAlign.BOTTOM);
-            const tree = new Formatter().format(cellMargain);
-            expect(tree).to.deep.equal({ "w:tcPr": [{ "w:vAlign": [{ _attr: { "w:val": "bottom" } }] }] });
+            const properties = new TableCellProperties();
+            properties.setVerticalAlign(VerticalAlign.BOTTOM);
+            const tree = new Formatter().format(properties);
+            expect(tree).to.deep.equal({ "w:tcPr": [{ "w:vAlign": { _attr: { "w:val": "bottom" } } }] });
         });
     });
 
     describe("#setWidth", () => {
         it("should set width", () => {
-            const cellMargain = new TableCellProperties();
-            cellMargain.setWidth(1, WidthType.DXA);
-            const tree = new Formatter().format(cellMargain);
-            expect(tree).to.deep.equal({ "w:tcPr": [{ "w:tcW": [{ _attr: { "w:type": "dxa", "w:w": 1 } }] }] });
+            const properties = new TableCellProperties();
+            properties.setWidth(1, WidthType.DXA);
+            const tree = new Formatter().format(properties);
+            expect(tree).to.deep.equal({ "w:tcPr": [{ "w:tcW": { _attr: { "w:type": "dxa", "w:w": 1 } } }] });
         });
 
         it("should set width using default of AUTO", () => {
-            const cellMargain = new TableCellProperties();
-            cellMargain.setWidth(1);
-            const tree = new Formatter().format(cellMargain);
-            expect(tree).to.deep.equal({ "w:tcPr": [{ "w:tcW": [{ _attr: { "w:type": "auto", "w:w": 1 } }] }] });
+            const properties = new TableCellProperties();
+            properties.setWidth(1);
+            const tree = new Formatter().format(properties);
+            expect(tree).to.deep.equal({ "w:tcPr": [{ "w:tcW": { _attr: { "w:type": "auto", "w:w": 1 } } }] });
         });
     });
 
     describe("#setShading", () => {
         it("sets shading", () => {
-            const cellMargain = new TableCellProperties();
-            cellMargain.setShading({
+            const properties = new TableCellProperties();
+            properties.setShading({
                 fill: "test",
                 color: "000",
             });
-            const tree = new Formatter().format(cellMargain);
-            expect(tree).to.deep.equal({ "w:tcPr": [{ "w:shd": [{ _attr: { "w:fill": "test", "w:color": "000" } }] }] });
+            const tree = new Formatter().format(properties);
+            expect(tree).to.deep.equal({ "w:tcPr": [{ "w:shd": { _attr: { "w:fill": "test", "w:color": "000" } } }] });
         });
     });
 
     describe("#Borders", () => {
         it("should return the TableCellBorders if Border has borders", () => {
-            const cellMargain = new TableCellProperties();
-            cellMargain.Borders.addTopBorder(BorderStyle.DASH_DOT_STROKED, 3, "red");
-            const borders = cellMargain.Borders;
+            const properties = new TableCellProperties();
+            properties.Borders.addTopBorder(BorderStyle.DASH_DOT_STROKED, 3, "red");
+            const borders = properties.Borders;
 
             const tree = new Formatter().format(borders);
 
             expect(tree).to.deep.equal({
-                "w:tcBorders": [{ "w:top": [{ _attr: { "w:val": "dashDotStroked", "w:sz": 3, "w:color": "red" } }] }],
+                "w:tcBorders": [{ "w:top": { _attr: { "w:val": "dashDotStroked", "w:sz": 3, "w:color": "red" } } }],
             });
         });
     });

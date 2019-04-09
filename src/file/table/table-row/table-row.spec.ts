@@ -11,11 +11,7 @@ describe("TableRow", () => {
             const tableRow = new TableRow([]);
             const tree = new Formatter().format(tableRow);
             expect(tree).to.deep.equal({
-                "w:tr": [
-                    {
-                        "w:trPr": [],
-                    },
-                ],
+                "w:tr": null,
             });
         });
 
@@ -25,19 +21,9 @@ describe("TableRow", () => {
             expect(tree).to.deep.equal({
                 "w:tr": [
                     {
-                        "w:trPr": [],
-                    },
-                    {
                         "w:tc": [
                             {
-                                "w:tcPr": [],
-                            },
-                            {
-                                "w:p": [
-                                    {
-                                        "w:pPr": [],
-                                    },
-                                ],
+                                "w:p": null,
                             },
                         ],
                     },

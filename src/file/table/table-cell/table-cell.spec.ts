@@ -22,15 +22,13 @@ describe("TableCellBorders", () => {
             expect(tree).to.deep.equal({
                 "w:tcBorders": [
                     {
-                        "w:top": [
-                            {
-                                _attr: {
-                                    "w:color": "FF00FF",
-                                    "w:sz": 1,
-                                    "w:val": "dotted",
-                                },
+                        "w:top": {
+                            _attr: {
+                                "w:color": "FF00FF",
+                                "w:sz": 1,
+                                "w:val": "dotted",
                             },
-                        ],
+                        },
                     },
                 ],
             });
@@ -44,15 +42,13 @@ describe("TableCellBorders", () => {
             expect(tree).to.deep.equal({
                 "w:tcBorders": [
                     {
-                        "w:start": [
-                            {
-                                _attr: {
-                                    "w:color": "FF00FF",
-                                    "w:sz": 2,
-                                    "w:val": "single",
-                                },
+                        "w:start": {
+                            _attr: {
+                                "w:color": "FF00FF",
+                                "w:sz": 2,
+                                "w:val": "single",
                             },
-                        ],
+                        },
                     },
                 ],
             });
@@ -66,15 +62,13 @@ describe("TableCellBorders", () => {
             expect(tree).to.deep.equal({
                 "w:tcBorders": [
                     {
-                        "w:bottom": [
-                            {
-                                _attr: {
-                                    "w:color": "FF00FF",
-                                    "w:sz": 1,
-                                    "w:val": "double",
-                                },
+                        "w:bottom": {
+                            _attr: {
+                                "w:color": "FF00FF",
+                                "w:sz": 1,
+                                "w:val": "double",
                             },
-                        ],
+                        },
                     },
                 ],
             });
@@ -88,15 +82,13 @@ describe("TableCellBorders", () => {
             expect(tree).to.deep.equal({
                 "w:tcBorders": [
                     {
-                        "w:end": [
-                            {
-                                _attr: {
-                                    "w:color": "FF00FF",
-                                    "w:sz": 3,
-                                    "w:val": "thick",
-                                },
+                        "w:end": {
+                            _attr: {
+                                "w:color": "FF00FF",
+                                "w:sz": 3,
+                                "w:val": "thick",
                             },
-                        ],
+                        },
                     },
                 ],
             });
@@ -110,15 +102,13 @@ describe("TableCellBorders", () => {
             expect(tree).to.deep.equal({
                 "w:tcBorders": [
                     {
-                        "w:left": [
-                            {
-                                _attr: {
-                                    "w:color": "FF00FF",
-                                    "w:sz": 3,
-                                    "w:val": "thick",
-                                },
+                        "w:left": {
+                            _attr: {
+                                "w:color": "FF00FF",
+                                "w:sz": 3,
+                                "w:val": "thick",
                             },
-                        ],
+                        },
                     },
                 ],
             });
@@ -132,15 +122,13 @@ describe("TableCellBorders", () => {
             expect(tree).to.deep.equal({
                 "w:tcBorders": [
                     {
-                        "w:right": [
-                            {
-                                _attr: {
-                                    "w:color": "FF00FF",
-                                    "w:sz": 3,
-                                    "w:val": "thick",
-                                },
+                        "w:right": {
+                            _attr: {
+                                "w:color": "FF00FF",
+                                "w:sz": 3,
+                                "w:val": "thick",
                             },
-                        ],
+                        },
                     },
                 ],
             });
@@ -159,70 +147,58 @@ describe("TableCellBorders", () => {
             expect(tree).to.deep.equal({
                 "w:tcBorders": [
                     {
-                        "w:top": [
-                            {
-                                _attr: {
-                                    "w:color": "FF00FF",
-                                    "w:sz": 1,
-                                    "w:val": "dotted",
-                                },
+                        "w:top": {
+                            _attr: {
+                                "w:color": "FF00FF",
+                                "w:sz": 1,
+                                "w:val": "dotted",
                             },
-                        ],
+                        },
                     },
                     {
-                        "w:end": [
-                            {
-                                _attr: {
-                                    "w:color": "FF00FF",
-                                    "w:sz": 3,
-                                    "w:val": "thick",
-                                },
+                        "w:end": {
+                            _attr: {
+                                "w:color": "FF00FF",
+                                "w:sz": 3,
+                                "w:val": "thick",
                             },
-                        ],
+                        },
                     },
                     {
-                        "w:bottom": [
-                            {
-                                _attr: {
-                                    "w:color": "FF00FF",
-                                    "w:sz": 1,
-                                    "w:val": "double",
-                                },
+                        "w:bottom": {
+                            _attr: {
+                                "w:color": "FF00FF",
+                                "w:sz": 1,
+                                "w:val": "double",
                             },
-                        ],
+                        },
                     },
                     {
-                        "w:start": [
-                            {
-                                _attr: {
-                                    "w:color": "FF00FF",
-                                    "w:sz": 2,
-                                    "w:val": "single",
-                                },
+                        "w:start": {
+                            _attr: {
+                                "w:color": "FF00FF",
+                                "w:sz": 2,
+                                "w:val": "single",
                             },
-                        ],
+                        },
                     },
                     {
-                        "w:left": [
-                            {
-                                _attr: {
-                                    "w:color": "FF00FF",
-                                    "w:sz": 2,
-                                    "w:val": "single",
-                                },
+                        "w:left": {
+                            _attr: {
+                                "w:color": "FF00FF",
+                                "w:sz": 2,
+                                "w:val": "single",
                             },
-                        ],
+                        },
                     },
                     {
-                        "w:right": [
-                            {
-                                _attr: {
-                                    "w:color": "FF00FF",
-                                    "w:sz": 2,
-                                    "w:val": "single",
-                                },
+                        "w:right": {
+                            _attr: {
+                                "w:color": "FF00FF",
+                                "w:sz": 2,
+                                "w:val": "single",
                             },
-                        ],
+                        },
                     },
                 ],
             });
@@ -236,14 +212,12 @@ describe("TableCellWidth", () => {
             const tcWidth = new TableCellWidth(100, WidthType.DXA);
             const tree = new Formatter().format(tcWidth);
             expect(tree).to.deep.equal({
-                "w:tcW": [
-                    {
-                        _attr: {
-                            "w:type": "dxa",
-                            "w:w": 100,
-                        },
+                "w:tcW": {
+                    _attr: {
+                        "w:type": "dxa",
+                        "w:w": 100,
                     },
-                ],
+                },
             });
         });
     });

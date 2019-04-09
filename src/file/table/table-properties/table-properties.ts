@@ -1,4 +1,4 @@
-import { XmlComponent } from "file/xml-components";
+import { IgnoreIfEmptyXmlComponent } from "file/xml-components";
 
 import { ITableShadingAttributesProperties, TableShading } from "../shading";
 import { WidthType } from "../table-cell";
@@ -8,7 +8,7 @@ import { ITableFloatOptions, TableFloatProperties } from "./table-float-properti
 import { TableLayout, TableLayoutType } from "./table-layout";
 import { PreferredTableWidth } from "./table-width";
 
-export class TableProperties extends XmlComponent {
+export class TableProperties extends IgnoreIfEmptyXmlComponent {
     private readonly cellMargin: TableCellMargin;
 
     constructor() {

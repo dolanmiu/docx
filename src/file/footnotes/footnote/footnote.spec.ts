@@ -11,8 +11,7 @@ describe("Footnote", () => {
             const tree = new Formatter().format(footnote);
 
             expect(Object.keys(tree)).to.deep.equal(["w:footnote"]);
-            expect(tree["w:footnote"]).to.be.an.instanceof(Array);
-            expect(tree["w:footnote"][0]).to.deep.equal({ _attr: { "w:type": "separator", "w:id": 1 } });
+            expect(tree["w:footnote"]).to.deep.equal({ _attr: { "w:type": "separator", "w:id": 1 } });
         });
 
         it("should create a footnote without a footnote type", () => {
@@ -20,8 +19,7 @@ describe("Footnote", () => {
             const tree = new Formatter().format(footnote);
 
             expect(Object.keys(tree)).to.deep.equal(["w:footnote"]);
-            expect(tree["w:footnote"]).to.be.an.instanceof(Array);
-            expect(tree["w:footnote"][0]).to.deep.equal({ _attr: { "w:id": 1 } });
+            expect(tree["w:footnote"]).to.deep.equal({ _attr: { "w:id": 1 } });
         });
     });
 });

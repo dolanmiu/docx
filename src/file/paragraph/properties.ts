@@ -1,8 +1,8 @@
 // http://officeopenxml.com/WPparagraphProperties.php
-import { XmlComponent } from "file/xml-components";
+import { IgnoreIfEmptyXmlComponent, XmlComponent } from "file/xml-components";
 import { Border } from "./formatting/border";
 
-export class ParagraphProperties extends XmlComponent {
+export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
     public readonly paragraphBorder: Border;
 
     constructor() {

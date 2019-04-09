@@ -6,8 +6,11 @@ describe("TableRowProperties", () => {
     describe("#constructor", () => {
         it("creates an initially empty property object", () => {
             const rowProperties = new TableRowProperties();
-            const tree = new Formatter().format(rowProperties);
-            expect(tree).to.deep.equal({ "w:trPr": [] });
+            // The TableRowProperties is ignorable if there are no attributes,
+            // which results in prepForXml returning undefined, which causes
+            // the formatter to throw an error if that is the only object it
+            // has been asked to format.
+            expect(() => new Formatter().format(rowProperties)).to.throw("XMLComponent did not format correctly");
         });
     });
 
@@ -16,7 +19,7 @@ describe("TableRowProperties", () => {
             const rowProperties = new TableRowProperties();
             rowProperties.setCantSplit();
             const tree = new Formatter().format(rowProperties);
-            expect(tree).to.deep.equal({ "w:trPr": [{ "w:cantSplit": [{ _attr: { "w:val": true } }] }] });
+            expect(tree).to.deep.equal({ "w:trPr": [{ "w:cantSplit": { _attr: { "w:val": true } } }] });
         });
     });
 
@@ -25,7 +28,7 @@ describe("TableRowProperties", () => {
             const rowProperties = new TableRowProperties();
             rowProperties.setTableHeader();
             const tree = new Formatter().format(rowProperties);
-            expect(tree).to.deep.equal({ "w:trPr": [{ "w:tblHeader": [{ _attr: { "w:val": true } }] }] });
+            expect(tree).to.deep.equal({ "w:trPr": [{ "w:tblHeader": { _attr: { "w:val": true } } }] });
         });
     });
 });

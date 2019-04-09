@@ -40,7 +40,7 @@ describe("Paragraph", () => {
             expect(tree)
                 .to.be.an("array")
                 .which.includes({
-                    "w:r": [{ "w:rPr": [] }, { "w:t": [{ _attr: { "xml:space": "preserve" } }, "this is a test run"] }],
+                    "w:r": [{ "w:t": [{ _attr: { "xml:space": "preserve" } }, "this is a test run"] }],
                 });
         });
     });
@@ -52,7 +52,7 @@ describe("Paragraph", () => {
             expect(tree).to.deep.equal({
                 "w:p": [
                     {
-                        "w:pPr": [{ "w:pStyle": [{ _attr: { "w:val": "Heading1" } }] }],
+                        "w:pPr": [{ "w:pStyle": { _attr: { "w:val": "Heading1" } } }],
                     },
                 ],
             });
@@ -66,7 +66,7 @@ describe("Paragraph", () => {
             expect(tree).to.deep.equal({
                 "w:p": [
                     {
-                        "w:pPr": [{ "w:pStyle": [{ _attr: { "w:val": "Heading2" } }] }],
+                        "w:pPr": [{ "w:pStyle": { _attr: { "w:val": "Heading2" } } }],
                     },
                 ],
             });
@@ -80,7 +80,7 @@ describe("Paragraph", () => {
             expect(tree).to.deep.equal({
                 "w:p": [
                     {
-                        "w:pPr": [{ "w:pStyle": [{ _attr: { "w:val": "Heading3" } }] }],
+                        "w:pPr": [{ "w:pStyle": { _attr: { "w:val": "Heading3" } } }],
                     },
                 ],
             });
@@ -94,7 +94,7 @@ describe("Paragraph", () => {
             expect(tree).to.deep.equal({
                 "w:p": [
                     {
-                        "w:pPr": [{ "w:pStyle": [{ _attr: { "w:val": "Heading4" } }] }],
+                        "w:pPr": [{ "w:pStyle": { _attr: { "w:val": "Heading4" } } }],
                     },
                 ],
             });
@@ -108,7 +108,7 @@ describe("Paragraph", () => {
             expect(tree).to.deep.equal({
                 "w:p": [
                     {
-                        "w:pPr": [{ "w:pStyle": [{ _attr: { "w:val": "Heading5" } }] }],
+                        "w:pPr": [{ "w:pStyle": { _attr: { "w:val": "Heading5" } } }],
                     },
                 ],
             });
@@ -122,7 +122,7 @@ describe("Paragraph", () => {
             expect(tree).to.deep.equal({
                 "w:p": [
                     {
-                        "w:pPr": [{ "w:pStyle": [{ _attr: { "w:val": "Heading6" } }] }],
+                        "w:pPr": [{ "w:pStyle": { _attr: { "w:val": "Heading6" } } }],
                     },
                 ],
             });
@@ -136,7 +136,7 @@ describe("Paragraph", () => {
             expect(tree).to.deep.equal({
                 "w:p": [
                     {
-                        "w:pPr": [{ "w:pStyle": [{ _attr: { "w:val": "Title" } }] }],
+                        "w:pPr": [{ "w:pStyle": { _attr: { "w:val": "Title" } } }],
                     },
                 ],
             });
@@ -150,7 +150,7 @@ describe("Paragraph", () => {
             expect(tree).to.deep.equal({
                 "w:p": [
                     {
-                        "w:pPr": [{ "w:jc": [{ _attr: { "w:val": "center" } }] }],
+                        "w:pPr": [{ "w:jc": { _attr: { "w:val": "center" } } }],
                     },
                 ],
             });
@@ -164,7 +164,7 @@ describe("Paragraph", () => {
             expect(tree).to.deep.equal({
                 "w:p": [
                     {
-                        "w:pPr": [{ "w:jc": [{ _attr: { "w:val": "left" } }] }],
+                        "w:pPr": [{ "w:jc": { _attr: { "w:val": "left" } } }],
                     },
                 ],
             });
@@ -178,7 +178,7 @@ describe("Paragraph", () => {
             expect(tree).to.deep.equal({
                 "w:p": [
                     {
-                        "w:pPr": [{ "w:jc": [{ _attr: { "w:val": "right" } }] }],
+                        "w:pPr": [{ "w:jc": { _attr: { "w:val": "right" } } }],
                     },
                 ],
             });
@@ -192,7 +192,7 @@ describe("Paragraph", () => {
             expect(tree).to.deep.equal({
                 "w:p": [
                     {
-                        "w:pPr": [{ "w:jc": [{ _attr: { "w:val": "start" } }] }],
+                        "w:pPr": [{ "w:jc": { _attr: { "w:val": "start" } } }],
                     },
                 ],
             });
@@ -206,7 +206,7 @@ describe("Paragraph", () => {
             expect(tree).to.deep.equal({
                 "w:p": [
                     {
-                        "w:pPr": [{ "w:jc": [{ _attr: { "w:val": "end" } }] }],
+                        "w:pPr": [{ "w:jc": { _attr: { "w:val": "end" } } }],
                     },
                 ],
             });
@@ -220,7 +220,7 @@ describe("Paragraph", () => {
             expect(tree).to.deep.equal({
                 "w:p": [
                     {
-                        "w:pPr": [{ "w:jc": [{ _attr: { "w:val": "distribute" } }] }],
+                        "w:pPr": [{ "w:jc": { _attr: { "w:val": "distribute" } } }],
                     },
                 ],
             });
@@ -234,7 +234,7 @@ describe("Paragraph", () => {
             expect(tree).to.deep.equal({
                 "w:p": [
                     {
-                        "w:pPr": [{ "w:jc": [{ _attr: { "w:val": "both" } }] }],
+                        "w:pPr": [{ "w:jc": { _attr: { "w:val": "both" } } }],
                     },
                 ],
             });
@@ -252,14 +252,12 @@ describe("Paragraph", () => {
                             {
                                 "w:tabs": [
                                     {
-                                        "w:tab": [
-                                            {
-                                                _attr: {
-                                                    "w:pos": 9026,
-                                                    "w:val": "right",
-                                                },
+                                        "w:tab": {
+                                            _attr: {
+                                                "w:pos": 9026,
+                                                "w:val": "right",
                                             },
-                                        ],
+                                        },
                                     },
                                 ],
                             },
@@ -281,15 +279,13 @@ describe("Paragraph", () => {
                             {
                                 "w:tabs": [
                                     {
-                                        "w:tab": [
-                                            {
-                                                _attr: {
-                                                    "w:pos": 100,
-                                                    "w:val": "left",
-                                                    "w:leader": "hyphen",
-                                                },
+                                        "w:tab": {
+                                            _attr: {
+                                                "w:pos": 100,
+                                                "w:val": "left",
+                                                "w:leader": "hyphen",
                                             },
-                                        ],
+                                        },
                                     },
                                 ],
                             },
@@ -311,15 +307,13 @@ describe("Paragraph", () => {
                             {
                                 "w:tabs": [
                                     {
-                                        "w:tab": [
-                                            {
-                                                _attr: {
-                                                    "w:pos": 100,
-                                                    "w:val": "right",
-                                                    "w:leader": "dot",
-                                                },
+                                        "w:tab": {
+                                            _attr: {
+                                                "w:pos": 100,
+                                                "w:val": "right",
+                                                "w:leader": "dot",
                                             },
-                                        ],
+                                        },
                                     },
                                 ],
                             },
@@ -341,15 +335,13 @@ describe("Paragraph", () => {
                             {
                                 "w:tabs": [
                                     {
-                                        "w:tab": [
-                                            {
-                                                _attr: {
-                                                    "w:pos": 100,
-                                                    "w:val": "center",
-                                                    "w:leader": "middleDot",
-                                                },
+                                        "w:tab": {
+                                            _attr: {
+                                                "w:pos": 100,
+                                                "w:val": "center",
+                                                "w:leader": "middleDot",
                                             },
-                                        ],
+                                        },
                                     },
                                 ],
                             },
@@ -367,7 +359,7 @@ describe("Paragraph", () => {
             expect(tree).to.deep.equal({
                 "w:p": [
                     {
-                        "w:pPr": [{ "w:contextualSpacing": [{ _attr: { "w:val": 1 } }] }],
+                        "w:pPr": [{ "w:contextualSpacing": { _attr: { "w:val": 1 } } }],
                     },
                 ],
             });
@@ -379,7 +371,7 @@ describe("Paragraph", () => {
             expect(tree).to.deep.equal({
                 "w:p": [
                     {
-                        "w:pPr": [{ "w:contextualSpacing": [{ _attr: { "w:val": 0 } }] }],
+                        "w:pPr": [{ "w:contextualSpacing": { _attr: { "w:val": 0 } } }],
                     },
                 ],
             });
@@ -397,16 +389,14 @@ describe("Paragraph", () => {
                             {
                                 "w:pBdr": [
                                     {
-                                        "w:bottom": [
-                                            {
-                                                _attr: {
-                                                    "w:val": "single",
-                                                    "w:color": "auto",
-                                                    "w:space": "1",
-                                                    "w:sz": "6",
-                                                },
+                                        "w:bottom": {
+                                            _attr: {
+                                                "w:val": "single",
+                                                "w:color": "auto",
+                                                "w:space": "1",
+                                                "w:sz": "6",
                                             },
-                                        ],
+                                        },
                                     },
                                 ],
                             },
@@ -430,28 +420,24 @@ describe("Paragraph", () => {
                             {
                                 "w:pBdr": [
                                     {
-                                        "w:left": [
-                                            {
-                                                _attr: {
-                                                    "w:color": "auto",
-                                                    "w:space": "1",
-                                                    "w:sz": "6",
-                                                    "w:val": "single",
-                                                },
+                                        "w:left": {
+                                            _attr: {
+                                                "w:color": "auto",
+                                                "w:space": "1",
+                                                "w:sz": "6",
+                                                "w:val": "single",
                                             },
-                                        ],
+                                        },
                                     },
                                     {
-                                        "w:right": [
-                                            {
-                                                _attr: {
-                                                    "w:color": "auto",
-                                                    "w:space": "1",
-                                                    "w:sz": "6",
-                                                    "w:val": "single",
-                                                },
+                                        "w:right": {
+                                            _attr: {
+                                                "w:color": "auto",
+                                                "w:space": "1",
+                                                "w:sz": "6",
+                                                "w:val": "single",
                                             },
-                                        ],
+                                        },
                                     },
                                 ],
                             },
@@ -469,10 +455,7 @@ describe("Paragraph", () => {
             expect(tree).to.deep.equal({
                 "w:p": [
                     {
-                        "w:pPr": [],
-                    },
-                    {
-                        "w:r": [{ "w:rPr": [] }, { "w:br": [{ _attr: { "w:type": "page" } }] }],
+                        "w:r": [{ "w:br": { _attr: { "w:type": "page" } } }],
                     },
                 ],
             });
@@ -488,7 +471,7 @@ describe("Paragraph", () => {
                     {
                         "w:pPr": [
                             {
-                                "w:pageBreakBefore": [],
+                                "w:pageBreakBefore": null,
                             },
                         ],
                     },
@@ -510,7 +493,7 @@ describe("Paragraph", () => {
                 .which.is.an("array")
                 .which.has.length.at.least(1);
             expect(tree["w:p"][0]["w:pPr"][0]).to.deep.equal({
-                "w:pStyle": [{ _attr: { "w:val": "ListParagraph" } }],
+                "w:pStyle": { _attr: { "w:val": "ListParagraph" } },
             });
         });
 
@@ -526,7 +509,7 @@ describe("Paragraph", () => {
                 .which.is.an("array")
                 .which.has.length.at.least(1);
             expect(tree["w:p"][0]["w:pPr"][0]).to.deep.equal({
-                "w:pStyle": [{ _attr: { "w:val": "ListParagraph" } }],
+                "w:pStyle": { _attr: { "w:val": "ListParagraph" } },
             });
         });
 
@@ -542,7 +525,7 @@ describe("Paragraph", () => {
                 .which.is.an("array")
                 .which.has.length.at.least(2);
             expect(tree["w:p"][0]["w:pPr"][1]).to.deep.equal({
-                "w:numPr": [{ "w:ilvl": [{ _attr: { "w:val": 1 } }] }, { "w:numId": [{ _attr: { "w:val": 1 } }] }],
+                "w:numPr": [{ "w:ilvl": { _attr: { "w:val": 1 } } }, { "w:numId": { _attr: { "w:val": 1 } } }],
             });
         });
     });
@@ -565,7 +548,7 @@ describe("Paragraph", () => {
                 .which.is.an("array")
                 .which.has.length.at.least(1);
             expect(tree["w:p"][0]["w:pPr"][0]).to.deep.equal({
-                "w:pStyle": [{ _attr: { "w:val": "ListParagraph" } }],
+                "w:pStyle": { _attr: { "w:val": "ListParagraph" } },
             });
         });
 
@@ -581,11 +564,11 @@ describe("Paragraph", () => {
                 "w:p": [
                     {
                         "w:pPr": [
-                            { "w:pStyle": [{ _attr: { "w:val": "ListParagraph" } }] },
+                            { "w:pStyle": { _attr: { "w:val": "ListParagraph" } } },
                             {
                                 "w:numPr": [
-                                    { "w:ilvl": [{ _attr: { "w:val": 0 } }] },
-                                    { "w:numId": [{ _attr: { "w:val": letterNumbering.id } }] },
+                                    { "w:ilvl": { _attr: { "w:val": 0 } } },
+                                    { "w:numId": { _attr: { "w:val": letterNumbering.id } } },
                                 ],
                             },
                         ],
@@ -602,7 +585,7 @@ describe("Paragraph", () => {
             expect(tree).to.deep.equal({
                 "w:p": [
                     {
-                        "w:pPr": [{ "w:pStyle": [{ _attr: { "w:val": "myFancyStyle" } }] }],
+                        "w:pPr": [{ "w:pStyle": { _attr: { "w:val": "myFancyStyle" } } }],
                     },
                 ],
             });
@@ -616,7 +599,7 @@ describe("Paragraph", () => {
             expect(tree).to.deep.equal({
                 "w:p": [
                     {
-                        "w:pPr": [{ "w:ind": [{ _attr: { "w:left": 720 } }] }],
+                        "w:pPr": [{ "w:ind": { _attr: { "w:left": 720 } } }],
                     },
                 ],
             });
@@ -630,7 +613,7 @@ describe("Paragraph", () => {
             expect(tree).to.deep.equal({
                 "w:p": [
                     {
-                        "w:pPr": [{ "w:spacing": [{ _attr: { "w:before": 90, "w:line": 50 } }] }],
+                        "w:pPr": [{ "w:spacing": { _attr: { "w:before": 90, "w:line": 50 } } }],
                     },
                 ],
             });
@@ -642,7 +625,7 @@ describe("Paragraph", () => {
             paragraph.keepLines();
             const tree = new Formatter().format(paragraph);
             expect(tree).to.deep.equal({
-                "w:p": [{ "w:pPr": [{ "w:keepLines": [] }] }],
+                "w:p": [{ "w:pPr": [{ "w:keepLines": null }] }],
             });
         });
     });
@@ -652,7 +635,7 @@ describe("Paragraph", () => {
             paragraph.keepNext();
             const tree = new Formatter().format(paragraph);
             expect(tree).to.deep.equal({
-                "w:p": [{ "w:pPr": [{ "w:keepNext": [] }] }],
+                "w:p": [{ "w:pPr": [{ "w:keepNext": null }] }],
             });
         });
     });
@@ -662,7 +645,7 @@ describe("Paragraph", () => {
             paragraph.bidirectional();
             const tree = new Formatter().format(paragraph);
             expect(tree).to.deep.equal({
-                "w:p": [{ "w:pPr": [{ "w:bidi": [] }] }],
+                "w:p": [{ "w:pPr": [{ "w:bidi": null }] }],
             });
         });
     });
@@ -674,7 +657,7 @@ describe("Paragraph", () => {
             expect(tree).to.deep.equal({
                 "w:p": [
                     {
-                        "w:pPr": [{ "w:outlineLvl": [{ _attr: { "w:val": "0" } }] }],
+                        "w:pPr": [{ "w:outlineLvl": { _attr: { "w:val": "0" } } }],
                     },
                 ],
             });

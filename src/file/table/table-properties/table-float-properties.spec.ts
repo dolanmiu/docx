@@ -26,20 +26,18 @@ describe("Table Float Properties", () => {
 });
 
 const DEFAULT_TFP = {
-    "w:tblpPr": [
-        {
-            _attr: {
-                "w:horzAnchor": "margin",
-                "w:vertAnchor": "page",
-                "w:tblpX": 10,
-                "w:tblpXSpec": "center",
-                "w:tblpY": 20,
-                "w:tblpYSpec": "bottom",
-                "w:bottomFromText": 30,
-                "w:topFromText": 40,
-                "w:leftFromText": 50,
-                "w:rightFromText": 60,
-            },
+    "w:tblpPr": {
+        _attr: {
+            "w:horzAnchor": "margin",
+            "w:vertAnchor": "page",
+            "w:tblpX": 10,
+            "w:tblpXSpec": "center",
+            "w:tblpY": 20,
+            "w:tblpYSpec": "bottom",
+            "w:bottomFromText": 30,
+            "w:topFromText": 40,
+            "w:leftFromText": 50,
+            "w:rightFromText": 60,
         },
-    ],
+    },
 };
