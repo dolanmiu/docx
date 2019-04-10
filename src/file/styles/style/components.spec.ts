@@ -2,6 +2,8 @@ import { expect } from "chai";
 import { Formatter } from "export/formatter";
 import * as components from "./components";
 
+import { EMPTY_OBJECT } from "file/xml-components";
+
 describe("Style components", () => {
     it("Name#constructor", () => {
         const style = new components.Name("Style Name");
@@ -36,18 +38,18 @@ describe("Style components", () => {
     it("UnhideWhenUsed#constructor", () => {
         const style = new components.UnhideWhenUsed();
         const tree = new Formatter().format(style);
-        expect(tree).to.deep.equal({ "w:unhideWhenUsed": {} });
+        expect(tree).to.deep.equal({ "w:unhideWhenUsed": EMPTY_OBJECT });
     });
 
     it("QuickFormat#constructor", () => {
         const style = new components.QuickFormat();
         const tree = new Formatter().format(style);
-        expect(tree).to.deep.equal({ "w:qFormat": {} });
+        expect(tree).to.deep.equal({ "w:qFormat": EMPTY_OBJECT });
     });
 
     it("SemiHidden#constructor", () => {
         const style = new components.SemiHidden();
         const tree = new Formatter().format(style);
-        expect(tree).to.deep.equal({ "w:semiHidden": {} });
+        expect(tree).to.deep.equal({ "w:semiHidden": EMPTY_OBJECT });
     });
 });

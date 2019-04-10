@@ -2,6 +2,8 @@ import { BaseXmlComponent } from "./base";
 import { IXmlableObject } from "./xmlable-object";
 export { BaseXmlComponent };
 
+export const EMPTY_OBJECT = Object.seal({});
+
 export abstract class XmlComponent extends BaseXmlComponent {
     // tslint:disable-next-line:readonly-keyword
     protected root: Array<BaseXmlComponent | string>;
@@ -34,7 +36,7 @@ export abstract class XmlComponent extends BaseXmlComponent {
         // children in order to get an empty XML element generated.
         const onlyAttrs = (c) => typeof c === "object" && c._attr;
         return {
-            [this.rootKey]: children.length ? (children.length === 1 && onlyAttrs(children[0]) ? children[0] : children) : {},
+            [this.rootKey]: children.length ? (children.length === 1 && onlyAttrs(children[0]) ? children[0] : children) : EMPTY_OBJECT,
         };
     }
 

@@ -6,6 +6,8 @@ import * as file from "file";
 import { Numbering } from "../numbering";
 import { LeaderType } from "./formatting";
 
+import { EMPTY_OBJECT } from "file/xml-components";
+
 describe("Paragraph", () => {
     let paragraph: file.Paragraph;
 
@@ -471,7 +473,7 @@ describe("Paragraph", () => {
                     {
                         "w:pPr": [
                             {
-                                "w:pageBreakBefore": {},
+                                "w:pageBreakBefore": EMPTY_OBJECT,
                             },
                         ],
                     },
@@ -625,7 +627,7 @@ describe("Paragraph", () => {
             paragraph.keepLines();
             const tree = new Formatter().format(paragraph);
             expect(tree).to.deep.equal({
-                "w:p": [{ "w:pPr": [{ "w:keepLines": {} }] }],
+                "w:p": [{ "w:pPr": [{ "w:keepLines": EMPTY_OBJECT }] }],
             });
         });
     });
@@ -635,7 +637,7 @@ describe("Paragraph", () => {
             paragraph.keepNext();
             const tree = new Formatter().format(paragraph);
             expect(tree).to.deep.equal({
-                "w:p": [{ "w:pPr": [{ "w:keepNext": {} }] }],
+                "w:p": [{ "w:pPr": [{ "w:keepNext": EMPTY_OBJECT }] }],
             });
         });
     });
@@ -645,7 +647,7 @@ describe("Paragraph", () => {
             paragraph.bidirectional();
             const tree = new Formatter().format(paragraph);
             expect(tree).to.deep.equal({
-                "w:p": [{ "w:pPr": [{ "w:bidi": {} }] }],
+                "w:p": [{ "w:pPr": [{ "w:bidi": EMPTY_OBJECT }] }],
             });
         });
     });

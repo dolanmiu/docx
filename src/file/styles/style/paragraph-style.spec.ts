@@ -4,6 +4,8 @@ import { Formatter } from "export/formatter";
 
 import { ParagraphStyle } from "./paragraph-style";
 
+import { EMPTY_OBJECT } from "file/xml-components";
+
 describe("ParagraphStyle", () => {
     describe("#constructor", () => {
         it("should set the style type to paragraph and use the given style id", () => {
@@ -42,7 +44,7 @@ describe("ParagraphStyle", () => {
             const style = new ParagraphStyle("myStyleId").quickFormat();
             const tree = new Formatter().format(style);
             expect(tree).to.deep.equal({
-                "w:style": [{ _attr: { "w:type": "paragraph", "w:styleId": "myStyleId" } }, { "w:qFormat": {} }],
+                "w:style": [{ _attr: { "w:type": "paragraph", "w:styleId": "myStyleId" } }, { "w:qFormat": EMPTY_OBJECT }],
             });
         });
 
@@ -216,7 +218,7 @@ describe("ParagraphStyle", () => {
             const style = new ParagraphStyle("myStyleId").keepLines();
             const tree = new Formatter().format(style);
             expect(tree).to.deep.equal({
-                "w:style": [{ _attr: { "w:type": "paragraph", "w:styleId": "myStyleId" } }, { "w:pPr": [{ "w:keepLines": {} }] }],
+                "w:style": [{ _attr: { "w:type": "paragraph", "w:styleId": "myStyleId" } }, { "w:pPr": [{ "w:keepLines": EMPTY_OBJECT }] }],
             });
         });
 
@@ -224,7 +226,7 @@ describe("ParagraphStyle", () => {
             const style = new ParagraphStyle("myStyleId").keepNext();
             const tree = new Formatter().format(style);
             expect(tree).to.deep.equal({
-                "w:style": [{ _attr: { "w:type": "paragraph", "w:styleId": "myStyleId" } }, { "w:pPr": [{ "w:keepNext": {} }] }],
+                "w:style": [{ _attr: { "w:type": "paragraph", "w:styleId": "myStyleId" } }, { "w:pPr": [{ "w:keepNext": EMPTY_OBJECT }] }],
             });
         });
 
@@ -439,7 +441,7 @@ describe("ParagraphStyle", () => {
             const style = new ParagraphStyle("myStyleId").semiHidden();
             const tree = new Formatter().format(style);
             expect(tree).to.deep.equal({
-                "w:style": [{ _attr: { "w:type": "paragraph", "w:styleId": "myStyleId" } }, { "w:semiHidden": {} }],
+                "w:style": [{ _attr: { "w:type": "paragraph", "w:styleId": "myStyleId" } }, { "w:semiHidden": EMPTY_OBJECT }],
             });
         });
 
@@ -464,7 +466,7 @@ describe("ParagraphStyle", () => {
             const style = new ParagraphStyle("myStyleId").unhideWhenUsed();
             const tree = new Formatter().format(style);
             expect(tree).to.deep.equal({
-                "w:style": [{ _attr: { "w:type": "paragraph", "w:styleId": "myStyleId" } }, { "w:unhideWhenUsed": {} }],
+                "w:style": [{ _attr: { "w:type": "paragraph", "w:styleId": "myStyleId" } }, { "w:unhideWhenUsed": EMPTY_OBJECT }],
             });
         });
     });

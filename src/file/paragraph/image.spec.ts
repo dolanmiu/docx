@@ -5,6 +5,8 @@ import { Formatter } from "export/formatter";
 
 import { ImageParagraph } from "./image";
 
+import { EMPTY_OBJECT } from "file/xml-components";
+
 describe("Image", () => {
     let image: ImageParagraph;
 
@@ -156,12 +158,12 @@ describe("Image", () => {
                                                                                 },
                                                                             },
                                                                             {
-                                                                                "a:srcRect": {},
+                                                                                "a:srcRect": EMPTY_OBJECT,
                                                                             },
                                                                             {
                                                                                 "a:stretch": [
                                                                                     {
-                                                                                        "a:fillRect": {},
+                                                                                        "a:fillRect": EMPTY_OBJECT,
                                                                                     },
                                                                                 ],
                                                                             },
@@ -202,7 +204,7 @@ describe("Image", () => {
                                                                                         },
                                                                                     },
                                                                                     {
-                                                                                        "a:avLst": {},
+                                                                                        "a:avLst": EMPTY_OBJECT,
                                                                                     },
                                                                                 ],
                                                                             },

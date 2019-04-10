@@ -7,6 +7,8 @@ import { LevelForOverride } from "./level";
 import { Num } from "./num";
 import { Numbering } from "./numbering";
 
+import { EMPTY_OBJECT } from "file/xml-components";
+
 describe("Numbering", () => {
     let numbering: Numbering;
 
@@ -216,7 +218,7 @@ describe("AbstractNumbering", () => {
                 const level = abstractNumbering.createLevel(0, "lowerRoman", "%0.").keepLines();
                 const tree = new Formatter().format(level);
                 expect(tree["w:lvl"]).to.include({
-                    "w:pPr": [{ "w:keepLines": {} }],
+                    "w:pPr": [{ "w:keepLines": EMPTY_OBJECT }],
                 });
             });
 
@@ -225,7 +227,7 @@ describe("AbstractNumbering", () => {
                 const level = abstractNumbering.createLevel(0, "lowerRoman", "%0.").keepNext();
                 const tree = new Formatter().format(level);
                 expect(tree["w:lvl"]).to.include({
-                    "w:pPr": [{ "w:keepNext": {} }],
+                    "w:pPr": [{ "w:keepNext": EMPTY_OBJECT }],
                 });
             });
         });

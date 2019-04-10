@@ -6,6 +6,8 @@ import { CharacterStyle, ParagraphStyle } from "./style";
 
 import { Styles } from "./styles";
 
+import { EMPTY_OBJECT } from "file/xml-components";
+
 describe("Styles", () => {
     let styles: Styles;
 
@@ -64,7 +66,7 @@ describe("Styles", () => {
                             },
                         },
                         {
-                            "w:unhideWhenUsed": {},
+                            "w:unhideWhenUsed": EMPTY_OBJECT,
                         },
                     ],
                 },
@@ -88,7 +90,7 @@ describe("Styles", () => {
                             },
                         },
                         {
-                            "w:unhideWhenUsed": {},
+                            "w:unhideWhenUsed": EMPTY_OBJECT,
                         },
                     ],
                 },

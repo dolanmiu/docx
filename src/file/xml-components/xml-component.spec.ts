@@ -1,7 +1,7 @@
 import { expect } from "chai";
 
 import { Utility } from "tests/utility";
-import { XmlComponent } from "./";
+import { EMPTY_OBJECT, XmlComponent } from "./";
 
 class TestComponent extends XmlComponent {}
 
@@ -31,7 +31,7 @@ describe("XmlComponent", () => {
                 return;
             }
 
-            expect(xml["w:test"]).to.deep.equal({});
+            expect(xml["w:test"]).to.deep.equal(EMPTY_OBJECT);
         });
     });
 });

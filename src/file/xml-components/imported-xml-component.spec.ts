@@ -1,7 +1,7 @@
 import { expect } from "chai";
 import { Element, xml2js } from "xml-js";
 
-import { ImportedXmlComponent } from "./";
+import { EMPTY_OBJECT, ImportedXmlComponent } from "./";
 import { convertToXmlComponent } from "./imported-xml-component";
 
 const xmlString = `
@@ -73,7 +73,7 @@ describe("ImportedXmlComponent", () => {
                         },
                     },
                     {
-                        "w:child": {},
+                        "w:child": EMPTY_OBJECT,
                     },
                 ],
             });

@@ -4,6 +4,8 @@ import { Formatter } from "export/formatter";
 
 import { CharacterStyle } from "./character-style";
 
+import { EMPTY_OBJECT } from "file/xml-components";
+
 describe("CharacterStyle", () => {
     describe("#constructor", () => {
         it("should set the style type to character and use the given style id", () => {
@@ -20,7 +22,7 @@ describe("CharacterStyle", () => {
                         },
                     },
                     {
-                        "w:unhideWhenUsed": {},
+                        "w:unhideWhenUsed": EMPTY_OBJECT,
                     },
                 ],
             });
@@ -41,7 +43,7 @@ describe("CharacterStyle", () => {
                         },
                     },
                     {
-                        "w:unhideWhenUsed": {},
+                        "w:unhideWhenUsed": EMPTY_OBJECT,
                     },
                 ],
             });
@@ -63,7 +65,7 @@ describe("CharacterStyle", () => {
                         },
                     },
                     {
-                        "w:unhideWhenUsed": {},
+                        "w:unhideWhenUsed": EMPTY_OBJECT,
                     },
                     { "w:basedOn": { _attr: { "w:val": "otherId" } } },
                 ],
@@ -89,7 +91,7 @@ describe("CharacterStyle", () => {
                         },
                     },
                     {
-                        "w:unhideWhenUsed": {},
+                        "w:unhideWhenUsed": EMPTY_OBJECT,
                     },
                 ],
             });
@@ -113,7 +115,7 @@ describe("CharacterStyle", () => {
                             },
                         },
                         {
-                            "w:unhideWhenUsed": {},
+                            "w:unhideWhenUsed": EMPTY_OBJECT,
                         },
                     ],
                 });
@@ -136,7 +138,7 @@ describe("CharacterStyle", () => {
                             },
                         },
                         {
-                            "w:unhideWhenUsed": {},
+                            "w:unhideWhenUsed": EMPTY_OBJECT,
                         },
                     ],
                 });
@@ -159,7 +161,7 @@ describe("CharacterStyle", () => {
                             },
                         },
                         {
-                            "w:unhideWhenUsed": {},
+                            "w:unhideWhenUsed": EMPTY_OBJECT,
                         },
                     ],
                 });
@@ -191,7 +193,7 @@ describe("CharacterStyle", () => {
                         },
                     },
                     {
-                        "w:unhideWhenUsed": {},
+                        "w:unhideWhenUsed": EMPTY_OBJECT,
                     },
                 ],
             });
@@ -214,7 +216,7 @@ describe("CharacterStyle", () => {
                         },
                     },
                     {
-                        "w:unhideWhenUsed": {},
+                        "w:unhideWhenUsed": EMPTY_OBJECT,
                     },
                 ],
             });
@@ -237,7 +239,7 @@ describe("CharacterStyle", () => {
                         },
                     },
                     {
-                        "w:unhideWhenUsed": {},
+                        "w:unhideWhenUsed": EMPTY_OBJECT,
                     },
                 ],
             });
@@ -260,7 +262,7 @@ describe("CharacterStyle", () => {
                         },
                     },
                     {
-                        "w:unhideWhenUsed": {},
+                        "w:unhideWhenUsed": EMPTY_OBJECT,
                     },
                 ],
             });
@@ -280,7 +282,7 @@ describe("CharacterStyle", () => {
                         },
                     },
                     {
-                        "w:unhideWhenUsed": {},
+                        "w:unhideWhenUsed": EMPTY_OBJECT,
                     },
                     { "w:link": { _attr: { "w:val": "MyLink" } } },
                 ],
@@ -300,8 +302,8 @@ describe("CharacterStyle", () => {
                             },
                         },
                     },
-                    { "w:unhideWhenUsed": {} },
-                    { "w:semiHidden": {} },
+                    { "w:unhideWhenUsed": EMPTY_OBJECT },
+                    { "w:semiHidden": EMPTY_OBJECT },
                 ],
             });
         });

@@ -2,6 +2,8 @@ import { expect } from "chai";
 import { Formatter } from "export/formatter";
 import * as defaultStyels from "./default-styles";
 
+import { EMPTY_OBJECT } from "file/xml-components";
+
 describe("Default Styles", () => {
     it("HeadingStyle#constructor", () => {
         const style = new defaultStyels.HeadingStyle("Heading1", "Heading 1");
@@ -12,7 +14,7 @@ describe("Default Styles", () => {
                 { "w:name": { _attr: { "w:val": "Heading 1" } } },
                 { "w:basedOn": { _attr: { "w:val": "Normal" } } },
                 { "w:next": { _attr: { "w:val": "Normal" } } },
-                { "w:qFormat": {} },
+                { "w:qFormat": EMPTY_OBJECT },
             ],
         });
     });
@@ -26,7 +28,7 @@ describe("Default Styles", () => {
                 { "w:name": { _attr: { "w:val": "Title" } } },
                 { "w:basedOn": { _attr: { "w:val": "Normal" } } },
                 { "w:next": { _attr: { "w:val": "Normal" } } },
-                { "w:qFormat": {} },
+                { "w:qFormat": EMPTY_OBJECT },
             ],
         });
     });
@@ -40,7 +42,7 @@ describe("Default Styles", () => {
                 { "w:name": { _attr: { "w:val": "Heading 1" } } },
                 { "w:basedOn": { _attr: { "w:val": "Normal" } } },
                 { "w:next": { _attr: { "w:val": "Normal" } } },
-                { "w:qFormat": {} },
+                { "w:qFormat": EMPTY_OBJECT },
             ],
         });
     });
@@ -54,7 +56,7 @@ describe("Default Styles", () => {
                 { "w:name": { _attr: { "w:val": "Heading 2" } } },
                 { "w:basedOn": { _attr: { "w:val": "Normal" } } },
                 { "w:next": { _attr: { "w:val": "Normal" } } },
-                { "w:qFormat": {} },
+                { "w:qFormat": EMPTY_OBJECT },
             ],
         });
     });
@@ -68,7 +70,7 @@ describe("Default Styles", () => {
                 { "w:name": { _attr: { "w:val": "Heading 3" } } },
                 { "w:basedOn": { _attr: { "w:val": "Normal" } } },
                 { "w:next": { _attr: { "w:val": "Normal" } } },
-                { "w:qFormat": {} },
+                { "w:qFormat": EMPTY_OBJECT },
             ],
         });
     });
@@ -82,7 +84,7 @@ describe("Default Styles", () => {
                 { "w:name": { _attr: { "w:val": "Heading 4" } } },
                 { "w:basedOn": { _attr: { "w:val": "Normal" } } },
                 { "w:next": { _attr: { "w:val": "Normal" } } },
-                { "w:qFormat": {} },
+                { "w:qFormat": EMPTY_OBJECT },
             ],
         });
     });
@@ -96,7 +98,7 @@ describe("Default Styles", () => {
                 { "w:name": { _attr: { "w:val": "Heading 5" } } },
                 { "w:basedOn": { _attr: { "w:val": "Normal" } } },
                 { "w:next": { _attr: { "w:val": "Normal" } } },
-                { "w:qFormat": {} },
+                { "w:qFormat": EMPTY_OBJECT },
             ],
         });
     });
@@ -110,7 +112,7 @@ describe("Default Styles", () => {
                 { "w:name": { _attr: { "w:val": "Heading 6" } } },
                 { "w:basedOn": { _attr: { "w:val": "Normal" } } },
                 { "w:next": { _attr: { "w:val": "Normal" } } },
-                { "w:qFormat": {} },
+                { "w:qFormat": EMPTY_OBJECT },
             ],
         });
     });
@@ -123,7 +125,7 @@ describe("Default Styles", () => {
                 { _attr: { "w:type": "paragraph", "w:styleId": "ListParagraph" } },
                 { "w:name": { _attr: { "w:val": "List Paragraph" } } },
                 { "w:basedOn": { _attr: { "w:val": "Normal" } } },
-                { "w:qFormat": {} },
+                { "w:qFormat": EMPTY_OBJECT },
             ],
         });
     });
@@ -176,10 +178,10 @@ describe("Default Styles", () => {
                     },
                 },
                 {
-                    "w:semiHidden": {},
+                    "w:semiHidden": EMPTY_OBJECT,
                 },
                 {
-                    "w:unhideWhenUsed": {},
+                    "w:unhideWhenUsed": EMPTY_OBJECT,
                 },
             ],
         });
@@ -211,12 +213,12 @@ describe("Default Styles", () => {
                     },
                 },
                 {
-                    "w:unhideWhenUsed": {},
+                    "w:unhideWhenUsed": EMPTY_OBJECT,
                 },
                 { "w:basedOn": { _attr: { "w:val": "DefaultParagraphFont" } } },
 
                 {
-                    "w:semiHidden": {},
+                    "w:semiHidden": EMPTY_OBJECT,
                 },
             ],
         });
@@ -255,12 +257,12 @@ describe("Default Styles", () => {
                     },
                 },
                 {
-                    "w:unhideWhenUsed": {},
+                    "w:unhideWhenUsed": EMPTY_OBJECT,
                 },
                 { "w:basedOn": { _attr: { "w:val": "DefaultParagraphFont" } } },
                 { "w:link": { _attr: { "w:val": "FootnoteText" } } },
                 {
-                    "w:semiHidden": {},
+                    "w:semiHidden": EMPTY_OBJECT,
                 },
             ],
         });
@@ -284,7 +286,7 @@ describe("Default Styles", () => {
                     },
                 },
                 {
-                    "w:unhideWhenUsed": {},
+                    "w:unhideWhenUsed": EMPTY_OBJECT,
                 },
                 { "w:basedOn": { _attr: { "w:val": "DefaultParagraphFont" } } },
             ],

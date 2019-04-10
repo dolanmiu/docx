@@ -8,6 +8,8 @@ import { Table } from "./table";
 // import { WidthType } from "./table-cell";
 import { RelativeHorizontalPosition, RelativeVerticalPosition, TableAnchorType } from "./table-properties";
 
+import { EMPTY_OBJECT } from "file/xml-components";
+
 const DEFAULT_TABLE_PROPERTIES = {
     "w:tblCellMar": [
         {
@@ -107,7 +109,7 @@ const WIDTHS = {
 //             ],
 //         },
 //         { "w:tblGrid": [{ "w:gridCol": { _attr: { "w:w": 100 } } }] },
-//         { "w:tr": [{ "w:tc": [{ "w:p": {} }] }] },
+//         { "w:tr": [{ "w:tc": [{ "w:p": EMPTY_OBJECT }] }] },
 //     ],
 // };
 
@@ -119,7 +121,7 @@ describe("Table", () => {
                 columns: 2,
             });
             const tree = new Formatter().format(table);
-            const cell = { "w:tc": [{ "w:p": {} }] };
+            const cell = { "w:tc": [{ "w:p": EMPTY_OBJECT }] };
             expect(tree).to.deep.equal({
                 "w:tbl": [
                     { "w:tblPr": [DEFAULT_TABLE_PROPERTIES, BORDERS, WIDTHS] },
@@ -284,7 +286,7 @@ describe("Table", () => {
                     .to.be.an("array")
                     .which.has.length.at.least(1);
                 expect(row["w:tr"].find((x) => x["w:tc"])).to.deep.equal({
-                    "w:tc": [{ "w:p": {} }],
+                    "w:tc": [{ "w:p": EMPTY_OBJECT }],
                 });
             });
 
@@ -311,7 +313,7 @@ describe("Table", () => {
                 const cell = row["w:tr"].find((x) => x["w:tc"]);
                 expect(cell).not.to.be.undefined;
                 expect(cell["w:tc"][cell["w:tc"].length - 1]).to.deep.equal({
-                    "w:p": {},
+                    "w:p": EMPTY_OBJECT,
                 });
             });
 
