@@ -216,7 +216,7 @@ describe("AbstractNumbering", () => {
                 const level = abstractNumbering.createLevel(0, "lowerRoman", "%0.").keepLines();
                 const tree = new Formatter().format(level);
                 expect(tree["w:lvl"]).to.include({
-                    "w:pPr": [{ "w:keepLines": null }],
+                    "w:pPr": [{ "w:keepLines": {} }],
                 });
             });
 
@@ -225,7 +225,7 @@ describe("AbstractNumbering", () => {
                 const level = abstractNumbering.createLevel(0, "lowerRoman", "%0.").keepNext();
                 const tree = new Formatter().format(level);
                 expect(tree["w:lvl"]).to.include({
-                    "w:pPr": [{ "w:keepNext": null }],
+                    "w:pPr": [{ "w:keepNext": {} }],
                 });
             });
         });

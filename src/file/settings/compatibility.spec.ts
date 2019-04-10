@@ -8,7 +8,7 @@ describe("Compatibility", () => {
             const compatibility = new Compatibility();
 
             const tree = new Formatter().format(compatibility);
-            expect(tree).to.deep.equal({ "w:compat": null });
+            expect(tree).to.deep.equal({ "w:compat": {} });
         });
     });
 
@@ -18,7 +18,7 @@ describe("Compatibility", () => {
             compatibility.doNotExpandShiftReturn();
 
             const tree = new Formatter().format(compatibility);
-            expect(tree).to.deep.equal({ "w:compat": [{ "w:doNotExpandShiftReturn": null }] });
+            expect(tree).to.deep.equal({ "w:compat": [{ "w:doNotExpandShiftReturn": {} }] });
         });
     });
 });

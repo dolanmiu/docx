@@ -11,7 +11,7 @@ describe("TableRow", () => {
             const tableRow = new TableRow([]);
             const tree = new Formatter().format(tableRow);
             expect(tree).to.deep.equal({
-                "w:tr": null,
+                "w:tr": {},
             });
         });
 
@@ -23,7 +23,7 @@ describe("TableRow", () => {
                     {
                         "w:tc": [
                             {
-                                "w:p": null,
+                                "w:p": {},
                             },
                         ],
                     },

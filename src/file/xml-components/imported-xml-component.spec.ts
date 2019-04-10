@@ -73,7 +73,7 @@ describe("ImportedXmlComponent", () => {
                         },
                     },
                     {
-                        "w:child": null,
+                        "w:child": {},
                     },
                 ],
             });

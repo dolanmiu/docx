@@ -17,7 +17,7 @@ describe("GridCol", () => {
         it("does not set a width attribute if not given", () => {
             const grid = new GridCol();
             const tree = new Formatter().format(grid);
-            expect(tree).to.deep.equal({ "w:gridCol": null });
+            expect(tree).to.deep.equal({ "w:gridCol": {} });
         });
     });
 });

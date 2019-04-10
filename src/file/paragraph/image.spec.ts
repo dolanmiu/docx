@@ -156,12 +156,12 @@ describe("Image", () => {
                                                                                 },
                                                                             },
                                                                             {
-                                                                                "a:srcRect": null,
+                                                                                "a:srcRect": {},
                                                                             },
                                                                             {
                                                                                 "a:stretch": [
                                                                                     {
-                                                                                        "a:fillRect": null,
+                                                                                        "a:fillRect": {},
                                                                                     },
                                                                                 ],
                                                                             },
@@ -202,7 +202,7 @@ describe("Image", () => {
                                                                                         },
                                                                                     },
                                                                                     {
-                                                                                        "a:avLst": null,
+                                                                                        "a:avLst": {},
                                                                                     },
                                                                                 ],
                                                                             },

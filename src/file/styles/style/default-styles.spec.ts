@@ -12,7 +12,7 @@ describe("Default Styles", () => {
                 { "w:name": { _attr: { "w:val": "Heading 1" } } },
                 { "w:basedOn": { _attr: { "w:val": "Normal" } } },
                 { "w:next": { _attr: { "w:val": "Normal" } } },
-                { "w:qFormat": null },
+                { "w:qFormat": {} },
             ],
         });
     });
@@ -26,7 +26,7 @@ describe("Default Styles", () => {
                 { "w:name": { _attr: { "w:val": "Title" } } },
                 { "w:basedOn": { _attr: { "w:val": "Normal" } } },
                 { "w:next": { _attr: { "w:val": "Normal" } } },
-                { "w:qFormat": null },
+                { "w:qFormat": {} },
             ],
         });
     });
@@ -40,7 +40,7 @@ describe("Default Styles", () => {
                 { "w:name": { _attr: { "w:val": "Heading 1" } } },
                 { "w:basedOn": { _attr: { "w:val": "Normal" } } },
                 { "w:next": { _attr: { "w:val": "Normal" } } },
-                { "w:qFormat": null },
+                { "w:qFormat": {} },
             ],
         });
     });
@@ -54,7 +54,7 @@ describe("Default Styles", () => {
                 { "w:name": { _attr: { "w:val": "Heading 2" } } },
                 { "w:basedOn": { _attr: { "w:val": "Normal" } } },
                 { "w:next": { _attr: { "w:val": "Normal" } } },
-                { "w:qFormat": null },
+                { "w:qFormat": {} },
             ],
         });
     });
@@ -68,7 +68,7 @@ describe("Default Styles", () => {
                 { "w:name": { _attr: { "w:val": "Heading 3" } } },
                 { "w:basedOn": { _attr: { "w:val": "Normal" } } },
                 { "w:next": { _attr: { "w:val": "Normal" } } },
-                { "w:qFormat": null },
+                { "w:qFormat": {} },
             ],
         });
     });
@@ -82,7 +82,7 @@ describe("Default Styles", () => {
                 { "w:name": { _attr: { "w:val": "Heading 4" } } },
                 { "w:basedOn": { _attr: { "w:val": "Normal" } } },
                 { "w:next": { _attr: { "w:val": "Normal" } } },
-                { "w:qFormat": null },
+                { "w:qFormat": {} },
             ],
         });
     });
@@ -96,7 +96,7 @@ describe("Default Styles", () => {
                 { "w:name": { _attr: { "w:val": "Heading 5" } } },
                 { "w:basedOn": { _attr: { "w:val": "Normal" } } },
                 { "w:next": { _attr: { "w:val": "Normal" } } },
-                { "w:qFormat": null },
+                { "w:qFormat": {} },
             ],
         });
     });
@@ -110,7 +110,7 @@ describe("Default Styles", () => {
                 { "w:name": { _attr: { "w:val": "Heading 6" } } },
                 { "w:basedOn": { _attr: { "w:val": "Normal" } } },
                 { "w:next": { _attr: { "w:val": "Normal" } } },
-                { "w:qFormat": null },
+                { "w:qFormat": {} },
             ],
         });
     });
@@ -123,7 +123,7 @@ describe("Default Styles", () => {
                 { _attr: { "w:type": "paragraph", "w:styleId": "ListParagraph" } },
                 { "w:name": { _attr: { "w:val": "List Paragraph" } } },
                 { "w:basedOn": { _attr: { "w:val": "Normal" } } },
-                { "w:qFormat": null },
+                { "w:qFormat": {} },
             ],
         });
     });
@@ -176,10 +176,10 @@ describe("Default Styles", () => {
                     },
                 },
                 {
-                    "w:semiHidden": null,
+                    "w:semiHidden": {},
                 },
                 {
-                    "w:unhideWhenUsed": null,
+                    "w:unhideWhenUsed": {},
                 },
             ],
         });
@@ -211,12 +211,12 @@ describe("Default Styles", () => {
                     },
                 },
                 {
-                    "w:unhideWhenUsed": null,
+                    "w:unhideWhenUsed": {},
                 },
                 { "w:basedOn": { _attr: { "w:val": "DefaultParagraphFont" } } },
 
                 {
-                    "w:semiHidden": null,
+                    "w:semiHidden": {},
                 },
             ],
         });
@@ -255,12 +255,12 @@ describe("Default Styles", () => {
                     },
                 },
                 {
-                    "w:unhideWhenUsed": null,
+                    "w:unhideWhenUsed": {},
                 },
                 { "w:basedOn": { _attr: { "w:val": "DefaultParagraphFont" } } },
                 { "w:link": { _attr: { "w:val": "FootnoteText" } } },
                 {
-                    "w:semiHidden": null,
+                    "w:semiHidden": {},
                 },
             ],
         });
@@ -284,7 +284,7 @@ describe("Default Styles", () => {
                     },
                 },
                 {
-                    "w:unhideWhenUsed": null,
+                    "w:unhideWhenUsed": {},
                 },
                 { "w:basedOn": { _attr: { "w:val": "DefaultParagraphFont" } } },
             ],

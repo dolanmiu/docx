@@ -107,7 +107,7 @@ const WIDTHS = {
 //             ],
 //         },
 //         { "w:tblGrid": [{ "w:gridCol": { _attr: { "w:w": 100 } } }] },
-//         { "w:tr": [{ "w:tc": [{ "w:p": null }] }] },
+//         { "w:tr": [{ "w:tc": [{ "w:p": {} }] }] },
 //     ],
 // };
 
@@ -119,7 +119,7 @@ describe("Table", () => {
                 columns: 2,
             });
             const tree = new Formatter().format(table);
-            const cell = { "w:tc": [{ "w:p": null }] };
+            const cell = { "w:tc": [{ "w:p": {} }] };
             expect(tree).to.deep.equal({
                 "w:tbl": [
                     { "w:tblPr": [DEFAULT_TABLE_PROPERTIES, BORDERS, WIDTHS] },
@@ -284,7 +284,7 @@ describe("Table", () => {
                     .to.be.an("array")
                     .which.has.length.at.least(1);
                 expect(row["w:tr"].find((x) => x["w:tc"])).to.deep.equal({
-                    "w:tc": [{ "w:p": null }],
+                    "w:tc": [{ "w:p": {} }],
                 });
             });
 
@@ -311,7 +311,7 @@ describe("Table", () => {
                 const cell = row["w:tr"].find((x) => x["w:tc"]);
                 expect(cell).not.to.be.undefined;
                 expect(cell["w:tc"][cell["w:tc"].length - 1]).to.deep.equal({
-                    "w:p": null,
+                    "w:p": {},
                 });
             });
 

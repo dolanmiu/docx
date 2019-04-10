@@ -1,4 +1,4 @@
-import { assert } from "chai";
+import { expect } from "chai";
 
 import { Utility } from "tests/utility";
 import { XmlComponent } from "./";
@@ -15,7 +15,7 @@ describe("XmlComponent", () => {
     describe("#constructor()", () => {
         it("should create an Xml Component which has the correct rootKey", () => {
             const newJson = Utility.jsonify(xmlComponent);
-            assert.equal(newJson.rootKey, "w:test");
+            expect(newJson.rootKey).to.equal("w:test");
         });
     });
 
@@ -31,7 +31,7 @@ describe("XmlComponent", () => {
                 return;
             }
 
-            assert.isNull(xml["w:test"]);
+            expect(xml["w:test"]).to.deep.equal({});
         });
     });
 });

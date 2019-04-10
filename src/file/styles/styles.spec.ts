@@ -64,7 +64,7 @@ describe("Styles", () => {
                             },
                         },
                         {
-                            "w:unhideWhenUsed": null,
+                            "w:unhideWhenUsed": {},
                         },
                     ],
                 },
@@ -88,7 +88,7 @@ describe("Styles", () => {
                             },
                         },
                         {
-                            "w:unhideWhenUsed": null,
+                            "w:unhideWhenUsed": {},
                         },
                     ],
                 },

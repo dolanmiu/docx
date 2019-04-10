@@ -36,18 +36,18 @@ describe("Style components", () => {
     it("UnhideWhenUsed#constructor", () => {
         const style = new components.UnhideWhenUsed();
         const tree = new Formatter().format(style);
-        expect(tree).to.deep.equal({ "w:unhideWhenUsed": null });
+        expect(tree).to.deep.equal({ "w:unhideWhenUsed": {} });
     });
 
     it("QuickFormat#constructor", () => {
         const style = new components.QuickFormat();
         const tree = new Formatter().format(style);
-        expect(tree).to.deep.equal({ "w:qFormat": null });
+        expect(tree).to.deep.equal({ "w:qFormat": {} });
     });
 
     it("SemiHidden#constructor", () => {
         const style = new components.SemiHidden();
         const tree = new Formatter().format(style);
-        expect(tree).to.deep.equal({ "w:semiHidden": null });
+        expect(tree).to.deep.equal({ "w:semiHidden": {} });
     });
 });

@@ -20,7 +20,7 @@ describe("CharacterStyle", () => {
                         },
                     },
                     {
-                        "w:unhideWhenUsed": null,
+                        "w:unhideWhenUsed": {},
                     },
                 ],
             });
@@ -41,7 +41,7 @@ describe("CharacterStyle", () => {
                         },
                     },
                     {
-                        "w:unhideWhenUsed": null,
+                        "w:unhideWhenUsed": {},
                     },
                 ],
             });
@@ -63,7 +63,7 @@ describe("CharacterStyle", () => {
                         },
                     },
                     {
-                        "w:unhideWhenUsed": null,
+                        "w:unhideWhenUsed": {},
                     },
                     { "w:basedOn": { _attr: { "w:val": "otherId" } } },
                 ],
@@ -89,7 +89,7 @@ describe("CharacterStyle", () => {
                         },
                     },
                     {
-                        "w:unhideWhenUsed": null,
+                        "w:unhideWhenUsed": {},
                     },
                 ],
             });
@@ -113,7 +113,7 @@ describe("CharacterStyle", () => {
                             },
                         },
                         {
-                            "w:unhideWhenUsed": null,
+                            "w:unhideWhenUsed": {},
                         },
                     ],
                 });
@@ -136,7 +136,7 @@ describe("CharacterStyle", () => {
                             },
                         },
                         {
-                            "w:unhideWhenUsed": null,
+                            "w:unhideWhenUsed": {},
                         },
                     ],
                 });
@@ -159,7 +159,7 @@ describe("CharacterStyle", () => {
                             },
                         },
                         {
-                            "w:unhideWhenUsed": null,
+                            "w:unhideWhenUsed": {},
                         },
                     ],
                 });
@@ -191,7 +191,7 @@ describe("CharacterStyle", () => {
                         },
                     },
                     {
-                        "w:unhideWhenUsed": null,
+                        "w:unhideWhenUsed": {},
                     },
                 ],
             });
@@ -214,7 +214,7 @@ describe("CharacterStyle", () => {
                         },
                     },
                     {
-                        "w:unhideWhenUsed": null,
+                        "w:unhideWhenUsed": {},
                     },
                 ],
             });
@@ -237,7 +237,7 @@ describe("CharacterStyle", () => {
                         },
                     },
                     {
-                        "w:unhideWhenUsed": null,
+                        "w:unhideWhenUsed": {},
                     },
                 ],
             });
@@ -260,7 +260,7 @@ describe("CharacterStyle", () => {
                         },
                     },
                     {
-                        "w:unhideWhenUsed": null,
+                        "w:unhideWhenUsed": {},
                     },
                 ],
             });
@@ -280,7 +280,7 @@ describe("CharacterStyle", () => {
                         },
                     },
                     {
-                        "w:unhideWhenUsed": null,
+                        "w:unhideWhenUsed": {},
                     },
                     { "w:link": { _attr: { "w:val": "MyLink" } } },
                 ],
@@ -300,8 +300,8 @@ describe("CharacterStyle", () => {
                             },
                         },
                     },
-                    { "w:unhideWhenUsed": null },
-                    { "w:semiHidden": null },
+                    { "w:unhideWhenUsed": {} },
+                    { "w:semiHidden": {} },
                 ],
             });
         });

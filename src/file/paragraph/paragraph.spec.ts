@@ -471,7 +471,7 @@ describe("Paragraph", () => {
                     {
                         "w:pPr": [
                             {
-                                "w:pageBreakBefore": null,
+                                "w:pageBreakBefore": {},
                             },
                         ],
                     },
@@ -625,7 +625,7 @@ describe("Paragraph", () => {
             paragraph.keepLines();
             const tree = new Formatter().format(paragraph);
             expect(tree).to.deep.equal({
-                "w:p": [{ "w:pPr": [{ "w:keepLines": null }] }],
+                "w:p": [{ "w:pPr": [{ "w:keepLines": {} }] }],
             });
         });
     });
@@ -635,7 +635,7 @@ describe("Paragraph", () => {
             paragraph.keepNext();
             const tree = new Formatter().format(paragraph);
             expect(tree).to.deep.equal({
-                "w:p": [{ "w:pPr": [{ "w:keepNext": null }] }],
+                "w:p": [{ "w:pPr": [{ "w:keepNext": {} }] }],
             });
         });
     });
@@ -645,7 +645,7 @@ describe("Paragraph", () => {
             paragraph.bidirectional();
             const tree = new Formatter().format(paragraph);
             expect(tree).to.deep.equal({
-                "w:p": [{ "w:pPr": [{ "w:bidi": null }] }],
+                "w:p": [{ "w:pPr": [{ "w:bidi": {} }] }],
             });
         });
     });

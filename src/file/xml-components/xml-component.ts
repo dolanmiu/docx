@@ -30,11 +30,11 @@ export abstract class XmlComponent extends BaseXmlComponent {
         // represents our attributes, use the object itself as our children to
         // avoid an unneeded XML close element.  (Note: We have to use this
         // function to get typescript to allow our check.)
-        // Additionally, if the array is empty, use null as our children to
-        // get an empty XML element generated.
+        // Additionally, if the array is empty, use an empty object as our
+        // children in order to get an empty XML element generated.
         const onlyAttrs = (c) => typeof c === "object" && c._attr;
         return {
-            [this.rootKey]: children.length ? (children.length === 1 && onlyAttrs(children[0]) ? children[0] : children) : null,
+            [this.rootKey]: children.length ? (children.length === 1 && onlyAttrs(children[0]) ? children[0] : children) : {},
         };
     }
 
@@ -52,7 +52,9 @@ export abstract class XmlComponent extends BaseXmlComponent {
 export abstract class IgnoreIfEmptyXmlComponent extends XmlComponent {
     public prepForXml(): IXmlableObject | undefined {
         const result = super.prepForXml();
-        if (result && result[this.rootKey]) {
+        // Ignore the object if its falsey or is an empty object (would produce
+        // an empty XML element if allowed to be included in the output).
+        if (result && (typeof result[this.rootKey] !== "object" || Object.keys(result[this.rootKey]).length)) {
             return result;
         }
     }

@@ -15,8 +15,7 @@
         "max-classes-per-file": [false],
         "no-implicit-dependencies": false,
         "no-submodule-imports": false,
-        // We need null in order to get empty elements from the xml library
-        "no-null-keyword": false,
+        "no-null-keyword": true,
         "return-undefined": true,
         "prefer-readonly": true,
         "no-duplicate-imports": true,
