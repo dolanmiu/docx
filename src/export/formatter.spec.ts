@@ -31,7 +31,7 @@ describe("Formatter", () => {
             const paragraph = new file.Paragraph();
             paragraph.addRun(new file.TextRun("test").bold());
             const newJson = formatter.format(paragraph);
-            assert.isDefined(newJson["w:p"][1]["w:r"][0]["w:rPr"][0]["w:b"][0]._attr["w:val"]);
+            assert.isDefined(newJson["w:p"][0]["w:r"][0]["w:rPr"][0]["w:b"]._attr["w:val"]);
         });
 
         it("should format attributes (rsidSect)", () => {

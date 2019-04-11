@@ -1,10 +1,10 @@
-import { XmlComponent } from "file/xml-components";
+import { IgnoreIfEmptyXmlComponent } from "file/xml-components";
 
 import { ITableShadingAttributesProperties, TableShading } from "../shading";
 import { ITableCellMargainOptions, TableCellMargain } from "./cell-margain/table-cell-margains";
 import { GridSpan, TableCellBorders, TableCellWidth, VAlign, VerticalAlign, VMerge, VMergeType, WidthType } from "./table-cell-components";
 
-export class TableCellProperties extends XmlComponent {
+export class TableCellProperties extends IgnoreIfEmptyXmlComponent {
     private readonly cellBorder: TableCellBorders;
 
     constructor() {

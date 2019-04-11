@@ -1,7 +1,7 @@
 import { expect } from "chai";
 import { Element, xml2js } from "xml-js";
 
-import { ImportedXmlComponent } from "./";
+import { EMPTY_OBJECT, ImportedXmlComponent } from "./";
 import { convertToXmlComponent } from "./imported-xml-component";
 
 const xmlString = `
@@ -25,11 +25,25 @@ const convertedXmlElement = {
             deleted: false,
             rootKey: "w:p",
             root: [
+                { deleted: false, rootKey: "_attr", root: { "w:one": "value 1", "w:two": "value 2" } },
                 { deleted: false, rootKey: "w:rPr", root: [{ deleted: false, rootKey: "w:noProof", root: ["some value"] }] },
-                { deleted: false, rootKey: "w:r", root: [{ deleted: false, rootKey: "w:t", root: ["Text 1"] }], _attr: { active: "true" } },
-                { deleted: false, rootKey: "w:r", root: [{ deleted: false, rootKey: "w:t", root: ["Text 2"] }], _attr: { active: "true" } },
+                {
+                    deleted: false,
+                    rootKey: "w:r",
+                    root: [
+                        { deleted: false, rootKey: "_attr", root: { active: "true" } },
+                        { deleted: false, rootKey: "w:t", root: ["Text 1"] },
+                    ],
+                },
+                {
+                    deleted: false,
+                    rootKey: "w:r",
+                    root: [
+                        { deleted: false, rootKey: "_attr", root: { active: "true" } },
+                        { deleted: false, rootKey: "w:t", root: ["Text 2"] },
+                    ],
+                },
             ],
-            _attr: { "w:one": "value 1", "w:two": "value 2" },
         },
     ],
     rootKey: undefined,
@@ -59,7 +73,7 @@ describe("ImportedXmlComponent", () => {
                         },
                     },
                     {
-                        "w:child": [],
+                        "w:child": EMPTY_OBJECT,
                     },
                 ],
             });

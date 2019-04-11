@@ -1,6 +1,6 @@
-import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
+import { IgnoreIfEmptyXmlComponent, XmlAttributeComponent, XmlComponent } from "file/xml-components";
 
-export class TableRowProperties extends XmlComponent {
+export class TableRowProperties extends IgnoreIfEmptyXmlComponent {
     constructor() {
         super("w:trPr");
     }

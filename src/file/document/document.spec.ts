@@ -52,7 +52,7 @@ describe("Document", () => {
             expect(body[0])
                 .to.have.property("w:p")
                 .which.includes({
-                    "w:r": [{ "w:rPr": [] }, { "w:t": [{ _attr: { "xml:space": "preserve" } }, "sample paragraph text"] }],
+                    "w:r": [{ "w:t": [{ _attr: { "xml:space": "preserve" } }, "sample paragraph text"] }],
                 });
         });
     });
@@ -84,9 +84,9 @@ describe("Document", () => {
                 .to.have.property("w:tbl")
                 .which.includes({
                     "w:tblGrid": [
-                        { "w:gridCol": [{ _attr: { "w:w": 100 } }] },
-                        { "w:gridCol": [{ _attr: { "w:w": 100 } }] },
-                        { "w:gridCol": [{ _attr: { "w:w": 100 } }] },
+                        { "w:gridCol": { _attr: { "w:w": 100 } } },
+                        { "w:gridCol": { _attr: { "w:w": 100 } } },
+                        { "w:gridCol": { _attr: { "w:w": 100 } } },
                     ],
                 });
             expect(body[0]["w:tbl"].filter((x) => x["w:tr"])).to.have.length(2);

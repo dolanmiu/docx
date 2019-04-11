@@ -21,8 +21,7 @@ describe("PageBorders", () => {
             const tree = new Formatter().format(properties);
 
             expect(Object.keys(tree)).to.deep.equal(["w:pgBorders"]);
-            expect(tree["w:pgBorders"]).to.be.an.instanceof(Array);
-            expect(tree["w:pgBorders"][0]).to.deep.equal({ _attr: { "w:display": "firstPage" } });
+            expect(tree["w:pgBorders"]).to.deep.equal({ _attr: { "w:display": "firstPage" } });
         });
 
         it("should create page borders with full configuration", () => {
@@ -58,32 +57,24 @@ describe("PageBorders", () => {
             expect(tree["w:pgBorders"]).to.be.an.instanceof(Array);
             expect(tree["w:pgBorders"][0]).to.deep.equal({ _attr: { "w:display": "firstPage", "w:zOrder": "back" } });
             expect(tree["w:pgBorders"][1]).to.deep.equal({
-                "w:top": [
-                    {
-                        _attr: { "w:color": "001122", "w:size": 10, "w:val": "doubleWave" },
-                    },
-                ],
+                "w:top": {
+                    _attr: { "w:color": "001122", "w:size": 10, "w:val": "doubleWave" },
+                },
             });
             expect(tree["w:pgBorders"][2]).to.deep.equal({
-                "w:right": [
-                    {
-                        _attr: { "w:color": "223344", "w:size": 20, "w:val": "double" },
-                    },
-                ],
+                "w:right": {
+                    _attr: { "w:color": "223344", "w:size": 20, "w:val": "double" },
+                },
             });
             expect(tree["w:pgBorders"][3]).to.deep.equal({
-                "w:bottom": [
-                    {
-                        _attr: { "w:color": "556677", "w:size": 30, "w:val": "single" },
-                    },
-                ],
+                "w:bottom": {
+                    _attr: { "w:color": "556677", "w:size": 30, "w:val": "single" },
+                },
             });
             expect(tree["w:pgBorders"][4]).to.deep.equal({
-                "w:left": [
-                    {
-                        _attr: { "w:color": "889900", "w:size": 40, "w:val": "dotted" },
-                    },
-                ],
+                "w:left": {
+                    _attr: { "w:color": "889900", "w:size": 40, "w:val": "dotted" },
+                },
             });
         });
     });

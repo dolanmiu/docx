@@ -1,4 +1,4 @@
-import { IXmlableObject, XmlAttributeComponent, XmlComponent } from "file/xml-components";
+import { IgnoreIfEmptyXmlComponent, XmlAttributeComponent, XmlComponent } from "file/xml-components";
 
 import { WidthType } from "../table-cell";
 
@@ -17,15 +17,9 @@ class BaseTableCellMargin extends XmlComponent {
     }
 }
 
-export class TableCellMargin extends XmlComponent {
+export class TableCellMargin extends IgnoreIfEmptyXmlComponent {
     constructor() {
         super("w:tblCellMar");
-    }
-
-    public prepForXml(): IXmlableObject | undefined {
-        if (this.root.length > 0) {
-            return super.prepForXml();
-        }
     }
 
     public addTopMargin(value: number, type: WidthType = WidthType.DXA): void {

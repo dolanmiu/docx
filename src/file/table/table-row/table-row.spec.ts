@@ -5,17 +5,15 @@ import { Formatter } from "export/formatter";
 import { TableCell } from "../table-cell";
 import { TableRow } from "./table-row";
 
+import { EMPTY_OBJECT } from "file/xml-components";
+
 describe("TableRow", () => {
     describe("#constructor", () => {
         it("should create with no cells", () => {
             const tableRow = new TableRow([]);
             const tree = new Formatter().format(tableRow);
             expect(tree).to.deep.equal({
-                "w:tr": [
-                    {
-                        "w:trPr": [],
-                    },
-                ],
+                "w:tr": EMPTY_OBJECT,
             });
         });
 
@@ -25,19 +23,9 @@ describe("TableRow", () => {
             expect(tree).to.deep.equal({
                 "w:tr": [
                     {
-                        "w:trPr": [],
-                    },
-                    {
                         "w:tc": [
                             {
-                                "w:tcPr": [],
-                            },
-                            {
-                                "w:p": [
-                                    {
-                                        "w:pPr": [],
-                                    },
-                                ],
+                                "w:p": EMPTY_OBJECT,
                             },
                         ],
                     },

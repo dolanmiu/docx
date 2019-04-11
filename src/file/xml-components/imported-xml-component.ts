@@ -1,6 +1,6 @@
 // tslint:disable:no-any
 import { Element as XmlElement, xml2js } from "xml-js";
-import { IXmlableObject, XmlComponent } from ".";
+import { IXmlableObject, XmlAttributeComponent, XmlComponent } from ".";
 
 /**
  * Converts the given xml element (in json format) into XmlComponent.
@@ -27,6 +27,10 @@ export function convertToXmlComponent(element: XmlElement): ImportedXmlComponent
     }
 }
 
+class ImportedXmlComponentAttributes extends XmlAttributeComponent<any> {
+    // noop
+}
+
 /**
  * Represents imported xml component from xml file.
  */
@@ -47,55 +51,11 @@ export class ImportedXmlComponent extends XmlComponent {
      */
 
     // tslint:disable-next-line:variable-name
-    private readonly _attr: any;
-
-    // tslint:disable-next-line:variable-name
     constructor(rootKey: string, _attr?: any) {
         super(rootKey);
         if (_attr) {
-            this._attr = _attr;
+            this.root.push(new ImportedXmlComponentAttributes(_attr));
         }
-    }
-
-    /**
-     * Transforms the object so it can be converted to xml. Example:
-     * <w:someKey someAttr="1" otherAttr="11">
-     *    <w:child childAttr="2">
-     *    </w:child>
-     * </w:someKey>
-     * {
-     *   'w:someKey': [
-     *      {
-     *          _attr: {
-     *              someAttr: "1",
-     *              otherAttr: "11"
-     *          }
-     *      },
-     *      {
-     *          'w:child': [
-     *              {
-     *                  _attr: {
-     *                      childAttr: "2"
-     *                  }
-     *              }
-     *           ]
-     *      }
-     *    ]
-     * }
-     */
-    public prepForXml(): IXmlableObject | undefined {
-        const result = super.prepForXml();
-        if (!result) {
-            return undefined;
-        }
-
-        if (!!this._attr) {
-            if (!Array.isArray(result[this.rootKey])) {
-                result[this.rootKey] = [result[this.rootKey]];
-            }
-            result[this.rootKey].unshift({ _attr: this._attr });
-        }
-        return result;
     }
 
     public push(xmlComponent: XmlComponent | string): void {

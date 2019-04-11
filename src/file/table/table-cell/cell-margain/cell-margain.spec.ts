@@ -10,14 +10,12 @@ describe("TopCellMargain", () => {
             const cellMargain = new TopCellMargain(1);
             const tree = new Formatter().format(cellMargain);
             expect(tree).to.deep.equal({
-                "w:top": [
-                    {
-                        _attr: {
-                            "w:type": "dxa",
-                            "w:w": 1,
-                        },
+                "w:top": {
+                    _attr: {
+                        "w:type": "dxa",
+                        "w:w": 1,
                     },
-                ],
+                },
             });
         });
     });
@@ -29,14 +27,12 @@ describe("BottomCellMargain", () => {
             const cellMargain = new BottomCellMargain(1);
             const tree = new Formatter().format(cellMargain);
             expect(tree).to.deep.equal({
-                "w:bottom": [
-                    {
-                        _attr: {
-                            "w:type": "dxa",
-                            "w:w": 1,
-                        },
+                "w:bottom": {
+                    _attr: {
+                        "w:type": "dxa",
+                        "w:w": 1,
                     },
-                ],
+                },
             });
         });
     });
@@ -48,14 +44,12 @@ describe("LeftCellMargain", () => {
             const cellMargain = new LeftCellMargain(1);
             const tree = new Formatter().format(cellMargain);
             expect(tree).to.deep.equal({
-                "w:start": [
-                    {
-                        _attr: {
-                            "w:type": "dxa",
-                            "w:w": 1,
-                        },
+                "w:start": {
+                    _attr: {
+                        "w:type": "dxa",
+                        "w:w": 1,
                     },
-                ],
+                },
             });
         });
     });
@@ -67,14 +61,12 @@ describe("RightCellMargain", () => {
             const cellMargain = new RightCellMargain(1);
             const tree = new Formatter().format(cellMargain);
             expect(tree).to.deep.equal({
-                "w:end": [
-                    {
-                        _attr: {
-                            "w:type": "dxa",
-                            "w:w": 1,
-                        },
+                "w:end": {
+                    _attr: {
+                        "w:type": "dxa",
+                        "w:w": 1,
                     },
-                ],
+                },
             });
         });
     });

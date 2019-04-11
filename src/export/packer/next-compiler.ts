@@ -191,13 +191,4 @@ export class Compiler {
             },
         };
     }
-
-    /* By default docx collapse empty tags. <a></a> -> <a/>. this function mimic it
-       so comparing (diff) original docx file and the library output is easier
-       Currently not used, so commenting out */
-    // private collapseEmptyTags(xmlData: string): string {
-    //     const regEx = /<(([^ <>]+)[^<>]*)><\/\2>/g;
-    //     const collapsed = xmlData.replace(regEx, "<$1/>");
-    //     return collapsed;
-    // }
 }

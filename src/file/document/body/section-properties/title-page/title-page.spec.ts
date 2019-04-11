@@ -11,8 +11,7 @@ describe("PageSize", () => {
             const tree = new Formatter().format(properties);
 
             expect(Object.keys(tree)).to.deep.equal(["w:titlePg"]);
-            expect(tree["w:titlePg"]).to.be.an.instanceof(Array);
-            expect(tree["w:titlePg"][0]).to.deep.equal({ _attr: { "w:val": "1" } });
+            expect(tree["w:titlePg"]).to.deep.equal({ _attr: { "w:val": "1" } });
         });
     });
 });

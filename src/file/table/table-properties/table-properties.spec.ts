@@ -9,8 +9,11 @@ describe("TableProperties", () => {
     describe("#constructor", () => {
         it("creates an initially empty property object", () => {
             const tp = new TableProperties();
-            const tree = new Formatter().format(tp);
-            expect(tree).to.deep.equal({ "w:tblPr": [] });
+            // The TableProperties is ignorable if there are no attributes,
+            // which results in prepForXml returning undefined, which causes
+            // the formatter to throw an error if that is the only object it
+            // has been asked to format.
+            expect(() => new Formatter().format(tp)).to.throw("XMLComponent did not format correctly");
         });
     });
 
@@ -19,7 +22,7 @@ describe("TableProperties", () => {
             const tp = new TableProperties().setWidth(1234, WidthType.DXA);
             const tree = new Formatter().format(tp);
             expect(tree).to.deep.equal({
-                "w:tblPr": [{ "w:tblW": [{ _attr: { "w:type": "dxa", "w:w": 1234 } }] }],
+                "w:tblPr": [{ "w:tblW": { _attr: { "w:type": "dxa", "w:w": 1234 } } }],
             });
         });
 
@@ -27,7 +30,7 @@ describe("TableProperties", () => {
             const tp = new TableProperties().setWidth(1234);
             const tree = new Formatter().format(tp);
             expect(tree).to.deep.equal({
-                "w:tblPr": [{ "w:tblW": [{ _attr: { "w:type": "auto", "w:w": 1234 } }] }],
+                "w:tblPr": [{ "w:tblW": { _attr: { "w:type": "auto", "w:w": 1234 } } }],
             });
         });
     });
@@ -37,7 +40,7 @@ describe("TableProperties", () => {
             const tp = new TableProperties().setFixedWidthLayout();
             const tree = new Formatter().format(tp);
             expect(tree).to.deep.equal({
-                "w:tblPr": [{ "w:tblLayout": [{ _attr: { "w:type": "fixed" } }] }],
+                "w:tblPr": [{ "w:tblLayout": { _attr: { "w:type": "fixed" } } }],
             });
         });
     });
@@ -48,7 +51,7 @@ describe("TableProperties", () => {
             tp.CellMargin.addTopMargin(1234, WidthType.DXA);
             const tree = new Formatter().format(tp);
             expect(tree).to.deep.equal({
-                "w:tblPr": [{ "w:tblCellMar": [{ "w:top": [{ _attr: { "w:type": "dxa", "w:w": 1234 } }] }] }],
+                "w:tblPr": [{ "w:tblCellMar": [{ "w:top": { _attr: { "w:type": "dxa", "w:w": 1234 } } }] }],
             });
         });
 
@@ -57,7 +60,7 @@ describe("TableProperties", () => {
             tp.CellMargin.addLeftMargin(1234, WidthType.DXA);
             const tree = new Formatter().format(tp);
             expect(tree).to.deep.equal({
-                "w:tblPr": [{ "w:tblCellMar": [{ "w:left": [{ _attr: { "w:type": "dxa", "w:w": 1234 } }] }] }],
+                "w:tblPr": [{ "w:tblCellMar": [{ "w:left": { _attr: { "w:type": "dxa", "w:w": 1234 } } }] }],
             });
         });
     });

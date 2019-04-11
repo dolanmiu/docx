@@ -41,7 +41,7 @@ describe("Run", () => {
             run.underline();
             const tree = new Formatter().format(run);
             expect(tree).to.deep.equal({
-                "w:r": [{ "w:rPr": [{ "w:u": [{ _attr: { "w:val": "single" } }] }] }],
+                "w:r": [{ "w:rPr": [{ "w:u": { _attr: { "w:val": "single" } } }] }],
             });
         });
 
@@ -49,7 +49,7 @@ describe("Run", () => {
             run.underline("double", "990011");
             const tree = new Formatter().format(run);
             expect(tree).to.deep.equal({
-                "w:r": [{ "w:rPr": [{ "w:u": [{ _attr: { "w:val": "double", "w:color": "990011" } }] }] }],
+                "w:r": [{ "w:rPr": [{ "w:u": { _attr: { "w:val": "double", "w:color": "990011" } } }] }],
             });
         });
     });
@@ -114,7 +114,7 @@ describe("Run", () => {
                 "w:r": [
                     {
                         "w:rPr": [
-                            { "w:rFonts": [{ _attr: { "w:ascii": "Times", "w:cs": "Times", "w:eastAsia": "Times", "w:hAnsi": "Times" } }] },
+                            { "w:rFonts": { _attr: { "w:ascii": "Times", "w:cs": "Times", "w:eastAsia": "Times", "w:hAnsi": "Times" } } },
                         ],
                     },
                 ],
@@ -127,7 +127,7 @@ describe("Run", () => {
             run.color("001122");
             const tree = new Formatter().format(run);
             expect(tree).to.deep.equal({
-                "w:r": [{ "w:rPr": [{ "w:color": [{ _attr: { "w:val": "001122" } }] }] }],
+                "w:r": [{ "w:rPr": [{ "w:color": { _attr: { "w:val": "001122" } } }] }],
             });
         });
     });
@@ -139,7 +139,7 @@ describe("Run", () => {
             expect(tree).to.deep.equal({
                 "w:r": [
                     {
-                        "w:rPr": [{ "w:sz": [{ _attr: { "w:val": 24 } }] }, { "w:szCs": [{ _attr: { "w:val": 24 } }] }],
+                        "w:rPr": [{ "w:sz": { _attr: { "w:val": 24 } } }, { "w:szCs": { _attr: { "w:val": 24 } } }],
                     },
                 ],
             });
@@ -151,7 +151,7 @@ describe("Run", () => {
             run.rightToLeft();
             const tree = new Formatter().format(run);
             expect(tree).to.deep.equal({
-                "w:r": [{ "w:rPr": [{ "w:rtl": [{ _attr: { "w:val": true } }] }] }],
+                "w:r": [{ "w:rPr": [{ "w:rtl": { _attr: { "w:val": true } } }] }],
             });
         });
     });
@@ -162,11 +162,10 @@ describe("Run", () => {
             const tree = new Formatter().format(run);
             expect(tree).to.deep.equal({
                 "w:r": [
-                    { "w:rPr": [] },
-                    { "w:fldChar": [{ _attr: { "w:fldCharType": "begin" } }] },
+                    { "w:fldChar": { _attr: { "w:fldCharType": "begin" } } },
                     { "w:instrText": [{ _attr: { "xml:space": "preserve" } }, "NUMPAGES"] },
-                    { "w:fldChar": [{ _attr: { "w:fldCharType": "separate" } }] },
-                    { "w:fldChar": [{ _attr: { "w:fldCharType": "end" } }] },
+                    { "w:fldChar": { _attr: { "w:fldCharType": "separate" } } },
+                    { "w:fldChar": { _attr: { "w:fldCharType": "end" } } },
                 ],
             });
         });
@@ -178,11 +177,10 @@ describe("Run", () => {
             const tree = new Formatter().format(run);
             expect(tree).to.deep.equal({
                 "w:r": [
-                    { "w:rPr": [] },
-                    { "w:fldChar": [{ _attr: { "w:fldCharType": "begin" } }] },
+                    { "w:fldChar": { _attr: { "w:fldCharType": "begin" } } },
                     { "w:instrText": [{ _attr: { "xml:space": "preserve" } }, "PAGE"] },
-                    { "w:fldChar": [{ _attr: { "w:fldCharType": "separate" } }] },
-                    { "w:fldChar": [{ _attr: { "w:fldCharType": "end" } }] },
+                    { "w:fldChar": { _attr: { "w:fldCharType": "separate" } } },
+                    { "w:fldChar": { _attr: { "w:fldCharType": "end" } } },
                 ],
             });
         });
@@ -193,7 +191,7 @@ describe("Run", () => {
             run.style("myRunStyle");
             const tree = new Formatter().format(run);
             expect(tree).to.deep.equal({
-                "w:r": [{ "w:rPr": [{ "w:rStyle": [{ _attr: { "w:val": "myRunStyle" } }] }] }],
+                "w:r": [{ "w:rPr": [{ "w:rStyle": { _attr: { "w:val": "myRunStyle" } } }] }],
             });
         });
     });

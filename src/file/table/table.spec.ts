@@ -8,71 +8,63 @@ import { Table } from "./table";
 // import { WidthType } from "./table-cell";
 import { RelativeHorizontalPosition, RelativeVerticalPosition, TableAnchorType } from "./table-properties";
 
+import { EMPTY_OBJECT } from "file/xml-components";
+
 const DEFAULT_TABLE_PROPERTIES = {
     "w:tblCellMar": [
         {
-            "w:bottom": [
-                {
-                    _attr: {
-                        "w:type": "auto",
-                        "w:w": 0,
-                    },
+            "w:bottom": {
+                _attr: {
+                    "w:type": "auto",
+                    "w:w": 0,
                 },
-            ],
+            },
         },
         {
-            "w:top": [
-                {
-                    _attr: {
-                        "w:type": "auto",
-                        "w:w": 0,
-                    },
+            "w:top": {
+                _attr: {
+                    "w:type": "auto",
+                    "w:w": 0,
                 },
-            ],
+            },
         },
         {
-            "w:left": [
-                {
-                    _attr: {
-                        "w:type": "auto",
-                        "w:w": 0,
-                    },
+            "w:left": {
+                _attr: {
+                    "w:type": "auto",
+                    "w:w": 0,
                 },
-            ],
+            },
         },
         {
-            "w:right": [
-                {
-                    _attr: {
-                        "w:type": "auto",
-                        "w:w": 0,
-                    },
+            "w:right": {
+                _attr: {
+                    "w:type": "auto",
+                    "w:w": 0,
                 },
-            ],
+            },
         },
     ],
 };
 
 const BORDERS = {
     "w:tblBorders": [
-        { "w:top": [{ _attr: { "w:val": "single", "w:sz": 4, "w:space": 0, "w:color": "auto" } }] },
-        { "w:left": [{ _attr: { "w:val": "single", "w:sz": 4, "w:space": 0, "w:color": "auto" } }] },
-        { "w:bottom": [{ _attr: { "w:val": "single", "w:sz": 4, "w:space": 0, "w:color": "auto" } }] },
-        { "w:right": [{ _attr: { "w:val": "single", "w:sz": 4, "w:space": 0, "w:color": "auto" } }] },
-        { "w:insideH": [{ _attr: { "w:val": "single", "w:sz": 4, "w:space": 0, "w:color": "auto" } }] },
-        { "w:insideV": [{ _attr: { "w:val": "single", "w:sz": 4, "w:space": 0, "w:color": "auto" } }] },
+        { "w:top": { _attr: { "w:val": "single", "w:sz": 4, "w:space": 0, "w:color": "auto" } } },
+        { "w:left": { _attr: { "w:val": "single", "w:sz": 4, "w:space": 0, "w:color": "auto" } } },
+        { "w:bottom": { _attr: { "w:val": "single", "w:sz": 4, "w:space": 0, "w:color": "auto" } } },
+        { "w:right": { _attr: { "w:val": "single", "w:sz": 4, "w:space": 0, "w:color": "auto" } } },
+        { "w:insideH": { _attr: { "w:val": "single", "w:sz": 4, "w:space": 0, "w:color": "auto" } } },
+        { "w:insideV": { _attr: { "w:val": "single", "w:sz": 4, "w:space": 0, "w:color": "auto" } } },
     ],
 };
 
 const WIDTHS = {
-    "w:tblW": [
-        {
-            _attr: {
-                "w:type": "auto",
-                "w:w": 100,
-            },
+    "w:tblW": {
+        _attr: {
+            "w:type": "auto",
+            "w:w": 100,
         },
-    ],
+    },
 };
 
 // const f = {
@@ -81,45 +73,43 @@ const WIDTHS = {
 //             "w:tblPr": [
 //                 {
 //                     "w:tblCellMar": [
-//                         { "w:bottom": [{ _attr: { "w:type": "auto", "w:w": 0 } }] },
-//                         { "w:top": [{ _attr: { "w:type": "auto", "w:w": 0 } }] },
-//                         { "w:left": [{ _attr: { "w:type": "auto", "w:w": 0 } }] },
-//                         { "w:right": [{ _attr: { "w:type": "auto", "w:w": 0 } }] },
+//                         { "w:bottom": { _attr: { "w:type": "auto", "w:w": 0 } } },
+//                         { "w:top": { _attr: { "w:type": "auto", "w:w": 0 } } },
+//                         { "w:left": { _attr: { "w:type": "auto", "w:w": 0 } } },
+//                         { "w:right": { _attr: { "w:type": "auto", "w:w": 0 } } },
 //                     ],
 //                 },
 //                 {
 //                     "w:tblBorders": [
-//                         { "w:top": [{ _attr: { "w:val": "single", "w:sz": 4, "w:space": 0, "w:color": "auto" } }] },
-//                         { "w:left": [{ _attr: { "w:val": "single", "w:sz": 4, "w:space": 0, "w:color": "auto" } }] },
-//                         { "w:bottom": [{ _attr: { "w:val": "single", "w:sz": 4, "w:space": 0, "w:color": "auto" } }] },
-//                         { "w:right": [{ _attr: { "w:val": "single", "w:sz": 4, "w:space": 0, "w:color": "auto" } }] },
-//                         { "w:insideH": [{ _attr: { "w:val": "single", "w:sz": 4, "w:space": 0, "w:color": "auto" } }] },
-//                         { "w:insideV": [{ _attr: { "w:val": "single", "w:sz": 4, "w:space": 0, "w:color": "auto" } }] },
+//                         { "w:top": { _attr: { "w:val": "single", "w:sz": 4, "w:space": 0, "w:color": "auto" } } },
+//                         { "w:left": { _attr: { "w:val": "single", "w:sz": 4, "w:space": 0, "w:color": "auto" } } },
+//                         { "w:bottom": { _attr: { "w:val": "single", "w:sz": 4, "w:space": 0, "w:color": "auto" } } },
+//                         { "w:right": { _attr: { "w:val": "single", "w:sz": 4, "w:space": 0, "w:color": "auto" } } },
+//                         { "w:insideH": { _attr: { "w:val": "single", "w:sz": 4, "w:space": 0, "w:color": "auto" } } },
+//                         { "w:insideV": { _attr: { "w:val": "single", "w:sz": 4, "w:space": 0, "w:color": "auto" } } },
 //                     ],
 //                 },
-//                 { "w:tblW": [{ _attr: { "w:type": "auto", "w:w": 100 } }] },
+//                 { "w:tblW": { _attr: { "w:type": "auto", "w:w": 100 } } },
 //                 {
-//                     "w:tblpPr": [
-//                         {
-//                             _attr: {
-//                                 "w:horzAnchor": "margin",
-//                                 "w:vertAnchor": "page",
-//                                 "w:tblpX": 10,
-//                                 "w:tblpXSpec": "center",
-//                                 "w:tblpY": 20,
-//                                 "w:tblpYSpec": "bottom",
-//                                 "w:bottomFromText": 30,
-//                                 "w:topFromText": 40,
-//                                 "w:leftFromText": 50,
-//                                 "w:rightFromText": 60,
-//                             },
+//                     "w:tblpPr": {
+//                         _attr: {
+//                             "w:horzAnchor": "margin",
+//                             "w:vertAnchor": "page",
+//                             "w:tblpX": 10,
+//                             "w:tblpXSpec": "center",
+//                             "w:tblpY": 20,
+//                             "w:tblpYSpec": "bottom",
+//                             "w:bottomFromText": 30,
+//                             "w:topFromText": 40,
+//                             "w:leftFromText": 50,
+//                             "w:rightFromText": 60,
 //                         },
-//                     ],
+//                     },
 //                 },
 //             ],
 //         },
-//         { "w:tblGrid": [{ "w:gridCol": [{ _attr: { "w:w": 100 } }] }] },
-//         { "w:tr": [{ "w:trPr": [] }, { "w:tc": [{ "w:tcPr": [] }, { "w:p": [{ "w:pPr": [] }] }] }] },
+//         { "w:tblGrid": [{ "w:gridCol": { _attr: { "w:w": 100 } } }] },
+//         { "w:tr": [{ "w:tc": [{ "w:p": EMPTY_OBJECT }] }] },
 //     ],
 // };
 
@@ -131,16 +121,16 @@ describe("Table", () => {
                 columns: 2,
             });
             const tree = new Formatter().format(table);
-            const cell = { "w:tc": [{ "w:tcPr": [] }, { "w:p": [{ "w:pPr": [] }] }] };
+            const cell = { "w:tc": [{ "w:p": EMPTY_OBJECT }] };
             expect(tree).to.deep.equal({
                 "w:tbl": [
                     { "w:tblPr": [DEFAULT_TABLE_PROPERTIES, BORDERS, WIDTHS] },
                     {
-                        "w:tblGrid": [{ "w:gridCol": [{ _attr: { "w:w": 100 } }] }, { "w:gridCol": [{ _attr: { "w:w": 100 } }] }],
+                        "w:tblGrid": [{ "w:gridCol": { _attr: { "w:w": 100 } } }, { "w:gridCol": { _attr: { "w:w": 100 } } }],
                     },
-                    { "w:tr": [{ "w:trPr": [] }, cell, cell] },
-                    { "w:tr": [{ "w:trPr": [] }, cell, cell] },
-                    { "w:tr": [{ "w:trPr": [] }, cell, cell] },
+                    { "w:tr": [cell, cell] },
+                    { "w:tr": [cell, cell] },
+                    { "w:tr": [cell, cell] },
                 ],
             });
         });
@@ -172,9 +162,8 @@ describe("Table", () => {
             const tree = new Formatter().format(table);
             const cell = (c) => ({
                 "w:tc": [
-                    { "w:tcPr": [] },
                     {
-                        "w:p": [{ "w:pPr": [] }, { "w:r": [{ "w:rPr": [] }, { "w:t": [{ _attr: { "xml:space": "preserve" } }, c] }] }],
+                        "w:p": [{ "w:r": [{ "w:t": [{ _attr: { "xml:space": "preserve" } }, c] }] }],
                     },
                 ],
             });
@@ -182,10 +171,10 @@ describe("Table", () => {
                 "w:tbl": [
                     { "w:tblPr": [DEFAULT_TABLE_PROPERTIES, BORDERS, WIDTHS] },
                     {
-                        "w:tblGrid": [{ "w:gridCol": [{ _attr: { "w:w": 100 } }] }, { "w:gridCol": [{ _attr: { "w:w": 100 } }] }],
+                        "w:tblGrid": [{ "w:gridCol": { _attr: { "w:w": 100 } } }, { "w:gridCol": { _attr: { "w:w": 100 } } }],
                     },
-                    { "w:tr": [{ "w:trPr": [] }, cell("A1"), cell("B1")] },
-                    { "w:tr": [{ "w:trPr": [] }, cell("A2"), cell("B2")] },
+                    { "w:tr": [cell("A1"), cell("B1")] },
+                    { "w:tr": [cell("A2"), cell("B2")] },
                 ],
             });
         });
@@ -222,9 +211,8 @@ describe("Table", () => {
             const tree = new Formatter().format(table);
             const cell = (c) => ({
                 "w:tc": [
-                    { "w:tcPr": [] },
                     {
-                        "w:p": [{ "w:pPr": [] }, { "w:r": [{ "w:rPr": [] }, { "w:t": [{ _attr: { "xml:space": "preserve" } }, c] }] }],
+                        "w:p": [{ "w:r": [{ "w:t": [{ _attr: { "xml:space": "preserve" } }, c] }] }],
                     },
                 ],
             });
@@ -232,10 +220,10 @@ describe("Table", () => {
                 "w:tbl": [
                     { "w:tblPr": [DEFAULT_TABLE_PROPERTIES, BORDERS, WIDTHS] },
                     {
-                        "w:tblGrid": [{ "w:gridCol": [{ _attr: { "w:w": 100 } }] }, { "w:gridCol": [{ _attr: { "w:w": 100 } }] }],
+                        "w:tblGrid": [{ "w:gridCol": { _attr: { "w:w": 100 } } }, { "w:gridCol": { _attr: { "w:w": 100 } } }],
                     },
-                    { "w:tr": [{ "w:trPr": [] }, cell("A1"), cell("B1")] },
-                    { "w:tr": [{ "w:trPr": [] }, cell("A2"), cell("B2")] },
+                    { "w:tr": [cell("A1"), cell("B1")] },
+                    { "w:tr": [cell("A2"), cell("B2")] },
                 ],
             });
         });
@@ -250,7 +238,7 @@ describe("Table", () => {
     //             .which.is.an("array")
     //             .with.has.length.at.least(1);
     //         expect(tree["w:tbl"][0]).to.deep.equal({
-    //             "w:tblPr": [DEFAULT_TABLE_PROPERTIES, { "w:tblW": [{ _attr: { "w:type": "pct", "w:w": "1000%" } }] }],
+    //             "w:tblPr": [DEFAULT_TABLE_PROPERTIES, { "w:tblW": { _attr: { "w:type": "pct", "w:w": "1000%" } } }],
     //         });
     //     });
 
@@ -259,7 +247,7 @@ describe("Table", () => {
     //         const tree = new Formatter().format(table);
 
     //         expect(tree["w:tbl"][0]).to.deep.equal({
-    //             "w:tblPr": [DEFAULT_TABLE_PROPERTIES, { "w:tblW": [{ _attr: { "w:type": "auto", "w:w": 1000 } }] }],
+    //             "w:tblPr": [DEFAULT_TABLE_PROPERTIES, { "w:tblW": { _attr: { "w:type": "auto", "w:w": 1000 } } }],
     //         });
     //     });
     // });
@@ -276,7 +264,7 @@ describe("Table", () => {
                 .which.is.an("array")
                 .with.has.length.at.least(1);
             expect(tree["w:tbl"][0]).to.deep.equal({
-                "w:tblPr": [DEFAULT_TABLE_PROPERTIES, BORDERS, WIDTHS, { "w:tblLayout": [{ _attr: { "w:type": "fixed" } }] }],
+                "w:tblPr": [DEFAULT_TABLE_PROPERTIES, BORDERS, WIDTHS, { "w:tblLayout": { _attr: { "w:type": "fixed" } } }],
             });
         });
     });
@@ -298,7 +286,7 @@ describe("Table", () => {
                     .to.be.an("array")
                     .which.has.length.at.least(1);
                 expect(row["w:tr"].find((x) => x["w:tc"])).to.deep.equal({
-                    "w:tc": [{ "w:tcPr": [] }, { "w:p": [{ "w:pPr": [] }] }],
+                    "w:tc": [{ "w:p": EMPTY_OBJECT }],
                 });
             });
 
@@ -325,7 +313,7 @@ describe("Table", () => {
                 const cell = row["w:tr"].find((x) => x["w:tc"]);
                 expect(cell).not.to.be.undefined;
                 expect(cell["w:tc"][cell["w:tc"].length - 1]).to.deep.equal({
-                    "w:p": [{ "w:pPr": [] }],
+                    "w:p": EMPTY_OBJECT,
                 });
             });
 
@@ -346,12 +334,8 @@ describe("Table", () => {
                     .which.has.length.at.least(1);
                 expect(row["w:tr"].find((x) => x["w:tc"])).to.deep.equal({
                     "w:tc": [
-                        { "w:tcPr": [] },
                         {
-                            "w:p": [
-                                { "w:pPr": [] },
-                                { "w:r": [{ "w:rPr": [] }, { "w:t": [{ _attr: { "xml:space": "preserve" } }, "Hello"] }] },
-                            ],
+                            "w:p": [{ "w:r": [{ "w:t": [{ _attr: { "xml:space": "preserve" } }, "Hello"] }] }],
                         },
                     ],
                 });
@@ -377,12 +361,10 @@ describe("Table", () => {
                     .which.has.length.at.least(1);
                 expect(row["w:tr"].find((x) => x["w:tc"])).to.deep.equal({
                     "w:tc": [
-                        { "w:tcPr": [] },
                         {
                             "w:p": [
-                                { "w:pPr": [] },
                                 {
-                                    "w:r": [{ "w:rPr": [] }, { "w:t": [{ _attr: { "xml:space": "preserve" } }, "Test paragraph"] }],
+                                    "w:r": [{ "w:t": [{ _attr: { "xml:space": "preserve" } }, "Test paragraph"] }],
                                 },
                             ],
                         },
@@ -421,22 +403,20 @@ describe("Table", () => {
                     BORDERS,
                     WIDTHS,
                     {
-                        "w:tblpPr": [
-                            {
-                                _attr: {
-                                    "w:horzAnchor": "margin",
-                                    "w:vertAnchor": "page",
-                                    "w:tblpX": 10,
-                                    "w:tblpXSpec": "center",
-                                    "w:tblpY": 20,
-                                    "w:tblpYSpec": "bottom",
-                                    "w:bottomFromText": 30,
-                                    "w:topFromText": 40,
-                                    "w:leftFromText": 50,
-                                    "w:rightFromText": 60,
-                                },
+                        "w:tblpPr": {
+                            _attr: {
+                                "w:horzAnchor": "margin",
+                                "w:vertAnchor": "page",
+                                "w:tblpX": 10,
+                                "w:tblpXSpec": "center",
+                                "w:tblpY": 20,
+                                "w:tblpYSpec": "bottom",
+                                "w:bottomFromText": 30,
+                                "w:topFromText": 40,
+                                "w:leftFromText": 50,
+                                "w:rightFromText": 60,
                             },
-                        ],
+                        },
                     },
                 ],
             });

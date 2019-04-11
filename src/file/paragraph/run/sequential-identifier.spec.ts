@@ -17,17 +17,12 @@ describe("Sequential Identifier", () => {
 const DEFAULT_SEQ = {
     "w:r": [
         {
-            "w:rPr": [],
-        },
-        {
-            "w:fldChar": [
-                {
-                    _attr: {
-                        "w:fldCharType": "begin",
-                        "w:dirty": true,
-                    },
+            "w:fldChar": {
+                _attr: {
+                    "w:fldCharType": "begin",
+                    "w:dirty": true,
                 },
-            ],
+            },
         },
         {
             "w:instrText": [
@@ -40,22 +35,18 @@ const DEFAULT_SEQ = {
             ],
         },
         {
-            "w:fldChar": [
-                {
-                    _attr: {
-                        "w:fldCharType": "separate",
-                    },
+            "w:fldChar": {
+                _attr: {
+                    "w:fldCharType": "separate",
                 },
-            ],
+            },
         },
         {
-            "w:fldChar": [
-                {
-                    _attr: {
-                        "w:fldCharType": "end",
-                    },
+            "w:fldChar": {
+                _attr: {
+                    "w:fldCharType": "end",
                 },
-            ],
+            },
         },
     ],
 };

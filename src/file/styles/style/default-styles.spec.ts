@@ -2,6 +2,8 @@ import { expect } from "chai";
 import { Formatter } from "export/formatter";
 import * as defaultStyels from "./default-styles";
 
+import { EMPTY_OBJECT } from "file/xml-components";
+
 describe("Default Styles", () => {
     it("HeadingStyle#constructor", () => {
         const style = new defaultStyels.HeadingStyle("Heading1", "Heading 1");
@@ -9,12 +11,10 @@ describe("Default Styles", () => {
         expect(tree).to.deep.equal({
             "w:style": [
                 { _attr: { "w:type": "paragraph", "w:styleId": "Heading1" } },
-                { "w:name": [{ _attr: { "w:val": "Heading 1" } }] },
-                { "w:pPr": [] },
-                { "w:rPr": [] },
-                { "w:basedOn": [{ _attr: { "w:val": "Normal" } }] },
-                { "w:next": [{ _attr: { "w:val": "Normal" } }] },
-                { "w:qFormat": [] },
+                { "w:name": { _attr: { "w:val": "Heading 1" } } },
+                { "w:basedOn": { _attr: { "w:val": "Normal" } } },
+                { "w:next": { _attr: { "w:val": "Normal" } } },
+                { "w:qFormat": EMPTY_OBJECT },
             ],
         });
     });
@@ -25,12 +25,10 @@ describe("Default Styles", () => {
         expect(tree).to.deep.equal({
             "w:style": [
                 { _attr: { "w:type": "paragraph", "w:styleId": "Title" } },
-                { "w:name": [{ _attr: { "w:val": "Title" } }] },
-                { "w:pPr": [] },
-                { "w:rPr": [] },
-                { "w:basedOn": [{ _attr: { "w:val": "Normal" } }] },
-                { "w:next": [{ _attr: { "w:val": "Normal" } }] },
-                { "w:qFormat": [] },
+                { "w:name": { _attr: { "w:val": "Title" } } },
+                { "w:basedOn": { _attr: { "w:val": "Normal" } } },
+                { "w:next": { _attr: { "w:val": "Normal" } } },
+                { "w:qFormat": EMPTY_OBJECT },
             ],
         });
     });
@@ -41,12 +39,10 @@ describe("Default Styles", () => {
         expect(tree).to.deep.equal({
             "w:style": [
                 { _attr: { "w:type": "paragraph", "w:styleId": "Heading1" } },
-                { "w:name": [{ _attr: { "w:val": "Heading 1" } }] },
-                { "w:pPr": [] },
-                { "w:rPr": [] },
-                { "w:basedOn": [{ _attr: { "w:val": "Normal" } }] },
-                { "w:next": [{ _attr: { "w:val": "Normal" } }] },
-                { "w:qFormat": [] },
+                { "w:name": { _attr: { "w:val": "Heading 1" } } },
+                { "w:basedOn": { _attr: { "w:val": "Normal" } } },
+                { "w:next": { _attr: { "w:val": "Normal" } } },
+                { "w:qFormat": EMPTY_OBJECT },
             ],
         });
     });
@@ -57,12 +53,10 @@ describe("Default Styles", () => {
         expect(tree).to.deep.equal({
             "w:style": [
                 { _attr: { "w:type": "paragraph", "w:styleId": "Heading2" } },
-                { "w:name": [{ _attr: { "w:val": "Heading 2" } }] },
-                { "w:pPr": [] },
-                { "w:rPr": [] },
-                { "w:basedOn": [{ _attr: { "w:val": "Normal" } }] },
-                { "w:next": [{ _attr: { "w:val": "Normal" } }] },
-                { "w:qFormat": [] },
+                { "w:name": { _attr: { "w:val": "Heading 2" } } },
+                { "w:basedOn": { _attr: { "w:val": "Normal" } } },
+                { "w:next": { _attr: { "w:val": "Normal" } } },
+                { "w:qFormat": EMPTY_OBJECT },
             ],
         });
     });
@@ -73,12 +67,10 @@ describe("Default Styles", () => {
         expect(tree).to.deep.equal({
             "w:style": [
                 { _attr: { "w:type": "paragraph", "w:styleId": "Heading3" } },
-                { "w:name": [{ _attr: { "w:val": "Heading 3" } }] },
-                { "w:pPr": [] },
-                { "w:rPr": [] },
-                { "w:basedOn": [{ _attr: { "w:val": "Normal" } }] },
-                { "w:next": [{ _attr: { "w:val": "Normal" } }] },
-                { "w:qFormat": [] },
+                { "w:name": { _attr: { "w:val": "Heading 3" } } },
+                { "w:basedOn": { _attr: { "w:val": "Normal" } } },
+                { "w:next": { _attr: { "w:val": "Normal" } } },
+                { "w:qFormat": EMPTY_OBJECT },
             ],
         });
     });
@@ -89,12 +81,10 @@ describe("Default Styles", () => {
         expect(tree).to.deep.equal({
             "w:style": [
                 { _attr: { "w:type": "paragraph", "w:styleId": "Heading4" } },
-                { "w:name": [{ _attr: { "w:val": "Heading 4" } }] },
-                { "w:pPr": [] },
-                { "w:rPr": [] },
-                { "w:basedOn": [{ _attr: { "w:val": "Normal" } }] },
-                { "w:next": [{ _attr: { "w:val": "Normal" } }] },
-                { "w:qFormat": [] },
+                { "w:name": { _attr: { "w:val": "Heading 4" } } },
+                { "w:basedOn": { _attr: { "w:val": "Normal" } } },
+                { "w:next": { _attr: { "w:val": "Normal" } } },
+                { "w:qFormat": EMPTY_OBJECT },
             ],
         });
     });
@@ -105,12 +95,10 @@ describe("Default Styles", () => {
         expect(tree).to.deep.equal({
             "w:style": [
                 { _attr: { "w:type": "paragraph", "w:styleId": "Heading5" } },
-                { "w:name": [{ _attr: { "w:val": "Heading 5" } }] },
-                { "w:pPr": [] },
-                { "w:rPr": [] },
-                { "w:basedOn": [{ _attr: { "w:val": "Normal" } }] },
-                { "w:next": [{ _attr: { "w:val": "Normal" } }] },
-                { "w:qFormat": [] },
+                { "w:name": { _attr: { "w:val": "Heading 5" } } },
+                { "w:basedOn": { _attr: { "w:val": "Normal" } } },
+                { "w:next": { _attr: { "w:val": "Normal" } } },
+                { "w:qFormat": EMPTY_OBJECT },
             ],
         });
     });
@@ -121,12 +109,10 @@ describe("Default Styles", () => {
         expect(tree).to.deep.equal({
             "w:style": [
                 { _attr: { "w:type": "paragraph", "w:styleId": "Heading6" } },
-                { "w:name": [{ _attr: { "w:val": "Heading 6" } }] },
-                { "w:pPr": [] },
-                { "w:rPr": [] },
-                { "w:basedOn": [{ _attr: { "w:val": "Normal" } }] },
-                { "w:next": [{ _attr: { "w:val": "Normal" } }] },
-                { "w:qFormat": [] },
+                { "w:name": { _attr: { "w:val": "Heading 6" } } },
+                { "w:basedOn": { _attr: { "w:val": "Normal" } } },
+                { "w:next": { _attr: { "w:val": "Normal" } } },
+                { "w:qFormat": EMPTY_OBJECT },
             ],
         });
     });
@@ -137,11 +123,9 @@ describe("Default Styles", () => {
         expect(tree).to.deep.equal({
             "w:style": [
                 { _attr: { "w:type": "paragraph", "w:styleId": "ListParagraph" } },
-                { "w:name": [{ _attr: { "w:val": "List Paragraph" } }] },
-                { "w:pPr": [] },
-                { "w:rPr": [] },
-                { "w:basedOn": [{ _attr: { "w:val": "Normal" } }] },
-                { "w:qFormat": [] },
+                { "w:name": { _attr: { "w:val": "List Paragraph" } } },
+                { "w:basedOn": { _attr: { "w:val": "Normal" } } },
+                { "w:qFormat": EMPTY_OBJECT },
             ],
         });
     });
@@ -152,60 +136,52 @@ describe("Default Styles", () => {
         expect(tree).to.deep.equal({
             "w:style": [
                 { _attr: { "w:type": "paragraph", "w:styleId": "FootnoteText" } },
-                { "w:name": [{ _attr: { "w:val": "footnote text" } }] },
+                { "w:name": { _attr: { "w:val": "footnote text" } } },
                 {
                     "w:pPr": [
                         {
-                            "w:spacing": [
-                                {
-                                    _attr: {
-                                        "w:after": 0,
-                                        "w:line": 240,
-                                        "w:lineRule": "auto",
-                                    },
+                            "w:spacing": {
+                                _attr: {
+                                    "w:after": 0,
+                                    "w:line": 240,
+                                    "w:lineRule": "auto",
                                 },
-                            ],
+                            },
                         },
                     ],
                 },
                 {
                     "w:rPr": [
                         {
-                            "w:sz": [
-                                {
-                                    _attr: {
-                                        "w:val": 20,
-                                    },
+                            "w:sz": {
+                                _attr: {
+                                    "w:val": 20,
                                 },
-                            ],
+                            },
                         },
                         {
-                            "w:szCs": [
-                                {
-                                    _attr: {
-                                        "w:val": 20,
-                                    },
+                            "w:szCs": {
+                                _attr: {
+                                    "w:val": 20,
                                 },
-                            ],
-                        },
-                    ],
-                },
-                { "w:basedOn": [{ _attr: { "w:val": "Normal" } }] },
-                { "w:link": [{ _attr: { "w:val": "FootnoteTextChar" } }] },
-                {
-                    "w:uiPriority": [
-                        {
-                            _attr: {
-                                "w:val": "99",
                             },
                         },
                     ],
                 },
+                { "w:basedOn": { _attr: { "w:val": "Normal" } } },
+                { "w:link": { _attr: { "w:val": "FootnoteTextChar" } } },
                 {
-                    "w:semiHidden": [],
+                    "w:uiPriority": {
+                        _attr: {
+                            "w:val": "99",
+                        },
+                    },
                 },
                 {
-                    "w:unhideWhenUsed": [],
+                    "w:semiHidden": EMPTY_OBJECT,
+                },
+                {
+                    "w:unhideWhenUsed": EMPTY_OBJECT,
                 },
             ],
         });
@@ -217,36 +193,32 @@ describe("Default Styles", () => {
         expect(tree).to.deep.equal({
             "w:style": [
                 { _attr: { "w:type": "character", "w:styleId": "FootnoteReference" } },
-                { "w:name": [{ _attr: { "w:val": "footnote reference" } }] },
+                { "w:name": { _attr: { "w:val": "footnote reference" } } },
                 {
                     "w:rPr": [
                         {
-                            "w:vertAlign": [
-                                {
-                                    _attr: {
-                                        "w:val": "superscript",
-                                    },
+                            "w:vertAlign": {
+                                _attr: {
+                                    "w:val": "superscript",
                                 },
-                            ],
-                        },
-                    ],
-                },
-                {
-                    "w:uiPriority": [
-                        {
-                            _attr: {
-                                "w:val": "99",
                             },
                         },
                     ],
                 },
                 {
-                    "w:unhideWhenUsed": [],
+                    "w:uiPriority": {
+                        _attr: {
+                            "w:val": "99",
+                        },
+                    },
                 },
-                { "w:basedOn": [{ _attr: { "w:val": "DefaultParagraphFont" } }] },
+                {
+                    "w:unhideWhenUsed": EMPTY_OBJECT,
+                },
+                { "w:basedOn": { _attr: { "w:val": "DefaultParagraphFont" } } },
 
                 {
-                    "w:semiHidden": [],
+                    "w:semiHidden": EMPTY_OBJECT,
                 },
             ],
         });
@@ -258,45 +230,39 @@ describe("Default Styles", () => {
         expect(tree).to.deep.equal({
             "w:style": [
                 { _attr: { "w:type": "character", "w:styleId": "FootnoteTextChar" } },
-                { "w:name": [{ _attr: { "w:val": "Footnote Text Char" } }] },
+                { "w:name": { _attr: { "w:val": "Footnote Text Char" } } },
                 {
                     "w:rPr": [
                         {
-                            "w:sz": [
-                                {
-                                    _attr: {
-                                        "w:val": 20,
-                                    },
+                            "w:sz": {
+                                _attr: {
+                                    "w:val": 20,
                                 },
-                            ],
+                            },
                         },
                         {
-                            "w:szCs": [
-                                {
-                                    _attr: {
-                                        "w:val": 20,
-                                    },
+                            "w:szCs": {
+                                _attr: {
+                                    "w:val": 20,
                                 },
-                            ],
-                        },
-                    ],
-                },
-                {
-                    "w:uiPriority": [
-                        {
-                            _attr: {
-                                "w:val": "99",
                             },
                         },
                     ],
                 },
                 {
-                    "w:unhideWhenUsed": [],
+                    "w:uiPriority": {
+                        _attr: {
+                            "w:val": "99",
+                        },
+                    },
                 },
-                { "w:basedOn": [{ _attr: { "w:val": "DefaultParagraphFont" } }] },
-                { "w:link": [{ _attr: { "w:val": "FootnoteText" } }] },
                 {
-                    "w:semiHidden": [],
+                    "w:unhideWhenUsed": EMPTY_OBJECT,
+                },
+                { "w:basedOn": { _attr: { "w:val": "DefaultParagraphFont" } } },
+                { "w:link": { _attr: { "w:val": "FootnoteText" } } },
+                {
+                    "w:semiHidden": EMPTY_OBJECT,
                 },
             ],
         });
@@ -308,23 +274,21 @@ describe("Default Styles", () => {
         expect(tree).to.deep.equal({
             "w:style": [
                 { _attr: { "w:type": "character", "w:styleId": "Hyperlink" } },
-                { "w:name": [{ _attr: { "w:val": "Hyperlink" } }] },
+                { "w:name": { _attr: { "w:val": "Hyperlink" } } },
                 {
-                    "w:rPr": [{ "w:color": [{ _attr: { "w:val": "0563C1" } }] }, { "w:u": [{ _attr: { "w:val": "single" } }] }],
+                    "w:rPr": [{ "w:color": { _attr: { "w:val": "0563C1" } } }, { "w:u": { _attr: { "w:val": "single" } } }],
                 },
                 {
-                    "w:uiPriority": [
-                        {
-                            _attr: {
-                                "w:val": "99",
-                            },
+                    "w:uiPriority": {
+                        _attr: {
+                            "w:val": "99",
                         },
-                    ],
+                    },
                 },
                 {
-                    "w:unhideWhenUsed": [],
+                    "w:unhideWhenUsed": EMPTY_OBJECT,
                 },
-                { "w:basedOn": [{ _attr: { "w:val": "DefaultParagraphFont" } }] },
+                { "w:basedOn": { _attr: { "w:val": "DefaultParagraphFont" } } },
             ],
         });
     });

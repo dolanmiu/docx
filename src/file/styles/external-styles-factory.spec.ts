@@ -71,24 +71,34 @@ describe("External styles factory", () => {
                                 deleted: false,
                                 root: [
                                     {
-                                        _attr: {
-                                            "w:ascii": "Arial",
-                                            "w:cstheme": "minorHAnsi",
-                                            "w:eastAsiaTheme": "minorHAnsi",
-                                            "w:hAnsi": "Arial",
-                                        },
                                         deleted: false,
-                                        root: [],
+                                        root: [
+                                            {
+                                                deleted: false,
+                                                root: {
+                                                    "w:ascii": "Arial",
+                                                    "w:cstheme": "minorHAnsi",
+                                                    "w:eastAsiaTheme": "minorHAnsi",
+                                                    "w:hAnsi": "Arial",
+                                                },
+                                                rootKey: "_attr",
+                                            },
+                                        ],
                                         rootKey: "w:rFonts",
                                     },
                                     {
-                                        _attr: {
-                                            "w:bidi": "ar-SA",
-                                            "w:eastAsia": "en-US",
-                                            "w:val": "en-US",
-                                        },
                                         deleted: false,
-                                        root: [],
+                                        root: [
+                                            {
+                                                deleted: false,
+                                                root: {
+                                                    "w:bidi": "ar-SA",
+                                                    "w:eastAsia": "en-US",
+                                                    "w:val": "en-US",
+                                                },
+                                                rootKey: "_attr",
+                                            },
+                                        ],
                                         rootKey: "w:lang",
                                     },
                                 ],
@@ -104,13 +114,18 @@ describe("External styles factory", () => {
                                 deleted: false,
                                 root: [
                                     {
-                                        _attr: {
-                                            "w:after": "160",
-                                            "w:line": "259",
-                                            "w:lineRule": "auto",
-                                        },
                                         deleted: false,
-                                        root: [],
+                                        root: [
+                                            {
+                                                deleted: false,
+                                                root: {
+                                                    "w:after": "160",
+                                                    "w:line": "259",
+                                                    "w:lineRule": "auto",
+                                                },
+                                                rootKey: "_attr",
+                                            },
+                                        ],
                                         rootKey: "w:spacing",
                                     },
                                 ],
@@ -123,12 +138,17 @@ describe("External styles factory", () => {
                 rootKey: "w:docDefaults",
             });
             expect(importedStyle.root[2]).to.deep.equal({
-                _attr: {
-                    "w:defLockedState": "1",
-                    "w:defUIPriority": "99",
-                },
                 deleted: false,
-                root: [],
+                root: [
+                    {
+                        deleted: false,
+                        root: {
+                            "w:defLockedState": "1",
+                            "w:defUIPriority": "99",
+                        },
+                        rootKey: "_attr",
+                    },
+                ],
                 rootKey: "w:latentStyles",
             });
         });
@@ -139,19 +159,28 @@ describe("External styles factory", () => {
 
             expect(importedStyle.root.length).to.equal(5);
             expect(importedStyle.root[3]).to.deep.equal({
-                _attr: {
-                    "w:default": "1",
-                    "w:styleId": "Normal",
-                    "w:type": "paragraph",
-                },
                 deleted: false,
                 root: [
                     {
-                        _attr: {
-                            "w:val": "Normal",
-                        },
                         deleted: false,
-                        root: [],
+                        root: {
+                            "w:default": "1",
+                            "w:styleId": "Normal",
+                            "w:type": "paragraph",
+                        },
+                        rootKey: "_attr",
+                    },
+                    {
+                        deleted: false,
+                        root: [
+                            {
+                                deleted: false,
+                                root: {
+                                    "w:val": "Normal",
+                                },
+                                rootKey: "_attr",
+                            },
+                        ],
                         rootKey: "w:name",
                     },
                     {
@@ -164,26 +193,40 @@ describe("External styles factory", () => {
             });
 
             expect(importedStyle.root[4]).to.deep.equal({
-                _attr: {
-                    "w:styleId": "Heading1",
-                    "w:type": "paragraph",
-                },
                 deleted: false,
                 root: [
                     {
-                        _attr: {
-                            "w:val": "heading 1",
-                        },
                         deleted: false,
-                        root: [],
+                        root: {
+                            "w:styleId": "Heading1",
+                            "w:type": "paragraph",
+                        },
+                        rootKey: "_attr",
+                    },
+                    {
+                        deleted: false,
+                        root: [
+                            {
+                                deleted: false,
+                                root: {
+                                    "w:val": "heading 1",
+                                },
+                                rootKey: "_attr",
+                            },
+                        ],
                         rootKey: "w:name",
                     },
                     {
-                        _attr: {
-                            "w:val": "Normal",
-                        },
                         deleted: false,
-                        root: [],
+                        root: [
+                            {
+                                deleted: false,
+                                root: {
+                                    "w:val": "Normal",
+                                },
+                                rootKey: "_attr",
+                            },
+                        ],
                         rootKey: "w:basedOn",
                     },
                     {
@@ -203,14 +246,19 @@ describe("External styles factory", () => {
                                 deleted: false,
                                 root: [
                                     {
-                                        _attr: {
-                                            "w:color": "auto",
-                                            "w:space": "1",
-                                            "w:sz": "4",
-                                            "w:val": "single",
-                                        },
                                         deleted: false,
-                                        root: [],
+                                        root: [
+                                            {
+                                                deleted: false,
+                                                root: {
+                                                    "w:color": "auto",
+                                                    "w:space": "1",
+                                                    "w:sz": "4",
+                                                    "w:val": "single",
+                                                },
+                                                rootKey: "_attr",
+                                            },
+                                        ],
                                         rootKey: "w:bottom",
                                     },
                                 ],

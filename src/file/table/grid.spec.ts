@@ -4,20 +4,22 @@ import { Formatter } from "export/formatter";
 
 import { GridCol, TableGrid } from "./grid";
 
+import { EMPTY_OBJECT } from "file/xml-components";
+
 describe("GridCol", () => {
     describe("#constructor", () => {
         it("sets the width attribute to the value given", () => {
             const grid = new GridCol(1234);
             const tree = new Formatter().format(grid);
             expect(tree).to.deep.equal({
-                "w:gridCol": [{ _attr: { "w:w": 1234 } }],
+                "w:gridCol": { _attr: { "w:w": 1234 } },
             });
         });
 
         it("does not set a width attribute if not given", () => {
             const grid = new GridCol();
             const tree = new Formatter().format(grid);
-            expect(tree).to.deep.equal({ "w:gridCol": [] });
+            expect(tree).to.deep.equal({ "w:gridCol": EMPTY_OBJECT });
         });
     });
 });
@@ -29,9 +31,9 @@ describe("TableGrid", () => {
             const tree = new Formatter().format(grid);
             expect(tree).to.deep.equal({
                 "w:tblGrid": [
-                    { "w:gridCol": [{ _attr: { "w:w": 1234 } }] },
-                    { "w:gridCol": [{ _attr: { "w:w": 321 } }] },
-                    { "w:gridCol": [{ _attr: { "w:w": 123 } }] },
+                    { "w:gridCol": { _attr: { "w:w": 1234 } } },
+                    { "w:gridCol": { _attr: { "w:w": 321 } } },
+                    { "w:gridCol": { _attr: { "w:w": 123 } } },
                 ],
             });
         });

@@ -1,5 +1,5 @@
 import { BorderStyle } from "file/styles";
-import { IXmlableObject, XmlAttributeComponent, XmlComponent } from "file/xml-components";
+import { IgnoreIfEmptyXmlComponent, XmlAttributeComponent, XmlComponent } from "file/xml-components";
 
 interface ICellBorder {
     readonly style: BorderStyle;
@@ -24,15 +24,9 @@ class BaseTableCellBorder extends XmlComponent {
     }
 }
 
-export class TableCellBorders extends XmlComponent {
+export class TableCellBorders extends IgnoreIfEmptyXmlComponent {
     constructor() {
         super("w:tcBorders");
-    }
-
-    public prepForXml(): IXmlableObject | undefined {
-        if (this.root.length > 0) {
-            return super.prepForXml();
-        }
     }
 
     public addTopBorder(style: BorderStyle, size: number, color: string): TableCellBorders {

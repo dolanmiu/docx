@@ -30,14 +30,14 @@ describe("Body", () => {
 
             const formatted = new Formatter().format(body)["w:body"];
             expect(formatted).to.be.an.instanceof(Array);
-            const defaultSectionPr = formatted[0]["w:p"][1]["w:pPr"][0]["w:sectPr"];
+            const defaultSectionPr = formatted[0]["w:p"][0]["w:pPr"][0]["w:sectPr"];
 
             // check that this is the default section and added first in paragraph
-            expect(defaultSectionPr[0]).to.deep.equal({ "w:pgSz": [{ _attr: { "w:h": 16838, "w:w": 11906, "w:orient": "portrait" } }] });
+            expect(defaultSectionPr[0]).to.deep.equal({ "w:pgSz": { _attr: { "w:h": 16838, "w:w": 11906, "w:orient": "portrait" } } });
 
             // check for new section (since it's the last one, it's direct child of body)
             const newSection = formatted[1]["w:sectPr"];
-            expect(newSection[0]).to.deep.equal({ "w:pgSz": [{ _attr: { "w:h": 10000, "w:w": 10000, "w:orient": "portrait" } }] });
+            expect(newSection[0]).to.deep.equal({ "w:pgSz": { _attr: { "w:h": 10000, "w:w": 10000, "w:orient": "portrait" } } });
         });
 
         it("should add section with default parameters", () => {
@@ -52,30 +52,27 @@ describe("Body", () => {
                 "w:body": [
                     {
                         "w:p": [
-                            { "w:pPr": [] },
                             {
                                 "w:pPr": [
                                     {
                                         "w:sectPr": [
-                                            { "w:pgSz": [{ _attr: { "w:w": 11906, "w:h": 16838, "w:orient": "portrait" } }] },
+                                            { "w:pgSz": { _attr: { "w:w": 11906, "w:h": 16838, "w:orient": "portrait" } } },
                                             {
-                                                "w:pgMar": [
-                                                    {
-                                                        _attr: {
-                                                            "w:top": 1440,
-                                                            "w:right": 1440,
-                                                            "w:bottom": 1440,
-                                                            "w:left": 1440,
-                                                            "w:header": 708,
-                                                            "w:footer": 708,
-                                                            "w:gutter": 0,
-                                                            "w:mirrorMargins": false,
-                                                        },
+                                                "w:pgMar": {
+                                                    _attr: {
+                                                        "w:top": 1440,
+                                                        "w:right": 1440,
+                                                        "w:bottom": 1440,
+                                                        "w:left": 1440,
+                                                        "w:header": 708,
+                                                        "w:footer": 708,
+                                                        "w:gutter": 0,
+                                                        "w:mirrorMargins": false,
                                                     },
-                                                ],
+                                                },
                                             },
-                                            { "w:cols": [{ _attr: { "w:space": 708 } }] },
-                                            { "w:docGrid": [{ _attr: { "w:linePitch": 360 } }] },
+                                            { "w:cols": { _attr: { "w:space": 708 } } },
+                                            { "w:docGrid": { _attr: { "w:linePitch": 360 } } },
                                         ],
                                     },
                                 ],
@@ -84,25 +81,23 @@ describe("Body", () => {
                     },
                     {
                         "w:sectPr": [
-                            { "w:pgSz": [{ _attr: { "w:w": 10000, "w:h": 10000, "w:orient": "portrait" } }] },
+                            { "w:pgSz": { _attr: { "w:w": 10000, "w:h": 10000, "w:orient": "portrait" } } },
                             {
-                                "w:pgMar": [
-                                    {
-                                        _attr: {
-                                            "w:top": 1440,
-                                            "w:right": 1440,
-                                            "w:bottom": 1440,
-                                            "w:left": 1440,
-                                            "w:header": 708,
-                                            "w:footer": 708,
-                                            "w:gutter": 0,
-                                            "w:mirrorMargins": false,
-                                        },
+                                "w:pgMar": {
+                                    _attr: {
+                                        "w:top": 1440,
+                                        "w:right": 1440,
+                                        "w:bottom": 1440,
+                                        "w:left": 1440,
+                                        "w:header": 708,
+                                        "w:footer": 708,
+                                        "w:gutter": 0,
+                                        "w:mirrorMargins": false,
                                     },
-                                ],
+                                },
                             },
-                            { "w:cols": [{ _attr: { "w:space": 708 } }] },
-                            { "w:docGrid": [{ _attr: { "w:linePitch": 360 } }] },
+                            { "w:cols": { _attr: { "w:space": 708 } } },
+                            { "w:docGrid": { _attr: { "w:linePitch": 360 } } },
                         ],
                     },
                 ],

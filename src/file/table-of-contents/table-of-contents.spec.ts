@@ -49,13 +49,11 @@ const DEFAULT_TOC = {
         {
             "w:sdtPr": [
                 {
-                    "w:alias": [
-                        {
-                            _attr: {
-                                "w:val": "Table of Contents",
-                            },
+                    "w:alias": {
+                        _attr: {
+                            "w:val": "Table of Contents",
                         },
-                    ],
+                    },
                 },
             ],
         },
@@ -64,22 +62,14 @@ const DEFAULT_TOC = {
                 {
                     "w:p": [
                         {
-                            "w:pPr": [],
-                        },
-                        {
                             "w:r": [
                                 {
-                                    "w:rPr": [],
-                                },
-                                {
-                                    "w:fldChar": [
-                                        {
-                                            _attr: {
-                                                "w:fldCharType": "begin",
-                                                "w:dirty": true,
-                                            },
+                                    "w:fldChar": {
+                                        _attr: {
+                                            "w:fldCharType": "begin",
+                                            "w:dirty": true,
                                         },
-                                    ],
+                                    },
                                 },
                                 {
                                     "w:instrText": [
@@ -92,13 +82,11 @@ const DEFAULT_TOC = {
                                     ],
                                 },
                                 {
-                                    "w:fldChar": [
-                                        {
-                                            _attr: {
-                                                "w:fldCharType": "separate",
-                                            },
+                                    "w:fldChar": {
+                                        _attr: {
+                                            "w:fldCharType": "separate",
                                         },
-                                    ],
+                                    },
                                 },
                             ],
                         },
@@ -107,21 +95,13 @@ const DEFAULT_TOC = {
                 {
                     "w:p": [
                         {
-                            "w:pPr": [],
-                        },
-                        {
                             "w:r": [
                                 {
-                                    "w:rPr": [],
-                                },
-                                {
-                                    "w:fldChar": [
-                                        {
-                                            _attr: {
-                                                "w:fldCharType": "end",
-                                            },
+                                    "w:fldChar": {
+                                        _attr: {
+                                            "w:fldCharType": "end",
                                         },
-                                    ],
+                                    },
                                 },
                             ],
                         },
@@ -137,13 +117,11 @@ const COMPLETE_TOC = {
         {
             "w:sdtPr": [
                 {
-                    "w:alias": [
-                        {
-                            _attr: {
-                                "w:val": "Summary",
-                            },
+                    "w:alias": {
+                        _attr: {
+                            "w:val": "Summary",
                         },
-                    ],
+                    },
                 },
             ],
         },
@@ -152,22 +130,14 @@ const COMPLETE_TOC = {
                 {
                     "w:p": [
                         {
-                            "w:pPr": [],
-                        },
-                        {
                             "w:r": [
                                 {
-                                    "w:rPr": [],
-                                },
-                                {
-                                    "w:fldChar": [
-                                        {
-                                            _attr: {
-                                                "w:fldCharType": "begin",
-                                                "w:dirty": true,
-                                            },
+                                    "w:fldChar": {
+                                        _attr: {
+                                            "w:fldCharType": "begin",
+                                            "w:dirty": true,
                                         },
-                                    ],
+                                    },
                                 },
                                 {
                                     "w:instrText": [
@@ -180,13 +150,11 @@ const COMPLETE_TOC = {
                                     ],
                                 },
                                 {
-                                    "w:fldChar": [
-                                        {
-                                            _attr: {
-                                                "w:fldCharType": "separate",
-                                            },
+                                    "w:fldChar": {
+                                        _attr: {
+                                            "w:fldCharType": "separate",
                                         },
-                                    ],
+                                    },
                                 },
                             ],
                         },
@@ -195,21 +163,13 @@ const COMPLETE_TOC = {
                 {
                     "w:p": [
                         {
-                            "w:pPr": [],
-                        },
-                        {
                             "w:r": [
                                 {
-                                    "w:rPr": [],
-                                },
-                                {
-                                    "w:fldChar": [
-                                        {
-                                            _attr: {
-                                                "w:fldCharType": "end",
-                                            },
+                                    "w:fldChar": {
+                                        _attr: {
+                                            "w:fldCharType": "end",
                                         },
-                                    ],
+                                    },
                                 },
                             ],
                         },

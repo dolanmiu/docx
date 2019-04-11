@@ -7,6 +7,8 @@ import { LevelForOverride } from "./level";
 import { Num } from "./num";
 import { Numbering } from "./numbering";
 
+import { EMPTY_OBJECT } from "file/xml-components";
+
 describe("Numbering", () => {
     let numbering: Numbering;
 
@@ -22,7 +24,7 @@ describe("Numbering", () => {
             expect(abstractNums).to.have.lengthOf(1);
             expect(abstractNums[0]["w:abstractNum"]).to.deep.include.members([
                 { _attr: { "w:abstractNumId": 0, "w15:restartNumberingAfterBreak": 0 } },
-                { "w:multiLevelType": [{ _attr: { "w:val": "hybridMultilevel" } }] },
+                { "w:multiLevelType": { _attr: { "w:val": "hybridMultilevel" } } },
             ]);
 
             abstractNums
@@ -37,9 +39,9 @@ describe("Numbering", () => {
                         { "w:numFmt": [{ _attr: { "w:val": "bullet" } }] },
                     ]);
                     // Once chai 4.0.0 lands and #644 is resolved, we can add the following to the test:
-                    // {"w:lvlText": [{"_attr": {"w:val": "•"}}]},
-                    // {"w:rPr": [{"w:rFonts": [{"_attr": {"w:ascii": "Symbol", "w:cs": "Symbol", "w:eastAsia": "Symbol", "w:hAnsi": "Symbol", "w:hint": "default"}}]}]},
-                    // {"w:pPr": [{"_attr": {}},
+                    // {"w:lvlText": {"_attr": {"w:val": "•"}}},
+                    // {"w:rPr": [{"w:rFonts": {"_attr": {"w:ascii": "Symbol", "w:cs": "Symbol", "w:eastAsia": "Symbol", "w:hAnsi": "Symbol", "w:hint": "default"}}}]},
+                    // {"w:pPr": [
                     //            {"w:ind": [{"_attr": {"w:left": 720, "w:hanging": 360}}]}]},
                 });
         });
@@ -65,7 +67,7 @@ describe("Numbering", () => {
             expect(n).to.be.instanceof(Num);
             const tree = new Formatter().format(numbering);
             const serializedN = tree["w:numbering"].find((obj) => obj["w:num"] && obj["w:num"][0]._attr["w:numId"] === n.id);
-            expect(serializedN["w:num"][1]["w:abstractNumId"][0]._attr["w:val"]).to.equal(a2.id);
+            expect(serializedN["w:num"][1]["w:abstractNumId"]._attr["w:val"]).to.equal(a2.id);
         });
 
         it("assigns a unique ID to each concrete numbering it creates", () => {
@@ -89,10 +91,10 @@ describe("AbstractNumbering", () => {
             const level = abstractNumbering.createLevel(3, "lowerLetter", "%1)", "end");
             const tree = new Formatter().format(level);
             expect(tree["w:lvl"]).to.include({ _attr: { "w:ilvl": 3, "w15:tentative": 1 } });
-            expect(tree["w:lvl"]).to.include({ "w:start": [{ _attr: { "w:val": 1 } }] });
-            expect(tree["w:lvl"]).to.include({ "w:lvlJc": [{ _attr: { "w:val": "end" } }] });
-            expect(tree["w:lvl"]).to.include({ "w:numFmt": [{ _attr: { "w:val": "lowerLetter" } }] });
-            expect(tree["w:lvl"]).to.include({ "w:lvlText": [{ _attr: { "w:val": "%1)" } }] });
+            expect(tree["w:lvl"]).to.include({ "w:start": { _attr: { "w:val": 1 } } });
+            expect(tree["w:lvl"]).to.include({ "w:lvlJc": { _attr: { "w:val": "end" } } });
+            expect(tree["w:lvl"]).to.include({ "w:numFmt": { _attr: { "w:val": "lowerLetter" } } });
+            expect(tree["w:lvl"]).to.include({ "w:lvlText": { _attr: { "w:val": "%1)" } } });
         });
 
         it("uses 'start' as the default alignment", () => {
@@ -100,10 +102,10 @@ describe("AbstractNumbering", () => {
             const level = abstractNumbering.createLevel(3, "lowerLetter", "%1)");
             const tree = new Formatter().format(level);
             expect(tree["w:lvl"]).to.include({ _attr: { "w:ilvl": 3, "w15:tentative": 1 } });
-            expect(tree["w:lvl"]).to.include({ "w:start": [{ _attr: { "w:val": 1 } }] });
-            expect(tree["w:lvl"]).to.include({ "w:lvlJc": [{ _attr: { "w:val": "start" } }] });
-            expect(tree["w:lvl"]).to.include({ "w:numFmt": [{ _attr: { "w:val": "lowerLetter" } }] });
-            expect(tree["w:lvl"]).to.include({ "w:lvlText": [{ _attr: { "w:val": "%1)" } }] });
+            expect(tree["w:lvl"]).to.include({ "w:start": { _attr: { "w:val": 1 } } });
+            expect(tree["w:lvl"]).to.include({ "w:lvlJc": { _attr: { "w:val": "start" } } });
+            expect(tree["w:lvl"]).to.include({ "w:numFmt": { _attr: { "w:val": "lowerLetter" } } });
+            expect(tree["w:lvl"]).to.include({ "w:lvlText": { _attr: { "w:val": "%1)" } } });
         });
 
         describe("formatting methods: paragraph properties", () => {
@@ -112,7 +114,7 @@ describe("AbstractNumbering", () => {
                 const level = abstractNumbering.createLevel(0, "lowerLetter", "%0.").indent({ left: 720 });
                 const tree = new Formatter().format(level);
                 expect(tree["w:lvl"]).to.include({
-                    "w:pPr": [{ "w:ind": [{ _attr: { "w:left": 720 } }] }],
+                    "w:pPr": [{ "w:ind": { _attr: { "w:left": 720 } } }],
                 });
             });
 
@@ -121,7 +123,7 @@ describe("AbstractNumbering", () => {
                 const level = abstractNumbering.createLevel(0, "lowerLetter", "%0.").spacing({ before: 50, after: 150 });
                 const tree = new Formatter().format(level);
                 expect(tree["w:lvl"]).to.include({
-                    "w:pPr": [{ "w:spacing": [{ _attr: { "w:before": 50, "w:after": 150 } }] }],
+                    "w:pPr": [{ "w:spacing": { _attr: { "w:before": 50, "w:after": 150 } } }],
                 });
             });
 
@@ -130,7 +132,7 @@ describe("AbstractNumbering", () => {
                 const level = abstractNumbering.createLevel(0, "lowerLetter", "%0.").center();
                 const tree = new Formatter().format(level);
                 expect(tree["w:lvl"]).to.include({
-                    "w:pPr": [{ "w:jc": [{ _attr: { "w:val": "center" } }] }],
+                    "w:pPr": [{ "w:jc": { _attr: { "w:val": "center" } } }],
                 });
             });
 
@@ -139,7 +141,7 @@ describe("AbstractNumbering", () => {
                 const level = abstractNumbering.createLevel(0, "lowerRoman", "%0.", "left").left();
                 const tree = new Formatter().format(level);
                 expect(tree["w:lvl"]).to.include({
-                    "w:pPr": [{ "w:jc": [{ _attr: { "w:val": "left" } }] }],
+                    "w:pPr": [{ "w:jc": { _attr: { "w:val": "left" } } }],
                 });
             });
 
@@ -148,7 +150,7 @@ describe("AbstractNumbering", () => {
                 const level = abstractNumbering.createLevel(0, "lowerRoman", "%0.").right();
                 const tree = new Formatter().format(level);
                 expect(tree["w:lvl"]).to.include({
-                    "w:pPr": [{ "w:jc": [{ _attr: { "w:val": "right" } }] }],
+                    "w:pPr": [{ "w:jc": { _attr: { "w:val": "right" } } }],
                 });
             });
 
@@ -157,7 +159,7 @@ describe("AbstractNumbering", () => {
                 const level = abstractNumbering.createLevel(0, "lowerRoman", "%0.").justified();
                 const tree = new Formatter().format(level);
                 expect(tree["w:lvl"]).to.include({
-                    "w:pPr": [{ "w:jc": [{ _attr: { "w:val": "both" } }] }],
+                    "w:pPr": [{ "w:jc": { _attr: { "w:val": "both" } } }],
                 });
             });
 
@@ -170,16 +172,14 @@ describe("AbstractNumbering", () => {
                         {
                             "w:pBdr": [
                                 {
-                                    "w:bottom": [
-                                        {
-                                            _attr: {
-                                                "w:color": "auto",
-                                                "w:space": "1",
-                                                "w:val": "single",
-                                                "w:sz": "6",
-                                            },
+                                    "w:bottom": {
+                                        _attr: {
+                                            "w:color": "auto",
+                                            "w:space": "1",
+                                            "w:val": "single",
+                                            "w:sz": "6",
                                         },
-                                    ],
+                                    },
                                 },
                             ],
                         },
@@ -194,7 +194,7 @@ describe("AbstractNumbering", () => {
                 expect(tree["w:lvl"]).to.include({
                     "w:pPr": [
                         {
-                            "w:tabs": [{ "w:tab": [{ _attr: { "w:val": "left", "w:pos": 1200 } }] }],
+                            "w:tabs": [{ "w:tab": { _attr: { "w:val": "left", "w:pos": 1200 } } }],
                         },
                     ],
                 });
@@ -207,7 +207,7 @@ describe("AbstractNumbering", () => {
                 expect(tree["w:lvl"]).to.include({
                     "w:pPr": [
                         {
-                            "w:tabs": [{ "w:tab": [{ _attr: { "w:val": "right", "w:pos": 9026 } }] }],
+                            "w:tabs": [{ "w:tab": { _attr: { "w:val": "right", "w:pos": 9026 } } }],
                         },
                     ],
                 });
@@ -218,7 +218,7 @@ describe("AbstractNumbering", () => {
                 const level = abstractNumbering.createLevel(0, "lowerRoman", "%0.").keepLines();
                 const tree = new Formatter().format(level);
                 expect(tree["w:lvl"]).to.include({
-                    "w:pPr": [{ "w:keepLines": [] }],
+                    "w:pPr": [{ "w:keepLines": EMPTY_OBJECT }],
                 });
             });
 
@@ -227,7 +227,7 @@ describe("AbstractNumbering", () => {
                 const level = abstractNumbering.createLevel(0, "lowerRoman", "%0.").keepNext();
                 const tree = new Formatter().format(level);
                 expect(tree["w:lvl"]).to.include({
-                    "w:pPr": [{ "w:keepNext": [] }],
+                    "w:pPr": [{ "w:keepNext": EMPTY_OBJECT }],
                 });
             });
         });
@@ -238,7 +238,7 @@ describe("AbstractNumbering", () => {
                 const level = abstractNumbering.createLevel(0, "lowerRoman", "%0.").size(24);
                 const tree = new Formatter().format(level);
                 expect(tree["w:lvl"]).to.include({
-                    "w:rPr": [{ "w:sz": [{ _attr: { "w:val": 24 } }] }],
+                    "w:rPr": [{ "w:sz": { _attr: { "w:val": 24 } } }],
                 });
             });
 
@@ -247,7 +247,7 @@ describe("AbstractNumbering", () => {
                 const level = abstractNumbering.createLevel(0, "lowerRoman", "%0.").smallCaps();
                 const tree = new Formatter().format(level);
                 expect(tree["w:lvl"]).to.include({
-                    "w:rPr": [{ "w:smallCaps": [{ _attr: { "w:val": true } }] }],
+                    "w:rPr": [{ "w:smallCaps": { _attr: { "w:val": true } } }],
                 });
             });
 
@@ -256,7 +256,7 @@ describe("AbstractNumbering", () => {
                 const level = abstractNumbering.createLevel(0, "lowerRoman", "%0.").allCaps();
                 const tree = new Formatter().format(level);
                 expect(tree["w:lvl"]).to.include({
-                    "w:rPr": [{ "w:caps": [{ _attr: { "w:val": true } }] }],
+                    "w:rPr": [{ "w:caps": { _attr: { "w:val": true } } }],
                 });
             });
 
@@ -265,7 +265,7 @@ describe("AbstractNumbering", () => {
                 const level = abstractNumbering.createLevel(0, "lowerRoman", "%0.").strike();
                 const tree = new Formatter().format(level);
                 expect(tree["w:lvl"]).to.include({
-                    "w:rPr": [{ "w:strike": [{ _attr: { "w:val": true } }] }],
+                    "w:rPr": [{ "w:strike": { _attr: { "w:val": true } } }],
                 });
             });
 
@@ -274,7 +274,7 @@ describe("AbstractNumbering", () => {
                 const level = abstractNumbering.createLevel(0, "lowerRoman", "%0.").doubleStrike();
                 const tree = new Formatter().format(level);
                 expect(tree["w:lvl"]).to.include({
-                    "w:rPr": [{ "w:dstrike": [{ _attr: { "w:val": true } }] }],
+                    "w:rPr": [{ "w:dstrike": { _attr: { "w:val": true } } }],
                 });
             });
 
@@ -283,7 +283,7 @@ describe("AbstractNumbering", () => {
                 const level = abstractNumbering.createLevel(0, "lowerRoman", "%0.").subScript();
                 const tree = new Formatter().format(level);
                 expect(tree["w:lvl"]).to.include({
-                    "w:rPr": [{ "w:vertAlign": [{ _attr: { "w:val": "subscript" } }] }],
+                    "w:rPr": [{ "w:vertAlign": { _attr: { "w:val": "subscript" } } }],
                 });
             });
 
@@ -292,7 +292,7 @@ describe("AbstractNumbering", () => {
                 const level = abstractNumbering.createLevel(0, "lowerRoman", "%0.").superScript();
                 const tree = new Formatter().format(level);
                 expect(tree["w:lvl"]).to.include({
-                    "w:rPr": [{ "w:vertAlign": [{ _attr: { "w:val": "superscript" } }] }],
+                    "w:rPr": [{ "w:vertAlign": { _attr: { "w:val": "superscript" } } }],
                 });
             });
 
@@ -302,7 +302,7 @@ describe("AbstractNumbering", () => {
                 const tree = new Formatter().format(level);
                 expect(tree["w:lvl"]).to.include({
                     "w:rPr": [
-                        { "w:rFonts": [{ _attr: { "w:ascii": "Times", "w:cs": "Times", "w:eastAsia": "Times", "w:hAnsi": "Times" } }] },
+                        { "w:rFonts": { _attr: { "w:ascii": "Times", "w:cs": "Times", "w:eastAsia": "Times", "w:hAnsi": "Times" } } },
                     ],
                 });
             });
@@ -312,7 +312,7 @@ describe("AbstractNumbering", () => {
                 const level = abstractNumbering.createLevel(0, "lowerRoman", "%0.").bold();
                 const tree = new Formatter().format(level);
                 expect(tree["w:lvl"]).to.include({
-                    "w:rPr": [{ "w:b": [{ _attr: { "w:val": true } }] }],
+                    "w:rPr": [{ "w:b": { _attr: { "w:val": true } } }],
                 });
             });
 
@@ -321,7 +321,7 @@ describe("AbstractNumbering", () => {
                 const level = abstractNumbering.createLevel(0, "lowerRoman", "%0.").italics();
                 const tree = new Formatter().format(level);
                 expect(tree["w:lvl"]).to.include({
-                    "w:rPr": [{ "w:i": [{ _attr: { "w:val": true } }] }],
+                    "w:rPr": [{ "w:i": { _attr: { "w:val": true } } }],
                 });
             });
 
@@ -331,7 +331,7 @@ describe("AbstractNumbering", () => {
                     const level = abstractNumbering.createLevel(0, "lowerRoman", "%0.").underline();
                     const tree = new Formatter().format(level);
                     expect(tree["w:lvl"]).to.include({
-                        "w:rPr": [{ "w:u": [{ _attr: { "w:val": "single" } }] }],
+                        "w:rPr": [{ "w:u": { _attr: { "w:val": "single" } } }],
                     });
                 });
 
@@ -340,7 +340,7 @@ describe("AbstractNumbering", () => {
                     const level = abstractNumbering.createLevel(0, "lowerRoman", "%0.").underline("double");
                     const tree = new Formatter().format(level);
                     expect(tree["w:lvl"]).to.include({
-                        "w:rPr": [{ "w:u": [{ _attr: { "w:val": "double" } }] }],
+                        "w:rPr": [{ "w:u": { _attr: { "w:val": "double" } } }],
                     });
                 });
 
@@ -349,7 +349,7 @@ describe("AbstractNumbering", () => {
                     const level = abstractNumbering.createLevel(0, "lowerRoman", "%0.").underline("double", "005599");
                     const tree = new Formatter().format(level);
                     expect(tree["w:lvl"]).to.include({
-                        "w:rPr": [{ "w:u": [{ _attr: { "w:val": "double", "w:color": "005599" } }] }],
+                        "w:rPr": [{ "w:u": { _attr: { "w:val": "double", "w:color": "005599" } } }],
                     });
                 });
             });
@@ -359,7 +359,7 @@ describe("AbstractNumbering", () => {
                 const level = abstractNumbering.createLevel(0, "lowerRoman", "%0.").color("123456");
                 const tree = new Formatter().format(level);
                 expect(tree["w:lvl"]).to.include({
-                    "w:rPr": [{ "w:color": [{ _attr: { "w:val": "123456" } }] }],
+                    "w:rPr": [{ "w:color": { _attr: { "w:val": "123456" } } }],
                 });
             });
         });
@@ -388,20 +388,12 @@ describe("concrete numbering", () => {
                         },
                     },
                     {
-                        "w:lvl": [
-                            {
-                                _attr: {
-                                    "w:ilvl": 3,
-                                    "w15:tentative": 1,
-                                },
+                        "w:lvl": {
+                            _attr: {
+                                "w:ilvl": 3,
+                                "w15:tentative": 1,
                             },
-                            {
-                                "w:pPr": [],
-                            },
-                            {
-                                "w:rPr": [],
-                            },
-                        ],
+                        },
                     },
                 ],
             });
@@ -418,29 +410,19 @@ describe("concrete numbering", () => {
                         },
                     },
                     {
-                        "w:startOverride": [
-                            {
-                                _attr: {
-                                    "w:val": 9,
-                                },
+                        "w:startOverride": {
+                            _attr: {
+                                "w:val": 9,
                             },
-                        ],
+                        },
                     },
                     {
-                        "w:lvl": [
-                            {
-                                _attr: {
-                                    "w:ilvl": 1,
-                                    "w15:tentative": 1,
-                                },
+                        "w:lvl": {
+                            _attr: {
+                                "w:ilvl": 1,
+                                "w15:tentative": 1,
                             },
-                            {
-                                "w:pPr": [],
-                            },
-                            {
-                                "w:rPr": [],
-                            },
-                        ],
+                        },
                     },
                 ],
             });
@@ -454,7 +436,7 @@ describe("concrete numbering", () => {
                 "w:lvlOverride": [
                     { _attr: { "w:ilvl": 1 } },
                     {
-                        "w:lvl": [{ _attr: { "w15:tentative": 1, "w:ilvl": 1 } }, { "w:pPr": [] }, { "w:rPr": [] }],
+                        "w:lvl": { _attr: { "w15:tentative": 1, "w:ilvl": 1 } },
                     },
                 ],
             });

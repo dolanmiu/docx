@@ -12,44 +12,36 @@ describe("TableCellMargain", () => {
             expect(tree).to.deep.equal({
                 "w:tcMar": [
                     {
-                        "w:top": [
-                            {
-                                _attr: {
-                                    "w:type": "dxa",
-                                    "w:w": 0,
-                                },
+                        "w:top": {
+                            _attr: {
+                                "w:type": "dxa",
+                                "w:w": 0,
                             },
-                        ],
+                        },
                     },
                     {
-                        "w:bottom": [
-                            {
-                                _attr: {
-                                    "w:type": "dxa",
-                                    "w:w": 0,
-                                },
+                        "w:bottom": {
+                            _attr: {
+                                "w:type": "dxa",
+                                "w:w": 0,
                             },
-                        ],
+                        },
                     },
                     {
-                        "w:end": [
-                            {
-                                _attr: {
-                                    "w:type": "dxa",
-                                    "w:w": 0,
-                                },
+                        "w:end": {
+                            _attr: {
+                                "w:type": "dxa",
+                                "w:w": 0,
                             },
-                        ],
+                        },
                     },
                     {
-                        "w:start": [
-                            {
-                                _attr: {
-                                    "w:type": "dxa",
-                                    "w:w": 0,
-                                },
+                        "w:start": {
+                            _attr: {
+                                "w:type": "dxa",
+                                "w:w": 0,
                             },
-                        ],
+                        },
                     },
                 ],
             });
@@ -66,44 +58,36 @@ describe("TableCellMargain", () => {
             expect(tree).to.deep.equal({
                 "w:tcMar": [
                     {
-                        "w:top": [
-                            {
-                                _attr: {
-                                    "w:type": "dxa",
-                                    "w:w": 5,
-                                },
+                        "w:top": {
+                            _attr: {
+                                "w:type": "dxa",
+                                "w:w": 5,
                             },
-                        ],
+                        },
                     },
                     {
-                        "w:bottom": [
-                            {
-                                _attr: {
-                                    "w:type": "dxa",
-                                    "w:w": 5,
-                                },
+                        "w:bottom": {
+                            _attr: {
+                                "w:type": "dxa",
+                                "w:w": 5,
                             },
-                        ],
+                        },
                     },
                     {
-                        "w:end": [
-                            {
-                                _attr: {
-                                    "w:type": "dxa",
-                                    "w:w": 5,
-                                },
+                        "w:end": {
+                            _attr: {
+                                "w:type": "dxa",
+                                "w:w": 5,
                             },
-                        ],
+                        },
                     },
                     {
-                        "w:start": [
-                            {
-                                _attr: {
-                                    "w:type": "dxa",
-                                    "w:w": 5,
-                                },
+                        "w:start": {
+                            _attr: {
+                                "w:type": "dxa",
+                                "w:w": 5,
                             },
-                        ],
+                        },
                     },
                 ],
             });

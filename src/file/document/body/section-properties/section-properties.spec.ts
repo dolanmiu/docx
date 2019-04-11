@@ -39,29 +39,27 @@ describe("SectionProperties", () => {
             const tree = new Formatter().format(properties);
             expect(Object.keys(tree)).to.deep.equal(["w:sectPr"]);
             expect(tree["w:sectPr"]).to.be.an.instanceof(Array);
-            expect(tree["w:sectPr"][0]).to.deep.equal({ "w:pgSz": [{ _attr: { "w:h": 16838, "w:w": 11906, "w:orient": "portrait" } }] });
+            expect(tree["w:sectPr"][0]).to.deep.equal({ "w:pgSz": { _attr: { "w:h": 16838, "w:w": 11906, "w:orient": "portrait" } } });
             expect(tree["w:sectPr"][1]).to.deep.equal({
-                "w:pgMar": [
-                    {
-                        _attr: {
-                            "w:bottom": 1440,
-                            "w:footer": 708,
-                            "w:top": 1440,
-                            "w:right": 1440,
-                            "w:left": 1440,
-                            "w:header": 708,
-                            "w:gutter": 0,
-                            "w:mirrorMargins": false,
-                        },
+                "w:pgMar": {
+                    _attr: {
+                        "w:bottom": 1440,
+                        "w:footer": 708,
+                        "w:top": 1440,
+                        "w:right": 1440,
+                        "w:left": 1440,
+                        "w:header": 708,
+                        "w:gutter": 0,
+                        "w:mirrorMargins": false,
                     },
-                ],
+                },
             });
 
-            expect(tree["w:sectPr"][2]).to.deep.equal({ "w:cols": [{ _attr: { "w:space": 708 } }] });
-            expect(tree["w:sectPr"][3]).to.deep.equal({ "w:docGrid": [{ _attr: { "w:linePitch": 360 } }] });
-            expect(tree["w:sectPr"][4]).to.deep.equal({ "w:headerReference": [{ _attr: { "r:id": "rId100", "w:type": "default" } }] });
-            expect(tree["w:sectPr"][5]).to.deep.equal({ "w:footerReference": [{ _attr: { "r:id": "rId200", "w:type": "even" } }] });
-            expect(tree["w:sectPr"][6]).to.deep.equal({ "w:pgNumType": [{ _attr: { "w:fmt": "cardinalText", "w:start": 10 } }] });
+            expect(tree["w:sectPr"][2]).to.deep.equal({ "w:cols": { _attr: { "w:space": 708 } } });
+            expect(tree["w:sectPr"][3]).to.deep.equal({ "w:docGrid": { _attr: { "w:linePitch": 360 } } });
+            expect(tree["w:sectPr"][4]).to.deep.equal({ "w:headerReference": { _attr: { "r:id": "rId100", "w:type": "default" } } });
+            expect(tree["w:sectPr"][5]).to.deep.equal({ "w:footerReference": { _attr: { "r:id": "rId200", "w:type": "even" } } });
+            expect(tree["w:sectPr"][6]).to.deep.equal({ "w:pgNumType": { _attr: { "w:fmt": "cardinalText", "w:start": 10 } } });
         });
 
         it("should create section properties with no options", () => {
@@ -69,25 +67,23 @@ describe("SectionProperties", () => {
             const tree = new Formatter().format(properties);
             expect(Object.keys(tree)).to.deep.equal(["w:sectPr"]);
             expect(tree["w:sectPr"]).to.be.an.instanceof(Array);
-            expect(tree["w:sectPr"][0]).to.deep.equal({ "w:pgSz": [{ _attr: { "w:h": 16838, "w:w": 11906, "w:orient": "portrait" } }] });
+            expect(tree["w:sectPr"][0]).to.deep.equal({ "w:pgSz": { _attr: { "w:h": 16838, "w:w": 11906, "w:orient": "portrait" } } });
             expect(tree["w:sectPr"][1]).to.deep.equal({
-                "w:pgMar": [
-                    {
-                        _attr: {
-                            "w:bottom": 1440,
-                            "w:footer": 708,
-                            "w:top": 1440,
-                            "w:right": 1440,
-                            "w:left": 1440,
-                            "w:header": 708,
-                            "w:gutter": 0,
-                            "w:mirrorMargins": false,
-                        },
+                "w:pgMar": {
+                    _attr: {
+                        "w:bottom": 1440,
+                        "w:footer": 708,
+                        "w:top": 1440,
+                        "w:right": 1440,
+                        "w:left": 1440,
+                        "w:header": 708,
+                        "w:gutter": 0,
+                        "w:mirrorMargins": false,
                     },
-                ],
+                },
             });
-            expect(tree["w:sectPr"][2]).to.deep.equal({ "w:cols": [{ _attr: { "w:space": 708 } }] });
-            expect(tree["w:sectPr"][3]).to.deep.equal({ "w:docGrid": [{ _attr: { "w:linePitch": 360 } }] });
+            expect(tree["w:sectPr"][2]).to.deep.equal({ "w:cols": { _attr: { "w:space": 708 } } });
+            expect(tree["w:sectPr"][3]).to.deep.equal({ "w:docGrid": { _attr: { "w:linePitch": 360 } } });
         });
 
         it("should create section properties with changed options", () => {
@@ -97,22 +93,20 @@ describe("SectionProperties", () => {
             const tree = new Formatter().format(properties);
             expect(Object.keys(tree)).to.deep.equal(["w:sectPr"]);
             expect(tree["w:sectPr"]).to.be.an.instanceof(Array);
-            expect(tree["w:sectPr"][0]).to.deep.equal({ "w:pgSz": [{ _attr: { "w:h": 16838, "w:w": 11906, "w:orient": "portrait" } }] });
+            expect(tree["w:sectPr"][0]).to.deep.equal({ "w:pgSz": { _attr: { "w:h": 16838, "w:w": 11906, "w:orient": "portrait" } } });
             expect(tree["w:sectPr"][1]).to.deep.equal({
-                "w:pgMar": [
-                    {
-                        _attr: {
-                            "w:bottom": 1440,
-                            "w:footer": 708,
-                            "w:top": 0,
-                            "w:right": 1440,
-                            "w:left": 1440,
-                            "w:header": 708,
-                            "w:gutter": 0,
-                            "w:mirrorMargins": false,
-                        },
+                "w:pgMar": {
+                    _attr: {
+                        "w:bottom": 1440,
+                        "w:footer": 708,
+                        "w:top": 0,
+                        "w:right": 1440,
+                        "w:left": 1440,
+                        "w:header": 708,
+                        "w:gutter": 0,
+                        "w:mirrorMargins": false,
                     },
-                ],
+                },
             });
         });
 
@@ -123,22 +117,20 @@ describe("SectionProperties", () => {
             const tree = new Formatter().format(properties);
             expect(Object.keys(tree)).to.deep.equal(["w:sectPr"]);
             expect(tree["w:sectPr"]).to.be.an.instanceof(Array);
-            expect(tree["w:sectPr"][0]).to.deep.equal({ "w:pgSz": [{ _attr: { "w:h": 16838, "w:w": 11906, "w:orient": "portrait" } }] });
+            expect(tree["w:sectPr"][0]).to.deep.equal({ "w:pgSz": { _attr: { "w:h": 16838, "w:w": 11906, "w:orient": "portrait" } } });
             expect(tree["w:sectPr"][1]).to.deep.equal({
-                "w:pgMar": [
-                    {
-                        _attr: {
-                            "w:bottom": 0,
-                            "w:footer": 708,
-                            "w:top": 1440,
-                            "w:right": 1440,
-                            "w:left": 1440,
-                            "w:header": 708,
-                            "w:gutter": 0,
-                            "w:mirrorMargins": false,
-                        },
+                "w:pgMar": {
+                    _attr: {
+                        "w:bottom": 0,
+                        "w:footer": 708,
+                        "w:top": 1440,
+                        "w:right": 1440,
+                        "w:left": 1440,
+                        "w:header": 708,
+                        "w:gutter": 0,
+                        "w:mirrorMargins": false,
                     },
-                ],
+                },
             });
         });
 
@@ -150,22 +142,20 @@ describe("SectionProperties", () => {
             const tree = new Formatter().format(properties);
             expect(Object.keys(tree)).to.deep.equal(["w:sectPr"]);
             expect(tree["w:sectPr"]).to.be.an.instanceof(Array);
-            expect(tree["w:sectPr"][0]).to.deep.equal({ "w:pgSz": [{ _attr: { "w:h": 0, "w:w": 0, "w:orient": "portrait" } }] });
+            expect(tree["w:sectPr"][0]).to.deep.equal({ "w:pgSz": { _attr: { "w:h": 0, "w:w": 0, "w:orient": "portrait" } } });
             expect(tree["w:sectPr"][1]).to.deep.equal({
-                "w:pgMar": [
-                    {
-                        _attr: {
-                            "w:bottom": 1440,
-                            "w:footer": 708,
-                            "w:top": 1440,
-                            "w:right": 1440,
-                            "w:left": 1440,
-                            "w:header": 708,
-                            "w:gutter": 0,
-                            "w:mirrorMargins": false,
-                        },
+                "w:pgMar": {
+                    _attr: {
+                        "w:bottom": 1440,
+                        "w:footer": 708,
+                        "w:top": 1440,
+                        "w:right": 1440,
+                        "w:left": 1440,
+                        "w:header": 708,
+                        "w:gutter": 0,
+                        "w:mirrorMargins": false,
                     },
-                ],
+                },
             });
         });
 
@@ -179,7 +169,7 @@ describe("SectionProperties", () => {
             expect(Object.keys(tree)).to.deep.equal(["w:sectPr"]);
             const pgBorders = tree["w:sectPr"].find((item) => item["w:pgBorders"] !== undefined);
             expect(pgBorders).to.deep.equal({
-                "w:pgBorders": [{ _attr: { "w:offsetFrom": "page" } }],
+                "w:pgBorders": { _attr: { "w:offsetFrom": "page" } },
             });
         });
 
@@ -191,7 +181,7 @@ describe("SectionProperties", () => {
             expect(Object.keys(tree)).to.deep.equal(["w:sectPr"]);
             const pgNumType = tree["w:sectPr"].find((item) => item["w:pgNumType"] !== undefined);
             expect(pgNumType).to.deep.equal({
-                "w:pgNumType": [{ _attr: { "w:fmt": "upperRoman" } }],
+                "w:pgNumType": { _attr: { "w:fmt": "upperRoman" } },
             });
         });
 
