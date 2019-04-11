@@ -105,7 +105,7 @@
 							<ul class="tsd-index-list">
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-external"><a href="importedxmlcomponent.html#addchildelement" class="tsd-kind-icon">add<wbr>Child<wbr>Element</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-external"><a href="importedxmlcomponent.html#delete" class="tsd-kind-icon">delete</a></li>
-								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-overwrite tsd-is-external"><a href="importedxmlcomponent.html#prepforxml" class="tsd-kind-icon">prep<wbr>For<wbr>Xml</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-overwrite tsd-is-inherited tsd-is-external"><a href="importedxmlcomponent.html#prepforxml" class="tsd-kind-icon">prep<wbr>For<wbr>Xml</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-external"><a href="importedxmlcomponent.html#push" class="tsd-kind-icon">push</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-static tsd-is-external"><a href="importedxmlcomponent.html#fromxmlstring" class="tsd-kind-icon">from<wbr>Xml<wbr>String</a></li>
 							</ul>
@@ -126,9 +126,14 @@
 							<aside class="tsd-sources">
 								<p>Overrides <a href="xmlcomponent.html">XmlComponent</a>.<a href="xmlcomponent.html#constructor">constructor</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/920bd3c/src/file/xml-components/imported-xml-component.ts#L50">file/xml-components/imported-xml-component.ts:50</a></li>
+									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/7a9cb92/src/file/xml-components/imported-xml-component.ts#L46">file/xml-components/imported-xml-component.ts:46</a></li>
 								</ul>
 							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Converts the xml string to a XmlComponent tree.</p>
+								</div>
+							</div>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
@@ -156,7 +161,7 @@
 							<aside class="tsd-sources">
 								<p>Inherited from <a href="basexmlcomponent.html">BaseXmlComponent</a>.<a href="basexmlcomponent.html#isdeleted">IsDeleted</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/920bd3c/src/file/xml-components/base.ts#L14">file/xml-components/base.ts:14</a></li>
+									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/7a9cb92/src/file/xml-components/base.ts#L14">file/xml-components/base.ts:14</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">boolean</span></h4>
@@ -177,7 +182,7 @@
 							<aside class="tsd-sources">
 								<p>Inherited from <a href="xmlcomponent.html">XmlComponent</a>.<a href="xmlcomponent.html#addchildelement">addChildElement</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/920bd3c/src/file/xml-components/xml-component.ts#L34">file/xml-components/xml-component.ts:34</a></li>
+									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/7a9cb92/src/file/xml-components/xml-component.ts#L43">file/xml-components/xml-component.ts:43</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -201,55 +206,28 @@
 							<aside class="tsd-sources">
 								<p>Inherited from <a href="xmlcomponent.html">XmlComponent</a>.<a href="xmlcomponent.html#delete">delete</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/920bd3c/src/file/xml-components/xml-component.ts#L40">file/xml-components/xml-component.ts:40</a></li>
+									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/7a9cb92/src/file/xml-components/xml-component.ts#L49">file/xml-components/xml-component.ts:49</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
 						</li>
 					</ul>
 				</section>
-				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-overwrite tsd-is-external">
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-overwrite tsd-is-inherited tsd-is-external">
 					<a name="prepforxml" class="tsd-anchor"></a>
 					<h3>prep<wbr>For<wbr>Xml</h3>
-					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-overwrite tsd-is-external">
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-overwrite tsd-is-inherited tsd-is-external">
 						<li class="tsd-signature tsd-kind-icon">prep<wbr>For<wbr>Xml<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="../interfaces/ixmlableobject.html" class="tsd-signature-type">IXmlableObject</a><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">undefined</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
-								<p>Overrides <a href="xmlcomponent.html">XmlComponent</a>.<a href="xmlcomponent.html#prepforxml">prepForXml</a></p>
+								<p>Inherited from <a href="xmlcomponent.html">XmlComponent</a>.<a href="xmlcomponent.html#prepforxml">prepForXml</a></p>
+								<p>Overrides <a href="basexmlcomponent.html">BaseXmlComponent</a>.<a href="basexmlcomponent.html#prepforxml">prepForXml</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/920bd3c/src/file/xml-components/imported-xml-component.ts#L86">file/xml-components/imported-xml-component.ts:86</a></li>
+									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/7a9cb92/src/file/xml-components/xml-component.ts#L16">file/xml-components/xml-component.ts:16</a></li>
 								</ul>
 							</aside>
-							<div class="tsd-comment tsd-typography">
-								<div class="lead">
-									<p>Transforms the object so it can be converted to xml. Example:
-										&lt;w:someKey someAttr=&quot;1&quot; otherAttr=&quot;11&quot;&gt;
-										&lt;w:child childAttr=&quot;2&quot;&gt;
-										&lt;/w:child&gt;
-										&lt;/w:someKey&gt;
-										{
-										&#39;w:someKey&#39;: [
-										{
-										_attr: {
-										someAttr: &quot;1&quot;,
-										otherAttr: &quot;11&quot;
-										}
-										},
-										{
-										&#39;w:child&#39;: [
-										{
-										_attr: {
-										childAttr: &quot;2&quot;
-										}
-										}
-										]
-										}
-										]
-									}</p>
-								</div>
-							</div>
 							<h4 class="tsd-returns-title">Returns <a href="../interfaces/ixmlableobject.html" class="tsd-signature-type">IXmlableObject</a>
 								<span class="tsd-signature-symbol"> | </span>
 								<span class="tsd-signature-type">undefined</span>
@@ -267,7 +245,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/920bd3c/src/file/xml-components/imported-xml-component.ts#L101">file/xml-components/imported-xml-component.ts:101</a></li>
+									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/7a9cb92/src/file/xml-components/imported-xml-component.ts#L61">file/xml-components/imported-xml-component.ts:61</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -290,7 +268,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/920bd3c/src/file/xml-components/imported-xml-component.ts#L39">file/xml-components/imported-xml-component.ts:39</a></li>
+									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/7a9cb92/src/file/xml-components/imported-xml-component.ts#L43">file/xml-components/imported-xml-component.ts:43</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -340,7 +318,7 @@
 							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-external">
 								<a href="importedxmlcomponent.html#delete" class="tsd-kind-icon">delete</a>
 							</li>
-							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-overwrite tsd-is-external">
+							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-overwrite tsd-is-inherited tsd-is-external">
 								<a href="importedxmlcomponent.html#prepforxml" class="tsd-kind-icon">prep<wbr>For<wbr>Xml</a>
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-external">
