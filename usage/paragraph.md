@@ -76,6 +76,22 @@ paragraph.heading1().center();
 
 The above will create a `heading 1` which is `centered`.
 
+### Justified text with breaks
+
+When a paragraph is justified, you may want to not justify the contents of incomplete lines, which end in a soft line break.
+
+![Justified line before](https://user-images.githubusercontent.com/7989576/53820338-e060c680-3f6b-11e9-817c-ecb43271951e.png)
+
+This is possible to achieve using: 
+
+```ts
+this.doc.Settings.addCompatibility().doNotExpandShiftReturn()
+```
+
+The result is:
+
+![Justified line after](https://user-images.githubusercontent.com/7989576/53820344-e2c32080-3f6b-11e9-9afe-24a2ed6e0d78.png)
+
 ## Thematic Break
 
 To add a break in the page, simply add `.thematicBreak()` on a paragraph:

@@ -96,6 +96,28 @@ Once you have got the cell, you can add data to it with the `addParagraph()` met
 cell.addParagraph(new Paragraph("Hello"));
 ```
 
+### Set width of a cell
+
+You can specify the width of a cell using:
+
+`cell.Properties.setWidth(width, format)`
+
+format can be:
+* WidthType.AUTO
+* WidthType.DXA: value is in twentieths of a point
+* WidthType.NIL: is considered as zero
+* WidthType.PCT: percent of table width
+
+### Example
+
+```ts
+cell.Properties.setWidth(100, WidthType.DXA);
+```
+
+```ts
+cell.Properties.setWidth('50%', WidthType.PCT);
+```
+
 ## Borders
 
 BorderStyle can be imported from `docx`. Size determines the thickness. HTML color can be a hex code or alias such as `red`.
@@ -122,7 +144,18 @@ cell.Borders.addEndBorder([BorderStyle], [SIZE], [HTML COLOR]);
 import { BorderStyle } from "docx";
 
 cell.Borders.addStartBorder(BorderStyle.DOT_DOT_DASH, 3, "green");
-cell.Borders.addStartBorder(BorderStyle.DOT_DOT_DASH, 3, "#ff8000");
+cell.Borders.addEndBorder(BorderStyle.DOT_DOT_DASH, 3, "#ff8000");
+```
+
+### Google DOCS
+
+Google DOCS does not support start and end borders, instead they use left and right borders. So to set left and right borders for Google DOCS you should use:
+
+```ts
+import { BorderStyle } from "docx";
+
+cell.Borders.addLeftBorder(BorderStyle.DOT_DOT_DASH, 3, "green");
+cell.Borders.addRightBorder(BorderStyle.DOT_DOT_DASH, 3, "#ff8000");
 ```
 
 ## Set Width
@@ -192,6 +225,23 @@ To have a table within a table
 ```ts
 cell.addTable(new Table(1, 1));
 ```
+
+## Pagination
+
+###Prevent row pagination
+To prevent breaking contents of a row across multiple pages, call `cantSplit()`:
+
+```ts
+table.getRow(0).setCantSplit();
+```
+
+###Repeat row
+If a table is paginated on multiple pages, it is possible to repeat a row at the top of each new page calling `setTableHeader()`:
+
+```ts
+table.getRow(0).setTableHeader();
+```
+ 
 
 ## Examples
 
