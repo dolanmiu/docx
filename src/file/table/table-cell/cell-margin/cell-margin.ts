@@ -1,21 +1,21 @@
 // http://officeopenxml.com/WPtableCellProperties-Margins.php
 import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
 
-export interface ICellMargainProperties {
+export interface ICellMarginProperties {
     readonly type: string;
     readonly width: number;
 }
 
-class CellMargainAttributes extends XmlAttributeComponent<ICellMargainProperties> {
+class CellMarginAttributes extends XmlAttributeComponent<ICellMarginProperties> {
     protected readonly xmlKeys = { width: "w:w", type: "w:type" };
 }
 
-export class TopCellMargain extends XmlComponent {
+export class TopCellMargin extends XmlComponent {
     constructor(value: number) {
         super("w:top");
 
         this.root.push(
-            new CellMargainAttributes({
+            new CellMarginAttributes({
                 width: value,
                 type: "dxa",
             }),
@@ -23,12 +23,12 @@ export class TopCellMargain extends XmlComponent {
     }
 }
 
-export class BottomCellMargain extends XmlComponent {
+export class BottomCellMargin extends XmlComponent {
     constructor(value: number) {
         super("w:bottom");
 
         this.root.push(
-            new CellMargainAttributes({
+            new CellMarginAttributes({
                 width: value,
                 type: "dxa",
             }),
@@ -36,12 +36,12 @@ export class BottomCellMargain extends XmlComponent {
     }
 }
 
-export class LeftCellMargain extends XmlComponent {
+export class LeftCellMargin extends XmlComponent {
     constructor(value: number) {
         super("w:start");
 
         this.root.push(
-            new CellMargainAttributes({
+            new CellMarginAttributes({
                 width: value,
                 type: "dxa",
             }),
@@ -49,12 +49,12 @@ export class LeftCellMargain extends XmlComponent {
     }
 }
 
-export class RightCellMargain extends XmlComponent {
+export class RightCellMargin extends XmlComponent {
     constructor(value: number) {
         super("w:end");
 
         this.root.push(
-            new CellMargainAttributes({
+            new CellMarginAttributes({
                 width: value,
                 type: "dxa",
             }),

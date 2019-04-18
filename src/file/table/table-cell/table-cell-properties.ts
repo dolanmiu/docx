@@ -1,7 +1,7 @@
 import { IgnoreIfEmptyXmlComponent } from "file/xml-components";
 
 import { ITableShadingAttributesProperties, TableShading } from "../shading";
-import { ITableCellMargainOptions, TableCellMargain } from "./cell-margain/table-cell-margains";
+import { ITableCellMarginOptions, TableCellMargin } from "./cell-margin/table-cell-margins";
 import { GridSpan, TableCellBorders, TableCellWidth, VAlign, VerticalAlign, VMerge, VMergeType, WidthType } from "./table-cell-components";
 
 export class TableCellProperties extends IgnoreIfEmptyXmlComponent {
@@ -47,8 +47,8 @@ export class TableCellProperties extends IgnoreIfEmptyXmlComponent {
         return this;
     }
 
-    public addMargains(options: ITableCellMargainOptions): TableCellProperties {
-        this.root.push(new TableCellMargain(options));
+    public addMargins(options: ITableCellMarginOptions): TableCellProperties {
+        this.root.push(new TableCellMargin(options));
 
         return this;
     }
