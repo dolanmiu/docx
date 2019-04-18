@@ -25,7 +25,7 @@ table = doc.createTable({
 table
     .getCell(0, 0)
     .addParagraph(new Paragraph("World"))
-    .setMargains({
+    .setMargins({
         top: 1000,
         bottom: 1000,
         left: 1000,
@@ -40,7 +40,7 @@ table = doc.createTable({
     columns: 4,
     width: 7000,
     widthUnitType: WidthType.DXA,
-    margains: {
+    margins: {
         top: 400,
         bottom: 400,
         right: 400,

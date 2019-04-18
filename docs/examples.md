@@ -112,7 +112,7 @@ _Source: https://github.com/dolanmiu/docx/blob/master/demo/demo18.ts_
 
 ## Margins
 
-Example showing how to set custom margains
+Example showing how to set custom margins
 
 [Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/demo6.ts ':include')
 

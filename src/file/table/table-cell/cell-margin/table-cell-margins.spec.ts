@@ -2,13 +2,13 @@ import { expect } from "chai";
 
 import { Formatter } from "export/formatter";
 
-import { TableCellMargain } from "./table-cell-margains";
+import { TableCellMargin } from "./table-cell-margins";
 
-describe("TableCellMargain", () => {
+describe("TableCellMargin", () => {
     describe("#constructor", () => {
         it("should create with default values", () => {
-            const cellMargain = new TableCellMargain({});
-            const tree = new Formatter().format(cellMargain);
+            const cellMargin = new TableCellMargin({});
+            const tree = new Formatter().format(cellMargin);
             expect(tree).to.deep.equal({
                 "w:tcMar": [
                     {
@@ -48,13 +48,13 @@ describe("TableCellMargain", () => {
         });
 
         it("should create with values", () => {
-            const cellMargain = new TableCellMargain({
+            const cellMargin = new TableCellMargin({
                 top: 5,
                 bottom: 5,
                 left: 5,
                 right: 5,
             });
-            const tree = new Formatter().format(cellMargain);
+            const tree = new Formatter().format(cellMargin);
             expect(tree).to.deep.equal({
                 "w:tcMar": [
                     {

@@ -2,13 +2,13 @@ import { expect } from "chai";
 
 import { Formatter } from "export/formatter";
 
-import { BottomCellMargain, LeftCellMargain, RightCellMargain, TopCellMargain } from "./cell-margain";
+import { BottomCellMargin, LeftCellMargin, RightCellMargin, TopCellMargin } from "./cell-margin";
 
-describe("TopCellMargain", () => {
+describe("TopCellMargin", () => {
     describe("#constructor", () => {
         it("should create", () => {
-            const cellMargain = new TopCellMargain(1);
-            const tree = new Formatter().format(cellMargain);
+            const cellMargin = new TopCellMargin(1);
+            const tree = new Formatter().format(cellMargin);
             expect(tree).to.deep.equal({
                 "w:top": {
                     _attr: {
@@ -21,11 +21,11 @@ describe("TopCellMargain", () => {
     });
 });
 
-describe("BottomCellMargain", () => {
+describe("BottomCellMargin", () => {
     describe("#constructor", () => {
         it("should create", () => {
-            const cellMargain = new BottomCellMargain(1);
-            const tree = new Formatter().format(cellMargain);
+            const cellMargin = new BottomCellMargin(1);
+            const tree = new Formatter().format(cellMargin);
             expect(tree).to.deep.equal({
                 "w:bottom": {
                     _attr: {
@@ -38,11 +38,11 @@ describe("BottomCellMargain", () => {
     });
 });
 
-describe("LeftCellMargain", () => {
+describe("LeftCellMargin", () => {
     describe("#constructor", () => {
         it("should create", () => {
-            const cellMargain = new LeftCellMargain(1);
-            const tree = new Formatter().format(cellMargain);
+            const cellMargin = new LeftCellMargin(1);
+            const tree = new Formatter().format(cellMargin);
             expect(tree).to.deep.equal({
                 "w:start": {
                     _attr: {
@@ -55,11 +55,11 @@ describe("LeftCellMargain", () => {
     });
 });
 
-describe("RightCellMargain", () => {
+describe("RightCellMargin", () => {
     describe("#constructor", () => {
         it("should create", () => {
-            const cellMargain = new RightCellMargain(1);
-            const tree = new Formatter().format(cellMargain);
+            const cellMargin = new RightCellMargin(1);
+            const tree = new Formatter().format(cellMargin);
             expect(tree).to.deep.equal({
                 "w:end": {
                     _attr: {

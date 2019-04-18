@@ -22,8 +22,8 @@ export interface ITableOptions {
     readonly width?: number;
     readonly widthUnitType?: WidthType;
     readonly columnWidths?: number[];
-    readonly margains?: {
-        readonly margainUnitType?: WidthType;
+    readonly margins?: {
+        readonly marginUnitType?: WidthType;
         readonly top?: number;
         readonly bottom?: number;
         readonly right?: number;
@@ -42,7 +42,7 @@ export class Table extends XmlComponent {
         width = 100,
         widthUnitType = WidthType.AUTO,
         columnWidths = Array<number>(columns).fill(100),
-        margains: { margainUnitType, top, bottom, right, left } = { margainUnitType: WidthType.AUTO, top: 0, bottom: 0, right: 0, left: 0 },
+        margins: { marginUnitType, top, bottom, right, left } = { marginUnitType: WidthType.AUTO, top: 0, bottom: 0, right: 0, left: 0 },
         float,
     }: ITableOptions) {
         super("w:tbl");
@@ -50,10 +50,10 @@ export class Table extends XmlComponent {
         this.root.push(this.properties);
         this.properties.setBorder();
         this.properties.setWidth(width, widthUnitType);
-        this.properties.CellMargin.addBottomMargin(bottom || 0, margainUnitType);
-        this.properties.CellMargin.addTopMargin(top || 0, margainUnitType);
-        this.properties.CellMargin.addLeftMargin(left || 0, margainUnitType);
-        this.properties.CellMargin.addRightMargin(right || 0, margainUnitType);
+        this.properties.CellMargin.addBottomMargin(bottom || 0, marginUnitType);
+        this.properties.CellMargin.addTopMargin(top || 0, marginUnitType);
+        this.properties.CellMargin.addLeftMargin(left || 0, marginUnitType);
+        this.properties.CellMargin.addRightMargin(right || 0, marginUnitType);
         const grid = new TableGrid(columnWidths);
 
         this.root.push(grid);
