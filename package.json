@@ -19,6 +19,7 @@
     "style.fix": "npm run style -- --write",
     "fix-types": "ts-node scripts/types-absolute-fixer.ts",
     "e2e": "ts-node scripts/e2e.ts",
+    "serve.docs": "cd docs && docsify serve",
     "ts-node": "ts-node"
   },
   "pre-commit": [
@@ -67,6 +68,7 @@
     "@types/webpack": "^4.4.24",
     "awesome-typescript-loader": "^3.4.1",
     "chai": "^3.5.0",
+    "docsify": "^4.9.1",
     "glob": "^7.1.2",
     "istanbul-instrumenter-loader": "^3.0.1",
     "jszip": "^3.1.5",
