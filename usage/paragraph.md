@@ -82,10 +82,10 @@ When a paragraph is justified, you may want to not justify the contents of incom
 
 ![Justified line before](https://user-images.githubusercontent.com/7989576/53820338-e060c680-3f6b-11e9-817c-ecb43271951e.png)
 
-This is possible to achieve using: 
+This is possible to achieve using:
 
 ```ts
-this.doc.Settings.addCompatibility().doNotExpandShiftReturn()
+this.doc.Settings.addCompatibility().doNotExpandShiftReturn();
 ```
 
 The result is:
@@ -122,7 +122,7 @@ var paragraph = new docx.Paragraph("Hello World on another page").pageBreakBefor
 
 ![Page Break Before in Word](https://user-images.githubusercontent.com/34742290/40176503-df3a8398-59db-11e8-8b9c-d719f13aa8b4.png)
 
-Example: https://github.com/dolanmiu/docx/blob/master/demo/demo15.js
+Example: https://github.com/dolanmiu/docx/blob/master/demo/demo15.ts
 
 ## Page break control
 
