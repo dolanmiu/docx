@@ -16,7 +16,7 @@ export class TableColumn {
     public mergeCells(startIndex: number, endIndex: number): TableCell {
         this.cells[startIndex].addVerticalMerge(VMergeType.RESTART);
 
-        for (let i = startIndex; i <= endIndex; i++) {
+        for (let i = startIndex + 1; i <= endIndex; i++) {
             this.cells[i].addVerticalMerge(VMergeType.CONTINUE);
         }
 
