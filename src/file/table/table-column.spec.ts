@@ -43,7 +43,9 @@ describe("TableColumn", () => {
             });
 
             const tree2 = new Formatter().format(cells[1]);
-            expect(tree2).to.deep.equal({ "w:tc": [{ "w:p": EMPTY_OBJECT }] });
+            expect(tree2).to.deep.equal({
+                "w:tc": [{ "w:tcPr": [{ "w:vMerge": { _attr: { "w:val": "continue" } } }] }, { "w:p": EMPTY_OBJECT }],
+            });
 
             const tree3 = new Formatter().format(cells[2]);
             expect(tree3).to.deep.equal({
