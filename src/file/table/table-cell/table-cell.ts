@@ -31,16 +31,10 @@ export class TableCell extends XmlComponent {
     public prepForXml(): IXmlableObject | undefined {
         // Cells must end with a paragraph
         if (!(this.root[this.root.length - 1] instanceof Paragraph)) {
-            this.createParagraph();
+            const para = new Paragraph({});
+            this.addParagraph(para);
         }
         return super.prepForXml();
-    }
-
-    public createParagraph(text?: string): Paragraph {
-        const para = new Paragraph(text);
-        this.addParagraph(para);
-
-        return para;
     }
 
     public setVerticalAlign(type: VerticalAlign): TableCell {

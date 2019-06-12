@@ -11,7 +11,7 @@ describe("HeaderWrapper", () => {
         it("should call the underlying header's addParagraph", () => {
             const wrapper = new HeaderWrapper(new Media(), 1);
             const spy = sinon.spy(wrapper.Header, "addParagraph");
-            wrapper.addParagraph(new Paragraph());
+            wrapper.addParagraph(new Paragraph({}));
 
             expect(spy.called).to.equal(true);
         });
@@ -37,16 +37,6 @@ describe("HeaderWrapper", () => {
             const wrapper = new HeaderWrapper(new Media(), 1);
             const spy = sinon.spy(wrapper.Header, "createTable");
             wrapper.createTable(1, 1);
-
-            expect(spy.called).to.equal(true);
-        });
-    });
-
-    describe("#createParagraph", () => {
-        it("should call the underlying header's createParagraph", () => {
-            const file = new HeaderWrapper(new Media(), 1);
-            const spy = sinon.spy(file.Header, "addParagraph");
-            file.createParagraph();
 
             expect(spy.called).to.equal(true);
         });

@@ -38,25 +38,25 @@ export class FootNotes extends XmlComponent {
 
         const begin = new Footnote(-1, FootnoteType.SEPERATOR);
         begin.addParagraph(
-            new Paragraph()
-                .spacing({
+            new Paragraph({
+                spacing: {
                     after: 0,
                     line: 240,
                     lineRule: "auto",
-                })
-                .addRun(new SeperatorRun()),
+                },
+            }).addRun(new SeperatorRun()),
         );
         this.root.push(begin);
 
         const spacing = new Footnote(0, FootnoteType.CONTINUATION_SEPERATOR);
         spacing.addParagraph(
-            new Paragraph()
-                .spacing({
+            new Paragraph({
+                spacing: {
                     after: 0,
                     line: 240,
                     lineRule: "auto",
-                })
-                .addRun(new ContinuationSeperatorRun()),
+                },
+            }).addRun(new ContinuationSeperatorRun()),
         );
         this.root.push(spacing);
     }

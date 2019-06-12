@@ -25,12 +25,6 @@ export class HeaderWrapper {
         this.header.addParagraph(paragraph);
     }
 
-    public createParagraph(text?: string): Paragraph {
-        const para = new Paragraph(text);
-        this.addParagraph(para);
-        return para;
-    }
-
     public addTable(table: Table): void {
         this.header.addTable(table);
     }

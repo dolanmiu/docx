@@ -60,8 +60,8 @@ export class Body extends XmlComponent {
     }
 
     private createSectionParagraph(section: SectionProperties): Paragraph {
-        const paragraph = new Paragraph();
-        const properties = new ParagraphProperties();
+        const paragraph = new Paragraph({});
+        const properties = new ParagraphProperties({});
         properties.addChildElement(section);
         paragraph.addChildElement(properties);
         return paragraph;

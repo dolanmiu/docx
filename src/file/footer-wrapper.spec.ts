@@ -11,7 +11,7 @@ describe("FooterWrapper", () => {
         it("should call the underlying footer's addParagraph", () => {
             const file = new FooterWrapper(new Media(), 1);
             const spy = sinon.spy(file.Footer, "addParagraph");
-            file.addParagraph(new Paragraph());
+            file.addParagraph(new Paragraph({}));
 
             expect(spy.called).to.equal(true);
         });
@@ -37,16 +37,6 @@ describe("FooterWrapper", () => {
             const wrapper = new FooterWrapper(new Media(), 1);
             const spy = sinon.spy(wrapper.Footer, "createTable");
             wrapper.createTable(1, 1);
-
-            expect(spy.called).to.equal(true);
-        });
-    });
-
-    describe("#createParagraph", () => {
-        it("should call the underlying footer's createParagraph", () => {
-            const file = new FooterWrapper(new Media(), 1);
-            const spy = sinon.spy(file.Footer, "addParagraph");
-            file.createParagraph();
 
             expect(spy.called).to.equal(true);
         });

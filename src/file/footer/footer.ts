@@ -42,12 +42,6 @@ export class Footer extends InitializableXmlComponent {
         return this;
     }
 
-    public createParagraph(text?: string): Paragraph {
-        const para = new Paragraph(text);
-        this.addParagraph(para);
-        return para;
-    }
-
     public addTable(table: Table): void {
         this.root.push(table);
     }

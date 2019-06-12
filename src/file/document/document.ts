@@ -47,12 +47,6 @@ export class Document extends XmlComponent {
         return this;
     }
 
-    public createParagraph(text?: string): Paragraph {
-        const para = new Paragraph(text);
-        this.addParagraph(para);
-        return para;
-    }
-
     public addTable(table: Table): Document {
         this.body.push(table);
         return this;

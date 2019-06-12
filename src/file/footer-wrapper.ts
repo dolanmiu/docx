@@ -25,12 +25,6 @@ export class FooterWrapper {
         this.footer.addParagraph(paragraph);
     }
 
-    public createParagraph(text?: string): Paragraph {
-        const para = new Paragraph(text);
-        this.addParagraph(para);
-        return para;
-    }
-
     public addTable(table: Table): void {
         this.footer.addTable(table);
     }

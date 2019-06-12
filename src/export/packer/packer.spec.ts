@@ -2,7 +2,7 @@
 import { assert } from "chai";
 import { stub } from "sinon";
 
-import { File, Paragraph } from "file";
+import { File, HeadingLevel, Paragraph } from "file";
 
 import { Packer } from "./packer";
 
@@ -17,11 +17,24 @@ describe("Packer", () => {
             lastModifiedBy: "Dolan Miu",
         });
         const paragraph = new Paragraph("test text");
-        const heading = new Paragraph("Hello world").heading1();
+        const heading = new Paragraph({
+            text: "Hello world",
+            heading: HeadingLevel.HEADING_1,
+        });
 
-        file.addParagraph(new Paragraph("title").title());
+        file.addParagraph(
+            new Paragraph({
+                text: "title",
+                heading: HeadingLevel.TITLE,
+            }),
+        );
         file.addParagraph(heading);
-        file.addParagraph(new Paragraph("heading 2").heading2());
+        file.addParagraph(
+            new Paragraph({
+                text: "heading 2",
+                heading: HeadingLevel.HEADING_2,
+            }),
+        );
         file.addParagraph(paragraph);
 
         packer = new Packer();

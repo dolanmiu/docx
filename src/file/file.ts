@@ -122,10 +122,6 @@ export class File {
         return this;
     }
 
-    public createParagraph(text?: string): Paragraph {
-        return this.document.createParagraph(text);
-    }
-
     public addTable(table: Table): File {
         this.document.addTable(table);
         return this;

@@ -2,7 +2,6 @@ import { assert, expect } from "chai";
 
 import { Formatter } from "export/formatter";
 
-import { Paragraph } from "../paragraph";
 import { Table } from "../table";
 import { Document } from "./document";
 
@@ -28,32 +27,6 @@ describe("Document", () => {
         it("should create default section", () => {
             const body = new Formatter().format(document)["w:document"][1]["w:body"];
             expect(body[0]).to.have.property("w:sectPr");
-        });
-    });
-
-    describe("#createParagraph", () => {
-        it("should create a new paragraph and append it to body", () => {
-            const para = document.createParagraph();
-            expect(para).to.be.an.instanceof(Paragraph);
-            const body = new Formatter().format(document)["w:document"][1]["w:body"];
-            expect(body)
-                .to.be.an("array")
-                .which.has.length.at.least(1);
-            expect(body[0]).to.have.property("w:p");
-        });
-
-        it("should use the text given to create a run in the paragraph", () => {
-            const para = document.createParagraph("sample paragraph text");
-            expect(para).to.be.an.instanceof(Paragraph);
-            const body = new Formatter().format(document)["w:document"][1]["w:body"];
-            expect(body)
-                .to.be.an("array")
-                .which.has.length.at.least(1);
-            expect(body[0])
-                .to.have.property("w:p")
-                .which.includes({
-                    "w:r": [{ "w:t": [{ _attr: { "xml:space": "preserve" } }, "sample paragraph text"] }],
-                });
         });
     });
 

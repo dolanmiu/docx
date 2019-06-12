@@ -7,7 +7,7 @@ export class ImageParagraph extends Paragraph {
     private readonly pictureRun: PictureRun;
 
     constructor(imageData: IMediaData, drawingOptions?: IDrawingOptions) {
-        super();
+        super({});
         this.pictureRun = new PictureRun(imageData, drawingOptions);
         this.root.push(this.pictureRun);
     }

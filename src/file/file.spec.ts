@@ -83,7 +83,7 @@ describe("File", () => {
         it("should call the underlying document's addParagraph", () => {
             const file = new File();
             const spy = sinon.spy(file.Document, "addParagraph");
-            file.addParagraph(new Paragraph());
+            file.addParagraph(new Paragraph({}));
 
             expect(spy.called).to.equal(true);
         });
@@ -123,16 +123,6 @@ describe("File", () => {
             const spy = sinon.spy(wrapper.Document, "addTableOfContents");
             // tslint:disable-next-line:no-any
             wrapper.addTableOfContents({} as any);
-
-            expect(spy.called).to.equal(true);
-        });
-    });
-
-    describe("#createParagraph", () => {
-        it("should call the underlying document's createParagraph", () => {
-            const wrapper = new File();
-            const spy = sinon.spy(wrapper.Document, "createParagraph");
-            wrapper.createParagraph("test");
 
             expect(spy.called).to.equal(true);
         });
