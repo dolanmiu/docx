@@ -12,7 +12,6 @@ const table = new Table({
 });
 table.getCell(1, 1).addParagraph(image.Paragraph);
 
-// doc.createParagraph("Hello World");
 doc.addTable(table);
 
 // doc.Header.createImage(fs.readFileSync("./demo/images/pizza.gif"));

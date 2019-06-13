@@ -1,7 +1,7 @@
 // Generate a CV
 // Import from 'docx' rather than '../build' if you install from npm
 import * as fs from "fs";
-import { Document, Packer, Paragraph, TextRun } from "../build";
+import { AlignmentType, Document, HeadingLevel, Packer, Paragraph, TextRun } from "../build";
 
 // tslint:disable:no-shadowed-variable
 
@@ -135,7 +135,12 @@ class DocumentCreator {
         const skills = data[2] as object[];
         const achivements = data[3] as object[];
         const document = new Document();
-        document.addParagraph(new Paragraph("Dolan Miu").title());
+        document.addParagraph(
+            new Paragraph({
+                text: "Dolan Miu",
+                heading: HeadingLevel.TITLE,
+            }),
+        );
 
         document.addParagraph(this.createContactInfo(PHONE_NUMBER, PROFILE_URL, EMAIL));
         document.addParagraph(this.createHeading("Education"));
@@ -194,15 +199,18 @@ class DocumentCreator {
         );
         document.addParagraph(new Paragraph("More references upon request"));
         document.addParagraph(
-            new Paragraph(
-                "This CV was generated in real-time based on my Linked-In profile from my personal website www.dolan.bio.",
-            ).center(),
+            new Paragraph({
+                text: "This CV was generated in real-time based on my Linked-In profile from my personal website www.dolan.bio.",
+                alignment: AlignmentType.CENTER,
+            }),
         );
         return document;
     }
 
     public createContactInfo(phoneNumber: string, profileUrl: string, email: string): Paragraph {
-        const paragraph = new Paragraph().center();
+        const paragraph = new Paragraph({
+            alignment: AlignmentType.CENTER,
+        });
         const contactInfo = new TextRun(`Mobile: ${phoneNumber} | LinkedIn: ${profileUrl} | Email: ${email}`);
         const address = new TextRun("Address: 58 Elm Avenue, Kent ME4 6ER, UK").break();
 
@@ -213,15 +221,26 @@ class DocumentCreator {
     }
 
     public createHeading(text: string): Paragraph {
-        return new Paragraph(text).heading1().thematicBreak();
+        return new Paragraph({
+            text: text,
+            heading: HeadingLevel.HEADING_1,
+            thematicBreak: true,
+        });
     }
 
     public createSubHeading(text: string): Paragraph {
-        return new Paragraph(text).heading2();
+        return new Paragraph({
+            text: text,
+            heading: HeadingLevel.HEADING_2,
+        });
     }
 
     public createInstitutionHeader(institutionName: string, dateText: string): Paragraph {
-        const paragraph = new Paragraph().maxRightTabStop();
+        const paragraph = new Paragraph({
+            tabStop: {
+                maxRight: {},
+            },
+        });
         const institution = new TextRun(institutionName).bold();
         const date = new TextRun(dateText).tab().bold();
 
@@ -232,7 +251,7 @@ class DocumentCreator {
     }
 
     public createRoleText(roleText: string): Paragraph {
-        const paragraph = new Paragraph();
+        const paragraph = new Paragraph({});
         const role = new TextRun(roleText).italics();
 
         paragraph.addRun(role);
@@ -241,12 +260,17 @@ class DocumentCreator {
     }
 
     public createBullet(text: string): Paragraph {
-        return new Paragraph(text).bullet();
+        return new Paragraph({
+            text: text,
+            bullet: {
+                level: 0,
+            },
+        });
     }
 
     // tslint:disable-next-line:no-any
     public createSkillList(skills: any[]): Paragraph {
-        const paragraph = new Paragraph();
+        const paragraph = new Paragraph({});
         const skillConcat = skills.map((skill) => skill.name).join(", ") + ".";
 
         paragraph.addRun(new TextRun(skillConcat));
@@ -259,7 +283,12 @@ class DocumentCreator {
         const arr: Paragraph[] = [];
 
         for (const achievement of achivements) {
-            const paragraph = new Paragraph(achievement.name).bullet();
+            const paragraph = new Paragraph({
+                text: achievement.name,
+                bullet: {
+                    level: 0,
+                },
+            });
             arr.push(paragraph);
         }
 
@@ -267,7 +296,7 @@ class DocumentCreator {
     }
 
     public createInterests(interests: string): Paragraph {
-        const paragraph = new Paragraph();
+        const paragraph = new Paragraph({});
 
         paragraph.addRun(new TextRun(interests));
         return paragraph;

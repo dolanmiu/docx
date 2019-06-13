@@ -6,7 +6,10 @@ import { Document, Packer, Paragraph } from "../build";
 const doc = new Document();
 
 const paragraph = new Paragraph("Hello World");
-const paragraph2 = new Paragraph("Hello World on another page").pageBreakBefore();
+const paragraph2 = new Paragraph({
+    text: "Hello World on another page",
+    pageBreakBefore: true,
+});
 
 doc.addParagraph(paragraph);
 doc.addParagraph(paragraph2);

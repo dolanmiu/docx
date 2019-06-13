@@ -1,7 +1,7 @@
 // Example of how to change page borders
 // Import from 'docx' rather than '../build' if you install from npm
 import * as fs from "fs";
-import { Document, Packer, Paragraph, TextRun } from "../build";
+import { Document, HeadingLevel, Packer, Paragraph, TextRun } from "../build";
 
 const doc = new Document(undefined, {
     top: 0,
@@ -18,9 +18,12 @@ paragraph.addRun(dateText);
 
 doc.addParagraph(paragraph);
 
-doc.createParagraph("Hello World").heading1();
-doc.createParagraph("Foo bar");
-doc.createParagraph("Github is the best");
+doc.addParagraph(new Paragraph({
+    text: "Hello World",
+    heading: HeadingLevel.HEADING_1,
+}));
+doc.addParagraph(new Paragraph("Foo bar"));
+doc.addParagraph(new Paragraph("Github is the best"));
 
 const packer = new Packer();
 

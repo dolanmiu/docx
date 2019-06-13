@@ -10,9 +10,9 @@ const paragraph = new Paragraph("Hello World").pageBreak();
 doc.addParagraph(paragraph);
 
 const header = doc.createHeader();
-header.createParagraph("Header on another page");
+header.addParagraph(new Paragraph("Header on another page"));
 const footer = doc.createFooter();
-footer.createParagraph("Footer on another page");
+footer.addParagraph(new Paragraph("Footer on another page"));
 
 doc.addSection({
     headers: {
@@ -25,7 +25,7 @@ doc.addSection({
     pageNumberFormatType: PageNumberFormat.DECIMAL,
 });
 
-doc.createParagraph("hello");
+doc.addParagraph(new Paragraph("hello"));
 
 doc.addSection({
     headers: {
@@ -39,11 +39,11 @@ doc.addSection({
     orientation: PageOrientation.LANDSCAPE,
 });
 
-doc.createParagraph("hello in landscape");
+doc.addParagraph(new Paragraph("hello in landscape"));
 
 const header2 = doc.createHeader();
 const pageNumber = new TextRun("Page number: ").pageNumber();
-header2.createParagraph().addRun(pageNumber);
+header2.addParagraph(new Paragraph({}).addRun(pageNumber));
 
 doc.addSection({
     headers: {
@@ -52,7 +52,7 @@ doc.addSection({
     orientation: PageOrientation.PORTRAIT,
 });
 
-doc.createParagraph("Page number in the header must be 2, because it continues from the previous section.");
+doc.addParagraph(new Paragraph("Page number in the header must be 2, because it continues from the previous section."));
 
 doc.addSection({
     headers: {
@@ -62,9 +62,9 @@ doc.addSection({
     orientation: PageOrientation.PORTRAIT,
 });
 
-doc.createParagraph(
+doc.addParagraph(new Paragraph(
     "Page number in the header must be III, because it continues from the previous section, but is defined as upper roman.",
-);
+));
 
 doc.addSection({
     headers: {
@@ -75,7 +75,7 @@ doc.addSection({
     orientation: PageOrientation.PORTRAIT,
 });
 
-doc.createParagraph("Page number in the header must be 25, because it is defined to start at 25 and to be decimal in this section.");
+doc.addParagraph(new Paragraph("Page number in the header must be 25, because it is defined to start at 25 and to be decimal in this section."));
 
 const packer = new Packer();
 

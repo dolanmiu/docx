@@ -1,7 +1,7 @@
 // This example shows 3 styles using XML styles
 // Import from 'docx' rather than '../build' if you install from npm
 import * as fs from "fs";
-import { Document, Packer, Paragraph } from "../build";
+import { Document, HeadingLevel, Packer, Paragraph } from "../build";
 
 const styles = fs.readFileSync("./demo/assets/custom-styles.xml", "utf-8");
 const doc = new Document({
@@ -9,16 +9,24 @@ const doc = new Document({
     externalStyles: styles,
 });
 
-doc.createParagraph("Cool Heading Text").heading1();
+doc.addParagraph(new Paragraph({
+    text: "Cool Heading Text",
+    heading: HeadingLevel.HEADING_1,
+}));
 
-const paragraph = new Paragraph('This is a custom named style from the template "MyFancyStyle"');
-paragraph.style("MyFancyStyle");
+const paragraph = new Paragraph({
+    text: 'This is a custom named style from the template "MyFancyStyle"',
+    style: "MyFancyStyle",
+});
 doc.addParagraph(paragraph);
 
-doc.createParagraph("Some normal text");
+doc.addParagraph(new Paragraph("Some normal text"));
 
-doc.createParagraph("MyFancyStyle again").style("MyFancyStyle");
-paragraph.style("MyFancyStyle");
+doc.addParagraph(new Paragraph({
+    text: "MyFancyStyle again",
+    style: "MyFancyStyle",
+}));
+
 doc.addParagraph(paragraph);
 
 const packer = new Packer();

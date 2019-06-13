@@ -1,14 +1,14 @@
 // Add text to header and footer
 // Import from 'docx' rather than '../build' if you install from npm
 import * as fs from "fs";
-import { Document, Packer } from "../build";
+import { Document, Packer, Paragraph } from "../build";
 
 const doc = new Document();
 
-doc.createParagraph("Hello World");
+doc.addParagraph(new Paragraph("Hello World"));
 
-doc.Header.createParagraph("Header text");
-doc.Footer.createParagraph("Footer text");
+doc.Header.addParagraph(new Paragraph("Header text"));
+doc.Footer.addParagraph(new Paragraph("Footer text"));
 
 const packer = new Packer();
 

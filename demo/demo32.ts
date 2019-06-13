@@ -1,7 +1,7 @@
 // Example of how you would merge cells together
 // Import from 'docx' rather than '../build' if you install from npm
 import * as fs from "fs";
-import { Document, Packer, Paragraph, ShadingType, WidthType } from "../build";
+import { Document, HeadingLevel, Packer, Paragraph, ShadingType, WidthType } from "../build";
 
 const doc = new Document();
 
@@ -13,7 +13,12 @@ let table = doc.createTable({
 table.getCell(0, 0).addParagraph(new Paragraph("Hello"));
 table.getRow(0).mergeCells(0, 1);
 
-doc.createParagraph("Another table").heading2();
+doc.addParagraph(
+    new Paragraph({
+        text: "Another table",
+        heading: HeadingLevel.HEADING_2,
+    }),
+);
 
 table = doc.createTable({
     rows: 2,
@@ -33,7 +38,12 @@ table
     });
 table.getRow(0).mergeCells(0, 2);
 
-doc.createParagraph("Another table").heading2();
+doc.addParagraph(
+    new Paragraph({
+        text: "Another table",
+        heading: HeadingLevel.HEADING_2,
+    }),
+);
 
 table = doc.createTable({
     rows: 2,
@@ -85,7 +95,7 @@ table
 
 table.getRow(0).mergeCells(0, 3);
 
-doc.createParagraph("hi");
+doc.addParagraph(new Paragraph("hi"));
 
 doc.createTable({
     rows: 2,

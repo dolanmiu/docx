@@ -1,7 +1,7 @@
 // Example on how to customise the look at feel using Styles
 // Import from 'docx' rather than '../build' if you install from npm
 import * as fs from "fs";
-import { Document, Packer } from "../build";
+import { Document, Packer, Paragraph, TextRun, HeadingLevel } from "../build";
 
 const doc = new Document({
     creator: "Clippy",
@@ -46,30 +46,56 @@ doc.Styles.createParagraphStyle("ListParagraph", "List Paragraph")
 const numberedAbstract = doc.Numbering.createAbstractNumbering();
 numberedAbstract.createLevel(0, "lowerLetter", "%1)", "left");
 
-doc.createParagraph("Test heading1, bold and italicized").heading1();
-doc.createParagraph("Some simple content");
-doc.createParagraph("Test heading2 with double red underline").heading2();
+doc.addParagraph(
+    new Paragraph({
+        text: "Test heading1, bold and italicized",
+        heading: HeadingLevel.HEADING_1,
+    }),
+);
+doc.addParagraph(new Paragraph("Some simple content"));
+doc.addParagraph(
+    new Paragraph({
+        text: "Test heading2 with double red underline",
+        heading: HeadingLevel.HEADING_2,
+    }),
+);
 
 const letterNumbering = doc.Numbering.createConcreteNumbering(numberedAbstract);
 const letterNumbering5 = doc.Numbering.createConcreteNumbering(numberedAbstract);
 letterNumbering5.overrideLevel(0, 5);
 
-doc.createParagraph("Option1").setNumbering(letterNumbering, 0);
-doc.createParagraph("Option5 -- override 2 to 5").setNumbering(letterNumbering5, 0);
-doc.createParagraph("Option3").setNumbering(letterNumbering, 0);
+doc.addParagraph(
+    new Paragraph({
+        text: "Option1",
+        numbering: {
+            num: letterNumbering,
+            level: 0,
+        },
+    }),
+);
+doc.addParagraph(new Paragraph("Option5 -- override 2 to 5").setNumbering(letterNumbering5, 0));
+doc.addParagraph(new Paragraph("Option3").setNumbering(letterNumbering, 0));
 
-doc
-    .createParagraph()
-    .createTextRun("Some monospaced content")
-    .font("Monospace");
+doc.addParagraph(new Paragraph({}).addRun(new TextRun("Some monospaced content").font("Monospace")));
 
-doc.createParagraph("An aside, in light gray italics and indented").style("aside");
-doc.createParagraph("This is normal, but well-spaced text").style("wellSpaced");
-const para = doc.createParagraph();
-para.createTextRun("This is a bold run,").bold();
-para.createTextRun(" switching to normal ");
-para.createTextRun("and then underlined ").underline();
-para.createTextRun("and back to normal.");
+doc.addParagraph(
+    new Paragraph({
+        text: "An aside, in light gray italics and indented",
+        style: "aside",
+    }),
+);
+doc.addParagraph(
+    new Paragraph({
+        text: "This is normal, but well-spaced text",
+        style: "wellSpaced",
+    }),
+);
+const para = new Paragraph({});
+doc.addParagraph(para);
+para.addRun(new TextRun("This is a bold run,").bold());
+para.addRun(new TextRun(" switching to normal "));
+para.addRun(new TextRun("and then underlined ").underline());
+para.addRun(new TextRun("and back to normal."));
 
 const packer = new Packer();
 
