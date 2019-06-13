@@ -1,7 +1,7 @@
 // Example on how to customise the look at feel using Styles
 // Import from 'docx' rather than '../build' if you install from npm
 import * as fs from "fs";
-import { Document, Packer, Paragraph, TextRun, HeadingLevel } from "../build";
+import { Document, HeadingLevel, Packer, Paragraph, TextRun } from "../build";
 
 const doc = new Document({
     creator: "Clippy",
@@ -73,8 +73,24 @@ doc.addParagraph(
         },
     }),
 );
-doc.addParagraph(new Paragraph("Option5 -- override 2 to 5").setNumbering(letterNumbering5, 0));
-doc.addParagraph(new Paragraph("Option3").setNumbering(letterNumbering, 0));
+doc.addParagraph(
+    new Paragraph({
+        text: "Option5 -- override 2 to 5",
+        numbering: {
+            num: letterNumbering,
+            level: 0,
+        },
+    }),
+);
+doc.addParagraph(
+    new Paragraph({
+        text: "Option3",
+        numbering: {
+            num: letterNumbering,
+            level: 0,
+        },
+    }),
+);
 
 doc.addParagraph(new Paragraph({}).addRun(new TextRun("Some monospaced content").font("Monospace")));
 
