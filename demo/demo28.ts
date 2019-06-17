@@ -1,7 +1,7 @@
 // Table of contents
 // Import from 'docx' rather than '../build' if you install from npm
 import * as fs from "fs";
-import { File, Packer, Paragraph, StyleLevel, TableOfContents } from "../build";
+import { File, HeadingLevel, Packer, Paragraph, StyleLevel, TableOfContents } from "../build";
 
 const doc = new File();
 
@@ -26,15 +26,30 @@ const toc = new TableOfContents("Summary", {
 
 doc.addTableOfContents(toc);
 
-doc.addParagraph(new Paragraph("Header #1").heading1().pageBreakBefore());
+doc.addParagraph(new Paragraph({
+    text: "Header #1",
+    heading: HeadingLevel.HEADING_1,
+    pageBreakBefore: true,
+}));
 doc.addParagraph(new Paragraph("I'm a little text very nicely written.'"));
 
-doc.addParagraph(new Paragraph("Header #2").heading1().pageBreakBefore());
+doc.addParagraph(new Paragraph({
+    text: "Header #2",
+    heading: HeadingLevel.HEADING_1,
+    pageBreakBefore: true,
+}));
 doc.addParagraph(new Paragraph("I'm a other text very nicely written.'"));
-doc.addParagraph(new Paragraph("Header #2.1").heading2());
+doc.addParagraph(new Paragraph({
+    text: "Header #2.1",
+    heading: HeadingLevel.HEADING_2,
+}));
 doc.addParagraph(new Paragraph("I'm a another text very nicely written.'"));
 
-doc.addParagraph(new Paragraph("My Spectacular Style #1").style("MySpectacularStyle").pageBreakBefore());
+doc.addParagraph(new Paragraph({
+    text: "My Spectacular Style #1",
+    style: "MySpectacularStyle",
+    pageBreakBefore: true,
+}));
 
 const packer = new Packer();
 

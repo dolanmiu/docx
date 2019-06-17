@@ -241,8 +241,14 @@ class DocumentCreator {
                 maxRight: {},
             },
         });
-        const institution = new TextRun(institutionName).bold();
-        const date = new TextRun(dateText).tab().bold();
+        const institution = new TextRun({
+            text: institutionName,
+            bold: true,
+        });
+        const date = new TextRun({
+            text: dateText,
+            bold: true,
+        }).tab();
 
         paragraph.addRun(institution);
         paragraph.addRun(date);
@@ -252,7 +258,10 @@ class DocumentCreator {
 
     public createRoleText(roleText: string): Paragraph {
         const paragraph = new Paragraph({});
-        const role = new TextRun(roleText).italics();
+        const role = new TextRun({
+            text: roleText,
+            italics: true,
+        });
 
         paragraph.addRun(role);
 

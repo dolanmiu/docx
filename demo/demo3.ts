@@ -14,25 +14,64 @@ abstractNum.createLevel(2, "lowerLetter", "%3)", "start").addParagraphProperty(n
 
 const concrete = numbering.createConcreteNumbering(abstractNum);
 
-const topLevelP = new Paragraph("Hey you");
-const subP = new Paragraph("What's up fam");
-const secondSubP = new Paragraph("Hello World 2");
-const subSubP = new Paragraph("Yeah boi");
-
-topLevelP.setNumbering(concrete, 0);
-subP.setNumbering(concrete, 1);
-secondSubP.setNumbering(concrete, 1);
-subSubP.setNumbering(concrete, 2);
+const topLevelP = new Paragraph({
+    text: "Hey you",
+    numbering: {
+        num: concrete,
+        level: 0,
+    },
+});
+const subP = new Paragraph({
+    text: "What's up fam",
+    numbering: {
+        num: concrete,
+        level: 1,
+    },
+});
+const secondSubP = new Paragraph({
+    text: "Hello World 2",
+    numbering: {
+        num: concrete,
+        level: 1,
+    },
+});
+const subSubP = new Paragraph({
+    text: "Yeah boi",
+    numbering: {
+        num: concrete,
+        level: 2,
+    },
+});
 
 doc.addParagraph(topLevelP);
 doc.addParagraph(subP);
 doc.addParagraph(secondSubP);
 doc.addParagraph(subSubP);
 
-const bullet1 = new Paragraph("Hey you").bullet();
-const bullet2 = new Paragraph("What's up fam").bullet(1);
-const bullet3 = new Paragraph("Hello World 2").bullet(2);
-const bullet4 = new Paragraph("Yeah boi").bullet(3);
+const bullet1 = new Paragraph({
+    text: "Hey you",
+    bullet: {
+        level: 0,
+    },
+});
+const bullet2 = new Paragraph({
+    text: "What's up fam",
+    bullet: {
+        level: 1,
+    },
+});
+const bullet3 = new Paragraph({
+    text: "Hello World 2",
+    bullet: {
+        level: 2,
+    },
+});
+const bullet4 = new Paragraph({
+    text: "Yeah boi",
+    bullet: {
+        level: 3,
+    },
+});
 
 doc.addParagraph(bullet1);
 doc.addParagraph(bullet2);

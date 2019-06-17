@@ -26,7 +26,7 @@ export class FootnoteReference extends XmlComponent {
 
 export class FootnoteReferenceRun extends Run {
     constructor(id: number) {
-        super();
+        super({});
 
         this.properties.push(new Style("FootnoteReference"));
 

@@ -7,7 +7,7 @@ export class PictureRun extends Run {
     private readonly drawing: Drawing;
 
     constructor(imageData: IMediaData, drawingOptions?: IDrawingOptions) {
-        super();
+        super({});
 
         if (imageData === undefined) {
             throw new Error("imageData cannot be undefined");

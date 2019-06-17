@@ -9,9 +9,23 @@ const paragraph = new Paragraph("No border!");
 
 doc.addParagraph(paragraph);
 
-const borderParagraph = new Paragraph("I have borders on my top and bottom sides!").createBorder();
-borderParagraph.Borders.addTopBorder();
-borderParagraph.Borders.addBottomBorder();
+const borderParagraph = new Paragraph({
+    text: "I have borders on my top and bottom sides!",
+    border: {
+        top: {
+            color: "auto",
+            space: 1,
+            value: "single",
+            size: 6,
+        },
+        bottom: {
+            color: "auto",
+            space: 1,
+            value: "single",
+            size: 6,
+        },
+    },
+});
 
 doc.addParagraph(borderParagraph);
 

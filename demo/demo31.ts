@@ -1,7 +1,7 @@
 // Example of how you would create a table and add data to it
 // Import from 'docx' rather than '../build' if you install from npm
 import * as fs from "fs";
-import { Document, Packer, Paragraph, VerticalAlign } from "../build";
+import { Document, HeadingLevel, Packer, Paragraph, VerticalAlign } from "../build";
 
 const doc = new Document();
 
@@ -17,9 +17,11 @@ table
 table
     .getCell(1, 0)
     .addParagraph(
-        new Paragraph(
-            "Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah",
-        ).heading1(),
+        new Paragraph({
+            text:
+                "Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah",
+            heading: HeadingLevel.HEADING_1,
+        }),
     );
 
 const packer = new Packer();

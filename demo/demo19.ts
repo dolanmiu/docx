@@ -6,8 +6,14 @@ import { Document, Packer, Paragraph, TextRun } from "../build";
 const doc = new Document();
 
 const paragraph = new Paragraph("Hello World");
-const institutionText = new TextRun("Foo").bold();
-const dateText = new TextRun("Bar").tab().bold();
+const institutionText = new TextRun({
+    text: "Foo",
+    bold: true,
+});
+const dateText = new TextRun({
+    text: "Bar",
+    bold: true,
+}).tab();
 paragraph.addRun(institutionText);
 paragraph.addRun(dateText);
 

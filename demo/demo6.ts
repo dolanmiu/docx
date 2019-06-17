@@ -11,8 +11,14 @@ const doc = new Document(undefined, {
 });
 
 const paragraph = new Paragraph("Hello World");
-const institutionText = new TextRun("Foo bar").bold();
-const dateText = new TextRun("Github is the best").tab().bold();
+const institutionText = new TextRun({
+    text: "Foo bar",
+    bold: true,
+});
+const dateText = new TextRun({
+    text: "Github is the best",
+    bold: true,
+}).tab();
 paragraph.addRun(institutionText);
 paragraph.addRun(dateText);
 

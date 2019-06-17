@@ -4,10 +4,9 @@ import * as fs from "fs";
 import { Document, Packer, Paragraph } from "../build";
 
 const doc = new Document();
-const paragraph = new Paragraph();
+const paragraph = new Paragraph({});
 const link = doc.createHyperlink("http://www.example.com", "Hyperlink");
 
-link.bold();
 paragraph.addHyperLink(link);
 doc.addParagraph(paragraph);
 

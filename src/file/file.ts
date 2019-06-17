@@ -30,6 +30,8 @@ import { TableOfContents } from "./table-of-contents";
 export class File {
     // tslint:disable-next-line:readonly-keyword
     private currentRelationshipId: number = 1;
+    // tslint:disable-next-line:readonly-keyword
+    private styles: Styles;
 
     private readonly document: Document;
     private readonly headers: IDocumentHeader[] = [];
@@ -43,8 +45,6 @@ export class File {
     private readonly settings: Settings;
     private readonly contentTypes: ContentTypes;
     private readonly appProperties: AppProperties;
-    // tslint:disable-next-line:readonly-keyword
-    private styles: Styles;
 
     constructor(
         options: IPropertiesOptions = {

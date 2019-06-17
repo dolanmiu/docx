@@ -29,7 +29,12 @@ describe("Formatter", () => {
 
         it("should format simple paragraph with bold text", () => {
             const paragraph = new file.Paragraph("");
-            paragraph.addRun(new file.TextRun("test").bold());
+            paragraph.addRun(
+                new file.TextRun({
+                    text: "test",
+                    bold: true,
+                }),
+            );
             const newJson = formatter.format(paragraph);
             assert.isDefined(newJson["w:p"][1]["w:r"][0]["w:rPr"][0]["w:b"]._attr["w:val"]);
         });

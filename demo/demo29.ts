@@ -12,27 +12,50 @@ abstractNum.createLevel(0, "upperRoman", "%1", "start").addParagraphProperty(new
 
 const concrete = numbering.createConcreteNumbering(abstractNum);
 
-const item1 = new Paragraph("line with contextual spacing");
-const item2 = new Paragraph("line with contextual spacing");
-const item3 = new Paragraph("line without contextual spacing");
-const item4 = new Paragraph("line without contextual spacing");
-
-item1
-    .setNumbering(concrete, 0)
-    .spacing({ before: 200 })
-    .contextualSpacing(true);
-item2
-    .setNumbering(concrete, 0)
-    .spacing({ before: 200 })
-    .contextualSpacing(true);
-item3
-    .setNumbering(concrete, 0)
-    .spacing({ before: 200 })
-    .contextualSpacing(false);
-item4
-    .setNumbering(concrete, 0)
-    .spacing({ before: 200 })
-    .contextualSpacing(false);
+const item1 = new Paragraph({
+    text: "line with contextual spacing",
+    numbering: {
+        num: concrete,
+        level: 0,
+    },
+    contextualSpacing: true,
+    spacing: {
+        before: 200,
+    },
+});
+const item2 = new Paragraph({
+    text: "line with contextual spacing",
+    numbering: {
+        num: concrete,
+        level: 0,
+    },
+    contextualSpacing: true,
+    spacing: {
+        before: 200,
+    },
+});
+const item3 = new Paragraph({
+    text: "line without contextual spacing",
+    numbering: {
+        num: concrete,
+        level: 0,
+    },
+    contextualSpacing: false,
+    spacing: {
+        before: 200,
+    },
+});
+const item4 = new Paragraph({
+    text: "line without contextual spacing",
+    numbering: {
+        num: concrete,
+        level: 0,
+    },
+    contextualSpacing: false,
+    spacing: {
+        before: 200,
+    },
+});
 
 doc.addParagraph(item1);
 doc.addParagraph(item2);

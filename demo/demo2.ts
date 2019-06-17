@@ -92,7 +92,16 @@ doc.addParagraph(
     }),
 );
 
-doc.addParagraph(new Paragraph({}).addRun(new TextRun("Some monospaced content").font("Monospace")));
+doc.addParagraph(
+    new Paragraph({}).addRun(
+        new TextRun({
+            text: "Some monospaced content",
+            font: {
+                name: "Monospace",
+            },
+        }),
+    ),
+);
 
 doc.addParagraph(
     new Paragraph({
@@ -108,10 +117,25 @@ doc.addParagraph(
 );
 const para = new Paragraph({});
 doc.addParagraph(para);
-para.addRun(new TextRun("This is a bold run,").bold());
+// Showing the different ways to create a TextRun
+para.addRun(
+    new TextRun({
+        text: "This is a bold run,",
+        bold: true,
+    }),
+);
 para.addRun(new TextRun(" switching to normal "));
-para.addRun(new TextRun("and then underlined ").underline());
-para.addRun(new TextRun("and back to normal."));
+para.addRun(
+    new TextRun({
+        text: "and then underlined ",
+        underline: {},
+    }),
+);
+para.addRun(
+    new TextRun({
+        text: "and back to normal.",
+    }),
+);
 
 const packer = new Packer();
 
