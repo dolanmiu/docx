@@ -67,6 +67,7 @@ export class SectionProperties extends XmlComponent {
             gutter = 0,
             mirror = false,
             space = 708,
+            num = 1,
             linePitch = 360,
             orientation = PageOrientation.PORTRAIT,
             headers,
@@ -88,7 +89,7 @@ export class SectionProperties extends XmlComponent {
         this.options = options;
         this.root.push(new PageSize(width, height, orientation));
         this.root.push(new PageMargin(top, right, bottom, left, header, footer, gutter, mirror));
-        this.root.push(new Columns(space));
+        this.root.push(new Columns(space, num));
         this.root.push(new DocumentGrid(linePitch));
 
         this.addHeaders(headers);
