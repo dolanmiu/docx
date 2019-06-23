@@ -55,18 +55,26 @@ export interface IParagraphOptions {
         readonly level: number;
         readonly custom?: boolean;
     };
+    readonly children?: Array<TextRun | PictureRun | Hyperlink>;
 }
 
 export class Paragraph extends XmlComponent {
     private readonly properties: ParagraphProperties;
 
-    constructor(options: string | IParagraphOptions) {
+    constructor(options: string | PictureRun | IParagraphOptions) {
         super("w:p");
 
         if (typeof options === "string") {
             this.properties = new ParagraphProperties({});
             this.root.push(this.properties);
             this.root.push(new TextRun(options));
+            return;
+        }
+
+        if (options instanceof PictureRun) {
+            this.properties = new ParagraphProperties({});
+            this.root.push(this.properties);
+            this.root.push(options);
             return;
         }
 
@@ -161,6 +169,12 @@ export class Paragraph extends XmlComponent {
         if (options.runs) {
             for (const run of options.runs) {
                 this.root.push(run);
+            }
+        }
+
+        if (options.children) {
+            for (const child of options.children) {
+                this.root.push(child);
             }
         }
     }

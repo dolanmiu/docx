@@ -141,11 +141,12 @@ export class File {
         width?: number,
         height?: number,
         drawingOptions?: IDrawingOptions,
-    ): Image {
+    ): Paragraph {
         const image = Media.addImage(this, buffer, width, height, drawingOptions);
-        this.document.addParagraph(image.Paragraph);
+        const paragraph = new Paragraph(image);
+        this.document.addParagraph(paragraph);
 
-        return image;
+        return paragraph;
     }
 
     public createHyperlink(link: string, text?: string): Hyperlink {

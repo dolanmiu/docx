@@ -1,8 +1,8 @@
 import { IDrawingOptions } from "../drawing";
 import { File } from "../file";
-import { ImageParagraph } from "../paragraph";
+import { PictureRun } from "../paragraph";
 import { IMediaData } from "./data";
-import { Image } from "./image";
+// import { Image } from "./image";
 
 export class Media {
     public static addImage(
@@ -11,10 +11,10 @@ export class Media {
         width?: number,
         height?: number,
         drawingOptions?: IDrawingOptions,
-    ): Image {
+    ): PictureRun {
         // Workaround to expose id without exposing to API
         const mediaData = file.Media.addMedia(buffer, width, height);
-        return new Image(new ImageParagraph(mediaData, drawingOptions));
+        return new PictureRun(mediaData, drawingOptions);
     }
 
     private static generateId(): string {

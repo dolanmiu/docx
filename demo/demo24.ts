@@ -12,7 +12,7 @@ const table = doc.createTable({
 table.getCell(2, 2).addParagraph(new Paragraph("Hello"));
 
 const image = Media.addImage(doc, fs.readFileSync("./demo/images/image1.jpeg"));
-table.getCell(1, 1).addParagraph(image.Paragraph);
+table.getCell(1, 1).addParagraph(new Paragraph(image));
 
 const packer = new Packer();
 
