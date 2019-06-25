@@ -26,6 +26,7 @@ describe("SectionProperties", () => {
                 gutter: 0,
                 mirror: false,
                 space: 708,
+                num: 1,
                 linePitch: 360,
                 headers: {
                     default: new HeaderWrapper(media, 100),
@@ -55,7 +56,7 @@ describe("SectionProperties", () => {
                 },
             });
 
-            expect(tree["w:sectPr"][2]).to.deep.equal({ "w:cols": { _attr: { "w:space": 708 } } });
+            expect(tree["w:sectPr"][2]).to.deep.equal({ "w:cols": { _attr: { "w:space": 708, "w:num": 1 } } });
             expect(tree["w:sectPr"][3]).to.deep.equal({ "w:docGrid": { _attr: { "w:linePitch": 360 } } });
             expect(tree["w:sectPr"][4]).to.deep.equal({ "w:headerReference": { _attr: { "r:id": "rId100", "w:type": "default" } } });
             expect(tree["w:sectPr"][5]).to.deep.equal({ "w:footerReference": { _attr: { "r:id": "rId200", "w:type": "even" } } });
@@ -82,7 +83,7 @@ describe("SectionProperties", () => {
                     },
                 },
             });
-            expect(tree["w:sectPr"][2]).to.deep.equal({ "w:cols": { _attr: { "w:space": 708 } } });
+            expect(tree["w:sectPr"][2]).to.deep.equal({ "w:cols": { _attr: { "w:space": 708, "w:num": 1 } } });
             expect(tree["w:sectPr"][3]).to.deep.equal({ "w:docGrid": { _attr: { "w:linePitch": 360 } } });
         });
 

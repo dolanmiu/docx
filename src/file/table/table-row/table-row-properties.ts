@@ -1,3 +1,4 @@
+import { HeightRule, TableRowHeight } from "file/table/table-row/table-row-height";
 import { IgnoreIfEmptyXmlComponent, XmlAttributeComponent, XmlComponent } from "file/xml-components";
 
 export class TableRowProperties extends IgnoreIfEmptyXmlComponent {
@@ -13,6 +14,12 @@ export class TableRowProperties extends IgnoreIfEmptyXmlComponent {
 
     public setTableHeader(): TableRowProperties {
         this.root.push(new TableHeader());
+
+        return this;
+    }
+
+    public setHeight(height: number, rule: HeightRule): TableRowProperties {
+        this.root.push(new TableRowHeight(height, rule));
 
         return this;
     }
