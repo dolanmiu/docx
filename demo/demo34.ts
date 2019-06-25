@@ -9,6 +9,7 @@ import {
     RelativeVerticalPosition,
     Table,
     TableAnchorType,
+    TableLayoutType,
     WidthType,
 } from "../build";
 
@@ -25,10 +26,10 @@ const table = new Table({
     },
     width: 4535,
     widthUnitType: WidthType.DXA,
+    layout: TableLayoutType.FIXED,
 });
 
-doc.addTable(table);
-table.setFixedWidthLayout();
+doc.add(table);
 
 table.getCell(0, 0).addParagraph(new Paragraph("Hello"));
 table.getRow(0).mergeCells(0, 1);

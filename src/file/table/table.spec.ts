@@ -9,6 +9,7 @@ import { Table } from "./table";
 import { RelativeHorizontalPosition, RelativeVerticalPosition, TableAnchorType } from "./table-properties";
 
 import { EMPTY_OBJECT } from "file/xml-components";
+import { TableLayoutType } from "./table-properties/table-layout";
 
 const DEFAULT_TABLE_PROPERTIES = {
     "w:tblCellMar": [
@@ -134,6 +135,22 @@ describe("Table", () => {
                 ],
             });
         });
+
+        it("sets the table to fixed width layout", () => {
+            const table = new Table({
+                rows: 1,
+                columns: 1,
+                layout: TableLayoutType.FIXED,
+            });
+            const tree = new Formatter().format(table);
+            expect(tree)
+                .to.have.property("w:tbl")
+                .which.is.an("array")
+                .with.has.length.at.least(1);
+            expect(tree["w:tbl"][0]).to.deep.equal({
+                "w:tblPr": [DEFAULT_TABLE_PROPERTIES, BORDERS, WIDTHS, { "w:tblLayout": { _attr: { "w:type": "fixed" } } }],
+            });
+        });
     });
 
     describe("#getRow and Row#getCell", () => {
@@ -251,23 +268,6 @@ describe("Table", () => {
     //         });
     //     });
     // });
-
-    describe("#setFixedWidthLayout", () => {
-        it("sets the table to fixed width layout", () => {
-            const table = new Table({
-                rows: 1,
-                columns: 1,
-            }).setFixedWidthLayout();
-            const tree = new Formatter().format(table);
-            expect(tree)
-                .to.have.property("w:tbl")
-                .which.is.an("array")
-                .with.has.length.at.least(1);
-            expect(tree["w:tbl"][0]).to.deep.equal({
-                "w:tblPr": [DEFAULT_TABLE_PROPERTIES, BORDERS, WIDTHS, { "w:tblLayout": { _attr: { "w:type": "fixed" } } }],
-            });
-        });
-    });
 
     describe("Cell", () => {
         describe("#prepForXml", () => {

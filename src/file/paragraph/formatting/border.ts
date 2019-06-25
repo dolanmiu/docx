@@ -27,8 +27,6 @@ class BorderProperty extends XmlComponent {
             sz: options.size,
         });
         this.root.push(attrs);
-
-        return this;
     }
 }
 
