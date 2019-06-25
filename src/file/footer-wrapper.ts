@@ -22,16 +22,12 @@ export class FooterWrapper {
         this.relationships = new Relationships();
     }
 
-    public addParagraph(paragraph: Paragraph): void {
-        this.footer.addParagraph(paragraph);
-    }
-
-    public addTable(table: Table): void {
-        this.footer.addTable(table);
+    public add(item: Paragraph | Table): void {
+        this.footer.add(item);
     }
 
     public addImage(image: Image): FooterWrapper {
-        this.footer.addParagraph(image.Paragraph);
+        this.footer.add(image.Paragraph);
         return this;
     }
 
@@ -47,7 +43,7 @@ export class FooterWrapper {
     ): Paragraph {
         const image = Media.addImage(this, buffer, width, height, drawingOptions);
         const paragraph = new Paragraph(image);
-        this.addParagraph(paragraph);
+        this.add(paragraph);
 
         return paragraph;
     }

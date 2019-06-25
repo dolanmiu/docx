@@ -10,7 +10,7 @@ describe("HeaderWrapper", () => {
     describe("#add", () => {
         it("should call the underlying header's addChildElement for Paragraph", () => {
             const wrapper = new HeaderWrapper(new Media(), 1);
-            const spy = sinon.spy(wrapper.Header, "addChildElement");
+            const spy = sinon.spy(wrapper.Header, "add");
             wrapper.add(new Paragraph({}));
 
             expect(spy.called).to.equal(true);
@@ -18,7 +18,7 @@ describe("HeaderWrapper", () => {
 
         it("should call the underlying header's addChildElement for Table", () => {
             const wrapper = new HeaderWrapper(new Media(), 1);
-            const spy = sinon.spy(wrapper.Header, "addChildElement");
+            const spy = sinon.spy(wrapper.Header, "add");
             wrapper.add(
                 new Table({
                     rows: 1,

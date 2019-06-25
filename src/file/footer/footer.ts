@@ -36,13 +36,7 @@ export class Footer extends InitializableXmlComponent {
         return this.refId;
     }
 
-    public addParagraph(paragraph: Paragraph): Footer {
-        this.root.push(paragraph);
-
-        return this;
-    }
-
-    public addTable(table: Table): void {
-        this.root.push(table);
+    public add(item: Paragraph | Table): void {
+        this.root.push(item);
     }
 }

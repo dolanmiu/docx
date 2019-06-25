@@ -7,21 +7,19 @@ import { Paragraph } from "./paragraph";
 import { Table } from "./table";
 
 describe("FooterWrapper", () => {
-    describe("#addParagraph", () => {
+    describe("#add", () => {
         it("should call the underlying footer's addParagraph", () => {
             const file = new FooterWrapper(new Media(), 1);
-            const spy = sinon.spy(file.Footer, "addParagraph");
-            file.addParagraph(new Paragraph({}));
+            const spy = sinon.spy(file.Footer, "add");
+            file.add(new Paragraph({}));
 
             expect(spy.called).to.equal(true);
         });
-    });
 
-    describe("#addTable", () => {
         it("should call the underlying footer's addParagraph", () => {
             const file = new FooterWrapper(new Media(), 1);
-            const spy = sinon.spy(file.Footer, "addTable");
-            file.addTable(
+            const spy = sinon.spy(file.Footer, "add");
+            file.add(
                 new Table({
                     rows: 1,
                     columns: 1,
@@ -30,12 +28,10 @@ describe("FooterWrapper", () => {
 
             expect(spy.called).to.equal(true);
         });
-    });
 
-    describe("#addImage", () => {
         it("should call the underlying footer's addImage", () => {
             const file = new FooterWrapper(new Media(), 1);
-            const spy = sinon.spy(file.Footer, "addParagraph");
+            const spy = sinon.spy(file.Footer, "add");
             // tslint:disable-next-line:no-any
             file.addImage({} as any);
 

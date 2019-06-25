@@ -23,7 +23,7 @@ export class HeaderWrapper {
     }
 
     public add(item: Paragraph | Table): HeaderWrapper {
-        this.header.addChildElement(item);
+        this.header.add(item);
 
         return this;
     }
