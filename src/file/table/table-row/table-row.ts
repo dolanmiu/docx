@@ -1,5 +1,5 @@
+import { HeightRule } from "file/table/table-row/table-row-height";
 import { XmlComponent } from "file/xml-components";
-
 import { TableCell } from "../table-cell";
 import { TableRowProperties } from "./table-row-properties";
 
@@ -46,6 +46,12 @@ export class TableRow extends XmlComponent {
 
     public setTableHeader(): TableRow {
         this.properties.setTableHeader();
+
+        return this;
+    }
+
+    public setHeight(height: number, rule: HeightRule): TableRow {
+        this.properties.setHeight(height, rule);
 
         return this;
     }

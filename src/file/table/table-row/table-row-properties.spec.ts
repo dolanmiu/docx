@@ -1,5 +1,6 @@
 import { expect } from "chai";
 import { Formatter } from "export/formatter";
+import { HeightRule } from "file/table/table-row/table-row-height";
 import { TableRowProperties } from "./table-row-properties";
 
 describe("TableRowProperties", () => {
@@ -29,6 +30,33 @@ describe("TableRowProperties", () => {
             rowProperties.setTableHeader();
             const tree = new Formatter().format(rowProperties);
             expect(tree).to.deep.equal({ "w:trPr": [{ "w:tblHeader": { _attr: { "w:val": true } } }] });
+        });
+    });
+
+    describe("#setHeight", () => {
+        it("sets exact row height", () => {
+            const rowProperties = new TableRowProperties();
+            rowProperties.setHeight(100, HeightRule.EXACT);
+            const tree = new Formatter().format(rowProperties);
+            expect(tree).to.deep.equal({ "w:trPr": [{ "w:trHeight": { _attr: { "w:val": 100, "w:hRule": "exact" } } }] });
+        });
+    });
+
+    describe("#setHeight", () => {
+        it("sets auto row height", () => {
+            const rowProperties = new TableRowProperties();
+            rowProperties.setHeight(100, HeightRule.AUTO);
+            const tree = new Formatter().format(rowProperties);
+            expect(tree).to.deep.equal({ "w:trPr": [{ "w:trHeight": { _attr: { "w:val": 100, "w:hRule": "auto" } } }] });
+        });
+    });
+
+    describe("#setHeight", () => {
+        it("sets at least row height", () => {
+            const rowProperties = new TableRowProperties();
+            rowProperties.setHeight(100, HeightRule.ATLEAST);
+            const tree = new Formatter().format(rowProperties);
+            expect(tree).to.deep.equal({ "w:trPr": [{ "w:trHeight": { _attr: { "w:val": 100, "w:hRule": "atLeast" } } }] });
         });
     });
 });
