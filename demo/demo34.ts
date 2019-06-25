@@ -1,11 +1,20 @@
 // Example of how you would create a table with float positions
 // Import from 'docx' rather than '../build' if you install from npm
 import * as fs from "fs";
-import { Document, Packer, Paragraph, RelativeHorizontalPosition, RelativeVerticalPosition, TableAnchorType, WidthType } from "../build";
+import {
+    Document,
+    Packer,
+    Paragraph,
+    RelativeHorizontalPosition,
+    RelativeVerticalPosition,
+    Table,
+    TableAnchorType,
+    WidthType,
+} from "../build";
 
 const doc = new Document();
 
-const table = doc.createTable({
+const table = new Table({
     rows: 2,
     columns: 2,
     float: {
@@ -17,6 +26,8 @@ const table = doc.createTable({
     width: 4535,
     widthUnitType: WidthType.DXA,
 });
+
+doc.addTable(table);
 table.setFixedWidthLayout();
 
 table.getCell(0, 0).addParagraph(new Paragraph("Hello"));

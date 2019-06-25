@@ -8,6 +8,10 @@ import { ITableCellMarginOptions } from "./cell-margin/table-cell-margins";
 import { TableCellBorders, VerticalAlign, VMergeType } from "./table-cell-components";
 import { TableCellProperties } from "./table-cell-properties";
 
+export interface ITableCellOptions {
+    readonly shading?: ITableShadingAttributesProperties;
+}
+
 export class TableCell extends XmlComponent {
     private readonly properties: TableCellProperties;
 

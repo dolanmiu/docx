@@ -4,10 +4,13 @@ You can create tables with `docx`. More information can be found [here](http://o
 
 ## Create Table
 
-To create a table, simply use the `createTable()` method on a `document`.
+To create a table, simply create one with `new Table()`, then add it to the document: `doc.addTable()`.
 
 ```ts
-const table = doc.createTable([NUMBER OF ROWS], [NUMBER OF COLUMNS]);
+const table = doc.addTable(new Table({
+    rows: [NUMBER OF ROWS],
+    columns: [NUMBER OF COLUMNS]
+});
 ```
 
 Alternatively, you can create a table object directly, and then add it in the `document`
@@ -20,11 +23,10 @@ doc.addTable(table);
 The snippet below creates a table of 2 rows and 4 columns.
 
 ```ts
-const table = doc.createTable(2, 4);
-
-// Or
-
-const table = new Table(2, 4);
+const table = new Table({
+    rows: 2,
+    columns: 4,
+});
 doc.addTable(table);
 ```
 
@@ -70,7 +72,7 @@ column.getCell(index);
 
 ## Cells
 
-The `createTable()` method created a table with cells. To access the cell, use the `getCell()` method.
+To access the cell, use the `getCell()` method.
 
 ```ts
 const cell = table.getCell([ROW INDEX], [COLUMN INDEX]);
@@ -103,10 +105,11 @@ You can specify the width of a cell using:
 `cell.Properties.setWidth(width, format)`
 
 format can be:
-* WidthType.AUTO
-* WidthType.DXA: value is in twentieths of a point
-* WidthType.NIL: is considered as zero
-* WidthType.PCT: percent of table width
+
+-   WidthType.AUTO
+-   WidthType.DXA: value is in twentieths of a point
+-   WidthType.NIL: is considered as zero
+-   WidthType.PCT: percent of table width
 
 ### Example
 
@@ -115,7 +118,7 @@ cell.Properties.setWidth(100, WidthType.DXA);
 ```
 
 ```ts
-cell.Properties.setWidth('50%', WidthType.PCT);
+cell.Properties.setWidth("50%", WidthType.PCT);
 ```
 
 ## Borders
@@ -241,11 +244,10 @@ If a table is paginated on multiple pages, it is possible to repeat a row at the
 ```ts
 table.getRow(0).setTableHeader();
 ```
- 
 
 ## Examples
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/demo4.ts ':include')
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/demo4.ts ":include")
 
 _Source: https://github.com/dolanmiu/docx/blob/master/demo/demo4.ts_
 
@@ -253,7 +255,7 @@ _Source: https://github.com/dolanmiu/docx/blob/master/demo/demo4.ts_
 
 Example showing how to add colourful borders to tables
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/demo20.ts ':include')
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/demo20.ts ":include")
 
 _Source: https://github.com/dolanmiu/docx/blob/master/demo/demo20.ts_
 
@@ -261,11 +263,11 @@ _Source: https://github.com/dolanmiu/docx/blob/master/demo/demo20.ts_
 
 Example showing how to add images to tables
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/demo24.ts ':include')
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/demo24.ts ":include")
 
 _Source: https://github.com/dolanmiu/docx/blob/master/demo/demo24.ts_
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/demo36.ts ':include')
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/demo36.ts ":include")
 
 _Source: https://github.com/dolanmiu/docx/blob/master/demo/demo36.ts_
 
@@ -273,7 +275,7 @@ _Source: https://github.com/dolanmiu/docx/blob/master/demo/demo36.ts_
 
 Example showing how align text in a table cell
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/demo31.ts ':include')
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/demo31.ts ":include")
 
 _Source: https://github.com/dolanmiu/docx/blob/master/demo/demo31.ts_
 
@@ -281,11 +283,11 @@ _Source: https://github.com/dolanmiu/docx/blob/master/demo/demo31.ts_
 
 Example showing merging of `rows`
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/demo32.ts ':include')
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/demo32.ts ":include")
 
 _Source: https://github.com/dolanmiu/docx/blob/master/demo/demo32.ts_
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/demo41.ts ':include')
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/demo41.ts ":include")
 
 _Source: https://github.com/dolanmiu/docx/blob/master/demo/demo41.ts_
 
@@ -293,13 +295,12 @@ _Source: https://github.com/dolanmiu/docx/blob/master/demo/demo41.ts_
 
 Example showing merging of `columns`
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/demo43.ts ':include')
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/demo43.ts ":include")
 
 _Source: https://github.com/dolanmiu/docx/blob/master/demo/demo43.ts_
 
 ### Floating tables
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/demo34.ts ':include')
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/demo34.ts ":include")
 
 _Source: https://github.com/dolanmiu/docx/blob/master/demo/demo34.ts_
-

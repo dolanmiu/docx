@@ -104,19 +104,6 @@ describe("File", () => {
         });
     });
 
-    describe("#createTable", () => {
-        it("should call the underlying document's createTable", () => {
-            const wrapper = new File();
-            const spy = sinon.spy(wrapper.Document, "createTable");
-            wrapper.createTable({
-                rows: 1,
-                columns: 1,
-            });
-
-            expect(spy.called).to.equal(true);
-        });
-    });
-
     describe("#addTableOfContents", () => {
         it("should call the underlying document's addTableOfContents", () => {
             const wrapper = new File();

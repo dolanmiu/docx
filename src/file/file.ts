@@ -24,7 +24,7 @@ import { Settings } from "./settings";
 import { Styles } from "./styles";
 import { ExternalStylesFactory } from "./styles/external-styles-factory";
 import { DefaultStylesFactory } from "./styles/factory";
-import { ITableOptions, Table } from "./table";
+import { Table } from "./table";
 import { TableOfContents } from "./table-of-contents";
 
 export class File {
@@ -125,10 +125,6 @@ export class File {
     public addTable(table: Table): File {
         this.document.addTable(table);
         return this;
-    }
-
-    public createTable(options: ITableOptions): Table {
-        return this.document.createTable(options);
     }
 
     public addImage(image: Image): File {

@@ -1,7 +1,7 @@
 // http://officeopenxml.com/WPdocument.php
 import { XmlComponent } from "file/xml-components";
 import { Paragraph } from "../paragraph";
-import { ITableOptions, Table } from "../table";
+import { Table } from "../table";
 import { TableOfContents } from "../table-of-contents";
 import { Body } from "./body";
 import { SectionPropertiesOptions } from "./body/section-properties";
@@ -50,12 +50,6 @@ export class Document extends XmlComponent {
     public addTable(table: Table): Document {
         this.body.push(table);
         return this;
-    }
-
-    public createTable(options: ITableOptions): Table {
-        const table = new Table(options);
-        this.addTable(table);
-        return table;
     }
 
     public get Body(): Body {

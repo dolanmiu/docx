@@ -32,16 +32,6 @@ describe("FooterWrapper", () => {
         });
     });
 
-    describe("#createTable", () => {
-        it("should call the underlying footer's createTable", () => {
-            const wrapper = new FooterWrapper(new Media(), 1);
-            const spy = sinon.spy(wrapper.Footer, "createTable");
-            wrapper.createTable(1, 1);
-
-            expect(spy.called).to.equal(true);
-        });
-    });
-
     describe("#addImage", () => {
         it("should call the underlying footer's addImage", () => {
             const file = new FooterWrapper(new Media(), 1);
@@ -56,12 +46,11 @@ describe("FooterWrapper", () => {
     describe("#createImage", () => {
         it("should call the underlying footer's createImage", () => {
             const file = new FooterWrapper(new Media(), 1);
-            const spy = sinon.spy(file.Media, "addMedia");
-            const fileSpy = sinon.spy(file, "addImage");
+            const spy = sinon.spy(Media, "addImage");
             file.createImage("");
 
             expect(spy.called).to.equal(true);
-            expect(fileSpy.called).to.equal(true);
+            spy.restore();
         });
     });
 

@@ -32,16 +32,6 @@ describe("HeaderWrapper", () => {
         });
     });
 
-    describe("#createTable", () => {
-        it("should call the underlying header's createTable", () => {
-            const wrapper = new HeaderWrapper(new Media(), 1);
-            const spy = sinon.spy(wrapper.Header, "createTable");
-            wrapper.createTable(1, 1);
-
-            expect(spy.called).to.equal(true);
-        });
-    });
-
     describe("#addImage", () => {
         it("should call the underlying header's addImage", () => {
             const file = new HeaderWrapper(new Media(), 1);
@@ -56,12 +46,11 @@ describe("HeaderWrapper", () => {
     describe("#createImage", () => {
         it("should call the underlying header's createImage", () => {
             const file = new HeaderWrapper(new Media(), 1);
-            const spy = sinon.spy(file.Media, "addMedia");
-            const fileSpy = sinon.spy(file, "addImage");
+            const spy = sinon.spy(Media, "addImage");
             file.createImage("");
 
             expect(spy.called).to.equal(true);
-            expect(fileSpy.called).to.equal(true);
+            spy.restore();
         });
     });
 

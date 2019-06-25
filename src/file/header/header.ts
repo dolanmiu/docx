@@ -56,13 +56,4 @@ export class Header extends InitializableXmlComponent {
     public addTable(table: Table): void {
         this.root.push(table);
     }
-
-    public createTable(rows: number, cols: number): Table {
-        const table = new Table({
-            rows: rows,
-            columns: cols,
-        });
-        this.addTable(table);
-        return table;
-    }
 }

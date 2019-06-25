@@ -2,7 +2,6 @@ import { assert, expect } from "chai";
 
 import { Formatter } from "export/formatter";
 
-import { Table } from "../table";
 import { Document } from "./document";
 
 describe("Document", () => {
@@ -27,42 +26,6 @@ describe("Document", () => {
         it("should create default section", () => {
             const body = new Formatter().format(document)["w:document"][1]["w:body"];
             expect(body[0]).to.have.property("w:sectPr");
-        });
-    });
-
-    describe("#createTable", () => {
-        it("should create a new table and append it to body", () => {
-            const table = document.createTable({
-                rows: 2,
-                columns: 3,
-            });
-            expect(table).to.be.an.instanceof(Table);
-            const body = new Formatter().format(document)["w:document"][1]["w:body"];
-            expect(body)
-                .to.be.an("array")
-                .which.has.length.at.least(1);
-            expect(body[0]).to.have.property("w:tbl");
-        });
-
-        it("should create a table with the correct dimensions", () => {
-            document.createTable({
-                rows: 2,
-                columns: 3,
-            });
-            const body = new Formatter().format(document)["w:document"][1]["w:body"];
-            expect(body)
-                .to.be.an("array")
-                .which.has.length.at.least(1);
-            expect(body[0])
-                .to.have.property("w:tbl")
-                .which.includes({
-                    "w:tblGrid": [
-                        { "w:gridCol": { _attr: { "w:w": 100 } } },
-                        { "w:gridCol": { _attr: { "w:w": 100 } } },
-                        { "w:gridCol": { _attr: { "w:w": 100 } } },
-                    ],
-                });
-            expect(body[0]["w:tbl"].filter((x) => x["w:tr"])).to.have.length(2);
         });
     });
 });

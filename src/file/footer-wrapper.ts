@@ -1,9 +1,10 @@
 import { XmlComponent } from "file/xml-components";
 
 import { FooterReferenceType } from "./document";
+import { IDrawingOptions } from "./drawing";
 import { Footer } from "./footer/footer";
 import { Image, Media } from "./media";
-import { ImageParagraph, Paragraph } from "./paragraph";
+import { Paragraph } from "./paragraph";
 import { Relationships } from "./relationships";
 import { Table } from "./table";
 
@@ -29,22 +30,26 @@ export class FooterWrapper {
         this.footer.addTable(table);
     }
 
-    public createTable(rows: number, cols: number): Table {
-        return this.footer.createTable(rows, cols);
+    public addImage(image: Image): FooterWrapper {
+        this.footer.addParagraph(image.Paragraph);
+        return this;
     }
 
     public addChildElement(childElement: XmlComponent): void {
         this.footer.addChildElement(childElement);
     }
 
-    public createImage(image: Buffer | string | Uint8Array | ArrayBuffer, width?: number, height?: number): void {
-        const mediaData = this.media.addMedia(image, width, height);
-        this.addImage(new Image(new ImageParagraph(mediaData)));
-    }
+    public createImage(
+        buffer: Buffer | string | Uint8Array | ArrayBuffer,
+        width?: number,
+        height?: number,
+        drawingOptions?: IDrawingOptions,
+    ): Paragraph {
+        const image = Media.addImage(this, buffer, width, height, drawingOptions);
+        const paragraph = new Paragraph(image);
+        this.addParagraph(paragraph);
 
-    public addImage(image: Image): FooterWrapper {
-        this.footer.addParagraph(image.Paragraph);
-        return this;
+        return paragraph;
     }
 
     public get Footer(): Footer {

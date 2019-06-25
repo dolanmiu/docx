@@ -1,14 +1,17 @@
 // Multiple cells merging in the same table
 // Import from 'docx' rather than '../build' if you install from npm
 import * as fs from "fs";
-import { Document, Packer, Paragraph } from "../build";
+import { Document, Packer, Paragraph, Table } from "../build";
 
 const doc = new Document();
 
-const table = doc.createTable({
+const table = new Table({
     rows: 13,
     columns: 6,
 });
+
+doc.addTable(table);
+
 let row = 0;
 table.getCell(row, 0).addParagraph(new Paragraph("0,0"));
 table.getCell(row, 1).addParagraph(new Paragraph("0,1"));
