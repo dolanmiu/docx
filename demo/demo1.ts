@@ -17,7 +17,7 @@ const dateText = new TextRun({
 paragraph.addRun(institutionText);
 paragraph.addRun(dateText);
 
-doc.addParagraph(paragraph);
+doc.add(paragraph);
 
 const packer = new Packer();
 

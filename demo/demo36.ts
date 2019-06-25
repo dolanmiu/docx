@@ -10,12 +10,12 @@ const table = new Table({
     rows: 2,
     columns: 2,
 });
-table.getCell(1, 1).addParagraph(new Paragraph(image));
+table.getCell(1, 1).add(new Paragraph(image));
 
-doc.addTable(table);
+doc.add(table);
 
 // doc.Header.createImage(fs.readFileSync("./demo/images/pizza.gif"));
-doc.Header.addTable(table);
+doc.Header.add(table);
 // doc.Footer.createImage(fs.readFileSync("./demo/images/pizza.gif"));
 
 const packer = new Packer();

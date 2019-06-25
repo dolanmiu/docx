@@ -80,20 +80,18 @@ describe("File", () => {
         });
     });
 
-    describe("#addParagraph", () => {
-        it("should call the underlying document's addParagraph", () => {
+    describe("#add", () => {
+        it("should call the underlying document's add a Paragraph", () => {
             const file = new File();
-            const spy = sinon.spy(file.Document, "addParagraph");
+            const spy = sinon.spy(file.Document, "add");
             file.add(new Paragraph({}));
 
             expect(spy.called).to.equal(true);
         });
-    });
 
-    describe("#add", () => {
-        it("should call the underlying document's addTable", () => {
+        it("should call the underlying document's add when adding a Table", () => {
             const wrapper = new File();
-            const spy = sinon.spy(wrapper.Document, "addTable");
+            const spy = sinon.spy(wrapper.Document, "add");
             wrapper.add(
                 new Table({
                     rows: 1,
@@ -104,19 +102,21 @@ describe("File", () => {
             expect(spy.called).to.equal(true);
         });
 
+        it("should call the underlying document's add when adding an Image (paragraph)", () => {
+            const wrapper = new File();
+            const spy = sinon.spy(wrapper.Document, "add");
+            // tslint:disable-next-line:no-any
+            wrapper.add(new Paragraph(""));
+
+            expect(spy.called).to.equal(true);
+        });
+    });
+
+    describe("#add", () => {
         it("should call the underlying document's addTableOfContents", () => {
             const wrapper = new File();
             const spy = sinon.spy(wrapper.Document, "addTableOfContents");
             wrapper.add(new TableOfContents());
-
-            expect(spy.called).to.equal(true);
-        });
-
-        it("should call the underlying document's addImage", () => {
-            const wrapper = new File();
-            const spy = sinon.spy(wrapper.Document, "addParagraph");
-            // tslint:disable-next-line:no-any
-            wrapper.add(new Paragraph(""));
 
             expect(spy.called).to.equal(true);
         });
@@ -126,7 +126,7 @@ describe("File", () => {
         it("should call the underlying document's createImage", () => {
             const wrapper = new File();
             const spy = sinon.spy(wrapper.Media, "addMedia");
-            const wrapperSpy = sinon.spy(wrapper.Document, "addParagraph");
+            const wrapperSpy = sinon.spy(wrapper.Document, "add");
             wrapper.createImage("");
 
             expect(spy.called).to.equal(true);

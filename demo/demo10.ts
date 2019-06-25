@@ -135,70 +135,70 @@ class DocumentCreator {
         const skills = data[2] as object[];
         const achivements = data[3] as object[];
         const document = new Document();
-        document.addParagraph(
+        document.add(
             new Paragraph({
                 text: "Dolan Miu",
                 heading: HeadingLevel.TITLE,
             }),
         );
 
-        document.addParagraph(this.createContactInfo(PHONE_NUMBER, PROFILE_URL, EMAIL));
-        document.addParagraph(this.createHeading("Education"));
+        document.add(this.createContactInfo(PHONE_NUMBER, PROFILE_URL, EMAIL));
+        document.add(this.createHeading("Education"));
 
         for (const education of educations) {
-            document.addParagraph(
+            document.add(
                 this.createInstitutionHeader(education.schoolName, `${education.startDate.year} - ${education.endDate.year}`),
             );
-            document.addParagraph(this.createRoleText(`${education.fieldOfStudy} - ${education.degree}`));
+            document.add(this.createRoleText(`${education.fieldOfStudy} - ${education.degree}`));
 
             const bulletPoints = this.splitParagraphIntoBullets(education.notes);
             bulletPoints.forEach((bulletPoint) => {
-                document.addParagraph(this.createBullet(bulletPoint));
+                document.add(this.createBullet(bulletPoint));
             });
         }
 
-        document.addParagraph(this.createHeading("Experience"));
+        document.add(this.createHeading("Experience"));
 
         for (const position of experiences) {
-            document.addParagraph(
+            document.add(
                 this.createInstitutionHeader(
                     position.company.name,
                     this.createPositionDateText(position.startDate, position.endDate, position.isCurrent),
                 ),
             );
-            document.addParagraph(this.createRoleText(position.title));
+            document.add(this.createRoleText(position.title));
 
             const bulletPoints = this.splitParagraphIntoBullets(position.summary);
 
             bulletPoints.forEach((bulletPoint) => {
-                document.addParagraph(this.createBullet(bulletPoint));
+                document.add(this.createBullet(bulletPoint));
             });
         }
 
-        document.addParagraph(this.createHeading("Skills, Achievements and Interests"));
+        document.add(this.createHeading("Skills, Achievements and Interests"));
 
-        document.addParagraph(this.createSubHeading("Skills"));
-        document.addParagraph(this.createSkillList(skills));
+        document.add(this.createSubHeading("Skills"));
+        document.add(this.createSkillList(skills));
 
-        document.addParagraph(this.createSubHeading("Achievements"));
+        document.add(this.createSubHeading("Achievements"));
 
         for (const achievementParagraph of this.createAchivementsList(achivements)) {
-            document.addParagraph(achievementParagraph);
+            document.add(achievementParagraph);
         }
 
-        document.addParagraph(this.createSubHeading("Interests"));
+        document.add(this.createSubHeading("Interests"));
 
-        document.addParagraph(this.createInterests("Programming, Technology, Music Production, Web Design, 3D Modelling, Dancing."));
+        document.add(this.createInterests("Programming, Technology, Music Production, Web Design, 3D Modelling, Dancing."));
 
-        document.addParagraph(this.createHeading("References"));
+        document.add(this.createHeading("References"));
 
-        document.addParagraph(
+        document.add(
             new Paragraph(
                 "Dr. Dean Mohamedally Director of Postgraduate Studies Department of Computer Science, University College London Malet Place, Bloomsbury, London WC1E d.mohamedally@ucl.ac.uk",
             ),
         );
-        document.addParagraph(new Paragraph("More references upon request"));
-        document.addParagraph(
+        document.add(new Paragraph("More references upon request"));
+        document.add(
             new Paragraph({
                 text: "This CV was generated in real-time based on my Linked-In profile from my personal website www.dolan.bio.",
                 alignment: AlignmentType.CENTER,

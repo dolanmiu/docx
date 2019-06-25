@@ -11,11 +11,11 @@ const doc = new Document(
     },
 );
 
-doc.Header.addParagraph(
+doc.Header.add(
     new Paragraph("Foo Bar corp. ").addRun(new TextRun("Page Number ").pageNumber()).addRun(new TextRun(" to ").numberOfTotalPages()),
 );
 
-doc.Footer.addParagraph(
+doc.Footer.add(
     new Paragraph({
         text: "Foo Bar corp. ",
         alignment: AlignmentType.CENTER,
@@ -24,11 +24,11 @@ doc.Footer.addParagraph(
         .addRun(new TextRun(" to ").numberOfTotalPages()),
 );
 
-doc.addParagraph(new Paragraph("Hello World 1").pageBreak());
-doc.addParagraph(new Paragraph("Hello World 2").pageBreak());
-doc.addParagraph(new Paragraph("Hello World 3").pageBreak());
-doc.addParagraph(new Paragraph("Hello World 4").pageBreak());
-doc.addParagraph(new Paragraph("Hello World 5").pageBreak());
+doc.add(new Paragraph("Hello World 1").pageBreak());
+doc.add(new Paragraph("Hello World 2").pageBreak());
+doc.add(new Paragraph("Hello World 3").pageBreak());
+doc.add(new Paragraph("Hello World 4").pageBreak());
+doc.add(new Paragraph("Hello World 5").pageBreak());
 
 const packer = new Packer();
 

@@ -10,10 +10,10 @@ const paragraph2 = new Paragraph("Hello World 1->").addSequentialIdentifier("Lab
 const paragraph3 = new Paragraph("Hello World 1->").addSequentialIdentifier("Another").addRun(new TextRun(" text after sequencial caption 3->")).addSequentialIdentifier("Label");
 const paragraph4 = new Paragraph("Hello World 2->").addSequentialIdentifier("Another").addRun(new TextRun(" text after sequencial caption 4->")).addSequentialIdentifier("Label");
 
-doc.addParagraph(paragraph);
-doc.addParagraph(paragraph2);
-doc.addParagraph(paragraph3);
-doc.addParagraph(paragraph4);
+doc.add(paragraph);
+doc.add(paragraph2);
+doc.add(paragraph3);
+doc.add(paragraph4);
 
 const packer = new Packer();
 

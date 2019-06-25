@@ -5,7 +5,7 @@ import { Document, Media, Packer, Paragraph } from "../build";
 
 const doc = new Document();
 const image = Media.addImage(doc, fs.readFileSync("./demo/images/image1.jpeg"));
-doc.addParagraph(new Paragraph("Hello World"));
+doc.add(new Paragraph("Hello World"));
 
 doc.Header.addImage(image);
 doc.Header.createImage(fs.readFileSync("./demo/images/pizza.gif"));

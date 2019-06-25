@@ -84,7 +84,7 @@ doc.Styles.createParagraphStyle("ListParagraph", "List Paragraph")
     .basedOn("Normal");
 
 doc.createImage(fs.readFileSync("./demo/images/pizza.gif"));
-doc.addParagraph(
+doc.add(
     new Paragraph({
         text: "HEADING",
         heading: HeadingLevel.HEADING_1,
@@ -92,7 +92,7 @@ doc.addParagraph(
     }),
 );
 
-doc.Footer.addParagraph(
+doc.Footer.add(
     new Paragraph({
         text: "1",
         style: "normalPara",
@@ -100,54 +100,54 @@ doc.Footer.addParagraph(
     }),
 );
 
-doc.addParagraph(
+doc.add(
     new Paragraph({
         text: "Ref. :",
         style: "normalPara",
     }),
 );
-doc.addParagraph(
+doc.add(
     new Paragraph({
         text: "Date :",
         style: "normalPara",
     }),
 );
 
-doc.addParagraph(
+doc.add(
     new Paragraph({
         text: "To,",
         style: "normalPara",
     }),
 );
-doc.addParagraph(
+doc.add(
     new Paragraph({
         text: "The Superindenting Engineer,(O &M)",
         style: "normalPara",
     }),
 );
 
-doc.addParagraph(
+doc.add(
     new Paragraph({
         text: "Sub : ",
         style: "normalPara",
     }),
 );
 
-doc.addParagraph(
+doc.add(
     new Paragraph({
         text: "Ref. : ",
         style: "normalPara",
     }),
 );
 
-doc.addParagraph(
+doc.add(
     new Paragraph({
         text: "Sir,",
         style: "normalPara",
     }),
 );
 
-doc.addParagraph(
+doc.add(
     new Paragraph({
         text: "BRIEF DESCRIPTION",
         style: "normalPara",
@@ -161,9 +161,9 @@ const table = new Table({
 table
     .getRow(0)
     .getCell(0)
-    .addParagraph(new Paragraph("Pole No."));
+    .add(new Paragraph("Pole No."));
 
-doc.addTable(table);
+doc.add(table);
 
 const arrboth = [
     {
@@ -178,7 +178,7 @@ const arrboth = [
 
 arrboth.forEach((item) => {
     doc.createImage(fs.readFileSync(item.image));
-    doc.addParagraph(
+    doc.add(
         new Paragraph({
             text: item.comment,
             style: "normalPara2",

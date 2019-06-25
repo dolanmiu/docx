@@ -27,13 +27,13 @@ myStyles
     .underline("double", "FF0000")
     .spacing({ before: 240, after: 120 }); // TWIP for both
 
-doc.addParagraph(
+doc.add(
     new Paragraph({
         text: "Hello",
         style: "myWonkyStyle",
     }),
 );
-doc.addParagraph(
+doc.add(
     new Paragraph({
         text: "World",
         heading: HeadingLevel.HEADING_2,

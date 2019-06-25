@@ -114,11 +114,11 @@ export class File {
 
     public add(item: Paragraph | Table | TableOfContents): File {
         if (item instanceof Paragraph) {
-            this.document.addParagraph(item);
+            this.document.add(item);
         }
 
         if (item instanceof Table) {
-            this.document.addTable(item);
+            this.document.add(item);
         }
 
         if (item instanceof TableOfContents) {
@@ -136,7 +136,7 @@ export class File {
     ): Paragraph {
         const image = Media.addImage(this, buffer, width, height, drawingOptions);
         const paragraph = new Paragraph(image);
-        this.document.addParagraph(paragraph);
+        this.document.add(paragraph);
 
         return paragraph;
     }

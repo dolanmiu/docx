@@ -37,18 +37,13 @@ export class Document extends XmlComponent {
         this.root.push(this.body);
     }
 
-    public addParagraph(paragraph: Paragraph): Document {
+    public add(paragraph: Paragraph | Table): Document {
         this.body.push(paragraph);
         return this;
     }
 
     public addTableOfContents(toc: TableOfContents): Document {
         this.body.push(toc);
-        return this;
-    }
-
-    public addTable(table: Table): Document {
-        this.body.push(table);
         return this;
     }
 

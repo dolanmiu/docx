@@ -10,11 +10,11 @@ const table = new Table({
     columns: 4,
 });
 
-doc.addTable(table);
+doc.add(table);
 
-table.getCell(2, 2).addParagraph(new Paragraph("Hello"));
+table.getCell(2, 2).add(new Paragraph("Hello"));
 table.getColumn(3).mergeCells(1, 2);
-// table.getCell(3, 2).addParagraph(new Paragraph("Hello"));
+// table.getCell(3, 2).add(new Paragraph("Hello"));
 
 const packer = new Packer();
 

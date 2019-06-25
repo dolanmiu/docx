@@ -22,13 +22,9 @@ export class TableCell extends XmlComponent {
         this.root.push(this.properties);
     }
 
-    public addParagraph(content: Paragraph): TableCell {
-        this.root.push(content);
-        return this;
-    }
+    public add(item: Paragraph | Table): TableCell {
+        this.root.push(item);
 
-    public addTable(content: Table): TableCell {
-        this.root.push(content);
         return this;
     }
 
@@ -36,7 +32,7 @@ export class TableCell extends XmlComponent {
         // Cells must end with a paragraph
         if (!(this.root[this.root.length - 1] instanceof Paragraph)) {
             const para = new Paragraph({});
-            this.addParagraph(para);
+            this.add(para);
         }
         return super.prepForXml();
     }

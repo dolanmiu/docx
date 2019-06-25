@@ -10,10 +10,10 @@ const table = new Table({
     columns: 4,
 });
 
-doc.addTable(table);
+doc.add(table);
 table
     .getCell(2, 2)
-    .addParagraph(new Paragraph("Hello"))
+    .add(new Paragraph("Hello"))
     .Borders.addTopBorder(BorderStyle.DASH_DOT_STROKED, 3, "red")
     .addBottomBorder(BorderStyle.DOUBLE, 3, "blue")
     .addStartBorder(BorderStyle.DOT_DOT_DASH, 3, "green")

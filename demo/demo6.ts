@@ -22,14 +22,14 @@ const dateText = new TextRun({
 paragraph.addRun(institutionText);
 paragraph.addRun(dateText);
 
-doc.addParagraph(paragraph);
+doc.add(paragraph);
 
-doc.addParagraph(new Paragraph({
+doc.add(new Paragraph({
     text: "Hello World",
     heading: HeadingLevel.HEADING_1,
 }));
-doc.addParagraph(new Paragraph("Foo bar"));
-doc.addParagraph(new Paragraph("Github is the best"));
+doc.add(new Paragraph("Foo bar"));
+doc.add(new Paragraph("Github is the best"));
 
 const packer = new Packer();
 

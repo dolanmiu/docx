@@ -7,12 +7,12 @@ const doc = new Document();
 
 const paragraph = new Paragraph("Hello World").pageBreak();
 
-doc.addParagraph(paragraph);
+doc.add(paragraph);
 
 const header = doc.createHeader();
-header.addParagraph(new Paragraph("Header on another page"));
+header.add(new Paragraph("Header on another page"));
 const footer = doc.createFooter();
-footer.addParagraph(new Paragraph("Footer on another page"));
+footer.add(new Paragraph("Footer on another page"));
 
 doc.addSection({
     headers: {
@@ -25,7 +25,7 @@ doc.addSection({
     pageNumberFormatType: PageNumberFormat.DECIMAL,
 });
 
-doc.addParagraph(new Paragraph("hello"));
+doc.add(new Paragraph("hello"));
 
 doc.addSection({
     headers: {
@@ -39,11 +39,11 @@ doc.addSection({
     orientation: PageOrientation.LANDSCAPE,
 });
 
-doc.addParagraph(new Paragraph("hello in landscape"));
+doc.add(new Paragraph("hello in landscape"));
 
 const header2 = doc.createHeader();
 const pageNumber = new TextRun("Page number: ").pageNumber();
-header2.addParagraph(new Paragraph({}).addRun(pageNumber));
+header2.add(new Paragraph({}).addRun(pageNumber));
 
 doc.addSection({
     headers: {
@@ -52,7 +52,7 @@ doc.addSection({
     orientation: PageOrientation.PORTRAIT,
 });
 
-doc.addParagraph(new Paragraph("Page number in the header must be 2, because it continues from the previous section."));
+doc.add(new Paragraph("Page number in the header must be 2, because it continues from the previous section."));
 
 doc.addSection({
     headers: {
@@ -62,7 +62,7 @@ doc.addSection({
     orientation: PageOrientation.PORTRAIT,
 });
 
-doc.addParagraph(new Paragraph(
+doc.add(new Paragraph(
     "Page number in the header must be III, because it continues from the previous section, but is defined as upper roman.",
 ));
 
@@ -75,7 +75,7 @@ doc.addSection({
     orientation: PageOrientation.PORTRAIT,
 });
 
-doc.addParagraph(new Paragraph("Page number in the header must be 25, because it is defined to start at 25 and to be decimal in this section."));
+doc.add(new Paragraph("Page number in the header must be 25, because it is defined to start at 25 and to be decimal in this section."));
 
 const packer = new Packer();
 

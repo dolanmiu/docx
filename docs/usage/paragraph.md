@@ -23,7 +23,7 @@ var paragraph = new docx.Paragraph("Short hand notation for adding text.");
 After you create the paragraph, you must add the paragraph into the `document`:
 
 ```js
-doc.addParagraph(paragraph);
+doc.add(paragraph);
 ```
 
 ## Styles

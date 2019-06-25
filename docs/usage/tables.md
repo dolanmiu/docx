@@ -4,10 +4,10 @@ You can create tables with `docx`. More information can be found [here](http://o
 
 ## Create Table
 
-To create a table, simply create one with `new Table()`, then add it to the document: `doc.addTable()`.
+To create a table, simply create one with `new Table()`, then add it to the document: `doc.add()`.
 
 ```ts
-const table = doc.addTable(new Table({
+const table = doc.add(new Table({
     rows: [NUMBER OF ROWS],
     columns: [NUMBER OF COLUMNS]
 });
@@ -17,7 +17,7 @@ Alternatively, you can create a table object directly, and then add it in the `d
 
 ```ts
 const table = new Table(4, 4);
-doc.addTable(table);
+doc.add(table);
 ```
 
 The snippet below creates a table of 2 rows and 4 columns.
@@ -27,7 +27,7 @@ const table = new Table({
     rows: 2,
     columns: 4,
 });
-doc.addTable(table);
+doc.add(table);
 ```
 
 ## Rows and Columns
@@ -92,10 +92,10 @@ const cell = column.getCell(2);
 
 ### Add paragraph to a cell
 
-Once you have got the cell, you can add data to it with the `addParagraph()` method.
+Once you have got the cell, you can add data to it with the `add()` method.
 
 ```ts
-cell.addParagraph(new Paragraph("Hello"));
+cell.add(new Paragraph("Hello"));
 ```
 
 ### Set width of a cell
@@ -226,7 +226,7 @@ It has not been implemented yet, but it will follow a similar structure as mergi
 To have a table within a table
 
 ```ts
-cell.addTable(new Table(1, 1));
+cell.add(new Table(1, 1));
 ```
 
 ## Pagination

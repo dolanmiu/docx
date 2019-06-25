@@ -58,15 +58,15 @@ const toc = new TableOfContents("Summary", {
 
 doc.addTableOfContents(toc);
 
-doc.addParagraph(new Paragraph("Header #1").heading1().pageBreakBefore());
-doc.addParagraph(new Paragraph("I'm a little text, very nicely written.'"));
+doc.add(new Paragraph("Header #1").heading1().pageBreakBefore());
+doc.add(new Paragraph("I'm a little text, very nicely written.'"));
 
-doc.addParagraph(new Paragraph("Header #2").heading1().pageBreakBefore());
-doc.addParagraph(new Paragraph("I'm another text very nicely written.'"));
-doc.addParagraph(new Paragraph("Header #2.1").heading2());
-doc.addParagraph(new Paragraph("I'm another text very nicely written.'"));
+doc.add(new Paragraph("Header #2").heading1().pageBreakBefore());
+doc.add(new Paragraph("I'm another text very nicely written.'"));
+doc.add(new Paragraph("Header #2.1").heading2());
+doc.add(new Paragraph("I'm another text very nicely written.'"));
 
-doc.addParagraph(new Paragraph("My Spectacular Style #1").style("MySpectacularStyle").pageBreakBefore());
+doc.add(new Paragraph("My Spectacular Style #1").style("MySpectacularStyle").pageBreakBefore());
 ```
 
 ### Complete example

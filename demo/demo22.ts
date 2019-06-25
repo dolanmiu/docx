@@ -13,7 +13,7 @@ const textRun1 = new TextRun({
     rightToLeft: true,
 });
 paragraph1.addRun(textRun1);
-doc.addParagraph(paragraph1);
+doc.add(paragraph1);
 
 const paragraph2 = new Paragraph({
     bidirectional: true,
@@ -24,7 +24,7 @@ const textRun2 = new TextRun({
     rightToLeft: true,
 });
 paragraph2.addRun(textRun2);
-doc.addParagraph(paragraph2);
+doc.add(paragraph2);
 
 const paragraph3 = new Paragraph({
     bidirectional: true,
@@ -35,7 +35,7 @@ const textRun3 = new TextRun({
     rightToLeft: true,
 });
 paragraph3.addRun(textRun3);
-doc.addParagraph(paragraph3);
+doc.add(paragraph3);
 
 const packer = new Packer();
 

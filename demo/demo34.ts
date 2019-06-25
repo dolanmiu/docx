@@ -31,7 +31,7 @@ const table = new Table({
 
 doc.add(table);
 
-table.getCell(0, 0).addParagraph(new Paragraph("Hello"));
+table.getCell(0, 0).add(new Paragraph("Hello"));
 table.getRow(0).mergeCells(0, 1);
 
 const packer = new Packer();

@@ -39,7 +39,7 @@ var doc = new docx.Document();
 var paragraph = new docx.Paragraph("Some cool text here.");
 // Add more text into the paragraph if you wish
 paragraph.addRun(new docx.TextRun("Lorem Ipsum Foo Bar"));
-doc.addParagraph(paragraph);
+doc.add(paragraph);
 
 // Used to export the file into a .docx file
 var packer = new docx.Packer();

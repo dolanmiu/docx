@@ -11,8 +11,8 @@ const paragraph2 = new Paragraph({
     pageBreakBefore: true,
 });
 
-doc.addParagraph(paragraph);
-doc.addParagraph(paragraph2);
+doc.add(paragraph);
+doc.add(paragraph2);
 
 const packer = new Packer();
 

@@ -37,7 +37,7 @@ export class FootNotes extends XmlComponent {
         );
 
         const begin = new Footnote(-1, FootnoteType.SEPERATOR);
-        begin.addParagraph(
+        begin.add(
             new Paragraph({
                 spacing: {
                     after: 0,
@@ -49,7 +49,7 @@ export class FootNotes extends XmlComponent {
         this.root.push(begin);
 
         const spacing = new Footnote(0, FootnoteType.CONTINUATION_SEPERATOR);
-        spacing.addParagraph(
+        spacing.add(
             new Paragraph({
                 spacing: {
                     after: 0,
@@ -63,7 +63,7 @@ export class FootNotes extends XmlComponent {
 
     public createFootNote(paragraph: Paragraph): void {
         const footnote = new Footnote(this.currentId);
-        footnote.addParagraph(paragraph);
+        footnote.add(paragraph);
         this.root.push(footnote);
 
         this.currentId++;

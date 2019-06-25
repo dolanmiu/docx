@@ -9,7 +9,7 @@ const doc = new Document(undefined, {
 
 const paragraph = new Paragraph("Hello World");
 
-doc.addParagraph(paragraph);
+doc.add(paragraph);
 
 const packer = new Packer();
 

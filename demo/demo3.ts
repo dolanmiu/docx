@@ -8,9 +8,9 @@ const doc = new Document();
 const numbering = new Numbering();
 
 const abstractNum = numbering.createAbstractNumbering();
-abstractNum.createLevel(0, "upperRoman", "%1", "start").addParagraphProperty(new Indent({ left: 720, hanging: 260 }));
-abstractNum.createLevel(1, "decimal", "%2.", "start").addParagraphProperty(new Indent({ left: 1440, hanging: 980 }));
-abstractNum.createLevel(2, "lowerLetter", "%3)", "start").addParagraphProperty(new Indent({ left: 14402160, hanging: 1700 }));
+abstractNum.createLevel(0, "upperRoman", "%1", "start").addProperty(new Indent({ left: 720, hanging: 260 }));
+abstractNum.createLevel(1, "decimal", "%2.", "start").addProperty(new Indent({ left: 1440, hanging: 980 }));
+abstractNum.createLevel(2, "lowerLetter", "%3)", "start").addProperty(new Indent({ left: 14402160, hanging: 1700 }));
 
 const concrete = numbering.createConcreteNumbering(abstractNum);
 
@@ -43,10 +43,10 @@ const subSubP = new Paragraph({
     },
 });
 
-doc.addParagraph(topLevelP);
-doc.addParagraph(subP);
-doc.addParagraph(secondSubP);
-doc.addParagraph(subSubP);
+doc.add(topLevelP);
+doc.add(subP);
+doc.add(secondSubP);
+doc.add(subSubP);
 
 const bullet1 = new Paragraph({
     text: "Hey you",
@@ -73,10 +73,10 @@ const bullet4 = new Paragraph({
     },
 });
 
-doc.addParagraph(bullet1);
-doc.addParagraph(bullet2);
-doc.addParagraph(bullet3);
-doc.addParagraph(bullet4);
+doc.add(bullet1);
+doc.add(bullet2);
+doc.add(bullet3);
+doc.add(bullet4);
 
 const packer = new Packer();
 

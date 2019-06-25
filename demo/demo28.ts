@@ -26,26 +26,26 @@ const toc = new TableOfContents("Summary", {
 
 doc.addTableOfContents(toc);
 
-doc.addParagraph(new Paragraph({
+doc.add(new Paragraph({
     text: "Header #1",
     heading: HeadingLevel.HEADING_1,
     pageBreakBefore: true,
 }));
-doc.addParagraph(new Paragraph("I'm a little text very nicely written.'"));
+doc.add(new Paragraph("I'm a little text very nicely written.'"));
 
-doc.addParagraph(new Paragraph({
+doc.add(new Paragraph({
     text: "Header #2",
     heading: HeadingLevel.HEADING_1,
     pageBreakBefore: true,
 }));
-doc.addParagraph(new Paragraph("I'm a other text very nicely written.'"));
-doc.addParagraph(new Paragraph({
+doc.add(new Paragraph("I'm a other text very nicely written.'"));
+doc.add(new Paragraph({
     text: "Header #2.1",
     heading: HeadingLevel.HEADING_2,
 }));
-doc.addParagraph(new Paragraph("I'm a another text very nicely written.'"));
+doc.add(new Paragraph("I'm a another text very nicely written.'"));
 
-doc.addParagraph(new Paragraph({
+doc.add(new Paragraph({
     text: "My Spectacular Style #1",
     style: "MySpectacularStyle",
     pageBreakBefore: true,

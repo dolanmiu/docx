@@ -92,7 +92,7 @@ This is just a guideline, and the rules can sometimes be broken.
     *Note:* This may look like its breaking the previous guideline, but it has semantically different meanings. The previous one is using data to construct an object, whereas this one is simply adding elements into the document:
 
     ```js
-    public addParagraph(paragraph: Paragraph) {
+    public add(paragraph: Paragraph) {
         this.root.push(paragraph);
     }
     ```

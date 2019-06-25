@@ -5,12 +5,12 @@ import { AlignmentType, Document, Packer, Paragraph, TextRun } from "../build";
 
 const doc = new Document();
 
-doc.addParagraph(
+doc.add(
     new Paragraph({
         text: "First Page",
     }).pageBreak(),
 );
-doc.addParagraph(new Paragraph("Second Page"));
+doc.add(new Paragraph("Second Page"));
 
 const pageNumber = new TextRun("Page ").pageNumber();
 
@@ -21,7 +21,7 @@ const pageoneheader = new Paragraph({
 
 pageoneheader.addRun(pageNumber);
 const firstPageHeader = doc.createFirstPageHeader();
-firstPageHeader.addParagraph(pageoneheader);
+firstPageHeader.add(pageoneheader);
 
 const pagetwoheader = new Paragraph({
     text: "My Title ",
@@ -29,7 +29,7 @@ const pagetwoheader = new Paragraph({
 });
 
 pagetwoheader.addRun(pageNumber);
-doc.Header.addParagraph(pagetwoheader);
+doc.Header.add(pagetwoheader);
 
 const packer = new Packer();
 

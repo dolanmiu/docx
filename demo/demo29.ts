@@ -8,7 +8,7 @@ const doc = new Document();
 const numbering = new Numbering();
 
 const abstractNum = numbering.createAbstractNumbering();
-abstractNum.createLevel(0, "upperRoman", "%1", "start").addParagraphProperty(new Indent({ left: 720, hanging: 260 }));
+abstractNum.createLevel(0, "upperRoman", "%1", "start").addProperty(new Indent({ left: 720, hanging: 260 }));
 
 const concrete = numbering.createConcreteNumbering(abstractNum);
 
@@ -57,10 +57,10 @@ const item4 = new Paragraph({
     },
 });
 
-doc.addParagraph(item1);
-doc.addParagraph(item2);
-doc.addParagraph(item3);
-doc.addParagraph(item4);
+doc.add(item1);
+doc.add(item2);
+doc.add(item3);
+doc.add(item4);
 
 const packer = new Packer();
 

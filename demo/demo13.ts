@@ -9,7 +9,7 @@ const doc = new Document({
     externalStyles: styles,
 });
 
-doc.addParagraph(new Paragraph({
+doc.add(new Paragraph({
     text: "Cool Heading Text",
     heading: HeadingLevel.HEADING_1,
 }));
@@ -18,16 +18,16 @@ const paragraph = new Paragraph({
     text: 'This is a custom named style from the template "MyFancyStyle"',
     style: "MyFancyStyle",
 });
-doc.addParagraph(paragraph);
+doc.add(paragraph);
 
-doc.addParagraph(new Paragraph("Some normal text"));
+doc.add(new Paragraph("Some normal text"));
 
-doc.addParagraph(new Paragraph({
+doc.add(new Paragraph({
     text: "MyFancyStyle again",
     style: "MyFancyStyle",
 }));
 
-doc.addParagraph(paragraph);
+doc.add(paragraph);
 
 const packer = new Packer();
 

@@ -46,14 +46,14 @@ doc.Styles.createParagraphStyle("ListParagraph", "List Paragraph")
 const numberedAbstract = doc.Numbering.createAbstractNumbering();
 numberedAbstract.createLevel(0, "lowerLetter", "%1)", "left");
 
-doc.addParagraph(
+doc.add(
     new Paragraph({
         text: "Test heading1, bold and italicized",
         heading: HeadingLevel.HEADING_1,
     }),
 );
-doc.addParagraph(new Paragraph("Some simple content"));
-doc.addParagraph(
+doc.add(new Paragraph("Some simple content"));
+doc.add(
     new Paragraph({
         text: "Test heading2 with double red underline",
         heading: HeadingLevel.HEADING_2,
@@ -64,7 +64,7 @@ const letterNumbering = doc.Numbering.createConcreteNumbering(numberedAbstract);
 const letterNumbering5 = doc.Numbering.createConcreteNumbering(numberedAbstract);
 letterNumbering5.overrideLevel(0, 5);
 
-doc.addParagraph(
+doc.add(
     new Paragraph({
         text: "Option1",
         numbering: {
@@ -73,7 +73,7 @@ doc.addParagraph(
         },
     }),
 );
-doc.addParagraph(
+doc.add(
     new Paragraph({
         text: "Option5 -- override 2 to 5",
         numbering: {
@@ -82,7 +82,7 @@ doc.addParagraph(
         },
     }),
 );
-doc.addParagraph(
+doc.add(
     new Paragraph({
         text: "Option3",
         numbering: {
@@ -92,7 +92,7 @@ doc.addParagraph(
     }),
 );
 
-doc.addParagraph(
+doc.add(
     new Paragraph({}).addRun(
         new TextRun({
             text: "Some monospaced content",
@@ -103,20 +103,20 @@ doc.addParagraph(
     ),
 );
 
-doc.addParagraph(
+doc.add(
     new Paragraph({
         text: "An aside, in light gray italics and indented",
         style: "aside",
     }),
 );
-doc.addParagraph(
+doc.add(
     new Paragraph({
         text: "This is normal, but well-spaced text",
         style: "wellSpaced",
     }),
 );
 const para = new Paragraph({});
-doc.addParagraph(para);
+doc.add(para);
 // Showing the different ways to create a TextRun
 para.addRun(
     new TextRun({

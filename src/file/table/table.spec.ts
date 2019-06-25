@@ -163,19 +163,19 @@ describe("Table", () => {
             table
                 .getRow(0)
                 .getCell(0)
-                .addParagraph(new Paragraph("A1"));
+                .add(new Paragraph("A1"));
             table
                 .getRow(0)
                 .getCell(1)
-                .addParagraph(new Paragraph("B1"));
+                .add(new Paragraph("B1"));
             table
                 .getRow(1)
                 .getCell(0)
-                .addParagraph(new Paragraph("A2"));
+                .add(new Paragraph("A2"));
             table
                 .getRow(1)
                 .getCell(1)
-                .addParagraph(new Paragraph("B2"));
+                .add(new Paragraph("B2"));
             const tree = new Formatter().format(table);
             const cell = (c) => ({
                 "w:tc": [
@@ -221,10 +221,10 @@ describe("Table", () => {
                 rows: 2,
                 columns: 2,
             });
-            table.getCell(0, 0).addParagraph(new Paragraph("A1"));
-            table.getCell(0, 1).addParagraph(new Paragraph("B1"));
-            table.getCell(1, 0).addParagraph(new Paragraph("A2"));
-            table.getCell(1, 1).addParagraph(new Paragraph("B2"));
+            table.getCell(0, 0).add(new Paragraph("A1"));
+            table.getCell(0, 1).add(new Paragraph("B1"));
+            table.getCell(1, 0).add(new Paragraph("A2"));
+            table.getCell(1, 1).add(new Paragraph("B2"));
             const tree = new Formatter().format(table);
             const cell = (c) => ({
                 "w:tc": [
@@ -295,7 +295,7 @@ describe("Table", () => {
                     rows: 1,
                     columns: 1,
                 });
-                parentTable.getCell(0, 0).addTable(
+                parentTable.getCell(0, 0).add(
                     new Table({
                         rows: 1,
                         columns: 1,
@@ -322,7 +322,7 @@ describe("Table", () => {
                     rows: 1,
                     columns: 1,
                 });
-                parentTable.getCell(0, 0).addParagraph(new Paragraph("Hello"));
+                parentTable.getCell(0, 0).add(new Paragraph("Hello"));
                 const tree = new Formatter().format(parentTable);
                 expect(tree)
                     .to.have.property("w:tbl")

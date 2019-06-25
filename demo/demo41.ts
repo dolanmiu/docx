@@ -10,41 +10,41 @@ const table = new Table({
     columns: 6,
 });
 
-doc.addTable(table);
+doc.add(table);
 
 let row = 0;
-table.getCell(row, 0).addParagraph(new Paragraph("0,0"));
-table.getCell(row, 1).addParagraph(new Paragraph("0,1"));
-table.getCell(row, 3).addParagraph(new Paragraph("0,3"));
-table.getCell(row, 4).addParagraph(new Paragraph("0,4"));
+table.getCell(row, 0).add(new Paragraph("0,0"));
+table.getCell(row, 1).add(new Paragraph("0,1"));
+table.getCell(row, 3).add(new Paragraph("0,3"));
+table.getCell(row, 4).add(new Paragraph("0,4"));
 table.getRow(row).mergeCells(4, 5);
 table.getRow(row).mergeCells(1, 2);
 row = 1;
-table.getCell(row, 0).addParagraph(new Paragraph("1,0"));
-table.getCell(row, 2).addParagraph(new Paragraph("1,2"));
-table.getCell(row, 4).addParagraph(new Paragraph("1,4"));
+table.getCell(row, 0).add(new Paragraph("1,0"));
+table.getCell(row, 2).add(new Paragraph("1,2"));
+table.getCell(row, 4).add(new Paragraph("1,4"));
 table.getRow(row).mergeCells(4, 5);
 table.getRow(row).mergeCells(2, 3);
 table.getRow(row).mergeCells(0, 1);
 
 row = 2;
-table.getCell(row, 0).addParagraph(new Paragraph("2,0"));
-table.getCell(row, 1).addParagraph(new Paragraph("2,1"));
-table.getCell(row, 2).addParagraph(new Paragraph("2,2"));
-table.getCell(row, 3).addParagraph(new Paragraph("2,3"));
-table.getCell(row, 4).addParagraph(new Paragraph("2,4"));
+table.getCell(row, 0).add(new Paragraph("2,0"));
+table.getCell(row, 1).add(new Paragraph("2,1"));
+table.getCell(row, 2).add(new Paragraph("2,2"));
+table.getCell(row, 3).add(new Paragraph("2,3"));
+table.getCell(row, 4).add(new Paragraph("2,4"));
 table.getRow(row).mergeCells(4, 5);
 table.getRow(row).mergeCells(1, 2);
 row = 3;
-table.getCell(row, 0).addParagraph(new Paragraph("3,0"));
-table.getCell(row, 1).addParagraph(new Paragraph("3,1"));
-table.getCell(row, 2).addParagraph(new Paragraph("3,2"));
-table.getCell(row, 3).addParagraph(new Paragraph("3,3"));
-table.getCell(row, 4).addParagraph(new Paragraph("3,4"));
-table.getCell(row, 5).addParagraph(new Paragraph("3,5"));
+table.getCell(row, 0).add(new Paragraph("3,0"));
+table.getCell(row, 1).add(new Paragraph("3,1"));
+table.getCell(row, 2).add(new Paragraph("3,2"));
+table.getCell(row, 3).add(new Paragraph("3,3"));
+table.getCell(row, 4).add(new Paragraph("3,4"));
+table.getCell(row, 5).add(new Paragraph("3,5"));
 row = 4;
-table.getCell(row, 0).addParagraph(new Paragraph("4,0"));
-table.getCell(row, 5).addParagraph(new Paragraph("4,5"));
+table.getCell(row, 0).add(new Paragraph("4,0"));
+table.getCell(row, 5).add(new Paragraph("4,5"));
 table.getRow(row).mergeCells(0, 4);
 
 const packer = new Packer();

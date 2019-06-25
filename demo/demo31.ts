@@ -10,14 +10,14 @@ const table = new Table({
     columns: 2,
 });
 
-doc.addTable(table);
+doc.add(table);
 
 table
     .getCell(1, 1)
-    .addParagraph(new Paragraph("This text should be in the middle of the cell"))
+    .add(new Paragraph("This text should be in the middle of the cell"))
     .setVerticalAlign(VerticalAlign.CENTER);
 
-table.getCell(1, 0).addParagraph(
+table.getCell(1, 0).add(
     new Paragraph({
         text:
             "Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah",

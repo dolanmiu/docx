@@ -6,7 +6,7 @@ import { Document, Packer, Paragraph } from "../build";
 const doc = new Document();
 
 const paragraph = new Paragraph("Hello World");
-doc.addParagraph(paragraph);
+doc.add(paragraph);
 
 const image = doc.createImage(fs.readFileSync("./demo/images/pizza.gif"));
 const image2 = doc.createImage(fs.readFileSync("./demo/images/pizza.gif"));

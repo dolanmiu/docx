@@ -10,12 +10,12 @@ const table = new Table({
     columns: 4,
 });
 
-doc.addTable(table);
+doc.add(table);
 
-table.getCell(2, 2).addParagraph(new Paragraph("Hello"));
+table.getCell(2, 2).add(new Paragraph("Hello"));
 
 const image = Media.addImage(doc, fs.readFileSync("./demo/images/image1.jpeg"));
-table.getCell(1, 1).addParagraph(new Paragraph(image));
+table.getCell(1, 1).add(new Paragraph(image));
 
 const packer = new Packer();
 

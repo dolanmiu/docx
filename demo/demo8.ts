@@ -5,10 +5,10 @@ import { Document, Packer, Paragraph } from "../build";
 
 const doc = new Document();
 
-doc.addParagraph(new Paragraph("Hello World"));
+doc.add(new Paragraph("Hello World"));
 
-doc.Header.addParagraph(new Paragraph("Header text"));
-doc.Footer.addParagraph(new Paragraph("Footer text"));
+doc.Header.add(new Paragraph("Header text"));
+doc.Footer.add(new Paragraph("Footer text"));
 
 const packer = new Packer();
 

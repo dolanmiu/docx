@@ -21,7 +21,7 @@ fs.readFile(filePath, (err, data) => {
             template: templateDocument,
         });
         const paragraph = new Paragraph("Hello World");
-        doc.addParagraph(paragraph);
+        doc.add(paragraph);
 
         const packer = new Packer();
         packer.toBuffer(doc).then((buffer) => {

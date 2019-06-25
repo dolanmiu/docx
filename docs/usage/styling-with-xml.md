@@ -39,7 +39,7 @@ doc.createParagraph("Cool Heading Text").heading1();
 
 let paragraph = new docx.Paragraph('This is a custom named style from the template "Cool New Style"');
 paragraph.style("Cool New Style");
-doc.addParagraph(paragraph);
+doc.add(paragraph);
 
 doc.createParagraph("Some normal text");
 ```

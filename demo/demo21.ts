@@ -17,20 +17,20 @@ const anchorId = "anchorID";
 // First create the bookmark
 const bookmark = doc.createBookmark(anchorId, "Lorem Ipsum");
 // That has header styling
-doc.addParagraph(
+doc.add(
     new Paragraph({
         heading: HeadingLevel.HEADING_1,
     }).addBookmark(bookmark),
 );
 
-doc.addParagraph(new Paragraph("\n"));
+doc.add(new Paragraph("\n"));
 
-doc.addParagraph(new Paragraph(loremIpsum));
-doc.addParagraph(new Paragraph({}).pageBreak());
+doc.add(new Paragraph(loremIpsum));
+doc.add(new Paragraph({}).pageBreak());
 
 // Now the link back up to the bookmark
 const hyperlink = doc.createInternalHyperLink(anchorId, `Click me!`);
-doc.addParagraph(new Paragraph({}).addHyperLink(hyperlink));
+doc.add(new Paragraph({}).addHyperLink(hyperlink));
 
 const packer = new Packer();
 

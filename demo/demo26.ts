@@ -7,7 +7,7 @@ const doc = new Document();
 
 const paragraph = new Paragraph("No border!");
 
-doc.addParagraph(paragraph);
+doc.add(paragraph);
 
 const borderParagraph = new Paragraph({
     text: "I have borders on my top and bottom sides!",
@@ -27,7 +27,7 @@ const borderParagraph = new Paragraph({
     },
 });
 
-doc.addParagraph(borderParagraph);
+doc.add(borderParagraph);
 
 const packer = new Packer();
 

@@ -7,7 +7,7 @@ import { Document, HorizontalPositionAlign, HorizontalPositionRelativeFrom, Pack
 const doc = new Document();
 
 const paragraph = new Paragraph("Hello World");
-doc.addParagraph(paragraph);
+doc.add(paragraph);
 
 doc.createImage(fs.readFileSync("./demo/images/image1.jpeg"));
 doc.createImage(fs.readFileSync("./demo/images/dog.png").toString("base64"));

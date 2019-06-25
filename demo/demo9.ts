@@ -5,7 +5,7 @@ import { Document, Packer, Paragraph } from "../build";
 
 const doc = new Document();
 
-doc.addParagraph(new Paragraph("Hello World"));
+doc.add(new Paragraph("Hello World"));
 
 doc.Header.createImage(fs.readFileSync("./demo/images/pizza.gif"));
 doc.Footer.createImage(fs.readFileSync("./demo/images/pizza.gif"));

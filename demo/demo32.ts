@@ -10,12 +10,12 @@ let table = new Table({
     columns: 2,
 });
 
-doc.addTable(table);
+doc.add(table);
 
-table.getCell(0, 0).addParagraph(new Paragraph("Hello"));
+table.getCell(0, 0).add(new Paragraph("Hello"));
 table.getRow(0).mergeCells(0, 1);
 
-doc.addParagraph(
+doc.add(
     new Paragraph({
         text: "Another table",
         heading: HeadingLevel.HEADING_2,
@@ -30,11 +30,11 @@ table = new Table({
     columnWidths: [1000, 1000, 1000],
 });
 
-doc.addTable(table);
+doc.add(table);
 
 table
     .getCell(0, 0)
-    .addParagraph(new Paragraph("World"))
+    .add(new Paragraph("World"))
     .setMargins({
         top: 1000,
         bottom: 1000,
@@ -43,7 +43,7 @@ table
     });
 table.getRow(0).mergeCells(0, 2);
 
-doc.addParagraph(
+doc.add(
     new Paragraph({
         text: "Another table",
         heading: HeadingLevel.HEADING_2,
@@ -63,14 +63,14 @@ table = new Table({
     },
 });
 
-doc.addTable(table);
+doc.add(table);
 
-table.getCell(0, 0).addParagraph(new Paragraph("Foo"));
-table.getCell(0, 1).addParagraph(new Paragraph("v"));
+table.getCell(0, 0).add(new Paragraph("Foo"));
+table.getCell(0, 1).add(new Paragraph("v"));
 
 table
     .getCell(1, 0)
-    .addParagraph(new Paragraph("Bar1"))
+    .add(new Paragraph("Bar1"))
     .setShading({
         fill: "b79c2f",
         val: ShadingType.REVERSE_DIAGONAL_STRIPE,
@@ -78,7 +78,7 @@ table
     });
 table
     .getCell(1, 1)
-    .addParagraph(new Paragraph("Bar2"))
+    .add(new Paragraph("Bar2"))
     .setShading({
         fill: "42c5f4",
         val: ShadingType.PERCENT_95,
@@ -86,7 +86,7 @@ table
     });
 table
     .getCell(1, 2)
-    .addParagraph(new Paragraph("Bar3"))
+    .add(new Paragraph("Bar3"))
     .setShading({
         fill: "880aa8",
         val: ShadingType.PERCENT_10,
@@ -94,7 +94,7 @@ table
     });
 table
     .getCell(1, 3)
-    .addParagraph(new Paragraph("Bar4"))
+    .add(new Paragraph("Bar4"))
     .setShading({
         fill: "FF0000",
         val: ShadingType.CLEAR,
@@ -103,7 +103,7 @@ table
 
 table.getRow(0).mergeCells(0, 3);
 
-doc.addParagraph(new Paragraph("hi"));
+doc.add(new Paragraph("hi"));
 
 table = new Table({
     rows: 2,
@@ -112,7 +112,7 @@ table = new Table({
     widthUnitType: WidthType.PERCENTAGE,
 });
 
-doc.addTable(table);
+doc.add(table);
 
 const packer = new Packer();
 

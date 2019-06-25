@@ -11,8 +11,8 @@ var paragraph = new docx.Paragraph(text).bullet();
 var text2 = new docx.TextRun("Are awesome");
 var paragraph2 = new docx.Paragraph(text2).bullet();
 
-doc.addParagraph(paragraph);
-doc.addParagraph(paragraph2);
+doc.add(paragraph);
+doc.add(paragraph2);
 ```
 
 ### This will produce:

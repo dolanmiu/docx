@@ -6,7 +6,7 @@ import { Document, Media, Packer, Paragraph } from "../build";
 const doc = new Document();
 
 const paragraph = new Paragraph("Hello World");
-doc.addParagraph(paragraph);
+doc.add(paragraph);
 
 const image = Media.addImage(doc, fs.readFileSync("./demo/images/image1.jpeg"));
 const image2 = Media.addImage(doc, fs.readFileSync("./demo/images/dog.png"));
@@ -20,12 +20,12 @@ const image6 = Media.addImage(doc, Buffer.from(imageBase64Data, "base64"), 100, 
 // I am adding an image to the paragraph rather than the document to make the image inline
 paragraph.addImage(image5);
 
-doc.addImage(image);
-doc.addImage(image2);
-doc.addImage(image3);
-doc.addImage(image4);
-doc.addImage(image5);
-doc.addImage(image6);
+doc.add(image);
+doc.add(image2);
+doc.add(image3);
+doc.add(image4);
+doc.add(image5);
+doc.add(image6);
 
 const packer = new Packer();
 
