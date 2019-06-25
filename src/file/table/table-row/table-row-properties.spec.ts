@@ -34,25 +34,19 @@ describe("TableRowProperties", () => {
     });
 
     describe("#setHeight", () => {
-        it("sets exact row height", () => {
+        it("sets row height exact", () => {
             const rowProperties = new TableRowProperties();
             rowProperties.setHeight(100, HeightRule.EXACT);
             const tree = new Formatter().format(rowProperties);
             expect(tree).to.deep.equal({ "w:trPr": [{ "w:trHeight": { _attr: { "w:val": 100, "w:hRule": "exact" } } }] });
         });
-    });
-
-    describe("#setHeight", () => {
-        it("sets auto row height", () => {
+        it("sets row height auto", () => {
             const rowProperties = new TableRowProperties();
             rowProperties.setHeight(100, HeightRule.AUTO);
             const tree = new Formatter().format(rowProperties);
             expect(tree).to.deep.equal({ "w:trPr": [{ "w:trHeight": { _attr: { "w:val": 100, "w:hRule": "auto" } } }] });
         });
-    });
-
-    describe("#setHeight", () => {
-        it("sets at least row height", () => {
+        it("sets row height at least", () => {
             const rowProperties = new TableRowProperties();
             rowProperties.setHeight(100, HeightRule.ATLEAST);
             const tree = new Formatter().format(rowProperties);

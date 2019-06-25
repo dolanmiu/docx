@@ -2,10 +2,10 @@ import { expect } from "chai";
 
 import { Formatter } from "export/formatter";
 
+import { HeightRule } from "file/table/table-row/table-row-height";
+import { EMPTY_OBJECT } from "file/xml-components";
 import { TableCell } from "../table-cell";
 import { TableRow } from "./table-row";
-
-import { EMPTY_OBJECT } from "file/xml-components";
 
 describe("TableRow", () => {
     describe("#constructor", () => {
@@ -65,6 +65,30 @@ describe("TableRow", () => {
 
             tableRow.mergeCells(0, 1);
             expect(() => tableRow.getCell(1)).to.throw();
+        });
+    });
+
+    describe("#setHeight", () => {
+        it("should set row height", () => {
+            const tableRow = new TableRow([]);
+            tableRow.setHeight(100, HeightRule.EXACT);
+            const tree = new Formatter().format(tableRow);
+            expect(tree).to.deep.equal({
+                "w:tr": [
+                    {
+                        "w:trPr": [
+                            {
+                                "w:trHeight": {
+                                    _attr: {
+                                        "w:hRule": "exact",
+                                        "w:val": 100,
+                                    },
+                                },
+                            },
+                        ],
+                    },
+                ],
+            });
         });
     });
 });
