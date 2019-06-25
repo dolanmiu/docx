@@ -15,7 +15,7 @@ import { IFileProperties } from "./file-properties";
 import { FooterWrapper, IDocumentFooter } from "./footer-wrapper";
 import { FootNotes } from "./footnotes";
 import { HeaderWrapper, IDocumentHeader } from "./header-wrapper";
-import { Image, Media } from "./media";
+import { Media } from "./media";
 import { Numbering } from "./numbering";
 import { Bookmark, Hyperlink, Paragraph } from "./paragraph";
 import { Relationships } from "./relationships";
@@ -112,23 +112,19 @@ export class File {
         this.settings = new Settings();
     }
 
-    public addTableOfContents(toc: TableOfContents): File {
-        this.document.addTableOfContents(toc);
-        return this;
-    }
+    public add(item: Paragraph | Table | TableOfContents): File {
+        if (item instanceof Paragraph) {
+            this.document.addParagraph(item);
+        }
 
-    public addParagraph(paragraph: Paragraph): File {
-        this.document.addParagraph(paragraph);
-        return this;
-    }
+        if (item instanceof Table) {
+            this.document.addTable(item);
+        }
 
-    public addTable(table: Table): File {
-        this.document.addTable(table);
-        return this;
-    }
+        if (item instanceof TableOfContents) {
+            this.document.addTableOfContents(item);
+        }
 
-    public addImage(image: Image): File {
-        this.document.addParagraph(image.Paragraph);
         return this;
     }
 

@@ -6,6 +6,7 @@ import { Formatter } from "export/formatter";
 import { File } from "./file";
 import { Paragraph } from "./paragraph";
 import { Table } from "./table";
+import { TableOfContents } from "./table-of-contents";
 
 describe("File", () => {
     describe("#constructor", () => {
@@ -83,17 +84,17 @@ describe("File", () => {
         it("should call the underlying document's addParagraph", () => {
             const file = new File();
             const spy = sinon.spy(file.Document, "addParagraph");
-            file.addParagraph(new Paragraph({}));
+            file.add(new Paragraph({}));
 
             expect(spy.called).to.equal(true);
         });
     });
 
-    describe("#addTable", () => {
+    describe("#add", () => {
         it("should call the underlying document's addTable", () => {
             const wrapper = new File();
             const spy = sinon.spy(wrapper.Document, "addTable");
-            wrapper.addTable(
+            wrapper.add(
                 new Table({
                     rows: 1,
                     columns: 1,
@@ -102,25 +103,20 @@ describe("File", () => {
 
             expect(spy.called).to.equal(true);
         });
-    });
 
-    describe("#addTableOfContents", () => {
         it("should call the underlying document's addTableOfContents", () => {
             const wrapper = new File();
             const spy = sinon.spy(wrapper.Document, "addTableOfContents");
-            // tslint:disable-next-line:no-any
-            wrapper.addTableOfContents({} as any);
+            wrapper.add(new TableOfContents());
 
             expect(spy.called).to.equal(true);
         });
-    });
 
-    describe("#addImage", () => {
         it("should call the underlying document's addImage", () => {
             const wrapper = new File();
             const spy = sinon.spy(wrapper.Document, "addParagraph");
             // tslint:disable-next-line:no-any
-            wrapper.addImage({} as any);
+            wrapper.add(new Paragraph(""));
 
             expect(spy.called).to.equal(true);
         });

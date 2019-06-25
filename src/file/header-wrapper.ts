@@ -22,16 +22,14 @@ export class HeaderWrapper {
         this.relationships = new Relationships();
     }
 
-    public addParagraph(paragraph: Paragraph): void {
-        this.header.addParagraph(paragraph);
-    }
+    public add(item: Paragraph | Table): HeaderWrapper {
+        this.header.addChildElement(item);
 
-    public addTable(table: Table): void {
-        this.header.addTable(table);
+        return this;
     }
 
     public addImage(image: Image): HeaderWrapper {
-        this.header.addParagraph(image.Paragraph);
+        this.header.add(image.Paragraph);
         return this;
     }
 
@@ -47,7 +45,7 @@ export class HeaderWrapper {
     ): Paragraph {
         const image = Media.addImage(this, buffer, width, height, drawingOptions);
         const paragraph = new Paragraph(image);
-        this.addParagraph(paragraph);
+        this.add(paragraph);
 
         return paragraph;
     }

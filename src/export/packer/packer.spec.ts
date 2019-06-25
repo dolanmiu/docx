@@ -22,20 +22,20 @@ describe("Packer", () => {
             heading: HeadingLevel.HEADING_1,
         });
 
-        file.addParagraph(
+        file.add(
             new Paragraph({
                 text: "title",
                 heading: HeadingLevel.TITLE,
             }),
         );
-        file.addParagraph(heading);
-        file.addParagraph(
+        file.add(heading);
+        file.add(
             new Paragraph({
                 text: "heading 2",
                 heading: HeadingLevel.HEADING_2,
             }),
         );
-        file.addParagraph(paragraph);
+        file.add(paragraph);
 
         packer = new Packer();
     });

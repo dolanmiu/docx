@@ -49,11 +49,7 @@ export class Header extends InitializableXmlComponent {
         return this.refId;
     }
 
-    public addParagraph(paragraph: Paragraph): void {
-        this.root.push(paragraph);
-    }
-
-    public addTable(table: Table): void {
-        this.root.push(table);
+    public add(item: Paragraph | Table): void {
+        this.root.push(item);
     }
 }
