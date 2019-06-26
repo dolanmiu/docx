@@ -1,6 +1,6 @@
-import { assert } from "chai";
+import { expect } from "chai";
 
-import { Utility } from "tests/utility";
+import { Formatter } from "export/formatter";
 
 import { Style } from "./style";
 
@@ -10,14 +10,26 @@ describe("ParagraphStyle", () => {
     describe("#constructor()", () => {
         it("should create a style with given value", () => {
             style = new Style("test");
-            const newJson = Utility.jsonify(style);
-            assert.equal(newJson.root[0].root.val, "test");
+            const tree = new Formatter().format(style);
+            expect(tree).to.deep.equal({
+                "w:pStyle": {
+                    _attr: {
+                        "w:val": "test",
+                    },
+                },
+            });
         });
 
         it("should create a style with blank val", () => {
             style = new Style("");
-            const newJson = Utility.jsonify(style);
-            assert.equal(newJson.root[0].root.val, "");
+            const tree = new Formatter().format(style);
+            expect(tree).to.deep.equal({
+                "w:pStyle": {
+                    _attr: {
+                        "w:val": "",
+                    },
+                },
+            });
         });
     });
 });

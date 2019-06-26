@@ -1,6 +1,6 @@
-import { assert } from "chai";
+import { expect } from "chai";
 
-import { Utility } from "tests/utility";
+import { Formatter } from "export/formatter";
 
 import { Align } from "./align";
 import { VerticalPositionAlign } from "./floating-position";
@@ -8,9 +8,10 @@ import { VerticalPositionAlign } from "./floating-position";
 describe("Align", () => {
     describe("#constructor()", () => {
         it("should create a element with correct root key", () => {
-            const newJson = Utility.jsonify(new Align(VerticalPositionAlign.CENTER));
-            assert.equal(newJson.rootKey, "wp:align");
-            assert.include(newJson.root[0], VerticalPositionAlign.CENTER);
+            const tree = new Formatter().format(new Align(VerticalPositionAlign.CENTER));
+            expect(tree).to.deep.equal({
+                "wp:align": ["center"],
+            });
         });
     });
 });

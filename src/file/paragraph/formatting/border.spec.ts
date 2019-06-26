@@ -1,6 +1,6 @@
-import { assert } from "chai";
+import { assert, expect } from "chai";
 
-import { Utility } from "tests/utility";
+import { Formatter } from "export/formatter";
 
 import { ThematicBreak } from "./border";
 
@@ -28,14 +28,21 @@ describe("ThematicBreak", () => {
         });
 
         it("should create a Thematic Break with correct border properties", () => {
-            const newJson = Utility.jsonify(thematicBreak);
-            const attributes = {
-                color: "auto",
-                space: "1",
-                val: "single",
-                sz: "6",
-            };
-            assert.equal(JSON.stringify(newJson.root[0].root[0].root), JSON.stringify(attributes));
+            const tree = new Formatter().format(thematicBreak);
+            expect(tree).to.deep.equal({
+                "w:pBdr": [
+                    {
+                        "w:bottom": {
+                            _attr: {
+                                "w:color": "auto",
+                                "w:space": "1",
+                                "w:sz": "6",
+                                "w:val": "single",
+                            },
+                        },
+                    },
+                ],
+            });
         });
     });
 });

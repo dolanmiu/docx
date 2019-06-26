@@ -1,6 +1,6 @@
-import { assert } from "chai";
+import { expect } from "chai";
 
-import { Utility } from "tests/utility";
+import { Formatter } from "export/formatter";
 
 import { VerticalPositionAlign, VerticalPositionRelativeFrom } from "./floating-position";
 import { VerticalPosition } from "./vertical-position";
@@ -8,35 +8,45 @@ import { VerticalPosition } from "./vertical-position";
 describe("VerticalPosition", () => {
     describe("#constructor()", () => {
         it("should create a element with position align", () => {
-            const newJson = Utility.jsonify(
+            const tree = new Formatter().format(
                 new VerticalPosition({
                     relative: VerticalPositionRelativeFrom.MARGIN,
                     align: VerticalPositionAlign.INSIDE,
                 }),
             );
-            assert.equal(newJson.rootKey, "wp:positionV");
-            assert.include(newJson.root[0].root, {
-                relativeFrom: "margin",
+            expect(tree).to.deep.equal({
+                "wp:positionV": [
+                    {
+                        _attr: {
+                            relativeFrom: "margin",
+                        },
+                    },
+                    {
+                        "wp:align": ["inside"],
+                    },
+                ],
             });
-
-            assert.equal(newJson.root[1].rootKey, "wp:align");
-            assert.include(newJson.root[1].root, "inside");
         });
 
         it("should create a element with offset", () => {
-            const newJson = Utility.jsonify(
+            const tree = new Formatter().format(
                 new VerticalPosition({
                     relative: VerticalPositionRelativeFrom.MARGIN,
                     offset: 40,
                 }),
             );
-            assert.equal(newJson.rootKey, "wp:positionV");
-            assert.include(newJson.root[0].root, {
-                relativeFrom: "margin",
+            expect(tree).to.deep.equal({
+                "wp:positionV": [
+                    {
+                        _attr: {
+                            relativeFrom: "margin",
+                        },
+                    },
+                    {
+                        "wp:posOffset": ["40"],
+                    },
+                ],
             });
-
-            assert.equal(newJson.root[1].rootKey, "wp:posOffset");
-            assert.include(newJson.root[1].root[0], 40);
         });
     });
 });
