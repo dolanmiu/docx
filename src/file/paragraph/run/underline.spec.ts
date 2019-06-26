@@ -1,7 +1,6 @@
-import { assert, expect } from "chai";
+import { expect } from "chai";
 
 import { Formatter } from "export/formatter";
-import { Utility } from "tests/utility";
 
 import * as u from "./underline";
 
@@ -9,8 +8,14 @@ describe("Underline", () => {
     describe("#constructor()", () => {
         it("should create a new Underline object with u:u as the rootKey", () => {
             const underline = new u.Underline();
-            const newJson = Utility.jsonify(underline);
-            assert.equal(newJson.rootKey, "w:u");
+            const tree = new Formatter().format(underline);
+            expect(tree).to.deep.equal({
+                "w:u": {
+                    _attr: {
+                        "w:val": "single",
+                    },
+                },
+            });
         });
 
         it("should default to 'single' and no color", () => {
@@ -33,16 +38,16 @@ describe("Underline", () => {
 
 describe("DashDotDotHeavyUnderline", () => {
     describe("#constructor()", () => {
-        it("should have u:u as the rootKey", () => {
-            const underline = new u.DashDotDotHeavyUnderline();
-            const newJson = Utility.jsonify(underline);
-            assert.equal(newJson.rootKey, "w:u");
-        });
-
         it("should put value in attribute", () => {
             const underline = new u.DashDotDotHeavyUnderline();
-            const newJson = Utility.jsonify(underline);
-            assert.equal(newJson.root[0].root.val, "dashDotDotHeavy");
+            const tree = new Formatter().format(underline);
+            expect(tree).to.deep.equal({
+                "w:u": {
+                    _attr: {
+                        "w:val": "dashDotDotHeavy",
+                    },
+                },
+            });
         });
     });
 });
@@ -51,8 +56,14 @@ describe("DashDotDotHeavyUnderline", () => {
     describe("#constructor()", () => {
         it("should put value in attribute", () => {
             const underline = new u.DashDotHeavyUnderline();
-            const newJson = Utility.jsonify(underline);
-            assert.equal(newJson.root[0].root.val, "dashDotHeavy");
+            const tree = new Formatter().format(underline);
+            expect(tree).to.deep.equal({
+                "w:u": {
+                    _attr: {
+                        "w:val": "dashDotHeavy",
+                    },
+                },
+            });
         });
     });
 });
@@ -61,8 +72,14 @@ describe("DashDotDotHeavyUnderline", () => {
     describe("#constructor()", () => {
         it("should put value in attribute", () => {
             const underline = new u.DashLongHeavyUnderline();
-            const newJson = Utility.jsonify(underline);
-            assert.equal(newJson.root[0].root.val, "dashLongHeavy");
+            const tree = new Formatter().format(underline);
+            expect(tree).to.deep.equal({
+                "w:u": {
+                    _attr: {
+                        "w:val": "dashLongHeavy",
+                    },
+                },
+            });
         });
     });
 });
@@ -71,8 +88,14 @@ describe("DashDotDotHeavyUnderline", () => {
     describe("#constructor()", () => {
         it("should put value in attribute", () => {
             const underline = new u.DashLongUnderline();
-            const newJson = Utility.jsonify(underline);
-            assert.equal(newJson.root[0].root.val, "dashLong");
+            const tree = new Formatter().format(underline);
+            expect(tree).to.deep.equal({
+                "w:u": {
+                    _attr: {
+                        "w:val": "dashLong",
+                    },
+                },
+            });
         });
     });
 });
@@ -81,8 +104,14 @@ describe("DashDotDotHeavyUnderline", () => {
     describe("#constructor()", () => {
         it("should put value in attribute", () => {
             const underline = new u.DashUnderline();
-            const newJson = Utility.jsonify(underline);
-            assert.equal(newJson.root[0].root.val, "dash");
+            const tree = new Formatter().format(underline);
+            expect(tree).to.deep.equal({
+                "w:u": {
+                    _attr: {
+                        "w:val": "dash",
+                    },
+                },
+            });
         });
     });
 });
@@ -91,8 +120,14 @@ describe("DashDotDotHeavyUnderline", () => {
     describe("#constructor()", () => {
         it("should put value in attribute", () => {
             const underline = new u.DotDashUnderline();
-            const newJson = Utility.jsonify(underline);
-            assert.equal(newJson.root[0].root.val, "dotDash");
+            const tree = new Formatter().format(underline);
+            expect(tree).to.deep.equal({
+                "w:u": {
+                    _attr: {
+                        "w:val": "dotDash",
+                    },
+                },
+            });
         });
     });
 });
@@ -101,8 +136,14 @@ describe("DashDotDotHeavyUnderline", () => {
     describe("#constructor()", () => {
         it("should put value in attribute", () => {
             const underline = new u.DotDotDashUnderline();
-            const newJson = Utility.jsonify(underline);
-            assert.equal(newJson.root[0].root.val, "dotDotDash");
+            const tree = new Formatter().format(underline);
+            expect(tree).to.deep.equal({
+                "w:u": {
+                    _attr: {
+                        "w:val": "dotDotDash",
+                    },
+                },
+            });
         });
     });
 });
@@ -111,8 +152,14 @@ describe("DashDotDotHeavyUnderline", () => {
     describe("#constructor()", () => {
         it("should put value in attribute", () => {
             const underline = new u.DottedHeavyUnderline();
-            const newJson = Utility.jsonify(underline);
-            assert.equal(newJson.root[0].root.val, "dottedHeavy");
+            const tree = new Formatter().format(underline);
+            expect(tree).to.deep.equal({
+                "w:u": {
+                    _attr: {
+                        "w:val": "dottedHeavy",
+                    },
+                },
+            });
         });
     });
 });
@@ -121,8 +168,14 @@ describe("DashDotDotHeavyUnderline", () => {
     describe("#constructor()", () => {
         it("should put value in attribute", () => {
             const underline = new u.DottedUnderline();
-            const newJson = Utility.jsonify(underline);
-            assert.equal(newJson.root[0].root.val, "dotted");
+            const tree = new Formatter().format(underline);
+            expect(tree).to.deep.equal({
+                "w:u": {
+                    _attr: {
+                        "w:val": "dotted",
+                    },
+                },
+            });
         });
     });
 });
@@ -131,8 +184,14 @@ describe("DashDotDotHeavyUnderline", () => {
     describe("#constructor()", () => {
         it("should put value in attribute", () => {
             const underline = new u.DoubleUnderline();
-            const newJson = Utility.jsonify(underline);
-            assert.equal(newJson.root[0].root.val, "double");
+            const tree = new Formatter().format(underline);
+            expect(tree).to.deep.equal({
+                "w:u": {
+                    _attr: {
+                        "w:val": "double",
+                    },
+                },
+            });
         });
     });
 });
@@ -141,8 +200,14 @@ describe("DashDotDotHeavyUnderline", () => {
     describe("#constructor()", () => {
         it("should put value in attribute", () => {
             const underline = new u.SingleUnderline();
-            const newJson = Utility.jsonify(underline);
-            assert.equal(newJson.root[0].root.val, "single");
+            const tree = new Formatter().format(underline);
+            expect(tree).to.deep.equal({
+                "w:u": {
+                    _attr: {
+                        "w:val": "single",
+                    },
+                },
+            });
         });
     });
 });
@@ -151,8 +216,14 @@ describe("DashDotDotHeavyUnderline", () => {
     describe("#constructor()", () => {
         it("should put value in attribute", () => {
             const underline = new u.ThickUnderline();
-            const newJson = Utility.jsonify(underline);
-            assert.equal(newJson.root[0].root.val, "thick");
+            const tree = new Formatter().format(underline);
+            expect(tree).to.deep.equal({
+                "w:u": {
+                    _attr: {
+                        "w:val": "thick",
+                    },
+                },
+            });
         });
     });
 });
@@ -161,8 +232,14 @@ describe("DashDotDotHeavyUnderline", () => {
     describe("#constructor()", () => {
         it("should put value in attribute", () => {
             const underline = new u.WaveUnderline();
-            const newJson = Utility.jsonify(underline);
-            assert.equal(newJson.root[0].root.val, "wave");
+            const tree = new Formatter().format(underline);
+            expect(tree).to.deep.equal({
+                "w:u": {
+                    _attr: {
+                        "w:val": "wave",
+                    },
+                },
+            });
         });
     });
 });
@@ -171,8 +248,14 @@ describe("DashDotDotHeavyUnderline", () => {
     describe("#constructor()", () => {
         it("should put value in attribute", () => {
             const underline = new u.WavyDoubleUnderline();
-            const newJson = Utility.jsonify(underline);
-            assert.equal(newJson.root[0].root.val, "wavyDouble");
+            const tree = new Formatter().format(underline);
+            expect(tree).to.deep.equal({
+                "w:u": {
+                    _attr: {
+                        "w:val": "wavyDouble",
+                    },
+                },
+            });
         });
     });
 });
@@ -181,8 +264,14 @@ describe("DashDotDotHeavyUnderline", () => {
     describe("#constructor()", () => {
         it("should put value in attribute", () => {
             const underline = new u.WavyHeavyUnderline();
-            const newJson = Utility.jsonify(underline);
-            assert.equal(newJson.root[0].root.val, "wavyHeavy");
+            const tree = new Formatter().format(underline);
+            expect(tree).to.deep.equal({
+                "w:u": {
+                    _attr: {
+                        "w:val": "wavyHeavy",
+                    },
+                },
+            });
         });
     });
 });
@@ -191,8 +280,14 @@ describe("DashDotDotHeavyUnderline", () => {
     describe("#constructor()", () => {
         it("should put value in attribute", () => {
             const underline = new u.WordsUnderline();
-            const newJson = Utility.jsonify(underline);
-            assert.equal(newJson.root[0].root.val, "words");
+            const tree = new Formatter().format(underline);
+            expect(tree).to.deep.equal({
+                "w:u": {
+                    _attr: {
+                        "w:val": "words",
+                    },
+                },
+            });
         });
     });
 });

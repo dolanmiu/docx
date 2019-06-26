@@ -1,6 +1,6 @@
 import { expect } from "chai";
 
-import { Utility } from "tests/utility";
+import { Formatter } from "export/formatter";
 import { EMPTY_OBJECT, XmlComponent } from "./";
 
 class TestComponent extends XmlComponent {}
@@ -14,8 +14,10 @@ describe("XmlComponent", () => {
 
     describe("#constructor()", () => {
         it("should create an Xml Component which has the correct rootKey", () => {
-            const newJson = Utility.jsonify(xmlComponent);
-            expect(newJson.rootKey).to.equal("w:test");
+            const tree = new Formatter().format(xmlComponent);
+            expect(tree).to.deep.equal({
+                "w:test": {},
+            });
         });
     });
 
