@@ -1,7 +1,6 @@
-import { assert, expect } from "chai";
+import { expect } from "chai";
 
 import { Formatter } from "export/formatter";
-import { Utility } from "tests/utility";
 
 import { Hyperlink } from "./";
 
@@ -14,28 +13,23 @@ describe("Hyperlink", () => {
 
     describe("#constructor()", () => {
         it("should create a hyperlink with correct root key", () => {
-            const newJson = Utility.jsonify(hyperlink);
-            assert.equal(newJson.rootKey, "w:hyperlink");
-        });
-
-        it("should create a hyperlink with right attributes", () => {
-            const newJson = Utility.jsonify(hyperlink);
-            const attributes = {
-                history: 1,
-                id: "rId1",
-            };
-            assert.equal(JSON.stringify(newJson.root[0].root), JSON.stringify(attributes));
-        });
-
-        it("should create a hyperlink with a run component", () => {
             const tree = new Formatter().format(hyperlink);
-            const runJson = {
-                "w:r": [
-                    { "w:rPr": [{ "w:rStyle": { _attr: { "w:val": "Hyperlink" } } }] },
-                    { "w:t": [{ _attr: { "xml:space": "preserve" } }, "https://example.com"] },
+            expect(tree).to.deep.equal({
+                "w:hyperlink": [
+                    {
+                        _attr: {
+                            "w:history": 1,
+                            "r:id": "rId1",
+                        },
+                    },
+                    {
+                        "w:r": [
+                            { "w:rPr": [{ "w:rStyle": { _attr: { "w:val": "Hyperlink" } } }] },
+                            { "w:t": [{ _attr: { "xml:space": "preserve" } }, "https://example.com"] },
+                        ],
+                    },
                 ],
-            };
-            expect(tree["w:hyperlink"][1]).to.deep.equal(runJson);
+            });
         });
 
         describe("with optional anchor parameter", () => {
@@ -44,12 +38,23 @@ describe("Hyperlink", () => {
             });
 
             it("should create an internal link with anchor tag", () => {
-                const newJson = Utility.jsonify(hyperlink);
-                const attributes = {
-                    history: 1,
-                    anchor: "anchor",
-                };
-                assert.equal(JSON.stringify(newJson.root[0].root), JSON.stringify(attributes));
+                const tree = new Formatter().format(hyperlink);
+                expect(tree).to.deep.equal({
+                    "w:hyperlink": [
+                        {
+                            _attr: {
+                                "w:history": 1,
+                                "w:anchor": "anchor",
+                            },
+                        },
+                        {
+                            "w:r": [
+                                { "w:rPr": [{ "w:rStyle": { _attr: { "w:val": "Hyperlink" } } }] },
+                                { "w:t": [{ _attr: { "xml:space": "preserve" } }, "Anchor Text"] },
+                            ],
+                        },
+                    ],
+                });
             });
         });
     });

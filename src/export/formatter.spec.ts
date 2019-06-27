@@ -1,10 +1,9 @@
-import { assert } from "chai";
+import { assert, expect } from "chai";
 
-import { Formatter } from "../export/formatter";
-import * as file from "../file";
-import { CoreProperties } from "../file/core-properties";
-import { Attributes } from "../file/xml-components";
-import { Utility } from "../tests/utility";
+import { Formatter } from "export/formatter";
+import * as file from "file";
+import { CoreProperties } from "file/core-properties";
+import { Attributes } from "file/xml-components";
 
 describe("Formatter", () => {
     let formatter: Formatter;
@@ -38,26 +37,24 @@ describe("Formatter", () => {
             const attributes = new Attributes({
                 rsidSect: "test2",
             });
-            let newJson = formatter.format(attributes);
-            newJson = Utility.jsonify(newJson);
-            if (newJson._attr === undefined) {
-                assert.fail();
-                return;
-            }
-            assert.isDefined(newJson._attr["w:rsidSect"]);
+            const tree = formatter.format(attributes);
+            expect(tree).to.deep.equal({
+                _attr: {
+                    "w:rsidSect": "test2",
+                },
+            });
         });
 
         it("should format attributes (val)", () => {
             const attributes = new Attributes({
                 val: "test",
             });
-            let newJson = formatter.format(attributes);
-            newJson = Utility.jsonify(newJson);
-            if (newJson._attr === undefined) {
-                assert.fail();
-                return;
-            }
-            assert.isDefined(newJson._attr["w:val"]);
+            const tree = formatter.format(attributes);
+            expect(tree).to.deep.equal({
+                _attr: {
+                    "w:val": "test",
+                },
+            });
         });
 
         it("should should change 'p' tag into 'w:p' tag", () => {

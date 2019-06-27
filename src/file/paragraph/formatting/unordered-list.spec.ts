@@ -1,6 +1,6 @@
-import { assert } from "chai";
+import { expect } from "chai";
 
-import { Utility } from "tests/utility";
+import { Formatter } from "export/formatter";
 
 import { NumberProperties } from "./unordered-list";
 
@@ -13,20 +13,25 @@ describe("NumberProperties", () => {
 
     describe("#constructor()", () => {
         it("should create a Number Properties with correct root key", () => {
-            const newJson = Utility.jsonify(numberProperties);
-            assert.equal(newJson.rootKey, "w:numPr");
-        });
-
-        it("should create a Page Break with a Indent Level inside", () => {
-            const newJson = Utility.jsonify(numberProperties);
-            assert.equal(newJson.root[0].rootKey, "w:ilvl");
-            assert.equal(newJson.root[0].root[0].root.val, 10);
-        });
-
-        it("should create a Page Break with a Number Id inside", () => {
-            const newJson = Utility.jsonify(numberProperties);
-            assert.equal(newJson.root[1].rootKey, "w:numId");
-            assert.equal(newJson.root[1].root[0].root.val, 5);
+            const tree = new Formatter().format(numberProperties);
+            expect(tree).to.deep.equal({
+                "w:numPr": [
+                    {
+                        "w:ilvl": {
+                            _attr: {
+                                "w:val": 10,
+                            },
+                        },
+                    },
+                    {
+                        "w:numId": {
+                            _attr: {
+                                "w:val": 5,
+                            },
+                        },
+                    },
+                ],
+            });
         });
     });
 });
