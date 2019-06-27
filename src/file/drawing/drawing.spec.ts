@@ -1,6 +1,6 @@
-import { assert } from "chai";
+import { expect } from "chai";
 
-import { Utility } from "tests/utility";
+import { Formatter } from "export/formatter";
 
 import { Drawing, IDrawingOptions } from "./drawing";
 
@@ -32,16 +32,181 @@ describe("Drawing", () => {
     let currentBreak: Drawing;
 
     describe("#constructor()", () => {
-        it("should create a Drawing with correct root key", () => {
-            currentBreak = createDrawing();
-            const newJson = Utility.jsonify(currentBreak);
-            assert.equal(newJson.rootKey, "w:drawing");
-        });
-
         it("should create a drawing with inline element when there are no options passed", () => {
             currentBreak = createDrawing();
-            const newJson = Utility.jsonify(currentBreak);
-            assert.equal(newJson.root[0].rootKey, "wp:inline");
+            const tree = new Formatter().format(currentBreak);
+            expect(tree).to.deep.equal({
+                "w:drawing": [
+                    {
+                        "wp:inline": [
+                            {
+                                _attr: {
+                                    distB: 0,
+                                    distL: 0,
+                                    distR: 0,
+                                    distT: 0,
+                                },
+                            },
+                            {
+                                "wp:extent": {
+                                    _attr: {
+                                        cx: 952500,
+                                        cy: 952500,
+                                    },
+                                },
+                            },
+                            {
+                                "wp:effectExtent": {
+                                    _attr: {
+                                        b: 0,
+                                        l: 0,
+                                        r: 0,
+                                        t: 0,
+                                    },
+                                },
+                            },
+                            {
+                                "wp:docPr": {
+                                    _attr: {
+                                        descr: "",
+                                        id: 0,
+                                        name: "",
+                                    },
+                                },
+                            },
+                            {
+                                "wp:cNvGraphicFramePr": [
+                                    {
+                                        "a:graphicFrameLocks": {
+                                            _attr: {
+                                                // tslint:disable-next-line:object-literal-key-quotes
+                                                noChangeAspect: 1,
+                                                "xmlns:a": "http://schemas.openxmlformats.org/drawingml/2006/main",
+                                            },
+                                        },
+                                    },
+                                ],
+                            },
+                            {
+                                "a:graphic": [
+                                    {
+                                        _attr: {
+                                            "xmlns:a": "http://schemas.openxmlformats.org/drawingml/2006/main",
+                                        },
+                                    },
+                                    {
+                                        "a:graphicData": [
+                                            {
+                                                _attr: {
+                                                    uri: "http://schemas.openxmlformats.org/drawingml/2006/picture",
+                                                },
+                                            },
+                                            {
+                                                "pic:pic": [
+                                                    {
+                                                        _attr: {
+                                                            "xmlns:pic": "http://schemas.openxmlformats.org/drawingml/2006/picture",
+                                                        },
+                                                    },
+                                                    {
+                                                        "pic:nvPicPr": [
+                                                            {
+                                                                "pic:cNvPr": {
+                                                                    _attr: {
+                                                                        desc: "",
+                                                                        id: 0,
+                                                                        name: "",
+                                                                    },
+                                                                },
+                                                            },
+                                                            {
+                                                                "pic:cNvPicPr": [
+                                                                    {
+                                                                        "a:picLocks": {
+                                                                            _attr: {
+                                                                                noChangeArrowheads: 1,
+                                                                                noChangeAspect: 1,
+                                                                            },
+                                                                        },
+                                                                    },
+                                                                ],
+                                                            },
+                                                        ],
+                                                    },
+                                                    {
+                                                        "pic:blipFill": [
+                                                            {
+                                                                "a:blip": {
+                                                                    _attr: {
+                                                                        // tslint:disable-next-line:object-literal-key-quotes
+                                                                        cstate: "none",
+                                                                        "r:embed": "rId{test.jpg}",
+                                                                    },
+                                                                },
+                                                            },
+                                                            {
+                                                                "a:srcRect": {},
+                                                            },
+                                                            {
+                                                                "a:stretch": [
+                                                                    {
+                                                                        "a:fillRect": {},
+                                                                    },
+                                                                ],
+                                                            },
+                                                        ],
+                                                    },
+                                                    {
+                                                        "pic:spPr": [
+                                                            {
+                                                                _attr: {
+                                                                    bwMode: "auto",
+                                                                },
+                                                            },
+                                                            {
+                                                                "a:xfrm": [
+                                                                    {
+                                                                        "a:ext": {
+                                                                            _attr: {
+                                                                                cx: 952500,
+                                                                                cy: 952500,
+                                                                            },
+                                                                        },
+                                                                    },
+                                                                    {
+                                                                        "a:off": {
+                                                                            _attr: {
+                                                                                x: 0,
+                                                                                y: 0,
+                                                                            },
+                                                                        },
+                                                                    },
+                                                                ],
+                                                            },
+                                                            {
+                                                                "a:prstGeom": [
+                                                                    {
+                                                                        _attr: {
+                                                                            prst: "rect",
+                                                                        },
+                                                                    },
+                                                                    {
+                                                                        "a:avLst": {},
+                                                                    },
+                                                                ],
+                                                            },
+                                                        ],
+                                                    },
+                                                ],
+                                            },
+                                        ],
+                                    },
+                                ],
+                            },
+                        ],
+                    },
+                ],
+            });
         });
 
         it("should create a drawing with anchor element when there options are passed", () => {
@@ -55,8 +220,220 @@ describe("Drawing", () => {
                     },
                 },
             });
-            const newJson = Utility.jsonify(currentBreak);
-            assert.equal(newJson.root[0].rootKey, "wp:anchor");
+            const tree = new Formatter().format(currentBreak);
+            expect(tree).to.deep.equal({
+                "w:drawing": [
+                    {
+                        "wp:anchor": [
+                            {
+                                _attr: {
+                                    allowOverlap: "1",
+                                    behindDoc: "0",
+                                    distB: 0,
+                                    distL: 0,
+                                    distR: 0,
+                                    distT: 0,
+                                    layoutInCell: "1",
+                                    locked: "0",
+                                    relativeHeight: 952500,
+                                    simplePos: "0",
+                                },
+                            },
+                            {
+                                "wp:simplePos": {
+                                    _attr: {
+                                        x: 0,
+                                        y: 0,
+                                    },
+                                },
+                            },
+                            {
+                                "wp:positionH": [
+                                    {
+                                        _attr: {
+                                            relativeFrom: "page",
+                                        },
+                                    },
+                                    {
+                                        "wp:posOffset": ["0"],
+                                    },
+                                ],
+                            },
+                            {
+                                "wp:positionV": [
+                                    {
+                                        _attr: {
+                                            relativeFrom: "page",
+                                        },
+                                    },
+                                    {
+                                        "wp:posOffset": ["0"],
+                                    },
+                                ],
+                            },
+                            {
+                                "wp:extent": {
+                                    _attr: {
+                                        cx: 952500,
+                                        cy: 952500,
+                                    },
+                                },
+                            },
+                            {
+                                "wp:effectExtent": {
+                                    _attr: {
+                                        b: 0,
+                                        l: 0,
+                                        r: 0,
+                                        t: 0,
+                                    },
+                                },
+                            },
+                            {
+                                "wp:wrapNone": {},
+                            },
+                            {
+                                "wp:docPr": {
+                                    _attr: {
+                                        descr: "",
+                                        id: 0,
+                                        name: "",
+                                    },
+                                },
+                            },
+                            {
+                                "wp:cNvGraphicFramePr": [
+                                    {
+                                        "a:graphicFrameLocks": {
+                                            _attr: {
+                                                // tslint:disable-next-line:object-literal-key-quotes
+                                                noChangeAspect: 1,
+                                                "xmlns:a": "http://schemas.openxmlformats.org/drawingml/2006/main",
+                                            },
+                                        },
+                                    },
+                                ],
+                            },
+                            {
+                                "a:graphic": [
+                                    {
+                                        _attr: {
+                                            "xmlns:a": "http://schemas.openxmlformats.org/drawingml/2006/main",
+                                        },
+                                    },
+                                    {
+                                        "a:graphicData": [
+                                            {
+                                                _attr: {
+                                                    uri: "http://schemas.openxmlformats.org/drawingml/2006/picture",
+                                                },
+                                            },
+                                            {
+                                                "pic:pic": [
+                                                    {
+                                                        _attr: {
+                                                            "xmlns:pic": "http://schemas.openxmlformats.org/drawingml/2006/picture",
+                                                        },
+                                                    },
+                                                    {
+                                                        "pic:nvPicPr": [
+                                                            {
+                                                                "pic:cNvPr": {
+                                                                    _attr: {
+                                                                        desc: "",
+                                                                        id: 0,
+                                                                        name: "",
+                                                                    },
+                                                                },
+                                                            },
+                                                            {
+                                                                "pic:cNvPicPr": [
+                                                                    {
+                                                                        "a:picLocks": {
+                                                                            _attr: {
+                                                                                noChangeArrowheads: 1,
+                                                                                noChangeAspect: 1,
+                                                                            },
+                                                                        },
+                                                                    },
+                                                                ],
+                                                            },
+                                                        ],
+                                                    },
+                                                    {
+                                                        "pic:blipFill": [
+                                                            {
+                                                                "a:blip": {
+                                                                    _attr: {
+                                                                        // tslint:disable-next-line:object-literal-key-quotes
+                                                                        cstate: "none",
+                                                                        "r:embed": "rId{test.jpg}",
+                                                                    },
+                                                                },
+                                                            },
+                                                            {
+                                                                "a:srcRect": {},
+                                                            },
+                                                            {
+                                                                "a:stretch": [
+                                                                    {
+                                                                        "a:fillRect": {},
+                                                                    },
+                                                                ],
+                                                            },
+                                                        ],
+                                                    },
+                                                    {
+                                                        "pic:spPr": [
+                                                            {
+                                                                _attr: {
+                                                                    bwMode: "auto",
+                                                                },
+                                                            },
+                                                            {
+                                                                "a:xfrm": [
+                                                                    {
+                                                                        "a:ext": {
+                                                                            _attr: {
+                                                                                cx: 952500,
+                                                                                cy: 952500,
+                                                                            },
+                                                                        },
+                                                                    },
+                                                                    {
+                                                                        "a:off": {
+                                                                            _attr: {
+                                                                                x: 0,
+                                                                                y: 0,
+                                                                            },
+                                                                        },
+                                                                    },
+                                                                ],
+                                                            },
+                                                            {
+                                                                "a:prstGeom": [
+                                                                    {
+                                                                        _attr: {
+                                                                            prst: "rect",
+                                                                        },
+                                                                    },
+                                                                    {
+                                                                        "a:avLst": {},
+                                                                    },
+                                                                ],
+                                                            },
+                                                        ],
+                                                    },
+                                                ],
+                                            },
+                                        ],
+                                    },
+                                ],
+                            },
+                        ],
+                    },
+                ],
+            });
         });
     });
 });
