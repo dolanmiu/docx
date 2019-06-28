@@ -25,8 +25,10 @@ describe("SectionProperties", () => {
                 footer: 708,
                 gutter: 0,
                 mirror: false,
-                space: 708,
-                num: 1,
+                column: {
+                    space: 708,
+                    count: 1,
+                },
                 linePitch: 360,
                 headers: {
                     default: new HeaderWrapper(media, 100),

@@ -4,7 +4,6 @@ import { HeaderWrapper } from "file/header-wrapper";
 import { XmlComponent } from "file/xml-components";
 
 import { Columns } from "./columns/columns";
-import { IColumnsAttributes } from "./columns/columns-attributes";
 import { DocumentGrid } from "./doc-grid/doc-grid";
 import { IDocGridAttributesProperties } from "./doc-grid/doc-grid-attributes";
 import { FooterReferenceType } from "./footer-reference";
@@ -40,19 +39,24 @@ interface ITitlePageOptions {
 
 export type SectionPropertiesOptions = IPageSizeAttributes &
     IPageMarginAttributes &
-    IColumnsAttributes &
     IDocGridAttributesProperties &
     IHeadersOptions &
     IFootersOptions &
     IPageNumberTypeAttributes &
     ILineNumberAttributes &
     IPageBordersOptions &
-    ITitlePageOptions;
+    ITitlePageOptions & {
+        readonly column?: {
+            readonly space?: number;
+            readonly count?: number;
+        };
+    };
+// Need to decouple this from the attributes
 
 export class SectionProperties extends XmlComponent {
     private readonly options: SectionPropertiesOptions;
 
-    constructor(options: SectionPropertiesOptions = {}) {
+    constructor(options: SectionPropertiesOptions = { column: {} }) {
         super("w:sectPr");
 
         const {
@@ -66,8 +70,7 @@ export class SectionProperties extends XmlComponent {
             footer = 708,
             gutter = 0,
             mirror = false,
-            space = 708,
-            num = 1,
+            column = {},
             linePitch = 360,
             orientation = PageOrientation.PORTRAIT,
             headers,
@@ -89,7 +92,7 @@ export class SectionProperties extends XmlComponent {
         this.options = options;
         this.root.push(new PageSize(width, height, orientation));
         this.root.push(new PageMargin(top, right, bottom, left, header, footer, gutter, mirror));
-        this.root.push(new Columns(space, num));
+        this.root.push(new Columns(column.space ? column.space : 708, column.count ? column.count : 1));
         this.root.push(new DocumentGrid(linePitch));
 
         this.addHeaders(headers);
