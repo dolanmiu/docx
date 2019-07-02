@@ -1,17 +1,20 @@
-import { assert } from "chai";
+import { expect } from "chai";
 
-import { Utility } from "tests/utility";
+import { Formatter } from "export/formatter";
 
 import { SimplePos } from "./simple-pos";
 
 describe("SimplePos", () => {
     describe("#constructor()", () => {
         it("should create a element with correct root key", () => {
-            const newJson = Utility.jsonify(new SimplePos());
-            assert.equal(newJson.rootKey, "wp:simplePos");
-            assert.include(newJson.root[0].root, {
-                x: 0,
-                y: 0,
+            const tree = new Formatter().format(new SimplePos());
+            expect(tree).to.deep.equal({
+                "wp:simplePos": {
+                    _attr: {
+                        x: 0,
+                        y: 0,
+                    },
+                },
             });
         });
     });

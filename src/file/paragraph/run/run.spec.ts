@@ -1,7 +1,6 @@
-import { assert, expect } from "chai";
+import { expect } from "chai";
 
 import { Formatter } from "export/formatter";
-import { Utility } from "tests/utility";
 
 import { Run } from "./";
 import { UnderlineType } from "./underline";
@@ -12,9 +11,23 @@ describe("Run", () => {
             const run = new Run({
                 bold: true,
             });
-            const newJson = Utility.jsonify(run);
-            assert.equal(newJson.root[0].root[0].rootKey, "w:b");
-            assert.equal(newJson.root[0].root[1].rootKey, "w:bCs");
+            const tree = new Formatter().format(run);
+            expect(tree).to.deep.equal({
+                "w:r": [
+                    {
+                        "w:rPr": [
+                            { "w:b": { _attr: { "w:val": true } } },
+                            {
+                                "w:bCs": {
+                                    _attr: {
+                                        "w:val": true,
+                                    },
+                                },
+                            },
+                        ],
+                    },
+                ],
+            });
         });
     });
 
@@ -23,9 +36,23 @@ describe("Run", () => {
             const run = new Run({
                 italics: true,
             });
-            const newJson = Utility.jsonify(run);
-            assert.equal(newJson.root[0].root[0].rootKey, "w:i");
-            assert.equal(newJson.root[0].root[1].rootKey, "w:iCs");
+            const tree = new Formatter().format(run);
+            expect(tree).to.deep.equal({
+                "w:r": [
+                    {
+                        "w:rPr": [
+                            { "w:i": { _attr: { "w:val": true } } },
+                            {
+                                "w:iCs": {
+                                    _attr: {
+                                        "w:val": true,
+                                    },
+                                },
+                            },
+                        ],
+                    },
+                ],
+            });
         });
     });
 
@@ -59,8 +86,10 @@ describe("Run", () => {
             const run = new Run({
                 smallCaps: true,
             });
-            const newJson = Utility.jsonify(run);
-            assert.equal(newJson.root[0].root[0].rootKey, "w:smallCaps");
+            const tree = new Formatter().format(run);
+            expect(tree).to.deep.equal({
+                "w:r": [{ "w:rPr": [{ "w:smallCaps": {} }] }],
+            });
         });
     });
 
@@ -69,8 +98,10 @@ describe("Run", () => {
             const run = new Run({
                 allCaps: true,
             });
-            const newJson = Utility.jsonify(run);
-            assert.equal(newJson.root[0].root[0].rootKey, "w:caps");
+            const tree = new Formatter().format(run);
+            expect(tree).to.deep.equal({
+                "w:r": [{ "w:rPr": [{ "w:caps": {} }] }],
+            });
         });
     });
 
@@ -79,8 +110,10 @@ describe("Run", () => {
             const run = new Run({
                 strike: true,
             });
-            const newJson = Utility.jsonify(run);
-            assert.equal(newJson.root[0].root[0].rootKey, "w:strike");
+            const tree = new Formatter().format(run);
+            expect(tree).to.deep.equal({
+                "w:r": [{ "w:rPr": [{ "w:strike": { _attr: { "w:val": true } } }] }],
+            });
         });
     });
 
@@ -89,8 +122,10 @@ describe("Run", () => {
             const run = new Run({
                 doubleStrike: true,
             });
-            const newJson = Utility.jsonify(run);
-            assert.equal(newJson.root[0].root[0].rootKey, "w:dstrike");
+            const tree = new Formatter().format(run);
+            expect(tree).to.deep.equal({
+                "w:r": [{ "w:rPr": [{ "w:dstrike": { _attr: { "w:val": true } } }] }],
+            });
         });
     });
 
@@ -98,8 +133,10 @@ describe("Run", () => {
         it("it should add break to the run", () => {
             const run = new Run({});
             run.break();
-            const newJson = Utility.jsonify(run);
-            assert.equal(newJson.root[1].rootKey, "w:br");
+            const tree = new Formatter().format(run);
+            expect(tree).to.deep.equal({
+                "w:r": [{ "w:br": {} }],
+            });
         });
     });
 
@@ -107,8 +144,10 @@ describe("Run", () => {
         it("it should add break to the run", () => {
             const run = new Run({});
             run.tab();
-            const newJson = Utility.jsonify(run);
-            assert.equal(newJson.root[1].rootKey, "w:tab");
+            const tree = new Formatter().format(run);
+            expect(tree).to.deep.equal({
+                "w:r": [{ "w:tab": {} }],
+            });
         });
     });
 

@@ -1,15 +1,16 @@
-import { assert } from "chai";
+import { expect } from "chai";
 
-import { Utility } from "tests/utility";
+import { Formatter } from "export/formatter";
 
 import { PositionOffset } from "./position-offset";
 
 describe("PositionOffset", () => {
     describe("#constructor()", () => {
         it("should create a element with correct root key", () => {
-            const newJson = Utility.jsonify(new PositionOffset(50));
-            assert.equal(newJson.rootKey, "wp:posOffset");
-            assert.equal(newJson.root[0], 50);
+            const tree = new Formatter().format(new PositionOffset(50));
+            expect(tree).to.deep.equal({
+                "wp:posOffset": ["50"],
+            });
         });
     });
 });

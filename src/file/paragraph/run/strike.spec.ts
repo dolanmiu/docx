@@ -1,6 +1,6 @@
-import { assert } from "chai";
+import { expect } from "chai";
 
-import { Utility } from "tests/utility";
+import { Formatter } from "export/formatter";
 
 import { DoubleStrike, Strike } from "./formatting";
 
@@ -13,8 +13,14 @@ describe("Strike", () => {
 
     describe("#constructor()", () => {
         it("should create a Strike with correct root key", () => {
-            const newJson = Utility.jsonify(strike);
-            assert.equal(newJson.rootKey, "w:strike");
+            const tree = new Formatter().format(strike);
+            expect(tree).to.deep.equal({
+                "w:strike": {
+                    _attr: {
+                        "w:val": true,
+                    },
+                },
+            });
         });
     });
 });
@@ -28,8 +34,14 @@ describe("DoubleStrike", () => {
 
     describe("#constructor()", () => {
         it("should create a Double Strike with correct root key", () => {
-            const newJson = Utility.jsonify(strike);
-            assert.equal(newJson.rootKey, "w:dstrike");
+            const tree = new Formatter().format(strike);
+            expect(tree).to.deep.equal({
+                "w:dstrike": {
+                    _attr: {
+                        "w:val": true,
+                    },
+                },
+            });
         });
     });
 });

@@ -1,6 +1,6 @@
-import { assert } from "chai";
+import { expect } from "chai";
 
-import { Utility } from "tests/utility";
+import { Formatter } from "export/formatter";
 
 import { Tab } from "./tab";
 
@@ -13,8 +13,10 @@ describe("Tab", () => {
 
     describe("#constructor()", () => {
         it("should create a Tab with correct root key", () => {
-            const newJson = Utility.jsonify(tab);
-            assert.equal(newJson.rootKey, "w:tab");
+            const tree = new Formatter().format(tab);
+            expect(tree).to.deep.equal({
+                "w:tab": {},
+            });
         });
     });
 });
