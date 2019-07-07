@@ -15,7 +15,7 @@ describe("File", () => {
             const header = doc.createHeader();
             const footer = doc.createFooter();
 
-            doc.addSection({
+            doc.addSectionOld({
                 headers: {
                     default: header,
                 },
@@ -35,7 +35,7 @@ describe("File", () => {
             const header = doc.createHeader();
             const footer = doc.createFooter();
 
-            doc.addSection({
+            doc.addSectionOld({
                 headers: {
                     first: header,
                 },
@@ -55,7 +55,7 @@ describe("File", () => {
             const header = doc.createHeader();
             const footer = doc.createFooter();
 
-            doc.addSection({
+            doc.addSectionOld({
                 headers: {
                     default: header,
                     first: header,

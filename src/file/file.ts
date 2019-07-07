@@ -27,6 +27,11 @@ import { DefaultStylesFactory } from "./styles/factory";
 import { Table } from "./table";
 import { TableOfContents } from "./table-of-contents";
 
+export interface ISectionOptions {
+    readonly properties: SectionPropertiesOptions;
+    readonly children: Array<Paragraph | Table | TableOfContents>;
+}
+
 export class File {
     // tslint:disable-next-line:readonly-keyword
     private currentRelationshipId: number = 1;
@@ -54,6 +59,7 @@ export class File {
         },
         sectionPropertiesOptions: SectionPropertiesOptions = {},
         fileProperties: IFileProperties = {},
+        sections: ISectionOptions[] = [],
     ) {
         this.coreProperties = new CoreProperties(options);
         this.numbering = new Numbering();
@@ -110,6 +116,14 @@ export class File {
 
         this.document = new Document(newSectionPropertiesOptions);
         this.settings = new Settings();
+
+        for (const section of sections) {
+            this.document.Body.addSection(section.properties);
+
+            for (const child of section.children) {
+                this.add(child);
+            }
+        }
     }
 
     public add(item: Paragraph | Table | TableOfContents): File {
@@ -167,7 +181,7 @@ export class File {
         return bookmark;
     }
 
-    public addSection(sectionPropertiesOptions: SectionPropertiesOptions): void {
+    public addSectionOld(sectionPropertiesOptions: SectionPropertiesOptions): void {
         this.document.Body.addSection(sectionPropertiesOptions);
     }
 
