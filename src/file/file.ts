@@ -185,6 +185,14 @@ export class File {
         this.document.Body.addSection(sectionPropertiesOptions);
     }
 
+    public addSection(section: ISectionOptions): void {
+        this.document.Body.addSection(section.properties);
+
+        for (const child of section.children) {
+            this.add(child);
+        }
+    }
+
     public createFootnote(paragraph: Paragraph): void {
         this.footNotes.createFootNote(paragraph);
     }
