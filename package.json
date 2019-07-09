@@ -1,6 +1,6 @@
 {
-  "name": "docx",
-  "version": "5.0.0-rc4",
+  "name": "wisedocx",
+  "version": "1.0.1",
   "description": "Generate .docx documents with JavaScript (formerly Office-Clippy)",
   "main": "build/index.js",
   "scripts": {
@@ -55,7 +55,7 @@
     "xml-js": "^1.6.8"
   },
   "author": "Dolan Miu",
-  "license": "MIT",
+  "license": "UNLICENSED",
   "bugs": {
     "url": "https://github.com/dolanmiu/docx/issues"
   },
@@ -93,5 +93,8 @@
   },
   "engines": {
     "node": ">=8"
+  },
+  "directories": {
+    "doc": "docs"
   }
 }
