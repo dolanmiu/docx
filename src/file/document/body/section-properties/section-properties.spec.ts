@@ -29,6 +29,9 @@ describe("SectionProperties", () => {
                     space: 708,
                     count: 1,
                 },
+                type: {
+                    val: "continuous",
+                },
                 linePitch: 360,
                 headers: {
                     default: new HeaderWrapper(media, 100),
@@ -63,6 +66,7 @@ describe("SectionProperties", () => {
             expect(tree["w:sectPr"][4]).to.deep.equal({ "w:headerReference": { _attr: { "r:id": "rId100", "w:type": "default" } } });
             expect(tree["w:sectPr"][5]).to.deep.equal({ "w:footerReference": { _attr: { "r:id": "rId200", "w:type": "even" } } });
             expect(tree["w:sectPr"][6]).to.deep.equal({ "w:pgNumType": { _attr: { "w:fmt": "cardinalText", "w:start": 10 } } });
+            expect(tree["w:sectPr"][7]).to.deep.equal({ "w:type": { _attr: { "w:val": "coutinuous" } } });
         });
 
         it("should create section properties with no options", () => {
@@ -87,6 +91,7 @@ describe("SectionProperties", () => {
             });
             expect(tree["w:sectPr"][2]).to.deep.equal({ "w:cols": { _attr: { "w:space": 708, "w:num": 1 } } });
             expect(tree["w:sectPr"][3]).to.deep.equal({ "w:docGrid": { _attr: { "w:linePitch": 360 } } });
+            expect(tree["w:sectPr"][4]).to.deep.equal({ "w:type": { _attr: { "w:val": "continuous" } } });
         });
 
         it("should create section properties with changed options", () => {

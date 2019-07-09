@@ -18,6 +18,8 @@ import { IPageNumberTypeAttributes, PageNumberType } from "./page-number";
 import { PageSize } from "./page-size/page-size";
 import { IPageSizeAttributes, PageOrientation } from "./page-size/page-size-attributes";
 import { TitlePage } from "./title-page/title-page";
+import { Type } from "./type/type";
+import { ITypeAttributes } from "./type/type-attributes";
 
 export interface IHeaderFooterGroup<T> {
     readonly default?: T;
@@ -45,6 +47,11 @@ export type SectionPropertiesOptions = IPageSizeAttributes &
     IPageNumberTypeAttributes &
     ILineNumberAttributes &
     IPageBordersOptions &
+    ITypeAttributes & {
+        readonly type?: {
+            readonly val?: string;
+        };
+    } &
     ITitlePageOptions & {
         readonly column?: {
             readonly space?: number;
@@ -71,6 +78,7 @@ export class SectionProperties extends XmlComponent {
             gutter = 0,
             mirror = false,
             column = {},
+            type = {},
             linePitch = 360,
             orientation = PageOrientation.PORTRAIT,
             headers,
@@ -94,7 +102,7 @@ export class SectionProperties extends XmlComponent {
         this.root.push(new PageMargin(top, right, bottom, left, header, footer, gutter, mirror));
         this.root.push(new Columns(column.space ? column.space : 708, column.count ? column.count : 1));
         this.root.push(new DocumentGrid(linePitch));
-
+        this.root.push(new Type(type.val ? type.val : "continuous"));
         this.addHeaders(headers);
         this.addFooters(footers);
 
