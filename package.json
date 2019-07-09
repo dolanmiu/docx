@@ -1,6 +1,6 @@
 {
   "name": "wisedocx",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Generate .docx documents with JavaScript (formerly Office-Clippy)",
   "main": "build/index.js",
   "scripts": {
