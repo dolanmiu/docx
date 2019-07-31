@@ -11,3 +11,4 @@ export * from "./table-of-contents";
 export * from "./xml-components";
 export * from "./header-wrapper";
 export * from "./footer-wrapper";
+export * from "./header";

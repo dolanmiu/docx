@@ -10,9 +10,11 @@ const table = new Table({
     columns: 4,
 });
 
-doc.add(table);
-
 table.getCell(2, 2).add(new Paragraph("Hello"));
+
+doc.addSection({
+    children: [table],
+});
 
 const packer = new Packer();
 

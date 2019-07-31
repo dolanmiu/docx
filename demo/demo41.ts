@@ -10,8 +10,6 @@ const table = new Table({
     columns: 6,
 });
 
-doc.add(table);
-
 let row = 0;
 table.getCell(row, 0).add(new Paragraph("0,0"));
 table.getCell(row, 1).add(new Paragraph("0,1"));
@@ -46,6 +44,10 @@ row = 4;
 table.getCell(row, 0).add(new Paragraph("4,0"));
 table.getCell(row, 5).add(new Paragraph("4,5"));
 table.getRow(row).mergeCells(0, 4);
+
+doc.addSection({
+    children: [table],
+});
 
 const packer = new Packer();
 

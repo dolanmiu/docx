@@ -12,16 +12,16 @@ fs.readFile(filePath, (err, data) => {
     }
 
     importDotx.extract(data).then((templateDocument) => {
-        // This any needs fixing
-        const sectionProps = {
-            titlePage: templateDocument.titlePageIsDefined,
-        } as any;
-
-        const doc = new Document(undefined, sectionProps, {
+        const doc = new Document(undefined, {
             template: templateDocument,
         });
-        const paragraph = new Paragraph("Hello World");
-        doc.add(paragraph);
+
+        doc.addSection({
+            properties: {
+                titlePage: templateDocument.titlePageIsDefined,
+            },
+            children: [new Paragraph("Hello World")],
+        });
 
         const packer = new Packer();
         packer.toBuffer(doc).then((buffer) => {

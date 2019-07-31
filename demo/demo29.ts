@@ -1,66 +1,65 @@
 // Numbered lists
 // Import from 'docx' rather than '../build' if you install from npm
 import * as fs from "fs";
-import { Document, Indent, Numbering, Packer, Paragraph } from "../build";
+import { Document, Numbering, Packer, Paragraph } from "../build";
 
 const doc = new Document();
 
 const numbering = new Numbering();
 
 const abstractNum = numbering.createAbstractNumbering();
-abstractNum.createLevel(0, "upperRoman", "%1", "start").addProperty(new Indent({ left: 720, hanging: 260 }));
+abstractNum.createLevel(0, "upperRoman", "%1", "start").indent({ left: 720, hanging: 260 });
 
 const concrete = numbering.createConcreteNumbering(abstractNum);
 
-const item1 = new Paragraph({
-    text: "line with contextual spacing",
-    numbering: {
-        num: concrete,
-        level: 0,
-    },
-    contextualSpacing: true,
-    spacing: {
-        before: 200,
-    },
+doc.addSection({
+    children: [
+        new Paragraph({
+            text: "line with contextual spacing",
+            numbering: {
+                num: concrete,
+                level: 0,
+            },
+            contextualSpacing: true,
+            spacing: {
+                before: 200,
+            },
+        }),
+        new Paragraph({
+            text: "line with contextual spacing",
+            numbering: {
+                num: concrete,
+                level: 0,
+            },
+            contextualSpacing: true,
+            spacing: {
+                before: 200,
+            },
+        }),
+        new Paragraph({
+            text: "line without contextual spacing",
+            numbering: {
+                num: concrete,
+                level: 0,
+            },
+            contextualSpacing: false,
+            spacing: {
+                before: 200,
+            },
+        }),
+        new Paragraph({
+            text: "line without contextual spacing",
+            numbering: {
+                num: concrete,
+                level: 0,
+            },
+            contextualSpacing: false,
+            spacing: {
+                before: 200,
+            },
+        }),
+    ],
 });
-const item2 = new Paragraph({
-    text: "line with contextual spacing",
-    numbering: {
-        num: concrete,
-        level: 0,
-    },
-    contextualSpacing: true,
-    spacing: {
-        before: 200,
-    },
-});
-const item3 = new Paragraph({
-    text: "line without contextual spacing",
-    numbering: {
-        num: concrete,
-        level: 0,
-    },
-    contextualSpacing: false,
-    spacing: {
-        before: 200,
-    },
-});
-const item4 = new Paragraph({
-    text: "line without contextual spacing",
-    numbering: {
-        num: concrete,
-        level: 0,
-    },
-    contextualSpacing: false,
-    spacing: {
-        before: 200,
-    },
-});
-
-doc.add(item1);
-doc.add(item2);
-doc.add(item3);
-doc.add(item4);
 
 const packer = new Packer();
 

@@ -41,17 +41,6 @@ describe("HeaderWrapper", () => {
         });
     });
 
-    describe("#createImage", () => {
-        it("should call the underlying header's createImage", () => {
-            const file = new HeaderWrapper(new Media(), 1);
-            const spy = sinon.spy(Media, "addImage");
-            file.createImage("");
-
-            expect(spy.called).to.equal(true);
-            spy.restore();
-        });
-    });
-
     describe("#addChildElement", () => {
         it("should call the underlying header's addChildElement", () => {
             const file = new HeaderWrapper(new Media(), 1);

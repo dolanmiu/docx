@@ -46,96 +46,76 @@ doc.Styles.createParagraphStyle("ListParagraph", "List Paragraph")
 const numberedAbstract = doc.Numbering.createAbstractNumbering();
 numberedAbstract.createLevel(0, "lowerLetter", "%1)", "left");
 
-doc.add(
-    new Paragraph({
-        text: "Test heading1, bold and italicized",
-        heading: HeadingLevel.HEADING_1,
-    }),
-);
-doc.add(new Paragraph("Some simple content"));
-doc.add(
-    new Paragraph({
-        text: "Test heading2 with double red underline",
-        heading: HeadingLevel.HEADING_2,
-    }),
-);
-
 const letterNumbering = doc.Numbering.createConcreteNumbering(numberedAbstract);
 const letterNumbering5 = doc.Numbering.createConcreteNumbering(numberedAbstract);
 letterNumbering5.overrideLevel(0, 5);
 
-doc.add(
-    new Paragraph({
-        text: "Option1",
-        numbering: {
-            num: letterNumbering,
-            level: 0,
-        },
-    }),
-);
-doc.add(
-    new Paragraph({
-        text: "Option5 -- override 2 to 5",
-        numbering: {
-            num: letterNumbering,
-            level: 0,
-        },
-    }),
-);
-doc.add(
-    new Paragraph({
-        text: "Option3",
-        numbering: {
-            num: letterNumbering,
-            level: 0,
-        },
-    }),
-);
-
-doc.add(
-    new Paragraph({}).addRun(
-        new TextRun({
-            text: "Some monospaced content",
-            font: {
-                name: "Monospace",
+doc.addSection({
+    children: [
+        new Paragraph({
+            text: "Test heading1, bold and italicized",
+            heading: HeadingLevel.HEADING_1,
+        }),
+        new Paragraph("Some simple content"),
+        new Paragraph({
+            text: "Test heading2 with double red underline",
+            heading: HeadingLevel.HEADING_2,
+        }),
+        new Paragraph({
+            text: "Option1",
+            numbering: {
+                num: letterNumbering,
+                level: 0,
             },
         }),
-    ),
-);
-
-doc.add(
-    new Paragraph({
-        text: "An aside, in light gray italics and indented",
-        style: "aside",
-    }),
-);
-doc.add(
-    new Paragraph({
-        text: "This is normal, but well-spaced text",
-        style: "wellSpaced",
-    }),
-);
-const para = new Paragraph({});
-doc.add(para);
-// Showing the different ways to create a TextRun
-para.addRun(
-    new TextRun({
-        text: "This is a bold run,",
-        bold: true,
-    }),
-);
-para.addRun(new TextRun(" switching to normal "));
-para.addRun(
-    new TextRun({
-        text: "and then underlined ",
-        underline: {},
-    }),
-);
-para.addRun(
-    new TextRun({
-        text: "and back to normal.",
-    }),
-);
+        new Paragraph({
+            text: "Option5 -- override 2 to 5",
+            numbering: {
+                num: letterNumbering,
+                level: 0,
+            },
+        }),
+        new Paragraph({
+            text: "Option3",
+            numbering: {
+                num: letterNumbering,
+                level: 0,
+            },
+        }),
+        new Paragraph({}).addRun(
+            new TextRun({
+                text: "Some monospaced content",
+                font: {
+                    name: "Monospace",
+                },
+            }),
+        ),
+        new Paragraph({
+            text: "An aside, in light gray italics and indented",
+            style: "aside",
+        }),
+        new Paragraph({
+            text: "This is normal, but well-spaced text",
+            style: "wellSpaced",
+        }),
+        new Paragraph({
+            children: [
+                new TextRun({
+                    text: "This is a bold run,",
+                    bold: true,
+                }),
+                new TextRun(" switching to normal "),
+                new TextRun({
+                    text: "and then underlined ",
+                    underline: {},
+                }),
+                new TextRun({
+                    text: "and back to normal.",
+                }),
+            ],
+        }),
+    ],
+});
 
 const packer = new Packer();
 

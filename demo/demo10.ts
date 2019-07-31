@@ -127,97 +127,86 @@ const achievements = [
 ];
 
 class DocumentCreator {
-    public create(data: object[]): Document {
-        // tslint:disable-next-line:no-any
-        const experiences = data[0] as any[];
-        // tslint:disable-next-line:no-any
-        const educations = data[1] as any[];
-        const skills = data[2] as object[];
-        const achivements = data[3] as object[];
+    // tslint:disable-next-line: typedef
+    public create([experiences, educations, skills, achivements]): Document {
         const document = new Document();
-        document.add(
-            new Paragraph({
-                text: "Dolan Miu",
-                heading: HeadingLevel.TITLE,
-            }),
-        );
 
-        document.add(this.createContactInfo(PHONE_NUMBER, PROFILE_URL, EMAIL));
-        document.add(this.createHeading("Education"));
+        document.addSection({
+            children: [
+                new Paragraph({
+                    text: "Dolan Miu",
+                    heading: HeadingLevel.TITLE,
+                }),
+                this.createContactInfo(PHONE_NUMBER, PROFILE_URL, EMAIL),
+                this.createHeading("Education"),
+                ...educations
+                    .map((education) => {
+                        const arr: Paragraph[] = [];
+                        arr.push(
+                            this.createInstitutionHeader(education.schoolName, `${education.startDate.year} - ${education.endDate.year}`),
+                        );
+                        arr.push(this.createRoleText(`${education.fieldOfStudy} - ${education.degree}`));
 
-        for (const education of educations) {
-            document.add(
-                this.createInstitutionHeader(education.schoolName, `${education.startDate.year} - ${education.endDate.year}`),
-            );
-            document.add(this.createRoleText(`${education.fieldOfStudy} - ${education.degree}`));
+                        const bulletPoints = this.splitParagraphIntoBullets(education.notes);
+                        bulletPoints.forEach((bulletPoint) => {
+                            arr.push(this.createBullet(bulletPoint));
+                        });
 
-            const bulletPoints = this.splitParagraphIntoBullets(education.notes);
-            bulletPoints.forEach((bulletPoint) => {
-                document.add(this.createBullet(bulletPoint));
-            });
-        }
+                        return arr;
+                    })
+                    .reduce((prev, curr) => prev.concat(curr), []),
+                this.createHeading("Experience"),
+                ...experiences
+                    .map((position) => {
+                        const arr: Paragraph[] = [];
 
-        document.add(this.createHeading("Experience"));
+                        arr.push(
+                            this.createInstitutionHeader(
+                                position.company.name,
+                                this.createPositionDateText(position.startDate, position.endDate, position.isCurrent),
+                            ),
+                        );
+                        arr.push(this.createRoleText(position.title));
 
-        for (const position of experiences) {
-            document.add(
-                this.createInstitutionHeader(
-                    position.company.name,
-                    this.createPositionDateText(position.startDate, position.endDate, position.isCurrent),
+                        const bulletPoints = this.splitParagraphIntoBullets(position.summary);
+
+                        bulletPoints.forEach((bulletPoint) => {
+                            arr.push(this.createBullet(bulletPoint));
+                        });
+
+                        return arr;
+                    })
+                    .reduce((prev, curr) => prev.concat(curr), []),
+                this.createHeading("Skills, Achievements and Interests"),
+                this.createSubHeading("Skills"),
+                this.createSkillList(skills),
+                this.createSubHeading("Achievements"),
+                ...this.createAchivementsList(achivements),
+                this.createSubHeading("Interests"),
+                this.createInterests("Programming, Technology, Music Production, Web Design, 3D Modelling, Dancing."),
+                this.createHeading("References"),
+                new Paragraph(
+                    "Dr. Dean Mohamedally Director of Postgraduate Studies Department of Computer Science, University College London Malet Place, Bloomsbury, London WC1E d.mohamedally@ucl.ac.uk",
                 ),
-            );
-            document.add(this.createRoleText(position.title));
+                new Paragraph("More references upon request"),
+                new Paragraph({
+                    text: "This CV was generated in real-time based on my Linked-In profile from my personal website www.dolan.bio.",
+                    alignment: AlignmentType.CENTER,
+                }),
+            ],
+        });
 
-            const bulletPoints = this.splitParagraphIntoBullets(position.summary);
-
-            bulletPoints.forEach((bulletPoint) => {
-                document.add(this.createBullet(bulletPoint));
-            });
-        }
-
-        document.add(this.createHeading("Skills, Achievements and Interests"));
-
-        document.add(this.createSubHeading("Skills"));
-        document.add(this.createSkillList(skills));
-
-        document.add(this.createSubHeading("Achievements"));
-
-        for (const achievementParagraph of this.createAchivementsList(achivements)) {
-            document.add(achievementParagraph);
-        }
-
-        document.add(this.createSubHeading("Interests"));
-
-        document.add(this.createInterests("Programming, Technology, Music Production, Web Design, 3D Modelling, Dancing."));
-
-        document.add(this.createHeading("References"));
-
-        document.add(
-            new Paragraph(
-                "Dr. Dean Mohamedally Director of Postgraduate Studies Department of Computer Science, University College London Malet Place, Bloomsbury, London WC1E d.mohamedally@ucl.ac.uk",
-            ),
-        );
-        document.add(new Paragraph("More references upon request"));
-        document.add(
-            new Paragraph({
-                text: "This CV was generated in real-time based on my Linked-In profile from my personal website www.dolan.bio.",
-                alignment: AlignmentType.CENTER,
-            }),
-        );
         return document;
     }
 
     public createContactInfo(phoneNumber: string, profileUrl: string, email: string): Paragraph {
-        const paragraph = new Paragraph({
+        return new Paragraph({
             alignment: AlignmentType.CENTER,
+            children: [
+                new TextRun(`Mobile: ${phoneNumber} | LinkedIn: ${profileUrl} | Email: ${email}`),
+                new TextRun("Address: 58 Elm Avenue, Kent ME4 6ER, UK").break(),
+            ],
         });
-        const contactInfo = new TextRun(`Mobile: ${phoneNumber} | LinkedIn: ${profileUrl} | Email: ${email}`);
-        const address = new TextRun("Address: 58 Elm Avenue, Kent ME4 6ER, UK").break();
-
-        paragraph.addRun(contactInfo);
-        paragraph.addRun(address);
-
-        return paragraph;
     }
 
     public createHeading(text: string): Paragraph {
@@ -236,36 +225,32 @@ class DocumentCreator {
     }
 
     public createInstitutionHeader(institutionName: string, dateText: string): Paragraph {
-        const paragraph = new Paragraph({
+        return new Paragraph({
             tabStop: {
                 maxRight: {},
             },
+            children: [
+                new TextRun({
+                    text: institutionName,
+                    bold: true,
+                }),
+                new TextRun({
+                    text: dateText,
+                    bold: true,
+                }).tab(),
+            ],
         });
-        const institution = new TextRun({
-            text: institutionName,
-            bold: true,
-        });
-        const date = new TextRun({
-            text: dateText,
-            bold: true,
-        }).tab();
-
-        paragraph.addRun(institution);
-        paragraph.addRun(date);
-
-        return paragraph;
     }
 
     public createRoleText(roleText: string): Paragraph {
-        const paragraph = new Paragraph({});
-        const role = new TextRun({
-            text: roleText,
-            italics: true,
+        return new Paragraph({
+            children: [
+                new TextRun({
+                    text: roleText,
+                    italics: true,
+                }),
+            ],
         });
-
-        paragraph.addRun(role);
-
-        return paragraph;
     }
 
     public createBullet(text: string): Paragraph {
@@ -279,36 +264,28 @@ class DocumentCreator {
 
     // tslint:disable-next-line:no-any
     public createSkillList(skills: any[]): Paragraph {
-        const paragraph = new Paragraph({});
-        const skillConcat = skills.map((skill) => skill.name).join(", ") + ".";
-
-        paragraph.addRun(new TextRun(skillConcat));
-
-        return paragraph;
+        return new Paragraph({
+            children: [new TextRun(skills.map((skill) => skill.name).join(", ") + ".")],
+        });
     }
 
     // tslint:disable-next-line:no-any
     public createAchivementsList(achivements: any[]): Paragraph[] {
-        const arr: Paragraph[] = [];
-
-        for (const achievement of achivements) {
-            const paragraph = new Paragraph({
-                text: achievement.name,
-                bullet: {
-                    level: 0,
-                },
-            });
-            arr.push(paragraph);
-        }
-
-        return arr;
+        return achivements.map(
+            (achievement) =>
+                new Paragraph({
+                    text: achievement.name,
+                    bullet: {
+                        level: 0,
+                    },
+                }),
+        );
     }
 
     public createInterests(interests: string): Paragraph {
-        const paragraph = new Paragraph({});
-
-        paragraph.addRun(new TextRun(interests));
-        return paragraph;
+        return new Paragraph({
+            children: [new TextRun(interests)],
+        });
     }
 
     public splitParagraphIntoBullets(text: string): string[] {

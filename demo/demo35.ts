@@ -8,7 +8,9 @@ const paragraph = new Paragraph({});
 const link = doc.createHyperlink("http://www.example.com", "Hyperlink");
 
 paragraph.addHyperLink(link);
-doc.add(paragraph);
+doc.addSection({
+    children: [paragraph],
+});
 
 const packer = new Packer();
 

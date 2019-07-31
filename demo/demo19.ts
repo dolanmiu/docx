@@ -5,19 +5,23 @@ import { Document, Packer, Paragraph, TextRun } from "../build";
 
 const doc = new Document();
 
-const paragraph = new Paragraph("Hello World");
-const institutionText = new TextRun({
-    text: "Foo",
-    bold: true,
+doc.addSection({
+    children: [
+        new Paragraph({
+            children: [
+                new TextRun("Hello World"),
+                new TextRun({
+                    text: "Foo",
+                    bold: true,
+                }),
+                new TextRun({
+                    text: "Bar",
+                    bold: true,
+                }).tab(),
+            ],
+        }),
+    ],
 });
-const dateText = new TextRun({
-    text: "Bar",
-    bold: true,
-}).tab();
-paragraph.addRun(institutionText);
-paragraph.addRun(dateText);
-
-doc.add(paragraph);
 
 const packer = new Packer();
 

@@ -1,22 +1,18 @@
 // Scaling images
 // Import from 'docx' rather than '../build' if you install from npm
 import * as fs from "fs";
-import { Document, Packer, Paragraph } from "../build";
+import { Document, Media, Packer, Paragraph } from "../build";
 
 const doc = new Document();
 
-const paragraph = new Paragraph("Hello World");
-doc.add(paragraph);
+const image = Media.addImage(doc, fs.readFileSync("./demo/images/pizza.gif"), 50, 50);
+const image2 = Media.addImage(doc, fs.readFileSync("./demo/images/pizza.gif"), 100, 100);
+const image3 = Media.addImage(doc, fs.readFileSync("./demo/images/pizza.gif"), 250, 250);
+const image4 = Media.addImage(doc, fs.readFileSync("./demo/images/pizza.gif"), 400, 400);
 
-const image = doc.createImage(fs.readFileSync("./demo/images/pizza.gif"));
-const image2 = doc.createImage(fs.readFileSync("./demo/images/pizza.gif"));
-const image3 = doc.createImage(fs.readFileSync("./demo/images/pizza.gif"));
-const image4 = doc.createImage(fs.readFileSync("./demo/images/pizza.gif"));
-
-image.scale(0.5);
-image2.scale(1);
-image3.scale(2.5);
-image4.scale(4);
+doc.addSection({
+    children: [new Paragraph("Hello World"), new Paragraph(image), new Paragraph(image2), new Paragraph(image3), new Paragraph(image4)],
+});
 
 const packer = new Packer();
 

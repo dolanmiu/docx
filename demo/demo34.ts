@@ -29,10 +29,12 @@ const table = new Table({
     layout: TableLayoutType.FIXED,
 });
 
-doc.add(table);
-
 table.getCell(0, 0).add(new Paragraph("Hello"));
 table.getRow(0).mergeCells(0, 1);
+
+doc.addSection({
+    children: [table],
+});
 
 const packer = new Packer();
 

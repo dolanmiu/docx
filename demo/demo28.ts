@@ -18,38 +18,39 @@ doc.Styles.createParagraphStyle("MySpectacularStyle", "My Spectacular Style")
 
 // Let's define the properties for generate a TOC for heading 1-5 and MySpectacularStyle,
 // making the entries be hyperlinks for the paragraph
-const toc = new TableOfContents("Summary", {
-    hyperlink: true,
-    headingStyleRange: "1-5",
-    stylesWithLevels: [new StyleLevel("MySpectacularStyle", 1)],
+
+doc.addSection({
+    children: [
+        new TableOfContents("Summary", {
+            hyperlink: true,
+            headingStyleRange: "1-5",
+            stylesWithLevels: [new StyleLevel("MySpectacularStyle", 1)],
+        }),
+        new Paragraph({
+            text: "Header #1",
+            heading: HeadingLevel.HEADING_1,
+            pageBreakBefore: true,
+        }),
+        new Paragraph("I'm a little text very nicely written.'"),
+        new Paragraph({
+            text: "Header #2",
+            heading: HeadingLevel.HEADING_1,
+            pageBreakBefore: true,
+        }),
+        new Paragraph("I'm a other text very nicely written.'"),
+        new Paragraph({
+            text: "Header #2.1",
+            heading: HeadingLevel.HEADING_2,
+        }),
+        new Paragraph("I'm a another text very nicely written.'"),
+        new Paragraph({
+            text: "My Spectacular Style #1",
+            style: "MySpectacularStyle",
+            pageBreakBefore: true,
+        }),
+
+    ],
 });
-
-doc.addTableOfContents(toc);
-
-doc.add(new Paragraph({
-    text: "Header #1",
-    heading: HeadingLevel.HEADING_1,
-    pageBreakBefore: true,
-}));
-doc.add(new Paragraph("I'm a little text very nicely written.'"));
-
-doc.add(new Paragraph({
-    text: "Header #2",
-    heading: HeadingLevel.HEADING_1,
-    pageBreakBefore: true,
-}));
-doc.add(new Paragraph("I'm a other text very nicely written.'"));
-doc.add(new Paragraph({
-    text: "Header #2.1",
-    heading: HeadingLevel.HEADING_2,
-}));
-doc.add(new Paragraph("I'm a another text very nicely written.'"));
-
-doc.add(new Paragraph({
-    text: "My Spectacular Style #1",
-    style: "MySpectacularStyle",
-    pageBreakBefore: true,
-}));
 
 const packer = new Packer();
 

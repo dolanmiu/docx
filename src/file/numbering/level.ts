@@ -2,6 +2,7 @@ import { Attributes, XmlAttributeComponent, XmlComponent } from "file/xml-compon
 import {
     Alignment,
     AlignmentType,
+    IIndentAttributesProperties,
     Indent,
     ISpacingProperties,
     KeepLines,
@@ -235,7 +236,7 @@ export class LevelBase extends XmlComponent {
         return this;
     }
 
-    public indent(attrs: object): Level {
+    public indent(attrs: IIndentAttributesProperties): Level {
         this.addParagraphProperty(new Indent(attrs));
         return this;
     }

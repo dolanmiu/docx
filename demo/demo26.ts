@@ -5,29 +5,28 @@ import { Document, Packer, Paragraph } from "../build";
 
 const doc = new Document();
 
-const paragraph = new Paragraph("No border!");
-
-doc.add(paragraph);
-
-const borderParagraph = new Paragraph({
-    text: "I have borders on my top and bottom sides!",
-    border: {
-        top: {
-            color: "auto",
-            space: 1,
-            value: "single",
-            size: 6,
-        },
-        bottom: {
-            color: "auto",
-            space: 1,
-            value: "single",
-            size: 6,
-        },
-    },
+doc.addSection({
+    children: [
+        new Paragraph("No border!"),
+        new Paragraph({
+            text: "I have borders on my top and bottom sides!",
+            border: {
+                top: {
+                    color: "auto",
+                    space: 1,
+                    value: "single",
+                    size: 6,
+                },
+                bottom: {
+                    color: "auto",
+                    space: 1,
+                    value: "single",
+                    size: 6,
+                },
+            },
+        }),
+    ],
 });
-
-doc.add(borderParagraph);
 
 const packer = new Packer();
 

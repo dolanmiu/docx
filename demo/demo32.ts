@@ -5,24 +5,15 @@ import { Document, HeadingLevel, Packer, Paragraph, ShadingType, Table, WidthTyp
 
 const doc = new Document();
 
-let table = new Table({
+const table = new Table({
     rows: 2,
     columns: 2,
 });
 
-doc.add(table);
-
 table.getCell(0, 0).add(new Paragraph("Hello"));
 table.getRow(0).mergeCells(0, 1);
 
-doc.add(
-    new Paragraph({
-        text: "Another table",
-        heading: HeadingLevel.HEADING_2,
-    }),
-);
-
-table = new Table({
+const table2 = new Table({
     rows: 2,
     columns: 3,
     width: 100,
@@ -30,9 +21,7 @@ table = new Table({
     columnWidths: [1000, 1000, 1000],
 });
 
-doc.add(table);
-
-table
+table2
     .getCell(0, 0)
     .add(new Paragraph("World"))
     .setMargins({
@@ -43,14 +32,7 @@ table
     });
 table.getRow(0).mergeCells(0, 2);
 
-doc.add(
-    new Paragraph({
-        text: "Another table",
-        heading: HeadingLevel.HEADING_2,
-    }),
-);
-
-table = new Table({
+const table3 = new Table({
     rows: 2,
     columns: 4,
     width: 7000,
@@ -63,12 +45,10 @@ table = new Table({
     },
 });
 
-doc.add(table);
+table3.getCell(0, 0).add(new Paragraph("Foo"));
+table3.getCell(0, 1).add(new Paragraph("v"));
 
-table.getCell(0, 0).add(new Paragraph("Foo"));
-table.getCell(0, 1).add(new Paragraph("v"));
-
-table
+table3
     .getCell(1, 0)
     .add(new Paragraph("Bar1"))
     .setShading({
@@ -76,7 +56,7 @@ table
         val: ShadingType.REVERSE_DIAGONAL_STRIPE,
         color: "auto",
     });
-table
+table3
     .getCell(1, 1)
     .add(new Paragraph("Bar2"))
     .setShading({
@@ -84,7 +64,7 @@ table
         val: ShadingType.PERCENT_95,
         color: "auto",
     });
-table
+table3
     .getCell(1, 2)
     .add(new Paragraph("Bar3"))
     .setShading({
@@ -92,7 +72,7 @@ table
         val: ShadingType.PERCENT_10,
         color: "e2df0b",
     });
-table
+table3
     .getCell(1, 3)
     .add(new Paragraph("Bar4"))
     .setShading({
@@ -101,18 +81,32 @@ table
         color: "auto",
     });
 
-table.getRow(0).mergeCells(0, 3);
+table3.getRow(0).mergeCells(0, 3);
 
-doc.add(new Paragraph("hi"));
-
-table = new Table({
+const table4 = new Table({
     rows: 2,
     columns: 2,
     width: 100,
     widthUnitType: WidthType.PERCENTAGE,
 });
 
-doc.add(table);
+doc.addSection({
+    children: [
+        table,
+        new Paragraph({
+            text: "Another table",
+            heading: HeadingLevel.HEADING_2,
+        }),
+        table2,
+        new Paragraph({
+            text: "Another table",
+            heading: HeadingLevel.HEADING_2,
+        }),
+        table3,
+        new Paragraph("hi"),
+        table4,
+    ],
+});
 
 const packer = new Packer();
 

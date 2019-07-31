@@ -12,10 +12,6 @@ export class ImageParagraph extends Paragraph {
         this.root.push(this.pictureRun);
     }
 
-    public scale(factorX: number, factorY?: number): void {
-        this.pictureRun.scale(factorX, factorY);
-    }
-
     public get Run(): PictureRun {
         return this.pictureRun;
     }

@@ -39,17 +39,6 @@ describe("FooterWrapper", () => {
         });
     });
 
-    describe("#createImage", () => {
-        it("should call the underlying footer's createImage", () => {
-            const file = new FooterWrapper(new Media(), 1);
-            const spy = sinon.spy(Media, "addImage");
-            file.createImage("");
-
-            expect(spy.called).to.equal(true);
-            spy.restore();
-        });
-    });
-
     describe("#addChildElement", () => {
         it("should call the underlying footer's addChildElement", () => {
             const file = new FooterWrapper(new Media(), 1);

@@ -5,37 +5,39 @@ import { Document, Packer, Paragraph, TextRun } from "../build";
 
 const doc = new Document();
 
-const paragraph1 = new Paragraph({
-    bidirectional: true,
+doc.addSection({
+    children: [
+        new Paragraph({
+            bidirectional: true,
+            children: [
+                new TextRun({
+                    text: "שלום עולם",
+                    rightToLeft: true,
+                }),
+            ],
+        }),
+        new Paragraph({
+            bidirectional: true,
+            children: [
+                new TextRun({
+                    text: "שלום עולם",
+                    bold: true,
+                    rightToLeft: true,
+                }),
+            ],
+        }),
+        new Paragraph({
+            bidirectional: true,
+            children: [
+                new TextRun({
+                    text: "שלום עולם",
+                    italics: true,
+                    rightToLeft: true,
+                }),
+            ],
+        }),
+    ],
 });
-const textRun1 = new TextRun({
-    text: "שלום עולם",
-    rightToLeft: true,
-});
-paragraph1.addRun(textRun1);
-doc.add(paragraph1);
-
-const paragraph2 = new Paragraph({
-    bidirectional: true,
-});
-const textRun2 = new TextRun({
-    text: "שלום עולם",
-    bold: true,
-    rightToLeft: true,
-});
-paragraph2.addRun(textRun2);
-doc.add(paragraph2);
-
-const paragraph3 = new Paragraph({
-    bidirectional: true,
-});
-const textRun3 = new TextRun({
-    text: "שלום עולם",
-    italics: true,
-    rightToLeft: true,
-});
-paragraph3.addRun(textRun3);
-doc.add(paragraph3);
 
 const packer = new Packer();
 

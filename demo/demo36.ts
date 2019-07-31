@@ -1,7 +1,7 @@
 // Add image to table cell
 // Import from 'docx' rather than '../build' if you install from npm
 import * as fs from "fs";
-import { Document, Media, Packer, Paragraph, Table } from "../build";
+import { Document, Header, Media, Packer, Paragraph, Table } from "../build";
 
 const doc = new Document();
 const image = Media.addImage(doc, fs.readFileSync("./demo/images/image1.jpeg"));
@@ -12,11 +12,15 @@ const table = new Table({
 });
 table.getCell(1, 1).add(new Paragraph(image));
 
-doc.add(table);
-
-// doc.Header.createImage(fs.readFileSync("./demo/images/pizza.gif"));
-doc.Header.add(table);
-// doc.Footer.createImage(fs.readFileSync("./demo/images/pizza.gif"));
+// Adding same table in the body and in the header
+doc.addSection({
+    headers: {
+        default: new Header({
+            children: [table],
+        }),
+    },
+    children: [table],
+});
 
 const packer = new Packer();
 

@@ -5,14 +5,15 @@ import { Document, Packer, Paragraph } from "../build";
 
 const doc = new Document();
 
-const paragraph = new Paragraph("Hello World");
-const paragraph2 = new Paragraph({
-    text: "Hello World on another page",
-    pageBreakBefore: true,
+doc.addSection({
+    children: [
+        new Paragraph("Hello World"),
+        new Paragraph({
+            text: "Hello World on another page",
+            pageBreakBefore: true,
+        }),
+    ],
 });
-
-doc.add(paragraph);
-doc.add(paragraph2);
 
 const packer = new Packer();
 

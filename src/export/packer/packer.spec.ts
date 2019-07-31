@@ -16,26 +16,24 @@ describe("Packer", () => {
             revision: "1",
             lastModifiedBy: "Dolan Miu",
         });
-        const paragraph = new Paragraph("test text");
-        const heading = new Paragraph({
-            text: "Hello world",
-            heading: HeadingLevel.HEADING_1,
-        });
 
-        file.add(
-            new Paragraph({
-                text: "title",
-                heading: HeadingLevel.TITLE,
-            }),
-        );
-        file.add(heading);
-        file.add(
-            new Paragraph({
-                text: "heading 2",
-                heading: HeadingLevel.HEADING_2,
-            }),
-        );
-        file.add(paragraph);
+        file.addSection({
+            children: [
+                new Paragraph({
+                    text: "title",
+                    heading: HeadingLevel.TITLE,
+                }),
+                new Paragraph({
+                    text: "Hello world",
+                    heading: HeadingLevel.HEADING_1,
+                }),
+                new Paragraph({
+                    text: "heading 2",
+                    heading: HeadingLevel.HEADING_2,
+                }),
+                new Paragraph("test text"),
+            ],
+        });
 
         packer = new Packer();
     });

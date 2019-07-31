@@ -3,7 +3,7 @@
 import * as fs from "fs";
 import { Document, HeadingLevel, Packer, Paragraph } from "../build";
 
-const loremIpsum =
+const LOREM_IPSUM =
     "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam mi velit, convallis convallis scelerisque nec, faucibus nec leo. Phasellus at posuere mauris, tempus dignissim velit. Integer et tortor dolor. Duis auctor efficitur mattis. Vivamus ut metus accumsan tellus auctor sollicitudin venenatis et nibh. Cras quis massa ac metus fringilla venenatis. Proin rutrum mauris purus, ut suscipit magna consectetur id. Integer consectetur sollicitudin ante, vitae faucibus neque efficitur in. Praesent ultricies nibh lectus. Mauris pharetra id odio eget iaculis. Duis dictum, risus id pellentesque rutrum, lorem quam malesuada massa, quis ullamcorper turpis urna a diam. Cras vulputate metus vel massa porta ullamcorper. Etiam porta condimentum nulla nec tristique. Sed nulla urna, pharetra non tortor sed, sollicitudin molestie diam. Maecenas enim leo, feugiat eget vehicula id, sollicitudin vitae ante.";
 
 const doc = new Document({
@@ -16,21 +16,19 @@ const anchorId = "anchorID";
 
 // First create the bookmark
 const bookmark = doc.createBookmark(anchorId, "Lorem Ipsum");
-// That has header styling
-doc.add(
-    new Paragraph({
-        heading: HeadingLevel.HEADING_1,
-    }).addBookmark(bookmark),
-);
-
-doc.add(new Paragraph("\n"));
-
-doc.add(new Paragraph(loremIpsum));
-doc.add(new Paragraph({}).pageBreak());
-
-// Now the link back up to the bookmark
 const hyperlink = doc.createInternalHyperLink(anchorId, `Click me!`);
-doc.add(new Paragraph({}).addHyperLink(hyperlink));
+
+doc.addSection({
+    children: [
+        new Paragraph({
+            heading: HeadingLevel.HEADING_1,
+        }).addBookmark(bookmark),
+        new Paragraph("\n"),
+        new Paragraph(LOREM_IPSUM),
+        new Paragraph({}).pageBreak(),
+        new Paragraph({}).addHyperLink(hyperlink),
+    ],
+});
 
 const packer = new Packer();
 

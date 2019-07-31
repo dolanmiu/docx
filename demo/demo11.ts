@@ -1,14 +1,9 @@
 // Setting styles with JavaScript configuration
 // Import from 'docx' rather than '../build' if you install from npm
 import * as fs from "fs";
-import { AlignmentType, Document, HeadingLevel, Packer, Paragraph, Table } from "../build";
+import { AlignmentType, Document, Footer, HeadingLevel, Media, Packer, Paragraph, Table } from "../build";
 
-const doc = new Document(undefined, {
-    top: 700,
-    right: 700,
-    bottom: 700,
-    left: 700,
-});
+const doc = new Document();
 
 doc.Styles.createParagraphStyle("Heading1", "Heading 1")
     .basedOn("Normal")
@@ -83,76 +78,7 @@ doc.Styles.createParagraphStyle("ListParagraph", "List Paragraph")
     .quickFormat()
     .basedOn("Normal");
 
-doc.createImage(fs.readFileSync("./demo/images/pizza.gif"));
-doc.add(
-    new Paragraph({
-        text: "HEADING",
-        heading: HeadingLevel.HEADING_1,
-        alignment: AlignmentType.CENTER,
-    }),
-);
-
-doc.Footer.add(
-    new Paragraph({
-        text: "1",
-        style: "normalPara",
-        alignment: AlignmentType.RIGHT,
-    }),
-);
-
-doc.add(
-    new Paragraph({
-        text: "Ref. :",
-        style: "normalPara",
-    }),
-);
-doc.add(
-    new Paragraph({
-        text: "Date :",
-        style: "normalPara",
-    }),
-);
-
-doc.add(
-    new Paragraph({
-        text: "To,",
-        style: "normalPara",
-    }),
-);
-doc.add(
-    new Paragraph({
-        text: "The Superindenting Engineer,(O &M)",
-        style: "normalPara",
-    }),
-);
-
-doc.add(
-    new Paragraph({
-        text: "Sub : ",
-        style: "normalPara",
-    }),
-);
-
-doc.add(
-    new Paragraph({
-        text: "Ref. : ",
-        style: "normalPara",
-    }),
-);
-
-doc.add(
-    new Paragraph({
-        text: "Sir,",
-        style: "normalPara",
-    }),
-);
-
-doc.add(
-    new Paragraph({
-        text: "BRIEF DESCRIPTION",
-        style: "normalPara",
-    }),
-);
+const image = Media.addImage(doc, fs.readFileSync("./demo/images/pizza.gif"));
 
 const table = new Table({
     rows: 4,
@@ -163,27 +89,78 @@ table
     .getCell(0)
     .add(new Paragraph("Pole No."));
 
-doc.add(table);
+const image1 = Media.addImage(doc, fs.readFileSync("./demo/images/pizza.gif"));
+const image2 = Media.addImage(doc, fs.readFileSync("./demo/images/pizza.gif"));
 
-const arrboth = [
-    {
-        image: "./demo/images/pizza.gif",
-        comment: "Test",
+doc.addSection({
+    properties: {
+        top: 700,
+        right: 700,
+        bottom: 700,
+        left: 700,
     },
-    {
-        image: "./demo/images/pizza.gif",
-        comment: "Test 2",
+    footers: {
+        default: new Footer({
+            children: [
+                new Paragraph({
+                    text: "1",
+                    style: "normalPara",
+                    alignment: AlignmentType.RIGHT,
+                }),
+            ],
+        }),
     },
-];
-
-arrboth.forEach((item) => {
-    doc.createImage(fs.readFileSync(item.image));
-    doc.add(
+    children: [
+        new Paragraph(image),
         new Paragraph({
-            text: item.comment,
+            text: "HEADING",
+            heading: HeadingLevel.HEADING_1,
+            alignment: AlignmentType.CENTER,
+        }),
+        new Paragraph({
+            text: "Ref. :",
+            style: "normalPara",
+        }),
+        new Paragraph({
+            text: "Date :",
+            style: "normalPara",
+        }),
+        new Paragraph({
+            text: "To,",
+            style: "normalPara",
+        }),
+        new Paragraph({
+            text: "The Superindenting Engineer,(O &M)",
+            style: "normalPara",
+        }),
+        new Paragraph({
+            text: "Sub : ",
+            style: "normalPara",
+        }),
+        new Paragraph({
+            text: "Ref. : ",
+            style: "normalPara",
+        }),
+        new Paragraph({
+            text: "Sir,",
+            style: "normalPara",
+        }),
+        new Paragraph({
+            text: "BRIEF DESCRIPTION",
+            style: "normalPara",
+        }),
+        table,
+        new Paragraph(image1),
+        new Paragraph({
+            text: "Test",
             style: "normalPara2",
         }),
-    );
+        new Paragraph(image2),
+        new Paragraph({
+            text: "Test 2",
+            style: "normalPara2",
+        }),
+    ],
 });
 
 const packer = new Packer();

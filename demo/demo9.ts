@@ -1,14 +1,34 @@
 // Add images to header and footer
 // Import from 'docx' rather than '../build' if you install from npm
 import * as fs from "fs";
-import { Document, Packer, Paragraph } from "../build";
+import { Document, Footer, Header, Media, Packer, Paragraph } from "../build";
 
 const doc = new Document();
 
-doc.add(new Paragraph("Hello World"));
+const image1 = Media.addImage(doc, fs.readFileSync("./demo/images/pizza.gif"));
+const image2 = Media.addImage(doc, fs.readFileSync("./demo/images/pizza.gif"));
 
-doc.Header.createImage(fs.readFileSync("./demo/images/pizza.gif"));
-doc.Footer.createImage(fs.readFileSync("./demo/images/pizza.gif"));
+doc.addSection({
+    headers: {
+        default: new Header({
+            children: [
+                new Paragraph({
+                    children: [image1],
+                }),
+            ],
+        }),
+    },
+    footers: {
+        default: new Footer({
+            children: [
+                new Paragraph({
+                    children: [image2],
+                }),
+            ],
+        }),
+    },
+    children: [new Paragraph("Hello World")],
+});
 
 const packer = new Packer();
 

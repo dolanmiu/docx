@@ -4,24 +4,37 @@ import * as sinon from "sinon";
 import { Formatter } from "export/formatter";
 
 import { File } from "./file";
+import { Footer, Header } from "./header";
 import { Paragraph } from "./paragraph";
 import { Table } from "./table";
 import { TableOfContents } from "./table-of-contents";
 
 describe("File", () => {
     describe("#constructor", () => {
+        it("should create with correct headers and footers by default", () => {
+            const doc = new File();
+
+            doc.addSection({
+                children: [],
+            });
+
+            const tree = new Formatter().format(doc.Document.Body);
+
+            expect(tree["w:body"][1]["w:sectPr"][4]["w:headerReference"]._attr["w:type"]).to.equal("default");
+            expect(tree["w:body"][1]["w:sectPr"][5]["w:footerReference"]._attr["w:type"]).to.equal("default");
+        });
+
         it("should create with correct headers and footers", () => {
             const doc = new File();
-            const header = doc.createHeader();
-            const footer = doc.createFooter();
 
-            doc.addSectionOld({
+            doc.addSection({
                 headers: {
-                    default: header,
+                    default: new Header(),
                 },
                 footers: {
-                    default: footer,
+                    default: new Footer(),
                 },
+                children: [],
             });
 
             const tree = new Formatter().format(doc.Document.Body);
@@ -32,40 +45,40 @@ describe("File", () => {
 
         it("should create with first headers and footers", () => {
             const doc = new File();
-            const header = doc.createHeader();
-            const footer = doc.createFooter();
 
-            doc.addSectionOld({
+            doc.addSection({
                 headers: {
-                    first: header,
+                    first: new Header(),
                 },
                 footers: {
-                    first: footer,
+                    first: new Footer(),
                 },
+                children: [],
             });
 
             const tree = new Formatter().format(doc.Document.Body);
 
-            expect(tree["w:body"][1]["w:sectPr"][4]["w:headerReference"]._attr["w:type"]).to.equal("first");
-            expect(tree["w:body"][1]["w:sectPr"][5]["w:footerReference"]._attr["w:type"]).to.equal("first");
+            console.log(JSON.stringify(tree, null, 2));
+
+            expect(tree["w:body"][1]["w:sectPr"][5]["w:headerReference"]._attr["w:type"]).to.equal("first");
+            expect(tree["w:body"][1]["w:sectPr"][7]["w:footerReference"]._attr["w:type"]).to.equal("first");
         });
 
         it("should create with correct headers", () => {
             const doc = new File();
-            const header = doc.createHeader();
-            const footer = doc.createFooter();
 
-            doc.addSectionOld({
+            doc.addSection({
                 headers: {
-                    default: header,
-                    first: header,
-                    even: header,
+                    default: new Header(),
+                    first: new Header(),
+                    even: new Header(),
                 },
                 footers: {
-                    default: footer,
-                    first: footer,
-                    even: footer,
+                    default: new Footer(),
+                    first: new Footer(),
+                    even: new Footer(),
                 },
+                children: [],
             });
 
             const tree = new Formatter().format(doc.Document.Body);
@@ -80,57 +93,53 @@ describe("File", () => {
         });
     });
 
-    describe("#add", () => {
+    describe("#addSection", () => {
         it("should call the underlying document's add a Paragraph", () => {
             const file = new File();
             const spy = sinon.spy(file.Document, "add");
-            file.add(new Paragraph({}));
+            file.addSection({
+                children: [new Paragraph({})],
+            });
 
             expect(spy.called).to.equal(true);
         });
 
         it("should call the underlying document's add when adding a Table", () => {
-            const wrapper = new File();
-            const spy = sinon.spy(wrapper.Document, "add");
-            wrapper.add(
-                new Table({
-                    rows: 1,
-                    columns: 1,
-                }),
-            );
+            const file = new File();
+            const spy = sinon.spy(file.Document, "add");
+            file.addSection({
+                children: [
+                    new Table({
+                        rows: 1,
+                        columns: 1,
+                    }),
+                ],
+            });
 
             expect(spy.called).to.equal(true);
         });
 
         it("should call the underlying document's add when adding an Image (paragraph)", () => {
-            const wrapper = new File();
-            const spy = sinon.spy(wrapper.Document, "add");
+            const file = new File();
+            const spy = sinon.spy(file.Document, "add");
             // tslint:disable-next-line:no-any
-            wrapper.add(new Paragraph(""));
+            file.addSection({
+                children: [new Paragraph("")],
+            });
 
             expect(spy.called).to.equal(true);
         });
     });
 
-    describe("#add", () => {
-        it("should call the underlying document's addTableOfContents", () => {
-            const wrapper = new File();
-            const spy = sinon.spy(wrapper.Document, "addTableOfContents");
-            wrapper.add(new TableOfContents());
+    describe("#addSection", () => {
+        it("should call the underlying document's add", () => {
+            const file = new File();
+            const spy = sinon.spy(file.Document, "add");
+            file.addSection({
+                children: [new TableOfContents()],
+            });
 
             expect(spy.called).to.equal(true);
-        });
-    });
-
-    describe("#createImage", () => {
-        it("should call the underlying document's createImage", () => {
-            const wrapper = new File();
-            const spy = sinon.spy(wrapper.Media, "addMedia");
-            const wrapperSpy = sinon.spy(wrapper.Document, "add");
-            wrapper.createImage("");
-
-            expect(spy.called).to.equal(true);
-            expect(wrapperSpy.called).to.equal(true);
         });
     });
 

@@ -5,11 +5,9 @@ import { Document, Packer, Paragraph } from "../build";
 
 const doc = new Document();
 
-const paragraph = new Paragraph("Hello World").referenceFootnote(1);
-const paragraph2 = new Paragraph("Hello World").referenceFootnote(2);
-
-doc.add(paragraph);
-doc.add(paragraph2);
+doc.addSection({
+    children: [new Paragraph("Hello World").referenceFootnote(1), new Paragraph("Hello World").referenceFootnote(2)],
+});
 
 doc.createFootnote(new Paragraph("Test"));
 doc.createFootnote(new Paragraph("My amazing reference"));

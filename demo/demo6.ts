@@ -3,33 +3,37 @@
 import * as fs from "fs";
 import { Document, HeadingLevel, Packer, Paragraph, TextRun } from "../build";
 
-const doc = new Document(undefined, {
-    top: 0,
-    right: 0,
-    bottom: 0,
-    left: 0,
+const doc = new Document();
+
+doc.addSection({
+    margins: {
+        top: 0,
+        right: 0,
+        bottom: 0,
+        left: 0,
+    },
+    children: [
+        new Paragraph({
+            children: [
+                new TextRun("Hello World"),
+                new TextRun({
+                    text: "Foo bar",
+                    bold: true,
+                }),
+                new TextRun({
+                    text: "Github is the best",
+                    bold: true,
+                }).tab(),
+            ],
+        }),
+        new Paragraph({
+            text: "Hello World",
+            heading: HeadingLevel.HEADING_1,
+        }),
+        new Paragraph("Foo bar"),
+        new Paragraph("Github is the best"),
+    ],
 });
-
-const paragraph = new Paragraph("Hello World");
-const institutionText = new TextRun({
-    text: "Foo bar",
-    bold: true,
-});
-const dateText = new TextRun({
-    text: "Github is the best",
-    bold: true,
-}).tab();
-paragraph.addRun(institutionText);
-paragraph.addRun(dateText);
-
-doc.add(paragraph);
-
-doc.add(new Paragraph({
-    text: "Hello World",
-    heading: HeadingLevel.HEADING_1,
-}));
-doc.add(new Paragraph("Foo bar"));
-doc.add(new Paragraph("Github is the best"));
 
 const packer = new Packer();
 

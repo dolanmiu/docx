@@ -3,13 +3,14 @@
 import * as fs from "fs";
 import { Document, Packer, PageOrientation, Paragraph } from "../build";
 
-const doc = new Document(undefined, {
-    orientation: PageOrientation.LANDSCAPE,
+const doc = new Document();
+
+doc.addSection({
+    size: {
+        orientation: PageOrientation.LANDSCAPE,
+    },
+    children: [new Paragraph("Hello World")],
 });
-
-const paragraph = new Paragraph("Hello World");
-
-doc.add(paragraph);
 
 const packer = new Packer();
 
