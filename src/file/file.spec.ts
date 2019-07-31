@@ -58,8 +58,6 @@ describe("File", () => {
 
             const tree = new Formatter().format(doc.Document.Body);
 
-            console.log(JSON.stringify(tree, null, 2));
-
             expect(tree["w:body"][1]["w:sectPr"][5]["w:headerReference"]._attr["w:type"]).to.equal("first");
             expect(tree["w:body"][1]["w:sectPr"][7]["w:footerReference"]._attr["w:type"]).to.equal("first");
         });

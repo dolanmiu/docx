@@ -1,7 +1,7 @@
 /* tslint:disable:typedef space-before-function-paren */
 import { expect } from "chai";
 
-import { File, Header, Footer } from "file";
+import { File, Footer, Header } from "file";
 
 import { Compiler } from "./next-compiler";
 
