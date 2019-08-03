@@ -1,10 +1,15 @@
 # Text
 
-Paragraphs need `text run` objects. To create text:
+You can add multiple `text runs` in `Paragraphs`. This is the most verbose way of writing a `Paragraph` but it is also the most flexible:
 
 ```js
-var text = new docx.TextRun("My awesome text here for my university dissertation");
-paragraph.addRun(text);
+import { Paragraph, Text } from "docx";
+
+const paragraph = new Paragraph({
+    children: [
+        new TextRun("My awesome text here for my university dissertation"),
+    ],
+});
 ```
 
 Text objects have methods inside which changes the way the text is displayed.

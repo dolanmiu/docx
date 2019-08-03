@@ -27,7 +27,6 @@ export interface IParagraphOptions {
     readonly text?: string;
     readonly border?: IBorderOptions;
     readonly spacing?: ISpacingProperties;
-    readonly runs?: Run[];
     readonly outlineLevel?: number;
     readonly alignment?: AlignmentType;
     readonly heading?: HeadingLevel;
@@ -164,12 +163,6 @@ export class Paragraph extends XmlComponent {
                 this.properties.push(new Style("ListParagraph"));
             }
             this.properties.push(new NumberProperties(options.numbering.num.id, options.numbering.level));
-        }
-
-        if (options.runs) {
-            for (const run of options.runs) {
-                this.root.push(run);
-            }
         }
 
         if (options.children) {

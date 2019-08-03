@@ -2,28 +2,170 @@
 
 > Everything (text, images, graphs etc) in OpenXML is organised in paragraphs.
 
-## Example
+!> Paragraphs requires an understanding of [Sections](usage/sections.md).
 
-You can add more text to the paragraph by doing this:
+You can create `Paragraphs` in the following ways:
+
+### Shorthand
 
 ```js
-var paragraph = new docx.Paragraph(),
+import { Paragraph } from "docx";
+
+var paragraph = new Paragraph("Short hand Hello World");
 ```
 
+### Children Method
+
+This method is useful for adding different `text` with different styles or adding `images` inline.
+
 ```js
-var text = new docx.TextRun("Lorem Ipsum Foo Bar");
-var paragraph = new docx.Paragraph();
-paragraph.addRun(text);
+var paragraph = new Paragraph({
+    children: [new TextRun("Lorem Ipsum Foo Bar"), new TextRun("Hello World")],
+});
 ```
 
+### Explicit
+
 ```js
-var paragraph = new docx.Paragraph("Short hand notation for adding text.");
+var paragraph = new Paragraph({
+    text: "Short hand notation for adding text.",
+});
 ```
 
-After you create the paragraph, you must add the paragraph into the `document`:
+After you create the paragraph, you must add the paragraph into the `document's section`. Learn more about `sections` here:
 
 ```js
-doc.add(paragraph);
+doc.addSection({
+    children: [paragraph],
+});
+```
+
+Or the preferred convension, define the paragraph inside the section and remove the usage of variables:
+
+```js
+doc.addSection({
+    children: [
+        new Paragraph({
+            children: [new TextRun("Lorem Ipsum Foo Bar"), new TextRun("Hello World")],
+        }),
+    ],
+});
+```
+
+## Options
+
+This is the list of options for a paragraph. A detailed explanation is below:
+
+| Property            | Type                                                                                                                | Mandatory? | Possible Values                                                                                            |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------- | ---------- | ---------------------------------------------------------------------------------------------------------- |
+| [text](#text)       | `string`                                                                                                            | Optional   |                                                                                                            |
+| [heading](#heading) | `HeadingLevel`                                                                                                      | Optional   | `HEADING_1`, `HEADING_2`, `HEADING_3`, `HEADING_4`, `HEADING_5`, `HEADING_6`, `TITLE`                      |
+| [border](#border)   | `IBorderOptions`                                                                                                    | Optional   | `top`, `bottom`, `left`, `right`. Each of these are of type IBorderPropertyOptions. Click here for Example |
+| [spacing](#spacing) | `ISpacingProperties`                                                                                                | Optional   | See below for ISpacingProperties                                                                           |
+| outlineLevel        | `number`                                                                                                            | Optional   |                                                                                                            |
+| alignment           | `AlignmentType`                                                                                                     | Optional   |                                                                                                            |
+| heading             | `HeadingLevel`                                                                                                      | Optional   |                                                                                                            |
+| bidirectional       | `boolean`                                                                                                           | Optional   |                                                                                                            |
+| thematicBreak       | `boolean`                                                                                                           | Optional   |                                                                                                            |
+| pageBreakBefore     | `boolean`                                                                                                           | Optional   |                                                                                                            |
+| contextualSpacing   | `boolean`                                                                                                           | Optional   |                                                                                                            |
+| indent              | `IIndentAttributesProperties`                                                                                       | Optional   |                                                                                                            |
+| keepLines           | `boolean`                                                                                                           | Optional   |                                                                                                            |
+| keepNext            | `boolean`                                                                                                           | Optional   |                                                                                                            |
+| children            | `(TextRun or PictureRun or Hyperlink)[]`                                                                            | Optional   |                                                                                                            |
+| style               | `string`                                                                                                            | Optional   |                                                                                                            |
+| tabStop             | `{ left?: ITabStopOptions; right?: ITabStopOptions; maxRight?: { leader: LeaderType; }; center?: ITabStopOptions }` | Optional   |                                                                                                            |
+| bullet              | `{ level: number }`                                                                                                 | Optional   |                                                                                                            |
+| numbering           | `{ num: Num; level: number; custom?: boolean }`                                                                     | Optional   |                                                                                                            |
+
+## Text
+
+This is the text in a paragraph. You can also add text by using the `Paragraph` shorthand (mentioned above) or adding `children`.
+
+**Example:**
+
+```ts
+const paragraph = new Paragraph({
+    text: "Hello World",
+});
+```
+
+## Heading
+
+**Example:**
+
+Setting a Heading 1 paragraph with "Hello World" as it's text:
+
+```ts
+const paragraph = new Paragraph({
+    text: "Hello World",
+    heading: HeadingLevel.HEADING_1,
+});
+```
+
+## Border
+
+Add borders to a `Paragraph`. Good for making the `Paragraph` stand out
+
+#### IBorderPropertyOptions
+
+`top`, `bottom`, `left`, `right` of the border
+
+| Property | Type     | Notes    |
+| -------- | -------- | -------- |
+| color    | `string` | Required |
+| space    | `number` | Required |
+| value    | `string` | Required |
+| size     | `number` | Required |
+
+**Example:**
+
+Add border on the top and the bottom of the paragraph
+
+```ts
+const paragraph = new Paragraph({
+    text: "I have borders on my top and bottom sides!",
+    border: {
+        top: {
+            color: "auto",
+            space: 1,
+            value: "single",
+            size: 6,
+        },
+        bottom: {
+            color: "auto",
+            space: 1,
+            value: "single",
+            size: 6,
+        },
+    },
+});
+```
+
+## Spacing
+
+Adding spacing between paragraphs
+
+### ISpacingProperties
+
+| Property | Type     | Notes    |
+| -------- | -------- | -------- |
+| after    | `number` | Optional |
+| before   | `number` | Optional |
+| line     | `number` | Optional |
+| lineRule | `string` | Optional |
+
+**Example:**
+
+Add spacing before the paragraph:
+
+```ts
+const paragraph = new Paragraph({
+    text: "line with contextual spacing",
+    spacing: {
+        before: 200,
+    },
+});
 ```
 
 ## Styles
@@ -32,20 +174,15 @@ To create styles, please refer to the styling Wiki: https://github.com/dolanmiu/
 
 ![Word 2013 Styles menu](http://content.gcflearnfree.org/topics/233/style_apply_choose.png "Word 2013 Styles menu")
 
-### Heading1 - Heading5
+### Headings and titles
 
 ```js
-paragraph.heading1();
-paragraph.heading2();
-paragraph.heading3();
-paragraph.heading4();
-paragraph.heading5();
-```
+import { HeadingLevel, Paragraph } from "docx";
 
-### Title
-
-```js
-paragraph.title();
+const paragraph = new Paragraph({
+    text: "Hello World",
+    heading: HeadingLevel.TITLE,
+});
 ```
 
 ## Text Alignment
@@ -71,7 +208,11 @@ paragraph.justified();
 ### Example
 
 ```js
-paragraph.heading1().center();
+const paragraph = new Paragraph({
+    text: "Hello World",
+    heading: HeadingLevel.HEADING_1,
+    alignment: AlignmentType.CENTER,
+});
 ```
 
 The above will create a `heading 1` which is `centered`.

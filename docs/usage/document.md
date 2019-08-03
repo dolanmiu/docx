@@ -33,7 +33,7 @@ const doc = new docx.Document({
 
 You can mix and match whatever properties you want, or provide no properties.
 
-### units for positioning
+### Units for positioning
 
 Various parts of the API require positioning arguments. The units are "20ths of a point" from the [OOXML](http://officeopenxml.com/index.php) specification.
 See [Lars Corneliussen's blog post](https://startbigthinksmall.wordpress.com/2010/01/04/points-inches-and-emus-measuring-units-in-office-open-xml/) for more information and how to convert units.

@@ -3,7 +3,7 @@
 To create a `floating` image on top of text:
 
 ```ts
-doc.createImage(fs.readFileSync("./demo/images/pizza.gif"), 200, 200, {
+Media.addImage(doc, fs.readFileSync("./demo/images/pizza.gif"), 200, 200, {
     floating: {
         horizontalPosition: {
             offset: 1014400,
@@ -18,7 +18,7 @@ doc.createImage(fs.readFileSync("./demo/images/pizza.gif"), 200, 200, {
 By default with no arguments, its an `inline` image:
 
 ```ts
-doc.createImage(fs.readFileSync("./demo/images/parrots.bmp"));
+Media.addImage(doc, fs.readFileSync("./demo/images/parrots.bmp"));
 ```
 
 You can also create images manually and add them later:
@@ -35,7 +35,7 @@ Adding images can be done in two ways:
 1. Call the `createImage` method to add the image directly into the `document`:
 
     ```js
-    doc.createImage([IMAGE_BUFFER], [WIDTH], [HEIGHT], [POSITION_OPTIONS]);
+    Media.addImage(doc, [IMAGE_BUFFER], [WIDTH], [HEIGHT], [POSITION_OPTIONS]);
     ```
 
 2. Create an `image` first, then add it into the `document`:
@@ -141,7 +141,7 @@ wrap: {
 For example:
 
 ```ts
-doc.createImage(fs.readFileSync("./demo/images/pizza.gif"), 200, 200, {
+Media.addImage(doc, fs.readFileSync("./demo/images/pizza.gif"), 200, 200, {
     floating: {
         horizontalPosition: {
             offset: 2014400,
@@ -184,7 +184,7 @@ margins: {
 For example:
 
 ```ts
-doc.createImage(fs.readFileSync("./demo/images/pizza.gif"), 200, 200, {
+Media.addImage(doc, fs.readFileSync("./demo/images/pizza.gif"), 200, 200, {
     floating: {
         horizontalPosition: {
             offset: 2014400,

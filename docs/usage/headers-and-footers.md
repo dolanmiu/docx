@@ -1,5 +1,7 @@
 # Headers and Footers
 
+!> Headers and Footers requires an understanding of [Sections](usage/sections.md).
+
 ## Example
 
 Creating Headers and footers is simple. Access the `Header` and `Footer` by doing so like this:
