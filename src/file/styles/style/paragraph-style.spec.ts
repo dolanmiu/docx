@@ -375,6 +375,32 @@ describe("ParagraphStyle", () => {
             });
         });
 
+        it("#highlight", () => {
+            const style = new ParagraphStyle("myStyleId").highlight("005599");
+            const tree = new Formatter().format(style);
+            expect(tree).to.deep.equal({
+                "w:style": [
+                    { _attr: { "w:type": "paragraph", "w:styleId": "myStyleId" } },
+                    {
+                        "w:rPr": [{ "w:highlight ": { _attr: { "w:val": "005599" } } }],
+                    },
+                ],
+            });
+        });
+
+        it("#shadow", () => {
+            const style = new ParagraphStyle("myStyleId").shadow("pct10", "00FFFF", "FF0000");
+            const tree = new Formatter().format(style);
+            expect(tree).to.deep.equal({
+                "w:style": [
+                    { _attr: { "w:type": "paragraph", "w:styleId": "myStyleId" } },
+                    {
+                        "w:rPr": [{ "w:shd ": { _attr: { "w:val": "pct10", "w:fill": "00FFFF", "w:color": "FF0000" } } }],
+                    },
+                ],
+            });
+        });
+
         describe("#underline", () => {
             it("should set underline to 'single' if no arguments are given", () => {
                 const style = new ParagraphStyle("myStyleId").underline();

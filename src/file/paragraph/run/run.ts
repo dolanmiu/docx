@@ -7,9 +7,13 @@ import {
     BoldComplexScript,
     Color,
     DoubleStrike,
+    Highlight,
+    HighlightComplexScript,
     Italics,
     ItalicsComplexScript,
     RightToLeft,
+    Shadow,
+    ShadowComplexScript,
     Size,
     SizeComplexScript,
     Strike,
@@ -129,6 +133,18 @@ export class Run extends XmlComponent {
 
     public style(styleId: string): Run {
         this.properties.push(new Style(styleId));
+        return this;
+    }
+
+    public highlight(color: string): Run {
+        this.properties.push(new Highlight(color));
+        this.properties.push(new HighlightComplexScript(color));
+        return this;
+    }
+
+    public shadow(value: string, fill: string, color: string): Run {
+        this.properties.push(new Shadow(value, fill, color));
+        this.properties.push(new ShadowComplexScript(value, fill, color));
         return this;
     }
 }
