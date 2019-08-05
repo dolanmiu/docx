@@ -68,7 +68,7 @@
     "@types/webpack": "^4.4.24",
     "awesome-typescript-loader": "^3.4.1",
     "chai": "^3.5.0",
-    "docsify": "^4.9.1",
+    "docsify-cli": "^4.3.0",
     "glob": "^7.1.2",
     "istanbul-instrumenter-loader": "^3.0.1",
     "jszip": "^3.1.5",
