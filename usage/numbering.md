@@ -67,7 +67,7 @@ First you need to create a new numbering container class and use it to
 create your abstract numbering style, define your levels, and create
 your concrete numbering style:
 
-```js
+```ts
 const numbering = new docx.Numbering();
 
 const abstractNum = numbering.createAbstractNumbering();
@@ -81,7 +81,7 @@ const concrete = numbering.createConcreteNumbering(abstractNum);
 You can then apply your concrete style to paragraphs using the
 `setNumbering` method:
 
-```js
+```ts
 topLevelP.setNumbering(concrete, 0);
 subP.setNumbering(concrete, 1);
 subSubP.setNumbering(concrete, 2);
@@ -90,7 +90,7 @@ subSubP.setNumbering(concrete, 2);
 Finally, you need to let your exporter know about your numbering
 styles when you're ready to render the document:
 
-```js
+```ts
 const packer = new Packer(doc, undefined, undefined, numbering);
 packer.pack(myOutput);
 ```

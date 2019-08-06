@@ -12,7 +12,7 @@ The complete documentation can be found [here](https://www.ecma-international.or
 
 All you need to do is create a `TableOfContents` object and assign it to the document.
 
-```js
+```ts
 const toc = new TableOfContents("Summary", {
     hyperlink: true,
     headingStyleRange: "1-5",
@@ -47,7 +47,7 @@ Here is the list of all options that you can use to generate your tables of cont
 
 ## Examples
 
-```js
+```ts
 // Let's define the options for generate a TOC for heading 1-5 and MySpectacularStyle,
 // making the entries be hyperlinks for the paragraph
 const toc = new TableOfContents("Summary", {
@@ -58,15 +58,15 @@ const toc = new TableOfContents("Summary", {
 
 doc.addTableOfContents(toc);
 
-doc.addParagraph(new Paragraph("Header #1").heading1().pageBreakBefore());
-doc.addParagraph(new Paragraph("I'm a little text, very nicely written.'"));
+doc.add(new Paragraph("Header #1").heading1().pageBreakBefore());
+doc.add(new Paragraph("I'm a little text, very nicely written.'"));
 
-doc.addParagraph(new Paragraph("Header #2").heading1().pageBreakBefore());
-doc.addParagraph(new Paragraph("I'm another text very nicely written.'"));
-doc.addParagraph(new Paragraph("Header #2.1").heading2());
-doc.addParagraph(new Paragraph("I'm another text very nicely written.'"));
+doc.add(new Paragraph("Header #2").heading1().pageBreakBefore());
+doc.add(new Paragraph("I'm another text very nicely written.'"));
+doc.add(new Paragraph("Header #2.1").heading2());
+doc.add(new Paragraph("I'm another text very nicely written.'"));
 
-doc.addParagraph(new Paragraph("My Spectacular Style #1").style("MySpectacularStyle").pageBreakBefore());
+doc.add(new Paragraph("My Spectacular Style #1").style("MySpectacularStyle").pageBreakBefore());
 ```
 
 ### Complete example

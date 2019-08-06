@@ -87,12 +87,6 @@
 								<li class="tsd-kind-constructor tsd-parent-kind-class tsd-is-overwrite tsd-is-external"><a href="paragraphproperties.html#constructor" class="tsd-kind-icon">constructor</a></li>
 							</ul>
 						</section>
-						<section class="tsd-index-section tsd-is-external">
-							<h3>Properties</h3>
-							<ul class="tsd-index-list">
-								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-external"><a href="paragraphproperties.html#paragraphborder" class="tsd-kind-icon">paragraph<wbr>Border</a></li>
-							</ul>
-						</section>
 						<section class="tsd-index-section tsd-is-inherited tsd-is-external">
 							<h3>Accessors</h3>
 							<ul class="tsd-index-list">
@@ -103,7 +97,6 @@
 							<h3>Methods</h3>
 							<ul class="tsd-index-list">
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-external"><a href="paragraphproperties.html#addchildelement" class="tsd-kind-icon">add<wbr>Child<wbr>Element</a></li>
-								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-external"><a href="paragraphproperties.html#createborder" class="tsd-kind-icon">create<wbr>Border</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-external"><a href="paragraphproperties.html#delete" class="tsd-kind-icon">delete</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-overwrite tsd-is-inherited tsd-is-external"><a href="paragraphproperties.html#prepforxml" class="tsd-kind-icon">prep<wbr>For<wbr>Xml</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-external"><a href="paragraphproperties.html#push" class="tsd-kind-icon">push</a></li>
@@ -118,32 +111,25 @@
 					<a name="constructor" class="tsd-anchor"></a>
 					<h3>constructor</h3>
 					<ul class="tsd-signatures tsd-kind-constructor tsd-parent-kind-class tsd-is-overwrite tsd-is-external">
-						<li class="tsd-signature tsd-kind-icon">new <wbr>Paragraph<wbr>Properties<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="paragraphproperties.html" class="tsd-signature-type">ParagraphProperties</a></li>
+						<li class="tsd-signature tsd-kind-icon">new <wbr>Paragraph<wbr>Properties<span class="tsd-signature-symbol">(</span>options<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">IParagraphPropertiesOptions</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="paragraphproperties.html" class="tsd-signature-type">ParagraphProperties</a></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<p>Overrides <a href="xmlcomponent.html">XmlComponent</a>.<a href="xmlcomponent.html#constructor">constructor</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/2a5e372/src/file/paragraph/properties.ts#L6">file/paragraph/properties.ts:6</a></li>
+									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/629e6a5/src/file/paragraph/properties.ts#L10">file/paragraph/properties.ts:10</a></li>
 								</ul>
 							</aside>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>options: <span class="tsd-signature-type">IParagraphPropertiesOptions</span></h5>
+								</li>
+							</ul>
 							<h4 class="tsd-returns-title">Returns <a href="paragraphproperties.html" class="tsd-signature-type">ParagraphProperties</a></h4>
 						</li>
 					</ul>
-				</section>
-			</section>
-			<section class="tsd-panel-group tsd-member-group tsd-is-external">
-				<h2>Properties</h2>
-				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-external">
-					<a name="paragraphborder" class="tsd-anchor"></a>
-					<h3>paragraph<wbr>Border</h3>
-					<div class="tsd-signature tsd-kind-icon">paragraph<wbr>Border<span class="tsd-signature-symbol">:</span> <a href="border.html" class="tsd-signature-type">Border</a></div>
-					<aside class="tsd-sources">
-						<ul>
-							<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/2a5e372/src/file/paragraph/properties.ts#L6">file/paragraph/properties.ts:6</a></li>
-						</ul>
-					</aside>
 				</section>
 			</section>
 			<section class="tsd-panel-group tsd-member-group tsd-is-inherited tsd-is-external">
@@ -159,7 +145,7 @@
 							<aside class="tsd-sources">
 								<p>Inherited from <a href="basexmlcomponent.html">BaseXmlComponent</a>.<a href="basexmlcomponent.html#isdeleted">IsDeleted</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/2a5e372/src/file/xml-components/base.ts#L14">file/xml-components/base.ts:14</a></li>
+									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/629e6a5/src/file/xml-components/base.ts#L14">file/xml-components/base.ts:14</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">boolean</span></h4>
@@ -180,7 +166,7 @@
 							<aside class="tsd-sources">
 								<p>Inherited from <a href="xmlcomponent.html">XmlComponent</a>.<a href="xmlcomponent.html#addchildelement">addChildElement</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/2a5e372/src/file/xml-components/xml-component.ts#L43">file/xml-components/xml-component.ts:43</a></li>
+									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/629e6a5/src/file/xml-components/xml-component.ts#L43">file/xml-components/xml-component.ts:43</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -190,23 +176,6 @@
 								</li>
 							</ul>
 							<h4 class="tsd-returns-title">Returns <a href="xmlcomponent.html" class="tsd-signature-type">XmlComponent</a></h4>
-						</li>
-					</ul>
-				</section>
-				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-external">
-					<a name="createborder" class="tsd-anchor"></a>
-					<h3>create<wbr>Border</h3>
-					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-external">
-						<li class="tsd-signature tsd-kind-icon">create<wbr>Border<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
-					</ul>
-					<ul class="tsd-descriptions">
-						<li class="tsd-description">
-							<aside class="tsd-sources">
-								<ul>
-									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/2a5e372/src/file/paragraph/properties.ts#L13">file/paragraph/properties.ts:13</a></li>
-								</ul>
-							</aside>
-							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
 						</li>
 					</ul>
 				</section>
@@ -221,7 +190,7 @@
 							<aside class="tsd-sources">
 								<p>Inherited from <a href="xmlcomponent.html">XmlComponent</a>.<a href="xmlcomponent.html#delete">delete</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/2a5e372/src/file/xml-components/xml-component.ts#L49">file/xml-components/xml-component.ts:49</a></li>
+									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/629e6a5/src/file/xml-components/xml-component.ts#L49">file/xml-components/xml-component.ts:49</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
@@ -240,7 +209,7 @@
 								<p>Inherited from <a href="ignoreifemptyxmlcomponent.html">IgnoreIfEmptyXmlComponent</a>.<a href="ignoreifemptyxmlcomponent.html#prepforxml">prepForXml</a></p>
 								<p>Overrides <a href="xmlcomponent.html">XmlComponent</a>.<a href="xmlcomponent.html#prepforxml">prepForXml</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/2a5e372/src/file/xml-components/xml-component.ts#L55">file/xml-components/xml-component.ts:55</a></li>
+									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/629e6a5/src/file/xml-components/xml-component.ts#L55">file/xml-components/xml-component.ts:55</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-returns-title">Returns <a href="../interfaces/ixmlableobject.html" class="tsd-signature-type">IXmlableObject</a>
@@ -260,7 +229,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/2a5e372/src/file/paragraph/properties.ts#L17">file/paragraph/properties.ts:17</a></li>
+									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/629e6a5/src/file/paragraph/properties.ts#L19">file/paragraph/properties.ts:19</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -293,17 +262,11 @@
 							<li class=" tsd-kind-constructor tsd-parent-kind-class tsd-is-overwrite tsd-is-external">
 								<a href="paragraphproperties.html#constructor" class="tsd-kind-icon">constructor</a>
 							</li>
-							<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-external">
-								<a href="paragraphproperties.html#paragraphborder" class="tsd-kind-icon">paragraph<wbr>Border</a>
-							</li>
 							<li class=" tsd-kind-get-signature tsd-parent-kind-class tsd-is-inherited tsd-is-external">
 								<a href="paragraphproperties.html#isdeleted" class="tsd-kind-icon">Is<wbr>Deleted</a>
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-external">
 								<a href="paragraphproperties.html#addchildelement" class="tsd-kind-icon">add<wbr>Child<wbr>Element</a>
-							</li>
-							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-external">
-								<a href="paragraphproperties.html#createborder" class="tsd-kind-icon">create<wbr>Border</a>
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-external">
 								<a href="paragraphproperties.html#delete" class="tsd-kind-icon">delete</a>

@@ -2,7 +2,7 @@
 
 *   Include documentation reference(s) at the top of each file:
 
-    ```js
+    ```ts
     // http://officeopenxml.com/WPdocument.php
     ```
 
@@ -44,7 +44,7 @@ Try to make method parameters of the outside API accept primitives, or `json` ob
 This is so that:
 
 1. Imports are much cleaner for the end user, no need for:
-   ```js
+   ```ts
    import { ChildComponent } from "./my-feature/sub-component/deeper/.../my-deep.component";
    ```
 
@@ -55,7 +55,7 @@ This is so that:
 
 `TableFloatProperties` is a class. The outside world would have to `new` up the object, and inject it in like so:
 
-```js
+```ts
     public float(tableFloatProperties: TableFloatProperties): Table
 ```
 
@@ -67,7 +67,7 @@ This is so that:
 
 `ITableFloatOptions` is an interface for a JSON of primitives. The end user would need to pass in a json object and not need to worry about the internals:
 
-```js
+```ts
     public float(tableFloatOptions: ITableFloatOptions): Table
 ```
 
@@ -81,7 +81,7 @@ This is just a guideline, and the rules can sometimes be broken.
 
 *   Use `create` if the method `new`'s up an element inside:
 
-    ```js
+    ```ts
     public createParagraph() {
         const paragraph = new Paragraph();
         this.root.push(paragraph);
@@ -91,8 +91,8 @@ This is just a guideline, and the rules can sometimes be broken.
 *   Use `add` if you add the element into the method as a parameter.
     *Note:* This may look like its breaking the previous guideline, but it has semantically different meanings. The previous one is using data to construct an object, whereas this one is simply adding elements into the document:
 
-    ```js
-    public addParagraph(paragraph: Paragraph) {
+    ```ts
+    public add(paragraph: Paragraph) {
         this.root.push(paragraph);
     }
     ```
@@ -101,7 +101,7 @@ This is just a guideline, and the rules can sometimes be broken.
 
 Getters and Setters are done with a capital letter like so:
 
-```js
+```ts
 public get Level() {
    ...
 }
@@ -111,13 +111,13 @@ There is no performance advantage by doing this. It means we don't need to prefi
 
 **Do not:**
 
-```js
+```ts
 private get _level: string;
 ```
 
 **Do**
 
-```js
+```ts
 private get level: string;
 ```
 
@@ -158,13 +158,13 @@ Do not use `type`, but rather use `Interfaces`. `type` cannot be extended, and a
 
 **Do not:**
 
-```js
+```ts
 type RelationshipFileInfo = { id: number, target: string };
 ```
 
 **Do:**
 
-```js
+```ts
 interface IRelationshipFileInfo {
     id: number;
     target: string;
@@ -177,13 +177,13 @@ To take full advantage of TypeScript's typing system, its best to use `string en
 
 **Do not:**
 
-```js
+```ts
 type WeaponType = "bow" | "sword" | "wand";
 ```
 
 **Do:**
 
-```js
+```ts
 enum WeaponType = {
     BOW = "bow",
     SWORD = "sword",
@@ -196,7 +196,7 @@ enum WeaponType = {
 I am not sure where these habits in software development come from, but I do not believe it is beneficial:
 
 **Do not:**
-```js
+```ts
 readdy // misspelling
 perm // abbreviation
 conf // abbreviation
@@ -206,7 +206,7 @@ colour // U.K. English
 ```
 
 **Do:**
-```js
+```ts
 ready
 permission
 config
@@ -231,7 +231,7 @@ Please write a test of every file you make and suffix it with `.spec.ts`.
 
 Here is a template of a test:
 
-```js
+```ts
 import { assert } from "chai";
 
 describe("ClassName", () => {

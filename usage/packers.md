@@ -10,7 +10,7 @@ Packers in `version 4` and above are now one single `Packer`. It works in both a
 
 This will return a NodeJS `Buffer`. If this is used in the browser, it will return a `UInt8Array` instead.
 
-```js
+```ts
 const packer = new docx.Packer();
 
 packer.toBuffer(doc).then((buffer) => {
@@ -20,7 +20,7 @@ packer.toBuffer(doc).then((buffer) => {
 
 ### Export as a `base64` string
 
-```js
+```ts
 const packer = new docx.Packer();
 
 packer.toBase64String(doc).then((string) => {
@@ -32,7 +32,7 @@ packer.toBase64String(doc).then((string) => {
 
 This is useful if you want to send it as an downloadable in a browser environment.
 
-```js
+```ts
 const packer = new docx.Packer();
 
 packer.toBlob(doc).then((blob) => {
@@ -45,7 +45,7 @@ packer.toBlob(doc).then((blob) => {
 
 ### File System Packer
 
-```js
+```ts
 const docx = require("docx");
 
 const doc = new docx.Document();
@@ -56,7 +56,7 @@ exporter.pack("My Document");
 
 ### Buffer Packer
 
-```js
+```ts
 const docx = require("docx");
 
 const doc = new docx.Document();
@@ -68,7 +68,7 @@ const buffer = exporter.pack();
 
 Creates a `node` `Readable` stream
 
-```js
+```ts
 const docx = require("docx");
 
 const doc = new docx.Document();
@@ -88,7 +88,7 @@ I used the express exporter in my [website](http://www.dolan.bio).
 
 The recommended way is to use the `StreamPacker` and handle the `express` magic outside of the library:
 
-```js
+```ts
 const docx = require("docx");
 
 const doc = new docx.Document();
@@ -107,7 +107,7 @@ where `res` is the response object obtained through the Express router. It is th
 
 You can export your word document as a PDF file like so:
 
-```js
+```ts
 const exporter = new docx.LocalPacker(doc);
 exporter.packPdf("My Document");
 
