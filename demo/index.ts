@@ -19,13 +19,16 @@ prompt.start();
 
 prompt.get(schema, (_, result) => {
     const demoNumber = result.number;
-    const filePath = `./demo/demo${demoNumber}.ts`;
+    const files = fs.readdirSync("./demo").filter((fn) => fn.startsWith(demoNumber));
 
-    if (!fs.existsSync(filePath)) {
-        console.error(`demo${demoNumber} does not exist: ${filePath}`);
+    if (files.length === 0) {
+        console.error(`demo number ${demoNumber} does not exist`);
         return;
     }
-    console.log(`Running demo ${demoNumber}`);
+
+    const filePath = `./demo/${files[0]}`;
+
+    console.log(`Running demo ${demoNumber}: ${files[0]}`);
     if (shelljs.exec(`npm run ts-node -- ${filePath}`).code === 0) {
         console.log("Document created successfully");
     } else {

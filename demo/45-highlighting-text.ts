@@ -1,5 +1,7 @@
+// Highlighting text
+// Import from 'docx' rather than '../build' if you install from npm
 import * as fs from "fs";
-import { AlignmentType, Document, Header, Packer, Paragraph, ShadingType, TextRun } from "../build";
+import { AlignmentType, Document, Header, Packer, Paragraph, TextRun } from "../build";
 
 const doc = new Document();
 
@@ -18,11 +20,7 @@ doc.addSection({
                             font: {
                                 name: "Garamond",
                             },
-                            shadow: {
-                                type: ShadingType.REVERSE_DIAGONAL_STRIPE,
-                                color: "00FFFF",
-                                fill: "FF0000",
-                            },
+                            highlight: "yellow",
                         }),
                     ],
                 }),

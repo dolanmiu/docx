@@ -15,7 +15,7 @@ import {
     Italics,
     ItalicsComplexScript,
     RightToLeft,
-    Shadow,
+    Shading,
     ShadowComplexScript,
     Size,
     SizeComplexScript,
@@ -51,7 +51,7 @@ export interface IRunOptions {
         readonly hint?: string;
     };
     readonly highlight?: string;
-    readonly shadow?: {
+    readonly shading?: {
         readonly type: ShadingType;
         readonly fill: string;
         readonly color: string;
@@ -130,9 +130,9 @@ export class Run extends XmlComponent {
             this.properties.push(new HighlightComplexScript(options.highlight));
         }
 
-        if (options.shadow) {
-            this.properties.push(new Shadow(options.shadow.type, options.shadow.fill, options.shadow.color));
-            this.properties.push(new ShadowComplexScript(options.shadow.type, options.shadow.fill, options.shadow.color));
+        if (options.shading) {
+            this.properties.push(new Shading(options.shading.type, options.shading.fill, options.shading.color));
+            this.properties.push(new ShadowComplexScript(options.shading.type, options.shading.fill, options.shading.color));
         }
     }
 

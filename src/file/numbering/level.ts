@@ -205,7 +205,7 @@ export class LevelBase extends XmlComponent {
     }
 
     public shadow(value: string, fill: string, color: string): Level {
-        this.addRunProperty(new formatting.Shadow(value, fill, color));
+        this.addRunProperty(new formatting.Shading(value, fill, color));
         return this;
     }
     // --------------------- Paragraph formatting ------------------------ //

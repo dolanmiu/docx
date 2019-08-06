@@ -201,7 +201,7 @@ export class HighlightComplexScript extends XmlComponent {
     }
 }
 
-export class Shadow extends XmlComponent {
+export class Shading extends XmlComponent {
     constructor(value: string, fill: string, color: string) {
         super("w:shd");
         this.root.push(

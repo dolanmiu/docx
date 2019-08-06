@@ -119,7 +119,7 @@ export class ParagraphStyle extends Style {
     }
 
     public shadow(value: string, fill: string, color: string): ParagraphStyle {
-        return this.addRunProperty(new formatting.Shadow(value, fill, color));
+        return this.addRunProperty(new formatting.Shading(value, fill, color));
     }
 
     // --------------------- Paragraph formatting ------------------------ //
