@@ -115,6 +115,54 @@ describe("Run", () => {
         });
     });
 
+    describe("#highlight()", () => {
+        it("it should add highlight to the properties", () => {
+            run.highlight("005599");
+            const tree = new Formatter().format(run);
+            expect(tree).to.deep.equal({
+                "w:r": [
+                    {
+                        "w:rPr": [
+                            { "w:highlight": { _attr: { "w:val": "005599" } } },
+                            {
+                                "w:highlightCs": {
+                                    _attr: {
+                                        "w:val": "005599",
+                                    },
+                                },
+                            },
+                        ],
+                    },
+                ],
+            });
+        });
+    });
+
+    describe("#shadow()", () => {
+        it("it should add shadow to the properties", () => {
+            run.shadow("pct10", "00FFFF", "FF0000");
+            const tree = new Formatter().format(run);
+            expect(tree).to.deep.equal({
+                "w:r": [
+                    {
+                        "w:rPr": [
+                            { "w:shd": { _attr: { "w:val": "pct10", "w:fill": "00FFFF", "w:color": "FF0000" } } },
+                            {
+                                "w:shdCs": {
+                                    _attr: {
+                                        "w:val": "pct10",
+                                        "w:fill": "00FFFF",
+                                        "w:color": "FF0000",
+                                    },
+                                },
+                            },
+                        ],
+                    },
+                ],
+            });
+        });
+    });
+
     describe("#break()", () => {
         it("it should add break to the run", () => {
             run.break();
