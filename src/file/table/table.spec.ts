@@ -9,6 +9,7 @@ import { Table } from "./table";
 import { RelativeHorizontalPosition, RelativeVerticalPosition, TableAnchorType } from "./table-properties";
 
 import { EMPTY_OBJECT } from "file/xml-components";
+import { TableLayoutType } from "./table-properties/table-layout";
 
 const DEFAULT_TABLE_PROPERTIES = {
     "w:tblCellMar": [
@@ -134,6 +135,22 @@ describe("Table", () => {
                 ],
             });
         });
+
+        it("sets the table to fixed width layout", () => {
+            const table = new Table({
+                rows: 1,
+                columns: 1,
+                layout: TableLayoutType.FIXED,
+            });
+            const tree = new Formatter().format(table);
+            expect(tree)
+                .to.have.property("w:tbl")
+                .which.is.an("array")
+                .with.has.length.at.least(1);
+            expect(tree["w:tbl"][0]).to.deep.equal({
+                "w:tblPr": [DEFAULT_TABLE_PROPERTIES, BORDERS, WIDTHS, { "w:tblLayout": { _attr: { "w:type": "fixed" } } }],
+            });
+        });
     });
 
     describe("#getRow and Row#getCell", () => {
@@ -146,19 +163,19 @@ describe("Table", () => {
             table
                 .getRow(0)
                 .getCell(0)
-                .addParagraph(new Paragraph("A1"));
+                .add(new Paragraph("A1"));
             table
                 .getRow(0)
                 .getCell(1)
-                .addParagraph(new Paragraph("B1"));
+                .add(new Paragraph("B1"));
             table
                 .getRow(1)
                 .getCell(0)
-                .addParagraph(new Paragraph("A2"));
+                .add(new Paragraph("A2"));
             table
                 .getRow(1)
                 .getCell(1)
-                .addParagraph(new Paragraph("B2"));
+                .add(new Paragraph("B2"));
             const tree = new Formatter().format(table);
             const cell = (c) => ({
                 "w:tc": [
@@ -204,10 +221,10 @@ describe("Table", () => {
                 rows: 2,
                 columns: 2,
             });
-            table.getCell(0, 0).addParagraph(new Paragraph("A1"));
-            table.getCell(0, 1).addParagraph(new Paragraph("B1"));
-            table.getCell(1, 0).addParagraph(new Paragraph("A2"));
-            table.getCell(1, 1).addParagraph(new Paragraph("B2"));
+            table.getCell(0, 0).add(new Paragraph("A1"));
+            table.getCell(0, 1).add(new Paragraph("B1"));
+            table.getCell(1, 0).add(new Paragraph("A2"));
+            table.getCell(1, 1).add(new Paragraph("B2"));
             const tree = new Formatter().format(table);
             const cell = (c) => ({
                 "w:tc": [
@@ -252,23 +269,6 @@ describe("Table", () => {
     //     });
     // });
 
-    describe("#setFixedWidthLayout", () => {
-        it("sets the table to fixed width layout", () => {
-            const table = new Table({
-                rows: 1,
-                columns: 1,
-            }).setFixedWidthLayout();
-            const tree = new Formatter().format(table);
-            expect(tree)
-                .to.have.property("w:tbl")
-                .which.is.an("array")
-                .with.has.length.at.least(1);
-            expect(tree["w:tbl"][0]).to.deep.equal({
-                "w:tblPr": [DEFAULT_TABLE_PROPERTIES, BORDERS, WIDTHS, { "w:tblLayout": { _attr: { "w:type": "fixed" } } }],
-            });
-        });
-    });
-
     describe("Cell", () => {
         describe("#prepForXml", () => {
             it("inserts a paragraph at the end of the cell if it is empty", () => {
@@ -295,7 +295,7 @@ describe("Table", () => {
                     rows: 1,
                     columns: 1,
                 });
-                parentTable.getCell(0, 0).addTable(
+                parentTable.getCell(0, 0).add(
                     new Table({
                         rows: 1,
                         columns: 1,
@@ -322,7 +322,7 @@ describe("Table", () => {
                     rows: 1,
                     columns: 1,
                 });
-                parentTable.getCell(0, 0).addParagraph(new Paragraph("Hello"));
+                parentTable.getCell(0, 0).add(new Paragraph("Hello"));
                 const tree = new Formatter().format(parentTable);
                 expect(tree)
                     .to.have.property("w:tbl")
@@ -336,37 +336,6 @@ describe("Table", () => {
                     "w:tc": [
                         {
                             "w:p": [{ "w:r": [{ "w:t": [{ _attr: { "xml:space": "preserve" } }, "Hello"] }] }],
-                        },
-                    ],
-                });
-            });
-        });
-
-        describe("#createParagraph", () => {
-            it("inserts a new paragraph in the cell", () => {
-                const table = new Table({
-                    rows: 1,
-                    columns: 1,
-                });
-                const para = table.getCell(0, 0).createParagraph("Test paragraph");
-                expect(para).to.be.an.instanceof(Paragraph);
-                const tree = new Formatter().format(table);
-                expect(tree)
-                    .to.have.property("w:tbl")
-                    .which.is.an("array");
-                const row = tree["w:tbl"].find((x) => x["w:tr"]);
-                expect(row).not.to.be.undefined;
-                expect(row["w:tr"])
-                    .to.be.an("array")
-                    .which.has.length.at.least(1);
-                expect(row["w:tr"].find((x) => x["w:tc"])).to.deep.equal({
-                    "w:tc": [
-                        {
-                            "w:p": [
-                                {
-                                    "w:r": [{ "w:t": [{ _attr: { "xml:space": "preserve" } }, "Test paragraph"] }],
-                                },
-                            ],
                         },
                     ],
                 });

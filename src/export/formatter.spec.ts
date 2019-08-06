@@ -14,23 +14,28 @@ describe("Formatter", () => {
 
     describe("#format()", () => {
         it("should format simple paragraph", () => {
-            const paragraph = new file.Paragraph();
+            const paragraph = new file.Paragraph("");
             const newJson = formatter.format(paragraph);
             assert.isDefined(newJson["w:p"]);
         });
 
         it("should remove xmlKeys", () => {
-            const paragraph = new file.Paragraph();
+            const paragraph = new file.Paragraph("");
             const newJson = formatter.format(paragraph);
             const stringifiedJson = JSON.stringify(newJson);
             assert(stringifiedJson.indexOf("xmlKeys") < 0);
         });
 
         it("should format simple paragraph with bold text", () => {
-            const paragraph = new file.Paragraph();
-            paragraph.addRun(new file.TextRun("test").bold());
+            const paragraph = new file.Paragraph("");
+            paragraph.addRun(
+                new file.TextRun({
+                    text: "test",
+                    bold: true,
+                }),
+            );
             const newJson = formatter.format(paragraph);
-            assert.isDefined(newJson["w:p"][0]["w:r"][0]["w:rPr"][0]["w:b"]._attr["w:val"]);
+            assert.isDefined(newJson["w:p"][1]["w:r"][0]["w:rPr"][0]["w:b"]._attr["w:val"]);
         });
 
         it("should format attributes (rsidSect)", () => {
@@ -58,7 +63,7 @@ describe("Formatter", () => {
         });
 
         it("should should change 'p' tag into 'w:p' tag", () => {
-            const paragraph = new file.Paragraph();
+            const paragraph = new file.Paragraph("");
             const newJson = formatter.format(paragraph);
             assert.isDefined(newJson["w:p"]);
         });

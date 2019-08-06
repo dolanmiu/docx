@@ -64,6 +64,6 @@ export class CharacterStyle extends Style {
     }
 
     public shadow(value: string, fill: string, color: string): CharacterStyle {
-        return this.addRunProperty(new formatting.Shadow(value, fill, color));
+        return this.addRunProperty(new formatting.Shading(value, fill, color));
     }
 }

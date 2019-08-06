@@ -3,6 +3,7 @@ import { expect } from "chai";
 import { Formatter } from "export/formatter";
 
 import { WidthType } from "../table-cell";
+import { TableLayoutType } from "./table-layout";
 import { TableProperties } from "./table-properties";
 
 describe("TableProperties", () => {
@@ -35,9 +36,10 @@ describe("TableProperties", () => {
         });
     });
 
-    describe("#setFixedWidthLayout", () => {
+    describe("#setLayout", () => {
         it("sets the table to fixed width layout", () => {
-            const tp = new TableProperties().setFixedWidthLayout();
+            const tp = new TableProperties();
+            tp.setLayout(TableLayoutType.FIXED);
             const tree = new Formatter().format(tp);
             expect(tree).to.deep.equal({
                 "w:tblPr": [{ "w:tblLayout": { _attr: { "w:type": "fixed" } } }],

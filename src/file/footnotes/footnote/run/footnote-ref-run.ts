@@ -3,9 +3,10 @@ import { FootnoteRef } from "./footnote-ref";
 
 export class FootnoteRefRun extends Run {
     constructor() {
-        super();
+        super({
+            style: "FootnoteReference",
+        });
 
-        this.style("FootnoteReference");
         this.root.push(new FootnoteRef());
     }
 }

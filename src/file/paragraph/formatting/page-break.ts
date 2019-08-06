@@ -15,7 +15,7 @@ class Break extends XmlComponent {
 
 export class PageBreak extends Run {
     constructor() {
-        super();
+        super({});
         this.root.push(new Break());
     }
 }

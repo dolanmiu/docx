@@ -3,7 +3,7 @@ import { Seperator } from "./seperator";
 
 export class SeperatorRun extends Run {
     constructor() {
-        super();
+        super({});
 
         this.root.push(new Seperator());
     }

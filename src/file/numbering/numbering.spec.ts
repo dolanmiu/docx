@@ -175,9 +175,9 @@ describe("AbstractNumbering", () => {
                                     "w:bottom": {
                                         _attr: {
                                             "w:color": "auto",
-                                            "w:space": "1",
+                                            "w:space": 1,
                                             "w:val": "single",
-                                            "w:sz": "6",
+                                            "w:sz": 6,
                                         },
                                     },
                                 },

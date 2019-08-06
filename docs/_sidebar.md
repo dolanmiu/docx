@@ -9,6 +9,7 @@
 * Usage
 
 	* [Document](usage/document.md)
+    * [Sections](usage/sections.md)
 	* [Paragraph](usage/paragraph.md)
 	* [Text](usage/text.md)
 	* [Image](usage/images.md)

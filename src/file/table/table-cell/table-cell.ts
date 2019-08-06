@@ -8,6 +8,10 @@ import { ITableCellMarginOptions } from "./cell-margin/table-cell-margins";
 import { TableCellBorders, VerticalAlign, VMergeType } from "./table-cell-components";
 import { TableCellProperties } from "./table-cell-properties";
 
+export interface ITableCellOptions {
+    readonly shading?: ITableShadingAttributesProperties;
+}
+
 export class TableCell extends XmlComponent {
     private readonly properties: TableCellProperties;
 
@@ -18,29 +22,19 @@ export class TableCell extends XmlComponent {
         this.root.push(this.properties);
     }
 
-    public addParagraph(content: Paragraph): TableCell {
-        this.root.push(content);
-        return this;
-    }
+    public add(item: Paragraph | Table): TableCell {
+        this.root.push(item);
 
-    public addTable(content: Table): TableCell {
-        this.root.push(content);
         return this;
     }
 
     public prepForXml(): IXmlableObject | undefined {
         // Cells must end with a paragraph
         if (!(this.root[this.root.length - 1] instanceof Paragraph)) {
-            this.createParagraph();
+            const para = new Paragraph({});
+            this.add(para);
         }
         return super.prepForXml();
-    }
-
-    public createParagraph(text?: string): Paragraph {
-        const para = new Paragraph(text);
-        this.addParagraph(para);
-
-        return para;
     }
 
     public setVerticalAlign(type: VerticalAlign): TableCell {

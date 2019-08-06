@@ -1,22 +1,16 @@
 import { assert, expect } from "chai";
 
 import { Formatter } from "export/formatter";
-import * as file from "file";
-
-import { Numbering } from "../numbering";
-import { LeaderType } from "./formatting";
-
 import { EMPTY_OBJECT } from "file/xml-components";
 
+import { Numbering } from "../numbering";
+import { AlignmentType, HeadingLevel, LeaderType } from "./formatting";
+import { Paragraph } from "./paragraph";
+
 describe("Paragraph", () => {
-    let paragraph: file.Paragraph;
-
-    beforeEach(() => {
-        paragraph = new file.Paragraph();
-    });
-
     describe("#constructor()", () => {
         it("should create valid JSON", () => {
+            const paragraph = new Paragraph("");
             const stringifiedJson = JSON.stringify(paragraph);
 
             try {
@@ -28,28 +22,18 @@ describe("Paragraph", () => {
         });
 
         it("should create have valid properties", () => {
+            const paragraph = new Paragraph("");
             const stringifiedJson = JSON.stringify(paragraph);
             const newJson = JSON.parse(stringifiedJson);
             assert.equal(newJson.root[0].rootKey, "w:pPr");
         });
     });
 
-    describe("#createTextRun", () => {
-        it("should add a new run to the paragraph and return it", () => {
-            const run = paragraph.createTextRun("this is a test run");
-            expect(run).to.be.instanceof(file.TextRun);
-            const tree = new Formatter().format(paragraph)["w:p"];
-            expect(tree)
-                .to.be.an("array")
-                .which.includes({
-                    "w:r": [{ "w:t": [{ _attr: { "xml:space": "preserve" } }, "this is a test run"] }],
-                });
-        });
-    });
-
     describe("#heading1()", () => {
         it("should add heading style to JSON", () => {
-            paragraph.heading1();
+            const paragraph = new Paragraph({
+                heading: HeadingLevel.HEADING_1,
+            });
             const tree = new Formatter().format(paragraph);
             expect(tree).to.deep.equal({
                 "w:p": [
@@ -63,7 +47,9 @@ describe("Paragraph", () => {
 
     describe("#heading2()", () => {
         it("should add heading style to JSON", () => {
-            paragraph.heading2();
+            const paragraph = new Paragraph({
+                heading: HeadingLevel.HEADING_2,
+            });
             const tree = new Formatter().format(paragraph);
             expect(tree).to.deep.equal({
                 "w:p": [
@@ -77,7 +63,9 @@ describe("Paragraph", () => {
 
     describe("#heading3()", () => {
         it("should add heading style to JSON", () => {
-            paragraph.heading3();
+            const paragraph = new Paragraph({
+                heading: HeadingLevel.HEADING_3,
+            });
             const tree = new Formatter().format(paragraph);
             expect(tree).to.deep.equal({
                 "w:p": [
@@ -91,7 +79,9 @@ describe("Paragraph", () => {
 
     describe("#heading4()", () => {
         it("should add heading style to JSON", () => {
-            paragraph.heading4();
+            const paragraph = new Paragraph({
+                heading: HeadingLevel.HEADING_4,
+            });
             const tree = new Formatter().format(paragraph);
             expect(tree).to.deep.equal({
                 "w:p": [
@@ -105,7 +95,9 @@ describe("Paragraph", () => {
 
     describe("#heading5()", () => {
         it("should add heading style to JSON", () => {
-            paragraph.heading5();
+            const paragraph = new Paragraph({
+                heading: HeadingLevel.HEADING_5,
+            });
             const tree = new Formatter().format(paragraph);
             expect(tree).to.deep.equal({
                 "w:p": [
@@ -119,7 +111,9 @@ describe("Paragraph", () => {
 
     describe("#heading6()", () => {
         it("should add heading style to JSON", () => {
-            paragraph.heading6();
+            const paragraph = new Paragraph({
+                heading: HeadingLevel.HEADING_6,
+            });
             const tree = new Formatter().format(paragraph);
             expect(tree).to.deep.equal({
                 "w:p": [
@@ -133,7 +127,9 @@ describe("Paragraph", () => {
 
     describe("#title()", () => {
         it("should add title style to JSON", () => {
-            paragraph.title();
+            const paragraph = new Paragraph({
+                heading: HeadingLevel.TITLE,
+            });
             const tree = new Formatter().format(paragraph);
             expect(tree).to.deep.equal({
                 "w:p": [
@@ -147,7 +143,9 @@ describe("Paragraph", () => {
 
     describe("#center()", () => {
         it("should add center alignment to JSON", () => {
-            paragraph.center();
+            const paragraph = new Paragraph({
+                alignment: AlignmentType.CENTER,
+            });
             const tree = new Formatter().format(paragraph);
             expect(tree).to.deep.equal({
                 "w:p": [
@@ -161,7 +159,9 @@ describe("Paragraph", () => {
 
     describe("#left()", () => {
         it("should add left alignment to JSON", () => {
-            paragraph.left();
+            const paragraph = new Paragraph({
+                alignment: AlignmentType.LEFT,
+            });
             const tree = new Formatter().format(paragraph);
             expect(tree).to.deep.equal({
                 "w:p": [
@@ -175,7 +175,9 @@ describe("Paragraph", () => {
 
     describe("#right()", () => {
         it("should add right alignment to JSON", () => {
-            paragraph.right();
+            const paragraph = new Paragraph({
+                alignment: AlignmentType.RIGHT,
+            });
             const tree = new Formatter().format(paragraph);
             expect(tree).to.deep.equal({
                 "w:p": [
@@ -189,7 +191,9 @@ describe("Paragraph", () => {
 
     describe("#start()", () => {
         it("should add start alignment to JSON", () => {
-            paragraph.start();
+            const paragraph = new Paragraph({
+                alignment: AlignmentType.START,
+            });
             const tree = new Formatter().format(paragraph);
             expect(tree).to.deep.equal({
                 "w:p": [
@@ -203,7 +207,9 @@ describe("Paragraph", () => {
 
     describe("#end()", () => {
         it("should add end alignment to JSON", () => {
-            paragraph.end();
+            const paragraph = new Paragraph({
+                alignment: AlignmentType.END,
+            });
             const tree = new Formatter().format(paragraph);
             expect(tree).to.deep.equal({
                 "w:p": [
@@ -217,7 +223,9 @@ describe("Paragraph", () => {
 
     describe("#distribute()", () => {
         it("should add distribute alignment to JSON", () => {
-            paragraph.distribute();
+            const paragraph = new Paragraph({
+                alignment: AlignmentType.DISTRIBUTE,
+            });
             const tree = new Formatter().format(paragraph);
             expect(tree).to.deep.equal({
                 "w:p": [
@@ -231,7 +239,9 @@ describe("Paragraph", () => {
 
     describe("#justified()", () => {
         it("should add justified alignment to JSON", () => {
-            paragraph.justified();
+            const paragraph = new Paragraph({
+                alignment: AlignmentType.JUSTIFIED,
+            });
             const tree = new Formatter().format(paragraph);
             expect(tree).to.deep.equal({
                 "w:p": [
@@ -245,7 +255,11 @@ describe("Paragraph", () => {
 
     describe("#maxRightTabStop()", () => {
         it("should add maxRightTabStop to JSON", () => {
-            paragraph.maxRightTabStop();
+            const paragraph = new Paragraph({
+                tabStop: {
+                    maxRight: {},
+                },
+            });
             const tree = new Formatter().format(paragraph);
             expect(tree).to.deep.equal({
                 "w:p": [
@@ -272,7 +286,14 @@ describe("Paragraph", () => {
 
     describe("#leftTabStop()", () => {
         it("should add leftTabStop to JSON", () => {
-            paragraph.leftTabStop(100, LeaderType.HYPHEN);
+            const paragraph = new Paragraph({
+                tabStop: {
+                    left: {
+                        position: 100,
+                        leader: LeaderType.HYPHEN,
+                    },
+                },
+            });
             const tree = new Formatter().format(paragraph);
             expect(tree).to.deep.equal({
                 "w:p": [
@@ -300,7 +321,14 @@ describe("Paragraph", () => {
 
     describe("#rightTabStop()", () => {
         it("should add rightTabStop to JSON", () => {
-            paragraph.rightTabStop(100, LeaderType.DOT);
+            const paragraph = new Paragraph({
+                tabStop: {
+                    right: {
+                        position: 100,
+                        leader: LeaderType.DOT,
+                    },
+                },
+            });
             const tree = new Formatter().format(paragraph);
             expect(tree).to.deep.equal({
                 "w:p": [
@@ -328,7 +356,14 @@ describe("Paragraph", () => {
 
     describe("#centerTabStop()", () => {
         it("should add centerTabStop to JSON", () => {
-            paragraph.centerTabStop(100, LeaderType.MIDDLE_DOT);
+            const paragraph = new Paragraph({
+                tabStop: {
+                    center: {
+                        position: 100,
+                        leader: LeaderType.MIDDLE_DOT,
+                    },
+                },
+            });
             const tree = new Formatter().format(paragraph);
             expect(tree).to.deep.equal({
                 "w:p": [
@@ -356,7 +391,9 @@ describe("Paragraph", () => {
 
     describe("#contextualSpacing()", () => {
         it("should add contextualSpacing to JSON, and set 1 if true", () => {
-            paragraph.contextualSpacing(true);
+            const paragraph = new Paragraph({
+                contextualSpacing: true,
+            });
             const tree = new Formatter().format(paragraph);
             expect(tree).to.deep.equal({
                 "w:p": [
@@ -366,23 +403,13 @@ describe("Paragraph", () => {
                 ],
             });
         });
-
-        it("should add contextualSpacing to JSON, and set 0 if false", () => {
-            paragraph.contextualSpacing(false);
-            const tree = new Formatter().format(paragraph);
-            expect(tree).to.deep.equal({
-                "w:p": [
-                    {
-                        "w:pPr": [{ "w:contextualSpacing": { _attr: { "w:val": 0 } } }],
-                    },
-                ],
-            });
-        });
     });
 
     describe("#thematicBreak()", () => {
         it("should add thematic break to JSON", () => {
-            paragraph.thematicBreak();
+            const paragraph = new Paragraph({
+                thematicBreak: true,
+            });
             const tree = new Formatter().format(paragraph);
             expect(tree).to.deep.equal({
                 "w:p": [
@@ -395,8 +422,8 @@ describe("Paragraph", () => {
                                             _attr: {
                                                 "w:val": "single",
                                                 "w:color": "auto",
-                                                "w:space": "1",
-                                                "w:sz": "6",
+                                                "w:space": 1,
+                                                "w:sz": 6,
                                             },
                                         },
                                     },
@@ -411,9 +438,22 @@ describe("Paragraph", () => {
 
     describe("#paragraphBorders()", () => {
         it("should add a left and right border to a paragraph", () => {
-            paragraph.createBorder();
-            paragraph.Borders.addLeftBorder();
-            paragraph.Borders.addRightBorder();
+            const paragraph = new Paragraph({
+                border: {
+                    left: {
+                        color: "auto",
+                        space: 1,
+                        value: "single",
+                        size: 6,
+                    },
+                    right: {
+                        color: "auto",
+                        space: 1,
+                        value: "single",
+                        size: 6,
+                    },
+                },
+            });
             const tree = new Formatter().format(paragraph);
             expect(tree).to.deep.equal({
                 "w:p": [
@@ -425,8 +465,8 @@ describe("Paragraph", () => {
                                         "w:left": {
                                             _attr: {
                                                 "w:color": "auto",
-                                                "w:space": "1",
-                                                "w:sz": "6",
+                                                "w:space": 1,
+                                                "w:sz": 6,
                                                 "w:val": "single",
                                             },
                                         },
@@ -435,8 +475,8 @@ describe("Paragraph", () => {
                                         "w:right": {
                                             _attr: {
                                                 "w:color": "auto",
-                                                "w:space": "1",
-                                                "w:sz": "6",
+                                                "w:space": 1,
+                                                "w:sz": 6,
                                                 "w:val": "single",
                                             },
                                         },
@@ -452,6 +492,7 @@ describe("Paragraph", () => {
 
     describe("#pageBreak()", () => {
         it("should add page break to JSON", () => {
+            const paragraph = new Paragraph({});
             paragraph.pageBreak();
             const tree = new Formatter().format(paragraph);
             expect(tree).to.deep.equal({
@@ -466,7 +507,9 @@ describe("Paragraph", () => {
 
     describe("#pageBreakBefore()", () => {
         it("should add page break before to JSON", () => {
-            paragraph.pageBreakBefore();
+            const paragraph = new Paragraph({
+                pageBreakBefore: true,
+            });
             const tree = new Formatter().format(paragraph);
             expect(tree).to.deep.equal({
                 "w:p": [
@@ -484,7 +527,11 @@ describe("Paragraph", () => {
 
     describe("#bullet()", () => {
         it("should default to 0 indent level if no bullet was specified", () => {
-            paragraph.bullet();
+            const paragraph = new Paragraph({
+                bullet: {
+                    level: 0,
+                },
+            });
             const tree = new Formatter().format(paragraph);
             expect(tree)
                 .to.have.property("w:p")
@@ -500,7 +547,11 @@ describe("Paragraph", () => {
         });
 
         it("should add list paragraph style to JSON", () => {
-            paragraph.bullet(0);
+            const paragraph = new Paragraph({
+                bullet: {
+                    level: 0,
+                },
+            });
             const tree = new Formatter().format(paragraph);
             expect(tree)
                 .to.have.property("w:p")
@@ -516,7 +567,11 @@ describe("Paragraph", () => {
         });
 
         it("it should add numbered properties", () => {
-            paragraph.bullet(1);
+            const paragraph = new Paragraph({
+                bullet: {
+                    level: 1,
+                },
+            });
             const tree = new Formatter().format(paragraph);
             expect(tree)
                 .to.have.property("w:p")
@@ -539,7 +594,12 @@ describe("Paragraph", () => {
             numberedAbstract.createLevel(0, "lowerLetter", "%1)", "start");
             const letterNumbering = numbering.createConcreteNumbering(numberedAbstract);
 
-            paragraph.setNumbering(letterNumbering, 0);
+            const paragraph = new Paragraph({
+                numbering: {
+                    num: letterNumbering,
+                    level: 0,
+                },
+            });
             const tree = new Formatter().format(paragraph);
             expect(tree)
                 .to.have.property("w:p")
@@ -560,7 +620,12 @@ describe("Paragraph", () => {
             numberedAbstract.createLevel(0, "lowerLetter", "%1)", "start");
             const letterNumbering = numbering.createConcreteNumbering(numberedAbstract);
 
-            paragraph.setNumbering(letterNumbering, 0);
+            const paragraph = new Paragraph({
+                numbering: {
+                    num: letterNumbering,
+                    level: 0,
+                },
+            });
             const tree = new Formatter().format(paragraph);
             expect(tree).to.deep.equal({
                 "w:p": [
@@ -582,7 +647,9 @@ describe("Paragraph", () => {
 
     describe("#style", () => {
         it("should set the paragraph style to the given styleId", () => {
-            paragraph.style("myFancyStyle");
+            const paragraph = new Paragraph({
+                style: "myFancyStyle",
+            });
             const tree = new Formatter().format(paragraph);
             expect(tree).to.deep.equal({
                 "w:p": [
@@ -596,7 +663,9 @@ describe("Paragraph", () => {
 
     describe("#indent", () => {
         it("should set the paragraph indent to the given values", () => {
-            paragraph.indent({ left: 720 });
+            const paragraph = new Paragraph({
+                indent: { left: 720 },
+            });
             const tree = new Formatter().format(paragraph);
             expect(tree).to.deep.equal({
                 "w:p": [
@@ -610,7 +679,9 @@ describe("Paragraph", () => {
 
     describe("#spacing", () => {
         it("should set the paragraph spacing to the given values", () => {
-            paragraph.spacing({ before: 90, line: 50 });
+            const paragraph = new Paragraph({
+                spacing: { before: 90, line: 50 },
+            });
             const tree = new Formatter().format(paragraph);
             expect(tree).to.deep.equal({
                 "w:p": [
@@ -624,7 +695,9 @@ describe("Paragraph", () => {
 
     describe("#keepLines", () => {
         it("should set the paragraph keepLines sub-component", () => {
-            paragraph.keepLines();
+            const paragraph = new Paragraph({
+                keepLines: true,
+            });
             const tree = new Formatter().format(paragraph);
             expect(tree).to.deep.equal({
                 "w:p": [{ "w:pPr": [{ "w:keepLines": EMPTY_OBJECT }] }],
@@ -634,7 +707,9 @@ describe("Paragraph", () => {
 
     describe("#keepNext", () => {
         it("should set the paragraph keepNext sub-component", () => {
-            paragraph.keepNext();
+            const paragraph = new Paragraph({
+                keepNext: true,
+            });
             const tree = new Formatter().format(paragraph);
             expect(tree).to.deep.equal({
                 "w:p": [{ "w:pPr": [{ "w:keepNext": EMPTY_OBJECT }] }],
@@ -644,7 +719,9 @@ describe("Paragraph", () => {
 
     describe("#bidirectional", () => {
         it("set paragraph right to left layout", () => {
-            paragraph.bidirectional();
+            const paragraph = new Paragraph({
+                bidirectional: true,
+            });
             const tree = new Formatter().format(paragraph);
             expect(tree).to.deep.equal({
                 "w:p": [{ "w:pPr": [{ "w:bidi": EMPTY_OBJECT }] }],
@@ -654,12 +731,14 @@ describe("Paragraph", () => {
 
     describe("#outlineLevel", () => {
         it("should set paragraph outline level to the given value", () => {
-            paragraph.outlineLevel("0");
+            const paragraph = new Paragraph({
+                outlineLevel: 0,
+            });
             const tree = new Formatter().format(paragraph);
             expect(tree).to.deep.equal({
                 "w:p": [
                     {
-                        "w:pPr": [{ "w:outlineLvl": { _attr: { "w:val": "0" } } }],
+                        "w:pPr": [{ "w:outlineLvl": { _attr: { "w:val": 0 } } }],
                     },
                 ],
             });

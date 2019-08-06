@@ -35,8 +35,8 @@ describe("ThematicBreak", () => {
                         "w:bottom": {
                             _attr: {
                                 "w:color": "auto",
-                                "w:space": "1",
-                                "w:sz": "6",
+                                "w:space": 1,
+                                "w:sz": 6,
                                 "w:val": "single",
                             },
                         },

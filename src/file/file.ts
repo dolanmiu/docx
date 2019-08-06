@@ -3,19 +3,18 @@ import { ContentTypes } from "./content-types/content-types";
 import { CoreProperties, IPropertiesOptions } from "./core-properties";
 import { Document } from "./document";
 import {
-    FooterReference,
     FooterReferenceType,
-    HeaderReference,
     HeaderReferenceType,
-    IHeaderFooterGroup,
+    IPageSizeAttributes,
     SectionPropertiesOptions,
 } from "./document/body/section-properties";
-import { IDrawingOptions } from "./drawing";
+import { IPageMarginAttributes } from "./document/body/section-properties/page-margin/page-margin-attributes";
 import { IFileProperties } from "./file-properties";
 import { FooterWrapper, IDocumentFooter } from "./footer-wrapper";
 import { FootNotes } from "./footnotes";
+import { Footer, Header } from "./header";
 import { HeaderWrapper, IDocumentHeader } from "./header-wrapper";
-import { Image, Media } from "./media";
+import { Media } from "./media";
 import { Numbering } from "./numbering";
 import { Bookmark, Hyperlink, Paragraph } from "./paragraph";
 import { Relationships } from "./relationships";
@@ -24,12 +23,31 @@ import { Settings } from "./settings";
 import { Styles } from "./styles";
 import { ExternalStylesFactory } from "./styles/external-styles-factory";
 import { DefaultStylesFactory } from "./styles/factory";
-import { ITableOptions, Table } from "./table";
+import { Table } from "./table";
 import { TableOfContents } from "./table-of-contents";
+
+export interface ISectionOptions {
+    readonly headers?: {
+        readonly default?: Header;
+        readonly first?: Header;
+        readonly even?: Header;
+    };
+    readonly footers?: {
+        readonly default?: Footer;
+        readonly first?: Footer;
+        readonly even?: Footer;
+    };
+    readonly size?: IPageSizeAttributes;
+    readonly margins?: IPageMarginAttributes;
+    readonly properties?: SectionPropertiesOptions;
+    readonly children: Array<Paragraph | Table | TableOfContents>;
+}
 
 export class File {
     // tslint:disable-next-line:readonly-keyword
     private currentRelationshipId: number = 1;
+    // tslint:disable-next-line:readonly-keyword
+    private styles: Styles;
 
     private readonly document: Document;
     private readonly headers: IDocumentHeader[] = [];
@@ -43,8 +61,6 @@ export class File {
     private readonly settings: Settings;
     private readonly contentTypes: ContentTypes;
     private readonly appProperties: AppProperties;
-    // tslint:disable-next-line:readonly-keyword
-    private styles: Styles;
 
     constructor(
         options: IPropertiesOptions = {
@@ -52,8 +68,8 @@ export class File {
             revision: "1",
             lastModifiedBy: "Un-named",
         },
-        sectionPropertiesOptions: SectionPropertiesOptions = {},
         fileProperties: IFileProperties = {},
+        sections: ISectionOptions[] = [],
     ) {
         this.coreProperties = new CoreProperties(options);
         this.numbering = new Numbering();
@@ -62,6 +78,8 @@ export class File {
         this.appProperties = new AppProperties();
         this.footNotes = new FootNotes();
         this.contentTypes = new ContentTypes();
+        this.document = new Document();
+        this.settings = new Settings();
 
         this.media = fileProperties.template && fileProperties.template.media ? fileProperties.template.media : new Media();
 
@@ -90,66 +108,21 @@ export class File {
             for (const templateHeader of fileProperties.template.headers) {
                 this.addHeaderToDocument(templateHeader.header, templateHeader.type);
             }
-        } else {
-            this.createHeader();
         }
 
         if (fileProperties.template && fileProperties.template.footers) {
             for (const templateFooter of fileProperties.template.footers) {
                 this.addFooterToDocument(templateFooter.footer, templateFooter.type);
             }
-        } else {
-            this.createFooter();
         }
 
-        const newSectionPropertiesOptions = {
-            ...sectionPropertiesOptions,
-            headers: this.groupHeaders(this.headers, sectionPropertiesOptions.headers),
-            footers: this.groupFooters(this.footers, sectionPropertiesOptions.footers),
-        };
+        for (const section of sections) {
+            this.document.Body.addSection(section.properties ? section.properties : {});
 
-        this.document = new Document(newSectionPropertiesOptions);
-        this.settings = new Settings();
-    }
-
-    public addTableOfContents(toc: TableOfContents): File {
-        this.document.addTableOfContents(toc);
-        return this;
-    }
-
-    public addParagraph(paragraph: Paragraph): File {
-        this.document.addParagraph(paragraph);
-        return this;
-    }
-
-    public createParagraph(text?: string): Paragraph {
-        return this.document.createParagraph(text);
-    }
-
-    public addTable(table: Table): File {
-        this.document.addTable(table);
-        return this;
-    }
-
-    public createTable(options: ITableOptions): Table {
-        return this.document.createTable(options);
-    }
-
-    public addImage(image: Image): File {
-        this.document.addParagraph(image.Paragraph);
-        return this;
-    }
-
-    public createImage(
-        buffer: Buffer | string | Uint8Array | ArrayBuffer,
-        width?: number,
-        height?: number,
-        drawingOptions?: IDrawingOptions,
-    ): Image {
-        const image = Media.addImage(this, buffer, width, height, drawingOptions);
-        this.document.addParagraph(image.Paragraph);
-
-        return image;
+            for (const child of section.children) {
+                this.document.add(child);
+            }
+        }
     }
 
     public createHyperlink(link: string, text?: string): Hyperlink {
@@ -172,104 +145,69 @@ export class File {
         return hyperlink;
     }
 
-    public createBookmark(name: string, text?: string): Bookmark {
-        const newText = text === undefined ? name : text;
-        const bookmark = new Bookmark(name, newText, this.docRelationships.RelationshipCount);
-        return bookmark;
+    public createBookmark(name: string, text: string = name): Bookmark {
+        return new Bookmark(name, text, this.docRelationships.RelationshipCount);
     }
 
-    public addSection(sectionPropertiesOptions: SectionPropertiesOptions): void {
-        this.document.Body.addSection(sectionPropertiesOptions);
+    public addSection({
+        headers = { default: new Header() },
+        footers = { default: new Header() },
+        margins = {},
+        size = {},
+        properties,
+        children,
+    }: ISectionOptions): void {
+        this.document.Body.addSection({
+            ...properties,
+            headers: {
+                default: headers.default ? this.createHeader(headers.default) : this.createHeader(new Header()),
+                first: headers.first ? this.createHeader(headers.first) : undefined,
+                even: headers.even ? this.createHeader(headers.even) : undefined,
+            },
+            footers: {
+                default: footers.default ? this.createFooter(footers.default) : this.createFooter(new Footer()),
+                first: footers.first ? this.createFooter(footers.first) : undefined,
+                even: footers.even ? this.createFooter(footers.even) : undefined,
+            },
+            ...margins,
+            ...size,
+        });
+
+        for (const child of children) {
+            this.document.add(child);
+        }
     }
 
     public createFootnote(paragraph: Paragraph): void {
         this.footNotes.createFootNote(paragraph);
     }
 
-    public createHeader(): HeaderWrapper {
-        const header = new HeaderWrapper(this.media, this.currentRelationshipId++);
-        this.addHeaderToDocument(header);
-        return header;
-    }
-
-    public createFooter(): FooterWrapper {
-        const footer = new FooterWrapper(this.media, this.currentRelationshipId++);
-        this.addFooterToDocument(footer);
-        return footer;
-    }
-
-    public createFirstPageHeader(): HeaderWrapper {
-        const headerWrapper = this.createHeader();
-
-        this.document.Body.DefaultSection.addChildElement(
-            new HeaderReference({
-                headerType: HeaderReferenceType.FIRST,
-                headerId: headerWrapper.Header.ReferenceId,
-            }),
-        );
-
-        return headerWrapper;
-    }
-
-    public createEvenPageHeader(): HeaderWrapper {
-        const headerWrapper = this.createHeader();
-
-        this.document.Body.DefaultSection.addChildElement(
-            new HeaderReference({
-                headerType: HeaderReferenceType.EVEN,
-                headerId: headerWrapper.Header.ReferenceId,
-            }),
-        );
-
-        return headerWrapper;
-    }
-
-    public createFirstPageFooter(): FooterWrapper {
-        const footerWrapper = this.createFooter();
-
-        this.document.Body.DefaultSection.addChildElement(
-            new FooterReference({
-                footerType: FooterReferenceType.FIRST,
-                footerId: footerWrapper.Footer.ReferenceId,
-            }),
-        );
-
-        return footerWrapper;
-    }
-
-    public createEvenPageFooter(): FooterWrapper {
-        const footerWrapper = this.createFooter();
-
-        this.document.Body.DefaultSection.addChildElement(
-            new FooterReference({
-                footerType: FooterReferenceType.EVEN,
-                footerId: footerWrapper.Footer.ReferenceId,
-            }),
-        );
-
-        return footerWrapper;
-    }
-
-    public getFooterByReferenceNumber(refId: number): FooterWrapper {
-        const entry = this.footers.map((item) => item.footer).find((h) => h.Footer.ReferenceId === refId);
-        if (entry) {
-            return entry;
-        }
-        throw new Error(`There is no footer with given reference id ${refId}`);
-    }
-
-    public getHeaderByReferenceNumber(refId: number): HeaderWrapper {
-        const entry = this.headers.map((item) => item.header).find((h) => h.Header.ReferenceId === refId);
-        if (entry) {
-            return entry;
-        }
-        throw new Error(`There is no header with given reference id ${refId}`);
-    }
-
     public verifyUpdateFields(): void {
         if (this.document.getTablesOfContents().length) {
             this.settings.addUpdateFields();
         }
+    }
+
+    private createHeader(header: Header): HeaderWrapper {
+        const wrapper = new HeaderWrapper(this.media, this.currentRelationshipId++);
+
+        for (const child of header.options.children) {
+            wrapper.add(child);
+        }
+
+        this.addHeaderToDocument(wrapper);
+        return wrapper;
+    }
+
+    private createFooter(footer: Footer): FooterWrapper {
+        const wrapper = new FooterWrapper(this.media, this.currentRelationshipId++);
+
+        for (const child of footer.options.children) {
+            wrapper.add(child);
+        }
+
+        this.addFooterToDocument(wrapper);
+        return wrapper;
     }
 
     private addHeaderToDocument(header: HeaderWrapper, type: HeaderReferenceType = HeaderReferenceType.DEFAULT): void {
@@ -331,66 +269,6 @@ export class File {
         );
     }
 
-    private groupHeaders(headers: IDocumentHeader[], group: IHeaderFooterGroup<HeaderWrapper> = {}): IHeaderFooterGroup<HeaderWrapper> {
-        let newGroup = group;
-
-        for (const header of headers) {
-            switch (header.type) {
-                case HeaderReferenceType.FIRST:
-                    newGroup = {
-                        ...newGroup,
-                        first: header.header,
-                    };
-                    break;
-                case HeaderReferenceType.EVEN:
-                    newGroup = {
-                        ...newGroup,
-                        even: header.header,
-                    };
-                    break;
-                case HeaderReferenceType.DEFAULT:
-                default:
-                    newGroup = {
-                        ...newGroup,
-                        default: header.header,
-                    };
-                    break;
-            }
-        }
-
-        return newGroup;
-    }
-
-    private groupFooters(footers: IDocumentFooter[], group: IHeaderFooterGroup<FooterWrapper> = {}): IHeaderFooterGroup<FooterWrapper> {
-        let newGroup = group;
-
-        for (const footer of footers) {
-            switch (footer.type) {
-                case FooterReferenceType.FIRST:
-                    newGroup = {
-                        ...newGroup,
-                        first: footer.footer,
-                    };
-                    break;
-                case FooterReferenceType.EVEN:
-                    newGroup = {
-                        ...newGroup,
-                        even: footer.footer,
-                    };
-                    break;
-                case FooterReferenceType.DEFAULT:
-                default:
-                    newGroup = {
-                        ...newGroup,
-                        default: footer.footer,
-                    };
-                    break;
-            }
-        }
-
-        return newGroup;
-    }
-
     public get Document(): Document {
         return this.document;
     }
@@ -423,16 +301,8 @@ export class File {
         return this.fileRelationships;
     }
 
-    public get Header(): HeaderWrapper {
-        return this.headers[0].header;
-    }
-
     public get Headers(): HeaderWrapper[] {
         return this.headers.map((item) => item.header);
-    }
-
-    public get Footer(): FooterWrapper {
-        return this.footers[0].footer;
     }
 
     public get Footers(): FooterWrapper[] {

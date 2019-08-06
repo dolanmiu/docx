@@ -1,10 +1,15 @@
-# Text
+# Text Runs
 
-Paragraphs need `text run` objects. To create text:
+!> TextRuns requires an understanding of [Paragraphs](usage/paragraph.md).
 
-```js
-var text = new docx.TextRun("My awesome text here for my university dissertation");
-paragraph.addRun(text);
+You can add multiple `text runs` in `Paragraphs`. This is the most verbose way of writing a `Paragraph` but it is also the most flexible:
+
+```ts
+import { Paragraph, TextRun } from "docx";
+
+const paragraph = new Paragraph({
+    children: [new TextRun("My awesome text here for my university dissertation"), new TextRun("Foo Bar")],
+});
 ```
 
 Text objects have methods inside which changes the way the text is displayed.
@@ -15,55 +20,87 @@ More info [here](https://english.stackexchange.com/questions/97081/what-is-the-t
 
 ### Bold
 
-```js
-text.bold();
+```ts
+const text = new TextRun({
+    text: "Foo Bar",
+    bold: true,
+});
 ```
 
 ### Italics
 
-```js
-text.italics();
+```ts
+const text = new TextRun({
+    text: "Foo Bar",
+    italics: true,
+});
 ```
 
 ### Underline
 
-```js
-text.underline();
+Underline has a few options
+
+#### Options
+
+| Property | Type            | Notes    | Possible Values                                                                                                                                                           |
+| -------- | --------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| type     | `UnderlineType` | Optional | SINGLE, WORD, DOUBLE, THICK, DOTTED, DOTTEDHEAV, DASH, DASHEDHEAV, DASHLONG, DASHLONGHEAV, DOTDASH, DASHDOTHEAVY, DOTDOTDAS, DASHDOTDOTHEAVY, WAVE, WAVYHEAVY, WAVYDOUBLE |
+| color    | `string`        | Optional | Color Hex values                                                                                                                                                          |
+
+**Example:**
+
+```ts
+const text = new TextRun({
+    text: "and then underlined ",
+    underline: {
+        type: UnderlineType.DOUBLE,
+        color: "990011",
+    },
+});
+```
+
+To do a simple vanilla underline:
+
+```ts
+const text = new TextRun({
+    text: "and then underlined ",
+    underline: {},
+});
 ```
 
 ### Strike through
 
-```js
+```ts
 text.strike();
 ```
 
 ### Double strike through
 
-```js
+```ts
 text.doubleStrike();
 ```
 
 ### Superscript
 
-```js
+```ts
 text.superScript();
 ```
 
 ### Subscript
 
-```js
+```ts
 text.subScript();
 ```
 
 ### All Capitals
 
-```js
+```ts
 text.allCaps();
 ```
 
 ### Small Capitals
 
-```js
+```ts
 text.smallCaps();
 ```
 
@@ -71,7 +108,7 @@ text.smallCaps();
 
 Sometimes you would want to put text underneath another line of text but inside the same paragraph.
 
-```js
+```ts
 text.break();
 ```
 
@@ -79,6 +116,6 @@ text.break();
 
 What if you want to create a paragraph which is **_bold_** and **_italic_**?
 
-```js
+```ts
 paragraph.bold().italics();
 ```

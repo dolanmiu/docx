@@ -1,9 +1,11 @@
 # Images
 
+!> Images requires an understanding of [Sections](usage/sections.md) and [Paragraphs](usage/paragraph.md).
+
 To create a `floating` image on top of text:
 
 ```ts
-doc.createImage(fs.readFileSync("./demo/images/pizza.gif"), 200, 200, {
+Media.addImage(doc, fs.readFileSync("./demo/images/pizza.gif"), 200, 200, {
     floating: {
         horizontalPosition: {
             offset: 1014400,
@@ -18,14 +20,27 @@ doc.createImage(fs.readFileSync("./demo/images/pizza.gif"), 200, 200, {
 By default with no arguments, its an `inline` image:
 
 ```ts
-doc.createImage(fs.readFileSync("./demo/images/parrots.bmp"));
+const image = Media.addImage(doc, fs.readFileSync("./demo/images/pizza.gif"));
 ```
 
-You can also create images manually and add them later:
+Add it into the document by adding the image into a paragraph:
 
 ```ts
-const image = Media.addImage(doc, fs.readFileSync("./demo/images/pizza.gif"));
-doc.addImage(image);
+doc.addSection({
+    children: [new Paragraph(image)],
+});
+```
+
+Or:
+
+```ts
+doc.addSection({
+    children: [
+        new Paragraph({
+            children: [image],
+        }),
+    ],
+});
 ```
 
 ## Intro
@@ -34,15 +49,17 @@ Adding images can be done in two ways:
 
 1. Call the `createImage` method to add the image directly into the `document`:
 
-    ```js
-    doc.createImage([IMAGE_BUFFER], [WIDTH], [HEIGHT], [POSITION_OPTIONS]);
+    ```ts
+    Media.addImage(doc, [IMAGE_BUFFER], [WIDTH], [HEIGHT], [POSITION_OPTIONS]);
     ```
 
 2. Create an `image` first, then add it into the `document`:
 
     ```ts
     const image = Media.addImage(doc, [IMAGE_BUFFER]);
-    doc.addImage(image);
+    doc.addSection({
+        children: [new Paragraph(image)],
+    });
     ```
 
 `docx` supports `jpeg`, `jpg`, `bmp`, `gif` and `png`
@@ -141,7 +158,7 @@ wrap: {
 For example:
 
 ```ts
-doc.createImage(fs.readFileSync("./demo/images/pizza.gif"), 200, 200, {
+Media.addImage(doc, fs.readFileSync("./demo/images/pizza.gif"), 200, 200, {
     floating: {
         horizontalPosition: {
             offset: 2014400,
@@ -184,7 +201,7 @@ margins: {
 For example:
 
 ```ts
-doc.createImage(fs.readFileSync("./demo/images/pizza.gif"), 200, 200, {
+Media.addImage(doc, fs.readFileSync("./demo/images/pizza.gif"), 200, 200, {
     floating: {
         horizontalPosition: {
             offset: 2014400,
@@ -210,7 +227,7 @@ doc.createImage(fs.readFileSync("./demo/images/pizza.gif"), 200, 200, {
 
 Importing Images from file system path
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/demo5.ts ':include')
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/demo5.ts ":include")
 
 _Source: https://github.com/dolanmiu/docx/blob/master/demo/demo5.ts_
 
@@ -218,7 +235,7 @@ _Source: https://github.com/dolanmiu/docx/blob/master/demo/demo5.ts_
 
 Example showing how to add image to headers and footers
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/demo9.ts ':include')
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/demo9.ts ":include")
 
 _Source: https://github.com/dolanmiu/docx/blob/master/demo/demo9.ts_
 
@@ -226,6 +243,6 @@ _Source: https://github.com/dolanmiu/docx/blob/master/demo/demo9.ts_
 
 Example showing how to float images on top of text and optimally give a `margin`
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/demo38.ts ':include')
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/demo38.ts ":include")
 
 _Source: https://github.com/dolanmiu/docx/blob/master/demo/demo38.ts_

@@ -1,9 +1,7 @@
-import { assert, expect } from "chai";
+import { expect } from "chai";
 
 import { Formatter } from "export/formatter";
 
-import { Paragraph } from "../paragraph";
-import { Table } from "../table";
 import { Document } from "./document";
 
 describe("Document", () => {
@@ -15,81 +13,34 @@ describe("Document", () => {
 
     describe("#constructor()", () => {
         it("should create valid JSON", () => {
-            const stringifiedJson = JSON.stringify(document);
+            const tree = new Formatter().format(document);
 
-            try {
-                JSON.parse(stringifiedJson);
-            } catch (e) {
-                assert.isTrue(false);
-            }
-            assert.isTrue(true);
-        });
-
-        it("should create default section", () => {
-            const body = new Formatter().format(document)["w:document"][1]["w:body"];
-            expect(body[0]).to.have.property("w:sectPr");
-        });
-    });
-
-    describe("#createParagraph", () => {
-        it("should create a new paragraph and append it to body", () => {
-            const para = document.createParagraph();
-            expect(para).to.be.an.instanceof(Paragraph);
-            const body = new Formatter().format(document)["w:document"][1]["w:body"];
-            expect(body)
-                .to.be.an("array")
-                .which.has.length.at.least(1);
-            expect(body[0]).to.have.property("w:p");
-        });
-
-        it("should use the text given to create a run in the paragraph", () => {
-            const para = document.createParagraph("sample paragraph text");
-            expect(para).to.be.an.instanceof(Paragraph);
-            const body = new Formatter().format(document)["w:document"][1]["w:body"];
-            expect(body)
-                .to.be.an("array")
-                .which.has.length.at.least(1);
-            expect(body[0])
-                .to.have.property("w:p")
-                .which.includes({
-                    "w:r": [{ "w:t": [{ _attr: { "xml:space": "preserve" } }, "sample paragraph text"] }],
-                });
-        });
-    });
-
-    describe("#createTable", () => {
-        it("should create a new table and append it to body", () => {
-            const table = document.createTable({
-                rows: 2,
-                columns: 3,
+            expect(tree).to.deep.equal({
+                "w:document": [
+                    {
+                        _attr: {
+                            "xmlns:wpc": "http://schemas.microsoft.com/office/word/2010/wordprocessingCanvas",
+                            "xmlns:mc": "http://schemas.openxmlformats.org/markup-compatibility/2006",
+                            "xmlns:o": "urn:schemas-microsoft-com:office:office",
+                            "xmlns:r": "http://schemas.openxmlformats.org/officeDocument/2006/relationships",
+                            "xmlns:m": "http://schemas.openxmlformats.org/officeDocument/2006/math",
+                            "xmlns:v": "urn:schemas-microsoft-com:vml",
+                            "xmlns:wp14": "http://schemas.microsoft.com/office/word/2010/wordprocessingDrawing",
+                            "xmlns:wp": "http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing",
+                            "xmlns:w10": "urn:schemas-microsoft-com:office:word",
+                            "xmlns:w": "http://schemas.openxmlformats.org/wordprocessingml/2006/main",
+                            "xmlns:w14": "http://schemas.microsoft.com/office/word/2010/wordml",
+                            "xmlns:w15": "http://schemas.microsoft.com/office/word/2012/wordml",
+                            "xmlns:wpg": "http://schemas.microsoft.com/office/word/2010/wordprocessingGroup",
+                            "xmlns:wpi": "http://schemas.microsoft.com/office/word/2010/wordprocessingInk",
+                            "xmlns:wne": "http://schemas.microsoft.com/office/word/2006/wordml",
+                            "xmlns:wps": "http://schemas.microsoft.com/office/word/2010/wordprocessingShape",
+                            "mc:Ignorable": "w14 w15 wp14",
+                        },
+                    },
+                    { "w:body": {} },
+                ],
             });
-            expect(table).to.be.an.instanceof(Table);
-            const body = new Formatter().format(document)["w:document"][1]["w:body"];
-            expect(body)
-                .to.be.an("array")
-                .which.has.length.at.least(1);
-            expect(body[0]).to.have.property("w:tbl");
-        });
-
-        it("should create a table with the correct dimensions", () => {
-            document.createTable({
-                rows: 2,
-                columns: 3,
-            });
-            const body = new Formatter().format(document)["w:document"][1]["w:body"];
-            expect(body)
-                .to.be.an("array")
-                .which.has.length.at.least(1);
-            expect(body[0])
-                .to.have.property("w:tbl")
-                .which.includes({
-                    "w:tblGrid": [
-                        { "w:gridCol": { _attr: { "w:w": 100 } } },
-                        { "w:gridCol": { _attr: { "w:w": 100 } } },
-                        { "w:gridCol": { _attr: { "w:w": 100 } } },
-                    ],
-                });
-            expect(body[0]["w:tbl"].filter((x) => x["w:tr"])).to.have.length(2);
         });
     });
 });

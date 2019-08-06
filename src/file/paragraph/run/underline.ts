@@ -1,5 +1,25 @@
 import { Attributes, XmlComponent } from "file/xml-components";
 
+export enum UnderlineType {
+    SINGLE = "single",
+    WORDS = "words",
+    DOUBLE = "double",
+    THICK = "thick",
+    DOTTED = "dotted",
+    DOTTEDHEAVY = "dottedHeavy",
+    DASH = "dash",
+    DASHEDHEAVY = "dashedHeavy",
+    DASHLONG = "dashLong",
+    DASHLONGHEAVY = "dashLongHeavy",
+    DOTDASH = "dotDash",
+    DASHDOTHEAVY = "dashDotHeavy",
+    DOTDOTDASH = "dotDotDash",
+    DASHDOTDOTHEAVY = "dashDotDotHeavy",
+    WAVE = "wave",
+    WAVYHEAVY = "wavyHeavy",
+    WAVYDOUBLE = "wavyDouble",
+}
+
 export abstract class BaseUnderline extends XmlComponent {
     constructor(underlineType: string, color?: string) {
         super("w:u");

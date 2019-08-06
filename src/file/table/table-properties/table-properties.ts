@@ -23,9 +23,8 @@ export class TableProperties extends IgnoreIfEmptyXmlComponent {
         return this;
     }
 
-    public setFixedWidthLayout(): TableProperties {
-        this.root.push(new TableLayout(TableLayoutType.FIXED));
-        return this;
+    public setLayout(type: TableLayoutType): void {
+        this.root.push(new TableLayout(type));
     }
 
     public setBorder(): TableProperties {

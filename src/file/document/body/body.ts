@@ -3,15 +3,10 @@ import { Paragraph, ParagraphProperties, TableOfContents } from "../..";
 import { SectionProperties, SectionPropertiesOptions } from "./section-properties/section-properties";
 
 export class Body extends XmlComponent {
-    private readonly defaultSection: SectionProperties;
-
     private readonly sections: SectionProperties[] = [];
 
-    constructor(sectionPropertiesOptions?: SectionPropertiesOptions) {
+    constructor() {
         super("w:body");
-
-        this.defaultSection = new SectionProperties(sectionPropertiesOptions);
-        this.sections.push(this.defaultSection);
     }
 
     /**
@@ -20,21 +15,15 @@ export class Body extends XmlComponent {
      * The spec says:
      *  - section element should be in the last paragraph of the section
      *  - last section should be direct child of body
-     * @param section new section
+     * @param options new section options
      */
-    public addSection(section: SectionPropertiesOptions | SectionProperties): void {
+    public addSection(options: SectionPropertiesOptions): void {
         const currentSection = this.sections.pop() as SectionProperties;
         this.root.push(this.createSectionParagraph(currentSection));
-        if (section instanceof SectionProperties) {
-            this.sections.push(section);
-        } else {
-            const params = {
-                ...this.defaultSection.Options,
-                ...section,
-            };
-            this.sections.push(new SectionProperties(params));
-        }
+
+        this.sections.push(new SectionProperties(options));
     }
+
     public prepForXml(): IXmlableObject | undefined {
         if (this.sections.length === 1) {
             this.root.push(this.sections.pop() as SectionProperties);
@@ -47,21 +36,13 @@ export class Body extends XmlComponent {
         this.root.push(component);
     }
 
-    public get DefaultSection(): SectionProperties {
-        return this.defaultSection;
-    }
-
     public getTablesOfContents(): TableOfContents[] {
         return this.root.filter((child) => child instanceof TableOfContents) as TableOfContents[];
     }
 
-    public getParagraphs(): Paragraph[] {
-        return this.root.filter((child) => child instanceof Paragraph) as Paragraph[];
-    }
-
     private createSectionParagraph(section: SectionProperties): Paragraph {
-        const paragraph = new Paragraph();
-        const properties = new ParagraphProperties();
+        const paragraph = new Paragraph({});
+        const properties = new ParagraphProperties({});
         properties.addChildElement(section);
         paragraph.addChildElement(properties);
         return paragraph;

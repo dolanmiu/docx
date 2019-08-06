@@ -9,43 +9,43 @@ script:
   - npm run test.coverage
   - npm run style
   - npm run build
-  - npm run ts-node -- ./demo/demo1.ts
+  - npm run ts-node -- ./demo/1-basic.ts
   - npm run e2e "My Document.docx"
-  - npm run ts-node -- ./demo/demo2.ts
-  - npm run ts-node -- ./demo/demo3.ts
-  - npm run ts-node -- ./demo/demo4.ts
-  - npm run ts-node -- ./demo/demo5.ts
-  - npm run ts-node -- ./demo/demo6.ts
-  - npm run ts-node -- ./demo/demo7.ts
-  - npm run ts-node -- ./demo/demo8.ts
-  - npm run ts-node -- ./demo/demo9.ts
-  - npm run ts-node -- ./demo/demo10.ts
+  - npm run ts-node -- ./demo/2-declaritive-styles.ts
+  - npm run ts-node -- ./demo/3-numbering-and-bullet-points.ts
+  - npm run ts-node -- ./demo/4-basic-table.ts
+  - npm run ts-node -- ./demo/5-images.ts
+  - npm run ts-node -- ./demo/6-page-borders.ts
+  - npm run ts-node -- ./demo/7-landscape.ts
+  - npm run ts-node -- ./demo/8-header-footer.ts
+  - npm run ts-node -- ./demo/9-images-in-header-and-footer.ts
+  - npm run ts-node -- ./demo/10-my-cv.ts
   - npm run e2e "My Document.docx"
-  - npm run ts-node -- ./demo/demo11.ts
-  - npm run ts-node -- ./demo/demo12.ts
-  - npm run ts-node -- ./demo/demo13.ts
-  - npm run ts-node -- ./demo/demo14.ts
-  - npm run ts-node -- ./demo/demo15.ts
-  - npm run ts-node -- ./demo/demo16.ts
-  - npm run ts-node -- ./demo/demo17.ts
-  - npm run ts-node -- ./demo/demo18.ts
-  - npm run ts-node -- ./demo/demo19.ts
-  - npm run ts-node -- ./demo/demo20.ts
-  - npm run ts-node -- ./demo/demo21.ts
-  - npm run ts-node -- ./demo/demo22.ts
-  - npm run ts-node -- ./demo/demo23.ts
-  - npm run ts-node -- ./demo/demo24.ts
+  - npm run ts-node -- ./demo/11-declaritive-styles-2.ts
+  - npm run ts-node -- ./demo/12-scaling-images.ts
+  - npm run ts-node -- ./demo/13-xml-styles.ts
+  - npm run ts-node -- ./demo/14-page-numbers.ts
+  - npm run ts-node -- ./demo/15-page-break-before.ts
+  - npm run ts-node -- ./demo/16-multiple-sections.ts
+  - npm run ts-node -- ./demo/17-footnotes.ts
+  - npm run ts-node -- ./demo/18-image-from-buffer.ts
+  - npm run ts-node -- ./demo/19-export-to-base64.ts
+  - npm run ts-node -- ./demo/20-table-cell-borders.ts
+  - npm run ts-node -- ./demo/21-bookmarks.ts
+  - npm run ts-node -- ./demo/22-right-to-left-text.ts
+  - npm run ts-node -- ./demo/23-base64-images.ts
+  - npm run ts-node -- ./demo/24-images-to-table-cell.ts
 #   - npm run ts-node -- ./demo/demo25.ts
-  - npm run ts-node -- ./demo/demo26.ts
-  - npm run ts-node -- ./demo/demo27.ts
-  - npm run ts-node -- ./demo/demo28.ts
-  - npm run ts-node -- ./demo/demo29.ts
-  - npm run ts-node -- ./demo/demo30.ts
-  - npm run ts-node -- ./demo/demo31.ts
-  - npm run ts-node -- ./demo/demo32.ts
+  - npm run ts-node -- ./demo/26-paragraph-borders.ts
+  - npm run ts-node -- ./demo/27-declaritive-styles-3.ts
+  - npm run ts-node -- ./demo/28-table-of-contents.ts
+  - npm run ts-node -- ./demo/29-numbered-lists.ts
+  - npm run ts-node -- ./demo/30-template-document.ts
+  - npm run ts-node -- ./demo/31-tables.ts
+  - npm run ts-node -- ./demo/32-merge-table-cells.ts
 #   - npm run e2e "My Document.docx" // Need to fix
-  - npm run ts-node -- ./demo/demo33.ts
-  - npm run ts-node -- ./demo/demo34.ts
+  - npm run ts-node -- ./demo/33-sequential-captions.ts
+  - npm run ts-node -- ./demo/34-floating-tables.ts
 after_failure:
   - "cat /home/travis/builds/dolanmiu/docx/npm-debug.log"
 after_success:

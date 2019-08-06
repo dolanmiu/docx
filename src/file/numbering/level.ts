@@ -1,7 +1,8 @@
 import { Attributes, XmlAttributeComponent, XmlComponent } from "file/xml-components";
 import {
     Alignment,
-    AlignmentOptions,
+    AlignmentType,
+    IIndentAttributesProperties,
     Indent,
     ISpacingProperties,
     KeepLines,
@@ -114,7 +115,7 @@ export class LevelBase extends XmlComponent {
             this.root.push(new LevelJc(lvlJc));
         }
 
-        this.paragraphProperties = new ParagraphProperties();
+        this.paragraphProperties = new ParagraphProperties({});
         this.runProperties = new RunProperties();
 
         this.root.push(this.paragraphProperties);
@@ -204,28 +205,28 @@ export class LevelBase extends XmlComponent {
     }
 
     public shadow(value: string, fill: string, color: string): Level {
-        this.addRunProperty(new formatting.Shadow(value, fill, color));
+        this.addRunProperty(new formatting.Shading(value, fill, color));
         return this;
     }
     // --------------------- Paragraph formatting ------------------------ //
 
     public center(): Level {
-        this.addParagraphProperty(new Alignment(AlignmentOptions.CENTER));
+        this.addParagraphProperty(new Alignment(AlignmentType.CENTER));
         return this;
     }
 
     public left(): Level {
-        this.addParagraphProperty(new Alignment(AlignmentOptions.LEFT));
+        this.addParagraphProperty(new Alignment(AlignmentType.LEFT));
         return this;
     }
 
     public right(): Level {
-        this.addParagraphProperty(new Alignment(AlignmentOptions.RIGHT));
+        this.addParagraphProperty(new Alignment(AlignmentType.RIGHT));
         return this;
     }
 
     public justified(): Level {
-        this.addParagraphProperty(new Alignment(AlignmentOptions.BOTH));
+        this.addParagraphProperty(new Alignment(AlignmentType.BOTH));
         return this;
     }
 
@@ -244,7 +245,7 @@ export class LevelBase extends XmlComponent {
         return this;
     }
 
-    public indent(attrs: object): Level {
+    public indent(attrs: IIndentAttributesProperties): Level {
         this.addParagraphProperty(new Indent(attrs));
         return this;
     }
