@@ -1,14 +1,14 @@
-# Text
+# Text Runs
+
+!> TextRuns requires an understanding of [Paragraphs](usage/paragraph.md).
 
 You can add multiple `text runs` in `Paragraphs`. This is the most verbose way of writing a `Paragraph` but it is also the most flexible:
 
 ```ts
-import { Paragraph, Text } from "docx";
+import { Paragraph, TextRun } from "docx";
 
 const paragraph = new Paragraph({
-    children: [
-        new TextRun("My awesome text here for my university dissertation"),
-    ],
+    children: [new TextRun("My awesome text here for my university dissertation"), new TextRun("Foo Bar")],
 });
 ```
 
@@ -21,19 +21,51 @@ More info [here](https://english.stackexchange.com/questions/97081/what-is-the-t
 ### Bold
 
 ```ts
-text.bold();
+const text = new TextRun({
+    text: "Foo Bar",
+    bold: true,
+});
 ```
 
 ### Italics
 
 ```ts
-text.italics();
+const text = new TextRun({
+    text: "Foo Bar",
+    italics: true,
+});
 ```
 
 ### Underline
 
+Underline has a few options
+
+#### Options
+
+| Property | Type            | Notes    | Possible Values                                                                                                                                                           |
+| -------- | --------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| type     | `UnderlineType` | Optional | SINGLE, WORD, DOUBLE, THICK, DOTTED, DOTTEDHEAV, DASH, DASHEDHEAV, DASHLONG, DASHLONGHEAV, DOTDASH, DASHDOTHEAVY, DOTDOTDAS, DASHDOTDOTHEAVY, WAVE, WAVYHEAVY, WAVYDOUBLE |
+| color    | `string`        | Optional | Color Hex values                                                                                                                                                          |
+
+**Example:**
+
 ```ts
-text.underline();
+const text = new TextRun({
+    text: "and then underlined ",
+    underline: {
+        type: UnderlineType.DOUBLE,
+        color: "990011",
+    },
+});
+```
+
+To do a simple vanilla underline:
+
+```ts
+const text = new TextRun({
+    text: "and then underlined ",
+    underline: {},
+});
 ```
 
 ### Strike through
