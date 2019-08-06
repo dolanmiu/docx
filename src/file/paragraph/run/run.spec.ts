@@ -123,7 +123,7 @@ describe("Run", () => {
                 "w:r": [
                     {
                         "w:rPr": [
-                            { "w:highlight ": { _attr: { "w:val": "005599" } } },
+                            { "w:highlight": { _attr: { "w:val": "005599" } } },
                             {
                                 "w:highlightCs": {
                                     _attr: {
@@ -146,7 +146,7 @@ describe("Run", () => {
                 "w:r": [
                     {
                         "w:rPr": [
-                            { "w:shd ": { _attr: { "w:val": "pct10", "w:fill": "00FFFF", "w:color": "FF0000" } } },
+                            { "w:shd": { _attr: { "w:val": "pct10", "w:fill": "00FFFF", "w:color": "FF0000" } } },
                             {
                                 "w:shdCs": {
                                     _attr: {

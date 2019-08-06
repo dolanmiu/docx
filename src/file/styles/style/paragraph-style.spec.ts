@@ -382,7 +382,7 @@ describe("ParagraphStyle", () => {
                 "w:style": [
                     { _attr: { "w:type": "paragraph", "w:styleId": "myStyleId" } },
                     {
-                        "w:rPr": [{ "w:highlight ": { _attr: { "w:val": "005599" } } }],
+                        "w:rPr": [{ "w:highlight": { _attr: { "w:val": "005599" } } }],
                     },
                 ],
             });
@@ -395,7 +395,7 @@ describe("ParagraphStyle", () => {
                 "w:style": [
                     { _attr: { "w:type": "paragraph", "w:styleId": "myStyleId" } },
                     {
-                        "w:rPr": [{ "w:shd ": { _attr: { "w:val": "pct10", "w:fill": "00FFFF", "w:color": "FF0000" } } }],
+                        "w:rPr": [{ "w:shd": { _attr: { "w:val": "pct10", "w:fill": "00FFFF", "w:color": "FF0000" } } }],
                     },
                 ],
             });
