@@ -114,6 +114,14 @@ export class ParagraphStyle extends Style {
         return this.addRunProperty(new formatting.CharacterSpacing(value));
     }
 
+    public highlight(color: string): ParagraphStyle {
+        return this.addRunProperty(new formatting.Highlight(color));
+    }
+
+    public shadow(value: string, fill: string, color: string): ParagraphStyle {
+        return this.addRunProperty(new formatting.Shadow(value, fill, color));
+    }
+
     // --------------------- Paragraph formatting ------------------------ //
 
     public center(): ParagraphStyle {

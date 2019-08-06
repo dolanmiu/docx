@@ -199,6 +199,15 @@ export class LevelBase extends XmlComponent {
         return this;
     }
 
+    public highlight(color: string): Level {
+        this.addRunProperty(new formatting.Highlight(color));
+        return this;
+    }
+
+    public shadow(value: string, fill: string, color: string): Level {
+        this.addRunProperty(new formatting.Shadow(value, fill, color));
+        return this;
+    }
     // --------------------- Paragraph formatting ------------------------ //
 
     public center(): Level {
