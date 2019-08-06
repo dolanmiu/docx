@@ -172,6 +172,12 @@ const paragraph = new Paragraph({
 
 **Example:**
 
+```ts
+const paragraph = new Paragraph({
+    outlineLevel: 0,
+});
+```
+
 ## Styles
 
 To create styles, please refer to the styling Wiki: https://github.com/dolanmiu/docx/wiki/Styling
@@ -239,10 +245,15 @@ The result is:
 
 ## Thematic Break
 
-To add a break in the page, simply add `.thematicBreak()` on a paragraph:
+To add a thematic break in the `Paragraph`:
 
 ```js
-var paragraph = new docx.Paragraph("Amazing Heading").heading1().thematicBreak();
+var paragraph = new docx.Paragraph("Amazing Heading");
+const paragraph = new Paragraph({
+    text: "Amazing Heading",
+    heading: HeadingLevel.HEADING_1,
+    thematicBreak: true,
+});
 ```
 
 The above example will create a heading with a page break directly under it.
@@ -251,8 +262,8 @@ The above example will create a heading with a page break directly under it.
 
 To move to a new page (insert a page break), simply add `.pageBreak()` on a paragraph:
 
-```js
-var paragraph = new docx.Paragraph("Amazing Heading").heading1().pageBreak();
+```ts
+const paragraph = new docx.Paragraph("Amazing Heading").pageBreak();
 ```
 
 The above example will create a heading and start a new page immediately afterwards.
@@ -261,8 +272,11 @@ The above example will create a heading and start a new page immediately afterwa
 
 This option (available in word) will make sure that the paragraph will start on a new page (if it's not already on a new page).
 
-```js
-var paragraph = new docx.Paragraph("Hello World on another page").pageBreakBefore();
+```ts
+const paragraph = new Paragraph({
+    text: "Hello World on another page",
+    pageBreakBefore: true,
+});
 ```
 
 ![Page Break Before in Word](https://user-images.githubusercontent.com/34742290/40176503-df3a8398-59db-11e8-8b9c-d719f13aa8b4.png)
