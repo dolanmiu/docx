@@ -18,8 +18,8 @@ npm install --save docx
 
 Then you can `require` or `import` as usual:
 
-```js
-let docx = require("docx");
+```ts
+const docx = require("docx");
 ```
 
 ```ts
@@ -30,7 +30,7 @@ import { ... } from "docx";
 
 ## Basic Usage
 
-```js
+```ts
 import * as fs from "fs";
 import { Document, Packer, Paragraph, TextRun } from "docx";
 

@@ -8,33 +8,33 @@ You can create `Paragraphs` in the following ways:
 
 ### Shorthand
 
-```js
+```ts
 import { Paragraph } from "docx";
 
-var paragraph = new Paragraph("Short hand Hello World");
+const paragraph = new Paragraph("Short hand Hello World");
 ```
 
 ### Children Method
 
 This method is useful for adding different `text` with different styles or adding `images` inline.
 
-```js
-var paragraph = new Paragraph({
+```ts
+const paragraph = new Paragraph({
     children: [new TextRun("Lorem Ipsum Foo Bar"), new TextRun("Hello World")],
 });
 ```
 
 ### Explicit
 
-```js
-var paragraph = new Paragraph({
+```ts
+const paragraph = new Paragraph({
     text: "Short hand notation for adding text.",
 });
 ```
 
 After you create the paragraph, you must add the paragraph into the `document's section`. Learn more about `sections` here:
 
-```js
+```ts
 doc.addSection({
     children: [paragraph],
 });
@@ -42,7 +42,7 @@ doc.addSection({
 
 Or the preferred convension, define the paragraph inside the section and remove the usage of variables:
 
-```js
+```ts
 doc.addSection({
     children: [
         new Paragraph({
@@ -186,7 +186,7 @@ To create styles, please refer to the styling Wiki: https://github.com/dolanmiu/
 
 ### Headings and titles
 
-```js
+```ts
 import { HeadingLevel, Paragraph } from "docx";
 
 const paragraph = new Paragraph({
@@ -201,7 +201,7 @@ To change the text alignment of a paragraph, add an `AlignmentType` option on th
 
 **Example:**
 
-```js
+```ts
 const paragraph = new Paragraph({
     text: "Hello World",
     heading: HeadingLevel.HEADING_1,
@@ -231,8 +231,8 @@ The result is:
 
 To add a thematic break in the `Paragraph`:
 
-```js
-var paragraph = new docx.Paragraph("Amazing Heading");
+```ts
+const paragraph = new docx.Paragraph("Amazing Heading");
 const paragraph = new Paragraph({
     text: "Amazing Heading",
     heading: HeadingLevel.HEADING_1,

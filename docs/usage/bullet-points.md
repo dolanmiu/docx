@@ -4,12 +4,12 @@
 
 To make a bullet point, simply make a paragraph into a bullet point:
 
-```js
-var text = new docx.TextRun("Bullet points");
-var paragraph = new docx.Paragraph(text).bullet();
+```ts
+const text = new docx.TextRun("Bullet points");
+const paragraph = new docx.Paragraph(text).bullet();
 
-var text2 = new docx.TextRun("Are awesome");
-var paragraph2 = new docx.Paragraph(text2).bullet();
+const text2 = new docx.TextRun("Are awesome");
+const paragraph2 = new docx.Paragraph(text2).bullet();
 
 doc.add(paragraph);
 doc.add(paragraph2);

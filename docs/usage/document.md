@@ -4,7 +4,7 @@
 
 To create a new document, it is very easy:
 
-```js
+```ts
 const doc = new docx.Document();
 ```
 
@@ -12,7 +12,7 @@ const doc = new docx.Document();
 
 You can add properties to the Word document by specifying options, for example:
 
-```js
+```ts
 const doc = new docx.Document({
     creator: "Dolan Miu",
     description: "My extremely interesting document",

@@ -2,7 +2,7 @@
 
 You can add multiple `text runs` in `Paragraphs`. This is the most verbose way of writing a `Paragraph` but it is also the most flexible:
 
-```js
+```ts
 import { Paragraph, Text } from "docx";
 
 const paragraph = new Paragraph({
@@ -20,55 +20,55 @@ More info [here](https://english.stackexchange.com/questions/97081/what-is-the-t
 
 ### Bold
 
-```js
+```ts
 text.bold();
 ```
 
 ### Italics
 
-```js
+```ts
 text.italics();
 ```
 
 ### Underline
 
-```js
+```ts
 text.underline();
 ```
 
 ### Strike through
 
-```js
+```ts
 text.strike();
 ```
 
 ### Double strike through
 
-```js
+```ts
 text.doubleStrike();
 ```
 
 ### Superscript
 
-```js
+```ts
 text.superScript();
 ```
 
 ### Subscript
 
-```js
+```ts
 text.subScript();
 ```
 
 ### All Capitals
 
-```js
+```ts
 text.allCaps();
 ```
 
 ### Small Capitals
 
-```js
+```ts
 text.smallCaps();
 ```
 
@@ -76,7 +76,7 @@ text.smallCaps();
 
 Sometimes you would want to put text underneath another line of text but inside the same paragraph.
 
-```js
+```ts
 text.break();
 ```
 
@@ -84,6 +84,6 @@ text.break();
 
 What if you want to create a paragraph which is **_bold_** and **_italic_**?
 
-```js
+```ts
 paragraph.bold().italics();
 ```

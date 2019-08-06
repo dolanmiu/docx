@@ -12,7 +12,7 @@ The complete documentation can be found [here](https://www.ecma-international.or
 
 All you need to do is create a `TableOfContents` object and assign it to the document.
 
-```js
+```ts
 const toc = new TableOfContents("Summary", {
     hyperlink: true,
     headingStyleRange: "1-5",
@@ -47,7 +47,7 @@ Here is the list of all options that you can use to generate your tables of cont
 
 ## Examples
 
-```js
+```ts
 // Let's define the options for generate a TOC for heading 1-5 and MySpectacularStyle,
 // making the entries be hyperlinks for the paragraph
 const toc = new TableOfContents("Summary", {
