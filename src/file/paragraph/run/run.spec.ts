@@ -1,6 +1,7 @@
 import { expect } from "chai";
 
 import { Formatter } from "export/formatter";
+import { ShadingType } from "file/table";
 
 import { Run } from "./";
 import { UnderlineType } from "./underline";
@@ -131,7 +132,10 @@ describe("Run", () => {
 
     describe("#highlight()", () => {
         it("it should add highlight to the properties", () => {
-            run.highlight("005599");
+            const run = new Run({
+                doubleStrike: true,
+                highlight: "005599",
+            });
             const tree = new Formatter().format(run);
             expect(tree).to.deep.equal({
                 "w:r": [
@@ -154,7 +158,14 @@ describe("Run", () => {
 
     describe("#shadow()", () => {
         it("it should add shadow to the properties", () => {
-            run.shadow("pct10", "00FFFF", "FF0000");
+            const run = new Run({
+                doubleStrike: true,
+                shadow: {
+                    type: ShadingType.PERCENT_10,
+                    fill: "00FFFF",
+                    color: "FF0000",
+                },
+            });
             const tree = new Formatter().format(run);
             expect(tree).to.deep.equal({
                 "w:r": [

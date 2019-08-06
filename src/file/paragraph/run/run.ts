@@ -1,4 +1,7 @@
 // http://officeopenxml.com/WPtext.php
+import { ShadingType } from "file/table";
+import { XmlComponent } from "file/xml-components";
+
 import { Break } from "./break";
 import { Caps, SmallCaps } from "./caps";
 import { Begin, End, Separate } from "./field";
@@ -26,8 +29,6 @@ import { Style } from "./style";
 import { Tab } from "./tab";
 import { Underline, UnderlineType } from "./underline";
 
-import { XmlComponent } from "file/xml-components";
-
 export interface IRunOptions {
     readonly bold?: true;
     readonly italics?: true;
@@ -48,6 +49,12 @@ export interface IRunOptions {
     readonly font?: {
         readonly name: string;
         readonly hint?: string;
+    };
+    readonly highlight?: string;
+    readonly shadow?: {
+        readonly type: ShadingType;
+        readonly fill: string;
+        readonly color: string;
     };
 }
 
@@ -117,6 +124,16 @@ export class Run extends XmlComponent {
         if (options.font) {
             this.properties.push(new RunFonts(options.font.name, options.font.hint));
         }
+
+        if (options.highlight) {
+            this.properties.push(new Highlight(options.highlight));
+            this.properties.push(new HighlightComplexScript(options.highlight));
+        }
+
+        if (options.shadow) {
+            this.properties.push(new Shadow(options.shadow.type, options.shadow.fill, options.shadow.color));
+            this.properties.push(new ShadowComplexScript(options.shadow.type, options.shadow.fill, options.shadow.color));
+        }
     }
 
     public break(): Run {
@@ -142,58 +159,6 @@ export class Run extends XmlComponent {
         this.root.push(new NumberOfPages());
         this.root.push(new Separate());
         this.root.push(new End());
-        return this;
-    }
-
-    public smallCaps(): Run {
-        this.properties.push(new SmallCaps());
-        return this;
-    }
-
-    public allCaps(): Run {
-        this.properties.push(new Caps());
-        return this;
-    }
-
-    public strike(): Run {
-        this.properties.push(new Strike());
-        return this;
-    }
-
-    public doubleStrike(): Run {
-        this.properties.push(new DoubleStrike());
-        return this;
-    }
-
-    public subScript(): Run {
-        this.properties.push(new SubScript());
-        return this;
-    }
-
-    public superScript(): Run {
-        this.properties.push(new SuperScript());
-        return this;
-    }
-
-    public font(fontName: string, hint?: string | undefined): Run {
-        this.properties.push(new RunFonts(fontName, hint));
-        return this;
-    }
-
-    public style(styleId: string): Run {
-        this.properties.push(new Style(styleId));
-        return this;
-    }
-
-    public highlight(color: string): Run {
-        this.properties.push(new Highlight(color));
-        this.properties.push(new HighlightComplexScript(color));
-        return this;
-    }
-
-    public shadow(value: string, fill: string, color: string): Run {
-        this.properties.push(new Shadow(value, fill, color));
-        this.properties.push(new ShadowComplexScript(value, fill, color));
         return this;
     }
 }

@@ -1,24 +1,32 @@
 import * as fs from "fs";
-import { Document, Packer, Paragraph, TextRun } from "../build";
+import { AlignmentType, Document, Header, Packer, Paragraph, TextRun } from "../build";
 
 const doc = new Document();
 
-const header = doc.Header.createTable(1, 3)
-  // @ts-ignore
-  header.properties.root[1] = []
-
-   header.getCell(0, 2).addParagraph(
-    new Paragraph()
-      .addRun(
-        new TextRun('W.P. 660')
-          .color('red')
-          .bold()
-          .size(12 * 2)
-          .font('Garamond')
-          .highlight('yellow')
-      )
-      .right()
-  )
+doc.addSection({
+    headers: {
+        default: new Header({
+            children: [
+                new Paragraph({
+                    alignment: AlignmentType.RIGHT,
+                    children: [
+                        new TextRun({
+                            text: "Hello World",
+                            color: "red",
+                            bold: true,
+                            size: 24,
+                            font: {
+                                name: "Garamond",
+                            },
+                            highlight: "yellow",
+                        }),
+                    ],
+                }),
+            ],
+        }),
+    },
+    children: [],
+});
 
 const packer = new Packer();
 
