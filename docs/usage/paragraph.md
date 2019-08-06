@@ -197,25 +197,9 @@ const paragraph = new Paragraph({
 
 ## Text Alignment
 
-To change the text alignment of a paragraph, for center, left, right or justified:
+To change the text alignment of a paragraph, add an `AlignmentType` option on the paragraph.for center, left, right or justified:
 
-```js
-paragraph.center();
-```
-
-```js
-paragraph.left();
-```
-
-```js
-paragraph.right();
-```
-
-```js
-paragraph.justified();
-```
-
-### Example
+**Example:**
 
 ```js
 const paragraph = new Paragraph({
