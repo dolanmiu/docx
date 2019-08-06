@@ -133,7 +133,6 @@ describe("Run", () => {
     describe("#highlight()", () => {
         it("it should add highlight to the properties", () => {
             const run = new Run({
-                doubleStrike: true,
                 highlight: "005599",
             });
             const tree = new Formatter().format(run);
@@ -159,7 +158,6 @@ describe("Run", () => {
     describe("#shadow()", () => {
         it("it should add shadow to the properties", () => {
             const run = new Run({
-                doubleStrike: true,
                 shadow: {
                     type: ShadingType.PERCENT_10,
                     fill: "00FFFF",
