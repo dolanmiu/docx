@@ -53,6 +53,11 @@ describe("Packer", () => {
                 assert.isDefined(error);
             });
         });
+
+        after(() => {
+            // tslint:disable-next-line:no-any
+            (Packer as any).compiler.compile.restore();
+        });
     });
 
     describe("#toBase64String()", () => {
@@ -72,6 +77,11 @@ describe("Packer", () => {
             return Packer.toBase64String(file).catch((error) => {
                 assert.isDefined(error);
             });
+        });
+
+        after(() => {
+            // tslint:disable-next-line:no-any
+            (Packer as any).compiler.compile.restore();
         });
     });
 });
