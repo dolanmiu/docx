@@ -2,9 +2,44 @@
 
 > Packers are the way in which `docx` turns your code into `.docx` format. It is completely decoupled from the `docx.Document`.
 
+Packers in `version 4` and above are now one single `Packer`. It works in both a node and browser environment (Angular etc). Now, the packer returns a `Buffer`, `Blob` or `base64 string`. It is up to you to take that and persist it with node's `fs`, send it down as a downloadable file, or anything else you wish. As of version 4, this library will not have options to export to PDF.
+
+## Version 5
+
+Packers in `version 5` and above are now static methods on `Packer`.
+
+### Export as Buffer
+
+This will return a NodeJS `Buffer`. If this is used in the browser, it will return a `UInt8Array` instead.
+
+```ts
+Packer.toBuffer(doc).then((buffer) => {
+    fs.writeFileSync("My Document.docx", buffer);
+});
+```
+
+### Export as a `base64` string
+
+```ts
+Packer.toBase64String(doc).then((string) => {
+    console.log(string);
+});
+```
+
+### Export as Blob
+
+This is useful if you want to send it as an downloadable in a browser environment.
+
+```ts
+Packer.toBlob(doc).then((blob) => {
+    // saveAs from FileSaver will download the file
+    saveAs(blob, "example.docx");
+});
+```
+
 ## Version 4
 
-Packers in `version 4` and above are now one single `Packer`. It works in both a node and browser environment (Angular etc). Now, the packer returns a `Buffer`, `Blob` or `base64 string`. It is up to you to take that and persist it with node's `fs`, send it down as a downloadable file, or anything else you wish. As of version 4, this library will not have options to export to PDF.
+The `Packer` in `version 4` requires an instance of `Packer`, so be sure to `new` it.
 
 ### Export as Buffer
 

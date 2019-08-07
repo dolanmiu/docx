@@ -14,8 +14,6 @@ doc.addSection({
     children: [new Paragraph("Hello World"), new Paragraph(image), new Paragraph(image2), new Paragraph(image3), new Paragraph(image4)],
 });
 
-const packer = new Packer();
-
-packer.toBuffer(doc).then((buffer) => {
+Packer.toBuffer(doc).then((buffer) => {
     fs.writeFileSync("My Document.docx", buffer);
 });

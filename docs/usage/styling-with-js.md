@@ -107,8 +107,7 @@ There are three parts to using custom styles with `docx`:
 3.  When you generate your document, make sure to pass the `styles` container to the `Packer`:
 
     ```ts
-    const packer = new Packer(doc, myStyles);
-    packer.pack(myOutStream);
+    Packer.pack(myOutStream);
     ```
 
 **Note**: If you are using the `.headingX` or `.title` methods of paragraphs, you must make sure to define `HeadingX` or `Title` styles for these. Otherwise they'll show up unstyled :(. If you are using the `.bullet` or `.setNumbering` methods, you need to define a `ListParagraph` style or the numbers may not show up.

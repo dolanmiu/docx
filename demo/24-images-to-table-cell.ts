@@ -19,8 +19,6 @@ table.getCell(2, 2).add(new Paragraph("Hello"));
 const image = Media.addImage(doc, fs.readFileSync("./demo/images/image1.jpeg"));
 table.getCell(1, 1).add(new Paragraph(image));
 
-const packer = new Packer();
-
-packer.toBuffer(doc).then((buffer) => {
+Packer.toBuffer(doc).then((buffer) => {
     fs.writeFileSync("My Document.docx", buffer);
 });
