@@ -59,9 +59,7 @@ doc.addSection({
 });
 
 // Used to export the file into a .docx file
-const packer = new Packer();
-
-packer.toBuffer(doc).then((buffer) => {
+Packer.toBuffer(doc).then((buffer) => {
     fs.writeFileSync("My Document.docx", buffer);
 });
 
