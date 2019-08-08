@@ -12,8 +12,6 @@ doc.addSection({
 doc.createFootnote(new Paragraph("Test"));
 doc.createFootnote(new Paragraph("My amazing reference"));
 
-const packer = new Packer();
-
-packer.toBuffer(doc).then((buffer) => {
+Packer.toBuffer(doc).then((buffer) => {
     fs.writeFileSync("My Document.docx", buffer);
 });

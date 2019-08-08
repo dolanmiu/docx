@@ -23,8 +23,6 @@ doc.addSection({
     ],
 });
 
-const packer = new Packer();
-
-packer.toBase64String(doc).then((str) => {
+Packer.toBase64String(doc).then((str) => {
     fs.writeFileSync("My Document.docx", str);
 });

@@ -19,8 +19,6 @@ table
     .addStartBorder(BorderStyle.DOT_DOT_DASH, 3, "green")
     .addEndBorder(BorderStyle.DOT_DOT_DASH, 3, "#ff8000");
 
-const packer = new Packer();
-
-packer.toBuffer(doc).then((buffer) => {
+Packer.toBuffer(doc).then((buffer) => {
     fs.writeFileSync("My Document.docx", buffer);
 });
