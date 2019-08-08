@@ -74,6 +74,8 @@ Read the contribution guidelines [here](https://docx.js.org/#/contribution-guide
 [<img src="https://i.imgur.com/1LjuK2M.png" alt="drawing" height="50"/>](https://turbopatent.com/)
 [<img src="https://i.imgur.com/dHMg0wF.gif" alt="drawing" height="50"/>](http://www.madisoncres.com/)
 
+...and many more!
+
 ---
 
 [![patreon][patreon-image]][patreon-url]
