@@ -204,6 +204,21 @@ describe("Run", () => {
         });
     });
 
+    describe("#numberOfTotalPagesSection", () => {
+        it("should set the run to the RTL mode", () => {
+            run.numberOfTotalPagesSection();
+            const tree = new Formatter().format(run);
+            expect(tree).to.deep.equal({
+                "w:r": [
+                    { "w:fldChar": { _attr: { "w:fldCharType": "begin" } } },
+                    { "w:instrText": [{ _attr: { "xml:space": "preserve" } }, "SECTIONPAGES"] },
+                    { "w:fldChar": { _attr: { "w:fldCharType": "separate" } } },
+                    { "w:fldChar": { _attr: { "w:fldCharType": "end" } } },
+                ],
+            });
+        });
+    });
+
     describe("#pageNumber", () => {
         it("should set the run to the RTL mode", () => {
             run.pageNumber();

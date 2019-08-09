@@ -20,3 +20,11 @@ export class NumberOfPages extends XmlComponent {
         this.root.push("NUMPAGES");
     }
 }
+
+export class NumberOfPagesSection extends XmlComponent {
+    constructor() {
+        super("w:instrText");
+        this.root.push(new TextAttributes({ space: SpaceType.PRESERVE }));
+        this.root.push("SECTIONPAGES");
+    }
+}
