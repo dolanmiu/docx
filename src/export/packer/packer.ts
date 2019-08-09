@@ -7,7 +7,7 @@ export class Packer {
         const zipData = (await zip.generateAsync({
             type: "nodebuffer",
             mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-            compression: "DEFLATE"
+            compression: "DEFLATE",
         })) as Buffer;
 
         return zipData;
@@ -18,7 +18,7 @@ export class Packer {
         const zipData = (await zip.generateAsync({
             type: "base64",
             mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-            compression: "DEFLATE"
+            compression: "DEFLATE",
         })) as string;
 
         return zipData;
@@ -29,7 +29,7 @@ export class Packer {
         const zipData = (await zip.generateAsync({
             type: "blob",
             mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-            compression: "DEFLATE"
+            compression: "DEFLATE",
         })) as Blob;
 
         return zipData;
