@@ -286,6 +286,7 @@ describe("Run", () => {
 
     describe("#numberOfTotalPagesSection", () => {
         it("should set the run to the RTL mode", () => {
+            const run = new Run({});
             run.numberOfTotalPagesSection();
             const tree = new Formatter().format(run);
             expect(tree).to.deep.equal({
