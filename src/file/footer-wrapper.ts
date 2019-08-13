@@ -3,7 +3,7 @@ import { XmlComponent } from "file/xml-components";
 import { FooterReferenceType } from "./document";
 import { Footer } from "./footer/footer";
 import { Image, Media } from "./media";
-import { ImageParagraph, Paragraph } from "./paragraph";
+import { Paragraph } from "./paragraph";
 import { Relationships } from "./relationships";
 import { Table } from "./table";
 
@@ -21,36 +21,17 @@ export class FooterWrapper {
         this.relationships = new Relationships();
     }
 
-    public addParagraph(paragraph: Paragraph): void {
-        this.footer.addParagraph(paragraph);
+    public add(item: Paragraph | Table): void {
+        this.footer.add(item);
     }
 
-    public createParagraph(text?: string): Paragraph {
-        const para = new Paragraph(text);
-        this.addParagraph(para);
-        return para;
-    }
-
-    public addTable(table: Table): void {
-        this.footer.addTable(table);
-    }
-
-    public createTable(rows: number, cols: number): Table {
-        return this.footer.createTable(rows, cols);
+    public addImage(image: Image): FooterWrapper {
+        this.footer.add(image.Paragraph);
+        return this;
     }
 
     public addChildElement(childElement: XmlComponent): void {
         this.footer.addChildElement(childElement);
-    }
-
-    public createImage(image: Buffer | string | Uint8Array | ArrayBuffer, width?: number, height?: number): void {
-        const mediaData = this.media.addMedia(image, width, height);
-        this.addImage(new Image(new ImageParagraph(mediaData)));
-    }
-
-    public addImage(image: Image): FooterWrapper {
-        this.footer.addParagraph(image.Paragraph);
-        return this;
     }
 
     public get Footer(): Footer {

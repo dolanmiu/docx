@@ -1,16 +1,15 @@
 // http://officeopenxml.com/WPdocument.php
 import { XmlComponent } from "file/xml-components";
 import { Paragraph } from "../paragraph";
-import { ITableOptions, Table } from "../table";
+import { Table } from "../table";
 import { TableOfContents } from "../table-of-contents";
 import { Body } from "./body";
-import { SectionPropertiesOptions } from "./body/section-properties";
 import { DocumentAttributes } from "./document-attributes";
 
 export class Document extends XmlComponent {
     private readonly body: Body;
 
-    constructor(sectionPropertiesOptions?: SectionPropertiesOptions) {
+    constructor() {
         super("w:document");
         this.root.push(
             new DocumentAttributes({
@@ -33,35 +32,13 @@ export class Document extends XmlComponent {
                 Ignorable: "w14 w15 wp14",
             }),
         );
-        this.body = new Body(sectionPropertiesOptions);
+        this.body = new Body();
         this.root.push(this.body);
     }
 
-    public addParagraph(paragraph: Paragraph): Document {
-        this.body.push(paragraph);
+    public add(item: Paragraph | Table | TableOfContents): Document {
+        this.body.push(item);
         return this;
-    }
-
-    public addTableOfContents(toc: TableOfContents): Document {
-        this.body.push(toc);
-        return this;
-    }
-
-    public createParagraph(text?: string): Paragraph {
-        const para = new Paragraph(text);
-        this.addParagraph(para);
-        return para;
-    }
-
-    public addTable(table: Table): Document {
-        this.body.push(table);
-        return this;
-    }
-
-    public createTable(options: ITableOptions): Table {
-        const table = new Table(options);
-        this.addTable(table);
-        return table;
     }
 
     public get Body(): Body {
@@ -70,9 +47,5 @@ export class Document extends XmlComponent {
 
     public getTablesOfContents(): TableOfContents[] {
         return this.body.getTablesOfContents();
-    }
-
-    public getParagraphs(): Paragraph[] {
-        return this.body.getParagraphs();
     }
 }

@@ -20,7 +20,10 @@ export class Hyperlink extends XmlComponent {
 
         const attributes = new HyperlinkAttributes(props);
         this.root.push(attributes);
-        this.textRun = new TextRun(text).style("Hyperlink");
+        this.textRun = new TextRun({
+            text: text,
+            style: "Hyperlink",
+        });
         this.root.push(this.textRun);
     }
 

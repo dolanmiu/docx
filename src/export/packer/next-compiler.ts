@@ -30,17 +30,15 @@ interface IXmlifyedFileMapping {
 export class Compiler {
     private readonly formatter: Formatter;
     private readonly imageReplacer: ImageReplacer;
-    private readonly prettifyXml?: boolean;
 
-    constructor(prettifyXml?: boolean) {
+    constructor() {
         this.formatter = new Formatter();
         this.imageReplacer = new ImageReplacer();
-        this.prettifyXml = prettifyXml;
     }
 
-    public compile(file: File): JSZip {
+    public compile(file: File, prettifyXml?: boolean): JSZip {
         const zip = new JSZip();
-        const xmlifiedFileMapping = this.xmlifyFile(file);
+        const xmlifiedFileMapping = this.xmlifyFile(file, prettifyXml);
 
         for (const key in xmlifiedFileMapping) {
             if (!xmlifiedFileMapping[key]) {
@@ -66,14 +64,14 @@ export class Compiler {
         return zip;
     }
 
-    private xmlifyFile(file: File): IXmlifyedFileMapping {
+    private xmlifyFile(file: File, prettify?: boolean): IXmlifyedFileMapping {
         file.verifyUpdateFields();
         const documentRelationshipCount = file.DocumentRelationships.RelationshipCount + 1;
 
         return {
             Relationships: {
                 data: (() => {
-                    const xmlData = xml(this.formatter.format(file.Document), this.prettifyXml);
+                    const xmlData = xml(this.formatter.format(file.Document), prettify);
                     const mediaDatas = this.imageReplacer.getMediaData(xmlData, file.Media);
 
                     mediaDatas.forEach((mediaData, i) => {
@@ -84,13 +82,13 @@ export class Compiler {
                         );
                     });
 
-                    return xml(this.formatter.format(file.DocumentRelationships), this.prettifyXml);
+                    return xml(this.formatter.format(file.DocumentRelationships), prettify);
                 })(),
                 path: "word/_rels/document.xml.rels",
             },
             Document: {
                 data: (() => {
-                    const tempXmlData = xml(this.formatter.format(file.Document), this.prettifyXml);
+                    const tempXmlData = xml(this.formatter.format(file.Document), prettify);
                     const mediaDatas = this.imageReplacer.getMediaData(tempXmlData, file.Media);
                     const xmlData = this.imageReplacer.replace(tempXmlData, mediaDatas, documentRelationshipCount);
 
@@ -99,7 +97,7 @@ export class Compiler {
                 path: "word/document.xml",
             },
             Styles: {
-                data: xml(this.formatter.format(file.Styles), this.prettifyXml),
+                data: xml(this.formatter.format(file.Styles), prettify),
                 path: "word/styles.xml",
             },
             Properties: {
@@ -112,15 +110,15 @@ export class Compiler {
                 path: "docProps/core.xml",
             },
             Numbering: {
-                data: xml(this.formatter.format(file.Numbering), this.prettifyXml),
+                data: xml(this.formatter.format(file.Numbering), prettify),
                 path: "word/numbering.xml",
             },
             FileRelationships: {
-                data: xml(this.formatter.format(file.FileRelationships), this.prettifyXml),
+                data: xml(this.formatter.format(file.FileRelationships), prettify),
                 path: "_rels/.rels",
             },
             HeaderRelationships: file.Headers.map((headerWrapper, index) => {
-                const xmlData = xml(this.formatter.format(headerWrapper.Header), this.prettifyXml);
+                const xmlData = xml(this.formatter.format(headerWrapper.Header), prettify);
                 const mediaDatas = this.imageReplacer.getMediaData(xmlData, file.Media);
 
                 mediaDatas.forEach((mediaData, i) => {
@@ -132,12 +130,12 @@ export class Compiler {
                 });
 
                 return {
-                    data: xml(this.formatter.format(headerWrapper.Relationships), this.prettifyXml),
+                    data: xml(this.formatter.format(headerWrapper.Relationships), prettify),
                     path: `word/_rels/header${index + 1}.xml.rels`,
                 };
             }),
             FooterRelationships: file.Footers.map((footerWrapper, index) => {
-                const xmlData = xml(this.formatter.format(footerWrapper.Footer), this.prettifyXml);
+                const xmlData = xml(this.formatter.format(footerWrapper.Footer), prettify);
                 const mediaDatas = this.imageReplacer.getMediaData(xmlData, file.Media);
 
                 mediaDatas.forEach((mediaData, i) => {
@@ -149,12 +147,12 @@ export class Compiler {
                 });
 
                 return {
-                    data: xml(this.formatter.format(footerWrapper.Relationships), this.prettifyXml),
+                    data: xml(this.formatter.format(footerWrapper.Relationships), prettify),
                     path: `word/_rels/footer${index + 1}.xml.rels`,
                 };
             }),
             Headers: file.Headers.map((headerWrapper, index) => {
-                const tempXmlData = xml(this.formatter.format(headerWrapper.Header), this.prettifyXml);
+                const tempXmlData = xml(this.formatter.format(headerWrapper.Header), prettify);
                 const mediaDatas = this.imageReplacer.getMediaData(tempXmlData, file.Media);
                 // TODO: 0 needs to be changed when headers get relationships of their own
                 const xmlData = this.imageReplacer.replace(tempXmlData, mediaDatas, 0);
@@ -165,7 +163,7 @@ export class Compiler {
                 };
             }),
             Footers: file.Footers.map((footerWrapper, index) => {
-                const tempXmlData = xml(this.formatter.format(footerWrapper.Footer), this.prettifyXml);
+                const tempXmlData = xml(this.formatter.format(footerWrapper.Footer), prettify);
                 const mediaDatas = this.imageReplacer.getMediaData(tempXmlData, file.Media);
                 // TODO: 0 needs to be changed when headers get relationships of their own
                 const xmlData = this.imageReplacer.replace(tempXmlData, mediaDatas, 0);
@@ -176,19 +174,19 @@ export class Compiler {
                 };
             }),
             ContentTypes: {
-                data: xml(this.formatter.format(file.ContentTypes), this.prettifyXml),
+                data: xml(this.formatter.format(file.ContentTypes), prettify),
                 path: "[Content_Types].xml",
             },
             AppProperties: {
-                data: xml(this.formatter.format(file.AppProperties), this.prettifyXml),
+                data: xml(this.formatter.format(file.AppProperties), prettify),
                 path: "docProps/app.xml",
             },
             FootNotes: {
-                data: xml(this.formatter.format(file.FootNotes), this.prettifyXml),
+                data: xml(this.formatter.format(file.FootNotes), prettify),
                 path: "word/footnotes.xml",
             },
             Settings: {
-                data: xml(this.formatter.format(file.Settings), this.prettifyXml),
+                data: xml(this.formatter.format(file.Settings), prettify),
                 path: "word/settings.xml",
             },
         };

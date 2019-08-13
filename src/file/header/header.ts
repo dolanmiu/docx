@@ -50,26 +50,7 @@ export class Header extends InitializableXmlComponent {
         return this.refId;
     }
 
-    public addParagraph(paragraph: Paragraph): void {
-        this.root.push(paragraph);
-    }
-
-    public createParagraph(text?: string): Paragraph {
-        const para = new Paragraph(text);
-        this.addParagraph(para);
-        return para;
-    }
-
-    public addTable(table: Table): void {
-        this.root.push(table);
-    }
-
-    public createTable(rows: number, cols: number): Table {
-        const table = new Table({
-            rows: rows,
-            columns: cols,
-        });
-        this.addTable(table);
-        return table;
+    public add(item: Paragraph | Table): void {
+        this.root.push(item);
     }
 }

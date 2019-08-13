@@ -175,9 +175,9 @@ describe("AbstractNumbering", () => {
                                     "w:bottom": {
                                         _attr: {
                                             "w:color": "auto",
-                                            "w:space": "1",
+                                            "w:space": 1,
                                             "w:val": "single",
-                                            "w:sz": "6",
+                                            "w:sz": 6,
                                         },
                                     },
                                 },
@@ -322,6 +322,24 @@ describe("AbstractNumbering", () => {
                 const tree = new Formatter().format(level);
                 expect(tree["w:lvl"]).to.include({
                     "w:rPr": [{ "w:i": { _attr: { "w:val": true } } }],
+                });
+            });
+
+            it("#highlight", () => {
+                const abstractNumbering = new AbstractNumbering(1);
+                const level = abstractNumbering.createLevel(0, "lowerRoman", "%0.").highlight("005599");
+                const tree = new Formatter().format(level);
+                expect(tree["w:lvl"]).to.include({
+                    "w:rPr": [{ "w:highlight": { _attr: { "w:val": "005599" } } }],
+                });
+            });
+
+            it("#shadow", () => {
+                const abstractNumbering = new AbstractNumbering(1);
+                const level = abstractNumbering.createLevel(0, "lowerRoman", "%0.").shadow("pct10", "00FFFF", "FF0000");
+                const tree = new Formatter().format(level);
+                expect(tree["w:lvl"]).to.include({
+                    "w:rPr": [{ "w:shd": { _attr: { "w:val": "pct10", "w:fill": "00FFFF", "w:color": "FF0000" } } }],
                 });
             });
 

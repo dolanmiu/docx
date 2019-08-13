@@ -2,7 +2,7 @@
 
 ## Example
 
-```js
+```ts
 const para = new Paragraph("To whom it may concern:").heading2().center();
 
 const name = new TextRun("Name:")
@@ -56,7 +56,7 @@ Unlike CSS, less specific rules don't _necessarily_ override parent rules. The r
 
 This is the type of formatting that your uncle uses when he types out documents: _N ... a ... m ... e ... :_ Then he grabs the mouse, highlights _Name:_ and moves over to the **B** for bold. This manner of formatting results in markup that is similar to writing `<span style="bold: true">Name:</span>` if you were typing out HTML. DOCX (the format) allows you to specify this for any of the four types of items. `docx` (the library) only supports this type of formatting for paragraphs and characters, using a _fluent_ api. Thus you could do:
 
-```js
+```ts
 const name = new TextRun("Name:")
     .bold()
     .font("Calibri")
@@ -65,7 +65,7 @@ const name = new TextRun("Name:")
 
 Or for paragraph formatting:
 
-```js
+```ts
 const para = new Paragraph("To whom it may concern:").heading2().center();
 ```
 
@@ -76,12 +76,12 @@ DOCX files contain a styles section separate from the main content, much like ho
 There are three parts to using custom styles with `docx`:
 
 1.  Create a container object for the style definitions:
-    ```js
+    ```ts
     const myStyles = new docx.Styles();
     ```
 2.  Define your custom styles, similar to the way you would format a paragraph or run
 
-    ```js
+    ```ts
     // The first argument is an ID you use to apply the style to paragraphs
     // The second argument is a human-friendly name to show in the UI
     myStyles
@@ -106,9 +106,8 @@ There are three parts to using custom styles with `docx`:
 
 3.  When you generate your document, make sure to pass the `styles` container to the `Packer`:
 
-    ```js
-    const packer = new Packer(doc, myStyles);
-    packer.pack(myOutStream);
+    ```ts
+    Packer.pack(myOutStream);
     ```
 
 **Note**: If you are using the `.headingX` or `.title` methods of paragraphs, you must make sure to define `HeadingX` or `Title` styles for these. Otherwise they'll show up unstyled :(. If you are using the `.bullet` or `.setNumbering` methods, you need to define a `ListParagraph` style or the numbers may not show up.

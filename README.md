@@ -66,9 +66,15 @@ Read the contribution guidelines [here](https://docx.js.org/#/contribution-guide
 
 # Used by
 
-[<img src="https://i.imgur.com/zy5qWmI.png" alt="drawing" height="200"/>](https://hfour.com/)
-[<img src="https://i.imgur.com/OYP5tgS.png" alt="drawing" height="200"/>](https://fuzzproductions.com/)
-[<img src="https://i.imgur.com/zUDMfZ3.png" alt="drawing" height="200"/>](https://www.mettzer.com/)
+[<img src="https://i.imgur.com/zy5qWmI.png" alt="drawing" height="50"/>](https://hfour.com/)
+[<img src="https://i.imgur.com/OYP5tgS.png" alt="drawing" height="50"/>](https://fuzzproductions.com/)
+[<img src="https://i.imgur.com/zUDMfZ3.png" alt="drawing" height="50"/>](https://www.mettzer.com/)
+[<img src="https://i.imgur.com/wtNB1uq.png" alt="drawing" height="50"/>](https://www.wisedoc.net/)
+[<img src="https://i.imgur.com/suiH2zc.png" alt="drawing" height="50"/>](https://www.dabblewriter.com/)
+[<img src="https://i.imgur.com/1LjuK2M.png" alt="drawing" height="50"/>](https://turbopatent.com/)
+[<img src="https://i.imgur.com/dHMg0wF.gif" alt="drawing" height="50"/>](http://www.madisoncres.com/)
+
+...and many more!
 
 ---
 

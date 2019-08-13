@@ -10,45 +10,45 @@ Simply call the relevant methods on the paragraph listed below. Then just add a 
 
 ## Example
 
-```js
-var paragraph = new docx.Paragraph().maxRightTabStop();
-var leftText = new docx.TextRun("Hey everyone").bold();
-var rightText = new docx.TextRun("11th November 2015").tab();
+```ts
+const paragraph = new docx.Paragraph().maxRightTabStop();
+const leftText = new docx.TextRun("Hey everyone").bold();
+const rightText = new docx.TextRun("11th November 2015").tab();
 paragraph.addRun(leftText);
 paragraph.addRun(rightText);
 ```
 The example above will create a left aligned text, and a right aligned text on the same line. The laymans approach to this problem would be to either use text boxes or tables. YUK!
 
-```js
-var paragraph = new docx.Paragraph();
+```ts
+const paragraph = new docx.Paragraph();
 paragraph.maxRightTabStop();
 paragraph.leftTabStop(1000);
-var text = new docx.TextRun("Second tab stop here I come!").tab().tab();
+const text = new docx.TextRun("Second tab stop here I come!").tab().tab();
 paragraph.addRun(text);
 ```
 
 The above shows the use of two tab stops, and how to select/use it.
 
 ## Left Tab Stop
-```js
+```ts
 paragraph.leftTabStop(2268);
 ```
 2268 is the distance from the left side.
 
 ## Center Tab Stop
-```js
+```ts
 paragraph.centerTabStop(2268);
 ```
 2268 is the distance from the left side.
 
 ## Right Tab Stop
-```js
+```ts
 paragraph.rightTabStop(2268);
 ```
 2268 is the distance from the left side.
 
 ## Max Right Tab Stop
-```js
+```ts
 paragraph.maxRightTabStop();
 ```
 This will create a tab stop on the very edge of the right hand side. Handy for right aligning and left aligning text on the same line.

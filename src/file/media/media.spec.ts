@@ -5,6 +5,7 @@ import { stub } from "sinon";
 import { Formatter } from "export/formatter";
 
 import { File } from "../file";
+import { Paragraph } from "../paragraph";
 import { Media } from "./media";
 
 describe("Media", () => {
@@ -13,10 +14,10 @@ describe("Media", () => {
             const file = new File();
             const image = Media.addImage(file, "");
 
-            let tree = new Formatter().format(image.Paragraph);
+            let tree = new Formatter().format(new Paragraph(image));
             expect(tree["w:p"]).to.be.an.instanceof(Array);
 
-            tree = new Formatter().format(image.Run);
+            tree = new Formatter().format(image);
             expect(tree["w:r"]).to.be.an.instanceof(Array);
         });
 
@@ -26,7 +27,7 @@ describe("Media", () => {
 
             const file = new File();
             const image1 = Media.addImage(file, "test");
-            const tree = new Formatter().format(image1.Paragraph);
+            const tree = new Formatter().format(new Paragraph(image1));
             const inlineElements = tree["w:p"][0]["w:r"][0]["w:drawing"][0]["wp:inline"];
             const graphicData = inlineElements.find((x) => x["a:graphic"]);
 
@@ -38,7 +39,7 @@ describe("Media", () => {
             });
 
             const image2 = Media.addImage(file, "test");
-            const tree2 = new Formatter().format(image2.Paragraph);
+            const tree2 = new Formatter().format(new Paragraph(image2));
             const inlineElements2 = tree2["w:p"][0]["w:r"][0]["w:drawing"][0]["wp:inline"];
             const graphicData2 = inlineElements2.find((x) => x["a:graphic"]);
 

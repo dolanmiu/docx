@@ -166,9 +166,9 @@ describe("ParagraphStyle", () => {
                                         "w:bottom": {
                                             _attr: {
                                                 "w:color": "auto",
-                                                "w:space": "1",
+                                                "w:space": 1,
                                                 "w:val": "single",
-                                                "w:sz": "6",
+                                                "w:sz": 6,
                                             },
                                         },
                                     },
@@ -231,12 +231,12 @@ describe("ParagraphStyle", () => {
         });
 
         it("#outlineLevel", () => {
-            const style = new ParagraphStyle("myStyleId").outlineLevel("1");
+            const style = new ParagraphStyle("myStyleId").outlineLevel(1);
             const tree = new Formatter().format(style);
             expect(tree).to.deep.equal({
                 "w:style": [
                     { _attr: { "w:type": "paragraph", "w:styleId": "myStyleId" } },
-                    { "w:pPr": [{ "w:outlineLvl": { _attr: { "w:val": "1" } } }] },
+                    { "w:pPr": [{ "w:outlineLvl": { _attr: { "w:val": 1 } } }] },
                 ],
             });
         });
@@ -370,6 +370,32 @@ describe("ParagraphStyle", () => {
                     { _attr: { "w:type": "paragraph", "w:styleId": "myStyleId" } },
                     {
                         "w:rPr": [{ "w:i": { _attr: { "w:val": true } } }],
+                    },
+                ],
+            });
+        });
+
+        it("#highlight", () => {
+            const style = new ParagraphStyle("myStyleId").highlight("005599");
+            const tree = new Formatter().format(style);
+            expect(tree).to.deep.equal({
+                "w:style": [
+                    { _attr: { "w:type": "paragraph", "w:styleId": "myStyleId" } },
+                    {
+                        "w:rPr": [{ "w:highlight": { _attr: { "w:val": "005599" } } }],
+                    },
+                ],
+            });
+        });
+
+        it("#shadow", () => {
+            const style = new ParagraphStyle("myStyleId").shadow("pct10", "00FFFF", "FF0000");
+            const tree = new Formatter().format(style);
+            expect(tree).to.deep.equal({
+                "w:style": [
+                    { _attr: { "w:type": "paragraph", "w:styleId": "myStyleId" } },
+                    {
+                        "w:rPr": [{ "w:shd": { _attr: { "w:val": "pct10", "w:fill": "00FFFF", "w:color": "FF0000" } } }],
                     },
                 ],
             });

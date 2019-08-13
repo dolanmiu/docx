@@ -113,7 +113,7 @@ export class Imprint extends XmlComponent {
     }
 }
 
-export class Shadow extends XmlComponent {
+/* export class Shadow extends XmlComponent {
     constructor() {
         super("w:shadow");
         this.root.push(
@@ -122,7 +122,7 @@ export class Shadow extends XmlComponent {
             }),
         );
     }
-}
+} */
 
 export class SmallCaps extends XmlComponent {
     constructor() {
@@ -174,6 +174,54 @@ export class RightToLeft extends XmlComponent {
         this.root.push(
             new Attributes({
                 val: true,
+            }),
+        );
+    }
+}
+
+export class Highlight extends XmlComponent {
+    constructor(color: string) {
+        super("w:highlight");
+        this.root.push(
+            new Attributes({
+                val: color,
+            }),
+        );
+    }
+}
+
+export class HighlightComplexScript extends XmlComponent {
+    constructor(color: string) {
+        super("w:highlightCs");
+        this.root.push(
+            new Attributes({
+                val: color,
+            }),
+        );
+    }
+}
+
+export class Shading extends XmlComponent {
+    constructor(value: string, fill: string, color: string) {
+        super("w:shd");
+        this.root.push(
+            new Attributes({
+                val: value,
+                fill: fill,
+                color: color,
+            }),
+        );
+    }
+}
+
+export class ShadowComplexScript extends XmlComponent {
+    constructor(value: string, fill: string, color: string) {
+        super("w:shdCs");
+        this.root.push(
+            new Attributes({
+                val: value,
+                fill: fill,
+                color: color,
             }),
         );
     }

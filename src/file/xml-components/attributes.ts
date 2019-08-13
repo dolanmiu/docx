@@ -3,6 +3,7 @@ import { XmlAttributeComponent } from "./default-attributes";
 export interface IAttributesProperties {
     readonly val?: string | number | boolean;
     readonly color?: string;
+    readonly fill?: string;
     readonly space?: string;
     readonly sz?: string;
     readonly type?: string;
@@ -26,6 +27,7 @@ export class Attributes extends XmlAttributeComponent<IAttributesProperties> {
     protected readonly xmlKeys = {
         val: "w:val",
         color: "w:color",
+        fill: "w:fill",
         space: "w:space",
         sz: "w:sz",
         type: "w:type",

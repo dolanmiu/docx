@@ -4,7 +4,7 @@ import { SequentialIdentifierInstruction } from "./sequential-identifier-instruc
 
 export class SequentialIdentifier extends Run {
     constructor(identifier: string) {
-        super();
+        super({});
         this.root.push(new Begin(true));
         this.root.push(new SequentialIdentifierInstruction(identifier));
         this.root.push(new Separate());

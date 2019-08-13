@@ -1,5 +1,5 @@
 <p align="center">
-    <img alt="clippy the assistant" src="https://i.imgur.com/pwCV6L8.png">
+    <img alt="clippy the assistant" src="https://i.imgur.com/37uBGhO.gif">
 </p>
 
 <p align="center">
@@ -18,33 +18,49 @@ npm install --save docx
 
 Then you can `require` or `import` as usual:
 
-```js
-let docx = require("docx");
+```ts
+const docx = require("docx");
 ```
 
-```js
+```ts
 import * as docx from "docx";
+// or
+import { ... } from "docx";
 ```
 
 ## Basic Usage
 
-```js
-var fs = require("fs");
-var docx = require("docx");
+```ts
+import * as fs from "fs";
+import { Document, Packer, Paragraph, TextRun } from "docx";
 
 // Create document
-var doc = new docx.Document();
+const doc = new Document();
 
-// Add some content in the document
-var paragraph = new docx.Paragraph("Some cool text here.");
-// Add more text into the paragraph if you wish
-paragraph.addRun(new docx.TextRun("Lorem Ipsum Foo Bar"));
-doc.addParagraph(paragraph);
+// Documents contain sections, you can have multiple sections per document, go here to learn more about sections
+// This simple example will only contain one section
+doc.addSection({
+    properties: {},
+    children: [
+        new Paragraph({
+            children: [
+                new TextRun("Hello World"),
+                new TextRun({
+                    text: "Foo Bar",
+                    bold: true,
+                }),
+                new TextRun({
+                    text: "Github is the best",
+                    bold: true,
+                }).tab(),
+            ],
+        }),
+    ],
+});
 
 // Used to export the file into a .docx file
-var packer = new docx.Packer();
-packer.toBuffer(doc).then((buffer) => {
-    fs.writeFileSync("My First Document.docx", buffer);
+Packer.toBuffer(doc).then((buffer) => {
+    fs.writeFileSync("My Document.docx", buffer);
 });
 
 // Done! A file called 'My First Document.docx' will be in your file system.

@@ -1,63 +1,70 @@
 // http://officeopenxml.com/WPborders.php
-import { Attributes, XmlComponent } from "file/xml-components";
+import { XmlComponent } from "file/xml-components";
+import { BorderAttributes } from "./border-attributes";
+
+interface IBorderPropertyOptions {
+    readonly color: string;
+    readonly space: number;
+    readonly value: string;
+    readonly size: number;
+}
+
+export interface IBorderOptions {
+    readonly top?: IBorderPropertyOptions;
+    readonly bottom?: IBorderPropertyOptions;
+    readonly left?: IBorderPropertyOptions;
+    readonly right?: IBorderPropertyOptions;
+}
 
 class BorderProperty extends XmlComponent {
-    public setProperties(color: string, space: string, value: string, size: string): XmlComponent {
-        const attrs = new Attributes({
-            color: color,
-            space: space,
-            val: value,
-            sz: size,
+    constructor(rootKey: string, options: IBorderPropertyOptions = { color: "auto", space: 1, value: "single", size: 6 }) {
+        super(rootKey);
+
+        const attrs = new BorderAttributes({
+            color: options.color,
+            space: options.space,
+            val: options.value,
+            sz: options.size,
         });
         this.root.push(attrs);
-
-        return this;
     }
 }
 
 export class Border extends XmlComponent {
-    constructor() {
+    constructor(options: IBorderOptions) {
         super("w:pBdr");
-    }
 
-    public addTopBorder(color: string = "auto", space: string = "1", value: string = "single", size: string = "6"): XmlComponent {
-        const top = new BorderProperty("w:top");
-        top.setProperties(color, space, value, size);
-        this.root.push(top);
+        if (options.top !== undefined) {
+            const borderProperty = new BorderProperty("w:top", options.top);
+            this.root.push(borderProperty);
+        }
 
-        return this;
-    }
+        if (options.bottom !== undefined) {
+            const borderProperty = new BorderProperty("w:bottom", options.bottom);
+            this.root.push(borderProperty);
+        }
 
-    public addBottomBorder(color: string = "auto", space: string = "1", value: string = "single", size: string = "6"): XmlComponent {
-        const bottom = new BorderProperty("w:bottom");
-        bottom.setProperties(color, space, value, size);
-        this.root.push(bottom);
+        if (options.left !== undefined) {
+            const borderProperty = new BorderProperty("w:left", options.left);
+            this.root.push(borderProperty);
+        }
 
-        return this;
-    }
-
-    public addLeftBorder(color: string = "auto", space: string = "1", value: string = "single", size: string = "6"): XmlComponent {
-        const left = new BorderProperty("w:left");
-        left.setProperties(color, space, value, size);
-        this.root.push(left);
-
-        return this;
-    }
-
-    public addRightBorder(color: string = "auto", space: string = "1", value: string = "single", size: string = "6"): XmlComponent {
-        const right = new BorderProperty("w:right");
-        right.setProperties(color, space, value, size);
-        this.root.push(right);
-
-        return this;
+        if (options.right !== undefined) {
+            const borderProperty = new BorderProperty("w:right", options.right);
+            this.root.push(borderProperty);
+        }
     }
 }
 
 export class ThematicBreak extends XmlComponent {
     constructor() {
         super("w:pBdr");
-        const bottom = new BorderProperty("w:bottom");
-        bottom.setProperties("auto", "1", "single", "6");
+        const bottom = new BorderProperty("w:bottom", {
+            color: "auto",
+            space: 1,
+            value: "single",
+            size: 6,
+        });
         this.root.push(bottom);
     }
 }

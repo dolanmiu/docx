@@ -1,24 +1,26 @@
 # Headers and Footers
 
+!> Headers and Footers requires an understanding of [Sections](usage/sections.md).
+
 ## Example
 
 Creating Headers and footers is simple. Access the `Header` and `Footer` by doing so like this:
 
-```js
+```ts
 doc.Header;
 doc.Footer;
 ```
 
 You can call the same methods as you would with a `File`:
 
-```js
+```ts
 doc.Header.createParagraph("Header text");
 doc.Footer.createParagraph("Footer text");
 ```
 
 Even add images:
 
-```js
+```ts
 doc.Header.createImage([BUFFER_OF_YOUR_IMAGE]);
 doc.Footer.createImage([BUFFER_OF_YOUR_IMAGE]);
 ```
@@ -31,7 +33,7 @@ Also all the supported section properties are implemented according to: http://o
 
 ### Example
 
-```js
+```ts
     const header = this.document.createHeader();
     const footer = this.document.createFooter();
 

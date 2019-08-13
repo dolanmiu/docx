@@ -307,5 +307,51 @@ describe("CharacterStyle", () => {
                 ],
             });
         });
+
+        it("#highlight", () => {
+            const style = new CharacterStyle("myStyleId").highlight("005599");
+            const tree = new Formatter().format(style);
+            expect(tree).to.deep.equal({
+                "w:style": [
+                    { _attr: { "w:type": "character", "w:styleId": "myStyleId" } },
+                    {
+                        "w:rPr": [{ "w:highlight": { _attr: { "w:val": "005599" } } }],
+                    },
+                    {
+                        "w:uiPriority": {
+                            _attr: {
+                                "w:val": "99",
+                            },
+                        },
+                    },
+                    {
+                        "w:unhideWhenUsed": EMPTY_OBJECT,
+                    },
+                ],
+            });
+        });
+
+        it("#shadow", () => {
+            const style = new CharacterStyle("myStyleId").shadow("pct10", "00FFFF", "FF0000");
+            const tree = new Formatter().format(style);
+            expect(tree).to.deep.equal({
+                "w:style": [
+                    { _attr: { "w:type": "character", "w:styleId": "myStyleId" } },
+                    {
+                        "w:rPr": [{ "w:shd": { _attr: { "w:val": "pct10", "w:fill": "00FFFF", "w:color": "FF0000" } } }],
+                    },
+                    {
+                        "w:uiPriority": {
+                            _attr: {
+                                "w:val": "99",
+                            },
+                        },
+                    },
+                    {
+                        "w:unhideWhenUsed": EMPTY_OBJECT,
+                    },
+                ],
+            });
+        });
     });
 });

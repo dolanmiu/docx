@@ -1,6 +1,6 @@
 import {
     Alignment,
-    AlignmentOptions,
+    AlignmentType,
     Indent,
     ISpacingProperties,
     KeepLines,
@@ -24,7 +24,7 @@ export class ParagraphStyle extends Style {
 
     constructor(styleId: string, name?: string) {
         super({ type: "paragraph", styleId: styleId }, name);
-        this.paragraphProperties = new ParagraphProperties();
+        this.paragraphProperties = new ParagraphProperties({});
         this.runProperties = new RunProperties();
         this.root.push(this.paragraphProperties);
         this.root.push(this.runProperties);
@@ -35,7 +35,7 @@ export class ParagraphStyle extends Style {
         return this;
     }
 
-    public outlineLevel(level: string): ParagraphStyle {
+    public outlineLevel(level: number): ParagraphStyle {
         this.paragraphProperties.push(new OutlineLevel(level));
         return this;
     }
@@ -114,22 +114,30 @@ export class ParagraphStyle extends Style {
         return this.addRunProperty(new formatting.CharacterSpacing(value));
     }
 
+    public highlight(color: string): ParagraphStyle {
+        return this.addRunProperty(new formatting.Highlight(color));
+    }
+
+    public shadow(value: string, fill: string, color: string): ParagraphStyle {
+        return this.addRunProperty(new formatting.Shading(value, fill, color));
+    }
+
     // --------------------- Paragraph formatting ------------------------ //
 
     public center(): ParagraphStyle {
-        return this.addParagraphProperty(new Alignment(AlignmentOptions.CENTER));
+        return this.addParagraphProperty(new Alignment(AlignmentType.CENTER));
     }
 
     public left(): ParagraphStyle {
-        return this.addParagraphProperty(new Alignment(AlignmentOptions.LEFT));
+        return this.addParagraphProperty(new Alignment(AlignmentType.LEFT));
     }
 
     public right(): ParagraphStyle {
-        return this.addParagraphProperty(new Alignment(AlignmentOptions.RIGHT));
+        return this.addParagraphProperty(new Alignment(AlignmentType.RIGHT));
     }
 
     public justified(): ParagraphStyle {
-        return this.addParagraphProperty(new Alignment(AlignmentOptions.BOTH));
+        return this.addParagraphProperty(new Alignment(AlignmentType.BOTH));
     }
 
     public thematicBreak(): ParagraphStyle {

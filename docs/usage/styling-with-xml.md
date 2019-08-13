@@ -24,7 +24,7 @@
 
 Read the styles using `fs`, and put it into the `Document` object in the constructor:
 
-```js
+```ts
 const styles = fs.readFileSync("./styles.xml", "utf-8");
 const doc = new docx.Document({
     title: "Title",
@@ -34,12 +34,12 @@ const doc = new docx.Document({
 
 You can use paragraphs, `heading1()`, `heading2()` etc and it will be styled according to your `styles.xml` created earlier. You can even use your new style you made by calling the `style` method:
 
-```js
+```ts
 doc.createParagraph("Cool Heading Text").heading1();
 
-let paragraph = new docx.Paragraph('This is a custom named style from the template "Cool New Style"');
+const paragraph = new docx.Paragraph('This is a custom named style from the template "Cool New Style"');
 paragraph.style("Cool New Style");
-doc.addParagraph(paragraph);
+doc.add(paragraph);
 
 doc.createParagraph("Some normal text");
 ```

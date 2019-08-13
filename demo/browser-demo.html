@@ -1,39 +1,45 @@
 <!DOCTYPE html>
 <html>
+    <head>
+        <script src="../build/index.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/1.3.8/FileSaver.js"></script>
+    </head>
 
-<head>
-    <script src="../build/index.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/1.3.8/FileSaver.js"></script>
-</head>
+    <body>
+        <h1>DOCX browser Word document generation</h1>
 
-<body>
+        <button type="button" onclick="generate()">Click to generate document</button>
 
-    <h1>DOCX browser Word document generation</h1>
+        <script>
+            function generate() {
+                const doc = new Document();
 
-    <button type="button" onclick="generate()">Click to generate document</button>
+                doc.addSection({
+                    children: [
+                        new Paragraph({
+                            children: [
+                                new TextRun("Hello World"),
+                                new TextRun({
+                                    text: "Foo Bar",
+                                    bold: true,
+                                }),
+                                new TextRun({
+                                    text: "Github is the best",
+                                    bold: true,
+                                }).tab(),
+                            ],
+                        }),
+                    ],
+                });
 
-    <script>
-        function generate() {
-            const doc = new Document();
 
-            const paragraph = new Paragraph("Hello World");
-            const institutionText = new TextRun("Foo Bar").bold();
-            const dateText = new TextRun("Github is the best").tab().bold();
-            paragraph.addRun(institutionText);
-            paragraph.addRun(dateText);
 
-            doc.addParagraph(paragraph);
-
-            const packer = new Packer();
-
-            packer.toBlob(doc).then(blob => {
-                console.log(blob);
-                saveAs(blob, "example.docx");
-                console.log("Document created successfully");
-            });
-        }
-    </script>
-
-</body>
-
+                Packer.toBlob(doc).then((blob) => {
+                    console.log(blob);
+                    saveAs(blob, "example.docx");
+                    console.log("Document created successfully");
+                });
+            }
+        </script>
+    </body>
 </html>

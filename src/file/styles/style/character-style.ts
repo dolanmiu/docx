@@ -58,4 +58,12 @@ export class CharacterStyle extends Style {
         this.root.push(new SemiHidden());
         return this;
     }
+
+    public highlight(color: string): CharacterStyle {
+        return this.addRunProperty(new formatting.Highlight(color));
+    }
+
+    public shadow(value: string, fill: string, color: string): CharacterStyle {
+        return this.addRunProperty(new formatting.Shading(value, fill, color));
+    }
 }
