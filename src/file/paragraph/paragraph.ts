@@ -15,6 +15,7 @@ import { HeadingLevel, Style } from "./formatting/style";
 import { CenterTabStop, LeaderType, LeftTabStop, MaxRightTabStop, RightTabStop } from "./formatting/tab-stop";
 import { NumberProperties } from "./formatting/unordered-list";
 import { Bookmark, Hyperlink, OutlineLevel } from "./links";
+import { Math } from "./math";
 import { ParagraphProperties } from "./properties";
 import { PictureRun, Run, SequentialIdentifier, TextRun } from "./run";
 
@@ -54,7 +55,7 @@ export interface IParagraphOptions {
         readonly level: number;
         readonly custom?: boolean;
     };
-    readonly children?: Array<TextRun | PictureRun | Hyperlink>;
+    readonly children?: Array<TextRun | PictureRun | Hyperlink | Math>;
 }
 
 export class Paragraph extends XmlComponent {
