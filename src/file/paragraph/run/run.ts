@@ -21,7 +21,7 @@ import {
     SizeComplexScript,
     Strike,
 } from "./formatting";
-import { NumberOfPages, Page } from "./page-number";
+import { NumberOfPages, NumberOfPagesSection, Page } from "./page-number";
 import { RunProperties } from "./properties";
 import { RunFonts } from "./run-fonts";
 import { SubScript, SuperScript } from "./script";
@@ -157,6 +157,14 @@ export class Run extends XmlComponent {
     public numberOfTotalPages(): Run {
         this.root.push(new Begin());
         this.root.push(new NumberOfPages());
+        this.root.push(new Separate());
+        this.root.push(new End());
+        return this;
+    }
+
+    public numberOfTotalPagesSection(): Run {
+        this.root.push(new Begin());
+        this.root.push(new NumberOfPagesSection());
         this.root.push(new Separate());
         this.root.push(new End());
         return this;
