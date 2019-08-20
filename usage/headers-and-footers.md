@@ -25,7 +25,7 @@ doc.Header.createImage([BUFFER_OF_YOUR_IMAGE]);
 doc.Footer.createImage([BUFFER_OF_YOUR_IMAGE]);
 ```
 
-Refer to [`demo8.ts`](https://github.com/dolanmiu/docx/blob/master/demo/demo8.ts) for more information.
+Refer to [`8-header-footer`](https://github.com/dolanmiu/docx/blob/master/demo/8-header-footer.ts) for more information.
 
 ## Multiple Headers and Footers
 

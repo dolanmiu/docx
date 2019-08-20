@@ -265,7 +265,7 @@ const paragraph = new Paragraph({
 
 ![Page Break Before in Word](https://user-images.githubusercontent.com/34742290/40176503-df3a8398-59db-11e8-8b9c-d719f13aa8b4.png)
 
-Example: https://github.com/dolanmiu/docx/blob/master/demo/demo15.ts
+Example: https://github.com/dolanmiu/docx/blob/master/demo/15-page-break-before.ts
 
 ## Page break control
 

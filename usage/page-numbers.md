@@ -61,6 +61,6 @@ doc.Header.createParagraph().addRun(new TextRun("Page ").pageNumber()).addRun(ne
 
 Adding page numbers to Header and Footer
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/demo39.ts ':include')
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/39-page-numbers.ts ':include')
 
-_Source: https://github.com/dolanmiu/docx/blob/master/demo/demo39.ts_
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/39-page-numbers.ts_
