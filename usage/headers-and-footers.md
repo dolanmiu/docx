@@ -38,7 +38,7 @@ If you want more head
 
 Example showing basic header and footer
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/8-header-footer.ts ":include")
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/8-header-footer.ts ':include')
 
 _Source: https://github.com/dolanmiu/docx/blob/master/demo/8-header-footer.ts_
 
