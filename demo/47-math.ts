@@ -1,7 +1,7 @@
 // Simple example to add text to a document
 // Import from 'docx' rather than '../build' if you install from npm
 import * as fs from "fs";
-import { Document, Math, MathDenominator, MathFraction, MathNumerator, MathRun, Packer, Paragraph, TextRun } from "../build";
+import { Document, Math, MathDenominator, MathFraction, MathNumerator, MathRun, MathSum, Packer, Paragraph, TextRun } from "../build";
 
 const doc = new Document();
 
@@ -22,6 +22,17 @@ doc.addSection({
                 new TextRun({
                     text: "Foo Bar",
                     bold: true,
+                }),
+            ],
+        }),
+        new Paragraph({
+            children: [
+                new Math({
+                    children: [
+                        new MathSum({
+                            child: new MathRun("test"),
+                        }),
+                    ],
                 }),
             ],
         }),
