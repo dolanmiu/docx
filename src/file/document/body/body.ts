@@ -1,5 +1,5 @@
 import { IXmlableObject, XmlComponent } from "file/xml-components";
-import { Paragraph, ParagraphProperties, TableOfContents } from "../..";
+import { TableOfContents } from "../..";
 import { SectionProperties, SectionPropertiesOptions } from "./section-properties/section-properties";
 
 export class Body extends XmlComponent {
@@ -18,9 +18,6 @@ export class Body extends XmlComponent {
      * @param options new section options
      */
     public addSection(options: SectionPropertiesOptions): void {
-        const currentSection = this.sections.pop() as SectionProperties;
-        this.root.push(this.createSectionParagraph(currentSection));
-
         this.sections.push(new SectionProperties(options));
     }
 
@@ -38,13 +35,5 @@ export class Body extends XmlComponent {
 
     public getTablesOfContents(): TableOfContents[] {
         return this.root.filter((child) => child instanceof TableOfContents) as TableOfContents[];
-    }
-
-    private createSectionParagraph(section: SectionProperties): Paragraph {
-        const paragraph = new Paragraph({});
-        const properties = new ParagraphProperties({});
-        properties.addChildElement(section);
-        paragraph.addChildElement(properties);
-        return paragraph;
     }
 }
