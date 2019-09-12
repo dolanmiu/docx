@@ -4,7 +4,7 @@ import * as sinon from "sinon";
 import { HeaderWrapper } from "./header-wrapper";
 import { Media } from "./media";
 import { Paragraph } from "./paragraph";
-import { Table } from "./table";
+import { Table, TableCell, TableRow } from "./table";
 
 describe("HeaderWrapper", () => {
     describe("#add", () => {
@@ -21,8 +21,15 @@ describe("HeaderWrapper", () => {
             const spy = sinon.spy(wrapper.Header, "add");
             wrapper.add(
                 new Table({
-                    rows: 1,
-                    columns: 1,
+                    rows: [
+                        new TableRow({
+                            children: [
+                                new TableCell({
+                                    children: [new Paragraph("hello")],
+                                }),
+                            ],
+                        }),
+                    ],
                 }),
             );
 

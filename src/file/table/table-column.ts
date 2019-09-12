@@ -1,4 +1,4 @@
-import { TableCell, VMergeType } from "./table-cell";
+import { TableCell } from "./table-cell";
 
 export class TableColumn {
     constructor(private readonly cells: TableCell[]) {}
@@ -13,13 +13,13 @@ export class TableColumn {
         return cell;
     }
 
-    public mergeCells(startIndex: number, endIndex: number): TableCell {
-        this.cells[startIndex].addVerticalMerge(VMergeType.RESTART);
+    // public mergeCells(startIndex: number, endIndex: number): TableCell {
+    //     this.cells[startIndex].addVerticalMerge(VMergeType.RESTART);
 
-        for (let i = startIndex + 1; i <= endIndex; i++) {
-            this.cells[i].addVerticalMerge(VMergeType.CONTINUE);
-        }
+    //     for (let i = startIndex + 1; i <= endIndex; i++) {
+    //         this.cells[i].addVerticalMerge(VMergeType.CONTINUE);
+    //     }
 
-        return this.cells[startIndex];
-    }
+    //     return this.cells[startIndex];
+    // }
 }

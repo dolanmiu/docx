@@ -2,9 +2,11 @@
 import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
 
 export class TableGrid extends XmlComponent {
-    constructor(cols: number[]) {
+    constructor(widths: number[]) {
         super("w:tblGrid");
-        cols.forEach((col) => this.root.push(new GridCol(col)));
+        for (const width of widths) {
+            this.root.push(new GridCol(width));
+        }
     }
 }
 

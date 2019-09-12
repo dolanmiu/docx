@@ -1,7 +1,7 @@
 // Setting styles with JavaScript configuration
 // Import from 'docx' rather than '../build' if you install from npm
 import * as fs from "fs";
-import { AlignmentType, Document, Footer, HeadingLevel, Media, Packer, Paragraph, Table } from "../build";
+import { AlignmentType, Document, Footer, HeadingLevel, Media, Packer, Paragraph, Table, TableCell, TableRow } from "../build";
 
 const doc = new Document();
 
@@ -81,13 +81,37 @@ doc.Styles.createParagraphStyle("ListParagraph", "List Paragraph")
 const image = Media.addImage(doc, fs.readFileSync("./demo/images/pizza.gif"));
 
 const table = new Table({
-    rows: 4,
-    columns: 4,
+    rows: [
+        new TableRow({
+            children: [
+                new TableCell({
+                    children: [new Paragraph("Test cell 1.")],
+                }),
+            ],
+        }),
+        new TableRow({
+            children: [
+                new TableCell({
+                    children: [new Paragraph("Test cell 2.")],
+                }),
+            ],
+        }),
+        new TableRow({
+            children: [
+                new TableCell({
+                    children: [new Paragraph("Test cell 3.")],
+                }),
+            ],
+        }),
+        new TableRow({
+            children: [
+                new TableCell({
+                    children: [new Paragraph("Test cell 4.")],
+                }),
+            ],
+        }),
+    ],
 });
-table
-    .getRow(0)
-    .getCell(0)
-    .add(new Paragraph("Pole No."));
 
 const image1 = Media.addImage(doc, fs.readFileSync("./demo/images/pizza.gif"));
 const image2 = Media.addImage(doc, fs.readFileSync("./demo/images/pizza.gif"));
