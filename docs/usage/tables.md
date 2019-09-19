@@ -1,94 +1,127 @@
 # Tables
 
-You can create tables with `docx`. More information can be found [here](http://officeopenxml.com/WPtable.php).
+!> Paragraphs requires an understanding of [Sections](usage/sections.md).
 
-## Create Table
+## Intro
 
-To create a table, simply create one with `new Table()`, then add it to the document: `doc.add()`.
-
-```ts
-const table = doc.add(new Table({
-    rows: [NUMBER OF ROWS],
-    columns: [NUMBER OF COLUMNS]
-});
-```
-
-Alternatively, you can create a table object directly, and then add it in the `document`
-
-```ts
-const table = new Table(4, 4);
-doc.add(table);
-```
-
-The snippet below creates a table of 2 rows and 4 columns.
+Create a simple table like so:
 
 ```ts
 const table = new Table({
-    rows: 2,
-    columns: 4,
+    rows: [Array of `TableRow`s]
 });
-doc.add(table);
 ```
 
-## Rows and Columns
-
-You can get a row or a column from a table like so, where `index` is a number:
-
-### Get Row
+Then add the table in the `section`
 
 ```ts
-const row = doc.getRow(index);
+doc.addSection({
+    children: [table],
+});
 ```
 
-With this, you can merge a row by using the `mergeCells()` method, where `startIndex` is the row number you want to merge from, and `endIndex` is where you want it to merge to:
+## Table Row
+
+A table consists of multiple `table rows`. Table rows have a list of `children` which accepts a list of `table cells` explained below. You can create a simple `table row` like so:
 
 ```ts
-row.mergeCells(startIndex, endIndex);
+const tableRow = new TableRow({
+    children: [
+        new TableCell({
+            children: [new Paragraph("hello")],
+        }),
+    ],
+});
 ```
 
-You can get a cell from a `row` by using the `getCell()` method, where `index` is the row index:
+Or preferably, add the tableRow directly into the `table` without declaring a variable:
 
 ```ts
-row.getCell(index);
+const table = new Table({
+    rows: [
+        new TableRow({
+            children: [
+                new TableCell({
+                    children: [new Paragraph("hello")],
+                }),
+            ],
+        }),
+    ],
+});
 ```
 
-### Get Column
+### Options
 
-```ts
-const column = doc.getColumn(index);
-```
+Here is a list of options you can add to the `table row`:
 
-Again, you can merge a row by using the `mergeCells()` method, where `startIndex` is the row number you want to merge from, and `endIndex` is where you want it to merge to:
-
-```ts
-column.mergeCells(startIndex, endIndex);
-```
-
-You can get a cell from a `column` by using the `getCell()` method, where `index` is the column index:
-
-```ts
-column.getCell(index);
-```
+| Property    | Type                                  | Notes    |
+| ----------- | ------------------------------------- | -------- |
+| children    | `Array<TableCell>`                    | Required |
+| cantSplit   | `boolean`                             | Optional |
+| tableHeader | `boolean`                             | Optional |
+| height      | `{ value: number, rule: HeightRule }` | Optional |
 
 ## Cells
 
-To access the cell, use the `getCell()` method.
+Cells need to be added in the `table row`, you can create a table cell like:
 
 ```ts
-const cell = table.getCell([ROW INDEX], [COLUMN INDEX]);
+const tableCell = new TableCell({
+    children: [new Paragraph("hello")],
+});
 ```
 
-You can also get a cell from a `column` or a `row` with `getCell()`, mentioned previously.
-
-For example:
+Or preferably, add the tableRow directly into the `table row` without declaring a variable:
 
 ```ts
-const cell = table.getCell(0, 2);
-
-const cell = row.getCell(0);
-
-const cell = column.getCell(2);
+const tableRow = new TableRow({
+    children: [
+        new TableCell({
+            children: [new Paragraph("hello")],
+        }),
+    ],
+});
 ```
+
+| Property    | Type                                  | Notes    |
+| ----------- | ------------------------------------- | -------- |
+| children    | `Array<TableCell>`                    | Required |
+| cantSplit   | `boolean`                             | Optional |
+| tableHeader | `boolean`                             | Optional |
+| height      | `{ value: number, rule: HeightRule }` | Optional |
+
+### Options
+
+ readonly shading?: ITableShadingAttributesProperties;
+    readonly margins?: ITableCellMarginOptions;
+    readonly verticalAlign?: VerticalAlign;
+    readonly verticalMerge?: VMergeType;
+    readonly columnSpan?: number;
+    readonly borders?: {
+        readonly top?: {
+            readonly style: BorderStyle;
+            readonly size: number;
+            readonly color: string;
+        };
+        readonly bottom?: {
+            readonly style: BorderStyle;
+            readonly size: number;
+            readonly color: string;
+        };
+        readonly left?: {
+            readonly style: BorderStyle;
+            readonly size: number;
+            readonly color: string;
+        };
+        readonly right?: {
+            readonly style: BorderStyle;
+            readonly size: number;
+            readonly color: string;
+        };
+    };
+    readonly children: Array<Paragraph | Table>;
+
+
 
 ### Add paragraph to a cell
 
