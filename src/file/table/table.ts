@@ -57,6 +57,13 @@ export class Table extends XmlComponent {
         this.root.push(new TableGrid(columnWidths));
 
         for (const row of rows) {
+            row.Children.forEach((cell, i) => {
+                cell.MetaData = {
+                    column: rows.map((r) => r.Children[i]),
+                    row: row,
+                };
+            });
+
             this.root.push(row);
         }
 

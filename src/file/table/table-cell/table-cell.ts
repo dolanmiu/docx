@@ -5,6 +5,7 @@ import { IXmlableObject, XmlComponent } from "file/xml-components";
 
 import { ITableShadingAttributesProperties } from "../shading";
 import { Table } from "../table";
+import { TableRow } from "../table-row";
 import { ITableCellMarginOptions } from "./cell-margin/table-cell-margins";
 import { VerticalAlign, VMergeType } from "./table-cell-components";
 import { TableCellProperties } from "./table-cell-properties";
@@ -15,6 +16,7 @@ export interface ITableCellOptions {
     readonly verticalAlign?: VerticalAlign;
     readonly verticalMerge?: VMergeType;
     readonly columnSpan?: number;
+    readonly rowSpan?: number;
     readonly borders?: {
         readonly top?: {
             readonly style: BorderStyle;
@@ -40,8 +42,15 @@ export interface ITableCellOptions {
     readonly children: Array<Paragraph | Table>;
 }
 
+interface ITableCellMetaData {
+    readonly column: TableCell[];
+    readonly row: TableRow;
+}
+
 export class TableCell extends XmlComponent {
     private readonly properties: TableCellProperties;
+    // tslint:disable-next-line: readonly-keyword
+    private metaData: ITableCellMetaData;
 
     constructor(readonly options: ITableCellOptions) {
         super("w:tc");
@@ -98,10 +107,32 @@ export class TableCell extends XmlComponent {
     }
 
     public prepForXml(): IXmlableObject | undefined {
+        // Row Span has to be added in this method and not the constructor because it needs to know information about the column which happens after Table Cell construction
+        // Row Span of 1 will crash word as it will add RESTART and not a corresponding CONTINUE
+        if (this.options.rowSpan && this.options.rowSpan > 1) {
+            this.properties.addVerticalMerge(VMergeType.RESTART);
+
+            const currentIndex = this.metaData.column.indexOf(this);
+            for (let i = currentIndex + 1; i <= currentIndex + this.options.rowSpan - 1; i++) {
+                this.metaData.column[i].metaData.row.Children.splice(
+                    i,
+                    0,
+                    new TableCell({
+                        children: [],
+                    }),
+                );
+                this.metaData.column[i].properties.addVerticalMerge(VMergeType.CONTINUE);
+            }
+        }
+
         // Cells must end with a paragraph
         if (!(this.root[this.root.length - 1] instanceof Paragraph)) {
             this.root.push(new Paragraph({}));
         }
         return super.prepForXml();
+    }
+
+    public set MetaData(metaData: ITableCellMetaData) {
+        this.metaData = metaData;
     }
 }

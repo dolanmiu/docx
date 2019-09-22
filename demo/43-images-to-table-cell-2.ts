@@ -36,6 +36,7 @@ const table = new Table({
                 }),
                 new TableCell({
                     children: [],
+                    rowSpan: 2,
                 }),
             ],
         }),
@@ -73,8 +74,6 @@ const table = new Table({
         }),
     ],
 });
-
-table.getColumn(3).mergeCells(1, 2);
 
 doc.addSection({
     children: [table],

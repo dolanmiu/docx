@@ -42,18 +42,7 @@ export class TableRow extends XmlComponent {
         return this.options.children.length;
     }
 
-    // public mergeCells(startIndex: number, endIndex: number): TableCell {
-    //     const cellSpan = endIndex - startIndex + 1;
-
-    //     return this.addGridSpan(startIndex, cellSpan);
-    // }
-
-    // private addGridSpan(index: number, cellSpan: number): TableCell {
-    //     const remainCell = this.options.children[index];
-    //     remainCell.addGridSpan(cellSpan);
-    //     this.options.children.splice(index + 1, cellSpan - 1);
-    //     this.root.splice(index + 2, cellSpan - 1);
-
-    //     return remainCell;
-    // }
+    public get Children(): TableCell[] {
+        return this.options.children;
+    }
 }
