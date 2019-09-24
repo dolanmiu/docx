@@ -1,7 +1,7 @@
 // http://officeopenxml.com/WPtableGrid.php
 import { XmlComponent } from "file/xml-components";
 import { TableGrid } from "./grid";
-import { WidthType } from "./table-cell";
+import { TableCell, VMergeType, WidthType } from "./table-cell";
 import { ITableFloatOptions, TableProperties } from "./table-properties";
 import { TableLayoutType } from "./table-properties/table-layout";
 import { TableRow } from "./table-row";
@@ -57,14 +57,29 @@ export class Table extends XmlComponent {
         this.root.push(new TableGrid(columnWidths));
 
         for (const row of rows) {
-            row.Children.forEach((cell, i) => {
-                cell.MetaData = {
-                    column: rows.map((r) => r.Children[i]),
-                    row: row,
-                };
-            });
-
             this.root.push(row);
+        }
+
+        for (const row of rows) {
+            row.Children.forEach((cell, cellIndex) => {
+                const column = rows.map((r) => r.Children[cellIndex]);
+                // Row Span has to be added in this method and not the constructor because it needs to know information about the column which happens after Table Cell construction
+                // Row Span of 1 will crash word as it will add RESTART and not a corresponding CONTINUE
+                if (cell.options.rowSpan && cell.options.rowSpan > 1) {
+                    const thisCellsColumnIndex = column.indexOf(cell);
+                    const endColumnIndex = thisCellsColumnIndex + (cell.options.rowSpan - 1);
+
+                    for (let i = thisCellsColumnIndex + 1; i <= endColumnIndex; i++) {
+                        rows[i].addCellToIndex(
+                            new TableCell({
+                                children: [],
+                                verticalMerge: VMergeType.CONTINUE,
+                            }),
+                            i,
+                        );
+                    }
+                }
+            });
         }
 
         if (float) {

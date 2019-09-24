@@ -1,4 +1,4 @@
-// Example of how you would merge cells together - Rows and Columns
+// Example of how you would merge cells together (Rows and Columns) and apply shading
 // Import from 'docx' rather than '../build' if you install from npm
 import * as fs from "fs";
 import { Document, HeadingLevel, Packer, Paragraph, ShadingType, Table, TableCell, TableRow, WidthType } from "../build";
@@ -128,10 +128,58 @@ const table4 = new Table({
         new TableRow({
             children: [
                 new TableCell({
+                    children: [new Paragraph("0,0")],
+                    columnSpan: 2,
+                }),
+            ],
+        }),
+        new TableRow({
+            children: [
+                new TableCell({
+                    children: [new Paragraph("1,0")],
+                }),
+                new TableCell({
+                    children: [new Paragraph("1,1")],
+                }),
+            ],
+        }),
+        new TableRow({
+            children: [
+                new TableCell({
+                    children: [new Paragraph("2,0")],
+                    columnSpan: 2,
+                }),
+            ],
+        }),
+    ],
+    width: 100,
+    widthUnitType: WidthType.PERCENTAGE,
+});
+
+const table5 = new Table({
+    rows: [
+        new TableRow({
+            children: [
+                new TableCell({
+                    children: [new Paragraph("0,0")],
+                }),
+                new TableCell({
+                    children: [new Paragraph("0,1")],
+                    rowSpan: 2,
+                }),
+                new TableCell({
+                    children: [new Paragraph("0,2")],
+                }),
+            ],
+        }),
+        new TableRow({
+            children: [
+                new TableCell({
                     children: [],
                 }),
                 new TableCell({
-                    children: [],
+                    children: [new Paragraph("1,2")],
+                    rowSpan: 2,
                 }),
             ],
         }),
@@ -163,8 +211,10 @@ doc.addSection({
             heading: HeadingLevel.HEADING_2,
         }),
         table3,
-        new Paragraph("hi"),
+        new Paragraph("Merging columns"),
         table4,
+        new Paragraph("More Merging columns"),
+        table5,
     ],
 });
 

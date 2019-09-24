@@ -45,4 +45,9 @@ export class TableRow extends XmlComponent {
     public get Children(): TableCell[] {
         return this.options.children;
     }
+
+    public addCellToIndex(cell: TableCell, index: number): void {
+        // Offset because properties is also in root.
+        this.root.splice(index + 1, 0, cell);
+    }
 }

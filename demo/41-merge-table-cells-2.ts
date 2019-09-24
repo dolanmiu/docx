@@ -1,4 +1,4 @@
-// Multiple cells merging in the same table
+// Multiple cells merging in the same table - Rows and Columns
 // Import from 'docx' rather than '../build' if you install from npm
 import * as fs from "fs";
 import { Document, Packer, Paragraph, Table, TableCell, TableRow } from "../build";
