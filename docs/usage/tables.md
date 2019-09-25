@@ -128,7 +128,9 @@ const tableRow = new TableRow({
 Once you have got the cell, you can add data to it with the `add()` method.
 
 ```ts
-cell.add(new Paragraph("Hello"));
+new TableCell({
+    children: [new Paragraph("Hello")],
+}),
 ```
 
 ### Set width of a cell
@@ -312,9 +314,9 @@ Example showing how align text in a table cell
 
 _Source: https://github.com/dolanmiu/docx/blob/master/demo/31-tables.ts_
 
-### Merging rows
+### Shading 
 
-Example showing merging of `rows`
+Example showing merging of columns and rows and shading
 
 [Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/32-merge-table-cells.ts ':include')
 
@@ -326,7 +328,7 @@ _Source: https://github.com/dolanmiu/docx/blob/master/demo/41-merge-table-cells-
 
 ### Merging columns
 
-Example showing merging of `columns`
+Example showing merging of columns and rows
 
 [Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/43-images-to-table-cell-2.ts ':include')
 
