@@ -8,7 +8,6 @@ import { Table } from "./table";
 // import { WidthType } from "./table-cell";
 import { RelativeHorizontalPosition, RelativeVerticalPosition, TableAnchorType } from "./table-properties";
 
-import { EMPTY_OBJECT } from "file/xml-components";
 import { TableCell } from "./table-cell";
 import { TableLayoutType } from "./table-properties/table-layout";
 import { TableRow } from "./table-row";
@@ -154,7 +153,28 @@ describe("Table", () => {
                 ],
             });
             const tree = new Formatter().format(table);
-            const cell = { "w:tc": [{ "w:p": EMPTY_OBJECT }] };
+            const cell = {
+                "w:tc": [
+                    {
+                        "w:p": [
+                            {
+                                "w:r": [
+                                    {
+                                        "w:t": [
+                                            {
+                                                _attr: {
+                                                    "xml:space": "preserve",
+                                                },
+                                            },
+                                            "hello",
+                                        ],
+                                    },
+                                ],
+                            },
+                        ],
+                    },
+                ],
+            };
             expect(tree).to.deep.equal({
                 "w:tbl": [
                     { "w:tblPr": [DEFAULT_TABLE_PROPERTIES, BORDERS, WIDTHS] },
@@ -216,7 +236,26 @@ describe("Table", () => {
                     .to.be.an("array")
                     .which.has.length.at.least(1);
                 expect(row["w:tr"].find((x) => x["w:tc"])).to.deep.equal({
-                    "w:tc": [{ "w:p": EMPTY_OBJECT }],
+                    "w:tc": [
+                        {
+                            "w:p": [
+                                {
+                                    "w:r": [
+                                        {
+                                            "w:t": [
+                                                {
+                                                    _attr: {
+                                                        "xml:space": "preserve",
+                                                    },
+                                                },
+                                                "hello",
+                                            ],
+                                        },
+                                    ],
+                                },
+                            ],
+                        },
+                    ],
                 });
             });
 
