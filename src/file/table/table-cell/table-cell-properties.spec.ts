@@ -73,6 +73,54 @@ describe("TableCellProperties", () => {
         });
     });
 
+    describe("#addMargins", () => {
+        it("sets shading", () => {
+            const properties = new TableCellProperties();
+            properties.addMargins({});
+            const tree = new Formatter().format(properties);
+            expect(tree).to.deep.equal({
+                "w:tcPr": [
+                    {
+                        "w:tcMar": [
+                            {
+                                "w:top": {
+                                    _attr: {
+                                        "w:type": "dxa",
+                                        "w:w": 0,
+                                    },
+                                },
+                            },
+                            {
+                                "w:bottom": {
+                                    _attr: {
+                                        "w:type": "dxa",
+                                        "w:w": 0,
+                                    },
+                                },
+                            },
+                            {
+                                "w:end": {
+                                    _attr: {
+                                        "w:type": "dxa",
+                                        "w:w": 0,
+                                    },
+                                },
+                            },
+                            {
+                                "w:start": {
+                                    _attr: {
+                                        "w:type": "dxa",
+                                        "w:w": 0,
+                                    },
+                                },
+                            },
+                        ],
+                    },
+                ],
+            });
+        });
+    });
+
     describe("#Borders", () => {
         it("should return the TableCellBorders if Border has borders", () => {
             const properties = new TableCellProperties();
