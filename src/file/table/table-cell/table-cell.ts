@@ -6,14 +6,14 @@ import { IXmlableObject, XmlComponent } from "file/xml-components";
 import { ITableShadingAttributesProperties } from "../shading";
 import { Table } from "../table";
 import { ITableCellMarginOptions } from "./cell-margin/table-cell-margins";
-import { VerticalAlign, VMergeType } from "./table-cell-components";
+import { VerticalAlign, VerticalMergeType } from "./table-cell-components";
 import { TableCellProperties } from "./table-cell-properties";
 
 export interface ITableCellOptions {
     readonly shading?: ITableShadingAttributesProperties;
     readonly margins?: ITableCellMarginOptions;
     readonly verticalAlign?: VerticalAlign;
-    readonly verticalMerge?: VMergeType;
+    readonly verticalMerge?: VerticalMergeType;
     readonly columnSpan?: number;
     readonly rowSpan?: number;
     readonly borders?: {
@@ -75,7 +75,7 @@ export class TableCell extends XmlComponent {
         }
 
         if (options.rowSpan && options.rowSpan > 1) {
-            this.properties.addVerticalMerge(VMergeType.RESTART);
+            this.properties.addVerticalMerge(VerticalMergeType.RESTART);
         }
 
         if (options.borders) {

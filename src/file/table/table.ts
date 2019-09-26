@@ -1,7 +1,7 @@
 // http://officeopenxml.com/WPtableGrid.php
 import { XmlComponent } from "file/xml-components";
 import { TableGrid } from "./grid";
-import { TableCell, VMergeType, WidthType } from "./table-cell";
+import { TableCell, VerticalMergeType, WidthType } from "./table-cell";
 import { ITableFloatOptions, TableProperties } from "./table-properties";
 import { TableLayoutType } from "./table-properties/table-layout";
 import { TableRow } from "./table-row";
@@ -18,8 +18,10 @@ import { TableRow } from "./table-row";
  */
 export interface ITableOptions {
     readonly rows: TableRow[];
-    readonly width?: number;
-    readonly widthUnitType?: WidthType;
+    readonly width?: {
+        readonly size: number;
+        readonly type?: WidthType;
+    };
     readonly columnWidths?: number[];
     readonly margins?: {
         readonly marginUnitType?: WidthType;
@@ -37,8 +39,7 @@ export class Table extends XmlComponent {
 
     constructor({
         rows,
-        width = 100,
-        widthUnitType = WidthType.AUTO,
+        width,
         columnWidths = Array<number>(Math.max(...rows.map((row) => row.CellCount))).fill(100),
         margins: { marginUnitType, top, bottom, right, left } = { marginUnitType: WidthType.AUTO, top: 0, bottom: 0, right: 0, left: 0 },
         float,
@@ -48,7 +49,13 @@ export class Table extends XmlComponent {
         this.properties = new TableProperties();
         this.root.push(this.properties);
         this.properties.setBorder();
-        this.properties.setWidth(width, widthUnitType);
+
+        if (width) {
+            this.properties.setWidth(width.size, width.type);
+        } else {
+            this.properties.setWidth(100);
+        }
+
         this.properties.CellMargin.addBottomMargin(bottom || 0, marginUnitType);
         this.properties.CellMargin.addTopMargin(top || 0, marginUnitType);
         this.properties.CellMargin.addLeftMargin(left || 0, marginUnitType);
@@ -73,7 +80,7 @@ export class Table extends XmlComponent {
                         rows[i].addCellToIndex(
                             new TableCell({
                                 children: [],
-                                verticalMerge: VMergeType.CONTINUE,
+                                verticalMerge: VerticalMergeType.CONTINUE,
                             }),
                             i,
                         );

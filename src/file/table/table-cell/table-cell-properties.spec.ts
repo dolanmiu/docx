@@ -3,7 +3,7 @@ import { expect } from "chai";
 import { Formatter } from "export/formatter";
 import { BorderStyle } from "file/styles";
 
-import { VerticalAlign, VMergeType, WidthType } from "./table-cell-components";
+import { VerticalAlign, VerticalMergeType, WidthType } from "./table-cell-components";
 import { TableCellProperties } from "./table-cell-properties";
 
 describe("TableCellProperties", () => {
@@ -30,7 +30,7 @@ describe("TableCellProperties", () => {
     describe("#addVerticalMerge", () => {
         it("adds vertical merge", () => {
             const properties = new TableCellProperties();
-            properties.addVerticalMerge(VMergeType.CONTINUE);
+            properties.addVerticalMerge(VerticalMergeType.CONTINUE);
             const tree = new Formatter().format(properties);
             expect(tree).to.deep.equal({ "w:tcPr": [{ "w:vMerge": { _attr: { "w:val": "continue" } } }] });
         });
