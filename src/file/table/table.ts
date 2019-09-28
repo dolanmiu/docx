@@ -61,15 +61,9 @@ export class Table extends XmlComponent {
 
         this.root.push(grid);
 
-        this.rows = Array(rows)
-            .fill(0)
-            .map(() => {
-                const cells = Array(columns)
-                    .fill(0)
-                    .map(() => new TableCell());
-                const row = new TableRow(cells);
-                return row;
-            });
+        this.rows = Array(rows).fill(new TableRow(
+            Array(columns).fill(new TableCell())
+        ));
 
         this.rows.forEach((x) => this.root.push(x));
 
