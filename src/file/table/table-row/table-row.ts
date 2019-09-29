@@ -3,56 +3,51 @@ import { XmlComponent } from "file/xml-components";
 import { TableCell } from "../table-cell";
 import { TableRowProperties } from "./table-row-properties";
 
+export interface ITableRowOptions {
+    readonly cantSplit?: boolean;
+    readonly tableHeader?: boolean;
+    readonly height?: {
+        readonly height: number;
+        readonly rule: HeightRule;
+    };
+    readonly children: TableCell[];
+}
+
 export class TableRow extends XmlComponent {
     private readonly properties: TableRowProperties;
 
-    constructor(private readonly cells: TableCell[]) {
+    constructor(private readonly options: ITableRowOptions) {
         super("w:tr");
         this.properties = new TableRowProperties();
         this.root.push(this.properties);
-        cells.forEach((c) => this.root.push(c));
-    }
 
-    public getCell(index: number): TableCell {
-        const cell = this.cells[index];
-
-        if (!cell) {
-            throw Error("Index out of bounds when trying to get cell on row");
+        for (const child of options.children) {
+            this.root.push(child);
         }
 
-        return cell;
+        if (options.cantSplit) {
+            this.properties.setCantSplit();
+        }
+
+        if (options.tableHeader) {
+            this.properties.setTableHeader();
+        }
+
+        if (options.height) {
+            this.properties.setHeight(options.height.height, options.height.rule);
+        }
     }
 
-    public addGridSpan(index: number, cellSpan: number): TableCell {
-        const remainCell = this.cells[index];
-        remainCell.addGridSpan(cellSpan);
-        this.cells.splice(index + 1, cellSpan - 1);
-        this.root.splice(index + 2, cellSpan - 1);
-
-        return remainCell;
+    public get CellCount(): number {
+        return this.options.children.length;
     }
 
-    public mergeCells(startIndex: number, endIndex: number): TableCell {
-        const cellSpan = endIndex - startIndex + 1;
-
-        return this.addGridSpan(startIndex, cellSpan);
+    public get Children(): TableCell[] {
+        return this.options.children;
     }
 
-    public setCantSplit(): TableRow {
-        this.properties.setCantSplit();
-
-        return this;
-    }
-
-    public setTableHeader(): TableRow {
-        this.properties.setTableHeader();
-
-        return this;
-    }
-
-    public setHeight(height: number, rule: HeightRule): TableRow {
-        this.properties.setHeight(height, rule);
-
-        return this;
+    public addCellToIndex(cell: TableCell, index: number): void {
+        // Offset because properties is also in root.
+        this.root.splice(index + 1, 0, cell);
     }
 }

@@ -103,7 +103,7 @@ export class GridSpan extends XmlComponent {
 /**
  * Vertical merge types.
  */
-export enum VMergeType {
+export enum VerticalMergeType {
     /**
      * Cell that is merged with upper one.
      */
@@ -114,19 +114,19 @@ export enum VMergeType {
     RESTART = "restart",
 }
 
-class VMergeAttributes extends XmlAttributeComponent<{ readonly val: VMergeType }> {
+class VerticalMergeAttributes extends XmlAttributeComponent<{ readonly val: VerticalMergeType }> {
     protected readonly xmlKeys = { val: "w:val" };
 }
 
 /**
  * Vertical merge element. Should be used in a table cell.
  */
-export class VMerge extends XmlComponent {
-    constructor(value: VMergeType) {
+export class VerticalMerge extends XmlComponent {
+    constructor(value: VerticalMergeType) {
         super("w:vMerge");
 
         this.root.push(
-            new VMergeAttributes({
+            new VerticalMergeAttributes({
                 val: value,
             }),
         );

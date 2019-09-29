@@ -68,13 +68,13 @@ export class Compiler {
         file.verifyUpdateFields();
         const documentRelationshipCount = file.DocumentRelationships.RelationshipCount + 1;
 
+        const documentXmlData = xml(this.formatter.format(file.Document), prettify);
+        const documentMediaDatas = this.imageReplacer.getMediaData(documentXmlData, file.Media);
+
         return {
             Relationships: {
                 data: (() => {
-                    const xmlData = xml(this.formatter.format(file.Document), prettify);
-                    const mediaDatas = this.imageReplacer.getMediaData(xmlData, file.Media);
-
-                    mediaDatas.forEach((mediaData, i) => {
+                    documentMediaDatas.forEach((mediaData, i) => {
                         file.DocumentRelationships.createRelationship(
                             documentRelationshipCount + i,
                             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
@@ -88,9 +88,7 @@ export class Compiler {
             },
             Document: {
                 data: (() => {
-                    const tempXmlData = xml(this.formatter.format(file.Document), prettify);
-                    const mediaDatas = this.imageReplacer.getMediaData(tempXmlData, file.Media);
-                    const xmlData = this.imageReplacer.replace(tempXmlData, mediaDatas, documentRelationshipCount);
+                    const xmlData = this.imageReplacer.replace(documentXmlData, documentMediaDatas, documentRelationshipCount);
 
                     return xmlData;
                 })(),

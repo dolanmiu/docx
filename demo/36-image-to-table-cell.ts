@@ -1,16 +1,61 @@
-// Add image to table cell
+// Add image to table cell in a header and body
 // Import from 'docx' rather than '../build' if you install from npm
 import * as fs from "fs";
-import { Document, Header, Media, Packer, Paragraph, Table } from "../build";
+import { Document, Header, Media, Packer, Paragraph, Table, TableCell, TableRow } from "../build";
 
 const doc = new Document();
 const image = Media.addImage(doc, fs.readFileSync("./demo/images/image1.jpeg"));
 
 const table = new Table({
-    rows: 2,
-    columns: 2,
+    rows: [
+        new TableRow({
+            children: [
+                new TableCell({
+                    children: [],
+                }),
+                new TableCell({
+                    children: [],
+                }),
+                new TableCell({
+                    children: [],
+                }),
+                new TableCell({
+                    children: [],
+                }),
+            ],
+        }),
+        new TableRow({
+            children: [
+                new TableCell({
+                    children: [],
+                }),
+                new TableCell({
+                    children: [new Paragraph(image)],
+                }),
+            ],
+        }),
+        new TableRow({
+            children: [
+                new TableCell({
+                    children: [],
+                }),
+                new TableCell({
+                    children: [],
+                }),
+            ],
+        }),
+        new TableRow({
+            children: [
+                new TableCell({
+                    children: [],
+                }),
+                new TableCell({
+                    children: [],
+                }),
+            ],
+        }),
+    ],
 });
-table.getCell(1, 1).add(new Paragraph(image));
 
 // Adding same table in the body and in the header
 doc.addSection({

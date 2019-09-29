@@ -1,17 +1,79 @@
 // Add image to table cell
 // Import from 'docx' rather than '../build' if you install from npm
 import * as fs from "fs";
-import { Document, Packer, Paragraph, Table } from "../build";
+import { Document, Packer, Paragraph, Table, TableCell, TableRow } from "../build";
 
 const doc = new Document();
 
 const table = new Table({
-    rows: 4,
-    columns: 4,
+    rows: [
+        new TableRow({
+            children: [
+                new TableCell({
+                    children: [],
+                }),
+                new TableCell({
+                    children: [],
+                }),
+                new TableCell({
+                    children: [],
+                }),
+                new TableCell({
+                    children: [],
+                }),
+            ],
+        }),
+        new TableRow({
+            children: [
+                new TableCell({
+                    children: [],
+                }),
+                new TableCell({
+                    children: [],
+                }),
+                new TableCell({
+                    children: [],
+                }),
+                new TableCell({
+                    children: [],
+                    rowSpan: 2,
+                }),
+            ],
+        }),
+        new TableRow({
+            children: [
+                new TableCell({
+                    children: [],
+                }),
+                new TableCell({
+                    children: [],
+                }),
+                new TableCell({
+                    children: [new Paragraph("Hello")],
+                }),
+                new TableCell({
+                    children: [],
+                }),
+            ],
+        }),
+        new TableRow({
+            children: [
+                new TableCell({
+                    children: [],
+                }),
+                new TableCell({
+                    children: [],
+                }),
+                new TableCell({
+                    children: [],
+                }),
+                new TableCell({
+                    children: [],
+                }),
+            ],
+        }),
+    ],
 });
-
-table.getCell(2, 2).add(new Paragraph("Hello"));
-table.getColumn(3).mergeCells(1, 2);
 
 doc.addSection({
     children: [table],
