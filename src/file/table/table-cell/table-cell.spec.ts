@@ -3,7 +3,9 @@ import { expect } from "chai";
 import { Formatter } from "export/formatter";
 import { BorderStyle } from "file/styles";
 
-import { TableCellBorders, TableCellWidth, WidthType } from "./table-cell-components";
+import { ShadingType } from "../shading";
+import { TableCell } from "./table-cell";
+import { TableCellBorders, TableCellWidth, VerticalAlign, VerticalMergeType, WidthType } from "./table-cell-components";
 
 describe("TableCellBorders", () => {
     describe("#prepForXml", () => {
@@ -218,6 +220,335 @@ describe("TableCellWidth", () => {
                         "w:w": 100,
                     },
                 },
+            });
+        });
+    });
+});
+
+describe("TableCell", () => {
+    describe("#constructor", () => {
+        it("should create", () => {
+            const cell = new TableCell({
+                children: [],
+            });
+
+            const tree = new Formatter().format(cell);
+
+            expect(tree).to.deep.equal({
+                "w:tc": [
+                    {
+                        "w:p": {},
+                    },
+                ],
+            });
+        });
+
+        it("should create with vertical align", () => {
+            const cell = new TableCell({
+                children: [],
+                verticalAlign: VerticalAlign.CENTER,
+            });
+
+            const tree = new Formatter().format(cell);
+
+            expect(tree).to.deep.equal({
+                "w:tc": [
+                    {
+                        "w:tcPr": [
+                            {
+                                "w:vAlign": {
+                                    _attr: {
+                                        "w:val": "center",
+                                    },
+                                },
+                            },
+                        ],
+                    },
+                    {
+                        "w:p": {},
+                    },
+                ],
+            });
+        });
+
+        it("should create with vertical merge", () => {
+            const cell = new TableCell({
+                children: [],
+                verticalMerge: VerticalMergeType.RESTART,
+            });
+
+            const tree = new Formatter().format(cell);
+
+            expect(tree).to.deep.equal({
+                "w:tc": [
+                    {
+                        "w:tcPr": [
+                            {
+                                "w:vMerge": {
+                                    _attr: {
+                                        "w:val": "restart",
+                                    },
+                                },
+                            },
+                        ],
+                    },
+                    {
+                        "w:p": {},
+                    },
+                ],
+            });
+        });
+
+        it("should create with margins", () => {
+            const cell = new TableCell({
+                children: [],
+                margins: {
+                    top: 1,
+                    left: 1,
+                    bottom: 1,
+                    right: 1,
+                },
+            });
+
+            const tree = new Formatter().format(cell);
+
+            expect(tree).to.deep.equal({
+                "w:tc": [
+                    {
+                        "w:tcPr": [
+                            {
+                                "w:tcMar": [
+                                    {
+                                        "w:top": {
+                                            _attr: {
+                                                "w:type": "dxa",
+                                                "w:w": 1,
+                                            },
+                                        },
+                                    },
+                                    {
+                                        "w:bottom": {
+                                            _attr: {
+                                                "w:type": "dxa",
+                                                "w:w": 1,
+                                            },
+                                        },
+                                    },
+                                    {
+                                        "w:end": {
+                                            _attr: {
+                                                "w:type": "dxa",
+                                                "w:w": 1,
+                                            },
+                                        },
+                                    },
+                                    {
+                                        "w:start": {
+                                            _attr: {
+                                                "w:type": "dxa",
+                                                "w:w": 1,
+                                            },
+                                        },
+                                    },
+                                ],
+                            },
+                        ],
+                    },
+                    {
+                        "w:p": {},
+                    },
+                ],
+            });
+        });
+
+        it("should create with shading", () => {
+            const cell = new TableCell({
+                children: [],
+                shading: {
+                    fill: "red",
+                    color: "blue",
+                    val: ShadingType.PERCENT_10,
+                },
+            });
+
+            const tree = new Formatter().format(cell);
+
+            expect(tree).to.deep.equal({
+                "w:tc": [
+                    {
+                        "w:tcPr": [
+                            {
+                                "w:shd": {
+                                    _attr: {
+                                        "w:color": "blue",
+                                        "w:fill": "red",
+                                        "w:val": "pct10",
+                                    },
+                                },
+                            },
+                        ],
+                    },
+                    {
+                        "w:p": {},
+                    },
+                ],
+            });
+        });
+
+        it("should create with column span", () => {
+            const cell = new TableCell({
+                children: [],
+                columnSpan: 2,
+            });
+
+            const tree = new Formatter().format(cell);
+
+            expect(tree).to.deep.equal({
+                "w:tc": [
+                    {
+                        "w:tcPr": [
+                            {
+                                "w:gridSpan": {
+                                    _attr: {
+                                        "w:val": 2,
+                                    },
+                                },
+                            },
+                        ],
+                    },
+                    {
+                        "w:p": {},
+                    },
+                ],
+            });
+        });
+
+        describe("rowSpan", () => {
+            it("should not create with row span if its less than 1", () => {
+                const cell = new TableCell({
+                    children: [],
+                    rowSpan: 0,
+                });
+
+                const tree = new Formatter().format(cell);
+
+                expect(tree).to.deep.equal({
+                    "w:tc": [
+                        {
+                            "w:p": {},
+                        },
+                    ],
+                });
+            });
+
+            it("should create with row span if its greater than 1", () => {
+                const cell = new TableCell({
+                    children: [],
+                    rowSpan: 2,
+                });
+
+                const tree = new Formatter().format(cell);
+
+                expect(tree).to.deep.equal({
+                    "w:tc": [
+                        {
+                            "w:tcPr": [
+                                {
+                                    "w:vMerge": {
+                                        _attr: {
+                                            "w:val": "restart",
+                                        },
+                                    },
+                                },
+                            ],
+                        },
+                        {
+                            "w:p": {},
+                        },
+                    ],
+                });
+            });
+
+            it("should create with borders", () => {
+                const cell = new TableCell({
+                    children: [],
+                    borders: {
+                        top: {
+                            style: BorderStyle.DASH_DOT_STROKED,
+                            size: 3,
+                            color: "red",
+                        },
+                        bottom: {
+                            style: BorderStyle.DOUBLE,
+                            size: 3,
+                            color: "blue",
+                        },
+                        left: {
+                            style: BorderStyle.DASH_DOT_STROKED,
+                            size: 3,
+                            color: "green",
+                        },
+                        right: {
+                            style: BorderStyle.DASH_DOT_STROKED,
+                            size: 3,
+                            color: "#ff8000",
+                        },
+                    },
+                });
+
+                const tree = new Formatter().format(cell);
+
+                expect(tree).to.deep.equal({
+                    "w:tc": [
+                        {
+                            "w:tcPr": [
+                                {
+                                    "w:tcBorders": [
+                                        {
+                                            "w:top": {
+                                                _attr: {
+                                                    "w:color": "red",
+                                                    "w:sz": 3,
+                                                    "w:val": "dashDotStroked",
+                                                },
+                                            },
+                                        },
+                                        {
+                                            "w:bottom": {
+                                                _attr: {
+                                                    "w:color": "blue",
+                                                    "w:sz": 3,
+                                                    "w:val": "double",
+                                                },
+                                            },
+                                        },
+                                        {
+                                            "w:left": {
+                                                _attr: {
+                                                    "w:color": "green",
+                                                    "w:sz": 3,
+                                                    "w:val": "dashDotStroked",
+                                                },
+                                            },
+                                        },
+                                        {
+                                            "w:right": {
+                                                _attr: {
+                                                    "w:color": "#ff8000",
+                                                    "w:sz": 3,
+                                                    "w:val": "dashDotStroked",
+                                                },
+                                            },
+                                        },
+                                    ],
+                                },
+                            ],
+                        },
+                        {
+                            "w:p": {},
+                        },
+                    ],
+                });
             });
         });
     });

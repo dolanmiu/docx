@@ -2,7 +2,7 @@ import { XmlComponent } from "file/xml-components";
 
 import { HeaderReferenceType } from "./document";
 import { Header } from "./header/header";
-import { Image, Media } from "./media";
+import { Media } from "./media";
 import { Paragraph } from "./paragraph";
 import { Relationships } from "./relationships";
 import { Table } from "./table";
@@ -24,11 +24,6 @@ export class HeaderWrapper {
     public add(item: Paragraph | Table): HeaderWrapper {
         this.header.add(item);
 
-        return this;
-    }
-
-    public addImage(image: Image): HeaderWrapper {
-        this.header.add(image.Paragraph);
         return this;
     }
 

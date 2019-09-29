@@ -1,6 +1,5 @@
 // http://officeopenxml.com/WPparagraph.php
 import { FootnoteReferenceRun } from "file/footnotes/footnote/run/reference-run";
-import { Image } from "file/media";
 import { Num } from "file/numbering/num";
 import { XmlComponent } from "file/xml-components";
 
@@ -188,13 +187,6 @@ export class Paragraph extends XmlComponent {
         this.root.push(bookmark.text);
         this.root.push(bookmark.end);
         return this;
-    }
-
-    public addImage(image: Image): PictureRun {
-        const run = image.Run;
-        this.addRun(run);
-
-        return run;
     }
 
     public pageBreak(): Paragraph {

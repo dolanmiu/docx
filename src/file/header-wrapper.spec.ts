@@ -37,17 +37,6 @@ describe("HeaderWrapper", () => {
         });
     });
 
-    describe("#addImage", () => {
-        it("should call the underlying header's addImage", () => {
-            const file = new HeaderWrapper(new Media(), 1);
-            const spy = sinon.spy(file.Header, "add");
-            // tslint:disable-next-line:no-any
-            file.addImage({} as any);
-
-            expect(spy.called).to.equal(true);
-        });
-    });
-
     describe("#addChildElement", () => {
         it("should call the underlying header's addChildElement", () => {
             const file = new HeaderWrapper(new Media(), 1);

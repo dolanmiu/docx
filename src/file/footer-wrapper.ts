@@ -2,7 +2,7 @@ import { XmlComponent } from "file/xml-components";
 
 import { FooterReferenceType } from "./document";
 import { Footer } from "./footer/footer";
-import { Image, Media } from "./media";
+import { Media } from "./media";
 import { Paragraph } from "./paragraph";
 import { Relationships } from "./relationships";
 import { Table } from "./table";
@@ -23,11 +23,6 @@ export class FooterWrapper {
 
     public add(item: Paragraph | Table): void {
         this.footer.add(item);
-    }
-
-    public addImage(image: Image): FooterWrapper {
-        this.footer.add(image.Paragraph);
-        return this;
     }
 
     public addChildElement(childElement: XmlComponent): void {
