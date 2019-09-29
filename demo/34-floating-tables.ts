@@ -44,8 +44,10 @@ const table = new Table({
         relativeHorizontalPosition: RelativeHorizontalPosition.RIGHT,
         relativeVerticalPosition: RelativeVerticalPosition.BOTTOM,
     },
-    width: 4535,
-    widthUnitType: WidthType.DXA,
+    width: {
+        size: 4535,
+        type: WidthType.DXA,
+    },
     layout: TableLayoutType.FIXED,
 });
 

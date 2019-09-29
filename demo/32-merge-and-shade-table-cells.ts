@@ -58,8 +58,10 @@ const table2 = new Table({
             ],
         }),
     ],
-    width: 100,
-    widthUnitType: WidthType.AUTO,
+    width: {
+        size: 100,
+        type: WidthType.AUTO,
+    },
     columnWidths: [1000, 1000, 1000],
 });
 
@@ -113,8 +115,10 @@ const table3 = new Table({
             ],
         }),
     ],
-    width: 7000,
-    widthUnitType: WidthType.DXA,
+    width: {
+        size: 7000,
+        type: WidthType.DXA,
+    },
     margins: {
         top: 400,
         bottom: 400,
@@ -152,8 +156,10 @@ const table4 = new Table({
             ],
         }),
     ],
-    width: 100,
-    widthUnitType: WidthType.PERCENTAGE,
+    width: {
+        size: 100,
+        type: WidthType.PERCENTAGE,
+    },
 });
 
 const table5 = new Table({
@@ -194,8 +200,10 @@ const table5 = new Table({
             ],
         }),
     ],
-    width: 100,
-    widthUnitType: WidthType.PERCENTAGE,
+    width: {
+        size: 100,
+        type: WidthType.PERCENTAGE,
+    },
 });
 
 doc.addSection({
