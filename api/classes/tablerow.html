@@ -87,24 +87,21 @@
 								<li class="tsd-kind-constructor tsd-parent-kind-class tsd-is-overwrite tsd-is-external"><a href="tablerow.html#constructor" class="tsd-kind-icon">constructor</a></li>
 							</ul>
 						</section>
-						<section class="tsd-index-section tsd-is-inherited tsd-is-external">
+						<section class="tsd-index-section tsd-is-external">
 							<h3>Accessors</h3>
 							<ul class="tsd-index-list">
+								<li class="tsd-kind-get-signature tsd-parent-kind-class tsd-is-external"><a href="tablerow.html#cellcount" class="tsd-kind-icon">Cell<wbr>Count</a></li>
+								<li class="tsd-kind-get-signature tsd-parent-kind-class tsd-is-external"><a href="tablerow.html#children" class="tsd-kind-icon">Children</a></li>
 								<li class="tsd-kind-get-signature tsd-parent-kind-class tsd-is-inherited tsd-is-external"><a href="tablerow.html#isdeleted" class="tsd-kind-icon">Is<wbr>Deleted</a></li>
 							</ul>
 						</section>
 						<section class="tsd-index-section tsd-is-external">
 							<h3>Methods</h3>
 							<ul class="tsd-index-list">
+								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-external"><a href="tablerow.html#addcelltoindex" class="tsd-kind-icon">add<wbr>Cell<wbr>ToIndex</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-external"><a href="tablerow.html#addchildelement" class="tsd-kind-icon">add<wbr>Child<wbr>Element</a></li>
-								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-external"><a href="tablerow.html#addgridspan" class="tsd-kind-icon">add<wbr>Grid<wbr>Span</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-external"><a href="tablerow.html#delete" class="tsd-kind-icon">delete</a></li>
-								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-external"><a href="tablerow.html#getcell" class="tsd-kind-icon">get<wbr>Cell</a></li>
-								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-external"><a href="tablerow.html#mergecells" class="tsd-kind-icon">merge<wbr>Cells</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-overwrite tsd-is-inherited tsd-is-external"><a href="tablerow.html#prepforxml" class="tsd-kind-icon">prep<wbr>For<wbr>Xml</a></li>
-								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-external"><a href="tablerow.html#setcantsplit" class="tsd-kind-icon">set<wbr>Cant<wbr>Split</a></li>
-								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-external"><a href="tablerow.html#setheight" class="tsd-kind-icon">set<wbr>Height</a></li>
-								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-external"><a href="tablerow.html#settableheader" class="tsd-kind-icon">set<wbr>Table<wbr>Header</a></li>
 							</ul>
 						</section>
 					</div>
@@ -116,20 +113,20 @@
 					<a name="constructor" class="tsd-anchor"></a>
 					<h3>constructor</h3>
 					<ul class="tsd-signatures tsd-kind-constructor tsd-parent-kind-class tsd-is-overwrite tsd-is-external">
-						<li class="tsd-signature tsd-kind-icon">new <wbr>Table<wbr>Row<span class="tsd-signature-symbol">(</span>cells<span class="tsd-signature-symbol">: </span><a href="tablecell.html" class="tsd-signature-type">TableCell</a><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="tablerow.html" class="tsd-signature-type">TableRow</a></li>
+						<li class="tsd-signature tsd-kind-icon">new <wbr>Table<wbr>Row<span class="tsd-signature-symbol">(</span>options<span class="tsd-signature-symbol">: </span><a href="../interfaces/itablerowoptions.html" class="tsd-signature-type">ITableRowOptions</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="tablerow.html" class="tsd-signature-type">TableRow</a></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<p>Overrides <a href="xmlcomponent.html">XmlComponent</a>.<a href="xmlcomponent.html#constructor">constructor</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/993f8f8/src/file/table/table-row/table-row.ts#L7">file/table/table-row/table-row.ts:7</a></li>
+									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/2b874e3/src/file/table/table-row/table-row.ts#L17">file/table/table-row/table-row.ts:17</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
-									<h5>cells: <a href="tablecell.html" class="tsd-signature-type">TableCell</a><span class="tsd-signature-symbol">[]</span></h5>
+									<h5>options: <a href="../interfaces/itablerowoptions.html" class="tsd-signature-type">ITableRowOptions</a></h5>
 								</li>
 							</ul>
 							<h4 class="tsd-returns-title">Returns <a href="tablerow.html" class="tsd-signature-type">TableRow</a></h4>
@@ -137,8 +134,42 @@
 					</ul>
 				</section>
 			</section>
-			<section class="tsd-panel-group tsd-member-group tsd-is-inherited tsd-is-external">
+			<section class="tsd-panel-group tsd-member-group tsd-is-external">
 				<h2>Accessors</h2>
+				<section class="tsd-panel tsd-member tsd-kind-get-signature tsd-parent-kind-class tsd-is-external">
+					<a name="cellcount" class="tsd-anchor"></a>
+					<h3>Cell<wbr>Count</h3>
+					<ul class="tsd-signatures tsd-kind-get-signature tsd-parent-kind-class tsd-is-external">
+						<li class="tsd-signature tsd-kind-icon"><span class="tsd-signature-symbol">get</span> CellCount<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/2b874e3/src/file/table/table-row/table-row.ts#L41">file/table/table-row/table-row.ts:41</a></li>
+								</ul>
+							</aside>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">number</span></h4>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-get-signature tsd-parent-kind-class tsd-is-external">
+					<a name="children" class="tsd-anchor"></a>
+					<h3>Children</h3>
+					<ul class="tsd-signatures tsd-kind-get-signature tsd-parent-kind-class tsd-is-external">
+						<li class="tsd-signature tsd-kind-icon"><span class="tsd-signature-symbol">get</span> Children<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="tablecell.html" class="tsd-signature-type">TableCell</a><span class="tsd-signature-symbol">[]</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/2b874e3/src/file/table/table-row/table-row.ts#L45">file/table/table-row/table-row.ts:45</a></li>
+								</ul>
+							</aside>
+							<h4 class="tsd-returns-title">Returns <a href="tablecell.html" class="tsd-signature-type">TableCell</a><span class="tsd-signature-symbol">[]</span></h4>
+						</li>
+					</ul>
+				</section>
 				<section class="tsd-panel tsd-member tsd-kind-get-signature tsd-parent-kind-class tsd-is-inherited tsd-is-external">
 					<a name="isdeleted" class="tsd-anchor"></a>
 					<h3>Is<wbr>Deleted</h3>
@@ -150,7 +181,7 @@
 							<aside class="tsd-sources">
 								<p>Inherited from <a href="basexmlcomponent.html">BaseXmlComponent</a>.<a href="basexmlcomponent.html#isdeleted">IsDeleted</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/993f8f8/src/file/xml-components/base.ts#L14">file/xml-components/base.ts:14</a></li>
+									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/2b874e3/src/file/xml-components/base.ts#L14">file/xml-components/base.ts:14</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">boolean</span></h4>
@@ -160,6 +191,32 @@
 			</section>
 			<section class="tsd-panel-group tsd-member-group tsd-is-external">
 				<h2>Methods</h2>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-external">
+					<a name="addcelltoindex" class="tsd-anchor"></a>
+					<h3>add<wbr>Cell<wbr>ToIndex</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-external">
+						<li class="tsd-signature tsd-kind-icon">add<wbr>Cell<wbr>ToIndex<span class="tsd-signature-symbol">(</span>cell<span class="tsd-signature-symbol">: </span><a href="tablecell.html" class="tsd-signature-type">TableCell</a>, index<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/2b874e3/src/file/table/table-row/table-row.ts#L49">file/table/table-row/table-row.ts:49</a></li>
+								</ul>
+							</aside>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>cell: <a href="tablecell.html" class="tsd-signature-type">TableCell</a></h5>
+								</li>
+								<li>
+									<h5>index: <span class="tsd-signature-type">number</span></h5>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
+						</li>
+					</ul>
+				</section>
 				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-external">
 					<a name="addchildelement" class="tsd-anchor"></a>
 					<h3>add<wbr>Child<wbr>Element</h3>
@@ -171,7 +228,7 @@
 							<aside class="tsd-sources">
 								<p>Inherited from <a href="xmlcomponent.html">XmlComponent</a>.<a href="xmlcomponent.html#addchildelement">addChildElement</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/993f8f8/src/file/xml-components/xml-component.ts#L43">file/xml-components/xml-component.ts:43</a></li>
+									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/2b874e3/src/file/xml-components/xml-component.ts#L43">file/xml-components/xml-component.ts:43</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -181,32 +238,6 @@
 								</li>
 							</ul>
 							<h4 class="tsd-returns-title">Returns <a href="xmlcomponent.html" class="tsd-signature-type">XmlComponent</a></h4>
-						</li>
-					</ul>
-				</section>
-				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-external">
-					<a name="addgridspan" class="tsd-anchor"></a>
-					<h3>add<wbr>Grid<wbr>Span</h3>
-					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-external">
-						<li class="tsd-signature tsd-kind-icon">add<wbr>Grid<wbr>Span<span class="tsd-signature-symbol">(</span>index<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span>, cellSpan<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="tablecell.html" class="tsd-signature-type">TableCell</a></li>
-					</ul>
-					<ul class="tsd-descriptions">
-						<li class="tsd-description">
-							<aside class="tsd-sources">
-								<ul>
-									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/993f8f8/src/file/table/table-row/table-row.ts#L26">file/table/table-row/table-row.ts:26</a></li>
-								</ul>
-							</aside>
-							<h4 class="tsd-parameters-title">Parameters</h4>
-							<ul class="tsd-parameters">
-								<li>
-									<h5>index: <span class="tsd-signature-type">number</span></h5>
-								</li>
-								<li>
-									<h5>cellSpan: <span class="tsd-signature-type">number</span></h5>
-								</li>
-							</ul>
-							<h4 class="tsd-returns-title">Returns <a href="tablecell.html" class="tsd-signature-type">TableCell</a></h4>
 						</li>
 					</ul>
 				</section>
@@ -221,59 +252,10 @@
 							<aside class="tsd-sources">
 								<p>Inherited from <a href="xmlcomponent.html">XmlComponent</a>.<a href="xmlcomponent.html#delete">delete</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/993f8f8/src/file/xml-components/xml-component.ts#L49">file/xml-components/xml-component.ts:49</a></li>
+									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/2b874e3/src/file/xml-components/xml-component.ts#L49">file/xml-components/xml-component.ts:49</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
-						</li>
-					</ul>
-				</section>
-				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-external">
-					<a name="getcell" class="tsd-anchor"></a>
-					<h3>get<wbr>Cell</h3>
-					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-external">
-						<li class="tsd-signature tsd-kind-icon">get<wbr>Cell<span class="tsd-signature-symbol">(</span>index<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="tablecell.html" class="tsd-signature-type">TableCell</a></li>
-					</ul>
-					<ul class="tsd-descriptions">
-						<li class="tsd-description">
-							<aside class="tsd-sources">
-								<ul>
-									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/993f8f8/src/file/table/table-row/table-row.ts#L16">file/table/table-row/table-row.ts:16</a></li>
-								</ul>
-							</aside>
-							<h4 class="tsd-parameters-title">Parameters</h4>
-							<ul class="tsd-parameters">
-								<li>
-									<h5>index: <span class="tsd-signature-type">number</span></h5>
-								</li>
-							</ul>
-							<h4 class="tsd-returns-title">Returns <a href="tablecell.html" class="tsd-signature-type">TableCell</a></h4>
-						</li>
-					</ul>
-				</section>
-				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-external">
-					<a name="mergecells" class="tsd-anchor"></a>
-					<h3>merge<wbr>Cells</h3>
-					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-external">
-						<li class="tsd-signature tsd-kind-icon">merge<wbr>Cells<span class="tsd-signature-symbol">(</span>startIndex<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span>, endIndex<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="tablecell.html" class="tsd-signature-type">TableCell</a></li>
-					</ul>
-					<ul class="tsd-descriptions">
-						<li class="tsd-description">
-							<aside class="tsd-sources">
-								<ul>
-									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/993f8f8/src/file/table/table-row/table-row.ts#L35">file/table/table-row/table-row.ts:35</a></li>
-								</ul>
-							</aside>
-							<h4 class="tsd-parameters-title">Parameters</h4>
-							<ul class="tsd-parameters">
-								<li>
-									<h5>startIndex: <span class="tsd-signature-type">number</span></h5>
-								</li>
-								<li>
-									<h5>endIndex: <span class="tsd-signature-type">number</span></h5>
-								</li>
-							</ul>
-							<h4 class="tsd-returns-title">Returns <a href="tablecell.html" class="tsd-signature-type">TableCell</a></h4>
 						</li>
 					</ul>
 				</section>
@@ -289,73 +271,13 @@
 								<p>Inherited from <a href="xmlcomponent.html">XmlComponent</a>.<a href="xmlcomponent.html#prepforxml">prepForXml</a></p>
 								<p>Overrides <a href="basexmlcomponent.html">BaseXmlComponent</a>.<a href="basexmlcomponent.html#prepforxml">prepForXml</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/993f8f8/src/file/xml-components/xml-component.ts#L16">file/xml-components/xml-component.ts:16</a></li>
+									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/2b874e3/src/file/xml-components/xml-component.ts#L16">file/xml-components/xml-component.ts:16</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-returns-title">Returns <a href="../interfaces/ixmlableobject.html" class="tsd-signature-type">IXmlableObject</a>
 								<span class="tsd-signature-symbol"> | </span>
 								<span class="tsd-signature-type">undefined</span>
 							</h4>
-						</li>
-					</ul>
-				</section>
-				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-external">
-					<a name="setcantsplit" class="tsd-anchor"></a>
-					<h3>set<wbr>Cant<wbr>Split</h3>
-					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-external">
-						<li class="tsd-signature tsd-kind-icon">set<wbr>Cant<wbr>Split<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="tablerow.html" class="tsd-signature-type">TableRow</a></li>
-					</ul>
-					<ul class="tsd-descriptions">
-						<li class="tsd-description">
-							<aside class="tsd-sources">
-								<ul>
-									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/993f8f8/src/file/table/table-row/table-row.ts#L41">file/table/table-row/table-row.ts:41</a></li>
-								</ul>
-							</aside>
-							<h4 class="tsd-returns-title">Returns <a href="tablerow.html" class="tsd-signature-type">TableRow</a></h4>
-						</li>
-					</ul>
-				</section>
-				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-external">
-					<a name="setheight" class="tsd-anchor"></a>
-					<h3>set<wbr>Height</h3>
-					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-external">
-						<li class="tsd-signature tsd-kind-icon">set<wbr>Height<span class="tsd-signature-symbol">(</span>height<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span>, rule<span class="tsd-signature-symbol">: </span><a href="../enums/heightrule.html" class="tsd-signature-type">HeightRule</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="tablerow.html" class="tsd-signature-type">TableRow</a></li>
-					</ul>
-					<ul class="tsd-descriptions">
-						<li class="tsd-description">
-							<aside class="tsd-sources">
-								<ul>
-									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/993f8f8/src/file/table/table-row/table-row.ts#L53">file/table/table-row/table-row.ts:53</a></li>
-								</ul>
-							</aside>
-							<h4 class="tsd-parameters-title">Parameters</h4>
-							<ul class="tsd-parameters">
-								<li>
-									<h5>height: <span class="tsd-signature-type">number</span></h5>
-								</li>
-								<li>
-									<h5>rule: <a href="../enums/heightrule.html" class="tsd-signature-type">HeightRule</a></h5>
-								</li>
-							</ul>
-							<h4 class="tsd-returns-title">Returns <a href="tablerow.html" class="tsd-signature-type">TableRow</a></h4>
-						</li>
-					</ul>
-				</section>
-				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-external">
-					<a name="settableheader" class="tsd-anchor"></a>
-					<h3>set<wbr>Table<wbr>Header</h3>
-					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-external">
-						<li class="tsd-signature tsd-kind-icon">set<wbr>Table<wbr>Header<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="tablerow.html" class="tsd-signature-type">TableRow</a></li>
-					</ul>
-					<ul class="tsd-descriptions">
-						<li class="tsd-description">
-							<aside class="tsd-sources">
-								<ul>
-									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/993f8f8/src/file/table/table-row/table-row.ts#L47">file/table/table-row/table-row.ts:47</a></li>
-								</ul>
-							</aside>
-							<h4 class="tsd-returns-title">Returns <a href="tablerow.html" class="tsd-signature-type">TableRow</a></h4>
 						</li>
 					</ul>
 				</section>
@@ -379,35 +301,26 @@
 							<li class=" tsd-kind-constructor tsd-parent-kind-class tsd-is-overwrite tsd-is-external">
 								<a href="tablerow.html#constructor" class="tsd-kind-icon">constructor</a>
 							</li>
+							<li class=" tsd-kind-get-signature tsd-parent-kind-class tsd-is-external">
+								<a href="tablerow.html#cellcount" class="tsd-kind-icon">Cell<wbr>Count</a>
+							</li>
+							<li class=" tsd-kind-get-signature tsd-parent-kind-class tsd-is-external">
+								<a href="tablerow.html#children" class="tsd-kind-icon">Children</a>
+							</li>
 							<li class=" tsd-kind-get-signature tsd-parent-kind-class tsd-is-inherited tsd-is-external">
 								<a href="tablerow.html#isdeleted" class="tsd-kind-icon">Is<wbr>Deleted</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-external">
+								<a href="tablerow.html#addcelltoindex" class="tsd-kind-icon">add<wbr>Cell<wbr>ToIndex</a>
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-external">
 								<a href="tablerow.html#addchildelement" class="tsd-kind-icon">add<wbr>Child<wbr>Element</a>
 							</li>
-							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-external">
-								<a href="tablerow.html#addgridspan" class="tsd-kind-icon">add<wbr>Grid<wbr>Span</a>
-							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-external">
 								<a href="tablerow.html#delete" class="tsd-kind-icon">delete</a>
 							</li>
-							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-external">
-								<a href="tablerow.html#getcell" class="tsd-kind-icon">get<wbr>Cell</a>
-							</li>
-							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-external">
-								<a href="tablerow.html#mergecells" class="tsd-kind-icon">merge<wbr>Cells</a>
-							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-overwrite tsd-is-inherited tsd-is-external">
 								<a href="tablerow.html#prepforxml" class="tsd-kind-icon">prep<wbr>For<wbr>Xml</a>
-							</li>
-							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-external">
-								<a href="tablerow.html#setcantsplit" class="tsd-kind-icon">set<wbr>Cant<wbr>Split</a>
-							</li>
-							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-external">
-								<a href="tablerow.html#setheight" class="tsd-kind-icon">set<wbr>Height</a>
-							</li>
-							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-external">
-								<a href="tablerow.html#settableheader" class="tsd-kind-icon">set<wbr>Table<wbr>Header</a>
 							</li>
 						</ul>
 					</li>
