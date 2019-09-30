@@ -82,14 +82,16 @@ doc.addSection({
                 level: 0,
             },
         }),
-        new Paragraph({}).addRun(
-            new TextRun({
-                text: "Some monospaced content",
-                font: {
-                    name: "Monospace",
-                },
-            }),
-        ),
+        new Paragraph({
+            children: [
+                new TextRun({
+                    text: "Some monospaced content",
+                    font: {
+                        name: "Monospace",
+                    },
+                }),
+            ],
+        }),
         new Paragraph({
             text: "An aside, in light gray italics and indented",
             style: "aside",

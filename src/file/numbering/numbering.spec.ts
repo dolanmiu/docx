@@ -8,6 +8,7 @@ import { Num } from "./num";
 import { Numbering } from "./numbering";
 
 import { EMPTY_OBJECT } from "file/xml-components";
+import { TabStopPosition } from "../paragraph";
 
 describe("Numbering", () => {
     let numbering: Numbering;
@@ -202,7 +203,7 @@ describe("AbstractNumbering", () => {
 
             it("#maxRightTabStop", () => {
                 const abstractNumbering = new AbstractNumbering(1);
-                const level = abstractNumbering.createLevel(0, "lowerRoman", "%0.").maxRightTabStop();
+                const level = abstractNumbering.createLevel(0, "lowerRoman", "%0.").rightTabStop(TabStopPosition.MAX);
                 const tree = new Formatter().format(level);
                 expect(tree["w:lvl"]).to.include({
                     "w:pPr": [

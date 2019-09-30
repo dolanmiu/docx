@@ -28,15 +28,52 @@ describe("Formatter", () => {
         });
 
         it("should format simple paragraph with bold text", () => {
-            const paragraph = new Paragraph("");
-            paragraph.addRun(
-                new TextRun({
-                    text: "test",
-                    bold: true,
-                }),
-            );
-            const newJson = formatter.format(paragraph);
-            assert.isDefined(newJson["w:p"][1]["w:r"][0]["w:rPr"][0]["w:b"]._attr["w:val"]);
+            const paragraph = new Paragraph({
+                children: [
+                    new TextRun({
+                        text: "test",
+                        bold: true,
+                    }),
+                ],
+            });
+
+            const tree = formatter.format(paragraph);
+            expect(tree).to.deep.equal({
+                "w:p": [
+                    {
+                        "w:r": [
+                            {
+                                "w:rPr": [
+                                    {
+                                        "w:b": {
+                                            _attr: {
+                                                "w:val": true,
+                                            },
+                                        },
+                                    },
+                                    {
+                                        "w:bCs": {
+                                            _attr: {
+                                                "w:val": true,
+                                            },
+                                        },
+                                    },
+                                ],
+                            },
+                            {
+                                "w:t": [
+                                    {
+                                        _attr: {
+                                            "xml:space": "preserve",
+                                        },
+                                    },
+                                    "test",
+                                ],
+                            },
+                        ],
+                    },
+                ],
+            });
         });
 
         it("should format attributes (rsidSect)", () => {

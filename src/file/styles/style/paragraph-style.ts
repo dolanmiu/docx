@@ -6,12 +6,12 @@ import {
     KeepLines,
     KeepNext,
     LeftTabStop,
-    MaxRightTabStop,
     OutlineLevel,
     ParagraphProperties,
     Spacing,
     ThematicBreak,
 } from "file/paragraph";
+import { RightTabStop } from "file/paragraph/formatting";
 import * as formatting from "file/paragraph/run/formatting";
 import { RunProperties } from "file/paragraph/run/properties";
 import { XmlComponent } from "file/xml-components";
@@ -144,8 +144,8 @@ export class ParagraphStyle extends Style {
         return this.addParagraphProperty(new ThematicBreak());
     }
 
-    public maxRightTabStop(): ParagraphStyle {
-        return this.addParagraphProperty(new MaxRightTabStop());
+    public rightTabStop(position: number): ParagraphStyle {
+        return this.addParagraphProperty(new RightTabStop(position));
     }
 
     public leftTabStop(position: number): ParagraphStyle {

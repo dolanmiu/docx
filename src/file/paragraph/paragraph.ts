@@ -11,14 +11,14 @@ import { KeepLines, KeepNext } from "./formatting/keep";
 import { PageBreak, PageBreakBefore } from "./formatting/page-break";
 import { ContextualSpacing, ISpacingProperties, Spacing } from "./formatting/spacing";
 import { HeadingLevel, Style } from "./formatting/style";
-import { CenterTabStop, LeaderType, LeftTabStop, MaxRightTabStop, RightTabStop } from "./formatting/tab-stop";
+import { CenterTabStop, LeaderType, LeftTabStop, RightTabStop, TabStopPosition } from "./formatting/tab-stop";
 import { NumberProperties } from "./formatting/unordered-list";
 import { Bookmark, Hyperlink, OutlineLevel } from "./links";
 import { ParagraphProperties } from "./properties";
 import { PictureRun, Run, SequentialIdentifier, TextRun } from "./run";
 
 interface ITabStopOptions {
-    readonly position: number;
+    readonly position: number | TabStopPosition;
     readonly leader?: LeaderType;
 }
 
@@ -39,9 +39,6 @@ export interface IParagraphOptions {
     readonly tabStop?: {
         readonly left?: ITabStopOptions;
         readonly right?: ITabStopOptions;
-        readonly maxRight?: {
-            readonly leader?: LeaderType;
-        };
         readonly center?: ITabStopOptions;
     };
     readonly style?: string;
@@ -53,7 +50,7 @@ export interface IParagraphOptions {
         readonly level: number;
         readonly custom?: boolean;
     };
-    readonly children?: Array<TextRun | PictureRun | Hyperlink>;
+    readonly children?: Array<TextRun | PictureRun | Hyperlink | Bookmark | PageBreak>;
 }
 
 export class Paragraph extends XmlComponent {
@@ -139,10 +136,6 @@ export class Paragraph extends XmlComponent {
                 this.properties.push(new RightTabStop(options.tabStop.right.position, options.tabStop.right.leader));
             }
 
-            if (options.tabStop.maxRight) {
-                this.properties.push(new MaxRightTabStop(options.tabStop.maxRight.leader));
-            }
-
             if (options.tabStop.center) {
                 this.properties.push(new CenterTabStop(options.tabStop.center.position, options.tabStop.center.leader));
             }
@@ -166,32 +159,16 @@ export class Paragraph extends XmlComponent {
 
         if (options.children) {
             for (const child of options.children) {
+                if (child instanceof Bookmark) {
+                    this.root.push(child.start);
+                    this.root.push(child.text);
+                    this.root.push(child.end);
+                    continue;
+                }
+
                 this.root.push(child);
             }
         }
-    }
-
-    public addRun(run: Run): Paragraph {
-        this.root.push(run);
-        return this;
-    }
-
-    public addHyperLink(hyperlink: Hyperlink): Paragraph {
-        this.root.push(hyperlink);
-        return this;
-    }
-
-    public addBookmark(bookmark: Bookmark): Paragraph {
-        // Bookmarks by spec have three components, a start, text, and end
-        this.root.push(bookmark.start);
-        this.root.push(bookmark.text);
-        this.root.push(bookmark.end);
-        return this;
-    }
-
-    public pageBreak(): Paragraph {
-        this.root.push(new PageBreak());
-        return this;
     }
 
     public referenceFootnote(id: number): Paragraph {

@@ -16,18 +16,24 @@ export class TableOfContents extends XmlComponent {
 
         const content = new StructuredDocumentTagContent();
 
-        const beginParagraph = new Paragraph({});
-        const beginRun = new Run({});
-        beginRun.addChildElement(new Begin(true));
-        beginRun.addChildElement(new FieldInstruction(properties));
-        beginRun.addChildElement(new Separate());
-        beginParagraph.addRun(beginRun);
+        const beginParagraph = new Paragraph({
+            children: [
+                new Run({
+                    children: [new Begin(true), new FieldInstruction(properties), new Separate()],
+                }),
+            ],
+        });
+
         content.addChildElement(beginParagraph);
 
-        const endParagraph = new Paragraph({});
-        const endRun = new Run({});
-        endRun.addChildElement(new End());
-        endParagraph.addRun(endRun);
+        const endParagraph = new Paragraph({
+            children: [
+                new Run({
+                    children: [new End()],
+                }),
+            ],
+        });
+
         content.addChildElement(endParagraph);
 
         this.root.push(content);

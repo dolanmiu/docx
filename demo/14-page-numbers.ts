@@ -1,7 +1,7 @@
 // Page numbers
 // Import from 'docx' rather than '../build' if you install from npm
 import * as fs from "fs";
-import { AlignmentType, Document, Header, Packer, Paragraph, TextRun } from "../build";
+import { AlignmentType, Document, Header, Packer, PageBreak, Paragraph, TextRun } from "../build";
 
 const doc = new Document();
 
@@ -26,8 +26,8 @@ doc.addSection({
     },
     children: [
         new Paragraph({
-            text: "First Page",
-        }).pageBreak(),
+            children: [new TextRun("First Page"), new PageBreak()],
+        }),
         new Paragraph("Second Page"),
     ],
 });

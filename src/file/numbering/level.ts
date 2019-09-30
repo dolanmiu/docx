@@ -8,8 +8,9 @@ import {
     KeepLines,
     KeepNext,
     LeftTabStop,
-    MaxRightTabStop,
+    RightTabStop,
     Spacing,
+    TabStopPosition,
     ThematicBreak,
 } from "../paragraph/formatting";
 import { ParagraphProperties } from "../paragraph/properties";
@@ -235,9 +236,8 @@ export class LevelBase extends XmlComponent {
         return this;
     }
 
-    public maxRightTabStop(): Level {
-        this.addParagraphProperty(new MaxRightTabStop());
-        return this;
+    public rightTabStop(position: number): Level {
+        return this.addParagraphProperty(new RightTabStop(position));
     }
 
     public leftTabStop(position: number): Level {

@@ -1,10 +1,10 @@
 import { expect } from "chai";
 
 import { Formatter } from "export/formatter";
+import { TabStopPosition } from "file/paragraph";
+import { EMPTY_OBJECT } from "file/xml-components";
 
 import { ParagraphStyle } from "./paragraph-style";
-
-import { EMPTY_OBJECT } from "file/xml-components";
 
 describe("ParagraphStyle", () => {
     describe("#constructor", () => {
@@ -198,7 +198,7 @@ describe("ParagraphStyle", () => {
         });
 
         it("#maxRightTabStop", () => {
-            const style = new ParagraphStyle("myStyleId").maxRightTabStop();
+            const style = new ParagraphStyle("myStyleId").rightTabStop(TabStopPosition.MAX);
             const tree = new Formatter().format(style);
             expect(tree).to.deep.equal({
                 "w:style": [

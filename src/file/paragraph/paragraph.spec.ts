@@ -4,7 +4,7 @@ import { Formatter } from "export/formatter";
 import { EMPTY_OBJECT } from "file/xml-components";
 
 import { Numbering } from "../numbering";
-import { AlignmentType, HeadingLevel, LeaderType } from "./formatting";
+import { AlignmentType, HeadingLevel, LeaderType, PageBreak, TabStopPosition } from "./formatting";
 import { Paragraph } from "./paragraph";
 
 describe("Paragraph", () => {
@@ -254,10 +254,12 @@ describe("Paragraph", () => {
     });
 
     describe("#maxRightTabStop()", () => {
-        it("should add maxRightTabStop to JSON", () => {
+        it("should add right tab stop to JSON", () => {
             const paragraph = new Paragraph({
                 tabStop: {
-                    maxRight: {},
+                    right: {
+                        position: TabStopPosition.MAX,
+                    },
                 },
             });
             const tree = new Formatter().format(paragraph);
@@ -492,8 +494,9 @@ describe("Paragraph", () => {
 
     describe("#pageBreak()", () => {
         it("should add page break to JSON", () => {
-            const paragraph = new Paragraph({});
-            paragraph.pageBreak();
+            const paragraph = new Paragraph({
+                children: [new PageBreak()],
+            });
             const tree = new Formatter().format(paragraph);
             expect(tree).to.deep.equal({
                 "w:p": [

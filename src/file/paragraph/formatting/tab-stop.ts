@@ -28,6 +28,10 @@ export enum LeaderType {
     UNDERSCORE = "underscore",
 }
 
+export enum TabStopPosition {
+    MAX = 9026,
+}
+
 export class TabAttributes extends XmlAttributeComponent<{
     readonly val: TabValue;
     readonly pos: string | number;
@@ -46,12 +50,6 @@ export class TabStopItem extends XmlComponent {
                 leader,
             }),
         );
-    }
-}
-
-export class MaxRightTabStop extends TabStop {
-    constructor(leader?: LeaderType) {
-        super(new TabStopItem(TabValue.RIGHT, 9026, leader));
     }
 }
 
