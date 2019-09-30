@@ -328,7 +328,7 @@ const cell = new TableCell({
 
 ## Examples
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/4-basic-table.ts ":include")
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/4-basic-table.ts ':include')
 
 _Source: https://github.com/dolanmiu/docx/blob/master/demo/4-basic-table.ts_
 
@@ -336,7 +336,7 @@ _Source: https://github.com/dolanmiu/docx/blob/master/demo/4-basic-table.ts_
 
 Example showing how to add colourful borders to tables
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/20-table-cell-borders.ts ":include")
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/20-table-cell-borders.ts ':include')
 
 _Source: https://github.com/dolanmiu/docx/blob/master/demo/20-table-cell-borders.ts_
 
@@ -344,11 +344,11 @@ _Source: https://github.com/dolanmiu/docx/blob/master/demo/20-table-cell-borders
 
 Example showing how to add images to tables
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/24-images-to-table-cell.ts ":include")
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/24-images-to-table-cell.ts ':include')
 
 _Source: https://github.com/dolanmiu/docx/blob/master/demo/24-images-to-table-cell.ts_
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/36-image-to-table-cell.ts ":include")
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/36-image-to-table-cell.ts ':include')
 
 _Source: https://github.com/dolanmiu/docx/blob/master/demo/36-image-to-table-cell.ts_
 
@@ -356,7 +356,7 @@ _Source: https://github.com/dolanmiu/docx/blob/master/demo/36-image-to-table-cel
 
 Example showing how align text in a table cell
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/31-tables.ts ":include")
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/31-tables.ts ':include')
 
 _Source: https://github.com/dolanmiu/docx/blob/master/demo/31-tables.ts_
 
@@ -364,11 +364,11 @@ _Source: https://github.com/dolanmiu/docx/blob/master/demo/31-tables.ts_
 
 Example showing merging of columns and rows and shading
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/32-merge-table-cells.ts ":include")
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/32-merge-and-shade-table-cells.ts ':include')
 
-_Source: https://github.com/dolanmiu/docx/blob/master/demo/32-merge-table-cells.ts_
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/32-merge-and-shade-table-cells.ts_
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/41-merge-table-cells-2.ts ":include")
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/41-merge-table-cells-2.ts ':include')
 
 _Source: https://github.com/dolanmiu/docx/blob/master/demo/41-merge-table-cells-2.ts_
 
@@ -376,12 +376,12 @@ _Source: https://github.com/dolanmiu/docx/blob/master/demo/41-merge-table-cells-
 
 Example showing merging of columns and rows
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/43-images-to-table-cell-2.ts ":include")
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/43-images-to-table-cell-2.ts ':include')
 
 _Source: https://github.com/dolanmiu/docx/blob/master/demo/43-images-to-table-cell-2.ts_
 
 ### Floating tables
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/34-floating-tables.ts ":include")
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/34-floating-tables.ts ':include')
 
 _Source: https://github.com/dolanmiu/docx/blob/master/demo/34-floating-tables.ts_
