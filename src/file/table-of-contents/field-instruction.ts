@@ -52,7 +52,7 @@ export class FieldInstruction extends XmlComponent {
             instruction = `${instruction} \\s "${this.properties.seqFieldIdentifierForPrefix}"`;
         }
         if (this.properties.stylesWithLevels && this.properties.stylesWithLevels.length) {
-            const styles = this.properties.stylesWithLevels.map((sl) => `${sl.styleName};${sl.level}`).join(";");
+            const styles = this.properties.stylesWithLevels.map((sl) => `${sl.styleName},${sl.level}`).join(",");
             instruction = `${instruction} \\t "${styles}"`;
         }
         if (this.properties.useAppliedParagraphOutlineLevel) {
