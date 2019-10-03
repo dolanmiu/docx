@@ -15,7 +15,7 @@ import { CenterTabStop, LeaderType, LeftTabStop, RightTabStop, TabStopPosition }
 import { NumberProperties } from "./formatting/unordered-list";
 import { Bookmark, Hyperlink, OutlineLevel } from "./links";
 import { ParagraphProperties } from "./properties";
-import { PictureRun, Run, SequentialIdentifier, TextRun } from "./run";
+import { PictureRun, Run, SequentialIdentifier, SymbolRun, TextRun } from "./run";
 
 interface ITabStopOptions {
     readonly position: number | TabStopPosition;
@@ -50,7 +50,7 @@ export interface IParagraphOptions {
         readonly level: number;
         readonly custom?: boolean;
     };
-    readonly children?: Array<TextRun | PictureRun | Hyperlink | Bookmark | PageBreak>;
+    readonly children?: Array<TextRun | PictureRun | Hyperlink | SymbolRun | Bookmark | PageBreak>;
 }
 
 export class Paragraph extends XmlComponent {
