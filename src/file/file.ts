@@ -97,10 +97,15 @@ export class File {
             const stylesFactory = new ExternalStylesFactory();
             this.styles = stylesFactory.newInstance(options.externalStyles);
         } else if (options.styles) {
-            this.styles = options.styles;
+            const stylesFactory = new DefaultStylesFactory();
+            const defaultStyles = stylesFactory.newInstance();
+            this.styles = new Styles({
+                ...defaultStyles,
+                ...options.styles,
+            });
         } else {
             const stylesFactory = new DefaultStylesFactory();
-            this.styles = stylesFactory.newInstance();
+            this.styles = new Styles(stylesFactory.newInstance());
         }
 
         this.addDefaultRelationships();

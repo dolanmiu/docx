@@ -1,12 +1,11 @@
 import { BaseXmlComponent, ImportedXmlComponent, XmlComponent } from "file/xml-components";
 
-import { DocumentDefaults } from "./defaults";
 import { CharacterStyle, ParagraphStyle } from "./style";
 import { ICharacterStyleOptions } from "./style/character-style";
 import { IParagraphStyleOptions } from "./style/paragraph-style";
 export * from "./border";
 
-interface IStylesOptions {
+export interface IStylesOptions {
     readonly initialStyles?: BaseXmlComponent;
     readonly paragraphStyles?: IParagraphStyleOptions[];
     readonly characterStyles?: ICharacterStyleOptions[];
@@ -21,6 +20,12 @@ export class Styles extends XmlComponent {
             this.root.push(options.initialStyles);
         }
 
+        if (options.importedStyles) {
+            for (const style of options.importedStyles) {
+                this.root.push(style);
+            }
+        }
+
         if (options.paragraphStyles) {
             for (const style of options.paragraphStyles) {
                 this.root.push(new ParagraphStyle(style));
@@ -32,17 +37,5 @@ export class Styles extends XmlComponent {
                 this.root.push(new CharacterStyle(style));
             }
         }
-
-        if (options.importedStyles) {
-            for (const style of options.importedStyles) {
-                this.root.push(style);
-            }
-        }
-    }
-
-    public createDocumentDefaults(): DocumentDefaults {
-        const defaults = new DocumentDefaults();
-        this.root.push(defaults);
-        return defaults;
     }
 }

@@ -1,13 +1,13 @@
 // Example on how to customise the look at feel using Styles
 // Import from 'docx' rather than '../build' if you install from npm
 import * as fs from "fs";
-import { Document, HeadingLevel, Packer, Paragraph, Styles, TextRun, UnderlineType } from "../build";
+import { Document, HeadingLevel, Packer, Paragraph, TextRun, UnderlineType } from "../build";
 
 const doc = new Document({
     creator: "Clippy",
     title: "Sample Document",
     description: "A brief example of using docx",
-    styles: new Styles({
+    styles: {
         paragraphStyles: [
             {
                 id: "Heading1",
@@ -81,7 +81,7 @@ const doc = new Document({
                 quickFormat: true,
             },
         ],
-    }),
+    },
 });
 
 const numberedAbstract = doc.Numbering.createAbstractNumbering();
