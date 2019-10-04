@@ -1,106 +1,170 @@
-import { CharacterStyle } from "./character-style";
-import { ParagraphStyle } from "./paragraph-style";
+import { UnderlineType } from "file/paragraph/run/underline";
+
+import { CharacterStyle, IBaseCharacterStyleOptions } from "./character-style";
+import { IBaseParagraphStyleOptions, IParagraphStyleOptions, ParagraphStyle } from "./paragraph-style";
 
 export class HeadingStyle extends ParagraphStyle {
-    constructor(styleId: string, name: string) {
-        super(styleId, name);
-        this.basedOn("Normal");
-        this.next("Normal");
-        this.quickFormat();
+    constructor(options: IParagraphStyleOptions) {
+        super({
+            ...options,
+            basedOn: "Normal",
+            next: "Normal",
+            quickFormat: true,
+        });
     }
 }
 
 export class TitleStyle extends HeadingStyle {
-    constructor() {
-        super("Title", "Title");
+    constructor(options: IBaseParagraphStyleOptions) {
+        super({
+            ...options,
+            id: "Title",
+            name: "Title",
+        });
     }
 }
 
 export class Heading1Style extends HeadingStyle {
-    constructor() {
-        super("Heading1", "Heading 1");
+    constructor(options: IBaseParagraphStyleOptions) {
+        super({
+            ...options,
+            id: "Heading1",
+            name: "Heading 1",
+        });
     }
 }
 
 export class Heading2Style extends HeadingStyle {
-    constructor() {
-        super("Heading2", "Heading 2");
+    constructor(options: IBaseParagraphStyleOptions) {
+        super({
+            ...options,
+            id: "Heading2",
+            name: "Heading 2",
+        });
     }
 }
 
 export class Heading3Style extends HeadingStyle {
-    constructor() {
-        super("Heading3", "Heading 3");
+    constructor(options: IBaseParagraphStyleOptions) {
+        super({
+            ...options,
+            id: "Heading3",
+            name: "Heading 3",
+        });
     }
 }
 
 export class Heading4Style extends HeadingStyle {
-    constructor() {
-        super("Heading4", "Heading 4");
+    constructor(options: IBaseParagraphStyleOptions) {
+        super({
+            ...options,
+            id: "Heading4",
+            name: "Heading 4",
+        });
     }
 }
 
 export class Heading5Style extends HeadingStyle {
-    constructor() {
-        super("Heading5", "Heading 5");
+    constructor(options: IBaseParagraphStyleOptions) {
+        super({
+            ...options,
+            id: "Heading5",
+            name: "Heading 5",
+        });
     }
 }
 
 export class Heading6Style extends HeadingStyle {
-    constructor() {
-        super("Heading6", "Heading 6");
+    constructor(options: IBaseParagraphStyleOptions) {
+        super({
+            ...options,
+            id: "Heading6",
+            name: "Heading 6",
+        });
     }
 }
 
 export class ListParagraph extends ParagraphStyle {
-    constructor() {
-        super("ListParagraph", "List Paragraph");
-        this.basedOn("Normal");
-        this.quickFormat();
+    constructor(options: IBaseParagraphStyleOptions) {
+        super({
+            ...options,
+            id: "ListParagraph",
+            name: "List Paragraph",
+            basedOn: "Normal",
+            quickFormat: true,
+        });
     }
 }
 
 export class FootnoteText extends ParagraphStyle {
-    constructor() {
-        super("FootnoteText", "footnote text");
-        this.basedOn("Normal")
-            .link("FootnoteTextChar")
-            .uiPriority("99")
-            .semiHidden()
-            .unhideWhenUsed()
-            .spacing({
-                after: 0,
-                line: 240,
-                lineRule: "auto",
-            })
-            .size(20);
+    constructor(options: IBaseParagraphStyleOptions) {
+        super({
+            ...options,
+            id: "FootnoteText",
+            name: "footnote text",
+            link: "FootnoteTextChar",
+            basedOn: "Normal",
+            uiPriority: 99,
+            semiHidden: true,
+            unhideWhenUsed: true,
+            paragraph: {
+                spacing: {
+                    after: 0,
+                    line: 240,
+                    lineRule: "auto",
+                },
+            },
+            run: {
+                size: 20,
+            },
+        });
     }
 }
 
 export class FootnoteReferenceStyle extends CharacterStyle {
-    constructor() {
-        super("FootnoteReference", "footnote reference");
-        this.basedOn("DefaultParagraphFont")
-            .semiHidden()
-            .superScript();
+    constructor(options: IBaseCharacterStyleOptions) {
+        super({
+            ...options,
+            id: "FootnoteReference",
+            name: "footnote reference",
+            basedOn: "DefaultParagraphFont",
+            semiHidden: true,
+            run: {
+                superScript: true,
+            },
+        });
     }
 }
 
 export class FootnoteTextChar extends CharacterStyle {
-    constructor() {
-        super("FootnoteTextChar", "Footnote Text Char");
-        this.basedOn("DefaultParagraphFont")
-            .link("FootnoteText")
-            .semiHidden()
-            .size(20);
+    constructor(options: IBaseCharacterStyleOptions) {
+        super({
+            ...options,
+            id: "FootnoteTextChar",
+            name: "Footnote Text Char",
+            basedOn: "DefaultParagraphFont",
+            link: "FootnoteText",
+            semiHidden: true,
+            run: {
+                size: 20,
+            },
+        });
     }
 }
 
 export class HyperlinkStyle extends CharacterStyle {
-    constructor() {
-        super("Hyperlink", "Hyperlink");
-        this.basedOn("DefaultParagraphFont")
-            .color("0563C1")
-            .underline("single");
+    constructor(options: IBaseCharacterStyleOptions) {
+        super({
+            ...options,
+            id: "Hyperlink",
+            name: "Hyperlink",
+            basedOn: "DefaultParagraphFont",
+            run: {
+                color: "0563C1",
+                underline: {
+                    type: UnderlineType.SINGLE,
+                },
+            },
+        });
     }
 }

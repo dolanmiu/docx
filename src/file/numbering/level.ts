@@ -10,12 +10,12 @@ import {
     LeftTabStop,
     RightTabStop,
     Spacing,
-    TabStopPosition,
     ThematicBreak,
 } from "../paragraph/formatting";
 import { ParagraphProperties } from "../paragraph/properties";
 import * as formatting from "../paragraph/run/formatting";
 import { RunProperties } from "../paragraph/run/properties";
+import { UnderlineType } from "../paragraph/run/underline";
 
 interface ILevelAttributesProperties {
     readonly ilvl?: number;
@@ -185,7 +185,7 @@ export class LevelBase extends XmlComponent {
         return this;
     }
 
-    public underline(underlineType?: string, color?: string): Level {
+    public underline(underlineType?: UnderlineType, color?: string): Level {
         this.addRunProperty(new formatting.Underline(underlineType, color));
         return this;
     }

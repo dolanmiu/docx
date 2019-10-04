@@ -9,6 +9,7 @@ import { Numbering } from "./numbering";
 
 import { EMPTY_OBJECT } from "file/xml-components";
 import { TabStopPosition } from "../paragraph";
+import { UnderlineType } from "../paragraph/run/underline";
 
 describe("Numbering", () => {
     let numbering: Numbering;
@@ -356,7 +357,7 @@ describe("AbstractNumbering", () => {
 
                 it("should set the style if given", () => {
                     const abstractNumbering = new AbstractNumbering(1);
-                    const level = abstractNumbering.createLevel(0, "lowerRoman", "%0.").underline("double");
+                    const level = abstractNumbering.createLevel(0, "lowerRoman", "%0.").underline(UnderlineType.DOUBLE);
                     const tree = new Formatter().format(level);
                     expect(tree["w:lvl"]).to.include({
                         "w:rPr": [{ "w:u": { _attr: { "w:val": "double" } } }],
@@ -365,7 +366,7 @@ describe("AbstractNumbering", () => {
 
                 it("should set the style and color if given", () => {
                     const abstractNumbering = new AbstractNumbering(1);
-                    const level = abstractNumbering.createLevel(0, "lowerRoman", "%0.").underline("double", "005599");
+                    const level = abstractNumbering.createLevel(0, "lowerRoman", "%0.").underline(UnderlineType.DOUBLE, "005599");
                     const tree = new Formatter().format(level);
                     expect(tree["w:lvl"]).to.include({
                         "w:rPr": [{ "w:u": { _attr: { "w:val": "double", "w:color": "005599" } } }],

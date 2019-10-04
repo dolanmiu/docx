@@ -38,11 +38,13 @@ export class ExternalStylesFactory {
             throw new Error("can not find styles element");
         }
 
-        const importedStyle = new Styles(new ImportedRootElementAttributes(stylesXmlElement.attributes));
         const stylesElements = stylesXmlElement.elements || [];
-        for (const childElm of stylesElements) {
-            importedStyle.push(convertToXmlComponent(childElm) as ImportedXmlComponent);
-        }
+
+        const importedStyle = new Styles({
+            initialStyles: new ImportedRootElementAttributes(stylesXmlElement.attributes),
+            importedStyles: stylesElements.map((childElm) => convertToXmlComponent(childElm) as ImportedXmlComponent),
+        });
+
         return importedStyle;
     }
 }

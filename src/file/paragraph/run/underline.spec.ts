@@ -27,7 +27,7 @@ describe("Underline", () => {
         });
 
         it("should use the given style type and color", () => {
-            const underline = new u.Underline("double", "FF00CC");
+            const underline = new u.Underline(u.UnderlineType.DOUBLE, "FF00CC");
             const tree = new Formatter().format(underline);
             expect(tree).to.deep.equal({
                 "w:u": { _attr: { "w:val": "double", "w:color": "FF00CC" } },
