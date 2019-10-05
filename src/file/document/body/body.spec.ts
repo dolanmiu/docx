@@ -23,6 +23,9 @@ describe("Body", () => {
             expect(tree).to.deep.equal({
                 "w:body": [
                     {
+                        "w:p": {},
+                    },
+                    {
                         "w:sectPr": [
                             { "w:pgSz": { _attr: { "w:w": 10000, "w:h": 10000, "w:orient": "portrait" } } },
                             {
