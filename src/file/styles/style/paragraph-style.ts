@@ -11,7 +11,7 @@ import {
     Spacing,
     ThematicBreak,
 } from "file/paragraph";
-import { RightTabStop } from "file/paragraph/formatting";
+import { IIndentAttributesProperties, RightTabStop } from "file/paragraph/formatting";
 import * as formatting from "file/paragraph/run/formatting";
 import { RunProperties } from "file/paragraph/run/properties";
 import { UnderlineType } from "file/paragraph/run/underline";
@@ -57,7 +57,7 @@ export interface IBaseParagraphStyleOptions {
         readonly thematicBreak?: boolean;
         readonly rightTabStop?: number;
         readonly leftTabStop?: number;
-        readonly indent?: object;
+        readonly indent?: IIndentAttributesProperties;
         readonly spacing?: ISpacingProperties;
         readonly keepNext?: boolean;
         readonly keepLines?: boolean;
