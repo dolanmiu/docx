@@ -7,9 +7,9 @@ import {
     ISpacingProperties,
     KeepLines,
     KeepNext,
-    LeftTabStop,
-    RightTabStop,
     Spacing,
+    TabStop,
+    TabStopType,
     ThematicBreak,
 } from "../paragraph/formatting";
 import { ParagraphProperties } from "../paragraph/properties";
@@ -237,11 +237,11 @@ export class LevelBase extends XmlComponent {
     }
 
     public rightTabStop(position: number): Level {
-        return this.addParagraphProperty(new RightTabStop(position));
+        return this.addParagraphProperty(new TabStop(TabStopType.RIGHT, position));
     }
 
     public leftTabStop(position: number): Level {
-        this.addParagraphProperty(new LeftTabStop(position));
+        this.addParagraphProperty(new TabStop(TabStopType.LEFT, position));
         return this;
     }
 

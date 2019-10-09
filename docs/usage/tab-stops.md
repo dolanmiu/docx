@@ -13,11 +13,12 @@ Simply call the relevant methods on the paragraph listed below. Then just add a 
 ```ts
 const paragraph = new Paragraph({
     children: [new TextRun("Hey everyone").bold(), new TextRun("11th November 1999").tab()],
-    tabStop: {
-        right: {
+    tabStops: [
+        {
+            type: TabStopType.RIGHT,
             position: TabStopPosition.MAX,
         },
-    },
+    ],
 });
 ```
 
@@ -26,28 +27,49 @@ The example above will create a left aligned text, and a right aligned text on t
 ```ts
 const paragraph = new Paragraph({
     children: [new TextRun("Second tab stop here I come!").tab().tab()],
-    tabStop: {
-        right: {
+    tabStops: [
+        {
+            type: TabStopType.RIGHT,
             position: TabStopPosition.MAX,
         },
-        left: {
+        {
+            type: TabStopType.LEFT,
             position: 1000,
         },
-    },
+    ],
 });
 ```
 
 The above shows the use of two tab stops, and how to select/use it.
 
+You can add multiple tab stops of the same `type` too.
+
+```ts
+const paragraph = new Paragraph({
+    children: [new TextRun("Multiple tab stops!").tab().tab()],
+    tabStops: [
+        {
+            type: TabStopType.RIGHT,
+            position: TabStopPosition.MAX,
+        },
+        {
+            type: TabStopType.RIGHT,
+            position: 1000,
+        },
+    ],
+});
+```
+
 ## Left Tab Stop
 
 ```ts
 const paragraph = new Paragraph({
-    tabStop: {
-        left: {
+    tabStops: [
+        {
+            type: TabStopType.LEFT,
             position: 2268,
         },
-    },
+    ],
 });
 ```
 
@@ -57,11 +79,12 @@ const paragraph = new Paragraph({
 
 ```ts
 const paragraph = new Paragraph({
-    tabStop: {
-        center: {
+    tabStops: [
+        {
+            type: TabStopType.CENTER,
             position: 2268,
         },
-    },
+    ],
 });
 ```
 
@@ -71,11 +94,12 @@ const paragraph = new Paragraph({
 
 ```ts
 const paragraph = new Paragraph({
-    tabStop: {
-        right: {
+    tabStops: [
+        {
+            type: TabStopType.RIGHT,
             position: 2268,
         },
-    },
+    ],
 });
 ```
 
@@ -85,11 +109,12 @@ const paragraph = new Paragraph({
 
 ```ts
 const paragraph = new Paragraph({
-    tabStop: {
-        right: {
+    tabStops: [
+        {
+            type: TabStopType.RIGHT,
             position: TabStopPosition.MAX,
         },
-    },
+    ],
 });
 ```
 

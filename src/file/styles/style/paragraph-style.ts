@@ -5,13 +5,12 @@ import {
     ISpacingProperties,
     KeepLines,
     KeepNext,
-    LeftTabStop,
     OutlineLevel,
     ParagraphProperties,
     Spacing,
     ThematicBreak,
 } from "file/paragraph";
-import { IIndentAttributesProperties, RightTabStop } from "file/paragraph/formatting";
+import { IIndentAttributesProperties, TabStop, TabStopType } from "file/paragraph/formatting";
 import * as formatting from "file/paragraph/run/formatting";
 import { RunProperties } from "file/paragraph/run/properties";
 import { UnderlineType } from "file/paragraph/run/underline";
@@ -181,11 +180,11 @@ export class ParagraphStyle extends Style {
             }
 
             if (options.paragraph.rightTabStop) {
-                this.paragraphProperties.push(new RightTabStop(options.paragraph.rightTabStop));
+                this.paragraphProperties.push(new TabStop(TabStopType.RIGHT, options.paragraph.rightTabStop));
             }
 
             if (options.paragraph.leftTabStop) {
-                this.paragraphProperties.push(new LeftTabStop(options.paragraph.leftTabStop));
+                this.paragraphProperties.push(new TabStop(TabStopType.LEFT, options.paragraph.leftTabStop));
             }
 
             if (options.paragraph.indent) {
