@@ -45,7 +45,7 @@ export interface IParagraphOptions {
         readonly level: number;
         readonly custom?: boolean;
     };
-    readonly children?: Array<TextRun | PictureRun | Hyperlink | SymbolRun | Bookmark | PageBreak>;
+    readonly children?: Array<TextRun | PictureRun | Hyperlink | SymbolRun | Bookmark | PageBreak | SequentialIdentifier>;
 }
 
 export class Paragraph extends XmlComponent {
@@ -165,11 +165,6 @@ export class Paragraph extends XmlComponent {
 
     public addRunToFront(run: Run): Paragraph {
         this.root.splice(1, 0, run);
-        return this;
-    }
-
-    public addSequentialIdentifier(identifier: string): Paragraph {
-        this.root.push(new SequentialIdentifier(identifier));
         return this;
     }
 }
