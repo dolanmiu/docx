@@ -47,30 +47,6 @@ Here is the list of all options that you can use to generate your tables of cont
 
 ## Examples
 
-```ts
-// Let's define the options for generate a TOC for heading 1-5 and MySpectacularStyle,
-// making the entries be hyperlinks for the paragraph
-const toc = new TableOfContents("Summary", {
-    hyperlink: true,
-    headingStyleRange: "1-5",
-    stylesWithLevels: [new StyleLevel("MySpectacularStyle", 1)],
-});
-
-doc.addTableOfContents(toc);
-
-doc.add(new Paragraph("Header #1").heading1().pageBreakBefore());
-doc.add(new Paragraph("I'm a little text, very nicely written.'"));
-
-doc.add(new Paragraph("Header #2").heading1().pageBreakBefore());
-doc.add(new Paragraph("I'm another text very nicely written.'"));
-doc.add(new Paragraph("Header #2.1").heading2());
-doc.add(new Paragraph("I'm another text very nicely written.'"));
-
-doc.add(new Paragraph("My Spectacular Style #1").style("MySpectacularStyle").pageBreakBefore());
-```
-
-### Complete example
-
 [Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/28-table-of-contents.ts ':include')
 
 _Source: https://github.com/dolanmiu/docx/blob/master/demo/28-table-of-contents.ts_

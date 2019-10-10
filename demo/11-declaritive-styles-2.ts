@@ -1,82 +1,153 @@
 // Setting styles with JavaScript configuration
 // Import from 'docx' rather than '../build' if you install from npm
 import * as fs from "fs";
-import { AlignmentType, Document, Footer, HeadingLevel, Media, Packer, Paragraph, Table, TableCell, TableRow } from "../build";
+import {
+    AlignmentType,
+    Document,
+    Footer,
+    HeadingLevel,
+    Media,
+    Packer,
+    Paragraph,
+    Table,
+    TableCell,
+    TableRow,
+    TabStopPosition,
+    UnderlineType,
+} from "../build";
 
-const doc = new Document();
-
-doc.Styles.createParagraphStyle("Heading1", "Heading 1")
-    .basedOn("Normal")
-    .next("Normal")
-    .quickFormat()
-    .font("Calibri")
-    .size(52)
-    .center()
-    .bold()
-    .color("000000")
-    .spacing({ line: 340 })
-    .underline("single", "000000");
-
-doc.Styles.createParagraphStyle("Heading2", "Heading 2")
-    .basedOn("Normal")
-    .next("Normal")
-    .font("Calibri")
-    .quickFormat()
-    .size(26)
-    .bold()
-    .spacing({ line: 340 });
-
-doc.Styles.createParagraphStyle("Heading3", "Heading 3")
-    .basedOn("Normal")
-    .next("Normal")
-    .font("Calibri")
-    .quickFormat()
-    .size(26)
-    .bold()
-    .spacing({ line: 276 });
-
-doc.Styles.createParagraphStyle("Heading4", "Heading 4")
-    .basedOn("Normal")
-    .next("Normal")
-    .justified()
-    .font("Calibri")
-    .size(26)
-    .bold();
-
-doc.Styles.createParagraphStyle("normalPara", "Normal Para")
-    .basedOn("Normal")
-    .next("Normal")
-    .font("Calibri")
-    .quickFormat()
-    .leftTabStop(453.543307087)
-    .maxRightTabStop()
-    .size(26)
-    .spacing({ line: 276, before: 20 * 72 * 0.1, after: 20 * 72 * 0.05 });
-
-doc.Styles.createParagraphStyle("normalPara2", "Normal Para2")
-    .basedOn("Normal")
-    .next("Normal")
-    .quickFormat()
-    .font("Calibri")
-    .size(26)
-    .justified()
-    .spacing({ line: 276, before: 20 * 72 * 0.1, after: 20 * 72 * 0.05 });
-
-doc.Styles.createParagraphStyle("aside", "Aside")
-    .basedOn("Normal")
-    .next("Normal")
-    .color("999999")
-    .italics()
-    .indent({ left: 720 })
-    .spacing({ line: 276 });
-
-doc.Styles.createParagraphStyle("wellSpaced", "Well Spaced")
-    .basedOn("Normal")
-    .spacing({ line: 276, before: 20 * 72 * 0.1, after: 20 * 72 * 0.05 });
-
-doc.Styles.createParagraphStyle("ListParagraph", "List Paragraph")
-    .quickFormat()
-    .basedOn("Normal");
+const doc = new Document({
+    styles: {
+        paragraphStyles: [
+            {
+                id: "Heading1",
+                name: "Heading 1",
+                basedOn: "Normal",
+                next: "Normal",
+                quickFormat: true,
+                run: {
+                    font: "Calibri",
+                    size: 52,
+                    bold: true,
+                    color: "000000",
+                    underline: {
+                        type: UnderlineType.SINGLE,
+                        color: "000000",
+                    },
+                },
+                paragraph: {
+                    alignment: AlignmentType.CENTER,
+                    spacing: { line: 340 },
+                },
+            },
+            {
+                id: "Heading2",
+                name: "Heading 2",
+                basedOn: "Normal",
+                next: "Normal",
+                quickFormat: true,
+                run: {
+                    font: "Calibri",
+                    size: 26,
+                    bold: true,
+                },
+                paragraph: {
+                    spacing: { line: 340 },
+                },
+            },
+            {
+                id: "Heading3",
+                name: "Heading 3",
+                basedOn: "Normal",
+                next: "Normal",
+                quickFormat: true,
+                run: {
+                    font: "Calibri",
+                    size: 26,
+                    bold: true,
+                },
+                paragraph: {
+                    spacing: { line: 276 },
+                },
+            },
+            {
+                id: "Heading4",
+                name: "Heading 4",
+                basedOn: "Normal",
+                next: "Normal",
+                quickFormat: true,
+                run: {
+                    font: "Calibri",
+                    size: 26,
+                    bold: true,
+                },
+                paragraph: {
+                    alignment: AlignmentType.JUSTIFIED,
+                },
+            },
+            {
+                id: "normalPara",
+                name: "Normal Para",
+                basedOn: "Normal",
+                next: "Normal",
+                quickFormat: true,
+                run: {
+                    font: "Calibri",
+                    size: 26,
+                    bold: true,
+                },
+                paragraph: {
+                    spacing: { line: 276, before: 20 * 72 * 0.1, after: 20 * 72 * 0.05 },
+                    rightTabStop: TabStopPosition.MAX,
+                    leftTabStop: 453.543307087,
+                },
+            },
+            {
+                id: "normalPara2",
+                name: "Normal Para2",
+                basedOn: "Normal",
+                next: "Normal",
+                quickFormat: true,
+                run: {
+                    font: "Calibri",
+                    size: 26,
+                },
+                paragraph: {
+                    alignment: AlignmentType.JUSTIFIED,
+                    spacing: { line: 276, before: 20 * 72 * 0.1, after: 20 * 72 * 0.05 },
+                },
+            },
+            {
+                id: "aside",
+                name: "Aside",
+                basedOn: "Normal",
+                next: "Normal",
+                run: {
+                    color: "999999",
+                    italics: true,
+                },
+                paragraph: {
+                    spacing: { line: 276 },
+                    indent: { left: 720 },
+                },
+            },
+            {
+                id: "wellSpaced",
+                name: "Well Spaced",
+                basedOn: "Normal",
+                paragraph: {
+                    spacing: { line: 276, before: 20 * 72 * 0.1, after: 20 * 72 * 0.05 },
+                },
+            },
+            {
+                id: "ListParagraph",
+                name: "List Paragraph",
+                basedOn: "Normal",
+                quickFormat: true,
+            },
+        ],
+    },
+});
 
 const image = Media.addImage(doc, fs.readFileSync("./demo/images/pizza.gif"));
 

@@ -6,7 +6,7 @@ import { Document, Footer, Header, Packer, PageNumberFormat, PageOrientation, Pa
 const doc = new Document();
 
 doc.addSection({
-    children: [new Paragraph("Hello World").pageBreak()],
+    children: [new Paragraph("Hello World")],
 });
 
 doc.addSection({

@@ -1,18 +1,26 @@
 // Multiple sections with total number of pages in each section
 // Import from 'docx' rather than '../build' if you install from npm
 import * as fs from "fs";
-import { Document, Packer, PageNumberFormat, TextRun } from "../build";
+import { AlignmentType, Document, Packer, PageNumberFormat, TextRun, Header, Paragraph, Footer, PageBreak } from "../build";
 
 const doc = new Document();
 
+const header = new Header({
+    children: [
+        new Paragraph({
+            children: [
+                new TextRun("Header on another page"),
+                new TextRun("Page Number: ").pageNumber(),
+                new TextRun(" to ").numberOfTotalPagesSection(),
+            ],
+            alignment: AlignmentType.CENTER,
+        }),
+    ],
+});
 
-const header = doc.createHeader();
-header.createParagraph("Header on another page");
-const footer = doc.createFooter();
-footer.createParagraph("Foo Bar corp. ")
-    .center()
-    .addRun(new TextRun("Page Number: ").pageNumber())
-    .addRun(new TextRun(" to ").numberOfTotalPagesSection());
+const footer = new Footer({
+    children: [new Paragraph("Foo Bar corp. ")],
+});
 
 doc.addSection({
     headers: {
@@ -21,12 +29,16 @@ doc.addSection({
     footers: {
         default: footer,
     },
-    pageNumberStart: 1,
-    pageNumberFormatType: PageNumberFormat.DECIMAL,
+    properties: {
+        pageNumberStart: 1,
+        pageNumberFormatType: PageNumberFormat.DECIMAL,
+    },
+    children: [
+        new Paragraph({
+            children: [new TextRun("Section 1"), new PageBreak(), new TextRun("Section 1"), new PageBreak()],
+        }),
+    ],
 });
-
-doc.createParagraph("Section 1").pageBreak();
-doc.createParagraph("Section 1").pageBreak();
 
 doc.addSection({
     headers: {
@@ -35,15 +47,17 @@ doc.addSection({
     footers: {
         default: footer,
     },
-    pageNumberStart: 1,
-    pageNumberFormatType: PageNumberFormat.DECIMAL,
+    properties: {
+        pageNumberStart: 1,
+        pageNumberFormatType: PageNumberFormat.DECIMAL,
+    },
+    children: [
+        new Paragraph({
+            children: [new TextRun("Section 2"), new PageBreak(), new TextRun("Section 2"), new PageBreak()],
+        }),
+    ],
 });
 
-doc.createParagraph("Section 2").pageBreak();
-doc.createParagraph("Section 2").pageBreak();
-
-const packer = new Packer();
-
-packer.toBuffer(doc).then((buffer) => {
+Packer.toBuffer(doc).then((buffer) => {
     fs.writeFileSync("My Document.docx", buffer);
 });

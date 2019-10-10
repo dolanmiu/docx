@@ -2,13 +2,13 @@ import { assert } from "chai";
 
 import { Utility } from "tests/utility";
 
-import { LeaderType, LeftTabStop, MaxRightTabStop, RightTabStop } from "./tab-stop";
+import { LeaderType, TabStop, TabStopType } from "./tab-stop";
 
 describe("LeftTabStop", () => {
-    let tabStop: LeftTabStop;
+    let tabStop: TabStop;
 
     beforeEach(() => {
-        tabStop = new LeftTabStop(100);
+        tabStop = new TabStop(TabStopType.LEFT, 100);
     });
 
     describe("#constructor()", () => {
@@ -29,10 +29,10 @@ describe("LeftTabStop", () => {
 });
 
 describe("RightTabStop", () => {
-    let tabStop: RightTabStop;
+    let tabStop: TabStop;
 
     beforeEach(() => {
-        tabStop = new RightTabStop(100, LeaderType.DOT);
+        tabStop = new TabStop(TabStopType.RIGHT, 100, LeaderType.DOT);
     });
 
     describe("#constructor()", () => {
@@ -42,31 +42,6 @@ describe("RightTabStop", () => {
                 val: "right",
                 pos: 100,
                 leader: "dot",
-            };
-            assert.equal(JSON.stringify(newJson.root[0].root[0].root), JSON.stringify(attributes));
-        });
-
-        it("should create a Tab Stop with w:tab", () => {
-            const newJson = Utility.jsonify(tabStop);
-            assert.equal(newJson.root[0].rootKey, "w:tab");
-        });
-    });
-});
-
-describe("MaxRightTabStop", () => {
-    let tabStop: MaxRightTabStop;
-
-    beforeEach(() => {
-        tabStop = new MaxRightTabStop();
-    });
-
-    describe("#constructor()", () => {
-        it("should create a Tab Stop with correct attributes", () => {
-            const newJson = Utility.jsonify(tabStop);
-
-            const attributes = {
-                val: "right",
-                pos: 9026,
             };
             assert.equal(JSON.stringify(newJson.root[0].root[0].root), JSON.stringify(attributes));
         });

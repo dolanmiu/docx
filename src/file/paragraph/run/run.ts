@@ -2,6 +2,7 @@
 import { ShadingType } from "file/table";
 import { XmlComponent } from "file/xml-components";
 
+import { FieldInstruction } from "file/table-of-contents/field-instruction";
 import { Break } from "./break";
 import { Caps, SmallCaps } from "./caps";
 import { Begin, End, Separate } from "./field";
@@ -56,6 +57,7 @@ export interface IRunOptions {
         readonly fill: string;
         readonly color: string;
     };
+    readonly children?: Array<Begin | FieldInstruction | Separate | End>;
 }
 
 export class Run extends XmlComponent {
@@ -133,6 +135,12 @@ export class Run extends XmlComponent {
         if (options.shading) {
             this.properties.push(new Shading(options.shading.type, options.shading.fill, options.shading.color));
             this.properties.push(new ShadowComplexScript(options.shading.type, options.shading.fill, options.shading.color));
+        }
+
+        if (options.children) {
+            for (const child of options.children) {
+                this.root.push(child);
+            }
         }
     }
 

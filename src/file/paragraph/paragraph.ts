@@ -11,16 +11,11 @@ import { KeepLines, KeepNext } from "./formatting/keep";
 import { PageBreak, PageBreakBefore } from "./formatting/page-break";
 import { ContextualSpacing, ISpacingProperties, Spacing } from "./formatting/spacing";
 import { HeadingLevel, Style } from "./formatting/style";
-import { CenterTabStop, LeaderType, LeftTabStop, MaxRightTabStop, RightTabStop } from "./formatting/tab-stop";
+import { LeaderType, TabStop, TabStopPosition, TabStopType } from "./formatting/tab-stop";
 import { NumberProperties } from "./formatting/unordered-list";
 import { Bookmark, Hyperlink, OutlineLevel } from "./links";
 import { ParagraphProperties } from "./properties";
 import { PictureRun, Run, SequentialIdentifier, SymbolRun, TextRun } from "./run";
-
-interface ITabStopOptions {
-    readonly position: number;
-    readonly leader?: LeaderType;
-}
 
 export interface IParagraphOptions {
     readonly text?: string;
@@ -36,14 +31,11 @@ export interface IParagraphOptions {
     readonly indent?: IIndentAttributesProperties;
     readonly keepLines?: boolean;
     readonly keepNext?: boolean;
-    readonly tabStop?: {
-        readonly left?: ITabStopOptions;
-        readonly right?: ITabStopOptions;
-        readonly maxRight?: {
-            readonly leader?: LeaderType;
-        };
-        readonly center?: ITabStopOptions;
-    };
+    readonly tabStops?: Array<{
+        readonly position: number | TabStopPosition;
+        readonly type: TabStopType;
+        readonly leader?: LeaderType;
+    }>;
     readonly style?: string;
     readonly bullet?: {
         readonly level: number;
@@ -53,7 +45,7 @@ export interface IParagraphOptions {
         readonly level: number;
         readonly custom?: boolean;
     };
-    readonly children?: Array<TextRun | PictureRun | Hyperlink | SymbolRun>;
+    readonly children?: Array<TextRun | PictureRun | Hyperlink | SymbolRun | Bookmark | PageBreak | SequentialIdentifier>;
 }
 
 export class Paragraph extends XmlComponent {
@@ -130,21 +122,9 @@ export class Paragraph extends XmlComponent {
             this.properties.push(new KeepNext());
         }
 
-        if (options.tabStop) {
-            if (options.tabStop.left) {
-                this.properties.push(new LeftTabStop(options.tabStop.left.position, options.tabStop.left.leader));
-            }
-
-            if (options.tabStop.right) {
-                this.properties.push(new RightTabStop(options.tabStop.right.position, options.tabStop.right.leader));
-            }
-
-            if (options.tabStop.maxRight) {
-                this.properties.push(new MaxRightTabStop(options.tabStop.maxRight.leader));
-            }
-
-            if (options.tabStop.center) {
-                this.properties.push(new CenterTabStop(options.tabStop.center.position, options.tabStop.center.leader));
+        if (options.tabStops) {
+            for (const tabStop of options.tabStops) {
+                this.properties.push(new TabStop(tabStop.type, tabStop.position, tabStop.leader));
             }
         }
 
@@ -166,32 +146,16 @@ export class Paragraph extends XmlComponent {
 
         if (options.children) {
             for (const child of options.children) {
+                if (child instanceof Bookmark) {
+                    this.root.push(child.start);
+                    this.root.push(child.text);
+                    this.root.push(child.end);
+                    continue;
+                }
+
                 this.root.push(child);
             }
         }
-    }
-
-    public addRun(run: Run): Paragraph {
-        this.root.push(run);
-        return this;
-    }
-
-    public addHyperLink(hyperlink: Hyperlink): Paragraph {
-        this.root.push(hyperlink);
-        return this;
-    }
-
-    public addBookmark(bookmark: Bookmark): Paragraph {
-        // Bookmarks by spec have three components, a start, text, and end
-        this.root.push(bookmark.start);
-        this.root.push(bookmark.text);
-        this.root.push(bookmark.end);
-        return this;
-    }
-
-    public pageBreak(): Paragraph {
-        this.root.push(new PageBreak());
-        return this;
     }
 
     public referenceFootnote(id: number): Paragraph {
@@ -201,11 +165,6 @@ export class Paragraph extends XmlComponent {
 
     public addRunToFront(run: Run): Paragraph {
         this.root.splice(1, 0, run);
-        return this;
-    }
-
-    public addSequentialIdentifier(identifier: string): Paragraph {
-        this.root.push(new SequentialIdentifier(identifier));
         return this;
     }
 }

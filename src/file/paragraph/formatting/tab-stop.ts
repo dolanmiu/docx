@@ -2,13 +2,13 @@
 import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
 
 export class TabStop extends XmlComponent {
-    constructor(tab: TabStopItem) {
+    constructor(type: TabStopType, position: number, leader?: LeaderType) {
         super("w:tabs");
-        this.root.push(tab);
+        this.root.push(new TabStopItem(type, position, leader));
     }
 }
 
-export enum TabValue {
+export enum TabStopType {
     LEFT = "left",
     RIGHT = "right",
     CENTER = "center",
@@ -28,8 +28,12 @@ export enum LeaderType {
     UNDERSCORE = "underscore",
 }
 
+export enum TabStopPosition {
+    MAX = 9026,
+}
+
 export class TabAttributes extends XmlAttributeComponent<{
-    readonly val: TabValue;
+    readonly val: TabStopType;
     readonly pos: string | number;
     readonly leader?: LeaderType;
 }> {
@@ -37,7 +41,7 @@ export class TabAttributes extends XmlAttributeComponent<{
 }
 
 export class TabStopItem extends XmlComponent {
-    constructor(value: TabValue, position: string | number, leader?: LeaderType) {
+    constructor(value: TabStopType, position: string | number, leader?: LeaderType) {
         super("w:tab");
         this.root.push(
             new TabAttributes({
@@ -46,29 +50,5 @@ export class TabStopItem extends XmlComponent {
                 leader,
             }),
         );
-    }
-}
-
-export class MaxRightTabStop extends TabStop {
-    constructor(leader?: LeaderType) {
-        super(new TabStopItem(TabValue.RIGHT, 9026, leader));
-    }
-}
-
-export class LeftTabStop extends TabStop {
-    constructor(position: number, leader?: LeaderType) {
-        super(new TabStopItem(TabValue.LEFT, position, leader));
-    }
-}
-
-export class RightTabStop extends TabStop {
-    constructor(position: number, leader?: LeaderType) {
-        super(new TabStopItem(TabValue.RIGHT, position, leader));
-    }
-}
-
-export class CenterTabStop extends TabStop {
-    constructor(position: number, leader?: LeaderType) {
-        super(new TabStopItem(TabValue.CENTER, position, leader));
     }
 }

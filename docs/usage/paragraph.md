@@ -248,10 +248,15 @@ The above example will create a heading with a page break directly under it.
 
 ## Page Break
 
-To move to a new page (insert a page break), simply add `.pageBreak()` on a paragraph:
+To move to a new page (insert a page break):
 
 ```ts
-const paragraph = new docx.Paragraph("Amazing Heading").pageBreak();
+const paragraph = new docx.Paragraph({
+    children: [
+        new TextRun("Amazing Heading"),
+        new PageBreak(),
+    ]
+});
 ```
 
 The above example will create a heading and start a new page immediately afterwards.
