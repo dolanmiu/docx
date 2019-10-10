@@ -3,15 +3,23 @@
 import * as fs from "fs";
 import { File, HeadingLevel, Packer, Paragraph, StyleLevel, TableOfContents } from "../build";
 
-const doc = new File();
-
-// The first argument is an ID you use to apply the style to paragraphs
-// The second argument is a human-friendly name to show in the UI
-doc.Styles.createParagraphStyle("MySpectacularStyle", "My Spectacular Style")
-    .basedOn("Heading1")
-    .next("Heading1")
-    .color("990000")
-    .italics();
+const doc = new File({
+    styles: {
+        paragraphStyles: [
+            {
+                id: "MySpectacularStyle",
+                name: "My Spectacular Style",
+                basedOn: "Heading1",
+                next: "Heading1",
+                quickFormat: true,
+                run: {
+                    italics: true,
+                    color: "990000",
+                },
+            },
+        ],
+    },
+});
 
 // WordprocessingML docs for TableOfContents can be found here:
 // http://officeopenxml.com/WPtableOfContents.php
