@@ -52,6 +52,221 @@ describe("CharacterStyle", () => {
                 ],
             });
         });
+
+        it("should add smallCaps", () => {
+            const style = new CharacterStyle({
+                id: "myStyleId",
+                run: {
+                    smallCaps: true,
+                },
+            });
+            const tree = new Formatter().format(style);
+            expect(tree).to.deep.equal({
+                "w:style": [
+                    { _attr: { "w:type": "character", "w:styleId": "myStyleId" } },
+                    {
+                        "w:rPr": [{ "w:smallCaps": { _attr: { "w:val": true } } }],
+                    },
+                    {
+                        "w:uiPriority": {
+                            _attr: {
+                                "w:val": 99,
+                            },
+                        },
+                    },
+                    {
+                        "w:unhideWhenUsed": EMPTY_OBJECT,
+                    },
+                ],
+            });
+        });
+
+        it("should add allCaps", () => {
+            const style = new CharacterStyle({
+                id: "myStyleId",
+                run: {
+                    allCaps: true,
+                },
+            });
+            const tree = new Formatter().format(style);
+            expect(tree).to.deep.equal({
+                "w:style": [
+                    { _attr: { "w:type": "character", "w:styleId": "myStyleId" } },
+                    {
+                        "w:rPr": [{ "w:caps": { _attr: { "w:val": true } } }],
+                    },
+                    {
+                        "w:uiPriority": {
+                            _attr: {
+                                "w:val": 99,
+                            },
+                        },
+                    },
+                    {
+                        "w:unhideWhenUsed": EMPTY_OBJECT,
+                    },
+                ],
+            });
+        });
+
+        it("should add strike", () => {
+            const style = new CharacterStyle({
+                id: "myStyleId",
+                run: {
+                    strike: true,
+                },
+            });
+            const tree = new Formatter().format(style);
+            expect(tree).to.deep.equal({
+                "w:style": [
+                    { _attr: { "w:type": "character", "w:styleId": "myStyleId" } },
+                    {
+                        "w:rPr": [{ "w:strike": { _attr: { "w:val": true } } }],
+                    },
+                    {
+                        "w:uiPriority": {
+                            _attr: {
+                                "w:val": 99,
+                            },
+                        },
+                    },
+                    {
+                        "w:unhideWhenUsed": EMPTY_OBJECT,
+                    },
+                ],
+            });
+        });
+
+        it("should add double strike", () => {
+            const style = new CharacterStyle({
+                id: "myStyleId",
+                run: {
+                    doubleStrike: true,
+                },
+            });
+            const tree = new Formatter().format(style);
+            expect(tree).to.deep.equal({
+                "w:style": [
+                    { _attr: { "w:type": "character", "w:styleId": "myStyleId" } },
+                    {
+                        "w:rPr": [{ "w:dstrike": { _attr: { "w:val": true } } }],
+                    },
+                    {
+                        "w:uiPriority": {
+                            _attr: {
+                                "w:val": 99,
+                            },
+                        },
+                    },
+                    {
+                        "w:unhideWhenUsed": EMPTY_OBJECT,
+                    },
+                ],
+            });
+        });
+
+        it("should add sub script", () => {
+            const style = new CharacterStyle({
+                id: "myStyleId",
+                run: {
+                    subScript: true,
+                },
+            });
+            const tree = new Formatter().format(style);
+            expect(tree).to.deep.equal({
+                "w:style": [
+                    { _attr: { "w:type": "character", "w:styleId": "myStyleId" } },
+                    {
+                        "w:rPr": [
+                            {
+                                "w:vertAlign": {
+                                    _attr: {
+                                        "w:val": "subscript",
+                                    },
+                                },
+                            },
+                        ],
+                    },
+                    {
+                        "w:uiPriority": {
+                            _attr: {
+                                "w:val": 99,
+                            },
+                        },
+                    },
+                    {
+                        "w:unhideWhenUsed": EMPTY_OBJECT,
+                    },
+                ],
+            });
+        });
+
+        it("should add font", () => {
+            const style = new CharacterStyle({
+                id: "myStyleId",
+                run: {
+                    font: "test font",
+                },
+            });
+            const tree = new Formatter().format(style);
+            expect(tree).to.deep.equal({
+                "w:style": [
+                    { _attr: { "w:type": "character", "w:styleId": "myStyleId" } },
+                    {
+                        "w:rPr": [
+                            {
+                                "w:rFonts": {
+                                    _attr: {
+                                        "w:ascii": "test font",
+                                        "w:cs": "test font",
+                                        "w:eastAsia": "test font",
+                                        "w:hAnsi": "test font",
+                                    },
+                                },
+                            },
+                        ],
+                    },
+                    {
+                        "w:uiPriority": {
+                            _attr: {
+                                "w:val": 99,
+                            },
+                        },
+                    },
+                    {
+                        "w:unhideWhenUsed": EMPTY_OBJECT,
+                    },
+                ],
+            });
+        });
+
+        it("should add character spacing", () => {
+            const style = new CharacterStyle({
+                id: "myStyleId",
+                run: {
+                    characterSpacing: 100,
+                },
+            });
+            const tree = new Formatter().format(style);
+            expect(tree).to.deep.equal({
+                "w:style": [
+                    { _attr: { "w:type": "character", "w:styleId": "myStyleId" } },
+                    {
+                        "w:rPr": [{ "w:spacing": { _attr: { "w:val": 100 } } }],
+                    },
+                    {
+                        "w:uiPriority": {
+                            _attr: {
+                                "w:val": 99,
+                            },
+                        },
+                    },
+                    {
+                        "w:unhideWhenUsed": EMPTY_OBJECT,
+                    },
+                ],
+            });
+        });
     });
 
     describe("formatting methods: style attributes", () => {
