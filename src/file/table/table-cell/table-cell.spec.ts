@@ -395,6 +395,33 @@ describe("TableCell", () => {
             });
         });
 
+        it("should create with width", () => {
+            const cell = new TableCell({
+                children: [],
+                width: { size: 100, type: WidthType.DXA },
+            });
+            const tree = new Formatter().format(cell);
+            expect(tree).to.deep.equal({
+                "w:tc": [
+                    {
+                        "w:tcPr": [
+                            {
+                                "w:tcW": {
+                                    _attr: {
+                                        "w:type": "dxa",
+                                        "w:w": 100,
+                                    },
+                                },
+                            },
+                        ],
+                    },
+                    {
+                        "w:p": {},
+                    },
+                ],
+            });
+        });
+
         it("should create with column span", () => {
             const cell = new TableCell({
                 children: [],
