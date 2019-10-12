@@ -9,6 +9,7 @@ module.exports = {
         path: path.resolve("build"),
         filename: "index.js",
         libraryTarget: "umd",
+        library: "docx",
     },
 
     resolve: {
@@ -24,15 +25,16 @@ module.exports = {
             },
             // For coverage testing
             ...(process.env.NODE_ENV !== "production"
-                ? [{
-                    test: /\.(ts)/,
-                    include: path.resolve("src"),
-                    loader: "istanbul-instrumenter-loader",
-                    enforce: "post",
-                    exclude: [/node_modules/],
-                }]
-                : []
-            )
+                ? [
+                      {
+                          test: /\.(ts)/,
+                          include: path.resolve("src"),
+                          loader: "istanbul-instrumenter-loader",
+                          enforce: "post",
+                          exclude: [/node_modules/],
+                      },
+                  ]
+                : []),
         ],
     },
 
