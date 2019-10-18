@@ -16,4 +16,23 @@ describe("TextRun", () => {
             });
         });
     });
+
+    describe("#referenceFootnote()", () => {
+        it("should add a valid footnote reference", () => {
+            run = new TextRun("test");
+            run.referenceFootnote(1);
+            const tree = new Formatter().format(run);
+            expect(tree).to.deep.equal({
+                "w:r": [
+                    { "w:t": [{ _attr: { "xml:space": "preserve" } }, "test"] },
+                    {
+                        "w:r": [
+                            { "w:rPr": [{ "w:rStyle": { _attr: { "w:val": "FootnoteReference" } } }] },
+                            { "w:footnoteReference": { _attr: { "w:id": 1 } } },
+                        ],
+                    },
+                ],
+            });
+        });
+    });
 });
