@@ -6,6 +6,7 @@ import { TableBorders } from "./table-borders";
 import { TableCellMargin } from "./table-cell-margin";
 import { ITableFloatOptions, TableFloatProperties } from "./table-float-properties";
 import { TableLayout, TableLayoutType } from "./table-layout";
+import { TableStyle } from "./table-style";
 import { PreferredTableWidth } from "./table-width";
 
 export class TableProperties extends IgnoreIfEmptyXmlComponent {
@@ -44,6 +45,11 @@ export class TableProperties extends IgnoreIfEmptyXmlComponent {
     public setShading(attrs: ITableShadingAttributesProperties): TableProperties {
         this.root.push(new TableShading(attrs));
 
+        return this;
+    }
+
+    public setStyle(styleId: string): TableProperties {
+        this.root.push(new TableStyle(styleId));
         return this;
     }
 }

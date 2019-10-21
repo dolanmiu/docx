@@ -32,6 +32,7 @@ export interface ITableOptions {
     };
     readonly float?: ITableFloatOptions;
     readonly layout?: TableLayoutType;
+    readonly style?: string;
 }
 
 export class Table extends XmlComponent {
@@ -44,6 +45,7 @@ export class Table extends XmlComponent {
         margins: { marginUnitType, top, bottom, right, left } = { marginUnitType: WidthType.AUTO, top: 0, bottom: 0, right: 0, left: 0 },
         float,
         layout,
+        style,
     }: ITableOptions) {
         super("w:tbl");
         this.properties = new TableProperties();
@@ -95,6 +97,10 @@ export class Table extends XmlComponent {
 
         if (layout) {
             this.properties.setLayout(layout);
+        }
+
+        if (style) {
+            this.properties.setStyle(style);
         }
     }
 }
