@@ -52,6 +52,10 @@ export class Table extends XmlComponent {
         this.root.push(this.properties);
         this.properties.setBorder();
 
+        if (style) {
+            this.properties.setStyle(style);
+        }
+
         if (width) {
             this.properties.setWidth(width.size, width.type);
         } else {
@@ -97,10 +101,6 @@ export class Table extends XmlComponent {
 
         if (layout) {
             this.properties.setLayout(layout);
-        }
-
-        if (style) {
-            this.properties.setStyle(style);
         }
     }
 }
