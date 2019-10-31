@@ -8,6 +8,7 @@ import { Media } from "file/media";
 import { PageBorderOffsetFrom } from "./page-border";
 import { PageNumberFormat } from "./page-number";
 import { SectionProperties } from "./section-properties";
+import { SectionVerticalAlignValue } from "./vertical-align";
 
 describe("SectionProperties", () => {
     describe("#constructor()", () => {
@@ -39,6 +40,7 @@ describe("SectionProperties", () => {
                 pageNumberStart: 10,
                 pageNumberFormatType: PageNumberFormat.CARDINAL_TEXT,
                 titlePage: true,
+                verticalAlign: SectionVerticalAlignValue.TOP,
             });
             const tree = new Formatter().format(properties);
             expect(Object.keys(tree)).to.deep.equal(["w:sectPr"]);
