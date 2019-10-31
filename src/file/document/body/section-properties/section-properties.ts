@@ -89,7 +89,7 @@ export class SectionProperties extends XmlComponent {
             pageBorderBottom,
             pageBorderLeft,
             titlePage = false,
-            valign,
+            verticalAlign,
         } = options;
 
         this.options = options;
@@ -125,8 +125,8 @@ export class SectionProperties extends XmlComponent {
             this.root.push(new TitlePage());
         }
 
-        if (valign) {
-            this.root.push(new SectionVerticalAlign(valign));
+        if (verticalAlign) {
+            this.root.push(new SectionVerticalAlign(verticalAlign));
         }
     }
 

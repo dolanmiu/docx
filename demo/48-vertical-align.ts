@@ -7,7 +7,7 @@ const doc = new Document();
 
 doc.addSection({
     properties: {
-        valign: SectionVerticalAlignValue.Center,
+        verticalAlign: SectionVerticalAlignValue.CENTER,
     },
     children: [
         new Paragraph({
