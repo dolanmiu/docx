@@ -227,22 +227,22 @@ Media.addImage(doc, fs.readFileSync("./demo/images/pizza.gif"), 200, 200, {
 
 Importing Images from file system path
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/demo5.ts ":include")
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/5-images.ts ':include')
 
-_Source: https://github.com/dolanmiu/docx/blob/master/demo/demo5.ts_
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/5-images.ts_
 
 ### Add images to header and footer
 
 Example showing how to add image to headers and footers
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/demo9.ts ":include")
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/9-images-in-header-and-footer.ts ':include')
 
-_Source: https://github.com/dolanmiu/docx/blob/master/demo/demo9.ts_
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/9-images-in-header-and-footer.ts_
 
 ### Floating images
 
 Example showing how to float images on top of text and optimally give a `margin`
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/demo38.ts ":include")
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/38-text-wrapping.ts ':include')
 
-_Source: https://github.com/dolanmiu/docx/blob/master/demo/demo38.ts_
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/38-text-wrapping.ts_

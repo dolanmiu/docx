@@ -86,11 +86,3 @@ topLevelP.setNumbering(concrete, 0);
 subP.setNumbering(concrete, 1);
 subSubP.setNumbering(concrete, 2);
 ```
-
-Finally, you need to let your exporter know about your numbering
-styles when you're ready to render the document:
-
-```ts
-const packer = new Packer(doc, undefined, undefined, numbering);
-packer.pack(myOutput);
-```

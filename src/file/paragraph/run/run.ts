@@ -2,6 +2,7 @@
 import { ShadingType } from "file/table";
 import { XmlComponent } from "file/xml-components";
 
+import { FieldInstruction } from "file/table-of-contents/field-instruction";
 import { Break } from "./break";
 import { Caps, SmallCaps } from "./caps";
 import { Begin, End, Separate } from "./field";
@@ -21,7 +22,7 @@ import {
     SizeComplexScript,
     Strike,
 } from "./formatting";
-import { NumberOfPages, Page } from "./page-number";
+import { NumberOfPages, NumberOfPagesSection, Page } from "./page-number";
 import { RunProperties } from "./properties";
 import { RunFonts } from "./run-fonts";
 import { SubScript, SuperScript } from "./script";
@@ -56,6 +57,7 @@ export interface IRunOptions {
         readonly fill: string;
         readonly color: string;
     };
+    readonly children?: Array<Begin | FieldInstruction | Separate | End>;
 }
 
 export class Run extends XmlComponent {
@@ -134,6 +136,12 @@ export class Run extends XmlComponent {
             this.properties.push(new Shading(options.shading.type, options.shading.fill, options.shading.color));
             this.properties.push(new ShadowComplexScript(options.shading.type, options.shading.fill, options.shading.color));
         }
+
+        if (options.children) {
+            for (const child of options.children) {
+                this.root.push(child);
+            }
+        }
     }
 
     public break(): Run {
@@ -157,6 +165,14 @@ export class Run extends XmlComponent {
     public numberOfTotalPages(): Run {
         this.root.push(new Begin());
         this.root.push(new NumberOfPages());
+        this.root.push(new Separate());
+        this.root.push(new End());
+        return this;
+    }
+
+    public numberOfTotalPagesSection(): Run {
+        this.root.push(new Begin());
+        this.root.push(new NumberOfPagesSection());
         this.root.push(new Separate());
         this.root.push(new End());
         return this;

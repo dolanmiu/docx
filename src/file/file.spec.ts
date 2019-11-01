@@ -6,7 +6,7 @@ import { Formatter } from "export/formatter";
 import { File } from "./file";
 import { Footer, Header } from "./header";
 import { Paragraph } from "./paragraph";
-import { Table } from "./table";
+import { Table, TableCell, TableRow } from "./table";
 import { TableOfContents } from "./table-of-contents";
 
 describe("File", () => {
@@ -108,8 +108,15 @@ describe("File", () => {
             file.addSection({
                 children: [
                     new Table({
-                        rows: 1,
-                        columns: 1,
+                        rows: [
+                            new TableRow({
+                                children: [
+                                    new TableCell({
+                                        children: [new Paragraph("hello")],
+                                    }),
+                                ],
+                            }),
+                        ],
                     }),
                 ],
             });

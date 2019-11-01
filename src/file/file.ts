@@ -46,8 +46,6 @@ export interface ISectionOptions {
 export class File {
     // tslint:disable-next-line:readonly-keyword
     private currentRelationshipId: number = 1;
-    // tslint:disable-next-line:readonly-keyword
-    private styles: Styles;
 
     private readonly document: Document;
     private readonly headers: IDocumentHeader[] = [];
@@ -61,6 +59,7 @@ export class File {
     private readonly settings: Settings;
     private readonly contentTypes: ContentTypes;
     private readonly appProperties: AppProperties;
+    private readonly styles: Styles;
 
     constructor(
         options: IPropertiesOptions = {
@@ -97,9 +96,16 @@ export class File {
         } else if (options.externalStyles) {
             const stylesFactory = new ExternalStylesFactory();
             this.styles = stylesFactory.newInstance(options.externalStyles);
+        } else if (options.styles) {
+            const stylesFactory = new DefaultStylesFactory();
+            const defaultStyles = stylesFactory.newInstance();
+            this.styles = new Styles({
+                ...defaultStyles,
+                ...options.styles,
+            });
         } else {
             const stylesFactory = new DefaultStylesFactory();
-            this.styles = stylesFactory.newInstance();
+            this.styles = new Styles(stylesFactory.newInstance());
         }
 
         this.addDefaultRelationships();
@@ -275,10 +281,6 @@ export class File {
 
     public get Styles(): Styles {
         return this.styles;
-    }
-
-    public set Styles(styles: Styles) {
-        this.styles = styles;
     }
 
     public get CoreProperties(): CoreProperties {

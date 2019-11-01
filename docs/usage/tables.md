@@ -1,306 +1,387 @@
 # Tables
 
-You can create tables with `docx`. More information can be found [here](http://officeopenxml.com/WPtable.php).
+!> Paragraphs requires an understanding of [Sections](usage/sections.md).
 
-## Create Table
+## Intro
 
-To create a table, simply create one with `new Table()`, then add it to the document: `doc.add()`.
+* `Tables` contain a list of `Rows`
+* `Rows` contain a list of `TableCells`
+* `TableCells` contain a list of `Parahraphs` and/or `Tables`. You can add `Tables` as tables can be nested inside each other
 
-```ts
-const table = doc.add(new Table({
-    rows: [NUMBER OF ROWS],
-    columns: [NUMBER OF COLUMNS]
-});
-```
-
-Alternatively, you can create a table object directly, and then add it in the `document`
-
-```ts
-const table = new Table(4, 4);
-doc.add(table);
-```
-
-The snippet below creates a table of 2 rows and 4 columns.
+Create a simple table like so:
 
 ```ts
 const table = new Table({
-    rows: 2,
-    columns: 4,
+    rows: [Array of `TableRow`s]
 });
-doc.add(table);
 ```
 
-## Rows and Columns
-
-You can get a row or a column from a table like so, where `index` is a number:
-
-### Get Row
+Then add the table in the `section`
 
 ```ts
-const row = doc.getRow(index);
+doc.addSection({
+    children: [table],
+});
 ```
 
-With this, you can merge a row by using the `mergeCells()` method, where `startIndex` is the row number you want to merge from, and `endIndex` is where you want it to merge to:
+## Table
+
+### Set Width
 
 ```ts
-row.mergeCells(startIndex, endIndex);
+const table = new Table({
+    ...,
+    width: {
+        size: [TABLE_WIDTH],
+        type: WidthType,
+    }
+});
 ```
-
-You can get a cell from a `row` by using the `getCell()` method, where `index` is the row index:
-
-```ts
-row.getCell(index);
-```
-
-### Get Column
-
-```ts
-const column = doc.getColumn(index);
-```
-
-Again, you can merge a row by using the `mergeCells()` method, where `startIndex` is the row number you want to merge from, and `endIndex` is where you want it to merge to:
-
-```ts
-column.mergeCells(startIndex, endIndex);
-```
-
-You can get a cell from a `column` by using the `getCell()` method, where `index` is the column index:
-
-```ts
-column.getCell(index);
-```
-
-## Cells
-
-To access the cell, use the `getCell()` method.
-
-```ts
-const cell = table.getCell([ROW INDEX], [COLUMN INDEX]);
-```
-
-You can also get a cell from a `column` or a `row` with `getCell()`, mentioned previously.
 
 For example:
 
 ```ts
-const cell = table.getCell(0, 2);
 
-const cell = row.getCell(0);
+const table = new Table({
+    ...,
+    width: {
+        size: 4535,
+        type: WidthType.DXA,
+    }
+});
+```
 
-const cell = column.getCell(2);
+### Pagination
+
+#### Prevent row pagination
+
+To prevent breaking contents of a row across multiple pages, call `cantSplit`:
+
+```ts
+const table = new Table({
+    rows: [],
+    cantSplit: true,
+});
+```
+
+## Table Row
+
+A table consists of multiple `table rows`. Table rows have a list of `children` which accepts a list of `table cells` explained below. You can create a simple `table row` like so:
+
+```ts
+const tableRow = new TableRow({
+    children: [
+        new TableCell({
+            children: [new Paragraph("hello")],
+        }),
+    ],
+});
+```
+
+Or preferably, add the tableRow directly into the `table` without declaring a variable:
+
+```ts
+const table = new Table({
+    rows: [
+        new TableRow({
+            children: [
+                new TableCell({
+                    children: [new Paragraph("hello")],
+                }),
+            ],
+        }),
+    ],
+});
+```
+
+### Options
+
+Here is a list of options you can add to the `table row`:
+
+| Property    | Type                                  | Notes    |
+| ----------- | ------------------------------------- | -------- |
+| children    | `Array<TableCell>`                    | Required |
+| cantSplit   | `boolean`                             | Optional |
+| tableHeader | `boolean`                             | Optional |
+| height      | `{ value: number, rule: HeightRule }` | Optional |
+
+### Repeat row
+
+If a table is paginated on multiple pages, it is possible to repeat a row at the top of each new page by setting `tableHeader` to `true`:
+
+```ts
+const row = new TableRow({
+    ...,
+    tableHeader: true,
+});
+```
+
+## Table Cells
+
+Cells need to be added in the `table row`, you can create a table cell like:
+
+```ts
+const tableCell = new TableCell({
+    children: [new Paragraph("hello")],
+});
+```
+
+Or preferably, add the tableRow directly into the `table row` without declaring a variable:
+
+```ts
+const tableRow = new TableRow({
+    children: [
+        new TableCell({
+            children: [new Paragraph("hello")],
+        }),
+    ],
+});
+```
+
+### Options
+
+| Property      | Type                                | Notes                                                       |
+| ------------- | ----------------------------------- | ----------------------------------------------------------- |
+| children      | `Array<Paragraph | Table>`          | Required. You can nest tables by adding a table into a cell |
+| shading       | `ITableShadingAttributesProperties` | Optional                                                    |
+| margins       | `ITableCellMarginOptions`           | Optional                                                    |
+| verticalAlign | `VerticalAlign`                     | Optional                                                    |
+| columnSpan    | `number`                            | Optional                                                    |
+| rowSpan       | `number`                            | Optional                                                    |
+| borders       | `BorderOptions`                     | Optional                                                    |
+| width         | `{ size: number type: WidthType }`  | Optional                                                    |
+
+#### Border Options
+
+| Property | Type                                                  | Notes    |
+| -------- | ----------------------------------------------------- | -------- |
+| top      | `{ style: BorderStyle, size: number, color: string }` | Optional |
+| bottom   | `{ style: BorderStyle, size: number, color: string }` | Optional |
+| left     | `{ style: BorderStyle, size: number, color: string }` | Optional |
+| right    | `{ style: BorderStyle, size: number, color: string }` | Optional |
+
+##### Example
+
+```ts
+const cell = new TableCell({
+    ...,
+    borders: {
+        top: {
+            style: BorderStyle.DASH_DOT_STROKED,
+            size: 1,
+            color: "red",
+        },
+        bottom: {
+            style: BorderStyle.THICK_THIN_MEDIUM_GAP,
+            size: 5,
+            color: "889900",
+        },
+    },
+});
+```
+
+##### Google DOCS
+
+Google DOCS does not support start and end borders, instead they use left and right borders. So to set left and right borders for Google DOCS you should use:
+
+```ts
+const cell = new TableCell({
+    ...,
+    borders: {
+        top: {
+            style: BorderStyle.DOT_DOT_DASH,
+            size: 3,
+            color: "green",
+        },
+        bottom: {
+            style: BorderStyle.DOT_DOT_DASH,
+            size: 3,
+            color: "ff8000",
+        },
+    },
+});
 ```
 
 ### Add paragraph to a cell
 
-Once you have got the cell, you can add data to it with the `add()` method.
+Once you have got the cell, you can add data to it:
 
 ```ts
-cell.add(new Paragraph("Hello"));
+const cell = new TableCell({
+    children: [new Paragraph("Hello")],
+});
 ```
 
 ### Set width of a cell
 
 You can specify the width of a cell using:
 
-`cell.Properties.setWidth(width, format)`
+```ts
+const cell = new TableCell({
+    ...,
+    width: {
+        size: number,
+        type: WidthType,
+    },
+});
+```
 
-format can be:
+`WidthType` values can be:
 
--   WidthType.AUTO
--   WidthType.DXA: value is in twentieths of a point
--   WidthType.NIL: is considered as zero
--   WidthType.PCT: percent of table width
+| Property | Notes                             |
+| -------- | --------------------------------- |
+| AUTO     |                                   |
+| DXA      | value is in twentieths of a point |
+| NIL      | is considered as zero             |
+| PCT      | percent of table width            |
 
-### Example
+#### Example
 
 ```ts
 cell.Properties.setWidth(100, WidthType.DXA);
 ```
 
-```ts
-cell.Properties.setWidth("50%", WidthType.PCT);
-```
+### Nested Tables
 
-## Borders
-
-BorderStyle can be imported from `docx`. Size determines the thickness. HTML color can be a hex code or alias such as `red`.
+To have a table within a table, simply add it in the `children` block of a `table cell`:
 
 ```ts
-cell.Borders.addTopBorder([BorderStyle], [SIZE], [HTML COLOR]);
+const cell = new TableCell({
+    children: [new Table(...)],
+});
 ```
 
-```ts
-cell.Borders.addBottomBorder([BorderStyle], [SIZE], [HTML COLOR]);
-```
-
-```ts
-cell.Borders.addStartBorder([[BorderStyle]], [SIZE], [HTML COLOR]);
-```
-
-```ts
-cell.Borders.addEndBorder([BorderStyle], [SIZE], [HTML COLOR]);
-```
-
-### Example
-
-```ts
-import { BorderStyle } from "docx";
-
-cell.Borders.addStartBorder(BorderStyle.DOT_DOT_DASH, 3, "green");
-cell.Borders.addEndBorder(BorderStyle.DOT_DOT_DASH, 3, "#ff8000");
-```
-
-### Google DOCS
-
-Google DOCS does not support start and end borders, instead they use left and right borders. So to set left and right borders for Google DOCS you should use:
-
-```ts
-import { BorderStyle } from "docx";
-
-cell.Borders.addLeftBorder(BorderStyle.DOT_DOT_DASH, 3, "green");
-cell.Borders.addRightBorder(BorderStyle.DOT_DOT_DASH, 3, "#ff8000");
-```
-
-## Set Width
-
-```ts
-import { WidthType } from "docx";
-
-table.setWidth([WIDTH], [OPTIONAL WidthType. Defaults to DXA]);
-```
-
-For example:
-
-```ts
-table.setWidth(4535, WidthType.DXA);
-```
-
-## Vertical Align
+### Vertical Align
 
 Sets the vertical alignment of the contents of the cell
 
 ```ts
-import { VerticalAlign } from "docx";
-
-cell.setVerticalAlign([VerticalAlign TYPE]);
+const cell = new TableCell({
+    ...,
+    verticalAlign: VerticalAlign,
+});
 ```
+
+`VerticalAlign` values can be:
+
+| Property | Notes                                      |
+| -------- | ------------------------------------------ |
+| BOTTOM   | Align the contents on the bottom           |
+| CENTER   | Align the contents on the center           |
+| TOP      | Align the contents on the top. The default |
 
 For example, to center align a cell:
 
 ```ts
-cell.setVerticalAlign(VerticalAlign.CENTER);
+const cell = new TableCell({
+    verticalAlign: VerticalAlign.CENTER,
+});
 ```
 
-## Rows
+## Merging cells together
 
-To get a row, use the `getRow` method on a `table`. There are a handful of methods which you can apply to a row which will be explained below.
+### Row Merge
 
-```ts
-table.getRow([ROW INDEX]);
-```
-
-## Merge cells together
-
-### Merging on a row
-
-First obtain the row, and call `mergeCells()`. The first argument is where the merge should start. The second argument is where the merge should end.
+When cell rows are merged, it counts as multiple rows, so be sure to remove excess cells. It is similar to how HTML's `rowspan` works.
+https://www.w3schools.com/tags/att_td_rowspan.asp
 
 ```ts
-table.getRow(0).mergeCells([FROM INDEX], [TO INDEX]);
+const cell = new TableCell({
+    ...,
+    rowSpan: [NUMBER_OF_CELLS_TO_MERGE],
+});
 ```
 
 #### Example
 
-This will merge 3 cells together starting from index `0`:
+The example will merge three rows together.
 
 ```ts
-table.getRow(0).mergeCells(0, 2);
+const cell = new TableCell({
+    ...,
+    rowSpan: 3,
+});
 ```
 
-### Merging on a column
+### Column Merge
 
-It has not been implemented yet, but it will follow a similar structure as merging a row.
-
-## Nested Tables
-
-To have a table within a table
+When cell columns are merged, it counts as multiple columns, so be sure to remove excess cells. It is similar to how HTML's `colspan` works.
+https://www.w3schools.com/tags/att_td_colspan.asp
 
 ```ts
-cell.add(new Table(1, 1));
+const cell = new TableCell({
+    ...,
+    columnSpan: [NUMBER_OF_CELLS_TO_MERGE],
+});
 ```
 
-## Pagination
+#### Example
 
-###Prevent row pagination
-To prevent breaking contents of a row across multiple pages, call `cantSplit()`:
-
-```ts
-table.getRow(0).setCantSplit();
-```
-
-###Repeat row
-If a table is paginated on multiple pages, it is possible to repeat a row at the top of each new page calling `setTableHeader()`:
+The example will merge three columns together.
 
 ```ts
-table.getRow(0).setTableHeader();
+const cell = new TableCell({
+    ...,
+    columnSpan: 3,
+});
 ```
 
 ## Examples
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/demo4.ts ":include")
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/4-basic-table.ts ':include')
 
-_Source: https://github.com/dolanmiu/docx/blob/master/demo/demo4.ts_
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/4-basic-table.ts_
 
 ### Custom borders
 
 Example showing how to add colourful borders to tables
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/demo20.ts ":include")
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/20-table-cell-borders.ts ':include')
 
-_Source: https://github.com/dolanmiu/docx/blob/master/demo/demo20.ts_
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/20-table-cell-borders.ts_
 
 ### Adding images
 
 Example showing how to add images to tables
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/demo24.ts ":include")
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/24-images-to-table-cell.ts ':include')
 
-_Source: https://github.com/dolanmiu/docx/blob/master/demo/demo24.ts_
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/24-images-to-table-cell.ts_
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/demo36.ts ":include")
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/36-image-to-table-cell.ts ':include')
 
-_Source: https://github.com/dolanmiu/docx/blob/master/demo/demo36.ts_
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/36-image-to-table-cell.ts_
 
 ### Alignment of text in a cell
 
 Example showing how align text in a table cell
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/demo31.ts ":include")
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/31-tables.ts ':include')
 
-_Source: https://github.com/dolanmiu/docx/blob/master/demo/demo31.ts_
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/31-tables.ts_
 
-### Merging rows
+### Shading
 
-Example showing merging of `rows`
+Example showing merging of columns and rows and shading
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/demo32.ts ":include")
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/32-merge-and-shade-table-cells.ts ':include')
 
-_Source: https://github.com/dolanmiu/docx/blob/master/demo/demo32.ts_
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/32-merge-and-shade-table-cells.ts_
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/demo41.ts ":include")
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/41-merge-table-cells-2.ts ':include')
 
-_Source: https://github.com/dolanmiu/docx/blob/master/demo/demo41.ts_
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/41-merge-table-cells-2.ts_
 
 ### Merging columns
 
-Example showing merging of `columns`
+Example showing merging of columns and rows
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/demo43.ts ":include")
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/43-images-to-table-cell-2.ts ':include')
 
-_Source: https://github.com/dolanmiu/docx/blob/master/demo/demo43.ts_
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/43-images-to-table-cell-2.ts_
 
 ### Floating tables
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/demo34.ts ":include")
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/34-floating-tables.ts ':include')
 
-_Source: https://github.com/dolanmiu/docx/blob/master/demo/demo34.ts_
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/34-floating-tables.ts_

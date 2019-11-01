@@ -38,6 +38,7 @@ describe("SectionProperties", () => {
                 },
                 pageNumberStart: 10,
                 pageNumberFormatType: PageNumberFormat.CARDINAL_TEXT,
+                titlePage: true,
             });
             const tree = new Formatter().format(properties);
             expect(Object.keys(tree)).to.deep.equal(["w:sectPr"]);

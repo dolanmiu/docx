@@ -33,7 +33,7 @@ export abstract class BaseUnderline extends XmlComponent {
 }
 
 export class Underline extends BaseUnderline {
-    constructor(underlineType: string = "single", color?: string) {
+    constructor(underlineType: UnderlineType = UnderlineType.SINGLE, color?: string) {
         super(underlineType, color);
     }
 }

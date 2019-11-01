@@ -1,7 +1,8 @@
+// http://officeopenxml.com/WPstyleGenProps.php
 import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
 
 interface IComponentAttributes {
-    readonly val: string;
+    readonly val: string | number;
 }
 
 class ComponentAttributes extends XmlAttributeComponent<IComponentAttributes> {
@@ -37,7 +38,7 @@ export class Link extends XmlComponent {
 }
 
 export class UiPriority extends XmlComponent {
-    constructor(value: string) {
+    constructor(value: number) {
         super("w:uiPriority");
         // TODO: this value should be a ST_DecimalNumber
         this.root.push(new ComponentAttributes({ val: value }));

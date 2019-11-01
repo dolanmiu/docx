@@ -1,7 +1,7 @@
 // Generate a CV
 // Import from 'docx' rather than '../build' if you install from npm
 import * as fs from "fs";
-import { AlignmentType, Document, HeadingLevel, Packer, Paragraph, TextRun } from "../build";
+import { AlignmentType, Document, HeadingLevel, Packer, Paragraph, TabStopPosition, TabStopType, TextRun } from "../build";
 
 // tslint:disable:no-shadowed-variable
 
@@ -226,9 +226,12 @@ class DocumentCreator {
 
     public createInstitutionHeader(institutionName: string, dateText: string): Paragraph {
         return new Paragraph({
-            tabStop: {
-                maxRight: {},
-            },
+            tabStops: [
+                {
+                    type: TabStopType.RIGHT,
+                    position: TabStopPosition.MAX,
+                },
+            ],
             children: [
                 new TextRun({
                     text: institutionName,

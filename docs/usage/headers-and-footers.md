@@ -2,52 +2,46 @@
 
 !> Headers and Footers requires an understanding of [Sections](usage/sections.md).
 
+Every Section has a sections which you can define its Headers and Footers:
+
+```ts
+doc.addSection({
+    headers: {
+        default: new Header({ // The standard default header
+            children: [],
+        }),
+        first: new Header({ // The first header
+            children: [],
+        }),
+        even: new Header({ // The header on every other page
+            children: [],
+        }),
+    },
+    footers: {
+        default: new Footer({ // The standard default footer
+            children: [],
+        }),
+        first: new Footer({ // The first footer
+            children: [],
+        }),
+        even: new Footer({ // The footer on every other page
+            children: [],
+        }),
+    },
+    children: [],
+});
+```
+
+If you want more head
+
 ## Example
 
-Creating Headers and footers is simple. Access the `Header` and `Footer` by doing so like this:
+Example showing basic header and footer
 
-```ts
-doc.Header;
-doc.Footer;
-```
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/8-header-footer.ts ':include')
 
-You can call the same methods as you would with a `File`:
-
-```ts
-doc.Header.createParagraph("Header text");
-doc.Footer.createParagraph("Footer text");
-```
-
-Even add images:
-
-```ts
-doc.Header.createImage([BUFFER_OF_YOUR_IMAGE]);
-doc.Footer.createImage([BUFFER_OF_YOUR_IMAGE]);
-```
-
-Refer to [`demo8.ts`](https://github.com/dolanmiu/docx/blob/master/demo/demo8.ts) for more information.
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/8-header-footer.ts_
 
 ## Multiple Headers and Footers
 
-Also all the supported section properties are implemented according to: http://officeopenxml.com/WPsection.php
-
-### Example
-
-```ts
-    const header = this.document.createHeader();
-    const footer = this.document.createFooter();
-
-    // Add new section with another header and footer
-    doc.addSection({
-      headers: {
-        default: header
-      },
-      footers: {
-        default: footer
-      },
-      pageNumberStart: 1,
-      pageNumberFormatType: docx.PageNumberFormat.DECIMAL,
-    });
-```
-
-
+More headers and footers can be accomplished by creating more `Section`. New headers and footers can be set per `Section`

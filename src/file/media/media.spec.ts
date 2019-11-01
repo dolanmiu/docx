@@ -80,6 +80,16 @@ describe("Media", () => {
             const image = new Media().addMedia("");
             expect(image.stream).to.be.an.instanceof(Uint8Array);
         });
+
+        it("should use data as is if its not a string", () => {
+            // tslint:disable-next-line
+            ((process as any).atob as any) = () => "atob result";
+            // tslint:disable-next-line:no-any
+            (Media as any).generateId = () => "test";
+
+            const image = new Media().addMedia(new Buffer(""));
+            expect(image.stream).to.be.an.instanceof(Uint8Array);
+        });
     });
 
     describe("#getMedia", () => {

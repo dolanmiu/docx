@@ -1,0 +1,20 @@
+import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
+
+interface ISymbolAttributesProperties {
+    readonly char: string;
+    readonly symbolfont?: string;
+}
+
+class SymbolAttributes extends XmlAttributeComponent<ISymbolAttributesProperties> {
+    protected readonly xmlKeys = {
+        char: "w:char",
+        symbolfont: "w:font",
+    };
+}
+
+export class Symbol extends XmlComponent {
+    constructor(char: string = "", symbolfont: string = "Wingdings") {
+        super("w:sym");
+        this.root.push(new SymbolAttributes({ char: char, symbolfont: symbolfont }));
+    }
+}

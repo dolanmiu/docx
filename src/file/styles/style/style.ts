@@ -25,8 +25,4 @@ export class Style extends XmlComponent {
             this.root.push(new Name(name));
         }
     }
-
-    public push(styleSegment: XmlComponent): void {
-        this.root.push(styleSegment);
-    }
 }

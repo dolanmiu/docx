@@ -30,9 +30,9 @@ describe("Style components", () => {
     });
 
     it("UiPriority#constructor", () => {
-        const style = new components.UiPriority("123");
+        const style = new components.UiPriority(123);
         const tree = new Formatter().format(style);
-        expect(tree).to.deep.equal({ "w:uiPriority": { _attr: { "w:val": "123" } } });
+        expect(tree).to.deep.equal({ "w:uiPriority": { _attr: { "w:val": 123 } } });
     });
 
     it("UnhideWhenUsed#constructor", () => {

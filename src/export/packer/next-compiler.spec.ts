@@ -1,7 +1,8 @@
 /* tslint:disable:typedef space-before-function-paren */
 import { expect } from "chai";
+import * as sinon from "sinon";
 
-import { File, Footer, Header } from "file";
+import { File, Footer, Header, Paragraph } from "file";
 
 import { Compiler } from "./next-compiler";
 
@@ -71,6 +72,23 @@ describe("Compiler", () => {
             expect(fileNames).to.include("word/_rels/footer1.xml.rels");
             expect(fileNames).to.include("word/footer2.xml");
             expect(fileNames).to.include("word/_rels/footer2.xml.rels");
+        });
+
+        it("should call the format method X times equalling X files to be formatted", () => {
+            // This test is required because before, there was a case where Document was formatted twice, which was inefficient
+            // This also caused issues such as running prepForXml multiple times as format() was ran multiple times.
+            const paragraph = new Paragraph("");
+            const doc = new File();
+
+            doc.addSection({
+                properties: {},
+                children: [paragraph],
+            });
+            // tslint:disable-next-line: no-string-literal
+            const spy = sinon.spy(compiler["formatter"], "format");
+
+            compiler.compile(file);
+            expect(spy.callCount).to.equal(10);
         });
     });
 });

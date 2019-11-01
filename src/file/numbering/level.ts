@@ -7,14 +7,15 @@ import {
     ISpacingProperties,
     KeepLines,
     KeepNext,
-    LeftTabStop,
-    MaxRightTabStop,
     Spacing,
+    TabStop,
+    TabStopType,
     ThematicBreak,
 } from "../paragraph/formatting";
 import { ParagraphProperties } from "../paragraph/properties";
 import * as formatting from "../paragraph/run/formatting";
 import { RunProperties } from "../paragraph/run/properties";
+import { UnderlineType } from "../paragraph/run/underline";
 
 interface ILevelAttributesProperties {
     readonly ilvl?: number;
@@ -184,7 +185,7 @@ export class LevelBase extends XmlComponent {
         return this;
     }
 
-    public underline(underlineType?: string, color?: string): Level {
+    public underline(underlineType?: UnderlineType, color?: string): Level {
         this.addRunProperty(new formatting.Underline(underlineType, color));
         return this;
     }
@@ -235,13 +236,12 @@ export class LevelBase extends XmlComponent {
         return this;
     }
 
-    public maxRightTabStop(): Level {
-        this.addParagraphProperty(new MaxRightTabStop());
-        return this;
+    public rightTabStop(position: number): Level {
+        return this.addParagraphProperty(new TabStop(TabStopType.RIGHT, position));
     }
 
     public leftTabStop(position: number): Level {
-        this.addParagraphProperty(new LeftTabStop(position));
+        this.addParagraphProperty(new TabStop(TabStopType.LEFT, position));
         return this;
     }
 

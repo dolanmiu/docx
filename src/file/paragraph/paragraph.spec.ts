@@ -4,7 +4,7 @@ import { Formatter } from "export/formatter";
 import { EMPTY_OBJECT } from "file/xml-components";
 
 import { Numbering } from "../numbering";
-import { AlignmentType, HeadingLevel, LeaderType } from "./formatting";
+import { AlignmentType, HeadingLevel, LeaderType, PageBreak, TabStopPosition, TabStopType } from "./formatting";
 import { Paragraph } from "./paragraph";
 
 describe("Paragraph", () => {
@@ -254,11 +254,14 @@ describe("Paragraph", () => {
     });
 
     describe("#maxRightTabStop()", () => {
-        it("should add maxRightTabStop to JSON", () => {
+        it("should add right tab stop to JSON", () => {
             const paragraph = new Paragraph({
-                tabStop: {
-                    maxRight: {},
-                },
+                tabStops: [
+                    {
+                        type: TabStopType.RIGHT,
+                        position: TabStopPosition.MAX,
+                    },
+                ],
             });
             const tree = new Formatter().format(paragraph);
             expect(tree).to.deep.equal({
@@ -287,12 +290,13 @@ describe("Paragraph", () => {
     describe("#leftTabStop()", () => {
         it("should add leftTabStop to JSON", () => {
             const paragraph = new Paragraph({
-                tabStop: {
-                    left: {
+                tabStops: [
+                    {
+                        type: TabStopType.LEFT,
                         position: 100,
                         leader: LeaderType.HYPHEN,
                     },
-                },
+                ],
             });
             const tree = new Formatter().format(paragraph);
             expect(tree).to.deep.equal({
@@ -322,12 +326,13 @@ describe("Paragraph", () => {
     describe("#rightTabStop()", () => {
         it("should add rightTabStop to JSON", () => {
             const paragraph = new Paragraph({
-                tabStop: {
-                    right: {
+                tabStops: [
+                    {
+                        type: TabStopType.RIGHT,
                         position: 100,
                         leader: LeaderType.DOT,
                     },
-                },
+                ],
             });
             const tree = new Formatter().format(paragraph);
             expect(tree).to.deep.equal({
@@ -357,12 +362,13 @@ describe("Paragraph", () => {
     describe("#centerTabStop()", () => {
         it("should add centerTabStop to JSON", () => {
             const paragraph = new Paragraph({
-                tabStop: {
-                    center: {
+                tabStops: [
+                    {
+                        type: TabStopType.CENTER,
                         position: 100,
                         leader: LeaderType.MIDDLE_DOT,
                     },
-                },
+                ],
             });
             const tree = new Formatter().format(paragraph);
             expect(tree).to.deep.equal({
@@ -492,8 +498,9 @@ describe("Paragraph", () => {
 
     describe("#pageBreak()", () => {
         it("should add page break to JSON", () => {
-            const paragraph = new Paragraph({});
-            paragraph.pageBreak();
+            const paragraph = new Paragraph({
+                children: [new PageBreak()],
+            });
             const tree = new Formatter().format(paragraph);
             expect(tree).to.deep.equal({
                 "w:p": [

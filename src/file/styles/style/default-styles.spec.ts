@@ -1,12 +1,15 @@
 import { expect } from "chai";
 import { Formatter } from "export/formatter";
-import * as defaultStyels from "./default-styles";
+import * as defaultStyles from "./default-styles";
 
 import { EMPTY_OBJECT } from "file/xml-components";
 
 describe("Default Styles", () => {
     it("HeadingStyle#constructor", () => {
-        const style = new defaultStyels.HeadingStyle("Heading1", "Heading 1");
+        const style = new defaultStyles.HeadingStyle({
+            id: "Heading1",
+            name: "Heading 1",
+        });
         const tree = new Formatter().format(style);
         expect(tree).to.deep.equal({
             "w:style": [
@@ -20,7 +23,7 @@ describe("Default Styles", () => {
     });
 
     it("TitleStyle#constructor", () => {
-        const style = new defaultStyels.TitleStyle();
+        const style = new defaultStyles.TitleStyle({});
         const tree = new Formatter().format(style);
         expect(tree).to.deep.equal({
             "w:style": [
@@ -34,7 +37,7 @@ describe("Default Styles", () => {
     });
 
     it("Heading1Style#constructor", () => {
-        const style = new defaultStyels.Heading1Style();
+        const style = new defaultStyles.Heading1Style({});
         const tree = new Formatter().format(style);
         expect(tree).to.deep.equal({
             "w:style": [
@@ -48,7 +51,7 @@ describe("Default Styles", () => {
     });
 
     it("Heading2Style#constructor", () => {
-        const style = new defaultStyels.Heading2Style();
+        const style = new defaultStyles.Heading2Style({});
         const tree = new Formatter().format(style);
         expect(tree).to.deep.equal({
             "w:style": [
@@ -62,7 +65,7 @@ describe("Default Styles", () => {
     });
 
     it("Heading3Style#constructor", () => {
-        const style = new defaultStyels.Heading3Style();
+        const style = new defaultStyles.Heading3Style({});
         const tree = new Formatter().format(style);
         expect(tree).to.deep.equal({
             "w:style": [
@@ -76,7 +79,7 @@ describe("Default Styles", () => {
     });
 
     it("Heading4Style#constructor", () => {
-        const style = new defaultStyels.Heading4Style();
+        const style = new defaultStyles.Heading4Style({});
         const tree = new Formatter().format(style);
         expect(tree).to.deep.equal({
             "w:style": [
@@ -90,7 +93,7 @@ describe("Default Styles", () => {
     });
 
     it("Heading5Style#constructor", () => {
-        const style = new defaultStyels.Heading5Style();
+        const style = new defaultStyles.Heading5Style({});
         const tree = new Formatter().format(style);
         expect(tree).to.deep.equal({
             "w:style": [
@@ -104,7 +107,7 @@ describe("Default Styles", () => {
     });
 
     it("Heading6Style#constructor", () => {
-        const style = new defaultStyels.Heading6Style();
+        const style = new defaultStyles.Heading6Style({});
         const tree = new Formatter().format(style);
         expect(tree).to.deep.equal({
             "w:style": [
@@ -118,7 +121,7 @@ describe("Default Styles", () => {
     });
 
     it("ListParagraph#constructor", () => {
-        const style = new defaultStyels.ListParagraph();
+        const style = new defaultStyles.ListParagraph({});
         const tree = new Formatter().format(style);
         expect(tree).to.deep.equal({
             "w:style": [
@@ -131,7 +134,7 @@ describe("Default Styles", () => {
     });
 
     it("FootnoteText#constructor", () => {
-        const style = new defaultStyels.FootnoteText();
+        const style = new defaultStyles.FootnoteText({});
         const tree = new Formatter().format(style);
         expect(tree).to.deep.equal({
             "w:style": [
@@ -171,14 +174,14 @@ describe("Default Styles", () => {
                 { "w:basedOn": { _attr: { "w:val": "Normal" } } },
                 { "w:link": { _attr: { "w:val": "FootnoteTextChar" } } },
                 {
-                    "w:uiPriority": {
-                        _attr: {
-                            "w:val": "99",
-                        },
-                    },
+                    "w:semiHidden": EMPTY_OBJECT,
                 },
                 {
-                    "w:semiHidden": EMPTY_OBJECT,
+                    "w:uiPriority": {
+                        _attr: {
+                            "w:val": 99,
+                        },
+                    },
                 },
                 {
                     "w:unhideWhenUsed": EMPTY_OBJECT,
@@ -188,7 +191,7 @@ describe("Default Styles", () => {
     });
 
     it("FootnoteReferenceStyle#constructor", () => {
-        const style = new defaultStyels.FootnoteReferenceStyle();
+        const style = new defaultStyles.FootnoteReferenceStyle({});
         const tree = new Formatter().format(style);
         expect(tree).to.deep.equal({
             "w:style": [
@@ -208,7 +211,7 @@ describe("Default Styles", () => {
                 {
                     "w:uiPriority": {
                         _attr: {
-                            "w:val": "99",
+                            "w:val": 99,
                         },
                     },
                 },
@@ -225,7 +228,7 @@ describe("Default Styles", () => {
     });
 
     it("FootnoteTextChar#constructor", () => {
-        const style = new defaultStyels.FootnoteTextChar();
+        const style = new defaultStyles.FootnoteTextChar({});
         const tree = new Formatter().format(style);
         expect(tree).to.deep.equal({
             "w:style": [
@@ -252,7 +255,7 @@ describe("Default Styles", () => {
                 {
                     "w:uiPriority": {
                         _attr: {
-                            "w:val": "99",
+                            "w:val": 99,
                         },
                     },
                 },
@@ -269,19 +272,28 @@ describe("Default Styles", () => {
     });
 
     it("HyperlinkStyle#constructor", () => {
-        const style = new defaultStyels.HyperlinkStyle();
+        const style = new defaultStyles.HyperlinkStyle({});
         const tree = new Formatter().format(style);
         expect(tree).to.deep.equal({
             "w:style": [
                 { _attr: { "w:type": "character", "w:styleId": "Hyperlink" } },
                 { "w:name": { _attr: { "w:val": "Hyperlink" } } },
                 {
-                    "w:rPr": [{ "w:color": { _attr: { "w:val": "0563C1" } } }, { "w:u": { _attr: { "w:val": "single" } } }],
+                    "w:rPr": [
+                        { "w:u": { _attr: { "w:val": "single" } } },
+                        {
+                            "w:color": {
+                                _attr: {
+                                    "w:val": "0563C1",
+                                },
+                            },
+                        },
+                    ],
                 },
                 {
                     "w:uiPriority": {
                         _attr: {
-                            "w:val": "99",
+                            "w:val": 99,
                         },
                     },
                 },

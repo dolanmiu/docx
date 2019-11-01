@@ -1,7 +1,8 @@
 import { assert, expect } from "chai";
+import * as sinon from "sinon";
 
 import { Formatter } from "export/formatter";
-import * as file from "file";
+import { Paragraph, TextRun } from "file";
 import { CoreProperties } from "file/core-properties";
 import { Attributes } from "file/xml-components";
 
@@ -14,28 +15,65 @@ describe("Formatter", () => {
 
     describe("#format()", () => {
         it("should format simple paragraph", () => {
-            const paragraph = new file.Paragraph("");
+            const paragraph = new Paragraph("");
             const newJson = formatter.format(paragraph);
             assert.isDefined(newJson["w:p"]);
         });
 
         it("should remove xmlKeys", () => {
-            const paragraph = new file.Paragraph("");
+            const paragraph = new Paragraph("");
             const newJson = formatter.format(paragraph);
             const stringifiedJson = JSON.stringify(newJson);
             assert(stringifiedJson.indexOf("xmlKeys") < 0);
         });
 
         it("should format simple paragraph with bold text", () => {
-            const paragraph = new file.Paragraph("");
-            paragraph.addRun(
-                new file.TextRun({
-                    text: "test",
-                    bold: true,
-                }),
-            );
-            const newJson = formatter.format(paragraph);
-            assert.isDefined(newJson["w:p"][1]["w:r"][0]["w:rPr"][0]["w:b"]._attr["w:val"]);
+            const paragraph = new Paragraph({
+                children: [
+                    new TextRun({
+                        text: "test",
+                        bold: true,
+                    }),
+                ],
+            });
+
+            const tree = formatter.format(paragraph);
+            expect(tree).to.deep.equal({
+                "w:p": [
+                    {
+                        "w:r": [
+                            {
+                                "w:rPr": [
+                                    {
+                                        "w:b": {
+                                            _attr: {
+                                                "w:val": true,
+                                            },
+                                        },
+                                    },
+                                    {
+                                        "w:bCs": {
+                                            _attr: {
+                                                "w:val": true,
+                                            },
+                                        },
+                                    },
+                                ],
+                            },
+                            {
+                                "w:t": [
+                                    {
+                                        _attr: {
+                                            "xml:space": "preserve",
+                                        },
+                                    },
+                                    "test",
+                                ],
+                            },
+                        ],
+                    },
+                ],
+            });
         });
 
         it("should format attributes (rsidSect)", () => {
@@ -63,7 +101,7 @@ describe("Formatter", () => {
         });
 
         it("should should change 'p' tag into 'w:p' tag", () => {
-            const paragraph = new file.Paragraph("");
+            const paragraph = new Paragraph("");
             const newJson = formatter.format(paragraph);
             assert.isDefined(newJson["w:p"]);
         });
@@ -75,6 +113,14 @@ describe("Formatter", () => {
             });
             const newJson = formatter.format(properties);
             assert.isDefined(newJson["cp:coreProperties"]);
+        });
+
+        it("should call the prep method only once", () => {
+            const paragraph = new Paragraph("");
+            const spy = sinon.spy(paragraph, "prepForXml");
+
+            formatter.format(paragraph);
+            expect(spy.calledOnce).to.equal(true);
         });
     });
 });

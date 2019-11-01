@@ -5,188 +5,207 @@ import {
     ISpacingProperties,
     KeepLines,
     KeepNext,
-    LeftTabStop,
-    MaxRightTabStop,
     OutlineLevel,
     ParagraphProperties,
     Spacing,
     ThematicBreak,
 } from "file/paragraph";
+import { IIndentAttributesProperties, TabStop, TabStopType } from "file/paragraph/formatting";
 import * as formatting from "file/paragraph/run/formatting";
 import { RunProperties } from "file/paragraph/run/properties";
-import { XmlComponent } from "file/xml-components";
+import { UnderlineType } from "file/paragraph/run/underline";
+import { ShadingType } from "file/table";
+
 import { BasedOn, Link, Next, QuickFormat, SemiHidden, UiPriority, UnhideWhenUsed } from "./components";
 import { Style } from "./style";
 
+export interface IBaseParagraphStyleOptions {
+    readonly basedOn?: string;
+    readonly next?: string;
+    readonly quickFormat?: boolean;
+    readonly link?: string;
+    readonly semiHidden?: boolean;
+    readonly uiPriority?: number;
+    readonly unhideWhenUsed?: boolean;
+    readonly run?: {
+        readonly size?: number;
+        readonly bold?: boolean;
+        readonly italics?: boolean;
+        readonly smallCaps?: boolean;
+        readonly allCaps?: boolean;
+        readonly strike?: boolean;
+        readonly doubleStrike?: boolean;
+        readonly subScript?: boolean;
+        readonly superScript?: boolean;
+        readonly underline?: {
+            readonly type?: UnderlineType;
+            readonly color?: string;
+        };
+        readonly color?: string;
+        readonly font?: string;
+        readonly characterSpacing?: number;
+        readonly highlight?: string;
+        readonly shadow?: {
+            readonly type: ShadingType;
+            readonly fill: string;
+            readonly color: string;
+        };
+    };
+    readonly paragraph?: {
+        readonly alignment?: AlignmentType;
+        readonly thematicBreak?: boolean;
+        readonly rightTabStop?: number;
+        readonly leftTabStop?: number;
+        readonly indent?: IIndentAttributesProperties;
+        readonly spacing?: ISpacingProperties;
+        readonly keepNext?: boolean;
+        readonly keepLines?: boolean;
+        readonly outlineLevel?: number;
+    };
+}
+
+export interface IParagraphStyleOptions extends IBaseParagraphStyleOptions {
+    readonly id: string;
+    readonly name?: string;
+}
 export class ParagraphStyle extends Style {
     private readonly paragraphProperties: ParagraphProperties;
     private readonly runProperties: RunProperties;
 
-    constructor(styleId: string, name?: string) {
-        super({ type: "paragraph", styleId: styleId }, name);
+    constructor(options: IParagraphStyleOptions) {
+        super({ type: "paragraph", styleId: options.id }, options.name);
         this.paragraphProperties = new ParagraphProperties({});
         this.runProperties = new RunProperties();
         this.root.push(this.paragraphProperties);
         this.root.push(this.runProperties);
-    }
 
-    public addParagraphProperty(property: XmlComponent): ParagraphStyle {
-        this.paragraphProperties.push(property);
-        return this;
-    }
+        if (options.basedOn) {
+            this.root.push(new BasedOn(options.basedOn));
+        }
 
-    public outlineLevel(level: number): ParagraphStyle {
-        this.paragraphProperties.push(new OutlineLevel(level));
-        return this;
-    }
+        if (options.next) {
+            this.root.push(new Next(options.next));
+        }
 
-    public addRunProperty(property: XmlComponent): ParagraphStyle {
-        this.runProperties.push(property);
-        return this;
-    }
+        if (options.quickFormat) {
+            this.root.push(new QuickFormat());
+        }
 
-    public basedOn(parentId: string): ParagraphStyle {
-        this.root.push(new BasedOn(parentId));
-        return this;
-    }
+        if (options.link) {
+            this.root.push(new Link(options.link));
+        }
 
-    public quickFormat(): ParagraphStyle {
-        this.root.push(new QuickFormat());
-        return this;
-    }
+        if (options.semiHidden) {
+            this.root.push(new SemiHidden());
+        }
 
-    public next(nextId: string): ParagraphStyle {
-        this.root.push(new Next(nextId));
-        return this;
-    }
+        if (options.uiPriority) {
+            this.root.push(new UiPriority(options.uiPriority));
+        }
 
-    // ----------  Run formatting ---------------------- //
+        if (options.unhideWhenUsed) {
+            this.root.push(new UnhideWhenUsed());
+        }
 
-    public size(twips: number): ParagraphStyle {
-        return this.addRunProperty(new formatting.Size(twips)).addRunProperty(new formatting.SizeComplexScript(twips));
-    }
+        if (options.run) {
+            if (options.run.size) {
+                this.runProperties.push(new formatting.Size(options.run.size));
+                this.runProperties.push(new formatting.SizeComplexScript(options.run.size));
+            }
 
-    public bold(): ParagraphStyle {
-        return this.addRunProperty(new formatting.Bold());
-    }
+            if (options.run.bold) {
+                this.runProperties.push(new formatting.Bold());
+            }
 
-    public italics(): ParagraphStyle {
-        return this.addRunProperty(new formatting.Italics());
-    }
+            if (options.run.italics) {
+                this.runProperties.push(new formatting.Italics());
+            }
 
-    public smallCaps(): ParagraphStyle {
-        return this.addRunProperty(new formatting.SmallCaps());
-    }
+            if (options.run.smallCaps) {
+                this.runProperties.push(new formatting.SmallCaps());
+            }
 
-    public allCaps(): ParagraphStyle {
-        return this.addRunProperty(new formatting.Caps());
-    }
+            if (options.run.allCaps) {
+                this.runProperties.push(new formatting.Caps());
+            }
 
-    public strike(): ParagraphStyle {
-        return this.addRunProperty(new formatting.Strike());
-    }
+            if (options.run.strike) {
+                this.runProperties.push(new formatting.Strike());
+            }
 
-    public doubleStrike(): ParagraphStyle {
-        return this.addRunProperty(new formatting.DoubleStrike());
-    }
+            if (options.run.doubleStrike) {
+                this.runProperties.push(new formatting.DoubleStrike());
+            }
 
-    public subScript(): ParagraphStyle {
-        return this.addRunProperty(new formatting.SubScript());
-    }
+            if (options.run.subScript) {
+                this.runProperties.push(new formatting.SubScript());
+            }
 
-    public superScript(): ParagraphStyle {
-        return this.addRunProperty(new formatting.SuperScript());
-    }
+            if (options.run.superScript) {
+                this.runProperties.push(new formatting.SuperScript());
+            }
 
-    public underline(underlineType?: string, color?: string): ParagraphStyle {
-        return this.addRunProperty(new formatting.Underline(underlineType, color));
-    }
+            if (options.run.underline) {
+                this.runProperties.push(new formatting.Underline(options.run.underline.type, options.run.underline.color));
+            }
 
-    public color(color: string): ParagraphStyle {
-        return this.addRunProperty(new formatting.Color(color));
-    }
+            if (options.run.color) {
+                this.runProperties.push(new formatting.Color(options.run.color));
+            }
 
-    public font(fontName: string): ParagraphStyle {
-        return this.addRunProperty(new formatting.RunFonts(fontName));
-    }
+            if (options.run.font) {
+                this.runProperties.push(new formatting.RunFonts(options.run.font));
+            }
 
-    public characterSpacing(value: number): ParagraphStyle {
-        return this.addRunProperty(new formatting.CharacterSpacing(value));
-    }
+            if (options.run.characterSpacing) {
+                this.runProperties.push(new formatting.CharacterSpacing(options.run.characterSpacing));
+            }
 
-    public highlight(color: string): ParagraphStyle {
-        return this.addRunProperty(new formatting.Highlight(color));
-    }
+            if (options.run.highlight) {
+                this.runProperties.push(new formatting.Highlight(options.run.highlight));
+            }
 
-    public shadow(value: string, fill: string, color: string): ParagraphStyle {
-        return this.addRunProperty(new formatting.Shading(value, fill, color));
-    }
+            if (options.run.shadow) {
+                this.runProperties.push(new formatting.Shading(options.run.shadow.type, options.run.shadow.fill, options.run.shadow.color));
+            }
+        }
 
-    // --------------------- Paragraph formatting ------------------------ //
+        if (options.paragraph) {
+            if (options.paragraph.alignment) {
+                this.paragraphProperties.push(new Alignment(options.paragraph.alignment));
+            }
 
-    public center(): ParagraphStyle {
-        return this.addParagraphProperty(new Alignment(AlignmentType.CENTER));
-    }
+            if (options.paragraph.thematicBreak) {
+                this.paragraphProperties.push(new ThematicBreak());
+            }
 
-    public left(): ParagraphStyle {
-        return this.addParagraphProperty(new Alignment(AlignmentType.LEFT));
-    }
+            if (options.paragraph.rightTabStop) {
+                this.paragraphProperties.push(new TabStop(TabStopType.RIGHT, options.paragraph.rightTabStop));
+            }
 
-    public right(): ParagraphStyle {
-        return this.addParagraphProperty(new Alignment(AlignmentType.RIGHT));
-    }
+            if (options.paragraph.leftTabStop) {
+                this.paragraphProperties.push(new TabStop(TabStopType.LEFT, options.paragraph.leftTabStop));
+            }
 
-    public justified(): ParagraphStyle {
-        return this.addParagraphProperty(new Alignment(AlignmentType.BOTH));
-    }
+            if (options.paragraph.indent) {
+                this.paragraphProperties.push(new Indent(options.paragraph.indent));
+            }
 
-    public thematicBreak(): ParagraphStyle {
-        return this.addParagraphProperty(new ThematicBreak());
-    }
+            if (options.paragraph.spacing) {
+                this.paragraphProperties.push(new Spacing(options.paragraph.spacing));
+            }
 
-    public maxRightTabStop(): ParagraphStyle {
-        return this.addParagraphProperty(new MaxRightTabStop());
-    }
+            if (options.paragraph.keepNext) {
+                this.paragraphProperties.push(new KeepNext());
+            }
 
-    public leftTabStop(position: number): ParagraphStyle {
-        return this.addParagraphProperty(new LeftTabStop(position));
-    }
+            if (options.paragraph.keepLines) {
+                this.paragraphProperties.push(new KeepLines());
+            }
 
-    public indent(attrs: object): ParagraphStyle {
-        return this.addParagraphProperty(new Indent(attrs));
-    }
-
-    public spacing(params: ISpacingProperties): ParagraphStyle {
-        return this.addParagraphProperty(new Spacing(params));
-    }
-
-    public keepNext(): ParagraphStyle {
-        return this.addParagraphProperty(new KeepNext());
-    }
-
-    public keepLines(): ParagraphStyle {
-        return this.addParagraphProperty(new KeepLines());
-    }
-
-    /*-------------- Style Properties -----------------*/
-
-    public link(link: string): ParagraphStyle {
-        this.root.push(new Link(link));
-        return this;
-    }
-
-    public semiHidden(): ParagraphStyle {
-        this.root.push(new SemiHidden());
-        return this;
-    }
-
-    public uiPriority(priority: string): ParagraphStyle {
-        this.root.push(new UiPriority(priority));
-        return this;
-    }
-
-    public unhideWhenUsed(): ParagraphStyle {
-        this.root.push(new UnhideWhenUsed());
-        return this;
+            if (options.paragraph.outlineLevel) {
+                this.paragraphProperties.push(new OutlineLevel(options.paragraph.outlineLevel));
+            }
+        }
     }
 }

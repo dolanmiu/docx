@@ -4,7 +4,7 @@ import * as sinon from "sinon";
 import { FooterWrapper } from "./footer-wrapper";
 import { Media } from "./media";
 import { Paragraph } from "./paragraph";
-import { Table } from "./table";
+import { Table, TableCell, TableRow } from "./table";
 
 describe("FooterWrapper", () => {
     describe("#add", () => {
@@ -21,19 +21,17 @@ describe("FooterWrapper", () => {
             const spy = sinon.spy(file.Footer, "add");
             file.add(
                 new Table({
-                    rows: 1,
-                    columns: 1,
+                    rows: [
+                        new TableRow({
+                            children: [
+                                new TableCell({
+                                    children: [new Paragraph("hello")],
+                                }),
+                            ],
+                        }),
+                    ],
                 }),
             );
-
-            expect(spy.called).to.equal(true);
-        });
-
-        it("should call the underlying footer's addImage", () => {
-            const file = new FooterWrapper(new Media(), 1);
-            const spy = sinon.spy(file.Footer, "add");
-            // tslint:disable-next-line:no-any
-            file.addImage({} as any);
 
             expect(spy.called).to.equal(true);
         });

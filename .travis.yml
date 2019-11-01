@@ -42,7 +42,7 @@ script:
   - npm run ts-node -- ./demo/29-numbered-lists.ts
   - npm run ts-node -- ./demo/30-template-document.ts
   - npm run ts-node -- ./demo/31-tables.ts
-  - npm run ts-node -- ./demo/32-merge-table-cells.ts
+  - npm run ts-node -- ./demo/32-merge-and-shade-table-cells.ts
 #   - npm run e2e "My Document.docx" // Need to fix
   - npm run ts-node -- ./demo/33-sequential-captions.ts
   - npm run ts-node -- ./demo/34-floating-tables.ts

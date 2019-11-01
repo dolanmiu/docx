@@ -2,7 +2,16 @@ import { IgnoreIfEmptyXmlComponent } from "file/xml-components";
 
 import { ITableShadingAttributesProperties, TableShading } from "../shading";
 import { ITableCellMarginOptions, TableCellMargin } from "./cell-margin/table-cell-margins";
-import { GridSpan, TableCellBorders, TableCellWidth, VAlign, VerticalAlign, VMerge, VMergeType, WidthType } from "./table-cell-components";
+import {
+    GridSpan,
+    TableCellBorders,
+    TableCellWidth,
+    VAlign,
+    VerticalAlign,
+    VerticalMerge,
+    VerticalMergeType,
+    WidthType,
+} from "./table-cell-components";
 
 export class TableCellProperties extends IgnoreIfEmptyXmlComponent {
     private readonly cellBorder: TableCellBorders;
@@ -23,8 +32,8 @@ export class TableCellProperties extends IgnoreIfEmptyXmlComponent {
         return this;
     }
 
-    public addVerticalMerge(type: VMergeType): TableCellProperties {
-        this.root.push(new VMerge(type));
+    public addVerticalMerge(type: VerticalMergeType): TableCellProperties {
+        this.root.push(new VerticalMerge(type));
 
         return this;
     }

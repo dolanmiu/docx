@@ -2,6 +2,7 @@ import { expect } from "chai";
 
 import { Formatter } from "export/formatter";
 
+import { ShadingType } from "../shading";
 import { WidthType } from "../table-cell";
 import { TableLayoutType } from "./table-layout";
 import { TableProperties } from "./table-properties";
@@ -63,6 +64,31 @@ describe("TableProperties", () => {
             const tree = new Formatter().format(tp);
             expect(tree).to.deep.equal({
                 "w:tblPr": [{ "w:tblCellMar": [{ "w:left": { _attr: { "w:type": "dxa", "w:w": 1234 } } }] }],
+            });
+        });
+    });
+
+    describe("#setShading", () => {
+        it("sets the shading of the table", () => {
+            const tp = new TableProperties();
+            tp.setShading({
+                fill: "b79c2f",
+                val: ShadingType.REVERSE_DIAGONAL_STRIPE,
+                color: "auto",
+            });
+            const tree = new Formatter().format(tp);
+            expect(tree).to.deep.equal({
+                "w:tblPr": [
+                    {
+                        "w:shd": {
+                            _attr: {
+                                "w:color": "auto",
+                                "w:fill": "b79c2f",
+                                "w:val": "reverseDiagStripe",
+                            },
+                        },
+                    },
+                ],
             });
         });
     });

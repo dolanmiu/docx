@@ -44,7 +44,8 @@ export class FootNotes extends XmlComponent {
                     line: 240,
                     lineRule: "auto",
                 },
-            }).addRun(new SeperatorRun()),
+                children: [new SeperatorRun()],
+            }),
         );
         this.root.push(begin);
 
@@ -56,7 +57,8 @@ export class FootNotes extends XmlComponent {
                     line: 240,
                     lineRule: "auto",
                 },
-            }).addRun(new ContinuationSeperatorRun()),
+                children: [new ContinuationSeperatorRun()],
+            }),
         );
         this.root.push(spacing);
     }

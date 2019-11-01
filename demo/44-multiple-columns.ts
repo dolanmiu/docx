@@ -8,7 +8,7 @@ const doc = new Document();
 doc.addSection({
     properties: {
         column: {
-            width: 708,
+            space: 708,
             count: 2,
         },
     },
@@ -23,7 +23,7 @@ doc.addSection({
 doc.addSection({
     properties: {
         column: {
-            width: 708,
+            space: 708,
             count: 3,
         },
     },
