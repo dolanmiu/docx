@@ -20,7 +20,7 @@ class NumAttributes extends XmlAttributeComponent<INumAttributesProperties> {
     protected readonly xmlKeys = { numId: "w:numId" };
 }
 
-export class Num extends XmlComponent {
+export class ConcreteNumbering extends XmlComponent {
     public readonly id: number;
 
     constructor(numId: number, abstractNumId: number) {

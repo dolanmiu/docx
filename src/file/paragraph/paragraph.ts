@@ -1,6 +1,6 @@
 // http://officeopenxml.com/WPparagraph.php
 import { FootnoteReferenceRun } from "file/footnotes/footnote/run/reference-run";
-import { Num } from "file/numbering/num";
+import { ConcreteNumbering } from "file/numbering/num";
 import { XmlComponent } from "file/xml-components";
 
 import { Alignment, AlignmentType } from "./formatting/alignment";
@@ -41,7 +41,7 @@ export interface IParagraphOptions {
         readonly level: number;
     };
     readonly numbering?: {
-        readonly num: Num;
+        readonly num: ConcreteNumbering;
         readonly level: number;
         readonly custom?: boolean;
     };

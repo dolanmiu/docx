@@ -71,7 +71,9 @@ export class File {
         sections: ISectionOptions[] = [],
     ) {
         this.coreProperties = new CoreProperties(options);
-        this.numbering = new Numbering();
+        this.numbering = new Numbering({
+            levels: options.numbering ? options.numbering.levels : [],
+        });
         this.docRelationships = new Relationships();
         this.fileRelationships = new Relationships();
         this.appProperties = new AppProperties();

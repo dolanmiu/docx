@@ -1,5 +1,6 @@
 import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
-import { Level } from "./level";
+
+import { ILevelsOptions, Level } from "./level";
 import { MultiLevelType } from "./multi-level-type";
 
 interface IAbstractNumberingAttributesProperties {
@@ -14,10 +15,14 @@ class AbstractNumberingAttributes extends XmlAttributeComponent<IAbstractNumberi
     };
 }
 
+export interface IAbstractNumberingOptions {
+    readonly levels: ILevelsOptions[];
+}
+
 export class AbstractNumbering extends XmlComponent {
     public readonly id: number;
 
-    constructor(id: number) {
+    constructor(id: number, options: IAbstractNumberingOptions) {
         super("w:abstractNum");
         this.root.push(
             new AbstractNumberingAttributes({
@@ -27,15 +32,9 @@ export class AbstractNumbering extends XmlComponent {
         );
         this.root.push(new MultiLevelType("hybridMultilevel"));
         this.id = id;
-    }
 
-    public addLevel(level: Level): void {
-        this.root.push(level);
-    }
-
-    public createLevel(num: number, format: string, text: string, align: string = "start"): Level {
-        const level = new Level(num, format, text, align);
-        this.addLevel(level);
-        return level;
+        for (const option of options.levels) {
+            this.root.push(new Level(option));
+        }
     }
 }
