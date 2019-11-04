@@ -636,8 +636,6 @@ describe("Paragraph", () => {
                     },
                 ],
             });
-            const numberedAbstract = numbering.createAbstractNumbering();
-            const letterNumbering = numbering.createConcreteNumbering(numberedAbstract);
 
             const paragraph = new Paragraph({
                 numbering: {
