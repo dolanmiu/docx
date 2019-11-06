@@ -79,8 +79,8 @@ export enum LevelSuffix {
 
 export interface ILevelsOptions {
     readonly level: number;
-    readonly format: string;
-    readonly text: string;
+    readonly format?: string;
+    readonly text?: string;
     readonly alignment?: AlignmentType;
     readonly start?: number;
     readonly suffix?: LevelSuffix;
@@ -115,9 +115,15 @@ export class LevelBase extends XmlComponent {
         );
 
         this.root.push(new Start(start));
-        this.root.push(new NumberFormat(format));
-        this.root.push(new LevelText(text));
         this.root.push(new LevelJc(alignment));
+
+        if (format) {
+            this.root.push(new NumberFormat(format));
+        }
+
+        if (text) {
+            this.root.push(new LevelText(text));
+        }
 
         this.paragraphProperties = new ParagraphProperties({});
         this.runProperties = new RunProperties();

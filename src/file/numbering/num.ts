@@ -55,7 +55,9 @@ export class LevelOverride extends XmlComponent {
             this.root.push(new StartOverride(start));
         }
 
-        this.lvl = new LevelForOverride(this.levelNum);
+        this.lvl = new LevelForOverride({
+            level: this.levelNum,
+        });
         this.root.push(this.lvl);
     }
 

@@ -8,7 +8,7 @@ import { UnderlineType } from "../paragraph/run/underline";
 import { ShadingType } from "../table";
 import { AbstractNumbering } from "./abstract-numbering";
 
-describe.only("AbstractNumbering", () => {
+describe("AbstractNumbering", () => {
     it("stores its ID at its .id property", () => {
         const abstractNumbering = new AbstractNumbering(5, {
             levels: [],
@@ -29,11 +29,11 @@ describe.only("AbstractNumbering", () => {
                 ],
             });
             const tree = new Formatter().format(abstractNumbering);
-            expect(tree["w:lvl"]).to.include({ _attr: { "w:ilvl": 3, "w15:tentative": 1 } });
-            expect(tree["w:lvl"]).to.include({ "w:start": { _attr: { "w:val": 1 } } });
-            expect(tree["w:lvl"]).to.include({ "w:lvlJc": { _attr: { "w:val": "end" } } });
-            expect(tree["w:lvl"]).to.include({ "w:numFmt": { _attr: { "w:val": "lowerLetter" } } });
-            expect(tree["w:lvl"]).to.include({ "w:lvlText": { _attr: { "w:val": "%1)" } } });
+            expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({ _attr: { "w:ilvl": 3, "w15:tentative": 1 } });
+            expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({ "w:start": { _attr: { "w:val": 1 } } });
+            expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({ "w:lvlJc": { _attr: { "w:val": "end" } } });
+            expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({ "w:numFmt": { _attr: { "w:val": "lowerLetter" } } });
+            expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({ "w:lvlText": { _attr: { "w:val": "%1)" } } });
         });
 
         it("uses 'start' as the default alignment", () => {
@@ -47,11 +47,11 @@ describe.only("AbstractNumbering", () => {
                 ],
             });
             const tree = new Formatter().format(abstractNumbering);
-            expect(tree["w:lvl"]).to.include({ _attr: { "w:ilvl": 3, "w15:tentative": 1 } });
-            expect(tree["w:lvl"]).to.include({ "w:start": { _attr: { "w:val": 1 } } });
-            expect(tree["w:lvl"]).to.include({ "w:lvlJc": { _attr: { "w:val": "start" } } });
-            expect(tree["w:lvl"]).to.include({ "w:numFmt": { _attr: { "w:val": "lowerLetter" } } });
-            expect(tree["w:lvl"]).to.include({ "w:lvlText": { _attr: { "w:val": "%1)" } } });
+            expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({ _attr: { "w:ilvl": 3, "w15:tentative": 1 } });
+            expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({ "w:start": { _attr: { "w:val": 1 } } });
+            expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({ "w:lvlJc": { _attr: { "w:val": "start" } } });
+            expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({ "w:numFmt": { _attr: { "w:val": "lowerLetter" } } });
+            expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({ "w:lvlText": { _attr: { "w:val": "%1)" } } });
         });
 
         describe("formatting methods: paragraph properties", () => {
@@ -71,7 +71,7 @@ describe.only("AbstractNumbering", () => {
                     ],
                 });
                 const tree = new Formatter().format(abstractNumbering);
-                expect(tree["w:lvl"]).to.include({
+                expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({
                     "w:pPr": [{ "w:ind": { _attr: { "w:left": 720 } } }],
                 });
             });
@@ -92,7 +92,7 @@ describe.only("AbstractNumbering", () => {
                     ],
                 });
                 const tree = new Formatter().format(abstractNumbering);
-                expect(tree["w:lvl"]).to.include({
+                expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({
                     "w:pPr": [{ "w:spacing": { _attr: { "w:before": 50, "w:after": 150 } } }],
                 });
             });
@@ -113,7 +113,7 @@ describe.only("AbstractNumbering", () => {
                     ],
                 });
                 const tree = new Formatter().format(abstractNumbering);
-                expect(tree["w:lvl"]).to.include({
+                expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({
                     "w:pPr": [{ "w:jc": { _attr: { "w:val": "center" } } }],
                 });
             });
@@ -134,7 +134,7 @@ describe.only("AbstractNumbering", () => {
                     ],
                 });
                 const tree = new Formatter().format(abstractNumbering);
-                expect(tree["w:lvl"]).to.include({
+                expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({
                     "w:pPr": [{ "w:jc": { _attr: { "w:val": "left" } } }],
                 });
             });
@@ -155,7 +155,7 @@ describe.only("AbstractNumbering", () => {
                     ],
                 });
                 const tree = new Formatter().format(abstractNumbering);
-                expect(tree["w:lvl"]).to.include({
+                expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({
                     "w:pPr": [{ "w:jc": { _attr: { "w:val": "right" } } }],
                 });
             });
@@ -176,7 +176,7 @@ describe.only("AbstractNumbering", () => {
                     ],
                 });
                 const tree = new Formatter().format(abstractNumbering);
-                expect(tree["w:lvl"]).to.include({
+                expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({
                     "w:pPr": [{ "w:jc": { _attr: { "w:val": "both" } } }],
                 });
             });
@@ -197,7 +197,7 @@ describe.only("AbstractNumbering", () => {
                     ],
                 });
                 const tree = new Formatter().format(abstractNumbering);
-                expect(tree["w:lvl"]).to.include({
+                expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({
                     "w:pPr": [
                         {
                             "w:pBdr": [
@@ -233,7 +233,7 @@ describe.only("AbstractNumbering", () => {
                     ],
                 });
                 const tree = new Formatter().format(abstractNumbering);
-                expect(tree["w:lvl"]).to.include({
+                expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({
                     "w:pPr": [
                         {
                             "w:tabs": [{ "w:tab": { _attr: { "w:val": "left", "w:pos": 1200 } } }],
@@ -258,7 +258,7 @@ describe.only("AbstractNumbering", () => {
                     ],
                 });
                 const tree = new Formatter().format(abstractNumbering);
-                expect(tree["w:lvl"]).to.include({
+                expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({
                     "w:pPr": [
                         {
                             "w:tabs": [{ "w:tab": { _attr: { "w:val": "right", "w:pos": 9026 } } }],
@@ -283,7 +283,7 @@ describe.only("AbstractNumbering", () => {
                     ],
                 });
                 const tree = new Formatter().format(abstractNumbering);
-                expect(tree["w:lvl"]).to.include({
+                expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({
                     "w:pPr": [{ "w:keepLines": EMPTY_OBJECT }],
                 });
             });
@@ -304,7 +304,7 @@ describe.only("AbstractNumbering", () => {
                     ],
                 });
                 const tree = new Formatter().format(abstractNumbering);
-                expect(tree["w:lvl"]).to.include({
+                expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({
                     "w:pPr": [{ "w:keepNext": EMPTY_OBJECT }],
                 });
             });
@@ -327,7 +327,7 @@ describe.only("AbstractNumbering", () => {
                     ],
                 });
                 const tree = new Formatter().format(abstractNumbering);
-                expect(tree["w:lvl"]).to.include({
+                expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({
                     "w:rPr": [{ "w:sz": { _attr: { "w:val": 24 } } }],
                 });
             });
@@ -348,7 +348,7 @@ describe.only("AbstractNumbering", () => {
                     ],
                 });
                 const tree = new Formatter().format(abstractNumbering);
-                expect(tree["w:lvl"]).to.include({
+                expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({
                     "w:rPr": [{ "w:smallCaps": { _attr: { "w:val": true } } }],
                 });
             });
@@ -369,7 +369,7 @@ describe.only("AbstractNumbering", () => {
                     ],
                 });
                 const tree = new Formatter().format(abstractNumbering);
-                expect(tree["w:lvl"]).to.include({
+                expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({
                     "w:rPr": [{ "w:caps": { _attr: { "w:val": true } } }],
                 });
             });
@@ -391,7 +391,7 @@ describe.only("AbstractNumbering", () => {
                 });
 
                 const tree = new Formatter().format(abstractNumbering);
-                expect(tree["w:lvl"]).to.include({
+                expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({
                     "w:rPr": [{ "w:strike": { _attr: { "w:val": true } } }],
                 });
             });
@@ -412,7 +412,7 @@ describe.only("AbstractNumbering", () => {
                     ],
                 });
                 const tree = new Formatter().format(abstractNumbering);
-                expect(tree["w:lvl"]).to.include({
+                expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({
                     "w:rPr": [{ "w:dstrike": { _attr: { "w:val": true } } }],
                 });
             });
@@ -433,7 +433,7 @@ describe.only("AbstractNumbering", () => {
                     ],
                 });
                 const tree = new Formatter().format(abstractNumbering);
-                expect(tree["w:lvl"]).to.include({
+                expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({
                     "w:rPr": [{ "w:vertAlign": { _attr: { "w:val": "subscript" } } }],
                 });
             });
@@ -454,7 +454,7 @@ describe.only("AbstractNumbering", () => {
                     ],
                 });
                 const tree = new Formatter().format(abstractNumbering);
-                expect(tree["w:lvl"]).to.include({
+                expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({
                     "w:rPr": [{ "w:vertAlign": { _attr: { "w:val": "superscript" } } }],
                 });
             });
@@ -475,7 +475,7 @@ describe.only("AbstractNumbering", () => {
                     ],
                 });
                 const tree = new Formatter().format(abstractNumbering);
-                expect(tree["w:lvl"]).to.include({
+                expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({
                     "w:rPr": [
                         { "w:rFonts": { _attr: { "w:ascii": "Times", "w:cs": "Times", "w:eastAsia": "Times", "w:hAnsi": "Times" } } },
                     ],
@@ -498,7 +498,7 @@ describe.only("AbstractNumbering", () => {
                     ],
                 });
                 const tree = new Formatter().format(abstractNumbering);
-                expect(tree["w:lvl"]).to.include({
+                expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({
                     "w:rPr": [{ "w:b": { _attr: { "w:val": true } } }],
                 });
             });
@@ -519,7 +519,7 @@ describe.only("AbstractNumbering", () => {
                     ],
                 });
                 const tree = new Formatter().format(abstractNumbering);
-                expect(tree["w:lvl"]).to.include({
+                expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({
                     "w:rPr": [{ "w:i": { _attr: { "w:val": true } } }],
                 });
             });
@@ -540,7 +540,7 @@ describe.only("AbstractNumbering", () => {
                     ],
                 });
                 const tree = new Formatter().format(abstractNumbering);
-                expect(tree["w:lvl"]).to.include({
+                expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({
                     "w:rPr": [{ "w:highlight": { _attr: { "w:val": "005599" } } }],
                 });
             });
@@ -565,7 +565,7 @@ describe.only("AbstractNumbering", () => {
                     ],
                 });
                 const tree = new Formatter().format(abstractNumbering);
-                expect(tree["w:lvl"]).to.include({
+                expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({
                     "w:rPr": [{ "w:shd": { _attr: { "w:val": "pct10", "w:fill": "00FFFF", "w:color": "FF0000" } } }],
                 });
             });
@@ -587,7 +587,7 @@ describe.only("AbstractNumbering", () => {
                         ],
                     });
                     const tree = new Formatter().format(abstractNumbering);
-                    expect(tree["w:lvl"]).to.include({
+                    expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({
                         "w:rPr": [{ "w:u": { _attr: { "w:val": "single" } } }],
                     });
                 });
@@ -610,7 +610,7 @@ describe.only("AbstractNumbering", () => {
                         ],
                     });
                     const tree = new Formatter().format(abstractNumbering);
-                    expect(tree["w:lvl"]).to.include({
+                    expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({
                         "w:rPr": [{ "w:u": { _attr: { "w:val": "double" } } }],
                     });
                 });
@@ -634,7 +634,7 @@ describe.only("AbstractNumbering", () => {
                         ],
                     });
                     const tree = new Formatter().format(abstractNumbering);
-                    expect(tree["w:lvl"]).to.include({
+                    expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({
                         "w:rPr": [{ "w:u": { _attr: { "w:val": "double", "w:color": "005599" } } }],
                     });
                 });
@@ -656,7 +656,7 @@ describe.only("AbstractNumbering", () => {
                     ],
                 });
                 const tree = new Formatter().format(abstractNumbering);
-                expect(tree["w:lvl"]).to.include({
+                expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({
                     "w:rPr": [{ "w:color": { _attr: { "w:val": "123456" } } }],
                 });
             });
