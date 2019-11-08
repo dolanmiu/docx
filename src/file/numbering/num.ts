@@ -23,7 +23,7 @@ class NumAttributes extends XmlAttributeComponent<INumAttributesProperties> {
 export class ConcreteNumbering extends XmlComponent {
     public readonly id: number;
 
-    constructor(numId: number, abstractNumId: number) {
+    constructor(numId: number, abstractNumId: number, public readonly reference?: string) {
         super("w:num");
         this.root.push(
             new NumAttributes({

@@ -15,14 +15,10 @@ class AbstractNumberingAttributes extends XmlAttributeComponent<IAbstractNumberi
     };
 }
 
-export interface IAbstractNumberingOptions {
-    readonly levels: ILevelsOptions[];
-}
-
 export class AbstractNumbering extends XmlComponent {
     public readonly id: number;
 
-    constructor(id: number, options: IAbstractNumberingOptions) {
+    constructor(id: number, levelOptions: ILevelsOptions[]) {
         super("w:abstractNum");
         this.root.push(
             new AbstractNumberingAttributes({
@@ -33,7 +29,7 @@ export class AbstractNumbering extends XmlComponent {
         this.root.push(new MultiLevelType("hybridMultilevel"));
         this.id = id;
 
-        for (const option of options.levels) {
+        for (const option of levelOptions) {
             this.root.push(new Level(option));
         }
     }

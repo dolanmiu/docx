@@ -8,7 +8,7 @@ describe("Numbering", () => {
     describe("#constructor", () => {
         it("creates a default numbering with one abstract and one concrete instance", () => {
             const numbering = new Numbering({
-                levels: [],
+                config: [],
             });
 
             const tree = new Formatter().format(numbering);

@@ -629,7 +629,7 @@ describe("Paragraph", () => {
                         "w:pPr": [
                             { "w:pStyle": { _attr: { "w:val": "ListParagraph" } } },
                             {
-                                "w:numPr": [{ "w:ilvl": { _attr: { "w:val": 0 } } }, { "w:numId": { _attr: { "w:val": "__test id__" } } }],
+                                "w:numPr": [{ "w:ilvl": { _attr: { "w:val": 0 } } }, { "w:numId": { _attr: { "w:val": "{test id}" } } }],
                             },
                         ],
                     },

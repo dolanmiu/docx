@@ -24,7 +24,7 @@ class NumberId extends XmlComponent {
         super("w:numId");
         this.root.push(
             new Attributes({
-                val: typeof id === "string" ? `__${id}__` : id,
+                val: typeof id === "string" ? `{${id}}` : id,
             }),
         );
     }

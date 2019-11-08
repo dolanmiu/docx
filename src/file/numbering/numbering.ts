@@ -3,17 +3,25 @@ import { AlignmentType } from "file/paragraph";
 import { IXmlableObject, XmlComponent } from "file/xml-components";
 
 import { DocumentAttributes } from "../document/document-attributes";
-import { AbstractNumbering, IAbstractNumberingOptions } from "./abstract-numbering";
+import { AbstractNumbering } from "./abstract-numbering";
+import { ILevelsOptions } from "./level";
 import { ConcreteNumbering } from "./num";
+
+export interface INumberingOptions {
+    readonly config: Array<{
+        readonly levels: ILevelsOptions[];
+        readonly reference: string;
+    }>;
+}
 
 export class Numbering extends XmlComponent {
     // tslint:disable-next-line:readonly-keyword
     private nextId: number;
 
-    private readonly abstractNumbering: XmlComponent[] = [];
-    private readonly concreteNumbering: XmlComponent[] = [];
+    private readonly abstractNumbering: AbstractNumbering[] = [];
+    private readonly concreteNumbering: ConcreteNumbering[] = [];
 
-    constructor(options: IAbstractNumberingOptions) {
+    constructor(options: INumberingOptions) {
         super("w:numbering");
         this.root.push(
             new DocumentAttributes({
@@ -39,114 +47,114 @@ export class Numbering extends XmlComponent {
 
         this.nextId = 0;
 
-        const abstractNumbering = this.createAbstractNumbering({
-            levels: [
-                {
-                    level: 0,
-                    format: "bullet",
-                    text: "\u25CF",
-                    alignment: AlignmentType.LEFT,
-                    style: {
-                        paragraph: {
-                            indent: { left: 720, hanging: 360 },
-                        },
+        const abstractNumbering = this.createAbstractNumbering([
+            {
+                level: 0,
+                format: "bullet",
+                text: "\u25CF",
+                alignment: AlignmentType.LEFT,
+                style: {
+                    paragraph: {
+                        indent: { left: 720, hanging: 360 },
                     },
                 },
-                {
-                    level: 1,
-                    format: "bullet",
-                    text: "\u25CB",
-                    alignment: AlignmentType.LEFT,
-                    style: {
-                        paragraph: {
-                            indent: { left: 1440, hanging: 360 },
-                        },
+            },
+            {
+                level: 1,
+                format: "bullet",
+                text: "\u25CB",
+                alignment: AlignmentType.LEFT,
+                style: {
+                    paragraph: {
+                        indent: { left: 1440, hanging: 360 },
                     },
                 },
-                {
-                    level: 2,
-                    format: "bullet",
-                    text: "\u25A0",
-                    alignment: AlignmentType.LEFT,
-                    style: {
-                        paragraph: {
-                            indent: { left: 2160, hanging: 360 },
-                        },
+            },
+            {
+                level: 2,
+                format: "bullet",
+                text: "\u25A0",
+                alignment: AlignmentType.LEFT,
+                style: {
+                    paragraph: {
+                        indent: { left: 2160, hanging: 360 },
                     },
                 },
-                {
-                    level: 3,
-                    format: "bullet",
-                    text: "\u25CF",
-                    alignment: AlignmentType.LEFT,
-                    style: {
-                        paragraph: {
-                            indent: { left: 2880, hanging: 360 },
-                        },
+            },
+            {
+                level: 3,
+                format: "bullet",
+                text: "\u25CF",
+                alignment: AlignmentType.LEFT,
+                style: {
+                    paragraph: {
+                        indent: { left: 2880, hanging: 360 },
                     },
                 },
-                {
-                    level: 4,
-                    format: "bullet",
-                    text: "\u25CB",
-                    alignment: AlignmentType.LEFT,
-                    style: {
-                        paragraph: {
-                            indent: { left: 3600, hanging: 360 },
-                        },
+            },
+            {
+                level: 4,
+                format: "bullet",
+                text: "\u25CB",
+                alignment: AlignmentType.LEFT,
+                style: {
+                    paragraph: {
+                        indent: { left: 3600, hanging: 360 },
                     },
                 },
-                {
-                    level: 5,
-                    format: "bullet",
-                    text: "\u25A0",
-                    alignment: AlignmentType.LEFT,
-                    style: {
-                        paragraph: {
-                            indent: { left: 4320, hanging: 360 },
-                        },
+            },
+            {
+                level: 5,
+                format: "bullet",
+                text: "\u25A0",
+                alignment: AlignmentType.LEFT,
+                style: {
+                    paragraph: {
+                        indent: { left: 4320, hanging: 360 },
                     },
                 },
-                {
-                    level: 6,
-                    format: "bullet",
-                    text: "\u25CF",
-                    alignment: AlignmentType.LEFT,
-                    style: {
-                        paragraph: {
-                            indent: { left: 5040, hanging: 360 },
-                        },
+            },
+            {
+                level: 6,
+                format: "bullet",
+                text: "\u25CF",
+                alignment: AlignmentType.LEFT,
+                style: {
+                    paragraph: {
+                        indent: { left: 5040, hanging: 360 },
                     },
                 },
-                {
-                    level: 7,
-                    format: "bullet",
-                    text: "\u25CF",
-                    alignment: AlignmentType.LEFT,
-                    style: {
-                        paragraph: {
-                            indent: { left: 5760, hanging: 360 },
-                        },
+            },
+            {
+                level: 7,
+                format: "bullet",
+                text: "\u25CF",
+                alignment: AlignmentType.LEFT,
+                style: {
+                    paragraph: {
+                        indent: { left: 5760, hanging: 360 },
                     },
                 },
-                {
-                    level: 8,
-                    format: "bullet",
-                    text: "\u25CF",
-                    alignment: AlignmentType.LEFT,
-                    style: {
-                        paragraph: {
-                            indent: { left: 6480, hanging: 360 },
-                        },
+            },
+            {
+                level: 8,
+                format: "bullet",
+                text: "\u25CF",
+                alignment: AlignmentType.LEFT,
+                style: {
+                    paragraph: {
+                        indent: { left: 6480, hanging: 360 },
                     },
                 },
-            ],
-        });
+            },
+        ]);
 
         this.createConcreteNumbering(abstractNumbering);
 
-        const currentAbstractNumbering = this.createAbstractNumbering(options);
-        this.createConcreteNumbering(currentAbstractNumbering);
+        for (const con of options.config) {
+            const currentAbstractNumbering = this.createAbstractNumbering(con.levels);
+            this.createConcreteNumbering(currentAbstractNumbering, con.reference);
+        }
     }
 
     public prepForXml(): IXmlableObject | undefined {
@@ -155,15 +163,19 @@ export class Numbering extends XmlComponent {
         return super.prepForXml();
     }
 
-    private createConcreteNumbering(abstractNumbering: AbstractNumbering): ConcreteNumbering {
-        const num = new ConcreteNumbering(this.nextId++, abstractNumbering.id);
+    private createConcreteNumbering(abstractNumbering: AbstractNumbering, reference?: string): ConcreteNumbering {
+        const num = new ConcreteNumbering(this.nextId++, abstractNumbering.id, reference);
         this.concreteNumbering.push(num);
         return num;
     }
 
-    private createAbstractNumbering(options: IAbstractNumberingOptions): AbstractNumbering {
+    private createAbstractNumbering(options: ILevelsOptions[]): AbstractNumbering {
         const num = new AbstractNumbering(this.nextId++, options);
         this.abstractNumbering.push(num);
         return num;
+    }
+
+    public get ConcreteNumbering(): ConcreteNumbering[] {
+        return this.concreteNumbering;
     }
 }
