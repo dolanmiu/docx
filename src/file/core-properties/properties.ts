@@ -1,6 +1,7 @@
 import { XmlComponent } from "file/xml-components";
 
 import { DocumentAttributes } from "../document/document-attributes";
+import { INumberingOptions } from "../numbering";
 import { IStylesOptions } from "../styles";
 import { Created, Creator, Description, Keywords, LastModifiedBy, Modified, Revision, Subject, Title } from "./components";
 
@@ -14,6 +15,7 @@ export interface IPropertiesOptions {
     readonly revision?: string;
     readonly externalStyles?: string;
     readonly styles?: IStylesOptions;
+    readonly numbering?: INumberingOptions;
 }
 
 export class CoreProperties extends XmlComponent {

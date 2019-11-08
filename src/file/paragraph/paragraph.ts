@@ -1,6 +1,5 @@
 // http://officeopenxml.com/WPparagraph.php
 import { FootnoteReferenceRun } from "file/footnotes/footnote/run/reference-run";
-import { Num } from "file/numbering/num";
 import { XmlComponent } from "file/xml-components";
 
 import { Alignment, AlignmentType } from "./formatting/alignment";
@@ -41,7 +40,7 @@ export interface IParagraphOptions {
         readonly level: number;
     };
     readonly numbering?: {
-        readonly num: Num;
+        readonly reference: string;
         readonly level: number;
         readonly custom?: boolean;
     };
@@ -141,7 +140,7 @@ export class Paragraph extends XmlComponent {
             if (!options.numbering.custom) {
                 this.properties.push(new Style("ListParagraph"));
             }
-            this.properties.push(new NumberProperties(options.numbering.num.id, options.numbering.level));
+            this.properties.push(new NumberProperties(options.numbering.reference, options.numbering.level));
         }
 
         if (options.children) {

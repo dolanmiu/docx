@@ -20,11 +20,7 @@ This method is useful for adding different [text](text.md) with different styles
 
 ```ts
 const paragraph = new Paragraph({
-    children: [
-        new TextRun("Lorem Ipsum Foo Bar"),
-        new TextRun("Hello World"),
-        new SymbolRun("F071"),
-    ],
+    children: [new TextRun("Lorem Ipsum Foo Bar"), new TextRun("Hello World"), new SymbolRun("F071")],
 });
 ```
 
@@ -60,27 +56,27 @@ doc.addSection({
 
 This is the list of options for a paragraph. A detailed explanation is below:
 
-| Property                      | Type                                                                                                                | Mandatory? | Possible Values                                                                                            |
-| ----------------------------- | ------------------------------------------------------------------------------------------------------------------- | ---------- | ---------------------------------------------------------------------------------------------------------- |
-| [text](#text)                 | `string`                                                                                                            | Optional   |                                                                                                            |
-| [heading](#heading)           | `HeadingLevel`                                                                                                      | Optional   | `HEADING_1`, `HEADING_2`, `HEADING_3`, `HEADING_4`, `HEADING_5`, `HEADING_6`, `TITLE`                      |
-| [border](#border)             | `IBorderOptions`                                                                                                    | Optional   | `top`, `bottom`, `left`, `right`. Each of these are of type IBorderPropertyOptions. Click here for Example |
-| [spacing](#spacing)           | `ISpacingProperties`                                                                                                | Optional   | See below for ISpacingProperties                                                                           |
+| Property                       | Type                                                                                                                | Mandatory? | Possible Values                                                                                            |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------- | ---------- | ---------------------------------------------------------------------------------------------------------- |
+| [text](#text)                  | `string`                                                                                                            | Optional   |                                                                                                            |
+| [heading](#heading)            | `HeadingLevel`                                                                                                      | Optional   | `HEADING_1`, `HEADING_2`, `HEADING_3`, `HEADING_4`, `HEADING_5`, `HEADING_6`, `TITLE`                      |
+| [border](#border)              | `IBorderOptions`                                                                                                    | Optional   | `top`, `bottom`, `left`, `right`. Each of these are of type IBorderPropertyOptions. Click here for Example |
+| [spacing](#spacing)            | `ISpacingProperties`                                                                                                | Optional   | See below for ISpacingProperties                                                                           |
 | [outlineLevel](#outline-level) | `number`                                                                                                            | Optional   |                                                                                                            |
-| alignment                     | `AlignmentType`                                                                                                     | Optional   |                                                                                                            |
-| heading                       | `HeadingLevel`                                                                                                      | Optional   |                                                                                                            |
-| bidirectional                 | `boolean`                                                                                                           | Optional   |                                                                                                            |
-| thematicBreak                 | `boolean`                                                                                                           | Optional   |                                                                                                            |
-| pageBreakBefore               | `boolean`                                                                                                           | Optional   |                                                                                                            |
-| contextualSpacing             | `boolean`                                                                                                           | Optional   |                                                                                                            |
-| indent                        | `IIndentAttributesProperties`                                                                                       | Optional   |                                                                                                            |
-| keepLines                     | `boolean`                                                                                                           | Optional   |                                                                                                            |
-| keepNext                      | `boolean`                                                                                                           | Optional   |                                                                                                            |
-| children                      | `(TextRun or PictureRun or Hyperlink)[]`                                                                            | Optional   |                                                                                                            |
-| style                         | `string`                                                                                                            | Optional   |                                                                                                            |
-| tabStop                       | `{ left?: ITabStopOptions; right?: ITabStopOptions; maxRight?: { leader: LeaderType; }; center?: ITabStopOptions }` | Optional   |                                                                                                            |
-| bullet                        | `{ level: number }`                                                                                                 | Optional   |                                                                                                            |
-| numbering                     | `{ num: Num; level: number; custom?: boolean }`                                                                     | Optional   |                                                                                                            |
+| alignment                      | `AlignmentType`                                                                                                     | Optional   |                                                                                                            |
+| heading                        | `HeadingLevel`                                                                                                      | Optional   |                                                                                                            |
+| bidirectional                  | `boolean`                                                                                                           | Optional   |                                                                                                            |
+| thematicBreak                  | `boolean`                                                                                                           | Optional   |                                                                                                            |
+| pageBreakBefore                | `boolean`                                                                                                           | Optional   |                                                                                                            |
+| contextualSpacing              | `boolean`                                                                                                           | Optional   |                                                                                                            |
+| indent                         | `IIndentAttributesProperties`                                                                                       | Optional   |                                                                                                            |
+| keepLines                      | `boolean`                                                                                                           | Optional   |                                                                                                            |
+| keepNext                       | `boolean`                                                                                                           | Optional   |                                                                                                            |
+| children                       | `(TextRun or PictureRun or Hyperlink)[]`                                                                            | Optional   |                                                                                                            |
+| style                          | `string`                                                                                                            | Optional   |                                                                                                            |
+| tabStop                        | `{ left?: ITabStopOptions; right?: ITabStopOptions; maxRight?: { leader: LeaderType; }; center?: ITabStopOptions }` | Optional   |                                                                                                            |
+| bullet                         | `{ level: number }`                                                                                                 | Optional   |                                                                                                            |
+| numbering                      | `{ num: ConcreteNumbering; level: number; custom?: boolean }`                                                       | Optional   |                                                                                                            |
 
 ## Text
 
@@ -252,10 +248,7 @@ To move to a new page (insert a page break):
 
 ```ts
 const paragraph = new docx.Paragraph({
-    children: [
-        new TextRun("Amazing Heading"),
-        new PageBreak(),
-    ]
+    children: [new TextRun("Amazing Heading"), new PageBreak()],
 });
 ```
 

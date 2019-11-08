@@ -4,6 +4,7 @@ import * as xml from "xml";
 import { File } from "file";
 import { Formatter } from "../formatter";
 import { ImageReplacer } from "./image-replacer";
+import { NumberingReplacer } from "./numbering-replacer";
 
 interface IXmlifyedFile {
     readonly data: string;
@@ -30,10 +31,12 @@ interface IXmlifyedFileMapping {
 export class Compiler {
     private readonly formatter: Formatter;
     private readonly imageReplacer: ImageReplacer;
+    private readonly numberingReplacer: NumberingReplacer;
 
     constructor() {
         this.formatter = new Formatter();
         this.imageReplacer = new ImageReplacer();
+        this.numberingReplacer = new NumberingReplacer();
     }
 
     public compile(file: File, prettifyXml?: boolean): JSZip {
@@ -89,8 +92,9 @@ export class Compiler {
             Document: {
                 data: (() => {
                     const xmlData = this.imageReplacer.replace(documentXmlData, documentMediaDatas, documentRelationshipCount);
+                    const referenedXmlData = this.numberingReplacer.replace(xmlData, file.Numbering.ConcreteNumbering);
 
-                    return xmlData;
+                    return referenedXmlData;
                 })(),
                 path: "word/document.xml",
             },

@@ -2,9 +2,7 @@ import { Attributes, XmlAttributeComponent, XmlComponent } from "file/xml-compon
 import {
     Alignment,
     AlignmentType,
-    IIndentAttributesProperties,
     Indent,
-    ISpacingProperties,
     KeepLines,
     KeepNext,
     Spacing,
@@ -15,7 +13,7 @@ import {
 import { ParagraphProperties } from "../paragraph/properties";
 import * as formatting from "../paragraph/run/formatting";
 import { RunProperties } from "../paragraph/run/properties";
-import { UnderlineType } from "../paragraph/run/underline";
+import { IParagraphStyleOptions2, IRunStyleOptions } from "../styles/style-options";
 
 interface ILevelAttributesProperties {
     readonly ilvl?: number;
@@ -63,7 +61,7 @@ class LevelText extends XmlComponent {
 }
 
 class LevelJc extends XmlComponent {
-    constructor(value: string) {
+    constructor(value: AlignmentType) {
         super("w:lvlJc");
         this.root.push(
             new Attributes({
@@ -77,6 +75,19 @@ export enum LevelSuffix {
     NOTHING = "nothing",
     SPACE = "space",
     TAB = "tab",
+}
+
+export interface ILevelsOptions {
+    readonly level: number;
+    readonly format?: string;
+    readonly text?: string;
+    readonly alignment?: AlignmentType;
+    readonly start?: number;
+    readonly suffix?: LevelSuffix;
+    readonly style?: {
+        readonly run?: IRunStyleOptions;
+        readonly paragraph?: IParagraphStyleOptions2;
+    };
 }
 
 class Suffix extends XmlComponent {
@@ -94,7 +105,7 @@ export class LevelBase extends XmlComponent {
     private readonly paragraphProperties: ParagraphProperties;
     private readonly runProperties: RunProperties;
 
-    constructor(level: number, start?: number, numberFormat?: string, levelText?: string, lvlJc?: string) {
+    constructor({ level, format, text, alignment = AlignmentType.START, start = 1, style, suffix }: ILevelsOptions) {
         super("w:lvl");
         this.root.push(
             new LevelAttributes({
@@ -103,17 +114,15 @@ export class LevelBase extends XmlComponent {
             }),
         );
 
-        if (start !== undefined) {
-            this.root.push(new Start(start));
+        this.root.push(new Start(start));
+        this.root.push(new LevelJc(alignment));
+
+        if (format) {
+            this.root.push(new NumberFormat(format));
         }
-        if (numberFormat !== undefined) {
-            this.root.push(new NumberFormat(numberFormat));
-        }
-        if (levelText !== undefined) {
-            this.root.push(new LevelText(levelText));
-        }
-        if (lvlJc !== undefined) {
-            this.root.push(new LevelJc(lvlJc));
+
+        if (text) {
+            this.root.push(new LevelText(text));
         }
 
         this.paragraphProperties = new ParagraphProperties({});
@@ -121,156 +130,112 @@ export class LevelBase extends XmlComponent {
 
         this.root.push(this.paragraphProperties);
         this.root.push(this.runProperties);
-    }
 
-    public setSuffix(value: LevelSuffix): LevelBase {
-        this.root.push(new Suffix(value));
-        return this;
-    }
+        if (suffix) {
+            this.root.push(new Suffix(suffix));
+        }
 
-    public addParagraphProperty(property: XmlComponent): Level {
-        this.paragraphProperties.push(property);
-        return this;
-    }
+        if (style) {
+            if (style.run) {
+                if (style.run.size) {
+                    this.runProperties.push(new formatting.Size(style.run.size));
+                }
 
-    public addRunProperty(property: XmlComponent): Level {
-        this.runProperties.push(property);
-        return this;
-    }
+                if (style.run.bold) {
+                    this.runProperties.push(new formatting.Bold());
+                }
 
-    // ----------  Run formatting ---------------------- //
+                if (style.run.italics) {
+                    this.runProperties.push(new formatting.Italics());
+                }
 
-    public size(twips: number): Level {
-        this.addRunProperty(new formatting.Size(twips));
-        return this;
-    }
+                if (style.run.smallCaps) {
+                    this.runProperties.push(new formatting.SmallCaps());
+                }
 
-    public bold(): Level {
-        this.addRunProperty(new formatting.Bold());
-        return this;
-    }
+                if (style.run.allCaps) {
+                    this.runProperties.push(new formatting.Caps());
+                }
 
-    public italics(): Level {
-        this.addRunProperty(new formatting.Italics());
-        return this;
-    }
+                if (style.run.strike) {
+                    this.runProperties.push(new formatting.Strike());
+                }
 
-    public smallCaps(): Level {
-        this.addRunProperty(new formatting.SmallCaps());
-        return this;
-    }
+                if (style.run.doubleStrike) {
+                    this.runProperties.push(new formatting.DoubleStrike());
+                }
 
-    public allCaps(): Level {
-        this.addRunProperty(new formatting.Caps());
-        return this;
-    }
+                if (style.run.subScript) {
+                    this.runProperties.push(new formatting.SubScript());
+                }
 
-    public strike(): Level {
-        this.addRunProperty(new formatting.Strike());
-        return this;
-    }
+                if (style.run.superScript) {
+                    this.runProperties.push(new formatting.SuperScript());
+                }
 
-    public doubleStrike(): Level {
-        this.addRunProperty(new formatting.DoubleStrike());
-        return this;
-    }
+                if (style.run.underline) {
+                    this.runProperties.push(new formatting.Underline(style.run.underline.type, style.run.underline.color));
+                }
 
-    public subScript(): Level {
-        this.addRunProperty(new formatting.SubScript());
-        return this;
-    }
+                if (style.run.color) {
+                    this.runProperties.push(new formatting.Color(style.run.color));
+                }
 
-    public superScript(): Level {
-        this.addRunProperty(new formatting.SuperScript());
-        return this;
-    }
+                if (style.run.font) {
+                    this.runProperties.push(new formatting.RunFonts(style.run.font));
+                }
 
-    public underline(underlineType?: UnderlineType, color?: string): Level {
-        this.addRunProperty(new formatting.Underline(underlineType, color));
-        return this;
-    }
+                if (style.run.highlight) {
+                    this.runProperties.push(new formatting.Highlight(style.run.highlight));
+                }
 
-    public color(color: string): Level {
-        this.addRunProperty(new formatting.Color(color));
-        return this;
-    }
+                if (style.run.shadow) {
+                    this.runProperties.push(new formatting.Shading(style.run.shadow.type, style.run.shadow.fill, style.run.shadow.color));
+                }
+            }
 
-    public font(fontName: string): Level {
-        this.addRunProperty(new formatting.RunFonts(fontName));
-        return this;
-    }
+            if (style.paragraph) {
+                if (style.paragraph.alignment) {
+                    this.paragraphProperties.push(new Alignment(style.paragraph.alignment));
+                }
 
-    public highlight(color: string): Level {
-        this.addRunProperty(new formatting.Highlight(color));
-        return this;
-    }
+                if (style.paragraph.thematicBreak) {
+                    this.paragraphProperties.push(new ThematicBreak());
+                }
 
-    public shadow(value: string, fill: string, color: string): Level {
-        this.addRunProperty(new formatting.Shading(value, fill, color));
-        return this;
-    }
-    // --------------------- Paragraph formatting ------------------------ //
+                if (style.paragraph.rightTabStop) {
+                    this.paragraphProperties.push(new TabStop(TabStopType.RIGHT, style.paragraph.rightTabStop));
+                }
 
-    public center(): Level {
-        this.addParagraphProperty(new Alignment(AlignmentType.CENTER));
-        return this;
-    }
+                if (style.paragraph.leftTabStop) {
+                    this.paragraphProperties.push(new TabStop(TabStopType.LEFT, style.paragraph.leftTabStop));
+                }
 
-    public left(): Level {
-        this.addParagraphProperty(new Alignment(AlignmentType.LEFT));
-        return this;
-    }
+                if (style.paragraph.indent) {
+                    this.paragraphProperties.push(new Indent(style.paragraph.indent));
+                }
 
-    public right(): Level {
-        this.addParagraphProperty(new Alignment(AlignmentType.RIGHT));
-        return this;
-    }
+                if (style.paragraph.spacing) {
+                    this.paragraphProperties.push(new Spacing(style.paragraph.spacing));
+                }
 
-    public justified(): Level {
-        this.addParagraphProperty(new Alignment(AlignmentType.BOTH));
-        return this;
-    }
+                if (style.paragraph.keepNext) {
+                    this.paragraphProperties.push(new KeepNext());
+                }
 
-    public thematicBreak(): Level {
-        this.addParagraphProperty(new ThematicBreak());
-        return this;
-    }
-
-    public rightTabStop(position: number): Level {
-        return this.addParagraphProperty(new TabStop(TabStopType.RIGHT, position));
-    }
-
-    public leftTabStop(position: number): Level {
-        this.addParagraphProperty(new TabStop(TabStopType.LEFT, position));
-        return this;
-    }
-
-    public indent(attrs: IIndentAttributesProperties): Level {
-        this.addParagraphProperty(new Indent(attrs));
-        return this;
-    }
-
-    public spacing(params: ISpacingProperties): Level {
-        this.addParagraphProperty(new Spacing(params));
-        return this;
-    }
-
-    public keepNext(): Level {
-        this.addParagraphProperty(new KeepNext());
-        return this;
-    }
-
-    public keepLines(): Level {
-        this.addParagraphProperty(new KeepLines());
-        return this;
+                if (style.paragraph.keepLines) {
+                    this.paragraphProperties.push(new KeepLines());
+                }
+            }
+        }
     }
 }
 
 export class Level extends LevelBase {
     // This is the level that sits under abstractNum. We make a
     // handful of properties required
-    constructor(level: number, numberFormat: string, levelText: string, lvlJc: string) {
-        super(level, 1, numberFormat, levelText, lvlJc);
+    constructor(options: ILevelsOptions) {
+        super(options);
     }
 }
 
