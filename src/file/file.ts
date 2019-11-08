@@ -25,6 +25,7 @@ import { ExternalStylesFactory } from "./styles/external-styles-factory";
 import { DefaultStylesFactory } from "./styles/factory";
 import { Table } from "./table";
 import { TableOfContents } from "./table-of-contents";
+import * as shortid from "shortid";
 
 export interface ISectionOptions {
     readonly headers?: {
@@ -133,7 +134,7 @@ export class File {
 
     public createHyperlink(link: string, text?: string): Hyperlink {
         const newText = text === undefined ? link : text;
-        const hyperlink = new Hyperlink(newText, this.docRelationships.RelationshipCount);
+        const hyperlink = new Hyperlink(newText, shortid.generate().toLowerCase());
         this.docRelationships.createRelationship(
             hyperlink.linkId,
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink",
@@ -145,7 +146,7 @@ export class File {
 
     public createInternalHyperLink(anchor: string, text?: string): Hyperlink {
         const newText = text === undefined ? anchor : text;
-        const hyperlink = new Hyperlink(newText, this.docRelationships.RelationshipCount, anchor);
+        const hyperlink = new Hyperlink(newText, shortid.generate().toLowerCase(), anchor);
         // NOTE: unlike File#createHyperlink(), since the link is to an internal bookmark
         // we don't need to create a new relationship.
         return hyperlink;
