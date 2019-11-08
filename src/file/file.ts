@@ -1,3 +1,4 @@
+import * as shortid from "shortid";
 import { AppProperties } from "./app-properties/app-properties";
 import { ContentTypes } from "./content-types/content-types";
 import { CoreProperties, IPropertiesOptions } from "./core-properties";
@@ -25,7 +26,6 @@ import { ExternalStylesFactory } from "./styles/external-styles-factory";
 import { DefaultStylesFactory } from "./styles/factory";
 import { Table } from "./table";
 import { TableOfContents } from "./table-of-contents";
-import * as shortid from "shortid";
 
 export interface ISectionOptions {
     readonly headers?: {
