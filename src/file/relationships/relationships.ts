@@ -16,7 +16,7 @@ export class Relationships extends XmlComponent {
         this.root.push(relationship);
     }
 
-    public createRelationship(id: number, type: RelationshipType, target: string, targetMode?: TargetModeType): Relationship {
+    public createRelationship(id: number | string, type: RelationshipType, target: string, targetMode?: TargetModeType): Relationship {
         const relationship = new Relationship(`rId${id}`, type, target, targetMode);
         this.addRelationship(relationship);
 

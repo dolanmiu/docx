@@ -8,7 +8,7 @@ describe("Hyperlink", () => {
     let hyperlink: Hyperlink;
 
     beforeEach(() => {
-        hyperlink = new Hyperlink("https://example.com", 0);
+        hyperlink = new Hyperlink("https://example.com", "superid");
     });
 
     describe("#constructor()", () => {
@@ -19,7 +19,7 @@ describe("Hyperlink", () => {
                     {
                         _attr: {
                             "w:history": 1,
-                            "r:id": "rId1",
+                            "r:id": "rIdsuperid",
                         },
                     },
                     {
@@ -34,7 +34,7 @@ describe("Hyperlink", () => {
 
         describe("with optional anchor parameter", () => {
             beforeEach(() => {
-                hyperlink = new Hyperlink("Anchor Text", 0, "anchor");
+                hyperlink = new Hyperlink("Anchor Text", "superid2", "anchor");
             });
 
             it("should create an internal link with anchor tag", () => {
