@@ -1,7 +1,7 @@
 {
   "name": "docx",
   "version": "5.0.0-rc7",
-  "description": "Generate .docx documents with JavaScript (formerly Office-Clippy)",
+  "description": "Easily generate .docx files with JS/TS with a nice declarative API. Works for Node and on the Browser.",
   "main": "build/index.js",
   "scripts": {
     "pretest": "rimraf ./build",
