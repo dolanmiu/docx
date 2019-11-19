@@ -2,7 +2,7 @@
 import { XmlComponent } from "file/xml-components";
 import { TableGrid } from "./grid";
 import { TableCell, VerticalMergeType, WidthType } from "./table-cell";
-import { ITableFloatOptions, TableProperties } from "./table-properties";
+import { ITableBordersOptions, ITableFloatOptions, TableProperties } from "./table-properties";
 import { TableLayoutType } from "./table-properties/table-layout";
 import { TableRow } from "./table-row";
 
@@ -32,6 +32,7 @@ export interface ITableOptions {
     };
     readonly float?: ITableFloatOptions;
     readonly layout?: TableLayoutType;
+    readonly borders?: ITableBordersOptions;
 }
 
 export class Table extends XmlComponent {
@@ -44,11 +45,17 @@ export class Table extends XmlComponent {
         margins: { marginUnitType, top, bottom, right, left } = { marginUnitType: WidthType.AUTO, top: 0, bottom: 0, right: 0, left: 0 },
         float,
         layout,
+        borders,
     }: ITableOptions) {
         super("w:tbl");
         this.properties = new TableProperties();
         this.root.push(this.properties);
-        this.properties.setBorder();
+
+        if (borders) {
+            this.properties.setBorder(borders);
+        } else {
+            this.properties.setBorder({});
+        }
 
         if (width) {
             this.properties.setWidth(width.size, width.type);
