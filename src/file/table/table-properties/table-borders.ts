@@ -58,7 +58,7 @@ export class TableBorders extends XmlComponent {
         }
 
         if (options.right) {
-            this.root.push(new TableBordersElement("w:right", options.right.style, 4, 0, "auto"));
+            this.root.push(new TableBordersElement("w:right", options.right.style, options.right.size, 0, options.right.color));
         } else {
             this.root.push(new TableBordersElement("w:right", BorderStyle.SINGLE, 4, 0, "auto"));
         }
