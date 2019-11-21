@@ -18,9 +18,9 @@ doc.addSection({
                     bold: true,
                 }),
                 new TextRun({
-                    text: "Github is the best",
+                    text: "\tGithub is the best",
                     bold: true,
-                }).tab(),
+                }),
             ],
         }),
     ],

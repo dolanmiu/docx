@@ -12,7 +12,7 @@ Simply call the relevant methods on the paragraph listed below. Then just add a 
 
 ```ts
 const paragraph = new Paragraph({
-    children: [new TextRun("Hey everyone").bold(), new TextRun("11th November 1999").tab()],
+    children: [new TextRun("Hey everyone").bold(), new TextRun(\t"11th November 1999")],
     tabStops: [
         {
             type: TabStopType.RIGHT,
@@ -26,7 +26,7 @@ The example above will create a left aligned text, and a right aligned text on t
 
 ```ts
 const paragraph = new Paragraph({
-    children: [new TextRun("Second tab stop here I come!").tab().tab()],
+    children: [new TextRun("Second tab stop here I come!")],
     tabStops: [
         {
             type: TabStopType.RIGHT,
@@ -46,7 +46,7 @@ You can add multiple tab stops of the same `type` too.
 
 ```ts
 const paragraph = new Paragraph({
-    children: [new TextRun("Multiple tab stops!").tab().tab()],
+    children: [new TextRun("Multiple tab stops!")],
     tabStops: [
         {
             type: TabStopType.RIGHT,
