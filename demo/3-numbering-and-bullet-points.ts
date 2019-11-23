@@ -42,6 +42,17 @@ const doc = new Document({
                             },
                         },
                     },
+                    {
+                        level: 3,
+                        format: "upperLetter",
+                        text: "%4)",
+                        alignment: AlignmentType.START,
+                        style: {
+                            paragraph: {
+                                indent: { left: 2880, hanging: 2420 },
+                            },
+                        },
+                    },
                 ],
             },
         ],
@@ -100,6 +111,27 @@ doc.addSection({
             text: "Yeah boi",
             bullet: {
                 level: 3,
+            },
+        }),
+        new Paragraph({
+            text: "101 MSXFM",
+            numbering: {
+                reference: "my-crazy-numbering",
+                level: 3,
+            },
+        }),
+        new Paragraph({
+            text: "back to level 1",
+            numbering: {
+                reference: "my-crazy-numbering",
+                level: 1,
+            },
+        }),
+        new Paragraph({
+            text: "back to level 0",
+            numbering: {
+                reference: "my-crazy-numbering",
+                level: 0,
             },
         }),
     ],
