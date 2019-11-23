@@ -22,6 +22,22 @@ const doc = new Document({
                 ],
                 reference: "my-crazy-reference",
             },
+            {
+                levels: [
+                    {
+                        level: 0,
+                        format: "decimal",
+                        text: "%1",
+                        alignment: AlignmentType.START,
+                        style: {
+                            paragraph: {
+                                indent: { left: 720, hanging: 260 },
+                            },
+                        },
+                    },
+                ],
+                reference: "my-number-numbering-reference",
+            },
         ],
     },
 });
@@ -70,6 +86,27 @@ doc.addSection({
             contextualSpacing: false,
             spacing: {
                 before: 200,
+            },
+        }),
+        new Paragraph({
+            text: "Step 1 - Add sugar",
+            numbering: {
+                reference: "my-number-numbering-reference",
+                level: 0,
+            },
+        }),
+        new Paragraph({
+            text: "Step 2 - Add wheat",
+            numbering: {
+                reference: "my-number-numbering-reference",
+                level: 0,
+            },
+        }),
+        new Paragraph({
+            text: "Step 3 - Put in oven",
+            numbering: {
+                reference: "my-number-numbering-reference",
+                level: 0,
             },
         }),
     ],
