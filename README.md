@@ -73,6 +73,8 @@ Read the contribution guidelines [here](https://docx.js.org/#/contribution-guide
 [<img src="https://i.imgur.com/suiH2zc.png" alt="drawing" height="50"/>](https://www.dabblewriter.com/)
 [<img src="https://i.imgur.com/1LjuK2M.png" alt="drawing" height="50"/>](https://turbopatent.com/)
 [<img src="https://i.imgur.com/dHMg0wF.gif" alt="drawing" height="50"/>](http://www.madisoncres.com/)
+[<img src="https://i.imgur.com/QEZXU5b.png" alt="drawing" height="50"/>](https://www.beekast.com/)
+[<img src="https://imgur.com/XVU6aoi.png" alt="drawing" height="50"/>](https://herraizsoto.com/)
 
 ...and many more!
 
