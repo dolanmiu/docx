@@ -13,7 +13,9 @@ const header = new Header({
                 new TextRun({
                     children: ["Page number: ", PageNumber.CURRENT],
                 }),
-                new TextRun(" to ").numberOfTotalPagesSection(),
+                new TextRun({
+                    children: [" to ", PageNumber.TOTAL_PAGES_IN_SECTION],
+                }),
             ],
             alignment: AlignmentType.CENTER,
         }),

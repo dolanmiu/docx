@@ -1,8 +1,7 @@
 // Page numbers
 // Import from 'docx' rather than '../build' if you install from npm
 import * as fs from "fs";
-import { AlignmentType, Document, Header, Packer, PageBreak, Paragraph, TextRun } from "../build";
-import { PageNumber } from "../build/file/paragraph";
+import { AlignmentType, Document, Header, Packer, PageBreak, PageNumber, Paragraph, TextRun } from "../build";
 
 const doc = new Document();
 
