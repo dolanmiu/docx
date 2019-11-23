@@ -238,9 +238,9 @@ class DocumentCreator {
                     bold: true,
                 }),
                 new TextRun({
-                    text: dateText,
+                    text: `\t${dateText}`,
                     bold: true,
-                }).tab(),
+                }),
             ],
         });
     }

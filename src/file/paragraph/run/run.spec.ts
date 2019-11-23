@@ -1,9 +1,11 @@
 import { expect } from "chai";
 
 import { Formatter } from "export/formatter";
+// import { FootnoteReferenceRun } from "file/footnotes/footnote/run/reference-run";
 import { ShadingType } from "file/table";
 
 import { Run } from "./";
+import { PageNumber } from "./run";
 import { UnderlineType } from "./underline";
 
 describe("Run", () => {
@@ -197,17 +199,6 @@ describe("Run", () => {
         });
     });
 
-    describe("#tab()", () => {
-        it("it should add break to the run", () => {
-            const run = new Run({});
-            run.tab();
-            const tree = new Formatter().format(run);
-            expect(tree).to.deep.equal({
-                "w:r": [{ "w:tab": {} }],
-            });
-        });
-    });
-
     describe("#font()", () => {
         it("should set the font as named", () => {
             const run = new Run({
@@ -270,8 +261,10 @@ describe("Run", () => {
 
     describe("#numberOfTotalPages", () => {
         it("should set the run to the RTL mode", () => {
-            const run = new Run({});
-            run.numberOfTotalPages();
+            const run = new Run({
+                children: [PageNumber.TOTAL_PAGES],
+            });
+
             const tree = new Formatter().format(run);
             expect(tree).to.deep.equal({
                 "w:r": [
@@ -286,8 +279,10 @@ describe("Run", () => {
 
     describe("#numberOfTotalPagesSection", () => {
         it("should set the run to the RTL mode", () => {
-            const run = new Run({});
-            run.numberOfTotalPagesSection();
+            const run = new Run({
+                children: [PageNumber.TOTAL_PAGES_IN_SECTION],
+            });
+
             const tree = new Formatter().format(run);
             expect(tree).to.deep.equal({
                 "w:r": [
@@ -302,8 +297,9 @@ describe("Run", () => {
 
     describe("#pageNumber", () => {
         it("should set the run to the RTL mode", () => {
-            const run = new Run({});
-            run.pageNumber();
+            const run = new Run({
+                children: [PageNumber.CURRENT],
+            });
             const tree = new Formatter().format(run);
             expect(tree).to.deep.equal({
                 "w:r": [

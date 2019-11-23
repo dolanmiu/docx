@@ -44,7 +44,9 @@ export interface IParagraphOptions {
         readonly level: number;
         readonly custom?: boolean;
     };
-    readonly children?: Array<TextRun | PictureRun | Hyperlink | SymbolRun | Bookmark | PageBreak | SequentialIdentifier>;
+    readonly children?: Array<
+        TextRun | PictureRun | Hyperlink | SymbolRun | Bookmark | PageBreak | SequentialIdentifier | FootnoteReferenceRun
+    >;
 }
 
 export class Paragraph extends XmlComponent {
@@ -155,11 +157,6 @@ export class Paragraph extends XmlComponent {
                 this.root.push(child);
             }
         }
-    }
-
-    public referenceFootnote(id: number): Paragraph {
-        this.root.push(new FootnoteReferenceRun(id));
-        return this;
     }
 
     public addRunToFront(run: Run): Paragraph {
