@@ -1,5 +1,7 @@
 // http://officeopenxml.com/WPtableGrid.php
 import { XmlComponent } from "file/xml-components";
+
+import { AlignmentType } from "../paragraph";
 import { TableGrid } from "./grid";
 import { TableCell, VerticalMergeType, WidthType } from "./table-cell";
 import { ITableBordersOptions, ITableFloatOptions, TableProperties } from "./table-properties";
@@ -33,6 +35,7 @@ export interface ITableOptions {
     readonly float?: ITableFloatOptions;
     readonly layout?: TableLayoutType;
     readonly borders?: ITableBordersOptions;
+    readonly alignment?: AlignmentType;
 }
 
 export class Table extends XmlComponent {
@@ -46,6 +49,7 @@ export class Table extends XmlComponent {
         float,
         layout,
         borders,
+        alignment,
     }: ITableOptions) {
         super("w:tbl");
         this.properties = new TableProperties();
@@ -102,6 +106,10 @@ export class Table extends XmlComponent {
 
         if (layout) {
             this.properties.setLayout(layout);
+        }
+
+        if (alignment) {
+            this.properties.setAlignment(alignment);
         }
     }
 }

@@ -1,5 +1,6 @@
 import { IgnoreIfEmptyXmlComponent } from "file/xml-components";
 
+import { Alignment, AlignmentType } from "../../paragraph";
 import { ITableShadingAttributesProperties, TableShading } from "../shading";
 import { WidthType } from "../table-cell";
 import { ITableBordersOptions, TableBorders } from "./table-borders";
@@ -45,5 +46,9 @@ export class TableProperties extends IgnoreIfEmptyXmlComponent {
         this.root.push(new TableShading(attrs));
 
         return this;
+    }
+
+    public setAlignment(type: AlignmentType): void {
+        this.root.push(new Alignment(type));
     }
 }
