@@ -1,3 +1,4 @@
+// http://officeopenxml.com/WPtableProperties.php
 import { IgnoreIfEmptyXmlComponent } from "file/xml-components";
 
 import { Alignment, AlignmentType } from "../../paragraph";

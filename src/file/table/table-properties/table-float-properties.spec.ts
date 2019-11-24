@@ -3,11 +3,12 @@ import { expect } from "chai";
 import { Formatter } from "export/formatter";
 
 import { RelativeHorizontalPosition, RelativeVerticalPosition, TableAnchorType, TableFloatProperties } from "./table-float-properties";
+import { OverlapType } from "./table-overlap";
 
 describe("Table Float Properties", () => {
     describe("#constructor", () => {
         it("should construct a TableFloatProperties with all options", () => {
-            const tfp = new TableFloatProperties({
+            const properties = new TableFloatProperties({
                 horizontalAnchor: TableAnchorType.MARGIN,
                 verticalAnchor: TableAnchorType.PAGE,
                 absoluteHorizontalPosition: 10,
@@ -19,8 +20,32 @@ describe("Table Float Properties", () => {
                 leftFromText: 50,
                 rightFromText: 60,
             });
-            const tree = new Formatter().format(tfp);
-            expect(tree).to.be.deep.equal(DEFAULT_TFP);
+            const tree = new Formatter().format(properties);
+            expect(tree).to.deep.equal(DEFAULT_TFP);
+        });
+
+        it("should add overlap", () => {
+            const properties = new TableFloatProperties({
+                overlap: OverlapType.NEVER,
+            });
+            const tree = new Formatter().format(properties);
+
+            expect(tree).to.deep.equal({
+                "w:tblpPr": [
+                    {
+                        _attr: {
+                            overlap: "never",
+                        },
+                    },
+                    {
+                        "w:tblOverlap": {
+                            _attr: {
+                                "w:val": "never",
+                            },
+                        },
+                    },
+                ],
+            });
         });
     });
 });

@@ -1,4 +1,5 @@
 // http://officeopenxml.com/WPalignment.php
+// http://officeopenxml.com/WPtableAlignment.php
 import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
 
 export enum AlignmentType {
