@@ -3,7 +3,7 @@ import { expect } from "chai";
 
 import { Formatter } from "export/formatter";
 
-import { Paragraph } from "../paragraph";
+import { AlignmentType, Paragraph } from "../paragraph";
 import { Table } from "./table";
 // import { WidthType } from "./table-cell";
 import { RelativeHorizontalPosition, RelativeVerticalPosition, TableAnchorType } from "./table-properties";
@@ -208,6 +208,29 @@ describe("Table", () => {
                 .with.has.length.at.least(1);
             expect(tree["w:tbl"][0]).to.deep.equal({
                 "w:tblPr": [DEFAULT_TABLE_PROPERTIES, BORDERS, WIDTHS, { "w:tblLayout": { _attr: { "w:type": "fixed" } } }],
+            });
+        });
+
+        it("should center the table", () => {
+            const table = new Table({
+                rows: [
+                    new TableRow({
+                        children: [
+                            new TableCell({
+                                children: [new Paragraph("hello")],
+                            }),
+                        ],
+                    }),
+                ],
+                alignment: AlignmentType.CENTER,
+            });
+            const tree = new Formatter().format(table);
+            expect(tree)
+                .to.have.property("w:tbl")
+                .which.is.an("array")
+                .with.has.length.at.least(1);
+            expect(tree["w:tbl"][0]).to.deep.equal({
+                "w:tblPr": [DEFAULT_TABLE_PROPERTIES, BORDERS, WIDTHS, { "w:jc": { _attr: { "w:val": "center" } } }],
             });
         });
 
