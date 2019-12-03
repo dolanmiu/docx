@@ -2,6 +2,7 @@ import { XmlComponent } from "file/xml-components";
 
 import { DocumentAttributes } from "../document/document-attributes";
 import { INumberingOptions } from "../numbering";
+import { Paragraph } from "../paragraph";
 import { IStylesOptions } from "../styles";
 import { Created, Creator, Description, Keywords, LastModifiedBy, Modified, Revision, Subject, Title } from "./components";
 
@@ -16,6 +17,7 @@ export interface IPropertiesOptions {
     readonly externalStyles?: string;
     readonly styles?: IStylesOptions;
     readonly numbering?: INumberingOptions;
+    readonly footnotes?: Paragraph[];
 }
 
 export class CoreProperties extends XmlComponent {
