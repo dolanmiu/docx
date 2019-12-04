@@ -67,6 +67,7 @@ export class File {
             creator: "Un-named",
             revision: "1",
             lastModifiedBy: "Un-named",
+            footnotes: [],
         },
         fileProperties: IFileProperties = {},
         sections: ISectionOptions[] = [],
@@ -136,6 +137,12 @@ export class File {
                 this.document.add(child);
             }
         }
+
+        if (options.footnotes) {
+            for (const paragraph of options.footnotes) {
+                this.footNotes.createFootNote(paragraph);
+            }
+        }
     }
 
     public createHyperlink(link: string, text?: string): Hyperlink {
@@ -189,10 +196,6 @@ export class File {
         for (const child of children) {
             this.document.add(child);
         }
-    }
-
-    public createFootnote(paragraph: Paragraph): void {
-        this.footNotes.createFootNote(paragraph);
     }
 
     public verifyUpdateFields(): void {
