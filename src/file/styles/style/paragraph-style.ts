@@ -1,4 +1,14 @@
-import { Alignment, ContextualSpacing, Indent, KeepLines, KeepNext, OutlineLevel, ParagraphProperties, Spacing, ThematicBreak } from "file/paragraph";
+import {
+    Alignment,
+    ContextualSpacing,
+    Indent,
+    KeepLines,
+    KeepNext,
+    OutlineLevel,
+    ParagraphProperties,
+    Spacing,
+    ThematicBreak,
+} from "file/paragraph";
 import { TabStop, TabStopType } from "file/paragraph/formatting";
 import * as formatting from "file/paragraph/run/formatting";
 import { RunProperties } from "file/paragraph/run/properties";
