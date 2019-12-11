@@ -220,6 +220,32 @@ describe("ParagraphStyle", () => {
             });
         });
 
+        it("#contextualSpacing", () => {
+            const style = new ParagraphStyle({
+                id: "myStyleId",
+                paragraph: {
+                    contextualSpacing: true,
+                },
+            });
+            const tree = new Formatter().format(style);
+            expect(tree).to.deep.equal({
+                "w:style": [
+                    { _attr: { "w:type": "paragraph", "w:styleId": "myStyleId" } },
+                    {
+                        "w:pPr": [
+                            {
+                                "w:contextualSpacing": {
+                                    _attr: {
+                                        "w:val": 1,
+                                    },
+                                },
+                            },
+                        ],
+                    },
+                ],
+            });
+        });
+
         it("#leftTabStop", () => {
             const style = new ParagraphStyle({
                 id: "myStyleId",
