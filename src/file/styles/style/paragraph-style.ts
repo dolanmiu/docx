@@ -1,4 +1,14 @@
-import { Alignment, Indent, KeepLines, KeepNext, OutlineLevel, ParagraphProperties, Spacing, ThematicBreak } from "file/paragraph";
+import {
+    Alignment,
+    ContextualSpacing,
+    Indent,
+    KeepLines,
+    KeepNext,
+    OutlineLevel,
+    ParagraphProperties,
+    Spacing,
+    ThematicBreak,
+} from "file/paragraph";
 import { TabStop, TabStopType } from "file/paragraph/formatting";
 import * as formatting from "file/paragraph/run/formatting";
 import { RunProperties } from "file/paragraph/run/properties";
@@ -132,6 +142,10 @@ export class ParagraphStyle extends Style {
 
             if (options.paragraph.thematicBreak) {
                 this.paragraphProperties.push(new ThematicBreak());
+            }
+
+            if (options.paragraph.contextualSpacing) {
+                this.paragraphProperties.push(new ContextualSpacing(options.paragraph.contextualSpacing));
             }
 
             if (options.paragraph.rightTabStop) {
