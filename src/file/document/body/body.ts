@@ -26,6 +26,7 @@ export class Body extends XmlComponent {
 
     public prepForXml(): IXmlableObject | undefined {
         if (this.sections.length === 1) {
+            this.root.splice(0, 1);
             this.root.push(this.sections.pop() as SectionProperties);
         }
 
