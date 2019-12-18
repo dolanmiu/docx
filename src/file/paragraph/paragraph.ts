@@ -1,7 +1,8 @@
 // http://officeopenxml.com/WPparagraph.php
 import { FootnoteReferenceRun } from "file/footnotes/footnote/run/reference-run";
-import { XmlComponent } from "file/xml-components";
+import { IXmlableObject, XmlComponent } from "file/xml-components";
 
+import { File } from "../file";
 import { Alignment, AlignmentType } from "./formatting/alignment";
 import { Bidirectional } from "./formatting/bidirectional";
 import { IBorderOptions, ThematicBreak } from "./formatting/border";
@@ -12,7 +13,7 @@ import { ContextualSpacing, ISpacingProperties, Spacing } from "./formatting/spa
 import { HeadingLevel, Style } from "./formatting/style";
 import { LeaderType, TabStop, TabStopPosition, TabStopType } from "./formatting/tab-stop";
 import { NumberProperties } from "./formatting/unordered-list";
-import { Bookmark, Hyperlink, OutlineLevel } from "./links";
+import { Bookmark, HyperlinkRef, OutlineLevel } from "./links";
 import { ParagraphProperties } from "./properties";
 import { PictureRun, Run, SequentialIdentifier, SymbolRun, TextRun } from "./run";
 
@@ -45,7 +46,7 @@ export interface IParagraphOptions {
         readonly custom?: boolean;
     };
     readonly children?: Array<
-        TextRun | PictureRun | Hyperlink | SymbolRun | Bookmark | PageBreak | SequentialIdentifier | FootnoteReferenceRun
+        TextRun | PictureRun | SymbolRun | Bookmark | PageBreak | SequentialIdentifier | FootnoteReferenceRun | HyperlinkRef
     >;
 }
 
@@ -157,6 +158,17 @@ export class Paragraph extends XmlComponent {
                 this.root.push(child);
             }
         }
+    }
+
+    public prepForXml(file: File): IXmlableObject | undefined {
+        for (const element of this.root) {
+            if (element instanceof HyperlinkRef) {
+                const index = this.root.indexOf(element);
+                this.root[index] = file.HyperlinkCache[element.id];
+            }
+        }
+
+        return super.prepForXml();
     }
 
     public addRunToFront(run: Run): Paragraph {

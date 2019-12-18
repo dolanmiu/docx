@@ -3,6 +3,7 @@ import { Paragraph } from "file/paragraph";
 import { BorderStyle } from "file/styles";
 import { IXmlableObject, XmlComponent } from "file/xml-components";
 
+import { File } from "../../file";
 import { ITableShadingAttributesProperties } from "../shading";
 import { Table } from "../table";
 import { ITableCellMarginOptions } from "./cell-margin/table-cell-margins";
@@ -110,11 +111,11 @@ export class TableCell extends XmlComponent {
         }
     }
 
-    public prepForXml(): IXmlableObject | undefined {
+    public prepForXml(file?: File): IXmlableObject | undefined {
         // Cells must end with a paragraph
         if (!(this.root[this.root.length - 1] instanceof Paragraph)) {
             this.root.push(new Paragraph({}));
         }
-        return super.prepForXml();
+        return super.prepForXml(file);
     }
 }

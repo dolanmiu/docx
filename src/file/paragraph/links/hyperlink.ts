@@ -3,6 +3,10 @@ import { XmlComponent } from "file/xml-components";
 import { TextRun } from "../run";
 import { HyperlinkAttributes, IHyperlinkAttributesProperties } from "./hyperlink-attributes";
 
+export class HyperlinkRef {
+    constructor(public readonly id: string) {}
+}
+
 export class Hyperlink extends XmlComponent {
     public readonly linkId: string;
     private readonly textRun: TextRun;

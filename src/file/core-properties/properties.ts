@@ -18,6 +18,12 @@ export interface IPropertiesOptions {
     readonly styles?: IStylesOptions;
     readonly numbering?: INumberingOptions;
     readonly footnotes?: Paragraph[];
+    readonly hyperlinks?: {
+        readonly [key: string]: {
+            readonly link: string;
+            readonly text: string;
+        };
+    };
 }
 
 export class CoreProperties extends XmlComponent {
