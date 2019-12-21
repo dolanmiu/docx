@@ -17,7 +17,7 @@ import { Footer, Header } from "./header";
 import { HeaderWrapper, IDocumentHeader } from "./header-wrapper";
 import { Media } from "./media";
 import { Numbering } from "./numbering";
-import { Bookmark, Hyperlink, HyperlinkRef, Paragraph } from "./paragraph";
+import { Bookmark, Hyperlink, HyperlinkRef, HyperlinkType, Paragraph } from "./paragraph";
 import { Relationships } from "./relationships";
 import { TargetModeType } from "./relationships/relationship/relationship";
 import { Settings } from "./settings";
@@ -158,20 +158,18 @@ export class File {
                     continue;
                 }
 
-                const hyperlink = this.createHyperlink(options.hyperlinks[key].link, options.hyperlinks[key].text);
+                const hyperlinkRef = options.hyperlinks[key];
+
+                const hyperlink =
+                    hyperlinkRef.type === HyperlinkType.EXTERNAL
+                        ? this.createHyperlink(hyperlinkRef.link, hyperlinkRef.text)
+                        : this.createInternalHyperLink(key, hyperlinkRef.text);
+
                 cache[key] = hyperlink;
             }
 
             this.hyperlinkCache = cache;
         }
-    }
-
-    public createInternalHyperLink(anchor: string, text?: string): Hyperlink {
-        const newText = text === undefined ? anchor : text;
-        const hyperlink = new Hyperlink(newText, shortid.generate().toLowerCase(), anchor);
-        // NOTE: unlike File#createHyperlink(), since the link is to an internal bookmark
-        // we don't need to create a new relationship.
-        return hyperlink;
     }
 
     public createBookmark(name: string, text: string = name): Bookmark {
@@ -219,15 +217,21 @@ export class File {
         }
     }
 
-    private createHyperlink(link: string, text?: string): Hyperlink {
-        const newText = text === undefined ? link : text;
-        const hyperlink = new Hyperlink(newText, shortid.generate().toLowerCase());
+    private createHyperlink(link: string, text: string = link): Hyperlink {
+        const hyperlink = new Hyperlink(text, shortid.generate().toLowerCase());
         this.docRelationships.createRelationship(
             hyperlink.linkId,
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink",
             link,
             TargetModeType.EXTERNAL,
         );
+        return hyperlink;
+    }
+
+    private createInternalHyperLink(anchor: string, text: string = anchor): Hyperlink {
+        const hyperlink = new Hyperlink(text, shortid.generate().toLowerCase(), anchor);
+        // NOTE: unlike File#createHyperlink(), since the link is to an internal bookmark
+        // we don't need to create a new relationship.
         return hyperlink;
     }
 

@@ -2,9 +2,20 @@ import { XmlComponent } from "file/xml-components";
 
 import { DocumentAttributes } from "../document/document-attributes";
 import { INumberingOptions } from "../numbering";
-import { Paragraph } from "../paragraph";
+import { HyperlinkType, Paragraph } from "../paragraph";
 import { IStylesOptions } from "../styles";
 import { Created, Creator, Description, Keywords, LastModifiedBy, Modified, Revision, Subject, Title } from "./components";
+
+export interface IInternalHyperlinkDefinition {
+    readonly text: string;
+    readonly type: HyperlinkType.INTERNAL;
+}
+
+export interface IExternalHyperlinkDefinition {
+    readonly link: string;
+    readonly text: string;
+    readonly type: HyperlinkType.EXTERNAL;
+}
 
 export interface IPropertiesOptions {
     readonly title?: string;
@@ -19,10 +30,7 @@ export interface IPropertiesOptions {
     readonly numbering?: INumberingOptions;
     readonly footnotes?: Paragraph[];
     readonly hyperlinks?: {
-        readonly [key: string]: {
-            readonly link: string;
-            readonly text: string;
-        };
+        readonly [key: string]: IInternalHyperlinkDefinition | IExternalHyperlinkDefinition;
     };
 }
 

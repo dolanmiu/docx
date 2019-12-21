@@ -3,6 +3,10 @@ import { XmlComponent } from "file/xml-components";
 import { TextRun } from "../run";
 import { BookmarkEndAttributes, BookmarkStartAttributes } from "./bookmark-attributes";
 
+export class BookmarkRef {
+    constructor(public readonly name: string, public readonly text: string) {}
+}
+
 export class Bookmark {
     public readonly linkId: number;
     public readonly start: BookmarkStart;

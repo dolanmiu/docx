@@ -3,6 +3,11 @@ import { XmlComponent } from "file/xml-components";
 import { TextRun } from "../run";
 import { HyperlinkAttributes, IHyperlinkAttributesProperties } from "./hyperlink-attributes";
 
+export enum HyperlinkType {
+    INTERNAL = "INTERNAL",
+    EXTERNAL = "EXTERNAL",
+}
+
 export class HyperlinkRef {
     constructor(public readonly id: string) {}
 }
