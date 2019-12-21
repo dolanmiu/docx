@@ -17,7 +17,7 @@ import { Footer, Header } from "./header";
 import { HeaderWrapper, IDocumentHeader } from "./header-wrapper";
 import { Media } from "./media";
 import { Numbering } from "./numbering";
-import { Bookmark, Hyperlink, HyperlinkRef, HyperlinkType, Paragraph } from "./paragraph";
+import { Hyperlink, HyperlinkRef, HyperlinkType, Paragraph } from "./paragraph";
 import { Relationships } from "./relationships";
 import { TargetModeType } from "./relationships/relationship/relationship";
 import { Settings } from "./settings";
@@ -170,10 +170,6 @@ export class File {
 
             this.hyperlinkCache = cache;
         }
-    }
-
-    public createBookmark(name: string, text: string = name): Bookmark {
-        return new Bookmark(name, text, this.docRelationships.RelationshipCount);
     }
 
     public addSection({
