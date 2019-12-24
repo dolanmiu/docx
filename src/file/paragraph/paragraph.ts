@@ -13,7 +13,7 @@ import { ContextualSpacing, ISpacingProperties, Spacing } from "./formatting/spa
 import { HeadingLevel, Style } from "./formatting/style";
 import { LeaderType, TabStop, TabStopPosition, TabStopType } from "./formatting/tab-stop";
 import { NumberProperties } from "./formatting/unordered-list";
-import { Bookmark, BookmarkRef, HyperlinkRef, OutlineLevel } from "./links";
+import { Bookmark, HyperlinkRef, OutlineLevel } from "./links";
 import { ParagraphProperties } from "./properties";
 import { PictureRun, Run, SequentialIdentifier, SymbolRun, TextRun } from "./run";
 
@@ -46,7 +46,7 @@ export interface IParagraphOptions {
         readonly custom?: boolean;
     };
     readonly children?: Array<
-        TextRun | PictureRun | SymbolRun | Bookmark | PageBreak | SequentialIdentifier | FootnoteReferenceRun | HyperlinkRef | BookmarkRef
+        TextRun | PictureRun | SymbolRun | Bookmark | PageBreak | SequentialIdentifier | FootnoteReferenceRun | HyperlinkRef
     >;
 }
 

@@ -4,10 +4,6 @@ import * as shortid from "shortid";
 import { TextRun } from "../run";
 import { BookmarkEndAttributes, BookmarkStartAttributes } from "./bookmark-attributes";
 
-export class BookmarkRef {
-    constructor(public readonly name: string, public readonly text: string) {}
-}
-
 export class Bookmark {
     public readonly start: BookmarkStart;
     public readonly text: TextRun;

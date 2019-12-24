@@ -132,6 +132,30 @@ describe("Run", () => {
         });
     });
 
+    describe("#subScript()", () => {
+        it("it should add subScript to the properties", () => {
+            const run = new Run({
+                subScript: true,
+            });
+            const tree = new Formatter().format(run);
+            expect(tree).to.deep.equal({
+                "w:r": [{ "w:rPr": [{ "w:vertAlign": { _attr: { "w:val": "subscript" } } }] }],
+            });
+        });
+    });
+
+    describe("#superScript()", () => {
+        it("it should add superScript to the properties", () => {
+            const run = new Run({
+                superScript: true,
+            });
+            const tree = new Formatter().format(run);
+            expect(tree).to.deep.equal({
+                "w:r": [{ "w:rPr": [{ "w:vertAlign": { _attr: { "w:val": "superscript" } } }] }],
+            });
+        });
+    });
+
     describe("#highlight()", () => {
         it("it should add highlight to the properties", () => {
             const run = new Run({

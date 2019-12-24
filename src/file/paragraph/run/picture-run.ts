@@ -7,10 +7,6 @@ export class PictureRun extends Run {
     constructor(imageData: IMediaData, drawingOptions?: IDrawingOptions) {
         super({});
 
-        if (imageData === undefined) {
-            throw new Error("imageData cannot be undefined");
-        }
-
         const drawing = new Drawing(imageData, drawingOptions);
 
         this.root.push(drawing);
