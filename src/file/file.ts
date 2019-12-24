@@ -61,7 +61,7 @@ export class File {
     private readonly contentTypes: ContentTypes;
     private readonly appProperties: AppProperties;
     private readonly styles: Styles;
-    private readonly hyperlinkCache: { readonly [key: string]: Hyperlink };
+    private readonly hyperlinkCache: { readonly [key: string]: Hyperlink } = {};
 
     constructor(
         options: IPropertiesOptions = {

@@ -148,6 +148,14 @@ describe("File", () => {
         });
     });
 
+    describe("#HyperlinkCache", () => {
+        it("should initially have empty hyperlink cache", () => {
+            const file = new File();
+
+            expect(file.HyperlinkCache).to.deep.equal({});
+        });
+    });
+
     describe("#createFootnote", () => {
         it("should create footnote", () => {
             const wrapper = new File({
