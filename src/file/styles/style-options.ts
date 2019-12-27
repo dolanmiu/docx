@@ -29,6 +29,7 @@ export interface IRunStyleOptions {
 export interface IParagraphStyleOptions2 {
     readonly alignment?: AlignmentType;
     readonly thematicBreak?: boolean;
+    readonly contextualSpacing?: boolean;
     readonly rightTabStop?: number;
     readonly leftTabStop?: number;
     readonly indent?: IIndentAttributesProperties;
