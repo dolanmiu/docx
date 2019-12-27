@@ -102,9 +102,6 @@ describe("File", () => {
             expect(tree).to.deep.equal({
                 "w:body": [
                     {
-                        "w:p": {},
-                    },
-                    {
                         "w:p": [
                             {
                                 "w:r": [
