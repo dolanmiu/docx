@@ -41,7 +41,7 @@ export interface ISectionOptions {
     readonly size?: IPageSizeAttributes;
     readonly margins?: IPageMarginAttributes;
     readonly properties?: SectionPropertiesOptions;
-    readonly children: Array<Paragraph | Table | TableOfContents>;
+    readonly children: Array<Paragraph | Table | TableOfContents | HyperlinkRef>;
 }
 
 export class File {
