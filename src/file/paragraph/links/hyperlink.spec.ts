@@ -3,6 +3,7 @@ import { expect } from "chai";
 import { Formatter } from "export/formatter";
 
 import { Hyperlink } from "./";
+import { HyperlinkRef } from "./hyperlink";
 
 describe("Hyperlink", () => {
     let hyperlink: Hyperlink;
@@ -57,5 +58,13 @@ describe("Hyperlink", () => {
                 });
             });
         });
+    });
+});
+
+describe("HyperlinkRef", () => {
+    describe("#constructor()", () => {
+        const hyperlinkRef = new HyperlinkRef("test-id");
+
+        expect(hyperlinkRef.id).to.equal("test-id");
     });
 });

@@ -1,9 +1,12 @@
 import { assert, expect } from "chai";
+import * as shortid from "shortid";
+import { stub } from "sinon";
 
 import { Formatter } from "export/formatter";
 import { EMPTY_OBJECT } from "file/xml-components";
 
 import { AlignmentType, HeadingLevel, LeaderType, PageBreak, TabStopPosition, TabStopType } from "./formatting";
+import { Bookmark } from "./links";
 import { Paragraph } from "./paragraph";
 
 describe("Paragraph", () => {
@@ -635,6 +638,49 @@ describe("Paragraph", () => {
                     },
                 ],
             });
+        });
+    });
+
+    it("it should add bookmark", () => {
+        stub(shortid, "generate").callsFake(() => {
+            return "test-unique-id";
+        });
+        const paragraph = new Paragraph({
+            children: [new Bookmark("test-id", "test")],
+        });
+        const tree = new Formatter().format(paragraph);
+        expect(tree).to.deep.equal({
+            "w:p": [
+                {
+                    "w:bookmarkStart": {
+                        _attr: {
+                            "w:id": "test-unique-id",
+                            "w:name": "test-id",
+                        },
+                    },
+                },
+                {
+                    "w:r": [
+                        {
+                            "w:t": [
+                                {
+                                    _attr: {
+                                        "xml:space": "preserve",
+                                    },
+                                },
+                                "test",
+                            ],
+                        },
+                    ],
+                },
+                {
+                    "w:bookmarkEnd": {
+                        _attr: {
+                            "w:id": "test-unique-id",
+                        },
+                    },
+                },
+            ],
         });
     });
 

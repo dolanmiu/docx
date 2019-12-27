@@ -5,7 +5,7 @@ import { Formatter } from "export/formatter";
 
 import { File } from "./file";
 import { Footer, Header } from "./header";
-import { Paragraph } from "./paragraph";
+import { HyperlinkRef, Paragraph } from "./paragraph";
 import { Table, TableCell, TableRow } from "./table";
 import { TableOfContents } from "./table-of-contents";
 
@@ -89,6 +89,91 @@ describe("File", () => {
             expect(tree["w:body"][0]["w:sectPr"][8]["w:footerReference"]._attr["w:type"]).to.equal("first");
             expect(tree["w:body"][0]["w:sectPr"][9]["w:footerReference"]._attr["w:type"]).to.equal("even");
         });
+
+        it("should add child", () => {
+            const doc = new File(undefined, undefined, [
+                {
+                    children: [new Paragraph("test")],
+                },
+            ]);
+
+            const tree = new Formatter().format(doc.Document.Body);
+
+            expect(tree).to.deep.equal({
+                "w:body": [
+                    {
+                        "w:p": [
+                            {
+                                "w:r": [
+                                    {
+                                        "w:t": [
+                                            {
+                                                _attr: {
+                                                    "xml:space": "preserve",
+                                                },
+                                            },
+                                            "test",
+                                        ],
+                                    },
+                                ],
+                            },
+                        ],
+                    },
+                    {
+                        "w:sectPr": [
+                            {
+                                "w:pgSz": {
+                                    _attr: {
+                                        "w:h": 16838,
+                                        "w:orient": "portrait",
+                                        "w:w": 11906,
+                                    },
+                                },
+                            },
+                            {
+                                "w:pgMar": {
+                                    _attr: {
+                                        "w:bottom": 1440,
+                                        "w:footer": 708,
+                                        "w:gutter": 0,
+                                        "w:header": 708,
+                                        "w:left": 1440,
+                                        "w:mirrorMargins": false,
+                                        "w:right": 1440,
+                                        "w:top": 1440,
+                                    },
+                                },
+                            },
+                            {
+                                "w:cols": {
+                                    _attr: {
+                                        "w:num": 1,
+                                        "w:space": 708,
+                                    },
+                                },
+                            },
+                            {
+                                "w:docGrid": {
+                                    _attr: {
+                                        "w:linePitch": 360,
+                                    },
+                                },
+                            },
+                        ],
+                    },
+                ],
+            });
+        });
+
+        it("should add hyperlink child", () => {
+            const doc = new File(undefined, undefined, [
+                {
+                    children: [new HyperlinkRef("test")],
+                },
+            ]);
+
+            expect(doc.HyperlinkCache).to.deep.equal({});
+        });
     });
 
     describe("#addSection", () => {
@@ -100,6 +185,16 @@ describe("File", () => {
             });
 
             expect(spy.called).to.equal(true);
+        });
+
+        it("should add hyperlink child", () => {
+            const doc = new File();
+
+            doc.addSection({
+                children: [new HyperlinkRef("test")],
+            });
+
+            expect(doc.HyperlinkCache).to.deep.equal({});
         });
 
         it("should call the underlying document's add when adding a Table", () => {
@@ -145,6 +240,14 @@ describe("File", () => {
             });
 
             expect(spy.called).to.equal(true);
+        });
+    });
+
+    describe("#HyperlinkCache", () => {
+        it("should initially have empty hyperlink cache", () => {
+            const file = new File();
+
+            expect(file.HyperlinkCache).to.deep.equal({});
         });
     });
 

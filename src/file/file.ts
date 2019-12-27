@@ -17,7 +17,7 @@ import { Footer, Header } from "./header";
 import { HeaderWrapper, IDocumentHeader } from "./header-wrapper";
 import { Media } from "./media";
 import { Numbering } from "./numbering";
-import { Bookmark, Hyperlink, Paragraph } from "./paragraph";
+import { Hyperlink, HyperlinkRef, HyperlinkType, Paragraph } from "./paragraph";
 import { Relationships } from "./relationships";
 import { TargetModeType } from "./relationships/relationship/relationship";
 import { Settings } from "./settings";
@@ -41,7 +41,7 @@ export interface ISectionOptions {
     readonly size?: IPageSizeAttributes;
     readonly margins?: IPageMarginAttributes;
     readonly properties?: SectionPropertiesOptions;
-    readonly children: Array<Paragraph | Table | TableOfContents>;
+    readonly children: Array<Paragraph | Table | TableOfContents | HyperlinkRef>;
 }
 
 export class File {
@@ -61,13 +61,13 @@ export class File {
     private readonly contentTypes: ContentTypes;
     private readonly appProperties: AppProperties;
     private readonly styles: Styles;
+    private readonly hyperlinkCache: { readonly [key: string]: Hyperlink } = {};
 
     constructor(
         options: IPropertiesOptions = {
             creator: "Un-named",
             revision: "1",
             lastModifiedBy: "Un-named",
-            footnotes: [],
         },
         fileProperties: IFileProperties = {},
         sections: ISectionOptions[] = [],
@@ -134,6 +134,12 @@ export class File {
             this.document.Body.addSection(section.properties ? section.properties : {});
 
             for (const child of section.children) {
+                if (child instanceof HyperlinkRef) {
+                    const hyperlink = this.hyperlinkCache[child.id];
+                    this.document.add(hyperlink);
+                    continue;
+                }
+
                 this.document.add(child);
             }
         }
@@ -143,30 +149,27 @@ export class File {
                 this.footNotes.createFootNote(paragraph);
             }
         }
-    }
 
-    public createHyperlink(link: string, text?: string): Hyperlink {
-        const newText = text === undefined ? link : text;
-        const hyperlink = new Hyperlink(newText, shortid.generate().toLowerCase());
-        this.docRelationships.createRelationship(
-            hyperlink.linkId,
-            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink",
-            link,
-            TargetModeType.EXTERNAL,
-        );
-        return hyperlink;
-    }
+        if (options.hyperlinks) {
+            const cache = {};
 
-    public createInternalHyperLink(anchor: string, text?: string): Hyperlink {
-        const newText = text === undefined ? anchor : text;
-        const hyperlink = new Hyperlink(newText, shortid.generate().toLowerCase(), anchor);
-        // NOTE: unlike File#createHyperlink(), since the link is to an internal bookmark
-        // we don't need to create a new relationship.
-        return hyperlink;
-    }
+            for (const key in options.hyperlinks) {
+                if (!options.hyperlinks[key]) {
+                    continue;
+                }
 
-    public createBookmark(name: string, text: string = name): Bookmark {
-        return new Bookmark(name, text, this.docRelationships.RelationshipCount);
+                const hyperlinkRef = options.hyperlinks[key];
+
+                const hyperlink =
+                    hyperlinkRef.type === HyperlinkType.EXTERNAL
+                        ? this.createHyperlink(hyperlinkRef.link, hyperlinkRef.text)
+                        : this.createInternalHyperLink(key, hyperlinkRef.text);
+
+                cache[key] = hyperlink;
+            }
+
+            this.hyperlinkCache = cache;
+        }
     }
 
     public addSection({
@@ -194,6 +197,12 @@ export class File {
         });
 
         for (const child of children) {
+            if (child instanceof HyperlinkRef) {
+                const hyperlink = this.hyperlinkCache[child.id];
+                this.document.add(hyperlink);
+                continue;
+            }
+
             this.document.add(child);
         }
     }
@@ -202,6 +211,24 @@ export class File {
         if (this.document.getTablesOfContents().length) {
             this.settings.addUpdateFields();
         }
+    }
+
+    private createHyperlink(link: string, text: string = link): Hyperlink {
+        const hyperlink = new Hyperlink(text, shortid.generate().toLowerCase());
+        this.docRelationships.createRelationship(
+            hyperlink.linkId,
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink",
+            link,
+            TargetModeType.EXTERNAL,
+        );
+        return hyperlink;
+    }
+
+    private createInternalHyperLink(anchor: string, text: string = anchor): Hyperlink {
+        const hyperlink = new Hyperlink(text, shortid.generate().toLowerCase(), anchor);
+        // NOTE: unlike File#createHyperlink(), since the link is to an internal bookmark
+        // we don't need to create a new relationship.
+        return hyperlink;
     }
 
     private createHeader(header: Header): HeaderWrapper {
@@ -335,5 +362,9 @@ export class File {
 
     public get Settings(): Settings {
         return this.settings;
+    }
+
+    public get HyperlinkCache(): { readonly [key: string]: Hyperlink } {
+        return this.hyperlinkCache;
     }
 }
