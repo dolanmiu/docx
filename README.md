@@ -18,7 +18,7 @@
 [![codecov][codecov-image]][codecov-url]
 
 <p align="center">
-    <img src="https://i.imgur.com/H5FA1Qy.gif" alt="drawing" width="800"/>
+    <img src="https://i.imgur.com/TCH0YzD.png" alt="drawing" width="800"/>
 </p>
 
 # Demo
