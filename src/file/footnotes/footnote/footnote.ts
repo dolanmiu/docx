@@ -10,18 +10,23 @@ export enum FootnoteType {
 }
 
 export class Footnote extends XmlComponent {
-    constructor(id: number, type?: FootnoteType) {
+    constructor(options: { readonly id: number; readonly type?: FootnoteType; readonly children: Paragraph[] }) {
         super("w:footnote");
         this.root.push(
             new FootnoteAttributes({
-                type: type,
-                id: id,
+                type: options.type,
+                id: options.id,
             }),
         );
-    }
 
-    public add(paragraph: Paragraph): void {
-        paragraph.addRunToFront(new FootnoteRefRun());
-        this.root.push(paragraph);
+        for (let i = 0; i < options.children.length; i++) {
+            const child = options.children[i];
+
+            if (i === 0) {
+                child.addRunToFront(new FootnoteRefRun());
+            }
+
+            this.root.push(child);
+        }
     }
 }

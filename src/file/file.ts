@@ -1,4 +1,5 @@
 import * as shortid from "shortid";
+
 import { AppProperties } from "./app-properties/app-properties";
 import { ContentTypes } from "./content-types/content-types";
 import { CoreProperties, IPropertiesOptions } from "./core-properties";
@@ -145,8 +146,12 @@ export class File {
         }
 
         if (options.footnotes) {
-            for (const paragraph of options.footnotes) {
-                this.footNotes.createFootNote(paragraph);
+            for (const key in options.footnotes) {
+                if (!options.footnotes[key]) {
+                    continue;
+                }
+
+                this.footNotes.createFootNote(parseFloat(key), options.footnotes[key].children);
             }
         }
 

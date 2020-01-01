@@ -254,7 +254,11 @@ describe("File", () => {
     describe("#createFootnote", () => {
         it("should create footnote", () => {
             const wrapper = new File({
-                footnotes: [new Paragraph("hello")],
+                footnotes: {
+                    1: {
+                        children: [new Paragraph("hello")],
+                    },
+                },
             });
 
             const tree = new Formatter().format(wrapper.FootNotes);

@@ -1,4 +1,5 @@
 import { XmlComponent } from "file/xml-components";
+
 import { Paragraph } from "../paragraph";
 import { Footnote, FootnoteType } from "./footnote/footnote";
 import { ContinuationSeperatorRun } from "./footnote/run/continuation-seperator-run";
@@ -6,13 +7,8 @@ import { SeperatorRun } from "./footnote/run/seperator-run";
 import { FootnotesAttributes } from "./footnotes-attributes";
 
 export class FootNotes extends XmlComponent {
-    // tslint:disable-next-line:readonly-keyword
-    private currentId: number;
-
     constructor() {
         super("w:footnotes");
-
-        this.currentId = 1;
 
         this.root.push(
             new FootnotesAttributes({
@@ -36,38 +32,46 @@ export class FootNotes extends XmlComponent {
             }),
         );
 
-        const begin = new Footnote(-1, FootnoteType.SEPERATOR);
-        begin.add(
-            new Paragraph({
-                spacing: {
-                    after: 0,
-                    line: 240,
-                    lineRule: "auto",
-                },
-                children: [new SeperatorRun()],
-            }),
-        );
+        const begin = new Footnote({
+            id: -1,
+            type: FootnoteType.SEPERATOR,
+            children: [
+                new Paragraph({
+                    spacing: {
+                        after: 0,
+                        line: 240,
+                        lineRule: "auto",
+                    },
+                    children: [new SeperatorRun()],
+                }),
+            ],
+        });
+
         this.root.push(begin);
 
-        const spacing = new Footnote(0, FootnoteType.CONTINUATION_SEPERATOR);
-        spacing.add(
-            new Paragraph({
-                spacing: {
-                    after: 0,
-                    line: 240,
-                    lineRule: "auto",
-                },
-                children: [new ContinuationSeperatorRun()],
-            }),
-        );
+        const spacing = new Footnote({
+            id: 0,
+            type: FootnoteType.CONTINUATION_SEPERATOR,
+            children: [
+                new Paragraph({
+                    spacing: {
+                        after: 0,
+                        line: 240,
+                        lineRule: "auto",
+                    },
+                    children: [new ContinuationSeperatorRun()],
+                }),
+            ],
+        });
+
         this.root.push(spacing);
     }
 
-    public createFootNote(paragraph: Paragraph): void {
-        const footnote = new Footnote(this.currentId);
-        footnote.add(paragraph);
+    public createFootNote(id: number, paragraph: Paragraph[]): void {
+        const footnote = new Footnote({
+            id: id,
+            children: paragraph,
+        });
         this.root.push(footnote);
-
-        this.currentId++;
     }
 }
