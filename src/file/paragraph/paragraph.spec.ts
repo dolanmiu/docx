@@ -8,6 +8,7 @@ import { EMPTY_OBJECT } from "file/xml-components";
 import { AlignmentType, HeadingLevel, LeaderType, PageBreak, TabStopPosition, TabStopType } from "./formatting";
 import { Bookmark } from "./links";
 import { Paragraph } from "./paragraph";
+import { TextRun } from "./run";
 
 describe("Paragraph", () => {
     describe("#constructor()", () => {
@@ -646,7 +647,12 @@ describe("Paragraph", () => {
             return "test-unique-id";
         });
         const paragraph = new Paragraph({
-            children: [new Bookmark("test-id", "test")],
+            children: [
+                new Bookmark({
+                    id: "test-id",
+                    children: [new TextRun("test")],
+                }),
+            ],
         });
         const tree = new Formatter().format(paragraph);
         expect(tree).to.deep.equal({

@@ -2,13 +2,17 @@ import { assert, expect } from "chai";
 
 import { Utility } from "tests/utility";
 
+import { TextRun } from "../run";
 import { Bookmark } from "./bookmark";
 
 describe("Bookmark", () => {
     let bookmark: Bookmark;
 
     beforeEach(() => {
-        bookmark = new Bookmark("anchor", "Internal Link");
+        bookmark = new Bookmark({
+            id: "anchor",
+            children: [new TextRun("Internal Link")],
+        });
     });
 
     it("should create a bookmark with three root elements", () => {

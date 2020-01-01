@@ -150,7 +150,9 @@ export class Paragraph extends XmlComponent {
             for (const child of options.children) {
                 if (child instanceof Bookmark) {
                     this.root.push(child.start);
-                    this.root.push(child.text);
+                    for (const textRun of child.children) {
+                        this.root.push(textRun);
+                    }
                     this.root.push(child.end);
                     continue;
                 }

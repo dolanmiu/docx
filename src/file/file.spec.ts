@@ -5,7 +5,7 @@ import { Formatter } from "export/formatter";
 
 import { File } from "./file";
 import { Footer, Header } from "./header";
-import { HyperlinkRef, Paragraph } from "./paragraph";
+import { HyperlinkRef, HyperlinkType, Paragraph } from "./paragraph";
 import { Table, TableCell, TableRow } from "./table";
 import { TableOfContents } from "./table-of-contents";
 
@@ -240,6 +240,20 @@ describe("File", () => {
             });
 
             expect(spy.called).to.equal(true);
+        });
+
+        it.only("should create hyperlinks", () => {
+            const wrapper = new File({
+                hyperlinks: {
+                    myHyperLink: {
+                        link: "test.com",
+                        text: "test",
+                        type: HyperlinkType.EXTERNAL,
+                    },
+                },
+            });
+
+            expect(wrapper.HyperlinkCache.myHyperLink).to.not.be.undefined("");
         });
     });
 
