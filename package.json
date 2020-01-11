@@ -50,6 +50,7 @@
   "types": "./build/index.d.ts",
   "dependencies": {
     "@types/jszip": "^3.1.4",
+    "@types/node": "^13.1.6",
     "jszip": "^3.1.5",
     "shortid": "^2.2.15",
     "xml": "^1.0.1",
