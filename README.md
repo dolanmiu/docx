@@ -75,6 +75,8 @@ Read the contribution guidelines [here](https://docx.js.org/#/contribution-guide
 [<img src="https://i.imgur.com/dHMg0wF.gif" alt="drawing" height="50"/>](http://www.madisoncres.com/)
 [<img src="https://i.imgur.com/QEZXU5b.png" alt="drawing" height="50"/>](https://www.beekast.com/)
 [<img src="https://imgur.com/XVU6aoi.png" alt="drawing" height="50"/>](https://herraizsoto.com/)
+[<img src="https://i.imgur.com/fn1xccG.png" alt="drawing" height="50"/>](http://www.ativer.com.br/)
+
 
 ...and many more!
 
