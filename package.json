@@ -1,6 +1,6 @@
 {
   "name": "docx",
-  "version": "5.0.1",
+  "version": "5.0.2",
   "description": "Easily generate .docx files with JS/TS with a nice declarative API. Works for Node and on the Browser.",
   "main": "build/index.js",
   "scripts": {
