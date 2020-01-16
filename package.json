@@ -3,6 +3,7 @@
   "version": "5.0.1",
   "description": "Easily generate .docx files with JS/TS with a nice declarative API. Works for Node and on the Browser.",
   "main": "build/index.js",
+  "browser": "build/index.web.js",
   "scripts": {
     "pretest": "rimraf ./build",
     "test": "mocha-webpack \"src/**/*.ts\"",
@@ -68,7 +69,7 @@
     "@types/request-promise": "^4.1.42",
     "@types/shortid": "0.0.29",
     "@types/sinon": "^4.3.1",
-    "@types/webpack": "^4.4.24",
+    "@types/webpack": "^4.41.2",
     "awesome-typescript-loader": "^3.4.1",
     "chai": "^3.5.0",
     "docsify-cli": "^4.3.0",
@@ -87,12 +88,14 @@
     "rimraf": "^2.5.2",
     "shelljs": "^0.7.7",
     "sinon": "^5.0.7",
+    "ts-loader": "^6.2.1",
     "ts-node": "^7.0.1",
     "tslint": "^5.11.0",
     "tslint-immutable": "^4.9.0",
     "typedoc": "^0.11.1",
     "typescript": "2.9.2",
-    "webpack": "^3.10.0"
+    "webpack": "^4.41.5",
+    "webpack-cli": "^3.3.10"
   },
   "engines": {
     "node": ">=8"
