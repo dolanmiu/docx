@@ -56,12 +56,8 @@ export type SectionPropertiesOptions = IPageSizeAttributes &
 // Need to decouple this from the attributes
 
 export class SectionProperties extends XmlComponent {
-    private readonly options: SectionPropertiesOptions;
-
-    constructor(options: SectionPropertiesOptions = { column: {} }) {
-        super("w:sectPr");
-
-        const {
+    constructor(
+        {
             width = 11906,
             height = 16838,
             top = 1440,
@@ -79,6 +75,7 @@ export class SectionProperties extends XmlComponent {
             footers,
             pageNumberFormatType,
             pageNumberStart,
+            pageNumberSeparator,
             lineNumberCountBy,
             lineNumberStart,
             lineNumberRestart,
@@ -90,9 +87,10 @@ export class SectionProperties extends XmlComponent {
             pageBorderLeft,
             titlePage = false,
             verticalAlign,
-        } = options;
+        }: SectionPropertiesOptions = { column: {} },
+    ) {
+        super("w:sectPr");
 
-        this.options = options;
         this.root.push(new PageSize(width, height, orientation));
         this.root.push(new PageMargin(top, right, bottom, left, header, footer, gutter, mirror));
         this.root.push(new Columns(column.space ? column.space : 708, column.count ? column.count : 1));
@@ -101,9 +99,7 @@ export class SectionProperties extends XmlComponent {
         this.addHeaders(headers);
         this.addFooters(footers);
 
-        if (pageNumberStart || pageNumberFormatType) {
-            this.root.push(new PageNumberType(pageNumberStart, pageNumberFormatType));
-        }
+        this.root.push(new PageNumberType(pageNumberStart, pageNumberFormatType, pageNumberSeparator));
 
         if (lineNumberCountBy || lineNumberStart || lineNumberRestart || lineNumberDistance) {
             this.root.push(new LineNumberType(lineNumberCountBy, lineNumberStart, lineNumberRestart, lineNumberDistance));
@@ -190,9 +186,5 @@ export class SectionProperties extends XmlComponent {
                 );
             }
         }
-    }
-
-    public get Options(): SectionPropertiesOptions {
-        return this.options;
     }
 }
