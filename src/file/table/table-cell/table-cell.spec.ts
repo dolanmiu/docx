@@ -5,7 +5,7 @@ import { BorderStyle } from "file/styles";
 
 import { ShadingType } from "../shading";
 import { TableCell } from "./table-cell";
-import { TableCellBorders, TableCellWidth, VerticalAlign, VerticalMergeType, WidthType } from "./table-cell-components";
+import { TableCellBorders, TableCellWidth, TextDirection, VerticalAlign, VerticalMergeType, WidthType } from "./table-cell-components";
 
 describe("TableCellBorders", () => {
     describe("#prepForXml", () => {
@@ -259,6 +259,34 @@ describe("TableCell", () => {
                                 "w:vAlign": {
                                     _attr: {
                                         "w:val": "center",
+                                    },
+                                },
+                            },
+                        ],
+                    },
+                    {
+                        "w:p": {},
+                    },
+                ],
+            });
+        });
+
+        it("should create with text direction", () => {
+            const cell = new TableCell({
+                children: [],
+                textDirection: TextDirection.BOTTOMTOTOPLEFTTORIGHT,
+            });
+
+            const tree = new Formatter().format(cell);
+
+            expect(tree).to.deep.equal({
+                "w:tc": [
+                    {
+                        "w:tcPr": [
+                            {
+                                "w:textDirection": {
+                                    _attr: {
+                                        "w:val": "btLr",
                                     },
                                 },
                             },

@@ -7,13 +7,14 @@ import { File } from "../../file";
 import { ITableShadingAttributesProperties } from "../shading";
 import { Table } from "../table";
 import { ITableCellMarginOptions } from "./cell-margin/table-cell-margins";
-import { VerticalAlign, VerticalMergeType, WidthType } from "./table-cell-components";
+import { TextDirection, VerticalAlign, VerticalMergeType, WidthType } from "./table-cell-components";
 import { TableCellProperties } from "./table-cell-properties";
 
 export interface ITableCellOptions {
     readonly shading?: ITableShadingAttributesProperties;
     readonly margins?: ITableCellMarginOptions;
     readonly verticalAlign?: VerticalAlign;
+    readonly textDirection?: TextDirection;
     readonly verticalMerge?: VerticalMergeType;
     readonly width?: {
         readonly size: number | string;
@@ -61,6 +62,10 @@ export class TableCell extends XmlComponent {
 
         if (options.verticalAlign) {
             this.properties.setVerticalAlign(options.verticalAlign);
+        }
+
+        if (options.textDirection) {
+            this.properties.setTextDirection(options.textDirection);
         }
 
         if (options.verticalMerge) {

@@ -158,6 +158,31 @@ export class VAlign extends XmlComponent {
     }
 }
 
+export enum TextDirection {
+    BOTTOMTOTOPLEFTTORIGHT = "btLr",
+    LEFTTORIGHTTOPTOBOTTOM = "lrTb",
+    TOPTOBOTTOMRIGHTTOLEFT = "tbRl",
+}
+
+class TDirectionAttributes extends XmlAttributeComponent<{ readonly val: TextDirection }> {
+    protected readonly xmlKeys = { val: "w:val" };
+}
+
+/**
+ * Text Direction within a table cell
+ */
+export class TDirection extends XmlComponent {
+    constructor(value: TextDirection) {
+        super("w:textDirection");
+
+        this.root.push(
+            new TDirectionAttributes({
+                val: value,
+            }),
+        );
+    }
+}
+
 export enum WidthType {
     /** Auto. */
     AUTO = "auto",
