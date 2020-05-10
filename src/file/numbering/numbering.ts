@@ -147,6 +147,17 @@ export class Numbering extends XmlComponent {
                     },
                 },
             },
+            {
+                level: 9,
+                format: "bullet",
+                text: "\u2726",
+                alignment: AlignmentType.LEFT,
+                style: {
+                    paragraph: {
+                        indent: { left: 720, hanging: 360 },
+                    },
+                },
+            },
         ]);
 
         this.createConcreteNumbering(abstractNumbering);
