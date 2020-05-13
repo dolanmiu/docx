@@ -159,9 +159,9 @@ export class VAlign extends XmlComponent {
 }
 
 export enum TextDirection {
-    BOTTOMTOTOPLEFTTORIGHT = "btLr",
-    LEFTTORIGHTTOPTOBOTTOM = "lrTb",
-    TOPTOBOTTOMRIGHTTOLEFT = "tbRl",
+    BOTTOM_TO_TOP_LEFT_TO_RIGHT = "btLr",
+    LEFT_TO_RIGHT_TOP_TO_BOTTOM = "lrTb",
+    TOP_TO_BOTTOM_RIGHT_TO_LEFT = "tbRl",
 }
 
 class TDirectionAttributes extends XmlAttributeComponent<{ readonly val: TextDirection }> {

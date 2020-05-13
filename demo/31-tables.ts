@@ -18,12 +18,12 @@ const table = new Table({
                     verticalAlign: VerticalAlign.CENTER,
                 }),
                 new TableCell({
-                    children: [new Paragraph({text: "bottom to top"}), new Paragraph({})],
-                    textDirection: TextDirection.BOTTOMTOTOPLEFTTORIGHT
+                    children: [new Paragraph({ text: "bottom to top" }), new Paragraph({})],
+                    textDirection: TextDirection.BOTTOM_TO_TOP_LEFT_TO_RIGHT,
                 }),
                 new TableCell({
-                    children: [new Paragraph({text: "top to bottom"}), new Paragraph({})],
-                    textDirection: TextDirection.TOPTOBOTTOMRIGHTTOLEFT
+                    children: [new Paragraph({ text: "top to bottom" }), new Paragraph({})],
+                    textDirection: TextDirection.TOP_TO_BOTTOM_RIGHT_TO_LEFT,
                 }),
             ],
         }),

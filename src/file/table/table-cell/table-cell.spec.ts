@@ -274,7 +274,7 @@ describe("TableCell", () => {
         it("should create with text direction", () => {
             const cell = new TableCell({
                 children: [],
-                textDirection: TextDirection.BOTTOMTOTOPLEFTTORIGHT,
+                textDirection: TextDirection.BOTTOM_TO_TOP_LEFT_TO_RIGHT,
             });
 
             const tree = new Formatter().format(cell);
