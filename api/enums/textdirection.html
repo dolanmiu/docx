@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>Compiler | docx</title>
+	<title>TextDirection | docx</title>
 	<meta name="description" content="">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="../assets/css/main.css">
@@ -54,90 +54,62 @@
 					<a href="../globals.html">Globals</a>
 				</li>
 				<li>
-					<a href="compiler.html">Compiler</a>
+					<a href="textdirection.html">TextDirection</a>
 				</li>
 			</ul>
-			<h1>Class Compiler</h1>
+			<h1>Enumeration TextDirection</h1>
 		</div>
 	</div>
 </header>
 <div class="container container-main">
 	<div class="row">
 		<div class="col-8 col-content">
-			<section class="tsd-panel tsd-hierarchy">
-				<h3>Hierarchy</h3>
-				<ul class="tsd-hierarchy">
-					<li>
-						<span class="target">Compiler</span>
-					</li>
-				</ul>
-			</section>
 			<section class="tsd-panel-group tsd-index-group">
 				<h2>Index</h2>
 				<section class="tsd-panel tsd-index-panel">
 					<div class="tsd-index-content">
 						<section class="tsd-index-section tsd-is-external">
-							<h3>Constructors</h3>
+							<h3>Enumeration members</h3>
 							<ul class="tsd-index-list">
-								<li class="tsd-kind-constructor tsd-parent-kind-class tsd-is-external"><a href="compiler.html#constructor" class="tsd-kind-icon">constructor</a></li>
-							</ul>
-						</section>
-						<section class="tsd-index-section tsd-is-external">
-							<h3>Methods</h3>
-							<ul class="tsd-index-list">
-								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-external"><a href="compiler.html#compile" class="tsd-kind-icon">compile</a></li>
+								<li class="tsd-kind-enum-member tsd-parent-kind-enum tsd-is-external"><a href="textdirection.html#bottom_to_top_left_to_right" class="tsd-kind-icon">BOTTOM_<wbr>TO_<wbr>TOP_<wbr>LEFT_<wbr>TO_<wbr>RIGHT</a></li>
+								<li class="tsd-kind-enum-member tsd-parent-kind-enum tsd-is-external"><a href="textdirection.html#left_to_right_top_to_bottom" class="tsd-kind-icon">LEFT_<wbr>TO_<wbr>RIGHT_<wbr>TOP_<wbr>TO_<wbr>BOTTOM</a></li>
+								<li class="tsd-kind-enum-member tsd-parent-kind-enum tsd-is-external"><a href="textdirection.html#top_to_bottom_right_to_left" class="tsd-kind-icon">TOP_<wbr>TO_<wbr>BOTTOM_<wbr>RIGHT_<wbr>TO_<wbr>LEFT</a></li>
 							</ul>
 						</section>
 					</div>
 				</section>
 			</section>
 			<section class="tsd-panel-group tsd-member-group tsd-is-external">
-				<h2>Constructors</h2>
-				<section class="tsd-panel tsd-member tsd-kind-constructor tsd-parent-kind-class tsd-is-external">
-					<a name="constructor" class="tsd-anchor"></a>
-					<h3>constructor</h3>
-					<ul class="tsd-signatures tsd-kind-constructor tsd-parent-kind-class tsd-is-external">
-						<li class="tsd-signature tsd-kind-icon">new <wbr>Compiler<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="compiler.html" class="tsd-signature-type">Compiler</a></li>
-					</ul>
-					<ul class="tsd-descriptions">
-						<li class="tsd-description">
-							<aside class="tsd-sources">
-								<ul>
-									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/6245635/src/export/packer/next-compiler.ts#L34">export/packer/next-compiler.ts:34</a></li>
-								</ul>
-							</aside>
-							<h4 class="tsd-returns-title">Returns <a href="compiler.html" class="tsd-signature-type">Compiler</a></h4>
-						</li>
-					</ul>
+				<h2>Enumeration members</h2>
+				<section class="tsd-panel tsd-member tsd-kind-enum-member tsd-parent-kind-enum tsd-is-external">
+					<a name="bottom_to_top_left_to_right" class="tsd-anchor"></a>
+					<h3>BOTTOM_<wbr>TO_<wbr>TOP_<wbr>LEFT_<wbr>TO_<wbr>RIGHT</h3>
+					<div class="tsd-signature tsd-kind-icon">BOTTOM_<wbr>TO_<wbr>TOP_<wbr>LEFT_<wbr>TO_<wbr>RIGHT<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol"> =&nbsp;&quot;btLr&quot;</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/6245635/src/file/table/table-cell/table-cell-components.ts#L162">file/table/table-cell/table-cell-components.ts:162</a></li>
+						</ul>
+					</aside>
 				</section>
-			</section>
-			<section class="tsd-panel-group tsd-member-group tsd-is-external">
-				<h2>Methods</h2>
-				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-external">
-					<a name="compile" class="tsd-anchor"></a>
-					<h3>compile</h3>
-					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-external">
-						<li class="tsd-signature tsd-kind-icon">compile<span class="tsd-signature-symbol">(</span>file<span class="tsd-signature-symbol">: </span><a href="file.html" class="tsd-signature-type">File</a>, prettifyXml<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">true</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">false</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">JSZip</span></li>
-					</ul>
-					<ul class="tsd-descriptions">
-						<li class="tsd-description">
-							<aside class="tsd-sources">
-								<ul>
-									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/6245635/src/export/packer/next-compiler.ts#L42">export/packer/next-compiler.ts:42</a></li>
-								</ul>
-							</aside>
-							<h4 class="tsd-parameters-title">Parameters</h4>
-							<ul class="tsd-parameters">
-								<li>
-									<h5>file: <a href="file.html" class="tsd-signature-type">File</a></h5>
-								</li>
-								<li>
-									<h5><span class="tsd-flag ts-flagOptional">Optional</span> prettifyXml: <span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">true</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">false</span></h5>
-								</li>
-							</ul>
-							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">JSZip</span></h4>
-						</li>
-					</ul>
+				<section class="tsd-panel tsd-member tsd-kind-enum-member tsd-parent-kind-enum tsd-is-external">
+					<a name="left_to_right_top_to_bottom" class="tsd-anchor"></a>
+					<h3>LEFT_<wbr>TO_<wbr>RIGHT_<wbr>TOP_<wbr>TO_<wbr>BOTTOM</h3>
+					<div class="tsd-signature tsd-kind-icon">LEFT_<wbr>TO_<wbr>RIGHT_<wbr>TOP_<wbr>TO_<wbr>BOTTOM<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol"> =&nbsp;&quot;lrTb&quot;</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/6245635/src/file/table/table-cell/table-cell-components.ts#L163">file/table/table-cell/table-cell-components.ts:163</a></li>
+						</ul>
+					</aside>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-enum-member tsd-parent-kind-enum tsd-is-external">
+					<a name="top_to_bottom_right_to_left" class="tsd-anchor"></a>
+					<h3>TOP_<wbr>TO_<wbr>BOTTOM_<wbr>RIGHT_<wbr>TO_<wbr>LEFT</h3>
+					<div class="tsd-signature tsd-kind-icon">TOP_<wbr>TO_<wbr>BOTTOM_<wbr>RIGHT_<wbr>TO_<wbr>LEFT<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol"> =&nbsp;&quot;tbRl&quot;</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/6245635/src/file/table/table-cell/table-cell-components.ts#L164">file/table/table-cell/table-cell-components.ts:164</a></li>
+						</ul>
+					</aside>
 				</section>
 			</section>
 		</div>
@@ -153,14 +125,17 @@
 				<ul class="before-current">
 				</ul>
 				<ul class="current">
-					<li class="current tsd-kind-class tsd-is-external">
-						<a href="compiler.html" class="tsd-kind-icon">Compiler</a>
+					<li class="current tsd-kind-enum tsd-is-external">
+						<a href="textdirection.html" class="tsd-kind-icon">Text<wbr>Direction</a>
 						<ul>
-							<li class=" tsd-kind-constructor tsd-parent-kind-class tsd-is-external">
-								<a href="compiler.html#constructor" class="tsd-kind-icon">constructor</a>
+							<li class=" tsd-kind-enum-member tsd-parent-kind-enum tsd-is-external">
+								<a href="textdirection.html#bottom_to_top_left_to_right" class="tsd-kind-icon">BOTTOM_<wbr>TO_<wbr>TOP_<wbr>LEFT_<wbr>TO_<wbr>RIGHT</a>
 							</li>
-							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-external">
-								<a href="compiler.html#compile" class="tsd-kind-icon">compile</a>
+							<li class=" tsd-kind-enum-member tsd-parent-kind-enum tsd-is-external">
+								<a href="textdirection.html#left_to_right_top_to_bottom" class="tsd-kind-icon">LEFT_<wbr>TO_<wbr>RIGHT_<wbr>TOP_<wbr>TO_<wbr>BOTTOM</a>
+							</li>
+							<li class=" tsd-kind-enum-member tsd-parent-kind-enum tsd-is-external">
+								<a href="textdirection.html#top_to_bottom_right_to_left" class="tsd-kind-icon">TOP_<wbr>TO_<wbr>BOTTOM_<wbr>RIGHT_<wbr>TO_<wbr>LEFT</a>
 							</li>
 						</ul>
 					</li>
