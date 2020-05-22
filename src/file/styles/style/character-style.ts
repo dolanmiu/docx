@@ -1,3 +1,4 @@
+import { EmphasisMarkType } from "file/paragraph/run/emphasis-mark";
 import * as formatting from "file/paragraph/run/formatting";
 import { RunProperties } from "file/paragraph/run/properties";
 import { UnderlineType } from "file/paragraph/run/underline";
@@ -22,6 +23,9 @@ export interface IBaseCharacterStyleOptions {
         readonly underline?: {
             readonly type?: UnderlineType;
             readonly color?: string;
+        };
+        readonly emphasisMark?: {
+            readonly type?: EmphasisMarkType;
         };
         readonly color?: string;
         readonly font?: string;
@@ -102,6 +106,10 @@ export class CharacterStyle extends Style {
 
             if (options.run.underline) {
                 this.runProperties.push(new formatting.Underline(options.run.underline.type, options.run.underline.color));
+            }
+
+            if (options.run.emphasisMark) {
+                this.runProperties.push(new formatting.EmphasisMark(options.run.emphasisMark.type));
             }
 
             if (options.run.color) {

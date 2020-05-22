@@ -5,4 +5,5 @@ export * from "./picture-run";
 export * from "./run-fonts";
 export * from "./sequential-identifier";
 export * from "./underline";
+export * from "./emphasis-mark";
 export * from "./tab";

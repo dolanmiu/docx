@@ -1,7 +1,7 @@
 import { expect } from "chai";
 
 import { Formatter } from "export/formatter";
-import { AlignmentType, TabStopPosition } from "file/paragraph";
+import { AlignmentType, EmphasisMarkType, TabStopPosition } from "file/paragraph";
 import { UnderlineType } from "file/paragraph/run/underline";
 import { ShadingType } from "file/table";
 import { EMPTY_OBJECT } from "file/xml-components";
@@ -49,7 +49,15 @@ describe("ParagraphStyle", () => {
             const style = new ParagraphStyle({ id: "myStyleId", quickFormat: true });
             const tree = new Formatter().format(style);
             expect(tree).to.deep.equal({
-                "w:style": [{ _attr: { "w:type": "paragraph", "w:styleId": "myStyleId" } }, { "w:qFormat": EMPTY_OBJECT }],
+                "w:style": [
+                    {
+                        _attr: {
+                            "w:type": "paragraph",
+                            "w:styleId": "myStyleId",
+                        },
+                    },
+                    { "w:qFormat": EMPTY_OBJECT },
+                ],
             });
         });
 
@@ -299,7 +307,15 @@ describe("ParagraphStyle", () => {
             });
             const tree = new Formatter().format(style);
             expect(tree).to.deep.equal({
-                "w:style": [{ _attr: { "w:type": "paragraph", "w:styleId": "myStyleId" } }, { "w:pPr": [{ "w:keepLines": EMPTY_OBJECT }] }],
+                "w:style": [
+                    {
+                        _attr: {
+                            "w:type": "paragraph",
+                            "w:styleId": "myStyleId",
+                        },
+                    },
+                    { "w:pPr": [{ "w:keepLines": EMPTY_OBJECT }] },
+                ],
             });
         });
 
@@ -312,7 +328,15 @@ describe("ParagraphStyle", () => {
             });
             const tree = new Formatter().format(style);
             expect(tree).to.deep.equal({
-                "w:style": [{ _attr: { "w:type": "paragraph", "w:styleId": "myStyleId" } }, { "w:pPr": [{ "w:keepNext": EMPTY_OBJECT }] }],
+                "w:style": [
+                    {
+                        _attr: {
+                            "w:type": "paragraph",
+                            "w:styleId": "myStyleId",
+                        },
+                    },
+                    { "w:pPr": [{ "w:keepNext": EMPTY_OBJECT }] },
+                ],
             });
         });
 
@@ -473,7 +497,16 @@ describe("ParagraphStyle", () => {
                     { _attr: { "w:type": "paragraph", "w:styleId": "myStyleId" } },
                     {
                         "w:rPr": [
-                            { "w:rFonts": { _attr: { "w:ascii": "Times", "w:cs": "Times", "w:eastAsia": "Times", "w:hAnsi": "Times" } } },
+                            {
+                                "w:rFonts": {
+                                    _attr: {
+                                        "w:ascii": "Times",
+                                        "w:cs": "Times",
+                                        "w:eastAsia": "Times",
+                                        "w:hAnsi": "Times",
+                                    },
+                                },
+                            },
                         ],
                     },
                 ],
@@ -550,7 +583,17 @@ describe("ParagraphStyle", () => {
                 "w:style": [
                     { _attr: { "w:type": "paragraph", "w:styleId": "myStyleId" } },
                     {
-                        "w:rPr": [{ "w:shd": { _attr: { "w:val": "pct10", "w:fill": "00FFFF", "w:color": "FF0000" } } }],
+                        "w:rPr": [
+                            {
+                                "w:shd": {
+                                    _attr: {
+                                        "w:val": "pct10",
+                                        "w:fill": "00FFFF",
+                                        "w:color": "FF0000",
+                                    },
+                                },
+                            },
+                        ],
                     },
                 ],
             });
@@ -617,6 +660,46 @@ describe("ParagraphStyle", () => {
             });
         });
 
+        describe("#emphasisMark", () => {
+            it("should set emphasisMark to 'dot' if no arguments are given", () => {
+                const style = new ParagraphStyle({
+                    id: "myStyleId",
+                    run: {
+                        emphasisMark: {},
+                    },
+                });
+                const tree = new Formatter().format(style);
+                expect(tree).to.deep.equal({
+                    "w:style": [
+                        { _attr: { "w:type": "paragraph", "w:styleId": "myStyleId" } },
+                        {
+                            "w:rPr": [{ "w:em": { _attr: { "w:val": "dot" } } }],
+                        },
+                    ],
+                });
+            });
+
+            it("should set the style if given", () => {
+                const style = new ParagraphStyle({
+                    id: "myStyleId",
+                    run: {
+                        emphasisMark: {
+                            type: EmphasisMarkType.DOT,
+                        },
+                    },
+                });
+                const tree = new Formatter().format(style);
+                expect(tree).to.deep.equal({
+                    "w:style": [
+                        { _attr: { "w:type": "paragraph", "w:styleId": "myStyleId" } },
+                        {
+                            "w:rPr": [{ "w:em": { _attr: { "w:val": "dot" } } }],
+                        },
+                    ],
+                });
+            });
+        });
+
         it("#color", () => {
             const style = new ParagraphStyle({
                 id: "myStyleId",
@@ -639,7 +722,15 @@ describe("ParagraphStyle", () => {
             const style = new ParagraphStyle({ id: "myStyleId", link: "MyLink" });
             const tree = new Formatter().format(style);
             expect(tree).to.deep.equal({
-                "w:style": [{ _attr: { "w:type": "paragraph", "w:styleId": "myStyleId" } }, { "w:link": { _attr: { "w:val": "MyLink" } } }],
+                "w:style": [
+                    {
+                        _attr: {
+                            "w:type": "paragraph",
+                            "w:styleId": "myStyleId",
+                        },
+                    },
+                    { "w:link": { _attr: { "w:val": "MyLink" } } },
+                ],
             });
         });
 
@@ -647,7 +738,15 @@ describe("ParagraphStyle", () => {
             const style = new ParagraphStyle({ id: "myStyleId", semiHidden: true });
             const tree = new Formatter().format(style);
             expect(tree).to.deep.equal({
-                "w:style": [{ _attr: { "w:type": "paragraph", "w:styleId": "myStyleId" } }, { "w:semiHidden": EMPTY_OBJECT }],
+                "w:style": [
+                    {
+                        _attr: {
+                            "w:type": "paragraph",
+                            "w:styleId": "myStyleId",
+                        },
+                    },
+                    { "w:semiHidden": EMPTY_OBJECT },
+                ],
             });
         });
 
@@ -672,7 +771,15 @@ describe("ParagraphStyle", () => {
             const style = new ParagraphStyle({ id: "myStyleId", unhideWhenUsed: true });
             const tree = new Formatter().format(style);
             expect(tree).to.deep.equal({
-                "w:style": [{ _attr: { "w:type": "paragraph", "w:styleId": "myStyleId" } }, { "w:unhideWhenUsed": EMPTY_OBJECT }],
+                "w:style": [
+                    {
+                        _attr: {
+                            "w:type": "paragraph",
+                            "w:styleId": "myStyleId",
+                        },
+                    },
+                    { "w:unhideWhenUsed": EMPTY_OBJECT },
+                ],
             });
         });
     });

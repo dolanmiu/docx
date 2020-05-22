@@ -5,6 +5,7 @@ import { Formatter } from "export/formatter";
 import { ShadingType } from "file/table";
 
 import { Run } from "./";
+import { EmphasisMarkType } from "./emphasis-mark";
 import { PageNumber } from "./run";
 import { UnderlineType } from "./underline";
 
@@ -80,6 +81,30 @@ describe("Run", () => {
             const tree = new Formatter().format(run);
             expect(tree).to.deep.equal({
                 "w:r": [{ "w:rPr": [{ "w:u": { _attr: { "w:val": "double", "w:color": "990011" } } }] }],
+            });
+        });
+    });
+
+    describe("#emphasisMark()", () => {
+        it("should default to 'dot'", () => {
+            const run = new Run({
+                emphasisMark: {},
+            });
+            const tree = new Formatter().format(run);
+            expect(tree).to.deep.equal({
+                "w:r": [{ "w:rPr": [{ "w:em": { _attr: { "w:val": "dot" } } }] }],
+            });
+        });
+
+        it("should set the style type if given", () => {
+            const run = new Run({
+                emphasisMark: {
+                    type: EmphasisMarkType.DOT,
+                },
+            });
+            const tree = new Formatter().format(run);
+            expect(tree).to.deep.equal({
+                "w:r": [{ "w:rPr": [{ "w:em": { _attr: { "w:val": "dot" } } }] }],
             });
         });
     });
@@ -235,7 +260,16 @@ describe("Run", () => {
                 "w:r": [
                     {
                         "w:rPr": [
-                            { "w:rFonts": { _attr: { "w:ascii": "Times", "w:cs": "Times", "w:eastAsia": "Times", "w:hAnsi": "Times" } } },
+                            {
+                                "w:rFonts": {
+                                    _attr: {
+                                        "w:ascii": "Times",
+                                        "w:cs": "Times",
+                                        "w:eastAsia": "Times",
+                                        "w:hAnsi": "Times",
+                                    },
+                                },
+                            },
                         ],
                     },
                 ],
