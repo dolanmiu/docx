@@ -22,7 +22,8 @@ const name = new TextRun({
 ### Run formatting
 
 -   `bold`, `italics`, `smallCaps`, `allCaps`, `strike`, `doubleStrike`, `subScript`, `superScript`: Set the formatting property to true
--   `underline(style="single", color=null)`: Set the underline style and color
+-   `underline({type="single", color=null})`: Set the underline style and color
+-   `emphasisMark({type="dot"})`: Set the emphasis mark style
 -   `color(color)`: Set the text color, using 6 hex characters for RRGGBB (no leading `#`)
 -   `size(halfPts)`: Set the font size, measured in half-points
 -   `font(name)`: Set the run's font
