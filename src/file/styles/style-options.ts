@@ -1,4 +1,4 @@
-import { AlignmentType, IIndentAttributesProperties, ISpacingProperties, UnderlineType } from "../paragraph";
+import { AlignmentType, EmphasisMarkType, IIndentAttributesProperties, ISpacingProperties, UnderlineType } from "../paragraph";
 import { ShadingType } from "../table";
 
 export interface IRunStyleOptions {
@@ -14,6 +14,9 @@ export interface IRunStyleOptions {
     readonly underline?: {
         readonly type?: UnderlineType;
         readonly color?: string;
+    };
+    readonly emphasisMark?: {
+        readonly type?: EmphasisMarkType;
     };
     readonly color?: string;
     readonly font?: string;

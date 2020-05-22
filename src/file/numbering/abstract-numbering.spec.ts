@@ -3,7 +3,7 @@ import { expect } from "chai";
 import { Formatter } from "export/formatter";
 import { EMPTY_OBJECT } from "file/xml-components";
 
-import { AlignmentType, TabStopPosition } from "../paragraph";
+import { AlignmentType, EmphasisMarkType, TabStopPosition } from "../paragraph";
 import { UnderlineType } from "../paragraph/run/underline";
 import { ShadingType } from "../table";
 import { AbstractNumbering } from "./abstract-numbering";
@@ -433,7 +433,16 @@ describe("AbstractNumbering", () => {
                 const tree = new Formatter().format(abstractNumbering);
                 expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({
                     "w:rPr": [
-                        { "w:rFonts": { _attr: { "w:ascii": "Times", "w:cs": "Times", "w:eastAsia": "Times", "w:hAnsi": "Times" } } },
+                        {
+                            "w:rFonts": {
+                                _attr: {
+                                    "w:ascii": "Times",
+                                    "w:cs": "Times",
+                                    "w:eastAsia": "Times",
+                                    "w:hAnsi": "Times",
+                                },
+                            },
+                        },
                     ],
                 });
             });
@@ -578,6 +587,48 @@ describe("AbstractNumbering", () => {
                     const tree = new Formatter().format(abstractNumbering);
                     expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({
                         "w:rPr": [{ "w:u": { _attr: { "w:val": "double", "w:color": "005599" } } }],
+                    });
+                });
+            });
+
+            describe("#emphasisMark", () => {
+                it("should set emphasisMark to 'dot' if no arguments are given", () => {
+                    const abstractNumbering = new AbstractNumbering(1, [
+                        {
+                            level: 0,
+                            format: "lowerRoman",
+                            text: "%0.",
+                            style: {
+                                run: {
+                                    emphasisMark: {},
+                                },
+                            },
+                        },
+                    ]);
+                    const tree = new Formatter().format(abstractNumbering);
+                    expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({
+                        "w:rPr": [{ "w:em": { _attr: { "w:val": "dot" } } }],
+                    });
+                });
+
+                it("should set the style if given", () => {
+                    const abstractNumbering = new AbstractNumbering(1, [
+                        {
+                            level: 0,
+                            format: "lowerRoman",
+                            text: "%0.",
+                            style: {
+                                run: {
+                                    emphasisMark: {
+                                        type: EmphasisMarkType.DOT,
+                                    },
+                                },
+                            },
+                        },
+                    ]);
+                    const tree = new Formatter().format(abstractNumbering);
+                    expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({
+                        "w:rPr": [{ "w:em": { _attr: { "w:val": "dot" } } }],
                     });
                 });
             });

@@ -177,6 +177,10 @@ export class LevelBase extends XmlComponent {
                     this.runProperties.push(new formatting.Underline(style.run.underline.type, style.run.underline.color));
                 }
 
+                if (style.run.emphasisMark) {
+                    this.runProperties.push(new formatting.EmphasisMark(style.run.emphasisMark.type));
+                }
+
                 if (style.run.color) {
                     this.runProperties.push(new formatting.Color(style.run.color));
                 }

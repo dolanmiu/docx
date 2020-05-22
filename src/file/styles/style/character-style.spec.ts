@@ -1,6 +1,7 @@
 import { expect } from "chai";
 
 import { Formatter } from "export/formatter";
+import { EmphasisMarkType } from "file/paragraph/run/emphasis-mark";
 import { UnderlineType } from "file/paragraph/run/underline";
 import { ShadingType } from "file/table";
 import { EMPTY_OBJECT } from "file/xml-components";
@@ -412,6 +413,66 @@ describe("CharacterStyle", () => {
             });
         });
 
+        describe("#emphasisMark", () => {
+            it("should set emphasisMark to 'dot' if no arguments are given", () => {
+                const style = new CharacterStyle({
+                    id: "myStyleId",
+                    run: {
+                        emphasisMark: {},
+                    },
+                });
+                const tree = new Formatter().format(style);
+                expect(tree).to.deep.equal({
+                    "w:style": [
+                        { _attr: { "w:type": "character", "w:styleId": "myStyleId" } },
+                        {
+                            "w:rPr": [{ "w:em": { _attr: { "w:val": "dot" } } }],
+                        },
+                        {
+                            "w:uiPriority": {
+                                _attr: {
+                                    "w:val": 99,
+                                },
+                            },
+                        },
+                        {
+                            "w:unhideWhenUsed": EMPTY_OBJECT,
+                        },
+                    ],
+                });
+            });
+
+            it("should set the style if given", () => {
+                const style = new CharacterStyle({
+                    id: "myStyleId",
+                    run: {
+                        emphasisMark: {
+                            type: EmphasisMarkType.DOT,
+                        },
+                    },
+                });
+                const tree = new Formatter().format(style);
+                expect(tree).to.deep.equal({
+                    "w:style": [
+                        { _attr: { "w:type": "character", "w:styleId": "myStyleId" } },
+                        {
+                            "w:rPr": [{ "w:em": { _attr: { "w:val": "dot" } } }],
+                        },
+                        {
+                            "w:uiPriority": {
+                                _attr: {
+                                    "w:val": 99,
+                                },
+                            },
+                        },
+                        {
+                            "w:unhideWhenUsed": EMPTY_OBJECT,
+                        },
+                    ],
+                });
+            });
+        });
+
         it("#superScript", () => {
             const style = new CharacterStyle({
                 id: "myStyleId",
@@ -616,7 +677,17 @@ describe("CharacterStyle", () => {
                 "w:style": [
                     { _attr: { "w:type": "character", "w:styleId": "myStyleId" } },
                     {
-                        "w:rPr": [{ "w:shd": { _attr: { "w:val": "pct10", "w:fill": "00FFFF", "w:color": "FF0000" } } }],
+                        "w:rPr": [
+                            {
+                                "w:shd": {
+                                    _attr: {
+                                        "w:val": "pct10",
+                                        "w:fill": "00FFFF",
+                                        "w:color": "FF0000",
+                                    },
+                                },
+                            },
+                        ],
                     },
                     {
                         "w:uiPriority": {
