@@ -171,6 +171,11 @@ export class Paragraph extends XmlComponent {
         return super.prepForXml();
     }
 
+    public appendRun(run: Run): Paragraph {
+        this.root.push(run);
+        return this;
+    }
+
     public addRunToFront(run: Run): Paragraph {
         this.root.splice(1, 0, run);
         return this;
