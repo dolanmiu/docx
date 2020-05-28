@@ -114,6 +114,10 @@ export class ParagraphStyle extends Style {
                 this.runProperties.push(new formatting.Underline(options.run.underline.type, options.run.underline.color));
             }
 
+            if (options.run.emphasisMark) {
+                this.runProperties.push(new formatting.EmphasisMark(options.run.emphasisMark.type));
+            }
+
             if (options.run.color) {
                 this.runProperties.push(new formatting.Color(options.run.color));
             }

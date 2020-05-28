@@ -162,6 +162,10 @@ doc.addSection({
                     underline: {},
                 }),
                 new TextRun({
+                    text: "and then emphasis-mark ",
+                    emphasisMark: {},
+                }),
+                new TextRun({
                     text: "and back to normal.",
                 }),
             ],
