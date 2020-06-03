@@ -68,6 +68,15 @@ const text = new TextRun({
 });
 ```
 
+### Emphasis Mark
+
+```ts
+const text = new TextRun({
+    text: "and then emphasis mark",
+    emphasisMark: {},
+});
+```
+
 ### Strike through
 
 ```ts

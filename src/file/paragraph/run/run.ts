@@ -6,6 +6,7 @@ import { FootnoteReferenceRun } from "file/footnotes/footnote/run/reference-run"
 import { FieldInstruction } from "file/table-of-contents/field-instruction";
 import { Break } from "./break";
 import { Caps, SmallCaps } from "./caps";
+import { EmphasisMark, EmphasisMarkType } from "./emphasis-mark";
 import { Begin, End, Separate } from "./field";
 import {
     Bold,
@@ -37,6 +38,9 @@ export interface IRunOptions {
     readonly underline?: {
         readonly color?: string;
         readonly type?: UnderlineType;
+    };
+    readonly emphasisMark?: {
+        readonly type?: EmphasisMarkType;
     };
     readonly color?: string;
     readonly size?: number;
@@ -88,6 +92,10 @@ export class Run extends XmlComponent {
 
         if (options.underline) {
             this.properties.push(new Underline(options.underline.type, options.underline.color));
+        }
+
+        if (options.emphasisMark) {
+            this.properties.push(new EmphasisMark(options.emphasisMark.type));
         }
 
         if (options.color) {

@@ -1,5 +1,7 @@
 import { expect } from "chai";
 
+import { EmphasisMarkType } from "./emphasis-mark";
+
 import { Formatter } from "export/formatter";
 
 import { UnderlineType } from "./underline";
@@ -44,6 +46,9 @@ describe("SymbolRun", () => {
                     color: "red",
                     type: UnderlineType.DOUBLE,
                 },
+                emphasisMark: {
+                    type: EmphasisMarkType.DOT,
+                },
                 color: "green",
                 size: 40,
                 highlight: "yellow",
@@ -59,6 +64,7 @@ describe("SymbolRun", () => {
                             { "w:i": { _attr: { "w:val": true } } },
                             { "w:iCs": { _attr: { "w:val": true } } },
                             { "w:u": { _attr: { "w:val": "double", "w:color": "red" } } },
+                            { "w:em": { _attr: { "w:val": "dot" } } },
                             { "w:color": { _attr: { "w:val": "green" } } },
                             { "w:sz": { _attr: { "w:val": 40 } } },
                             { "w:szCs": { _attr: { "w:val": 40 } } },
