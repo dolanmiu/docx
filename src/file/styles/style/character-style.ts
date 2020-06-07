@@ -1,6 +1,7 @@
 import { EmphasisMarkType } from "file/paragraph/run/emphasis-mark";
 import * as formatting from "file/paragraph/run/formatting";
 import { RunProperties } from "file/paragraph/run/properties";
+import { IFontAttributesProperties } from "file/paragraph/run/run-fonts";
 import { UnderlineType } from "file/paragraph/run/underline";
 
 import { BasedOn, Link, SemiHidden, UiPriority, UnhideWhenUsed } from "./components";
@@ -28,7 +29,7 @@ export interface IBaseCharacterStyleOptions {
             readonly type?: EmphasisMarkType;
         };
         readonly color?: string;
-        readonly font?: string;
+        readonly font?: string | IFontAttributesProperties;
         readonly characterSpacing?: number;
         readonly highlight?: string;
         readonly shadow?: {

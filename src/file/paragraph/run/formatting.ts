@@ -3,7 +3,7 @@ import { Attributes, XmlComponent } from "file/xml-components";
 export { Underline } from "./underline";
 export { EmphasisMark } from "./emphasis-mark";
 export { SubScript, SuperScript } from "./script";
-export { RunFonts } from "./run-fonts";
+export { RunFonts, IFontAttributesProperties } from "./run-fonts";
 
 export class Bold extends XmlComponent {
     constructor() {
