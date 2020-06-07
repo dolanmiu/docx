@@ -1,9 +1,9 @@
-// Chinese text - Chinese need to use a Chinese font. And ascii Text Need to use a ascii font.
+// Chinese text - Chinese text need to use a Chinese font. And ascii text need to use a ascii font.
 // Different from the `52-japanese.ts`.
 //     `52-japanese.ts` will set all characters to use Japanese font.
 //     `53-chinese.ts` will set Chinese characters to use Chinese font, and set ascii characters to use ascii font.
 
-// Note that if the compute have not install `KaiTi` font, this demo doesn't work.
+// Note that if the OS have not install `KaiTi` font, this demo doesn't work.
 
 // Import from 'docx' rather than '../build' if you install from npm
 import * as fs from "fs";
