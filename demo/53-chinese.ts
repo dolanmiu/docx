@@ -7,7 +7,7 @@
 
 // Import from 'docx' rather than '../build' if you install from npm
 import * as fs from "fs";
-import { Document, HeadingLevel, Packer, Paragraph } from "../build";
+import { Document, HeadingLevel, Packer, Paragraph, TextRun } from "../build";
 
 const doc = new Document({
     styles: {
@@ -37,6 +37,15 @@ doc.addSection({
         }),
         new Paragraph({
             text: "中文和英文 Chinese and English",
+        }),
+        new Paragraph({
+            children: [
+                new TextRun({
+                    text: "中文和英文 Chinese and English",
+                    font: { eastAsia: "SimSun" },  // set eastAsia to "SimSun".
+                    // The ascii characters will use the default font ("Times") specified in paragraphStyles
+                }),
+            ],
         }),
     ],
 });
