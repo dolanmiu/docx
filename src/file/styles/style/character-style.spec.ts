@@ -202,7 +202,7 @@ describe("CharacterStyle", () => {
             });
         });
 
-        it("should add font", () => {
+        it("should add font by name", () => {
             const style = new CharacterStyle({
                 id: "myStyleId",
                 run: {
@@ -222,6 +222,46 @@ describe("CharacterStyle", () => {
                                         "w:cs": "test font",
                                         "w:eastAsia": "test font",
                                         "w:hAnsi": "test font",
+                                    },
+                                },
+                            },
+                        ],
+                    },
+                    {
+                        "w:uiPriority": {
+                            _attr: {
+                                "w:val": 99,
+                            },
+                        },
+                    },
+                    {
+                        "w:unhideWhenUsed": EMPTY_OBJECT,
+                    },
+                ],
+            });
+        });
+
+        it("should add font for ascii and eastAsia", () => {
+            const style = new CharacterStyle({
+                id: "myStyleId",
+                run: {
+                    font: {
+                        ascii: "test font ascii",
+                        eastAsia: "test font eastAsia",
+                    },
+                },
+            });
+            const tree = new Formatter().format(style);
+            expect(tree).to.deep.equal({
+                "w:style": [
+                    { _attr: { "w:type": "character", "w:styleId": "myStyleId" } },
+                    {
+                        "w:rPr": [
+                            {
+                                "w:rFonts": {
+                                    _attr: {
+                                        "w:ascii": "test font ascii",
+                                        "w:eastAsia": "test font eastAsia",
                                     },
                                 },
                             },
