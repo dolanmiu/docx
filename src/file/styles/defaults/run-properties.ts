@@ -1,6 +1,6 @@
 import { Size, SizeComplexScript } from "file/paragraph/run/formatting";
 import { RunProperties } from "file/paragraph/run/properties";
-import { RunFonts } from "file/paragraph/run/run-fonts";
+import { IFontAttributesProperties, RunFonts } from "file/paragraph/run/run-fonts";
 import { XmlComponent } from "file/xml-components";
 
 export class RunPropertiesDefaults extends XmlComponent {
@@ -18,8 +18,8 @@ export class RunPropertiesDefaults extends XmlComponent {
         return this;
     }
 
-    public font(fontName: string): RunPropertiesDefaults {
-        this.properties.push(new RunFonts(fontName));
+    public font(font: string | IFontAttributesProperties): RunPropertiesDefaults {
+        this.properties.push(new RunFonts(font));
         return this;
     }
 }

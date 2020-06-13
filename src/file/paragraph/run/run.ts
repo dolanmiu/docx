@@ -27,10 +27,15 @@ import {
 import { NumberOfPages, NumberOfPagesSection, Page } from "./page-number";
 import { RunProperties } from "./properties";
 import { Text } from "./run-components/text";
-import { RunFonts } from "./run-fonts";
+import { IFontAttributesProperties, RunFonts } from "./run-fonts";
 import { SubScript, SuperScript } from "./script";
 import { Style } from "./style";
 import { Underline, UnderlineType } from "./underline";
+
+interface IFontOptions {
+    readonly name: string;
+    readonly hint?: string;
+}
 
 export interface IRunOptions {
     readonly bold?: true;
@@ -52,10 +57,7 @@ export interface IRunOptions {
     readonly subScript?: boolean;
     readonly superScript?: boolean;
     readonly style?: string;
-    readonly font?: {
-        readonly name: string;
-        readonly hint?: string;
-    };
+    readonly font?: IFontOptions | IFontAttributesProperties;
     readonly highlight?: string;
     readonly shading?: {
         readonly type: ShadingType;
@@ -140,7 +142,11 @@ export class Run extends XmlComponent {
         }
 
         if (options.font) {
-            this.properties.push(new RunFonts(options.font.name, options.font.hint));
+            if ("name" in options.font) {
+                this.properties.push(new RunFonts(options.font.name, options.font.hint));
+            } else {
+                this.properties.push(new RunFonts(options.font));
+            }
         }
 
         if (options.highlight) {

@@ -21,5 +21,12 @@ describe("RunFonts", () => {
                 },
             });
         });
+
+        it("uses the font attrs for ascii and eastAsia", () => {
+            const tree = new Formatter().format(new RunFonts({ ascii: "Times", eastAsia: "KaiTi" }));
+            expect(tree).to.deep.equal({
+                "w:rFonts": { _attr: { "w:ascii": "Times", "w:eastAsia": "KaiTi" } },
+            });
+        });
     });
 });
