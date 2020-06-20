@@ -1,14 +1,14 @@
 import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
 
-interface IRunFontAttributesProperties {
-    readonly ascii: string;
-    readonly cs: string;
-    readonly eastAsia: string;
-    readonly hAnsi: string;
+export interface IFontAttributesProperties {
+    readonly ascii?: string;
+    readonly cs?: string;
+    readonly eastAsia?: string;
+    readonly hAnsi?: string;
     readonly hint?: string;
 }
 
-class RunFontAttributes extends XmlAttributeComponent<IRunFontAttributesProperties> {
+class RunFontAttributes extends XmlAttributeComponent<IFontAttributesProperties> {
     protected readonly xmlKeys = {
         ascii: "w:ascii",
         cs: "w:cs",
@@ -19,16 +19,26 @@ class RunFontAttributes extends XmlAttributeComponent<IRunFontAttributesProperti
 }
 
 export class RunFonts extends XmlComponent {
-    constructor(ascii: string, hint?: string) {
+    constructor(name: string, hint?: string);
+    constructor(attrs: string | IFontAttributesProperties);
+    constructor(nameOrAttrs: string | IFontAttributesProperties, hint?: string) {
         super("w:rFonts");
-        this.root.push(
-            new RunFontAttributes({
-                ascii: ascii,
-                cs: ascii,
-                eastAsia: ascii,
-                hAnsi: ascii,
-                hint: hint,
-            }),
-        );
+        if (typeof nameOrAttrs === "string") {
+            // use constructor(name: string, hint?: string);
+            const name = nameOrAttrs;
+            this.root.push(
+                new RunFontAttributes({
+                    ascii: name,
+                    cs: name,
+                    eastAsia: name,
+                    hAnsi: name,
+                    hint: hint,
+                }),
+            );
+        } else {
+            // use constructor(attrs: IRunFontAttributesProperties);
+            const attrs = nameOrAttrs;
+            this.root.push(new RunFontAttributes(attrs));
+        }
     }
 }

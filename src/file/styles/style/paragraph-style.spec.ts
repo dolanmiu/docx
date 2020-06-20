@@ -484,7 +484,7 @@ describe("ParagraphStyle", () => {
             });
         });
 
-        it("#font", () => {
+        it("#font by name", () => {
             const style = new ParagraphStyle({
                 id: "myStyleId",
                 run: {
@@ -504,6 +504,36 @@ describe("ParagraphStyle", () => {
                                         "w:cs": "Times",
                                         "w:eastAsia": "Times",
                                         "w:hAnsi": "Times",
+                                    },
+                                },
+                            },
+                        ],
+                    },
+                ],
+            });
+        });
+
+        it("#font for ascii and eastAsia", () => {
+            const style = new ParagraphStyle({
+                id: "myStyleId",
+                run: {
+                    font: {
+                        ascii: "Times",
+                        eastAsia: "KaiTi",
+                    },
+                },
+            });
+            const tree = new Formatter().format(style);
+            expect(tree).to.deep.equal({
+                "w:style": [
+                    { _attr: { "w:type": "paragraph", "w:styleId": "myStyleId" } },
+                    {
+                        "w:rPr": [
+                            {
+                                "w:rFonts": {
+                                    _attr: {
+                                        "w:ascii": "Times",
+                                        "w:eastAsia": "KaiTi",
                                     },
                                 },
                             },

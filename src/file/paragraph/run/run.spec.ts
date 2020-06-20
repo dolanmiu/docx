@@ -275,6 +275,32 @@ describe("Run", () => {
                 ],
             });
         });
+
+        it("should set the font for ascii and eastAsia", () => {
+            const run = new Run({
+                font: {
+                    ascii: "Times",
+                    eastAsia: "KaiTi",
+                },
+            });
+            const tree = new Formatter().format(run);
+            expect(tree).to.deep.equal({
+                "w:r": [
+                    {
+                        "w:rPr": [
+                            {
+                                "w:rFonts": {
+                                    _attr: {
+                                        "w:ascii": "Times",
+                                        "w:eastAsia": "KaiTi",
+                                    },
+                                },
+                            },
+                        ],
+                    },
+                ],
+            });
+        });
     });
 
     describe("#color", () => {

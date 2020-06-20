@@ -417,7 +417,7 @@ describe("AbstractNumbering", () => {
                 });
             });
 
-            it("#font", () => {
+            it("#font by name", () => {
                 const abstractNumbering = new AbstractNumbering(1, [
                     {
                         level: 0,
@@ -440,6 +440,37 @@ describe("AbstractNumbering", () => {
                                     "w:cs": "Times",
                                     "w:eastAsia": "Times",
                                     "w:hAnsi": "Times",
+                                },
+                            },
+                        },
+                    ],
+                });
+            });
+
+            it("#font for ascii and eastAsia", () => {
+                const abstractNumbering = new AbstractNumbering(1, [
+                    {
+                        level: 0,
+                        format: "lowerRoman",
+                        text: "%0.",
+                        style: {
+                            run: {
+                                font: {
+                                    ascii: "Times",
+                                    eastAsia: "KaiTi",
+                                },
+                            },
+                        },
+                    },
+                ]);
+                const tree = new Formatter().format(abstractNumbering);
+                expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({
+                    "w:rPr": [
+                        {
+                            "w:rFonts": {
+                                _attr: {
+                                    "w:ascii": "Times",
+                                    "w:eastAsia": "KaiTi",
                                 },
                             },
                         },
