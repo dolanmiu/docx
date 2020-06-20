@@ -87,6 +87,7 @@ export class Table extends XmlComponent {
                     for (let i = rowIndex + 1; i <= endRowIndex; i++) {
                         rows[i].addCellToIndex(
                             new TableCell({
+                                columnSpan: cell.options.columnSpan,
                                 borders: cell.options.borders,
                                 children: [],
                                 verticalMerge: VerticalMergeType.CONTINUE,
