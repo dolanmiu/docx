@@ -2,7 +2,7 @@
 // Also includes an example on how to center tables
 // Import from 'docx' rather than '../build' if you install from npm
 import * as fs from "fs";
-import { AlignmentType, Document, HeadingLevel, Packer, Paragraph, ShadingType, Table, TableCell, TableRow, WidthType } from "../build";
+import { AlignmentType, BorderStyle, Document, HeadingLevel, Packer, Paragraph, ShadingType, Table, TableCell, TableRow, WidthType } from "../build";
 
 const doc = new Document();
 
@@ -209,14 +209,40 @@ const table5 = new Table({
     },
 });
 
+const borders = {
+    top: {
+        style: BorderStyle.DASH_SMALL_GAP,
+        size: 1,
+        color: "red",
+    },
+    bottom: {
+        style: BorderStyle.DASH_SMALL_GAP,
+        size: 1,
+        color: "red",
+    },
+    left: {
+        style: BorderStyle.DASH_SMALL_GAP,
+        size: 1,
+        color: "red",
+    },
+    right: {
+        style: BorderStyle.DASH_SMALL_GAP,
+        size: 1,
+        color: "red",
+    },
+};
+
 const table6 = new Table({
     rows: [
         new TableRow({
             children: [
                 new TableCell({
-                    children: [new Paragraph("11")],
+                    borders,
+                    children: [new Paragraph("11"), new Paragraph("21")],
+                    rowSpan: 2,
                 }),
                 new TableCell({
+                    borders,
                     children: [new Paragraph("12")],
                 }),
             ],
@@ -224,18 +250,17 @@ const table6 = new Table({
         new TableRow({
             children: [
                 new TableCell({
-                    children: [new Paragraph("21"), new Paragraph("31")],
+                    borders,
+                    children: [new Paragraph("22"), new Paragraph("32")],
                     rowSpan: 2,
-                }),
-                new TableCell({
-                    children: [new Paragraph("22")],
                 }),
             ],
         }),
         new TableRow({
             children: [
                 new TableCell({
-                    children: [new Paragraph("32")],
+                    borders,
+                    children: [new Paragraph("31")],
                 }),
             ],
         }),
