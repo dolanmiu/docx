@@ -188,6 +188,72 @@ describe("Table", () => {
             });
         });
 
+        it("creates a table with the correct columnSpan and rowSpan", () => {
+            const table = new Table({
+                rows: [
+                    new TableRow({
+                        children: [
+                            new TableCell({
+                                children: [new Paragraph("hello")],
+                                columnSpan: 2,
+                            }),
+                        ],
+                    }),
+                    new TableRow({
+                        children: [
+                            new TableCell({
+                                children: [new Paragraph("hello")],
+                                rowSpan: 2,
+                            }),
+                            new TableCell({
+                                children: [new Paragraph("hello")],
+                            }),
+                        ],
+                    }),
+                    new TableRow({
+                        children: [
+                            new TableCell({
+                                children: [new Paragraph("hello")],
+                            }),
+                        ],
+                    }),
+                ],
+            });
+            const tree = new Formatter().format(table);
+            const cellP = { "w:p": [{ "w:r": [{ "w:t": [{ _attr: { "xml:space": "preserve" } }, "hello"] }] }] };
+            expect(tree).to.deep.equal({
+                "w:tbl": [
+                    { "w:tblPr": [DEFAULT_TABLE_PROPERTIES, BORDERS, WIDTHS] },
+                    {
+                        "w:tblGrid": [{ "w:gridCol": { _attr: { "w:w": 100 } } }, { "w:gridCol": { _attr: { "w:w": 100 } } }],
+                    },
+                    {
+                        "w:tr": [
+                            {
+                                "w:tc": [{ "w:tcPr": [{ "w:gridSpan": { _attr: { "w:val": 2 } } }] }, cellP],
+                            },
+                        ],
+                    },
+                    {
+                        "w:tr": [
+                            {
+                                "w:tc": [{ "w:tcPr": [{ "w:vMerge": { _attr: { "w:val": "restart" } } }] }, cellP],
+                            },
+                            { "w:tc": [cellP] },
+                        ],
+                    },
+                    {
+                        "w:tr": [
+                            {
+                                "w:tc": [{ "w:tcPr": [{ "w:vMerge": { _attr: { "w:val": "continue" } } }] }, { "w:p": {} }],
+                            },
+                            { "w:tc": [cellP] },
+                        ],
+                    },
+                ],
+            });
+        });
+
         it("sets the table to fixed width layout", () => {
             const table = new Table({
                 rows: [
