@@ -209,6 +209,43 @@ const table5 = new Table({
     },
 });
 
+const table6 = new Table({
+    rows: [
+        new TableRow({
+            children: [
+                new TableCell({
+                    children: [new Paragraph("11")],
+                }),
+                new TableCell({
+                    children: [new Paragraph("12")],
+                }),
+            ],
+        }),
+        new TableRow({
+            children: [
+                new TableCell({
+                    children: [new Paragraph("21"), new Paragraph("31")],
+                    rowSpan: 2,
+                }),
+                new TableCell({
+                    children: [new Paragraph("22")],
+                }),
+            ],
+        }),
+        new TableRow({
+            children: [
+                new TableCell({
+                    children: [new Paragraph("32")],
+                }),
+            ],
+        }),
+    ],
+    width: {
+        size: 100,
+        type: WidthType.PERCENTAGE,
+    },
+});
+
 doc.addSection({
     children: [
         table,
@@ -226,6 +263,8 @@ doc.addSection({
         table4,
         new Paragraph("More Merging columns"),
         table5,
+        new Paragraph("Another Merging columns"),
+        table6,
     ],
 });
 

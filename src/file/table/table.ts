@@ -78,27 +78,24 @@ export class Table extends XmlComponent {
             this.root.push(row);
         }
 
-        for (const row of rows) {
-            row.Children.forEach((cell, cellIndex) => {
-                const column = rows.map((r) => r.Children[cellIndex]);
+        rows.forEach((row, rowIndex) => {
+            row.cells.forEach((cell, cellIndex) => {
                 // Row Span has to be added in this method and not the constructor because it needs to know information about the column which happens after Table Cell construction
                 // Row Span of 1 will crash word as it will add RESTART and not a corresponding CONTINUE
                 if (cell.options.rowSpan && cell.options.rowSpan > 1) {
-                    const thisCellsColumnIndex = column.indexOf(cell);
-                    const endColumnIndex = thisCellsColumnIndex + (cell.options.rowSpan - 1);
-
-                    for (let i = thisCellsColumnIndex + 1; i <= endColumnIndex; i++) {
+                    const endRowIndex = rowIndex + (cell.options.rowSpan - 1);
+                    for (let i = rowIndex + 1; i <= endRowIndex; i++) {
                         rows[i].addCellToIndex(
                             new TableCell({
                                 children: [],
                                 verticalMerge: VerticalMergeType.CONTINUE,
                             }),
-                            i,
+                            cellIndex,
                         );
                     }
                 }
             });
-        }
+        });
 
         if (float) {
             this.properties.setTableFloatProperties(float);
