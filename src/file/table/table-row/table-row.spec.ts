@@ -182,4 +182,91 @@ describe("TableRow", () => {
             });
         });
     });
+
+    describe("#rootIndexToColumnIndex", () => {
+        it("should get the correct virtual column index by root index", () => {
+            const tableRow = new TableRow({
+                children: [
+                    new TableCell({
+                        children: [new Paragraph("test")],
+                        columnSpan: 3,
+                    }),
+                    new TableCell({
+                        children: [new Paragraph("test")],
+                    }),
+                    new TableCell({
+                        children: [new Paragraph("test")],
+                    }),
+                    new TableCell({
+                        children: [new Paragraph("test")],
+                        columnSpan: 3,
+                    }),
+                ],
+            });
+
+            expect(tableRow.rootIndexToColumnIndex(1)).to.equal(0);
+            expect(tableRow.rootIndexToColumnIndex(2)).to.equal(3);
+            expect(tableRow.rootIndexToColumnIndex(3)).to.equal(4);
+            expect(tableRow.rootIndexToColumnIndex(4)).to.equal(5);
+        });
+    });
+
+    describe("#columnIndexToRootIndex", () => {
+        it("should get the correct root index by virtual column index", () => {
+            const tableRow = new TableRow({
+                children: [
+                    new TableCell({
+                        children: [new Paragraph("test")],
+                        columnSpan: 3,
+                    }),
+                    new TableCell({
+                        children: [new Paragraph("test")],
+                    }),
+                    new TableCell({
+                        children: [new Paragraph("test")],
+                    }),
+                    new TableCell({
+                        children: [new Paragraph("test")],
+                        columnSpan: 3,
+                    }),
+                ],
+            });
+
+            expect(tableRow.columnIndexToRootIndex(0)).to.equal(1);
+            expect(tableRow.columnIndexToRootIndex(1)).to.equal(1);
+            expect(tableRow.columnIndexToRootIndex(2)).to.equal(1);
+
+            expect(tableRow.columnIndexToRootIndex(3)).to.equal(2);
+            expect(tableRow.columnIndexToRootIndex(4)).to.equal(3);
+
+            expect(tableRow.columnIndexToRootIndex(5)).to.equal(4);
+            expect(tableRow.columnIndexToRootIndex(6)).to.equal(4);
+            expect(tableRow.columnIndexToRootIndex(7)).to.equal(4);
+        });
+
+        it("should allow end new cell index", () => {
+            const tableRow = new TableRow({
+                children: [
+                    new TableCell({
+                        children: [new Paragraph("test")],
+                        columnSpan: 3,
+                    }),
+                    new TableCell({
+                        children: [new Paragraph("test")],
+                    }),
+                    new TableCell({
+                        children: [new Paragraph("test")],
+                    }),
+                    new TableCell({
+                        children: [new Paragraph("test")],
+                        columnSpan: 3,
+                    }),
+                ],
+            });
+
+            expect(() => tableRow.columnIndexToRootIndex(8)).to.throw(`cell 'columnIndex' should not great than 7`);
+            expect(tableRow.columnIndexToRootIndex(8, true)).to.equal(5);
+            expect(() => tableRow.columnIndexToRootIndex(9, true)).to.throw(`cell 'columnIndex' should not great than 8`);
+        });
+    });
 });

@@ -83,16 +83,18 @@ export class Table extends XmlComponent {
                 // Row Span has to be added in this method and not the constructor because it needs to know information about the column which happens after Table Cell construction
                 // Row Span of 1 will crash word as it will add RESTART and not a corresponding CONTINUE
                 if (cell.options.rowSpan && cell.options.rowSpan > 1) {
+                    const columnIndex = row.rootIndexToColumnIndex(cellIndex + 1);
+                    const startRowIndex = rowIndex + 1;
                     const endRowIndex = rowIndex + (cell.options.rowSpan - 1);
-                    for (let i = rowIndex + 1; i <= endRowIndex; i++) {
-                        rows[i].addCellToIndex(
+                    for (let i = startRowIndex; i <= endRowIndex; i++) {
+                        rows[i].addCellToColumnIndex(
                             new TableCell({
                                 columnSpan: cell.options.columnSpan,
                                 borders: cell.options.borders,
                                 children: [],
                                 verticalMerge: VerticalMergeType.CONTINUE,
                             }),
-                            cellIndex,
+                            columnIndex,
                         );
                     }
                 }

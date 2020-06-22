@@ -184,7 +184,7 @@ const table5 = new Table({
         new TableRow({
             children: [
                 new TableCell({
-                    children: [],
+                    children: [new Paragraph("1,0")],
                 }),
                 new TableCell({
                     children: [new Paragraph("1,2")],
@@ -195,10 +195,10 @@ const table5 = new Table({
         new TableRow({
             children: [
                 new TableCell({
-                    children: [],
+                    children: [new Paragraph("2,0")],
                 }),
                 new TableCell({
-                    children: [],
+                    children: [new Paragraph("2,1")],
                 }),
             ],
         }),
@@ -238,12 +238,12 @@ const table6 = new Table({
             children: [
                 new TableCell({
                     borders,
-                    children: [new Paragraph("11"), new Paragraph("21")],
+                    children: [new Paragraph("0,0")],
                     rowSpan: 2,
                 }),
                 new TableCell({
                     borders,
-                    children: [new Paragraph("12")],
+                    children: [new Paragraph("0,1")],
                 }),
             ],
         }),
@@ -251,7 +251,7 @@ const table6 = new Table({
             children: [
                 new TableCell({
                     borders,
-                    children: [new Paragraph("22"), new Paragraph("32")],
+                    children: [new Paragraph("1,1")],
                     rowSpan: 2,
                 }),
             ],
@@ -260,7 +260,72 @@ const table6 = new Table({
             children: [
                 new TableCell({
                     borders,
-                    children: [new Paragraph("31")],
+                    children: [new Paragraph("2,0")],
+                }),
+            ],
+        }),
+    ],
+    width: {
+        size: 100,
+        type: WidthType.PERCENTAGE,
+    },
+});
+
+const table7 = new Table({
+    rows: [
+        new TableRow({
+            children: [
+                new TableCell({
+                    children: [new Paragraph("0,0")],
+                }),
+                new TableCell({
+                    children: [new Paragraph("0,1")],
+                }),
+                new TableCell({
+                    children: [new Paragraph("0,2")],
+                    rowSpan: 2,
+                }),
+                new TableCell({
+                    children: [new Paragraph("0,3")],
+                }),
+            ],
+        }),
+        new TableRow({
+            children: [
+                new TableCell({
+                    children: [new Paragraph("1,0")],
+                    columnSpan: 2,
+                }),
+                new TableCell({
+                    children: [new Paragraph("1,3")],
+                }),
+            ],
+        }),
+        new TableRow({
+            children: [
+                new TableCell({
+                    children: [new Paragraph("2,0")],
+                    columnSpan: 2,
+                }),
+                new TableCell({
+                    children: [new Paragraph("2,2")],
+                    rowSpan: 2,
+                }),
+                new TableCell({
+                    children: [new Paragraph("2,3")],
+                }),
+            ],
+        }),
+        new TableRow({
+            children: [
+                new TableCell({
+                    children: [new Paragraph("3,0")],
+                }),
+                new TableCell({
+                    children: [new Paragraph("3,1")],
+                }),
+                new TableCell({
+                    children: [new Paragraph("3,3")],
                 }),
             ],
         }),
@@ -284,12 +349,14 @@ doc.addSection({
             heading: HeadingLevel.HEADING_2,
         }),
         table3,
-        new Paragraph("Merging columns"),
+        new Paragraph("Merging columns 1"),
         table4,
-        new Paragraph("More Merging columns"),
+        new Paragraph("Merging columns 2"),
         table5,
-        new Paragraph("Another Merging columns"),
+        new Paragraph("Merging columns 3"),
         table6,
+        new Paragraph("Merging columns 4"),
+        table7,
     ],
 });
 
