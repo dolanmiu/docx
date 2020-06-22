@@ -208,6 +208,9 @@ describe("TableRow", () => {
             expect(tableRow.rootIndexToColumnIndex(2)).to.equal(3);
             expect(tableRow.rootIndexToColumnIndex(3)).to.equal(4);
             expect(tableRow.rootIndexToColumnIndex(4)).to.equal(5);
+
+            expect(() => tableRow.rootIndexToColumnIndex(0)).to.throw(`cell 'rootIndex' should between 1 to 4`);
+            expect(() => tableRow.rootIndexToColumnIndex(5)).to.throw(`cell 'rootIndex' should between 1 to 4`);
         });
     });
 
@@ -242,6 +245,9 @@ describe("TableRow", () => {
             expect(tableRow.columnIndexToRootIndex(5)).to.equal(4);
             expect(tableRow.columnIndexToRootIndex(6)).to.equal(4);
             expect(tableRow.columnIndexToRootIndex(7)).to.equal(4);
+
+            expect(() => tableRow.columnIndexToRootIndex(-1)).to.throw(`cell 'columnIndex' should not less than zero`);
+            expect(() => tableRow.columnIndexToRootIndex(8)).to.throw(`cell 'columnIndex' should not great than 7`);
         });
 
         it("should allow end new cell index", () => {
@@ -264,7 +270,6 @@ describe("TableRow", () => {
                 ],
             });
 
-            expect(() => tableRow.columnIndexToRootIndex(8)).to.throw(`cell 'columnIndex' should not great than 7`);
             expect(tableRow.columnIndexToRootIndex(8, true)).to.equal(5);
             expect(() => tableRow.columnIndexToRootIndex(9, true)).to.throw(`cell 'columnIndex' should not great than 8`);
         });
