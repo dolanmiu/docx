@@ -43,6 +43,7 @@ export interface IParagraphOptions {
     readonly numbering?: {
         readonly reference: string;
         readonly level: number;
+        readonly numId?: number;
         readonly custom?: boolean;
     };
     readonly children?: Array<
@@ -143,7 +144,11 @@ export class Paragraph extends XmlComponent {
             if (!options.numbering.custom) {
                 this.properties.push(new Style("ListParagraph"));
             }
-            this.properties.push(new NumberProperties(options.numbering.reference, options.numbering.level));
+            if (options.numbering.numId) {
+                this.properties.push(new NumberProperties(options.numbering.numId, options.numbering.level));
+            } else {
+                this.properties.push(new NumberProperties(options.numbering.reference, options.numbering.level));
+            }
         }
 
         if (options.children) {
