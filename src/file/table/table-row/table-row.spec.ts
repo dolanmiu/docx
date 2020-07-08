@@ -271,7 +271,7 @@ describe("TableRow", () => {
             });
 
             expect(tableRow.columnIndexToRootIndex(8, true)).to.equal(5);
-            // for column 10, just place the new cell at the end of cell
+            // for column 10, just place the new cell at the end of row
             expect(tableRow.columnIndexToRootIndex(10, true)).to.equal(5);
         });
     });

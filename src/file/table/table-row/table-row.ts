@@ -86,7 +86,7 @@ export class TableRow extends XmlComponent {
         while (colIdx <= columnIndex) {
             if (rootIdx >= this.root.length) {
                 if (allowEndNewCell) {
-                    // for insert verticalMerge CONTINUE at row end
+                    // for inserting verticalMerge CONTINUE cell at end of row
                     return this.root.length;
                 } else {
                     throw new Error(`cell 'columnIndex' should not great than ${colIdx - 1}`);
