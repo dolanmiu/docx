@@ -83,10 +83,14 @@ export class TableRow extends XmlComponent {
         let colIdx = 0;
         // Offset because properties is also in root.
         let rootIdx = 1;
-        const endRootIndex = allowEndNewCell ? this.root.length : this.root.length - 1;
         while (colIdx <= columnIndex) {
-            if (rootIdx > endRootIndex) {
-                throw new Error(`cell 'columnIndex' should not great than ${colIdx - 1}`);
+            if (rootIdx >= this.root.length) {
+                if (allowEndNewCell) {
+                    // for insert verticalMerge CONTINUE at row end
+                    return this.root.length;
+                } else {
+                    throw new Error(`cell 'columnIndex' should not great than ${colIdx - 1}`);
+                }
             }
             const cell = this.root[rootIdx] as TableCell;
             rootIdx += 1;

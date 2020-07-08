@@ -287,6 +287,7 @@ const table7 = new Table({
                 }),
                 new TableCell({
                     children: [new Paragraph("0,3")],
+                    rowSpan: 3,
                 }),
             ],
         }),
@@ -295,9 +296,6 @@ const table7 = new Table({
                 new TableCell({
                     children: [new Paragraph("1,0")],
                     columnSpan: 2,
-                }),
-                new TableCell({
-                    children: [new Paragraph("1,3")],
                 }),
             ],
         }),
@@ -310,9 +308,6 @@ const table7 = new Table({
                 new TableCell({
                     children: [new Paragraph("2,2")],
                     rowSpan: 2,
-                }),
-                new TableCell({
-                    children: [new Paragraph("2,3")],
                 }),
             ],
         }),
