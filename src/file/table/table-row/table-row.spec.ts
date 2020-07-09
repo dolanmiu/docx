@@ -271,7 +271,8 @@ describe("TableRow", () => {
             });
 
             expect(tableRow.columnIndexToRootIndex(8, true)).to.equal(5);
-            expect(() => tableRow.columnIndexToRootIndex(9, true)).to.throw(`cell 'columnIndex' should not great than 8`);
+            // for column 10, just place the new cell at the end of row
+            expect(tableRow.columnIndexToRootIndex(10, true)).to.equal(5);
         });
     });
 });

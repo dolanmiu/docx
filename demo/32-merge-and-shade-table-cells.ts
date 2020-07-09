@@ -287,6 +287,7 @@ const table7 = new Table({
                 }),
                 new TableCell({
                     children: [new Paragraph("0,3")],
+                    rowSpan: 3,
                 }),
             ],
         }),
@@ -295,9 +296,6 @@ const table7 = new Table({
                 new TableCell({
                     children: [new Paragraph("1,0")],
                     columnSpan: 2,
-                }),
-                new TableCell({
-                    children: [new Paragraph("1,3")],
                 }),
             ],
         }),
@@ -310,9 +308,6 @@ const table7 = new Table({
                 new TableCell({
                     children: [new Paragraph("2,2")],
                     rowSpan: 2,
-                }),
-                new TableCell({
-                    children: [new Paragraph("2,3")],
                 }),
             ],
         }),
@@ -327,6 +322,41 @@ const table7 = new Table({
                 new TableCell({
                     children: [new Paragraph("3,3")],
                 }),
+            ],
+        }),
+    ],
+    width: {
+        size: 100,
+        type: WidthType.PERCENTAGE,
+    },
+});
+
+const table8 = new Table({
+    rows: [
+        new TableRow({
+            children: [
+                new TableCell({ children: [new Paragraph("1,1")] }),
+                new TableCell({ children: [new Paragraph("1,2")] }),
+                new TableCell({ children: [new Paragraph("1,3")] }),
+                new TableCell({ children: [new Paragraph("1,4")], rowSpan: 4, borders }),
+            ],
+        }),
+        new TableRow({
+            children: [
+                new TableCell({ children: [new Paragraph("2,1")] }),
+                new TableCell({ children: [new Paragraph("2,2")] }),
+                new TableCell({ children: [new Paragraph("2,3")], rowSpan: 3 }),
+            ],
+        }),
+        new TableRow({
+            children: [
+                new TableCell({ children: [new Paragraph("3,1")] }),
+                new TableCell({ children: [new Paragraph("3,2")], rowSpan: 2 }),
+            ],
+        }),
+        new TableRow({
+            children: [
+                new TableCell({ children: [new Paragraph("4,1")] }),
             ],
         }),
     ],
@@ -357,6 +387,8 @@ doc.addSection({
         table6,
         new Paragraph("Merging columns 4"),
         table7,
+        new Paragraph("Merging columns 5"),
+        table8,
     ],
 });
 

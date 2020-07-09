@@ -70,6 +70,9 @@ export class TableCell extends XmlComponent {
 
         if (options.verticalMerge) {
             this.properties.addVerticalMerge(options.verticalMerge);
+        } else if (options.rowSpan && options.rowSpan > 1) {
+            // if cell already have a `verticalMerge`, don't handle `rowSpan`
+            this.properties.addVerticalMerge(VerticalMergeType.RESTART);
         }
 
         if (options.margins) {
@@ -82,10 +85,6 @@ export class TableCell extends XmlComponent {
 
         if (options.columnSpan) {
             this.properties.addGridSpan(options.columnSpan);
-        }
-
-        if (options.rowSpan && options.rowSpan > 1) {
-            this.properties.addVerticalMerge(VerticalMergeType.RESTART);
         }
 
         if (options.width) {
