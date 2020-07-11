@@ -115,17 +115,6 @@ export class Imprint extends XmlComponent {
     }
 }
 
-/* export class Shadow extends XmlComponent {
-    constructor() {
-        super("w:shadow");
-        this.root.push(
-            new Attributes({
-                val: true,
-            }),
-        );
-    }
-} */
-
 export class SmallCaps extends XmlComponent {
     constructor() {
         super("w:smallCaps");

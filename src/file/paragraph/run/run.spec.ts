@@ -116,7 +116,7 @@ describe("Run", () => {
             });
             const tree = new Formatter().format(run);
             expect(tree).to.deep.equal({
-                "w:r": [{ "w:rPr": [{ "w:smallCaps": {} }] }],
+                "w:r": [{ "w:rPr": [{ "w:smallCaps": { _attr: { "w:val": true } } }] }],
             });
         });
     });
@@ -128,7 +128,7 @@ describe("Run", () => {
             });
             const tree = new Formatter().format(run);
             expect(tree).to.deep.equal({
-                "w:r": [{ "w:rPr": [{ "w:caps": {} }] }],
+                "w:r": [{ "w:rPr": [{ "w:caps": { _attr: { "w:val": true } } }] }],
             });
         });
     });

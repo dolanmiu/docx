@@ -292,6 +292,7 @@ describe("AbstractNumbering", () => {
                         style: {
                             run: {
                                 size: 24,
+                                sizeComplexScript: false,
                             },
                         },
                     },
@@ -487,6 +488,7 @@ describe("AbstractNumbering", () => {
                         style: {
                             run: {
                                 bold: true,
+                                boldComplexScript: false,
                             },
                         },
                     },
@@ -506,6 +508,7 @@ describe("AbstractNumbering", () => {
                         style: {
                             run: {
                                 italics: true,
+                                italicsComplexScript: false,
                             },
                         },
                     },
@@ -525,6 +528,7 @@ describe("AbstractNumbering", () => {
                         style: {
                             run: {
                                 highlight: "005599",
+                                highlightComplexScript: false,
                             },
                         },
                     },
@@ -548,6 +552,7 @@ describe("AbstractNumbering", () => {
                                     fill: "00FFFF",
                                     color: "FF0000",
                                 },
+                                shadingComplexScript: false,
                             },
                         },
                     },

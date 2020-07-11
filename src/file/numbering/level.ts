@@ -1,19 +1,7 @@
 import { Attributes, XmlAttributeComponent, XmlComponent } from "file/xml-components";
-import {
-    Alignment,
-    AlignmentType,
-    Indent,
-    KeepLines,
-    KeepNext,
-    Spacing,
-    TabStop,
-    TabStopType,
-    ThematicBreak,
-} from "../paragraph/formatting";
-import { ParagraphProperties } from "../paragraph/properties";
-import * as formatting from "../paragraph/run/formatting";
-import { RunProperties } from "../paragraph/run/properties";
-import { IParagraphStyleOptions2, IRunStyleOptions } from "../styles/style-options";
+import { AlignmentType } from "../paragraph/formatting";
+import { IParagraphStylePropertiesOptions, ParagraphProperties } from "../paragraph/properties";
+import { IRunStylePropertiesOptions, RunProperties } from "../paragraph/run/properties";
 
 interface ILevelAttributesProperties {
     readonly ilvl?: number;
@@ -85,8 +73,8 @@ export interface ILevelsOptions {
     readonly start?: number;
     readonly suffix?: LevelSuffix;
     readonly style?: {
-        readonly run?: IRunStyleOptions;
-        readonly paragraph?: IParagraphStyleOptions2;
+        readonly run?: IRunStylePropertiesOptions;
+        readonly paragraph?: IParagraphStylePropertiesOptions;
     };
 }
 
@@ -125,112 +113,14 @@ export class LevelBase extends XmlComponent {
             this.root.push(new LevelText(text));
         }
 
-        this.paragraphProperties = new ParagraphProperties({});
-        this.runProperties = new RunProperties();
+        this.paragraphProperties = new ParagraphProperties(style && style.paragraph);
+        this.runProperties = new RunProperties(style && style.run);
 
         this.root.push(this.paragraphProperties);
         this.root.push(this.runProperties);
 
         if (suffix) {
             this.root.push(new Suffix(suffix));
-        }
-
-        if (style) {
-            if (style.run) {
-                if (style.run.size) {
-                    this.runProperties.push(new formatting.Size(style.run.size));
-                }
-
-                if (style.run.bold) {
-                    this.runProperties.push(new formatting.Bold());
-                }
-
-                if (style.run.italics) {
-                    this.runProperties.push(new formatting.Italics());
-                }
-
-                if (style.run.smallCaps) {
-                    this.runProperties.push(new formatting.SmallCaps());
-                }
-
-                if (style.run.allCaps) {
-                    this.runProperties.push(new formatting.Caps());
-                }
-
-                if (style.run.strike) {
-                    this.runProperties.push(new formatting.Strike());
-                }
-
-                if (style.run.doubleStrike) {
-                    this.runProperties.push(new formatting.DoubleStrike());
-                }
-
-                if (style.run.subScript) {
-                    this.runProperties.push(new formatting.SubScript());
-                }
-
-                if (style.run.superScript) {
-                    this.runProperties.push(new formatting.SuperScript());
-                }
-
-                if (style.run.underline) {
-                    this.runProperties.push(new formatting.Underline(style.run.underline.type, style.run.underline.color));
-                }
-
-                if (style.run.emphasisMark) {
-                    this.runProperties.push(new formatting.EmphasisMark(style.run.emphasisMark.type));
-                }
-
-                if (style.run.color) {
-                    this.runProperties.push(new formatting.Color(style.run.color));
-                }
-
-                if (style.run.font) {
-                    this.runProperties.push(new formatting.RunFonts(style.run.font));
-                }
-
-                if (style.run.highlight) {
-                    this.runProperties.push(new formatting.Highlight(style.run.highlight));
-                }
-
-                if (style.run.shadow) {
-                    this.runProperties.push(new formatting.Shading(style.run.shadow.type, style.run.shadow.fill, style.run.shadow.color));
-                }
-            }
-
-            if (style.paragraph) {
-                if (style.paragraph.alignment) {
-                    this.paragraphProperties.push(new Alignment(style.paragraph.alignment));
-                }
-
-                if (style.paragraph.thematicBreak) {
-                    this.paragraphProperties.push(new ThematicBreak());
-                }
-
-                if (style.paragraph.rightTabStop) {
-                    this.paragraphProperties.push(new TabStop(TabStopType.RIGHT, style.paragraph.rightTabStop));
-                }
-
-                if (style.paragraph.leftTabStop) {
-                    this.paragraphProperties.push(new TabStop(TabStopType.LEFT, style.paragraph.leftTabStop));
-                }
-
-                if (style.paragraph.indent) {
-                    this.paragraphProperties.push(new Indent(style.paragraph.indent));
-                }
-
-                if (style.paragraph.spacing) {
-                    this.paragraphProperties.push(new Spacing(style.paragraph.spacing));
-                }
-
-                if (style.paragraph.keepNext) {
-                    this.paragraphProperties.push(new KeepNext());
-                }
-
-                if (style.paragraph.keepLines) {
-                    this.paragraphProperties.push(new KeepLines());
-                }
-            }
         }
     }
 }

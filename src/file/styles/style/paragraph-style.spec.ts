@@ -548,6 +548,7 @@ describe("ParagraphStyle", () => {
                 id: "myStyleId",
                 run: {
                     bold: true,
+                    boldComplexScript: false,
                 },
             });
             const tree = new Formatter().format(style);
@@ -566,6 +567,7 @@ describe("ParagraphStyle", () => {
                 id: "myStyleId",
                 run: {
                     italics: true,
+                    italicsComplexScript: false,
                 },
             });
             const tree = new Formatter().format(style);
@@ -584,6 +586,7 @@ describe("ParagraphStyle", () => {
                 id: "myStyleId",
                 run: {
                     highlight: "005599",
+                    highlightComplexScript: false,
                 },
             });
             const tree = new Formatter().format(style);
@@ -606,6 +609,7 @@ describe("ParagraphStyle", () => {
                         fill: "00FFFF",
                         color: "FF0000",
                     },
+                    shadingComplexScript: false,
                 },
             });
             const tree = new Formatter().format(style);
