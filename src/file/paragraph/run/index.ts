@@ -1,4 +1,5 @@
 export * from "./run";
+export * from "./properties";
 export * from "./text-run";
 export * from "./symbol-run";
 export * from "./picture-run";
