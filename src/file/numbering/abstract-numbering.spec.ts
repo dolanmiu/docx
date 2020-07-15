@@ -283,23 +283,41 @@ describe("AbstractNumbering", () => {
         });
 
         describe("formatting methods: run properties", () => {
-            it("#size", () => {
-                const abstractNumbering = new AbstractNumbering(1, [
-                    {
-                        level: 0,
-                        format: "lowerRoman",
-                        text: "%0.",
-                        style: {
-                            run: {
-                                size: 24,
-                                sizeComplexScript: false,
+            const sizeTests = [
+                {
+                    size: 24,
+                    expected: [{ "w:sz": { _attr: { "w:val": 24 } } }, { "w:szCs": { _attr: { "w:val": 24 } } }],
+                },
+                {
+                    size: 24,
+                    sizeComplexScript: true,
+                    expected: [{ "w:sz": { _attr: { "w:val": 24 } } }, { "w:szCs": { _attr: { "w:val": 24 } } }],
+                },
+                {
+                    size: 24,
+                    sizeComplexScript: false,
+                    expected: [{ "w:sz": { _attr: { "w:val": 24 } } }],
+                },
+                {
+                    size: 24,
+                    sizeComplexScript: 26,
+                    expected: [{ "w:sz": { _attr: { "w:val": 24 } } }, { "w:szCs": { _attr: { "w:val": 26 } } }],
+                },
+            ];
+            sizeTests.forEach(({ size, sizeComplexScript, expected }) => {
+                it(`#size ${size} cs ${sizeComplexScript}`, () => {
+                    const abstractNumbering = new AbstractNumbering(1, [
+                        {
+                            level: 0,
+                            format: "lowerRoman",
+                            text: "%0.",
+                            style: {
+                                run: { size, sizeComplexScript },
                             },
                         },
-                    },
-                ]);
-                const tree = new Formatter().format(abstractNumbering);
-                expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({
-                    "w:rPr": [{ "w:sz": { _attr: { "w:val": 24 } } }],
+                    ]);
+                    const tree = new Formatter().format(abstractNumbering);
+                    expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({ "w:rPr": expected });
                 });
             });
 
@@ -479,87 +497,185 @@ describe("AbstractNumbering", () => {
                 });
             });
 
-            it("#bold", () => {
-                const abstractNumbering = new AbstractNumbering(1, [
-                    {
-                        level: 0,
-                        format: "lowerRoman",
-                        text: "%0.",
-                        style: {
-                            run: {
-                                bold: true,
-                                boldComplexScript: false,
+            const boldTests = [
+                {
+                    bold: true,
+                    expected: [{ "w:b": { _attr: { "w:val": true } } }, { "w:bCs": { _attr: { "w:val": true } } }],
+                },
+                {
+                    bold: true,
+                    boldComplexScript: true,
+                    expected: [{ "w:b": { _attr: { "w:val": true } } }, { "w:bCs": { _attr: { "w:val": true } } }],
+                },
+                {
+                    bold: true,
+                    boldComplexScript: false,
+                    expected: [{ "w:b": { _attr: { "w:val": true } } }],
+                },
+            ];
+            boldTests.forEach(({ bold, boldComplexScript, expected }) => {
+                it(`#bold ${bold} cs ${boldComplexScript}`, () => {
+                    const abstractNumbering = new AbstractNumbering(1, [
+                        {
+                            level: 0,
+                            format: "lowerRoman",
+                            text: "%0.",
+                            style: {
+                                run: { bold, boldComplexScript },
                             },
                         },
-                    },
-                ]);
-                const tree = new Formatter().format(abstractNumbering);
-                expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({
-                    "w:rPr": [{ "w:b": { _attr: { "w:val": true } } }],
+                    ]);
+                    const tree = new Formatter().format(abstractNumbering);
+                    expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({ "w:rPr": expected });
                 });
             });
 
-            it("#italics", () => {
-                const abstractNumbering = new AbstractNumbering(1, [
-                    {
-                        level: 0,
-                        format: "lowerRoman",
-                        text: "%0.",
-                        style: {
-                            run: {
-                                italics: true,
-                                italicsComplexScript: false,
+            const italicsTests = [
+                {
+                    italics: true,
+                    expected: [{ "w:i": { _attr: { "w:val": true } } }, { "w:iCs": { _attr: { "w:val": true } } }],
+                },
+                {
+                    italics: true,
+                    italicsComplexScript: true,
+                    expected: [{ "w:i": { _attr: { "w:val": true } } }, { "w:iCs": { _attr: { "w:val": true } } }],
+                },
+                {
+                    italics: true,
+                    italicsComplexScript: false,
+                    expected: [{ "w:i": { _attr: { "w:val": true } } }],
+                },
+            ];
+            italicsTests.forEach(({ italics, italicsComplexScript, expected }) => {
+                it(`#italics ${italics} cs ${italicsComplexScript}`, () => {
+                    const abstractNumbering = new AbstractNumbering(1, [
+                        {
+                            level: 0,
+                            format: "lowerRoman",
+                            text: "%0.",
+                            style: {
+                                run: { italics, italicsComplexScript },
                             },
                         },
-                    },
-                ]);
-                const tree = new Formatter().format(abstractNumbering);
-                expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({
-                    "w:rPr": [{ "w:i": { _attr: { "w:val": true } } }],
+                    ]);
+                    const tree = new Formatter().format(abstractNumbering);
+                    expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({ "w:rPr": expected });
                 });
             });
 
-            it("#highlight", () => {
-                const abstractNumbering = new AbstractNumbering(1, [
-                    {
-                        level: 0,
-                        format: "lowerRoman",
-                        text: "%0.",
-                        style: {
-                            run: {
-                                highlight: "005599",
-                                highlightComplexScript: false,
+            const highlightTests = [
+                {
+                    highlight: "005599",
+                    expected: [{ "w:highlight": { _attr: { "w:val": "005599" } } }, { "w:highlightCs": { _attr: { "w:val": "005599" } } }],
+                },
+                {
+                    highlight: "005599",
+                    highlightComplexScript: true,
+                    expected: [{ "w:highlight": { _attr: { "w:val": "005599" } } }, { "w:highlightCs": { _attr: { "w:val": "005599" } } }],
+                },
+                {
+                    highlight: "005599",
+                    highlightComplexScript: false,
+                    expected: [{ "w:highlight": { _attr: { "w:val": "005599" } } }],
+                },
+                {
+                    highlight: "005599",
+                    highlightComplexScript: "550099",
+                    expected: [{ "w:highlight": { _attr: { "w:val": "005599" } } }, { "w:highlightCs": { _attr: { "w:val": "550099" } } }],
+                },
+            ];
+            highlightTests.forEach(({ highlight, highlightComplexScript, expected }) => {
+                it(`#highlight ${highlight} cs ${highlightComplexScript}`, () => {
+                    const abstractNumbering = new AbstractNumbering(1, [
+                        {
+                            level: 0,
+                            format: "lowerRoman",
+                            text: "%0.",
+                            style: {
+                                run: { highlight, highlightComplexScript },
                             },
                         },
-                    },
-                ]);
-                const tree = new Formatter().format(abstractNumbering);
-                expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({
-                    "w:rPr": [{ "w:highlight": { _attr: { "w:val": "005599" } } }],
+                    ]);
+                    const tree = new Formatter().format(abstractNumbering);
+                    expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({ "w:rPr": expected });
                 });
             });
 
-            it("#shadow", () => {
-                const abstractNumbering = new AbstractNumbering(1, [
-                    {
-                        level: 0,
-                        format: "lowerRoman",
-                        text: "%0.",
-                        style: {
-                            run: {
-                                shadow: {
-                                    type: ShadingType.PERCENT_10,
-                                    fill: "00FFFF",
-                                    color: "FF0000",
-                                },
-                                shadingComplexScript: false,
+            const shadingTests = [
+                {
+                    shadow: {
+                        type: ShadingType.PERCENT_10,
+                        fill: "00FFFF",
+                        color: "FF0000",
+                    },
+                    expected: [
+                        { "w:shd": { _attr: { "w:val": "pct10", "w:fill": "00FFFF", "w:color": "FF0000" } } },
+                        { "w:shdCs": { _attr: { "w:val": "pct10", "w:fill": "00FFFF", "w:color": "FF0000" } } },
+                    ],
+                },
+                {
+                    shading: {
+                        type: ShadingType.PERCENT_10,
+                        fill: "00FFFF",
+                        color: "FF0000",
+                    },
+                    expected: [
+                        { "w:shd": { _attr: { "w:val": "pct10", "w:fill": "00FFFF", "w:color": "FF0000" } } },
+                        { "w:shdCs": { _attr: { "w:val": "pct10", "w:fill": "00FFFF", "w:color": "FF0000" } } },
+                    ],
+                },
+                {
+                    shading: {
+                        type: ShadingType.PERCENT_10,
+                        fill: "00FFFF",
+                        color: "FF0000",
+                    },
+                    shadingComplexScript: true,
+                    expected: [
+                        { "w:shd": { _attr: { "w:val": "pct10", "w:fill": "00FFFF", "w:color": "FF0000" } } },
+                        { "w:shdCs": { _attr: { "w:val": "pct10", "w:fill": "00FFFF", "w:color": "FF0000" } } },
+                    ],
+                },
+                {
+                    shading: {
+                        type: ShadingType.PERCENT_10,
+                        fill: "00FFFF",
+                        color: "FF0000",
+                    },
+                    shadingComplexScript: false,
+                    expected: [{ "w:shd": { _attr: { "w:val": "pct10", "w:fill": "00FFFF", "w:color": "FF0000" } } }],
+                },
+                {
+                    shading: {
+                        type: ShadingType.PERCENT_10,
+                        fill: "00FFFF",
+                        color: "FF0000",
+                    },
+                    shadingComplexScript: {
+                        type: ShadingType.PERCENT_10,
+                        fill: "00FFFF",
+                        color: "00FF00",
+                    },
+                    expected: [
+                        { "w:shd": { _attr: { "w:val": "pct10", "w:fill": "00FFFF", "w:color": "FF0000" } } },
+                        { "w:shdCs": { _attr: { "w:val": "pct10", "w:fill": "00FFFF", "w:color": "00FF00" } } },
+                    ],
+                },
+            ];
+            shadingTests.forEach(({ shadow, shading, shadingComplexScript, expected }) => {
+                it("#shadow correctly", () => {
+                    const abstractNumbering = new AbstractNumbering(1, [
+                        {
+                            level: 0,
+                            format: "lowerRoman",
+                            text: "%0.",
+                            style: {
+                                run: { shadow, shading, shadingComplexScript },
                             },
                         },
-                    },
-                ]);
-                const tree = new Formatter().format(abstractNumbering);
-                expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({
-                    "w:rPr": [{ "w:shd": { _attr: { "w:val": "pct10", "w:fill": "00FFFF", "w:color": "FF0000" } } }],
+                    ]);
+                    const tree = new Formatter().format(abstractNumbering);
+                    expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({ "w:rPr": expected });
                 });
             });
 
