@@ -34,7 +34,7 @@ export class TableRow extends XmlComponent {
         }
 
         if (options.height) {
-            this.properties.setHeight(options.height.height, options.height.rule);
+            this.properties.setHeight(options.height.value, options.height.rule);
         }
     }
 
