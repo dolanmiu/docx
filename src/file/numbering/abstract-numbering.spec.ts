@@ -7,6 +7,7 @@ import { AlignmentType, EmphasisMarkType, TabStopPosition } from "../paragraph";
 import { UnderlineType } from "../paragraph/run/underline";
 import { ShadingType } from "../table";
 import { AbstractNumbering } from "./abstract-numbering";
+import { LevelSuffix } from "./level";
 
 describe("AbstractNumbering", () => {
     it("stores its ID at its .id property", () => {
@@ -46,6 +47,20 @@ describe("AbstractNumbering", () => {
             expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({ "w:lvlJc": { _attr: { "w:val": "start" } } });
             expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({ "w:numFmt": { _attr: { "w:val": "lowerLetter" } } });
             expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({ "w:lvlText": { _attr: { "w:val": "%1)" } } });
+        });
+
+        it("has suffix", () => {
+            const abstractNumbering = new AbstractNumbering(1, [
+                {
+                    level: 3,
+                    format: "lowerLetter",
+                    text: "%1)",
+                    alignment: AlignmentType.END,
+                    suffix: LevelSuffix.SPACE,
+                },
+            ]);
+            const tree = new Formatter().format(abstractNumbering);
+            expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({ "w:suff": { _attr: { "w:val": "space" } } });
         });
 
         describe("formatting methods: paragraph properties", () => {
