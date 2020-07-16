@@ -34,6 +34,10 @@ Here is an example of `docx` working in `Angular`:
 
 *   https://stackblitz.com/edit/angular-afvxtz
 
+Here is an example of `docx` working in `React`:
+
+*   https://stackblitz.com/edit/react-ts-qq25sp
+
 ## Node
 
 Press `endpoint` on the `RunKit` website:
