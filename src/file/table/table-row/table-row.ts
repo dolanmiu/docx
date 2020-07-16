@@ -7,7 +7,7 @@ export interface ITableRowOptions {
     readonly cantSplit?: boolean;
     readonly tableHeader?: boolean;
     readonly height?: {
-        readonly height: number;
+        readonly value: number;
         readonly rule: HeightRule;
     };
     readonly children: TableCell[];
@@ -34,7 +34,7 @@ export class TableRow extends XmlComponent {
         }
 
         if (options.height) {
-            this.properties.setHeight(options.height.height, options.height.rule);
+            this.properties.setHeight(options.height.value, options.height.rule);
         }
     }
 

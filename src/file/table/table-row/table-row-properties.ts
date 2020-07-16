@@ -18,8 +18,8 @@ export class TableRowProperties extends IgnoreIfEmptyXmlComponent {
         return this;
     }
 
-    public setHeight(height: number, rule: HeightRule): TableRowProperties {
-        this.root.push(new TableRowHeight(height, rule));
+    public setHeight(value: number, rule: HeightRule): TableRowProperties {
+        this.root.push(new TableRowHeight(value, rule));
 
         return this;
     }

@@ -10,12 +10,12 @@ export enum HeightRule {
 }
 
 interface ITableRowHeight {
-    readonly height: number;
+    readonly value: number;
     readonly rule: HeightRule;
 }
 
 export class TableRowHeightAttributes extends XmlAttributeComponent<ITableRowHeight> {
-    protected readonly xmlKeys = { height: "w:val", rule: "w:hRule" };
+    protected readonly xmlKeys = { value: "w:val", rule: "w:hRule" };
 }
 
 export class TableRowHeight extends XmlComponent {
@@ -24,7 +24,7 @@ export class TableRowHeight extends XmlComponent {
 
         this.root.push(
             new TableRowHeightAttributes({
-                height: value,
+                value: value,
                 rule: rule,
             }),
         );
