@@ -38,7 +38,7 @@ Here is an example of `docx` working in `React`:
 
 *   https://stackblitz.com/edit/react-ts-qq25sp
 
-Here is an example of `docx` working in `VueJS`:
+Here is an example of `docx` working in `Vue.js`:
 
 *   https://stackblitz.com/edit/vuejs-docx
 
