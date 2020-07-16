@@ -38,6 +38,10 @@ Here is an example of `docx` working in `React`:
 
 *   https://stackblitz.com/edit/react-ts-qq25sp
 
+Here is an example of `docx` working in `VueJS`:
+
+*   https://stackblitz.com/edit/vuejs-docx
+
 ## Node
 
 Press `endpoint` on the `RunKit` website:
