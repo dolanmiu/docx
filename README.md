@@ -37,6 +37,7 @@ Here is an example of `docx` working in `Angular`:
 Here is an example of `docx` working in `React`:
 
 *   https://stackblitz.com/edit/react-ts-qq25sp
+*   https://stackblitz.com/edit/react-ts-qdqu7z (adding images to Word Document)
 
 Here is an example of `docx` working in `Vue.js`:
 
