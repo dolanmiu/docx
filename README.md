@@ -59,7 +59,7 @@ Press `endpoint` on the `RunKit` website:
 *   https://runkit.com/dolanmiu/docx-demo8 - Header and Footer
 *   https://runkit.com/dolanmiu/docx-demo10 - **My CV generated with docx**
 
-More [here](https://docx.js.org/#/examples) and [here](https://github.com/dolanmiu/docx/tree/master/demo)
+More [here](https://github.com/dolanmiu/docx/tree/master/demo)
 
 # How to use & Documentation
 
