@@ -63,7 +63,7 @@
   },
   "homepage": "https://github.com/dolanmiu/docx#readme",
   "devDependencies": {
-    "@types/chai": "^3.4.35",
+    "@types/chai": "^4.2.12",
     "@types/mocha": "^8.0.0",
     "@types/request-promise": "^4.1.42",
     "@types/shortid": "0.0.29",
