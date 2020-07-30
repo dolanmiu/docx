@@ -97,9 +97,28 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/7d655cd/src/file/styles/external-styles-factory.ts#L28">file/styles/external-styles-factory.ts:28</a></li>
+									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/6e94bbb/src/file/styles/external-styles-factory.ts#L28">src/file/styles/external-styles-factory.ts:28</a></li>
 								</ul>
 							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Creates new Style based on the given styles.
+										Parses the styles and convert them to XmlComponent.
+										Example content from styles.xml:
+										&lt;?xml version=&quot;1.0&quot;&gt;
+									&lt;w:styles xmlns:mc=&quot;some schema&quot; ...&gt;</p>
+								</div>
+								<p>  &lt;w:style w:type=&quot;paragraph&quot; w:styleId=&quot;Heading1&quot;&gt;
+									&lt;w:name w:val=&quot;heading 1&quot;/&gt;
+									.....
+								</w:style></p>
+								<p>  &lt;w:style w:type=&quot;paragraph&quot; w:styleId=&quot;Heading2&quot;&gt;
+									&lt;w:name w:val=&quot;heading 2&quot;/&gt;
+									.....
+								</w:style></p>
+								<p>  &lt;w:docDefaults&gt;Or any other element will be parsed to</w:docDefaults></p>
+								<p></w:styles></p>
+							</div>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
@@ -151,6 +170,7 @@
 				<li class="tsd-kind-function tsd-has-type-parameter"><span class="tsd-kind-icon">Function with type parameter</span></li>
 				<li class="tsd-kind-index-signature"><span class="tsd-kind-icon">Index signature</span></li>
 				<li class="tsd-kind-type-alias"><span class="tsd-kind-icon">Type alias</span></li>
+				<li class="tsd-kind-type-alias tsd-has-type-parameter"><span class="tsd-kind-icon">Type alias with type parameter</span></li>
 			</ul>
 			<ul class="tsd-legend">
 				<li class="tsd-kind-enum"><span class="tsd-kind-icon">Enumeration</span></li>
@@ -199,7 +219,7 @@
 	</div>
 </footer>
 <div class="container tsd-generator">
-	<p>Generated using <a href="http://typedoc.org/" target="_blank">TypeDoc</a></p>
+	<p>Generated using <a href="https://typedoc.org/" target="_blank">TypeDoc</a></p>
 </div>
 <div class="overlay"></div>
 <script src="../assets/js/main.js"></script>

@@ -103,9 +103,18 @@
 					<div class="tsd-signature tsd-kind-icon">absolute<wbr>Horizontal<wbr>Position<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">number</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/7d655cd/src/file/table/table-properties/table-float-properties.ts#L46">file/table/table-properties/table-float-properties.ts:46</a></li>
+							<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/6e94bbb/src/file/table/table-properties/table-float-properties.ts#L46">src/file/table/table-properties/table-float-properties.ts:46</a></li>
 						</ul>
 					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>Specifies an absolute horizontal position for the table, relative to the horizontalAnchor.
+								The value is in twentieths of a point. Note that the value can be negative, in which case the
+								table is positioned before the anchor object in the direction of horizontal text flow.
+								If relativeHorizontalPosition is also specified, then the absoluteHorizontalPosition attribute is ignored.
+							If the attribute is omitted, the value is assumed to be zero.</p>
+						</div>
+					</div>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-external">
 					<a name="absoluteverticalposition" class="tsd-anchor"></a>
@@ -113,9 +122,18 @@
 					<div class="tsd-signature tsd-kind-icon">absolute<wbr>Vertical<wbr>Position<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">number</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/7d655cd/src/file/table/table-properties/table-float-properties.ts#L77">file/table/table-properties/table-float-properties.ts:77</a></li>
+							<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/6e94bbb/src/file/table/table-properties/table-float-properties.ts#L77">src/file/table/table-properties/table-float-properties.ts:77</a></li>
 						</ul>
 					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>Specifies an absolute vertical position for the table, relative to the verticalAnchor anchor.
+								The value is in twentieths of a point. Note that the value can be negative, in which case the table is
+								positioned before the anchor object in the direction of vertical text flow.
+								If relativeVerticalPosition is also specified, then the absoluteVerticalPosition attribute is ignored.
+							If the attribute is omitted, the value is assumed to be zero.</p>
+						</div>
+					</div>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-external">
 					<a name="bottomfromtext" class="tsd-anchor"></a>
@@ -123,9 +141,15 @@
 					<div class="tsd-signature tsd-kind-icon">bottom<wbr>From<wbr>Text<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">number</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/7d655cd/src/file/table/table-properties/table-float-properties.ts#L95">file/table/table-properties/table-float-properties.ts:95</a></li>
+							<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/6e94bbb/src/file/table/table-properties/table-float-properties.ts#L95">src/file/table/table-properties/table-float-properties.ts:95</a></li>
 						</ul>
 					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>Specifies the minimun distance to be maintained between the table and the top of text in the paragraph
+							below the table. The value is in twentieths of a point. If omitted, the value is assumed to be zero.</p>
+						</div>
+					</div>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-external">
 					<a name="horizontalanchor" class="tsd-anchor"></a>
@@ -133,9 +157,19 @@
 					<div class="tsd-signature tsd-kind-icon">horizontal<wbr>Anchor<span class="tsd-signature-symbol">:</span> <a href="../enums/tableanchortype.html" class="tsd-signature-type">TableAnchorType</a></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/7d655cd/src/file/table/table-properties/table-float-properties.ts#L37">file/table/table-properties/table-float-properties.ts:37</a></li>
+							<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/6e94bbb/src/file/table/table-properties/table-float-properties.ts#L37">src/file/table/table-properties/table-float-properties.ts:37</a></li>
 						</ul>
 					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>Specifies the horizontal anchor or the base object from which the horizontal positioning in the
+								tblpX or tblpXSpec attribute should be determined.
+								margin - relative to the vertical edge of the text margin before any text runs (left edge for left-to-right paragraphs)
+								page - relative to the vertical edge of the page before any text runs (left edge for left-to-right paragraphs)
+								text - relative to the vertical edge of the text margin for the column in which the anchor paragraph is located
+							If omitted, the value is assumed to be page.</p>
+						</div>
+					</div>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-external">
 					<a name="leftfromtext" class="tsd-anchor"></a>
@@ -143,9 +177,15 @@
 					<div class="tsd-signature tsd-kind-icon">left<wbr>From<wbr>Text<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">number</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/7d655cd/src/file/table/table-properties/table-float-properties.ts#L107">file/table/table-properties/table-float-properties.ts:107</a></li>
+							<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/6e94bbb/src/file/table/table-properties/table-float-properties.ts#L107">src/file/table/table-properties/table-float-properties.ts:107</a></li>
 						</ul>
 					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>Specifies the minimun distance to be maintained between the table and the edge of text in the paragraph
+							to the left of the table. The value is in twentieths of a point. If omitted, the value is assumed to be zero.</p>
+						</div>
+					</div>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-external">
 					<a name="overlap" class="tsd-anchor"></a>
@@ -153,7 +193,7 @@
 					<div class="tsd-signature tsd-kind-icon">overlap<span class="tsd-signature-symbol">:</span> <a href="../enums/overlaptype.html" class="tsd-signature-type">OverlapType</a></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/7d655cd/src/file/table/table-properties/table-float-properties.ts#L114">file/table/table-properties/table-float-properties.ts:114</a></li>
+							<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/6e94bbb/src/file/table/table-properties/table-float-properties.ts#L114">src/file/table/table-properties/table-float-properties.ts:114</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -163,9 +203,21 @@
 					<div class="tsd-signature tsd-kind-icon">relative<wbr>Horizontal<wbr>Position<span class="tsd-signature-symbol">:</span> <a href="../enums/relativehorizontalposition.html" class="tsd-signature-type">RelativeHorizontalPosition</a></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/7d655cd/src/file/table/table-properties/table-float-properties.ts#L58">file/table/table-properties/table-float-properties.ts:58</a></li>
+							<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/6e94bbb/src/file/table/table-properties/table-float-properties.ts#L58">src/file/table/table-properties/table-float-properties.ts:58</a></li>
 						</ul>
 					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>Specifies a relative horizontal position for the table, relative to the horizontalAnchor attribute.
+								This will supersede the absoluteHorizontalPosition attribute.
+								Possible values are:
+								center - the table should be horizontally centered with respect to the anchor
+								inside - the table should be inside of the anchor
+								left - the table should be left aligned with respect to the anchor
+								outside - the table should be outside of the anchor
+							right - the table should be right aligned with respect to the anchor</p>
+						</div>
+					</div>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-external">
 					<a name="relativeverticalposition" class="tsd-anchor"></a>
@@ -173,9 +225,21 @@
 					<div class="tsd-signature tsd-kind-icon">relative<wbr>Vertical<wbr>Position<span class="tsd-signature-symbol">:</span> <a href="../enums/relativeverticalposition.html" class="tsd-signature-type">RelativeVerticalPosition</a></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/7d655cd/src/file/table/table-properties/table-float-properties.ts#L89">file/table/table-properties/table-float-properties.ts:89</a></li>
+							<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/6e94bbb/src/file/table/table-properties/table-float-properties.ts#L89">src/file/table/table-properties/table-float-properties.ts:89</a></li>
 						</ul>
 					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>Specifies a relative vertical position for the table, relative to the verticalAnchor attribute.
+								This will supersede the absoluteVerticalPosition attribute. Possible values are:
+								center - the table should be vertically centered with respect to the anchor
+								inside - the table should be vertically aligned to the edge of the anchor and inside the anchor
+								bottom - the table should be vertically aligned to the bottom edge of the anchor
+								outside - the table should be vertically aligned to the edge of the anchor and outside the anchor
+								inline - the table should be vertically aligned in line with the surrounding text (so as to not allow any text wrapping around it)
+							top - the table should be vertically aligned to the top edge of the anchor</p>
+						</div>
+					</div>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-external">
 					<a name="rightfromtext" class="tsd-anchor"></a>
@@ -183,9 +247,15 @@
 					<div class="tsd-signature tsd-kind-icon">right<wbr>From<wbr>Text<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">number</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/7d655cd/src/file/table/table-properties/table-float-properties.ts#L113">file/table/table-properties/table-float-properties.ts:113</a></li>
+							<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/6e94bbb/src/file/table/table-properties/table-float-properties.ts#L113">src/file/table/table-properties/table-float-properties.ts:113</a></li>
 						</ul>
 					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>Specifies the minimun distance to be maintained between the table and the edge of text in the paragraph
+							to the right of the table. The value is in twentieths of a point. If omitted, the value is assumed to be zero.</p>
+						</div>
+					</div>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-external">
 					<a name="topfromtext" class="tsd-anchor"></a>
@@ -193,9 +263,15 @@
 					<div class="tsd-signature tsd-kind-icon">top<wbr>From<wbr>Text<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">number</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/7d655cd/src/file/table/table-properties/table-float-properties.ts#L101">file/table/table-properties/table-float-properties.ts:101</a></li>
+							<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/6e94bbb/src/file/table/table-properties/table-float-properties.ts#L101">src/file/table/table-properties/table-float-properties.ts:101</a></li>
 						</ul>
 					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>Specifies the minimun distance to be maintained between the table and the bottom edge of text in the paragraph
+							above the table. The value is in twentieths of a point. If omitted, the value is assumed to be zero.</p>
+						</div>
+					</div>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-external">
 					<a name="verticalanchor" class="tsd-anchor"></a>
@@ -203,9 +279,19 @@
 					<div class="tsd-signature tsd-kind-icon">vertical<wbr>Anchor<span class="tsd-signature-symbol">:</span> <a href="../enums/tableanchortype.html" class="tsd-signature-type">TableAnchorType</a></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/7d655cd/src/file/table/table-properties/table-float-properties.ts#L68">file/table/table-properties/table-float-properties.ts:68</a></li>
+							<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/6e94bbb/src/file/table/table-properties/table-float-properties.ts#L68">src/file/table/table-properties/table-float-properties.ts:68</a></li>
 						</ul>
 					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>Specifies the vertical anchor or the base object from which the vertical positioning
+								in the absoluteVerticalPosition attribute should be determined. Possible values are:
+								margin - relative to the horizontal edge of the text margin before any text runs (top edge for top-to-bottom paragraphs)
+								page - relative to the horizontal edge of the page before any text runs (top edge for top-to-bottom paragraphs)
+								text - relative to the horizontal edge of the text margin for the column in which the anchor paragraph is located
+							If omitted, the value is assumed to be page.</p>
+						</div>
+					</div>
 				</section>
 			</section>
 		</div>
@@ -278,6 +364,7 @@
 				<li class="tsd-kind-function tsd-has-type-parameter"><span class="tsd-kind-icon">Function with type parameter</span></li>
 				<li class="tsd-kind-index-signature"><span class="tsd-kind-icon">Index signature</span></li>
 				<li class="tsd-kind-type-alias"><span class="tsd-kind-icon">Type alias</span></li>
+				<li class="tsd-kind-type-alias tsd-has-type-parameter"><span class="tsd-kind-icon">Type alias with type parameter</span></li>
 			</ul>
 			<ul class="tsd-legend">
 				<li class="tsd-kind-enum"><span class="tsd-kind-icon">Enumeration</span></li>
@@ -326,7 +413,7 @@
 	</div>
 </footer>
 <div class="container tsd-generator">
-	<p>Generated using <a href="http://typedoc.org/" target="_blank">TypeDoc</a></p>
+	<p>Generated using <a href="https://typedoc.org/" target="_blank">TypeDoc</a></p>
 </div>
 <div class="overlay"></div>
 <script src="../assets/js/main.js"></script>

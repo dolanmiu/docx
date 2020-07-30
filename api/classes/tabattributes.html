@@ -68,7 +68,7 @@
 				<h3>Hierarchy</h3>
 				<ul class="tsd-hierarchy">
 					<li>
-						<a href="xmlattributecomponent.html" class="tsd-signature-type">XmlAttributeComponent</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">object</span><span class="tsd-signature-symbol">&gt;</span>
+						<a href="xmlattributecomponent.html" class="tsd-signature-type">XmlAttributeComponent</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-symbol">{ </span>leader<span class="tsd-signature-symbol">?: </span><a href="../enums/leadertype.html" class="tsd-signature-type">LeaderType</a><span class="tsd-signature-symbol">; </span>pos<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">; </span>val<span class="tsd-signature-symbol">: </span><a href="../enums/tabstoptype.html" class="tsd-signature-type">TabStopType</a><span class="tsd-signature-symbol"> }</span><span class="tsd-signature-symbol">&gt;</span>
 						<ul class="tsd-hierarchy">
 							<li>
 								<span class="target">TabAttributes</span>
@@ -109,22 +109,31 @@
 					<a name="constructor" class="tsd-anchor"></a>
 					<h3>constructor</h3>
 					<ul class="tsd-signatures tsd-kind-constructor tsd-parent-kind-class tsd-is-overwrite tsd-is-inherited tsd-is-external">
-						<li class="tsd-signature tsd-kind-icon">new <wbr>Tab<wbr>Attributes<span class="tsd-signature-symbol">(</span>properties<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">object</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="tabattributes.html" class="tsd-signature-type">TabAttributes</a></li>
+						<li class="tsd-signature tsd-kind-icon">new <wbr>Tab<wbr>Attributes<span class="tsd-signature-symbol">(</span>properties<span class="tsd-signature-symbol">: </span><span class="tsd-signature-symbol">{ </span>leader<span class="tsd-signature-symbol">?: </span><a href="../enums/leadertype.html" class="tsd-signature-type">LeaderType</a><span class="tsd-signature-symbol">; </span>pos<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">; </span>val<span class="tsd-signature-symbol">: </span><a href="../enums/tabstoptype.html" class="tsd-signature-type">TabStopType</a><span class="tsd-signature-symbol"> }</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="tabattributes.html" class="tsd-signature-type">TabAttributes</a></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
-								<p>Inherited from <a href="xmlattributecomponent.html">XmlAttributeComponent</a>.<a href="xmlattributecomponent.html#constructor">constructor</a></p>
+								<p>Inherited from <a href="apppropertiesattributes.html">AppPropertiesAttributes</a>.<a href="apppropertiesattributes.html#constructor">constructor</a></p>
 								<p>Overrides <a href="basexmlcomponent.html">BaseXmlComponent</a>.<a href="basexmlcomponent.html#constructor">constructor</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/7d655cd/src/file/xml-components/default-attributes.ts#L9">file/xml-components/default-attributes.ts:9</a></li>
+									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/6e94bbb/src/file/xml-components/default-attributes.ts#L9">src/file/xml-components/default-attributes.ts:9</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
-									<h5>properties: <span class="tsd-signature-type">object</span></h5>
+									<h5>properties: <span class="tsd-signature-symbol">{ </span>leader<span class="tsd-signature-symbol">?: </span><a href="../enums/leadertype.html" class="tsd-signature-type">LeaderType</a><span class="tsd-signature-symbol">; </span>pos<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">; </span>val<span class="tsd-signature-symbol">: </span><a href="../enums/tabstoptype.html" class="tsd-signature-type">TabStopType</a><span class="tsd-signature-symbol"> }</span></h5>
 									<ul class="tsd-parameters">
+										<li class="tsd-parameter">
+											<h5><span class="tsd-flag ts-flagOptional">Optional</span> leader<span class="tsd-signature-symbol">?: </span><a href="../enums/leadertype.html" class="tsd-signature-type">LeaderType</a></h5>
+										</li>
+										<li class="tsd-parameter">
+											<h5>pos<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">number</span></h5>
+										</li>
+										<li class="tsd-parameter">
+											<h5>val<span class="tsd-signature-symbol">: </span><a href="../enums/tabstoptype.html" class="tsd-signature-type">TabStopType</a></h5>
+										</li>
 									</ul>
 								</li>
 							</ul>
@@ -138,13 +147,20 @@
 				<section class="tsd-panel tsd-member tsd-kind-get-signature tsd-parent-kind-class tsd-is-inherited tsd-is-external">
 					<a name="isdeleted" class="tsd-anchor"></a>
 					<h3>Is<wbr>Deleted</h3>
-					<div class="tsd-signature tsd-kind-icon">Is<wbr>Deleted<span class="tsd-signature-symbol">:</span> </div>
-					<aside class="tsd-sources">
-						<p>Inherited from <a href="basexmlcomponent.html">BaseXmlComponent</a>.<a href="basexmlcomponent.html#isdeleted">IsDeleted</a></p>
-						<ul>
-							<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/7d655cd/src/file/xml-components/base.ts#L15">file/xml-components/base.ts:15</a></li>
-						</ul>
-					</aside>
+					<ul class="tsd-signatures tsd-kind-get-signature tsd-parent-kind-class tsd-is-inherited tsd-is-external">
+						<li class="tsd-signature tsd-kind-icon"><span class="tsd-signature-symbol">get</span> IsDeleted<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">boolean</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<p>Inherited from <a href="apppropertiesattributes.html">AppPropertiesAttributes</a>.<a href="apppropertiesattributes.html#isdeleted">IsDeleted</a></p>
+								<ul>
+									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/6e94bbb/src/file/xml-components/base.ts#L15">src/file/xml-components/base.ts:15</a></li>
+								</ul>
+							</aside>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">boolean</span></h4>
+						</li>
+					</ul>
 				</section>
 			</section>
 			<section class="tsd-panel-group tsd-member-group tsd-is-inherited tsd-is-external">
@@ -158,10 +174,10 @@
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
-								<p>Inherited from <a href="xmlattributecomponent.html">XmlAttributeComponent</a>.<a href="xmlattributecomponent.html#prepforxml">prepForXml</a></p>
+								<p>Inherited from <a href="apppropertiesattributes.html">AppPropertiesAttributes</a>.<a href="apppropertiesattributes.html#prepforxml">prepForXml</a></p>
 								<p>Overrides <a href="basexmlcomponent.html">BaseXmlComponent</a>.<a href="basexmlcomponent.html#prepforxml">prepForXml</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/7d655cd/src/file/xml-components/default-attributes.ts#L16">file/xml-components/default-attributes.ts:16</a></li>
+									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/6e94bbb/src/file/xml-components/default-attributes.ts#L16">src/file/xml-components/default-attributes.ts:16</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-returns-title">Returns <a href="../interfaces/ixmlableobject.html" class="tsd-signature-type">IXmlableObject</a></h4>
@@ -172,21 +188,30 @@
 					<a name="set" class="tsd-anchor"></a>
 					<h3>set</h3>
 					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-external">
-						<li class="tsd-signature tsd-kind-icon">set<span class="tsd-signature-symbol">(</span>properties<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">object</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+						<li class="tsd-signature tsd-kind-icon">set<span class="tsd-signature-symbol">(</span>properties<span class="tsd-signature-symbol">: </span><span class="tsd-signature-symbol">{ </span>leader<span class="tsd-signature-symbol">?: </span><a href="../enums/leadertype.html" class="tsd-signature-type">LeaderType</a><span class="tsd-signature-symbol">; </span>pos<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">; </span>val<span class="tsd-signature-symbol">: </span><a href="../enums/tabstoptype.html" class="tsd-signature-type">TabStopType</a><span class="tsd-signature-symbol"> }</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
-								<p>Inherited from <a href="xmlattributecomponent.html">XmlAttributeComponent</a>.<a href="xmlattributecomponent.html#set">set</a></p>
+								<p>Inherited from <a href="apppropertiesattributes.html">AppPropertiesAttributes</a>.<a href="apppropertiesattributes.html#set">set</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/7d655cd/src/file/xml-components/default-attributes.ts#L28">file/xml-components/default-attributes.ts:28</a></li>
+									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/6e94bbb/src/file/xml-components/default-attributes.ts#L28">src/file/xml-components/default-attributes.ts:28</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
-									<h5>properties: <span class="tsd-signature-type">object</span></h5>
+									<h5>properties: <span class="tsd-signature-symbol">{ </span>leader<span class="tsd-signature-symbol">?: </span><a href="../enums/leadertype.html" class="tsd-signature-type">LeaderType</a><span class="tsd-signature-symbol">; </span>pos<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">; </span>val<span class="tsd-signature-symbol">: </span><a href="../enums/tabstoptype.html" class="tsd-signature-type">TabStopType</a><span class="tsd-signature-symbol"> }</span></h5>
 									<ul class="tsd-parameters">
+										<li class="tsd-parameter">
+											<h5><span class="tsd-flag ts-flagOptional">Optional</span> leader<span class="tsd-signature-symbol">?: </span><a href="../enums/leadertype.html" class="tsd-signature-type">LeaderType</a></h5>
+										</li>
+										<li class="tsd-parameter">
+											<h5>pos<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">number</span></h5>
+										</li>
+										<li class="tsd-parameter">
+											<h5>val<span class="tsd-signature-symbol">: </span><a href="../enums/tabstoptype.html" class="tsd-signature-type">TabStopType</a></h5>
+										</li>
 									</ul>
 								</li>
 							</ul>
@@ -244,6 +269,7 @@
 				<li class="tsd-kind-function tsd-has-type-parameter"><span class="tsd-kind-icon">Function with type parameter</span></li>
 				<li class="tsd-kind-index-signature"><span class="tsd-kind-icon">Index signature</span></li>
 				<li class="tsd-kind-type-alias"><span class="tsd-kind-icon">Type alias</span></li>
+				<li class="tsd-kind-type-alias tsd-has-type-parameter"><span class="tsd-kind-icon">Type alias with type parameter</span></li>
 			</ul>
 			<ul class="tsd-legend">
 				<li class="tsd-kind-enum"><span class="tsd-kind-icon">Enumeration</span></li>
@@ -292,7 +318,7 @@
 	</div>
 </footer>
 <div class="container tsd-generator">
-	<p>Generated using <a href="http://typedoc.org/" target="_blank">TypeDoc</a></p>
+	<p>Generated using <a href="https://typedoc.org/" target="_blank">TypeDoc</a></p>
 </div>
 <div class="overlay"></div>
 <script src="../assets/js/main.js"></script>
