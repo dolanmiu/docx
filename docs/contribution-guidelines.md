@@ -1,25 +1,23 @@
 # Contribution Guidelines
 
-*   Include documentation reference(s) at the top of each file:
+-   Include documentation reference(s) at the top of each file:
 
     ```ts
     // http://officeopenxml.com/WPdocument.php
     ```
 
-*   Follow Prettier standards, and consider using the [Prettier VSCode](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode) plugin.
+-   Follow Prettier standards, and consider using the [Prettier VSCode](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode) plugin.
 
-*   Follow the `TSLint` rules
+-   Follow the `TSLint` rules
 
 ## Always think about the user
-
-The number one pillar for contribution to `docx` is to **ALWAYS** think about how the user will use `docx`.
 
 Put yourself in their position, and imagine how they would feel about your feature you wrote.
 
 1. Is it easy to use?
 2. Has it been documented well?
 3. Is it intuitive?
-4. Is it consistent with the rest of the API?
+4. Is it declarative?
 5. Is it fun to use?
 
 ## Good Commit Names
@@ -27,40 +25,13 @@ Put yourself in their position, and imagine how they would feel about your featu
 Please write good commit messages when making a commit: https://chris.beams.io/posts/git-commit/
 
 **Do not:**
+
 ```
 c // What?
 rtl // Adding acryonyms without explaining anything else is not helpful
 works! // Glad its working, but the message is not helpful
 demo updated // Getting better, but capitalize the first letter
 Unesesary coment removed // Make sure to use correct spelling
-```
-
-## No leaky components in API interface
-
-> This mainly applies to the API the end user will consume.
-
-Try to make method parameters of the outside API accept primitives, or `json` objects, so that child components are created **inside** the component, rather than being **injected** in.
-
-This is so that:
-
-1. Imports are much cleaner for the end user, no need for:
-   ```ts
-   import { ChildComponent } from "./my-feature/sub-component/deeper/.../my-deep.component";
-   ```
-
-2. This is what I consider "leakage". The code is aware of the underlying implementation of the component.
-3. It means the end user does not need to import and create the child component to be injected.
-
-**Do not**
-
-`TableFloatProperties` is a class. The outside world would have to `new` up the object, and inject it in like so:
-
-```ts
-    public float(tableFloatProperties: TableFloatProperties): Table
-```
-
-```ts
-    table.float(new TableFloatProperties(...));
 ```
 
 **Do**
@@ -71,31 +42,29 @@ This is so that:
     public float(tableFloatOptions: ITableFloatOptions): Table
 ```
 
+## Delcariative API
+
+Make sure the API is declarative, so no _method calling_ or _mutation_. This is a design decision, consistent with the rest of the project. There are benefits to delcariative code over other styles of code, explained here: https://dzone.com/articles/why-declarative-coding-makes-you-a-better-programm
+
+**Do not:**
+
 ```ts
-    table.float({...});
+const paragraph = doc.createParagraph();
+const text = paragraph.createText();
+text.contents = "Hello World";
 ```
 
-## Add vs Create
+**Do**
 
-This is just a guideline, and the rules can sometimes be broken.
-
-*   Use `create` if the method `new`'s up an element inside:
-
-    ```ts
-    public createParagraph() {
-        const paragraph = new Paragraph();
-        this.root.push(paragraph);
-    }
-    ```
-
-*   Use `add` if you add the element into the method as a parameter.
-    *Note:* This may look like its breaking the previous guideline, but it has semantically different meanings. The previous one is using data to construct an object, whereas this one is simply adding elements into the document:
-
-    ```ts
-    public add(paragraph: Paragraph) {
-        this.root.push(paragraph);
-    }
-    ```
+```ts
+doc.addSection({
+    children: [
+        new Paragraph({
+            children: [new TextRun("Hello World")],
+        }),
+    ],
+});
+```
 
 ## Getters and Setters
 
@@ -107,7 +76,7 @@ public get Level() {
 }
 ```
 
-There is no performance advantage by doing this. It means we don't need to prefix all private variables with the ugly `_`:
+This is the convention of this project. There is no performance advantage by doing this. It means we don't need to prefix all private variables with `_`:
 
 **Do not:**
 
@@ -121,30 +90,6 @@ private get _level: string;
 private get level: string;
 ```
 
-## Temporal Methods
-
-Some methods  are `non-temporal`, which means regardless of when you call the method, it will have the same affect on the document. For example, setting the width of a table at the end of the document will have the same effect as setting the width at the start:
-
-```ts
-table.setWidth(1000); // now removed as of version 5.0.0
-```
-
-Whereas some methods are `temporal`, which means depending on the time-frame they are called, it would produce a difference result. For example, moving `createParagraph()` around your code will physically alter the document.
-
-```ts
-doc.createParagraph("hello");
-```
-
-If a method is `non-temporal`, put it in the objects `constructor`. For example:
-
-```ts
-const table = new Table(width: number);
-```
-
-`Non-temporal` methods are usually methods which can only be used one time and one time only. For example, `.float()`. It does not make sense to call `.float()` again if its already floating.
-
-I am not sure what the real term is, but this will do.
-
 ## Interfaces over type alias
 
 Do not use `type`, but rather use `Interfaces`. `type` cannot be extended, and a class cannot implement it.
@@ -152,14 +97,14 @@ Do not use `type`, but rather use `Interfaces`. `type` cannot be extended, and a
 > "In general, use what you want ( type alias / interface ) just be consistent"
 > "always use interface for public API's definition when authoring a library or 3rd party ambient type definitions"
 >
-> *   https://medium.com/@martin_hotell/interface-vs-type-alias-in-typescript-2-7-2a8f1777af4c
+> -   https://medium.com/@martin_hotell/interface-vs-type-alias-in-typescript-2-7-2a8f1777af4c
 
 `Interface` is generally preferred over `type`: https://stackoverflow.com/questions/37233735/typescript-interfaces-vs-types
 
 **Do not:**
 
 ```ts
-type RelationshipFileInfo = { id: number, target: string };
+type RelationshipFileInfo = { id: number; target: string };
 ```
 
 **Do:**
@@ -193,26 +138,26 @@ enum WeaponType = {
 
 ## Spell correctly, in full and in American English
 
-I am not sure where these habits in software development come from, but I do not believe it is beneficial:
-
 **Do not:**
+
 ```ts
-readdy // misspelling
-perm // abbreviation
-conf // abbreviation
-cnty // abbreviation
-relationFile // abbreviation
-colour // U.K. English
+readdy; // misspelling
+perm; // abbreviation
+conf; // abbreviation
+cnty; // abbreviation
+relationFile; // abbreviation
+colour; // U.K. English
 ```
 
 **Do:**
+
 ```ts
-ready
-permission
-config
-country
-relationshipFile
-color
+ready;
+permission;
+config;
+country;
+relationshipFile;
+color;
 ```
 
 ## Keep files small (within reason)
