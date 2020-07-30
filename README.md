@@ -1,13 +1,3 @@
-<p align="center">
-    <img alt="clippy the assistant" src="https://i.imgur.com/37uBGhO.gif">
-</p>
-
-<p align="center">
-    Easily generate .docx files with JS/TS. Works for Node and on the Browser. :100:
-</p>
-
----
-
 # Welcome
 
 ## Installation
@@ -65,12 +55,6 @@ Packer.toBuffer(doc).then((buffer) => {
 
 // Done! A file called 'My First Document.docx' will be in your file system.
 ```
-
-## Honoured Mentions
-
-[@felipeochoa](https://github.com/felipeochoa)
-
-[@h4buli](https://github.com/h4buli)
 
 <p align="center">
     <img alt="clippy the assistant" src="http://i60.tinypic.com/339pvtt.png">

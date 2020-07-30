@@ -1,6 +1,6 @@
 * [Getting Started](/)
 
-* [Examples](examples.md)
+* [Examples](https://github.com/dolanmiu/docx/tree/master/demo)
 
 * API
 
