@@ -10,9 +10,16 @@ import { PictureRun, Run, SequentialIdentifier, SymbolRun, TextRun } from "./run
 
 export interface IParagraphOptions extends IParagraphPropertiesOptions {
     readonly text?: string;
-    readonly children?: Array<
-        TextRun | PictureRun | SymbolRun | Bookmark | PageBreak | SequentialIdentifier | FootnoteReferenceRun | HyperlinkRef
-    >;
+    readonly children?: (
+        | TextRun
+        | PictureRun
+        | SymbolRun
+        | Bookmark
+        | PageBreak
+        | SequentialIdentifier
+        | FootnoteReferenceRun
+        | HyperlinkRef
+    )[];
 }
 
 export class Paragraph extends XmlComponent {

@@ -44,7 +44,7 @@ export interface ITableCellOptions {
             readonly color: string;
         };
     };
-    readonly children: Array<Paragraph | Table>;
+    readonly children: (Paragraph | Table)[];
 }
 
 export class TableCell extends XmlComponent {

@@ -9,7 +9,7 @@ export interface IStylesOptions {
     readonly initialStyles?: BaseXmlComponent;
     readonly paragraphStyles?: IParagraphStyleOptions[];
     readonly characterStyles?: ICharacterStyleOptions[];
-    readonly importedStyles?: Array<XmlComponent | ParagraphStyle | CharacterStyle | ImportedXmlComponent>;
+    readonly importedStyles?: (XmlComponent | ParagraphStyle | CharacterStyle | ImportedXmlComponent)[];
 }
 
 export class Styles extends XmlComponent {

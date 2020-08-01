@@ -30,11 +30,11 @@ export interface IParagraphPropertiesOptions extends IParagraphStylePropertiesOp
     readonly heading?: HeadingLevel;
     readonly bidirectional?: boolean;
     readonly pageBreakBefore?: boolean;
-    readonly tabStops?: Array<{
+    readonly tabStops?: {
         readonly position: number | TabStopPosition;
         readonly type: TabStopType;
         readonly leader?: LeaderType;
-    }>;
+    }[];
     readonly style?: string;
     readonly bullet?: {
         readonly level: number;
