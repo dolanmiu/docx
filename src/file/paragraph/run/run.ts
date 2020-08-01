@@ -10,7 +10,7 @@ import { IRunPropertiesOptions, RunProperties } from "./properties";
 import { Text } from "./run-components/text";
 
 export interface IRunOptions extends IRunPropertiesOptions {
-    readonly children?: Array<Begin | FieldInstruction | Separate | End | PageNumber | FootnoteReferenceRun | string>;
+    readonly children?: (Begin | FieldInstruction | Separate | End | PageNumber | FootnoteReferenceRun | string)[];
     readonly text?: string;
 }
 

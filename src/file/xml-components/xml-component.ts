@@ -6,7 +6,7 @@ export const EMPTY_OBJECT = Object.seal({});
 
 export abstract class XmlComponent extends BaseXmlComponent {
     // tslint:disable-next-line:readonly-keyword no-any
-    protected root: Array<BaseXmlComponent | string | any>;
+    protected root: (BaseXmlComponent | string | any)[];
 
     constructor(rootKey: string) {
         super(rootKey);

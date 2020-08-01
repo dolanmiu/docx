@@ -8,10 +8,10 @@ import { ILevelsOptions } from "./level";
 import { ConcreteNumbering } from "./num";
 
 export interface INumberingOptions {
-    readonly config: Array<{
+    readonly config: {
         readonly levels: ILevelsOptions[];
         readonly reference: string;
-    }>;
+    }[];
 }
 
 export class Numbering extends XmlComponent {
