@@ -84,7 +84,7 @@
     "replace-in-file": "^3.1.0",
     "request": "^2.88.0",
     "request-promise": "^4.2.2",
-    "rimraf": "^2.5.2",
+    "rimraf": "^3.0.2",
     "shelljs": "^0.8.4",
     "sinon": "^9.0.2",
     "ts-node": "^8.10.2",
