@@ -16,7 +16,7 @@ describe("Compiler", () => {
     });
 
     describe("#compile()", () => {
-        it("should pack all the content", async function() {
+        it("should pack all the content", async function () {
             this.timeout(99999999);
             const zipFile = compiler.compile(file);
             const fileNames = Object.keys(zipFile.files).map((f) => zipFile.files[f].name);
@@ -35,7 +35,7 @@ describe("Compiler", () => {
             expect(fileNames).to.include("_rels/.rels");
         });
 
-        it("should pack all additional headers and footers", async function() {
+        it("should pack all additional headers and footers", async function () {
             file.addSection({
                 headers: {
                     default: new Header(),

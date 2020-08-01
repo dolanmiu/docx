@@ -268,10 +268,7 @@ describe("Table", () => {
                 layout: TableLayoutType.FIXED,
             });
             const tree = new Formatter().format(table);
-            expect(tree)
-                .to.have.property("w:tbl")
-                .which.is.an("array")
-                .with.has.length.at.least(1);
+            expect(tree).to.have.property("w:tbl").which.is.an("array").with.has.length.at.least(1);
             expect(tree["w:tbl"][0]).to.deep.equal({
                 "w:tblPr": [DEFAULT_TABLE_PROPERTIES, BORDERS, WIDTHS, { "w:tblLayout": { _attr: { "w:type": "fixed" } } }],
             });
@@ -291,10 +288,7 @@ describe("Table", () => {
                 alignment: AlignmentType.CENTER,
             });
             const tree = new Formatter().format(table);
-            expect(tree)
-                .to.have.property("w:tbl")
-                .which.is.an("array")
-                .with.has.length.at.least(1);
+            expect(tree).to.have.property("w:tbl").which.is.an("array").with.has.length.at.least(1);
             expect(tree["w:tbl"][0]).to.deep.equal({
                 "w:tblPr": [DEFAULT_TABLE_PROPERTIES, BORDERS, WIDTHS, { "w:jc": { _attr: { "w:val": "center" } } }],
             });
@@ -318,10 +312,7 @@ describe("Table", () => {
                 layout: TableLayoutType.FIXED,
             });
             const tree = new Formatter().format(table);
-            expect(tree)
-                .to.have.property("w:tbl")
-                .which.is.an("array")
-                .with.has.length.at.least(1);
+            expect(tree).to.have.property("w:tbl").which.is.an("array").with.has.length.at.least(1);
             expect(tree["w:tbl"][0]).to.deep.equal({
                 "w:tblPr": [
                     DEFAULT_TABLE_PROPERTIES,
@@ -355,14 +346,10 @@ describe("Table", () => {
                     ],
                 });
                 const tree = new Formatter().format(table);
-                expect(tree)
-                    .to.have.property("w:tbl")
-                    .which.is.an("array");
+                expect(tree).to.have.property("w:tbl").which.is.an("array");
                 const row = tree["w:tbl"].find((x) => x["w:tr"]);
                 expect(row).not.to.be.undefined;
-                expect(row["w:tr"])
-                    .to.be.an("array")
-                    .which.has.length.at.least(1);
+                expect(row["w:tr"]).to.be.an("array").which.has.length.at.least(1);
                 expect(row["w:tr"].find((x) => x["w:tc"])).to.deep.equal({
                     "w:tc": [
                         {
@@ -487,10 +474,7 @@ describe("Table", () => {
                 },
             });
             const tree = new Formatter().format(table);
-            expect(tree)
-                .to.have.property("w:tbl")
-                .which.is.an("array")
-                .with.has.length.at.least(1);
+            expect(tree).to.have.property("w:tbl").which.is.an("array").with.has.length.at.least(1);
             expect(tree["w:tbl"][0]).to.deep.equal({
                 "w:tblPr": [
                     DEFAULT_TABLE_PROPERTIES,
