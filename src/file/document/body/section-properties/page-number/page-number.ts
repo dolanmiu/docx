@@ -14,6 +14,7 @@ export enum PageNumberFormat {
     ORDINAL_TEXT = "ordinalText",
     UPPER_LETTER = "upperLetter",
     UPPER_ROMAN = "upperRoman",
+    DECIMAL_FULL_WIDTH = "decimalFullWidth",
 }
 
 export interface IPageNumberTypeAttributes {
