@@ -9,11 +9,13 @@ export interface ICustomPropertyOptions {
 export class CustomProperty extends XmlComponent {
     constructor(id: number, properties: ICustomPropertyOptions) {
         super("property");
-        this.root.push(new CustomPropertyAttributes({
-            fmtid: "{D5CDD505-2E9C-101B-9397-08002B2CF9AE}",
-            pid: id.toString(),
-            name: properties.name,
-        }));
+        this.root.push(
+            new CustomPropertyAttributes({
+                fmtid: "{D5CDD505-2E9C-101B-9397-08002B2CF9AE}",
+                pid: id.toString(),
+                name: properties.name,
+            }),
+        );
         this.root.push(new CustomPropertyValue(properties.value));
     }
 }

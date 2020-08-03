@@ -10,7 +10,7 @@ describe("CustomProperties", () => {
             expect(tree).to.deep.equal({
                 Properties: {
                     _attr: {
-                        "xmlns": "http://schemas.openxmlformats.org/officeDocument/2006/custom-properties",
+                        xmlns: "http://schemas.openxmlformats.org/officeDocument/2006/custom-properties",
                         "xmlns:vt": "http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes",
                     },
                 },
@@ -18,13 +18,16 @@ describe("CustomProperties", () => {
         });
 
         it("should create custom properties with all the attributes given", () => {
-            const properties = new CustomProperties([{ name: "Address", value: "123" }, { name: "Author", value: "456" }]);
+            const properties = new CustomProperties([
+                { name: "Address", value: "123" },
+                { name: "Author", value: "456" },
+            ]);
             const tree = new Formatter().format(properties);
             expect(tree).to.deep.equal({
                 Properties: [
                     {
                         _attr: {
-                            "xmlns": "http://schemas.openxmlformats.org/officeDocument/2006/custom-properties",
+                            xmlns: "http://schemas.openxmlformats.org/officeDocument/2006/custom-properties",
                             "xmlns:vt": "http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes",
                         },
                     },
@@ -38,9 +41,7 @@ describe("CustomProperties", () => {
                                 },
                             },
                             {
-                                "vt:lpwstr": [
-                                    "123",
-                                ],
+                                "vt:lpwstr": ["123"],
                             },
                         ],
                     },
@@ -54,9 +55,7 @@ describe("CustomProperties", () => {
                                 },
                             },
                             {
-                                "vt:lpwstr": [
-                                    "456",
-                                ],
+                                "vt:lpwstr": ["456"],
                             },
                         ],
                     },
