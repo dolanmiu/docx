@@ -2,6 +2,7 @@ import * as shortid from "shortid";
 import { AppProperties } from "./app-properties/app-properties";
 import { ContentTypes } from "./content-types/content-types";
 import { CoreProperties, IPropertiesOptions } from "./core-properties";
+import { CustomProperties, ICustomPropertyOptions } from "./custom-properties";
 import { Document } from "./document";
 import {
     FooterReferenceType,
@@ -59,6 +60,7 @@ export class File {
     private readonly footNotes: FootNotes;
     private readonly settings: Settings;
     private readonly contentTypes: ContentTypes;
+    private readonly customProperties: CustomProperties;
     private readonly appProperties: AppProperties;
     private readonly styles: Styles;
     private readonly hyperlinkCache: { readonly [key: string]: Hyperlink } = {};
@@ -71,6 +73,7 @@ export class File {
         },
         fileProperties: IFileProperties = {},
         sections: ISectionOptions[] = [],
+        customProperties: ICustomPropertyOptions[] = [],
     ) {
         this.coreProperties = new CoreProperties(options);
         this.numbering = new Numbering(
@@ -82,6 +85,7 @@ export class File {
         );
         this.docRelationships = new Relationships();
         this.fileRelationships = new Relationships();
+        this.customProperties = new CustomProperties(customProperties);
         this.appProperties = new AppProperties();
         this.footNotes = new FootNotes();
         this.contentTypes = new ContentTypes();
@@ -289,6 +293,11 @@ export class File {
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties",
             "docProps/app.xml",
         );
+        this.fileRelationships.createRelationship(
+            4,
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/custom-properties",
+            "docProps/custom.xml",
+        );
 
         this.docRelationships.createRelationship(
             this.currentRelationshipId++,
@@ -350,6 +359,10 @@ export class File {
 
     public get ContentTypes(): ContentTypes {
         return this.contentTypes;
+    }
+
+    public get CustomProperties(): CustomProperties {
+        return this.customProperties;
     }
 
     public get AppProperties(): AppProperties {
