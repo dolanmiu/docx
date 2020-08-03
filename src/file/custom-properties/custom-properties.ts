@@ -34,8 +34,4 @@ export class CustomProperties extends XmlComponent {
     public addCustomProperty(property: ICustomPropertyOptions): void {
         this.properties.push(new CustomProperty(this.nextId++, property));
     }
-
-    public get Properties(): CustomProperty[] {
-        return this.properties;
-    }
 }
