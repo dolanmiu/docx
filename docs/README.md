@@ -53,7 +53,7 @@ Packer.toBuffer(doc).then((buffer) => {
     fs.writeFileSync("My Document.docx", buffer);
 });
 
-// Done! A file called 'My First Document.docx' will be in your file system.
+// Done! A file called 'My Document.docx' will be in your file system.
 ```
 
 <p align="center">
