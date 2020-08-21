@@ -67,7 +67,7 @@ Please refer to the [documentation at https://docx.js.org/](https://docx.js.org/
 
 # Examples
 
-Check the `examples` section in the [documentation](https://docx.js.org/#/examples) and the [demo folder](https://github.com/dolanmiu/docx/tree/master/demo) for examples.
+Check the [demo folder](https://github.com/dolanmiu/docx/tree/master/demo) for examples.
 
 # Contributing
 
