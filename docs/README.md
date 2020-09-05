@@ -57,7 +57,7 @@ Packer.toBuffer(doc).then((buffer) => {
 ```
 
 <p align="center">
-    <img alt="clippy the assistant" src="http://i60.tinypic.com/339pvtt.png">
+    <img alt="clippy the assistant" src="./clippy.png">
 </p>
 
 ---
