@@ -1,6 +1,7 @@
 import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
 import { Compatibility } from "./compatibility";
 import { UpdateFields } from "./update-fields";
+import { TrackRevisions } from "./track-revisions";
 
 export interface ISettingsAttributesProperties {
     readonly wpc?: string;
@@ -46,6 +47,7 @@ export class SettingsAttributes extends XmlAttributeComponent<ISettingsAttribute
 
 export class Settings extends XmlComponent {
     private readonly compatibility;
+    private readonly trackRevisions;
 
     constructor() {
         super("w:settings");
@@ -71,6 +73,7 @@ export class Settings extends XmlComponent {
             }),
         );
         this.compatibility = new Compatibility();
+        this.trackRevisions = new TrackRevisions();
     }
 
     public addUpdateFields(): void {
@@ -85,5 +88,13 @@ export class Settings extends XmlComponent {
         }
 
         return this.compatibility;
+    }
+
+    public addTrackRevisions(): TrackRevisions {
+        if (!this.root.find((child) => child instanceof TrackRevisions)) {
+            this.addChildElement(this.trackRevisions);
+        }
+
+        return this.trackRevisions;
     }
 }
