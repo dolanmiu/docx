@@ -3,6 +3,7 @@ import { FootnoteReferenceRun } from "file/footnotes/footnote/run/reference-run"
 import { IXmlableObject, XmlComponent } from "file/xml-components";
 
 import { File } from "../file";
+import { InsertedTextRun, DeletedTextRun } from "../track-revision";
 import { PageBreak } from "./formatting/page-break";
 import { Bookmark, HyperlinkRef } from "./links";
 import { IParagraphPropertiesOptions, ParagraphProperties } from "./properties";
@@ -19,6 +20,8 @@ export interface IParagraphOptions extends IParagraphPropertiesOptions {
         | SequentialIdentifier
         | FootnoteReferenceRun
         | HyperlinkRef
+        | InsertedTextRun
+        | DeletedTextRun
     )[];
 }
 
