@@ -17,11 +17,11 @@ export class TrackRevisionAttributes extends XmlAttributeComponent<ITrackRevisio
 }
 
 export interface IInsertedTextRunOptions extends ITrackRevisionAttributesProperties {
-    readonly child: TextRun
+    readonly child: TextRun;
 }
 
 export interface IDeletedTextRunOptions extends ITrackRevisionAttributesProperties {
-    readonly text: string
+    readonly text: string;
 }
 
 export class InsertedTextRun extends XmlComponent {
@@ -32,7 +32,7 @@ export class InsertedTextRun extends XmlComponent {
                 id: options.id,
                 author: options.author,
                 date: options.date,
-            })
+            }),
         );
         this.addChildElement(options.child);
     }
@@ -65,7 +65,7 @@ export class DeletedTextRun extends XmlComponent {
                 id: options.id,
                 author: options.author,
                 date: options.date,
-            })
+            }),
         );
         this.addChildElement(new DeletedTextRunWrapper(options.text));
     }
