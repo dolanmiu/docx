@@ -170,50 +170,58 @@ export class RightToLeft extends XmlComponent {
     }
 }
 
-export class Highlight extends XmlComponent {
-    constructor(color: string) {
-        super("w:highlight");
-        this.root.push(
-            new Attributes({
-                val: color,
-            }),
-        );
-    }
-}
-
-export class HighlightComplexScript extends XmlComponent {
-    constructor(color: string) {
-        super("w:highlightCs");
-        this.root.push(
-            new Attributes({
-                val: color,
-            }),
-        );
-    }
-}
-
 export class Shading extends XmlComponent {
-    constructor(value: string, fill: string, color: string) {
+    constructor(value: string, fill: string, color?: string) {
         super("w:shd");
-        this.root.push(
-            new Attributes({
-                val: value,
-                fill: fill,
-                color: color,
-            }),
-        );
+        if (color) {
+            this.root.push(
+                new Attributes({
+                    val: value,
+                    fill: fill,
+                    color: color,
+                }),
+            );
+        } else {
+            this.root.push(
+                new Attributes({
+                    val: value,
+                    fill: fill,
+                }),
+            );
+        }
     }
 }
 
 export class ShadowComplexScript extends XmlComponent {
-    constructor(value: string, fill: string, color: string) {
+    constructor(value: string, fill: string, color?: string) {
         super("w:shdCs");
-        this.root.push(
-            new Attributes({
-                val: value,
-                fill: fill,
-                color: color,
-            }),
-        );
+        if (color) {
+            this.root.push(
+                new Attributes({
+                    val: value,
+                    fill: fill,
+                    color: color,
+                }),
+            );
+        } else {
+            this.root.push(
+                new Attributes({
+                    val: value,
+                    fill: fill,
+                }),
+            );
+        }
+    }
+}
+
+export class Highlight extends Shading {
+    constructor(color: string) {
+        super("clear", color);
+    }
+}
+
+export class HighlightComplexScript extends ShadowComplexScript {
+    constructor(color: string) {
+        super("clear", color);
     }
 }
