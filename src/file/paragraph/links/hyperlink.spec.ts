@@ -3,12 +3,13 @@ import { expect } from "chai";
 import { Formatter } from "export/formatter";
 
 import { Hyperlink } from "./";
+import { HyperlinkRef } from "./hyperlink";
 
 describe("Hyperlink", () => {
     let hyperlink: Hyperlink;
 
     beforeEach(() => {
-        hyperlink = new Hyperlink("https://example.com", 0);
+        hyperlink = new Hyperlink("https://example.com", "superid");
     });
 
     describe("#constructor()", () => {
@@ -19,7 +20,7 @@ describe("Hyperlink", () => {
                     {
                         _attr: {
                             "w:history": 1,
-                            "r:id": "rId1",
+                            "r:id": "rIdsuperid",
                         },
                     },
                     {
@@ -34,7 +35,7 @@ describe("Hyperlink", () => {
 
         describe("with optional anchor parameter", () => {
             beforeEach(() => {
-                hyperlink = new Hyperlink("Anchor Text", 0, "anchor");
+                hyperlink = new Hyperlink("Anchor Text", "superid2", "anchor");
             });
 
             it("should create an internal link with anchor tag", () => {
@@ -57,5 +58,13 @@ describe("Hyperlink", () => {
                 });
             });
         });
+    });
+});
+
+describe("HyperlinkRef", () => {
+    describe("#constructor()", () => {
+        const hyperlinkRef = new HyperlinkRef("test-id");
+
+        expect(hyperlinkRef.id).to.equal("test-id");
     });
 });

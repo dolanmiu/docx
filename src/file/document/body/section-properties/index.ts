@@ -5,3 +5,4 @@ export * from "./page-size";
 export * from "./page-number";
 export * from "./page-border";
 export * from "./line-number";
+export * from "./vertical-align";

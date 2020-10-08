@@ -3,6 +3,7 @@
 import * as fs from "fs";
 import {
     Document,
+    OverlapType,
     Packer,
     Paragraph,
     RelativeHorizontalPosition,
@@ -43,6 +44,7 @@ const table = new Table({
         verticalAnchor: TableAnchorType.MARGIN,
         relativeHorizontalPosition: RelativeHorizontalPosition.RIGHT,
         relativeVerticalPosition: RelativeVerticalPosition.BOTTOM,
+        overlap: OverlapType.NEVER,
     },
     width: {
         size: 4535,

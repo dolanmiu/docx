@@ -1,8 +1,10 @@
 // http://officeopenxml.com/WPtableGrid.php
 import { XmlComponent } from "file/xml-components";
+
+import { AlignmentType } from "../paragraph";
 import { TableGrid } from "./grid";
 import { TableCell, VerticalMergeType, WidthType } from "./table-cell";
-import { ITableFloatOptions, TableProperties } from "./table-properties";
+import { ITableBordersOptions, ITableFloatOptions, TableProperties } from "./table-properties";
 import { TableLayoutType } from "./table-properties/table-layout";
 import { TableRow } from "./table-row";
 
@@ -32,6 +34,8 @@ export interface ITableOptions {
     };
     readonly float?: ITableFloatOptions;
     readonly layout?: TableLayoutType;
+    readonly borders?: ITableBordersOptions;
+    readonly alignment?: AlignmentType;
 }
 
 export class Table extends XmlComponent {
@@ -44,11 +48,18 @@ export class Table extends XmlComponent {
         margins: { marginUnitType, top, bottom, right, left } = { marginUnitType: WidthType.AUTO, top: 0, bottom: 0, right: 0, left: 0 },
         float,
         layout,
+        borders,
+        alignment,
     }: ITableOptions) {
         super("w:tbl");
         this.properties = new TableProperties();
         this.root.push(this.properties);
-        this.properties.setBorder();
+
+        if (borders) {
+            this.properties.setBorder(borders);
+        } else {
+            this.properties.setBorder({});
+        }
 
         if (width) {
             this.properties.setWidth(width.size, width.type);
@@ -67,27 +78,29 @@ export class Table extends XmlComponent {
             this.root.push(row);
         }
 
-        for (const row of rows) {
-            row.Children.forEach((cell, cellIndex) => {
-                const column = rows.map((r) => r.Children[cellIndex]);
+        rows.forEach((row, rowIndex) => {
+            if (rowIndex === rows.length - 1) {
+                // don't process the end row
+                return;
+            }
+            let columnIndex = 0;
+            row.cells.forEach((cell) => {
                 // Row Span has to be added in this method and not the constructor because it needs to know information about the column which happens after Table Cell construction
                 // Row Span of 1 will crash word as it will add RESTART and not a corresponding CONTINUE
                 if (cell.options.rowSpan && cell.options.rowSpan > 1) {
-                    const thisCellsColumnIndex = column.indexOf(cell);
-                    const endColumnIndex = thisCellsColumnIndex + (cell.options.rowSpan - 1);
-
-                    for (let i = thisCellsColumnIndex + 1; i <= endColumnIndex; i++) {
-                        rows[i].addCellToIndex(
-                            new TableCell({
-                                children: [],
-                                verticalMerge: VerticalMergeType.CONTINUE,
-                            }),
-                            i,
-                        );
-                    }
+                    const continueCell = new TableCell({
+                        // the inserted CONTINUE cell has rowSpan, and will be handled when process the next row
+                        rowSpan: cell.options.rowSpan - 1,
+                        columnSpan: cell.options.columnSpan,
+                        borders: cell.options.borders,
+                        children: [],
+                        verticalMerge: VerticalMergeType.CONTINUE,
+                    });
+                    rows[rowIndex + 1].addCellToColumnIndex(continueCell, columnIndex);
                 }
+                columnIndex += cell.options.columnSpan || 1;
             });
-        }
+        });
 
         if (float) {
             this.properties.setTableFloatProperties(float);
@@ -95,6 +108,10 @@ export class Table extends XmlComponent {
 
         if (layout) {
             this.properties.setLayout(layout);
+        }
+
+        if (alignment) {
+            this.properties.setAlignment(alignment);
         }
     }
 }

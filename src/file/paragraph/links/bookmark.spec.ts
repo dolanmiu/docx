@@ -1,4 +1,4 @@
-import { assert } from "chai";
+import { assert, expect } from "chai";
 
 import { Utility } from "tests/utility";
 
@@ -8,7 +8,7 @@ describe("Bookmark", () => {
     let bookmark: Bookmark;
 
     beforeEach(() => {
-        bookmark = new Bookmark("anchor", "Internal Link", 0);
+        bookmark = new Bookmark("anchor", "Internal Link");
     });
 
     it("should create a bookmark with three root elements", () => {
@@ -21,11 +21,8 @@ describe("Bookmark", () => {
 
     it("should create a bookmark with the correct attributes on the bookmark start element", () => {
         const newJson = Utility.jsonify(bookmark);
-        const attributes = {
-            name: "anchor",
-            id: "1",
-        };
-        assert.equal(JSON.stringify(newJson.start.root[0].root), JSON.stringify(attributes));
+
+        assert.equal(newJson.start.root[0].root.name, "anchor");
     });
 
     it("should create a bookmark with the correct attributes on the text element", () => {
@@ -35,9 +32,6 @@ describe("Bookmark", () => {
 
     it("should create a bookmark with the correct attributes on the bookmark end element", () => {
         const newJson = Utility.jsonify(bookmark);
-        const attributes = {
-            id: "1",
-        };
-        assert.equal(JSON.stringify(newJson.end.root[0].root), JSON.stringify(attributes));
+        expect(newJson.end.root[0].root.id).to.be.a("string");
     });
 });

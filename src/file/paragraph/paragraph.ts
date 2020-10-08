@@ -1,52 +1,30 @@
 // http://officeopenxml.com/WPparagraph.php
 import { FootnoteReferenceRun } from "file/footnotes/footnote/run/reference-run";
-import { Num } from "file/numbering/num";
-import { XmlComponent } from "file/xml-components";
+import { IXmlableObject, XmlComponent } from "file/xml-components";
 
-import { Alignment, AlignmentType } from "./formatting/alignment";
-import { Bidirectional } from "./formatting/bidirectional";
-import { IBorderOptions, ThematicBreak } from "./formatting/border";
-import { IIndentAttributesProperties, Indent } from "./formatting/indent";
-import { KeepLines, KeepNext } from "./formatting/keep";
-import { PageBreak, PageBreakBefore } from "./formatting/page-break";
-import { ContextualSpacing, ISpacingProperties, Spacing } from "./formatting/spacing";
-import { HeadingLevel, Style } from "./formatting/style";
-import { LeaderType, TabStop, TabStopPosition, TabStopType } from "./formatting/tab-stop";
-import { NumberProperties } from "./formatting/unordered-list";
-import { Bookmark, Hyperlink, OutlineLevel } from "./links";
+import { PageBreak } from "./formatting/page-break";
+import { Bookmark, HyperlinkRef } from "./links";
 import { Math } from "./math";
-import { ParagraphProperties } from "./properties";
+import { File } from "../file";
+import { InsertedTextRun, DeletedTextRun } from "../track-revision";
+import { IParagraphPropertiesOptions, ParagraphProperties } from "./properties";
 import { PictureRun, Run, SequentialIdentifier, SymbolRun, TextRun } from "./run";
 
-export interface IParagraphOptions {
+export interface IParagraphOptions extends IParagraphPropertiesOptions {
     readonly text?: string;
-    readonly border?: IBorderOptions;
-    readonly spacing?: ISpacingProperties;
-    readonly outlineLevel?: number;
-    readonly alignment?: AlignmentType;
-    readonly heading?: HeadingLevel;
-    readonly bidirectional?: boolean;
-    readonly thematicBreak?: boolean;
-    readonly pageBreakBefore?: boolean;
-    readonly contextualSpacing?: boolean;
-    readonly indent?: IIndentAttributesProperties;
-    readonly keepLines?: boolean;
-    readonly keepNext?: boolean;
-    readonly tabStops?: Array<{
-        readonly position: number | TabStopPosition;
-        readonly type: TabStopType;
-        readonly leader?: LeaderType;
-    }>;
-    readonly style?: string;
-    readonly bullet?: {
-        readonly level: number;
-    };
-    readonly numbering?: {
-        readonly num: Num;
-        readonly level: number;
-        readonly custom?: boolean;
-    };
-    readonly children?: Array<TextRun | PictureRun | Hyperlink | SymbolRun | Bookmark | PageBreak | SequentialIdentifier | Math>;
+    readonly children?: (
+        | TextRun
+        | PictureRun
+        | SymbolRun
+        | Bookmark
+        | PageBreak
+        | SequentialIdentifier
+        | FootnoteReferenceRun
+        | HyperlinkRef
+        | InsertedTextRun
+        | DeletedTextRun
+        | Math
+    )[];
 }
 
 export class Paragraph extends XmlComponent {
@@ -69,80 +47,12 @@ export class Paragraph extends XmlComponent {
             return;
         }
 
-        this.properties = new ParagraphProperties({
-            border: options.border,
-        });
+        this.properties = new ParagraphProperties(options);
 
         this.root.push(this.properties);
 
         if (options.text) {
             this.root.push(new TextRun(options.text));
-        }
-
-        if (options.spacing) {
-            this.properties.push(new Spacing(options.spacing));
-        }
-
-        if (options.outlineLevel !== undefined) {
-            this.properties.push(new OutlineLevel(options.outlineLevel));
-        }
-
-        if (options.alignment) {
-            this.properties.push(new Alignment(options.alignment));
-        }
-
-        if (options.heading) {
-            this.properties.push(new Style(options.heading));
-        }
-
-        if (options.bidirectional) {
-            this.properties.push(new Bidirectional());
-        }
-
-        if (options.thematicBreak) {
-            this.properties.push(new ThematicBreak());
-        }
-
-        if (options.pageBreakBefore) {
-            this.properties.push(new PageBreakBefore());
-        }
-
-        if (options.contextualSpacing) {
-            this.properties.push(new ContextualSpacing(options.contextualSpacing));
-        }
-
-        if (options.indent) {
-            this.properties.push(new Indent(options.indent));
-        }
-
-        if (options.keepLines) {
-            this.properties.push(new KeepLines());
-        }
-
-        if (options.keepNext) {
-            this.properties.push(new KeepNext());
-        }
-
-        if (options.tabStops) {
-            for (const tabStop of options.tabStops) {
-                this.properties.push(new TabStop(tabStop.type, tabStop.position, tabStop.leader));
-            }
-        }
-
-        if (options.style) {
-            this.properties.push(new Style(options.style));
-        }
-
-        if (options.bullet) {
-            this.properties.push(new Style("ListParagraph"));
-            this.properties.push(new NumberProperties(1, options.bullet.level));
-        }
-
-        if (options.numbering) {
-            if (!options.numbering.custom) {
-                this.properties.push(new Style("ListParagraph"));
-            }
-            this.properties.push(new NumberProperties(options.numbering.num.id, options.numbering.level));
         }
 
         if (options.children) {
@@ -159,9 +69,15 @@ export class Paragraph extends XmlComponent {
         }
     }
 
-    public referenceFootnote(id: number): Paragraph {
-        this.root.push(new FootnoteReferenceRun(id));
-        return this;
+    public prepForXml(file: File): IXmlableObject | undefined {
+        for (const element of this.root) {
+            if (element instanceof HyperlinkRef) {
+                const index = this.root.indexOf(element);
+                this.root[index] = file.HyperlinkCache[element.id];
+            }
+        }
+
+        return super.prepForXml();
     }
 
     public addRunToFront(run: Run): Paragraph {

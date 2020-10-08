@@ -1,8 +1,10 @@
+// http://officeopenxml.com/WPtableProperties.php
 import { IgnoreIfEmptyXmlComponent } from "file/xml-components";
 
+import { Alignment, AlignmentType } from "../../paragraph";
 import { ITableShadingAttributesProperties, TableShading } from "../shading";
 import { WidthType } from "../table-cell";
-import { TableBorders } from "./table-borders";
+import { ITableBordersOptions, TableBorders } from "./table-borders";
 import { TableCellMargin } from "./table-cell-margin";
 import { ITableFloatOptions, TableFloatProperties } from "./table-float-properties";
 import { TableLayout, TableLayoutType } from "./table-layout";
@@ -27,8 +29,8 @@ export class TableProperties extends IgnoreIfEmptyXmlComponent {
         this.root.push(new TableLayout(type));
     }
 
-    public setBorder(): TableProperties {
-        this.root.push(new TableBorders());
+    public setBorder(borderOptions: ITableBordersOptions): TableProperties {
+        this.root.push(new TableBorders(borderOptions));
         return this;
     }
 
@@ -45,5 +47,9 @@ export class TableProperties extends IgnoreIfEmptyXmlComponent {
         this.root.push(new TableShading(attrs));
 
         return this;
+    }
+
+    public setAlignment(type: AlignmentType): void {
+        this.root.push(new Alignment(type));
     }
 }

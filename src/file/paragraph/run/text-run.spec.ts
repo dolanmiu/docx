@@ -1,6 +1,7 @@
 import { expect } from "chai";
 
 import { Formatter } from "export/formatter";
+import { FootnoteReferenceRun } from "file/footnotes/footnote/run/reference-run";
 
 import { TextRun } from "./text-run";
 
@@ -19,9 +20,11 @@ describe("TextRun", () => {
 
     describe("#referenceFootnote()", () => {
         it("should add a valid footnote reference", () => {
-            run = new TextRun("test");
-            run.referenceFootnote(1);
+            run = new TextRun({
+                children: ["test", new FootnoteReferenceRun(1)],
+            });
             const tree = new Formatter().format(run);
+
             expect(tree).to.deep.equal({
                 "w:r": [
                     { "w:t": [{ _attr: { "xml:space": "preserve" } }, "test"] },

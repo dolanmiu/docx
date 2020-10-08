@@ -1,7 +1,7 @@
 // Multiple sections with total number of pages in each section
 // Import from 'docx' rather than '../build' if you install from npm
 import * as fs from "fs";
-import { AlignmentType, Document, Packer, PageNumberFormat, TextRun, Header, Paragraph, Footer, PageBreak } from "../build";
+import { AlignmentType, Document, Footer, Header, Packer, PageBreak, PageNumber, PageNumberFormat, Paragraph, TextRun } from "../build";
 
 const doc = new Document();
 
@@ -10,8 +10,12 @@ const header = new Header({
         new Paragraph({
             children: [
                 new TextRun("Header on another page"),
-                new TextRun("Page Number: ").pageNumber(),
-                new TextRun(" to ").numberOfTotalPagesSection(),
+                new TextRun({
+                    children: ["Page number: ", PageNumber.CURRENT],
+                }),
+                new TextRun({
+                    children: [" to ", PageNumber.TOTAL_PAGES_IN_SECTION],
+                }),
             ],
             alignment: AlignmentType.CENTER,
         }),

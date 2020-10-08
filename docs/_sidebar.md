@@ -1,6 +1,6 @@
 * [Getting Started](/)
 
-* [Examples](examples.md)
+* [Examples](https://github.com/dolanmiu/docx/tree/master/demo)
 
 * API
 
@@ -20,6 +20,7 @@
 	* [Tab Stops](usage/tab-stops.md)
     * [Table of Contents](usage/table-of-contents.md)
     * [Page Numbers](usage/page-numbers.md)
+    * [Change Tracking](usage/change-tracking.md)
 	* Styling
         * [Styling with JS](usage/styling-with-js.md)
         * [Styling with XML](usage/styling-with-xml.md)
@@ -28,4 +29,3 @@
     * [Packers](usage/packers.md)
 
 * [Contribution Guidelines](contribution-guidelines.md)
-

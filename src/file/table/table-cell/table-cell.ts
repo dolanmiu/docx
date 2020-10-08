@@ -3,16 +3,18 @@ import { Paragraph } from "file/paragraph";
 import { BorderStyle } from "file/styles";
 import { IXmlableObject, XmlComponent } from "file/xml-components";
 
+import { File } from "../../file";
 import { ITableShadingAttributesProperties } from "../shading";
 import { Table } from "../table";
 import { ITableCellMarginOptions } from "./cell-margin/table-cell-margins";
-import { VerticalAlign, VerticalMergeType, WidthType } from "./table-cell-components";
+import { TextDirection, VerticalAlign, VerticalMergeType, WidthType } from "./table-cell-components";
 import { TableCellProperties } from "./table-cell-properties";
 
 export interface ITableCellOptions {
     readonly shading?: ITableShadingAttributesProperties;
     readonly margins?: ITableCellMarginOptions;
     readonly verticalAlign?: VerticalAlign;
+    readonly textDirection?: TextDirection;
     readonly verticalMerge?: VerticalMergeType;
     readonly width?: {
         readonly size: number | string;
@@ -42,7 +44,7 @@ export interface ITableCellOptions {
             readonly color: string;
         };
     };
-    readonly children: Array<Paragraph | Table>;
+    readonly children: (Paragraph | Table)[];
 }
 
 export class TableCell extends XmlComponent {
@@ -62,8 +64,15 @@ export class TableCell extends XmlComponent {
             this.properties.setVerticalAlign(options.verticalAlign);
         }
 
+        if (options.textDirection) {
+            this.properties.setTextDirection(options.textDirection);
+        }
+
         if (options.verticalMerge) {
             this.properties.addVerticalMerge(options.verticalMerge);
+        } else if (options.rowSpan && options.rowSpan > 1) {
+            // if cell already have a `verticalMerge`, don't handle `rowSpan`
+            this.properties.addVerticalMerge(VerticalMergeType.RESTART);
         }
 
         if (options.margins) {
@@ -76,10 +85,6 @@ export class TableCell extends XmlComponent {
 
         if (options.columnSpan) {
             this.properties.addGridSpan(options.columnSpan);
-        }
-
-        if (options.rowSpan && options.rowSpan > 1) {
-            this.properties.addVerticalMerge(VerticalMergeType.RESTART);
         }
 
         if (options.width) {
@@ -110,11 +115,11 @@ export class TableCell extends XmlComponent {
         }
     }
 
-    public prepForXml(): IXmlableObject | undefined {
+    public prepForXml(file?: File): IXmlableObject | undefined {
         // Cells must end with a paragraph
         if (!(this.root[this.root.length - 1] instanceof Paragraph)) {
             this.root.push(new Paragraph({}));
         }
-        return super.prepForXml();
+        return super.prepForXml(file);
     }
 }

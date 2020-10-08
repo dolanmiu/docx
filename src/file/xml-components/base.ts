@@ -1,3 +1,4 @@
+import { File } from "../file";
 import { IXmlableObject } from "./xmlable-object";
 
 export abstract class BaseXmlComponent {
@@ -9,7 +10,7 @@ export abstract class BaseXmlComponent {
         this.rootKey = rootKey;
     }
 
-    public abstract prepForXml(): IXmlableObject | undefined;
+    public abstract prepForXml(file?: File): IXmlableObject | undefined;
 
     public get IsDeleted(): boolean {
         return this.deleted;

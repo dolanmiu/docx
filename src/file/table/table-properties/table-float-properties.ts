@@ -1,5 +1,7 @@
 import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
 
+import { OverlapType, TableOverlap } from "./table-overlap";
+
 export enum TableAnchorType {
     MARGIN = "margin",
     PAGE = "page",
@@ -109,6 +111,7 @@ export interface ITableFloatOptions {
      * to the right of the table. The value is in twentieths of a point. If omitted, the value is assumed to be zero.
      */
     readonly rightFromText?: number;
+    readonly overlap?: OverlapType;
 }
 
 export class TableFloatOptionsAttributes extends XmlAttributeComponent<ITableFloatOptions> {
@@ -130,5 +133,9 @@ export class TableFloatProperties extends XmlComponent {
     constructor(options: ITableFloatOptions) {
         super("w:tblpPr");
         this.root.push(new TableFloatOptionsAttributes(options));
+
+        if (options.overlap) {
+            this.root.push(new TableOverlap(options.overlap));
+        }
     }
 }

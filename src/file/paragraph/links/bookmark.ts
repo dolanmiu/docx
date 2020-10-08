@@ -1,49 +1,41 @@
 // http://officeopenxml.com/WPbookmark.php
 import { XmlComponent } from "file/xml-components";
+import * as shortid from "shortid";
 import { TextRun } from "../run";
 import { BookmarkEndAttributes, BookmarkStartAttributes } from "./bookmark-attributes";
 
 export class Bookmark {
-    public readonly linkId: number;
     public readonly start: BookmarkStart;
     public readonly text: TextRun;
     public readonly end: BookmarkEnd;
 
-    constructor(name: string, text: string, relationshipsCount: number) {
-        this.linkId = relationshipsCount + 1;
+    constructor(name: string, text: string) {
+        const linkId = shortid.generate().toLowerCase();
 
-        this.start = new BookmarkStart(name, this.linkId);
+        this.start = new BookmarkStart(name, linkId);
         this.text = new TextRun(text);
-        this.end = new BookmarkEnd(this.linkId);
+        this.end = new BookmarkEnd(linkId);
     }
 }
 
 export class BookmarkStart extends XmlComponent {
-    public readonly linkId: number;
-
-    constructor(name: string, relationshipsCount: number) {
+    constructor(name: string, linkId: string) {
         super("w:bookmarkStart");
 
-        this.linkId = relationshipsCount;
-        const id = `${this.linkId}`;
         const attributes = new BookmarkStartAttributes({
             name,
-            id,
+            id: linkId,
         });
         this.root.push(attributes);
     }
 }
 
 export class BookmarkEnd extends XmlComponent {
-    public readonly linkId: number;
-
-    constructor(relationshipsCount: number) {
+    constructor(linkId: string) {
         super("w:bookmarkEnd");
 
-        this.linkId = relationshipsCount;
-        const id = `${this.linkId}`;
         const attributes = new BookmarkEndAttributes({
-            id,
+            id: linkId,
         });
         this.root.push(attributes);
     }

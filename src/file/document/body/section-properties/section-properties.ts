@@ -18,6 +18,7 @@ import { IPageNumberTypeAttributes, PageNumberType } from "./page-number";
 import { PageSize } from "./page-size/page-size";
 import { IPageSizeAttributes, PageOrientation } from "./page-size/page-size-attributes";
 import { TitlePage } from "./title-page/title-page";
+import { ISectionVerticalAlignAttributes, SectionVerticalAlign } from "./vertical-align";
 
 export interface IHeaderFooterGroup<T> {
     readonly default?: T;
@@ -45,7 +46,8 @@ export type SectionPropertiesOptions = IPageSizeAttributes &
     IPageNumberTypeAttributes &
     ILineNumberAttributes &
     IPageBordersOptions &
-    ITitlePageOptions & {
+    ITitlePageOptions &
+    ISectionVerticalAlignAttributes & {
         readonly column?: {
             readonly space?: number;
             readonly count?: number;
@@ -87,6 +89,7 @@ export class SectionProperties extends XmlComponent {
             pageBorderBottom,
             pageBorderLeft,
             titlePage = false,
+            verticalAlign,
         } = options;
 
         this.options = options;
@@ -120,6 +123,10 @@ export class SectionProperties extends XmlComponent {
 
         if (titlePage) {
             this.root.push(new TitlePage());
+        }
+
+        if (verticalAlign) {
+            this.root.push(new SectionVerticalAlign(verticalAlign));
         }
     }
 

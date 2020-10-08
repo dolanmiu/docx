@@ -3,14 +3,23 @@ import { XmlComponent } from "file/xml-components";
 import { TextRun } from "../run";
 import { HyperlinkAttributes, IHyperlinkAttributesProperties } from "./hyperlink-attributes";
 
+export enum HyperlinkType {
+    INTERNAL = "INTERNAL",
+    EXTERNAL = "EXTERNAL",
+}
+
+export class HyperlinkRef {
+    constructor(public readonly id: string) {}
+}
+
 export class Hyperlink extends XmlComponent {
-    public readonly linkId: number;
+    public readonly linkId: string;
     private readonly textRun: TextRun;
 
-    constructor(text: string, relationshipsCount: number, anchor?: string) {
+    constructor(text: string, relationshipId: string, anchor?: string) {
         super("w:hyperlink");
 
-        this.linkId = relationshipsCount + 1;
+        this.linkId = relationshipId;
 
         const props: IHyperlinkAttributesProperties = {
             history: 1,
