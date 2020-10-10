@@ -1,12 +1,12 @@
-// http://www.datypic.com/sc/ooxml/e-m_e-1.html
+// http://www.datypic.com/sc/ooxml/e-m_sup-3.html
 import { XmlComponent } from "file/xml-components";
 
-import { MathRun } from "../math-run";
+import { MathComponent } from "../math-component";
 
-export class MathSuperScript extends XmlComponent {
-    constructor(readonly run: MathRun) {
+export class MathSuperScriptElement extends XmlComponent {
+    constructor(child: MathComponent) {
         super("m:sup");
 
-        this.root.push(run);
+        this.root.push(child);
     }
 }

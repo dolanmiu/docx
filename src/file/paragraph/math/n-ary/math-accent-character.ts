@@ -6,7 +6,7 @@ class MathAccentCharacterAttributes extends XmlAttributeComponent<{ readonly acc
 }
 
 export class MathAccentCharacter extends XmlComponent {
-    constructor(readonly accent: string) {
+    constructor(accent: string) {
         super("m:chr");
 
         this.root.push(new MathAccentCharacterAttributes({ accent }));

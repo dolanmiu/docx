@@ -1,12 +1,11 @@
-import { IChangedAttributesProperties, ChangeAttributes } from "../track-revision";
 import { XmlComponent } from "file/xml-components";
-import { IRunOptions, RunProperties, IRunPropertiesOptions, FootnoteReferenceRun } from "../../index";
 
+import { FootnoteReferenceRun, IRunOptions, IRunPropertiesOptions, RunProperties } from "../../index";
 import { Break } from "../../paragraph/run/break";
-import { Begin, Separate, End } from "../../paragraph/run/field";
+import { Begin, End, Separate } from "../../paragraph/run/field";
 import { PageNumber } from "../../paragraph/run/run";
-
-import { DeletedPage, DeletedNumberOfPages, DeletedNumberOfPagesSection } from "./deleted-page-number";
+import { ChangeAttributes, IChangedAttributesProperties } from "../track-revision";
+import { DeletedNumberOfPages, DeletedNumberOfPagesSection, DeletedPage } from "./deleted-page-number";
 import { DeletedText } from "./deleted-text";
 
 interface IDeletedRunOptions extends IRunPropertiesOptions, IChangedAttributesProperties {

@@ -3,12 +3,22 @@ import { XmlComponent } from "file/xml-components";
 
 import { MathAccentCharacter } from "./math-accent-character";
 import { MathLimitLocation } from "./math-limit-location";
+import { MathSubScriptHide } from "./math-sub-script-hide";
+import { MathSuperScriptHide } from "./math-super-script-hide";
 
 export class MathNArayProperties extends XmlComponent {
-    constructor(readonly accent: string) {
+    constructor(accent: string, hasSuperScript: boolean, hasSubScript: boolean) {
         super("m:naryPr");
 
         this.root.push(new MathAccentCharacter(accent));
         this.root.push(new MathLimitLocation());
+
+        if (!hasSuperScript) {
+            this.root.push(new MathSuperScriptHide());
+        }
+
+        if (!hasSubScript) {
+            this.root.push(new MathSubScriptHide());
+        }
     }
 }

@@ -1,7 +1,7 @@
 import { expect } from "chai";
 import { Formatter } from "export/formatter";
-import { DeletedTextRun } from "./deleted-text-run";
 import { FootnoteReferenceRun, PageNumber } from "../../index";
+import { DeletedTextRun } from "./deleted-text-run";
 
 describe("DeletedTextRun", () => {
     describe("#constructor", () => {

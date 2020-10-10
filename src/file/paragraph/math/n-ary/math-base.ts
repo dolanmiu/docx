@@ -1,10 +1,10 @@
 // http://www.datypic.com/sc/ooxml/e-m_e-1.html
 import { XmlComponent } from "file/xml-components";
 
-import { MathRun } from "../math-run";
+import { MathComponent } from "../math-component";
 
 export class MathBase extends XmlComponent {
-    constructor(readonly run: MathRun) {
+    constructor(run: MathComponent) {
         super("m:e");
 
         this.root.push(run);

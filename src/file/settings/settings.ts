@@ -1,7 +1,7 @@
 import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
 import { Compatibility } from "./compatibility";
-import { UpdateFields } from "./update-fields";
 import { TrackRevisions } from "./track-revisions";
+import { UpdateFields } from "./update-fields";
 
 export interface ISettingsAttributesProperties {
     readonly wpc?: string;
@@ -46,8 +46,8 @@ export class SettingsAttributes extends XmlAttributeComponent<ISettingsAttribute
 }
 
 export class Settings extends XmlComponent {
-    private readonly compatibility;
-    private readonly trackRevisions;
+    private readonly compatibility: Compatibility;
+    private readonly trackRevisions: TrackRevisions;
 
     constructor() {
         super("w:settings");
