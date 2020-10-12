@@ -1,11 +1,11 @@
 import { XmlComponent } from "file/xml-components";
 
-import { MathRun } from "../math-run";
+import { MathComponent } from "../math-component";
 
 export class MathDenominator extends XmlComponent {
-    constructor(text: string) {
+    constructor(child: MathComponent) {
         super("m:den");
 
-        this.root.push(new MathRun(text));
+        this.root.push(child);
     }
 }

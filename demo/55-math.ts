@@ -6,10 +6,8 @@ import {
     Math,
     MathAngledBrackets,
     MathCurlyBrackets,
-    MathDenominator,
     MathFraction,
     MathFunction,
-    MathNumerator,
     MathPreSubSuperScript,
     MathRadical,
     MathRoundBrackets,
@@ -35,8 +33,8 @@ doc.addSection({
                     children: [
                         new MathRun("2+2"),
                         new MathFraction({
-                            numerator: new MathNumerator("hi"),
-                            denominator: new MathDenominator("2"),
+                            numerator: new MathRun("hi"),
+                            denominator: new MathRun("2"),
                         }),
                     ],
                 }),
@@ -142,8 +140,8 @@ doc.addSection({
                     children: [
                         new MathSubScript({
                             child: new MathFraction({
-                                numerator: new MathNumerator("1"),
-                                denominator: new MathDenominator("2"),
+                                numerator: new MathRun("1"),
+                                denominator: new MathRun("2"),
                             }),
                             subScript: new MathRun("4"),
                         }),
@@ -158,8 +156,8 @@ doc.addSection({
                         new MathSubScript({
                             child: new MathRadical({
                                 child: new MathFraction({
-                                    numerator: new MathNumerator("1"),
-                                    denominator: new MathDenominator("2"),
+                                    numerator: new MathRun("1"),
+                                    denominator: new MathRun("2"),
                                 }),
                                 degree: new MathRun("4"),
                             }),
@@ -207,26 +205,26 @@ doc.addSection({
                     children: [
                         new MathRoundBrackets({
                             child: new MathFraction({
-                                numerator: new MathNumerator("1"),
-                                denominator: new MathDenominator("2"),
+                                numerator: new MathRun("1"),
+                                denominator: new MathRun("2"),
                             }),
                         }),
                         new MathSquareBrackets({
                             child: new MathFraction({
-                                numerator: new MathNumerator("1"),
-                                denominator: new MathDenominator("2"),
+                                numerator: new MathRun("1"),
+                                denominator: new MathRun("2"),
                             }),
                         }),
                         new MathCurlyBrackets({
                             child: new MathFraction({
-                                numerator: new MathNumerator("1"),
-                                denominator: new MathDenominator("2"),
+                                numerator: new MathRun("1"),
+                                denominator: new MathRun("2"),
                             }),
                         }),
                         new MathAngledBrackets({
                             child: new MathFraction({
-                                numerator: new MathNumerator("1"),
-                                denominator: new MathDenominator("2"),
+                                numerator: new MathRun("1"),
+                                denominator: new MathRun("2"),
                             }),
                         }),
                     ],
@@ -238,14 +236,10 @@ doc.addSection({
                 new Math({
                     children: [
                         new MathFraction({
-                            numerator: new Math({
-                                children: [
-                                    new MathRadical({
-                                        child: new MathRun("4"),
-                                    }),
-                                ],
+                            numerator: new MathRadical({
+                                child: new MathRun("4"),
                             }),
-                            demoninator: new MathRun("2a"),
+                            denominator: new MathRun("2a"),
                         }),
                     ],
                 }),

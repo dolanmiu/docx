@@ -2,16 +2,15 @@ import { expect } from "chai";
 
 import { Formatter } from "export/formatter";
 
-import { MathDenominator } from "./math-denominator";
+import { MathRun } from "../math-run";
 import { MathFraction } from "./math-fraction";
-import { MathNumerator } from "./math-numerator";
 
 describe("MathFraction", () => {
     describe("#constructor()", () => {
         it("should create a MathFraction with correct root key", () => {
             const mathFraction = new MathFraction({
-                numerator: new MathNumerator("2"),
-                denominator: new MathDenominator("2"),
+                numerator: new MathRun("2"),
+                denominator: new MathRun("2"),
             });
             const tree = new Formatter().format(mathFraction);
             expect(tree).to.deep.equal({
