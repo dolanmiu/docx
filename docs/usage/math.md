@@ -4,9 +4,10 @@
 
 ## Intro
 
--   To add math, create a `Math` object
--   Add `MathComponents` inside `Math`
--   `MathComponents` can have nested `MathComponents` inside. e.g. A fraction where the numerator is a square root, and the demoninator as another fraction. More on `MathComponents` below
+1.  To add math, create a `Math` object
+2.  Add `MathComponents` inside `Math`
+3.  `MathComponents` can have nested `MathComponents` inside. e.g. A fraction where the numerator is a square root, and the demoninator as another fraction. More on `MathComponents` below
+4.  Make sure to add the `Math` object inside a `Paragraph`
 
 ## Example
 
@@ -76,7 +77,7 @@ new MathFraction({
     numerator: [
         new MathRun("1"),
         new MathRadical({
-            child: [new MathRun("2")],
+            children: [new MathRun("2")],
         }),
     ],
     denominator: [new MathRun("2")],
@@ -108,19 +109,157 @@ A `MathComponent` for `Σ`. It can take a `superScript` and/or `subScript` as ar
 
 ```ts
 new MathSum({
-    child: [new MathRun("i")],
+    children: [new MathRun("i")],
 }),
 ```
 
 ```ts
 new MathSum({
-    child: [
+    children: [
         new MathSuperScript({
-            child: new MathRun("e"),
-            superScript: new MathRun("2"),
+            children: [new MathRun("e")],
+            superScript: [new MathRun("2")],
         })
     ],
     subScript: [new MathRun("i")],
     superScript: [new MathRun("10")],
+}),
+```
+
+### Radicals
+
+A `MathComponent` for the `√` symbol. Examples include, square root, cube root etc. There is an optional `degree` parameter to specify the number of times the radicand is multiplied by itself. For example, `3` for cube root.
+
+```ts
+new MathRadical({
+    children: [new MathRun("2")],
+}),
+```
+
+Cube root example:
+
+```ts
+new MathRadical({
+    children: [
+        new MathFraction({
+            numerator: [new MathRun("1")],
+            denominator: [new MathRun("2")],
+        }),
+        new MathRun('+ 1'),
+    ],
+    degree: [new MathRun("3")],
+}),
+```
+
+### Super Script
+
+`MathSuperScripts` are the little numbers written to the top right of numbers or variables. It means the exponent or power if written by itself with the number or variable.
+
+```ts
+new MathSuperScript({
+    children: [new MathRun("x")],
+    superScript: [new MathRun("2")],
+}),
+```
+
+An example with cosine:
+
+```ts
+new MathSuperScript({
+    children: [new MathRun("cos")],
+    superScript: [new MathRun("-1")],
+}),
+```
+
+### Sub Script
+
+`MathSubScripts` are similar to `MathSuperScripts`, except the little number is written below.
+
+```ts
+new MathSubScript({
+    children: [new MathRun("F")],
+    subScript: [new MathRun("n-1")],
+}),
+```
+
+### Sub-Super Script
+
+`MathSubSuperScripts` are a combination of both `MathSuperScript` and `MathSubScript`.
+
+```ts
+new MathSubSuperScript({
+    children: [new MathRun("test")],
+    superScript: [new MathRun("hello")],
+    subScript: [new MathRun("world")],
+}),
+```
+
+### Function
+
+`MathFunctions` are a way of describing what happens to an input variable, in order to get the output result. It takes a `name` parameter to specify the name of the function.
+
+```ts
+new MathFunction({
+    name: [
+        new MathSuperScript({
+            children: [new MathRun("cos")],
+            superScript: [new MathRun("-1")],
+        }),
+    ],
+    children: [new MathRun("100")],
+}),
+```
+
+### Brackets
+
+#### Square brackets
+
+```ts
+new MathSquareBrackets({
+    children: [
+        new MathFraction({
+            numerator: [new MathRun("1")],
+            denominator: [new MathRun("2")],
+        }),
+    ],
+}),
+```
+
+#### Round brackets
+
+```ts
+new MathRoundBrackets({
+    children: [
+        new MathFraction({
+            numerator: [new MathRun("1")],
+            denominator: [new MathRun("2")],
+        }),
+    ],
+}),
+```
+
+#### Curly brackets
+
+```ts
+new MathCurlyBrackets({
+    children: [
+        new MathFraction({
+            numerator: [new MathRun("1")],
+            denominator: [new MathRun("2")],
+        }),
+    ],
+}),
+```
+
+#### Angled brackets
+
+```ts
+new MathAngledBrackets({
+    children: [
+        new MathFraction({
+            numerator: [new MathRun("1")],
+            denominator: [new MathRun("2")],
+        }),
+    ],
 }),
 ```

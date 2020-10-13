@@ -44,19 +44,23 @@ doc.addSection({
                 }),
             ],
         }),
-        // new Paragraph({
-        //     children: [
-        //         new MathFraction({
-        //             numerator: [
-        //                 new MathRun("1"),
-        //                 new MathRadical({
-        //                     children: [new MathRun("2")],
-        //                 }),
-        //             ],
-        //             denominator: [new MathRun("2")],
-        //         }),
-        //     ],
-        // }),
+        new Paragraph({
+            children: [
+                new Math({
+                    children: [
+                        new MathFraction({
+                            numerator: [
+                                new MathRun("1"),
+                                new MathRadical({
+                                    children: [new MathRun("2")],
+                                }),
+                            ],
+                            denominator: [new MathRun("2")],
+                        }),
+                    ],
+                }),
+            ],
+        }),
         new Paragraph({
             children: [
                 new Math({
