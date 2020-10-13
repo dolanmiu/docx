@@ -70,7 +70,7 @@
     "@types/sinon": "^9.0.4",
     "@types/webpack": "^4.4.24",
     "awesome-typescript-loader": "^3.4.1",
-    "chai": "^3.5.0",
+    "chai": "^4.2.0",
     "docsify-cli": "^4.3.0",
     "glob": "^7.1.2",
     "istanbul-instrumenter-loader": "^3.0.1",
