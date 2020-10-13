@@ -9,7 +9,7 @@ describe("MathSquareBrackets", () => {
     describe("#constructor()", () => {
         it("should create a MathSquareBrackets with correct root key", () => {
             const mathSquareBrackets = new MathSquareBrackets({
-                child: new MathRun("60"),
+                children: [new MathRun("60")],
             });
 
             const tree = new Formatter().format(mathSquareBrackets);

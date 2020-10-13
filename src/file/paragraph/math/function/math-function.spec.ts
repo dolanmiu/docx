@@ -9,8 +9,8 @@ describe("MathFunction", () => {
     describe("#constructor()", () => {
         it("should create a MathFunction with correct root key", () => {
             const mathFunction = new MathFunction({
-                name: new MathRun("sin"),
-                child: new MathRun("60"),
+                name: [new MathRun("sin")],
+                children: [new MathRun("60")],
             });
 
             const tree = new Formatter().format(mathFunction);

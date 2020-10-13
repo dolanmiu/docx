@@ -3,11 +3,13 @@ import { XmlComponent } from "file/xml-components";
 import { MathComponent } from "../math-component";
 
 export class MathDegree extends XmlComponent {
-    constructor(child?: MathComponent) {
+    constructor(children?: MathComponent[]) {
         super("m:deg");
 
-        if (!!child) {
-            this.root.push(child);
+        if (!!children) {
+            for (const child of children) {
+                this.root.push(child);
+            }
         }
     }
 }

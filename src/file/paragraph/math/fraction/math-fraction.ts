@@ -5,8 +5,8 @@ import { MathDenominator } from "./math-denominator";
 import { MathNumerator } from "./math-numerator";
 
 export interface IMathFractionOptions {
-    readonly numerator: MathComponent;
-    readonly denominator: MathComponent;
+    readonly numerator: MathComponent[];
+    readonly denominator: MathComponent[];
 }
 
 export class MathFraction extends XmlComponent {

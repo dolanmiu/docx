@@ -6,7 +6,7 @@ import { MathBase } from "../n-ary";
 import { MathBracketProperties } from "./math-bracket-properties";
 
 export class MathCurlyBrackets extends XmlComponent {
-    constructor(options: { readonly child: MathComponent }) {
+    constructor(options: { readonly children: MathComponent[] }) {
         super("m:d");
 
         this.root.push(
@@ -15,6 +15,6 @@ export class MathCurlyBrackets extends XmlComponent {
                 endingCharacter: "}",
             }),
         );
-        this.root.push(new MathBase(options.child));
+        this.root.push(new MathBase(options.children));
     }
 }

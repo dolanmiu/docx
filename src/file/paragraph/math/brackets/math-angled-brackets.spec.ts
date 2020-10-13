@@ -9,7 +9,7 @@ describe("MathAngledBrackets", () => {
     describe("#constructor()", () => {
         it("should create a MathAngledBrackets with correct root key", () => {
             const mathAngledBrackets = new MathAngledBrackets({
-                child: new MathRun("60"),
+                children: [new MathRun("60")],
             });
 
             const tree = new Formatter().format(mathAngledBrackets);

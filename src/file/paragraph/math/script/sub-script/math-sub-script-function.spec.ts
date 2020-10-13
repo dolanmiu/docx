@@ -9,8 +9,8 @@ describe("MathSubScript", () => {
     describe("#constructor()", () => {
         it("should create a MathSubScript with correct root key", () => {
             const mathSubScript = new MathSubScript({
-                child: new MathRun("e"),
-                subScript: new MathRun("2"),
+                children: [new MathRun("e")],
+                subScript: [new MathRun("2")],
             });
 
             const tree = new Formatter().format(mathSubScript);

@@ -9,8 +9,8 @@ describe("MathFraction", () => {
     describe("#constructor()", () => {
         it("should create a MathFraction with correct root key", () => {
             const mathFraction = new MathFraction({
-                numerator: new MathRun("2"),
-                denominator: new MathRun("2"),
+                numerator: [new MathRun("2")],
+                denominator: [new MathRun("2")],
             });
             const tree = new Formatter().format(mathFraction);
             expect(tree).to.deep.equal({

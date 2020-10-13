@@ -3,9 +3,11 @@ import { XmlComponent } from "file/xml-components";
 import { MathComponent } from "../math-component";
 
 export class MathDenominator extends XmlComponent {
-    constructor(child: MathComponent) {
+    constructor(children: MathComponent[]) {
         super("m:den");
 
-        this.root.push(child);
+        for (const child of children) {
+            this.root.push(child);
+        }
     }
 }

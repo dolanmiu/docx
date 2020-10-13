@@ -9,9 +9,9 @@ describe("MathSum", () => {
     describe("#constructor()", () => {
         it("should create a MathSum with correct root key", () => {
             const mathSum = new MathSum({
-                child: new MathRun("1"),
-                subScript: new MathRun("2"),
-                superScript: new MathRun("3"),
+                children: [new MathRun("1")],
+                subScript: [new MathRun("2")],
+                superScript: [new MathRun("3")],
             });
 
             const tree = new Formatter().format(mathSum);

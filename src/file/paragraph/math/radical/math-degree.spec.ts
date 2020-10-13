@@ -17,7 +17,7 @@ describe("MathDegree", () => {
         });
 
         it("should create a MathDegree with correct root key with child", () => {
-            const mathDegree = new MathDegree(new MathRun("2"));
+            const mathDegree = new MathDegree([new MathRun("2")]);
 
             const tree = new Formatter().format(mathDegree);
             expect(tree).to.deep.equal({

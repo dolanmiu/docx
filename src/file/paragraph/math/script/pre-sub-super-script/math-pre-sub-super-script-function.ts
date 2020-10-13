@@ -6,9 +6,9 @@ import { MathBase, MathSubScriptElement, MathSuperScriptElement } from "../../n-
 import { MathPreSubSuperScriptProperties } from "./math-pre-sub-super-script-function-properties";
 
 export interface IMathPreSubSuperScriptOptions {
-    readonly child: MathComponent;
-    readonly subScript: MathComponent;
-    readonly superScript: MathComponent;
+    readonly children: MathComponent[];
+    readonly subScript: MathComponent[];
+    readonly superScript: MathComponent[];
 }
 
 export class MathPreSubSuperScript extends XmlComponent {
@@ -16,7 +16,7 @@ export class MathPreSubSuperScript extends XmlComponent {
         super("m:sPre");
 
         this.root.push(new MathPreSubSuperScriptProperties());
-        this.root.push(new MathBase(options.child));
+        this.root.push(new MathBase(options.children));
         this.root.push(new MathSubScriptElement(options.subScript));
         this.root.push(new MathSuperScriptElement(options.superScript));
     }

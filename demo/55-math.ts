@@ -33,8 +33,8 @@ doc.addSection({
                     children: [
                         new MathRun("2+2"),
                         new MathFraction({
-                            numerator: new MathRun("hi"),
-                            denominator: new MathRun("2"),
+                            numerator: [new MathRun("hi")],
+                            denominator: [new MathRun("2")],
                         }),
                     ],
                 }),
@@ -44,26 +44,43 @@ doc.addSection({
                 }),
             ],
         }),
+        // new Paragraph({
+        //     children: [
+        //         new MathFraction({
+        //             numerator: [
+        //                 new MathRun("1"),
+        //                 new MathRadical({
+        //                     children: [new MathRun("2")],
+        //                 }),
+        //             ],
+        //             denominator: [new MathRun("2")],
+        //         }),
+        //     ],
+        // }),
         new Paragraph({
             children: [
                 new Math({
                     children: [
                         new MathSum({
-                            child: new MathRun("test"),
+                            children: [new MathRun("test")],
                         }),
                         new MathSum({
-                            child: new MathSuperScript({
-                                child: new MathRun("e"),
-                                superScript: new MathRun("2"),
-                            }),
-                            subScript: new MathRun("i"),
+                            children: [
+                                new MathSuperScript({
+                                    children: [new MathRun("e")],
+                                    superScript: [new MathRun("2")],
+                                }),
+                            ],
+                            subScript: [new MathRun("i")],
                         }),
                         new MathSum({
-                            child: new MathRadical({
-                                child: new MathRun("i"),
-                            }),
-                            subScript: new MathRun("i"),
-                            superScript: new MathRun("10"),
+                            children: [
+                                new MathRadical({
+                                    children: [new MathRun("i")],
+                                }),
+                            ],
+                            subScript: [new MathRun("i")],
+                            superScript: [new MathRun("10")],
                         }),
                     ],
                 }),
@@ -74,8 +91,8 @@ doc.addSection({
                 new Math({
                     children: [
                         new MathSuperScript({
-                            child: new MathRun("test"),
-                            superScript: new MathRun("hello"),
+                            children: [new MathRun("test")],
+                            superScript: [new MathRun("hello")],
                         }),
                     ],
                 }),
@@ -86,8 +103,8 @@ doc.addSection({
                 new Math({
                     children: [
                         new MathSubScript({
-                            child: new MathRun("test"),
-                            subScript: new MathRun("hello"),
+                            children: [new MathRun("test")],
+                            subScript: [new MathRun("hello")],
                         }),
                     ],
                 }),
@@ -98,11 +115,13 @@ doc.addSection({
                 new Math({
                     children: [
                         new MathSubScript({
-                            child: new MathRun("x"),
-                            subScript: new MathSuperScript({
-                                child: new MathRun("y"),
-                                superScript: new MathRun("2"),
-                            }),
+                            children: [new MathRun("x")],
+                            subScript: [
+                                new MathSuperScript({
+                                    children: [new MathRun("y")],
+                                    superScript: [new MathRun("2")],
+                                }),
+                            ],
                         }),
                     ],
                 }),
@@ -113,9 +132,9 @@ doc.addSection({
                 new Math({
                     children: [
                         new MathSubSuperScript({
-                            child: new MathRun("test"),
-                            superScript: new MathRun("hello"),
-                            subScript: new MathRun("world"),
+                            children: [new MathRun("test")],
+                            superScript: [new MathRun("hello")],
+                            subScript: [new MathRun("world")],
                         }),
                     ],
                 }),
@@ -126,9 +145,9 @@ doc.addSection({
                 new Math({
                     children: [
                         new MathPreSubSuperScript({
-                            child: new MathRun("test"),
-                            superScript: new MathRun("hello"),
-                            subScript: new MathRun("world"),
+                            children: [new MathRun("test")],
+                            superScript: [new MathRun("hello")],
+                            subScript: [new MathRun("world")],
                         }),
                     ],
                 }),
@@ -139,29 +158,35 @@ doc.addSection({
                 new Math({
                     children: [
                         new MathSubScript({
-                            child: new MathFraction({
-                                numerator: new MathRun("1"),
-                                denominator: new MathRun("2"),
-                            }),
-                            subScript: new MathRun("4"),
-                        }),
-                    ],
-                }),
-            ],
-        }),
-        new Paragraph({
-            children: [
-                new Math({
-                    children: [
-                        new MathSubScript({
-                            child: new MathRadical({
-                                child: new MathFraction({
-                                    numerator: new MathRun("1"),
-                                    denominator: new MathRun("2"),
+                            children: [
+                                new MathFraction({
+                                    numerator: [new MathRun("1")],
+                                    denominator: [new MathRun("2")],
                                 }),
-                                degree: new MathRun("4"),
-                            }),
-                            subScript: new MathRun("x"),
+                            ],
+                            subScript: [new MathRun("4")],
+                        }),
+                    ],
+                }),
+            ],
+        }),
+        new Paragraph({
+            children: [
+                new Math({
+                    children: [
+                        new MathSubScript({
+                            children: [
+                                new MathRadical({
+                                    children: [
+                                        new MathFraction({
+                                            numerator: [new MathRun("1")],
+                                            denominator: [new MathRun("2")],
+                                        }),
+                                    ],
+                                    degree: [new MathRun("4")],
+                                }),
+                            ],
+                            subScript: [new MathRun("x")],
                         }),
                     ],
                 }),
@@ -172,7 +197,7 @@ doc.addSection({
                 new Math({
                     children: [
                         new MathRadical({
-                            child: new MathRun("4"),
+                            children: [new MathRun("4")],
                         }),
                     ],
                 }),
@@ -183,16 +208,18 @@ doc.addSection({
                 new Math({
                     children: [
                         new MathFunction({
-                            name: new MathSuperScript({
-                                child: new MathRun("cos"),
-                                superScript: new MathRun("-1"),
-                            }),
-                            child: new MathRun("100"),
+                            name: [
+                                new MathSuperScript({
+                                    children: [new MathRun("cos")],
+                                    superScript: [new MathRun("-1")],
+                                }),
+                            ],
+                            children: [new MathRun("100")],
                         }),
                         new MathRun("×"),
                         new MathFunction({
-                            name: new MathRun("sin"),
-                            child: new MathRun("360"),
+                            name: [new MathRun("sin")],
+                            children: [new MathRun("360")],
                         }),
                         new MathRun("= x"),
                     ],
@@ -204,28 +231,36 @@ doc.addSection({
                 new Math({
                     children: [
                         new MathRoundBrackets({
-                            child: new MathFraction({
-                                numerator: new MathRun("1"),
-                                denominator: new MathRun("2"),
-                            }),
+                            children: [
+                                new MathFraction({
+                                    numerator: [new MathRun("1")],
+                                    denominator: [new MathRun("2")],
+                                }),
+                            ],
                         }),
                         new MathSquareBrackets({
-                            child: new MathFraction({
-                                numerator: new MathRun("1"),
-                                denominator: new MathRun("2"),
-                            }),
+                            children: [
+                                new MathFraction({
+                                    numerator: [new MathRun("1")],
+                                    denominator: [new MathRun("2")],
+                                }),
+                            ],
                         }),
                         new MathCurlyBrackets({
-                            child: new MathFraction({
-                                numerator: new MathRun("1"),
-                                denominator: new MathRun("2"),
-                            }),
+                            children: [
+                                new MathFraction({
+                                    numerator: [new MathRun("1")],
+                                    denominator: [new MathRun("2")],
+                                }),
+                            ],
                         }),
                         new MathAngledBrackets({
-                            child: new MathFraction({
-                                numerator: new MathRun("1"),
-                                denominator: new MathRun("2"),
-                            }),
+                            children: [
+                                new MathFraction({
+                                    numerator: [new MathRun("1")],
+                                    denominator: [new MathRun("2")],
+                                }),
+                            ],
                         }),
                     ],
                 }),
@@ -236,10 +271,12 @@ doc.addSection({
                 new Math({
                     children: [
                         new MathFraction({
-                            numerator: new MathRadical({
-                                child: new MathRun("4"),
-                            }),
-                            denominator: new MathRun("2a"),
+                            numerator: [
+                                new MathRadical({
+                                    children: [new MathRun("4")],
+                                }),
+                            ],
+                            denominator: [new MathRun("2a")],
                         }),
                     ],
                 }),

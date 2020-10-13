@@ -6,8 +6,8 @@ import { MathBase, MathSubScriptElement } from "../../n-ary";
 import { MathSubScriptProperties } from "./math-sub-script-function-properties";
 
 export interface IMathSubScriptOptions {
-    readonly child: MathComponent;
-    readonly subScript: MathComponent;
+    readonly children: MathComponent[];
+    readonly subScript: MathComponent[];
 }
 
 export class MathSubScript extends XmlComponent {
@@ -15,7 +15,7 @@ export class MathSubScript extends XmlComponent {
         super("m:sSub");
 
         this.root.push(new MathSubScriptProperties());
-        this.root.push(new MathBase(options.child));
+        this.root.push(new MathBase(options.children));
         this.root.push(new MathSubScriptElement(options.subScript));
     }
 }

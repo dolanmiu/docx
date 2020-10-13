@@ -8,7 +8,7 @@ import { MathSuperScriptElement } from "./math-super-script";
 describe("MathSuperScriptElement", () => {
     describe("#constructor()", () => {
         it("should create a MathSuperScriptElement with correct root key", () => {
-            const mathSuperScriptElement = new MathSuperScriptElement(new MathRun("2+2"));
+            const mathSuperScriptElement = new MathSuperScriptElement([new MathRun("2+2")]);
 
             const tree = new Formatter().format(mathSuperScriptElement);
             expect(tree).to.deep.equal({

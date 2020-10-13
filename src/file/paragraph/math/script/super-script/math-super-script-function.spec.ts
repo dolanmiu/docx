@@ -9,8 +9,8 @@ describe("MathSuperScript", () => {
     describe("#constructor()", () => {
         it("should create a MathSuperScript with correct root key", () => {
             const mathSuperScript = new MathSuperScript({
-                child: new MathRun("e"),
-                superScript: new MathRun("2"),
+                children: [new MathRun("e")],
+                superScript: [new MathRun("2")],
             });
 
             const tree = new Formatter().format(mathSuperScript);

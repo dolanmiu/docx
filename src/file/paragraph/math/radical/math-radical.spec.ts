@@ -9,8 +9,8 @@ describe("MathRadical", () => {
     describe("#constructor()", () => {
         it("should create a MathRadical with correct root key", () => {
             const mathRadical = new MathRadical({
-                child: new MathRun("e"),
-                degree: new MathRun("2"),
+                children: [new MathRun("e")],
+                degree: [new MathRun("2")],
             });
 
             const tree = new Formatter().format(mathRadical);
