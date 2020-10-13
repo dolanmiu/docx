@@ -5,8 +5,9 @@ import { stub } from "sinon";
 import { Formatter } from "export/formatter";
 import { EMPTY_OBJECT } from "file/xml-components";
 
+import { File } from "../file";
 import { AlignmentType, HeadingLevel, LeaderType, PageBreak, TabStopPosition, TabStopType } from "./formatting";
-import { Bookmark } from "./links";
+import { Bookmark, HyperlinkRef } from "./links";
 import { Paragraph } from "./paragraph";
 
 describe("Paragraph", () => {
@@ -756,6 +757,25 @@ describe("Paragraph", () => {
                         "w:pPr": [{ "w:outlineLvl": { _attr: { "w:val": 0 } } }],
                     },
                 ],
+            });
+        });
+    });
+
+    describe("#prepForXml", () => {
+        it("should set paragraph outline level to the given value", () => {
+            const paragraph = new Paragraph({
+                children: [new HyperlinkRef("myAnchorId")],
+            });
+            const fileMock = ({
+                HyperlinkCache: {
+                    myAnchorId: "test",
+                },
+                // tslint:disable-next-line: no-any
+            } as any) as File;
+            paragraph.prepForXml(fileMock);
+            const tree = new Formatter().format(paragraph);
+            expect(tree).to.deep.equal({
+                "w:p": ["test"],
             });
         });
     });

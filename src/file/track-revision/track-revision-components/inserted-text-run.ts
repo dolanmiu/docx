@@ -1,6 +1,7 @@
-import { IChangedAttributesProperties, ChangeAttributes } from "../track-revision";
 import { XmlComponent } from "file/xml-components";
-import { TextRun, IRunOptions } from "../../index";
+
+import { IRunOptions, TextRun } from "../../index";
+import { ChangeAttributes, IChangedAttributesProperties } from "../track-revision";
 
 interface IInsertedRunOptions extends IChangedAttributesProperties, IRunOptions {}
 
