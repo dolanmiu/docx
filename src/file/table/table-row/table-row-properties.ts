@@ -1,5 +1,7 @@
-import { HeightRule, TableRowHeight } from "file/table/table-row/table-row-height";
+// http://officeopenxml.com/WPtableRowProperties.php
 import { IgnoreIfEmptyXmlComponent, XmlAttributeComponent, XmlComponent } from "file/xml-components";
+
+import { HeightRule, TableRowHeight } from "./table-row-height";
 
 export class TableRowProperties extends IgnoreIfEmptyXmlComponent {
     constructor() {
