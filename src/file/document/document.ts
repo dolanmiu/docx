@@ -5,11 +5,16 @@ import { Table } from "../table";
 import { TableOfContents } from "../table-of-contents";
 import { Body } from "./body";
 import { DocumentAttributes } from "./document-attributes";
+import { DocumentBackground, IDocumentBackgroundOptions } from "./document-background";
+
+interface IDocumentOptions {
+    readonly background: IDocumentBackgroundOptions;
+}
 
 export class Document extends XmlComponent {
     private readonly body: Body;
 
-    constructor() {
+    constructor(options: IDocumentOptions) {
         super("w:document");
         this.root.push(
             new DocumentAttributes({
@@ -33,6 +38,7 @@ export class Document extends XmlComponent {
             }),
         );
         this.body = new Body();
+        this.root.push(new DocumentBackground(options.background));
         this.root.push(this.body);
     }
 
