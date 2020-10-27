@@ -85,7 +85,7 @@ export class File {
         this.appProperties = new AppProperties();
         this.footNotes = new FootNotes();
         this.contentTypes = new ContentTypes();
-        this.document = new Document();
+        this.document = new Document({ background: options.background || {} });
         this.settings = new Settings();
 
         this.media = fileProperties.template && fileProperties.template.media ? fileProperties.template.media : new Media();

@@ -1,5 +1,6 @@
 import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
 import { Compatibility } from "./compatibility";
+import { DisplayBackgroundShape } from "./display-background-shape";
 import { TrackRevisions } from "./track-revisions";
 import { UpdateFields } from "./update-fields";
 
@@ -72,8 +73,11 @@ export class Settings extends XmlComponent {
                 Ignorable: "w14 w15 wp14",
             }),
         );
+
         this.compatibility = new Compatibility();
         this.trackRevisions = new TrackRevisions();
+
+        this.root.push(new DisplayBackgroundShape());
     }
 
     public addUpdateFields(): void {

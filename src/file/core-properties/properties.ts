@@ -1,4 +1,5 @@
 import { XmlComponent } from "file/xml-components";
+import { IDocumentBackgroundOptions } from "../document";
 
 import { DocumentAttributes } from "../document/document-attributes";
 import { INumberingOptions } from "../numbering";
@@ -32,6 +33,7 @@ export interface IPropertiesOptions {
     readonly hyperlinks?: {
         readonly [key: string]: IInternalHyperlinkDefinition | IExternalHyperlinkDefinition;
     };
+    readonly background?: IDocumentBackgroundOptions;
 }
 
 export class CoreProperties extends XmlComponent {
