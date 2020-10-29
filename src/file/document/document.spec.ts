@@ -41,7 +41,7 @@ describe("Document", () => {
                     {
                         "w:background": {
                             _attr: {
-                                "w:color": "auto",
+                                "w:color": "FFFFFF",
                             },
                         },
                     },

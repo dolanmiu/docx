@@ -12,19 +12,19 @@ describe("DocumentBackground", () => {
             expect(tree).to.deep.equal({
                 "w:background": {
                     _attr: {
-                        "w:color": "auto",
+                        "w:color": "FFFFFF",
                     },
                 },
             });
         });
 
         it("should create a DocumentBackground with no options and set color to value", () => {
-            const documentBackground = new DocumentBackground({ color: "ffffff" });
+            const documentBackground = new DocumentBackground({ color: "ffff00" });
             const tree = new Formatter().format(documentBackground);
             expect(tree).to.deep.equal({
                 "w:background": {
                     _attr: {
-                        "w:color": "ffffff",
+                        "w:color": "ffff00",
                     },
                 },
             });
@@ -32,7 +32,7 @@ describe("DocumentBackground", () => {
 
         it("should create a DocumentBackground with no options and set other values", () => {
             const documentBackground = new DocumentBackground({
-                color: "ffffff",
+                color: "ffff00",
                 themeColor: "test",
                 themeShade: "test",
                 themeTint: "test",
@@ -41,7 +41,7 @@ describe("DocumentBackground", () => {
             expect(tree).to.deep.equal({
                 "w:background": {
                     _attr: {
-                        "w:color": "ffffff",
+                        "w:color": "ffff00",
                         "w:themeColor": "test",
                         "w:themeShade": "test",
                         "w:themeTint": "test",

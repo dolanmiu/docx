@@ -29,7 +29,7 @@ export class DocumentBackground extends XmlComponent {
 
         this.root.push(
             new DocumentBackgroundAttributes({
-                color: options.color ? options.color : "auto",
+                color: options.color ? options.color : "FFFFFF",
                 themeColor: options.themeColor,
                 themeShade: options.themeShade,
                 themeTint: options.themeTint,
