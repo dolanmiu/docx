@@ -6,10 +6,10 @@ import { Formatter } from "export/formatter";
 import { EMPTY_OBJECT } from "file/xml-components";
 
 import { File } from "../file";
+import { ShadingType } from "../table/shading";
 import { AlignmentType, HeadingLevel, LeaderType, PageBreak, TabStopPosition, TabStopType } from "./formatting";
 import { Bookmark, HyperlinkRef } from "./links";
 import { Paragraph } from "./paragraph";
-import { ShadingType } from "../table/shading";
 
 describe("Paragraph", () => {
     describe("#constructor()", () => {
