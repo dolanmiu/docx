@@ -39,7 +39,7 @@ const doc = new docx.Document({
 
 ### Change background color of Document
 
-Set the hax value in the document like so:
+Set the hex value in the document like so:
 
 ```ts
 const doc = new docx.Document({
