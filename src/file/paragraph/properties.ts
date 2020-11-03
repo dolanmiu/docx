@@ -7,8 +7,8 @@ import { Border, IBorderOptions, ThematicBreak } from "./formatting/border";
 import { IIndentAttributesProperties, Indent } from "./formatting/indent";
 import { KeepLines, KeepNext } from "./formatting/keep";
 import { PageBreakBefore } from "./formatting/page-break";
+import { HeadingLevel, ParagraphStyle } from "./formatting/paragraph-style";
 import { ContextualSpacing, ISpacingProperties, Spacing } from "./formatting/spacing";
-import { HeadingLevel, Style } from "./formatting/style";
 import { LeaderType, TabStop, TabStopPosition, TabStopType } from "./formatting/tab-stop";
 import { NumberProperties } from "./formatting/unordered-list";
 import { OutlineLevel } from "./links";
@@ -78,7 +78,7 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
         }
 
         if (options.heading) {
-            this.push(new Style(options.heading));
+            this.push(new ParagraphStyle(options.heading));
         }
 
         if (options.bidirectional) {
@@ -116,17 +116,17 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
         }
 
         if (options.style) {
-            this.push(new Style(options.style));
+            this.push(new ParagraphStyle(options.style));
         }
 
         if (options.bullet) {
-            this.push(new Style("ListParagraph"));
+            this.push(new ParagraphStyle("ListParagraph"));
             this.push(new NumberProperties(1, options.bullet.level));
         }
 
         if (options.numbering) {
             if (!options.numbering.custom) {
-                this.push(new Style("ListParagraph"));
+                this.push(new ParagraphStyle("ListParagraph"));
             }
             this.push(new NumberProperties(options.numbering.reference, options.numbering.level));
         }

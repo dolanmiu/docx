@@ -5,18 +5,18 @@ import { Alignment, AlignmentType } from "../../paragraph";
 import { ITableShadingAttributesProperties, TableShading } from "../shading";
 import { WidthType } from "../table-cell";
 import { ITableBordersOptions, TableBorders } from "./table-borders";
-import { TableCellMargin } from "./table-cell-margin";
 import { ITableFloatOptions, TableFloatProperties } from "./table-float-properties";
 import { TableLayout, TableLayoutType } from "./table-layout";
+import { TableLevelCellMargin } from "./table-level-cell-margin";
 import { PreferredTableWidth } from "./table-width";
 
 export class TableProperties extends IgnoreIfEmptyXmlComponent {
-    private readonly cellMargin: TableCellMargin;
+    private readonly cellMargin: TableLevelCellMargin;
 
     constructor() {
         super("w:tblPr");
 
-        this.cellMargin = new TableCellMargin();
+        this.cellMargin = new TableLevelCellMargin();
         this.root.push(this.cellMargin);
     }
 
@@ -34,7 +34,7 @@ export class TableProperties extends IgnoreIfEmptyXmlComponent {
         return this;
     }
 
-    public get CellMargin(): TableCellMargin {
+    public get CellMargin(): TableLevelCellMargin {
         return this.cellMargin;
     }
 

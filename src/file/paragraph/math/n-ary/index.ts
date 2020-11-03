@@ -3,5 +3,7 @@ export * from "./math-base";
 export * from "./math-limit-location";
 export * from "./math-naray-properties";
 export * from "./math-sub-script";
+export * from "./math-sub-script-hide";
 export * from "./math-sum";
 export * from "./math-super-script";
+export * from "./math-super-script-hide";
