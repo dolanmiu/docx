@@ -34,6 +34,9 @@ export interface IPropertiesOptions {
         readonly [key: string]: IInternalHyperlinkDefinition | IExternalHyperlinkDefinition;
     };
     readonly background?: IDocumentBackgroundOptions;
+    readonly features?: {
+        readonly trackRevisions?: boolean;
+    };
 }
 
 export class CoreProperties extends XmlComponent {

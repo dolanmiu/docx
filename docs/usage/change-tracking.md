@@ -53,6 +53,9 @@ In addtion to marking text as inserted or deleted, change tracking can also be a
 ```ts
 import { Document } from "docx";
 
-const doc = new Document({});
-doc.Settings.addTrackRevisions()
+const doc = new Document({
+    features: {
+        trackRevisions: true,
+    },
+});
 ```

@@ -1,7 +1,19 @@
 // Track Revisions aka. "Track Changes"
 // Import from 'docx' rather than '../build' if you install from npm
 import * as fs from "fs";
-import { Document, Packer, Paragraph, TextRun, ShadingType, DeletedTextRun, InsertedTextRun, Footer, PageNumber, AlignmentType, FootnoteReferenceRun } from "../build";
+import {
+    AlignmentType,
+    DeletedTextRun,
+    Document,
+    Footer,
+    FootnoteReferenceRun,
+    InsertedTextRun,
+    Packer,
+    PageNumber,
+    Paragraph,
+    ShadingType,
+    TextRun,
+} from "../build";
 
 /*
     For reference, see
@@ -17,7 +29,7 @@ import { Document, Packer, Paragraph, TextRun, ShadingType, DeletedTextRun, Inse
 const doc = new Document({
     footnotes: [
         new Paragraph({
-            children:[
+            children: [
                 new TextRun("This is a footnote"),
                 new DeletedTextRun({
                     text: " with some extra text which was deleted",
@@ -30,19 +42,20 @@ const doc = new Document({
                     id: 1,
                     author: "Firstname Lastname",
                     date: "2020-10-06T09:05:00Z",
-                })
-            ]
+                }),
+            ],
         }),
     ],
+    features: {
+        trackRevisions: true,
+    },
 });
-
-doc.Settings.addTrackRevisions()
 
 const paragraph = new Paragraph({
     children: [
         new TextRun("This is a simple demo "),
         new TextRun({
-            text: "on how to "
+            text: "on how to ",
         }),
         new InsertedTextRun({
             text: "mark a text as an insertion ",
@@ -55,7 +68,7 @@ const paragraph = new Paragraph({
             id: 1,
             author: "Firstname Lastname",
             date: "2020-10-06T09:00:00Z",
-        })
+        }),
     ],
 });
 
@@ -92,7 +105,7 @@ doc.addSection({
                 }),
                 new TextRun({
                     bold: true,
-                    children: [ "\tuse Inserted and Deleted TextRuns.", new FootnoteReferenceRun(1) ],
+                    children: ["\tuse Inserted and Deleted TextRuns.", new FootnoteReferenceRun(1)],
                 }),
             ],
         }),

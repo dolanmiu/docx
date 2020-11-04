@@ -170,6 +170,12 @@ export class File {
 
             this.hyperlinkCache = cache;
         }
+
+        if (options.features) {
+            if (options.features.trackRevisions) {
+                this.settings.addTrackRevisions();
+            }
+        }
     }
 
     public addSection({
