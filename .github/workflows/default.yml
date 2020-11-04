@@ -61,7 +61,6 @@ jobs:
             - name: Prettier
               run: |
                     npm run ts-node -- ./demo/1-basic.ts
-                #   - npm run e2e "My Document.docx"
                     npm run ts-node -- ./demo/2-declaritive-styles.ts
                     npm run ts-node -- ./demo/3-numbering-and-bullet-points.ts
                     npm run ts-node -- ./demo/4-basic-table.ts
@@ -71,7 +70,6 @@ jobs:
                     npm run ts-node -- ./demo/8-header-footer.ts
                     npm run ts-node -- ./demo/9-images-in-header-and-footer.ts
                     npm run ts-node -- ./demo/10-my-cv.ts
-                #   - npm run e2e "My Document.docx"
                     npm run ts-node -- ./demo/11-declaritive-styles-2.ts
                     npm run ts-node -- ./demo/12-scaling-images.ts
                     npm run ts-node -- ./demo/13-xml-styles.ts
@@ -86,7 +84,6 @@ jobs:
                     npm run ts-node -- ./demo/22-right-to-left-text.ts
                     npm run ts-node -- ./demo/23-base64-images.ts
                     npm run ts-node -- ./demo/24-images-to-table-cell.ts
-                #   - npm run ts-node -- ./demo/demo25.ts
                     npm run ts-node -- ./demo/26-paragraph-borders.ts
                     npm run ts-node -- ./demo/27-declaritive-styles-3.ts
                     npm run ts-node -- ./demo/28-table-of-contents.ts
@@ -94,6 +91,5 @@ jobs:
                     npm run ts-node -- ./demo/30-template-document.ts
                     npm run ts-node -- ./demo/31-tables.ts
                     npm run ts-node -- ./demo/32-merge-and-shade-table-cells.ts
-                #   - npm run e2e "My Document.docx" // Need to fix
                     npm run ts-node -- ./demo/33-sequential-captions.ts
                     npm run ts-node -- ./demo/34-floating-tables.ts
