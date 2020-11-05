@@ -49,7 +49,7 @@ jobs:
             - name: Install Dependencies
               run: npm ci
             - name: Prettier
-              run: npm run prettier
+              run: npm run style
     demos:
         name: Run Demos
         runs-on: ubuntu-latest
