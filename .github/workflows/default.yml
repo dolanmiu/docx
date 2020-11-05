@@ -52,13 +52,19 @@ jobs:
               run: npm run style
     demos:
         name: Run Demos
+        needs: [build]
         runs-on: ubuntu-latest
         steps:
             - name: Checkout Repo
               uses: actions/checkout@master
             - name: Install Dependencies
               run: npm ci
-            - name: Prettier
+            - name: Download Artifact
+              uses: actions/download-artifact@master
+              with:
+              name: build
+              path: build
+            - name: Run demos
               run: |
                     npm run ts-node -- ./demo/1-basic.ts
                     npm run ts-node -- ./demo/2-declaritive-styles.ts
