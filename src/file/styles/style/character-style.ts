@@ -15,7 +15,7 @@ export interface ICharacterStyleOptions extends IBaseCharacterStyleOptions {
     readonly name?: string;
 }
 
-export class CharacterStyle extends Style {
+export class StyleForCharacter extends Style {
     private readonly runProperties: RunProperties;
 
     constructor(options: ICharacterStyleOptions) {

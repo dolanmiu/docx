@@ -6,12 +6,12 @@ import { UnderlineType } from "file/paragraph/run/underline";
 import { ShadingType } from "file/table";
 import { EMPTY_OBJECT } from "file/xml-components";
 
-import { CharacterStyle } from "./character-style";
+import { StyleForCharacter } from "./character-style";
 
 describe("CharacterStyle", () => {
     describe("#constructor", () => {
         it("should set the style type to character and use the given style id", () => {
-            const style = new CharacterStyle({ id: "myStyleId" });
+            const style = new StyleForCharacter({ id: "myStyleId" });
             const tree = new Formatter().format(style);
             expect(tree).to.deep.equal({
                 "w:style": [
@@ -31,7 +31,7 @@ describe("CharacterStyle", () => {
         });
 
         it("should set the name of the style, if given", () => {
-            const style = new CharacterStyle({
+            const style = new StyleForCharacter({
                 id: "myStyleId",
                 name: "Style Name",
             });
@@ -55,7 +55,7 @@ describe("CharacterStyle", () => {
         });
 
         it("should add smallCaps", () => {
-            const style = new CharacterStyle({
+            const style = new StyleForCharacter({
                 id: "myStyleId",
                 run: {
                     smallCaps: true,
@@ -83,7 +83,7 @@ describe("CharacterStyle", () => {
         });
 
         it("should add allCaps", () => {
-            const style = new CharacterStyle({
+            const style = new StyleForCharacter({
                 id: "myStyleId",
                 run: {
                     allCaps: true,
@@ -111,7 +111,7 @@ describe("CharacterStyle", () => {
         });
 
         it("should add strike", () => {
-            const style = new CharacterStyle({
+            const style = new StyleForCharacter({
                 id: "myStyleId",
                 run: {
                     strike: true,
@@ -139,7 +139,7 @@ describe("CharacterStyle", () => {
         });
 
         it("should add double strike", () => {
-            const style = new CharacterStyle({
+            const style = new StyleForCharacter({
                 id: "myStyleId",
                 run: {
                     doubleStrike: true,
@@ -167,7 +167,7 @@ describe("CharacterStyle", () => {
         });
 
         it("should add sub script", () => {
-            const style = new CharacterStyle({
+            const style = new StyleForCharacter({
                 id: "myStyleId",
                 run: {
                     subScript: true,
@@ -203,7 +203,7 @@ describe("CharacterStyle", () => {
         });
 
         it("should add font by name", () => {
-            const style = new CharacterStyle({
+            const style = new StyleForCharacter({
                 id: "myStyleId",
                 run: {
                     font: "test font",
@@ -242,7 +242,7 @@ describe("CharacterStyle", () => {
         });
 
         it("should add font for ascii and eastAsia", () => {
-            const style = new CharacterStyle({
+            const style = new StyleForCharacter({
                 id: "myStyleId",
                 run: {
                     font: {
@@ -282,7 +282,7 @@ describe("CharacterStyle", () => {
         });
 
         it("should add character spacing", () => {
-            const style = new CharacterStyle({
+            const style = new StyleForCharacter({
                 id: "myStyleId",
                 run: {
                     characterSpacing: 100,
@@ -312,7 +312,7 @@ describe("CharacterStyle", () => {
 
     describe("formatting methods: style attributes", () => {
         it("#basedOn", () => {
-            const style = new CharacterStyle({ id: "myStyleId", basedOn: "otherId" });
+            const style = new StyleForCharacter({ id: "myStyleId", basedOn: "otherId" });
             const tree = new Formatter().format(style);
             expect(tree).to.deep.equal({
                 "w:style": [
@@ -357,7 +357,7 @@ describe("CharacterStyle", () => {
         ];
         sizeTests.forEach(({ size, sizeComplexScript, expected }) => {
             it(`#size ${size} cs ${sizeComplexScript}`, () => {
-                const style = new CharacterStyle({
+                const style = new StyleForCharacter({
                     id: "myStyleId",
                     run: { size, sizeComplexScript },
                 });
@@ -385,7 +385,7 @@ describe("CharacterStyle", () => {
 
         describe("#underline", () => {
             it("should set underline to 'single' if no arguments are given", () => {
-                const style = new CharacterStyle({
+                const style = new StyleForCharacter({
                     id: "myStyleId",
                     run: {
                         underline: {},
@@ -413,7 +413,7 @@ describe("CharacterStyle", () => {
             });
 
             it("should set the style if given", () => {
-                const style = new CharacterStyle({
+                const style = new StyleForCharacter({
                     id: "myStyleId",
                     run: {
                         underline: {
@@ -443,7 +443,7 @@ describe("CharacterStyle", () => {
             });
 
             it("should set the style and color if given", () => {
-                const style = new CharacterStyle({
+                const style = new StyleForCharacter({
                     id: "myStyleId",
                     run: {
                         underline: {
@@ -476,7 +476,7 @@ describe("CharacterStyle", () => {
 
         describe("#emphasisMark", () => {
             it("should set emphasisMark to 'dot' if no arguments are given", () => {
-                const style = new CharacterStyle({
+                const style = new StyleForCharacter({
                     id: "myStyleId",
                     run: {
                         emphasisMark: {},
@@ -504,7 +504,7 @@ describe("CharacterStyle", () => {
             });
 
             it("should set the style if given", () => {
-                const style = new CharacterStyle({
+                const style = new StyleForCharacter({
                     id: "myStyleId",
                     run: {
                         emphasisMark: {
@@ -535,7 +535,7 @@ describe("CharacterStyle", () => {
         });
 
         it("#superScript", () => {
-            const style = new CharacterStyle({
+            const style = new StyleForCharacter({
                 id: "myStyleId",
                 run: {
                     superScript: true,
@@ -571,7 +571,7 @@ describe("CharacterStyle", () => {
         });
 
         it("#color", () => {
-            const style = new CharacterStyle({
+            const style = new StyleForCharacter({
                 id: "myStyleId",
                 run: {
                     color: "123456",
@@ -616,7 +616,7 @@ describe("CharacterStyle", () => {
         ];
         boldTests.forEach(({ bold, boldComplexScript, expected }) => {
             it(`#bold ${bold} cs ${boldComplexScript}`, () => {
-                const style = new CharacterStyle({
+                const style = new StyleForCharacter({
                     id: "myStyleId",
                     run: { bold, boldComplexScript },
                 });
@@ -660,7 +660,7 @@ describe("CharacterStyle", () => {
         ];
         italicsTests.forEach(({ italics, italicsComplexScript, expected }) => {
             it(`#italics ${italics} cs ${italicsComplexScript}`, () => {
-                const style = new CharacterStyle({
+                const style = new StyleForCharacter({
                     id: "myStyleId",
                     run: { italics, italicsComplexScript },
                 });
@@ -687,7 +687,7 @@ describe("CharacterStyle", () => {
         });
 
         it("#link", () => {
-            const style = new CharacterStyle({ id: "myStyleId", link: "MyLink" });
+            const style = new StyleForCharacter({ id: "myStyleId", link: "MyLink" });
             const tree = new Formatter().format(style);
             expect(tree).to.deep.equal({
                 "w:style": [
@@ -708,7 +708,7 @@ describe("CharacterStyle", () => {
         });
 
         it("#semiHidden", () => {
-            const style = new CharacterStyle({ id: "myStyleId", semiHidden: true });
+            const style = new StyleForCharacter({ id: "myStyleId", semiHidden: true });
             const tree = new Formatter().format(style);
             expect(tree).to.deep.equal({
                 "w:style": [
@@ -749,7 +749,7 @@ describe("CharacterStyle", () => {
         ];
         highlightTests.forEach(({ highlight, highlightComplexScript, expected }) => {
             it(`#highlight ${highlight} cs ${highlightComplexScript}`, () => {
-                const style = new CharacterStyle({
+                const style = new StyleForCharacter({
                     id: "myStyleId",
                     run: { highlight, highlightComplexScript },
                 });
@@ -838,7 +838,7 @@ describe("CharacterStyle", () => {
         ];
         shadingTests.forEach(({ shadow, shading, shadingComplexScript, expected }) => {
             it("#shadow correctly", () => {
-                const style = new CharacterStyle({
+                const style = new StyleForCharacter({
                     id: "myStyleId",
                     run: { shadow, shading, shadingComplexScript },
                 });

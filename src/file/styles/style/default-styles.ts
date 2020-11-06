@@ -1,9 +1,9 @@
 import { UnderlineType } from "file/paragraph/run/underline";
 
-import { CharacterStyle, IBaseCharacterStyleOptions } from "./character-style";
-import { IBaseParagraphStyleOptions, IParagraphStyleOptions, ParagraphStyle } from "./paragraph-style";
+import { IBaseCharacterStyleOptions, StyleForCharacter } from "./character-style";
+import { IBaseParagraphStyleOptions, IParagraphStyleOptions, StyleForParagraph } from "./paragraph-style";
 
-export class HeadingStyle extends ParagraphStyle {
+export class HeadingStyle extends StyleForParagraph {
     constructor(options: IParagraphStyleOptions) {
         super({
             ...options,
@@ -84,7 +84,7 @@ export class Heading6Style extends HeadingStyle {
     }
 }
 
-export class ListParagraph extends ParagraphStyle {
+export class ListParagraph extends StyleForParagraph {
     constructor(options: IBaseParagraphStyleOptions) {
         super({
             ...options,
@@ -96,7 +96,7 @@ export class ListParagraph extends ParagraphStyle {
     }
 }
 
-export class FootnoteText extends ParagraphStyle {
+export class FootnoteText extends StyleForParagraph {
     constructor(options: IBaseParagraphStyleOptions) {
         super({
             ...options,
@@ -121,7 +121,7 @@ export class FootnoteText extends ParagraphStyle {
     }
 }
 
-export class FootnoteReferenceStyle extends CharacterStyle {
+export class FootnoteReferenceStyle extends StyleForCharacter {
     constructor(options: IBaseCharacterStyleOptions) {
         super({
             ...options,
@@ -136,7 +136,7 @@ export class FootnoteReferenceStyle extends CharacterStyle {
     }
 }
 
-export class FootnoteTextChar extends CharacterStyle {
+export class FootnoteTextChar extends StyleForCharacter {
     constructor(options: IBaseCharacterStyleOptions) {
         super({
             ...options,
@@ -152,7 +152,7 @@ export class FootnoteTextChar extends CharacterStyle {
     }
 }
 
-export class HyperlinkStyle extends CharacterStyle {
+export class HyperlinkStyle extends StyleForCharacter {
     constructor(options: IBaseCharacterStyleOptions) {
         super({
             ...options,
