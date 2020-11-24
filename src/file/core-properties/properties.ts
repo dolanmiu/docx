@@ -1,4 +1,4 @@
-import { IDefaultStylesOptions } from "docx/src/file/styles/factory";
+import { IDefaultStylesOptions } from "file/styles/factory";
 import { XmlComponent } from "file/xml-components";
 import { IDocumentBackgroundOptions } from "../document";
 
