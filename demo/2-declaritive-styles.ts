@@ -7,47 +7,44 @@ const doc = new Document({
     creator: "Clippy",
     title: "Sample Document",
     description: "A brief example of using docx",
+    defaultStyles: {
+        heading1: {
+            run: {
+                size: 28,
+                bold: true,
+                italics: true,
+                color: "red",
+            },
+            paragraph: {
+                spacing: {
+                    after: 120,
+                },
+            },
+        },
+        heading2: {
+            run: {
+                size: 26,
+                bold: true,
+                underline: {
+                    type: UnderlineType.DOUBLE,
+                    color: "FF0000",
+                },
+            },
+            paragraph: {
+                spacing: {
+                    before: 240,
+                    after: 120,
+                },
+            },
+        },
+        listParagraph: {
+            run: {
+                color: '#FF0000'
+            }
+        }
+    },
     styles: {
         paragraphStyles: [
-            {
-                id: "Heading1",
-                name: "Heading 1",
-                basedOn: "Normal",
-                next: "Normal",
-                quickFormat: true,
-                run: {
-                    size: 28,
-                    bold: true,
-                    italics: true,
-                    color: "red",
-                },
-                paragraph: {
-                    spacing: {
-                        after: 120,
-                    },
-                },
-            },
-            {
-                id: "Heading2",
-                name: "Heading 2",
-                basedOn: "Normal",
-                next: "Normal",
-                quickFormat: true,
-                run: {
-                    size: 26,
-                    bold: true,
-                    underline: {
-                        type: UnderlineType.DOUBLE,
-                        color: "FF0000",
-                    },
-                },
-                paragraph: {
-                    spacing: {
-                        before: 240,
-                        after: 120,
-                    },
-                },
-            },
             {
                 id: "aside",
                 name: "Aside",
@@ -74,12 +71,6 @@ const doc = new Document({
                 paragraph: {
                     spacing: { line: 276, before: 20 * 72 * 0.1, after: 20 * 72 * 0.05 },
                 },
-            },
-            {
-                id: "ListParagraph",
-                name: "List Paragraph",
-                basedOn: "Normal",
-                quickFormat: true,
             },
         ],
     },
