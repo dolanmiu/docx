@@ -1,11 +1,12 @@
+import { IDefaultStylesOptions } from "file/styles/factory";
 import { BaseXmlComponent, ImportedXmlComponent, XmlComponent } from "file/xml-components";
-
 import { StyleForCharacter, StyleForParagraph } from "./style";
 import { ICharacterStyleOptions } from "./style/character-style";
 import { IParagraphStyleOptions } from "./style/paragraph-style";
 export * from "./border";
 
 export interface IStylesOptions {
+    readonly default?: IDefaultStylesOptions;
     readonly initialStyles?: BaseXmlComponent;
     readonly paragraphStyles?: IParagraphStyleOptions[];
     readonly characterStyles?: ICharacterStyleOptions[];

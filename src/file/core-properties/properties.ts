@@ -1,4 +1,3 @@
-import { IDefaultStylesOptions } from "file/styles/factory";
 import { XmlComponent } from "file/xml-components";
 import { IDocumentBackgroundOptions } from "../document";
 
@@ -29,7 +28,6 @@ export interface IPropertiesOptions {
     readonly revision?: string;
     readonly externalStyles?: string;
     readonly styles?: IStylesOptions;
-    readonly defaultStyles?: IDefaultStylesOptions;
     readonly numbering?: INumberingOptions;
     readonly footnotes?: Paragraph[];
     readonly hyperlinks?: {

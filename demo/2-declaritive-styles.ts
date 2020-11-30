@@ -7,43 +7,43 @@ const doc = new Document({
     creator: "Clippy",
     title: "Sample Document",
     description: "A brief example of using docx",
-    defaultStyles: {
-        heading1: {
-            run: {
-                size: 28,
-                bold: true,
-                italics: true,
-                color: "red",
-            },
-            paragraph: {
-                spacing: {
-                    after: 120,
-                },
-            },
-        },
-        heading2: {
-            run: {
-                size: 26,
-                bold: true,
-                underline: {
-                    type: UnderlineType.DOUBLE,
-                    color: "FF0000",
-                },
-            },
-            paragraph: {
-                spacing: {
-                    before: 240,
-                    after: 120,
-                },
-            },
-        },
-        listParagraph: {
-            run: {
-                color: '#FF0000'
-            }
-        }
-    },
     styles: {
+        default: {
+            heading1: {
+                run: {
+                    size: 28,
+                    bold: true,
+                    italics: true,
+                    color: "red",
+                },
+                paragraph: {
+                    spacing: {
+                        after: 120,
+                    },
+                },
+            },
+            heading2: {
+                run: {
+                    size: 26,
+                    bold: true,
+                    underline: {
+                        type: UnderlineType.DOUBLE,
+                        color: "FF0000",
+                    },
+                },
+                paragraph: {
+                    spacing: {
+                        before: 240,
+                        after: 120,
+                    },
+                },
+            },
+            listParagraph: {
+                run: {
+                    color: '#FF0000'
+                }
+            }
+        },
         paragraphStyles: [
             {
                 id: "aside",

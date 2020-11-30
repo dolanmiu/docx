@@ -17,55 +17,55 @@ import {
 } from "../build";
 
 const doc = new Document({
-    defaultStyles: {
-        heading1: {
-            run: {
-                font: "Calibri",
-                size: 52,
-                bold: true,
-                color: "000000",
-                underline: {
-                    type: UnderlineType.SINGLE,
+    styles: {
+        default: {
+            heading1: {
+                run: {
+                    font: "Calibri",
+                    size: 52,
+                    bold: true,
                     color: "000000",
+                    underline: {
+                        type: UnderlineType.SINGLE,
+                        color: "000000",
+                    },
+                },
+                paragraph: {
+                    alignment: AlignmentType.CENTER,
+                    spacing: { line: 340 },
                 },
             },
-            paragraph: {
-                alignment: AlignmentType.CENTER,
-                spacing: { line: 340 },
+            heading2: {
+                run: {
+                    font: "Calibri",
+                    size: 26,
+                    bold: true,
+                },
+                paragraph: {
+                    spacing: { line: 340 },
+                },
+            },
+            heading3: {
+                run: {
+                    font: "Calibri",
+                    size: 26,
+                    bold: true,
+                },
+                paragraph: {
+                    spacing: { line: 276 },
+                },
+            },
+            heading4: {
+                run: {
+                    font: "Calibri",
+                    size: 26,
+                    bold: true,
+                },
+                paragraph: {
+                    alignment: AlignmentType.JUSTIFIED,
+                },
             },
         },
-        heading2: {
-            run: {
-                font: "Calibri",
-                size: 26,
-                bold: true,
-            },
-            paragraph: {
-                spacing: { line: 340 },
-            },
-        },
-        heading3: {
-            run: {
-                font: "Calibri",
-                size: 26,
-                bold: true,
-            },
-            paragraph: {
-                spacing: { line: 276 },
-            },
-        },
-        heading4: {
-            run: {
-                font: "Calibri",
-                size: 26,
-                bold: true,
-            },
-            paragraph: {
-                alignment: AlignmentType.JUSTIFIED,
-            },
-        },
-    },
-    styles: {
         paragraphStyles: [
             {
                 id: "normalPara",
