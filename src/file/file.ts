@@ -106,7 +106,7 @@ export class File {
             this.styles = stylesFactory.newInstance(options.externalStyles);
         } else if (options.styles) {
             const stylesFactory = new DefaultStylesFactory();
-            const defaultStyles = stylesFactory.newInstance();
+            const defaultStyles = stylesFactory.newInstance(options.styles.default);
             this.styles = new Styles({
                 ...defaultStyles,
                 ...options.styles,
