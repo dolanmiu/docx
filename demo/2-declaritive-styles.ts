@@ -40,9 +40,9 @@ const doc = new Document({
             },
             listParagraph: {
                 run: {
-                    color: '#FF0000'
-                }
-            }
+                    color: "#FF0000",
+                },
+            },
         },
         paragraphStyles: [
             {
@@ -158,6 +158,18 @@ doc.addSection({
                 }),
                 new TextRun({
                     text: "and back to normal.",
+                }),
+            ],
+        }),
+        new Paragraph({
+            style: "Strong",
+            children: [
+                new TextRun({
+                    text: "Strong Style",
+                }),
+                new TextRun({
+                    text:
+                        " - Very strong.",
                 }),
             ],
         }),

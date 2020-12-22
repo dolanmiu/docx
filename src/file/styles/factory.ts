@@ -16,6 +16,7 @@ import {
     IBaseCharacterStyleOptions,
     IBaseParagraphStyleOptions,
     ListParagraph,
+    StrongStyle,
     TitleStyle,
 } from "./style";
 
@@ -28,6 +29,7 @@ export interface IDefaultStylesOptions {
     readonly heading4?: IBaseParagraphStyleOptions;
     readonly heading5?: IBaseParagraphStyleOptions;
     readonly heading6?: IBaseParagraphStyleOptions;
+    readonly strong?: IBaseParagraphStyleOptions;
     readonly listParagraph?: IBaseParagraphStyleOptions;
     readonly hyperlink?: IBaseCharacterStyleOptions;
     readonly footnoteReference?: IBaseCharacterStyleOptions;
@@ -94,6 +96,12 @@ export class DefaultStylesFactory {
                         color: "1F4D78",
                     },
                     ...options.heading6,
+                }),
+                new StrongStyle({
+                    run: {
+                        bold: true,
+                    },
+                    ...options.strong,
                 }),
                 new ListParagraph(options.listParagraph || {}),
                 new HyperlinkStyle(options.hyperlink || {}),

@@ -120,6 +120,20 @@ describe("Default Styles", () => {
         });
     });
 
+    it("StrongStyle#constructor", () => {
+        const style = new defaultStyles.StrongStyle({});
+        const tree = new Formatter().format(style);
+        expect(tree).to.deep.equal({
+            "w:style": [
+                { _attr: { "w:type": "paragraph", "w:styleId": "Strong" } },
+                { "w:name": { _attr: { "w:val": "Strong" } } },
+                { "w:basedOn": { _attr: { "w:val": "Normal" } } },
+                { "w:next": { _attr: { "w:val": "Normal" } } },
+                { "w:qFormat": EMPTY_OBJECT },
+            ],
+        });
+    });
+
     it("ListParagraph#constructor", () => {
         const style = new defaultStyles.ListParagraph({});
         const tree = new Formatter().format(style);
