@@ -84,6 +84,16 @@ export class Heading6Style extends HeadingStyle {
     }
 }
 
+export class StrongStyle extends HeadingStyle {
+    constructor(options: IBaseParagraphStyleOptions) {
+        super({
+            ...options,
+            id: "Strong",
+            name: "Strong",
+        });
+    }
+}
+
 export class ListParagraph extends StyleForParagraph {
     constructor(options: IBaseParagraphStyleOptions) {
         super({
