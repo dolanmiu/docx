@@ -70,7 +70,16 @@ export interface IRunPropertiesOptions extends IRunStylePropertiesOptions {
 }
 
 export class RunProperties extends IgnoreIfEmptyXmlComponent {
-    constructor(options?: IRunPropertiesOptions) {
+    constructor(
+        options: IRunPropertiesOptions = {
+            font: {
+                ascii: "minorHAnsi",
+                cs: "minorBidi",
+                eastAsia: "minorEastAsia",
+                hAnsi: "minorHAnsi",
+            },
+        },
+    ) {
         super("w:rPr");
 
         if (!options) {
