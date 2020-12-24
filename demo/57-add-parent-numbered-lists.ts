@@ -1,7 +1,7 @@
 // Numbered lists - Add parent number in sub number
 // Import from 'docx' rather than '../build' if you install from npm
 import * as fs from "fs";
-import { AlignmentType, convertInchesToTwip, Document, HeadingLevel, Packer, Paragraph } from "../build";
+import { AlignmentType, convertInchesToTwip, Document, HeadingLevel, LevelFormat, Packer, Paragraph } from "../build";
 
 const doc = new Document({
     numbering: {
@@ -10,7 +10,7 @@ const doc = new Document({
                 levels: [
                     {
                         level: 0,
-                        format: "decimal",
+                        format: LevelFormat.DECIMAL,
                         text: "%1",
                         alignment: AlignmentType.START,
                         style: {
@@ -21,7 +21,7 @@ const doc = new Document({
                     },
                     {
                         level: 1,
-                        format: "decimal",
+                        format: LevelFormat.DECIMAL,
                         text: "%1.%2",
                         alignment: AlignmentType.START,
                         style: {

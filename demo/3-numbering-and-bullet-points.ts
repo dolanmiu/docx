@@ -1,7 +1,7 @@
 // Numbering and bullet points example
 // Import from 'docx' rather than '../build' if you install from npm
 import * as fs from "fs";
-import { AlignmentType, convertInchesToTwip, Document, Packer, Paragraph } from "../build";
+import { AlignmentType, convertInchesToTwip, Document, LevelFormat, Packer, Paragraph } from "../build";
 
 const doc = new Document({
     numbering: {
@@ -11,7 +11,7 @@ const doc = new Document({
                 levels: [
                     {
                         level: 0,
-                        format: "upperRoman",
+                        format: LevelFormat.UPPER_ROMAN,
                         text: "%1",
                         alignment: AlignmentType.START,
                         style: {
@@ -22,7 +22,7 @@ const doc = new Document({
                     },
                     {
                         level: 1,
-                        format: "decimal",
+                        format: LevelFormat.DECIMAL,
                         text: "%2.",
                         alignment: AlignmentType.START,
                         style: {
@@ -33,7 +33,7 @@ const doc = new Document({
                     },
                     {
                         level: 2,
-                        format: "lowerLetter",
+                        format: LevelFormat.LOWER_LETTER,
                         text: "%3)",
                         alignment: AlignmentType.START,
                         style: {
@@ -44,7 +44,7 @@ const doc = new Document({
                     },
                     {
                         level: 3,
-                        format: "upperLetter",
+                        format: LevelFormat.UPPER_LETTER,
                         text: "%4)",
                         alignment: AlignmentType.START,
                         style: {
