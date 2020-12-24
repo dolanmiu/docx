@@ -9,7 +9,7 @@ const text = new TextRun("Bullet points");
 const paragraph = new Paragraph({
     text: "Bullet points",
     bullet: {
-        level: 0, // How deep you want the bullet to me
+        level: 0, //How deep you want the bullet to be
     },
 });
 ```
