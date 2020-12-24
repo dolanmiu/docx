@@ -1,5 +1,6 @@
 import { expect } from "chai";
 
+import { convertInchesToTwip } from "convenience-functions";
 import { Formatter } from "export/formatter";
 import { FooterWrapper } from "file/footer-wrapper";
 import { HeaderWrapper } from "file/header-wrapper";
@@ -18,10 +19,10 @@ describe("SectionProperties", () => {
             const properties = new SectionProperties({
                 width: 11906,
                 height: 16838,
-                top: 1440,
-                right: 1440,
-                bottom: 1440,
-                left: 1440,
+                top: convertInchesToTwip(1),
+                right: convertInchesToTwip(1),
+                bottom: convertInchesToTwip(1),
+                left: convertInchesToTwip(1),
                 header: 708,
                 footer: 708,
                 gutter: 0,
@@ -30,7 +31,7 @@ describe("SectionProperties", () => {
                     space: 708,
                     count: 1,
                 },
-                linePitch: 360,
+                linePitch: convertInchesToTwip(0.25),
                 headers: {
                     default: new HeaderWrapper(media, 100),
                 },

@@ -1,7 +1,7 @@
 // Numbered lists - Add parent number in sub number
 // Import from 'docx' rather than '../build' if you install from npm
 import * as fs from "fs";
-import { AlignmentType, Document, HeadingLevel, Packer, Paragraph } from "../build";
+import { AlignmentType, convertInchesToTwip, Document, HeadingLevel, Packer, Paragraph } from "../build";
 
 const doc = new Document({
     numbering: {
@@ -15,7 +15,7 @@ const doc = new Document({
                         alignment: AlignmentType.START,
                         style: {
                             paragraph: {
-                                indent: { left: 720, hanging: 260 },
+                                indent: { left: convertInchesToTwip(0.5), hanging: 260 },
                             },
                         },
                     },
@@ -26,7 +26,7 @@ const doc = new Document({
                         alignment: AlignmentType.START,
                         style: {
                             paragraph: {
-                                indent: { left: 1.25 * 720, hanging: 1.25 * 260 },
+                                indent: { left: 1.25 * convertInchesToTwip(0.5), hanging: 1.25 * 260 },
                             },
                             run: {
                                 bold: true,
