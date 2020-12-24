@@ -89,11 +89,12 @@ describe("DeletedTextRun", () => {
     describe("#break()", () => {
         it("should add a break", () => {
             const deletedTextRun = new DeletedTextRun({
+                break: 1,
                 children: ["some text"],
                 id: 0,
                 date: "123",
                 author: "Author",
-            }).break();
+            });
             const tree = new Formatter().format(deletedTextRun);
             expect(tree).to.deep.equal({
                 "w:del": [
