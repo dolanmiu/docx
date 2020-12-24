@@ -28,5 +28,8 @@
 * Exporting
 
     * [Packers](usage/packers.md)
+* Utility
+
+    * [Convenience functions](usage/convenience-functions.md)
 
 * [Contribution Guidelines](contribution-guidelines.md)

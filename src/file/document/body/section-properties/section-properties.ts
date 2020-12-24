@@ -1,4 +1,5 @@
 // http://officeopenxml.com/WPsection.php
+import { convertInchesToTwip } from "convenience-functions";
 import { FooterWrapper } from "file/footer-wrapper";
 import { HeaderWrapper } from "file/header-wrapper";
 import { XmlComponent } from "file/xml-components";
@@ -64,10 +65,10 @@ export class SectionProperties extends XmlComponent {
         const {
             width = 11906,
             height = 16838,
-            top = 1440,
-            right = 1440,
-            bottom = 1440,
-            left = 1440,
+            top = convertInchesToTwip(1),
+            right = convertInchesToTwip(1),
+            bottom = convertInchesToTwip(1),
+            left = convertInchesToTwip(1),
             header = 708,
             footer = 708,
             gutter = 0,

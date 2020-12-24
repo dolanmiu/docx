@@ -3,6 +3,7 @@
 import * as fs from "fs";
 import {
     AlignmentType,
+    convertInchesToTwip,
     Document,
     Footer,
     HeadingLevel,
@@ -110,7 +111,7 @@ const doc = new Document({
                 },
                 paragraph: {
                     spacing: { line: 276 },
-                    indent: { left: 720 },
+                    indent: { left: convertInchesToTwip(0.5) },
                 },
             },
             {

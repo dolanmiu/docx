@@ -1,7 +1,7 @@
 // Numbering and bullet points example
 // Import from 'docx' rather than '../build' if you install from npm
 import * as fs from "fs";
-import { AlignmentType, Document, Packer, Paragraph } from "../build";
+import { AlignmentType, convertInchesToTwip, Document, Packer, Paragraph } from "../build";
 
 const doc = new Document({
     numbering: {
@@ -16,7 +16,7 @@ const doc = new Document({
                         alignment: AlignmentType.START,
                         style: {
                             paragraph: {
-                                indent: { left: 720, hanging: 260 },
+                                indent: { left: convertInchesToTwip(0.5), hanging: convertInchesToTwip(0.18) },
                             },
                         },
                     },
@@ -27,7 +27,7 @@ const doc = new Document({
                         alignment: AlignmentType.START,
                         style: {
                             paragraph: {
-                                indent: { left: 1440, hanging: 980 },
+                                indent: { left: convertInchesToTwip(1), hanging: convertInchesToTwip(0.68) },
                             },
                         },
                     },
@@ -38,7 +38,7 @@ const doc = new Document({
                         alignment: AlignmentType.START,
                         style: {
                             paragraph: {
-                                indent: { left: 2160, hanging: 1700 },
+                                indent: { left: convertInchesToTwip(1.5), hanging: convertInchesToTwip(1.18) },
                             },
                         },
                     },

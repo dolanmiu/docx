@@ -1,4 +1,5 @@
 // http://officeopenxml.com/WPnumbering.php
+import { convertInchesToTwip } from "convenience-functions";
 import { AlignmentType } from "file/paragraph";
 import { IXmlableObject, XmlComponent } from "file/xml-components";
 
@@ -55,7 +56,7 @@ export class Numbering extends XmlComponent {
                 alignment: AlignmentType.LEFT,
                 style: {
                     paragraph: {
-                        indent: { left: 720, hanging: 360 },
+                        indent: { left: convertInchesToTwip(0.5), hanging: convertInchesToTwip(0.25) },
                     },
                 },
             },
@@ -66,7 +67,7 @@ export class Numbering extends XmlComponent {
                 alignment: AlignmentType.LEFT,
                 style: {
                     paragraph: {
-                        indent: { left: 1440, hanging: 360 },
+                        indent: { left: convertInchesToTwip(1), hanging: convertInchesToTwip(0.25) },
                     },
                 },
             },
@@ -77,7 +78,7 @@ export class Numbering extends XmlComponent {
                 alignment: AlignmentType.LEFT,
                 style: {
                     paragraph: {
-                        indent: { left: 2160, hanging: 360 },
+                        indent: { left: 2160, hanging: convertInchesToTwip(0.25) },
                     },
                 },
             },
@@ -88,7 +89,7 @@ export class Numbering extends XmlComponent {
                 alignment: AlignmentType.LEFT,
                 style: {
                     paragraph: {
-                        indent: { left: 2880, hanging: 360 },
+                        indent: { left: 2880, hanging: convertInchesToTwip(0.25) },
                     },
                 },
             },
@@ -99,7 +100,7 @@ export class Numbering extends XmlComponent {
                 alignment: AlignmentType.LEFT,
                 style: {
                     paragraph: {
-                        indent: { left: 3600, hanging: 360 },
+                        indent: { left: 3600, hanging: convertInchesToTwip(0.25) },
                     },
                 },
             },
@@ -110,7 +111,7 @@ export class Numbering extends XmlComponent {
                 alignment: AlignmentType.LEFT,
                 style: {
                     paragraph: {
-                        indent: { left: 4320, hanging: 360 },
+                        indent: { left: 4320, hanging: convertInchesToTwip(0.25) },
                     },
                 },
             },
@@ -121,7 +122,7 @@ export class Numbering extends XmlComponent {
                 alignment: AlignmentType.LEFT,
                 style: {
                     paragraph: {
-                        indent: { left: 5040, hanging: 360 },
+                        indent: { left: 5040, hanging: convertInchesToTwip(0.25) },
                     },
                 },
             },
@@ -132,7 +133,7 @@ export class Numbering extends XmlComponent {
                 alignment: AlignmentType.LEFT,
                 style: {
                     paragraph: {
-                        indent: { left: 5760, hanging: 360 },
+                        indent: { left: 5760, hanging: convertInchesToTwip(0.25) },
                     },
                 },
             },
@@ -143,7 +144,7 @@ export class Numbering extends XmlComponent {
                 alignment: AlignmentType.LEFT,
                 style: {
                     paragraph: {
-                        indent: { left: 6480, hanging: 360 },
+                        indent: { left: 6480, hanging: convertInchesToTwip(0.25) },
                     },
                 },
             },

@@ -2,7 +2,20 @@
 // Also includes an example on how to center tables
 // Import from 'docx' rather than '../build' if you install from npm
 import * as fs from "fs";
-import { AlignmentType, BorderStyle, Document, HeadingLevel, Packer, Paragraph, ShadingType, Table, TableCell, TableRow, WidthType } from "../build";
+import {
+    AlignmentType,
+    BorderStyle,
+    convertInchesToTwip,
+    Document,
+    HeadingLevel,
+    Packer,
+    Paragraph,
+    ShadingType,
+    Table,
+    TableCell,
+    TableRow,
+    WidthType,
+} from "../build";
 
 const doc = new Document();
 
@@ -37,10 +50,10 @@ const table2 = new Table({
                 new TableCell({
                     children: [new Paragraph("World")],
                     margins: {
-                        top: 1000,
-                        bottom: 1000,
-                        left: 1000,
-                        right: 1000,
+                        top: convertInchesToTwip(0.69),
+                        bottom: convertInchesToTwip(0.69),
+                        left: convertInchesToTwip(0.69),
+                        right: convertInchesToTwip(0.69),
                     },
                     columnSpan: 3,
                 }),
@@ -64,7 +77,7 @@ const table2 = new Table({
         size: 100,
         type: WidthType.AUTO,
     },
-    columnWidths: [1000, 1000, 1000],
+    columnWidths: [convertInchesToTwip(0.69), convertInchesToTwip(0.69), convertInchesToTwip(0.69)],
 });
 
 const table3 = new Table({
@@ -119,14 +132,14 @@ const table3 = new Table({
         }),
     ],
     width: {
-        size: 7000,
+        size: convertInchesToTwip(4.86),
         type: WidthType.DXA,
     },
     margins: {
-        top: 400,
-        bottom: 400,
-        right: 400,
-        left: 400,
+        top: convertInchesToTwip(0.27),
+        bottom: convertInchesToTwip(0.27),
+        right: convertInchesToTwip(0.27),
+        left: convertInchesToTwip(0.27),
     },
 });
 
@@ -355,9 +368,7 @@ const table8 = new Table({
             ],
         }),
         new TableRow({
-            children: [
-                new TableCell({ children: [new Paragraph("4,1")] }),
-            ],
+            children: [new TableCell({ children: [new Paragraph("4,1")] })],
         }),
     ],
     width: {
