@@ -1,7 +1,25 @@
+// http://officeopenxml.com/WPnumbering-numFmt.php
 import { Attributes, XmlAttributeComponent, XmlComponent } from "file/xml-components";
 import { AlignmentType } from "../paragraph/formatting";
 import { IParagraphStylePropertiesOptions, ParagraphProperties } from "../paragraph/properties";
 import { IRunStylePropertiesOptions, RunProperties } from "../paragraph/run/properties";
+
+export enum LevelFormat {
+    BULLET = "bullet",
+    CARDINAL_TEXT = "cardinalText",
+    CHICAGO = "chicago",
+    DECIMAL = "decimal",
+    DECIMAL_ENCLOSED_CIRCLE = "decimalEnclosedCircle",
+    DECIMAL_ENCLOSED_FULLSTOP = "decimalEnclosedFullstop",
+    DECIMAL_ENCLOSED_PARENTHESES = "decimalEnclosedParen",
+    DECIMAL_ZERO = "decimalZero",
+    LOWER_LETTER = "lowerLetter",
+    LOWER_ROMAN = "lowerRoman",
+    NONE = "none",
+    ORDINAL_TEXT = "ordinalText",
+    UPPER_LETTER = "upperLetter",
+    UPPER_ROMAN = "upperRoman",
+}
 
 interface ILevelAttributesProperties {
     readonly ilvl?: number;
@@ -67,7 +85,7 @@ export enum LevelSuffix {
 
 export interface ILevelsOptions {
     readonly level: number;
-    readonly format?: string;
+    readonly format?: LevelFormat;
     readonly text?: string;
     readonly alignment?: AlignmentType;
     readonly start?: number;
