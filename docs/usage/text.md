@@ -158,6 +158,15 @@ Sometimes you would want to put text underneath another line of text but inside 
 ```ts
 const text = new TextRun({
     text: "break",
-    break: true,
+    break: 1,
+});
+```
+
+Adding two breaks:
+
+```ts
+const text = new TextRun({
+    text: "break",
+    break: 2,
 });
 ```

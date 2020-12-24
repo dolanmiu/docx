@@ -1,6 +1,6 @@
 import { XmlComponent } from "file/xml-components";
 
-import { FootnoteReferenceRun, IRunOptions, IRunPropertiesOptions, RunProperties } from "../../index";
+import { IRunOptions, RunProperties } from "../../index";
 import { Break } from "../../paragraph/run/break";
 import { Begin, End, Separate } from "../../paragraph/run/field";
 import { PageNumber } from "../../paragraph/run/run";
@@ -8,10 +8,7 @@ import { ChangeAttributes, IChangedAttributesProperties } from "../track-revisio
 import { DeletedNumberOfPages, DeletedNumberOfPagesSection, DeletedPage } from "./deleted-page-number";
 import { DeletedText } from "./deleted-text";
 
-interface IDeletedRunOptions extends IRunPropertiesOptions, IChangedAttributesProperties {
-    readonly children?: (Begin | Separate | End | PageNumber | FootnoteReferenceRun | string)[];
-    readonly text?: string;
-}
+interface IDeletedRunOptions extends IRunOptions, IChangedAttributesProperties {}
 
 export class DeletedTextRun extends XmlComponent {
     protected readonly deletedTextRunWrapper: DeletedTextRunWrapper;
@@ -25,13 +22,8 @@ export class DeletedTextRun extends XmlComponent {
                 date: options.date,
             }),
         );
-        this.deletedTextRunWrapper = new DeletedTextRunWrapper(options as IRunOptions);
+        this.deletedTextRunWrapper = new DeletedTextRunWrapper(options);
         this.addChildElement(this.deletedTextRunWrapper);
-    }
-
-    public break(): DeletedTextRun {
-        this.deletedTextRunWrapper.break();
-        return this;
     }
 }
 
@@ -74,9 +66,11 @@ class DeletedTextRunWrapper extends XmlComponent {
         } else if (options.text) {
             this.root.push(new DeletedText(options.text));
         }
-    }
 
-    public break(): void {
-        this.root.splice(1, 0, new Break());
+        if (options.break) {
+            for (let i = 0; i < options.break; i++) {
+                this.root.splice(1, 0, new Break());
+            }
+        }
     }
 }

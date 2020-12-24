@@ -80,6 +80,7 @@ doc.addSection({
             children: [
                 new TextRun("This is a demo "),
                 new DeletedTextRun({
+                    break: 1,
                     text: "in order",
                     color: "red",
                     bold: true,
@@ -95,7 +96,7 @@ doc.addSection({
                     id: 2,
                     author: "Firstname Lastname",
                     date: "2020-10-06T09:00:00Z",
-                }).break(),
+                }),
                 new InsertedTextRun({
                     text: "to show how to ",
                     bold: false,
