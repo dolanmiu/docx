@@ -218,5 +218,25 @@ describe("Anchor", () => {
             const textWrap = newJson.root[6];
             assert.equal(textWrap.rootKey, "wp:wrapTopAndBottom");
         });
+
+        it("should create a Drawing with a certain z-index", () => {
+            anchor = createAnchor({
+                floating: {
+                    verticalPosition: {
+                        offset: 0,
+                    },
+                    horizontalPosition: {
+                        offset: 0,
+                    },
+                    zIndex: 120,
+                },
+            });
+            const newJson = Utility.jsonify(anchor);
+            const anchorAttributes = newJson.root[0].root;
+
+            assert.include(anchorAttributes, {
+                relativeHeight: 120,
+            });
+        });
     });
 });
