@@ -219,6 +219,131 @@ describe("Anchor", () => {
             assert.equal(textWrap.rootKey, "wp:wrapTopAndBottom");
         });
 
+        it("should create a Drawing with a margin", () => {
+            anchor = createAnchor({
+                floating: {
+                    verticalPosition: {
+                        offset: 0,
+                    },
+                    horizontalPosition: {
+                        offset: 0,
+                    },
+                    margins: {
+                        top: 10,
+                        left: 10,
+                        bottom: 10,
+                        right: 10,
+                    },
+                },
+            });
+            const newJson = Utility.jsonify(anchor);
+            const anchorAttributes = newJson.root[0].root;
+            assert.include(anchorAttributes, {
+                distT: 10,
+                distB: 10,
+                distL: 10,
+                distR: 10,
+            });
+        });
+
+        it("should create a Drawing with a default margin", () => {
+            anchor = createAnchor({
+                floating: {
+                    verticalPosition: {
+                        offset: 0,
+                    },
+                    horizontalPosition: {
+                        offset: 0,
+                    },
+                    margins: {},
+                },
+            });
+            const newJson = Utility.jsonify(anchor);
+            const anchorAttributes = newJson.root[0].root;
+            assert.include(anchorAttributes, {
+                distT: 0,
+                distB: 0,
+                distL: 0,
+                distR: 0,
+            });
+        });
+
+        it("should create a Drawing with allowOverlap being false", () => {
+            anchor = createAnchor({
+                floating: {
+                    verticalPosition: {
+                        offset: 0,
+                    },
+                    horizontalPosition: {
+                        offset: 0,
+                    },
+                    allowOverlap: false,
+                },
+            });
+            const newJson = Utility.jsonify(anchor);
+            const anchorAttributes = newJson.root[0].root;
+            assert.include(anchorAttributes, {
+                allowOverlap: "0",
+            });
+        });
+
+        it("should create a Drawing with behindDocument being true", () => {
+            anchor = createAnchor({
+                floating: {
+                    verticalPosition: {
+                        offset: 0,
+                    },
+                    horizontalPosition: {
+                        offset: 0,
+                    },
+                    behindDocument: true,
+                },
+            });
+            const newJson = Utility.jsonify(anchor);
+            const anchorAttributes = newJson.root[0].root;
+            assert.include(anchorAttributes, {
+                behindDoc: "1",
+            });
+        });
+
+        it("should create a Drawing with locked being true", () => {
+            anchor = createAnchor({
+                floating: {
+                    verticalPosition: {
+                        offset: 0,
+                    },
+                    horizontalPosition: {
+                        offset: 0,
+                    },
+                    lockAnchor: true,
+                },
+            });
+            const newJson = Utility.jsonify(anchor);
+            const anchorAttributes = newJson.root[0].root;
+            assert.include(anchorAttributes, {
+                locked: "1",
+            });
+        });
+
+        it("should create a Drawing with locked being false", () => {
+            anchor = createAnchor({
+                floating: {
+                    verticalPosition: {
+                        offset: 0,
+                    },
+                    horizontalPosition: {
+                        offset: 0,
+                    },
+                    layoutInCell: false,
+                },
+            });
+            const newJson = Utility.jsonify(anchor);
+            const anchorAttributes = newJson.root[0].root;
+            assert.include(anchorAttributes, {
+                layoutInCell: "0",
+            });
+        });
+
         it("should create a Drawing with a certain z-index", () => {
             anchor = createAnchor({
                 floating: {

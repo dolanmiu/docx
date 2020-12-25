@@ -16,12 +16,6 @@ export class Anchor extends XmlComponent {
         super("wp:anchor");
 
         const floating: IFloating = {
-            margins: {
-                top: 0,
-                bottom: 0,
-                left: 0,
-                right: 0,
-            },
             allowOverlap: true,
             behindDocument: false,
             lockAnchor: false,
