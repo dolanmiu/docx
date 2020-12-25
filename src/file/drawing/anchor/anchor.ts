@@ -11,42 +11,38 @@ import { Extent } from "./../extent/extent";
 import { GraphicFrameProperties } from "./../graphic-frame/graphic-frame-properties";
 import { AnchorAttributes } from "./anchor-attributes";
 
-const defaultOptions: IFloating = {
-    allowOverlap: true,
-    behindDocument: false,
-    lockAnchor: false,
-    layoutInCell: true,
-    verticalPosition: {},
-    horizontalPosition: {},
-};
-
 export class Anchor extends XmlComponent {
     constructor(mediaData: IMediaData, dimensions: IMediaDataDimensions, drawingOptions: IDrawingOptions) {
         super("wp:anchor");
 
-        const floating = {
+        const floating: IFloating = {
             margins: {
                 top: 0,
                 bottom: 0,
                 left: 0,
                 right: 0,
             },
-            ...defaultOptions,
+            allowOverlap: true,
+            behindDocument: false,
+            lockAnchor: false,
+            layoutInCell: true,
+            verticalPosition: {},
+            horizontalPosition: {},
             ...drawingOptions.floating,
         };
 
         this.root.push(
             new AnchorAttributes({
-                distT: floating.margins.top || 0,
-                distB: floating.margins.bottom || 0,
-                distL: floating.margins.left || 0,
-                distR: floating.margins.right || 0,
+                distT: floating.margins ? floating.margins.top || 0 : 0,
+                distB: floating.margins ? floating.margins.bottom || 0 : 0,
+                distL: floating.margins ? floating.margins.left || 0 : 0,
+                distR: floating.margins ? floating.margins.right || 0 : 0,
                 simplePos: "0", // note: word doesn't fully support - so we use 0
                 allowOverlap: floating.allowOverlap === true ? "1" : "0",
                 behindDoc: floating.behindDocument === true ? "1" : "0",
                 locked: floating.lockAnchor === true ? "1" : "0",
                 layoutInCell: floating.layoutInCell === true ? "1" : "0",
-                relativeHeight: dimensions.emus.y,
+                relativeHeight: floating.zIndex ? floating.zIndex : dimensions.emus.y,
             }),
         );
 
