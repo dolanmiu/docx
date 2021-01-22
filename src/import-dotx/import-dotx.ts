@@ -46,7 +46,7 @@ export interface IDocumentTemplate {
 }
 
 export class ImportDotx {
-    public async extract(data: Buffer): Promise<IDocumentTemplate> {
+    public async extract(data: string | number[] | Uint8Array | ArrayBuffer | Blob | NodeJS.ReadableStream): Promise<IDocumentTemplate> {
         const zipContent = await JSZip.loadAsync(data);
 
         const documentContent = await zipContent.files["word/document.xml"].async("text");
