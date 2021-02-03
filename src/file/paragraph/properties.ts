@@ -125,7 +125,7 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
         }
 
         if (options.numbering) {
-            if(!options.style && !options.heading) {
+            if (!options.style && !options.heading) {
               if (!options.numbering.custom) {
                 this.push(new Style("ListParagraph"));
               }
