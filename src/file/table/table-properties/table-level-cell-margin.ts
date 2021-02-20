@@ -17,7 +17,7 @@ class BaseTableCellMargin extends XmlComponent {
     }
 }
 
-export class TableCellMargin extends IgnoreIfEmptyXmlComponent {
+export class TableLevelCellMargin extends IgnoreIfEmptyXmlComponent {
     constructor() {
         super("w:tblCellMar");
     }

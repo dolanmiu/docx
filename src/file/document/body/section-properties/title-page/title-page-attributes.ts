@@ -1,10 +1,10 @@
 import { XmlAttributeComponent } from "file/xml-components";
 
-export interface IHeaderReferenceAttributes {
+export interface ITitlePageAttributes {
     readonly value: string;
 }
 
-export class TitlePageAttributes extends XmlAttributeComponent<IHeaderReferenceAttributes> {
+export class TitlePageAttributes extends XmlAttributeComponent<ITitlePageAttributes> {
     protected readonly xmlKeys = {
         value: "w:val",
     };

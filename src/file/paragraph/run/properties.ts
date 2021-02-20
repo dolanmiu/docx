@@ -21,8 +21,8 @@ import {
     Strike,
 } from "./formatting";
 import { IFontAttributesProperties, RunFonts } from "./run-fonts";
+import { RunStyle } from "./run-style";
 import { SubScript, SuperScript } from "./script";
-import { Style } from "./style";
 import { Underline, UnderlineType } from "./underline";
 
 interface IFontOptions {
@@ -141,7 +141,7 @@ export class RunProperties extends IgnoreIfEmptyXmlComponent {
         }
 
         if (options.style) {
-            this.push(new Style(options.style));
+            this.push(new RunStyle(options.style));
         }
 
         if (options.font) {

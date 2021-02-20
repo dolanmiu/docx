@@ -10,7 +10,7 @@ export enum HeadingLevel {
     TITLE = "Title",
 }
 
-export class Style extends XmlComponent {
+export class ParagraphStyle extends XmlComponent {
     constructor(styleId: string) {
         super("w:pStyle");
         this.root.push(
