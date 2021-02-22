@@ -19,3 +19,30 @@ doc.addSection({
     ],
 });
 ```
+
+## Properties
+
+You can specify additional properties to the section, by providing a `properties` attribute.
+
+### Section Type
+
+Setting the section type determines how the contents of the section will be placed relative to the previous section. E.g., There are five different types:
+
+-   `CONTINUOUS`
+-   `EVEN_PAGE`
+-   `NEXT_COLUMN`
+-   `NEXT_PAGE`
+-   `ODD_PAGE`
+
+```ts
+doc.addSection({
+    properties: {
+        type: SectionType.CONTINUOUS,
+    }
+    children: [
+        new Paragraph({
+            children: [new TextRun("Hello World")],
+        }),
+    ],
+});
+```

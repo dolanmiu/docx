@@ -18,6 +18,8 @@ import { IPageMarginAttributes } from "./page-margin/page-margin-attributes";
 import { IPageNumberTypeAttributes, PageNumberType } from "./page-number";
 import { PageSize } from "./page-size/page-size";
 import { IPageSizeAttributes, PageOrientation } from "./page-size/page-size-attributes";
+import { Type } from "./type/section-type";
+import { SectionType } from "./type/section-type-attributes";
 import { TitlePage } from "./title-page/title-page";
 import { ISectionVerticalAlignAttributes, SectionVerticalAlign } from "./vertical-align";
 
@@ -53,6 +55,7 @@ export type SectionPropertiesOptions = IPageSizeAttributes &
             readonly space?: number;
             readonly count?: number;
         };
+        readonly type?: SectionType;
     };
 // Need to decouple this from the attributes
 
@@ -91,6 +94,7 @@ export class SectionProperties extends XmlComponent {
             pageBorderLeft,
             titlePage = false,
             verticalAlign,
+            type,
         } = options;
 
         this.options = options;
@@ -128,6 +132,10 @@ export class SectionProperties extends XmlComponent {
 
         if (verticalAlign) {
             this.root.push(new SectionVerticalAlign(verticalAlign));
+        }
+
+        if (type) {
+            this.root.push(new Type(type));
         }
     }
 

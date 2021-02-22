@@ -9,6 +9,7 @@ import { Media } from "file/media";
 import { PageBorderOffsetFrom } from "./page-border";
 import { PageNumberFormat } from "./page-number";
 import { SectionProperties } from "./section-properties";
+import { SectionType } from "./type/section-type-attributes";
 import { SectionVerticalAlignValue } from "./vertical-align";
 
 describe("SectionProperties", () => {
@@ -198,6 +199,18 @@ describe("SectionProperties", () => {
             expect(Object.keys(tree)).to.deep.equal(["w:sectPr"]);
             const pgNumType = tree["w:sectPr"].find((item) => item["w:pgNumType"] !== undefined);
             expect(pgNumType).to.equal(undefined);
+        });
+
+        it("should create section properties with section type", () => {
+            const properties = new SectionProperties({
+                type: SectionType.CONTINUOUS,
+            });
+            const tree = new Formatter().format(properties);
+            expect(Object.keys(tree)).to.deep.equal(["w:sectPr"]);
+            const type = tree["w:sectPr"].find((item) => item["w:type"] !== undefined);
+            expect(type).to.deep.equal({
+                "w:type": { _attr: { "w:val": "continuous" } },
+            });
         });
     });
 });
