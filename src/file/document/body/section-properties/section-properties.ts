@@ -18,9 +18,9 @@ import { IPageMarginAttributes } from "./page-margin/page-margin-attributes";
 import { IPageNumberTypeAttributes, PageNumberType } from "./page-number";
 import { PageSize } from "./page-size/page-size";
 import { IPageSizeAttributes, PageOrientation } from "./page-size/page-size-attributes";
+import { TitlePage } from "./title-page/title-page";
 import { Type } from "./type/section-type";
 import { SectionType } from "./type/section-type-attributes";
-import { TitlePage } from "./title-page/title-page";
 import { ISectionVerticalAlignAttributes, SectionVerticalAlign } from "./vertical-align";
 
 export interface IHeaderFooterGroup<T> {
