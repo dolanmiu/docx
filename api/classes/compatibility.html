@@ -93,12 +93,11 @@
 								<li class="tsd-kind-get-signature tsd-parent-kind-class tsd-is-inherited tsd-is-external"><a href="compatibility.html#isdeleted" class="tsd-kind-icon">Is<wbr>Deleted</a></li>
 							</ul>
 						</section>
-						<section class="tsd-index-section tsd-is-external">
+						<section class="tsd-index-section tsd-is-inherited tsd-is-external">
 							<h3>Methods</h3>
 							<ul class="tsd-index-list">
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-external"><a href="compatibility.html#addchildelement" class="tsd-kind-icon">add<wbr>Child<wbr>Element</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-external"><a href="compatibility.html#delete" class="tsd-kind-icon">delete</a></li>
-								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-external"><a href="compatibility.html#donotexpandshiftreturn" class="tsd-kind-icon">do<wbr>Not<wbr>Expand<wbr>Shift<wbr>Return</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-overwrite tsd-is-inherited tsd-is-external"><a href="compatibility.html#prepforxml" class="tsd-kind-icon">prep<wbr>For<wbr>Xml</a></li>
 							</ul>
 						</section>
@@ -111,16 +110,22 @@
 					<a name="constructor" class="tsd-anchor"></a>
 					<h3>constructor</h3>
 					<ul class="tsd-signatures tsd-kind-constructor tsd-parent-kind-class tsd-is-overwrite tsd-is-external">
-						<li class="tsd-signature tsd-kind-icon">new <wbr>Compatibility<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="compatibility.html" class="tsd-signature-type">Compatibility</a></li>
+						<li class="tsd-signature tsd-kind-icon">new <wbr>Compatibility<span class="tsd-signature-symbol">(</span>options<span class="tsd-signature-symbol">: </span><a href="../interfaces/icompatibilityoptions.html" class="tsd-signature-type">ICompatibilityOptions</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="compatibility.html" class="tsd-signature-type">Compatibility</a></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<p>Overrides <a href="baseemphasismark.html">BaseEmphasisMark</a>.<a href="baseemphasismark.html#constructor">constructor</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/84f4844/src/file/settings/compatibility.ts#L9">src/file/settings/compatibility.ts:9</a></li>
+									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/45b1f6f/src/file/settings/compatibility.ts#L15">src/file/settings/compatibility.ts:15</a></li>
 								</ul>
 							</aside>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>options: <a href="../interfaces/icompatibilityoptions.html" class="tsd-signature-type">ICompatibilityOptions</a></h5>
+								</li>
+							</ul>
 							<h4 class="tsd-returns-title">Returns <a href="compatibility.html" class="tsd-signature-type">Compatibility</a></h4>
 						</li>
 					</ul>
@@ -139,7 +144,7 @@
 							<aside class="tsd-sources">
 								<p>Inherited from <a href="apppropertiesattributes.html">AppPropertiesAttributes</a>.<a href="apppropertiesattributes.html#isdeleted">IsDeleted</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/84f4844/src/file/xml-components/base.ts#L15">src/file/xml-components/base.ts:15</a></li>
+									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/45b1f6f/src/file/xml-components/base.ts#L15">src/file/xml-components/base.ts:15</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">boolean</span></h4>
@@ -147,7 +152,7 @@
 					</ul>
 				</section>
 			</section>
-			<section class="tsd-panel-group tsd-member-group tsd-is-external">
+			<section class="tsd-panel-group tsd-member-group tsd-is-inherited tsd-is-external">
 				<h2>Methods</h2>
 				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-external">
 					<a name="addchildelement" class="tsd-anchor"></a>
@@ -160,7 +165,7 @@
 							<aside class="tsd-sources">
 								<p>Inherited from <a href="appproperties.html">AppProperties</a>.<a href="appproperties.html#addchildelement">addChildElement</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/84f4844/src/file/xml-components/xml-component.ts#L43">src/file/xml-components/xml-component.ts:43</a></li>
+									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/45b1f6f/src/file/xml-components/xml-component.ts#L43">src/file/xml-components/xml-component.ts:43</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -184,27 +189,10 @@
 							<aside class="tsd-sources">
 								<p>Inherited from <a href="appproperties.html">AppProperties</a>.<a href="appproperties.html#delete">delete</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/84f4844/src/file/xml-components/xml-component.ts#L49">src/file/xml-components/xml-component.ts:49</a></li>
+									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/45b1f6f/src/file/xml-components/xml-component.ts#L49">src/file/xml-components/xml-component.ts:49</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
-						</li>
-					</ul>
-				</section>
-				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-external">
-					<a name="donotexpandshiftreturn" class="tsd-anchor"></a>
-					<h3>do<wbr>Not<wbr>Expand<wbr>Shift<wbr>Return</h3>
-					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-external">
-						<li class="tsd-signature tsd-kind-icon">do<wbr>Not<wbr>Expand<wbr>Shift<wbr>Return<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="compatibility.html" class="tsd-signature-type">Compatibility</a></li>
-					</ul>
-					<ul class="tsd-descriptions">
-						<li class="tsd-description">
-							<aside class="tsd-sources">
-								<ul>
-									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/84f4844/src/file/settings/compatibility.ts#L14">src/file/settings/compatibility.ts:14</a></li>
-								</ul>
-							</aside>
-							<h4 class="tsd-returns-title">Returns <a href="compatibility.html" class="tsd-signature-type">Compatibility</a></h4>
 						</li>
 					</ul>
 				</section>
@@ -220,7 +208,7 @@
 								<p>Inherited from <a href="appproperties.html">AppProperties</a>.<a href="appproperties.html#prepforxml">prepForXml</a></p>
 								<p>Overrides <a href="basexmlcomponent.html">BaseXmlComponent</a>.<a href="basexmlcomponent.html#prepforxml">prepForXml</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/84f4844/src/file/xml-components/xml-component.ts#L16">src/file/xml-components/xml-component.ts:16</a></li>
+									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/45b1f6f/src/file/xml-components/xml-component.ts#L16">src/file/xml-components/xml-component.ts:16</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -261,9 +249,6 @@
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-external">
 								<a href="compatibility.html#delete" class="tsd-kind-icon">delete</a>
-							</li>
-							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-external">
-								<a href="compatibility.html#donotexpandshiftreturn" class="tsd-kind-icon">do<wbr>Not<wbr>Expand<wbr>Shift<wbr>Return</a>
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-overwrite tsd-is-inherited tsd-is-external">
 								<a href="compatibility.html#prepforxml" class="tsd-kind-icon">prep<wbr>For<wbr>Xml</a>
