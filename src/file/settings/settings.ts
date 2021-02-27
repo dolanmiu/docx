@@ -46,11 +46,15 @@ export class SettingsAttributes extends XmlAttributeComponent<ISettingsAttribute
     };
 }
 
+export interface ISettingsOptions {
+    readonly compatabilityModeVersion?: number;
+}
+
 export class Settings extends XmlComponent {
     private readonly compatibility: Compatibility;
     private readonly trackRevisions: TrackRevisions;
 
-    constructor() {
+    constructor(options: ISettingsOptions) {
         super("w:settings");
         this.root.push(
             new SettingsAttributes({
@@ -74,7 +78,11 @@ export class Settings extends XmlComponent {
             }),
         );
 
-        this.compatibility = new Compatibility();
+        this.compatibility = new Compatibility({
+            version: options.compatabilityModeVersion || 15,
+        });
+
+        this.root.push(this.compatibility);
         this.trackRevisions = new TrackRevisions();
 
         this.root.push(new DisplayBackgroundShape());
@@ -84,14 +92,6 @@ export class Settings extends XmlComponent {
         if (!this.root.find((child) => child instanceof UpdateFields)) {
             this.addChildElement(new UpdateFields());
         }
-    }
-
-    public addCompatibility(): Compatibility {
-        if (!this.root.find((child) => child instanceof Compatibility)) {
-            this.addChildElement(this.compatibility);
-        }
-
-        return this.compatibility;
     }
 
     public addTrackRevisions(): TrackRevisions {

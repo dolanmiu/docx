@@ -37,6 +37,7 @@ export interface IPropertiesOptions {
     readonly features?: {
         readonly trackRevisions?: boolean;
     };
+    readonly compatabilityModeVersion?: number;
 }
 
 export class CoreProperties extends XmlComponent {
