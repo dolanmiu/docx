@@ -47,7 +47,7 @@ export class SettingsAttributes extends XmlAttributeComponent<ISettingsAttribute
 }
 
 export interface ISettingsOptions {
-    compatabilityModeVersion?: number;
+    readonly compatabilityModeVersion?: number;
 }
 
 export class Settings extends XmlComponent {
