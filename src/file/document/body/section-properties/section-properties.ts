@@ -145,7 +145,7 @@ export class SectionProperties extends XmlComponent {
                 this.root.push(
                     new HeaderReference({
                         headerType: HeaderReferenceType.DEFAULT,
-                        headerId: headers.default.Header.ReferenceId,
+                        headerId: headers.default.View.ReferenceId,
                     }),
                 );
             }
@@ -154,7 +154,7 @@ export class SectionProperties extends XmlComponent {
                 this.root.push(
                     new HeaderReference({
                         headerType: HeaderReferenceType.FIRST,
-                        headerId: headers.first.Header.ReferenceId,
+                        headerId: headers.first.View.ReferenceId,
                     }),
                 );
             }
@@ -163,7 +163,7 @@ export class SectionProperties extends XmlComponent {
                 this.root.push(
                     new HeaderReference({
                         headerType: HeaderReferenceType.EVEN,
-                        headerId: headers.even.Header.ReferenceId,
+                        headerId: headers.even.View.ReferenceId,
                     }),
                 );
             }
@@ -176,7 +176,7 @@ export class SectionProperties extends XmlComponent {
                 this.root.push(
                     new FooterReference({
                         footerType: FooterReferenceType.DEFAULT,
-                        footerId: footers.default.Footer.ReferenceId,
+                        footerId: footers.default.View.ReferenceId,
                     }),
                 );
             }
@@ -185,7 +185,7 @@ export class SectionProperties extends XmlComponent {
                 this.root.push(
                     new FooterReference({
                         footerType: FooterReferenceType.FIRST,
-                        footerId: footers.first.Footer.ReferenceId,
+                        footerId: footers.first.View.ReferenceId,
                     }),
                 );
             }
@@ -194,7 +194,7 @@ export class SectionProperties extends XmlComponent {
                 this.root.push(
                     new FooterReference({
                         footerType: FooterReferenceType.EVEN,
-                        footerId: footers.even.Footer.ReferenceId,
+                        footerId: footers.even.View.ReferenceId,
                     }),
                 );
             }

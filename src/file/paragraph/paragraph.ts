@@ -79,7 +79,7 @@ export class Paragraph extends XmlComponent {
             if (element instanceof ExternalHyperlink) {
                 const index = this.root.indexOf(element);
                 const concreteHyperlink = new ConcreteHyperlink(element.options.child, shortid.generate().toLowerCase());
-                file.DocumentRelationships.createRelationship(
+                file.Document.Relationships.createRelationship(
                     concreteHyperlink.linkId,
                     "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink",
                     element.options.link,

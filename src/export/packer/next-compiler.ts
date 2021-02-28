@@ -69,23 +69,23 @@ export class Compiler {
 
     private xmlifyFile(file: File, prettify?: boolean): IXmlifyedFileMapping {
         file.verifyUpdateFields();
-        const documentRelationshipCount = file.DocumentRelationships.RelationshipCount + 1;
+        const documentRelationshipCount = file.Document.Relationships.RelationshipCount + 1;
 
-        const documentXmlData = xml(this.formatter.format(file.Document, file), prettify);
+        const documentXmlData = xml(this.formatter.format(file.Document.View, file), prettify);
         const documentMediaDatas = this.imageReplacer.getMediaData(documentXmlData, file.Media);
 
         return {
             Relationships: {
                 data: (() => {
                     documentMediaDatas.forEach((mediaData, i) => {
-                        file.DocumentRelationships.createRelationship(
+                        file.Document.Relationships.createRelationship(
                             documentRelationshipCount + i,
                             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
                             `media/${mediaData.fileName}`,
                         );
                     });
 
-                    return xml(this.formatter.format(file.DocumentRelationships, file), prettify);
+                    return xml(this.formatter.format(file.Document.Relationships, file), prettify);
                 })(),
                 path: "word/_rels/document.xml.rels",
             },
@@ -120,7 +120,7 @@ export class Compiler {
                 path: "_rels/.rels",
             },
             HeaderRelationships: file.Headers.map((headerWrapper, index) => {
-                const xmlData = xml(this.formatter.format(headerWrapper.Header, file), prettify);
+                const xmlData = xml(this.formatter.format(headerWrapper.View, file), prettify);
                 const mediaDatas = this.imageReplacer.getMediaData(xmlData, file.Media);
 
                 mediaDatas.forEach((mediaData, i) => {
@@ -137,7 +137,7 @@ export class Compiler {
                 };
             }),
             FooterRelationships: file.Footers.map((footerWrapper, index) => {
-                const xmlData = xml(this.formatter.format(footerWrapper.Footer, file), prettify);
+                const xmlData = xml(this.formatter.format(footerWrapper.View, file), prettify);
                 const mediaDatas = this.imageReplacer.getMediaData(xmlData, file.Media);
 
                 mediaDatas.forEach((mediaData, i) => {
@@ -154,7 +154,7 @@ export class Compiler {
                 };
             }),
             Headers: file.Headers.map((headerWrapper, index) => {
-                const tempXmlData = xml(this.formatter.format(headerWrapper.Header, file), prettify);
+                const tempXmlData = xml(this.formatter.format(headerWrapper.View, file), prettify);
                 const mediaDatas = this.imageReplacer.getMediaData(tempXmlData, file.Media);
                 // TODO: 0 needs to be changed when headers get relationships of their own
                 const xmlData = this.imageReplacer.replace(tempXmlData, mediaDatas, 0);
@@ -165,7 +165,7 @@ export class Compiler {
                 };
             }),
             Footers: file.Footers.map((footerWrapper, index) => {
-                const tempXmlData = xml(this.formatter.format(footerWrapper.Footer, file), prettify);
+                const tempXmlData = xml(this.formatter.format(footerWrapper.View, file), prettify);
                 const mediaDatas = this.imageReplacer.getMediaData(tempXmlData, file.Media);
                 // TODO: 0 needs to be changed when headers get relationships of their own
                 const xmlData = this.imageReplacer.replace(tempXmlData, mediaDatas, 0);

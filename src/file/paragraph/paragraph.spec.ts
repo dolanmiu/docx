@@ -804,8 +804,10 @@ describe("Paragraph", () => {
                 ],
             });
             const fileMock = ({
-                DocumentRelationships: {
-                    createRelationship: () => ({}),
+                Document: {
+                    Relationships: {
+                        createRelationship: () => ({}),
+                    },
                 },
             } as unknown) as File;
             paragraph.prepForXml(fileMock);

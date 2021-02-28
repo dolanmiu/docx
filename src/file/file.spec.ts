@@ -18,7 +18,7 @@ describe("File", () => {
                 children: [],
             });
 
-            const tree = new Formatter().format(doc.Document.Body);
+            const tree = new Formatter().format(doc.Document.View.Body);
 
             expect(tree["w:body"][0]["w:sectPr"][4]["w:headerReference"]._attr["w:type"]).to.equal("default");
             expect(tree["w:body"][0]["w:sectPr"][5]["w:footerReference"]._attr["w:type"]).to.equal("default");
@@ -37,7 +37,7 @@ describe("File", () => {
                 children: [],
             });
 
-            const tree = new Formatter().format(doc.Document.Body);
+            const tree = new Formatter().format(doc.Document.View.Body);
 
             expect(tree["w:body"][0]["w:sectPr"][4]["w:headerReference"]._attr["w:type"]).to.equal("default");
             expect(tree["w:body"][0]["w:sectPr"][5]["w:footerReference"]._attr["w:type"]).to.equal("default");
@@ -56,7 +56,7 @@ describe("File", () => {
                 children: [],
             });
 
-            const tree = new Formatter().format(doc.Document.Body);
+            const tree = new Formatter().format(doc.Document.View.Body);
 
             expect(tree["w:body"][0]["w:sectPr"][5]["w:headerReference"]._attr["w:type"]).to.equal("first");
             expect(tree["w:body"][0]["w:sectPr"][7]["w:footerReference"]._attr["w:type"]).to.equal("first");
@@ -79,7 +79,7 @@ describe("File", () => {
                 children: [],
             });
 
-            const tree = new Formatter().format(doc.Document.Body);
+            const tree = new Formatter().format(doc.Document.View.Body);
 
             expect(tree["w:body"][0]["w:sectPr"][4]["w:headerReference"]._attr["w:type"]).to.equal("default");
             expect(tree["w:body"][0]["w:sectPr"][5]["w:headerReference"]._attr["w:type"]).to.equal("first");
@@ -97,7 +97,7 @@ describe("File", () => {
                 },
             ]);
 
-            const tree = new Formatter().format(doc.Document.Body);
+            const tree = new Formatter().format(doc.Document.View.Body);
 
             expect(tree).to.deep.equal({
                 "w:body": [
@@ -169,7 +169,7 @@ describe("File", () => {
     describe("#addSection", () => {
         it("should call the underlying document's add a Paragraph", () => {
             const file = new File();
-            const spy = sinon.spy(file.Document, "add");
+            const spy = sinon.spy(file.Document.View, "add");
             file.addSection({
                 children: [new Paragraph({})],
             });
@@ -179,7 +179,7 @@ describe("File", () => {
 
         it("should call the underlying document's add when adding a Table", () => {
             const file = new File();
-            const spy = sinon.spy(file.Document, "add");
+            const spy = sinon.spy(file.Document.View, "add");
             file.addSection({
                 children: [
                     new Table({
@@ -201,7 +201,7 @@ describe("File", () => {
 
         it("should call the underlying document's add when adding an Image (paragraph)", () => {
             const file = new File();
-            const spy = sinon.spy(file.Document, "add");
+            const spy = sinon.spy(file.Document.View, "add");
             // tslint:disable-next-line:no-any
             file.addSection({
                 children: [new Paragraph("")],
@@ -214,7 +214,7 @@ describe("File", () => {
     describe("#addSection", () => {
         it("should call the underlying document's add", () => {
             const file = new File();
-            const spy = sinon.spy(file.Document, "add");
+            const spy = sinon.spy(file.Document.View, "add");
             file.addSection({
                 children: [new TableOfContents()],
             });
