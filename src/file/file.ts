@@ -1,4 +1,3 @@
-import * as shortid from "shortid";
 import { AppProperties } from "./app-properties/app-properties";
 import { ContentTypes } from "./content-types/content-types";
 import { CoreProperties, IPropertiesOptions } from "./core-properties";
@@ -17,9 +16,8 @@ import { Footer, Header } from "./header";
 import { HeaderWrapper, IDocumentHeader } from "./header-wrapper";
 import { Media } from "./media";
 import { Numbering } from "./numbering";
-import { Hyperlink, HyperlinkRef, HyperlinkType, Paragraph } from "./paragraph";
+import { Paragraph } from "./paragraph";
 import { Relationships } from "./relationships";
-import { TargetModeType } from "./relationships/relationship/relationship";
 import { Settings } from "./settings";
 import { Styles } from "./styles";
 import { ExternalStylesFactory } from "./styles/external-styles-factory";
@@ -41,7 +39,7 @@ export interface ISectionOptions {
     readonly size?: IPageSizeAttributes;
     readonly margins?: IPageMarginAttributes;
     readonly properties?: SectionPropertiesOptions;
-    readonly children: (Paragraph | Table | TableOfContents | HyperlinkRef)[];
+    readonly children: (Paragraph | Table | TableOfContents)[];
 }
 
 export class File {
@@ -61,7 +59,6 @@ export class File {
     private readonly contentTypes: ContentTypes;
     private readonly appProperties: AppProperties;
     private readonly styles: Styles;
-    private readonly hyperlinkCache: { readonly [key: string]: Hyperlink } = {};
 
     constructor(
         options: IPropertiesOptions = {
@@ -136,12 +133,6 @@ export class File {
             this.document.Body.addSection(section.properties ? section.properties : {});
 
             for (const child of section.children) {
-                if (child instanceof HyperlinkRef) {
-                    const hyperlink = this.hyperlinkCache[child.id];
-                    this.document.add(hyperlink);
-                    continue;
-                }
-
                 this.document.add(child);
             }
         }
@@ -150,27 +141,6 @@ export class File {
             for (const paragraph of options.footnotes) {
                 this.footNotes.createFootNote(paragraph);
             }
-        }
-
-        if (options.hyperlinks) {
-            const cache = {};
-
-            for (const key in options.hyperlinks) {
-                if (!options.hyperlinks[key]) {
-                    continue;
-                }
-
-                const hyperlinkRef = options.hyperlinks[key];
-
-                const hyperlink =
-                    hyperlinkRef.type === HyperlinkType.EXTERNAL
-                        ? this.createHyperlink(hyperlinkRef.link, hyperlinkRef.text)
-                        : this.createInternalHyperLink(key, hyperlinkRef.text);
-
-                cache[key] = hyperlink;
-            }
-
-            this.hyperlinkCache = cache;
         }
 
         if (options.features) {
@@ -205,12 +175,6 @@ export class File {
         });
 
         for (const child of children) {
-            if (child instanceof HyperlinkRef) {
-                const hyperlink = this.hyperlinkCache[child.id];
-                this.document.add(hyperlink);
-                continue;
-            }
-
             this.document.add(child);
         }
     }
@@ -219,24 +183,6 @@ export class File {
         if (this.document.getTablesOfContents().length) {
             this.settings.addUpdateFields();
         }
-    }
-
-    private createHyperlink(link: string, text: string = link): Hyperlink {
-        const hyperlink = new Hyperlink(text, shortid.generate().toLowerCase());
-        this.docRelationships.createRelationship(
-            hyperlink.linkId,
-            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink",
-            link,
-            TargetModeType.EXTERNAL,
-        );
-        return hyperlink;
-    }
-
-    private createInternalHyperLink(anchor: string, text: string = anchor): Hyperlink {
-        const hyperlink = new Hyperlink(text, shortid.generate().toLowerCase(), anchor);
-        // NOTE: unlike File#createHyperlink(), since the link is to an internal bookmark
-        // we don't need to create a new relationship.
-        return hyperlink;
     }
 
     private createHeader(header: Header): HeaderWrapper {
@@ -370,9 +316,5 @@ export class File {
 
     public get Settings(): Settings {
         return this.settings;
-    }
-
-    public get HyperlinkCache(): { readonly [key: string]: Hyperlink } {
-        return this.hyperlinkCache;
     }
 }

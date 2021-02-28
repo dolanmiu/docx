@@ -82,7 +82,7 @@ export class Media {
         return imageData;
     }
 
-    public get Array(): IMediaData[] {
+    public get Array(): readonly IMediaData[] {
         const array = new Array<IMediaData>();
 
         this.map.forEach((data) => {

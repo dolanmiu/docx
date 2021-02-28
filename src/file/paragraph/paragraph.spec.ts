@@ -8,8 +8,9 @@ import { EMPTY_OBJECT } from "file/xml-components";
 import { File } from "../file";
 import { ShadingType } from "../table/shading";
 import { AlignmentType, HeadingLevel, LeaderType, PageBreak, TabStopPosition, TabStopType } from "./formatting";
-import { Bookmark, HyperlinkRef } from "./links";
+import { Bookmark, ExternalHyperlink } from "./links";
 import { Paragraph } from "./paragraph";
+import { TextRun } from "./run";
 
 describe("Paragraph", () => {
     describe("#constructor()", () => {
@@ -763,7 +764,7 @@ describe("Paragraph", () => {
     });
 
     describe("#shading", () => {
-        it("should set paragraph outline level to the given value", () => {
+        it("should set shading to the given value", () => {
             const paragraph = new Paragraph({
                 shading: {
                     type: ShadingType.REVERSE_DIAGONAL_STRIPE,
@@ -793,20 +794,49 @@ describe("Paragraph", () => {
     });
 
     describe("#prepForXml", () => {
-        it("should set paragraph outline level to the given value", () => {
+        it("should set Internal Hyperlink", () => {
             const paragraph = new Paragraph({
-                children: [new HyperlinkRef("myAnchorId")],
+                children: [
+                    new ExternalHyperlink({
+                        child: new TextRun("test"),
+                        link: "http://www.google.com",
+                    }),
+                ],
             });
             const fileMock = ({
-                HyperlinkCache: {
-                    myAnchorId: "test",
+                DocumentRelationships: {
+                    createRelationship: () => ({}),
                 },
-                // tslint:disable-next-line: no-any
-            } as any) as File;
+            } as unknown) as File;
             paragraph.prepForXml(fileMock);
             const tree = new Formatter().format(paragraph);
             expect(tree).to.deep.equal({
-                "w:p": ["test"],
+                "w:p": [
+                    {
+                        "w:hyperlink": [
+                            {
+                                _attr: {
+                                    "r:id": "rIdtest-unique-id",
+                                    "w:history": 1,
+                                },
+                            },
+                            {
+                                "w:r": [
+                                    {
+                                        "w:t": [
+                                            {
+                                                _attr: {
+                                                    "xml:space": "preserve",
+                                                },
+                                            },
+                                            "test",
+                                        ],
+                                    },
+                                ],
+                            },
+                        ],
+                    },
+                ],
             });
         });
     });
