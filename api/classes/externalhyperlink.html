@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>IInternalHyperlinkDefinition | docx</title>
+	<title>ExternalHyperlink | docx</title>
 	<meta name="description" content="">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="../assets/css/main.css">
@@ -54,10 +54,10 @@
 					<a href="../globals.html">Globals</a>
 				</li>
 				<li>
-					<a href="iinternalhyperlinkdefinition.html">IInternalHyperlinkDefinition</a>
+					<a href="externalhyperlink.html">ExternalHyperlink</a>
 				</li>
 			</ul>
-			<h1>Interface IInternalHyperlinkDefinition</h1>
+			<h1>Class ExternalHyperlink</h1>
 		</div>
 	</div>
 </header>
@@ -68,7 +68,7 @@
 				<h3>Hierarchy</h3>
 				<ul class="tsd-hierarchy">
 					<li>
-						<span class="target">IInternalHyperlinkDefinition</span>
+						<span class="target">ExternalHyperlink</span>
 					</li>
 				</ul>
 			</section>
@@ -77,36 +77,76 @@
 				<section class="tsd-panel tsd-index-panel">
 					<div class="tsd-index-content">
 						<section class="tsd-index-section tsd-is-external">
+							<h3>Constructors</h3>
+							<ul class="tsd-index-list">
+								<li class="tsd-kind-constructor tsd-parent-kind-class tsd-is-external"><a href="externalhyperlink.html#constructor" class="tsd-kind-icon">constructor</a></li>
+							</ul>
+						</section>
+						<section class="tsd-index-section tsd-is-external">
 							<h3>Properties</h3>
 							<ul class="tsd-index-list">
-								<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-external"><a href="iinternalhyperlinkdefinition.html#text" class="tsd-kind-icon">text</a></li>
-								<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-external"><a href="iinternalhyperlinkdefinition.html#type" class="tsd-kind-icon">type</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-external"><a href="externalhyperlink.html#options" class="tsd-kind-icon">options</a></li>
 							</ul>
 						</section>
 					</div>
 				</section>
 			</section>
 			<section class="tsd-panel-group tsd-member-group tsd-is-external">
-				<h2>Properties</h2>
-				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-external">
-					<a name="text" class="tsd-anchor"></a>
-					<h3>text</h3>
-					<div class="tsd-signature tsd-kind-icon">text<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
-					<aside class="tsd-sources">
-						<ul>
-							<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/45b1f6f/src/file/core-properties/properties.ts#L11">src/file/core-properties/properties.ts:11</a></li>
-						</ul>
-					</aside>
+				<h2>Constructors</h2>
+				<section class="tsd-panel tsd-member tsd-kind-constructor tsd-parent-kind-class tsd-is-external">
+					<a name="constructor" class="tsd-anchor"></a>
+					<h3>constructor</h3>
+					<ul class="tsd-signatures tsd-kind-constructor tsd-parent-kind-class tsd-is-external">
+						<li class="tsd-signature tsd-kind-icon">new <wbr>External<wbr>Hyperlink<span class="tsd-signature-symbol">(</span>options<span class="tsd-signature-symbol">: </span><span class="tsd-signature-symbol">{ </span>child<span class="tsd-signature-symbol">: </span><a href="../globals.html#paragraphchild" class="tsd-signature-type">ParagraphChild</a><span class="tsd-signature-symbol">; </span>link<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> }</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="externalhyperlink.html" class="tsd-signature-type">ExternalHyperlink</a></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/60664a2/src/file/paragraph/links/hyperlink.ts#L40">src/file/paragraph/links/hyperlink.ts:40</a></li>
+								</ul>
+							</aside>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>options: <span class="tsd-signature-symbol">{ </span>child<span class="tsd-signature-symbol">: </span><a href="../globals.html#paragraphchild" class="tsd-signature-type">ParagraphChild</a><span class="tsd-signature-symbol">; </span>link<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> }</span></h5>
+									<ul class="tsd-parameters">
+										<li class="tsd-parameter">
+											<h5>child<span class="tsd-signature-symbol">: </span><a href="../globals.html#paragraphchild" class="tsd-signature-type">ParagraphChild</a></h5>
+										</li>
+										<li class="tsd-parameter">
+											<h5>link<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span></h5>
+										</li>
+									</ul>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <a href="externalhyperlink.html" class="tsd-signature-type">ExternalHyperlink</a></h4>
+						</li>
+					</ul>
 				</section>
-				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-external">
-					<a name="type" class="tsd-anchor"></a>
-					<h3>type</h3>
-					<div class="tsd-signature tsd-kind-icon">type<span class="tsd-signature-symbol">:</span> <a href="../enums/hyperlinktype.html#internal" class="tsd-signature-type">INTERNAL</a></div>
+			</section>
+			<section class="tsd-panel-group tsd-member-group tsd-is-external">
+				<h2>Properties</h2>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-external">
+					<a name="options" class="tsd-anchor"></a>
+					<h3>options</h3>
+					<div class="tsd-signature tsd-kind-icon">options<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">{ </span>child<span class="tsd-signature-symbol">: </span><a href="../globals.html#paragraphchild" class="tsd-signature-type">ParagraphChild</a><span class="tsd-signature-symbol">; </span>link<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> }</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/45b1f6f/src/file/core-properties/properties.ts#L12">src/file/core-properties/properties.ts:12</a></li>
+							<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/60664a2/src/file/paragraph/links/hyperlink.ts#L41">src/file/paragraph/links/hyperlink.ts:41</a></li>
 						</ul>
 					</aside>
+					<div class="tsd-type-declaration">
+						<h4>Type declaration</h4>
+						<ul class="tsd-parameters">
+							<li class="tsd-parameter">
+								<h5>child<span class="tsd-signature-symbol">: </span><a href="../globals.html#paragraphchild" class="tsd-signature-type">ParagraphChild</a></h5>
+							</li>
+							<li class="tsd-parameter">
+								<h5>link<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span></h5>
+							</li>
+						</ul>
+					</div>
 				</section>
 			</section>
 		</div>
@@ -122,14 +162,14 @@
 				<ul class="before-current">
 				</ul>
 				<ul class="current">
-					<li class="current tsd-kind-interface tsd-is-external">
-						<a href="iinternalhyperlinkdefinition.html" class="tsd-kind-icon">IInternal<wbr>Hyperlink<wbr>Definition</a>
+					<li class="current tsd-kind-class tsd-is-external">
+						<a href="externalhyperlink.html" class="tsd-kind-icon">External<wbr>Hyperlink</a>
 						<ul>
-							<li class=" tsd-kind-property tsd-parent-kind-interface tsd-is-external">
-								<a href="iinternalhyperlinkdefinition.html#text" class="tsd-kind-icon">text</a>
+							<li class=" tsd-kind-constructor tsd-parent-kind-class tsd-is-external">
+								<a href="externalhyperlink.html#constructor" class="tsd-kind-icon">constructor</a>
 							</li>
-							<li class=" tsd-kind-property tsd-parent-kind-interface tsd-is-external">
-								<a href="iinternalhyperlinkdefinition.html#type" class="tsd-kind-icon">type</a>
+							<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-external">
+								<a href="externalhyperlink.html#options" class="tsd-kind-icon">options</a>
 							</li>
 						</ul>
 					</li>

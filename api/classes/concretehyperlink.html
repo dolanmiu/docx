@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>Hyperlink | docx</title>
+	<title>ConcreteHyperlink | docx</title>
 	<meta name="description" content="">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="../assets/css/main.css">
@@ -54,10 +54,10 @@
 					<a href="../globals.html">Globals</a>
 				</li>
 				<li>
-					<a href="hyperlink.html">Hyperlink</a>
+					<a href="concretehyperlink.html">ConcreteHyperlink</a>
 				</li>
 			</ul>
-			<h1>Class Hyperlink</h1>
+			<h1>Class ConcreteHyperlink</h1>
 		</div>
 	</div>
 </header>
@@ -71,7 +71,12 @@
 						<a href="xmlcomponent.html" class="tsd-signature-type">XmlComponent</a>
 						<ul class="tsd-hierarchy">
 							<li>
-								<span class="target">Hyperlink</span>
+								<span class="target">ConcreteHyperlink</span>
+								<ul class="tsd-hierarchy">
+									<li>
+										<a href="internalhyperlink.html" class="tsd-signature-type">InternalHyperlink</a>
+									</li>
+								</ul>
 							</li>
 						</ul>
 					</li>
@@ -84,28 +89,27 @@
 						<section class="tsd-index-section tsd-is-external">
 							<h3>Constructors</h3>
 							<ul class="tsd-index-list">
-								<li class="tsd-kind-constructor tsd-parent-kind-class tsd-is-overwrite tsd-is-external"><a href="hyperlink.html#constructor" class="tsd-kind-icon">constructor</a></li>
+								<li class="tsd-kind-constructor tsd-parent-kind-class tsd-is-overwrite tsd-is-external"><a href="concretehyperlink.html#constructor" class="tsd-kind-icon">constructor</a></li>
 							</ul>
 						</section>
 						<section class="tsd-index-section tsd-is-external">
 							<h3>Properties</h3>
 							<ul class="tsd-index-list">
-								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-external"><a href="hyperlink.html#linkid" class="tsd-kind-icon">link<wbr>Id</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-external"><a href="concretehyperlink.html#linkid" class="tsd-kind-icon">link<wbr>Id</a></li>
 							</ul>
 						</section>
-						<section class="tsd-index-section tsd-is-external">
+						<section class="tsd-index-section tsd-is-inherited tsd-is-external">
 							<h3>Accessors</h3>
 							<ul class="tsd-index-list">
-								<li class="tsd-kind-get-signature tsd-parent-kind-class tsd-is-inherited tsd-is-external"><a href="hyperlink.html#isdeleted" class="tsd-kind-icon">Is<wbr>Deleted</a></li>
-								<li class="tsd-kind-get-signature tsd-parent-kind-class tsd-is-external"><a href="hyperlink.html#textrun" class="tsd-kind-icon">Text<wbr>Run</a></li>
+								<li class="tsd-kind-get-signature tsd-parent-kind-class tsd-is-inherited tsd-is-external"><a href="concretehyperlink.html#isdeleted" class="tsd-kind-icon">Is<wbr>Deleted</a></li>
 							</ul>
 						</section>
 						<section class="tsd-index-section tsd-is-inherited tsd-is-external">
 							<h3>Methods</h3>
 							<ul class="tsd-index-list">
-								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-external"><a href="hyperlink.html#addchildelement" class="tsd-kind-icon">add<wbr>Child<wbr>Element</a></li>
-								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-external"><a href="hyperlink.html#delete" class="tsd-kind-icon">delete</a></li>
-								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-overwrite tsd-is-inherited tsd-is-external"><a href="hyperlink.html#prepforxml" class="tsd-kind-icon">prep<wbr>For<wbr>Xml</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-external"><a href="concretehyperlink.html#addchildelement" class="tsd-kind-icon">add<wbr>Child<wbr>Element</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-external"><a href="concretehyperlink.html#delete" class="tsd-kind-icon">delete</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-overwrite tsd-is-inherited tsd-is-external"><a href="concretehyperlink.html#prepforxml" class="tsd-kind-icon">prep<wbr>For<wbr>Xml</a></li>
 							</ul>
 						</section>
 					</div>
@@ -117,20 +121,20 @@
 					<a name="constructor" class="tsd-anchor"></a>
 					<h3>constructor</h3>
 					<ul class="tsd-signatures tsd-kind-constructor tsd-parent-kind-class tsd-is-overwrite tsd-is-external">
-						<li class="tsd-signature tsd-kind-icon">new <wbr>Hyperlink<span class="tsd-signature-symbol">(</span>text<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>, relationshipId<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>, anchor<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="hyperlink.html" class="tsd-signature-type">Hyperlink</a></li>
+						<li class="tsd-signature tsd-kind-icon">new <wbr>Concrete<wbr>Hyperlink<span class="tsd-signature-symbol">(</span>child<span class="tsd-signature-symbol">: </span><a href="../globals.html#paragraphchild" class="tsd-signature-type">ParagraphChild</a>, relationshipId<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>, anchor<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="concretehyperlink.html" class="tsd-signature-type">ConcreteHyperlink</a></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<p>Overrides <a href="baseemphasismark.html">BaseEmphasisMark</a>.<a href="baseemphasismark.html#constructor">constructor</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/45b1f6f/src/file/paragraph/links/hyperlink.ts#L17">src/file/paragraph/links/hyperlink.ts:17</a></li>
+									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/60664a2/src/file/paragraph/links/hyperlink.ts#L15">src/file/paragraph/links/hyperlink.ts:15</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
-									<h5>text: <span class="tsd-signature-type">string</span></h5>
+									<h5>child: <a href="../globals.html#paragraphchild" class="tsd-signature-type">ParagraphChild</a></h5>
 								</li>
 								<li>
 									<h5>relationshipId: <span class="tsd-signature-type">string</span></h5>
@@ -139,7 +143,7 @@
 									<h5><span class="tsd-flag ts-flagOptional">Optional</span> anchor: <span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">string</span></h5>
 								</li>
 							</ul>
-							<h4 class="tsd-returns-title">Returns <a href="hyperlink.html" class="tsd-signature-type">Hyperlink</a></h4>
+							<h4 class="tsd-returns-title">Returns <a href="concretehyperlink.html" class="tsd-signature-type">ConcreteHyperlink</a></h4>
 						</li>
 					</ul>
 				</section>
@@ -152,12 +156,12 @@
 					<div class="tsd-signature tsd-kind-icon">link<wbr>Id<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/45b1f6f/src/file/paragraph/links/hyperlink.ts#L16">src/file/paragraph/links/hyperlink.ts:16</a></li>
+							<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/60664a2/src/file/paragraph/links/hyperlink.ts#L15">src/file/paragraph/links/hyperlink.ts:15</a></li>
 						</ul>
 					</aside>
 				</section>
 			</section>
-			<section class="tsd-panel-group tsd-member-group tsd-is-external">
+			<section class="tsd-panel-group tsd-member-group tsd-is-inherited tsd-is-external">
 				<h2>Accessors</h2>
 				<section class="tsd-panel tsd-member tsd-kind-get-signature tsd-parent-kind-class tsd-is-inherited tsd-is-external">
 					<a name="isdeleted" class="tsd-anchor"></a>
@@ -170,27 +174,10 @@
 							<aside class="tsd-sources">
 								<p>Inherited from <a href="apppropertiesattributes.html">AppPropertiesAttributes</a>.<a href="apppropertiesattributes.html#isdeleted">IsDeleted</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/45b1f6f/src/file/xml-components/base.ts#L15">src/file/xml-components/base.ts:15</a></li>
+									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/60664a2/src/file/xml-components/base.ts#L15">src/file/xml-components/base.ts:15</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">boolean</span></h4>
-						</li>
-					</ul>
-				</section>
-				<section class="tsd-panel tsd-member tsd-kind-get-signature tsd-parent-kind-class tsd-is-external">
-					<a name="textrun" class="tsd-anchor"></a>
-					<h3>Text<wbr>Run</h3>
-					<ul class="tsd-signatures tsd-kind-get-signature tsd-parent-kind-class tsd-is-external">
-						<li class="tsd-signature tsd-kind-icon"><span class="tsd-signature-symbol">get</span> TextRun<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="textrun.html" class="tsd-signature-type">TextRun</a></li>
-					</ul>
-					<ul class="tsd-descriptions">
-						<li class="tsd-description">
-							<aside class="tsd-sources">
-								<ul>
-									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/45b1f6f/src/file/paragraph/links/hyperlink.ts#L39">src/file/paragraph/links/hyperlink.ts:39</a></li>
-								</ul>
-							</aside>
-							<h4 class="tsd-returns-title">Returns <a href="textrun.html" class="tsd-signature-type">TextRun</a></h4>
 						</li>
 					</ul>
 				</section>
@@ -208,7 +195,7 @@
 							<aside class="tsd-sources">
 								<p>Inherited from <a href="appproperties.html">AppProperties</a>.<a href="appproperties.html#addchildelement">addChildElement</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/45b1f6f/src/file/xml-components/xml-component.ts#L43">src/file/xml-components/xml-component.ts:43</a></li>
+									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/60664a2/src/file/xml-components/xml-component.ts#L43">src/file/xml-components/xml-component.ts:43</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -232,7 +219,7 @@
 							<aside class="tsd-sources">
 								<p>Inherited from <a href="appproperties.html">AppProperties</a>.<a href="appproperties.html#delete">delete</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/45b1f6f/src/file/xml-components/xml-component.ts#L49">src/file/xml-components/xml-component.ts:49</a></li>
+									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/60664a2/src/file/xml-components/xml-component.ts#L49">src/file/xml-components/xml-component.ts:49</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
@@ -251,7 +238,7 @@
 								<p>Inherited from <a href="appproperties.html">AppProperties</a>.<a href="appproperties.html#prepforxml">prepForXml</a></p>
 								<p>Overrides <a href="basexmlcomponent.html">BaseXmlComponent</a>.<a href="basexmlcomponent.html#prepforxml">prepForXml</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/45b1f6f/src/file/xml-components/xml-component.ts#L16">src/file/xml-components/xml-component.ts:16</a></li>
+									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/60664a2/src/file/xml-components/xml-component.ts#L16">src/file/xml-components/xml-component.ts:16</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -279,28 +266,25 @@
 				</ul>
 				<ul class="current">
 					<li class="current tsd-kind-class tsd-is-external">
-						<a href="hyperlink.html" class="tsd-kind-icon">Hyperlink</a>
+						<a href="concretehyperlink.html" class="tsd-kind-icon">Concrete<wbr>Hyperlink</a>
 						<ul>
 							<li class=" tsd-kind-constructor tsd-parent-kind-class tsd-is-overwrite tsd-is-external">
-								<a href="hyperlink.html#constructor" class="tsd-kind-icon">constructor</a>
+								<a href="concretehyperlink.html#constructor" class="tsd-kind-icon">constructor</a>
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-external">
-								<a href="hyperlink.html#linkid" class="tsd-kind-icon">link<wbr>Id</a>
+								<a href="concretehyperlink.html#linkid" class="tsd-kind-icon">link<wbr>Id</a>
 							</li>
 							<li class=" tsd-kind-get-signature tsd-parent-kind-class tsd-is-inherited tsd-is-external">
-								<a href="hyperlink.html#isdeleted" class="tsd-kind-icon">Is<wbr>Deleted</a>
-							</li>
-							<li class=" tsd-kind-get-signature tsd-parent-kind-class tsd-is-external">
-								<a href="hyperlink.html#textrun" class="tsd-kind-icon">Text<wbr>Run</a>
+								<a href="concretehyperlink.html#isdeleted" class="tsd-kind-icon">Is<wbr>Deleted</a>
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-external">
-								<a href="hyperlink.html#addchildelement" class="tsd-kind-icon">add<wbr>Child<wbr>Element</a>
+								<a href="concretehyperlink.html#addchildelement" class="tsd-kind-icon">add<wbr>Child<wbr>Element</a>
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-external">
-								<a href="hyperlink.html#delete" class="tsd-kind-icon">delete</a>
+								<a href="concretehyperlink.html#delete" class="tsd-kind-icon">delete</a>
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-overwrite tsd-is-inherited tsd-is-external">
-								<a href="hyperlink.html#prepforxml" class="tsd-kind-icon">prep<wbr>For<wbr>Xml</a>
+								<a href="concretehyperlink.html#prepforxml" class="tsd-kind-icon">prep<wbr>For<wbr>Xml</a>
 							</li>
 						</ul>
 					</li>
