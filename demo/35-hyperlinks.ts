@@ -1,7 +1,7 @@
 // Example on how to add hyperlinks to websites
 // Import from 'docx' rather than '../build' if you install from npm
 import * as fs from "fs";
-import { ExternalHyperlink, Document, Packer, Paragraph, Media, TextRun, Footer } from "../build";
+import { Document, ExternalHyperlink, Footer, Media, Packer, Paragraph, TextRun } from "../build";
 
 const doc = new Document({});
 
@@ -20,6 +20,24 @@ doc.addSection({
                                 style: "Hyperlink",
                             }),
                             link: "http://www.example.com",
+                        }),
+                    ],
+                }),
+            ],
+        }),
+    },
+    headers: {
+        default: new Footer({
+            children: [
+                new Paragraph({
+                    children: [
+                        new TextRun("Click here for the "),
+                        new ExternalHyperlink({
+                            child: new TextRun({
+                                text: "Header external hyperlink",
+                                style: "Hyperlink",
+                            }),
+                            link: "http://www.google.com",
                         }),
                     ],
                 }),
