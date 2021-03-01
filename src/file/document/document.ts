@@ -7,7 +7,7 @@ import { Body } from "./body";
 import { DocumentAttributes } from "./document-attributes";
 import { DocumentBackground, IDocumentBackgroundOptions } from "./document-background";
 
-interface IDocumentOptions {
+export interface IDocumentOptions {
     readonly background: IDocumentBackgroundOptions;
 }
 

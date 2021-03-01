@@ -1,14 +1,12 @@
 import { IDrawingOptions } from "../drawing";
 import { File } from "../file";
-import { FooterWrapper } from "../footer-wrapper";
-import { HeaderWrapper } from "../header-wrapper";
 import { PictureRun } from "../paragraph";
 import { IMediaData } from "./data";
 // import { Image } from "./image";
 
 export class Media {
     public static addImage(
-        file: File | HeaderWrapper | FooterWrapper,
+        file: File,
         buffer: Buffer | string | Uint8Array | ArrayBuffer,
         width?: number,
         height?: number,

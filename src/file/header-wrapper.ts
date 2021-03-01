@@ -1,6 +1,7 @@
 import { XmlComponent } from "file/xml-components";
 
 import { HeaderReferenceType } from "./document";
+import { IViewWrapper } from "./document-wrapper";
 import { Header } from "./header/header";
 import { Media } from "./media";
 import { Paragraph } from "./paragraph";
@@ -12,7 +13,7 @@ export interface IDocumentHeader {
     readonly type: HeaderReferenceType;
 }
 
-export class HeaderWrapper {
+export class HeaderWrapper implements IViewWrapper {
     private readonly header: Header;
     private readonly relationships: Relationships;
 
@@ -31,7 +32,7 @@ export class HeaderWrapper {
         this.header.addChildElement(childElement);
     }
 
-    public get Header(): Header {
+    public get View(): Header {
         return this.header;
     }
 

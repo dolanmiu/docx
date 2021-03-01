@@ -5,7 +5,7 @@ import { stub } from "sinon";
 import { Formatter } from "export/formatter";
 import { EMPTY_OBJECT } from "file/xml-components";
 
-import { File } from "../file";
+import { IViewWrapper } from "../document-wrapper";
 import { ShadingType } from "../table/shading";
 import { AlignmentType, HeadingLevel, LeaderType, PageBreak, TabStopPosition, TabStopType } from "./formatting";
 import { Bookmark, ExternalHyperlink } from "./links";
@@ -804,10 +804,10 @@ describe("Paragraph", () => {
                 ],
             });
             const fileMock = ({
-                DocumentRelationships: {
+                Relationships: {
                     createRelationship: () => ({}),
                 },
-            } as unknown) as File;
+            } as unknown) as IViewWrapper;
             paragraph.prepForXml(fileMock);
             const tree = new Formatter().format(paragraph);
             expect(tree).to.deep.equal({

@@ -4,7 +4,7 @@ import * as shortid from "shortid";
 import { FootnoteReferenceRun } from "file/footnotes/footnote/run/reference-run";
 import { IXmlableObject, XmlComponent } from "file/xml-components";
 
-import { File } from "../file";
+import { IViewWrapper } from "../document-wrapper";
 import { TargetModeType } from "../relationships/relationship/relationship";
 import { DeletedTextRun, InsertedTextRun } from "../track-revision";
 import { PageBreak } from "./formatting/page-break";
@@ -74,12 +74,12 @@ export class Paragraph extends XmlComponent {
         }
     }
 
-    public prepForXml(file: File): IXmlableObject | undefined {
+    public prepForXml(file: IViewWrapper): IXmlableObject | undefined {
         for (const element of this.root) {
             if (element instanceof ExternalHyperlink) {
                 const index = this.root.indexOf(element);
                 const concreteHyperlink = new ConcreteHyperlink(element.options.child, shortid.generate().toLowerCase());
-                file.DocumentRelationships.createRelationship(
+                file.Relationships.createRelationship(
                     concreteHyperlink.linkId,
                     "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink",
                     element.options.link,
