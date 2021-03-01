@@ -1,10 +1,11 @@
 import { Document, IDocumentOptions } from "./document";
 import { Footer } from "./footer";
+import { FootNotes } from "./footnotes";
 import { Header } from "./header/header";
 import { Relationships } from "./relationships";
 
 export interface IViewWrapper {
-    readonly View: Document | Footer | Header;
+    readonly View: Document | Footer | Header | FootNotes;
     readonly Relationships: Relationships;
 }
 

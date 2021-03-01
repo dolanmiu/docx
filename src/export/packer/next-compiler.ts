@@ -25,6 +25,7 @@ interface IXmlifyedFileMapping {
     readonly ContentTypes: IXmlifyedFile;
     readonly AppProperties: IXmlifyedFile;
     readonly FootNotes: IXmlifyedFile;
+    readonly FootNotesRelationships: IXmlifyedFile;
     readonly Settings: IXmlifyedFile;
 }
 
@@ -184,8 +185,12 @@ export class Compiler {
                 path: "docProps/app.xml",
             },
             FootNotes: {
-                data: xml(this.formatter.format(file.FootNotes, file.Document), prettify),
+                data: xml(this.formatter.format(file.FootNotes.View, file.FootNotes), prettify),
                 path: "word/footnotes.xml",
+            },
+            FootNotesRelationships: {
+                data: xml(this.formatter.format(file.FootNotes.Relationships, file.FootNotes), prettify),
+                path: "word/_rels/footnotes.xml.rels",
             },
             Settings: {
                 data: xml(this.formatter.format(file.Settings, file.Document), prettify),
