@@ -1,5 +1,6 @@
 // http://officeopenxml.com/WPparagraphProperties.php
 import { IgnoreIfEmptyXmlComponent, XmlComponent } from "file/xml-components";
+import { ShadingType } from "../table/shading";
 import { Alignment, AlignmentType } from "./formatting/alignment";
 import { Bidirectional } from "./formatting/bidirectional";
 import { Border, IBorderOptions, ThematicBreak } from "./formatting/border";
@@ -11,6 +12,7 @@ import { HeadingLevel, Style } from "./formatting/style";
 import { LeaderType, TabStop, TabStopPosition, TabStopType } from "./formatting/tab-stop";
 import { NumberProperties } from "./formatting/unordered-list";
 import { OutlineLevel } from "./links";
+import { Shading } from "./run/formatting";
 
 export interface IParagraphStylePropertiesOptions {
     readonly alignment?: AlignmentType;
@@ -43,6 +45,11 @@ export interface IParagraphPropertiesOptions extends IParagraphStylePropertiesOp
         readonly reference: string;
         readonly level: number;
         readonly custom?: boolean;
+    };
+    readonly shading?: {
+        readonly type: ShadingType;
+        readonly fill: string;
+        readonly color: string;
     };
 }
 
@@ -130,6 +137,10 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
 
         if (options.leftTabStop) {
             this.push(new TabStop(TabStopType.LEFT, options.leftTabStop));
+        }
+
+        if (options.shading) {
+            this.push(new Shading(options.shading.type, options.shading.fill, options.shading.color));
         }
     }
 

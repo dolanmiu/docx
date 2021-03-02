@@ -11,6 +11,7 @@ import { Text } from "./run-components/text";
 
 export interface IRunOptions extends IRunPropertiesOptions {
     readonly children?: (Begin | FieldInstruction | Separate | End | PageNumber | FootnoteReferenceRun | string)[];
+    readonly break?: number;
     readonly text?: string;
 }
 
@@ -62,10 +63,11 @@ export class Run extends XmlComponent {
         } else if (options.text) {
             this.root.push(new Text(options.text));
         }
-    }
 
-    public break(): Run {
-        this.root.splice(1, 0, new Break());
-        return this;
+        if (options.break) {
+            for (let i = 0; i < options.break; i++) {
+                this.root.splice(1, 0, new Break());
+            }
+        }
     }
 }

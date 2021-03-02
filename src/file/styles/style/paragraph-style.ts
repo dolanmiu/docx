@@ -21,7 +21,7 @@ export interface IParagraphStyleOptions extends IBaseParagraphStyleOptions {
     readonly name?: string;
 }
 
-export class ParagraphStyle extends Style {
+export class StyleForParagraph extends Style {
     private readonly paragraphProperties: ParagraphProperties;
     private readonly runProperties: RunProperties;
 

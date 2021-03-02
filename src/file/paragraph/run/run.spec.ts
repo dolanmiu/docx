@@ -239,11 +239,27 @@ describe("Run", () => {
 
     describe("#break()", () => {
         it("it should add break to the run", () => {
-            const run = new Run({});
-            run.break();
+            const run = new Run({
+                break: 1,
+            });
             const tree = new Formatter().format(run);
             expect(tree).to.deep.equal({
                 "w:r": [{ "w:br": {} }],
+            });
+        });
+
+        it("it should add two breaks to the run", () => {
+            const run = new Run({
+                break: 2,
+            });
+            const tree = new Formatter().format(run);
+            expect(tree).to.deep.equal({
+                "w:r": [
+                    { "w:br": {} },
+                    {
+                        "w:br": {},
+                    },
+                ],
             });
         });
     });

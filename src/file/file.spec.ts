@@ -5,7 +5,7 @@ import { Formatter } from "export/formatter";
 
 import { File } from "./file";
 import { Footer, Header } from "./header";
-import { HyperlinkRef, Paragraph } from "./paragraph";
+import { Paragraph } from "./paragraph";
 import { Table, TableCell, TableRow } from "./table";
 import { TableOfContents } from "./table-of-contents";
 
@@ -18,7 +18,7 @@ describe("File", () => {
                 children: [],
             });
 
-            const tree = new Formatter().format(doc.Document.Body);
+            const tree = new Formatter().format(doc.Document.View.Body);
 
             expect(tree["w:body"][0]["w:sectPr"][4]["w:headerReference"]._attr["w:type"]).to.equal("default");
             expect(tree["w:body"][0]["w:sectPr"][5]["w:footerReference"]._attr["w:type"]).to.equal("default");
@@ -37,7 +37,7 @@ describe("File", () => {
                 children: [],
             });
 
-            const tree = new Formatter().format(doc.Document.Body);
+            const tree = new Formatter().format(doc.Document.View.Body);
 
             expect(tree["w:body"][0]["w:sectPr"][4]["w:headerReference"]._attr["w:type"]).to.equal("default");
             expect(tree["w:body"][0]["w:sectPr"][5]["w:footerReference"]._attr["w:type"]).to.equal("default");
@@ -56,7 +56,7 @@ describe("File", () => {
                 children: [],
             });
 
-            const tree = new Formatter().format(doc.Document.Body);
+            const tree = new Formatter().format(doc.Document.View.Body);
 
             expect(tree["w:body"][0]["w:sectPr"][5]["w:headerReference"]._attr["w:type"]).to.equal("first");
             expect(tree["w:body"][0]["w:sectPr"][7]["w:footerReference"]._attr["w:type"]).to.equal("first");
@@ -79,7 +79,7 @@ describe("File", () => {
                 children: [],
             });
 
-            const tree = new Formatter().format(doc.Document.Body);
+            const tree = new Formatter().format(doc.Document.View.Body);
 
             expect(tree["w:body"][0]["w:sectPr"][4]["w:headerReference"]._attr["w:type"]).to.equal("default");
             expect(tree["w:body"][0]["w:sectPr"][5]["w:headerReference"]._attr["w:type"]).to.equal("first");
@@ -97,7 +97,7 @@ describe("File", () => {
                 },
             ]);
 
-            const tree = new Formatter().format(doc.Document.Body);
+            const tree = new Formatter().format(doc.Document.View.Body);
 
             expect(tree).to.deep.equal({
                 "w:body": [
@@ -164,22 +164,12 @@ describe("File", () => {
                 ],
             });
         });
-
-        it("should add hyperlink child", () => {
-            const doc = new File(undefined, undefined, [
-                {
-                    children: [new HyperlinkRef("test")],
-                },
-            ]);
-
-            expect(doc.HyperlinkCache).to.deep.equal({});
-        });
     });
 
     describe("#addSection", () => {
         it("should call the underlying document's add a Paragraph", () => {
             const file = new File();
-            const spy = sinon.spy(file.Document, "add");
+            const spy = sinon.spy(file.Document.View, "add");
             file.addSection({
                 children: [new Paragraph({})],
             });
@@ -187,19 +177,9 @@ describe("File", () => {
             expect(spy.called).to.equal(true);
         });
 
-        it("should add hyperlink child", () => {
-            const doc = new File();
-
-            doc.addSection({
-                children: [new HyperlinkRef("test")],
-            });
-
-            expect(doc.HyperlinkCache).to.deep.equal({});
-        });
-
         it("should call the underlying document's add when adding a Table", () => {
             const file = new File();
-            const spy = sinon.spy(file.Document, "add");
+            const spy = sinon.spy(file.Document.View, "add");
             file.addSection({
                 children: [
                     new Table({
@@ -221,7 +201,7 @@ describe("File", () => {
 
         it("should call the underlying document's add when adding an Image (paragraph)", () => {
             const file = new File();
-            const spy = sinon.spy(file.Document, "add");
+            const spy = sinon.spy(file.Document.View, "add");
             // tslint:disable-next-line:no-any
             file.addSection({
                 children: [new Paragraph("")],
@@ -234,7 +214,7 @@ describe("File", () => {
     describe("#addSection", () => {
         it("should call the underlying document's add", () => {
             const file = new File();
-            const spy = sinon.spy(file.Document, "add");
+            const spy = sinon.spy(file.Document.View, "add");
             file.addSection({
                 children: [new TableOfContents()],
             });
@@ -243,11 +223,16 @@ describe("File", () => {
         });
     });
 
-    describe("#HyperlinkCache", () => {
-        it("should initially have empty hyperlink cache", () => {
-            const file = new File();
+    describe("#addTrackRevisionsFeature", () => {
+        it("should call the underlying document's add", () => {
+            const file = new File({
+                features: {
+                    trackRevisions: true,
+                },
+            });
 
-            expect(file.HyperlinkCache).to.deep.equal({});
+            // tslint:disable-next-line: no-unused-expression no-string-literal
+            expect(file.Settings["trackRevisions"]).to.exist;
         });
     });
 

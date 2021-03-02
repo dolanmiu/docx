@@ -1,9 +1,8 @@
-import * as shortid from "shortid";
 import { AppProperties } from "./app-properties/app-properties";
 import { ContentTypes } from "./content-types/content-types";
 import { CoreProperties, IPropertiesOptions } from "./core-properties";
 import { CustomProperties, ICustomPropertyOptions } from "./custom-properties";
-import { Document } from "./document";
+import { DocumentWrapper } from "./document-wrapper";
 import {
     FooterReferenceType,
     HeaderReferenceType,
@@ -18,9 +17,8 @@ import { Footer, Header } from "./header";
 import { HeaderWrapper, IDocumentHeader } from "./header-wrapper";
 import { Media } from "./media";
 import { Numbering } from "./numbering";
-import { Hyperlink, HyperlinkRef, HyperlinkType, Paragraph } from "./paragraph";
+import { Paragraph } from "./paragraph";
 import { Relationships } from "./relationships";
-import { TargetModeType } from "./relationships/relationship/relationship";
 import { Settings } from "./settings";
 import { Styles } from "./styles";
 import { ExternalStylesFactory } from "./styles/external-styles-factory";
@@ -42,17 +40,16 @@ export interface ISectionOptions {
     readonly size?: IPageSizeAttributes;
     readonly margins?: IPageMarginAttributes;
     readonly properties?: SectionPropertiesOptions;
-    readonly children: (Paragraph | Table | TableOfContents | HyperlinkRef)[];
+    readonly children: (Paragraph | Table | TableOfContents)[];
 }
 
 export class File {
     // tslint:disable-next-line:readonly-keyword
     private currentRelationshipId: number = 1;
 
-    private readonly document: Document;
+    private readonly documentWrapper: DocumentWrapper;
     private readonly headers: IDocumentHeader[] = [];
     private readonly footers: IDocumentFooter[] = [];
-    private readonly docRelationships: Relationships;
     private readonly coreProperties: CoreProperties;
     private readonly numbering: Numbering;
     private readonly media: Media;
@@ -63,7 +60,6 @@ export class File {
     private readonly customProperties: CustomProperties;
     private readonly appProperties: AppProperties;
     private readonly styles: Styles;
-    private readonly hyperlinkCache: { readonly [key: string]: Hyperlink } = {};
 
     constructor(
         options: IPropertiesOptions = {
@@ -83,14 +79,16 @@ export class File {
                       config: [],
                   },
         );
-        this.docRelationships = new Relationships();
+        // this.documentWrapper.Relationships = new Relationships();
         this.fileRelationships = new Relationships();
         this.customProperties = new CustomProperties(customProperties);
         this.appProperties = new AppProperties();
         this.footNotes = new FootNotes();
         this.contentTypes = new ContentTypes();
-        this.document = new Document();
-        this.settings = new Settings();
+        this.documentWrapper = new DocumentWrapper({ background: options.background || {} });
+        this.settings = new Settings({
+            compatabilityModeVersion: options.compatabilityModeVersion,
+        });
 
         this.media = fileProperties.template && fileProperties.template.media ? fileProperties.template.media : new Media();
 
@@ -110,7 +108,7 @@ export class File {
             this.styles = stylesFactory.newInstance(options.externalStyles);
         } else if (options.styles) {
             const stylesFactory = new DefaultStylesFactory();
-            const defaultStyles = stylesFactory.newInstance();
+            const defaultStyles = stylesFactory.newInstance(options.styles.default);
             this.styles = new Styles({
                 ...defaultStyles,
                 ...options.styles,
@@ -135,16 +133,10 @@ export class File {
         }
 
         for (const section of sections) {
-            this.document.Body.addSection(section.properties ? section.properties : {});
+            this.documentWrapper.View.Body.addSection(section.properties ? section.properties : {});
 
             for (const child of section.children) {
-                if (child instanceof HyperlinkRef) {
-                    const hyperlink = this.hyperlinkCache[child.id];
-                    this.document.add(hyperlink);
-                    continue;
-                }
-
-                this.document.add(child);
+                this.documentWrapper.View.add(child);
             }
         }
 
@@ -154,25 +146,10 @@ export class File {
             }
         }
 
-        if (options.hyperlinks) {
-            const cache = {};
-
-            for (const key in options.hyperlinks) {
-                if (!options.hyperlinks[key]) {
-                    continue;
-                }
-
-                const hyperlinkRef = options.hyperlinks[key];
-
-                const hyperlink =
-                    hyperlinkRef.type === HyperlinkType.EXTERNAL
-                        ? this.createHyperlink(hyperlinkRef.link, hyperlinkRef.text)
-                        : this.createInternalHyperLink(key, hyperlinkRef.text);
-
-                cache[key] = hyperlink;
+        if (options.features) {
+            if (options.features.trackRevisions) {
+                this.settings.addTrackRevisions();
             }
-
-            this.hyperlinkCache = cache;
         }
     }
 
@@ -184,7 +161,7 @@ export class File {
         properties,
         children,
     }: ISectionOptions): void {
-        this.document.Body.addSection({
+        this.documentWrapper.View.Body.addSection({
             ...properties,
             headers: {
                 default: headers.default ? this.createHeader(headers.default) : this.createHeader(new Header()),
@@ -201,38 +178,14 @@ export class File {
         });
 
         for (const child of children) {
-            if (child instanceof HyperlinkRef) {
-                const hyperlink = this.hyperlinkCache[child.id];
-                this.document.add(hyperlink);
-                continue;
-            }
-
-            this.document.add(child);
+            this.documentWrapper.View.add(child);
         }
     }
 
     public verifyUpdateFields(): void {
-        if (this.document.getTablesOfContents().length) {
+        if (this.documentWrapper.View.getTablesOfContents().length) {
             this.settings.addUpdateFields();
         }
-    }
-
-    private createHyperlink(link: string, text: string = link): Hyperlink {
-        const hyperlink = new Hyperlink(text, shortid.generate().toLowerCase());
-        this.docRelationships.createRelationship(
-            hyperlink.linkId,
-            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink",
-            link,
-            TargetModeType.EXTERNAL,
-        );
-        return hyperlink;
-    }
-
-    private createInternalHyperLink(anchor: string, text: string = anchor): Hyperlink {
-        const hyperlink = new Hyperlink(text, shortid.generate().toLowerCase(), anchor);
-        // NOTE: unlike File#createHyperlink(), since the link is to an internal bookmark
-        // we don't need to create a new relationship.
-        return hyperlink;
     }
 
     private createHeader(header: Header): HeaderWrapper {
@@ -259,8 +212,8 @@ export class File {
 
     private addHeaderToDocument(header: HeaderWrapper, type: HeaderReferenceType = HeaderReferenceType.DEFAULT): void {
         this.headers.push({ header, type });
-        this.docRelationships.createRelationship(
-            header.Header.ReferenceId,
+        this.documentWrapper.Relationships.createRelationship(
+            header.View.ReferenceId,
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/header",
             `header${this.headers.length}.xml`,
         );
@@ -269,8 +222,8 @@ export class File {
 
     private addFooterToDocument(footer: FooterWrapper, type: FooterReferenceType = FooterReferenceType.DEFAULT): void {
         this.footers.push({ footer, type });
-        this.docRelationships.createRelationship(
-            footer.Footer.ReferenceId,
+        this.documentWrapper.Relationships.createRelationship(
+            footer.View.ReferenceId,
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer",
             `footer${this.footers.length}.xml`,
         );
@@ -299,30 +252,30 @@ export class File {
             "docProps/custom.xml",
         );
 
-        this.docRelationships.createRelationship(
+        this.documentWrapper.Relationships.createRelationship(
             this.currentRelationshipId++,
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles",
             "styles.xml",
         );
-        this.docRelationships.createRelationship(
+        this.documentWrapper.Relationships.createRelationship(
             this.currentRelationshipId++,
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering",
             "numbering.xml",
         );
-        this.docRelationships.createRelationship(
+        this.documentWrapper.Relationships.createRelationship(
             this.currentRelationshipId++,
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/footnotes",
             "footnotes.xml",
         );
-        this.docRelationships.createRelationship(
+        this.documentWrapper.Relationships.createRelationship(
             this.currentRelationshipId++,
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/settings",
             "settings.xml",
         );
     }
 
-    public get Document(): Document {
-        return this.document;
+    public get Document(): DocumentWrapper {
+        return this.documentWrapper;
     }
 
     public get Styles(): Styles {
@@ -339,10 +292,6 @@ export class File {
 
     public get Media(): Media {
         return this.media;
-    }
-
-    public get DocumentRelationships(): Relationships {
-        return this.docRelationships;
     }
 
     public get FileRelationships(): Relationships {
@@ -375,9 +324,5 @@ export class File {
 
     public get Settings(): Settings {
         return this.settings;
-    }
-
-    public get HyperlinkCache(): { readonly [key: string]: Hyperlink } {
-        return this.hyperlinkCache;
     }
 }

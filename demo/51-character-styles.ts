@@ -15,6 +15,14 @@ const doc = new Document({
                     italics: true,
                 },
             },
+            {
+                id: "strong",
+                name: "Strong",
+                basedOn: "Normal",
+                run: {
+                    bold: true,
+                },
+            },
         ],
     },
 });
@@ -26,6 +34,18 @@ doc.addSection({
                 new TextRun({
                     text: "Foo bar",
                     style: "myRedStyle",
+                }),
+            ],
+        }),
+        new Paragraph({
+            children: [
+                new TextRun({
+                    text: "First Word",
+                    style: "strong",
+                }),
+                new TextRun({
+                    text:
+                        " - Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
                 }),
             ],
         }),

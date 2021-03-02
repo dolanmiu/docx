@@ -51,19 +51,6 @@ const table = new Table({
 });
 ```
 
-### Pagination
-
-#### Prevent row pagination
-
-To prevent breaking contents of a row across multiple pages, call `cantSplit`:
-
-```ts
-const table = new Table({
-    rows: [],
-    cantSplit: true,
-});
-```
-
 ## Table Row
 
 A table consists of multiple `table rows`. Table rows have a list of `children` which accepts a list of `table cells` explained below. You can create a simple `table row` like so:
@@ -103,7 +90,7 @@ Here is a list of options you can add to the `table row`:
 | children    | `Array<TableCell>`                    | Required |
 | cantSplit   | `boolean`                             | Optional |
 | tableHeader | `boolean`                             | Optional |
-| height      | `{ value: number, rule: HeightRule }` | Optional |
+| height      | `{ height: number, rule: HeightRule }` | Optional |
 
 ### Repeat row
 
@@ -113,6 +100,19 @@ If a table is paginated on multiple pages, it is possible to repeat a row at the
 const row = new TableRow({
     ...,
     tableHeader: true,
+});
+```
+
+### Pagination
+
+#### Prevent row pagination
+
+To prevent breaking contents of a row across multiple pages, call `cantSplit`:
+
+```ts
+const row = new Row({
+    ...,
+    cantSplit: true,
 });
 ```
 

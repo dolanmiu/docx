@@ -1,7 +1,7 @@
 // Numbering and bullet points example
 // Import from 'docx' rather than '../build' if you install from npm
 import * as fs from "fs";
-import { AlignmentType, Document, Packer, Paragraph } from "../build";
+import { AlignmentType, convertInchesToTwip, Document, LevelFormat, Packer, Paragraph } from "../build";
 
 const doc = new Document({
     numbering: {
@@ -11,40 +11,40 @@ const doc = new Document({
                 levels: [
                     {
                         level: 0,
-                        format: "upperRoman",
+                        format: LevelFormat.UPPER_ROMAN,
                         text: "%1",
                         alignment: AlignmentType.START,
                         style: {
                             paragraph: {
-                                indent: { left: 720, hanging: 260 },
+                                indent: { left: convertInchesToTwip(0.5), hanging: convertInchesToTwip(0.18) },
                             },
                         },
                     },
                     {
                         level: 1,
-                        format: "decimal",
+                        format: LevelFormat.DECIMAL,
                         text: "%2.",
                         alignment: AlignmentType.START,
                         style: {
                             paragraph: {
-                                indent: { left: 1440, hanging: 980 },
+                                indent: { left: convertInchesToTwip(1), hanging: convertInchesToTwip(0.68) },
                             },
                         },
                     },
                     {
                         level: 2,
-                        format: "lowerLetter",
+                        format: LevelFormat.LOWER_LETTER,
                         text: "%3)",
                         alignment: AlignmentType.START,
                         style: {
                             paragraph: {
-                                indent: { left: 2160, hanging: 1700 },
+                                indent: { left: convertInchesToTwip(1.5), hanging: convertInchesToTwip(1.18) },
                             },
                         },
                     },
                     {
                         level: 3,
-                        format: "upperLetter",
+                        format: LevelFormat.UPPER_LETTER,
                         text: "%4)",
                         alignment: AlignmentType.START,
                         style: {

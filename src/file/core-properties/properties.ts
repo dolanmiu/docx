@@ -1,21 +1,11 @@
 import { XmlComponent } from "file/xml-components";
+import { IDocumentBackgroundOptions } from "../document";
 
 import { DocumentAttributes } from "../document/document-attributes";
 import { INumberingOptions } from "../numbering";
-import { HyperlinkType, Paragraph } from "../paragraph";
+import { Paragraph } from "../paragraph";
 import { IStylesOptions } from "../styles";
 import { Created, Creator, Description, Keywords, LastModifiedBy, Modified, Revision, Subject, Title } from "./components";
-
-export interface IInternalHyperlinkDefinition {
-    readonly text: string;
-    readonly type: HyperlinkType.INTERNAL;
-}
-
-export interface IExternalHyperlinkDefinition {
-    readonly link: string;
-    readonly text: string;
-    readonly type: HyperlinkType.EXTERNAL;
-}
 
 export interface IPropertiesOptions {
     readonly title?: string;
@@ -29,9 +19,11 @@ export interface IPropertiesOptions {
     readonly styles?: IStylesOptions;
     readonly numbering?: INumberingOptions;
     readonly footnotes?: Paragraph[];
-    readonly hyperlinks?: {
-        readonly [key: string]: IInternalHyperlinkDefinition | IExternalHyperlinkDefinition;
+    readonly background?: IDocumentBackgroundOptions;
+    readonly features?: {
+        readonly trackRevisions?: boolean;
     };
+    readonly compatabilityModeVersion?: number;
 }
 
 export class CoreProperties extends XmlComponent {

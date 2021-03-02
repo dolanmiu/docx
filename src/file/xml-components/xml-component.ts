@@ -1,4 +1,4 @@
-import { File } from "../file";
+import { IViewWrapper } from "../document-wrapper";
 import { BaseXmlComponent } from "./base";
 import { IXmlableObject } from "./xmlable-object";
 
@@ -13,7 +13,7 @@ export abstract class XmlComponent extends BaseXmlComponent {
         this.root = new Array<BaseXmlComponent | string>();
     }
 
-    public prepForXml(file?: File): IXmlableObject | undefined {
+    public prepForXml(file?: IViewWrapper): IXmlableObject | undefined {
         const children = this.root
             .filter((c) => {
                 if (c instanceof BaseXmlComponent) {

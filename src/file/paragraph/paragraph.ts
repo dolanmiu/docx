@@ -1,25 +1,35 @@
 // http://officeopenxml.com/WPparagraph.php
+import * as shortid from "shortid";
+
 import { FootnoteReferenceRun } from "file/footnotes/footnote/run/reference-run";
 import { IXmlableObject, XmlComponent } from "file/xml-components";
 
-import { File } from "../file";
+import { IViewWrapper } from "../document-wrapper";
+import { TargetModeType } from "../relationships/relationship/relationship";
+import { DeletedTextRun, InsertedTextRun } from "../track-revision";
 import { PageBreak } from "./formatting/page-break";
-import { Bookmark, HyperlinkRef } from "./links";
+import { Bookmark, ConcreteHyperlink, ExternalHyperlink, InternalHyperlink } from "./links";
+import { Math } from "./math";
 import { IParagraphPropertiesOptions, ParagraphProperties } from "./properties";
 import { PictureRun, Run, SequentialIdentifier, SymbolRun, TextRun } from "./run";
 
+export type ParagraphChild =
+    | TextRun
+    | PictureRun
+    | SymbolRun
+    | Bookmark
+    | PageBreak
+    | SequentialIdentifier
+    | FootnoteReferenceRun
+    | InternalHyperlink
+    | ExternalHyperlink
+    | InsertedTextRun
+    | DeletedTextRun
+    | Math;
+
 export interface IParagraphOptions extends IParagraphPropertiesOptions {
     readonly text?: string;
-    readonly children?: (
-        | TextRun
-        | PictureRun
-        | SymbolRun
-        | Bookmark
-        | PageBreak
-        | SequentialIdentifier
-        | FootnoteReferenceRun
-        | HyperlinkRef
-    )[];
+    readonly children?: ParagraphChild[];
 }
 
 export class Paragraph extends XmlComponent {
@@ -64,11 +74,18 @@ export class Paragraph extends XmlComponent {
         }
     }
 
-    public prepForXml(file: File): IXmlableObject | undefined {
+    public prepForXml(file: IViewWrapper): IXmlableObject | undefined {
         for (const element of this.root) {
-            if (element instanceof HyperlinkRef) {
+            if (element instanceof ExternalHyperlink) {
                 const index = this.root.indexOf(element);
-                this.root[index] = file.HyperlinkCache[element.id];
+                const concreteHyperlink = new ConcreteHyperlink(element.options.child, shortid.generate().toLowerCase());
+                file.Relationships.createRelationship(
+                    concreteHyperlink.linkId,
+                    "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink",
+                    element.options.link,
+                    TargetModeType.EXTERNAL,
+                );
+                this.root[index] = concreteHyperlink;
             }
         }
 

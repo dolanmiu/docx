@@ -5,9 +5,12 @@ import { stub } from "sinon";
 import { Formatter } from "export/formatter";
 import { EMPTY_OBJECT } from "file/xml-components";
 
+import { IViewWrapper } from "../document-wrapper";
+import { ShadingType } from "../table/shading";
 import { AlignmentType, HeadingLevel, LeaderType, PageBreak, TabStopPosition, TabStopType } from "./formatting";
-import { Bookmark } from "./links";
+import { Bookmark, ExternalHyperlink } from "./links";
 import { Paragraph } from "./paragraph";
+import { TextRun } from "./run";
 
 describe("Paragraph", () => {
     describe("#constructor()", () => {
@@ -754,6 +757,84 @@ describe("Paragraph", () => {
                 "w:p": [
                     {
                         "w:pPr": [{ "w:outlineLvl": { _attr: { "w:val": 0 } } }],
+                    },
+                ],
+            });
+        });
+    });
+
+    describe("#shading", () => {
+        it("should set shading to the given value", () => {
+            const paragraph = new Paragraph({
+                shading: {
+                    type: ShadingType.REVERSE_DIAGONAL_STRIPE,
+                    color: "00FFFF",
+                    fill: "FF0000",
+                },
+            });
+            const tree = new Formatter().format(paragraph);
+            expect(tree).to.deep.equal({
+                "w:p": [
+                    {
+                        "w:pPr": [
+                            {
+                                "w:shd": {
+                                    _attr: {
+                                        "w:color": "00FFFF",
+                                        "w:fill": "FF0000",
+                                        "w:val": "reverseDiagStripe",
+                                    },
+                                },
+                            },
+                        ],
+                    },
+                ],
+            });
+        });
+    });
+
+    describe("#prepForXml", () => {
+        it("should set Internal Hyperlink", () => {
+            const paragraph = new Paragraph({
+                children: [
+                    new ExternalHyperlink({
+                        child: new TextRun("test"),
+                        link: "http://www.google.com",
+                    }),
+                ],
+            });
+            const fileMock = ({
+                Relationships: {
+                    createRelationship: () => ({}),
+                },
+            } as unknown) as IViewWrapper;
+            paragraph.prepForXml(fileMock);
+            const tree = new Formatter().format(paragraph);
+            expect(tree).to.deep.equal({
+                "w:p": [
+                    {
+                        "w:hyperlink": [
+                            {
+                                _attr: {
+                                    "r:id": "rIdtest-unique-id",
+                                    "w:history": 1,
+                                },
+                            },
+                            {
+                                "w:r": [
+                                    {
+                                        "w:t": [
+                                            {
+                                                _attr: {
+                                                    "xml:space": "preserve",
+                                                },
+                                            },
+                                            "test",
+                                        ],
+                                    },
+                                ],
+                            },
+                        ],
                     },
                 ],
             });

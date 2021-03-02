@@ -7,7 +7,7 @@ import { AlignmentType, EmphasisMarkType, TabStopPosition } from "../paragraph";
 import { UnderlineType } from "../paragraph/run/underline";
 import { ShadingType } from "../table";
 import { AbstractNumbering } from "./abstract-numbering";
-import { LevelSuffix } from "./level";
+import { LevelFormat, LevelSuffix } from "./level";
 
 describe("AbstractNumbering", () => {
     it("stores its ID at its .id property", () => {
@@ -20,7 +20,7 @@ describe("AbstractNumbering", () => {
             const abstractNumbering = new AbstractNumbering(1, [
                 {
                     level: 3,
-                    format: "lowerLetter",
+                    format: LevelFormat.LOWER_LETTER,
                     text: "%1)",
                     alignment: AlignmentType.END,
                 },
@@ -29,7 +29,7 @@ describe("AbstractNumbering", () => {
             expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({ _attr: { "w:ilvl": 3, "w15:tentative": 1 } });
             expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({ "w:start": { _attr: { "w:val": 1 } } });
             expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({ "w:lvlJc": { _attr: { "w:val": "end" } } });
-            expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({ "w:numFmt": { _attr: { "w:val": "lowerLetter" } } });
+            expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({ "w:numFmt": { _attr: { "w:val": LevelFormat.LOWER_LETTER } } });
             expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({ "w:lvlText": { _attr: { "w:val": "%1)" } } });
         });
 
@@ -37,7 +37,7 @@ describe("AbstractNumbering", () => {
             const abstractNumbering = new AbstractNumbering(1, [
                 {
                     level: 3,
-                    format: "lowerLetter",
+                    format: LevelFormat.LOWER_LETTER,
                     text: "%1)",
                 },
             ]);
@@ -45,7 +45,7 @@ describe("AbstractNumbering", () => {
             expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({ _attr: { "w:ilvl": 3, "w15:tentative": 1 } });
             expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({ "w:start": { _attr: { "w:val": 1 } } });
             expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({ "w:lvlJc": { _attr: { "w:val": "start" } } });
-            expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({ "w:numFmt": { _attr: { "w:val": "lowerLetter" } } });
+            expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({ "w:numFmt": { _attr: { "w:val": LevelFormat.LOWER_LETTER } } });
             expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({ "w:lvlText": { _attr: { "w:val": "%1)" } } });
         });
 
@@ -53,7 +53,7 @@ describe("AbstractNumbering", () => {
             const abstractNumbering = new AbstractNumbering(1, [
                 {
                     level: 3,
-                    format: "lowerLetter",
+                    format: LevelFormat.LOWER_LETTER,
                     text: "%1)",
                     alignment: AlignmentType.END,
                     suffix: LevelSuffix.SPACE,
@@ -68,7 +68,7 @@ describe("AbstractNumbering", () => {
                 const abstractNumbering = new AbstractNumbering(1, [
                     {
                         level: 0,
-                        format: "lowerRoman",
+                        format: LevelFormat.LOWER_ROMAN,
                         text: "%0.",
                         style: {
                             paragraph: {
@@ -87,7 +87,7 @@ describe("AbstractNumbering", () => {
                 const abstractNumbering = new AbstractNumbering(1, [
                     {
                         level: 0,
-                        format: "lowerRoman",
+                        format: LevelFormat.LOWER_ROMAN,
                         text: "%0.",
                         style: {
                             paragraph: {
@@ -106,7 +106,7 @@ describe("AbstractNumbering", () => {
                 const abstractNumbering = new AbstractNumbering(1, [
                     {
                         level: 0,
-                        format: "lowerRoman",
+                        format: LevelFormat.LOWER_ROMAN,
                         text: "%0.",
                         style: {
                             paragraph: {
@@ -125,7 +125,7 @@ describe("AbstractNumbering", () => {
                 const abstractNumbering = new AbstractNumbering(1, [
                     {
                         level: 0,
-                        format: "lowerRoman",
+                        format: LevelFormat.LOWER_ROMAN,
                         text: "%0.",
                         style: {
                             paragraph: {
@@ -144,7 +144,7 @@ describe("AbstractNumbering", () => {
                 const abstractNumbering = new AbstractNumbering(1, [
                     {
                         level: 0,
-                        format: "lowerRoman",
+                        format: LevelFormat.LOWER_ROMAN,
                         text: "%0.",
                         style: {
                             paragraph: {
@@ -163,7 +163,7 @@ describe("AbstractNumbering", () => {
                 const abstractNumbering = new AbstractNumbering(1, [
                     {
                         level: 0,
-                        format: "lowerRoman",
+                        format: LevelFormat.LOWER_ROMAN,
                         text: "%0.",
                         style: {
                             paragraph: {
@@ -182,7 +182,7 @@ describe("AbstractNumbering", () => {
                 const abstractNumbering = new AbstractNumbering(1, [
                     {
                         level: 0,
-                        format: "lowerRoman",
+                        format: LevelFormat.LOWER_ROMAN,
                         text: "%0.",
                         style: {
                             paragraph: {
@@ -216,7 +216,7 @@ describe("AbstractNumbering", () => {
                 const abstractNumbering = new AbstractNumbering(1, [
                     {
                         level: 0,
-                        format: "lowerRoman",
+                        format: LevelFormat.LOWER_ROMAN,
                         text: "%0.",
                         style: {
                             paragraph: {
@@ -239,7 +239,7 @@ describe("AbstractNumbering", () => {
                 const abstractNumbering = new AbstractNumbering(1, [
                     {
                         level: 0,
-                        format: "lowerRoman",
+                        format: LevelFormat.LOWER_ROMAN,
                         text: "%0.",
                         style: {
                             paragraph: {
@@ -262,7 +262,7 @@ describe("AbstractNumbering", () => {
                 const abstractNumbering = new AbstractNumbering(1, [
                     {
                         level: 0,
-                        format: "lowerRoman",
+                        format: LevelFormat.LOWER_ROMAN,
                         text: "%0.",
                         style: {
                             paragraph: {
@@ -281,7 +281,7 @@ describe("AbstractNumbering", () => {
                 const abstractNumbering = new AbstractNumbering(1, [
                     {
                         level: 0,
-                        format: "lowerRoman",
+                        format: LevelFormat.LOWER_ROMAN,
                         text: "%0.",
                         style: {
                             paragraph: {
@@ -324,7 +324,7 @@ describe("AbstractNumbering", () => {
                     const abstractNumbering = new AbstractNumbering(1, [
                         {
                             level: 0,
-                            format: "lowerRoman",
+                            format: LevelFormat.LOWER_ROMAN,
                             text: "%0.",
                             style: {
                                 run: { size, sizeComplexScript },
@@ -340,7 +340,7 @@ describe("AbstractNumbering", () => {
                 const abstractNumbering = new AbstractNumbering(1, [
                     {
                         level: 0,
-                        format: "lowerRoman",
+                        format: LevelFormat.LOWER_ROMAN,
                         text: "%0.",
                         style: {
                             run: {
@@ -359,7 +359,7 @@ describe("AbstractNumbering", () => {
                 const abstractNumbering = new AbstractNumbering(1, [
                     {
                         level: 0,
-                        format: "lowerRoman",
+                        format: LevelFormat.LOWER_ROMAN,
                         text: "%0.",
                         style: {
                             run: {
@@ -378,7 +378,7 @@ describe("AbstractNumbering", () => {
                 const abstractNumbering = new AbstractNumbering(1, [
                     {
                         level: 0,
-                        format: "lowerRoman",
+                        format: LevelFormat.LOWER_ROMAN,
                         text: "%0.",
                         style: {
                             run: {
@@ -398,7 +398,7 @@ describe("AbstractNumbering", () => {
                 const abstractNumbering = new AbstractNumbering(1, [
                     {
                         level: 0,
-                        format: "lowerRoman",
+                        format: LevelFormat.LOWER_ROMAN,
                         text: "%0.",
                         style: {
                             run: {
@@ -417,7 +417,7 @@ describe("AbstractNumbering", () => {
                 const abstractNumbering = new AbstractNumbering(1, [
                     {
                         level: 0,
-                        format: "lowerRoman",
+                        format: LevelFormat.LOWER_ROMAN,
                         text: "%0.",
                         style: {
                             run: {
@@ -436,7 +436,7 @@ describe("AbstractNumbering", () => {
                 const abstractNumbering = new AbstractNumbering(1, [
                     {
                         level: 0,
-                        format: "lowerRoman",
+                        format: LevelFormat.LOWER_ROMAN,
                         text: "%0.",
                         style: {
                             run: {
@@ -455,7 +455,7 @@ describe("AbstractNumbering", () => {
                 const abstractNumbering = new AbstractNumbering(1, [
                     {
                         level: 0,
-                        format: "lowerRoman",
+                        format: LevelFormat.LOWER_ROMAN,
                         text: "%0.",
                         style: {
                             run: {
@@ -485,7 +485,7 @@ describe("AbstractNumbering", () => {
                 const abstractNumbering = new AbstractNumbering(1, [
                     {
                         level: 0,
-                        format: "lowerRoman",
+                        format: LevelFormat.LOWER_ROMAN,
                         text: "%0.",
                         style: {
                             run: {
@@ -533,7 +533,7 @@ describe("AbstractNumbering", () => {
                     const abstractNumbering = new AbstractNumbering(1, [
                         {
                             level: 0,
-                            format: "lowerRoman",
+                            format: LevelFormat.LOWER_ROMAN,
                             text: "%0.",
                             style: {
                                 run: { bold, boldComplexScript },
@@ -566,7 +566,7 @@ describe("AbstractNumbering", () => {
                     const abstractNumbering = new AbstractNumbering(1, [
                         {
                             level: 0,
-                            format: "lowerRoman",
+                            format: LevelFormat.LOWER_ROMAN,
                             text: "%0.",
                             style: {
                                 run: { italics, italicsComplexScript },
@@ -604,7 +604,7 @@ describe("AbstractNumbering", () => {
                     const abstractNumbering = new AbstractNumbering(1, [
                         {
                             level: 0,
-                            format: "lowerRoman",
+                            format: LevelFormat.LOWER_ROMAN,
                             text: "%0.",
                             style: {
                                 run: { highlight, highlightComplexScript },
@@ -682,7 +682,7 @@ describe("AbstractNumbering", () => {
                     const abstractNumbering = new AbstractNumbering(1, [
                         {
                             level: 0,
-                            format: "lowerRoman",
+                            format: LevelFormat.LOWER_ROMAN,
                             text: "%0.",
                             style: {
                                 run: { shadow, shading, shadingComplexScript },
@@ -699,7 +699,7 @@ describe("AbstractNumbering", () => {
                     const abstractNumbering = new AbstractNumbering(1, [
                         {
                             level: 0,
-                            format: "lowerRoman",
+                            format: LevelFormat.LOWER_ROMAN,
                             text: "%0.",
                             style: {
                                 run: {
@@ -718,7 +718,7 @@ describe("AbstractNumbering", () => {
                     const abstractNumbering = new AbstractNumbering(1, [
                         {
                             level: 0,
-                            format: "lowerRoman",
+                            format: LevelFormat.LOWER_ROMAN,
                             text: "%0.",
                             style: {
                                 run: {
@@ -739,7 +739,7 @@ describe("AbstractNumbering", () => {
                     const abstractNumbering = new AbstractNumbering(1, [
                         {
                             level: 0,
-                            format: "lowerRoman",
+                            format: LevelFormat.LOWER_ROMAN,
                             text: "%0.",
                             style: {
                                 run: {
@@ -763,7 +763,7 @@ describe("AbstractNumbering", () => {
                     const abstractNumbering = new AbstractNumbering(1, [
                         {
                             level: 0,
-                            format: "lowerRoman",
+                            format: LevelFormat.LOWER_ROMAN,
                             text: "%0.",
                             style: {
                                 run: {
@@ -782,7 +782,7 @@ describe("AbstractNumbering", () => {
                     const abstractNumbering = new AbstractNumbering(1, [
                         {
                             level: 0,
-                            format: "lowerRoman",
+                            format: LevelFormat.LOWER_ROMAN,
                             text: "%0.",
                             style: {
                                 run: {
@@ -804,7 +804,7 @@ describe("AbstractNumbering", () => {
                 const abstractNumbering = new AbstractNumbering(1, [
                     {
                         level: 0,
-                        format: "lowerRoman",
+                        format: LevelFormat.LOWER_ROMAN,
                         text: "%0.",
                         style: {
                             run: {

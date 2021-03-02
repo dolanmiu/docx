@@ -77,40 +77,78 @@ const text = new TextRun({
 });
 ```
 
+### Shading and Highlighting
+
+```ts
+const text = new TextRun({
+    text: "shading",
+    shading: {
+        type: ShadingType.REVERSE_DIAGONAL_STRIPE,
+        color: "00FFFF",
+        fill: "FF0000",
+    },
+});
+```
+
+```ts
+const text = new TextRun({
+    text: "highlighting",
+    highlight: "yellow",
+});
+```
+
 ### Strike through
 
 ```ts
-text.strike();
+const text = new TextRun({
+    text: "strike",
+    strike: true,
+});
 ```
 
 ### Double strike through
 
 ```ts
-text.doubleStrike();
+const text = new TextRun({
+    text: "doubleStrike",
+    doubleStrike: true,
+});
 ```
 
 ### Superscript
 
 ```ts
-text.superScript();
+const text = new TextRun({
+    text: "superScript",
+    superScript: true,
+});
 ```
 
 ### Subscript
 
 ```ts
-text.subScript();
+const text = new TextRun({
+    text: "subScript",
+    subScript: true,
+});
 ```
 
 ### All Capitals
 
 ```ts
-text.allCaps();
+const text = new TextRun({
+    text: "allCaps",
+    allCaps: true,
+});
 ```
 
 ### Small Capitals
 
 ```ts
-text.smallCaps();
+const text = new TextRun({
+    text: "smallCaps",
+    smallCaps: true,
+});
 ```
 
 ## Break
@@ -118,13 +156,17 @@ text.smallCaps();
 Sometimes you would want to put text underneath another line of text but inside the same paragraph.
 
 ```ts
-text.break();
+const text = new TextRun({
+    text: "break",
+    break: 1,
+});
 ```
 
-## Chaining
-
-What if you want to create a paragraph which is **_bold_** and **_italic_**?
+Adding two breaks:
 
 ```ts
-paragraph.bold().italics();
+const text = new TextRun({
+    text: "break",
+    break: 2,
+});
 ```
