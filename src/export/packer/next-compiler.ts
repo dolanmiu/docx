@@ -23,6 +23,7 @@ interface IXmlifyedFileMapping {
     readonly HeaderRelationships: IXmlifyedFile[];
     readonly FooterRelationships: IXmlifyedFile[];
     readonly ContentTypes: IXmlifyedFile;
+    readonly CustomProperties: IXmlifyedFile;
     readonly AppProperties: IXmlifyedFile;
     readonly FootNotes: IXmlifyedFile;
     readonly Settings: IXmlifyedFile;
@@ -178,6 +179,10 @@ export class Compiler {
             ContentTypes: {
                 data: xml(this.formatter.format(file.ContentTypes, file.Document), prettify),
                 path: "[Content_Types].xml",
+            },
+            CustomProperties: {
+                data: xml(this.formatter.format(file.CustomProperties, file.Document), prettify),
+                path: "docProps/custom.xml",
             },
             AppProperties: {
                 data: xml(this.formatter.format(file.AppProperties, file.Document), prettify),
