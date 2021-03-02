@@ -181,7 +181,7 @@ export class Compiler {
                 path: "[Content_Types].xml",
             },
             CustomProperties: {
-                data: xml(this.formatter.format(file.CustomProperties, file), prettify),
+                data: xml(this.formatter.format(file.CustomProperties, file.Document), prettify),
                 path: "docProps/custom.xml",
             },
             AppProperties: {
