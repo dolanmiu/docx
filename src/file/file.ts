@@ -12,7 +12,7 @@ import {
 import { IPageMarginAttributes } from "./document/body/section-properties/page-margin/page-margin-attributes";
 import { IFileProperties } from "./file-properties";
 import { FooterWrapper, IDocumentFooter } from "./footer-wrapper";
-import { FootNotes } from "./footnotes";
+import { FootnotesWrapper } from "./footnotes-wrapper";
 import { Footer, Header } from "./header";
 import { HeaderWrapper, IDocumentHeader } from "./header-wrapper";
 import { Media } from "./media";
@@ -54,7 +54,7 @@ export class File {
     private readonly numbering: Numbering;
     private readonly media: Media;
     private readonly fileRelationships: Relationships;
-    private readonly footNotes: FootNotes;
+    private readonly footnotesWrapper: FootnotesWrapper;
     private readonly settings: Settings;
     private readonly contentTypes: ContentTypes;
     private readonly customProperties: CustomProperties;
@@ -79,11 +79,10 @@ export class File {
                       config: [],
                   },
         );
-        // this.documentWrapper.Relationships = new Relationships();
         this.fileRelationships = new Relationships();
         this.customProperties = new CustomProperties(customProperties);
         this.appProperties = new AppProperties();
-        this.footNotes = new FootNotes();
+        this.footnotesWrapper = new FootnotesWrapper();
         this.contentTypes = new ContentTypes();
         this.documentWrapper = new DocumentWrapper({ background: options.background || {} });
         this.settings = new Settings({
@@ -142,7 +141,7 @@ export class File {
 
         if (options.footnotes) {
             for (const paragraph of options.footnotes) {
-                this.footNotes.createFootNote(paragraph);
+                this.footnotesWrapper.View.createFootNote(paragraph);
             }
         }
 
@@ -318,8 +317,8 @@ export class File {
         return this.appProperties;
     }
 
-    public get FootNotes(): FootNotes {
-        return this.footNotes;
+    public get FootNotes(): FootnotesWrapper {
+        return this.footnotesWrapper;
     }
 
     public get Settings(): Settings {

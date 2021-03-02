@@ -242,7 +242,7 @@ describe("File", () => {
                 footnotes: [new Paragraph("hello")],
             });
 
-            const tree = new Formatter().format(wrapper.FootNotes);
+            const tree = new Formatter().format(wrapper.FootNotes.View);
 
             expect(tree).to.deep.equal({
                 "w:footnotes": [

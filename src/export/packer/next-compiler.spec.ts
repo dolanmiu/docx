@@ -30,6 +30,7 @@ describe("Compiler", () => {
             expect(fileNames).to.include("docProps/app.xml");
             expect(fileNames).to.include("word/numbering.xml");
             expect(fileNames).to.include("word/footnotes.xml");
+            expect(fileNames).to.include("word/_rels/footnotes.xml.rels");
             expect(fileNames).to.include("word/settings.xml");
             expect(fileNames).to.include("word/_rels/document.xml.rels");
             expect(fileNames).to.include("[Content_Types].xml");

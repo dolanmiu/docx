@@ -1,11 +1,11 @@
 import { expect } from "chai";
 
-import { DocumentWrapper } from "./document-wrapper";
+import { FootnotesWrapper } from "./footnotes-wrapper";
 
-describe("DocumentWrapper", () => {
+describe("FootnotesWrapper", () => {
     describe("#constructor", () => {
         it("should create", () => {
-            const file = new DocumentWrapper({ background: {} });
+            const file = new FootnotesWrapper();
 
             // tslint:disable-next-line: no-unused-expression
             expect(file.View).to.be.ok;

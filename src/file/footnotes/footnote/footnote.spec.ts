@@ -7,7 +7,10 @@ import { Footnote, FootnoteType } from "./footnote";
 describe("Footnote", () => {
     describe("#constructor", () => {
         it("should create a footnote with a footnote type", () => {
-            const footnote = new Footnote(1, FootnoteType.SEPERATOR);
+            const footnote = new Footnote({
+                id: 1,
+                type: FootnoteType.SEPERATOR,
+            });
             const tree = new Formatter().format(footnote);
 
             expect(Object.keys(tree)).to.deep.equal(["w:footnote"]);
@@ -15,7 +18,9 @@ describe("Footnote", () => {
         });
 
         it("should create a footnote without a footnote type", () => {
-            const footnote = new Footnote(1);
+            const footnote = new Footnote({
+                id: 1,
+            });
             const tree = new Formatter().format(footnote);
 
             expect(Object.keys(tree)).to.deep.equal(["w:footnote"]);
