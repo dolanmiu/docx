@@ -36,11 +36,10 @@ export interface ITableOptions {
     readonly layout?: TableLayoutType;
     readonly borders?: ITableBordersOptions;
     readonly alignment?: AlignmentType;
+    readonly visuallyRightToLeft?: boolean;
 }
 
 export class Table extends XmlComponent {
-    private readonly properties: TableProperties;
-
     constructor({
         rows,
         width,
@@ -50,27 +49,38 @@ export class Table extends XmlComponent {
         layout,
         borders,
         alignment,
+        visuallyRightToLeft,
     }: ITableOptions) {
         super("w:tbl");
-        this.properties = new TableProperties();
-        this.root.push(this.properties);
 
-        if (borders) {
-            this.properties.setBorder(borders);
-        } else {
-            this.properties.setBorder({});
-        }
-
-        if (width) {
-            this.properties.setWidth(width.size, width.type);
-        } else {
-            this.properties.setWidth(100);
-        }
-
-        this.properties.CellMargin.addBottomMargin(bottom || 0, marginUnitType);
-        this.properties.CellMargin.addTopMargin(top || 0, marginUnitType);
-        this.properties.CellMargin.addLeftMargin(left || 0, marginUnitType);
-        this.properties.CellMargin.addRightMargin(right || 0, marginUnitType);
+        this.root.push(
+            new TableProperties({
+                borders: borders ?? {},
+                width: width ?? { size: 100 },
+                float,
+                layout,
+                alignment,
+                cellMargin: {
+                    bottom: {
+                        value: bottom || 0,
+                        type: marginUnitType,
+                    },
+                    top: {
+                        value: top || 0,
+                        type: marginUnitType,
+                    },
+                    left: {
+                        value: left || 0,
+                        type: marginUnitType,
+                    },
+                    right: {
+                        value: right || 0,
+                        type: marginUnitType,
+                    },
+                },
+                visuallyRightToLeft,
+            }),
+        );
 
         this.root.push(new TableGrid(columnWidths));
 
@@ -101,17 +111,5 @@ export class Table extends XmlComponent {
                 columnIndex += cell.options.columnSpan || 1;
             });
         });
-
-        if (float) {
-            this.properties.setTableFloatProperties(float);
-        }
-
-        if (layout) {
-            this.properties.setLayout(layout);
-        }
-
-        if (alignment) {
-            this.properties.setAlignment(alignment);
-        }
     }
 }
