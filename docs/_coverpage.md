@@ -4,7 +4,7 @@
 
 -   Simple, declarative API
 -   50+ usage examples
--   Battle tested, mature, 95%+ coverage
+-   Battle tested, mature, 97%+ coverage
 
 [GitHub](https://github.com/dolanmiu/docx)
 [Get Started](#Welcome)
