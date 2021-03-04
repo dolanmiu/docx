@@ -5,51 +5,52 @@ import { Alignment, AlignmentType } from "../../paragraph";
 import { ITableShadingAttributesProperties, TableShading } from "../shading";
 import { WidthType } from "../table-cell";
 import { ITableBordersOptions, TableBorders } from "./table-borders";
-import { TableCellMargin } from "./table-cell-margin";
+import { ITableCellMarginOptions, TableCellMargin } from "./table-cell-margin";
 import { ITableFloatOptions, TableFloatProperties } from "./table-float-properties";
 import { TableLayout, TableLayoutType } from "./table-layout";
 import { PreferredTableWidth } from "./table-width";
 
-export class TableProperties extends IgnoreIfEmptyXmlComponent {
-    private readonly cellMargin: TableCellMargin;
+export interface ITablePropertiesOptions {
+    readonly width?: {
+        readonly size: number;
+        readonly type?: WidthType;
+    };
+    readonly layout?: TableLayoutType;
+    readonly borders?: ITableBordersOptions;
+    readonly float?: ITableFloatOptions;
+    readonly shading?: ITableShadingAttributesProperties;
+    readonly alignment?: AlignmentType;
+    readonly cellMargin?: ITableCellMarginOptions;
+}
 
-    constructor() {
+export class TableProperties extends IgnoreIfEmptyXmlComponent {
+    constructor(options: ITablePropertiesOptions) {
         super("w:tblPr");
 
-        this.cellMargin = new TableCellMargin();
-        this.root.push(this.cellMargin);
-    }
+        this.root.push(new TableCellMargin(options.cellMargin || {}));
 
-    public setWidth(width: number, type: WidthType = WidthType.AUTO): TableProperties {
-        this.root.push(new PreferredTableWidth(type, width));
-        return this;
-    }
+        if (options.borders) {
+            this.root.push(new TableBorders(options.borders));
+        }
 
-    public setLayout(type: TableLayoutType): void {
-        this.root.push(new TableLayout(type));
-    }
+        if (options.width) {
+            this.root.push(new PreferredTableWidth(options.width.type, options.width.size));
+        }
 
-    public setBorder(borderOptions: ITableBordersOptions): TableProperties {
-        this.root.push(new TableBorders(borderOptions));
-        return this;
-    }
+        if (options.float) {
+            this.root.push(new TableFloatProperties(options.float));
+        }
 
-    public get CellMargin(): TableCellMargin {
-        return this.cellMargin;
-    }
+        if (options.layout) {
+            this.root.push(new TableLayout(options.layout));
+        }
 
-    public setTableFloatProperties(tableFloatOptions: ITableFloatOptions): TableProperties {
-        this.root.push(new TableFloatProperties(tableFloatOptions));
-        return this;
-    }
+        if (options.alignment) {
+            this.root.push(new Alignment(options.alignment));
+        }
 
-    public setShading(attrs: ITableShadingAttributesProperties): TableProperties {
-        this.root.push(new TableShading(attrs));
-
-        return this;
-    }
-
-    public setAlignment(type: AlignmentType): void {
-        this.root.push(new Alignment(type));
+        if (options.shading) {
+            this.root.push(new TableShading(options.shading));
+        }
     }
 }
