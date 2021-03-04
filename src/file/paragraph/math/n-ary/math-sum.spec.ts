@@ -71,5 +71,60 @@ describe("MathSum", () => {
                 ],
             });
         });
+
+        it("should add a hide when there is no subScript or superScript", () => {
+            const mathSum = new MathSum({
+                children: [new MathRun("1")],
+            });
+
+            const tree = new Formatter().format(mathSum);
+            expect(tree).to.deep.equal({
+                "m:nary": [
+                    {
+                        "m:naryPr": [
+                            {
+                                "m:chr": {
+                                    _attr: {
+                                        "m:val": "∑",
+                                    },
+                                },
+                            },
+                            {
+                                "m:limLoc": {
+                                    _attr: {
+                                        "m:val": "undOvr",
+                                    },
+                                },
+                            },
+                            {
+                                "m:supHide": {
+                                    _attr: {
+                                        "m:val": 1,
+                                    },
+                                },
+                            },
+                            {
+                                "m:subHide": {
+                                    _attr: {
+                                        "m:val": 1,
+                                    },
+                                },
+                            },
+                        ],
+                    },
+                    {
+                        "m:e": [
+                            {
+                                "m:r": [
+                                    {
+                                        "m:t": ["1"],
+                                    },
+                                ],
+                            },
+                        ],
+                    },
+                ],
+            });
+        });
     });
 });

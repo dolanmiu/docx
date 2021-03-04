@@ -54,6 +54,7 @@ export type SectionPropertiesOptions = IPageSizeAttributes &
         readonly column?: {
             readonly space?: number;
             readonly count?: number;
+            readonly separate?: boolean;
         };
         readonly type?: SectionType;
     };
@@ -100,7 +101,7 @@ export class SectionProperties extends XmlComponent {
         this.options = options;
         this.root.push(new PageSize(width, height, orientation));
         this.root.push(new PageMargin(top, right, bottom, left, header, footer, gutter, mirror));
-        this.root.push(new Columns(column.space ? column.space : 708, column.count ? column.count : 1));
+        this.root.push(new Columns(column.space ? column.space : 708, column.count ? column.count : 1, column.separate ?? false));
         this.root.push(new DocumentGrid(linePitch));
 
         this.addHeaders(headers);

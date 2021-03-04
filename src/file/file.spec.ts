@@ -148,6 +148,7 @@ describe("File", () => {
                                 "w:cols": {
                                     _attr: {
                                         "w:num": 1,
+                                        "w:sep": false,
                                         "w:space": 708,
                                     },
                                 },
