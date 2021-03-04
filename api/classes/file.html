@@ -88,6 +88,7 @@
 								<li class="tsd-kind-get-signature tsd-parent-kind-class tsd-is-external"><a href="file.html#appproperties" class="tsd-kind-icon">App<wbr>Properties</a></li>
 								<li class="tsd-kind-get-signature tsd-parent-kind-class tsd-is-external"><a href="file.html#contenttypes" class="tsd-kind-icon">Content<wbr>Types</a></li>
 								<li class="tsd-kind-get-signature tsd-parent-kind-class tsd-is-external"><a href="file.html#coreproperties" class="tsd-kind-icon">Core<wbr>Properties</a></li>
+								<li class="tsd-kind-get-signature tsd-parent-kind-class tsd-is-external"><a href="file.html#customproperties" class="tsd-kind-icon">Custom<wbr>Properties</a></li>
 								<li class="tsd-kind-get-signature tsd-parent-kind-class tsd-is-external"><a href="file.html#document" class="tsd-kind-icon">Document</a></li>
 								<li class="tsd-kind-get-signature tsd-parent-kind-class tsd-is-external"><a href="file.html#filerelationships" class="tsd-kind-icon">File<wbr>Relationships</a></li>
 								<li class="tsd-kind-get-signature tsd-parent-kind-class tsd-is-external"><a href="file.html#footnotes" class="tsd-kind-icon">Foot<wbr>Notes</a></li>
@@ -115,13 +116,13 @@
 					<a name="constructor" class="tsd-anchor"></a>
 					<h3>constructor</h3>
 					<ul class="tsd-signatures tsd-kind-constructor tsd-parent-kind-class tsd-is-external">
-						<li class="tsd-signature tsd-kind-icon">new <wbr>File<span class="tsd-signature-symbol">(</span>options<span class="tsd-signature-symbol">?: </span><a href="../interfaces/ipropertiesoptions.html" class="tsd-signature-type">IPropertiesOptions</a>, fileProperties<span class="tsd-signature-symbol">?: </span><a href="../interfaces/ifileproperties.html" class="tsd-signature-type">IFileProperties</a>, sections<span class="tsd-signature-symbol">?: </span><a href="../interfaces/isectionoptions.html" class="tsd-signature-type">ISectionOptions</a><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="file.html" class="tsd-signature-type">File</a></li>
+						<li class="tsd-signature tsd-kind-icon">new <wbr>File<span class="tsd-signature-symbol">(</span>options<span class="tsd-signature-symbol">?: </span><a href="../interfaces/ipropertiesoptions.html" class="tsd-signature-type">IPropertiesOptions</a>, fileProperties<span class="tsd-signature-symbol">?: </span><a href="../interfaces/ifileproperties.html" class="tsd-signature-type">IFileProperties</a>, sections<span class="tsd-signature-symbol">?: </span><a href="../interfaces/isectionoptions.html" class="tsd-signature-type">ISectionOptions</a><span class="tsd-signature-symbol">[]</span>, customProperties<span class="tsd-signature-symbol">?: </span><a href="../interfaces/icustompropertyoptions.html" class="tsd-signature-type">ICustomPropertyOptions</a><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="file.html" class="tsd-signature-type">File</a></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/a79b1e3/src/file/file.ts#L60">src/file/file.ts:60</a></li>
+									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/9327f2b/src/file/file.ts#L62">src/file/file.ts:62</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -134,6 +135,9 @@
 								</li>
 								<li>
 									<h5><span class="tsd-flag ts-flagDefault value">Default value</span> sections: <a href="../interfaces/isectionoptions.html" class="tsd-signature-type">ISectionOptions</a><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol"> = []</span></h5>
+								</li>
+								<li>
+									<h5><span class="tsd-flag ts-flagDefault value">Default value</span> customProperties: <a href="../interfaces/icustompropertyoptions.html" class="tsd-signature-type">ICustomPropertyOptions</a><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol"> = []</span></h5>
 								</li>
 							</ul>
 							<h4 class="tsd-returns-title">Returns <a href="file.html" class="tsd-signature-type">File</a></h4>
@@ -153,7 +157,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/a79b1e3/src/file/file.ts#L304">src/file/file.ts:304</a></li>
+									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/9327f2b/src/file/file.ts#L316">src/file/file.ts:316</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-returns-title">Returns <a href="appproperties.html" class="tsd-signature-type">AppProperties</a></h4>
@@ -170,7 +174,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/a79b1e3/src/file/file.ts#L300">src/file/file.ts:300</a></li>
+									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/9327f2b/src/file/file.ts#L308">src/file/file.ts:308</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-returns-title">Returns <a href="contenttypes.html" class="tsd-signature-type">ContentTypes</a></h4>
@@ -187,10 +191,27 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/a79b1e3/src/file/file.ts#L276">src/file/file.ts:276</a></li>
+									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/9327f2b/src/file/file.ts#L284">src/file/file.ts:284</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-returns-title">Returns <a href="coreproperties.html" class="tsd-signature-type">CoreProperties</a></h4>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-get-signature tsd-parent-kind-class tsd-is-external">
+					<a name="customproperties" class="tsd-anchor"></a>
+					<h3>Custom<wbr>Properties</h3>
+					<ul class="tsd-signatures tsd-kind-get-signature tsd-parent-kind-class tsd-is-external">
+						<li class="tsd-signature tsd-kind-icon"><span class="tsd-signature-symbol">get</span> CustomProperties<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="customproperties.html" class="tsd-signature-type">CustomProperties</a></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/9327f2b/src/file/file.ts#L312">src/file/file.ts:312</a></li>
+								</ul>
+							</aside>
+							<h4 class="tsd-returns-title">Returns <a href="customproperties.html" class="tsd-signature-type">CustomProperties</a></h4>
 						</li>
 					</ul>
 				</section>
@@ -204,7 +225,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/a79b1e3/src/file/file.ts#L268">src/file/file.ts:268</a></li>
+									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/9327f2b/src/file/file.ts#L276">src/file/file.ts:276</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-returns-title">Returns <a href="documentwrapper.html" class="tsd-signature-type">DocumentWrapper</a></h4>
@@ -221,7 +242,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/a79b1e3/src/file/file.ts#L288">src/file/file.ts:288</a></li>
+									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/9327f2b/src/file/file.ts#L296">src/file/file.ts:296</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-returns-title">Returns <a href="relationships.html" class="tsd-signature-type">Relationships</a></h4>
@@ -232,16 +253,16 @@
 					<a name="footnotes" class="tsd-anchor"></a>
 					<h3>Foot<wbr>Notes</h3>
 					<ul class="tsd-signatures tsd-kind-get-signature tsd-parent-kind-class tsd-is-external">
-						<li class="tsd-signature tsd-kind-icon"><span class="tsd-signature-symbol">get</span> FootNotes<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="footnotes.html" class="tsd-signature-type">FootNotes</a></li>
+						<li class="tsd-signature tsd-kind-icon"><span class="tsd-signature-symbol">get</span> FootNotes<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="footnoteswrapper.html" class="tsd-signature-type">FootnotesWrapper</a></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/a79b1e3/src/file/file.ts#L308">src/file/file.ts:308</a></li>
+									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/9327f2b/src/file/file.ts#L320">src/file/file.ts:320</a></li>
 								</ul>
 							</aside>
-							<h4 class="tsd-returns-title">Returns <a href="footnotes.html" class="tsd-signature-type">FootNotes</a></h4>
+							<h4 class="tsd-returns-title">Returns <a href="footnoteswrapper.html" class="tsd-signature-type">FootnotesWrapper</a></h4>
 						</li>
 					</ul>
 				</section>
@@ -255,7 +276,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/a79b1e3/src/file/file.ts#L296">src/file/file.ts:296</a></li>
+									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/9327f2b/src/file/file.ts#L304">src/file/file.ts:304</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-returns-title">Returns <a href="footerwrapper.html" class="tsd-signature-type">FooterWrapper</a><span class="tsd-signature-symbol">[]</span></h4>
@@ -272,7 +293,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/a79b1e3/src/file/file.ts#L292">src/file/file.ts:292</a></li>
+									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/9327f2b/src/file/file.ts#L300">src/file/file.ts:300</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-returns-title">Returns <a href="headerwrapper.html" class="tsd-signature-type">HeaderWrapper</a><span class="tsd-signature-symbol">[]</span></h4>
@@ -289,7 +310,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/a79b1e3/src/file/file.ts#L284">src/file/file.ts:284</a></li>
+									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/9327f2b/src/file/file.ts#L292">src/file/file.ts:292</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-returns-title">Returns <a href="media.html" class="tsd-signature-type">Media</a></h4>
@@ -306,7 +327,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/a79b1e3/src/file/file.ts#L280">src/file/file.ts:280</a></li>
+									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/9327f2b/src/file/file.ts#L288">src/file/file.ts:288</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-returns-title">Returns <a href="numbering.html" class="tsd-signature-type">Numbering</a></h4>
@@ -323,7 +344,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/a79b1e3/src/file/file.ts#L312">src/file/file.ts:312</a></li>
+									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/9327f2b/src/file/file.ts#L324">src/file/file.ts:324</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-returns-title">Returns <a href="settings.html" class="tsd-signature-type">Settings</a></h4>
@@ -340,7 +361,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/a79b1e3/src/file/file.ts#L272">src/file/file.ts:272</a></li>
+									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/9327f2b/src/file/file.ts#L280">src/file/file.ts:280</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-returns-title">Returns <a href="styles.html" class="tsd-signature-type">Styles</a></h4>
@@ -360,7 +381,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/a79b1e3/src/file/file.ts#L152">src/file/file.ts:152</a></li>
+									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/9327f2b/src/file/file.ts#L155">src/file/file.ts:155</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -413,7 +434,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/a79b1e3/src/file/file.ts#L181">src/file/file.ts:181</a></li>
+									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/9327f2b/src/file/file.ts#L184">src/file/file.ts:184</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
@@ -448,6 +469,9 @@
 							</li>
 							<li class=" tsd-kind-get-signature tsd-parent-kind-class tsd-is-external">
 								<a href="file.html#coreproperties" class="tsd-kind-icon">Core<wbr>Properties</a>
+							</li>
+							<li class=" tsd-kind-get-signature tsd-parent-kind-class tsd-is-external">
+								<a href="file.html#customproperties" class="tsd-kind-icon">Custom<wbr>Properties</a>
 							</li>
 							<li class=" tsd-kind-get-signature tsd-parent-kind-class tsd-is-external">
 								<a href="file.html#document" class="tsd-kind-icon">Document</a>
