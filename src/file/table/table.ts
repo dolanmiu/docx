@@ -36,6 +36,7 @@ export interface ITableOptions {
     readonly layout?: TableLayoutType;
     readonly borders?: ITableBordersOptions;
     readonly alignment?: AlignmentType;
+    readonly visuallyRightToLeft?: boolean;
 }
 
 export class Table extends XmlComponent {
@@ -48,6 +49,7 @@ export class Table extends XmlComponent {
         layout,
         borders,
         alignment,
+        visuallyRightToLeft,
     }: ITableOptions) {
         super("w:tbl");
 
@@ -76,6 +78,7 @@ export class Table extends XmlComponent {
                         type: marginUnitType,
                     },
                 },
+                visuallyRightToLeft,
             }),
         );
 

@@ -141,4 +141,20 @@ describe("TableProperties", () => {
             });
         });
     });
+
+    describe("#Set Virtual Right to Left", () => {
+        it("sets the alignment of the table", () => {
+            const tp = new TableProperties({
+                visuallyRightToLeft: true,
+            });
+            const tree = new Formatter().format(tp);
+            expect(tree).to.deep.equal({
+                "w:tblPr": [
+                    {
+                        "w:bidiVisual": {},
+                    },
+                ],
+            });
+        });
+    });
 });
