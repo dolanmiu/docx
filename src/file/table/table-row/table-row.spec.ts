@@ -92,7 +92,7 @@ describe("TableRow", () => {
             const tableRow = new TableRow({
                 children: [],
                 height: {
-                    height: 100,
+                    value: 100,
                     rule: HeightRule.EXACT,
                 },
             });
