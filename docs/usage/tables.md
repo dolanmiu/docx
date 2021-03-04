@@ -326,6 +326,17 @@ const cell = new TableCell({
 });
 ```
 
+### Visual Right to Left Table
+
+It is possible to reverse how the cells of the table are displayed. The table direction. More info here: https://superuser.com/questions/996912/how-to-change-a-table-direction-in-microsoft-word
+
+```ts
+const table = new Table({
+    visuallyRightToLeft: true,
+});
+```
+
+
 ## Examples
 
 [Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/4-basic-table.ts ':include')
