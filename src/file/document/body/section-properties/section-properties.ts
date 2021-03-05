@@ -61,7 +61,9 @@ export type SectionPropertiesOptions = IPageSizeAttributes &
 // Need to decouple this from the attributes
 
 export class SectionProperties extends XmlComponent {
-    private readonly options: SectionPropertiesOptions;
+    public readonly width: number;
+    public readonly rightMargin: number;
+    public readonly leftMargin: number;
 
     constructor(options: SectionPropertiesOptions = { column: {} }) {
         super("w:sectPr");
@@ -98,7 +100,10 @@ export class SectionProperties extends XmlComponent {
             type,
         } = options;
 
-        this.options = options;
+        this.leftMargin = left;
+        this.rightMargin = right;
+        this.width = width;
+
         this.root.push(new PageSize(width, height, orientation));
         this.root.push(new PageMargin(top, right, bottom, left, header, footer, gutter, mirror));
         this.root.push(new Columns(column.space ? column.space : 708, column.count ? column.count : 1, column.separate ?? false));
@@ -200,9 +205,5 @@ export class SectionProperties extends XmlComponent {
                 );
             }
         }
-    }
-
-    public get Options(): SectionPropertiesOptions {
-        return this.options;
     }
 }

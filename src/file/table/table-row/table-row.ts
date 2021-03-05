@@ -42,10 +42,6 @@ export class TableRow extends XmlComponent {
         return this.options.children.length;
     }
 
-    public get Children(): TableCell[] {
-        return this.options.children;
-    }
-
     public get cells(): TableCell[] {
         return this.root.filter((xmlComponent) => xmlComponent instanceof TableCell);
     }
