@@ -22,15 +22,6 @@ class BaseTableCellMargin extends XmlComponent {
             }),
         );
     }
-
-    public setProperties(value: number, type: WidthType = WidthType.DXA): void {
-        this.root.push(
-            new TableCellMarginAttributes({
-                type: type,
-                value: value,
-            }),
-        );
-    }
 }
 
 export interface ITableCellMarginOptions {

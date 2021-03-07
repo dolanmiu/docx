@@ -20,6 +20,18 @@ describe("TableProperties", () => {
         });
     });
 
+    describe("#setStyle", () => {
+        it("should add a table style property", () => {
+            const tp = new TableProperties({
+                style: "TableNormal",
+            });
+            const tree = new Formatter().format(tp);
+            expect(tree).to.deep.equal({
+                "w:tblPr": [{ "w:tblStyle": { _attr: { "w:val": "TableNormal" } } }],
+            });
+        });
+    });
+
     describe("#setWidth", () => {
         it("should add a table width property", () => {
             const tp = new TableProperties({

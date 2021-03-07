@@ -8,6 +8,7 @@ import { ITableBordersOptions, TableBorders } from "./table-borders";
 import { ITableCellMarginOptions, TableCellMargin } from "./table-cell-margin";
 import { ITableFloatOptions, TableFloatProperties } from "./table-float-properties";
 import { TableLayout, TableLayoutType } from "./table-layout";
+import { TableStyle } from "./table-style";
 import { PreferredTableWidth } from "./table-width";
 import { VisuallyRightToLeft } from "./visually-right-to-left";
 
@@ -20,6 +21,7 @@ export interface ITablePropertiesOptions {
     readonly borders?: ITableBordersOptions;
     readonly float?: ITableFloatOptions;
     readonly shading?: ITableShadingAttributesProperties;
+    readonly style?: string;
     readonly alignment?: AlignmentType;
     readonly cellMargin?: ITableCellMarginOptions;
     readonly visuallyRightToLeft?: boolean;
@@ -57,6 +59,10 @@ export class TableProperties extends IgnoreIfEmptyXmlComponent {
 
         if (options.visuallyRightToLeft) {
             this.root.push(new VisuallyRightToLeft());
+        }
+
+        if (options.style) {
+            this.root.push(new TableStyle(options.style));
         }
     }
 }

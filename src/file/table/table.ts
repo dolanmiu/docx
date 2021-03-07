@@ -34,6 +34,7 @@ export interface ITableOptions {
     };
     readonly float?: ITableFloatOptions;
     readonly layout?: TableLayoutType;
+    readonly style?: string;
     readonly borders?: ITableBordersOptions;
     readonly alignment?: AlignmentType;
     readonly visuallyRightToLeft?: boolean;
@@ -47,6 +48,7 @@ export class Table extends XmlComponent {
         margins: { marginUnitType, top, bottom, right, left } = { marginUnitType: WidthType.AUTO, top: 0, bottom: 0, right: 0, left: 0 },
         float,
         layout,
+        style,
         borders,
         alignment,
         visuallyRightToLeft,
@@ -59,6 +61,7 @@ export class Table extends XmlComponent {
                 width: width ?? { size: 100 },
                 float,
                 layout,
+                style,
                 alignment,
                 cellMargin: {
                     bottom: {
