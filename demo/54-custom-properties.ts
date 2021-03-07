@@ -9,15 +9,20 @@ import { Document, Packer } from "../build";
 
 const doc = new Document(
     // Standard properties
-    { creator: "Creator", title: "Title", subject: "Subject", description: "Description" },
+    {
+        creator: "Creator",
+        title: "Title",
+        subject: "Subject",
+        description: "Description",
+        customProperties: [
+            { name: "Subtitle", value: "Subtitle" },
+            { name: "Address", value: "Address" },
+        ],
+    },
     // No file properties
     {},
     // No sections
     [],
-    [
-        { name: "Subtitle", value: "Subtitle" },
-        { name: "Address", value: "Address" },
-    ]
 );
 
 Packer.toBuffer(doc).then((buffer) => {

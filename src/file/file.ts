@@ -1,7 +1,7 @@
 import { AppProperties } from "./app-properties/app-properties";
 import { ContentTypes } from "./content-types/content-types";
 import { CoreProperties, IPropertiesOptions } from "./core-properties";
-import { CustomProperties, ICustomPropertyOptions } from "./custom-properties";
+import { CustomProperties } from "./custom-properties";
 import { DocumentWrapper } from "./document-wrapper";
 import {
     FooterReferenceType,
@@ -69,7 +69,6 @@ export class File {
         },
         fileProperties: IFileProperties = {},
         sections: ISectionOptions[] = [],
-        customProperties: ICustomPropertyOptions[] = [],
     ) {
         this.coreProperties = new CoreProperties(options);
         this.numbering = new Numbering(
@@ -80,7 +79,7 @@ export class File {
                   },
         );
         this.fileRelationships = new Relationships();
-        this.customProperties = new CustomProperties(customProperties);
+        this.customProperties = new CustomProperties(options.customProperties ?? []);
         this.appProperties = new AppProperties();
         this.footnotesWrapper = new FootnotesWrapper();
         this.contentTypes = new ContentTypes();

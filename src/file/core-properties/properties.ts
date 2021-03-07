@@ -1,4 +1,5 @@
 import { XmlComponent } from "file/xml-components";
+import { ICustomPropertyOptions } from "../custom-properties";
 import { IDocumentBackgroundOptions } from "../document";
 
 import { DocumentAttributes } from "../document/document-attributes";
@@ -24,6 +25,7 @@ export interface IPropertiesOptions {
         readonly trackRevisions?: boolean;
     };
     readonly compatabilityModeVersion?: number;
+    readonly customProperties?: ICustomPropertyOptions[];
 }
 
 export class CoreProperties extends XmlComponent {
