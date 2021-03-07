@@ -1,7 +1,7 @@
 // Example how to display page numbers
 // Import from 'docx' rather than '../build' if you install from npm
 import * as fs from "fs";
-import { AlignmentType, Document, Footer, Header, Packer, PageNumberFormat, Paragraph, TextRun } from "../build";
+import { AlignmentType, Document, Footer, Header, Packer, PageBreak, PageNumber, PageNumberFormat, Paragraph, TextRun } from "../build";
 
 const doc = new Document({});
 
@@ -9,9 +9,17 @@ doc.addSection({
     headers: {
         default: new Header({
             children: [
-                new Paragraph("Foo Bar corp. ")
-                    .addRun(new TextRun("Page Number ").pageNumber())
-                    .addRun(new TextRun(" to ").numberOfTotalPages()),
+                new Paragraph({
+                    children: [
+                        new TextRun("Foo Bar corp. "),
+                        new TextRun({
+                            children: ["Page Number ", PageNumber.CURRENT],
+                        }),
+                        new TextRun({
+                            children: [" to ", PageNumber.TOTAL_PAGES],
+                        }),
+                    ],
+                }),
             ],
         }),
     },
@@ -19,11 +27,17 @@ doc.addSection({
         default: new Footer({
             children: [
                 new Paragraph({
-                    text: "Foo Bar corp. ",
                     alignment: AlignmentType.CENTER,
-                })
-                    .addRun(new TextRun("Page Number: ").pageNumber())
-                    .addRun(new TextRun(" to ").numberOfTotalPages()),
+                    children: [
+                        new TextRun("Foo Bar corp. "),
+                        new TextRun({
+                            children: ["Page Number: ", PageNumber.CURRENT],
+                        }),
+                        new TextRun({
+                            children: [" to ", PageNumber.TOTAL_PAGES],
+                        }),
+                    ],
+                }),
             ],
         }),
     },
@@ -32,11 +46,21 @@ doc.addSection({
         pageNumberFormatType: PageNumberFormat.DECIMAL,
     },
     children: [
-        new Paragraph("Hello World 1").pageBreak(),
-        new Paragraph("Hello World 2").pageBreak(),
-        new Paragraph("Hello World 3").pageBreak(),
-        new Paragraph("Hello World 4").pageBreak(),
-        new Paragraph("Hello World 5").pageBreak(),
+        new Paragraph({
+            children: [new TextRun("Hello World 1"), new PageBreak()],
+        }),
+        new Paragraph({
+            children: [new TextRun("Hello World 2"), new PageBreak()],
+        }),
+        new Paragraph({
+            children: [new TextRun("Hello World 3"), new PageBreak()],
+        }),
+        new Paragraph({
+            children: [new TextRun("Hello World 4"), new PageBreak()],
+        }),
+        new Paragraph({
+            children: [new TextRun("Hello World 5"), new PageBreak()],
+        }),
     ],
 });
 

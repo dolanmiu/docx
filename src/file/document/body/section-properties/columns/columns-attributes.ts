@@ -1,13 +1,13 @@
 import { XmlAttributeComponent } from "file/xml-components";
 
-export interface IColumnsAttributes {
+export class ColumnsAttributes extends XmlAttributeComponent<{
     readonly space?: number;
     readonly num?: number;
-}
-
-export class ColumnsAttributes extends XmlAttributeComponent<IColumnsAttributes> {
+    readonly separate?: boolean;
+}> {
     protected readonly xmlKeys = {
         space: "w:space",
         num: "w:num",
+        separate: "w:sep",
     };
 }

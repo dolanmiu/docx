@@ -15,9 +15,9 @@ doc.addSection({
                     bold: true,
                 }),
                 new TextRun({
-                    text: "Bar",
+                    text: "\tBar",
                     bold: true,
-                }).tab(),
+                }),
             ],
         }),
     ],

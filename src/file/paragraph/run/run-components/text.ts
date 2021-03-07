@@ -9,8 +9,7 @@ export class Text extends XmlComponent {
     constructor(text: string) {
         super("w:t");
         this.root.push(new TextAttributes({ space: SpaceType.PRESERVE }));
-        if (text) {
-            this.root.push(text);
-        }
+
+        this.root.push(text);
     }
 }

@@ -36,7 +36,7 @@ describe("Packer", () => {
     });
 
     describe("#toBuffer()", () => {
-        it("should create a standard docx file", async function() {
+        it("should create a standard docx file", async function () {
             this.timeout(99999999);
             const buffer = await Packer.toBuffer(file);
 
@@ -61,7 +61,7 @@ describe("Packer", () => {
     });
 
     describe("#toBase64String()", () => {
-        it("should create a standard docx file", async function() {
+        it("should create a standard docx file", async function () {
             this.timeout(99999999);
             const str = await Packer.toBase64String(file);
 

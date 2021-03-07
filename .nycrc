@@ -1,14 +1,15 @@
 {
   "check-coverage": true,
-  "lines": 92.35,
-  "functions": 88.28,
-  "branches": 84.64,
-  "statements": 92.16,
+  "lines": 97.77,
+  "functions": 93.89,
+  "branches": 94.83,
+  "statements": 97.75,
   "include": [
     "src/**/*.ts"
   ],
   "exclude": [
-    "src/**/*.spec.ts"
+    "src/**/*.spec.ts",
+    "src/import-dotx/import-dotx.ts"
   ],
   "reporter": [
     "lcov",

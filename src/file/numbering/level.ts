@@ -1,21 +1,25 @@
+// http://officeopenxml.com/WPnumbering-numFmt.php
 import { Attributes, XmlAttributeComponent, XmlComponent } from "file/xml-components";
-import {
-    Alignment,
-    AlignmentType,
-    IIndentAttributesProperties,
-    Indent,
-    ISpacingProperties,
-    KeepLines,
-    KeepNext,
-    Spacing,
-    TabStop,
-    TabStopType,
-    ThematicBreak,
-} from "../paragraph/formatting";
-import { ParagraphProperties } from "../paragraph/properties";
-import * as formatting from "../paragraph/run/formatting";
-import { RunProperties } from "../paragraph/run/properties";
-import { UnderlineType } from "../paragraph/run/underline";
+import { AlignmentType } from "../paragraph/formatting";
+import { IParagraphStylePropertiesOptions, ParagraphProperties } from "../paragraph/properties";
+import { IRunStylePropertiesOptions, RunProperties } from "../paragraph/run/properties";
+
+export enum LevelFormat {
+    BULLET = "bullet",
+    CARDINAL_TEXT = "cardinalText",
+    CHICAGO = "chicago",
+    DECIMAL = "decimal",
+    DECIMAL_ENCLOSED_CIRCLE = "decimalEnclosedCircle",
+    DECIMAL_ENCLOSED_FULLSTOP = "decimalEnclosedFullstop",
+    DECIMAL_ENCLOSED_PARENTHESES = "decimalEnclosedParen",
+    DECIMAL_ZERO = "decimalZero",
+    LOWER_LETTER = "lowerLetter",
+    LOWER_ROMAN = "lowerRoman",
+    NONE = "none",
+    ORDINAL_TEXT = "ordinalText",
+    UPPER_LETTER = "upperLetter",
+    UPPER_ROMAN = "upperRoman",
+}
 
 interface ILevelAttributesProperties {
     readonly ilvl?: number;
@@ -63,7 +67,7 @@ class LevelText extends XmlComponent {
 }
 
 class LevelJc extends XmlComponent {
-    constructor(value: string) {
+    constructor(value: AlignmentType) {
         super("w:lvlJc");
         this.root.push(
             new Attributes({
@@ -77,6 +81,19 @@ export enum LevelSuffix {
     NOTHING = "nothing",
     SPACE = "space",
     TAB = "tab",
+}
+
+export interface ILevelsOptions {
+    readonly level: number;
+    readonly format?: LevelFormat;
+    readonly text?: string;
+    readonly alignment?: AlignmentType;
+    readonly start?: number;
+    readonly suffix?: LevelSuffix;
+    readonly style?: {
+        readonly run?: IRunStylePropertiesOptions;
+        readonly paragraph?: IParagraphStylePropertiesOptions;
+    };
 }
 
 class Suffix extends XmlComponent {
@@ -94,7 +111,7 @@ export class LevelBase extends XmlComponent {
     private readonly paragraphProperties: ParagraphProperties;
     private readonly runProperties: RunProperties;
 
-    constructor(level: number, start?: number, numberFormat?: string, levelText?: string, lvlJc?: string) {
+    constructor({ level, format, text, alignment = AlignmentType.START, start = 1, style, suffix }: ILevelsOptions) {
         super("w:lvl");
         this.root.push(
             new LevelAttributes({
@@ -103,174 +120,34 @@ export class LevelBase extends XmlComponent {
             }),
         );
 
-        if (start !== undefined) {
-            this.root.push(new Start(start));
-        }
-        if (numberFormat !== undefined) {
-            this.root.push(new NumberFormat(numberFormat));
-        }
-        if (levelText !== undefined) {
-            this.root.push(new LevelText(levelText));
-        }
-        if (lvlJc !== undefined) {
-            this.root.push(new LevelJc(lvlJc));
+        this.root.push(new Start(start));
+        this.root.push(new LevelJc(alignment));
+
+        if (format) {
+            this.root.push(new NumberFormat(format));
         }
 
-        this.paragraphProperties = new ParagraphProperties({});
-        this.runProperties = new RunProperties();
+        if (text) {
+            this.root.push(new LevelText(text));
+        }
+
+        this.paragraphProperties = new ParagraphProperties(style && style.paragraph);
+        this.runProperties = new RunProperties(style && style.run);
 
         this.root.push(this.paragraphProperties);
         this.root.push(this.runProperties);
-    }
 
-    public setSuffix(value: LevelSuffix): LevelBase {
-        this.root.push(new Suffix(value));
-        return this;
-    }
-
-    public addParagraphProperty(property: XmlComponent): Level {
-        this.paragraphProperties.push(property);
-        return this;
-    }
-
-    public addRunProperty(property: XmlComponent): Level {
-        this.runProperties.push(property);
-        return this;
-    }
-
-    // ----------  Run formatting ---------------------- //
-
-    public size(twips: number): Level {
-        this.addRunProperty(new formatting.Size(twips));
-        return this;
-    }
-
-    public bold(): Level {
-        this.addRunProperty(new formatting.Bold());
-        return this;
-    }
-
-    public italics(): Level {
-        this.addRunProperty(new formatting.Italics());
-        return this;
-    }
-
-    public smallCaps(): Level {
-        this.addRunProperty(new formatting.SmallCaps());
-        return this;
-    }
-
-    public allCaps(): Level {
-        this.addRunProperty(new formatting.Caps());
-        return this;
-    }
-
-    public strike(): Level {
-        this.addRunProperty(new formatting.Strike());
-        return this;
-    }
-
-    public doubleStrike(): Level {
-        this.addRunProperty(new formatting.DoubleStrike());
-        return this;
-    }
-
-    public subScript(): Level {
-        this.addRunProperty(new formatting.SubScript());
-        return this;
-    }
-
-    public superScript(): Level {
-        this.addRunProperty(new formatting.SuperScript());
-        return this;
-    }
-
-    public underline(underlineType?: UnderlineType, color?: string): Level {
-        this.addRunProperty(new formatting.Underline(underlineType, color));
-        return this;
-    }
-
-    public color(color: string): Level {
-        this.addRunProperty(new formatting.Color(color));
-        return this;
-    }
-
-    public font(fontName: string): Level {
-        this.addRunProperty(new formatting.RunFonts(fontName));
-        return this;
-    }
-
-    public highlight(color: string): Level {
-        this.addRunProperty(new formatting.Highlight(color));
-        return this;
-    }
-
-    public shadow(value: string, fill: string, color: string): Level {
-        this.addRunProperty(new formatting.Shading(value, fill, color));
-        return this;
-    }
-    // --------------------- Paragraph formatting ------------------------ //
-
-    public center(): Level {
-        this.addParagraphProperty(new Alignment(AlignmentType.CENTER));
-        return this;
-    }
-
-    public left(): Level {
-        this.addParagraphProperty(new Alignment(AlignmentType.LEFT));
-        return this;
-    }
-
-    public right(): Level {
-        this.addParagraphProperty(new Alignment(AlignmentType.RIGHT));
-        return this;
-    }
-
-    public justified(): Level {
-        this.addParagraphProperty(new Alignment(AlignmentType.BOTH));
-        return this;
-    }
-
-    public thematicBreak(): Level {
-        this.addParagraphProperty(new ThematicBreak());
-        return this;
-    }
-
-    public rightTabStop(position: number): Level {
-        return this.addParagraphProperty(new TabStop(TabStopType.RIGHT, position));
-    }
-
-    public leftTabStop(position: number): Level {
-        this.addParagraphProperty(new TabStop(TabStopType.LEFT, position));
-        return this;
-    }
-
-    public indent(attrs: IIndentAttributesProperties): Level {
-        this.addParagraphProperty(new Indent(attrs));
-        return this;
-    }
-
-    public spacing(params: ISpacingProperties): Level {
-        this.addParagraphProperty(new Spacing(params));
-        return this;
-    }
-
-    public keepNext(): Level {
-        this.addParagraphProperty(new KeepNext());
-        return this;
-    }
-
-    public keepLines(): Level {
-        this.addParagraphProperty(new KeepLines());
-        return this;
+        if (suffix) {
+            this.root.push(new Suffix(suffix));
+        }
     }
 }
 
 export class Level extends LevelBase {
     // This is the level that sits under abstractNum. We make a
     // handful of properties required
-    constructor(level: number, numberFormat: string, levelText: string, lvlJc: string) {
-        super(level, 1, numberFormat, levelText, lvlJc);
+    constructor(options: ILevelsOptions) {
+        super(options);
     }
 }
 

@@ -5,7 +5,7 @@ import { BorderStyle } from "file/styles";
 
 import { ShadingType } from "../shading";
 import { TableCell } from "./table-cell";
-import { TableCellBorders, TableCellWidth, VerticalAlign, VerticalMergeType, WidthType } from "./table-cell-components";
+import { TableCellBorders, TableCellWidth, TextDirection, VerticalAlign, VerticalMergeType, WidthType } from "./table-cell-components";
 
 describe("TableCellBorders", () => {
     describe("#prepForXml", () => {
@@ -271,6 +271,34 @@ describe("TableCell", () => {
             });
         });
 
+        it("should create with text direction", () => {
+            const cell = new TableCell({
+                children: [],
+                textDirection: TextDirection.BOTTOM_TO_TOP_LEFT_TO_RIGHT,
+            });
+
+            const tree = new Formatter().format(cell);
+
+            expect(tree).to.deep.equal({
+                "w:tc": [
+                    {
+                        "w:tcPr": [
+                            {
+                                "w:textDirection": {
+                                    _attr: {
+                                        "w:val": "btLr",
+                                    },
+                                },
+                            },
+                        ],
+                    },
+                    {
+                        "w:p": {},
+                    },
+                ],
+            });
+        });
+
         it("should create with vertical merge", () => {
             const cell = new TableCell({
                 children: [],
@@ -383,6 +411,33 @@ describe("TableCell", () => {
                                         "w:color": "blue",
                                         "w:fill": "red",
                                         "w:val": "pct10",
+                                    },
+                                },
+                            },
+                        ],
+                    },
+                    {
+                        "w:p": {},
+                    },
+                ],
+            });
+        });
+
+        it("should create with width", () => {
+            const cell = new TableCell({
+                children: [],
+                width: { size: 100, type: WidthType.DXA },
+            });
+            const tree = new Formatter().format(cell);
+            expect(tree).to.deep.equal({
+                "w:tc": [
+                    {
+                        "w:tcPr": [
+                            {
+                                "w:tcW": {
+                                    _attr: {
+                                        "w:type": "dxa",
+                                        "w:w": 100,
                                     },
                                 },
                             },

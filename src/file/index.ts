@@ -12,3 +12,5 @@ export * from "./xml-components";
 export * from "./header-wrapper";
 export * from "./footer-wrapper";
 export * from "./header";
+export * from "./footnotes";
+export * from "./track-revision";

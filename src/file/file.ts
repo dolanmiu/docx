@@ -1,7 +1,8 @@
 import { AppProperties } from "./app-properties/app-properties";
 import { ContentTypes } from "./content-types/content-types";
 import { CoreProperties, IPropertiesOptions } from "./core-properties";
-import { Document } from "./document";
+import { CustomProperties } from "./custom-properties";
+import { DocumentWrapper } from "./document-wrapper";
 import {
     FooterReferenceType,
     HeaderReferenceType,
@@ -11,14 +12,13 @@ import {
 import { IPageMarginAttributes } from "./document/body/section-properties/page-margin/page-margin-attributes";
 import { IFileProperties } from "./file-properties";
 import { FooterWrapper, IDocumentFooter } from "./footer-wrapper";
-import { FootNotes } from "./footnotes";
+import { FootnotesWrapper } from "./footnotes-wrapper";
 import { Footer, Header } from "./header";
 import { HeaderWrapper, IDocumentHeader } from "./header-wrapper";
 import { Media } from "./media";
 import { Numbering } from "./numbering";
-import { Bookmark, Hyperlink, Paragraph } from "./paragraph";
+import { Paragraph } from "./paragraph";
 import { Relationships } from "./relationships";
-import { TargetModeType } from "./relationships/relationship/relationship";
 import { Settings } from "./settings";
 import { Styles } from "./styles";
 import { ExternalStylesFactory } from "./styles/external-styles-factory";
@@ -40,24 +40,24 @@ export interface ISectionOptions {
     readonly size?: IPageSizeAttributes;
     readonly margins?: IPageMarginAttributes;
     readonly properties?: SectionPropertiesOptions;
-    readonly children: Array<Paragraph | Table | TableOfContents>;
+    readonly children: (Paragraph | Table | TableOfContents)[];
 }
 
 export class File {
     // tslint:disable-next-line:readonly-keyword
     private currentRelationshipId: number = 1;
 
-    private readonly document: Document;
+    private readonly documentWrapper: DocumentWrapper;
     private readonly headers: IDocumentHeader[] = [];
     private readonly footers: IDocumentFooter[] = [];
-    private readonly docRelationships: Relationships;
     private readonly coreProperties: CoreProperties;
     private readonly numbering: Numbering;
     private readonly media: Media;
     private readonly fileRelationships: Relationships;
-    private readonly footNotes: FootNotes;
+    private readonly footnotesWrapper: FootnotesWrapper;
     private readonly settings: Settings;
     private readonly contentTypes: ContentTypes;
+    private readonly customProperties: CustomProperties;
     private readonly appProperties: AppProperties;
     private readonly styles: Styles;
 
@@ -71,14 +71,22 @@ export class File {
         sections: ISectionOptions[] = [],
     ) {
         this.coreProperties = new CoreProperties(options);
-        this.numbering = new Numbering();
-        this.docRelationships = new Relationships();
+        this.numbering = new Numbering(
+            options.numbering
+                ? options.numbering
+                : {
+                      config: [],
+                  },
+        );
         this.fileRelationships = new Relationships();
+        this.customProperties = new CustomProperties(options.customProperties ?? []);
         this.appProperties = new AppProperties();
-        this.footNotes = new FootNotes();
+        this.footnotesWrapper = new FootnotesWrapper();
         this.contentTypes = new ContentTypes();
-        this.document = new Document();
-        this.settings = new Settings();
+        this.documentWrapper = new DocumentWrapper({ background: options.background || {} });
+        this.settings = new Settings({
+            compatabilityModeVersion: options.compatabilityModeVersion,
+        });
 
         this.media = fileProperties.template && fileProperties.template.media ? fileProperties.template.media : new Media();
 
@@ -98,7 +106,7 @@ export class File {
             this.styles = stylesFactory.newInstance(options.externalStyles);
         } else if (options.styles) {
             const stylesFactory = new DefaultStylesFactory();
-            const defaultStyles = stylesFactory.newInstance();
+            const defaultStyles = stylesFactory.newInstance(options.styles.default);
             this.styles = new Styles({
                 ...defaultStyles,
                 ...options.styles,
@@ -123,36 +131,24 @@ export class File {
         }
 
         for (const section of sections) {
-            this.document.Body.addSection(section.properties ? section.properties : {});
+            this.documentWrapper.View.Body.addSection(section.properties ? section.properties : {});
 
             for (const child of section.children) {
-                this.document.add(child);
+                this.documentWrapper.View.add(child);
             }
         }
-    }
 
-    public createHyperlink(link: string, text?: string): Hyperlink {
-        const newText = text === undefined ? link : text;
-        const hyperlink = new Hyperlink(newText, this.docRelationships.RelationshipCount);
-        this.docRelationships.createRelationship(
-            hyperlink.linkId,
-            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink",
-            link,
-            TargetModeType.EXTERNAL,
-        );
-        return hyperlink;
-    }
+        if (options.footnotes) {
+            for (const paragraph of options.footnotes) {
+                this.footnotesWrapper.View.createFootNote(paragraph);
+            }
+        }
 
-    public createInternalHyperLink(anchor: string, text?: string): Hyperlink {
-        const newText = text === undefined ? anchor : text;
-        const hyperlink = new Hyperlink(newText, this.docRelationships.RelationshipCount, anchor);
-        // NOTE: unlike File#createHyperlink(), since the link is to an internal bookmark
-        // we don't need to create a new relationship.
-        return hyperlink;
-    }
-
-    public createBookmark(name: string, text: string = name): Bookmark {
-        return new Bookmark(name, text, this.docRelationships.RelationshipCount);
+        if (options.features) {
+            if (options.features.trackRevisions) {
+                this.settings.addTrackRevisions();
+            }
+        }
     }
 
     public addSection({
@@ -163,7 +159,7 @@ export class File {
         properties,
         children,
     }: ISectionOptions): void {
-        this.document.Body.addSection({
+        this.documentWrapper.View.Body.addSection({
             ...properties,
             headers: {
                 default: headers.default ? this.createHeader(headers.default) : this.createHeader(new Header()),
@@ -180,16 +176,12 @@ export class File {
         });
 
         for (const child of children) {
-            this.document.add(child);
+            this.documentWrapper.View.add(child);
         }
     }
 
-    public createFootnote(paragraph: Paragraph): void {
-        this.footNotes.createFootNote(paragraph);
-    }
-
     public verifyUpdateFields(): void {
-        if (this.document.getTablesOfContents().length) {
+        if (this.documentWrapper.View.getTablesOfContents().length) {
             this.settings.addUpdateFields();
         }
     }
@@ -218,8 +210,8 @@ export class File {
 
     private addHeaderToDocument(header: HeaderWrapper, type: HeaderReferenceType = HeaderReferenceType.DEFAULT): void {
         this.headers.push({ header, type });
-        this.docRelationships.createRelationship(
-            header.Header.ReferenceId,
+        this.documentWrapper.Relationships.createRelationship(
+            header.View.ReferenceId,
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/header",
             `header${this.headers.length}.xml`,
         );
@@ -228,8 +220,8 @@ export class File {
 
     private addFooterToDocument(footer: FooterWrapper, type: FooterReferenceType = FooterReferenceType.DEFAULT): void {
         this.footers.push({ footer, type });
-        this.docRelationships.createRelationship(
-            footer.Footer.ReferenceId,
+        this.documentWrapper.Relationships.createRelationship(
+            footer.View.ReferenceId,
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer",
             `footer${this.footers.length}.xml`,
         );
@@ -252,31 +244,36 @@ export class File {
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties",
             "docProps/app.xml",
         );
+        this.fileRelationships.createRelationship(
+            4,
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/custom-properties",
+            "docProps/custom.xml",
+        );
 
-        this.docRelationships.createRelationship(
+        this.documentWrapper.Relationships.createRelationship(
             this.currentRelationshipId++,
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles",
             "styles.xml",
         );
-        this.docRelationships.createRelationship(
+        this.documentWrapper.Relationships.createRelationship(
             this.currentRelationshipId++,
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering",
             "numbering.xml",
         );
-        this.docRelationships.createRelationship(
+        this.documentWrapper.Relationships.createRelationship(
             this.currentRelationshipId++,
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/footnotes",
             "footnotes.xml",
         );
-        this.docRelationships.createRelationship(
+        this.documentWrapper.Relationships.createRelationship(
             this.currentRelationshipId++,
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/settings",
             "settings.xml",
         );
     }
 
-    public get Document(): Document {
-        return this.document;
+    public get Document(): DocumentWrapper {
+        return this.documentWrapper;
     }
 
     public get Styles(): Styles {
@@ -295,10 +292,6 @@ export class File {
         return this.media;
     }
 
-    public get DocumentRelationships(): Relationships {
-        return this.docRelationships;
-    }
-
     public get FileRelationships(): Relationships {
         return this.fileRelationships;
     }
@@ -315,12 +308,16 @@ export class File {
         return this.contentTypes;
     }
 
+    public get CustomProperties(): CustomProperties {
+        return this.customProperties;
+    }
+
     public get AppProperties(): AppProperties {
         return this.appProperties;
     }
 
-    public get FootNotes(): FootNotes {
-        return this.footNotes;
+    public get FootNotes(): FootnotesWrapper {
+        return this.footnotesWrapper;
     }
 
     public get Settings(): Settings {

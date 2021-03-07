@@ -5,7 +5,7 @@ export class ImageReplacer {
         let currentXmlData = xmlData;
 
         mediaData.forEach((image, i) => {
-            currentXmlData = currentXmlData.replace(`{${image.fileName}}`, (offset + i).toString());
+            currentXmlData = currentXmlData.replace(new RegExp(`{${image.fileName}}`, "g"), (offset + i).toString());
         });
 
         return currentXmlData;

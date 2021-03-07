@@ -52,7 +52,6 @@ docs/.nojekyll
 .idea
 
 # Lock files
-package-lock.json
 yarn.lock
 
 # Documents

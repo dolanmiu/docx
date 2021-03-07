@@ -1,19 +1,19 @@
+import { IViewWrapper } from "../document-wrapper";
 import { BaseXmlComponent } from "./base";
 import { IXmlableObject } from "./xmlable-object";
-export { BaseXmlComponent };
 
 export const EMPTY_OBJECT = Object.seal({});
 
 export abstract class XmlComponent extends BaseXmlComponent {
-    // tslint:disable-next-line:readonly-keyword
-    protected root: Array<BaseXmlComponent | string>;
+    // tslint:disable-next-line:readonly-keyword no-any
+    protected root: (BaseXmlComponent | string | any)[];
 
     constructor(rootKey: string) {
         super(rootKey);
         this.root = new Array<BaseXmlComponent | string>();
     }
 
-    public prepForXml(): IXmlableObject | undefined {
+    public prepForXml(file?: IViewWrapper): IXmlableObject | undefined {
         const children = this.root
             .filter((c) => {
                 if (c instanceof BaseXmlComponent) {
@@ -23,7 +23,7 @@ export abstract class XmlComponent extends BaseXmlComponent {
             })
             .map((comp) => {
                 if (comp instanceof BaseXmlComponent) {
-                    return comp.prepForXml();
+                    return comp.prepForXml(file);
                 }
                 return comp;
             })

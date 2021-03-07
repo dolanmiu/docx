@@ -1,0 +1,104 @@
+name: Default
+on:
+    push:
+        branches:
+            - master
+    pull_request:
+        branches:
+            - master
+
+jobs:
+    build:
+        name: Build
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout Repo
+              uses: actions/checkout@master
+            - name: Install Dependencies
+              run: npm ci
+            - name: Build
+              run: npm run build
+            - name: Archive Production Artifact
+              uses: actions/upload-artifact@master
+              with:
+                  name: build
+                  path: build
+    test:
+        name: Test
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout Repo
+              uses: actions/checkout@master
+            - name: Install Dependencies
+              run: npm ci
+            - name: Test
+              run: npm run test.coverage
+    lint:
+        name: Lint
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout Repo
+              uses: actions/checkout@master
+            - name: Install Dependencies
+              run: npm ci
+            - name: Lint
+              run: npm run lint
+    prettier:
+        name: Prettier
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout Repo
+              uses: actions/checkout@master
+            - name: Install Dependencies
+              run: npm ci
+            - name: Prettier
+              run: npm run style
+    demos:
+        name: Run Demos
+        needs: [build]
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout Repo
+              uses: actions/checkout@master
+            - name: Install Dependencies
+              run: npm ci
+            - name: Download Artifact
+              uses: actions/download-artifact@master
+              with:
+                  name: build
+                  path: build
+            - name: Run demos
+              run: |
+                  npm run ts-node -- ./demo/1-basic.ts
+                  npm run ts-node -- ./demo/2-declaritive-styles.ts
+                  npm run ts-node -- ./demo/3-numbering-and-bullet-points.ts
+                  npm run ts-node -- ./demo/4-basic-table.ts
+                  npm run ts-node -- ./demo/5-images.ts
+                  npm run ts-node -- ./demo/6-page-borders.ts
+                  npm run ts-node -- ./demo/7-landscape.ts
+                  npm run ts-node -- ./demo/8-header-footer.ts
+                  npm run ts-node -- ./demo/9-images-in-header-and-footer.ts
+                  npm run ts-node -- ./demo/10-my-cv.ts
+                  npm run ts-node -- ./demo/11-declaritive-styles-2.ts
+                  npm run ts-node -- ./demo/12-scaling-images.ts
+                  npm run ts-node -- ./demo/13-xml-styles.ts
+                  npm run ts-node -- ./demo/14-page-numbers.ts
+                  npm run ts-node -- ./demo/15-page-break-before.ts
+                  npm run ts-node -- ./demo/16-multiple-sections.ts
+                  npm run ts-node -- ./demo/17-footnotes.ts
+                  npm run ts-node -- ./demo/18-image-from-buffer.ts
+                  npm run ts-node -- ./demo/19-export-to-base64.ts
+                  npm run ts-node -- ./demo/20-table-cell-borders.ts
+                  npm run ts-node -- ./demo/21-bookmarks.ts
+                  npm run ts-node -- ./demo/22-right-to-left-text.ts
+                  npm run ts-node -- ./demo/23-base64-images.ts
+                  npm run ts-node -- ./demo/24-images-to-table-cell.ts
+                  npm run ts-node -- ./demo/26-paragraph-borders.ts
+                  npm run ts-node -- ./demo/27-declaritive-styles-3.ts
+                  npm run ts-node -- ./demo/28-table-of-contents.ts
+                  npm run ts-node -- ./demo/29-numbered-lists.ts
+                  npm run ts-node -- ./demo/30-template-document.ts
+                  npm run ts-node -- ./demo/31-tables.ts
+                  npm run ts-node -- ./demo/32-merge-and-shade-table-cells.ts
+                  npm run ts-node -- ./demo/33-sequential-captions.ts
+                  npm run ts-node -- ./demo/34-floating-tables.ts

@@ -204,7 +204,10 @@ class DocumentCreator {
             alignment: AlignmentType.CENTER,
             children: [
                 new TextRun(`Mobile: ${phoneNumber} | LinkedIn: ${profileUrl} | Email: ${email}`),
-                new TextRun("Address: 58 Elm Avenue, Kent ME4 6ER, UK").break(),
+                new TextRun({
+                    text: "Address: 58 Elm Avenue, Kent ME4 6ER, UK",
+                    break: 1,
+                }),
             ],
         });
     }
@@ -238,9 +241,9 @@ class DocumentCreator {
                     bold: true,
                 }),
                 new TextRun({
-                    text: dateText,
+                    text: `\t${dateText}`,
                     bold: true,
-                }).tab(),
+                }),
             ],
         });
     }

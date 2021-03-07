@@ -1,3 +1,4 @@
+import { IViewWrapper } from "../document-wrapper";
 import { IXmlableObject } from "./xmlable-object";
 
 export abstract class BaseXmlComponent {
@@ -9,7 +10,7 @@ export abstract class BaseXmlComponent {
         this.rootKey = rootKey;
     }
 
-    public abstract prepForXml(): IXmlableObject | undefined;
+    public abstract prepForXml(file?: IViewWrapper): IXmlableObject | undefined;
 
     public get IsDeleted(): boolean {
         return this.deleted;

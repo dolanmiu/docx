@@ -1,6 +1,10 @@
 import { XmlComponent } from "file/xml-components";
+import { ICustomPropertyOptions } from "../custom-properties";
+import { IDocumentBackgroundOptions } from "../document";
 
 import { DocumentAttributes } from "../document/document-attributes";
+import { INumberingOptions } from "../numbering";
+import { Paragraph } from "../paragraph";
 import { IStylesOptions } from "../styles";
 import { Created, Creator, Description, Keywords, LastModifiedBy, Modified, Revision, Subject, Title } from "./components";
 
@@ -14,6 +18,14 @@ export interface IPropertiesOptions {
     readonly revision?: string;
     readonly externalStyles?: string;
     readonly styles?: IStylesOptions;
+    readonly numbering?: INumberingOptions;
+    readonly footnotes?: Paragraph[];
+    readonly background?: IDocumentBackgroundOptions;
+    readonly features?: {
+        readonly trackRevisions?: boolean;
+    };
+    readonly compatabilityModeVersion?: number;
+    readonly customProperties?: ICustomPropertyOptions[];
 }
 
 export class CoreProperties extends XmlComponent {

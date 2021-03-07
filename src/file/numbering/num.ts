@@ -20,10 +20,10 @@ class NumAttributes extends XmlAttributeComponent<INumAttributesProperties> {
     protected readonly xmlKeys = { numId: "w:numId" };
 }
 
-export class Num extends XmlComponent {
+export class ConcreteNumbering extends XmlComponent {
     public readonly id: number;
 
-    constructor(numId: number, abstractNumId: number) {
+    constructor(numId: number, abstractNumId: number, public readonly reference?: string) {
         super("w:num");
         this.root.push(
             new NumAttributes({
@@ -55,7 +55,9 @@ export class LevelOverride extends XmlComponent {
             this.root.push(new StartOverride(start));
         }
 
-        this.lvl = new LevelForOverride(this.levelNum);
+        this.lvl = new LevelForOverride({
+            level: this.levelNum,
+        });
         this.root.push(this.lvl);
     }
 

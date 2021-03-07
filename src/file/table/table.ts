@@ -1,8 +1,10 @@
 // http://officeopenxml.com/WPtableGrid.php
 import { XmlComponent } from "file/xml-components";
+
+import { AlignmentType } from "../paragraph";
 import { TableGrid } from "./grid";
 import { TableCell, VerticalMergeType, WidthType } from "./table-cell";
-import { ITableFloatOptions, TableProperties } from "./table-properties";
+import { ITableBordersOptions, ITableFloatOptions, TableProperties } from "./table-properties";
 import { TableLayoutType } from "./table-properties/table-layout";
 import { TableRow } from "./table-row";
 
@@ -33,11 +35,12 @@ export interface ITableOptions {
     readonly float?: ITableFloatOptions;
     readonly layout?: TableLayoutType;
     readonly style?: string;
+    readonly borders?: ITableBordersOptions;
+    readonly alignment?: AlignmentType;
+    readonly visuallyRightToLeft?: boolean;
 }
 
 export class Table extends XmlComponent {
-    private readonly properties: TableProperties;
-
     constructor({
         rows,
         width,
@@ -46,26 +49,41 @@ export class Table extends XmlComponent {
         float,
         layout,
         style,
+        borders,
+        alignment,
+        visuallyRightToLeft,
     }: ITableOptions) {
         super("w:tbl");
-        this.properties = new TableProperties();
-        this.root.push(this.properties);
-        this.properties.setBorder();
 
-        if (style) {
-            this.properties.setStyle(style);
-        }
-
-        if (width) {
-            this.properties.setWidth(width.size, width.type);
-        } else {
-            this.properties.setWidth(100);
-        }
-
-        this.properties.CellMargin.addBottomMargin(bottom || 0, marginUnitType);
-        this.properties.CellMargin.addTopMargin(top || 0, marginUnitType);
-        this.properties.CellMargin.addLeftMargin(left || 0, marginUnitType);
-        this.properties.CellMargin.addRightMargin(right || 0, marginUnitType);
+        this.root.push(
+            new TableProperties({
+                borders: borders ?? {},
+                width: width ?? { size: 100 },
+                float,
+                layout,
+                style,
+                alignment,
+                cellMargin: {
+                    bottom: {
+                        value: bottom || 0,
+                        type: marginUnitType,
+                    },
+                    top: {
+                        value: top || 0,
+                        type: marginUnitType,
+                    },
+                    left: {
+                        value: left || 0,
+                        type: marginUnitType,
+                    },
+                    right: {
+                        value: right || 0,
+                        type: marginUnitType,
+                    },
+                },
+                visuallyRightToLeft,
+            }),
+        );
 
         this.root.push(new TableGrid(columnWidths));
 
@@ -73,34 +91,28 @@ export class Table extends XmlComponent {
             this.root.push(row);
         }
 
-        for (const row of rows) {
-            row.Children.forEach((cell, cellIndex) => {
-                const column = rows.map((r) => r.Children[cellIndex]);
+        rows.forEach((row, rowIndex) => {
+            if (rowIndex === rows.length - 1) {
+                // don't process the end row
+                return;
+            }
+            let columnIndex = 0;
+            row.cells.forEach((cell) => {
                 // Row Span has to be added in this method and not the constructor because it needs to know information about the column which happens after Table Cell construction
                 // Row Span of 1 will crash word as it will add RESTART and not a corresponding CONTINUE
                 if (cell.options.rowSpan && cell.options.rowSpan > 1) {
-                    const thisCellsColumnIndex = column.indexOf(cell);
-                    const endColumnIndex = thisCellsColumnIndex + (cell.options.rowSpan - 1);
-
-                    for (let i = thisCellsColumnIndex + 1; i <= endColumnIndex; i++) {
-                        rows[i].addCellToIndex(
-                            new TableCell({
-                                children: [],
-                                verticalMerge: VerticalMergeType.CONTINUE,
-                            }),
-                            i,
-                        );
-                    }
+                    const continueCell = new TableCell({
+                        // the inserted CONTINUE cell has rowSpan, and will be handled when process the next row
+                        rowSpan: cell.options.rowSpan - 1,
+                        columnSpan: cell.options.columnSpan,
+                        borders: cell.options.borders,
+                        children: [],
+                        verticalMerge: VerticalMergeType.CONTINUE,
+                    });
+                    rows[rowIndex + 1].addCellToColumnIndex(continueCell, columnIndex);
                 }
+                columnIndex += cell.options.columnSpan || 1;
             });
-        }
-
-        if (float) {
-            this.properties.setTableFloatProperties(float);
-        }
-
-        if (layout) {
-            this.properties.setLayout(layout);
-        }
+        });
     }
 }

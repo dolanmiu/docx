@@ -1,7 +1,7 @@
 // Multiple sections and headers
 // Import from 'docx' rather than '../build' if you install from npm
 import * as fs from "fs";
-import { Document, Footer, Header, Packer, PageNumberFormat, PageOrientation, Paragraph, TextRun } from "../build";
+import { Document, Footer, Header, Packer, PageNumber, PageNumberFormat, PageOrientation, Paragraph, TextRun } from "../build";
 
 const doc = new Document();
 
@@ -53,7 +53,11 @@ doc.addSection({
         default: new Header({
             children: [
                 new Paragraph({
-                    children: [new TextRun("Page number: ").pageNumber()],
+                    children: [
+                        new TextRun({
+                            children: ["Page number: ", PageNumber.CURRENT],
+                        }),
+                    ],
                 }),
             ],
         }),
@@ -69,7 +73,11 @@ doc.addSection({
         default: new Header({
             children: [
                 new Paragraph({
-                    children: [new TextRun("Page number: ").pageNumber()],
+                    children: [
+                        new TextRun({
+                            children: ["Page number: ", PageNumber.CURRENT],
+                        }),
+                    ],
                 }),
             ],
         }),
@@ -90,7 +98,11 @@ doc.addSection({
         default: new Header({
             children: [
                 new Paragraph({
-                    children: [new TextRun("Page number: ").pageNumber()],
+                    children: [
+                        new TextRun({
+                            children: ["Page number: ", PageNumber.CURRENT],
+                        }),
+                    ],
                 }),
             ],
         }),

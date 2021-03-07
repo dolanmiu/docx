@@ -7,6 +7,7 @@ export interface IIndentAttributesProperties {
     readonly firstLine?: number;
     readonly start?: number;
     readonly end?: number;
+    readonly right?: number;
 }
 
 class IndentAttributes extends XmlAttributeComponent<IIndentAttributesProperties> {
@@ -16,6 +17,7 @@ class IndentAttributes extends XmlAttributeComponent<IIndentAttributesProperties
         firstLine: "w:firstLine",
         start: "w:start",
         end: "w:end",
+        right: "w:end", // alias
     };
 }
 

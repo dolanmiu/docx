@@ -1,16 +1,23 @@
 // http://officeopenxml.com/WPhyperlink.php
+import * as shortid from "shortid";
+
 import { XmlComponent } from "file/xml-components";
-import { TextRun } from "../run";
+
+import { ParagraphChild } from "../paragraph";
 import { HyperlinkAttributes, IHyperlinkAttributesProperties } from "./hyperlink-attributes";
 
-export class Hyperlink extends XmlComponent {
-    public readonly linkId: number;
-    private readonly textRun: TextRun;
+export enum HyperlinkType {
+    INTERNAL = "INTERNAL",
+    EXTERNAL = "EXTERNAL",
+}
 
-    constructor(text: string, relationshipsCount: number, anchor?: string) {
+export class ConcreteHyperlink extends XmlComponent {
+    public readonly linkId: string;
+
+    constructor(child: ParagraphChild, relationshipId: string, anchor?: string) {
         super("w:hyperlink");
 
-        this.linkId = relationshipsCount + 1;
+        this.linkId = relationshipId;
 
         const props: IHyperlinkAttributesProperties = {
             history: 1,
@@ -20,14 +27,16 @@ export class Hyperlink extends XmlComponent {
 
         const attributes = new HyperlinkAttributes(props);
         this.root.push(attributes);
-        this.textRun = new TextRun({
-            text: text,
-            style: "Hyperlink",
-        });
-        this.root.push(this.textRun);
+        this.root.push(child);
     }
+}
 
-    public get TextRun(): TextRun {
-        return this.textRun;
+export class InternalHyperlink extends ConcreteHyperlink {
+    constructor(options: { readonly child: ParagraphChild; readonly anchor: string }) {
+        super(options.child, shortid.generate().toLowerCase(), options.anchor);
     }
+}
+
+export class ExternalHyperlink {
+    constructor(public readonly options: { readonly child: ParagraphChild; readonly link: string }) {}
 }

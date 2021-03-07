@@ -23,9 +23,6 @@ describe("Body", () => {
             expect(tree).to.deep.equal({
                 "w:body": [
                     {
-                        "w:p": {},
-                    },
-                    {
                         "w:sectPr": [
                             { "w:pgSz": { _attr: { "w:w": 10000, "w:h": 10000, "w:orient": "portrait" } } },
                             {
@@ -42,7 +39,7 @@ describe("Body", () => {
                                     },
                                 },
                             },
-                            { "w:cols": { _attr: { "w:space": 708, "w:num": 1 } } },
+                            { "w:cols": { _attr: { "w:space": 708, "w:sep": false, "w:num": 1 } } },
                             { "w:docGrid": { _attr: { "w:linePitch": 360 } } },
                         ],
                     },

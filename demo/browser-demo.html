@@ -12,21 +12,21 @@
 
         <script>
             function generate() {
-                const doc = new Document();
+                const doc = new docx.Document();
 
                 doc.addSection({
                     children: [
-                        new Paragraph({
+                        new docx.Paragraph({
                             children: [
-                                new TextRun("Hello World"),
-                                new TextRun({
+                                new docx.TextRun("Hello World"),
+                                new docx.TextRun({
                                     text: "Foo Bar",
                                     bold: true,
                                 }),
-                                new TextRun({
-                                    text: "Github is the best",
+                                new docx.TextRun({
+                                    text: "\tGithub is the best",
                                     bold: true,
-                                }).tab(),
+                                }),
                             ],
                         }),
                     ],
@@ -34,7 +34,7 @@
 
 
 
-                Packer.toBlob(doc).then((blob) => {
+                docx.Packer.toBlob(doc).then((blob) => {
                     console.log(blob);
                     saveAs(blob, "example.docx");
                     console.log("Document created successfully");
