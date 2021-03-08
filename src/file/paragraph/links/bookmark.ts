@@ -6,24 +6,24 @@ import { BookmarkEndAttributes, BookmarkStartAttributes } from "./bookmark-attri
 
 export class Bookmark {
     public readonly start: BookmarkStart;
-    public readonly text: TextRun;
+    public readonly children: TextRun[];
     public readonly end: BookmarkEnd;
 
-    constructor(name: string, text: string) {
+    constructor(options: { readonly id: string; readonly children: TextRun[] }) {
         const linkId = shortid.generate().toLowerCase();
 
-        this.start = new BookmarkStart(name, linkId);
-        this.text = new TextRun(text);
+        this.start = new BookmarkStart(options.id, linkId);
+        this.children = options.children;
         this.end = new BookmarkEnd(linkId);
     }
 }
 
 export class BookmarkStart extends XmlComponent {
-    constructor(name: string, linkId: string) {
+    constructor(id: string, linkId: string) {
         super("w:bookmarkStart");
 
         const attributes = new BookmarkStartAttributes({
-            name,
+            name: id,
             id: linkId,
         });
         this.root.push(attributes);

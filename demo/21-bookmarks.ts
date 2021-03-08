@@ -33,7 +33,12 @@ doc.addSection({
     children: [
         new Paragraph({
             heading: HeadingLevel.HEADING_1,
-            children: [new Bookmark("myAnchorId", "Lorem Ipsum")],
+            children: [
+                new Bookmark({
+                    id: "myAnchorId",
+                    children: [new TextRun("Lorem Ipsum")],
+                }),
+            ],
         }),
         new Paragraph("\n"),
         new Paragraph(LOREM_IPSUM),
