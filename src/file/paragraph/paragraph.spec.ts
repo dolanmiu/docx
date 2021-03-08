@@ -618,6 +618,28 @@ describe("Paragraph", () => {
                 ],
             });
         });
+
+        it("should not add ListParagraph style when custom is true", () => {
+            const paragraph = new Paragraph({
+                numbering: {
+                    reference: "test id",
+                    level: 0,
+                    custom: true,
+                },
+            });
+            const tree = new Formatter().format(paragraph);
+            expect(tree).to.deep.equal({
+                "w:p": [
+                    {
+                        "w:pPr": [
+                            {
+                                "w:numPr": [{ "w:ilvl": { _attr: { "w:val": 0 } } }, { "w:numId": { _attr: { "w:val": "{test id}" } } }],
+                            },
+                        ],
+                    },
+                ],
+            });
+        });
     });
 
     it("it should add bookmark", () => {
