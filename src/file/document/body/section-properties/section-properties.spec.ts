@@ -1,5 +1,6 @@
 import { expect } from "chai";
 
+import { convertInchesToTwip } from "convenience-functions";
 import { Formatter } from "export/formatter";
 import { FooterWrapper } from "file/footer-wrapper";
 import { HeaderWrapper } from "file/header-wrapper";
@@ -8,6 +9,7 @@ import { Media } from "file/media";
 import { PageBorderOffsetFrom } from "./page-border";
 import { PageNumberFormat } from "./page-number";
 import { SectionProperties } from "./section-properties";
+import { SectionType } from "./type/section-type-attributes";
 import { SectionVerticalAlignValue } from "./vertical-align";
 
 describe("SectionProperties", () => {
@@ -18,10 +20,10 @@ describe("SectionProperties", () => {
             const properties = new SectionProperties({
                 width: 11906,
                 height: 16838,
-                top: 1440,
-                right: 1440,
-                bottom: 1440,
-                left: 1440,
+                top: convertInchesToTwip(1),
+                right: convertInchesToTwip(1),
+                bottom: convertInchesToTwip(1),
+                left: convertInchesToTwip(1),
                 header: 708,
                 footer: 708,
                 gutter: 0,
@@ -29,8 +31,9 @@ describe("SectionProperties", () => {
                 column: {
                     space: 708,
                     count: 1,
+                    separate: true,
                 },
-                linePitch: 360,
+                linePitch: convertInchesToTwip(0.25),
                 headers: {
                     default: new HeaderWrapper(media, 100),
                 },
@@ -61,7 +64,7 @@ describe("SectionProperties", () => {
                 },
             });
 
-            expect(tree["w:sectPr"][2]).to.deep.equal({ "w:cols": { _attr: { "w:space": 708, "w:num": 1 } } });
+            expect(tree["w:sectPr"][2]).to.deep.equal({ "w:cols": { _attr: { "w:space": 708, "w:sep": true, "w:num": 1 } } });
             expect(tree["w:sectPr"][3]).to.deep.equal({ "w:docGrid": { _attr: { "w:linePitch": 360 } } });
             expect(tree["w:sectPr"][4]).to.deep.equal({ "w:headerReference": { _attr: { "r:id": "rId100", "w:type": "default" } } });
             expect(tree["w:sectPr"][5]).to.deep.equal({ "w:footerReference": { _attr: { "r:id": "rId200", "w:type": "even" } } });
@@ -88,7 +91,7 @@ describe("SectionProperties", () => {
                     },
                 },
             });
-            expect(tree["w:sectPr"][2]).to.deep.equal({ "w:cols": { _attr: { "w:space": 708, "w:num": 1 } } });
+            expect(tree["w:sectPr"][2]).to.deep.equal({ "w:cols": { _attr: { "w:space": 708, "w:sep": false, "w:num": 1 } } });
             expect(tree["w:sectPr"][3]).to.deep.equal({ "w:docGrid": { _attr: { "w:linePitch": 360 } } });
         });
 
@@ -197,6 +200,18 @@ describe("SectionProperties", () => {
             expect(Object.keys(tree)).to.deep.equal(["w:sectPr"]);
             const pgNumType = tree["w:sectPr"].find((item) => item["w:pgNumType"] !== undefined);
             expect(pgNumType).to.equal(undefined);
+        });
+
+        it("should create section properties with section type", () => {
+            const properties = new SectionProperties({
+                type: SectionType.CONTINUOUS,
+            });
+            const tree = new Formatter().format(properties);
+            expect(Object.keys(tree)).to.deep.equal(["w:sectPr"]);
+            const type = tree["w:sectPr"].find((item) => item["w:type"] !== undefined);
+            expect(type).to.deep.equal({
+                "w:type": { _attr: { "w:val": "continuous" } },
+            });
         });
     });
 });

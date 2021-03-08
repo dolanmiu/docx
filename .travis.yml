@@ -1,6 +1,6 @@
 language: node_js
 node_js:
-  - 9
+  - 10
 install:
   - npm install
   - npm install -g codecov
@@ -10,7 +10,7 @@ script:
   - npm run style
   - npm run build
   - npm run ts-node -- ./demo/1-basic.ts
-  - npm run e2e "My Document.docx"
+#   - npm run e2e "My Document.docx"
   - npm run ts-node -- ./demo/2-declaritive-styles.ts
   - npm run ts-node -- ./demo/3-numbering-and-bullet-points.ts
   - npm run ts-node -- ./demo/4-basic-table.ts
@@ -20,7 +20,7 @@ script:
   - npm run ts-node -- ./demo/8-header-footer.ts
   - npm run ts-node -- ./demo/9-images-in-header-and-footer.ts
   - npm run ts-node -- ./demo/10-my-cv.ts
-  - npm run e2e "My Document.docx"
+#   - npm run e2e "My Document.docx"
   - npm run ts-node -- ./demo/11-declaritive-styles-2.ts
   - npm run ts-node -- ./demo/12-scaling-images.ts
   - npm run ts-node -- ./demo/13-xml-styles.ts

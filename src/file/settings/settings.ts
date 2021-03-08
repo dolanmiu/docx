@@ -1,5 +1,7 @@
 import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
 import { Compatibility } from "./compatibility";
+import { DisplayBackgroundShape } from "./display-background-shape";
+import { TrackRevisions } from "./track-revisions";
 import { UpdateFields } from "./update-fields";
 
 export interface ISettingsAttributesProperties {
@@ -44,10 +46,15 @@ export class SettingsAttributes extends XmlAttributeComponent<ISettingsAttribute
     };
 }
 
-export class Settings extends XmlComponent {
-    private readonly compatibility;
+export interface ISettingsOptions {
+    readonly compatabilityModeVersion?: number;
+}
 
-    constructor() {
+export class Settings extends XmlComponent {
+    private readonly compatibility: Compatibility;
+    private readonly trackRevisions: TrackRevisions;
+
+    constructor(options: ISettingsOptions) {
         super("w:settings");
         this.root.push(
             new SettingsAttributes({
@@ -70,7 +77,15 @@ export class Settings extends XmlComponent {
                 Ignorable: "w14 w15 wp14",
             }),
         );
-        this.compatibility = new Compatibility();
+
+        this.compatibility = new Compatibility({
+            version: options.compatabilityModeVersion || 15,
+        });
+
+        this.root.push(this.compatibility);
+        this.trackRevisions = new TrackRevisions();
+
+        this.root.push(new DisplayBackgroundShape());
     }
 
     public addUpdateFields(): void {
@@ -79,11 +94,11 @@ export class Settings extends XmlComponent {
         }
     }
 
-    public addCompatibility(): Compatibility {
-        if (!this.root.find((child) => child instanceof Compatibility)) {
-            this.addChildElement(this.compatibility);
+    public addTrackRevisions(): TrackRevisions {
+        if (!this.root.find((child) => child instanceof TrackRevisions)) {
+            this.addChildElement(this.trackRevisions);
         }
 
-        return this.compatibility;
+        return this.trackRevisions;
     }
 }

@@ -3,10 +3,11 @@ import { expect } from "chai";
 import { Formatter } from "export/formatter";
 import { EMPTY_OBJECT } from "file/xml-components";
 
-import { AlignmentType, TabStopPosition } from "../paragraph";
+import { AlignmentType, EmphasisMarkType, TabStopPosition } from "../paragraph";
 import { UnderlineType } from "../paragraph/run/underline";
 import { ShadingType } from "../table";
 import { AbstractNumbering } from "./abstract-numbering";
+import { LevelFormat, LevelSuffix } from "./level";
 
 describe("AbstractNumbering", () => {
     it("stores its ID at its .id property", () => {
@@ -19,7 +20,7 @@ describe("AbstractNumbering", () => {
             const abstractNumbering = new AbstractNumbering(1, [
                 {
                     level: 3,
-                    format: "lowerLetter",
+                    format: LevelFormat.LOWER_LETTER,
                     text: "%1)",
                     alignment: AlignmentType.END,
                 },
@@ -28,7 +29,7 @@ describe("AbstractNumbering", () => {
             expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({ _attr: { "w:ilvl": 3, "w15:tentative": 1 } });
             expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({ "w:start": { _attr: { "w:val": 1 } } });
             expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({ "w:lvlJc": { _attr: { "w:val": "end" } } });
-            expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({ "w:numFmt": { _attr: { "w:val": "lowerLetter" } } });
+            expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({ "w:numFmt": { _attr: { "w:val": LevelFormat.LOWER_LETTER } } });
             expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({ "w:lvlText": { _attr: { "w:val": "%1)" } } });
         });
 
@@ -36,7 +37,7 @@ describe("AbstractNumbering", () => {
             const abstractNumbering = new AbstractNumbering(1, [
                 {
                     level: 3,
-                    format: "lowerLetter",
+                    format: LevelFormat.LOWER_LETTER,
                     text: "%1)",
                 },
             ]);
@@ -44,8 +45,22 @@ describe("AbstractNumbering", () => {
             expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({ _attr: { "w:ilvl": 3, "w15:tentative": 1 } });
             expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({ "w:start": { _attr: { "w:val": 1 } } });
             expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({ "w:lvlJc": { _attr: { "w:val": "start" } } });
-            expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({ "w:numFmt": { _attr: { "w:val": "lowerLetter" } } });
+            expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({ "w:numFmt": { _attr: { "w:val": LevelFormat.LOWER_LETTER } } });
             expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({ "w:lvlText": { _attr: { "w:val": "%1)" } } });
+        });
+
+        it("has suffix", () => {
+            const abstractNumbering = new AbstractNumbering(1, [
+                {
+                    level: 3,
+                    format: LevelFormat.LOWER_LETTER,
+                    text: "%1)",
+                    alignment: AlignmentType.END,
+                    suffix: LevelSuffix.SPACE,
+                },
+            ]);
+            const tree = new Formatter().format(abstractNumbering);
+            expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({ "w:suff": { _attr: { "w:val": "space" } } });
         });
 
         describe("formatting methods: paragraph properties", () => {
@@ -53,7 +68,7 @@ describe("AbstractNumbering", () => {
                 const abstractNumbering = new AbstractNumbering(1, [
                     {
                         level: 0,
-                        format: "lowerRoman",
+                        format: LevelFormat.LOWER_ROMAN,
                         text: "%0.",
                         style: {
                             paragraph: {
@@ -72,7 +87,7 @@ describe("AbstractNumbering", () => {
                 const abstractNumbering = new AbstractNumbering(1, [
                     {
                         level: 0,
-                        format: "lowerRoman",
+                        format: LevelFormat.LOWER_ROMAN,
                         text: "%0.",
                         style: {
                             paragraph: {
@@ -91,7 +106,7 @@ describe("AbstractNumbering", () => {
                 const abstractNumbering = new AbstractNumbering(1, [
                     {
                         level: 0,
-                        format: "lowerRoman",
+                        format: LevelFormat.LOWER_ROMAN,
                         text: "%0.",
                         style: {
                             paragraph: {
@@ -110,7 +125,7 @@ describe("AbstractNumbering", () => {
                 const abstractNumbering = new AbstractNumbering(1, [
                     {
                         level: 0,
-                        format: "lowerRoman",
+                        format: LevelFormat.LOWER_ROMAN,
                         text: "%0.",
                         style: {
                             paragraph: {
@@ -129,7 +144,7 @@ describe("AbstractNumbering", () => {
                 const abstractNumbering = new AbstractNumbering(1, [
                     {
                         level: 0,
-                        format: "lowerRoman",
+                        format: LevelFormat.LOWER_ROMAN,
                         text: "%0.",
                         style: {
                             paragraph: {
@@ -148,7 +163,7 @@ describe("AbstractNumbering", () => {
                 const abstractNumbering = new AbstractNumbering(1, [
                     {
                         level: 0,
-                        format: "lowerRoman",
+                        format: LevelFormat.LOWER_ROMAN,
                         text: "%0.",
                         style: {
                             paragraph: {
@@ -167,7 +182,7 @@ describe("AbstractNumbering", () => {
                 const abstractNumbering = new AbstractNumbering(1, [
                     {
                         level: 0,
-                        format: "lowerRoman",
+                        format: LevelFormat.LOWER_ROMAN,
                         text: "%0.",
                         style: {
                             paragraph: {
@@ -201,7 +216,7 @@ describe("AbstractNumbering", () => {
                 const abstractNumbering = new AbstractNumbering(1, [
                     {
                         level: 0,
-                        format: "lowerRoman",
+                        format: LevelFormat.LOWER_ROMAN,
                         text: "%0.",
                         style: {
                             paragraph: {
@@ -224,7 +239,7 @@ describe("AbstractNumbering", () => {
                 const abstractNumbering = new AbstractNumbering(1, [
                     {
                         level: 0,
-                        format: "lowerRoman",
+                        format: LevelFormat.LOWER_ROMAN,
                         text: "%0.",
                         style: {
                             paragraph: {
@@ -247,7 +262,7 @@ describe("AbstractNumbering", () => {
                 const abstractNumbering = new AbstractNumbering(1, [
                     {
                         level: 0,
-                        format: "lowerRoman",
+                        format: LevelFormat.LOWER_ROMAN,
                         text: "%0.",
                         style: {
                             paragraph: {
@@ -266,7 +281,7 @@ describe("AbstractNumbering", () => {
                 const abstractNumbering = new AbstractNumbering(1, [
                     {
                         level: 0,
-                        format: "lowerRoman",
+                        format: LevelFormat.LOWER_ROMAN,
                         text: "%0.",
                         style: {
                             paragraph: {
@@ -283,22 +298,41 @@ describe("AbstractNumbering", () => {
         });
 
         describe("formatting methods: run properties", () => {
-            it("#size", () => {
-                const abstractNumbering = new AbstractNumbering(1, [
-                    {
-                        level: 0,
-                        format: "lowerRoman",
-                        text: "%0.",
-                        style: {
-                            run: {
-                                size: 24,
+            const sizeTests = [
+                {
+                    size: 24,
+                    expected: [{ "w:sz": { _attr: { "w:val": 24 } } }, { "w:szCs": { _attr: { "w:val": 24 } } }],
+                },
+                {
+                    size: 24,
+                    sizeComplexScript: true,
+                    expected: [{ "w:sz": { _attr: { "w:val": 24 } } }, { "w:szCs": { _attr: { "w:val": 24 } } }],
+                },
+                {
+                    size: 24,
+                    sizeComplexScript: false,
+                    expected: [{ "w:sz": { _attr: { "w:val": 24 } } }],
+                },
+                {
+                    size: 24,
+                    sizeComplexScript: 26,
+                    expected: [{ "w:sz": { _attr: { "w:val": 24 } } }, { "w:szCs": { _attr: { "w:val": 26 } } }],
+                },
+            ];
+            sizeTests.forEach(({ size, sizeComplexScript, expected }) => {
+                it(`#size ${size} cs ${sizeComplexScript}`, () => {
+                    const abstractNumbering = new AbstractNumbering(1, [
+                        {
+                            level: 0,
+                            format: LevelFormat.LOWER_ROMAN,
+                            text: "%0.",
+                            style: {
+                                run: { size, sizeComplexScript },
                             },
                         },
-                    },
-                ]);
-                const tree = new Formatter().format(abstractNumbering);
-                expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({
-                    "w:rPr": [{ "w:sz": { _attr: { "w:val": 24 } } }],
+                    ]);
+                    const tree = new Formatter().format(abstractNumbering);
+                    expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({ "w:rPr": expected });
                 });
             });
 
@@ -306,7 +340,7 @@ describe("AbstractNumbering", () => {
                 const abstractNumbering = new AbstractNumbering(1, [
                     {
                         level: 0,
-                        format: "lowerRoman",
+                        format: LevelFormat.LOWER_ROMAN,
                         text: "%0.",
                         style: {
                             run: {
@@ -325,7 +359,7 @@ describe("AbstractNumbering", () => {
                 const abstractNumbering = new AbstractNumbering(1, [
                     {
                         level: 0,
-                        format: "lowerRoman",
+                        format: LevelFormat.LOWER_ROMAN,
                         text: "%0.",
                         style: {
                             run: {
@@ -344,7 +378,7 @@ describe("AbstractNumbering", () => {
                 const abstractNumbering = new AbstractNumbering(1, [
                     {
                         level: 0,
-                        format: "lowerRoman",
+                        format: LevelFormat.LOWER_ROMAN,
                         text: "%0.",
                         style: {
                             run: {
@@ -364,7 +398,7 @@ describe("AbstractNumbering", () => {
                 const abstractNumbering = new AbstractNumbering(1, [
                     {
                         level: 0,
-                        format: "lowerRoman",
+                        format: LevelFormat.LOWER_ROMAN,
                         text: "%0.",
                         style: {
                             run: {
@@ -383,7 +417,7 @@ describe("AbstractNumbering", () => {
                 const abstractNumbering = new AbstractNumbering(1, [
                     {
                         level: 0,
-                        format: "lowerRoman",
+                        format: LevelFormat.LOWER_ROMAN,
                         text: "%0.",
                         style: {
                             run: {
@@ -402,7 +436,7 @@ describe("AbstractNumbering", () => {
                 const abstractNumbering = new AbstractNumbering(1, [
                     {
                         level: 0,
-                        format: "lowerRoman",
+                        format: LevelFormat.LOWER_ROMAN,
                         text: "%0.",
                         style: {
                             run: {
@@ -417,11 +451,11 @@ describe("AbstractNumbering", () => {
                 });
             });
 
-            it("#font", () => {
+            it("#font by name", () => {
                 const abstractNumbering = new AbstractNumbering(1, [
                     {
                         level: 0,
-                        format: "lowerRoman",
+                        format: LevelFormat.LOWER_ROMAN,
                         text: "%0.",
                         style: {
                             run: {
@@ -433,80 +467,31 @@ describe("AbstractNumbering", () => {
                 const tree = new Formatter().format(abstractNumbering);
                 expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({
                     "w:rPr": [
-                        { "w:rFonts": { _attr: { "w:ascii": "Times", "w:cs": "Times", "w:eastAsia": "Times", "w:hAnsi": "Times" } } },
+                        {
+                            "w:rFonts": {
+                                _attr: {
+                                    "w:ascii": "Times",
+                                    "w:cs": "Times",
+                                    "w:eastAsia": "Times",
+                                    "w:hAnsi": "Times",
+                                },
+                            },
+                        },
                     ],
                 });
             });
 
-            it("#bold", () => {
+            it("#font for ascii and eastAsia", () => {
                 const abstractNumbering = new AbstractNumbering(1, [
                     {
                         level: 0,
-                        format: "lowerRoman",
+                        format: LevelFormat.LOWER_ROMAN,
                         text: "%0.",
                         style: {
                             run: {
-                                bold: true,
-                            },
-                        },
-                    },
-                ]);
-                const tree = new Formatter().format(abstractNumbering);
-                expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({
-                    "w:rPr": [{ "w:b": { _attr: { "w:val": true } } }],
-                });
-            });
-
-            it("#italics", () => {
-                const abstractNumbering = new AbstractNumbering(1, [
-                    {
-                        level: 0,
-                        format: "lowerRoman",
-                        text: "%0.",
-                        style: {
-                            run: {
-                                italics: true,
-                            },
-                        },
-                    },
-                ]);
-                const tree = new Formatter().format(abstractNumbering);
-                expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({
-                    "w:rPr": [{ "w:i": { _attr: { "w:val": true } } }],
-                });
-            });
-
-            it("#highlight", () => {
-                const abstractNumbering = new AbstractNumbering(1, [
-                    {
-                        level: 0,
-                        format: "lowerRoman",
-                        text: "%0.",
-                        style: {
-                            run: {
-                                highlight: "005599",
-                            },
-                        },
-                    },
-                ]);
-                const tree = new Formatter().format(abstractNumbering);
-                expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({
-                    "w:rPr": [{ "w:highlight": { _attr: { "w:val": "005599" } } }],
-                });
-            });
-
-            it("#shadow", () => {
-                const abstractNumbering = new AbstractNumbering(1, [
-                    {
-                        level: 0,
-                        format: "lowerRoman",
-                        text: "%0.",
-                        style: {
-                            run: {
-                                shadow: {
-                                    type: ShadingType.PERCENT_10,
-                                    fill: "00FFFF",
-                                    color: "FF0000",
+                                font: {
+                                    ascii: "Times",
+                                    eastAsia: "KaiTi",
                                 },
                             },
                         },
@@ -514,7 +499,198 @@ describe("AbstractNumbering", () => {
                 ]);
                 const tree = new Formatter().format(abstractNumbering);
                 expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({
-                    "w:rPr": [{ "w:shd": { _attr: { "w:val": "pct10", "w:fill": "00FFFF", "w:color": "FF0000" } } }],
+                    "w:rPr": [
+                        {
+                            "w:rFonts": {
+                                _attr: {
+                                    "w:ascii": "Times",
+                                    "w:eastAsia": "KaiTi",
+                                },
+                            },
+                        },
+                    ],
+                });
+            });
+
+            const boldTests = [
+                {
+                    bold: true,
+                    expected: [{ "w:b": { _attr: { "w:val": true } } }, { "w:bCs": { _attr: { "w:val": true } } }],
+                },
+                {
+                    bold: true,
+                    boldComplexScript: true,
+                    expected: [{ "w:b": { _attr: { "w:val": true } } }, { "w:bCs": { _attr: { "w:val": true } } }],
+                },
+                {
+                    bold: true,
+                    boldComplexScript: false,
+                    expected: [{ "w:b": { _attr: { "w:val": true } } }],
+                },
+            ];
+            boldTests.forEach(({ bold, boldComplexScript, expected }) => {
+                it(`#bold ${bold} cs ${boldComplexScript}`, () => {
+                    const abstractNumbering = new AbstractNumbering(1, [
+                        {
+                            level: 0,
+                            format: LevelFormat.LOWER_ROMAN,
+                            text: "%0.",
+                            style: {
+                                run: { bold, boldComplexScript },
+                            },
+                        },
+                    ]);
+                    const tree = new Formatter().format(abstractNumbering);
+                    expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({ "w:rPr": expected });
+                });
+            });
+
+            const italicsTests = [
+                {
+                    italics: true,
+                    expected: [{ "w:i": { _attr: { "w:val": true } } }, { "w:iCs": { _attr: { "w:val": true } } }],
+                },
+                {
+                    italics: true,
+                    italicsComplexScript: true,
+                    expected: [{ "w:i": { _attr: { "w:val": true } } }, { "w:iCs": { _attr: { "w:val": true } } }],
+                },
+                {
+                    italics: true,
+                    italicsComplexScript: false,
+                    expected: [{ "w:i": { _attr: { "w:val": true } } }],
+                },
+            ];
+            italicsTests.forEach(({ italics, italicsComplexScript, expected }) => {
+                it(`#italics ${italics} cs ${italicsComplexScript}`, () => {
+                    const abstractNumbering = new AbstractNumbering(1, [
+                        {
+                            level: 0,
+                            format: LevelFormat.LOWER_ROMAN,
+                            text: "%0.",
+                            style: {
+                                run: { italics, italicsComplexScript },
+                            },
+                        },
+                    ]);
+                    const tree = new Formatter().format(abstractNumbering);
+                    expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({ "w:rPr": expected });
+                });
+            });
+
+            const highlightTests = [
+                {
+                    highlight: "005599",
+                    expected: [{ "w:highlight": { _attr: { "w:val": "005599" } } }, { "w:highlightCs": { _attr: { "w:val": "005599" } } }],
+                },
+                {
+                    highlight: "005599",
+                    highlightComplexScript: true,
+                    expected: [{ "w:highlight": { _attr: { "w:val": "005599" } } }, { "w:highlightCs": { _attr: { "w:val": "005599" } } }],
+                },
+                {
+                    highlight: "005599",
+                    highlightComplexScript: false,
+                    expected: [{ "w:highlight": { _attr: { "w:val": "005599" } } }],
+                },
+                {
+                    highlight: "005599",
+                    highlightComplexScript: "550099",
+                    expected: [{ "w:highlight": { _attr: { "w:val": "005599" } } }, { "w:highlightCs": { _attr: { "w:val": "550099" } } }],
+                },
+            ];
+            highlightTests.forEach(({ highlight, highlightComplexScript, expected }) => {
+                it(`#highlight ${highlight} cs ${highlightComplexScript}`, () => {
+                    const abstractNumbering = new AbstractNumbering(1, [
+                        {
+                            level: 0,
+                            format: LevelFormat.LOWER_ROMAN,
+                            text: "%0.",
+                            style: {
+                                run: { highlight, highlightComplexScript },
+                            },
+                        },
+                    ]);
+                    const tree = new Formatter().format(abstractNumbering);
+                    expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({ "w:rPr": expected });
+                });
+            });
+
+            const shadingTests = [
+                {
+                    shadow: {
+                        type: ShadingType.PERCENT_10,
+                        fill: "00FFFF",
+                        color: "FF0000",
+                    },
+                    expected: [
+                        { "w:shd": { _attr: { "w:val": "pct10", "w:fill": "00FFFF", "w:color": "FF0000" } } },
+                        { "w:shdCs": { _attr: { "w:val": "pct10", "w:fill": "00FFFF", "w:color": "FF0000" } } },
+                    ],
+                },
+                {
+                    shading: {
+                        type: ShadingType.PERCENT_10,
+                        fill: "00FFFF",
+                        color: "FF0000",
+                    },
+                    expected: [
+                        { "w:shd": { _attr: { "w:val": "pct10", "w:fill": "00FFFF", "w:color": "FF0000" } } },
+                        { "w:shdCs": { _attr: { "w:val": "pct10", "w:fill": "00FFFF", "w:color": "FF0000" } } },
+                    ],
+                },
+                {
+                    shading: {
+                        type: ShadingType.PERCENT_10,
+                        fill: "00FFFF",
+                        color: "FF0000",
+                    },
+                    shadingComplexScript: true,
+                    expected: [
+                        { "w:shd": { _attr: { "w:val": "pct10", "w:fill": "00FFFF", "w:color": "FF0000" } } },
+                        { "w:shdCs": { _attr: { "w:val": "pct10", "w:fill": "00FFFF", "w:color": "FF0000" } } },
+                    ],
+                },
+                {
+                    shading: {
+                        type: ShadingType.PERCENT_10,
+                        fill: "00FFFF",
+                        color: "FF0000",
+                    },
+                    shadingComplexScript: false,
+                    expected: [{ "w:shd": { _attr: { "w:val": "pct10", "w:fill": "00FFFF", "w:color": "FF0000" } } }],
+                },
+                {
+                    shading: {
+                        type: ShadingType.PERCENT_10,
+                        fill: "00FFFF",
+                        color: "FF0000",
+                    },
+                    shadingComplexScript: {
+                        type: ShadingType.PERCENT_10,
+                        fill: "00FFFF",
+                        color: "00FF00",
+                    },
+                    expected: [
+                        { "w:shd": { _attr: { "w:val": "pct10", "w:fill": "00FFFF", "w:color": "FF0000" } } },
+                        { "w:shdCs": { _attr: { "w:val": "pct10", "w:fill": "00FFFF", "w:color": "00FF00" } } },
+                    ],
+                },
+            ];
+            shadingTests.forEach(({ shadow, shading, shadingComplexScript, expected }) => {
+                it("#shadow correctly", () => {
+                    const abstractNumbering = new AbstractNumbering(1, [
+                        {
+                            level: 0,
+                            format: LevelFormat.LOWER_ROMAN,
+                            text: "%0.",
+                            style: {
+                                run: { shadow, shading, shadingComplexScript },
+                            },
+                        },
+                    ]);
+                    const tree = new Formatter().format(abstractNumbering);
+                    expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({ "w:rPr": expected });
                 });
             });
 
@@ -523,7 +699,7 @@ describe("AbstractNumbering", () => {
                     const abstractNumbering = new AbstractNumbering(1, [
                         {
                             level: 0,
-                            format: "lowerRoman",
+                            format: LevelFormat.LOWER_ROMAN,
                             text: "%0.",
                             style: {
                                 run: {
@@ -542,7 +718,7 @@ describe("AbstractNumbering", () => {
                     const abstractNumbering = new AbstractNumbering(1, [
                         {
                             level: 0,
-                            format: "lowerRoman",
+                            format: LevelFormat.LOWER_ROMAN,
                             text: "%0.",
                             style: {
                                 run: {
@@ -563,7 +739,7 @@ describe("AbstractNumbering", () => {
                     const abstractNumbering = new AbstractNumbering(1, [
                         {
                             level: 0,
-                            format: "lowerRoman",
+                            format: LevelFormat.LOWER_ROMAN,
                             text: "%0.",
                             style: {
                                 run: {
@@ -582,11 +758,53 @@ describe("AbstractNumbering", () => {
                 });
             });
 
+            describe("#emphasisMark", () => {
+                it("should set emphasisMark to 'dot' if no arguments are given", () => {
+                    const abstractNumbering = new AbstractNumbering(1, [
+                        {
+                            level: 0,
+                            format: LevelFormat.LOWER_ROMAN,
+                            text: "%0.",
+                            style: {
+                                run: {
+                                    emphasisMark: {},
+                                },
+                            },
+                        },
+                    ]);
+                    const tree = new Formatter().format(abstractNumbering);
+                    expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({
+                        "w:rPr": [{ "w:em": { _attr: { "w:val": "dot" } } }],
+                    });
+                });
+
+                it("should set the style if given", () => {
+                    const abstractNumbering = new AbstractNumbering(1, [
+                        {
+                            level: 0,
+                            format: LevelFormat.LOWER_ROMAN,
+                            text: "%0.",
+                            style: {
+                                run: {
+                                    emphasisMark: {
+                                        type: EmphasisMarkType.DOT,
+                                    },
+                                },
+                            },
+                        },
+                    ]);
+                    const tree = new Formatter().format(abstractNumbering);
+                    expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({
+                        "w:rPr": [{ "w:em": { _attr: { "w:val": "dot" } } }],
+                    });
+                });
+            });
+
             it("#color", () => {
                 const abstractNumbering = new AbstractNumbering(1, [
                     {
                         level: 0,
-                        format: "lowerRoman",
+                        format: LevelFormat.LOWER_ROMAN,
                         text: "%0.",
                         style: {
                             run: {

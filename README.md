@@ -11,6 +11,7 @@
 [![NPM version][npm-image]][npm-url]
 [![Downloads per month][downloads-image]][downloads-url]
 [![Build Status][travis-image]][travis-url]
+[![GitHub Action Workflow Status][github-actions-workflow-image]][github-actions-workflow-url]
 [![Dependency Status][daviddm-image]][daviddm-url]
 [![Known Vulnerabilities][snky-image]][snky-url]
 [![Chat on Gitter][gitter-image]][gitter-url]
@@ -27,12 +28,21 @@
 
 Here are examples of `docx` being used with basic `HTML/JS` in a browser environment:
 
-*   https://codepen.io/anon/pen/dqoVgQ
-*   https://jsfiddle.net/3xhezb5w/2
+*   https://codepen.io/dolanmiu/pen/RwNeObg
+*   https://jsfiddle.net/dolanmiu/kqxrj35u/1/
 
 Here is an example of `docx` working in `Angular`:
 
 *   https://stackblitz.com/edit/angular-afvxtz
+
+Here is an example of `docx` working in `React`:
+
+*   https://stackblitz.com/edit/react-ts-qq25sp
+*   https://stackblitz.com/edit/react-ts-qdqu7z (adding images to Word Document)
+
+Here is an example of `docx` working in `Vue.js`:
+
+*   https://stackblitz.com/edit/vuejs-docx
 
 ## Node
 
@@ -50,7 +60,7 @@ Press `endpoint` on the `RunKit` website:
 *   https://runkit.com/dolanmiu/docx-demo8 - Header and Footer
 *   https://runkit.com/dolanmiu/docx-demo10 - **My CV generated with docx**
 
-More [here](https://docx.js.org/#/examples) and [here](https://github.com/dolanmiu/docx/tree/master/demo)
+More [here](https://github.com/dolanmiu/docx/tree/master/demo)
 
 # How to use & Documentation
 
@@ -58,7 +68,7 @@ Please refer to the [documentation at https://docx.js.org/](https://docx.js.org/
 
 # Examples
 
-Check the `examples` section in the [documentation](https://docx.js.org/#/examples) and the [demo folder](https://github.com/dolanmiu/docx/tree/master/demo) for examples.
+Check the [demo folder](https://github.com/dolanmiu/docx/tree/master/demo) for examples.
 
 # Contributing
 
@@ -74,7 +84,11 @@ Read the contribution guidelines [here](https://docx.js.org/#/contribution-guide
 [<img src="https://i.imgur.com/1LjuK2M.png" alt="drawing" height="50"/>](https://turbopatent.com/)
 [<img src="https://i.imgur.com/dHMg0wF.gif" alt="drawing" height="50"/>](http://www.madisoncres.com/)
 [<img src="https://i.imgur.com/QEZXU5b.png" alt="drawing" height="50"/>](https://www.beekast.com/)
-[<img src="https://imgur.com/XVU6aoi.png" alt="drawing" height="50"/>](https://herraizsoto.com/)
+[<img src="https://i.imgur.com/XVU6aoi.png" alt="drawing" height="50"/>](https://herraizsoto.com/)
+[<img src="https://i.imgur.com/fn1xccG.png" alt="drawing" height="50"/>](http://www.ativer.com.br/)
+[<img src="https://i.imgur.com/cmykN7c.png" alt="drawing" />](https://www.arity.co/)
+[<img src="https://i.imgur.com/PXo25um.png" alt="drawing" height="50"/>](https://www.circadianrisk.com/)
+
 
 ...and many more!
 
@@ -91,6 +105,8 @@ Made with 💖
 [downloads-url]: https://npmjs.org/package/docx
 [travis-image]: https://travis-ci.org/dolanmiu/docx.svg?branch=master
 [travis-url]: https://travis-ci.org/dolanmiu/docx
+[github-actions-workflow-image]: https://github.com/dolanmiu/docx/workflows/Default/badge.svg
+[github-actions-workflow-url]: https://github.com/dolanmiu/docx/actions
 [daviddm-image]: https://david-dm.org/dolanmiu/docx.svg?theme=shields.io
 [daviddm-url]: https://david-dm.org/dolanmiu/docx
 [snky-image]: https://snyk.io/test/github/dolanmiu/docx/badge.svg

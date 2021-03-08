@@ -22,6 +22,7 @@ const image4 = Media.addImage(doc, fs.readFileSync("./demo/images/parrots.bmp"))
 const image5 = Media.addImage(doc, fs.readFileSync("./demo/images/pizza.gif"));
 const image6 = Media.addImage(doc, fs.readFileSync("./demo/images/pizza.gif"), 200, 200, {
     floating: {
+        zIndex: 10,
         horizontalPosition: {
             offset: 1014400,
         },
@@ -33,6 +34,7 @@ const image6 = Media.addImage(doc, fs.readFileSync("./demo/images/pizza.gif"), 2
 
 const image7 = Media.addImage(doc, fs.readFileSync("./demo/images/cat.jpg"), 200, 200, {
     floating: {
+        zIndex: 5,
         horizontalPosition: {
             relative: HorizontalPositionRelativeFrom.PAGE,
             align: HorizontalPositionAlign.RIGHT,

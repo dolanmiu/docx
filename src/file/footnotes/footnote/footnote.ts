@@ -9,8 +9,14 @@ export enum FootnoteType {
     CONTINUATION_SEPERATOR = "continuationSeparator",
 }
 
+export interface IFootnoteOptions {
+    readonly id: number;
+    readonly type?: FootnoteType;
+    readonly children: Paragraph[];
+}
+
 export class Footnote extends XmlComponent {
-    constructor(options: { readonly id: number; readonly type?: FootnoteType; readonly children: Paragraph[] }) {
+    constructor(options: IFootnoteOptions) {
         super("w:footnote");
         this.root.push(
             new FootnoteAttributes({

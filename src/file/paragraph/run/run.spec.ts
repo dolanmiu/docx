@@ -5,6 +5,7 @@ import { Formatter } from "export/formatter";
 import { ShadingType } from "file/table";
 
 import { Run } from "./";
+import { EmphasisMarkType } from "./emphasis-mark";
 import { PageNumber } from "./run";
 import { UnderlineType } from "./underline";
 
@@ -84,6 +85,30 @@ describe("Run", () => {
         });
     });
 
+    describe("#emphasisMark()", () => {
+        it("should default to 'dot'", () => {
+            const run = new Run({
+                emphasisMark: {},
+            });
+            const tree = new Formatter().format(run);
+            expect(tree).to.deep.equal({
+                "w:r": [{ "w:rPr": [{ "w:em": { _attr: { "w:val": "dot" } } }] }],
+            });
+        });
+
+        it("should set the style type if given", () => {
+            const run = new Run({
+                emphasisMark: {
+                    type: EmphasisMarkType.DOT,
+                },
+            });
+            const tree = new Formatter().format(run);
+            expect(tree).to.deep.equal({
+                "w:r": [{ "w:rPr": [{ "w:em": { _attr: { "w:val": "dot" } } }] }],
+            });
+        });
+    });
+
     describe("#smallCaps()", () => {
         it("it should add smallCaps to the properties", () => {
             const run = new Run({
@@ -91,7 +116,7 @@ describe("Run", () => {
             });
             const tree = new Formatter().format(run);
             expect(tree).to.deep.equal({
-                "w:r": [{ "w:rPr": [{ "w:smallCaps": {} }] }],
+                "w:r": [{ "w:rPr": [{ "w:smallCaps": { _attr: { "w:val": true } } }] }],
             });
         });
     });
@@ -103,7 +128,7 @@ describe("Run", () => {
             });
             const tree = new Formatter().format(run);
             expect(tree).to.deep.equal({
-                "w:r": [{ "w:rPr": [{ "w:caps": {} }] }],
+                "w:r": [{ "w:rPr": [{ "w:caps": { _attr: { "w:val": true } } }] }],
             });
         });
     });
@@ -214,11 +239,27 @@ describe("Run", () => {
 
     describe("#break()", () => {
         it("it should add break to the run", () => {
-            const run = new Run({});
-            run.break();
+            const run = new Run({
+                break: 1,
+            });
             const tree = new Formatter().format(run);
             expect(tree).to.deep.equal({
                 "w:r": [{ "w:br": {} }],
+            });
+        });
+
+        it("it should add two breaks to the run", () => {
+            const run = new Run({
+                break: 2,
+            });
+            const tree = new Formatter().format(run);
+            expect(tree).to.deep.equal({
+                "w:r": [
+                    { "w:br": {} },
+                    {
+                        "w:br": {},
+                    },
+                ],
             });
         });
     });
@@ -235,7 +276,42 @@ describe("Run", () => {
                 "w:r": [
                     {
                         "w:rPr": [
-                            { "w:rFonts": { _attr: { "w:ascii": "Times", "w:cs": "Times", "w:eastAsia": "Times", "w:hAnsi": "Times" } } },
+                            {
+                                "w:rFonts": {
+                                    _attr: {
+                                        "w:ascii": "Times",
+                                        "w:cs": "Times",
+                                        "w:eastAsia": "Times",
+                                        "w:hAnsi": "Times",
+                                    },
+                                },
+                            },
+                        ],
+                    },
+                ],
+            });
+        });
+
+        it("should set the font for ascii and eastAsia", () => {
+            const run = new Run({
+                font: {
+                    ascii: "Times",
+                    eastAsia: "KaiTi",
+                },
+            });
+            const tree = new Formatter().format(run);
+            expect(tree).to.deep.equal({
+                "w:r": [
+                    {
+                        "w:rPr": [
+                            {
+                                "w:rFonts": {
+                                    _attr: {
+                                        "w:ascii": "Times",
+                                        "w:eastAsia": "KaiTi",
+                                    },
+                                },
+                            },
                         ],
                     },
                 ],

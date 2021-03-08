@@ -21,6 +21,8 @@
         "no-duplicate-imports": true,
         "unnecessary-constructor": true,
         "file-name-casing": [true, "kebab-case"],
+        "interface-name": [true, "always-prefix"],
+        "ordered-imports": true,
         // Functional Programming Rules
         "no-parameter-reassignment": true,
         "readonly-keyword": true,

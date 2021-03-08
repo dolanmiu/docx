@@ -11,7 +11,7 @@ import { TableProperties } from "./table-properties";
 describe("TableProperties", () => {
     describe("#constructor", () => {
         it("creates an initially empty property object", () => {
-            const tp = new TableProperties();
+            const tp = new TableProperties({});
             // The TableProperties is ignorable if there are no attributes,
             // which results in prepForXml returning undefined, which causes
             // the formatter to throw an error if that is the only object it
@@ -20,9 +20,26 @@ describe("TableProperties", () => {
         });
     });
 
+    describe("#setStyle", () => {
+        it("should add a table style property", () => {
+            const tp = new TableProperties({
+                style: "TableNormal",
+            });
+            const tree = new Formatter().format(tp);
+            expect(tree).to.deep.equal({
+                "w:tblPr": [{ "w:tblStyle": { _attr: { "w:val": "TableNormal" } } }],
+            });
+        });
+    });
+
     describe("#setWidth", () => {
         it("should add a table width property", () => {
-            const tp = new TableProperties().setWidth(1234, WidthType.DXA);
+            const tp = new TableProperties({
+                width: {
+                    size: 1234,
+                    type: WidthType.DXA,
+                },
+            });
             const tree = new Formatter().format(tp);
             expect(tree).to.deep.equal({
                 "w:tblPr": [{ "w:tblW": { _attr: { "w:type": "dxa", "w:w": 1234 } } }],
@@ -30,7 +47,12 @@ describe("TableProperties", () => {
         });
 
         it("should add a table width property with default of AUTO", () => {
-            const tp = new TableProperties().setWidth(1234);
+            const tp = new TableProperties({
+                width: {
+                    size: 1234,
+                },
+            });
+
             const tree = new Formatter().format(tp);
             expect(tree).to.deep.equal({
                 "w:tblPr": [{ "w:tblW": { _attr: { "w:type": "auto", "w:w": 1234 } } }],
@@ -40,8 +62,10 @@ describe("TableProperties", () => {
 
     describe("#setLayout", () => {
         it("sets the table to fixed width layout", () => {
-            const tp = new TableProperties();
-            tp.setLayout(TableLayoutType.FIXED);
+            const tp = new TableProperties({
+                layout: TableLayoutType.FIXED,
+            });
+
             const tree = new Formatter().format(tp);
             expect(tree).to.deep.equal({
                 "w:tblPr": [{ "w:tblLayout": { _attr: { "w:type": "fixed" } } }],
@@ -51,8 +75,15 @@ describe("TableProperties", () => {
 
     describe("#cellMargin", () => {
         it("adds a table cell top margin", () => {
-            const tp = new TableProperties();
-            tp.CellMargin.addTopMargin(1234, WidthType.DXA);
+            const tp = new TableProperties({
+                cellMargin: {
+                    top: {
+                        value: 1234,
+                        type: WidthType.DXA,
+                    },
+                },
+            });
+
             const tree = new Formatter().format(tp);
             expect(tree).to.deep.equal({
                 "w:tblPr": [{ "w:tblCellMar": [{ "w:top": { _attr: { "w:type": "dxa", "w:w": 1234 } } }] }],
@@ -60,8 +91,15 @@ describe("TableProperties", () => {
         });
 
         it("adds a table cell left margin", () => {
-            const tp = new TableProperties();
-            tp.CellMargin.addLeftMargin(1234, WidthType.DXA);
+            const tp = new TableProperties({
+                cellMargin: {
+                    left: {
+                        value: 1234,
+                        type: WidthType.DXA,
+                    },
+                },
+            });
+
             const tree = new Formatter().format(tp);
             expect(tree).to.deep.equal({
                 "w:tblPr": [{ "w:tblCellMar": [{ "w:left": { _attr: { "w:type": "dxa", "w:w": 1234 } } }] }],
@@ -71,12 +109,14 @@ describe("TableProperties", () => {
 
     describe("#setShading", () => {
         it("sets the shading of the table", () => {
-            const tp = new TableProperties();
-            tp.setShading({
-                fill: "b79c2f",
-                val: ShadingType.REVERSE_DIAGONAL_STRIPE,
-                color: "auto",
+            const tp = new TableProperties({
+                shading: {
+                    fill: "b79c2f",
+                    val: ShadingType.REVERSE_DIAGONAL_STRIPE,
+                    color: "auto",
+                },
             });
+
             const tree = new Formatter().format(tp);
             expect(tree).to.deep.equal({
                 "w:tblPr": [
@@ -95,9 +135,10 @@ describe("TableProperties", () => {
     });
 
     describe("#setAlignment", () => {
-        it("sets the shading of the table", () => {
-            const tp = new TableProperties();
-            tp.setAlignment(AlignmentType.CENTER);
+        it("sets the alignment of the table", () => {
+            const tp = new TableProperties({
+                alignment: AlignmentType.CENTER,
+            });
             const tree = new Formatter().format(tp);
             expect(tree).to.deep.equal({
                 "w:tblPr": [
@@ -107,6 +148,22 @@ describe("TableProperties", () => {
                                 "w:val": "center",
                             },
                         },
+                    },
+                ],
+            });
+        });
+    });
+
+    describe("#Set Virtual Right to Left", () => {
+        it("sets the alignment of the table", () => {
+            const tp = new TableProperties({
+                visuallyRightToLeft: true,
+            });
+            const tree = new Formatter().format(tp);
+            expect(tree).to.deep.equal({
+                "w:tblPr": [
+                    {
+                        "w:bidiVisual": {},
                     },
                 ],
             });

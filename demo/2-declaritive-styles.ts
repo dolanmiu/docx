@@ -1,20 +1,25 @@
 // Example on how to customise the look at feel using Styles
 // Import from 'docx' rather than '../build' if you install from npm
 import * as fs from "fs";
-import { AlignmentType, Document, HeadingLevel, Packer, Paragraph, TextRun, UnderlineType } from "../build";
+import {
+    AlignmentType,
+    convertInchesToTwip,
+    Document,
+    HeadingLevel,
+    LevelFormat,
+    Packer,
+    Paragraph,
+    TextRun,
+    UnderlineType,
+} from "../build";
 
 const doc = new Document({
     creator: "Clippy",
     title: "Sample Document",
     description: "A brief example of using docx",
     styles: {
-        paragraphStyles: [
-            {
-                id: "Heading1",
-                name: "Heading 1",
-                basedOn: "Normal",
-                next: "Normal",
-                quickFormat: true,
+        default: {
+            heading1: {
                 run: {
                     size: 28,
                     bold: true,
@@ -27,12 +32,7 @@ const doc = new Document({
                     },
                 },
             },
-            {
-                id: "Heading2",
-                name: "Heading 2",
-                basedOn: "Normal",
-                next: "Normal",
-                quickFormat: true,
+            heading2: {
                 run: {
                     size: 26,
                     bold: true,
@@ -48,6 +48,13 @@ const doc = new Document({
                     },
                 },
             },
+            listParagraph: {
+                run: {
+                    color: "#FF0000",
+                },
+            },
+        },
+        paragraphStyles: [
             {
                 id: "aside",
                 name: "Aside",
@@ -59,7 +66,7 @@ const doc = new Document({
                 },
                 paragraph: {
                     indent: {
-                        left: 720,
+                        left: convertInchesToTwip(0.5),
                     },
                     spacing: {
                         line: 276,
@@ -75,12 +82,6 @@ const doc = new Document({
                     spacing: { line: 276, before: 20 * 72 * 0.1, after: 20 * 72 * 0.05 },
                 },
             },
-            {
-                id: "ListParagraph",
-                name: "List Paragraph",
-                basedOn: "Normal",
-                quickFormat: true,
-            },
         ],
     },
     numbering: {
@@ -90,7 +91,7 @@ const doc = new Document({
                 levels: [
                     {
                         level: 0,
-                        format: "lowerLetter",
+                        format: LevelFormat.LOWER_LETTER,
                         text: "%1)",
                         alignment: AlignmentType.LEFT,
                     },
@@ -162,7 +163,22 @@ doc.addSection({
                     underline: {},
                 }),
                 new TextRun({
+                    text: "and then emphasis-mark ",
+                    emphasisMark: {},
+                }),
+                new TextRun({
                     text: "and back to normal.",
+                }),
+            ],
+        }),
+        new Paragraph({
+            style: "Strong",
+            children: [
+                new TextRun({
+                    text: "Strong Style",
+                }),
+                new TextRun({
+                    text: " - Very strong.",
                 }),
             ],
         }),

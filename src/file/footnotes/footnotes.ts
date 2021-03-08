@@ -72,6 +72,7 @@ export class FootNotes extends XmlComponent {
             id: id,
             children: paragraph,
         });
+
         this.root.push(footnote);
     }
 }

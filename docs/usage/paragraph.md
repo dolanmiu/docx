@@ -142,6 +142,21 @@ const paragraph = new Paragraph({
 });
 ```
 
+## Shading
+
+Add color to an entire paragraph block
+
+```ts
+const paragraph = new Paragraph({
+    text: "shading",
+    shading: {
+        type: ShadingType.REVERSE_DIAGONAL_STRIPE,
+        color: "00FFFF",
+        fill: "FF0000",
+    },
+});
+```
+
 ## Spacing
 
 Adding spacing between paragraphs
