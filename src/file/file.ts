@@ -139,11 +139,8 @@ export class File {
         }
 
         if (options.footnotes) {
+            // tslint:disable-next-line: forin
             for (const key in options.footnotes) {
-                if (!options.footnotes[key]) {
-                    continue;
-                }
-
                 this.footnotesWrapper.View.createFootNote(parseFloat(key), options.footnotes[key].children);
             }
         }
