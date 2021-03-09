@@ -425,4 +425,25 @@ describe("File", () => {
             });
         });
     });
+
+    it("should create default run and paragraph property document defaults", () => {
+        const doc = new File({
+            styles: {
+                default: {},
+            },
+        });
+
+        const tree = new Formatter().format(doc.Styles);
+
+        expect(tree["w:styles"][1]).to.deep.equal({
+            "w:docDefaults": [
+                {
+                    "w:rPrDefault": {},
+                },
+                {
+                    "w:pPrDefault": {},
+                },
+            ],
+        });
+    });
 });

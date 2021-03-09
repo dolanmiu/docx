@@ -13,11 +13,11 @@ export class DocumentDefaults extends XmlComponent {
     private readonly runPropertiesDefaults: RunPropertiesDefaults;
     private readonly paragraphPropertiesDefaults: ParagraphPropertiesDefaults;
 
-    constructor(options?: IDocumentDefaultsOptions) {
+    constructor(options: IDocumentDefaultsOptions) {
         super("w:docDefaults");
 
-        this.runPropertiesDefaults = new RunPropertiesDefaults(options && options.run);
-        this.paragraphPropertiesDefaults = new ParagraphPropertiesDefaults(options && options.paragraph);
+        this.runPropertiesDefaults = new RunPropertiesDefaults(options.run);
+        this.paragraphPropertiesDefaults = new ParagraphPropertiesDefaults(options.paragraph);
 
         this.root.push(this.runPropertiesDefaults);
         this.root.push(this.paragraphPropertiesDefaults);

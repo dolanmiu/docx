@@ -50,7 +50,7 @@ export class DefaultStylesFactory {
         return {
             initialStyles: documentAttributes,
             importedStyles: [
-                new DocumentDefaults(options.document),
+                new DocumentDefaults(options.document ?? {}),
                 new TitleStyle({
                     run: {
                         size: 56,
