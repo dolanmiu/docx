@@ -1,0 +1,1061 @@
+<!doctype html>
+<html class="default no-js">
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title>docx</title>
+	<meta name="description" content="Documentation for docx">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="stylesheet" href="assets/css/main.css">
+	<script async src="assets/js/search.js" id="search-script"></script>
+</head>
+<body>
+<header>
+	<div class="tsd-page-toolbar">
+		<div class="container">
+			<div class="table-wrap">
+				<div class="table-cell" id="tsd-search" data-index="assets/js/search.json" data-base=".">
+					<div class="field">
+						<label for="tsd-search-field" class="tsd-widget search no-caption">Search</label>
+						<input id="tsd-search-field" type="text" />
+					</div>
+					<ul class="results">
+						<li class="state loading">Preparing search index...</li>
+						<li class="state failure">The search index is not available</li>
+					</ul>
+					<a href="index.html" class="title">docx</a>
+				</div>
+				<div class="table-cell" id="tsd-widgets">
+					<div id="tsd-filter">
+						<a href="#" class="tsd-widget options no-caption" data-toggle="options">Options</a>
+						<div class="tsd-filter-group">
+							<div class="tsd-select" id="tsd-filter-visibility">
+								<span class="tsd-select-label">All</span>
+								<ul class="tsd-select-list">
+									<li data-value="public">Public</li>
+									<li data-value="protected">Public/Protected</li>
+									<li data-value="private" class="selected">All</li>
+								</ul>
+							</div>
+							<input type="checkbox" id="tsd-filter-inherited" checked />
+							<label class="tsd-widget" for="tsd-filter-inherited">Inherited</label>
+							<input type="checkbox" id="tsd-filter-externals" checked />
+							<label class="tsd-widget" for="tsd-filter-externals">Externals</label>
+						</div>
+					</div>
+					<a href="#" class="tsd-widget menu no-caption" data-toggle="menu">Menu</a>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="tsd-page-title">
+		<div class="container">
+			<h1>docx</h1>
+		</div>
+	</div>
+</header>
+<div class="container container-main">
+	<div class="row">
+		<div class="col-8 col-content">
+			<div class="tsd-panel tsd-typography">
+				<p align="center">
+					<img alt="clippy the assistant" src="https://i.imgur.com/37uBGhO.gif">
+				</p>
+				<p align="center">
+					Easily generate .docx files with JS/TS. Works for Node and on the Browser.
+				</p>
+				<hr>
+				<p><a href="https://npmjs.org/package/docx"><img src="https://badge.fury.io/js/docx.svg" alt="NPM version"></a>
+					<a href="https://npmjs.org/package/docx"><img src="https://img.shields.io/npm/dm/docx.svg" alt="Downloads per month"></a>
+					<a href="https://travis-ci.org/dolanmiu/docx"><img src="https://travis-ci.org/dolanmiu/docx.svg?branch=master" alt="Build Status"></a>
+					<a href="https://github.com/dolanmiu/docx/actions"><img src="https://github.com/dolanmiu/docx/workflows/Default/badge.svg" alt="GitHub Action Workflow Status"></a>
+					<a href="https://david-dm.org/dolanmiu/docx"><img src="https://david-dm.org/dolanmiu/docx.svg?theme=shields.io" alt="Dependency Status"></a>
+					<a href="https://snyk.io/test/github/dolanmiu/docx"><img src="https://snyk.io/test/github/dolanmiu/docx/badge.svg" alt="Known Vulnerabilities"></a>
+					<a href="https://gitter.im/docx-lib/Lobby"><img src="https://badges.gitter.im/dolanmiu/docx.svg" alt="Chat on Gitter"></a>
+					<a href="http://makeapullrequest.com"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg" alt="PRs Welcome"></a>
+				<a href="https://codecov.io/gh/dolanmiu/docx"><img src="https://codecov.io/gh/dolanmiu/docx/branch/master/graph/badge.svg" alt="codecov"></a></p>
+				<p align="center">
+					<img src="https://i.imgur.com/TCH0YzD.png" alt="drawing" width="800"/>
+				</p>
+				<a href="#demo" id="demo" style="color: inherit; text-decoration: none;">
+					<h1>Demo</h1>
+				</a>
+				<a href="#browser" id="browser" style="color: inherit; text-decoration: none;">
+					<h2>Browser</h2>
+				</a>
+				<p>Here are examples of <code>docx</code> being used with basic <code>HTML/JS</code> in a browser environment:</p>
+				<ul>
+					<li>  <a href="https://codepen.io/dolanmiu/pen/RwNeObg">https://codepen.io/dolanmiu/pen/RwNeObg</a></li>
+					<li>  <a href="https://jsfiddle.net/dolanmiu/kqxrj35u/1/">https://jsfiddle.net/dolanmiu/kqxrj35u/1/</a></li>
+				</ul>
+				<p>Here is an example of <code>docx</code> working in <code>Angular</code>:</p>
+				<ul>
+					<li>  <a href="https://stackblitz.com/edit/angular-afvxtz">https://stackblitz.com/edit/angular-afvxtz</a></li>
+				</ul>
+				<p>Here is an example of <code>docx</code> working in <code>React</code>:</p>
+				<ul>
+					<li>  <a href="https://stackblitz.com/edit/react-ts-qq25sp">https://stackblitz.com/edit/react-ts-qq25sp</a></li>
+					<li>  <a href="https://stackblitz.com/edit/react-ts-qdqu7z">https://stackblitz.com/edit/react-ts-qdqu7z</a> (adding images to Word Document)</li>
+				</ul>
+				<p>Here is an example of <code>docx</code> working in <code>Vue.js</code>:</p>
+				<ul>
+					<li>  <a href="https://stackblitz.com/edit/vuejs-docx">https://stackblitz.com/edit/vuejs-docx</a></li>
+				</ul>
+				<a href="#node" id="node" style="color: inherit; text-decoration: none;">
+					<h2>Node</h2>
+				</a>
+				<p>Press <code>endpoint</code> on the <code>RunKit</code> website:</p>
+				<p><img src="https://user-images.githubusercontent.com/2917613/38582539-f84311b6-3d07-11e8-90db-5885ae02c3c4.png" alt="RunKit Instructions"></p>
+				<ul>
+					<li>  <a href="https://runkit.com/dolanmiu/docx-demo1">https://runkit.com/dolanmiu/docx-demo1</a> - Simple paragraph and text</li>
+					<li>  <a href="https://runkit.com/dolanmiu/docx-demo2">https://runkit.com/dolanmiu/docx-demo2</a> - Advanced Paragraphs and text</li>
+					<li>  <a href="https://runkit.com/dolanmiu/docx-demo3">https://runkit.com/dolanmiu/docx-demo3</a> - Bullet points</li>
+					<li>  <a href="https://runkit.com/dolanmiu/docx-demo4">https://runkit.com/dolanmiu/docx-demo4</a> - Simple table</li>
+					<li>  <a href="https://runkit.com/dolanmiu/docx-demo5">https://runkit.com/dolanmiu/docx-demo5</a> - Images</li>
+					<li>  <a href="https://runkit.com/dolanmiu/docx-demo6">https://runkit.com/dolanmiu/docx-demo6</a> - Margins</li>
+					<li>  <a href="https://runkit.com/dolanmiu/docx-demo7">https://runkit.com/dolanmiu/docx-demo7</a> - Landscape</li>
+					<li>  <a href="https://runkit.com/dolanmiu/docx-demo8">https://runkit.com/dolanmiu/docx-demo8</a> - Header and Footer</li>
+					<li>  <a href="https://runkit.com/dolanmiu/docx-demo10">https://runkit.com/dolanmiu/docx-demo10</a> - <strong>My CV generated with docx</strong></li>
+				</ul>
+				<p>More <a href="https://github.com/dolanmiu/docx/tree/master/demo">here</a></p>
+				<a href="#how-to-use-amp-documentation" id="how-to-use-amp-documentation" style="color: inherit; text-decoration: none;">
+					<h1>How to use &amp; Documentation</h1>
+				</a>
+				<p>Please refer to the <a href="https://docx.js.org/">documentation at https://docx.js.org/</a> for details on how to use this library, examples and much more!</p>
+				<a href="#examples" id="examples" style="color: inherit; text-decoration: none;">
+					<h1>Examples</h1>
+				</a>
+				<p>Check the <a href="https://github.com/dolanmiu/docx/tree/master/demo">demo folder</a> for examples.</p>
+				<a href="#contributing" id="contributing" style="color: inherit; text-decoration: none;">
+					<h1>Contributing</h1>
+				</a>
+				<p>Read the contribution guidelines <a href="https://docx.js.org/#/contribution-guidelines">here</a>.</p>
+				<a href="#used-by" id="used-by" style="color: inherit; text-decoration: none;">
+					<h1>Used by</h1>
+				</a>
+				<p><a href="https://hfour.com/"><img src="https://i.imgur.com/zy5qWmI.png" alt="drawing" height="50"/></a>
+					<a href="https://fuzzproductions.com/"><img src="https://i.imgur.com/OYP5tgS.png" alt="drawing" height="50"/></a>
+					<a href="https://www.mettzer.com/"><img src="https://i.imgur.com/zUDMfZ3.png" alt="drawing" height="50"/></a>
+					<a href="https://www.wisedoc.net/"><img src="https://i.imgur.com/wtNB1uq.png" alt="drawing" height="50"/></a>
+					<a href="https://www.dabblewriter.com/"><img src="https://i.imgur.com/suiH2zc.png" alt="drawing" height="50"/></a>
+					<a href="https://turbopatent.com/"><img src="https://i.imgur.com/1LjuK2M.png" alt="drawing" height="50"/></a>
+					<a href="http://www.madisoncres.com/"><img src="https://i.imgur.com/dHMg0wF.gif" alt="drawing" height="50"/></a>
+					<a href="https://www.beekast.com/"><img src="https://i.imgur.com/QEZXU5b.png" alt="drawing" height="50"/></a>
+					<a href="https://herraizsoto.com/"><img src="https://i.imgur.com/XVU6aoi.png" alt="drawing" height="50"/></a>
+					<a href="http://www.ativer.com.br/"><img src="https://i.imgur.com/fn1xccG.png" alt="drawing" height="50"/></a>
+					<a href="https://www.arity.co/"><img src="https://i.imgur.com/cmykN7c.png" alt="drawing" /></a>
+				<a href="https://www.circadianrisk.com/"><img src="https://i.imgur.com/PXo25um.png" alt="drawing" height="50"/></a></p>
+				<p>...and many more!</p>
+				<hr>
+				<p><a href="https://www.patreon.com/dolanmiu"><img src="https://user-images.githubusercontent.com/2917613/51251459-4e880480-1991-11e9-92bf-38b96675a9e2.png" alt="patreon"></a>
+				<a href="https://www.browserstack.com"><img src="https://user-images.githubusercontent.com/2917613/54233552-128e9d00-4505-11e9-88fb-025a4e04007c.png" alt="browserstack"></a></p>
+				<p>Made with 💖</p>
+			</div>
+		</div>
+		<div class="col-4 col-menu menu-sticky-wrap menu-highlight">
+			<nav class="tsd-navigation primary">
+				<ul>
+					<li class=" ">
+						<a href="modules.html">Exports</a>
+					</li>
+				</ul>
+			</nav>
+			<nav class="tsd-navigation secondary menu-sticky">
+				<ul class="before-current">
+					<li class=" tsd-kind-enum">
+						<a href="enums/alignmenttype.html" class="tsd-kind-icon">Alignment<wbr>Type</a>
+					</li>
+					<li class=" tsd-kind-enum">
+						<a href="enums/borderstyle.html" class="tsd-kind-icon">Border<wbr>Style</a>
+					</li>
+					<li class=" tsd-kind-enum">
+						<a href="enums/emphasismarktype.html" class="tsd-kind-icon">Emphasis<wbr>Mark<wbr>Type</a>
+					</li>
+					<li class=" tsd-kind-enum">
+						<a href="enums/footerreferencetype.html" class="tsd-kind-icon">Footer<wbr>Reference<wbr>Type</a>
+					</li>
+					<li class=" tsd-kind-enum">
+						<a href="enums/headerreferencetype.html" class="tsd-kind-icon">Header<wbr>Reference<wbr>Type</a>
+					</li>
+					<li class=" tsd-kind-enum">
+						<a href="enums/headinglevel.html" class="tsd-kind-icon">Heading<wbr>Level</a>
+					</li>
+					<li class=" tsd-kind-enum">
+						<a href="enums/heightrule.html" class="tsd-kind-icon">Height<wbr>Rule</a>
+					</li>
+					<li class=" tsd-kind-enum">
+						<a href="enums/horizontalpositionalign.html" class="tsd-kind-icon">Horizontal<wbr>Position<wbr>Align</a>
+					</li>
+					<li class=" tsd-kind-enum">
+						<a href="enums/horizontalpositionrelativefrom.html" class="tsd-kind-icon">Horizontal<wbr>Position<wbr>Relative<wbr>From</a>
+					</li>
+					<li class=" tsd-kind-enum">
+						<a href="enums/hyperlinktype.html" class="tsd-kind-icon">Hyperlink<wbr>Type</a>
+					</li>
+					<li class=" tsd-kind-enum">
+						<a href="enums/leadertype.html" class="tsd-kind-icon">Leader<wbr>Type</a>
+					</li>
+					<li class=" tsd-kind-enum">
+						<a href="enums/levelformat.html" class="tsd-kind-icon">Level<wbr>Format</a>
+					</li>
+					<li class=" tsd-kind-enum">
+						<a href="enums/levelsuffix.html" class="tsd-kind-icon">Level<wbr>Suffix</a>
+					</li>
+					<li class=" tsd-kind-enum">
+						<a href="enums/linenumberrestartformat.html" class="tsd-kind-icon">Line<wbr>Number<wbr>Restart<wbr>Format</a>
+					</li>
+					<li class=" tsd-kind-enum">
+						<a href="enums/overlaptype.html" class="tsd-kind-icon">Overlap<wbr>Type</a>
+					</li>
+					<li class=" tsd-kind-enum">
+						<a href="enums/pageborderdisplay.html" class="tsd-kind-icon">Page<wbr>Border<wbr>Display</a>
+					</li>
+					<li class=" tsd-kind-enum">
+						<a href="enums/pageborderoffsetfrom.html" class="tsd-kind-icon">Page<wbr>Border<wbr>Offset<wbr>From</a>
+					</li>
+					<li class=" tsd-kind-enum">
+						<a href="enums/pageborderzorder.html" class="tsd-kind-icon">Page<wbr>BorderZOrder</a>
+					</li>
+					<li class=" tsd-kind-enum">
+						<a href="enums/pagenumber.html" class="tsd-kind-icon">Page<wbr>Number</a>
+					</li>
+					<li class=" tsd-kind-enum">
+						<a href="enums/pagenumberformat.html" class="tsd-kind-icon">Page<wbr>Number<wbr>Format</a>
+					</li>
+					<li class=" tsd-kind-enum">
+						<a href="enums/pageorientation.html" class="tsd-kind-icon">Page<wbr>Orientation</a>
+					</li>
+					<li class=" tsd-kind-enum">
+						<a href="enums/relativehorizontalposition.html" class="tsd-kind-icon">Relative<wbr>Horizontal<wbr>Position</a>
+					</li>
+					<li class=" tsd-kind-enum">
+						<a href="enums/relativeverticalposition.html" class="tsd-kind-icon">Relative<wbr>Vertical<wbr>Position</a>
+					</li>
+					<li class=" tsd-kind-enum">
+						<a href="enums/sectiontype.html" class="tsd-kind-icon">Section<wbr>Type</a>
+					</li>
+					<li class=" tsd-kind-enum">
+						<a href="enums/sectionverticalalignvalue.html" class="tsd-kind-icon">Section<wbr>Vertical<wbr>Align<wbr>Value</a>
+					</li>
+					<li class=" tsd-kind-enum">
+						<a href="enums/shadingtype.html" class="tsd-kind-icon">Shading<wbr>Type</a>
+					</li>
+					<li class=" tsd-kind-enum">
+						<a href="enums/tabstopposition.html" class="tsd-kind-icon">Tab<wbr>Stop<wbr>Position</a>
+					</li>
+					<li class=" tsd-kind-enum">
+						<a href="enums/tabstoptype.html" class="tsd-kind-icon">Tab<wbr>Stop<wbr>Type</a>
+					</li>
+					<li class=" tsd-kind-enum">
+						<a href="enums/tableanchortype.html" class="tsd-kind-icon">Table<wbr>Anchor<wbr>Type</a>
+					</li>
+					<li class=" tsd-kind-enum">
+						<a href="enums/tablelayouttype.html" class="tsd-kind-icon">Table<wbr>Layout<wbr>Type</a>
+					</li>
+					<li class=" tsd-kind-enum">
+						<a href="enums/textdirection.html" class="tsd-kind-icon">Text<wbr>Direction</a>
+					</li>
+					<li class=" tsd-kind-enum">
+						<a href="enums/textwrappingside.html" class="tsd-kind-icon">Text<wbr>Wrapping<wbr>Side</a>
+					</li>
+					<li class=" tsd-kind-enum">
+						<a href="enums/textwrappingtype.html" class="tsd-kind-icon">Text<wbr>Wrapping<wbr>Type</a>
+					</li>
+					<li class=" tsd-kind-enum">
+						<a href="enums/underlinetype.html" class="tsd-kind-icon">Underline<wbr>Type</a>
+					</li>
+					<li class=" tsd-kind-enum">
+						<a href="enums/verticalalign.html" class="tsd-kind-icon">Vertical<wbr>Align</a>
+					</li>
+					<li class=" tsd-kind-enum">
+						<a href="enums/verticalmergetype.html" class="tsd-kind-icon">Vertical<wbr>Merge<wbr>Type</a>
+					</li>
+					<li class=" tsd-kind-enum">
+						<a href="enums/verticalpositionalign.html" class="tsd-kind-icon">Vertical<wbr>Position<wbr>Align</a>
+					</li>
+					<li class=" tsd-kind-enum">
+						<a href="enums/verticalpositionrelativefrom.html" class="tsd-kind-icon">Vertical<wbr>Position<wbr>Relative<wbr>From</a>
+					</li>
+					<li class=" tsd-kind-enum">
+						<a href="enums/widthtype.html" class="tsd-kind-icon">Width<wbr>Type</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/abstractnumbering.html" class="tsd-kind-icon">Abstract<wbr>Numbering</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/alignment.html" class="tsd-kind-icon">Alignment</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/alignmentattributes.html" class="tsd-kind-icon">Alignment<wbr>Attributes</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/attributes.html" class="tsd-kind-icon">Attributes</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/baseemphasismark.html" class="tsd-kind-icon">Base<wbr>Emphasis<wbr>Mark</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/baseunderline.html" class="tsd-kind-icon">Base<wbr>Underline</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/basexmlcomponent.html" class="tsd-kind-icon">Base<wbr>Xml<wbr>Component</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/body.html" class="tsd-kind-icon">Body</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/bookmark.html" class="tsd-kind-icon">Bookmark</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/bookmarkend.html" class="tsd-kind-icon">Bookmark<wbr>End</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/bookmarkstart.html" class="tsd-kind-icon">Bookmark<wbr>Start</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/border.html" class="tsd-kind-icon">Border</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/cantsplit.html" class="tsd-kind-icon">Cant<wbr>Split</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/concretehyperlink.html" class="tsd-kind-icon">Concrete<wbr>Hyperlink</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/concretenumbering.html" class="tsd-kind-icon">Concrete<wbr>Numbering</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/contextualspacing.html" class="tsd-kind-icon">Contextual<wbr>Spacing</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/dashdotdotheavyunderline.html" class="tsd-kind-icon">Dash<wbr>Dot<wbr>Dot<wbr>Heavy<wbr>Underline</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/dashdotheavyunderline.html" class="tsd-kind-icon">Dash<wbr>Dot<wbr>Heavy<wbr>Underline</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/dashlongheavyunderline.html" class="tsd-kind-icon">Dash<wbr>Long<wbr>Heavy<wbr>Underline</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/dashlongunderline.html" class="tsd-kind-icon">Dash<wbr>Long<wbr>Underline</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/dashunderline.html" class="tsd-kind-icon">Dash<wbr>Underline</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/deletedtextrun.html" class="tsd-kind-icon">Deleted<wbr>Text<wbr>Run</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/document.html" class="tsd-kind-icon">Document</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/documentattributes.html" class="tsd-kind-icon">Document<wbr>Attributes</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/documentbackground.html" class="tsd-kind-icon">Document<wbr>Background</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/documentbackgroundattributes.html" class="tsd-kind-icon">Document<wbr>Background<wbr>Attributes</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/documentdefaults.html" class="tsd-kind-icon">Document<wbr>Defaults</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/dotdashunderline.html" class="tsd-kind-icon">Dot<wbr>Dash<wbr>Underline</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/dotdotdashunderline.html" class="tsd-kind-icon">Dot<wbr>Dot<wbr>Dash<wbr>Underline</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/dotemphasismark.html" class="tsd-kind-icon">Dot<wbr>Emphasis<wbr>Mark</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/dottedheavyunderline.html" class="tsd-kind-icon">Dotted<wbr>Heavy<wbr>Underline</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/dottedunderline.html" class="tsd-kind-icon">Dotted<wbr>Underline</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/doubleunderline.html" class="tsd-kind-icon">Double<wbr>Underline</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/drawing.html" class="tsd-kind-icon">Drawing</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/emphasismark.html" class="tsd-kind-icon">Emphasis<wbr>Mark</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/externalhyperlink.html" class="tsd-kind-icon">External<wbr>Hyperlink</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/file.html" class="tsd-kind-icon">File</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/footnotereferencerunattributes.html" class="tsd-kind-icon">Foot<wbr>Note<wbr>Reference<wbr>Run<wbr>Attributes</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/footnotes.html" class="tsd-kind-icon">Foot<wbr>Notes</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/footer.html" class="tsd-kind-icon">Footer</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/footerreference.html" class="tsd-kind-icon">Footer<wbr>Reference</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/footerreferenceattributes.html" class="tsd-kind-icon">Footer<wbr>Reference<wbr>Attributes</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/footerwrapper.html" class="tsd-kind-icon">Footer<wbr>Wrapper</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/footnotereference.html" class="tsd-kind-icon">Footnote<wbr>Reference</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/footnotereferencerun.html" class="tsd-kind-icon">Footnote<wbr>Reference<wbr>Run</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/gridspan.html" class="tsd-kind-icon">Grid<wbr>Span</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/header.html" class="tsd-kind-icon">Header</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/headerreference.html" class="tsd-kind-icon">Header<wbr>Reference</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/headerreferenceattributes.html" class="tsd-kind-icon">Header<wbr>Reference<wbr>Attributes</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/headerwrapper.html" class="tsd-kind-icon">Header<wbr>Wrapper</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/horizontalposition.html" class="tsd-kind-icon">Horizontal<wbr>Position</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/ignoreifemptyxmlcomponent.html" class="tsd-kind-icon">Ignore<wbr>IfEmpty<wbr>Xml<wbr>Component</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/importdotx.html" class="tsd-kind-icon">Import<wbr>Dotx</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/importedrootelementattributes.html" class="tsd-kind-icon">Imported<wbr>Root<wbr>Element<wbr>Attributes</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/importedxmlcomponent.html" class="tsd-kind-icon">Imported<wbr>Xml<wbr>Component</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/indent.html" class="tsd-kind-icon">Indent</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/initializablexmlcomponent.html" class="tsd-kind-icon">Initializable<wbr>Xml<wbr>Component</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/insertedtextrun.html" class="tsd-kind-icon">Inserted<wbr>Text<wbr>Run</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/internalhyperlink.html" class="tsd-kind-icon">Internal<wbr>Hyperlink</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/keeplines.html" class="tsd-kind-icon">Keep<wbr>Lines</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/keepnext.html" class="tsd-kind-icon">Keep<wbr>Next</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/level.html" class="tsd-kind-icon">Level</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/levelbase.html" class="tsd-kind-icon">Level<wbr>Base</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/levelforoverride.html" class="tsd-kind-icon">Level<wbr>For<wbr>Override</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/leveloverride.html" class="tsd-kind-icon">Level<wbr>Override</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/linenumberattributes.html" class="tsd-kind-icon">Line<wbr>Number<wbr>Attributes</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/linenumbertype.html" class="tsd-kind-icon">Line<wbr>Number<wbr>Type</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/math.html" class="tsd-kind-icon">Math</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/mathaccentcharacter.html" class="tsd-kind-icon">Math<wbr>Accent<wbr>Character</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/mathangledbrackets.html" class="tsd-kind-icon">Math<wbr>Angled<wbr>Brackets</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/mathbase.html" class="tsd-kind-icon">Math<wbr>Base</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/mathcurlybrackets.html" class="tsd-kind-icon">Math<wbr>Curly<wbr>Brackets</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/mathdegree.html" class="tsd-kind-icon">Math<wbr>Degree</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/mathdenominator.html" class="tsd-kind-icon">Math<wbr>Denominator</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/mathfraction.html" class="tsd-kind-icon">Math<wbr>Fraction</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/mathfunction.html" class="tsd-kind-icon">Math<wbr>Function</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/mathfunctionname.html" class="tsd-kind-icon">Math<wbr>Function<wbr>Name</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/mathfunctionproperties.html" class="tsd-kind-icon">Math<wbr>Function<wbr>Properties</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/mathlimitlocation.html" class="tsd-kind-icon">Math<wbr>Limit<wbr>Location</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/mathnarayproperties.html" class="tsd-kind-icon">MathNAray<wbr>Properties</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/mathnumerator.html" class="tsd-kind-icon">Math<wbr>Numerator</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/mathpresubsuperscript.html" class="tsd-kind-icon">Math<wbr>Pre<wbr>Sub<wbr>Super<wbr>Script</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/mathpresubsuperscriptproperties.html" class="tsd-kind-icon">Math<wbr>Pre<wbr>Sub<wbr>Super<wbr>Script<wbr>Properties</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/mathradical.html" class="tsd-kind-icon">Math<wbr>Radical</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/mathradicalproperties.html" class="tsd-kind-icon">Math<wbr>Radical<wbr>Properties</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/mathroundbrackets.html" class="tsd-kind-icon">Math<wbr>Round<wbr>Brackets</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/mathrun.html" class="tsd-kind-icon">Math<wbr>Run</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/mathsquarebrackets.html" class="tsd-kind-icon">Math<wbr>Square<wbr>Brackets</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/mathsubscript.html" class="tsd-kind-icon">Math<wbr>Sub<wbr>Script</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/mathsubscriptelement.html" class="tsd-kind-icon">Math<wbr>Sub<wbr>Script<wbr>Element</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/mathsubscriptproperties.html" class="tsd-kind-icon">Math<wbr>Sub<wbr>Script<wbr>Properties</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/mathsubsuperscript.html" class="tsd-kind-icon">Math<wbr>Sub<wbr>Super<wbr>Script</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/mathsubsuperscriptproperties.html" class="tsd-kind-icon">Math<wbr>Sub<wbr>Super<wbr>Script<wbr>Properties</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/mathsum.html" class="tsd-kind-icon">Math<wbr>Sum</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/mathsuperscript.html" class="tsd-kind-icon">Math<wbr>Super<wbr>Script</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/mathsuperscriptelement.html" class="tsd-kind-icon">Math<wbr>Super<wbr>Script<wbr>Element</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/mathsuperscriptproperties.html" class="tsd-kind-icon">Math<wbr>Super<wbr>Script<wbr>Properties</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/media.html" class="tsd-kind-icon">Media</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/numberproperties.html" class="tsd-kind-icon">Number<wbr>Properties</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/numbering.html" class="tsd-kind-icon">Numbering</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/outlinelevel.html" class="tsd-kind-icon">Outline<wbr>Level</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/packer.html" class="tsd-kind-icon">Packer</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/pageborders.html" class="tsd-kind-icon">Page<wbr>Borders</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/pagebreak.html" class="tsd-kind-icon">Page<wbr>Break</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/pagebreakbefore.html" class="tsd-kind-icon">Page<wbr>Break<wbr>Before</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/pagenumbertype.html" class="tsd-kind-icon">Page<wbr>Number<wbr>Type</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/pagenumbertypeattributes.html" class="tsd-kind-icon">Page<wbr>Number<wbr>Type<wbr>Attributes</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/pagesize.html" class="tsd-kind-icon">Page<wbr>Size</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/pagesizeattributes.html" class="tsd-kind-icon">Page<wbr>Size<wbr>Attributes</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/paragraph.html" class="tsd-kind-icon">Paragraph</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/paragraphproperties.html" class="tsd-kind-icon">Paragraph<wbr>Properties</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/paragraphpropertiesdefaults.html" class="tsd-kind-icon">Paragraph<wbr>Properties<wbr>Defaults</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/picturerun.html" class="tsd-kind-icon">Picture<wbr>Run</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/run.html" class="tsd-kind-icon">Run</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/runfonts.html" class="tsd-kind-icon">Run<wbr>Fonts</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/runproperties.html" class="tsd-kind-icon">Run<wbr>Properties</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/runpropertiesdefaults.html" class="tsd-kind-icon">Run<wbr>Properties<wbr>Defaults</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/sectionproperties.html" class="tsd-kind-icon">Section<wbr>Properties</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/sectiontypeattributes.html" class="tsd-kind-icon">Section<wbr>Type<wbr>Attributes</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/sectionverticalalign.html" class="tsd-kind-icon">Section<wbr>Vertical<wbr>Align</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/sectionverticalalignattributes.html" class="tsd-kind-icon">Section<wbr>Vertical<wbr>Align<wbr>Attributes</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/sequentialidentifier.html" class="tsd-kind-icon">Sequential<wbr>Identifier</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/simplepos.html" class="tsd-kind-icon">Simple<wbr>Pos</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/singleunderline.html" class="tsd-kind-icon">Single<wbr>Underline</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/spacing.html" class="tsd-kind-icon">Spacing</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/style.html" class="tsd-kind-icon">Style</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/styleforcharacter.html" class="tsd-kind-icon">Style<wbr>For<wbr>Character</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/styleforparagraph.html" class="tsd-kind-icon">Style<wbr>For<wbr>Paragraph</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/stylelevel.html" class="tsd-kind-icon">Style<wbr>Level</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/styles.html" class="tsd-kind-icon">Styles</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/symbolrun.html" class="tsd-kind-icon">Symbol<wbr>Run</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/tdirection.html" class="tsd-kind-icon">TDirection</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/tab.html" class="tsd-kind-icon">Tab</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/tabattributes.html" class="tsd-kind-icon">Tab<wbr>Attributes</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/tabstop.html" class="tsd-kind-icon">Tab<wbr>Stop</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/tabstopitem.html" class="tsd-kind-icon">Tab<wbr>Stop<wbr>Item</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/table.html" class="tsd-kind-icon">Table</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/tableborders.html" class="tsd-kind-icon">Table<wbr>Borders</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/tablecell.html" class="tsd-kind-icon">Table<wbr>Cell</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/tablecellborders.html" class="tsd-kind-icon">Table<wbr>Cell<wbr>Borders</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/tablecellwidth.html" class="tsd-kind-icon">Table<wbr>Cell<wbr>Width</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/tablefloatoptionsattributes.html" class="tsd-kind-icon">Table<wbr>Float<wbr>Options<wbr>Attributes</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/tablefloatproperties.html" class="tsd-kind-icon">Table<wbr>Float<wbr>Properties</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/tableheader.html" class="tsd-kind-icon">Table<wbr>Header</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/tablelayout.html" class="tsd-kind-icon">Table<wbr>Layout</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/tableofcontents.html" class="tsd-kind-icon">Table<wbr>OfContents</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/tableoverlap.html" class="tsd-kind-icon">Table<wbr>Overlap</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/tableproperties.html" class="tsd-kind-icon">Table<wbr>Properties</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/tablerow.html" class="tsd-kind-icon">Table<wbr>Row</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/tablerowheight.html" class="tsd-kind-icon">Table<wbr>Row<wbr>Height</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/tablerowheightattributes.html" class="tsd-kind-icon">Table<wbr>Row<wbr>Height<wbr>Attributes</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/tablerowproperties.html" class="tsd-kind-icon">Table<wbr>Row<wbr>Properties</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/tableshading.html" class="tsd-kind-icon">Table<wbr>Shading</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/textrun.html" class="tsd-kind-icon">Text<wbr>Run</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/thematicbreak.html" class="tsd-kind-icon">Thematic<wbr>Break</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/thickunderline.html" class="tsd-kind-icon">Thick<wbr>Underline</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/type.html" class="tsd-kind-icon">Type</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/underline.html" class="tsd-kind-icon">Underline</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/valign.html" class="tsd-kind-icon">VAlign</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/verticalmerge.html" class="tsd-kind-icon">Vertical<wbr>Merge</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/verticalposition.html" class="tsd-kind-icon">Vertical<wbr>Position</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/waveunderline.html" class="tsd-kind-icon">Wave<wbr>Underline</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/wavydoubleunderline.html" class="tsd-kind-icon">Wavy<wbr>Double<wbr>Underline</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/wavyheavyunderline.html" class="tsd-kind-icon">Wavy<wbr>Heavy<wbr>Underline</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/wordsunderline.html" class="tsd-kind-icon">Words<wbr>Underline</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/wrapnone.html" class="tsd-kind-icon">Wrap<wbr>None</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/wrapsquare.html" class="tsd-kind-icon">Wrap<wbr>Square</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/wraptight.html" class="tsd-kind-icon">Wrap<wbr>Tight</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/wraptopandbottom.html" class="tsd-kind-icon">Wrap<wbr>Top<wbr>And<wbr>Bottom</a>
+					</li>
+					<li class=" tsd-kind-class tsd-has-type-parameter">
+						<a href="classes/xmlattributecomponent.html" class="tsd-kind-icon">Xml<wbr>Attribute<wbr>Component</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/xmlcomponent.html" class="tsd-kind-icon">Xml<wbr>Component</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/iattributesproperties.html" class="tsd-kind-icon">IAttributes<wbr>Properties</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/ibasecharacterstyleoptions.html" class="tsd-kind-icon">IBase<wbr>Character<wbr>Style<wbr>Options</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/ibaseparagraphstyleoptions.html" class="tsd-kind-icon">IBase<wbr>Paragraph<wbr>Style<wbr>Options</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/iborderoptions.html" class="tsd-kind-icon">IBorder<wbr>Options</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/icharacterstyleoptions.html" class="tsd-kind-icon">ICharacter<wbr>Style<wbr>Options</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/idistance.html" class="tsd-kind-icon">IDistance</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/idocumentattributesproperties.html" class="tsd-kind-icon">IDocument<wbr>Attributes<wbr>Properties</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/idocumentbackgroundoptions.html" class="tsd-kind-icon">IDocument<wbr>Background<wbr>Options</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/idocumentdefaultsoptions.html" class="tsd-kind-icon">IDocument<wbr>Defaults<wbr>Options</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/idocumentfooter.html" class="tsd-kind-icon">IDocument<wbr>Footer</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/idocumentheader.html" class="tsd-kind-icon">IDocument<wbr>Header</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/idocumentoptions.html" class="tsd-kind-icon">IDocument<wbr>Options</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/idocumenttemplate.html" class="tsd-kind-icon">IDocument<wbr>Template</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/idrawingoptions.html" class="tsd-kind-icon">IDrawing<wbr>Options</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/ifileproperties.html" class="tsd-kind-icon">IFile<wbr>Properties</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/ifloating.html" class="tsd-kind-icon">IFloating</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/ifontattributesproperties.html" class="tsd-kind-icon">IFont<wbr>Attributes<wbr>Properties</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/ifooteroptions.html" class="tsd-kind-icon">IFooter<wbr>Options</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/ifooterreferenceattributes.html" class="tsd-kind-icon">IFooter<wbr>Reference<wbr>Attributes</a>
+					</li>
+					<li class=" tsd-kind-interface tsd-has-type-parameter">
+						<a href="interfaces/iheaderfootergroup.html" class="tsd-kind-icon">IHeader<wbr>Footer<wbr>Group</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/iheaderoptions.html" class="tsd-kind-icon">IHeader<wbr>Options</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/iheaderreferenceattributes.html" class="tsd-kind-icon">IHeader<wbr>Reference<wbr>Attributes</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/iheaderreferenceoptions.html" class="tsd-kind-icon">IHeader<wbr>Reference<wbr>Options</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/ihorizontalpositionoptions.html" class="tsd-kind-icon">IHorizontal<wbr>Position<wbr>Options</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/iindentattributesproperties.html" class="tsd-kind-icon">IIndent<wbr>Attributes<wbr>Properties</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/ilevelsoptions.html" class="tsd-kind-icon">ILevels<wbr>Options</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/ilinenumberattributes.html" class="tsd-kind-icon">ILine<wbr>Number<wbr>Attributes</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/imargins.html" class="tsd-kind-icon">IMargins</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/imathfractionoptions.html" class="tsd-kind-icon">IMath<wbr>Fraction<wbr>Options</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/imathfunctionoptions.html" class="tsd-kind-icon">IMath<wbr>Function<wbr>Options</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/imathoptions.html" class="tsd-kind-icon">IMath<wbr>Options</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/imathpresubsuperscriptoptions.html" class="tsd-kind-icon">IMath<wbr>Pre<wbr>Sub<wbr>Super<wbr>Script<wbr>Options</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/imathradicaloptions.html" class="tsd-kind-icon">IMath<wbr>Radical<wbr>Options</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/imathsubscriptoptions.html" class="tsd-kind-icon">IMath<wbr>Sub<wbr>Script<wbr>Options</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/imathsubsuperscriptoptions.html" class="tsd-kind-icon">IMath<wbr>Sub<wbr>Super<wbr>Script<wbr>Options</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/imathsumoptions.html" class="tsd-kind-icon">IMath<wbr>Sum<wbr>Options</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/imathsuperscriptoptions.html" class="tsd-kind-icon">IMath<wbr>Super<wbr>Script<wbr>Options</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/imediadata.html" class="tsd-kind-icon">IMedia<wbr>Data</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/imediadatadimensions.html" class="tsd-kind-icon">IMedia<wbr>Data<wbr>Dimensions</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/inumberingoptions.html" class="tsd-kind-icon">INumbering<wbr>Options</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/ipageborderattributes.html" class="tsd-kind-icon">IPage<wbr>Border<wbr>Attributes</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/ipageborderconfiguration.html" class="tsd-kind-icon">IPage<wbr>Border<wbr>Configuration</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/ipagebordersoptions.html" class="tsd-kind-icon">IPage<wbr>Borders<wbr>Options</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/ipagenumbertypeattributes.html" class="tsd-kind-icon">IPage<wbr>Number<wbr>Type<wbr>Attributes</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/ipagesizeattributes.html" class="tsd-kind-icon">IPage<wbr>Size<wbr>Attributes</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/iparagraphoptions.html" class="tsd-kind-icon">IParagraph<wbr>Options</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/iparagraphpropertiesoptions.html" class="tsd-kind-icon">IParagraph<wbr>Properties<wbr>Options</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/iparagraphstyleoptions.html" class="tsd-kind-icon">IParagraph<wbr>Style<wbr>Options</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/iparagraphstylepropertiesoptions.html" class="tsd-kind-icon">IParagraph<wbr>Style<wbr>Properties<wbr>Options</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/irunoptions.html" class="tsd-kind-icon">IRun<wbr>Options</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/irunpropertiesoptions.html" class="tsd-kind-icon">IRun<wbr>Properties<wbr>Options</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/irunstylepropertiesoptions.html" class="tsd-kind-icon">IRun<wbr>Style<wbr>Properties<wbr>Options</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/isectionoptions.html" class="tsd-kind-icon">ISection<wbr>Options</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/isectionverticalalignattributes.html" class="tsd-kind-icon">ISection<wbr>Vertical<wbr>Align<wbr>Attributes</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/ispacingproperties.html" class="tsd-kind-icon">ISpacing<wbr>Properties</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/istylesoptions.html" class="tsd-kind-icon">IStyles<wbr>Options</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/isymbolrunoptions.html" class="tsd-kind-icon">ISymbol<wbr>Run<wbr>Options</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/itablebordersoptions.html" class="tsd-kind-icon">ITable<wbr>Borders<wbr>Options</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/itablecelloptions.html" class="tsd-kind-icon">ITable<wbr>Cell<wbr>Options</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/itablefloatoptions.html" class="tsd-kind-icon">ITable<wbr>Float<wbr>Options</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/itableofcontentsoptions.html" class="tsd-kind-icon">ITable<wbr>OfContents<wbr>Options</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/itableoptions.html" class="tsd-kind-icon">ITable<wbr>Options</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/itablepropertiesoptions.html" class="tsd-kind-icon">ITable<wbr>Properties<wbr>Options</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/itablerowoptions.html" class="tsd-kind-icon">ITable<wbr>Row<wbr>Options</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/itableshadingattributesproperties.html" class="tsd-kind-icon">ITable<wbr>Shading<wbr>Attributes<wbr>Properties</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/itextwrapping.html" class="tsd-kind-icon">IText<wbr>Wrapping</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/iverticalpositionoptions.html" class="tsd-kind-icon">IVertical<wbr>Position<wbr>Options</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/ixmlattribute.html" class="tsd-kind-icon">IXml<wbr>Attribute</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/ixmlableobject.html" class="tsd-kind-icon">IXmlable<wbr>Object</a>
+					</li>
+					<li class=" tsd-kind-type-alias tsd-has-type-parameter">
+						<a href="modules.html#attributemap" class="tsd-kind-icon">Attribute<wbr>Map</a>
+					</li>
+					<li class=" tsd-kind-type-alias">
+						<a href="modules.html#mathcomponent" class="tsd-kind-icon">Math<wbr>Component</a>
+					</li>
+					<li class=" tsd-kind-type-alias">
+						<a href="modules.html#paragraphchild" class="tsd-kind-icon">Paragraph<wbr>Child</a>
+					</li>
+					<li class=" tsd-kind-type-alias">
+						<a href="modules.html#sectionpropertiesoptions" class="tsd-kind-icon">Section<wbr>Properties<wbr>Options</a>
+					</li>
+					<li class=" tsd-kind-variable">
+						<a href="modules.html#empty_object" class="tsd-kind-icon">EMPTY_<wbr>OBJECT</a>
+					</li>
+					<li class=" tsd-kind-function">
+						<a href="modules.html#convertinchestotwip" class="tsd-kind-icon">convert<wbr>Inches<wbr>ToTwip</a>
+					</li>
+					<li class=" tsd-kind-function">
+						<a href="modules.html#convertmillimeterstotwip" class="tsd-kind-icon">convert<wbr>Millimeters<wbr>ToTwip</a>
+					</li>
+					<li class=" tsd-kind-function">
+						<a href="modules.html#converttoxmlcomponent" class="tsd-kind-icon">convert<wbr>ToXml<wbr>Component</a>
+					</li>
+				</ul>
+			</nav>
+		</div>
+	</div>
+</div>
+<footer class="with-border-bottom">
+	<div class="container">
+		<h2>Legend</h2>
+		<div class="tsd-legend-group">
+			<ul class="tsd-legend">
+				<li class="tsd-kind-constructor tsd-parent-kind-class"><span class="tsd-kind-icon">Constructor</span></li>
+				<li class="tsd-kind-property tsd-parent-kind-class"><span class="tsd-kind-icon">Property</span></li>
+				<li class="tsd-kind-method tsd-parent-kind-class"><span class="tsd-kind-icon">Method</span></li>
+			</ul>
+			<ul class="tsd-legend">
+				<li class="tsd-kind-constructor tsd-parent-kind-class tsd-is-inherited"><span class="tsd-kind-icon">Inherited constructor</span></li>
+				<li class="tsd-kind-property tsd-parent-kind-class tsd-is-inherited"><span class="tsd-kind-icon">Inherited property</span></li>
+				<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><span class="tsd-kind-icon">Inherited method</span></li>
+			</ul>
+			<ul class="tsd-legend">
+				<li class="tsd-kind-property tsd-parent-kind-class tsd-is-static"><span class="tsd-kind-icon">Static property</span></li>
+				<li class="tsd-kind-method tsd-parent-kind-class tsd-is-static"><span class="tsd-kind-icon">Static method</span></li>
+			</ul>
+			<ul class="tsd-legend">
+				<li class="tsd-kind-property tsd-parent-kind-interface"><span class="tsd-kind-icon">Property</span></li>
+			</ul>
+		</div>
+	</div>
+</footer>
+<div class="container tsd-generator">
+	<p>Generated using <a href="https://typedoc.org/" target="_blank">TypeDoc</a></p>
+</div>
+<div class="overlay"></div>
+<script src="assets/js/main.js"></script>
+</body>
+</html>
