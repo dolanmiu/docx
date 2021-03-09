@@ -14,7 +14,7 @@
     "tsc": "rimraf ./build && tsc -p .",
     "webpack": "rimraf ./build && webpack",
     "demo": "npm run build && npm run ts-node ./demo",
-    "typedoc": "typedoc src/index.ts",
+    "typedoc": "typedoc src/index.ts --tsconfig tsconfig.typedoc.json",
     "style": "prettier -l \"src/**/*.ts\"",
     "style.fix": "npm run style -- --write",
     "fix-types": "ts-node scripts/types-absolute-fixer.ts",
