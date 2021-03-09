@@ -1,7 +1,7 @@
 // Page numbers - Start from 0 on a new section
 // Import from 'docx' rather than '../build' if you install from npm
 import * as fs from "fs";
-import { AlignmentType, Document, Header, Packer, PageBreak, PageNumber, Paragraph, TextRun } from "../build";
+import { AlignmentType, Document, Header, Packer, PageBreak, PageNumber, PageNumberSeparator, Paragraph, TextRun } from "../build";
 
 const doc = new Document();
 
@@ -45,6 +45,7 @@ doc.addSection({
 doc.addSection({
     properties: {
         pageNumberStart: 1,
+        pageNumberSeparator: PageNumberSeparator.EM_DASH
     },
     headers: {
         default: new Header({
