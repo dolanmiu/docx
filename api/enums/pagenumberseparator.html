@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>TableLayoutType | docx</title>
+	<title>PageNumberSeparator | docx</title>
 	<meta name="description" content="Documentation for docx">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="../assets/css/main.css">
@@ -55,10 +55,10 @@
 					<a href="../modules.html">docx</a>
 				</li>
 				<li>
-					<a href="tablelayouttype.html">TableLayoutType</a>
+					<a href="pagenumberseparator.html">PageNumberSeparator</a>
 				</li>
 			</ul>
-			<h1>Enumeration TableLayoutType</h1>
+			<h1>Enumeration PageNumberSeparator</h1>
 		</div>
 	</div>
 </header>
@@ -72,8 +72,11 @@
 						<section class="tsd-index-section ">
 							<h3>Enumeration members</h3>
 							<ul class="tsd-index-list">
-								<li class="tsd-kind-enum-member tsd-parent-kind-enum"><a href="tablelayouttype.html#autofit" class="tsd-kind-icon">AUTOFIT</a></li>
-								<li class="tsd-kind-enum-member tsd-parent-kind-enum"><a href="tablelayouttype.html#fixed" class="tsd-kind-icon">FIXED</a></li>
+								<li class="tsd-kind-enum-member tsd-parent-kind-enum"><a href="pagenumberseparator.html#colon" class="tsd-kind-icon">COLON</a></li>
+								<li class="tsd-kind-enum-member tsd-parent-kind-enum"><a href="pagenumberseparator.html#em_dash" class="tsd-kind-icon">EM_<wbr>DASH</a></li>
+								<li class="tsd-kind-enum-member tsd-parent-kind-enum"><a href="pagenumberseparator.html#en_dash" class="tsd-kind-icon">EN_<wbr>DASH</a></li>
+								<li class="tsd-kind-enum-member tsd-parent-kind-enum"><a href="pagenumberseparator.html#hyphen" class="tsd-kind-icon">HYPHEN</a></li>
+								<li class="tsd-kind-enum-member tsd-parent-kind-enum"><a href="pagenumberseparator.html#period" class="tsd-kind-icon">PERIOD</a></li>
 							</ul>
 						</section>
 					</div>
@@ -82,22 +85,52 @@
 			<section class="tsd-panel-group tsd-member-group ">
 				<h2>Enumeration members</h2>
 				<section class="tsd-panel tsd-member tsd-kind-enum-member tsd-parent-kind-enum">
-					<a name="autofit" class="tsd-anchor"></a>
-					<h3>AUTOFIT</h3>
-					<div class="tsd-signature tsd-kind-icon">AUTOFIT<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol"> = &quot;autofit&quot;</span></div>
+					<a name="colon" class="tsd-anchor"></a>
+					<h3>COLON</h3>
+					<div class="tsd-signature tsd-kind-icon">COLON<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol"> = &quot;colon&quot;</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/48d9e75/src/file/table/table-properties/table-layout.ts#L4">src/file/table/table-properties/table-layout.ts:4</a></li>
+							<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/48d9e75/src/file/document/body/section-properties/page-number/page-number.ts#L21">src/file/document/body/section-properties/page-number/page-number.ts:21</a></li>
 						</ul>
 					</aside>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-enum-member tsd-parent-kind-enum">
-					<a name="fixed" class="tsd-anchor"></a>
-					<h3>FIXED</h3>
-					<div class="tsd-signature tsd-kind-icon">FIXED<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol"> = &quot;fixed&quot;</span></div>
+					<a name="em_dash" class="tsd-anchor"></a>
+					<h3>EM_<wbr>DASH</h3>
+					<div class="tsd-signature tsd-kind-icon">EM_<wbr>DASH<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol"> = &quot;emDash&quot;</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/48d9e75/src/file/table/table-properties/table-layout.ts#L5">src/file/table/table-properties/table-layout.ts:5</a></li>
+							<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/48d9e75/src/file/document/body/section-properties/page-number/page-number.ts#L22">src/file/document/body/section-properties/page-number/page-number.ts:22</a></li>
+						</ul>
+					</aside>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-enum-member tsd-parent-kind-enum">
+					<a name="en_dash" class="tsd-anchor"></a>
+					<h3>EN_<wbr>DASH</h3>
+					<div class="tsd-signature tsd-kind-icon">EN_<wbr>DASH<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol"> = &quot;endash&quot;</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/48d9e75/src/file/document/body/section-properties/page-number/page-number.ts#L23">src/file/document/body/section-properties/page-number/page-number.ts:23</a></li>
+						</ul>
+					</aside>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-enum-member tsd-parent-kind-enum">
+					<a name="hyphen" class="tsd-anchor"></a>
+					<h3>HYPHEN</h3>
+					<div class="tsd-signature tsd-kind-icon">HYPHEN<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol"> = &quot;hyphen&quot;</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/48d9e75/src/file/document/body/section-properties/page-number/page-number.ts#L24">src/file/document/body/section-properties/page-number/page-number.ts:24</a></li>
+						</ul>
+					</aside>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-enum-member tsd-parent-kind-enum">
+					<a name="period" class="tsd-anchor"></a>
+					<h3>PERIOD</h3>
+					<div class="tsd-signature tsd-kind-icon">PERIOD<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol"> = &quot;period&quot;</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/48d9e75/src/file/document/body/section-properties/page-number/page-number.ts#L25">src/file/document/body/section-properties/page-number/page-number.ts:25</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -116,13 +149,22 @@
 				</ul>
 				<ul class="current">
 					<li class="current tsd-kind-enum">
-						<a href="tablelayouttype.html" class="tsd-kind-icon">Table<wbr>Layout<wbr>Type</a>
+						<a href="pagenumberseparator.html" class="tsd-kind-icon">Page<wbr>Number<wbr>Separator</a>
 						<ul>
 							<li class=" tsd-kind-enum-member tsd-parent-kind-enum">
-								<a href="tablelayouttype.html#autofit" class="tsd-kind-icon">AUTOFIT</a>
+								<a href="pagenumberseparator.html#colon" class="tsd-kind-icon">COLON</a>
 							</li>
 							<li class=" tsd-kind-enum-member tsd-parent-kind-enum">
-								<a href="tablelayouttype.html#fixed" class="tsd-kind-icon">FIXED</a>
+								<a href="pagenumberseparator.html#em_dash" class="tsd-kind-icon">EM_<wbr>DASH</a>
+							</li>
+							<li class=" tsd-kind-enum-member tsd-parent-kind-enum">
+								<a href="pagenumberseparator.html#en_dash" class="tsd-kind-icon">EN_<wbr>DASH</a>
+							</li>
+							<li class=" tsd-kind-enum-member tsd-parent-kind-enum">
+								<a href="pagenumberseparator.html#hyphen" class="tsd-kind-icon">HYPHEN</a>
+							</li>
+							<li class=" tsd-kind-enum-member tsd-parent-kind-enum">
+								<a href="pagenumberseparator.html#period" class="tsd-kind-icon">PERIOD</a>
 							</li>
 						</ul>
 					</li>
