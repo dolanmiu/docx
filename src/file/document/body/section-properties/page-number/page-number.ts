@@ -17,25 +17,36 @@ export enum PageNumberFormat {
     DECIMAL_FULL_WIDTH = "decimalFullWidth",
 }
 
+export enum PageNumberSeparator {
+    COLON = "colon",
+    EM_DASH = "emDash",
+    EN_DASH = "endash",
+    HYPHEN = "hyphen",
+    PERIOD = "period",
+}
+
 export interface IPageNumberTypeAttributes {
     readonly pageNumberStart?: number;
     readonly pageNumberFormatType?: PageNumberFormat;
+    readonly pageNumberSeparator?: PageNumberSeparator;
 }
 
 export class PageNumberTypeAttributes extends XmlAttributeComponent<IPageNumberTypeAttributes> {
     protected readonly xmlKeys = {
         pageNumberStart: "w:start",
         pageNumberFormatType: "w:fmt",
+        pageNumberSeparator: "w:chapSep",
     };
 }
 
 export class PageNumberType extends XmlComponent {
-    constructor(start?: number, numberFormat?: PageNumberFormat) {
+    constructor(start?: number, numberFormat?: PageNumberFormat, separator?: PageNumberSeparator) {
         super("w:pgNumType");
         this.root.push(
             new PageNumberTypeAttributes({
                 pageNumberStart: start,
                 pageNumberFormatType: numberFormat,
+                pageNumberSeparator: separator,
             }),
         );
     }

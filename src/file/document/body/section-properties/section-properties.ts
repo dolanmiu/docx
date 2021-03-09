@@ -65,10 +65,8 @@ export class SectionProperties extends XmlComponent {
     public readonly rightMargin: number;
     public readonly leftMargin: number;
 
-    constructor(options: SectionPropertiesOptions = { column: {} }) {
-        super("w:sectPr");
-
-        const {
+    constructor(
+        {
             width = 11906,
             height = 16838,
             top = convertInchesToTwip(1),
@@ -86,6 +84,7 @@ export class SectionProperties extends XmlComponent {
             footers,
             pageNumberFormatType,
             pageNumberStart,
+            pageNumberSeparator,
             lineNumberCountBy,
             lineNumberStart,
             lineNumberRestart,
@@ -98,7 +97,9 @@ export class SectionProperties extends XmlComponent {
             titlePage = false,
             verticalAlign,
             type,
-        } = options;
+        }: SectionPropertiesOptions = { column: {} },
+    ) {
+        super("w:sectPr");
 
         this.leftMargin = left;
         this.rightMargin = right;
@@ -112,9 +113,7 @@ export class SectionProperties extends XmlComponent {
         this.addHeaders(headers);
         this.addFooters(footers);
 
-        if (pageNumberStart || pageNumberFormatType) {
-            this.root.push(new PageNumberType(pageNumberStart, pageNumberFormatType));
-        }
+        this.root.push(new PageNumberType(pageNumberStart, pageNumberFormatType, pageNumberSeparator));
 
         if (lineNumberCountBy || lineNumberStart || lineNumberRestart || lineNumberDistance) {
             this.root.push(new LineNumberType(lineNumberCountBy, lineNumberStart, lineNumberRestart, lineNumberDistance));

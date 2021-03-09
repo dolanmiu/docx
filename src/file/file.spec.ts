@@ -160,6 +160,11 @@ describe("File", () => {
                                     },
                                 },
                             },
+                            {
+                                "w:pgNumType": {
+                                    _attr: {},
+                                },
+                            },
                         ],
                     },
                 ],

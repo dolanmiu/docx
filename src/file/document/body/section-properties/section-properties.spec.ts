@@ -5,6 +5,7 @@ import { Formatter } from "export/formatter";
 import { FooterWrapper } from "file/footer-wrapper";
 import { HeaderWrapper } from "file/header-wrapper";
 import { Media } from "file/media";
+import { LineNumberRestartFormat } from "./line-number";
 
 import { PageBorderOffsetFrom } from "./page-border";
 import { PageNumberFormat } from "./page-number";
@@ -194,12 +195,12 @@ describe("SectionProperties", () => {
             });
         });
 
-        it("should create section properties without page number type", () => {
+        it("should create section properties with a page number type by default", () => {
             const properties = new SectionProperties({});
             const tree = new Formatter().format(properties);
             expect(Object.keys(tree)).to.deep.equal(["w:sectPr"]);
             const pgNumType = tree["w:sectPr"].find((item) => item["w:pgNumType"] !== undefined);
-            expect(pgNumType).to.equal(undefined);
+            expect(pgNumType).to.deep.equal({ "w:pgNumType": { _attr: {} } });
         });
 
         it("should create section properties with section type", () => {
@@ -211,6 +212,21 @@ describe("SectionProperties", () => {
             const type = tree["w:sectPr"].find((item) => item["w:type"] !== undefined);
             expect(type).to.deep.equal({
                 "w:type": { _attr: { "w:val": "continuous" } },
+            });
+        });
+
+        it("should create section properties line number type", () => {
+            const properties = new SectionProperties({
+                lineNumberCountBy: 2,
+                lineNumberStart: 2,
+                lineNumberRestart: LineNumberRestartFormat.CONTINUOUS,
+                lineNumberDistance: 4,
+            });
+            const tree = new Formatter().format(properties);
+            expect(Object.keys(tree)).to.deep.equal(["w:sectPr"]);
+            const type = tree["w:sectPr"].find((item) => item["w:lnNumType"] !== undefined);
+            expect(type).to.deep.equal({
+                "w:lnNumType": { _attr: { "w:countBy": 2, "w:distance": 4, "w:restart": "continuous", "w:start": 2 } },
             });
         });
     });
