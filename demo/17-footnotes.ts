@@ -4,14 +4,14 @@ import * as fs from "fs";
 import { Document, FootnoteReferenceRun, Packer, Paragraph, TextRun } from "../build";
 
 const doc = new Document({
-    footnotes: [
-        new Paragraph("Foo"),
-        new Paragraph("Test"),
-        new Paragraph("My amazing reference"),
-        new Paragraph("Foo1"),
-        new Paragraph("Test1"),
-        new Paragraph("My amazing reference1"),
-    ],
+    footnotes: {
+        1: { children: [new Paragraph("Foo"), new Paragraph("Bar")] },
+        2: { children: [new Paragraph("Test")] },
+        3: { children: [new Paragraph("My amazing reference")] },
+        4: { children: [new Paragraph("Foo1")] },
+        5: { children: [new Paragraph("Test1")] },
+        6: { children: [new Paragraph("My amazing reference1")] },
+    },
 });
 
 doc.addSection({

@@ -1,7 +1,7 @@
 // Custom styles using JavaScript configuration
 // Import from 'docx' rather than '../build' if you install from npm
 import * as fs from "fs";
-import { Document, HeadingLevel, Packer, Paragraph, UnderlineType } from "../build";
+import { Document, convertInchesToTwip, HeadingLevel, Packer, Paragraph, UnderlineType } from "../build";
 
 const doc = new Document({
     styles: {
@@ -17,7 +17,7 @@ const doc = new Document({
                 },
                 paragraph: {
                     indent: {
-                        left: 720,
+                        left: convertInchesToTwip(0.5),
                     },
                     spacing: {
                         line: 276,

@@ -1,4 +1,5 @@
 // http://officeopenxml.com/WPsection.php
+import { convertInchesToTwip } from "convenience-functions";
 import { FooterWrapper } from "file/footer-wrapper";
 import { HeaderWrapper } from "file/header-wrapper";
 import { XmlComponent } from "file/xml-components";
@@ -18,6 +19,8 @@ import { IPageNumberTypeAttributes, PageNumberType } from "./page-number";
 import { PageSize } from "./page-size/page-size";
 import { IPageSizeAttributes, PageOrientation } from "./page-size/page-size-attributes";
 import { TitlePage } from "./title-page/title-page";
+import { Type } from "./type/section-type";
+import { SectionType } from "./type/section-type-attributes";
 import { ISectionVerticalAlignAttributes, SectionVerticalAlign } from "./vertical-align";
 
 export interface IHeaderFooterGroup<T> {
@@ -51,19 +54,25 @@ export type SectionPropertiesOptions = IPageSizeAttributes &
         readonly column?: {
             readonly space?: number;
             readonly count?: number;
+            readonly separate?: boolean;
         };
+        readonly type?: SectionType;
     };
 // Need to decouple this from the attributes
 
 export class SectionProperties extends XmlComponent {
+    public readonly width: number;
+    public readonly rightMargin: number;
+    public readonly leftMargin: number;
+
     constructor(
         {
             width = 11906,
             height = 16838,
-            top = 1440,
-            right = 1440,
-            bottom = 1440,
-            left = 1440,
+            top = convertInchesToTwip(1),
+            right = convertInchesToTwip(1),
+            bottom = convertInchesToTwip(1),
+            left = convertInchesToTwip(1),
             header = 708,
             footer = 708,
             gutter = 0,
@@ -87,13 +96,18 @@ export class SectionProperties extends XmlComponent {
             pageBorderLeft,
             titlePage = false,
             verticalAlign,
+            type,
         }: SectionPropertiesOptions = { column: {} },
     ) {
         super("w:sectPr");
 
+        this.leftMargin = left;
+        this.rightMargin = right;
+        this.width = width;
+
         this.root.push(new PageSize(width, height, orientation));
         this.root.push(new PageMargin(top, right, bottom, left, header, footer, gutter, mirror));
-        this.root.push(new Columns(column.space ? column.space : 708, column.count ? column.count : 1));
+        this.root.push(new Columns(column.space ? column.space : 708, column.count ? column.count : 1, column.separate ?? false));
         this.root.push(new DocumentGrid(linePitch));
 
         this.addHeaders(headers);
@@ -124,6 +138,10 @@ export class SectionProperties extends XmlComponent {
         if (verticalAlign) {
             this.root.push(new SectionVerticalAlign(verticalAlign));
         }
+
+        if (type) {
+            this.root.push(new Type(type));
+        }
     }
 
     private addHeaders(headers?: IHeaderFooterGroup<HeaderWrapper>): void {
@@ -132,7 +150,7 @@ export class SectionProperties extends XmlComponent {
                 this.root.push(
                     new HeaderReference({
                         headerType: HeaderReferenceType.DEFAULT,
-                        headerId: headers.default.Header.ReferenceId,
+                        headerId: headers.default.View.ReferenceId,
                     }),
                 );
             }
@@ -141,7 +159,7 @@ export class SectionProperties extends XmlComponent {
                 this.root.push(
                     new HeaderReference({
                         headerType: HeaderReferenceType.FIRST,
-                        headerId: headers.first.Header.ReferenceId,
+                        headerId: headers.first.View.ReferenceId,
                     }),
                 );
             }
@@ -150,7 +168,7 @@ export class SectionProperties extends XmlComponent {
                 this.root.push(
                     new HeaderReference({
                         headerType: HeaderReferenceType.EVEN,
-                        headerId: headers.even.Header.ReferenceId,
+                        headerId: headers.even.View.ReferenceId,
                     }),
                 );
             }
@@ -163,7 +181,7 @@ export class SectionProperties extends XmlComponent {
                 this.root.push(
                     new FooterReference({
                         footerType: FooterReferenceType.DEFAULT,
-                        footerId: footers.default.Footer.ReferenceId,
+                        footerId: footers.default.View.ReferenceId,
                     }),
                 );
             }
@@ -172,7 +190,7 @@ export class SectionProperties extends XmlComponent {
                 this.root.push(
                     new FooterReference({
                         footerType: FooterReferenceType.FIRST,
-                        footerId: footers.first.Footer.ReferenceId,
+                        footerId: footers.first.View.ReferenceId,
                     }),
                 );
             }
@@ -181,7 +199,7 @@ export class SectionProperties extends XmlComponent {
                 this.root.push(
                     new FooterReference({
                         footerType: FooterReferenceType.EVEN,
-                        footerId: footers.even.Footer.ReferenceId,
+                        footerId: footers.even.View.ReferenceId,
                     }),
                 );
             }

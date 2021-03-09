@@ -8,7 +8,7 @@ describe("Document", () => {
     let document: Document;
 
     beforeEach(() => {
-        document = new Document();
+        document = new Document({ background: {} });
     });
 
     describe("#constructor()", () => {
@@ -36,6 +36,13 @@ describe("Document", () => {
                             "xmlns:wne": "http://schemas.microsoft.com/office/word/2006/wordml",
                             "xmlns:wps": "http://schemas.microsoft.com/office/word/2010/wordprocessingShape",
                             "mc:Ignorable": "w14 w15 wp14",
+                        },
+                    },
+                    {
+                        "w:background": {
+                            _attr: {
+                                "w:color": "FFFFFF",
+                            },
                         },
                     },
                     { "w:body": {} },

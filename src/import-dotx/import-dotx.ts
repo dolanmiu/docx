@@ -17,8 +17,8 @@ const schemeToType = {
 };
 
 interface IDocumentRefs {
-    readonly headers: Array<{ readonly id: number; readonly type: HeaderReferenceType }>;
-    readonly footers: Array<{ readonly id: number; readonly type: FooterReferenceType }>;
+    readonly headers: { readonly id: number; readonly type: HeaderReferenceType }[];
+    readonly footers: { readonly id: number; readonly type: FooterReferenceType }[];
 }
 
 enum RelationshipType {
@@ -46,7 +46,9 @@ export interface IDocumentTemplate {
 }
 
 export class ImportDotx {
-    public async extract(data: Buffer): Promise<IDocumentTemplate> {
+    public async extract(
+        data: Buffer | string | number[] | Uint8Array | ArrayBuffer | Blob | NodeJS.ReadableStream,
+    ): Promise<IDocumentTemplate> {
         const zipContent = await JSZip.loadAsync(data);
 
         const documentContent = await zipContent.files["word/document.xml"].async("text");
@@ -99,7 +101,7 @@ export class ImportDotx {
 
                 return { type: reference.type, footer: wrapper };
             })
-            .filter((x) => !!x) as Array<Promise<IDocumentFooter>>;
+            .filter((x) => !!x) as Promise<IDocumentFooter>[];
 
         return Promise.all(result);
     }
@@ -134,7 +136,7 @@ export class ImportDotx {
 
                 return { type: reference.type, header: wrapper };
             })
-            .filter((x) => !!x) as Array<Promise<IDocumentHeader>>;
+            .filter((x) => !!x) as Promise<IDocumentHeader>[];
 
         return Promise.all(result);
     }

@@ -2,11 +2,9 @@ import { Run } from "file/paragraph/run";
 import { Style } from "file/paragraph/run/style";
 import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
 
-export interface IFootNoteReferenceRunAttributesProperties {
+export class FootNoteReferenceRunAttributes extends XmlAttributeComponent<{
     readonly id: number;
-}
-
-export class FootNoteReferenceRunAttributes extends XmlAttributeComponent<IFootNoteReferenceRunAttributesProperties> {
+}> {
     protected readonly xmlKeys = {
         id: "w:id",
     };

@@ -2,7 +2,20 @@
 // Also includes an example on how to center tables
 // Import from 'docx' rather than '../build' if you install from npm
 import * as fs from "fs";
-import { AlignmentType, Document, HeadingLevel, Packer, Paragraph, ShadingType, Table, TableCell, TableRow, WidthType } from "../build";
+import {
+    AlignmentType,
+    BorderStyle,
+    convertInchesToTwip,
+    Document,
+    HeadingLevel,
+    Packer,
+    Paragraph,
+    ShadingType,
+    Table,
+    TableCell,
+    TableRow,
+    WidthType,
+} from "../build";
 
 const doc = new Document();
 
@@ -37,10 +50,10 @@ const table2 = new Table({
                 new TableCell({
                     children: [new Paragraph("World")],
                     margins: {
-                        top: 1000,
-                        bottom: 1000,
-                        left: 1000,
-                        right: 1000,
+                        top: convertInchesToTwip(0.69),
+                        bottom: convertInchesToTwip(0.69),
+                        left: convertInchesToTwip(0.69),
+                        right: convertInchesToTwip(0.69),
                     },
                     columnSpan: 3,
                 }),
@@ -64,7 +77,7 @@ const table2 = new Table({
         size: 100,
         type: WidthType.AUTO,
     },
-    columnWidths: [1000, 1000, 1000],
+    columnWidths: [convertInchesToTwip(0.69), convertInchesToTwip(0.69), convertInchesToTwip(0.69)],
 });
 
 const table3 = new Table({
@@ -119,14 +132,14 @@ const table3 = new Table({
         }),
     ],
     width: {
-        size: 7000,
+        size: convertInchesToTwip(4.86),
         type: WidthType.DXA,
     },
     margins: {
-        top: 400,
-        bottom: 400,
-        right: 400,
-        left: 400,
+        top: convertInchesToTwip(0.27),
+        bottom: convertInchesToTwip(0.27),
+        right: convertInchesToTwip(0.27),
+        left: convertInchesToTwip(0.27),
     },
 });
 
@@ -184,7 +197,7 @@ const table5 = new Table({
         new TableRow({
             children: [
                 new TableCell({
-                    children: [],
+                    children: [new Paragraph("1,0")],
                 }),
                 new TableCell({
                     children: [new Paragraph("1,2")],
@@ -195,12 +208,167 @@ const table5 = new Table({
         new TableRow({
             children: [
                 new TableCell({
-                    children: [],
+                    children: [new Paragraph("2,0")],
                 }),
                 new TableCell({
-                    children: [],
+                    children: [new Paragraph("2,1")],
                 }),
             ],
+        }),
+    ],
+    width: {
+        size: 100,
+        type: WidthType.PERCENTAGE,
+    },
+});
+
+const borders = {
+    top: {
+        style: BorderStyle.DASH_SMALL_GAP,
+        size: 1,
+        color: "red",
+    },
+    bottom: {
+        style: BorderStyle.DASH_SMALL_GAP,
+        size: 1,
+        color: "red",
+    },
+    left: {
+        style: BorderStyle.DASH_SMALL_GAP,
+        size: 1,
+        color: "red",
+    },
+    right: {
+        style: BorderStyle.DASH_SMALL_GAP,
+        size: 1,
+        color: "red",
+    },
+};
+
+const table6 = new Table({
+    rows: [
+        new TableRow({
+            children: [
+                new TableCell({
+                    borders,
+                    children: [new Paragraph("0,0")],
+                    rowSpan: 2,
+                }),
+                new TableCell({
+                    borders,
+                    children: [new Paragraph("0,1")],
+                }),
+            ],
+        }),
+        new TableRow({
+            children: [
+                new TableCell({
+                    borders,
+                    children: [new Paragraph("1,1")],
+                    rowSpan: 2,
+                }),
+            ],
+        }),
+        new TableRow({
+            children: [
+                new TableCell({
+                    borders,
+                    children: [new Paragraph("2,0")],
+                }),
+            ],
+        }),
+    ],
+    width: {
+        size: 100,
+        type: WidthType.PERCENTAGE,
+    },
+});
+
+const table7 = new Table({
+    rows: [
+        new TableRow({
+            children: [
+                new TableCell({
+                    children: [new Paragraph("0,0")],
+                }),
+                new TableCell({
+                    children: [new Paragraph("0,1")],
+                }),
+                new TableCell({
+                    children: [new Paragraph("0,2")],
+                    rowSpan: 2,
+                }),
+                new TableCell({
+                    children: [new Paragraph("0,3")],
+                    rowSpan: 3,
+                }),
+            ],
+        }),
+        new TableRow({
+            children: [
+                new TableCell({
+                    children: [new Paragraph("1,0")],
+                    columnSpan: 2,
+                }),
+            ],
+        }),
+        new TableRow({
+            children: [
+                new TableCell({
+                    children: [new Paragraph("2,0")],
+                    columnSpan: 2,
+                }),
+                new TableCell({
+                    children: [new Paragraph("2,2")],
+                    rowSpan: 2,
+                }),
+            ],
+        }),
+        new TableRow({
+            children: [
+                new TableCell({
+                    children: [new Paragraph("3,0")],
+                }),
+                new TableCell({
+                    children: [new Paragraph("3,1")],
+                }),
+                new TableCell({
+                    children: [new Paragraph("3,3")],
+                }),
+            ],
+        }),
+    ],
+    width: {
+        size: 100,
+        type: WidthType.PERCENTAGE,
+    },
+});
+
+const table8 = new Table({
+    rows: [
+        new TableRow({
+            children: [
+                new TableCell({ children: [new Paragraph("1,1")] }),
+                new TableCell({ children: [new Paragraph("1,2")] }),
+                new TableCell({ children: [new Paragraph("1,3")] }),
+                new TableCell({ children: [new Paragraph("1,4")], rowSpan: 4, borders }),
+            ],
+        }),
+        new TableRow({
+            children: [
+                new TableCell({ children: [new Paragraph("2,1")] }),
+                new TableCell({ children: [new Paragraph("2,2")] }),
+                new TableCell({ children: [new Paragraph("2,3")], rowSpan: 3 }),
+            ],
+        }),
+        new TableRow({
+            children: [
+                new TableCell({ children: [new Paragraph("3,1")] }),
+                new TableCell({ children: [new Paragraph("3,2")], rowSpan: 2 }),
+            ],
+        }),
+        new TableRow({
+            children: [new TableCell({ children: [new Paragraph("4,1")] })],
         }),
     ],
     width: {
@@ -222,10 +390,16 @@ doc.addSection({
             heading: HeadingLevel.HEADING_2,
         }),
         table3,
-        new Paragraph("Merging columns"),
+        new Paragraph("Merging columns 1"),
         table4,
-        new Paragraph("More Merging columns"),
+        new Paragraph("Merging columns 2"),
         table5,
+        new Paragraph("Merging columns 3"),
+        table6,
+        new Paragraph("Merging columns 4"),
+        table7,
+        new Paragraph("Merging columns 5"),
+        table8,
     ],
 });
 

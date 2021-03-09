@@ -6,6 +6,8 @@ import {
     GridSpan,
     TableCellBorders,
     TableCellWidth,
+    TDirection,
+    TextDirection,
     VAlign,
     VerticalAlign,
     VerticalMerge,
@@ -58,6 +60,12 @@ export class TableCellProperties extends IgnoreIfEmptyXmlComponent {
 
     public addMargins(options: ITableCellMarginOptions): TableCellProperties {
         this.root.push(new TableCellMargin(options));
+
+        return this;
+    }
+
+    public setTextDirection(type: TextDirection): TableCellProperties {
+        this.root.push(new TDirection(type));
 
         return this;
     }

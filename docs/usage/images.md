@@ -125,6 +125,7 @@ Full options you can pass into `floating` are:
 | lockAnchor         | `boolean`                   | Optional |
 | behindDocument     | `boolean`                   | Optional |
 | layoutInCell       | `boolean`                   | Optional |
+| zIndex             | `number`                    | Optional |
 
 `HorizontalPositionOptions` are:
 

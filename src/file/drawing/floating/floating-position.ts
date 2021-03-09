@@ -1,4 +1,5 @@
 // http://officeopenxml.com/drwPicFloating-position.php
+// http://officeopenxml.com/drwPicFloating.php
 import { ITextWrapping } from "../text-wrap";
 
 export enum HorizontalPositionRelativeFrom {
@@ -67,4 +68,5 @@ export interface IFloating {
     readonly layoutInCell?: boolean;
     readonly margins?: IMargins;
     readonly wrap?: ITextWrapping;
+    readonly zIndex?: number;
 }
