@@ -1,4 +1,5 @@
 import { XmlComponent } from "file/xml-components";
+import { CompatibilitySetting } from "./compatibility-setting/compatibility-setting";
 
 class DoNotExpandShiftReturn extends XmlComponent {
     constructor() {
@@ -6,14 +7,21 @@ class DoNotExpandShiftReturn extends XmlComponent {
     }
 }
 
+export interface ICompatibilityOptions {
+    readonly doNotExpandShiftReturn?: boolean;
+    readonly version?: number;
+}
+
 export class Compatibility extends XmlComponent {
-    constructor() {
+    constructor(options: ICompatibilityOptions) {
         super("w:compat");
-    }
 
-    public doNotExpandShiftReturn(): Compatibility {
-        this.root.push(new DoNotExpandShiftReturn());
+        if (options.doNotExpandShiftReturn) {
+            this.root.push(new DoNotExpandShiftReturn());
+        }
 
-        return this;
+        if (options.version) {
+            this.root.push(new CompatibilitySetting(options.version));
+        }
     }
 }

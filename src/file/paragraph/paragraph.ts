@@ -1,54 +1,35 @@
 // http://officeopenxml.com/WPparagraph.php
+import * as shortid from "shortid";
+
 import { FootnoteReferenceRun } from "file/footnotes/footnote/run/reference-run";
 import { IXmlableObject, XmlComponent } from "file/xml-components";
 
-import { File } from "../file";
-import { Alignment, AlignmentType } from "./formatting/alignment";
-import { Bidirectional } from "./formatting/bidirectional";
-import { IBorderOptions, ThematicBreak } from "./formatting/border";
-import { IIndentAttributesProperties, Indent } from "./formatting/indent";
-import { KeepLines, KeepNext } from "./formatting/keep";
-import { PageBreak, PageBreakBefore } from "./formatting/page-break";
-import { ContextualSpacing, ISpacingProperties, Spacing } from "./formatting/spacing";
-import { HeadingLevel, Style } from "./formatting/style";
-import { LeaderType, TabStop, TabStopPosition, TabStopType } from "./formatting/tab-stop";
-import { NumberProperties } from "./formatting/unordered-list";
-import { Bookmark, HyperlinkRef, OutlineLevel } from "./links";
-import { ParagraphProperties } from "./properties";
+import { IViewWrapper } from "../document-wrapper";
+import { TargetModeType } from "../relationships/relationship/relationship";
+import { DeletedTextRun, InsertedTextRun } from "../track-revision";
+import { PageBreak } from "./formatting/page-break";
+import { Bookmark, ConcreteHyperlink, ExternalHyperlink, InternalHyperlink } from "./links";
+import { Math } from "./math";
+import { IParagraphPropertiesOptions, ParagraphProperties } from "./properties";
 import { PictureRun, Run, SequentialIdentifier, SymbolRun, TextRun } from "./run";
 
-export interface IParagraphOptions {
+export type ParagraphChild =
+    | TextRun
+    | PictureRun
+    | SymbolRun
+    | Bookmark
+    | PageBreak
+    | SequentialIdentifier
+    | FootnoteReferenceRun
+    | InternalHyperlink
+    | ExternalHyperlink
+    | InsertedTextRun
+    | DeletedTextRun
+    | Math;
+
+export interface IParagraphOptions extends IParagraphPropertiesOptions {
     readonly text?: string;
-    readonly border?: IBorderOptions;
-    readonly spacing?: ISpacingProperties;
-    readonly outlineLevel?: number;
-    readonly alignment?: AlignmentType;
-    readonly heading?: HeadingLevel;
-    readonly bidirectional?: boolean;
-    readonly thematicBreak?: boolean;
-    readonly pageBreakBefore?: boolean;
-    readonly contextualSpacing?: boolean;
-    readonly indent?: IIndentAttributesProperties;
-    readonly keepLines?: boolean;
-    readonly keepNext?: boolean;
-    readonly tabStops?: Array<{
-        readonly position: number | TabStopPosition;
-        readonly type: TabStopType;
-        readonly leader?: LeaderType;
-    }>;
-    readonly style?: string;
-    readonly bullet?: {
-        readonly level: number;
-    };
-    readonly numbering?: {
-        readonly reference: string;
-        readonly level: number;
-        readonly numId?: number;
-        readonly custom?: boolean;
-    };
-    readonly children?: Array<
-        TextRun | PictureRun | SymbolRun | Bookmark | PageBreak | SequentialIdentifier | FootnoteReferenceRun | HyperlinkRef
-    >;
+    readonly children?: ParagraphChild[];
 }
 
 export class Paragraph extends XmlComponent {
@@ -71,9 +52,7 @@ export class Paragraph extends XmlComponent {
             return;
         }
 
-        this.properties = new ParagraphProperties({
-            border: options.border,
-        });
+        this.properties = new ParagraphProperties(options);
 
         this.root.push(this.properties);
 
@@ -81,81 +60,13 @@ export class Paragraph extends XmlComponent {
             this.root.push(new TextRun(options.text));
         }
 
-        if (options.spacing) {
-            this.properties.push(new Spacing(options.spacing));
-        }
-
-        if (options.outlineLevel !== undefined) {
-            this.properties.push(new OutlineLevel(options.outlineLevel));
-        }
-
-        if (options.alignment) {
-            this.properties.push(new Alignment(options.alignment));
-        }
-
-        if (options.heading) {
-            this.properties.push(new Style(options.heading));
-        }
-
-        if (options.bidirectional) {
-            this.properties.push(new Bidirectional());
-        }
-
-        if (options.thematicBreak) {
-            this.properties.push(new ThematicBreak());
-        }
-
-        if (options.pageBreakBefore) {
-            this.properties.push(new PageBreakBefore());
-        }
-
-        if (options.contextualSpacing) {
-            this.properties.push(new ContextualSpacing(options.contextualSpacing));
-        }
-
-        if (options.indent) {
-            this.properties.push(new Indent(options.indent));
-        }
-
-        if (options.keepLines) {
-            this.properties.push(new KeepLines());
-        }
-
-        if (options.keepNext) {
-            this.properties.push(new KeepNext());
-        }
-
-        if (options.tabStops) {
-            for (const tabStop of options.tabStops) {
-                this.properties.push(new TabStop(tabStop.type, tabStop.position, tabStop.leader));
-            }
-        }
-
-        if (options.style) {
-            this.properties.push(new Style(options.style));
-        }
-
-        if (options.bullet) {
-            this.properties.push(new Style("ListParagraph"));
-            this.properties.push(new NumberProperties(1, options.bullet.level));
-        }
-
-        if (options.numbering) {
-            if (!options.numbering.custom) {
-                this.properties.push(new Style("ListParagraph"));
-            }
-            if (options.numbering.numId) {
-                this.properties.push(new NumberProperties(options.numbering.numId, options.numbering.level));
-            } else {
-                this.properties.push(new NumberProperties(options.numbering.reference, options.numbering.level));
-            }
-        }
-
         if (options.children) {
             for (const child of options.children) {
                 if (child instanceof Bookmark) {
                     this.root.push(child.start);
-                    this.root.push(child.text);
+                    for (const textRun of child.children) {
+                        this.root.push(textRun);
+                    }
                     this.root.push(child.end);
                     continue;
                 }
@@ -165,11 +76,18 @@ export class Paragraph extends XmlComponent {
         }
     }
 
-    public prepForXml(file: File): IXmlableObject | undefined {
+    public prepForXml(file: IViewWrapper): IXmlableObject | undefined {
         for (const element of this.root) {
-            if (element instanceof HyperlinkRef) {
+            if (element instanceof ExternalHyperlink) {
                 const index = this.root.indexOf(element);
-                this.root[index] = file.HyperlinkCache[element.id];
+                const concreteHyperlink = new ConcreteHyperlink(element.options.child, shortid.generate().toLowerCase());
+                file.Relationships.createRelationship(
+                    concreteHyperlink.linkId,
+                    "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink",
+                    element.options.link,
+                    TargetModeType.EXTERNAL,
+                );
+                this.root[index] = concreteHyperlink;
             }
         }
 

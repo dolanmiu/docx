@@ -1,9 +1,7 @@
 // Numbered lists
 // Import from 'docx' rather than '../build' if you install from npm
 import * as fs from "fs";
-import { AlignmentType, File, Packer, Paragraph } from "../build";
-
-const doc = new File({});
+import { AlignmentType, convertInchesToTwip, Document, LevelFormat, Packer, Paragraph } from "../build";
 
 const numbering1 = [
   {
@@ -15,6 +13,63 @@ const numbering1 = [
       paragraph: {
         indent: { left: 720, hanging: 260 },
       },
+
+    },
+},
+];
+
+const doc = new Document({
+    numbering: {
+        config: [
+            {
+                levels: [
+                    {
+                        level: 0,
+                        format: LevelFormat.UPPER_ROMAN,
+                        text: "%1",
+                        alignment: AlignmentType.START,
+                        style: {
+                            paragraph: {
+                                indent: { left: convertInchesToTwip(0.5), hanging: convertInchesToTwip(0.18) },
+                            },
+                        },
+                    },
+                ],
+                reference: "my-crazy-reference",
+            },
+            {
+                levels: [
+                    {
+                        level: 0,
+                        format: LevelFormat.DECIMAL,
+                        text: "%1",
+                        alignment: AlignmentType.START,
+                        style: {
+                            paragraph: {
+                                indent: { left: convertInchesToTwip(0.5), hanging: convertInchesToTwip(0.18) },
+                            },
+                        },
+                    },
+                ],
+                reference: "my-number-numbering-reference",
+            },
+            {
+                levels: [
+                    {
+                        level: 0,
+                        format: LevelFormat.DECIMAL_ZERO,
+                        text: "[%1]",
+                        alignment: AlignmentType.START,
+                        style: {
+                            paragraph: {
+                                indent: { left: convertInchesToTwip(0.5), hanging: convertInchesToTwip(0.18) },
+                            },
+                        },
+                    },
+                ],
+                reference: "padded-numbering-reference",
+            },
+        ],
     },
   },
 ];
@@ -139,6 +194,139 @@ doc.addSection({
                 reference: concreteNumbering3.reference!,
                 level: 0,
                 numId: 3,
+            },
+        }),
+        new Paragraph({
+            text: "test",
+            numbering: {
+                reference: "padded-numbering-reference",
+                level: 0,
+            },
+        }),
+        new Paragraph({
+            text: "test",
+            numbering: {
+                reference: "padded-numbering-reference",
+                level: 0,
+            },
+        }),
+        new Paragraph({
+            text: "test",
+            numbering: {
+                reference: "padded-numbering-reference",
+                level: 0,
+            },
+        }),
+        new Paragraph({
+            text: "test",
+            numbering: {
+                reference: "padded-numbering-reference",
+                level: 0,
+            },
+        }),
+        new Paragraph({
+            text: "test",
+            numbering: {
+                reference: "padded-numbering-reference",
+                level: 0,
+            },
+        }),
+        new Paragraph({
+            text: "test",
+            numbering: {
+                reference: "padded-numbering-reference",
+                level: 0,
+            },
+        }),
+        new Paragraph({
+            text: "test",
+            numbering: {
+                reference: "padded-numbering-reference",
+                level: 0,
+            },
+        }),
+        new Paragraph({
+            text: "test",
+            numbering: {
+                reference: "padded-numbering-reference",
+                level: 0,
+            },
+        }),
+        new Paragraph({
+            text: "test",
+            numbering: {
+                reference: "padded-numbering-reference",
+                level: 0,
+            },
+        }),
+        new Paragraph({
+            text: "test",
+            numbering: {
+                reference: "padded-numbering-reference",
+                level: 0,
+            },
+        }),
+        new Paragraph({
+            text: "test",
+            numbering: {
+                reference: "padded-numbering-reference",
+                level: 0,
+            },
+        }),
+        new Paragraph({
+            text: "test",
+            numbering: {
+                reference: "padded-numbering-reference",
+                level: 0,
+            },
+        }),
+        new Paragraph({
+            text: "test",
+            numbering: {
+                reference: "padded-numbering-reference",
+                level: 0,
+            },
+        }),
+        new Paragraph({
+            text: "test",
+            numbering: {
+                reference: "padded-numbering-reference",
+                level: 0,
+            },
+        }),
+        new Paragraph({
+            text: "test",
+            numbering: {
+                reference: "padded-numbering-reference",
+                level: 0,
+            },
+        }),
+        new Paragraph({
+            text: "test",
+            numbering: {
+                reference: "padded-numbering-reference",
+                level: 0,
+            },
+        }),
+        new Paragraph({
+            text: "test",
+            numbering: {
+                reference: "padded-numbering-reference",
+                level: 0,
+            },
+        }),
+        new Paragraph({
+            text: "test",
+            numbering: {
+                reference: "padded-numbering-reference",
+                level: 0,
+            },
+        }),
+        new Paragraph({
+            text: "test",
+            numbering: {
+                reference: "padded-numbering-reference",
+                level: 0,
             },
         }),
     ],

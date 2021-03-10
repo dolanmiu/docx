@@ -1,17 +1,18 @@
 // http://officeopenxml.com/WPnumbering.php
+import { convertInchesToTwip } from "convenience-functions";
 import { AlignmentType } from "file/paragraph";
 import { IXmlableObject, XmlComponent } from "file/xml-components";
 
 import { DocumentAttributes } from "../document/document-attributes";
 import { AbstractNumbering } from "./abstract-numbering";
-import { ILevelsOptions } from "./level";
+import { ILevelsOptions, LevelFormat } from "./level";
 import { ConcreteNumbering } from "./num";
 
 export interface INumberingOptions {
-    readonly config: Array<{
+    readonly config: {
         readonly levels: ILevelsOptions[];
         readonly reference: string;
-    }>;
+    }[];
 }
 
 export class Numbering extends XmlComponent {
@@ -46,105 +47,104 @@ export class Numbering extends XmlComponent {
         );
 
         this.nextId = 0;
-
         if (!options.config) {
             const abstractNumbering = this.createAbstractNumbering([
                 {
                     level: 0,
-                    format: "bullet",
+                    format: LevelFormat.BULLET,
                     text: "\u25CF",
                     alignment: AlignmentType.LEFT,
                     style: {
                         paragraph: {
-                            indent: { left: 720, hanging: 360 },
+                            indent: { left: convertInchesToTwip(0.5), hanging: convertInchesToTwip(0.25) },
                         },
                     },
                 },
                 {
                     level: 1,
-                    format: "bullet",
+                    format: LevelFormat.BULLET,
                     text: "\u25CB",
                     alignment: AlignmentType.LEFT,
                     style: {
                         paragraph: {
-                            indent: { left: 1440, hanging: 360 },
+                            indent: { left: convertInchesToTwip(1), hanging: convertInchesToTwip(0.25) },
                         },
                     },
                 },
                 {
                     level: 2,
-                    format: "bullet",
+                    format: LevelFormat.BULLET,
                     text: "\u25A0",
                     alignment: AlignmentType.LEFT,
                     style: {
                         paragraph: {
-                            indent: { left: 2160, hanging: 360 },
+                            indent: { left: 2160, hanging: convertInchesToTwip(0.25) },
                         },
                     },
                 },
                 {
                     level: 3,
-                    format: "bullet",
+                    format: LevelFormat.BULLET,
                     text: "\u25CF",
                     alignment: AlignmentType.LEFT,
                     style: {
                         paragraph: {
-                            indent: { left: 2880, hanging: 360 },
+                            indent: { left: 2880, hanging: convertInchesToTwip(0.25) },
                         },
                     },
                 },
                 {
                     level: 4,
-                    format: "bullet",
+                    format: LevelFormat.BULLET,
                     text: "\u25CB",
                     alignment: AlignmentType.LEFT,
                     style: {
                         paragraph: {
-                            indent: { left: 3600, hanging: 360 },
+                            indent: { left: 3600, hanging: convertInchesToTwip(0.25) },
                         },
                     },
                 },
                 {
                     level: 5,
-                    format: "bullet",
+                    format: LevelFormat.BULLET,
                     text: "\u25A0",
                     alignment: AlignmentType.LEFT,
                     style: {
                         paragraph: {
-                            indent: { left: 4320, hanging: 360 },
+                            indent: { left: 4320, hanging: convertInchesToTwip(0.25) },
                         },
                     },
                 },
                 {
                     level: 6,
-                    format: "bullet",
+                    format: LevelFormat.BULLET,
                     text: "\u25CF",
                     alignment: AlignmentType.LEFT,
                     style: {
                         paragraph: {
-                            indent: { left: 5040, hanging: 360 },
+                            indent: { left: 5040, hanging: convertInchesToTwip(0.25) },
                         },
                     },
                 },
                 {
                     level: 7,
-                    format: "bullet",
+                    format: LevelFormat.BULLET,
                     text: "\u25CF",
                     alignment: AlignmentType.LEFT,
                     style: {
                         paragraph: {
-                            indent: { left: 5760, hanging: 360 },
+                            indent: { left: 5760, hanging: convertInchesToTwip(0.25) },
                         },
                     },
                 },
                 {
                     level: 8,
-                    format: "bullet",
+                    format: LevelFormat.BULLET,
                     text: "\u25CF",
                     alignment: AlignmentType.LEFT,
                     style: {
                         paragraph: {
-                            indent: { left: 6480, hanging: 360 },
+                            indent: { left: 6480, hanging: convertInchesToTwip(0.25) },
                         },
                     },
                 },

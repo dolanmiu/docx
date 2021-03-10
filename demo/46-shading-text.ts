@@ -28,6 +28,18 @@ doc.addSection({
                         }),
                     ],
                 }),
+                new Paragraph({
+                    shading: {
+                        type: ShadingType.DIAGONAL_CROSS,
+                        color: "00FFFF",
+                        fill: "FF0000",
+                    },
+                    children: [
+                        new TextRun({
+                            text: "Hello World for entire paragraph",
+                        }),
+                    ],
+                }),
             ],
         }),
     },

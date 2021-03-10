@@ -6,12 +6,12 @@ import { UnderlineType } from "file/paragraph/run/underline";
 import { ShadingType } from "file/table";
 import { EMPTY_OBJECT } from "file/xml-components";
 
-import { CharacterStyle } from "./character-style";
+import { StyleForCharacter } from "./character-style";
 
 describe("CharacterStyle", () => {
     describe("#constructor", () => {
         it("should set the style type to character and use the given style id", () => {
-            const style = new CharacterStyle({ id: "myStyleId" });
+            const style = new StyleForCharacter({ id: "myStyleId" });
             const tree = new Formatter().format(style);
             expect(tree).to.deep.equal({
                 "w:style": [
@@ -31,7 +31,7 @@ describe("CharacterStyle", () => {
         });
 
         it("should set the name of the style, if given", () => {
-            const style = new CharacterStyle({
+            const style = new StyleForCharacter({
                 id: "myStyleId",
                 name: "Style Name",
             });
@@ -55,7 +55,7 @@ describe("CharacterStyle", () => {
         });
 
         it("should add smallCaps", () => {
-            const style = new CharacterStyle({
+            const style = new StyleForCharacter({
                 id: "myStyleId",
                 run: {
                     smallCaps: true,
@@ -83,7 +83,7 @@ describe("CharacterStyle", () => {
         });
 
         it("should add allCaps", () => {
-            const style = new CharacterStyle({
+            const style = new StyleForCharacter({
                 id: "myStyleId",
                 run: {
                     allCaps: true,
@@ -111,7 +111,7 @@ describe("CharacterStyle", () => {
         });
 
         it("should add strike", () => {
-            const style = new CharacterStyle({
+            const style = new StyleForCharacter({
                 id: "myStyleId",
                 run: {
                     strike: true,
@@ -139,7 +139,7 @@ describe("CharacterStyle", () => {
         });
 
         it("should add double strike", () => {
-            const style = new CharacterStyle({
+            const style = new StyleForCharacter({
                 id: "myStyleId",
                 run: {
                     doubleStrike: true,
@@ -167,7 +167,7 @@ describe("CharacterStyle", () => {
         });
 
         it("should add sub script", () => {
-            const style = new CharacterStyle({
+            const style = new StyleForCharacter({
                 id: "myStyleId",
                 run: {
                     subScript: true,
@@ -203,7 +203,7 @@ describe("CharacterStyle", () => {
         });
 
         it("should add font by name", () => {
-            const style = new CharacterStyle({
+            const style = new StyleForCharacter({
                 id: "myStyleId",
                 run: {
                     font: "test font",
@@ -242,7 +242,7 @@ describe("CharacterStyle", () => {
         });
 
         it("should add font for ascii and eastAsia", () => {
-            const style = new CharacterStyle({
+            const style = new StyleForCharacter({
                 id: "myStyleId",
                 run: {
                     font: {
@@ -282,7 +282,7 @@ describe("CharacterStyle", () => {
         });
 
         it("should add character spacing", () => {
-            const style = new CharacterStyle({
+            const style = new StyleForCharacter({
                 id: "myStyleId",
                 run: {
                     characterSpacing: 100,
@@ -312,7 +312,7 @@ describe("CharacterStyle", () => {
 
     describe("formatting methods: style attributes", () => {
         it("#basedOn", () => {
-            const style = new CharacterStyle({ id: "myStyleId", basedOn: "otherId" });
+            const style = new StyleForCharacter({ id: "myStyleId", basedOn: "otherId" });
             const tree = new Formatter().format(style);
             expect(tree).to.deep.equal({
                 "w:style": [
@@ -334,37 +334,58 @@ describe("CharacterStyle", () => {
     });
 
     describe("formatting methods: run properties", () => {
-        it("#size", () => {
-            const style = new CharacterStyle({
-                id: "myStyleId",
-                run: {
-                    size: 24,
-                },
-            });
-            const tree = new Formatter().format(style);
-            expect(tree).to.deep.equal({
-                "w:style": [
-                    { _attr: { "w:type": "character", "w:styleId": "myStyleId" } },
-                    {
-                        "w:rPr": [{ "w:sz": { _attr: { "w:val": 24 } } }, { "w:szCs": { _attr: { "w:val": 24 } } }],
-                    },
-                    {
-                        "w:uiPriority": {
-                            _attr: {
-                                "w:val": 99,
+        const sizeTests = [
+            {
+                size: 24,
+                expected: [{ "w:sz": { _attr: { "w:val": 24 } } }, { "w:szCs": { _attr: { "w:val": 24 } } }],
+            },
+            {
+                size: 24,
+                sizeComplexScript: true,
+                expected: [{ "w:sz": { _attr: { "w:val": 24 } } }, { "w:szCs": { _attr: { "w:val": 24 } } }],
+            },
+            {
+                size: 24,
+                sizeComplexScript: false,
+                expected: [{ "w:sz": { _attr: { "w:val": 24 } } }],
+            },
+            {
+                size: 24,
+                sizeComplexScript: 26,
+                expected: [{ "w:sz": { _attr: { "w:val": 24 } } }, { "w:szCs": { _attr: { "w:val": 26 } } }],
+            },
+        ];
+        sizeTests.forEach(({ size, sizeComplexScript, expected }) => {
+            it(`#size ${size} cs ${sizeComplexScript}`, () => {
+                const style = new StyleForCharacter({
+                    id: "myStyleId",
+                    run: { size, sizeComplexScript },
+                });
+                const tree = new Formatter().format(style);
+                expect(tree).to.deep.equal({
+                    "w:style": [
+                        { _attr: { "w:type": "character", "w:styleId": "myStyleId" } },
+                        {
+                            "w:rPr": expected,
+                        },
+                        {
+                            "w:uiPriority": {
+                                _attr: {
+                                    "w:val": 99,
+                                },
                             },
                         },
-                    },
-                    {
-                        "w:unhideWhenUsed": EMPTY_OBJECT,
-                    },
-                ],
+                        {
+                            "w:unhideWhenUsed": EMPTY_OBJECT,
+                        },
+                    ],
+                });
             });
         });
 
         describe("#underline", () => {
             it("should set underline to 'single' if no arguments are given", () => {
-                const style = new CharacterStyle({
+                const style = new StyleForCharacter({
                     id: "myStyleId",
                     run: {
                         underline: {},
@@ -392,7 +413,7 @@ describe("CharacterStyle", () => {
             });
 
             it("should set the style if given", () => {
-                const style = new CharacterStyle({
+                const style = new StyleForCharacter({
                     id: "myStyleId",
                     run: {
                         underline: {
@@ -422,7 +443,7 @@ describe("CharacterStyle", () => {
             });
 
             it("should set the style and color if given", () => {
-                const style = new CharacterStyle({
+                const style = new StyleForCharacter({
                     id: "myStyleId",
                     run: {
                         underline: {
@@ -455,7 +476,7 @@ describe("CharacterStyle", () => {
 
         describe("#emphasisMark", () => {
             it("should set emphasisMark to 'dot' if no arguments are given", () => {
-                const style = new CharacterStyle({
+                const style = new StyleForCharacter({
                     id: "myStyleId",
                     run: {
                         emphasisMark: {},
@@ -483,7 +504,7 @@ describe("CharacterStyle", () => {
             });
 
             it("should set the style if given", () => {
-                const style = new CharacterStyle({
+                const style = new StyleForCharacter({
                     id: "myStyleId",
                     run: {
                         emphasisMark: {
@@ -514,7 +535,7 @@ describe("CharacterStyle", () => {
         });
 
         it("#superScript", () => {
-            const style = new CharacterStyle({
+            const style = new StyleForCharacter({
                 id: "myStyleId",
                 run: {
                     superScript: true,
@@ -550,7 +571,7 @@ describe("CharacterStyle", () => {
         });
 
         it("#color", () => {
-            const style = new CharacterStyle({
+            const style = new StyleForCharacter({
                 id: "myStyleId",
                 run: {
                     color: "123456",
@@ -577,64 +598,96 @@ describe("CharacterStyle", () => {
             });
         });
 
-        it("#bold", () => {
-            const style = new CharacterStyle({
-                id: "myStyleId",
-                run: {
-                    bold: true,
-                },
-            });
-            const tree = new Formatter().format(style);
-            expect(tree).to.deep.equal({
-                "w:style": [
-                    { _attr: { "w:type": "character", "w:styleId": "myStyleId" } },
-                    {
-                        "w:rPr": [{ "w:b": { _attr: { "w:val": true } } }],
-                    },
-                    {
-                        "w:uiPriority": {
-                            _attr: {
-                                "w:val": 99,
+        const boldTests = [
+            {
+                bold: true,
+                expected: [{ "w:b": { _attr: { "w:val": true } } }, { "w:bCs": { _attr: { "w:val": true } } }],
+            },
+            {
+                bold: true,
+                boldComplexScript: true,
+                expected: [{ "w:b": { _attr: { "w:val": true } } }, { "w:bCs": { _attr: { "w:val": true } } }],
+            },
+            {
+                bold: true,
+                boldComplexScript: false,
+                expected: [{ "w:b": { _attr: { "w:val": true } } }],
+            },
+        ];
+        boldTests.forEach(({ bold, boldComplexScript, expected }) => {
+            it(`#bold ${bold} cs ${boldComplexScript}`, () => {
+                const style = new StyleForCharacter({
+                    id: "myStyleId",
+                    run: { bold, boldComplexScript },
+                });
+                const tree = new Formatter().format(style);
+                expect(tree).to.deep.equal({
+                    "w:style": [
+                        { _attr: { "w:type": "character", "w:styleId": "myStyleId" } },
+                        {
+                            "w:rPr": expected,
+                        },
+                        {
+                            "w:uiPriority": {
+                                _attr: {
+                                    "w:val": 99,
+                                },
                             },
                         },
-                    },
-                    {
-                        "w:unhideWhenUsed": EMPTY_OBJECT,
-                    },
-                ],
+                        {
+                            "w:unhideWhenUsed": EMPTY_OBJECT,
+                        },
+                    ],
+                });
             });
         });
 
-        it("#italics", () => {
-            const style = new CharacterStyle({
-                id: "myStyleId",
-                run: {
-                    italics: true,
-                },
-            });
-            const tree = new Formatter().format(style);
-            expect(tree).to.deep.equal({
-                "w:style": [
-                    { _attr: { "w:type": "character", "w:styleId": "myStyleId" } },
-                    {
-                        "w:rPr": [{ "w:i": { _attr: { "w:val": true } } }],
-                    },
-                    {
-                        "w:uiPriority": {
-                            _attr: {
-                                "w:val": 99,
+        const italicsTests = [
+            {
+                italics: true,
+                expected: [{ "w:i": { _attr: { "w:val": true } } }, { "w:iCs": { _attr: { "w:val": true } } }],
+            },
+            {
+                italics: true,
+                italicsComplexScript: true,
+                expected: [{ "w:i": { _attr: { "w:val": true } } }, { "w:iCs": { _attr: { "w:val": true } } }],
+            },
+            {
+                italics: true,
+                italicsComplexScript: false,
+                expected: [{ "w:i": { _attr: { "w:val": true } } }],
+            },
+        ];
+        italicsTests.forEach(({ italics, italicsComplexScript, expected }) => {
+            it(`#italics ${italics} cs ${italicsComplexScript}`, () => {
+                const style = new StyleForCharacter({
+                    id: "myStyleId",
+                    run: { italics, italicsComplexScript },
+                });
+                const tree = new Formatter().format(style);
+                expect(tree).to.deep.equal({
+                    "w:style": [
+                        { _attr: { "w:type": "character", "w:styleId": "myStyleId" } },
+                        {
+                            "w:rPr": expected,
+                        },
+                        {
+                            "w:uiPriority": {
+                                _attr: {
+                                    "w:val": 99,
+                                },
                             },
                         },
-                    },
-                    {
-                        "w:unhideWhenUsed": EMPTY_OBJECT,
-                    },
-                ],
+                        {
+                            "w:unhideWhenUsed": EMPTY_OBJECT,
+                        },
+                    ],
+                });
             });
         });
 
         it("#link", () => {
-            const style = new CharacterStyle({ id: "myStyleId", link: "MyLink" });
+            const style = new StyleForCharacter({ id: "myStyleId", link: "MyLink" });
             const tree = new Formatter().format(style);
             expect(tree).to.deep.equal({
                 "w:style": [
@@ -655,7 +708,7 @@ describe("CharacterStyle", () => {
         });
 
         it("#semiHidden", () => {
-            const style = new CharacterStyle({ id: "myStyleId", semiHidden: true });
+            const style = new StyleForCharacter({ id: "myStyleId", semiHidden: true });
             const tree = new Formatter().format(style);
             expect(tree).to.deep.equal({
                 "w:style": [
@@ -673,73 +726,141 @@ describe("CharacterStyle", () => {
             });
         });
 
-        it("#highlight", () => {
-            const style = new CharacterStyle({
-                id: "myStyleId",
-                run: {
-                    highlight: "005599",
-                },
-            });
-            const tree = new Formatter().format(style);
-            expect(tree).to.deep.equal({
-                "w:style": [
-                    { _attr: { "w:type": "character", "w:styleId": "myStyleId" } },
-                    {
-                        "w:rPr": [{ "w:highlight": { _attr: { "w:val": "005599" } } }],
-                    },
-                    {
-                        "w:uiPriority": {
-                            _attr: {
-                                "w:val": 99,
+        const highlightTests = [
+            {
+                highlight: "005599",
+                expected: [{ "w:highlight": { _attr: { "w:val": "005599" } } }, { "w:highlightCs": { _attr: { "w:val": "005599" } } }],
+            },
+            {
+                highlight: "005599",
+                highlightComplexScript: true,
+                expected: [{ "w:highlight": { _attr: { "w:val": "005599" } } }, { "w:highlightCs": { _attr: { "w:val": "005599" } } }],
+            },
+            {
+                highlight: "005599",
+                highlightComplexScript: false,
+                expected: [{ "w:highlight": { _attr: { "w:val": "005599" } } }],
+            },
+            {
+                highlight: "005599",
+                highlightComplexScript: "550099",
+                expected: [{ "w:highlight": { _attr: { "w:val": "005599" } } }, { "w:highlightCs": { _attr: { "w:val": "550099" } } }],
+            },
+        ];
+        highlightTests.forEach(({ highlight, highlightComplexScript, expected }) => {
+            it(`#highlight ${highlight} cs ${highlightComplexScript}`, () => {
+                const style = new StyleForCharacter({
+                    id: "myStyleId",
+                    run: { highlight, highlightComplexScript },
+                });
+                const tree = new Formatter().format(style);
+                expect(tree).to.deep.equal({
+                    "w:style": [
+                        { _attr: { "w:type": "character", "w:styleId": "myStyleId" } },
+                        {
+                            "w:rPr": expected,
+                        },
+                        {
+                            "w:uiPriority": {
+                                _attr: {
+                                    "w:val": 99,
+                                },
                             },
                         },
-                    },
-                    {
-                        "w:unhideWhenUsed": EMPTY_OBJECT,
-                    },
-                ],
+                        {
+                            "w:unhideWhenUsed": EMPTY_OBJECT,
+                        },
+                    ],
+                });
             });
         });
 
-        it("#shadow", () => {
-            const style = new CharacterStyle({
-                id: "myStyleId",
-                run: {
-                    shadow: {
-                        type: ShadingType.PERCENT_10,
-                        fill: "00FFFF",
-                        color: "FF0000",
-                    },
+        const shadingTests = [
+            {
+                shadow: {
+                    type: ShadingType.PERCENT_10,
+                    fill: "00FFFF",
+                    color: "FF0000",
                 },
-            });
-            const tree = new Formatter().format(style);
-            expect(tree).to.deep.equal({
-                "w:style": [
-                    { _attr: { "w:type": "character", "w:styleId": "myStyleId" } },
-                    {
-                        "w:rPr": [
-                            {
-                                "w:shd": {
-                                    _attr: {
-                                        "w:val": "pct10",
-                                        "w:fill": "00FFFF",
-                                        "w:color": "FF0000",
-                                    },
+                expected: [
+                    { "w:shd": { _attr: { "w:val": "pct10", "w:fill": "00FFFF", "w:color": "FF0000" } } },
+                    { "w:shdCs": { _attr: { "w:val": "pct10", "w:fill": "00FFFF", "w:color": "FF0000" } } },
+                ],
+            },
+            {
+                shading: {
+                    type: ShadingType.PERCENT_10,
+                    fill: "00FFFF",
+                    color: "FF0000",
+                },
+                expected: [
+                    { "w:shd": { _attr: { "w:val": "pct10", "w:fill": "00FFFF", "w:color": "FF0000" } } },
+                    { "w:shdCs": { _attr: { "w:val": "pct10", "w:fill": "00FFFF", "w:color": "FF0000" } } },
+                ],
+            },
+            {
+                shading: {
+                    type: ShadingType.PERCENT_10,
+                    fill: "00FFFF",
+                    color: "FF0000",
+                },
+                shadingComplexScript: true,
+                expected: [
+                    { "w:shd": { _attr: { "w:val": "pct10", "w:fill": "00FFFF", "w:color": "FF0000" } } },
+                    { "w:shdCs": { _attr: { "w:val": "pct10", "w:fill": "00FFFF", "w:color": "FF0000" } } },
+                ],
+            },
+            {
+                shading: {
+                    type: ShadingType.PERCENT_10,
+                    fill: "00FFFF",
+                    color: "FF0000",
+                },
+                shadingComplexScript: false,
+                expected: [{ "w:shd": { _attr: { "w:val": "pct10", "w:fill": "00FFFF", "w:color": "FF0000" } } }],
+            },
+            {
+                shading: {
+                    type: ShadingType.PERCENT_10,
+                    fill: "00FFFF",
+                    color: "FF0000",
+                },
+                shadingComplexScript: {
+                    type: ShadingType.PERCENT_10,
+                    fill: "00FFFF",
+                    color: "00FF00",
+                },
+                expected: [
+                    { "w:shd": { _attr: { "w:val": "pct10", "w:fill": "00FFFF", "w:color": "FF0000" } } },
+                    { "w:shdCs": { _attr: { "w:val": "pct10", "w:fill": "00FFFF", "w:color": "00FF00" } } },
+                ],
+            },
+        ];
+        shadingTests.forEach(({ shadow, shading, shadingComplexScript, expected }) => {
+            it("#shadow correctly", () => {
+                const style = new StyleForCharacter({
+                    id: "myStyleId",
+                    run: { shadow, shading, shadingComplexScript },
+                });
+                const tree = new Formatter().format(style);
+                expect(tree).to.deep.equal({
+                    "w:style": [
+                        { _attr: { "w:type": "character", "w:styleId": "myStyleId" } },
+                        {
+                            "w:rPr": expected,
+                        },
+                        {
+                            "w:uiPriority": {
+                                _attr: {
+                                    "w:val": 99,
                                 },
                             },
-                        ],
-                    },
-                    {
-                        "w:uiPriority": {
-                            _attr: {
-                                "w:val": 99,
-                            },
                         },
-                    },
-                    {
-                        "w:unhideWhenUsed": EMPTY_OBJECT,
-                    },
-                ],
+                        {
+                            "w:unhideWhenUsed": EMPTY_OBJECT,
+                        },
+                    ],
+                });
             });
         });
     });

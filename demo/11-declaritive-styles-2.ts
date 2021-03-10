@@ -3,6 +3,7 @@
 import * as fs from "fs";
 import {
     AlignmentType,
+    convertInchesToTwip,
     Document,
     Footer,
     HeadingLevel,
@@ -18,13 +19,8 @@ import {
 
 const doc = new Document({
     styles: {
-        paragraphStyles: [
-            {
-                id: "Heading1",
-                name: "Heading 1",
-                basedOn: "Normal",
-                next: "Normal",
-                quickFormat: true,
+        default: {
+            heading1: {
                 run: {
                     font: "Calibri",
                     size: 52,
@@ -40,12 +36,7 @@ const doc = new Document({
                     spacing: { line: 340 },
                 },
             },
-            {
-                id: "Heading2",
-                name: "Heading 2",
-                basedOn: "Normal",
-                next: "Normal",
-                quickFormat: true,
+            heading2: {
                 run: {
                     font: "Calibri",
                     size: 26,
@@ -55,12 +46,7 @@ const doc = new Document({
                     spacing: { line: 340 },
                 },
             },
-            {
-                id: "Heading3",
-                name: "Heading 3",
-                basedOn: "Normal",
-                next: "Normal",
-                quickFormat: true,
+            heading3: {
                 run: {
                     font: "Calibri",
                     size: 26,
@@ -70,12 +56,7 @@ const doc = new Document({
                     spacing: { line: 276 },
                 },
             },
-            {
-                id: "Heading4",
-                name: "Heading 4",
-                basedOn: "Normal",
-                next: "Normal",
-                quickFormat: true,
+            heading4: {
                 run: {
                     font: "Calibri",
                     size: 26,
@@ -85,6 +66,8 @@ const doc = new Document({
                     alignment: AlignmentType.JUSTIFIED,
                 },
             },
+        },
+        paragraphStyles: [
             {
                 id: "normalPara",
                 name: "Normal Para",
@@ -128,7 +111,7 @@ const doc = new Document({
                 },
                 paragraph: {
                     spacing: { line: 276 },
-                    indent: { left: 720 },
+                    indent: { left: convertInchesToTwip(0.5) },
                 },
             },
             {
@@ -138,12 +121,6 @@ const doc = new Document({
                 paragraph: {
                     spacing: { line: 276, before: 20 * 72 * 0.1, after: 20 * 72 * 0.05 },
                 },
-            },
-            {
-                id: "ListParagraph",
-                name: "List Paragraph",
-                basedOn: "Normal",
-                quickFormat: true,
             },
         ],
     },

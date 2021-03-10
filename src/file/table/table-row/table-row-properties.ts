@@ -1,5 +1,7 @@
-import { HeightRule, TableRowHeight } from "file/table/table-row/table-row-height";
+// http://officeopenxml.com/WPtableRowProperties.php
 import { IgnoreIfEmptyXmlComponent, XmlAttributeComponent, XmlComponent } from "file/xml-components";
+
+import { HeightRule, TableRowHeight } from "./table-row-height";
 
 export class TableRowProperties extends IgnoreIfEmptyXmlComponent {
     constructor() {
@@ -18,8 +20,8 @@ export class TableRowProperties extends IgnoreIfEmptyXmlComponent {
         return this;
     }
 
-    public setHeight(height: number, rule: HeightRule): TableRowProperties {
-        this.root.push(new TableRowHeight(height, rule));
+    public setHeight(value: number, rule: HeightRule): TableRowProperties {
+        this.root.push(new TableRowHeight(value, rule));
 
         return this;
     }

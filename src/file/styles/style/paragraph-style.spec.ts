@@ -6,12 +6,12 @@ import { UnderlineType } from "file/paragraph/run/underline";
 import { ShadingType } from "file/table";
 import { EMPTY_OBJECT } from "file/xml-components";
 
-import { ParagraphStyle } from "./paragraph-style";
+import { StyleForParagraph } from "./paragraph-style";
 
 describe("ParagraphStyle", () => {
     describe("#constructor", () => {
         it("should set the style type to paragraph and use the given style id", () => {
-            const style = new ParagraphStyle({ id: "myStyleId" });
+            const style = new StyleForParagraph({ id: "myStyleId" });
             const tree = new Formatter().format(style);
             expect(tree).to.deep.equal({
                 "w:style": { _attr: { "w:type": "paragraph", "w:styleId": "myStyleId" } },
@@ -19,7 +19,7 @@ describe("ParagraphStyle", () => {
         });
 
         it("should set the name of the style, if given", () => {
-            const style = new ParagraphStyle({
+            const style = new StyleForParagraph({
                 id: "myStyleId",
                 name: "Style Name",
             });
@@ -35,7 +35,7 @@ describe("ParagraphStyle", () => {
 
     describe("formatting methods: style attributes", () => {
         it("#basedOn", () => {
-            const style = new ParagraphStyle({ id: "myStyleId", basedOn: "otherId" });
+            const style = new StyleForParagraph({ id: "myStyleId", basedOn: "otherId" });
             const tree = new Formatter().format(style);
             expect(tree).to.deep.equal({
                 "w:style": [
@@ -46,7 +46,7 @@ describe("ParagraphStyle", () => {
         });
 
         it("#quickFormat", () => {
-            const style = new ParagraphStyle({ id: "myStyleId", quickFormat: true });
+            const style = new StyleForParagraph({ id: "myStyleId", quickFormat: true });
             const tree = new Formatter().format(style);
             expect(tree).to.deep.equal({
                 "w:style": [
@@ -62,7 +62,7 @@ describe("ParagraphStyle", () => {
         });
 
         it("#next", () => {
-            const style = new ParagraphStyle({ id: "myStyleId", next: "otherId" });
+            const style = new StyleForParagraph({ id: "myStyleId", next: "otherId" });
             const tree = new Formatter().format(style);
             expect(tree).to.deep.equal({
                 "w:style": [
@@ -75,7 +75,7 @@ describe("ParagraphStyle", () => {
 
     describe("formatting methods: paragraph properties", () => {
         it("#indent", () => {
-            const style = new ParagraphStyle({
+            const style = new StyleForParagraph({
                 id: "myStyleId",
                 paragraph: {
                     indent: { left: 720 },
@@ -93,7 +93,7 @@ describe("ParagraphStyle", () => {
         });
 
         it("#spacing", () => {
-            const style = new ParagraphStyle({ id: "myStyleId", paragraph: { spacing: { before: 50, after: 150 } } });
+            const style = new StyleForParagraph({ id: "myStyleId", paragraph: { spacing: { before: 50, after: 150 } } });
             const tree = new Formatter().format(style);
             expect(tree).to.deep.equal({
                 "w:style": [
@@ -106,7 +106,7 @@ describe("ParagraphStyle", () => {
         });
 
         it("#center", () => {
-            const style = new ParagraphStyle({
+            const style = new StyleForParagraph({
                 id: "myStyleId",
                 paragraph: {
                     alignment: AlignmentType.CENTER,
@@ -124,7 +124,7 @@ describe("ParagraphStyle", () => {
         });
 
         it("#character spacing", () => {
-            const style = new ParagraphStyle({
+            const style = new StyleForParagraph({
                 id: "myStyleId",
                 run: {
                     characterSpacing: 24,
@@ -142,7 +142,7 @@ describe("ParagraphStyle", () => {
         });
 
         it("#left", () => {
-            const style = new ParagraphStyle({
+            const style = new StyleForParagraph({
                 id: "myStyleId",
                 paragraph: {
                     alignment: AlignmentType.LEFT,
@@ -160,7 +160,7 @@ describe("ParagraphStyle", () => {
         });
 
         it("#right", () => {
-            const style = new ParagraphStyle({
+            const style = new StyleForParagraph({
                 id: "myStyleId",
                 paragraph: {
                     alignment: AlignmentType.RIGHT,
@@ -178,7 +178,7 @@ describe("ParagraphStyle", () => {
         });
 
         it("#justified", () => {
-            const style = new ParagraphStyle({
+            const style = new StyleForParagraph({
                 id: "myStyleId",
                 paragraph: {
                     alignment: AlignmentType.JUSTIFIED,
@@ -196,7 +196,7 @@ describe("ParagraphStyle", () => {
         });
 
         it("#thematicBreak", () => {
-            const style = new ParagraphStyle({
+            const style = new StyleForParagraph({
                 id: "myStyleId",
                 paragraph: {
                     thematicBreak: true,
@@ -229,7 +229,7 @@ describe("ParagraphStyle", () => {
         });
 
         it("#contextualSpacing", () => {
-            const style = new ParagraphStyle({
+            const style = new StyleForParagraph({
                 id: "myStyleId",
                 paragraph: {
                     contextualSpacing: true,
@@ -255,7 +255,7 @@ describe("ParagraphStyle", () => {
         });
 
         it("#leftTabStop", () => {
-            const style = new ParagraphStyle({
+            const style = new StyleForParagraph({
                 id: "myStyleId",
                 paragraph: {
                     leftTabStop: 1200,
@@ -277,7 +277,7 @@ describe("ParagraphStyle", () => {
         });
 
         it("#maxRightTabStop", () => {
-            const style = new ParagraphStyle({
+            const style = new StyleForParagraph({
                 id: "myStyleId",
                 paragraph: {
                     rightTabStop: TabStopPosition.MAX,
@@ -299,7 +299,7 @@ describe("ParagraphStyle", () => {
         });
 
         it("#keepLines", () => {
-            const style = new ParagraphStyle({
+            const style = new StyleForParagraph({
                 id: "myStyleId",
                 paragraph: {
                     keepLines: true,
@@ -320,7 +320,7 @@ describe("ParagraphStyle", () => {
         });
 
         it("#keepNext", () => {
-            const style = new ParagraphStyle({
+            const style = new StyleForParagraph({
                 id: "myStyleId",
                 paragraph: {
                     keepNext: true,
@@ -341,7 +341,7 @@ describe("ParagraphStyle", () => {
         });
 
         it("#outlineLevel", () => {
-            const style = new ParagraphStyle({
+            const style = new StyleForParagraph({
                 id: "myStyleId",
                 paragraph: {
                     outlineLevel: 1,
@@ -358,26 +358,42 @@ describe("ParagraphStyle", () => {
     });
 
     describe("formatting methods: run properties", () => {
-        it("#size", () => {
-            const style = new ParagraphStyle({
-                id: "myStyleId",
-                run: {
-                    size: 24,
-                },
-            });
-            const tree = new Formatter().format(style);
-            expect(tree).to.deep.equal({
-                "w:style": [
-                    { _attr: { "w:type": "paragraph", "w:styleId": "myStyleId" } },
-                    {
-                        "w:rPr": [{ "w:sz": { _attr: { "w:val": 24 } } }, { "w:szCs": { _attr: { "w:val": 24 } } }],
-                    },
-                ],
+        const sizeTests = [
+            {
+                size: 24,
+                expected: [{ "w:sz": { _attr: { "w:val": 24 } } }, { "w:szCs": { _attr: { "w:val": 24 } } }],
+            },
+            {
+                size: 24,
+                sizeComplexScript: true,
+                expected: [{ "w:sz": { _attr: { "w:val": 24 } } }, { "w:szCs": { _attr: { "w:val": 24 } } }],
+            },
+            {
+                size: 24,
+                sizeComplexScript: false,
+                expected: [{ "w:sz": { _attr: { "w:val": 24 } } }],
+            },
+            {
+                size: 24,
+                sizeComplexScript: 26,
+                expected: [{ "w:sz": { _attr: { "w:val": 24 } } }, { "w:szCs": { _attr: { "w:val": 26 } } }],
+            },
+        ];
+        sizeTests.forEach(({ size, sizeComplexScript, expected }) => {
+            it(`#size ${size} cs ${sizeComplexScript}`, () => {
+                const style = new StyleForParagraph({
+                    id: "myStyleId",
+                    run: { size, sizeComplexScript },
+                });
+                const tree = new Formatter().format(style);
+                expect(tree).to.deep.equal({
+                    "w:style": [{ _attr: { "w:type": "paragraph", "w:styleId": "myStyleId" } }, { "w:rPr": expected }],
+                });
             });
         });
 
         it("#smallCaps", () => {
-            const style = new ParagraphStyle({
+            const style = new StyleForParagraph({
                 id: "myStyleId",
                 run: {
                     smallCaps: true,
@@ -395,7 +411,7 @@ describe("ParagraphStyle", () => {
         });
 
         it("#allCaps", () => {
-            const style = new ParagraphStyle({
+            const style = new StyleForParagraph({
                 id: "myStyleId",
                 run: {
                     allCaps: true,
@@ -413,7 +429,7 @@ describe("ParagraphStyle", () => {
         });
 
         it("#strike", () => {
-            const style = new ParagraphStyle({
+            const style = new StyleForParagraph({
                 id: "myStyleId",
                 run: {
                     strike: true,
@@ -431,7 +447,7 @@ describe("ParagraphStyle", () => {
         });
 
         it("#doubleStrike", () => {
-            const style = new ParagraphStyle({
+            const style = new StyleForParagraph({
                 id: "myStyleId",
                 run: {
                     doubleStrike: true,
@@ -449,7 +465,7 @@ describe("ParagraphStyle", () => {
         });
 
         it("#subScript", () => {
-            const style = new ParagraphStyle({
+            const style = new StyleForParagraph({
                 id: "myStyleId",
                 run: {
                     subScript: true,
@@ -467,7 +483,7 @@ describe("ParagraphStyle", () => {
         });
 
         it("#superScript", () => {
-            const style = new ParagraphStyle({
+            const style = new StyleForParagraph({
                 id: "myStyleId",
                 run: {
                     superScript: true,
@@ -485,7 +501,7 @@ describe("ParagraphStyle", () => {
         });
 
         it("#font by name", () => {
-            const style = new ParagraphStyle({
+            const style = new StyleForParagraph({
                 id: "myStyleId",
                 run: {
                     font: "Times",
@@ -514,7 +530,7 @@ describe("ParagraphStyle", () => {
         });
 
         it("#font for ascii and eastAsia", () => {
-            const style = new ParagraphStyle({
+            const style = new StyleForParagraph({
                 id: "myStyleId",
                 run: {
                     font: {
@@ -543,95 +559,175 @@ describe("ParagraphStyle", () => {
             });
         });
 
-        it("#bold", () => {
-            const style = new ParagraphStyle({
-                id: "myStyleId",
-                run: {
-                    bold: true,
-                },
-            });
-            const tree = new Formatter().format(style);
-            expect(tree).to.deep.equal({
-                "w:style": [
-                    { _attr: { "w:type": "paragraph", "w:styleId": "myStyleId" } },
-                    {
-                        "w:rPr": [{ "w:b": { _attr: { "w:val": true } } }],
-                    },
-                ],
-            });
-        });
-
-        it("#italics", () => {
-            const style = new ParagraphStyle({
-                id: "myStyleId",
-                run: {
-                    italics: true,
-                },
-            });
-            const tree = new Formatter().format(style);
-            expect(tree).to.deep.equal({
-                "w:style": [
-                    { _attr: { "w:type": "paragraph", "w:styleId": "myStyleId" } },
-                    {
-                        "w:rPr": [{ "w:i": { _attr: { "w:val": true } } }],
-                    },
-                ],
+        const boldTests = [
+            {
+                bold: true,
+                expected: [{ "w:b": { _attr: { "w:val": true } } }, { "w:bCs": { _attr: { "w:val": true } } }],
+            },
+            {
+                bold: true,
+                boldComplexScript: true,
+                expected: [{ "w:b": { _attr: { "w:val": true } } }, { "w:bCs": { _attr: { "w:val": true } } }],
+            },
+            {
+                bold: true,
+                boldComplexScript: false,
+                expected: [{ "w:b": { _attr: { "w:val": true } } }],
+            },
+        ];
+        boldTests.forEach(({ bold, boldComplexScript, expected }) => {
+            it(`#bold ${bold} cs ${boldComplexScript}`, () => {
+                const style = new StyleForParagraph({
+                    id: "myStyleId",
+                    run: { bold, boldComplexScript },
+                });
+                const tree = new Formatter().format(style);
+                expect(tree).to.deep.equal({
+                    "w:style": [{ _attr: { "w:type": "paragraph", "w:styleId": "myStyleId" } }, { "w:rPr": expected }],
+                });
             });
         });
 
-        it("#highlight", () => {
-            const style = new ParagraphStyle({
-                id: "myStyleId",
-                run: {
-                    highlight: "005599",
-                },
-            });
-            const tree = new Formatter().format(style);
-            expect(tree).to.deep.equal({
-                "w:style": [
-                    { _attr: { "w:type": "paragraph", "w:styleId": "myStyleId" } },
-                    {
-                        "w:rPr": [{ "w:highlight": { _attr: { "w:val": "005599" } } }],
-                    },
-                ],
+        const italicsTests = [
+            {
+                italics: true,
+                expected: [{ "w:i": { _attr: { "w:val": true } } }, { "w:iCs": { _attr: { "w:val": true } } }],
+            },
+            {
+                italics: true,
+                italicsComplexScript: true,
+                expected: [{ "w:i": { _attr: { "w:val": true } } }, { "w:iCs": { _attr: { "w:val": true } } }],
+            },
+            {
+                italics: true,
+                italicsComplexScript: false,
+                expected: [{ "w:i": { _attr: { "w:val": true } } }],
+            },
+        ];
+        italicsTests.forEach(({ italics, italicsComplexScript, expected }) => {
+            it(`#italics ${italics} cs ${italicsComplexScript}`, () => {
+                const style = new StyleForParagraph({
+                    id: "myStyleId",
+                    run: { italics, italicsComplexScript },
+                });
+                const tree = new Formatter().format(style);
+                expect(tree).to.deep.equal({
+                    "w:style": [{ _attr: { "w:type": "paragraph", "w:styleId": "myStyleId" } }, { "w:rPr": expected }],
+                });
             });
         });
 
-        it("#shadow", () => {
-            const style = new ParagraphStyle({
-                id: "myStyleId",
-                run: {
-                    shadow: {
-                        type: ShadingType.PERCENT_10,
-                        fill: "00FFFF",
-                        color: "FF0000",
-                    },
-                },
+        const highlightTests = [
+            {
+                highlight: "005599",
+                expected: [{ "w:highlight": { _attr: { "w:val": "005599" } } }, { "w:highlightCs": { _attr: { "w:val": "005599" } } }],
+            },
+            {
+                highlight: "005599",
+                highlightComplexScript: true,
+                expected: [{ "w:highlight": { _attr: { "w:val": "005599" } } }, { "w:highlightCs": { _attr: { "w:val": "005599" } } }],
+            },
+            {
+                highlight: "005599",
+                highlightComplexScript: false,
+                expected: [{ "w:highlight": { _attr: { "w:val": "005599" } } }],
+            },
+            {
+                highlight: "005599",
+                highlightComplexScript: "550099",
+                expected: [{ "w:highlight": { _attr: { "w:val": "005599" } } }, { "w:highlightCs": { _attr: { "w:val": "550099" } } }],
+            },
+        ];
+        highlightTests.forEach(({ highlight, highlightComplexScript, expected }) => {
+            it(`#highlight ${highlight} cs ${highlightComplexScript}`, () => {
+                const style = new StyleForParagraph({
+                    id: "myStyleId",
+                    run: { highlight, highlightComplexScript },
+                });
+                const tree = new Formatter().format(style);
+                expect(tree).to.deep.equal({
+                    "w:style": [{ _attr: { "w:type": "paragraph", "w:styleId": "myStyleId" } }, { "w:rPr": expected }],
+                });
             });
-            const tree = new Formatter().format(style);
-            expect(tree).to.deep.equal({
-                "w:style": [
-                    { _attr: { "w:type": "paragraph", "w:styleId": "myStyleId" } },
-                    {
-                        "w:rPr": [
-                            {
-                                "w:shd": {
-                                    _attr: {
-                                        "w:val": "pct10",
-                                        "w:fill": "00FFFF",
-                                        "w:color": "FF0000",
-                                    },
-                                },
-                            },
-                        ],
-                    },
+        });
+
+        const shadingTests = [
+            {
+                shadow: {
+                    type: ShadingType.PERCENT_10,
+                    fill: "00FFFF",
+                    color: "FF0000",
+                },
+                expected: [
+                    { "w:shd": { _attr: { "w:val": "pct10", "w:fill": "00FFFF", "w:color": "FF0000" } } },
+                    { "w:shdCs": { _attr: { "w:val": "pct10", "w:fill": "00FFFF", "w:color": "FF0000" } } },
                 ],
+            },
+            {
+                shading: {
+                    type: ShadingType.PERCENT_10,
+                    fill: "00FFFF",
+                    color: "FF0000",
+                },
+                expected: [
+                    { "w:shd": { _attr: { "w:val": "pct10", "w:fill": "00FFFF", "w:color": "FF0000" } } },
+                    { "w:shdCs": { _attr: { "w:val": "pct10", "w:fill": "00FFFF", "w:color": "FF0000" } } },
+                ],
+            },
+            {
+                shading: {
+                    type: ShadingType.PERCENT_10,
+                    fill: "00FFFF",
+                    color: "FF0000",
+                },
+                shadingComplexScript: true,
+                expected: [
+                    { "w:shd": { _attr: { "w:val": "pct10", "w:fill": "00FFFF", "w:color": "FF0000" } } },
+                    { "w:shdCs": { _attr: { "w:val": "pct10", "w:fill": "00FFFF", "w:color": "FF0000" } } },
+                ],
+            },
+            {
+                shading: {
+                    type: ShadingType.PERCENT_10,
+                    fill: "00FFFF",
+                    color: "FF0000",
+                },
+                shadingComplexScript: false,
+                expected: [{ "w:shd": { _attr: { "w:val": "pct10", "w:fill": "00FFFF", "w:color": "FF0000" } } }],
+            },
+            {
+                shading: {
+                    type: ShadingType.PERCENT_10,
+                    fill: "00FFFF",
+                    color: "FF0000",
+                },
+                shadingComplexScript: {
+                    type: ShadingType.PERCENT_10,
+                    fill: "00FFFF",
+                    color: "00FF00",
+                },
+                expected: [
+                    { "w:shd": { _attr: { "w:val": "pct10", "w:fill": "00FFFF", "w:color": "FF0000" } } },
+                    { "w:shdCs": { _attr: { "w:val": "pct10", "w:fill": "00FFFF", "w:color": "00FF00" } } },
+                ],
+            },
+        ];
+        shadingTests.forEach(({ shadow, shading, shadingComplexScript, expected }) => {
+            it("#shadow correctly", () => {
+                const style = new StyleForParagraph({
+                    id: "myStyleId",
+                    run: { shadow, shading, shadingComplexScript },
+                });
+                const tree = new Formatter().format(style);
+                expect(tree).to.deep.equal({
+                    "w:style": [{ _attr: { "w:type": "paragraph", "w:styleId": "myStyleId" } }, { "w:rPr": expected }],
+                });
             });
         });
 
         describe("#underline", () => {
             it("should set underline to 'single' if no arguments are given", () => {
-                const style = new ParagraphStyle({
+                const style = new StyleForParagraph({
                     id: "myStyleId",
                     run: {
                         underline: {},
@@ -649,7 +745,7 @@ describe("ParagraphStyle", () => {
             });
 
             it("should set the style if given", () => {
-                const style = new ParagraphStyle({
+                const style = new StyleForParagraph({
                     id: "myStyleId",
                     run: {
                         underline: {
@@ -669,7 +765,7 @@ describe("ParagraphStyle", () => {
             });
 
             it("should set the style and color if given", () => {
-                const style = new ParagraphStyle({
+                const style = new StyleForParagraph({
                     id: "myStyleId",
                     run: {
                         underline: {
@@ -692,7 +788,7 @@ describe("ParagraphStyle", () => {
 
         describe("#emphasisMark", () => {
             it("should set emphasisMark to 'dot' if no arguments are given", () => {
-                const style = new ParagraphStyle({
+                const style = new StyleForParagraph({
                     id: "myStyleId",
                     run: {
                         emphasisMark: {},
@@ -710,7 +806,7 @@ describe("ParagraphStyle", () => {
             });
 
             it("should set the style if given", () => {
-                const style = new ParagraphStyle({
+                const style = new StyleForParagraph({
                     id: "myStyleId",
                     run: {
                         emphasisMark: {
@@ -731,7 +827,7 @@ describe("ParagraphStyle", () => {
         });
 
         it("#color", () => {
-            const style = new ParagraphStyle({
+            const style = new StyleForParagraph({
                 id: "myStyleId",
                 run: {
                     color: "123456",
@@ -749,7 +845,7 @@ describe("ParagraphStyle", () => {
         });
 
         it("#link", () => {
-            const style = new ParagraphStyle({ id: "myStyleId", link: "MyLink" });
+            const style = new StyleForParagraph({ id: "myStyleId", link: "MyLink" });
             const tree = new Formatter().format(style);
             expect(tree).to.deep.equal({
                 "w:style": [
@@ -765,7 +861,7 @@ describe("ParagraphStyle", () => {
         });
 
         it("#semiHidden", () => {
-            const style = new ParagraphStyle({ id: "myStyleId", semiHidden: true });
+            const style = new StyleForParagraph({ id: "myStyleId", semiHidden: true });
             const tree = new Formatter().format(style);
             expect(tree).to.deep.equal({
                 "w:style": [
@@ -781,7 +877,7 @@ describe("ParagraphStyle", () => {
         });
 
         it("#uiPriority", () => {
-            const style = new ParagraphStyle({ id: "myStyleId", uiPriority: 99 });
+            const style = new StyleForParagraph({ id: "myStyleId", uiPriority: 99 });
             const tree = new Formatter().format(style);
             expect(tree).to.deep.equal({
                 "w:style": [
@@ -798,7 +894,7 @@ describe("ParagraphStyle", () => {
         });
 
         it("#unhideWhenUsed", () => {
-            const style = new ParagraphStyle({ id: "myStyleId", unhideWhenUsed: true });
+            const style = new StyleForParagraph({ id: "myStyleId", unhideWhenUsed: true });
             const tree = new Formatter().format(style);
             expect(tree).to.deep.equal({
                 "w:style": [

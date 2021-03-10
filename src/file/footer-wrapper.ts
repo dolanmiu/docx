@@ -1,6 +1,7 @@
 import { XmlComponent } from "file/xml-components";
 
 import { FooterReferenceType } from "./document";
+import { IViewWrapper } from "./document-wrapper";
 import { Footer } from "./footer/footer";
 import { Media } from "./media";
 import { Paragraph } from "./paragraph";
@@ -12,7 +13,7 @@ export interface IDocumentFooter {
     readonly type: FooterReferenceType;
 }
 
-export class FooterWrapper {
+export class FooterWrapper implements IViewWrapper {
     private readonly footer: Footer;
     private readonly relationships: Relationships;
 
@@ -29,7 +30,7 @@ export class FooterWrapper {
         this.footer.addChildElement(childElement);
     }
 
-    public get Footer(): Footer {
+    public get View(): Footer {
         return this.footer;
     }
 

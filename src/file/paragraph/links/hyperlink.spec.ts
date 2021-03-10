@@ -2,14 +2,20 @@ import { expect } from "chai";
 
 import { Formatter } from "export/formatter";
 
-import { Hyperlink } from "./";
-import { HyperlinkRef } from "./hyperlink";
+import { TextRun } from "../run";
+import { ConcreteHyperlink, ExternalHyperlink, InternalHyperlink } from "./hyperlink";
 
-describe("Hyperlink", () => {
-    let hyperlink: Hyperlink;
+describe("ConcreteHyperlink", () => {
+    let hyperlink: ConcreteHyperlink;
 
     beforeEach(() => {
-        hyperlink = new Hyperlink("https://example.com", "superid");
+        hyperlink = new ConcreteHyperlink(
+            new TextRun({
+                text: "https://example.com",
+                style: "Hyperlink",
+            }),
+            "superid",
+        );
     });
 
     describe("#constructor()", () => {
@@ -35,7 +41,14 @@ describe("Hyperlink", () => {
 
         describe("with optional anchor parameter", () => {
             beforeEach(() => {
-                hyperlink = new Hyperlink("Anchor Text", "superid2", "anchor");
+                hyperlink = new ConcreteHyperlink(
+                    new TextRun({
+                        text: "Anchor Text",
+                        style: "Hyperlink",
+                    }),
+                    "superid2",
+                    "anchor",
+                );
             });
 
             it("should create an internal link with anchor tag", () => {
@@ -61,10 +74,53 @@ describe("Hyperlink", () => {
     });
 });
 
-describe("HyperlinkRef", () => {
+describe("ExternalHyperlink", () => {
     describe("#constructor()", () => {
-        const hyperlinkRef = new HyperlinkRef("test-id");
+        it("should create", () => {
+            const externalHyperlink = new ExternalHyperlink({
+                child: new TextRun("test"),
+                link: "http://www.google.com",
+            });
 
-        expect(hyperlinkRef.id).to.equal("test-id");
+            expect(externalHyperlink.options.link).to.equal("http://www.google.com");
+        });
+    });
+});
+
+describe("InternalHyperlink", () => {
+    describe("#constructor()", () => {
+        it("should create", () => {
+            const internalHyperlink = new InternalHyperlink({
+                child: new TextRun("test"),
+                anchor: "test-id",
+            });
+
+            const tree = new Formatter().format(internalHyperlink);
+
+            expect(tree).to.deep.equal({
+                "w:hyperlink": [
+                    {
+                        _attr: {
+                            "w:anchor": "test-id",
+                            "w:history": 1,
+                        },
+                    },
+                    {
+                        "w:r": [
+                            {
+                                "w:t": [
+                                    {
+                                        _attr: {
+                                            "xml:space": "preserve",
+                                        },
+                                    },
+                                    "test",
+                                ],
+                            },
+                        ],
+                    },
+                ],
+            });
+        });
     });
 });

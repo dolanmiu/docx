@@ -546,5 +546,77 @@ describe("TableBorders", () => {
                 });
             });
         });
+
+        describe("TableBorders.NONE convenience object", () => {
+            it("should add no borders", () => {
+                const tableBorders = new TableBorders(TableBorders.NONE);
+                const tree = new Formatter().format(tableBorders);
+
+                expect(tree).to.deep.equal({
+                    "w:tblBorders": [
+                        {
+                            "w:top": {
+                                _attr: {
+                                    "w:color": "auto",
+                                    "w:space": 0,
+                                    "w:sz": 0,
+                                    "w:val": "none",
+                                },
+                            },
+                        },
+                        {
+                            "w:left": {
+                                _attr: {
+                                    "w:color": "auto",
+                                    "w:space": 0,
+                                    "w:sz": 0,
+                                    "w:val": "none",
+                                },
+                            },
+                        },
+                        {
+                            "w:bottom": {
+                                _attr: {
+                                    "w:color": "auto",
+                                    "w:space": 0,
+                                    "w:sz": 0,
+                                    "w:val": "none",
+                                },
+                            },
+                        },
+                        {
+                            "w:right": {
+                                _attr: {
+                                    "w:color": "auto",
+                                    "w:space": 0,
+                                    "w:sz": 0,
+                                    "w:val": "none",
+                                },
+                            },
+                        },
+                        {
+                            "w:insideH": {
+                                _attr: {
+                                    "w:color": "auto",
+                                    "w:space": 0,
+                                    "w:sz": 0,
+                                    "w:val": "none",
+                                },
+                            },
+                        },
+                        {
+                            "w:insideV": {
+                                _attr: {
+                                    "w:color": "auto",
+                                    "w:space": 0,
+                                    "w:sz": 0,
+                                    "w:val": "none",
+                                },
+                            },
+                        },
+                    ],
+                });
+            });
+        });
     });
 });

@@ -12,36 +12,9 @@
         "noUnusedLocals": true,
         "noUnusedParameters": true,
         "baseUrl": "./src",
-        "paths" : {
-          "/*": [
-              "./*"
-            ]
+        "paths": {
+            "/*": ["./*"]
         }
     },
-    "exclude": [
-        "node_modules",
-        "tests",
-        "**/_*",
-        "demo",
-        "scripts",
-        "webpack.config.ts"
-    ],
-    "typedocOptions": {
-        "mode": "file",
-        "out": "docs/api",
-        "exclude": "test",
-        "theme": "default",
-        "ignoreCompilerErrors": true,
-        "excludePrivate": true,
-        "excludeProtected": true,
-        "excludeNotExported": true,
-        "excludeExternals": false,
-        "target": "ES6",
-        "moduleResolution": "node",
-        "preserveConstEnums": true,
-        "stripInternal": true,
-        "suppressExcessPropertyErrors": true,
-        "suppressImplicitAnyIndexErrors": true,
-        "module": "commonjs"
-      }
+    "exclude": ["node_modules", "tests", "**/_*", "demo", "scripts", "webpack.config.ts"]
 }

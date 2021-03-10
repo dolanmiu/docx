@@ -30,6 +30,24 @@ const doc = new docx.Document({
 * keywords
 * lastModifiedBy
 * revision
+* externalStyles
+* styles
+* numbering
+* footnotes
+* hyperlinks
+* background
+
+### Change background color of Document
+
+Set the hex value in the document like so:
+
+```ts
+const doc = new docx.Document({
+    background: {
+        color: "C45911",
+    },
+});
+```
 
 You can mix and match whatever properties you want, or provide no properties.
 

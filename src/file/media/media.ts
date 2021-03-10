@@ -1,14 +1,12 @@
 import { IDrawingOptions } from "../drawing";
 import { File } from "../file";
-import { FooterWrapper } from "../footer-wrapper";
-import { HeaderWrapper } from "../header-wrapper";
 import { PictureRun } from "../paragraph";
 import { IMediaData } from "./data";
 // import { Image } from "./image";
 
 export class Media {
     public static addImage(
-        file: File | HeaderWrapper | FooterWrapper,
+        file: File,
         buffer: Buffer | string | Uint8Array | ArrayBuffer,
         width?: number,
         height?: number,
@@ -21,14 +19,7 @@ export class Media {
 
     private static generateId(): string {
         // https://gist.github.com/6174/6062387
-        return (
-            Math.random()
-                .toString(36)
-                .substring(2, 15) +
-            Math.random()
-                .toString(36)
-                .substring(2, 15)
-        );
+        return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
     }
 
     private readonly map: Map<string, IMediaData>;
@@ -89,7 +80,7 @@ export class Media {
         return imageData;
     }
 
-    public get Array(): IMediaData[] {
+    public get Array(): readonly IMediaData[] {
         const array = new Array<IMediaData>();
 
         this.map.forEach((data) => {

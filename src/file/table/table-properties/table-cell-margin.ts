@@ -6,47 +6,49 @@ class TableCellMarginAttributes extends XmlAttributeComponent<{ readonly type: W
     protected readonly xmlKeys = { value: "w:w", type: "w:type" };
 }
 
+interface IBaseTableCellMarginOptions {
+    readonly value: number;
+    readonly type?: WidthType;
+}
+
 class BaseTableCellMargin extends XmlComponent {
-    public setProperties(value: number, type: WidthType = WidthType.DXA): void {
+    constructor(rootKey: string, options: IBaseTableCellMarginOptions) {
+        super(rootKey);
+
         this.root.push(
             new TableCellMarginAttributes({
-                type: type,
-                value: value,
+                type: options.type ?? WidthType.DXA,
+                value: options.value,
             }),
         );
     }
 }
 
+export interface ITableCellMarginOptions {
+    readonly top?: IBaseTableCellMarginOptions;
+    readonly bottom?: IBaseTableCellMarginOptions;
+    readonly left?: IBaseTableCellMarginOptions;
+    readonly right?: IBaseTableCellMarginOptions;
+}
+
 export class TableCellMargin extends IgnoreIfEmptyXmlComponent {
-    constructor() {
+    constructor(options: ITableCellMarginOptions) {
         super("w:tblCellMar");
-    }
 
-    public addTopMargin(value: number, type: WidthType = WidthType.DXA): void {
-        const top = new BaseTableCellMargin("w:top");
+        if (options.bottom) {
+            this.root.push(new BaseTableCellMargin("w:bottom", options.bottom));
+        }
 
-        top.setProperties(value, type);
-        this.root.push(top);
-    }
+        if (options.top) {
+            this.root.push(new BaseTableCellMargin("w:top", options.top));
+        }
 
-    public addLeftMargin(value: number, type: WidthType = WidthType.DXA): void {
-        const left = new BaseTableCellMargin("w:left");
+        if (options.left) {
+            this.root.push(new BaseTableCellMargin("w:left", options.left));
+        }
 
-        left.setProperties(value, type);
-        this.root.push(left);
-    }
-
-    public addBottomMargin(value: number, type: WidthType = WidthType.DXA): void {
-        const bottom = new BaseTableCellMargin("w:bottom");
-
-        bottom.setProperties(value, type);
-        this.root.push(bottom);
-    }
-
-    public addRightMargin(value: number, type: WidthType = WidthType.DXA): void {
-        const right = new BaseTableCellMargin("w:right");
-
-        right.setProperties(value, type);
-        this.root.push(right);
+        if (options.right) {
+            this.root.push(new BaseTableCellMargin("w:right", options.right));
+        }
     }
 }
