@@ -1,6 +1,7 @@
 // tslint:disable:no-any
 import { Element as XmlElement, xml2js } from "xml-js";
 import { IXmlableObject, XmlAttributeComponent, XmlComponent } from ".";
+import { IContext } from "./base";
 
 /**
  * Converts the given xml element (in json format) into XmlComponent.
@@ -72,7 +73,7 @@ export class ImportedRootElementAttributes extends XmlComponent {
         super("");
     }
 
-    public prepForXml(): IXmlableObject {
+    public prepForXml(_: IContext): IXmlableObject {
         return {
             _attr: this._attr,
         };

@@ -1,8 +1,7 @@
 // http://officeopenxml.com/WPtableGrid.php
-import { IViewWrapper } from "file/document-wrapper";
 import { Paragraph } from "file/paragraph";
 import { BorderStyle } from "file/styles";
-import { IXmlableObject, XmlComponent } from "file/xml-components";
+import { IContext, IXmlableObject, XmlComponent } from "file/xml-components";
 
 import { ITableShadingAttributesProperties } from "../shading";
 import { Table } from "../table";
@@ -105,11 +104,11 @@ export class TableCell extends XmlComponent {
         }
     }
 
-    public prepForXml(file?: IViewWrapper): IXmlableObject | undefined {
+    public prepForXml(context: IContext): IXmlableObject | undefined {
         // Cells must end with a paragraph
         if (!(this.root[this.root.length - 1] instanceof Paragraph)) {
             this.root.push(new Paragraph({}));
         }
-        return super.prepForXml(file);
+        return super.prepForXml(context);
     }
 }

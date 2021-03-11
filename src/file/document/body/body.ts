@@ -1,5 +1,4 @@
-import { IViewWrapper } from "file/document-wrapper";
-import { IXmlableObject, XmlComponent } from "file/xml-components";
+import { IContext, IXmlableObject, XmlComponent } from "file/xml-components";
 
 import { Paragraph, ParagraphProperties, TableOfContents } from "../..";
 import { SectionProperties, SectionPropertiesOptions } from "./section-properties/section-properties";
@@ -26,13 +25,13 @@ export class Body extends XmlComponent {
         this.sections.push(new SectionProperties(options));
     }
 
-    public prepForXml(file?: IViewWrapper): IXmlableObject | undefined {
+    public prepForXml(context: IContext): IXmlableObject | undefined {
         if (this.sections.length === 1) {
             this.root.splice(0, 1);
             this.root.push(this.sections.pop() as SectionProperties);
         }
 
-        return super.prepForXml(file);
+        return super.prepForXml(context);
     }
 
     public push(component: XmlComponent): void {

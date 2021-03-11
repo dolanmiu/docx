@@ -6,6 +6,7 @@ import { Formatter } from "export/formatter";
 import { EMPTY_OBJECT } from "file/xml-components";
 
 import { IViewWrapper } from "../document-wrapper";
+import { File } from "../file";
 import { ShadingType } from "../table/shading";
 import { AlignmentType, HeadingLevel, LeaderType, PageBreak, TabStopPosition, TabStopType } from "./formatting";
 import { Bookmark, ExternalHyperlink } from "./links";
@@ -830,12 +831,17 @@ describe("Paragraph", () => {
                     }),
                 ],
             });
-            const fileMock = ({
+            const viewWrapperMock = ({
                 Relationships: {
                     createRelationship: () => ({}),
                 },
             } as unknown) as IViewWrapper;
-            paragraph.prepForXml(fileMock);
+
+            const file = ({} as unknown) as File;
+            paragraph.prepForXml({
+                viewWrapper: viewWrapperMock,
+                file: file,
+            });
             const tree = new Formatter().format(paragraph);
             expect(tree).to.deep.equal({
                 "w:p": [

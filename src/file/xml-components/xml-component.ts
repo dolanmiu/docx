@@ -1,5 +1,4 @@
-import { IViewWrapper } from "../document-wrapper";
-import { BaseXmlComponent } from "./base";
+import { BaseXmlComponent, IContext } from "./base";
 import { IXmlableObject } from "./xmlable-object";
 
 export const EMPTY_OBJECT = Object.seal({});
@@ -13,7 +12,7 @@ export abstract class XmlComponent extends BaseXmlComponent {
         this.root = new Array<BaseXmlComponent | string>();
     }
 
-    public prepForXml(file?: IViewWrapper): IXmlableObject | undefined {
+    public prepForXml(context: IContext): IXmlableObject | undefined {
         const children = this.root
             .filter((c) => {
                 if (c instanceof BaseXmlComponent) {
@@ -23,7 +22,7 @@ export abstract class XmlComponent extends BaseXmlComponent {
             })
             .map((comp) => {
                 if (comp instanceof BaseXmlComponent) {
-                    return comp.prepForXml(file);
+                    return comp.prepForXml(context);
                 }
                 return comp;
             })
@@ -52,8 +51,8 @@ export abstract class XmlComponent extends BaseXmlComponent {
 }
 
 export abstract class IgnoreIfEmptyXmlComponent extends XmlComponent {
-    public prepForXml(): IXmlableObject | undefined {
-        const result = super.prepForXml();
+    public prepForXml(context: IContext): IXmlableObject | undefined {
+        const result = super.prepForXml(context);
         // Ignore the object if its falsey or is an empty object (would produce
         // an empty XML element if allowed to be included in the output).
         if (result && (typeof result[this.rootKey] !== "object" || Object.keys(result[this.rootKey]).length)) {

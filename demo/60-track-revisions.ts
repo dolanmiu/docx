@@ -27,25 +27,29 @@ import {
 */
 
 const doc = new Document({
-    footnotes: [
-        new Paragraph({
+    footnotes: {
+        1: {
             children: [
-                new TextRun("This is a footnote"),
-                new DeletedTextRun({
-                    text: " with some extra text which was deleted",
-                    id: 0,
-                    author: "Firstname Lastname",
-                    date: "2020-10-06T09:05:00Z",
-                }),
-                new InsertedTextRun({
-                    text: " and new content",
-                    id: 1,
-                    author: "Firstname Lastname",
-                    date: "2020-10-06T09:05:00Z",
+                new Paragraph({
+                    children: [
+                        new TextRun("This is a footnote"),
+                        new DeletedTextRun({
+                            text: " with some extra text which was deleted",
+                            id: 0,
+                            author: "Firstname Lastname",
+                            date: "2020-10-06T09:05:00Z",
+                        }),
+                        new InsertedTextRun({
+                            text: " and new content",
+                            id: 1,
+                            author: "Firstname Lastname",
+                            date: "2020-10-06T09:05:00Z",
+                        }),
+                    ],
                 }),
             ],
-        }),
-    ],
+        },
+    },
     features: {
         trackRevisions: true,
     },

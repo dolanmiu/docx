@@ -1,4 +1,4 @@
-import { IXmlableObject, XmlComponent } from "file/xml-components";
+import { IContext, IXmlableObject, XmlComponent } from "file/xml-components";
 import { CustomPropertiesAttributes } from "./custom-properties-attributes";
 import { CustomProperty, ICustomPropertyOptions } from "./custom-property";
 
@@ -26,9 +26,9 @@ export class CustomProperties extends XmlComponent {
         }
     }
 
-    public prepForXml(): IXmlableObject | undefined {
+    public prepForXml(context: IContext): IXmlableObject | undefined {
         this.properties.forEach((x) => this.root.push(x));
-        return super.prepForXml();
+        return super.prepForXml(context);
     }
 
     public addCustomProperty(property: ICustomPropertyOptions): void {
