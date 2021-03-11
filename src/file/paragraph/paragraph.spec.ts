@@ -598,6 +598,36 @@ describe("Paragraph", () => {
             });
         });
 
+        it("should add a style to the list paragraph when provided", () => {
+            const paragraph = new Paragraph({
+                numbering: {
+                    reference: "test id",
+                    level: 0,
+                },
+                style: "myFancyStyle",
+            });
+            const tree = new Formatter().format(paragraph);
+            expect(tree).to.have.property("w:p").which.is.an("array").which.has.length.at.least(1);
+            expect(tree["w:p"][0]).to.have.property("w:pPr").which.is.an("array").which.has.length.at.least(1);
+            expect(tree["w:p"][0]["w:pPr"][0]).to.deep.equal({
+                "w:pStyle": { _attr: { "w:val": "myFancyStyle" } },
+            });
+        });
+
+        it("should not add ListParagraph style to a list when using custom numbering", () => {
+            const paragraph = new Paragraph({
+                numbering: {
+                    reference: "test id",
+                    level: 0,
+                    custom: true,
+                },
+            });
+            const tree = new Formatter().format(paragraph);
+            expect(tree).to.have.property("w:p").which.is.an("array").which.has.length.at.least(1);
+            expect(tree["w:p"][0]).to.have.property("w:pPr").which.is.an("array").which.has.length.at.least(1);
+            expect(tree["w:p"][0]["w:pPr"][0]).to.not.have.property("w:pStyle");
+        });
+
         it("it should add numbered properties", () => {
             const paragraph = new Paragraph({
                 numbering: {
