@@ -2,9 +2,8 @@
 import * as shortid from "shortid";
 
 import { FootnoteReferenceRun } from "file/footnotes/footnote/run/reference-run";
-import { IXmlableObject, XmlComponent } from "file/xml-components";
+import { IContext, IXmlableObject, XmlComponent } from "file/xml-components";
 
-import { IViewWrapper } from "../document-wrapper";
 import { TargetModeType } from "../relationships/relationship/relationship";
 import { DeletedTextRun, InsertedTextRun } from "../track-revision";
 import { PageBreak } from "./formatting/page-break";
@@ -76,12 +75,12 @@ export class Paragraph extends XmlComponent {
         }
     }
 
-    public prepForXml(file: IViewWrapper): IXmlableObject | undefined {
+    public prepForXml(context: IContext): IXmlableObject | undefined {
         for (const element of this.root) {
             if (element instanceof ExternalHyperlink) {
                 const index = this.root.indexOf(element);
                 const concreteHyperlink = new ConcreteHyperlink(element.options.child, shortid.generate().toLowerCase());
-                file.Relationships.createRelationship(
+                context.viewWrapper.Relationships.createRelationship(
                     concreteHyperlink.linkId,
                     "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink",
                     element.options.link,
@@ -91,7 +90,7 @@ export class Paragraph extends XmlComponent {
             }
         }
 
-        return super.prepForXml();
+        return super.prepForXml(context);
     }
 
     public addRunToFront(run: Run): Paragraph {

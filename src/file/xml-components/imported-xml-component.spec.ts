@@ -2,6 +2,7 @@ import { expect } from "chai";
 import { Element, xml2js } from "xml-js";
 
 import { EMPTY_OBJECT, ImportedXmlComponent } from "./";
+import { IContext } from "./base";
 import { convertToXmlComponent } from "./imported-xml-component";
 
 const xmlString = `
@@ -63,7 +64,8 @@ describe("ImportedXmlComponent", () => {
 
     describe("#prepForXml()", () => {
         it("should transform for xml", () => {
-            const converted = importedXmlComponent.prepForXml();
+            // tslint:disable-next-line: no-object-literal-type-assertion
+            const converted = importedXmlComponent.prepForXml({} as IContext);
             expect(converted).to.deep.equal({
                 "w:test": [
                     {

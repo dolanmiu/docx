@@ -1,7 +1,7 @@
 // http://officeopenxml.com/WPnumbering.php
 import { convertInchesToTwip } from "convenience-functions";
 import { AlignmentType } from "file/paragraph";
-import { IXmlableObject, XmlComponent } from "file/xml-components";
+import { IContext, IXmlableObject, XmlComponent } from "file/xml-components";
 
 import { DocumentAttributes } from "../document/document-attributes";
 import { AbstractNumbering } from "./abstract-numbering";
@@ -158,10 +158,10 @@ export class Numbering extends XmlComponent {
         }
     }
 
-    public prepForXml(): IXmlableObject | undefined {
+    public prepForXml(context: IContext): IXmlableObject | undefined {
         this.abstractNumbering.forEach((x) => this.root.push(x));
         this.concreteNumbering.forEach((x) => this.root.push(x));
-        return super.prepForXml();
+        return super.prepForXml(context);
     }
 
     private createConcreteNumbering(abstractNumbering: AbstractNumbering, reference?: string): ConcreteNumbering {
