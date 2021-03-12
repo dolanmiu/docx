@@ -91,7 +91,8 @@
 						<section class="tsd-index-section ">
 							<h3>Properties</h3>
 							<ul class="tsd-index-list">
-								<li class="tsd-kind-property tsd-parent-kind-class"><a href="concretenumbering.html#id" class="tsd-kind-icon">id</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-class"><a href="concretenumbering.html#instance" class="tsd-kind-icon">instance</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-class"><a href="concretenumbering.html#numid" class="tsd-kind-icon">num<wbr>Id</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-class"><a href="concretenumbering.html#reference" class="tsd-kind-icon">reference</a></li>
 							</ul>
 						</section>
@@ -106,7 +107,6 @@
 							<ul class="tsd-index-list">
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="concretenumbering.html#addchildelement" class="tsd-kind-icon">add<wbr>Child<wbr>Element</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="concretenumbering.html#delete" class="tsd-kind-icon">delete</a></li>
-								<li class="tsd-kind-method tsd-parent-kind-class"><a href="concretenumbering.html#overridelevel" class="tsd-kind-icon">override<wbr>Level</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="concretenumbering.html#prepforxml" class="tsd-kind-icon">prep<wbr>For<wbr>Xml</a></li>
 							</ul>
 						</section>
@@ -119,26 +119,20 @@
 					<a name="constructor" class="tsd-anchor"></a>
 					<h3>constructor</h3>
 					<ul class="tsd-signatures tsd-kind-constructor tsd-parent-kind-class tsd-is-inherited">
-						<li class="tsd-signature tsd-kind-icon">new <wbr>Concrete<wbr>Numbering<span class="tsd-signature-symbol">(</span>numId<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span>, abstractNumId<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span>, reference<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="concretenumbering.html" class="tsd-signature-type" data-tsd-kind="Class">ConcreteNumbering</a></li>
+						<li class="tsd-signature tsd-kind-icon">new <wbr>Concrete<wbr>Numbering<span class="tsd-signature-symbol">(</span>options<span class="tsd-signature-symbol">: </span><a href="../interfaces/iconcretenumberingoptions.html" class="tsd-signature-type" data-tsd-kind="Interface">IConcreteNumberingOptions</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="concretenumbering.html" class="tsd-signature-type" data-tsd-kind="Class">ConcreteNumbering</a></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<p>Inherited from <a href="xmlcomponent.html">XmlComponent</a>.<a href="xmlcomponent.html#constructor">constructor</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/dbaa493/src/file/numbering/num.ts#L24">src/file/numbering/num.ts:24</a></li>
+									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/58f7e5a/src/file/numbering/num.ts#L34">src/file/numbering/num.ts:34</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
-									<h5>numId: <span class="tsd-signature-type">number</span></h5>
-								</li>
-								<li>
-									<h5>abstractNumId: <span class="tsd-signature-type">number</span></h5>
-								</li>
-								<li>
-									<h5><span class="tsd-flag ts-flagOptional">Optional</span> reference: <span class="tsd-signature-type">string</span></h5>
+									<h5>options: <a href="../interfaces/iconcretenumberingoptions.html" class="tsd-signature-type" data-tsd-kind="Interface">IConcreteNumberingOptions</a></h5>
 								</li>
 							</ul>
 							<h4 class="tsd-returns-title">Returns <a href="concretenumbering.html" class="tsd-signature-type" data-tsd-kind="Class">ConcreteNumbering</a></h4>
@@ -149,20 +143,33 @@
 			<section class="tsd-panel-group tsd-member-group ">
 				<h2>Properties</h2>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
-					<a name="id" class="tsd-anchor"></a>
-					<h3><span class="tsd-flag ts-flagReadonly">Readonly</span> id</h3>
-					<div class="tsd-signature tsd-kind-icon">id<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
+					<a name="instance" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagReadonly">Readonly</span> instance</h3>
+					<div class="tsd-signature tsd-kind-icon">instance<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/dbaa493/src/file/numbering/num.ts#L24">src/file/numbering/num.ts:24</a></li>
+							<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/58f7e5a/src/file/numbering/num.ts#L34">src/file/numbering/num.ts:34</a></li>
+						</ul>
+					</aside>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
+					<a name="numid" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagReadonly">Readonly</span> num<wbr>Id</h3>
+					<div class="tsd-signature tsd-kind-icon">num<wbr>Id<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/58f7e5a/src/file/numbering/num.ts#L32">src/file/numbering/num.ts:32</a></li>
 						</ul>
 					</aside>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
 					<a name="reference" class="tsd-anchor"></a>
-					<h3><span class="tsd-flag ts-flagOptional">Optional</span> <span class="tsd-flag ts-flagReadonly">Readonly</span> reference</h3>
+					<h3><span class="tsd-flag ts-flagReadonly">Readonly</span> reference</h3>
 					<div class="tsd-signature tsd-kind-icon">reference<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/58f7e5a/src/file/numbering/num.ts#L33">src/file/numbering/num.ts:33</a></li>
+						</ul>
 					</aside>
 				</section>
 			</section>
@@ -178,7 +185,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/dbaa493/src/file/xml-components/base.ts#L21">src/file/xml-components/base.ts:21</a></li>
+									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/58f7e5a/src/file/xml-components/base.ts#L21">src/file/xml-components/base.ts:21</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">boolean</span></h4>
@@ -199,7 +206,7 @@
 							<aside class="tsd-sources">
 								<p>Inherited from <a href="xmlcomponent.html">XmlComponent</a>.<a href="xmlcomponent.html#addchildelement">addChildElement</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/dbaa493/src/file/xml-components/xml-component.ts#L42">src/file/xml-components/xml-component.ts:42</a></li>
+									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/58f7e5a/src/file/xml-components/xml-component.ts#L42">src/file/xml-components/xml-component.ts:42</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -223,36 +230,10 @@
 							<aside class="tsd-sources">
 								<p>Inherited from <a href="xmlcomponent.html">XmlComponent</a>.<a href="xmlcomponent.html#delete">delete</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/dbaa493/src/file/xml-components/xml-component.ts#L48">src/file/xml-components/xml-component.ts:48</a></li>
+									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/58f7e5a/src/file/xml-components/xml-component.ts#L48">src/file/xml-components/xml-component.ts:48</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
-						</li>
-					</ul>
-				</section>
-				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
-					<a name="overridelevel" class="tsd-anchor"></a>
-					<h3>override<wbr>Level</h3>
-					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-						<li class="tsd-signature tsd-kind-icon">override<wbr>Level<span class="tsd-signature-symbol">(</span>num<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span>, start<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="leveloverride.html" class="tsd-signature-type" data-tsd-kind="Class">LevelOverride</a></li>
-					</ul>
-					<ul class="tsd-descriptions">
-						<li class="tsd-description">
-							<aside class="tsd-sources">
-								<ul>
-									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/dbaa493/src/file/numbering/num.ts#L37">src/file/numbering/num.ts:37</a></li>
-								</ul>
-							</aside>
-							<h4 class="tsd-parameters-title">Parameters</h4>
-							<ul class="tsd-parameters">
-								<li>
-									<h5>num: <span class="tsd-signature-type">number</span></h5>
-								</li>
-								<li>
-									<h5><span class="tsd-flag ts-flagOptional">Optional</span> start: <span class="tsd-signature-type">number</span></h5>
-								</li>
-							</ul>
-							<h4 class="tsd-returns-title">Returns <a href="leveloverride.html" class="tsd-signature-type" data-tsd-kind="Class">LevelOverride</a></h4>
 						</li>
 					</ul>
 				</section>
@@ -267,7 +248,7 @@
 							<aside class="tsd-sources">
 								<p>Inherited from <a href="xmlcomponent.html">XmlComponent</a>.<a href="xmlcomponent.html#prepforxml">prepForXml</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/dbaa493/src/file/xml-components/xml-component.ts#L15">src/file/xml-components/xml-component.ts:15</a></li>
+									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/58f7e5a/src/file/xml-components/xml-component.ts#L15">src/file/xml-components/xml-component.ts:15</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -301,7 +282,10 @@
 								<a href="concretenumbering.html#constructor" class="tsd-kind-icon">constructor</a>
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-class">
-								<a href="concretenumbering.html#id" class="tsd-kind-icon">id</a>
+								<a href="concretenumbering.html#instance" class="tsd-kind-icon">instance</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-class">
+								<a href="concretenumbering.html#numid" class="tsd-kind-icon">num<wbr>Id</a>
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-class">
 								<a href="concretenumbering.html#reference" class="tsd-kind-icon">reference</a>
@@ -314,9 +298,6 @@
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
 								<a href="concretenumbering.html#delete" class="tsd-kind-icon">delete</a>
-							</li>
-							<li class=" tsd-kind-method tsd-parent-kind-class">
-								<a href="concretenumbering.html#overridelevel" class="tsd-kind-icon">override<wbr>Level</a>
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
 								<a href="concretenumbering.html#prepforxml" class="tsd-kind-icon">prep<wbr>For<wbr>Xml</a>

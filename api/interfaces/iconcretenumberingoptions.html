@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>IFontAttributesProperties | docx</title>
+	<title>IConcreteNumberingOptions | docx</title>
 	<meta name="description" content="Documentation for docx">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="../assets/css/main.css">
@@ -55,10 +55,10 @@
 					<a href="../modules.html">docx</a>
 				</li>
 				<li>
-					<a href="ifontattributesproperties.html">IFontAttributesProperties</a>
+					<a href="iconcretenumberingoptions.html">IConcreteNumberingOptions</a>
 				</li>
 			</ul>
-			<h1>Interface IFontAttributesProperties</h1>
+			<h1>Interface IConcreteNumberingOptions</h1>
 		</div>
 	</div>
 </header>
@@ -69,7 +69,7 @@
 				<h3>Hierarchy</h3>
 				<ul class="tsd-hierarchy">
 					<li>
-						<span class="target">IFontAttributesProperties</span>
+						<span class="target">IConcreteNumberingOptions</span>
 					</li>
 				</ul>
 			</section>
@@ -80,11 +80,11 @@
 						<section class="tsd-index-section ">
 							<h3>Properties</h3>
 							<ul class="tsd-index-list">
-								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="ifontattributesproperties.html#ascii" class="tsd-kind-icon">ascii</a></li>
-								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="ifontattributesproperties.html#cs" class="tsd-kind-icon">cs</a></li>
-								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="ifontattributesproperties.html#eastasia" class="tsd-kind-icon">east<wbr>Asia</a></li>
-								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="ifontattributesproperties.html#hansi" class="tsd-kind-icon">h<wbr>Ansi</a></li>
-								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="ifontattributesproperties.html#hint" class="tsd-kind-icon">hint</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="iconcretenumberingoptions.html#abstractnumid" class="tsd-kind-icon">abstract<wbr>Num<wbr>Id</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="iconcretenumberingoptions.html#instance" class="tsd-kind-icon">instance</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="iconcretenumberingoptions.html#numid" class="tsd-kind-icon">num<wbr>Id</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="iconcretenumberingoptions.html#overridelevel" class="tsd-kind-icon">override<wbr>Level</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="iconcretenumberingoptions.html#reference" class="tsd-kind-icon">reference</a></li>
 							</ul>
 						</section>
 					</div>
@@ -93,52 +93,63 @@
 			<section class="tsd-panel-group tsd-member-group ">
 				<h2>Properties</h2>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
-					<a name="ascii" class="tsd-anchor"></a>
-					<h3><span class="tsd-flag ts-flagOptional">Optional</span> <span class="tsd-flag ts-flagReadonly">Readonly</span> ascii</h3>
-					<div class="tsd-signature tsd-kind-icon">ascii<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
+					<a name="abstractnumid" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagReadonly">Readonly</span> abstract<wbr>Num<wbr>Id</h3>
+					<div class="tsd-signature tsd-kind-icon">abstract<wbr>Num<wbr>Id<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/58f7e5a/src/file/paragraph/run/run-fonts.ts#L4">src/file/paragraph/run/run-fonts.ts:4</a></li>
+							<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/58f7e5a/src/file/numbering/num.ts#L22">src/file/numbering/num.ts:22</a></li>
 						</ul>
 					</aside>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
-					<a name="cs" class="tsd-anchor"></a>
-					<h3><span class="tsd-flag ts-flagOptional">Optional</span> <span class="tsd-flag ts-flagReadonly">Readonly</span> cs</h3>
-					<div class="tsd-signature tsd-kind-icon">cs<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
+					<a name="instance" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagReadonly">Readonly</span> instance</h3>
+					<div class="tsd-signature tsd-kind-icon">instance<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/58f7e5a/src/file/paragraph/run/run-fonts.ts#L5">src/file/paragraph/run/run-fonts.ts:5</a></li>
+							<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/58f7e5a/src/file/numbering/num.ts#L24">src/file/numbering/num.ts:24</a></li>
 						</ul>
 					</aside>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
-					<a name="eastasia" class="tsd-anchor"></a>
-					<h3><span class="tsd-flag ts-flagOptional">Optional</span> <span class="tsd-flag ts-flagReadonly">Readonly</span> east<wbr>Asia</h3>
-					<div class="tsd-signature tsd-kind-icon">east<wbr>Asia<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
+					<a name="numid" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagReadonly">Readonly</span> num<wbr>Id</h3>
+					<div class="tsd-signature tsd-kind-icon">num<wbr>Id<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/58f7e5a/src/file/paragraph/run/run-fonts.ts#L6">src/file/paragraph/run/run-fonts.ts:6</a></li>
+							<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/58f7e5a/src/file/numbering/num.ts#L21">src/file/numbering/num.ts:21</a></li>
 						</ul>
 					</aside>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
-					<a name="hansi" class="tsd-anchor"></a>
-					<h3><span class="tsd-flag ts-flagOptional">Optional</span> <span class="tsd-flag ts-flagReadonly">Readonly</span> h<wbr>Ansi</h3>
-					<div class="tsd-signature tsd-kind-icon">h<wbr>Ansi<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
+					<a name="overridelevel" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagOptional">Optional</span> <span class="tsd-flag ts-flagReadonly">Readonly</span> override<wbr>Level</h3>
+					<div class="tsd-signature tsd-kind-icon">override<wbr>Level<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">{ </span>num<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">; </span>start<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> }</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/58f7e5a/src/file/paragraph/run/run-fonts.ts#L7">src/file/paragraph/run/run-fonts.ts:7</a></li>
+							<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/58f7e5a/src/file/numbering/num.ts#L25">src/file/numbering/num.ts:25</a></li>
 						</ul>
 					</aside>
+					<div class="tsd-type-declaration">
+						<h4>Type declaration</h4>
+						<ul class="tsd-parameters">
+							<li class="tsd-parameter">
+								<h5><span class="tsd-flag ts-flagReadonly">Readonly</span> num<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span></h5>
+							</li>
+							<li class="tsd-parameter">
+								<h5><span class="tsd-flag ts-flagOptional">Optional</span> <span class="tsd-flag ts-flagReadonly">Readonly</span> start<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">number</span></h5>
+							</li>
+						</ul>
+					</div>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
-					<a name="hint" class="tsd-anchor"></a>
-					<h3><span class="tsd-flag ts-flagOptional">Optional</span> <span class="tsd-flag ts-flagReadonly">Readonly</span> hint</h3>
-					<div class="tsd-signature tsd-kind-icon">hint<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
+					<a name="reference" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagReadonly">Readonly</span> reference</h3>
+					<div class="tsd-signature tsd-kind-icon">reference<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/58f7e5a/src/file/paragraph/run/run-fonts.ts#L8">src/file/paragraph/run/run-fonts.ts:8</a></li>
+							<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/58f7e5a/src/file/numbering/num.ts#L23">src/file/numbering/num.ts:23</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -157,22 +168,22 @@
 				</ul>
 				<ul class="current">
 					<li class="current tsd-kind-interface">
-						<a href="ifontattributesproperties.html" class="tsd-kind-icon">IFont<wbr>Attributes<wbr>Properties</a>
+						<a href="iconcretenumberingoptions.html" class="tsd-kind-icon">IConcrete<wbr>Numbering<wbr>Options</a>
 						<ul>
 							<li class=" tsd-kind-property tsd-parent-kind-interface">
-								<a href="ifontattributesproperties.html#ascii" class="tsd-kind-icon">ascii</a>
+								<a href="iconcretenumberingoptions.html#abstractnumid" class="tsd-kind-icon">abstract<wbr>Num<wbr>Id</a>
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-interface">
-								<a href="ifontattributesproperties.html#cs" class="tsd-kind-icon">cs</a>
+								<a href="iconcretenumberingoptions.html#instance" class="tsd-kind-icon">instance</a>
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-interface">
-								<a href="ifontattributesproperties.html#eastasia" class="tsd-kind-icon">east<wbr>Asia</a>
+								<a href="iconcretenumberingoptions.html#numid" class="tsd-kind-icon">num<wbr>Id</a>
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-interface">
-								<a href="ifontattributesproperties.html#hansi" class="tsd-kind-icon">h<wbr>Ansi</a>
+								<a href="iconcretenumberingoptions.html#overridelevel" class="tsd-kind-icon">override<wbr>Level</a>
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-interface">
-								<a href="ifontattributesproperties.html#hint" class="tsd-kind-icon">hint</a>
+								<a href="iconcretenumberingoptions.html#reference" class="tsd-kind-icon">reference</a>
 							</li>
 						</ul>
 					</li>
