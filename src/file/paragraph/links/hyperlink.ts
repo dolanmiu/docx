@@ -1,6 +1,5 @@
 // http://officeopenxml.com/WPhyperlink.php
-import * as shortid from "shortid";
-
+import { uniqueId } from "convenience-functions";
 import { XmlComponent } from "file/xml-components";
 
 import { ParagraphChild } from "../paragraph";
@@ -33,7 +32,7 @@ export class ConcreteHyperlink extends XmlComponent {
 
 export class InternalHyperlink extends ConcreteHyperlink {
     constructor(options: { readonly child: ParagraphChild; readonly anchor: string }) {
-        super(options.child, shortid.generate().toLowerCase(), options.anchor);
+        super(options.child, uniqueId(), options.anchor);
     }
 }
 

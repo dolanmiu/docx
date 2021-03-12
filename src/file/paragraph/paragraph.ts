@@ -1,6 +1,6 @@
 // http://officeopenxml.com/WPparagraph.php
-import * as shortid from "shortid";
 
+import { uniqueId } from "convenience-functions";
 import { FootnoteReferenceRun } from "file/footnotes/footnote/run/reference-run";
 import { IContext, IXmlableObject, XmlComponent } from "file/xml-components";
 
@@ -79,7 +79,7 @@ export class Paragraph extends XmlComponent {
         for (const element of this.root) {
             if (element instanceof ExternalHyperlink) {
                 const index = this.root.indexOf(element);
-                const concreteHyperlink = new ConcreteHyperlink(element.options.child, shortid.generate().toLowerCase());
+                const concreteHyperlink = new ConcreteHyperlink(element.options.child, uniqueId());
                 context.viewWrapper.Relationships.createRelationship(
                     concreteHyperlink.linkId,
                     "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink",

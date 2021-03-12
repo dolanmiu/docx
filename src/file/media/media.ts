@@ -1,3 +1,5 @@
+import { uniqueId } from "convenience-functions";
+
 import { IDrawingOptions } from "../drawing";
 import { File } from "../file";
 import { PictureRun } from "../paragraph";
@@ -17,11 +19,6 @@ export class Media {
         return new PictureRun(mediaData, drawingOptions);
     }
 
-    private static generateId(): string {
-        // https://gist.github.com/6174/6062387
-        return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-    }
-
     private readonly map: Map<string, IMediaData>;
 
     constructor() {
@@ -39,7 +36,7 @@ export class Media {
     }
 
     public addMedia(buffer: Buffer | string | Uint8Array | ArrayBuffer, width: number = 100, height: number = 100): IMediaData {
-        const key = `${Media.generateId()}.png`;
+        const key = `${uniqueId()}.png`;
 
         return this.createMedia(
             key,

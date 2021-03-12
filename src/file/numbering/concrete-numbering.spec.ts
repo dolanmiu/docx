@@ -2,35 +2,59 @@ import { expect } from "chai";
 
 import { Formatter } from "export/formatter";
 
-import { LevelForOverride } from "./level";
 import { ConcreteNumbering } from "./num";
 
 describe("ConcreteNumbering", () => {
     describe("#overrideLevel", () => {
-        let concreteNumbering: ConcreteNumbering;
-        beforeEach(() => {
-            concreteNumbering = new ConcreteNumbering(0, 1);
-        });
-
         it("sets a new override level for the given level number", () => {
-            concreteNumbering.overrideLevel(3);
+            const concreteNumbering = new ConcreteNumbering({
+                numId: 0,
+                abstractNumId: 1,
+                reference: "1",
+                instance: 0,
+                overrideLevel: {
+                    num: 3,
+                },
+            });
+
             const tree = new Formatter().format(concreteNumbering);
-            expect(tree["w:num"]).to.include({
-                "w:lvlOverride": [
-                    { _attr: { "w:ilvl": 3 } },
+
+            expect(tree).to.deep.equal({
+                "w:num": [
                     {
-                        "w:lvl": [
-                            { _attr: { "w:ilvl": 3, "w15:tentative": 1 } },
-                            { "w:start": { _attr: { "w:val": 1 } } },
-                            { "w:lvlJc": { _attr: { "w:val": "start" } } },
-                        ],
+                        _attr: {
+                            "w:numId": 0,
+                        },
+                    },
+                    {
+                        "w:abstractNumId": {
+                            _attr: {
+                                "w:val": 1,
+                            },
+                        },
+                    },
+                    {
+                        "w:lvlOverride": {
+                            _attr: {
+                                "w:ilvl": 3,
+                            },
+                        },
                     },
                 ],
             });
         });
 
         it("sets the startOverride element if start is given", () => {
-            concreteNumbering.overrideLevel(1, 9);
+            const concreteNumbering = new ConcreteNumbering({
+                numId: 0,
+                abstractNumId: 1,
+                reference: "1",
+                instance: 0,
+                overrideLevel: {
+                    num: 1,
+                    start: 9,
+                },
+            });
             const tree = new Formatter().format(concreteNumbering);
             expect(tree["w:num"]).to.include({
                 "w:lvlOverride": [
@@ -46,31 +70,41 @@ describe("ConcreteNumbering", () => {
                             },
                         },
                     },
-                    {
-                        "w:lvl": [
-                            { _attr: { "w:ilvl": 1, "w15:tentative": 1 } },
-                            { "w:start": { _attr: { "w:val": 1 } } },
-                            { "w:lvlJc": { _attr: { "w:val": "start" } } },
-                        ],
-                    },
                 ],
             });
         });
 
         it("sets the lvl element if overrideLevel.Level is accessed", () => {
-            const ol = concreteNumbering.overrideLevel(1);
-            expect(ol.Level).to.be.instanceof(LevelForOverride);
+            const concreteNumbering = new ConcreteNumbering({
+                numId: 0,
+                abstractNumId: 1,
+                reference: "1",
+                instance: 0,
+                overrideLevel: {
+                    num: 1,
+                },
+            });
             const tree = new Formatter().format(concreteNumbering);
-
-            expect(tree["w:num"]).to.include({
-                "w:lvlOverride": [
-                    { _attr: { "w:ilvl": 1 } },
+            expect(tree).to.deep.equal({
+                "w:num": [
                     {
-                        "w:lvl": [
-                            { _attr: { "w:ilvl": 1, "w15:tentative": 1 } },
-                            { "w:start": { _attr: { "w:val": 1 } } },
-                            { "w:lvlJc": { _attr: { "w:val": "start" } } },
-                        ],
+                        _attr: {
+                            "w:numId": 0,
+                        },
+                    },
+                    {
+                        "w:abstractNumId": {
+                            _attr: {
+                                "w:val": 1,
+                            },
+                        },
+                    },
+                    {
+                        "w:lvlOverride": {
+                            _attr: {
+                                "w:ilvl": 1,
+                            },
+                        },
                     },
                 ],
             });

@@ -52,7 +52,7 @@
     "@types/jszip": "^3.1.4",
     "@types/node": "^14.0.5",
     "jszip": "^3.1.5",
-    "shortid": "^2.2.15",
+    "nanoid": "^3.1.20",
     "xml": "^1.0.1",
     "xml-js": "^1.6.8"
   },
@@ -66,7 +66,6 @@
     "@types/chai": "^4.2.15",
     "@types/mocha": "^8.0.0",
     "@types/request-promise": "^4.1.42",
-    "@types/shortid": "0.0.29",
     "@types/sinon": "^9.0.4",
     "@types/webpack": "^4.4.24",
     "awesome-typescript-loader": "^3.4.1",

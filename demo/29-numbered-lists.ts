@@ -1,7 +1,8 @@
 // Numbered lists
+// The lists can also be restarted by specifying the instance number
 // Import from 'docx' rather than '../build' if you install from npm
 import * as fs from "fs";
-import { AlignmentType, convertInchesToTwip, Document, LevelFormat, Packer, Paragraph } from "../build";
+import { AlignmentType, convertInchesToTwip, Document, HeadingLevel, LevelFormat, Packer, Paragraph } from "../build";
 
 const doc = new Document({
     numbering: {
@@ -126,10 +127,15 @@ doc.addSection({
             },
         }),
         new Paragraph({
+            text: "Next",
+            heading: HeadingLevel.HEADING_2,
+        }),
+        new Paragraph({
             text: "test",
             numbering: {
                 reference: "padded-numbering-reference",
                 level: 0,
+                instance: 2,
             },
         }),
         new Paragraph({
@@ -137,6 +143,19 @@ doc.addSection({
             numbering: {
                 reference: "padded-numbering-reference",
                 level: 0,
+                instance: 2,
+            },
+        }),
+        new Paragraph({
+            text: "Next",
+            heading: HeadingLevel.HEADING_2,
+        }),
+        new Paragraph({
+            text: "test",
+            numbering: {
+                reference: "padded-numbering-reference",
+                level: 0,
+                instance: 3,
             },
         }),
         new Paragraph({
@@ -144,6 +163,7 @@ doc.addSection({
             numbering: {
                 reference: "padded-numbering-reference",
                 level: 0,
+                instance: 3,
             },
         }),
         new Paragraph({
@@ -151,14 +171,12 @@ doc.addSection({
             numbering: {
                 reference: "padded-numbering-reference",
                 level: 0,
+                instance: 3,
             },
         }),
         new Paragraph({
-            text: "test",
-            numbering: {
-                reference: "padded-numbering-reference",
-                level: 0,
-            },
+            text: "Next",
+            heading: HeadingLevel.HEADING_2,
         }),
         new Paragraph({
             text: "test",

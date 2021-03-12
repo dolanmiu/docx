@@ -3,12 +3,10 @@ import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
 import { ILevelsOptions, Level } from "./level";
 import { MultiLevelType } from "./multi-level-type";
 
-interface IAbstractNumberingAttributesProperties {
-    readonly abstractNumId?: number;
-    readonly restartNumberingAfterBreak?: number;
-}
-
-class AbstractNumberingAttributes extends XmlAttributeComponent<IAbstractNumberingAttributesProperties> {
+class AbstractNumberingAttributes extends XmlAttributeComponent<{
+    readonly abstractNumId: number;
+    readonly restartNumberingAfterBreak: number;
+}> {
     protected readonly xmlKeys = {
         abstractNumId: "w:abstractNumId",
         restartNumberingAfterBreak: "w15:restartNumberingAfterBreak",
