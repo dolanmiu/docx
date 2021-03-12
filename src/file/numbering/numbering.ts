@@ -1,5 +1,6 @@
 // http://officeopenxml.com/WPnumbering.php
-import { convertInchesToTwip } from "convenience-functions";
+// https://stackoverflow.com/questions/58622437/purpose-of-abstractnum-and-numberinginstance
+import { convertInchesToTwip, uniqueNumericId } from "convenience-functions";
 import { AlignmentType } from "file/paragraph";
 import { IContext, IXmlableObject, XmlComponent } from "file/xml-components";
 
@@ -16,11 +17,8 @@ export interface INumberingOptions {
 }
 
 export class Numbering extends XmlComponent {
-    // tslint:disable-next-line:readonly-keyword
-    private nextId: number;
-
-    private readonly abstractNumbering: AbstractNumbering[] = [];
-    private readonly concreteNumbering: ConcreteNumbering[] = [];
+    private readonly abstractNumberingMap = new Map<string, AbstractNumbering>();
+    private readonly concreteNumberingMap = new Map<string, ConcreteNumbering>();
 
     constructor(options: INumberingOptions) {
         super("w:numbering");
@@ -46,9 +44,7 @@ export class Numbering extends XmlComponent {
             }),
         );
 
-        this.nextId = 0;
-
-        const abstractNumbering = this.createAbstractNumbering([
+        const abstractNumbering = new AbstractNumbering(uniqueNumericId(), [
             {
                 level: 0,
                 format: LevelFormat.BULLET,
@@ -150,33 +146,67 @@ export class Numbering extends XmlComponent {
             },
         ]);
 
-        this.createConcreteNumbering(abstractNumbering);
+        this.concreteNumberingMap.set(
+            "default-bullet-numbering",
+            new ConcreteNumbering({
+                numId: 0,
+                abstractNumId: abstractNumbering.id,
+                reference: "default-bullet-numbering",
+                instance: 0,
+                overrideLevel: {
+                    num: 0,
+                    start: 1,
+                },
+            }),
+        );
+
+        this.abstractNumberingMap.set("default-bullet-numbering", abstractNumbering);
 
         for (const con of options.config) {
-            const currentAbstractNumbering = this.createAbstractNumbering(con.levels);
-            this.createConcreteNumbering(currentAbstractNumbering, con.reference);
+            this.abstractNumberingMap.set(con.reference, new AbstractNumbering(uniqueNumericId(), con.levels));
         }
     }
 
     public prepForXml(context: IContext): IXmlableObject | undefined {
-        this.abstractNumbering.forEach((x) => this.root.push(x));
-        this.concreteNumbering.forEach((x) => this.root.push(x));
+        for (const numbering of this.abstractNumberingMap.values()) {
+            this.root.push(numbering);
+        }
+
+        for (const numbering of this.concreteNumberingMap.values()) {
+            this.root.push(numbering);
+        }
         return super.prepForXml(context);
     }
 
-    private createConcreteNumbering(abstractNumbering: AbstractNumbering, reference?: string): ConcreteNumbering {
-        const num = new ConcreteNumbering(this.nextId++, abstractNumbering.id, reference);
-        this.concreteNumbering.push(num);
-        return num;
-    }
+    public createConcreteNumberingInstance(reference: string, instance: number): void {
+        const abstractNumbering = this.abstractNumberingMap.get(reference);
 
-    private createAbstractNumbering(options: ILevelsOptions[]): AbstractNumbering {
-        const num = new AbstractNumbering(this.nextId++, options);
-        this.abstractNumbering.push(num);
-        return num;
+        if (!abstractNumbering) {
+            return;
+        }
+
+        const fullReference = `${reference}-${instance}`;
+
+        if (this.concreteNumberingMap.has(fullReference)) {
+            return;
+        }
+
+        this.concreteNumberingMap.set(
+            fullReference,
+            new ConcreteNumbering({
+                numId: uniqueNumericId(),
+                abstractNumId: abstractNumbering.id,
+                reference,
+                instance,
+                overrideLevel: {
+                    num: 0,
+                    start: 1,
+                },
+            }),
+        );
     }
 
     public get ConcreteNumbering(): ConcreteNumbering[] {
-        return this.concreteNumbering;
+        return Array.from(this.concreteNumberingMap.values());
     }
 }

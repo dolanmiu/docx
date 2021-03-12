@@ -1,7 +1,7 @@
 import { assert, expect } from "chai";
-import * as shortid from "shortid";
-import { stub } from "sinon";
+import { SinonStub, stub } from "sinon";
 
+import * as convenienceFunctions from "convenience-functions";
 import { Formatter } from "export/formatter";
 import { EMPTY_OBJECT } from "file/xml-components";
 
@@ -14,6 +14,16 @@ import { Paragraph } from "./paragraph";
 import { TextRun } from "./run";
 
 describe("Paragraph", () => {
+    before(() => {
+        stub(convenienceFunctions, "uniqueId").callsFake(() => {
+            return "test-unique-id";
+        });
+    });
+
+    after(() => {
+        (convenienceFunctions.uniqueId as SinonStub).restore();
+    });
+
     describe("#constructor()", () => {
         it("should create valid JSON", () => {
             const paragraph = new Paragraph("");
@@ -633,6 +643,7 @@ describe("Paragraph", () => {
                 numbering: {
                     reference: "test id",
                     level: 0,
+                    instance: 4,
                 },
             });
             const tree = new Formatter().format(paragraph);
@@ -642,7 +653,7 @@ describe("Paragraph", () => {
                         "w:pPr": [
                             { "w:pStyle": { _attr: { "w:val": "ListParagraph" } } },
                             {
-                                "w:numPr": [{ "w:ilvl": { _attr: { "w:val": 0 } } }, { "w:numId": { _attr: { "w:val": "{test id}" } } }],
+                                "w:numPr": [{ "w:ilvl": { _attr: { "w:val": 0 } } }, { "w:numId": { _attr: { "w:val": "{test id-4}" } } }],
                             },
                         ],
                     },
@@ -664,7 +675,7 @@ describe("Paragraph", () => {
                     {
                         "w:pPr": [
                             {
-                                "w:numPr": [{ "w:ilvl": { _attr: { "w:val": 0 } } }, { "w:numId": { _attr: { "w:val": "{test id}" } } }],
+                                "w:numPr": [{ "w:ilvl": { _attr: { "w:val": 0 } } }, { "w:numId": { _attr: { "w:val": "{test id-0}" } } }],
                             },
                         ],
                     },
@@ -674,9 +685,6 @@ describe("Paragraph", () => {
     });
 
     it("it should add bookmark", () => {
-        stub(shortid, "generate").callsFake(() => {
-            return "test-unique-id";
-        });
         const paragraph = new Paragraph({
             children: [
                 new Bookmark({

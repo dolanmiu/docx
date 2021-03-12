@@ -1,5 +1,4 @@
 import { Attributes, XmlAttributeComponent, XmlComponent } from "file/xml-components";
-import { LevelForOverride } from "./level";
 
 class AbstractNumId extends XmlComponent {
     constructor(value: number) {
@@ -12,32 +11,46 @@ class AbstractNumId extends XmlComponent {
     }
 }
 
-interface INumAttributesProperties {
+class NumAttributes extends XmlAttributeComponent<{
     readonly numId: number;
-}
-
-class NumAttributes extends XmlAttributeComponent<INumAttributesProperties> {
+}> {
     protected readonly xmlKeys = { numId: "w:numId" };
 }
 
-export class ConcreteNumbering extends XmlComponent {
-    public readonly id: number;
+export interface IConcreteNumberingOptions {
+    readonly numId: number;
+    readonly abstractNumId: number;
+    readonly reference: string;
+    readonly instance: number;
+    readonly overrideLevel?: {
+        readonly num: number;
+        readonly start?: number;
+    };
+}
 
-    constructor(numId: number, abstractNumId: number, public readonly reference?: string) {
+export class ConcreteNumbering extends XmlComponent {
+    public readonly numId: number;
+    public readonly reference: string;
+    public readonly instance: number;
+
+    constructor(options: IConcreteNumberingOptions) {
         super("w:num");
+
+        this.numId = options.numId;
+        this.reference = options.reference;
+        this.instance = options.instance;
+
         this.root.push(
             new NumAttributes({
-                numId: numId,
+                numId: options.numId,
             }),
         );
-        this.root.push(new AbstractNumId(abstractNumId));
-        this.id = numId;
-    }
 
-    public overrideLevel(num: number, start?: number): LevelOverride {
-        const olvl = new LevelOverride(num, start);
-        this.root.push(olvl);
-        return olvl;
+        this.root.push(new AbstractNumId(options.abstractNumId));
+
+        if (options.overrideLevel) {
+            this.root.push(new LevelOverride(options.overrideLevel.num, options.overrideLevel.start));
+        }
     }
 }
 
@@ -46,23 +59,12 @@ class LevelOverrideAttributes extends XmlAttributeComponent<{ readonly ilvl: num
 }
 
 export class LevelOverride extends XmlComponent {
-    private readonly lvl: LevelForOverride;
-
-    constructor(private readonly levelNum: number, start?: number) {
+    constructor(levelNum: number, start?: number) {
         super("w:lvlOverride");
         this.root.push(new LevelOverrideAttributes({ ilvl: levelNum }));
         if (start !== undefined) {
             this.root.push(new StartOverride(start));
         }
-
-        this.lvl = new LevelForOverride({
-            level: this.levelNum,
-        });
-        this.root.push(this.lvl);
-    }
-
-    public get Level(): LevelForOverride {
-        return this.lvl;
     }
 }
 

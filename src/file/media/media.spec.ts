@@ -1,7 +1,8 @@
 // tslint:disable:object-literal-key-quotes
 import { expect } from "chai";
-import { stub } from "sinon";
+import { SinonStub, stub } from "sinon";
 
+import * as convenienceFunctions from "convenience-functions";
 import { Formatter } from "export/formatter";
 
 import { File } from "../file";
@@ -9,6 +10,14 @@ import { Paragraph } from "../paragraph";
 import { Media } from "./media";
 
 describe("Media", () => {
+    before(() => {
+        stub(convenienceFunctions, "uniqueId").callsFake(() => "test");
+    });
+
+    after(() => {
+        (convenienceFunctions.uniqueId as SinonStub).restore();
+    });
+
     describe("#addImage", () => {
         it("should add image", () => {
             const file = new File();
@@ -23,7 +32,6 @@ describe("Media", () => {
 
         it("should ensure the correct relationship id is used when adding image", () => {
             // tslint:disable-next-line:no-any
-            stub(Media as any, "generateId").callsFake(() => "testId");
 
             const file = new File();
             const image1 = Media.addImage(file, "test");
@@ -33,7 +41,7 @@ describe("Media", () => {
 
             expect(graphicData["a:graphic"][1]["a:graphicData"][1]["pic:pic"][2]["pic:blipFill"][0]["a:blip"]).to.deep.equal({
                 _attr: {
-                    "r:embed": `rId{testId.png}`,
+                    "r:embed": `rId{test.png}`,
                     cstate: "none",
                 },
             });
@@ -45,7 +53,7 @@ describe("Media", () => {
 
             expect(graphicData2["a:graphic"][1]["a:graphicData"][1]["pic:pic"][2]["pic:blipFill"][0]["a:blip"]).to.deep.equal({
                 _attr: {
-                    "r:embed": `rId{testId.png}`,
+                    "r:embed": `rId{test.png}`,
                     cstate: "none",
                 },
             });
@@ -54,9 +62,6 @@ describe("Media", () => {
 
     describe("#addMedia", () => {
         it("should add media", () => {
-            // tslint:disable-next-line:no-any
-            (Media as any).generateId = () => "test";
-
             const image = new Media().addMedia("");
             expect(image.fileName).to.equal("test.png");
             expect(image.dimensions).to.deep.equal({
@@ -74,8 +79,6 @@ describe("Media", () => {
         it("should return UInt8Array if atob is present", () => {
             // tslint:disable-next-line
             ((process as any).atob as any) = () => "atob result";
-            // tslint:disable-next-line:no-any
-            (Media as any).generateId = () => "test";
 
             const image = new Media().addMedia("");
             expect(image.stream).to.be.an.instanceof(Uint8Array);
@@ -84,8 +87,6 @@ describe("Media", () => {
         it("should use data as is if its not a string", () => {
             // tslint:disable-next-line
             ((process as any).atob as any) = () => "atob result";
-            // tslint:disable-next-line:no-any
-            (Media as any).generateId = () => "test";
 
             const image = new Media().addMedia(new Buffer(""));
             expect(image.stream).to.be.an.instanceof(Uint8Array);
@@ -94,9 +95,6 @@ describe("Media", () => {
 
     describe("#getMedia", () => {
         it("should get media", () => {
-            // tslint:disable-next-line:no-any
-            (Media as any).generateId = () => "test";
-
             const media = new Media();
             media.addMedia("");
 
@@ -124,9 +122,6 @@ describe("Media", () => {
 
     describe("#Array", () => {
         it("Get images as array", () => {
-            // tslint:disable-next-line:no-any
-            (Media as any).generateId = () => "test";
-
             const media = new Media();
             media.addMedia("");
 

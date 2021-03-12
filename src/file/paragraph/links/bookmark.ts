@@ -1,6 +1,7 @@
 // http://officeopenxml.com/WPbookmark.php
+import { uniqueId } from "convenience-functions";
 import { XmlComponent } from "file/xml-components";
-import * as shortid from "shortid";
+
 import { TextRun } from "../run";
 import { BookmarkEndAttributes, BookmarkStartAttributes } from "./bookmark-attributes";
 
@@ -10,7 +11,7 @@ export class Bookmark {
     public readonly end: BookmarkEnd;
 
     constructor(options: { readonly id: string; readonly children: TextRun[] }) {
-        const linkId = shortid.generate().toLowerCase();
+        const linkId = uniqueId();
 
         this.start = new BookmarkStart(options.id, linkId);
         this.children = options.children;

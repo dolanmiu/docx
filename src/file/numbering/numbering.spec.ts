@@ -1,10 +1,20 @@
 import { expect } from "chai";
+import { SinonStub, stub } from "sinon";
 
+import * as convenienceFunctions from "convenience-functions";
 import { Formatter } from "export/formatter";
 
 import { Numbering } from "./numbering";
 
 describe("Numbering", () => {
+    before(() => {
+        stub(convenienceFunctions, "uniqueNumericId").callsFake(() => 0);
+    });
+
+    after(() => {
+        (convenienceFunctions.uniqueNumericId as SinonStub).restore();
+    });
+
     describe("#constructor", () => {
         it("creates a default numbering with one abstract and one concrete instance", () => {
             const numbering = new Numbering({
@@ -37,6 +47,70 @@ describe("Numbering", () => {
                     // {"w:pPr": [
                     //            {"w:ind": [{"_attr": {"w:left": 720, "w:hanging": 360}}]}]},
                 });
+        });
+
+        describe("#createConcreteNumberingInstance", () => {
+            it("should create a concrete numbering instance", () => {
+                const numbering = new Numbering({
+                    config: [
+                        {
+                            reference: "test-reference",
+                            levels: [
+                                {
+                                    level: 0,
+                                },
+                            ],
+                        },
+                    ],
+                });
+                expect(numbering.ConcreteNumbering).to.have.length(1);
+
+                numbering.createConcreteNumberingInstance("test-reference", 0);
+
+                expect(numbering.ConcreteNumbering).to.have.length(2);
+            });
+
+            it("should not create a concrete numbering instance if reference is invalid", () => {
+                const numbering = new Numbering({
+                    config: [
+                        {
+                            reference: "test-reference",
+                            levels: [
+                                {
+                                    level: 0,
+                                },
+                            ],
+                        },
+                    ],
+                });
+                expect(numbering.ConcreteNumbering).to.have.length(1);
+
+                numbering.createConcreteNumberingInstance("invalid-reference", 0);
+
+                expect(numbering.ConcreteNumbering).to.have.length(1);
+            });
+
+            it("should not create a concrete numbering instance if one already exists", () => {
+                const numbering = new Numbering({
+                    config: [
+                        {
+                            reference: "test-reference",
+                            levels: [
+                                {
+                                    level: 0,
+                                },
+                            ],
+                        },
+                    ],
+                });
+
+                expect(numbering.ConcreteNumbering).to.have.length(1);
+
+                numbering.createConcreteNumberingInstance("test-reference", 0);
+                numbering.createConcreteNumberingInstance("test-reference", 0);
+
+                expect(numbering.ConcreteNumbering).to.have.length(2);
+            });
         });
     });
 });

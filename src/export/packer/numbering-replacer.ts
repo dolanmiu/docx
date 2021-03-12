@@ -5,11 +5,10 @@ export class NumberingReplacer {
         let currentXmlData = xmlData;
 
         for (const concreteNumbering of concreteNumberings) {
-            if (!concreteNumbering.reference) {
-                continue;
-            }
-
-            currentXmlData = currentXmlData.replace(new RegExp(`{${concreteNumbering.reference}}`, "g"), concreteNumbering.id.toString());
+            currentXmlData = currentXmlData.replace(
+                new RegExp(`{${concreteNumbering.reference}-${concreteNumbering.instance}}`, "g"),
+                concreteNumbering.numId.toString(),
+            );
         }
 
         return currentXmlData;

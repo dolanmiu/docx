@@ -1,5 +1,6 @@
 // http://officeopenxml.com/WPparagraphProperties.php
-import { IgnoreIfEmptyXmlComponent, XmlComponent } from "file/xml-components";
+import { IContext, IgnoreIfEmptyXmlComponent, IXmlableObject, XmlComponent } from "file/xml-components";
+import { DocumentWrapper } from "../document-wrapper";
 import { ShadingType } from "../table/shading";
 import { Alignment, AlignmentType } from "./formatting/alignment";
 import { Bidirectional } from "./formatting/bidirectional";
@@ -44,6 +45,7 @@ export interface IParagraphPropertiesOptions extends IParagraphStylePropertiesOp
     readonly numbering?: {
         readonly reference: string;
         readonly level: number;
+        readonly instance?: number;
         readonly custom?: boolean;
     };
     readonly shading?: {
@@ -54,6 +56,8 @@ export interface IParagraphPropertiesOptions extends IParagraphStylePropertiesOp
 }
 
 export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
+    private readonly numberingReferences: { readonly reference: string; readonly instance: number }[] = [];
+
     constructor(options?: IParagraphPropertiesOptions) {
         super("w:pPr");
 
@@ -130,7 +134,12 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
                     this.push(new Style("ListParagraph"));
                 }
             }
-            this.push(new NumberProperties(options.numbering.reference, options.numbering.level));
+            this.numberingReferences.push({
+                reference: options.numbering.reference,
+                instance: options.numbering.instance ?? 0,
+            });
+
+            this.push(new NumberProperties(`${options.numbering.reference}-${options.numbering.instance ?? 0}`, options.numbering.level));
         }
 
         if (options.rightTabStop) {
@@ -148,5 +157,15 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
 
     public push(item: XmlComponent): void {
         this.root.push(item);
+    }
+
+    public prepForXml(context: IContext): IXmlableObject | undefined {
+        if (context.viewWrapper instanceof DocumentWrapper) {
+            for (const reference of this.numberingReferences) {
+                context.file.Numbering.createConcreteNumberingInstance(reference.reference, reference.instance);
+            }
+        }
+
+        return super.prepForXml(context);
     }
 }
