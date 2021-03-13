@@ -146,13 +146,37 @@ describe("Run", () => {
     });
 
     describe("#doubleStrike()", () => {
-        it("it should add caps to the properties", () => {
+        it("it should add double strike to the properties", () => {
             const run = new Run({
                 doubleStrike: true,
             });
             const tree = new Formatter().format(run);
             expect(tree).to.deep.equal({
                 "w:r": [{ "w:rPr": [{ "w:dstrike": { _attr: { "w:val": true } } }] }],
+            });
+        });
+    });
+
+    describe("#emboss()", () => {
+        it("it should add emboss to the properties", () => {
+            const run = new Run({
+                emboss: true,
+            });
+            const tree = new Formatter().format(run);
+            expect(tree).to.deep.equal({
+                "w:r": [{ "w:rPr": [{ "w:emboss": { _attr: { "w:val": true } } }] }],
+            });
+        });
+    });
+
+    describe("#imprint()", () => {
+        it("it should add imprint to the properties", () => {
+            const run = new Run({
+                imprint: true,
+            });
+            const tree = new Formatter().format(run);
+            expect(tree).to.deep.equal({
+                "w:r": [{ "w:rPr": [{ "w:imprint": { _attr: { "w:val": true } } }] }],
             });
         });
     });

@@ -8,8 +8,10 @@ import {
     CharacterSpacing,
     Color,
     DoubleStrike,
+    Emboss,
     Highlight,
     HighlightComplexScript,
+    Imprint,
     Italics,
     ItalicsComplexScript,
     RightToLeft,
@@ -63,6 +65,8 @@ export interface IRunStylePropertiesOptions {
     };
     readonly shadingComplexScript?: boolean | IRunStylePropertiesOptions["shading"];
     readonly shadow?: IRunStylePropertiesOptions["shading"];
+    readonly emboss?: boolean;
+    readonly imprint?: boolean;
 }
 
 export interface IRunPropertiesOptions extends IRunStylePropertiesOptions {
@@ -167,6 +171,14 @@ export class RunProperties extends IgnoreIfEmptyXmlComponent {
 
         if (options.characterSpacing) {
             this.push(new CharacterSpacing(options.characterSpacing));
+        }
+
+        if (options.emboss) {
+            this.push(new Emboss());
+        }
+
+        if (options.imprint) {
+            this.push(new Imprint());
         }
 
         const shading = options.shading || options.shadow;

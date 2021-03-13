@@ -43,7 +43,20 @@ doc.addSection({
             ],
         }),
     },
-    children: [],
+    children: [
+        new Paragraph({
+            children: [
+                new TextRun({
+                    emboss: true,
+                    text: "Embossed text - hello world",
+                }),
+                new TextRun({
+                    imprint: true,
+                    text: "Imprinted text - hello world",
+                }),
+            ],
+        }),
+    ],
 });
 
 Packer.toBuffer(doc).then((buffer) => {
