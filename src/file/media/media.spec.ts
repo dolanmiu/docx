@@ -77,19 +77,23 @@ describe("Media", () => {
         });
 
         it("should return UInt8Array if atob is present", () => {
-            // tslint:disable-next-line
-            ((process as any).atob as any) = () => "atob result";
+            global.atob = () => "atob result";
 
             const image = new Media().addMedia("");
             expect(image.stream).to.be.an.instanceof(Uint8Array);
+
+            // tslint:disable-next-line: no-any
+            (global as any).atob = undefined;
         });
 
         it("should use data as is if its not a string", () => {
-            // tslint:disable-next-line
-            ((process as any).atob as any) = () => "atob result";
+            global.atob = () => "atob result";
 
-            const image = new Media().addMedia(new Buffer(""));
+            const image = new Media().addMedia(Buffer.from(""));
             expect(image.stream).to.be.an.instanceof(Uint8Array);
+
+            // tslint:disable-next-line: no-any
+            (global as any).atob = undefined;
         });
     });
 

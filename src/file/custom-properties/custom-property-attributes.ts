@@ -1,12 +1,10 @@
 import { XmlAttributeComponent } from "file/xml-components";
 
-export interface ICustomPropertyAttributes {
+export class CustomPropertyAttributes extends XmlAttributeComponent<{
     readonly fmtid: string;
     readonly pid: string;
     readonly name: string;
-}
-
-export class CustomPropertyAttributes extends XmlAttributeComponent<ICustomPropertyAttributes> {
+}> {
     protected readonly xmlKeys = {
         fmtid: "fmtid",
         pid: "pid",

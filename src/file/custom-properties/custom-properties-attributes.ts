@@ -1,11 +1,9 @@
 import { XmlAttributeComponent } from "file/xml-components";
 
-export interface ICustomPropertiesAttributes {
+export class CustomPropertiesAttributes extends XmlAttributeComponent<{
     readonly xmlns: string;
     readonly vt: string;
-}
-
-export class CustomPropertiesAttributes extends XmlAttributeComponent<ICustomPropertiesAttributes> {
+}> {
     protected readonly xmlKeys = {
         xmlns: "xmlns",
         vt: "xmlns:vt",
