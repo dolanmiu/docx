@@ -118,6 +118,7 @@ doc.addSection({
                 reference: "my-crazy-numbering",
                 level: 0,
             },
+            style: "aside",
         }),
         new Paragraph({
             text: "Option5 -- override 2 to 5",
