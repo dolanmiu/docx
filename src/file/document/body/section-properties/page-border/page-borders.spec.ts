@@ -24,6 +24,18 @@ describe("PageBorders", () => {
             expect(tree["w:pgBorders"]).to.deep.equal({ _attr: { "w:display": "firstPage" } });
         });
 
+        it("should create page borders with default configuration", () => {
+            const properties = new PageBorders({});
+            const tree = new Formatter().format(properties);
+
+            expect(Object.keys(tree)).to.deep.equal(["w:pgBorders"]);
+            expect(tree).to.deep.equal({
+                "w:pgBorders": {
+                    _attr: {},
+                },
+            });
+        });
+
         it("should create page borders with full configuration", () => {
             const properties = new PageBorders({
                 pageBorders: {

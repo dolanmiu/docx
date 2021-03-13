@@ -72,17 +72,17 @@ export class PageBorders extends IgnoreIfEmptyXmlComponent {
             return;
         }
 
-        let pageBordersAttributes = {};
-
         if (options.pageBorders) {
-            pageBordersAttributes = {
-                display: options.pageBorders.display,
-                offsetFrom: options.pageBorders.offsetFrom,
-                zOrder: options.pageBorders.zOrder,
-            };
+            this.root.push(
+                new PageBordersAttributes({
+                    display: options.pageBorders.display,
+                    offsetFrom: options.pageBorders.offsetFrom,
+                    zOrder: options.pageBorders.zOrder,
+                }),
+            );
+        } else {
+            this.root.push(new PageBordersAttributes({}));
         }
-
-        this.root.push(new PageBordersAttributes(pageBordersAttributes));
 
         if (options.pageBorderTop) {
             this.root.push(new PageBorder("w:top", options.pageBorderTop));
