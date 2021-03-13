@@ -1,11 +1,9 @@
 import { XmlAttributeComponent } from "file/xml-components";
 
-export interface IAppPropertiesAttributes {
+export class AppPropertiesAttributes extends XmlAttributeComponent<{
     readonly xmlns: string;
     readonly vt: string;
-}
-
-export class AppPropertiesAttributes extends XmlAttributeComponent<IAppPropertiesAttributes> {
+}> {
     protected readonly xmlKeys = {
         xmlns: "xmlns",
         vt: "xmlns:vt",
