@@ -7,8 +7,10 @@ import { EMPTY_OBJECT } from "file/xml-components";
 
 import { IViewWrapper } from "../document-wrapper";
 import { File } from "../file";
+import { HorizontalPositionAlign, VerticalPositionAlign } from "../shared";
 import { ShadingType } from "../table/shading";
 import { AlignmentType, HeadingLevel, LeaderType, PageBreak, TabStopPosition, TabStopType } from "./formatting";
+import { FrameAnchorType } from "./frame";
 import { Bookmark, ExternalHyperlink } from "./links";
 import { Paragraph } from "./paragraph";
 import { TextRun } from "./run";
@@ -849,6 +851,52 @@ describe("Paragraph", () => {
                                         "w:color": "00FFFF",
                                         "w:fill": "FF0000",
                                         "w:val": "reverseDiagStripe",
+                                    },
+                                },
+                            },
+                        ],
+                    },
+                ],
+            });
+        });
+    });
+
+    describe("#frame", () => {
+        it("should set frame attribute", () => {
+            const paragraph = new Paragraph({
+                frame: {
+                    position: {
+                        x: 1000,
+                        y: 3000,
+                    },
+                    width: 4000,
+                    height: 1000,
+                    anchor: {
+                        horizontal: FrameAnchorType.MARGIN,
+                        vertical: FrameAnchorType.MARGIN,
+                    },
+                    alignment: {
+                        x: HorizontalPositionAlign.CENTER,
+                        y: VerticalPositionAlign.TOP,
+                    },
+                },
+            });
+            const tree = new Formatter().format(paragraph);
+            expect(tree).to.deep.equal({
+                "w:p": [
+                    {
+                        "w:pPr": [
+                            {
+                                "w:framePr": {
+                                    _attr: {
+                                        "w:h": 1000,
+                                        "w:hAnchor": "margin",
+                                        "w:vAnchor": "margin",
+                                        "w:w": 4000,
+                                        "w:x": 1000,
+                                        "w:xAlign": "center",
+                                        "w:y": 3000,
+                                        "w:yAlign": "top",
                                     },
                                 },
                             },

@@ -1,5 +1,7 @@
 // http://officeopenxml.com/drwPicFloating-position.php
 // http://officeopenxml.com/drwPicFloating.php
+import { HorizontalPositionAlign, VerticalPositionAlign } from "file/shared/alignment";
+
 import { ITextWrapping } from "../text-wrap";
 
 export enum HorizontalPositionRelativeFrom {
@@ -22,22 +24,6 @@ export enum VerticalPositionRelativeFrom {
     PAGE = "page",
     PARAGRAPH = "paragraph",
     TOP_MARGIN = "topMargin",
-}
-
-export enum HorizontalPositionAlign {
-    CENTER = "center",
-    INSIDE = "inside",
-    LEFT = "left",
-    OUTSIDE = "outside",
-    RIGHT = "right",
-}
-
-export enum VerticalPositionAlign {
-    BOTTOM = "bottom",
-    CENTER = "center",
-    INSIDE = "inside",
-    OUTSIDE = "outside",
-    TOP = "top",
 }
 
 export interface IHorizontalPositionOptions {

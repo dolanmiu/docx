@@ -1,8 +1,9 @@
 import { expect } from "chai";
 
 import { Formatter } from "export/formatter";
+import { HorizontalPositionAlign } from "file/shared/alignment";
 
-import { HorizontalPositionAlign, HorizontalPositionRelativeFrom } from "./floating-position";
+import { HorizontalPositionRelativeFrom } from "./floating-position";
 import { HorizontalPosition } from "./horizontal-position";
 
 describe("HorizontalPosition", () => {

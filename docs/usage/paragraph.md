@@ -32,7 +32,7 @@ const paragraph = new Paragraph({
 });
 ```
 
-After you create the paragraph, you must add the paragraph into the `document's section`. Learn more about `sections` here:
+After you create the paragraph, you must add the paragraph into a `section`:
 
 ```ts
 doc.addSection({
@@ -74,9 +74,11 @@ This is the list of options for a paragraph. A detailed explanation is below:
 | keepNext                       | `boolean`                                                                                                           | Optional   |                                                                                                            |
 | children                       | `(TextRun or PictureRun or Hyperlink)[]`                                                                            | Optional   |                                                                                                            |
 | style                          | `string`                                                                                                            | Optional   |                                                                                                            |
-| tabStop                        | `{ left?: ITabStopOptions; right?: ITabStopOptions; maxRight?: { leader: LeaderType; }; center?: ITabStopOptions }` | Optional   |                                                                                                            |
-| bullet                         | `{ level: number }`                                                                                                 | Optional   |                                                                                                            |
-| numbering                      | `{ num: ConcreteNumbering; level: number; custom?: boolean }`                                                       | Optional   |                                                                                                            |
+| [tabStop](usage/tab-stops)     | `{ left?: ITabStopOptions; right?: ITabStopOptions; maxRight?: { leader: LeaderType; }; center?: ITabStopOptions }` | Optional   |                                                                                                            |
+| [bullet](usage/bullet-points)  | `{ level: number }`                                                                                                 | Optional   |                                                                                                            |
+| [numbering](usage/numbering)   | `{ num: ConcreteNumbering; level: number; custom?: boolean }`                                                       | Optional   |                                                                                                            |
+| [widowControl](#widow-control) | `boolean`                                                                                                           | Optional   |                                                                                                            |
+| [frame](usage/text-frames.md)  | `IFrameOptions`                                                                                                     | Optional   |                                                                                                            |
 
 ## Text
 
@@ -157,6 +159,17 @@ const paragraph = new Paragraph({
 });
 ```
 
+## Widow Control
+
+Allow First/Last Line to Display on a Separate Page
+
+```ts
+const paragraph = new Paragraph({
+    text: "shading",
+    widowControl: true,
+});
+```
+
 ## Spacing
 
 Adding spacing between paragraphs
@@ -195,7 +208,7 @@ const paragraph = new Paragraph({
 
 ## Styles
 
-To create styles, please refer to the styling Wiki: https://github.com/dolanmiu/docx/wiki/Styling
+To create styles, please refer to the [styling documentation](usage/styling-with-js)
 
 ![Word 2013 Styles menu](http://content.gcflearnfree.org/topics/233/style_apply_choose.png "Word 2013 Styles menu")
 

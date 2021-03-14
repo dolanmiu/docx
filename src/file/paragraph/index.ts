@@ -4,3 +4,4 @@ export * from "./properties";
 export * from "./run";
 export * from "./links";
 export * from "./math";
+export * from "./frame";
