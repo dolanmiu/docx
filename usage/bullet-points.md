@@ -1,5 +1,6 @@
 # Bullet Points
 
+!> Bullet Points requires an understanding of [Paragraphs](usage/paragraph.md).
 ## Example
 
 To make a bullet point, simply make a paragraph into a bullet point:

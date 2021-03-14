@@ -3,8 +3,8 @@
 > Easily generate .docx files with JS/TS. Works for Node and on the Browser. :100:
 
 -   Simple, declarative API
--   50+ usage examples
--   Battle tested, mature, 97%+ coverage
+-   60+ usage examples
+-   Battle tested, mature, 98%+ coverage
 
 [GitHub](https://github.com/dolanmiu/docx)
 [Get Started](#Welcome)
