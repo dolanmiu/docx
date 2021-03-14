@@ -1,6 +1,6 @@
 /* tslint:disable:typedef space-before-function-paren */
 import { assert } from "chai";
-import { stub } from "sinon";
+import { mock, stub } from "sinon";
 
 import { File, HeadingLevel, Paragraph } from "file";
 
@@ -80,6 +80,34 @@ describe("Packer", () => {
         });
 
         after(() => {
+            // tslint:disable-next-line:no-any
+            (Packer as any).compiler.compile.restore();
+        });
+    });
+
+    describe("#toBlob()", () => {
+        it("should create a standard docx file", async () => {
+            // tslint:disable-next-line: no-any
+            stub((Packer as any).compiler, "compile").callsFake(() => ({
+                // tslint:disable-next-line: no-empty
+                generateAsync: () => mock({}),
+            }));
+            const str = await Packer.toBlob(file);
+
+            assert.isDefined(str);
+        });
+
+        it("should handle exception if it throws any", () => {
+            // tslint:disable-next-line:no-any
+            const compiler = stub((Packer as any).compiler, "compile");
+
+            compiler.throwsException();
+            return Packer.toBlob(file).catch((error) => {
+                assert.isDefined(error);
+            });
+        });
+
+        afterEach(() => {
             // tslint:disable-next-line:no-any
             (Packer as any).compiler.compile.restore();
         });
