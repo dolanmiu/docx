@@ -1,9 +1,9 @@
 import { expect } from "chai";
 
 import { Formatter } from "export/formatter";
+import { VerticalPositionAlign } from "file/shared/alignment";
 
 import { Align } from "./align";
-import { VerticalPositionAlign } from "./floating-position";
 
 describe("Align", () => {
     describe("#constructor()", () => {

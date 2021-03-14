@@ -13,6 +13,7 @@ import { HeadingLevel, Style } from "./formatting/style";
 import { LeaderType, TabStop, TabStopPosition, TabStopType } from "./formatting/tab-stop";
 import { NumberProperties } from "./formatting/unordered-list";
 import { WidowControl } from "./formatting/widow-control";
+import { FrameProperties, IFrameOptions } from "./frame/frame-properties";
 import { OutlineLevel } from "./links";
 import { Shading } from "./run/formatting";
 
@@ -55,6 +56,7 @@ export interface IParagraphPropertiesOptions extends IParagraphStylePropertiesOp
         readonly color: string;
     };
     readonly widowControl?: boolean;
+    readonly frame?: IFrameOptions;
 }
 
 export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
@@ -158,6 +160,10 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
 
         if (options.widowControl) {
             this.push(new WidowControl(options.widowControl));
+        }
+
+        if (options.frame) {
+            this.push(new FrameProperties(options.frame));
         }
     }
 
