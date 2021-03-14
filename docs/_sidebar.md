@@ -22,6 +22,7 @@
     * [Page Numbers](usage/page-numbers.md)
     * [Change Tracking](usage/change-tracking.md)
     * [Math](usage/math.md)
+    * [Text Frames](usage/text-frames.md)
 	* Styling
         * [Styling with JS](usage/styling-with-js.md)
         * [Styling with XML](usage/styling-with-xml.md)
