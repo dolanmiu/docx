@@ -1,7 +1,7 @@
 // Numbering and bullet points example
 // Import from 'docx' rather than '../build' if you install from npm
 import * as fs from "fs";
-import { AlignmentType, convertInchesToTwip, Document, LevelFormat, Packer, Paragraph } from "../build";
+import { AlignmentType, convertInchesToTwip, Document, HeadingLevel, LevelFormat, Packer, Paragraph } from "../build";
 
 const doc = new Document({
     numbering: {
@@ -50,6 +50,66 @@ const doc = new Document({
                         style: {
                             paragraph: {
                                 indent: { left: 2880, hanging: 2420 },
+                            },
+                        },
+                    },
+                ],
+            },
+            {
+                reference: "my-unique-bullet-points",
+                levels: [
+                    {
+                        level: 0,
+                        format: LevelFormat.BULLET,
+                        text: "\u1F60",
+                        alignment: AlignmentType.LEFT,
+                        style: {
+                            paragraph: {
+                                indent: { left: convertInchesToTwip(0.5), hanging: convertInchesToTwip(0.25) },
+                            },
+                        },
+                    },
+                    {
+                        level: 1,
+                        format: LevelFormat.BULLET,
+                        text: "\u00A5",
+                        alignment: AlignmentType.LEFT,
+                        style: {
+                            paragraph: {
+                                indent: { left: convertInchesToTwip(1), hanging: convertInchesToTwip(0.25) },
+                            },
+                        },
+                    },
+                    {
+                        level: 2,
+                        format: LevelFormat.BULLET,
+                        text: "\u273F",
+                        alignment: AlignmentType.LEFT,
+                        style: {
+                            paragraph: {
+                                indent: { left: 2160, hanging: convertInchesToTwip(0.25) },
+                            },
+                        },
+                    },
+                    {
+                        level: 3,
+                        format: LevelFormat.BULLET,
+                        text: "\u267A",
+                        alignment: AlignmentType.LEFT,
+                        style: {
+                            paragraph: {
+                                indent: { left: 2880, hanging: convertInchesToTwip(0.25) },
+                            },
+                        },
+                    },
+                    {
+                        level: 4,
+                        format: LevelFormat.BULLET,
+                        text: "\u2603",
+                        alignment: AlignmentType.LEFT,
+                        style: {
+                            paragraph: {
+                                indent: { left: 3600, hanging: convertInchesToTwip(0.25) },
                             },
                         },
                     },
@@ -132,6 +192,59 @@ doc.addSection({
             numbering: {
                 reference: "my-crazy-numbering",
                 level: 0,
+            },
+        }),
+        new Paragraph({
+            text: "Custom Bullet points",
+            heading: HeadingLevel.HEADING_1,
+        }),
+        new Paragraph({
+            text: "What's up fam",
+            numbering: {
+                reference: "my-unique-bullet-points",
+                level: 0,
+            },
+        }),
+        new Paragraph({
+            text: "Hey you",
+            numbering: {
+                reference: "my-unique-bullet-points",
+                level: 0,
+            },
+        }),
+        new Paragraph({
+            text: "What's up fam",
+            numbering: {
+                reference: "my-unique-bullet-points",
+                level: 1,
+            },
+        }),
+        new Paragraph({
+            text: "Hello World 2",
+            numbering: {
+                reference: "my-unique-bullet-points",
+                level: 2,
+            },
+        }),
+        new Paragraph({
+            text: "Yeah boi",
+            numbering: {
+                reference: "my-unique-bullet-points",
+                level: 3,
+            },
+        }),
+        new Paragraph({
+            text: "my Awesome numbering",
+            numbering: {
+                reference: "my-unique-bullet-points",
+                level: 4,
+            },
+        }),
+        new Paragraph({
+            text: "Back to level 1",
+            numbering: {
+                reference: "my-unique-bullet-points",
+                level: 1,
             },
         }),
     ],
