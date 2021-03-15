@@ -80,10 +80,10 @@
 						<section class="tsd-index-section ">
 							<h3>Properties</h3>
 							<ul class="tsd-index-list">
-								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="imediadata.html#dimensions" class="tsd-kind-icon">dimensions</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="imediadata.html#filename" class="tsd-kind-icon">file<wbr>Name</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="imediadata.html#path" class="tsd-kind-icon">path</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="imediadata.html#stream" class="tsd-kind-icon">stream</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="imediadata.html#transformation" class="tsd-kind-icon">transformation</a></li>
 							</ul>
 						</section>
 					</div>
@@ -92,22 +92,12 @@
 			<section class="tsd-panel-group tsd-member-group ">
 				<h2>Properties</h2>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
-					<a name="dimensions" class="tsd-anchor"></a>
-					<h3><span class="tsd-flag ts-flagReadonly">Readonly</span> dimensions</h3>
-					<div class="tsd-signature tsd-kind-icon">dimensions<span class="tsd-signature-symbol">:</span> <a href="imediadatadimensions.html" class="tsd-signature-type" data-tsd-kind="Interface">IMediaDataDimensions</a></div>
-					<aside class="tsd-sources">
-						<ul>
-							<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/a3febae/src/file/media/data.ts#L16">src/file/media/data.ts:16</a></li>
-						</ul>
-					</aside>
-				</section>
-				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
 					<a name="filename" class="tsd-anchor"></a>
 					<h3><span class="tsd-flag ts-flagReadonly">Readonly</span> file<wbr>Name</h3>
 					<div class="tsd-signature tsd-kind-icon">file<wbr>Name<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/a3febae/src/file/media/data.ts#L15">src/file/media/data.ts:15</a></li>
+							<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/40b3bc0/src/file/media/data.ts#L20">src/file/media/data.ts:20</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -117,7 +107,7 @@
 					<div class="tsd-signature tsd-kind-icon">path<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/a3febae/src/file/media/data.ts#L14">src/file/media/data.ts:14</a></li>
+							<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/40b3bc0/src/file/media/data.ts#L19">src/file/media/data.ts:19</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -127,7 +117,17 @@
 					<div class="tsd-signature tsd-kind-icon">stream<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Buffer</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">Uint8Array</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">ArrayBuffer</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/a3febae/src/file/media/data.ts#L13">src/file/media/data.ts:13</a></li>
+							<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/40b3bc0/src/file/media/data.ts#L18">src/file/media/data.ts:18</a></li>
+						</ul>
+					</aside>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
+					<a name="transformation" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagReadonly">Readonly</span> transformation</h3>
+					<div class="tsd-signature tsd-kind-icon">transformation<span class="tsd-signature-symbol">:</span> <a href="imediadatatransformation.html" class="tsd-signature-type" data-tsd-kind="Interface">IMediaDataTransformation</a></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/40b3bc0/src/file/media/data.ts#L21">src/file/media/data.ts:21</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -149,9 +149,6 @@
 						<a href="imediadata.html" class="tsd-kind-icon">IMedia<wbr>Data</a>
 						<ul>
 							<li class=" tsd-kind-property tsd-parent-kind-interface">
-								<a href="imediadata.html#dimensions" class="tsd-kind-icon">dimensions</a>
-							</li>
-							<li class=" tsd-kind-property tsd-parent-kind-interface">
 								<a href="imediadata.html#filename" class="tsd-kind-icon">file<wbr>Name</a>
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-interface">
@@ -159,6 +156,9 @@
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-interface">
 								<a href="imediadata.html#stream" class="tsd-kind-icon">stream</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-interface">
+								<a href="imediadata.html#transformation" class="tsd-kind-icon">transformation</a>
 							</li>
 						</ul>
 					</li>
