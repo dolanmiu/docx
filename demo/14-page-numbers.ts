@@ -1,11 +1,14 @@
 // Page numbers
 // Import from 'docx' rather than '../build' if you install from npm
 import * as fs from "fs";
-import { AlignmentType, Document, Header, Packer, PageBreak, PageNumber, Paragraph, TextRun } from "../build";
+import { AlignmentType, Document, Footer, Header, Packer, PageBreak, PageNumber, Paragraph, TextRun } from "../build";
 
 const doc = new Document();
 
 doc.addSection({
+    properties: {
+        titlePage: true,
+    },
     headers: {
         default: new Header({
             children: [
@@ -26,6 +29,34 @@ doc.addSection({
                     alignment: AlignmentType.RIGHT,
                     children: [
                         new TextRun("First Page Header "),
+                        new TextRun({
+                            children: ["Page ", PageNumber.CURRENT],
+                        }),
+                    ],
+                }),
+            ],
+        }),
+    },
+    footers: {
+        default: new Footer({
+            children: [
+                new Paragraph({
+                    alignment: AlignmentType.RIGHT,
+                    children: [
+                        new TextRun("My Title "),
+                        new TextRun({
+                            children: ["Footer - Page ", PageNumber.CURRENT],
+                        }),
+                    ],
+                }),
+            ],
+        }),
+        first: new Footer({
+            children: [
+                new Paragraph({
+                    alignment: AlignmentType.RIGHT,
+                    children: [
+                        new TextRun("First Page Footer "),
                         new TextRun({
                             children: ["Page ", PageNumber.CURRENT],
                         }),
