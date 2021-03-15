@@ -1,12 +1,10 @@
 import { IMediaData } from "file/media";
 import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
 
-interface IBlipProperties {
+class BlipAttributes extends XmlAttributeComponent<{
     readonly embed: string;
     readonly cstate: string;
-}
-
-class BlipAttributes extends XmlAttributeComponent<IBlipProperties> {
+}> {
     protected readonly xmlKeys = {
         embed: "r:embed",
         cstate: "cstate",

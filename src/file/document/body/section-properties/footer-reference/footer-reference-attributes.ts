@@ -6,12 +6,10 @@ export enum FooterReferenceType {
     EVEN = "even",
 }
 
-export interface IFooterReferenceAttributes {
+export class FooterReferenceAttributes extends XmlAttributeComponent<{
     readonly type: string;
     readonly id: string;
-}
-
-export class FooterReferenceAttributes extends XmlAttributeComponent<IFooterReferenceAttributes> {
+}> {
     protected readonly xmlKeys = {
         type: "w:type",
         id: "r:id",

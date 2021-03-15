@@ -3,12 +3,10 @@ import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
 
 import { IMargins } from "../floating";
 
-interface IWrapTightAttributes {
+class WrapTightAttributes extends XmlAttributeComponent<{
     readonly distT?: number;
     readonly distB?: number;
-}
-
-class WrapTightAttributes extends XmlAttributeComponent<IWrapTightAttributes> {
+}> {
     protected readonly xmlKeys = {
         distT: "distT",
         distB: "distB",

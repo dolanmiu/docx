@@ -1,6 +1,6 @@
 import { XmlAttributeComponent } from "file/xml-components";
 
-export interface IFooterAttributesProperties {
+export class FooterAttributes extends XmlAttributeComponent<{
     readonly wpc?: string;
     readonly mc?: string;
     readonly o?: string;
@@ -23,9 +23,7 @@ export interface IFooterAttributesProperties {
     readonly dcmitype?: string;
     readonly xsi?: string;
     readonly type?: string;
-}
-
-export class FooterAttributes extends XmlAttributeComponent<IFooterAttributesProperties> {
+}> {
     protected readonly xmlKeys = {
         wpc: "xmlns:wpc",
         mc: "xmlns:mc",

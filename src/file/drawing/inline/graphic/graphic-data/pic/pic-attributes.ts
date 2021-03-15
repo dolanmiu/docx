@@ -1,10 +1,8 @@
 import { XmlAttributeComponent } from "file/xml-components";
 
-export interface IPicAttributes {
+export class PicAttributes extends XmlAttributeComponent<{
     readonly xmlns?: string;
-}
-
-export class PicAttributes extends XmlAttributeComponent<IPicAttributes> {
+}> {
     protected readonly xmlKeys = {
         xmlns: "xmlns:pic",
     };

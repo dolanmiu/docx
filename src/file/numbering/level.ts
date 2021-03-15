@@ -21,12 +21,10 @@ export enum LevelFormat {
     UPPER_ROMAN = "upperRoman",
 }
 
-interface ILevelAttributesProperties {
+class LevelAttributes extends XmlAttributeComponent<{
     readonly ilvl?: number;
     readonly tentative?: number;
-}
-
-class LevelAttributes extends XmlAttributeComponent<ILevelAttributesProperties> {
+}> {
     protected readonly xmlKeys = {
         ilvl: "w:ilvl",
         tentative: "w15:tentative",

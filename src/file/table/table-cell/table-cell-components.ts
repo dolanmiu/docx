@@ -1,13 +1,11 @@
 import { BorderStyle } from "file/styles";
 import { IgnoreIfEmptyXmlComponent, XmlAttributeComponent, XmlComponent } from "file/xml-components";
 
-interface ICellBorder {
+class CellBorderAttributes extends XmlAttributeComponent<{
     readonly style: BorderStyle;
     readonly size: number;
     readonly color: string;
-}
-
-class CellBorderAttributes extends XmlAttributeComponent<ICellBorder> {
+}> {
     protected readonly xmlKeys = { style: "w:val", size: "w:sz", color: "w:color" };
 }
 

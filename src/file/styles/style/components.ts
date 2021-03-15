@@ -1,11 +1,9 @@
 // http://officeopenxml.com/WPstyleGenProps.php
 import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
 
-interface IComponentAttributes {
+class ComponentAttributes extends XmlAttributeComponent<{
     readonly val: string | number;
-}
-
-class ComponentAttributes extends XmlAttributeComponent<IComponentAttributes> {
+}> {
     protected readonly xmlKeys = { val: "w:val" };
 }
 

@@ -1,6 +1,6 @@
 import { XmlAttributeComponent } from "file/xml-components";
 
-export interface IHeaderAttributesProperties {
+export class HeaderAttributes extends XmlAttributeComponent<{
     readonly wpc?: string;
     readonly mc?: string;
     readonly o?: string;
@@ -34,9 +34,7 @@ export interface IHeaderAttributesProperties {
     readonly cx8?: string;
     readonly w16cid: string;
     readonly w16se: string;
-}
-
-export class HeaderAttributes extends XmlAttributeComponent<IHeaderAttributesProperties> {
+}> {
     protected readonly xmlKeys = {
         wpc: "xmlns:wpc",
         mc: "xmlns:mc",

@@ -3,12 +3,10 @@ import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
 
 import { WidthType } from "../table-cell";
 
-interface ITableWidth {
+class TableWidthAttributes extends XmlAttributeComponent<{
     readonly type: WidthType;
     readonly w: number | string;
-}
-
-class TableWidthAttributes extends XmlAttributeComponent<ITableWidth> {
+}> {
     protected readonly xmlKeys = { type: "w:type", w: "w:w" };
 }
 

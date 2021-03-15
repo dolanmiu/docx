@@ -4,7 +4,7 @@ import { DisplayBackgroundShape } from "./display-background-shape";
 import { TrackRevisions } from "./track-revisions";
 import { UpdateFields } from "./update-fields";
 
-export interface ISettingsAttributesProperties {
+export class SettingsAttributes extends XmlAttributeComponent<{
     readonly wpc?: string;
     readonly mc?: string;
     readonly o?: string;
@@ -22,9 +22,7 @@ export interface ISettingsAttributesProperties {
     readonly wne?: string;
     readonly wps?: string;
     readonly Ignorable?: string;
-}
-
-export class SettingsAttributes extends XmlAttributeComponent<ISettingsAttributesProperties> {
+}> {
     protected readonly xmlKeys = {
         wpc: "xmlns:wpc",
         mc: "xmlns:mc",

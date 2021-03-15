@@ -4,11 +4,9 @@ import { Align } from "./align";
 import { HorizontalPositionRelativeFrom, IHorizontalPositionOptions } from "./floating-position";
 import { PositionOffset } from "./position-offset";
 
-interface IHorizontalPositionAttributes {
+class HorizontalPositionAttributes extends XmlAttributeComponent<{
     readonly relativeFrom: HorizontalPositionRelativeFrom;
-}
-
-class HorizontalPositionAttributes extends XmlAttributeComponent<IHorizontalPositionAttributes> {
+}> {
     protected readonly xmlKeys = {
         relativeFrom: "relativeFrom",
     };

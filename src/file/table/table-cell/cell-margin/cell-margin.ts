@@ -1,12 +1,10 @@
 // http://officeopenxml.com/WPtableCellProperties-Margins.php
 import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
 
-export interface ICellMarginProperties {
+class CellMarginAttributes extends XmlAttributeComponent<{
     readonly type: string;
     readonly width: number;
-}
-
-class CellMarginAttributes extends XmlAttributeComponent<ICellMarginProperties> {
+}> {
     protected readonly xmlKeys = { width: "w:w", type: "w:type" };
 }
 

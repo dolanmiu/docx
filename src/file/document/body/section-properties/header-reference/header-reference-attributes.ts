@@ -6,12 +6,10 @@ export enum HeaderReferenceType {
     EVEN = "even",
 }
 
-export interface IHeaderReferenceAttributes {
+export class HeaderReferenceAttributes extends XmlAttributeComponent<{
     readonly type: string;
     readonly id: string;
-}
-
-export class HeaderReferenceAttributes extends XmlAttributeComponent<IHeaderReferenceAttributes> {
+}> {
     protected readonly xmlKeys = {
         type: "w:type",
         id: "r:id",

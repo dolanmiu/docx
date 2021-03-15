@@ -4,11 +4,9 @@ import { Align } from "./align";
 import { IVerticalPositionOptions, VerticalPositionRelativeFrom } from "./floating-position";
 import { PositionOffset } from "./position-offset";
 
-interface IVerticalPositionAttributes {
+class VerticalPositionAttributes extends XmlAttributeComponent<{
     readonly relativeFrom: VerticalPositionRelativeFrom;
-}
-
-class VerticalPositionAttributes extends XmlAttributeComponent<IVerticalPositionAttributes> {
+}> {
     protected readonly xmlKeys = {
         relativeFrom: "relativeFrom",
     };

@@ -1,10 +1,8 @@
 import { XmlAttributeComponent } from "file/xml-components";
 
-export interface IShapePropertiesAttributes {
+export class ShapePropertiesAttributes extends XmlAttributeComponent<{
     readonly bwMode?: string;
-}
-
-export class ShapePropertiesAttributes extends XmlAttributeComponent<IShapePropertiesAttributes> {
+}> {
     protected readonly xmlKeys = {
         bwMode: "bwMode",
     };

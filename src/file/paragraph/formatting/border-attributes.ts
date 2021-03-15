@@ -1,13 +1,11 @@
 import { XmlAttributeComponent } from "file/xml-components";
 
-export interface IBorderAttributesProperties {
+export class BorderAttributes extends XmlAttributeComponent<{
     readonly color: string;
     readonly space: number;
     readonly val: string;
     readonly sz: number;
-}
-
-export class BorderAttributes extends XmlAttributeComponent<IBorderAttributesProperties> {
+}> {
     protected readonly xmlKeys = {
         val: "w:val",
         color: "w:color",

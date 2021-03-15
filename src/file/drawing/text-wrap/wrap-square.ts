@@ -6,10 +6,6 @@ import { IMargins } from "../floating";
 
 interface IWrapSquareAttributes extends IDistance {
     readonly wrapText?: TextWrappingSide;
-    readonly distT?: number;
-    readonly distB?: number;
-    readonly distL?: number;
-    readonly distR?: number;
 }
 
 class WrapSquareAttributes extends XmlAttributeComponent<IWrapSquareAttributes> {

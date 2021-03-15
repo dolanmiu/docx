@@ -1,11 +1,9 @@
 import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
 
-interface ISymbolAttributesProperties {
+class SymbolAttributes extends XmlAttributeComponent<{
     readonly char: string;
     readonly symbolfont?: string;
-}
-
-class SymbolAttributes extends XmlAttributeComponent<ISymbolAttributesProperties> {
+}> {
     protected readonly xmlKeys = {
         char: "w:char",
         symbolfont: "w:font",

@@ -1,10 +1,8 @@
 import { XmlAttributeComponent } from "file/xml-components";
 
-export interface IPresetGeometryAttributes {
+export class PresetGeometryAttributes extends XmlAttributeComponent<{
     readonly prst?: string;
-}
-
-export class PresetGeometryAttributes extends XmlAttributeComponent<IPresetGeometryAttributes> {
+}> {
     protected readonly xmlKeys = {
         prst: "prst",
     };

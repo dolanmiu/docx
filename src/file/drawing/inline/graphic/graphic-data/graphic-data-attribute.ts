@@ -1,10 +1,8 @@
 import { XmlAttributeComponent } from "file/xml-components";
 
-export interface IGraphicDataAttributes {
+export class GraphicDataAttributes extends XmlAttributeComponent<{
     readonly uri?: string;
-}
-
-export class GraphicDataAttributes extends XmlAttributeComponent<IGraphicDataAttributes> {
+}> {
     protected readonly xmlKeys = {
         uri: "uri",
     };

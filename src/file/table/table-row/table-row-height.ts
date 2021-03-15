@@ -9,12 +9,10 @@ export enum HeightRule {
     EXACT = "exact",
 }
 
-interface ITableRowHeight {
+export class TableRowHeightAttributes extends XmlAttributeComponent<{
     readonly value: number;
     readonly rule: HeightRule;
-}
-
-export class TableRowHeightAttributes extends XmlAttributeComponent<ITableRowHeight> {
+}> {
     protected readonly xmlKeys = { value: "w:val", rule: "w:hRule" };
 }
 

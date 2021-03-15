@@ -1,6 +1,6 @@
 import { XmlAttributeComponent } from "./default-attributes";
 
-export interface IAttributesProperties {
+export class Attributes extends XmlAttributeComponent<{
     readonly val?: string | number | boolean;
     readonly color?: string;
     readonly fill?: string;
@@ -21,9 +21,7 @@ export interface IAttributesProperties {
     readonly gutter?: string;
     readonly linePitch?: string;
     readonly pos?: string | number; // Little strange. Perhaps it is normal. Need to clarify in the spec.
-}
-
-export class Attributes extends XmlAttributeComponent<IAttributesProperties> {
+}> {
     protected readonly xmlKeys = {
         val: "w:val",
         color: "w:color",

@@ -1,6 +1,6 @@
 import { XmlAttributeComponent } from "file/xml-components";
 
-export interface IFootnotesAttributesProperties {
+export class FootnotesAttributes extends XmlAttributeComponent<{
     readonly wpc?: string;
     readonly mc?: string;
     readonly o?: string;
@@ -18,9 +18,7 @@ export interface IFootnotesAttributesProperties {
     readonly wne?: string;
     readonly wps?: string;
     readonly Ignorable?: string;
-}
-
-export class FootnotesAttributes extends XmlAttributeComponent<IFootnotesAttributesProperties> {
+}> {
     protected readonly xmlKeys = {
         wpc: "xmlns:wpc",
         mc: "xmlns:mc",

@@ -1,12 +1,10 @@
 // http://officeopenxml.com/drwPicFloating-position.php
 import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
 
-interface ISimplePosAttributes {
+class SimplePosAttributes extends XmlAttributeComponent<{
     readonly x: number;
     readonly y: number;
-}
-
-class SimplePosAttributes extends XmlAttributeComponent<ISimplePosAttributes> {
+}> {
     protected readonly xmlKeys = {
         x: "x",
         y: "y",
