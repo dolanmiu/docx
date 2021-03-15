@@ -11,7 +11,7 @@ function createAnchor(drawingOptions: IDrawingOptions): Anchor {
         {
             fileName: "test.png",
             stream: new Buffer(""),
-            dimensions: {
+            transformation: {
                 pixels: {
                     x: 0,
                     y: 0,

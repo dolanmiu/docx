@@ -1,4 +1,4 @@
-export interface IMediaDataDimensions {
+export interface IMediaDataTransformation {
     readonly pixels: {
         readonly x: number;
         readonly y: number;
@@ -7,13 +7,18 @@ export interface IMediaDataDimensions {
         readonly x: number;
         readonly y: number;
     };
+    readonly flip?: {
+        readonly vertical?: boolean;
+        readonly horizontal?: boolean;
+    };
+    readonly rotation?: number;
 }
 
 export interface IMediaData {
     readonly stream: Buffer | Uint8Array | ArrayBuffer;
     readonly path?: string;
     readonly fileName: string;
-    readonly dimensions: IMediaDataDimensions;
+    readonly transformation: IMediaDataTransformation;
 }
 
 // Needed because of: https://github.com/s-panferov/awesome-typescript-loader/issues/432

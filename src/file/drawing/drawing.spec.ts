@@ -13,7 +13,7 @@ function createDrawing(drawingOptions?: IDrawingOptions): Drawing {
             fileName: "test.jpg",
             stream: Buffer.from(imageBase64Data, "base64"),
             path: path,
-            dimensions: {
+            transformation: {
                 pixels: {
                     x: 100,
                     y: 100,
@@ -165,6 +165,9 @@ describe("Drawing", () => {
                                                             },
                                                             {
                                                                 "a:xfrm": [
+                                                                    {
+                                                                        _attr: {},
+                                                                    },
                                                                     {
                                                                         "a:ext": {
                                                                             _attr: {
@@ -392,6 +395,9 @@ describe("Drawing", () => {
                                                             },
                                                             {
                                                                 "a:xfrm": [
+                                                                    {
+                                                                        _attr: {},
+                                                                    },
                                                                     {
                                                                         "a:ext": {
                                                                             _attr: {

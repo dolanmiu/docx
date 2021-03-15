@@ -1,5 +1,5 @@
 // http://officeopenxml.com/drwPicFloating.php
-import { IMediaData, IMediaDataDimensions } from "file/media";
+import { IMediaData, IMediaDataTransformation } from "file/media";
 import { XmlComponent } from "file/xml-components";
 import { IDrawingOptions } from "../drawing";
 import { HorizontalPosition, IFloating, SimplePos, VerticalPosition } from "../floating";
@@ -12,7 +12,7 @@ import { GraphicFrameProperties } from "./../graphic-frame/graphic-frame-propert
 import { AnchorAttributes } from "./anchor-attributes";
 
 export class Anchor extends XmlComponent {
-    constructor(mediaData: IMediaData, dimensions: IMediaDataDimensions, drawingOptions: IDrawingOptions) {
+    constructor(mediaData: IMediaData, transform: IMediaDataTransformation, drawingOptions: IDrawingOptions) {
         super("wp:anchor");
 
         const floating: IFloating = {
@@ -36,14 +36,14 @@ export class Anchor extends XmlComponent {
                 behindDoc: floating.behindDocument === true ? "1" : "0",
                 locked: floating.lockAnchor === true ? "1" : "0",
                 layoutInCell: floating.layoutInCell === true ? "1" : "0",
-                relativeHeight: floating.zIndex ? floating.zIndex : dimensions.emus.y,
+                relativeHeight: floating.zIndex ? floating.zIndex : transform.emus.y,
             }),
         );
 
         this.root.push(new SimplePos());
         this.root.push(new HorizontalPosition(floating.horizontalPosition));
         this.root.push(new VerticalPosition(floating.verticalPosition));
-        this.root.push(new Extent(dimensions.emus.x, dimensions.emus.y));
+        this.root.push(new Extent(transform.emus.x, transform.emus.y));
         this.root.push(new EffectExtent());
 
         if (drawingOptions.floating !== undefined && drawingOptions.floating.wrap !== undefined) {
@@ -67,6 +67,6 @@ export class Anchor extends XmlComponent {
 
         this.root.push(new DocProperties());
         this.root.push(new GraphicFrameProperties());
-        this.root.push(new Graphic(mediaData, dimensions.emus.x, dimensions.emus.y));
+        this.root.push(new Graphic(mediaData, transform));
     }
 }

@@ -159,7 +159,10 @@ export class ImportDotx {
 
         for (const r of wrapperImagesReferences) {
             const buffer = await zipContent.files[`word/${r.target}`].async("nodebuffer");
-            const mediaData = media.addMedia(buffer);
+            const mediaData = media.addMedia(buffer, {
+                width: 100,
+                height: 100,
+            });
 
             wrapper.Relationships.createRelationship(
                 r.id,

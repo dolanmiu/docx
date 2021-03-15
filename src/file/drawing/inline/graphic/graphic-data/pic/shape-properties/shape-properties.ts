@@ -1,4 +1,5 @@
 // http://officeopenxml.com/drwSp-SpPr.php
+import { IMediaDataTransformation } from "file/media";
 import { XmlComponent } from "file/xml-components";
 import { Form } from "./form";
 // import { NoFill } from "./no-fill";
@@ -9,7 +10,7 @@ import { ShapePropertiesAttributes } from "./shape-properties-attributes";
 export class ShapeProperties extends XmlComponent {
     private readonly form: Form;
 
-    constructor(x: number, y: number) {
+    constructor(transform: IMediaDataTransformation) {
         super("pic:spPr");
 
         this.root.push(
@@ -18,7 +19,7 @@ export class ShapeProperties extends XmlComponent {
             }),
         );
 
-        this.form = new Form(x, y);
+        this.form = new Form(transform);
 
         this.root.push(this.form);
         this.root.push(new PresetGeometry());
