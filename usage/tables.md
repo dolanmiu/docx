@@ -4,9 +4,9 @@
 
 ## Intro
 
-* `Tables` contain a list of `Rows`
-* `Rows` contain a list of `TableCells`
-* `TableCells` contain a list of `Parahraphs` and/or `Tables`. You can add `Tables` as tables can be nested inside each other
+-   `Tables` contain a list of `Rows`
+-   `Rows` contain a list of `TableCells`
+-   `TableCells` contain a list of `Parahraphs` and/or `Tables`. You can add `Tables` as tables can be nested inside each other
 
 Create a simple table like so:
 
@@ -85,11 +85,11 @@ const table = new Table({
 
 Here is a list of options you can add to the `table row`:
 
-| Property    | Type                                  | Notes    |
-| ----------- | ------------------------------------- | -------- |
-| children    | `Array<TableCell>`                    | Required |
-| cantSplit   | `boolean`                             | Optional |
-| tableHeader | `boolean`                             | Optional |
+| Property    | Type                                   | Notes    |
+| ----------- | -------------------------------------- | -------- |
+| children    | `Array<TableCell>`                     | Required |
+| cantSplit   | `boolean`                              | Optional |
+| tableHeader | `boolean`                              | Optional |
 | height      | `{ height: number, rule: HeightRule }` | Optional |
 
 ### Repeat row
@@ -142,7 +142,7 @@ const tableRow = new TableRow({
 
 | Property      | Type                                | Notes                                                       |
 | ------------- | ----------------------------------- | ----------------------------------------------------------- |
-| children      | `Array<Paragraph | Table>`          | Required. You can nest tables by adding a table into a cell |
+| children      | `Array<Paragraph or Table>`         | Required. You can nest tables by adding a table into a cell |
 | shading       | `ITableShadingAttributesProperties` | Optional                                                    |
 | margins       | `ITableCellMarginOptions`           | Optional                                                    |
 | verticalAlign | `VerticalAlign`                     | Optional                                                    |
@@ -335,7 +335,6 @@ const table = new Table({
     visuallyRightToLeft: true,
 });
 ```
-
 
 ## Examples
 
