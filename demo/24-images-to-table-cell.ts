@@ -5,7 +5,14 @@ import { Document, Media, Packer, Paragraph, Table, TableCell, TableRow } from "
 
 const doc = new Document();
 
-const image = Media.addImage(doc, fs.readFileSync("./demo/images/image1.jpeg"));
+const image = Media.addImage({
+    document: doc,
+    data: fs.readFileSync("./demo/images/image1.jpeg"),
+    transformation: {
+        width: 100,
+        height: 100,
+    },
+});
 
 const table = new Table({
     rows: [

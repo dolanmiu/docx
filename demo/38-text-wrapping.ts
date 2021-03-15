@@ -6,7 +6,13 @@ import { Document, Media, Packer, Paragraph, TextWrappingSide, TextWrappingType 
 
 const doc = new Document();
 
-const image = Media.addImage(doc, fs.readFileSync("./demo/images/pizza.gif"), 200, 200, {
+const image = Media.addImage({
+    document: doc,
+    data: fs.readFileSync("./demo/images/pizza.gif"),
+    transformation: {
+        width: 200,
+        height: 200,
+    },
     floating: {
         horizontalPosition: {
             offset: 2014400,

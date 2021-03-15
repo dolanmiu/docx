@@ -126,7 +126,14 @@ const doc = new Document({
     },
 });
 
-const image = Media.addImage(doc, fs.readFileSync("./demo/images/pizza.gif"));
+const image = Media.addImage({
+    document: doc,
+    data: fs.readFileSync("./demo/images/pizza.gif"),
+    transformation: {
+        width: 100,
+        height: 100,
+    },
+});
 
 const table = new Table({
     rows: [
@@ -161,8 +168,22 @@ const table = new Table({
     ],
 });
 
-const image1 = Media.addImage(doc, fs.readFileSync("./demo/images/pizza.gif"));
-const image2 = Media.addImage(doc, fs.readFileSync("./demo/images/pizza.gif"));
+const image1 = Media.addImage({
+    document: doc,
+    data: fs.readFileSync("./demo/images/pizza.gif"),
+    transformation: {
+        width: 100,
+        height: 100,
+    },
+});
+const image2 = Media.addImage({
+    document: doc,
+    data: fs.readFileSync("./demo/images/pizza.gif"),
+    transformation: {
+        width: 100,
+        height: 100,
+    },
+});
 
 doc.addSection({
     properties: {

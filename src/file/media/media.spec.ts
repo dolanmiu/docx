@@ -21,7 +21,14 @@ describe("Media", () => {
     describe("#addImage", () => {
         it("should add image", () => {
             const file = new File();
-            const image = Media.addImage(file, "");
+            const image = Media.addImage({
+                document: file,
+                data: "",
+                transformation: {
+                    width: 100,
+                    height: 100,
+                },
+            });
 
             let tree = new Formatter().format(new Paragraph(image));
             expect(tree["w:p"]).to.be.an.instanceof(Array);
@@ -34,7 +41,14 @@ describe("Media", () => {
             // tslint:disable-next-line:no-any
 
             const file = new File();
-            const image1 = Media.addImage(file, "test");
+            const image1 = Media.addImage({
+                document: file,
+                data: "test",
+                transformation: {
+                    width: 100,
+                    height: 100,
+                },
+            });
             const tree = new Formatter().format(new Paragraph(image1));
             const inlineElements = tree["w:p"][0]["w:r"][0]["w:drawing"][0]["wp:inline"];
             const graphicData = inlineElements.find((x) => x["a:graphic"]);
@@ -46,7 +60,14 @@ describe("Media", () => {
                 },
             });
 
-            const image2 = Media.addImage(file, "test");
+            const image2 = Media.addImage({
+                document: file,
+                data: "test",
+                transformation: {
+                    width: 100,
+                    height: 100,
+                },
+            });
             const tree2 = new Formatter().format(new Paragraph(image2));
             const inlineElements2 = tree2["w:p"][0]["w:r"][0]["w:drawing"][0]["wp:inline"];
             const graphicData2 = inlineElements2.find((x) => x["a:graphic"]);
@@ -62,24 +83,32 @@ describe("Media", () => {
 
     describe("#addMedia", () => {
         it("should add media", () => {
-            const image = new Media().addMedia("");
+            const image = new Media().addMedia("", {
+                width: 100,
+                height: 100,
+            });
             expect(image.fileName).to.equal("test.png");
-            expect(image.dimensions).to.deep.equal({
+            expect(image.transformation).to.deep.equal({
                 pixels: {
                     x: 100,
                     y: 100,
                 },
+                flip: undefined,
                 emus: {
                     x: 952500,
                     y: 952500,
                 },
+                rotation: undefined,
             });
         });
 
         it("should return UInt8Array if atob is present", () => {
             global.atob = () => "atob result";
 
-            const image = new Media().addMedia("");
+            const image = new Media().addMedia("", {
+                width: 100,
+                height: 100,
+            });
             expect(image.stream).to.be.an.instanceof(Uint8Array);
 
             // tslint:disable-next-line: no-any
@@ -89,7 +118,10 @@ describe("Media", () => {
         it("should use data as is if its not a string", () => {
             global.atob = () => "atob result";
 
-            const image = new Media().addMedia(Buffer.from(""));
+            const image = new Media().addMedia(Buffer.from(""), {
+                width: 100,
+                height: 100,
+            });
             expect(image.stream).to.be.an.instanceof(Uint8Array);
 
             // tslint:disable-next-line: no-any
@@ -100,20 +132,25 @@ describe("Media", () => {
     describe("#getMedia", () => {
         it("should get media", () => {
             const media = new Media();
-            media.addMedia("");
+            media.addMedia("", {
+                width: 100,
+                height: 100,
+            });
 
             const image = media.getMedia("test.png");
 
             expect(image.fileName).to.equal("test.png");
-            expect(image.dimensions).to.deep.equal({
+            expect(image.transformation).to.deep.equal({
                 pixels: {
                     x: 100,
                     y: 100,
                 },
+                flip: undefined,
                 emus: {
                     x: 952500,
                     y: 952500,
                 },
+                rotation: undefined,
             });
         });
 
@@ -127,7 +164,15 @@ describe("Media", () => {
     describe("#Array", () => {
         it("Get images as array", () => {
             const media = new Media();
-            media.addMedia("");
+            media.addMedia("", {
+                width: 100,
+                height: 100,
+                flip: {
+                    vertical: true,
+                    horizontal: true,
+                },
+                rotation: 90,
+            });
 
             const array = media.Array;
             expect(array).to.be.an.instanceof(Array);
@@ -135,15 +180,20 @@ describe("Media", () => {
 
             const image = array[0];
             expect(image.fileName).to.equal("test.png");
-            expect(image.dimensions).to.deep.equal({
+            expect(image.transformation).to.deep.equal({
                 pixels: {
                     x: 100,
                     y: 100,
+                },
+                flip: {
+                    vertical: true,
+                    horizontal: true,
                 },
                 emus: {
                     x: 952500,
                     y: 952500,
                 },
+                rotation: 5400000,
             });
         });
     });

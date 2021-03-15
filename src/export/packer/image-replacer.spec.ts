@@ -42,7 +42,7 @@ describe("ImageReplacer", () => {
                     {
                         stream: Buffer.from(""),
                         fileName: "test-image.png",
-                        dimensions: {
+                        transformation: {
                             pixels: {
                                 x: 100,
                                 y: 100,

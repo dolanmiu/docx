@@ -22,10 +22,10 @@ export class Drawing extends XmlComponent {
         super("w:drawing");
 
         if (!drawingOptions.floating) {
-            this.inline = new Inline(imageData, imageData.dimensions);
+            this.inline = new Inline(imageData, imageData.transformation);
             this.root.push(this.inline);
         } else {
-            this.root.push(new Anchor(imageData, imageData.dimensions, drawingOptions));
+            this.root.push(new Anchor(imageData, imageData.transformation, drawingOptions));
         }
     }
 

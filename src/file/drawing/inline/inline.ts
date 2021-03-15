@@ -1,5 +1,5 @@
 // http://officeopenxml.com/drwPicInline.php
-import { IMediaData, IMediaDataDimensions } from "file/media";
+import { IMediaData, IMediaDataTransformation } from "file/media";
 import { XmlComponent } from "file/xml-components";
 import { DocProperties } from "./../doc-properties/doc-properties";
 import { EffectExtent } from "./../effect-extent/effect-extent";
@@ -12,7 +12,7 @@ export class Inline extends XmlComponent {
     private readonly extent: Extent;
     private readonly graphic: Graphic;
 
-    constructor(mediaData: IMediaData, private readonly dimensions: IMediaDataDimensions) {
+    constructor(mediaData: IMediaData, private readonly transform: IMediaDataTransformation) {
         super("wp:inline");
 
         this.root.push(
@@ -24,8 +24,8 @@ export class Inline extends XmlComponent {
             }),
         );
 
-        this.extent = new Extent(dimensions.emus.x, dimensions.emus.y);
-        this.graphic = new Graphic(mediaData, dimensions.emus.x, dimensions.emus.y);
+        this.extent = new Extent(transform.emus.x, transform.emus.y);
+        this.graphic = new Graphic(mediaData, transform);
 
         this.root.push(this.extent);
         this.root.push(new EffectExtent());
@@ -35,8 +35,8 @@ export class Inline extends XmlComponent {
     }
 
     public scale(factorX: number, factorY: number): void {
-        const newX = Math.round(this.dimensions.emus.x * factorX);
-        const newY = Math.round(this.dimensions.emus.y * factorY);
+        const newX = Math.round(this.transform.emus.x * factorX);
+        const newY = Math.round(this.transform.emus.y * factorY);
 
         this.extent.setXY(newX, newY);
         this.graphic.setXY(newX, newY);

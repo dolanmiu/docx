@@ -1,22 +1,31 @@
 import { uniqueId } from "convenience-functions";
 
-import { IDrawingOptions } from "../drawing";
+import { IFloating } from "../drawing";
 import { File } from "../file";
 import { PictureRun } from "../paragraph";
 import { IMediaData } from "./data";
 // import { Image } from "./image";
 
+interface IMediaTransformation {
+    readonly width: number;
+    readonly height: number;
+    readonly flip?: {
+        readonly vertical?: boolean;
+        readonly horizontal?: boolean;
+    };
+    readonly rotation?: number;
+}
+
 export class Media {
-    public static addImage(
-        file: File,
-        buffer: Buffer | string | Uint8Array | ArrayBuffer,
-        width?: number,
-        height?: number,
-        drawingOptions?: IDrawingOptions,
-    ): PictureRun {
+    public static addImage(options: {
+        readonly document: File;
+        readonly data: Buffer | string | Uint8Array | ArrayBuffer;
+        readonly transformation: IMediaTransformation;
+        readonly floating?: IFloating;
+    }): PictureRun {
         // Workaround to expose id without exposing to API
-        const mediaData = file.Media.addMedia(buffer, width, height);
-        return new PictureRun(mediaData, drawingOptions);
+        const mediaData = options.document.Media.addMedia(options.data, options.transformation);
+        return new PictureRun(mediaData, { floating: options.floating });
     }
 
     private readonly map: Map<string, IMediaData>;
@@ -35,22 +44,13 @@ export class Media {
         return data;
     }
 
-    public addMedia(buffer: Buffer | string | Uint8Array | ArrayBuffer, width: number = 100, height: number = 100): IMediaData {
-        const key = `${uniqueId()}.png`;
-
-        return this.createMedia(
-            key,
-            {
-                width: width,
-                height: height,
-            },
-            buffer,
-        );
+    public addMedia(buffer: Buffer | string | Uint8Array | ArrayBuffer, transformation: IMediaTransformation): IMediaData {
+        return this.createMedia(`${uniqueId()}.png`, transformation, buffer);
     }
 
     private createMedia(
         key: string,
-        dimensions: { readonly width: number; readonly height: number },
+        transformation: IMediaTransformation,
         data: Buffer | string | Uint8Array | ArrayBuffer,
         filePath?: string,
     ): IMediaData {
@@ -60,15 +60,17 @@ export class Media {
             stream: newData,
             path: filePath,
             fileName: key,
-            dimensions: {
+            transformation: {
                 pixels: {
-                    x: Math.round(dimensions.width),
-                    y: Math.round(dimensions.height),
+                    x: Math.round(transformation.width),
+                    y: Math.round(transformation.height),
                 },
                 emus: {
-                    x: Math.round(dimensions.width * 9525),
-                    y: Math.round(dimensions.height * 9525),
+                    x: Math.round(transformation.width * 9525),
+                    y: Math.round(transformation.height * 9525),
                 },
+                flip: transformation.flip,
+                rotation: transformation.rotation ? transformation.rotation * 60000 : undefined,
             },
         };
 

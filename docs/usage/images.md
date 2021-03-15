@@ -5,7 +5,13 @@
 To create a `floating` image on top of text:
 
 ```ts
-Media.addImage(doc, fs.readFileSync("./demo/images/pizza.gif"), 200, 200, {
+const image = Media.addImage({
+    document: doc,
+    data: fs.readFileSync("./demo/images/pizza.gif"),
+    transformation: {
+        width: 200,
+        height: 200,
+    }
     floating: {
         horizontalPosition: {
             offset: 1014400,
@@ -20,7 +26,14 @@ Media.addImage(doc, fs.readFileSync("./demo/images/pizza.gif"), 200, 200, {
 By default with no arguments, its an `inline` image:
 
 ```ts
-const image = Media.addImage(doc, fs.readFileSync("./demo/images/pizza.gif"));
+const image = Media.addImage({
+    document: doc,
+    data: fs.readFileSync("./demo/images/pizza.gif"),
+    transformation: {
+        width: 100,
+        height: 100,
+    },
+});
 ```
 
 Add it into the document by adding the image into a paragraph:
@@ -50,13 +63,21 @@ Adding images can be done in two ways:
 1. Call the `createImage` method to add the image directly into the `document`:
 
     ```ts
-    Media.addImage(doc, [IMAGE_BUFFER], [WIDTH], [HEIGHT], [POSITION_OPTIONS]);
+    Media.addImage({});
     ```
 
 2. Create an `image` first, then add it into the `document`:
 
     ```ts
-    const image = Media.addImage(doc, [IMAGE_BUFFER]);
+    const image = Media.addImage({
+        document: doc,
+        data: [IMAGE_BUFFER],
+        transformation: {
+            width: [IMAGE_SIZE],
+            height: [IMAGE_SIZE],
+        },
+    });
+
     doc.addSection({
         children: [new Paragraph(image)],
     });
@@ -86,7 +107,13 @@ Pass `options` into the `[POSITION_OPTIONS]` metioned in the [Intro above](#Intr
 To change the position the image to be on top of the text, simply add the `floating` property to the last argument. By default, the offsets are relative to the top left corner of the `page`. Offset units are in [emus](https://startbigthinksmall.wordpress.com/2010/01/04/points-inches-and-emus-measuring-units-in-office-open-xml/):
 
 ```ts
-const imageData = document.createImage(buffer, 903, 1149, {
+const image = Media.addImage({
+    document: doc,
+    data: buffer,
+    transformation: {
+        width: 903,
+        height: 1149,
+    },
     floating: {
         horizontalPosition: {
             offset: 1014400, // relative: HorizontalPositionRelativeFrom.PAGE by default
@@ -99,7 +126,13 @@ const imageData = document.createImage(buffer, 903, 1149, {
 ```
 
 ```ts
-const imageData = document.createImage(buffer, 903, 1149, {
+const image = Media.addImage({
+    document: doc,
+    data: buffer,
+    transformation: {
+        width: 903,
+        height: 1149,
+    },
     floating: {
         horizontalPosition: {
             relative: HorizontalPositionRelativeFrom.RIGHT_MARGIN,
@@ -159,7 +192,13 @@ wrap: {
 For example:
 
 ```ts
-Media.addImage(doc, fs.readFileSync("./demo/images/pizza.gif"), 200, 200, {
+Media.addImage({
+    document: doc,
+    data: fs.readFileSync("./demo/images/pizza.gif"),
+    transformation: {
+        width: 200,
+        height: 200,
+    },
     floating: {
         horizontalPosition: {
             offset: 2014400,
@@ -202,7 +241,13 @@ margins: {
 For example:
 
 ```ts
-Media.addImage(doc, fs.readFileSync("./demo/images/pizza.gif"), 200, 200, {
+Media.addImage({
+    document: doc,
+    data: fs.readFileSync("./demo/images/pizza.gif"),
+    transformation: {
+        width: 200,
+        height: 200,
+    },
     floating: {
         horizontalPosition: {
             offset: 2014400,
@@ -228,7 +273,7 @@ Media.addImage(doc, fs.readFileSync("./demo/images/pizza.gif"), 200, 200, {
 
 Importing Images from file system path
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/5-images.ts ':include')
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/5-images.ts ":include")
 
 _Source: https://github.com/dolanmiu/docx/blob/master/demo/5-images.ts_
 
@@ -236,7 +281,7 @@ _Source: https://github.com/dolanmiu/docx/blob/master/demo/5-images.ts_
 
 Example showing how to add image to headers and footers
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/9-images-in-header-and-footer.ts ':include')
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/9-images-in-header-and-footer.ts ":include")
 
 _Source: https://github.com/dolanmiu/docx/blob/master/demo/9-images-in-header-and-footer.ts_
 
@@ -244,6 +289,6 @@ _Source: https://github.com/dolanmiu/docx/blob/master/demo/9-images-in-header-an
 
 Example showing how to float images on top of text and optimally give a `margin`
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/38-text-wrapping.ts ':include')
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/38-text-wrapping.ts ":include")
 
 _Source: https://github.com/dolanmiu/docx/blob/master/demo/38-text-wrapping.ts_
