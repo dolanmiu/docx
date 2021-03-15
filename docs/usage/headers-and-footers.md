@@ -32,8 +32,6 @@ doc.addSection({
 });
 ```
 
-If you want more head
-
 ## Example
 
 Example showing basic header and footer
