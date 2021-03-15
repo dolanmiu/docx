@@ -1,5 +1,7 @@
 import { UnderlineType } from "file/paragraph/run/underline";
 
+import { LineRuleType } from "file/paragraph";
+
 import { IBaseCharacterStyleOptions, StyleForCharacter } from "./character-style";
 import { IBaseParagraphStyleOptions, IParagraphStyleOptions, StyleForParagraph } from "./paragraph-style";
 
@@ -121,7 +123,7 @@ export class FootnoteText extends StyleForParagraph {
                 spacing: {
                     after: 0,
                     line: 240,
-                    lineRule: "auto",
+                    lineRule: LineRuleType.AUTO,
                 },
             },
             run: {

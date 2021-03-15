@@ -1,6 +1,6 @@
 import { XmlComponent } from "file/xml-components";
 
-import { Paragraph } from "../paragraph";
+import { LineRuleType, Paragraph } from "../paragraph";
 import { Footnote, FootnoteType } from "./footnote/footnote";
 import { ContinuationSeperatorRun } from "./footnote/run/continuation-seperator-run";
 import { SeperatorRun } from "./footnote/run/seperator-run";
@@ -40,7 +40,7 @@ export class FootNotes extends XmlComponent {
                     spacing: {
                         after: 0,
                         line: 240,
-                        lineRule: "auto",
+                        lineRule: LineRuleType.AUTO,
                     },
                     children: [new SeperatorRun()],
                 }),
@@ -57,7 +57,7 @@ export class FootNotes extends XmlComponent {
                     spacing: {
                         after: 0,
                         line: 240,
-                        lineRule: "auto",
+                        lineRule: LineRuleType.AUTO,
                     },
                     children: [new ContinuationSeperatorRun()],
                 }),
