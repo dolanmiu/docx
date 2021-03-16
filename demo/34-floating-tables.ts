@@ -45,6 +45,10 @@ const table = new Table({
         relativeHorizontalPosition: RelativeHorizontalPosition.RIGHT,
         relativeVerticalPosition: RelativeVerticalPosition.BOTTOM,
         overlap: OverlapType.NEVER,
+        leftFromText: 1000,
+        rightFromText: 2000,
+        topFromText: 1500,
+        bottomFromText: 30,
     },
     width: {
         size: 4535,
