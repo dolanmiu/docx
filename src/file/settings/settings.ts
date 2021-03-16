@@ -1,6 +1,8 @@
 import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
+
 import { Compatibility } from "./compatibility";
 import { DisplayBackgroundShape } from "./display-background-shape";
+import { EvenAndOddHeadersAndFooters } from "./even-odd-headers";
 import { TrackRevisions } from "./track-revisions";
 import { UpdateFields } from "./update-fields";
 
@@ -46,10 +48,10 @@ export class SettingsAttributes extends XmlAttributeComponent<{
 
 export interface ISettingsOptions {
     readonly compatabilityModeVersion?: number;
+    readonly evenAndOddHeaders: boolean;
 }
 
 export class Settings extends XmlComponent {
-    private readonly compatibility: Compatibility;
     private readonly trackRevisions: TrackRevisions;
 
     constructor(options: ISettingsOptions) {
@@ -76,11 +78,16 @@ export class Settings extends XmlComponent {
             }),
         );
 
-        this.compatibility = new Compatibility({
-            version: options.compatabilityModeVersion || 15,
-        });
+        this.root.push(
+            new Compatibility({
+                version: options.compatabilityModeVersion || 15,
+            }),
+        );
 
-        this.root.push(this.compatibility);
+        if (options.evenAndOddHeaders) {
+            this.root.push(new EvenAndOddHeadersAndFooters());
+        }
+
         this.trackRevisions = new TrackRevisions();
 
         this.root.push(new DisplayBackgroundShape());

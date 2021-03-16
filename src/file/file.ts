@@ -86,6 +86,7 @@ export class File {
         this.documentWrapper = new DocumentWrapper({ background: options.background || {} });
         this.settings = new Settings({
             compatabilityModeVersion: options.compatabilityModeVersion,
+            evenAndOddHeaders: options.evenAndOddHeaderAndFooters ? true : false,
         });
 
         this.media = fileProperties.template && fileProperties.template.media ? fileProperties.template.media : new Media();

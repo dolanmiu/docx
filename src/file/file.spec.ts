@@ -451,4 +451,14 @@ describe("File", () => {
             ],
         });
     });
+
+    it("should create with even and odd headers and footers", () => {
+        const doc = new File({
+            evenAndOddHeaderAndFooters: true,
+        });
+
+        const tree = new Formatter().format(doc.Settings);
+
+        expect(tree["w:settings"][2]).to.deep.equal({ "w:evenAndOddHeaders": {} });
+    });
 });
