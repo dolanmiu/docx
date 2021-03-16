@@ -30,6 +30,7 @@ export interface IPropertiesOptions {
     };
     readonly compatabilityModeVersion?: number;
     readonly customProperties?: ICustomPropertyOptions[];
+    readonly evenAndOddHeaderAndFooters?: boolean;
 }
 
 export class CoreProperties extends XmlComponent {
