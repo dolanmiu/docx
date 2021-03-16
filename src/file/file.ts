@@ -164,12 +164,12 @@ export class File {
         this.documentWrapper.View.Body.addSection({
             ...properties,
             headers: {
-                default: headers.default ? this.createHeader(headers.default) : this.createHeader(new Header()),
+                default: headers.default ? this.createHeader(headers.default) : undefined,
                 first: headers.first ? this.createHeader(headers.first) : undefined,
                 even: headers.even ? this.createHeader(headers.even) : undefined,
             },
             footers: {
-                default: footers.default ? this.createFooter(footers.default) : this.createFooter(new Footer()),
+                default: footers.default ? this.createFooter(footers.default) : undefined,
                 first: footers.first ? this.createFooter(footers.first) : undefined,
                 even: footers.even ? this.createFooter(footers.even) : undefined,
             },

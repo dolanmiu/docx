@@ -57,9 +57,8 @@ describe("File", () => {
             });
 
             const tree = new Formatter().format(doc.Document.View.Body);
-
-            expect(tree["w:body"][0]["w:sectPr"][5]["w:headerReference"]._attr["w:type"]).to.equal("first");
-            expect(tree["w:body"][0]["w:sectPr"][7]["w:footerReference"]._attr["w:type"]).to.equal("first");
+            expect(tree["w:body"][0]["w:sectPr"][4]["w:headerReference"]._attr["w:type"]).to.equal("first");
+            expect(tree["w:body"][0]["w:sectPr"][5]["w:footerReference"]._attr["w:type"]).to.equal("first");
         });
 
         it("should create with correct headers", () => {
