@@ -34,7 +34,14 @@ doc.addSection({
         default: new Footer({
             children: [
                 new Paragraph({
-                    text: "Footer text",
+                    text: "Odd Footer text",
+                }),
+            ],
+        }),
+        even: new Footer({
+            children: [
+                new Paragraph({
+                    text: "Even Cool Footer text",
                 }),
             ],
         }),
