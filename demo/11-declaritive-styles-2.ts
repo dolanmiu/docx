@@ -178,15 +178,17 @@ doc.addSection({
         }),
     },
     children: [
-        new Paragraph(
-            new ImageRun({
-                data: fs.readFileSync("./demo/images/pizza.gif"),
-                transformation: {
-                    width: 100,
-                    height: 100,
-                },
-            }),
-        ),
+        new Paragraph({
+            children: [
+                new ImageRun({
+                    data: fs.readFileSync("./demo/images/pizza.gif"),
+                    transformation: {
+                        width: 100,
+                        height: 100,
+                    },
+                }),
+            ],
+        }),
         new Paragraph({
             text: "HEADING",
             heading: HeadingLevel.HEADING_1,
@@ -225,28 +227,32 @@ doc.addSection({
             style: "normalPara",
         }),
         table,
-        new Paragraph(
-            new ImageRun({
-                data: fs.readFileSync("./demo/images/pizza.gif"),
-                transformation: {
-                    width: 100,
-                    height: 100,
-                },
-            }),
-        ),
+        new Paragraph({
+            children: [
+                new ImageRun({
+                    data: fs.readFileSync("./demo/images/pizza.gif"),
+                    transformation: {
+                        width: 100,
+                        height: 100,
+                    },
+                }),
+            ],
+        }),
         new Paragraph({
             text: "Test",
             style: "normalPara2",
         }),
-        new Paragraph(
-            new ImageRun({
-                data: fs.readFileSync("./demo/images/pizza.gif"),
-                transformation: {
-                    width: 100,
-                    height: 100,
-                },
-            }),
-        ),
+        new Paragraph({
+            children: [
+                new ImageRun({
+                    data: fs.readFileSync("./demo/images/pizza.gif"),
+                    transformation: {
+                        width: 100,
+                        height: 100,
+                    },
+                }),
+            ],
+        }),
         new Paragraph({
             text: "Test 2",
             style: "normalPara2",
