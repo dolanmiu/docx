@@ -92,9 +92,8 @@
 						<section class="tsd-index-section ">
 							<h3>Methods</h3>
 							<ul class="tsd-index-list">
+								<li class="tsd-kind-method tsd-parent-kind-class"><a href="media.html#addimage" class="tsd-kind-icon">add<wbr>Image</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="media.html#addmedia" class="tsd-kind-icon">add<wbr>Media</a></li>
-								<li class="tsd-kind-method tsd-parent-kind-class"><a href="media.html#getmedia" class="tsd-kind-icon">get<wbr>Media</a></li>
-								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-static"><a href="media.html#addimage" class="tsd-kind-icon">add<wbr>Image</a></li>
 							</ul>
 						</section>
 					</div>
@@ -112,7 +111,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/c8db70b/src/file/media/media.ts#L31">src/file/media/media.ts:31</a></li>
+									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/4783812/src/file/media/media.ts#L17">src/file/media/media.ts:17</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-returns-title">Returns <a href="media.html" class="tsd-signature-type" data-tsd-kind="Class">Media</a></h4>
@@ -132,7 +131,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/c8db70b/src/file/media/media.ts#L82">src/file/media/media.ts:82</a></li>
+									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/4783812/src/file/media/media.ts#L54">src/file/media/media.ts:54</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-symbol">readonly </span><a href="../interfaces/imediadata.html" class="tsd-signature-type" data-tsd-kind="Interface">IMediaData</a><span class="tsd-signature-symbol">[]</span></h4>
@@ -143,42 +142,16 @@
 			<section class="tsd-panel-group tsd-member-group ">
 				<h2>Methods</h2>
 				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
-					<a name="addmedia" class="tsd-anchor"></a>
-					<h3>add<wbr>Media</h3>
+					<a name="addimage" class="tsd-anchor"></a>
+					<h3>add<wbr>Image</h3>
 					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-						<li class="tsd-signature tsd-kind-icon">add<wbr>Media<span class="tsd-signature-symbol">(</span>buffer<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">Buffer</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">Uint8Array</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">ArrayBuffer</span>, transformation<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">IMediaTransformation</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="../interfaces/imediadata.html" class="tsd-signature-type" data-tsd-kind="Interface">IMediaData</a></li>
+						<li class="tsd-signature tsd-kind-icon">add<wbr>Image<span class="tsd-signature-symbol">(</span>key<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>, mediaData<span class="tsd-signature-symbol">: </span><a href="../interfaces/imediadata.html" class="tsd-signature-type" data-tsd-kind="Interface">IMediaData</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/c8db70b/src/file/media/media.ts#L47">src/file/media/media.ts:47</a></li>
-								</ul>
-							</aside>
-							<h4 class="tsd-parameters-title">Parameters</h4>
-							<ul class="tsd-parameters">
-								<li>
-									<h5>buffer: <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">Buffer</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">Uint8Array</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">ArrayBuffer</span></h5>
-								</li>
-								<li>
-									<h5>transformation: <span class="tsd-signature-type">IMediaTransformation</span></h5>
-								</li>
-							</ul>
-							<h4 class="tsd-returns-title">Returns <a href="../interfaces/imediadata.html" class="tsd-signature-type" data-tsd-kind="Interface">IMediaData</a></h4>
-						</li>
-					</ul>
-				</section>
-				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
-					<a name="getmedia" class="tsd-anchor"></a>
-					<h3>get<wbr>Media</h3>
-					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-						<li class="tsd-signature tsd-kind-icon">get<wbr>Media<span class="tsd-signature-symbol">(</span>key<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="../interfaces/imediadata.html" class="tsd-signature-type" data-tsd-kind="Interface">IMediaData</a></li>
-					</ul>
-					<ul class="tsd-descriptions">
-						<li class="tsd-description">
-							<aside class="tsd-sources">
-								<ul>
-									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/c8db70b/src/file/media/media.ts#L37">src/file/media/media.ts:37</a></li>
+									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/4783812/src/file/media/media.ts#L50">src/file/media/media.ts:50</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -186,45 +159,37 @@
 								<li>
 									<h5>key: <span class="tsd-signature-type">string</span></h5>
 								</li>
+								<li>
+									<h5>mediaData: <a href="../interfaces/imediadata.html" class="tsd-signature-type" data-tsd-kind="Interface">IMediaData</a></h5>
+								</li>
 							</ul>
-							<h4 class="tsd-returns-title">Returns <a href="../interfaces/imediadata.html" class="tsd-signature-type" data-tsd-kind="Interface">IMediaData</a></h4>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
 						</li>
 					</ul>
 				</section>
-				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-static">
-					<a name="addimage" class="tsd-anchor"></a>
-					<h3><span class="tsd-flag ts-flagStatic">Static</span> add<wbr>Image</h3>
-					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-static">
-						<li class="tsd-signature tsd-kind-icon">add<wbr>Image<span class="tsd-signature-symbol">(</span>options<span class="tsd-signature-symbol">: </span><span class="tsd-signature-symbol">{ </span>data<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">Buffer</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">Uint8Array</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">ArrayBuffer</span><span class="tsd-signature-symbol">; </span>document<span class="tsd-signature-symbol">: </span><a href="document.html" class="tsd-signature-type" data-tsd-kind="Class">Document</a><span class="tsd-signature-symbol">; </span>floating<span class="tsd-signature-symbol">?: </span><a href="../interfaces/ifloating.html" class="tsd-signature-type" data-tsd-kind="Interface">IFloating</a><span class="tsd-signature-symbol">; </span>transformation<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">IMediaTransformation</span><span class="tsd-signature-symbol"> }</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="picturerun.html" class="tsd-signature-type" data-tsd-kind="Class">PictureRun</a></li>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+					<a name="addmedia" class="tsd-anchor"></a>
+					<h3>add<wbr>Media</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+						<li class="tsd-signature tsd-kind-icon">add<wbr>Media<span class="tsd-signature-symbol">(</span>data<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">Buffer</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">Uint8Array</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">ArrayBuffer</span>, transformation<span class="tsd-signature-symbol">: </span><a href="../interfaces/imediatransformation.html" class="tsd-signature-type" data-tsd-kind="Interface">IMediaTransformation</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="../interfaces/imediadata.html" class="tsd-signature-type" data-tsd-kind="Interface">IMediaData</a></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/c8db70b/src/file/media/media.ts#L20">src/file/media/media.ts:20</a></li>
+									<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/4783812/src/file/media/media.ts#L23">src/file/media/media.ts:23</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
-									<h5>options: <span class="tsd-signature-symbol">{ </span>data<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">Buffer</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">Uint8Array</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">ArrayBuffer</span><span class="tsd-signature-symbol">; </span>document<span class="tsd-signature-symbol">: </span><a href="document.html" class="tsd-signature-type" data-tsd-kind="Class">Document</a><span class="tsd-signature-symbol">; </span>floating<span class="tsd-signature-symbol">?: </span><a href="../interfaces/ifloating.html" class="tsd-signature-type" data-tsd-kind="Interface">IFloating</a><span class="tsd-signature-symbol">; </span>transformation<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">IMediaTransformation</span><span class="tsd-signature-symbol"> }</span></h5>
-									<ul class="tsd-parameters">
-										<li class="tsd-parameter">
-											<h5><span class="tsd-flag ts-flagReadonly">Readonly</span> data<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">Buffer</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">Uint8Array</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">ArrayBuffer</span></h5>
-										</li>
-										<li class="tsd-parameter">
-											<h5><span class="tsd-flag ts-flagReadonly">Readonly</span> document<span class="tsd-signature-symbol">: </span><a href="document.html" class="tsd-signature-type" data-tsd-kind="Class">Document</a></h5>
-										</li>
-										<li class="tsd-parameter">
-											<h5><span class="tsd-flag ts-flagOptional">Optional</span> <span class="tsd-flag ts-flagReadonly">Readonly</span> floating<span class="tsd-signature-symbol">?: </span><a href="../interfaces/ifloating.html" class="tsd-signature-type" data-tsd-kind="Interface">IFloating</a></h5>
-										</li>
-										<li class="tsd-parameter">
-											<h5><span class="tsd-flag ts-flagReadonly">Readonly</span> transformation<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">IMediaTransformation</span></h5>
-										</li>
-									</ul>
+									<h5>data: <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">Buffer</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">Uint8Array</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">ArrayBuffer</span></h5>
+								</li>
+								<li>
+									<h5>transformation: <a href="../interfaces/imediatransformation.html" class="tsd-signature-type" data-tsd-kind="Interface">IMediaTransformation</a></h5>
 								</li>
 							</ul>
-							<h4 class="tsd-returns-title">Returns <a href="picturerun.html" class="tsd-signature-type" data-tsd-kind="Class">PictureRun</a></h4>
+							<h4 class="tsd-returns-title">Returns <a href="../interfaces/imediadata.html" class="tsd-signature-type" data-tsd-kind="Interface">IMediaData</a></h4>
 						</li>
 					</ul>
 				</section>
@@ -252,13 +217,10 @@
 								<a href="media.html#array" class="tsd-kind-icon">Array</a>
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class">
-								<a href="media.html#addmedia" class="tsd-kind-icon">add<wbr>Media</a>
+								<a href="media.html#addimage" class="tsd-kind-icon">add<wbr>Image</a>
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class">
-								<a href="media.html#getmedia" class="tsd-kind-icon">get<wbr>Media</a>
-							</li>
-							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-static">
-								<a href="media.html#addimage" class="tsd-kind-icon">add<wbr>Image</a>
+								<a href="media.html#addmedia" class="tsd-kind-icon">add<wbr>Media</a>
 							</li>
 						</ul>
 					</li>

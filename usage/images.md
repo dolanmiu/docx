@@ -5,8 +5,7 @@
 To create a `floating` image on top of text:
 
 ```ts
-const image = Media.addImage({
-    document: doc,
+const image = new ImageRun({
     data: fs.readFileSync("./demo/images/pizza.gif"),
     transformation: {
         width: 200,
@@ -26,8 +25,7 @@ const image = Media.addImage({
 By default with no arguments, its an `inline` image:
 
 ```ts
-const image = Media.addImage({
-    document: doc,
+const image = new ImageRun({
     data: fs.readFileSync("./demo/images/pizza.gif"),
     transformation: {
         width: 100,
@@ -58,30 +56,21 @@ doc.addSection({
 
 ## Intro
 
-Adding images can be done in two ways:
+Adding images can be easily done by creating an instance of `ImageRun`. This can be added in a `Paragraph` or `Hyperlink`:
 
-1. Call the `createImage` method to add the image directly into the `document`:
+```ts
+const image = new ImageRun({
+    data: [IMAGE_BUFFER],
+    transformation: {
+        width: [IMAGE_SIZE],
+        height: [IMAGE_SIZE],
+    },
+});
 
-    ```ts
-    Media.addImage({});
-    ```
-
-2. Create an `image` first, then add it into the `document`:
-
-    ```ts
-    const image = Media.addImage({
-        document: doc,
-        data: [IMAGE_BUFFER],
-        transformation: {
-            width: [IMAGE_SIZE],
-            height: [IMAGE_SIZE],
-        },
-    });
-
-    doc.addSection({
-        children: [new Paragraph(image)],
-    });
-    ```
+doc.addSection({
+    children: [new Paragraph(image)],
+});
+```
 
 `docx` supports `jpeg`, `jpg`, `bmp`, `gif` and `png`
 
@@ -96,7 +85,7 @@ Three types of image positioning is supported:
 -   Floating
 -   Inline
 
-By default, picture are exported as `Inline` elements.
+By default, images are exported as `Inline` elements.
 
 ### Usage
 
@@ -107,8 +96,7 @@ Pass `options` into the `[POSITION_OPTIONS]` metioned in the [Intro above](#Intr
 To change the position the image to be on top of the text, simply add the `floating` property to the last argument. By default, the offsets are relative to the top left corner of the `page`. Offset units are in [emus](https://startbigthinksmall.wordpress.com/2010/01/04/points-inches-and-emus-measuring-units-in-office-open-xml/):
 
 ```ts
-const image = Media.addImage({
-    document: doc,
+const image = new ImageRun({
     data: buffer,
     transformation: {
         width: 903,
@@ -126,8 +114,7 @@ const image = Media.addImage({
 ```
 
 ```ts
-const image = Media.addImage({
-    document: doc,
+const image = new ImageRun({
     data: buffer,
     transformation: {
         width: 903,
@@ -192,8 +179,7 @@ wrap: {
 For example:
 
 ```ts
-Media.addImage({
-    document: doc,
+const image = new ImageRun({
     data: fs.readFileSync("./demo/images/pizza.gif"),
     transformation: {
         width: 200,
@@ -241,8 +227,7 @@ margins: {
 For example:
 
 ```ts
-Media.addImage({
-    document: doc,
+const image = new ImageRun({
     data: fs.readFileSync("./demo/images/pizza.gif"),
     transformation: {
         width: 200,

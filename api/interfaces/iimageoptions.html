@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>IHeaderReferenceOptions | docx</title>
+	<title>IImageOptions | docx</title>
 	<meta name="description" content="Documentation for docx">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="../assets/css/main.css">
@@ -55,10 +55,10 @@
 					<a href="../modules.html">docx</a>
 				</li>
 				<li>
-					<a href="iheaderreferenceoptions.html">IHeaderReferenceOptions</a>
+					<a href="iimageoptions.html">IImageOptions</a>
 				</li>
 			</ul>
-			<h1>Interface IHeaderReferenceOptions</h1>
+			<h1>Interface IImageOptions</h1>
 		</div>
 	</div>
 </header>
@@ -69,7 +69,7 @@
 				<h3>Hierarchy</h3>
 				<ul class="tsd-hierarchy">
 					<li>
-						<span class="target">IHeaderReferenceOptions</span>
+						<span class="target">IImageOptions</span>
 					</li>
 				</ul>
 			</section>
@@ -80,8 +80,9 @@
 						<section class="tsd-index-section ">
 							<h3>Properties</h3>
 							<ul class="tsd-index-list">
-								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="iheaderreferenceoptions.html#headerid" class="tsd-kind-icon">header<wbr>Id</a></li>
-								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="iheaderreferenceoptions.html#headertype" class="tsd-kind-icon">header<wbr>Type</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="iimageoptions.html#data" class="tsd-kind-icon">data</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="iimageoptions.html#floating" class="tsd-kind-icon">floating</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="iimageoptions.html#transformation" class="tsd-kind-icon">transformation</a></li>
 							</ul>
 						</section>
 					</div>
@@ -90,22 +91,32 @@
 			<section class="tsd-panel-group tsd-member-group ">
 				<h2>Properties</h2>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
-					<a name="headerid" class="tsd-anchor"></a>
-					<h3><span class="tsd-flag ts-flagOptional">Optional</span> <span class="tsd-flag ts-flagReadonly">Readonly</span> header<wbr>Id</h3>
-					<div class="tsd-signature tsd-kind-icon">header<wbr>Id<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
+					<a name="data" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagReadonly">Readonly</span> data</h3>
+					<div class="tsd-signature tsd-kind-icon">data<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">Buffer</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">Uint8Array</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">ArrayBuffer</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/4783812/src/file/document/body/section-properties/header-reference/header-reference.ts#L6">src/file/document/body/section-properties/header-reference/header-reference.ts:6</a></li>
+							<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/4783812/src/file/paragraph/run/image-run.ts#L10">src/file/paragraph/run/image-run.ts:10</a></li>
 						</ul>
 					</aside>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
-					<a name="headertype" class="tsd-anchor"></a>
-					<h3><span class="tsd-flag ts-flagOptional">Optional</span> <span class="tsd-flag ts-flagReadonly">Readonly</span> header<wbr>Type</h3>
-					<div class="tsd-signature tsd-kind-icon">header<wbr>Type<span class="tsd-signature-symbol">:</span> <a href="../enums/headerreferencetype.html" class="tsd-signature-type" data-tsd-kind="Enumeration">HeaderReferenceType</a></div>
+					<a name="floating" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagOptional">Optional</span> <span class="tsd-flag ts-flagReadonly">Readonly</span> floating</h3>
+					<div class="tsd-signature tsd-kind-icon">floating<span class="tsd-signature-symbol">:</span> <a href="ifloating.html" class="tsd-signature-type" data-tsd-kind="Interface">IFloating</a></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/4783812/src/file/document/body/section-properties/header-reference/header-reference.ts#L5">src/file/document/body/section-properties/header-reference/header-reference.ts:5</a></li>
+							<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/4783812/src/file/paragraph/run/image-run.ts#L12">src/file/paragraph/run/image-run.ts:12</a></li>
+						</ul>
+					</aside>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
+					<a name="transformation" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagReadonly">Readonly</span> transformation</h3>
+					<div class="tsd-signature tsd-kind-icon">transformation<span class="tsd-signature-symbol">:</span> <a href="imediatransformation.html" class="tsd-signature-type" data-tsd-kind="Interface">IMediaTransformation</a></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/4783812/src/file/paragraph/run/image-run.ts#L11">src/file/paragraph/run/image-run.ts:11</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -124,13 +135,16 @@
 				</ul>
 				<ul class="current">
 					<li class="current tsd-kind-interface">
-						<a href="iheaderreferenceoptions.html" class="tsd-kind-icon">IHeader<wbr>Reference<wbr>Options</a>
+						<a href="iimageoptions.html" class="tsd-kind-icon">IImage<wbr>Options</a>
 						<ul>
 							<li class=" tsd-kind-property tsd-parent-kind-interface">
-								<a href="iheaderreferenceoptions.html#headerid" class="tsd-kind-icon">header<wbr>Id</a>
+								<a href="iimageoptions.html#data" class="tsd-kind-icon">data</a>
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-interface">
-								<a href="iheaderreferenceoptions.html#headertype" class="tsd-kind-icon">header<wbr>Type</a>
+								<a href="iimageoptions.html#floating" class="tsd-kind-icon">floating</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-interface">
+								<a href="iimageoptions.html#transformation" class="tsd-kind-icon">transformation</a>
 							</li>
 						</ul>
 					</li>
