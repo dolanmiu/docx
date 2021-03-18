@@ -47,4 +47,12 @@ describe("HeaderWrapper", () => {
             expect(spy.called).to.equal(true);
         });
     });
+
+    describe("#Media", () => {
+        it("should get Media", () => {
+            const media = new Media();
+            const file = new HeaderWrapper(media, 1);
+            expect(file.Media).to.equal(media);
+        });
+    });
 });

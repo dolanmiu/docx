@@ -1,33 +1,28 @@
-// Simple example to add text to a document
+// The demo on the README.md
 // Import from 'docx' rather than '../build' if you install from npm
 import * as fs from "fs";
-import { Document, HeadingLevel, Media, Packer, Paragraph, Table, TableCell, TableRow, VerticalAlign } from "../build";
+import { Document, HeadingLevel, ImageRun, Packer, Paragraph, Table, TableCell, TableRow, VerticalAlign } from "../build";
 
 const doc = new Document();
-
-const image1 = Media.addImage({
-    document: doc,
-    data: fs.readFileSync("./demo/images/image1.jpeg"),
-    transformation: {
-        width: 100,
-        height: 100,
-    },
-});
-const image2 = Media.addImage({
-    document: doc,
-    data: fs.readFileSync("./demo/images/pizza.gif"),
-    transformation: {
-        width: 100,
-        height: 100,
-    },
-});
 
 const table = new Table({
     rows: [
         new TableRow({
             children: [
                 new TableCell({
-                    children: [new Paragraph(image1)],
+                    children: [
+                        new Paragraph({
+                            children: [
+                                new ImageRun({
+                                    data: fs.readFileSync("./demo/images/image1.jpeg"),
+                                    transformation: {
+                                        width: 100,
+                                        height: 100,
+                                    },
+                                }),
+                            ],
+                        }),
+                    ],
                     verticalAlign: VerticalAlign.CENTER,
                 }),
                 new TableCell({
@@ -52,7 +47,19 @@ const table = new Table({
                     ],
                 }),
                 new TableCell({
-                    children: [new Paragraph(image1)],
+                    children: [
+                        new Paragraph({
+                            children: [
+                                new ImageRun({
+                                    data: fs.readFileSync("./demo/images/image1.jpeg"),
+                                    transformation: {
+                                        width: 100,
+                                        height: 100,
+                                    },
+                                }),
+                            ],
+                        }),
+                    ],
                 }),
             ],
         }),
@@ -66,7 +73,17 @@ doc.addSection({
             heading: HeadingLevel.HEADING_1,
         }),
         table,
-        new Paragraph(image2),
+        new Paragraph({
+            children: [
+                new ImageRun({
+                    data: fs.readFileSync("./demo/images/pizza.gif"),
+                    transformation: {
+                        width: 100,
+                        height: 100,
+                    },
+                }),
+            ],
+        }),
     ],
 });
 

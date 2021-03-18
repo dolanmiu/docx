@@ -1,18 +1,9 @@
 // Add image to table cell
 // Import from 'docx' rather than '../build' if you install from npm
 import * as fs from "fs";
-import { Document, Media, Packer, Paragraph, Table, TableCell, TableRow } from "../build";
+import { Document, ImageRun, Packer, Paragraph, Table, TableCell, TableRow } from "../build";
 
 const doc = new Document();
-
-const image = Media.addImage({
-    document: doc,
-    data: fs.readFileSync("./demo/images/image1.jpeg"),
-    transformation: {
-        width: 100,
-        height: 100,
-    },
-});
 
 const table = new Table({
     rows: [
@@ -38,7 +29,19 @@ const table = new Table({
                     children: [],
                 }),
                 new TableCell({
-                    children: [new Paragraph(image)],
+                    children: [
+                        new Paragraph({
+                            children: [
+                                new ImageRun({
+                                    data: fs.readFileSync("./demo/images/image1.jpeg"),
+                                    transformation: {
+                                        width: 100,
+                                        height: 100,
+                                    },
+                                }),
+                            ],
+                        }),
+                    ],
                 }),
                 new TableCell({
                     children: [],

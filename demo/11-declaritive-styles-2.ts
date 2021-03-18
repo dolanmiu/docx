@@ -7,7 +7,7 @@ import {
     Document,
     Footer,
     HeadingLevel,
-    Media,
+    ImageRun,
     Packer,
     Paragraph,
     Table,
@@ -126,15 +126,6 @@ const doc = new Document({
     },
 });
 
-const image = Media.addImage({
-    document: doc,
-    data: fs.readFileSync("./demo/images/pizza.gif"),
-    transformation: {
-        width: 100,
-        height: 100,
-    },
-});
-
 const table = new Table({
     rows: [
         new TableRow({
@@ -168,23 +159,6 @@ const table = new Table({
     ],
 });
 
-const image1 = Media.addImage({
-    document: doc,
-    data: fs.readFileSync("./demo/images/pizza.gif"),
-    transformation: {
-        width: 100,
-        height: 100,
-    },
-});
-const image2 = Media.addImage({
-    document: doc,
-    data: fs.readFileSync("./demo/images/pizza.gif"),
-    transformation: {
-        width: 100,
-        height: 100,
-    },
-});
-
 doc.addSection({
     properties: {
         top: 700,
@@ -204,7 +178,17 @@ doc.addSection({
         }),
     },
     children: [
-        new Paragraph(image),
+        new Paragraph({
+            children: [
+                new ImageRun({
+                    data: fs.readFileSync("./demo/images/pizza.gif"),
+                    transformation: {
+                        width: 100,
+                        height: 100,
+                    },
+                }),
+            ],
+        }),
         new Paragraph({
             text: "HEADING",
             heading: HeadingLevel.HEADING_1,
@@ -243,12 +227,32 @@ doc.addSection({
             style: "normalPara",
         }),
         table,
-        new Paragraph(image1),
+        new Paragraph({
+            children: [
+                new ImageRun({
+                    data: fs.readFileSync("./demo/images/pizza.gif"),
+                    transformation: {
+                        width: 100,
+                        height: 100,
+                    },
+                }),
+            ],
+        }),
         new Paragraph({
             text: "Test",
             style: "normalPara2",
         }),
-        new Paragraph(image2),
+        new Paragraph({
+            children: [
+                new ImageRun({
+                    data: fs.readFileSync("./demo/images/pizza.gif"),
+                    transformation: {
+                        width: 100,
+                        height: 100,
+                    },
+                }),
+            ],
+        }),
         new Paragraph({
             text: "Test 2",
             style: "normalPara2",

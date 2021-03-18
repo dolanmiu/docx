@@ -16,7 +16,6 @@ export interface IMediaDataTransformation {
 
 export interface IMediaData {
     readonly stream: Buffer | Uint8Array | ArrayBuffer;
-    readonly path?: string;
     readonly fileName: string;
     readonly transformation: IMediaDataTransformation;
 }

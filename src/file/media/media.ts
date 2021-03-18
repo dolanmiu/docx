@@ -1,12 +1,9 @@
 import { uniqueId } from "convenience-functions";
 
-import { IFloating } from "../drawing";
-import { File } from "../file";
-import { PictureRun } from "../paragraph";
 import { IMediaData } from "./data";
 // import { Image } from "./image";
 
-interface IMediaTransformation {
+export interface IMediaTransformation {
     readonly width: number;
     readonly height: number;
     readonly flip?: {
@@ -17,48 +14,19 @@ interface IMediaTransformation {
 }
 
 export class Media {
-    public static addImage(options: {
-        readonly document: File;
-        readonly data: Buffer | string | Uint8Array | ArrayBuffer;
-        readonly transformation: IMediaTransformation;
-        readonly floating?: IFloating;
-    }): PictureRun {
-        // Workaround to expose id without exposing to API
-        const mediaData = options.document.Media.addMedia(options.data, options.transformation);
-        return new PictureRun(mediaData, { floating: options.floating });
-    }
-
     private readonly map: Map<string, IMediaData>;
 
     constructor() {
         this.map = new Map<string, IMediaData>();
     }
 
-    public getMedia(key: string): IMediaData {
-        const data = this.map.get(key);
+    public addMedia(data: Buffer | string | Uint8Array | ArrayBuffer, transformation: IMediaTransformation): IMediaData {
+        const key = `${uniqueId()}.png`;
 
-        if (data === undefined) {
-            throw new Error(`Cannot find image with the key ${key}`);
-        }
-
-        return data;
-    }
-
-    public addMedia(buffer: Buffer | string | Uint8Array | ArrayBuffer, transformation: IMediaTransformation): IMediaData {
-        return this.createMedia(`${uniqueId()}.png`, transformation, buffer);
-    }
-
-    private createMedia(
-        key: string,
-        transformation: IMediaTransformation,
-        data: Buffer | string | Uint8Array | ArrayBuffer,
-        filePath?: string,
-    ): IMediaData {
         const newData = typeof data === "string" ? this.convertDataURIToBinary(data) : data;
 
         const imageData: IMediaData = {
             stream: newData,
-            path: filePath,
             fileName: key,
             transformation: {
                 pixels: {
@@ -79,14 +47,12 @@ export class Media {
         return imageData;
     }
 
+    public addImage(key: string, mediaData: IMediaData): void {
+        this.map.set(key, mediaData);
+    }
+
     public get Array(): readonly IMediaData[] {
-        const array = new Array<IMediaData>();
-
-        this.map.forEach((data) => {
-            array.push(data);
-        });
-
-        return array;
+        return Array.from(this.map.values());
     }
 
     private convertDataURIToBinary(dataURI: string): Uint8Array {

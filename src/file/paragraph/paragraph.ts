@@ -10,11 +10,11 @@ import { PageBreak } from "./formatting/page-break";
 import { Bookmark, ConcreteHyperlink, ExternalHyperlink, InternalHyperlink } from "./links";
 import { Math } from "./math";
 import { IParagraphPropertiesOptions, ParagraphProperties } from "./properties";
-import { PictureRun, Run, SequentialIdentifier, SymbolRun, TextRun } from "./run";
+import { ImageRun, Run, SequentialIdentifier, SymbolRun, TextRun } from "./run";
 
 export type ParagraphChild =
     | TextRun
-    | PictureRun
+    | ImageRun
     | SymbolRun
     | Bookmark
     | PageBreak
@@ -34,20 +34,13 @@ export interface IParagraphOptions extends IParagraphPropertiesOptions {
 export class Paragraph extends XmlComponent {
     private readonly properties: ParagraphProperties;
 
-    constructor(options: string | PictureRun | IParagraphOptions) {
+    constructor(options: string | IParagraphOptions) {
         super("w:p");
 
         if (typeof options === "string") {
             this.properties = new ParagraphProperties({});
             this.root.push(this.properties);
             this.root.push(new TextRun(options));
-            return;
-        }
-
-        if (options instanceof PictureRun) {
-            this.properties = new ParagraphProperties({});
-            this.root.push(this.properties);
-            this.root.push(options);
             return;
         }
 
