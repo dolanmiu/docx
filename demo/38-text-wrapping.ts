@@ -2,34 +2,9 @@
 // Import from 'docx' rather than '../build' if you install from npm
 import * as fs from "fs";
 // import { Document, Packer, Paragraph } from "../build";
-import { Document, Media, Packer, Paragraph, TextWrappingSide, TextWrappingType } from "../build";
+import { Document, ImageRun, Packer, Paragraph, TextWrappingSide, TextWrappingType } from "../build";
 
 const doc = new Document();
-
-const image = Media.addImage({
-    document: doc,
-    data: fs.readFileSync("./demo/images/pizza.gif"),
-    transformation: {
-        width: 200,
-        height: 200,
-    },
-    floating: {
-        horizontalPosition: {
-            offset: 2014400,
-        },
-        verticalPosition: {
-            offset: 2014400,
-        },
-        wrap: {
-            type: TextWrappingType.SQUARE,
-            side: TextWrappingSide.BOTH_SIDES,
-        },
-        margins: {
-            top: 201440,
-            bottom: 201440,
-        },
-    },
-});
 
 doc.addSection({
     children: [
@@ -42,7 +17,31 @@ doc.addSection({
         new Paragraph(
             "Ut eget diam cursus quam accumsan interdum at id ante. Ut mollis mollis arcu, eu scelerisque dui tempus in. Quisque aliquam, augue quis ornare aliquam, ex purus ultrices mauris, ut porta dolor dolor nec justo. Nunc a tempus odio, eu viverra arcu. Suspendisse vitae nibh nec mi pharetra tempus. Mauris ut ullamcorper sapien, et sagittis sapien. Vestibulum in urna metus. In scelerisque, massa id bibendum tempus, quam orci rutrum turpis, a feugiat nisi ligula id metus. Praesent id dictum purus. Proin interdum ipsum nulla.",
         ),
-        new Paragraph(image),
+        new Paragraph(
+            new ImageRun({
+                data: fs.readFileSync("./demo/images/pizza.gif"),
+                transformation: {
+                    width: 200,
+                    height: 200,
+                },
+                floating: {
+                    horizontalPosition: {
+                        offset: 2014400,
+                    },
+                    verticalPosition: {
+                        offset: 2014400,
+                    },
+                    wrap: {
+                        type: TextWrappingType.SQUARE,
+                        side: TextWrappingSide.BOTH_SIDES,
+                    },
+                    margins: {
+                        top: 201440,
+                        bottom: 201440,
+                    },
+                },
+            }),
+        ),
     ],
 });
 
