@@ -9,6 +9,14 @@ const doc = new Document({
             children: [new Paragraph("Hello World")],
         },
         {
+            properties: {
+                page: {
+                    pageNumbers: {
+                        start: 1,
+                        formatType: PageNumberFormat.DECIMAL,
+                    },
+                },
+            },
             headers: {
                 default: new Header({
                     children: [new Paragraph("First Default Header on another page")],
@@ -19,13 +27,21 @@ const doc = new Document({
                     children: [new Paragraph("Footer on another page")],
                 }),
             },
-            properties: {
-                pageNumberStart: 1,
-                pageNumberFormatType: PageNumberFormat.DECIMAL,
-            },
+
             children: [new Paragraph("hello")],
         },
         {
+            properties: {
+                page: {
+                    size: {
+                        orientation: PageOrientation.LANDSCAPE,
+                    },
+                    pageNumbers: {
+                        start: 1,
+                        formatType: PageNumberFormat.DECIMAL,
+                    },
+                },
+            },
             headers: {
                 default: new Header({
                     children: [new Paragraph("Second Default Header on another page")],
@@ -36,16 +52,16 @@ const doc = new Document({
                     children: [new Paragraph("Footer on another page")],
                 }),
             },
-            size: {
-                orientation: PageOrientation.LANDSCAPE,
-            },
-            properties: {
-                pageNumberStart: 1,
-                pageNumberFormatType: PageNumberFormat.DECIMAL,
-            },
             children: [new Paragraph("hello in landscape")],
         },
         {
+            properties: {
+                page: {
+                    size: {
+                        orientation: PageOrientation.PORTRAIT,
+                    },
+                },
+            },
             headers: {
                 default: new Header({
                     children: [
@@ -59,12 +75,20 @@ const doc = new Document({
                     ],
                 }),
             },
-            size: {
-                orientation: PageOrientation.PORTRAIT,
-            },
+
             children: [new Paragraph("Page number in the header must be 2, because it continues from the previous section.")],
         },
         {
+            properties: {
+                page: {
+                    size: {
+                        orientation: PageOrientation.PORTRAIT,
+                    },
+                    pageNumbers: {
+                        formatType: PageNumberFormat.UPPER_ROMAN,
+                    },
+                },
+            },
             headers: {
                 default: new Header({
                     children: [
@@ -77,10 +101,6 @@ const doc = new Document({
                         }),
                     ],
                 }),
-            },
-            properties: {
-                pageNumberFormatType: PageNumberFormat.UPPER_ROMAN,
-                orientation: PageOrientation.PORTRAIT,
             },
             children: [
                 new Paragraph(
@@ -89,6 +109,17 @@ const doc = new Document({
             ],
         },
         {
+            properties: {
+                page: {
+                    size: {
+                        orientation: PageOrientation.PORTRAIT,
+                    },
+                    pageNumbers: {
+                        start: 25,
+                        formatType: PageNumberFormat.DECIMAL,
+                    },
+                },
+            },
             headers: {
                 default: new Header({
                     children: [
@@ -101,13 +132,6 @@ const doc = new Document({
                         }),
                     ],
                 }),
-            },
-            size: {
-                orientation: PageOrientation.PORTRAIT,
-            },
-            properties: {
-                pageNumberFormatType: PageNumberFormat.DECIMAL,
-                pageNumberStart: 25,
             },
             children: [
                 new Paragraph(
