@@ -160,10 +160,14 @@ const doc = new Document({
     sections: [
         {
             properties: {
-                top: 700,
-                right: 700,
-                bottom: 700,
-                left: 700,
+                page: {
+                    margin: {
+                        top: 700,
+                        right: 700,
+                        bottom: 700,
+                        left: 700,
+                    },
+                },
             },
             footers: {
                 default: new Footer({
