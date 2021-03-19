@@ -19,8 +19,10 @@ const table = new Table({
 Then add the table in the `section`
 
 ```ts
-doc.addSection({
-    children: [table],
+const doc = new Document({
+    sections: [{
+        children: [table],
+    }];
 });
 ```
 

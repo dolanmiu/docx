@@ -22,79 +22,80 @@ const doc = new Document({
             ],
         },
     },
-});
-
-doc.addSection({
-    footers: {
-        default: new Footer({
+    sections: [
+        {
+            footers: {
+                default: new Footer({
+                    children: [
+                        new Paragraph({
+                            children: [
+                                new TextRun("Click here for the "),
+                                new ExternalHyperlink({
+                                    child: new TextRun({
+                                        text: "Footer external hyperlink",
+                                        style: "Hyperlink",
+                                    }),
+                                    link: "http://www.example.com",
+                                }),
+                            ],
+                        }),
+                    ],
+                }),
+            },
+            headers: {
+                default: new Footer({
+                    children: [
+                        new Paragraph({
+                            children: [
+                                new TextRun("Click here for the "),
+                                new ExternalHyperlink({
+                                    child: new TextRun({
+                                        text: "Header external hyperlink",
+                                        style: "Hyperlink",
+                                    }),
+                                    link: "http://www.google.com",
+                                }),
+                            ],
+                        }),
+                    ],
+                }),
+            },
             children: [
                 new Paragraph({
                     children: [
-                        new TextRun("Click here for the "),
                         new ExternalHyperlink({
                             child: new TextRun({
-                                text: "Footer external hyperlink",
+                                text: "Anchor Text",
                                 style: "Hyperlink",
                             }),
                             link: "http://www.example.com",
                         }),
+                        new FootnoteReferenceRun(1),
                     ],
                 }),
-            ],
-        }),
-    },
-    headers: {
-        default: new Footer({
-            children: [
                 new Paragraph({
                     children: [
-                        new TextRun("Click here for the "),
                         new ExternalHyperlink({
-                            child: new TextRun({
-                                text: "Header external hyperlink",
-                                style: "Hyperlink",
+                            child: new ImageRun({
+                                data: fs.readFileSync("./demo/images/image1.jpeg"),
+                                transformation: {
+                                    width: 100,
+                                    height: 100,
+                                },
                             }),
                             link: "http://www.google.com",
+                        }),
+                        new ExternalHyperlink({
+                            child: new TextRun({
+                                text: "BBC News Link",
+                                style: "Hyperlink",
+                            }),
+                            link: "https://www.bbc.co.uk/news",
                         }),
                     ],
                 }),
             ],
-        }),
-    },
-    children: [
-        new Paragraph({
-            children: [
-                new ExternalHyperlink({
-                    child: new TextRun({
-                        text: "Anchor Text",
-                        style: "Hyperlink",
-                    }),
-                    link: "http://www.example.com",
-                }),
-                new FootnoteReferenceRun(1),
-            ],
-        }),
-        new Paragraph({
-            children: [
-                new ExternalHyperlink({
-                    child: new ImageRun({
-                        data: fs.readFileSync("./demo/images/image1.jpeg"),
-                        transformation: {
-                            width: 100,
-                            height: 100,
-                        },
-                    }),
-                    link: "http://www.google.com",
-                }),
-                new ExternalHyperlink({
-                    child: new TextRun({
-                        text: "BBC News Link",
-                        style: "Hyperlink",
-                    }),
-                    link: "https://www.bbc.co.uk/news",
-                }),
-            ],
-        }),
+        },
     ],
 });
 

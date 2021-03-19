@@ -4,18 +4,13 @@ import * as fs from "fs";
 import { Document, Packer, Paragraph, Table, TableCell, TableRow, WidthType } from "../build";
 
 const styles = fs.readFileSync("./demo/assets/custom-styles.xml", "utf-8");
-const doc = new Document({
-    title: "Title",
-    externalStyles: styles
-});
-
 
 // Create a table and pass the XML Style
 const table = new Table({
-    style: 'MyCustomTableStyle',
+    style: "MyCustomTableStyle",
     width: {
         size: 9070,
-        type: WidthType.DXA
+        type: WidthType.DXA,
     },
     rows: [
         new TableRow({
@@ -41,8 +36,14 @@ const table = new Table({
     ],
 });
 
-doc.addSection({
-    children: [table],
+const doc = new Document({
+    title: "Title",
+    externalStyles: styles,
+    sections: [
+        {
+            children: [table],
+        },
+    ],
 });
 
 Packer.toBuffer(doc).then((buffer) => {

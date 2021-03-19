@@ -10,17 +10,45 @@ const doc = new Document({
     creator: "Clippy",
     title: "Sample Document",
     description: "A brief example of using docx with bookmarks and internal hyperlinks",
-});
-
-doc.addSection({
-    footers: {
-        default: new Footer({
+    sections: [
+        {
+            footers: {
+                default: new Footer({
+                    children: [
+                        new Paragraph({
+                            children: [
+                                new InternalHyperlink({
+                                    child: new TextRun({
+                                        text: "Click here!",
+                                        style: "Hyperlink",
+                                    }),
+                                    anchor: "myAnchorId",
+                                }),
+                            ],
+                        }),
+                    ],
+                }),
+            },
             children: [
+                new Paragraph({
+                    heading: HeadingLevel.HEADING_1,
+                    children: [
+                        new Bookmark({
+                            id: "myAnchorId",
+                            children: [new TextRun("Lorem Ipsum")],
+                        }),
+                    ],
+                }),
+                new Paragraph("\n"),
+                new Paragraph(LOREM_IPSUM),
+                new Paragraph({
+                    children: [new PageBreak()],
+                }),
                 new Paragraph({
                     children: [
                         new InternalHyperlink({
                             child: new TextRun({
-                                text: "Click here!",
+                                text: "Anchor Text",
                                 style: "Hyperlink",
                             }),
                             anchor: "myAnchorId",
@@ -28,34 +56,7 @@ doc.addSection({
                     ],
                 }),
             ],
-        }),
-    },
-    children: [
-        new Paragraph({
-            heading: HeadingLevel.HEADING_1,
-            children: [
-                new Bookmark({
-                    id: "myAnchorId",
-                    children: [new TextRun("Lorem Ipsum")],
-                }),
-            ],
-        }),
-        new Paragraph("\n"),
-        new Paragraph(LOREM_IPSUM),
-        new Paragraph({
-            children: [new PageBreak()],
-        }),
-        new Paragraph({
-            children: [
-                new InternalHyperlink({
-                    child: new TextRun({
-                        text: "Anchor Text",
-                        style: "Hyperlink",
-                    }),
-                    anchor: "myAnchorId",
-                }),
-            ],
-        }),
+        },
     ],
 });
 

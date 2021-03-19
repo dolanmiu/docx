@@ -3,73 +3,75 @@
 import * as fs from "fs";
 import { AlignmentType, Document, Footer, Header, Packer, PageBreak, PageNumber, Paragraph, TextRun } from "../build";
 
-const doc = new Document();
-
-doc.addSection({
-    properties: {
-        titlePage: true,
-    },
-    headers: {
-        default: new Header({
-            children: [
-                new Paragraph({
-                    alignment: AlignmentType.RIGHT,
+const doc = new Document({
+    sections: [
+        {
+            properties: {
+                titlePage: true,
+            },
+            headers: {
+                default: new Header({
                     children: [
-                        new TextRun("My Title "),
-                        new TextRun({
-                            children: ["Page ", PageNumber.CURRENT],
+                        new Paragraph({
+                            alignment: AlignmentType.RIGHT,
+                            children: [
+                                new TextRun("My Title "),
+                                new TextRun({
+                                    children: ["Page ", PageNumber.CURRENT],
+                                }),
+                            ],
                         }),
                     ],
                 }),
-            ],
-        }),
-        first: new Header({
-            children: [
-                new Paragraph({
-                    alignment: AlignmentType.RIGHT,
+                first: new Header({
                     children: [
-                        new TextRun("First Page Header "),
-                        new TextRun({
-                            children: ["Page ", PageNumber.CURRENT],
+                        new Paragraph({
+                            alignment: AlignmentType.RIGHT,
+                            children: [
+                                new TextRun("First Page Header "),
+                                new TextRun({
+                                    children: ["Page ", PageNumber.CURRENT],
+                                }),
+                            ],
                         }),
                     ],
                 }),
-            ],
-        }),
-    },
-    footers: {
-        default: new Footer({
-            children: [
-                new Paragraph({
-                    alignment: AlignmentType.RIGHT,
+            },
+            footers: {
+                default: new Footer({
                     children: [
-                        new TextRun("My Title "),
-                        new TextRun({
-                            children: ["Footer - Page ", PageNumber.CURRENT],
+                        new Paragraph({
+                            alignment: AlignmentType.RIGHT,
+                            children: [
+                                new TextRun("My Title "),
+                                new TextRun({
+                                    children: ["Footer - Page ", PageNumber.CURRENT],
+                                }),
+                            ],
                         }),
                     ],
                 }),
-            ],
-        }),
-        first: new Footer({
-            children: [
-                new Paragraph({
-                    alignment: AlignmentType.RIGHT,
+                first: new Footer({
                     children: [
-                        new TextRun("First Page Footer "),
-                        new TextRun({
-                            children: ["Page ", PageNumber.CURRENT],
+                        new Paragraph({
+                            alignment: AlignmentType.RIGHT,
+                            children: [
+                                new TextRun("First Page Footer "),
+                                new TextRun({
+                                    children: ["Page ", PageNumber.CURRENT],
+                                }),
+                            ],
                         }),
                     ],
                 }),
+            },
+            children: [
+                new Paragraph({
+                    children: [new TextRun("First Page"), new PageBreak()],
+                }),
+                new Paragraph("Second Page"),
             ],
-        }),
-    },
-    children: [
-        new Paragraph({
-            children: [new TextRun("First Page"), new PageBreak()],
-        }),
-        new Paragraph("Second Page"),
+        },
     ],
 });
 

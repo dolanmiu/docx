@@ -3,8 +3,6 @@
 import * as fs from "fs";
 import { Document, Packer, Paragraph, Table, TableCell, TableRow, WidthType } from "../build";
 
-const doc = new Document();
-
 const table = new Table({
     columnWidths: [3505, 5505],
     rows: [
@@ -114,14 +112,18 @@ const table3 = new Table({
     ],
 });
 
-doc.addSection({
-    children: [
-        new Paragraph({ text: "Table with skewed widths" }),
-        table,
-        new Paragraph({ text: "Table with equal widths" }),
-        table2,
-        new Paragraph({ text: "Table without setting widths" }),
-        table3,
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({ text: "Table with skewed widths" }),
+                table,
+                new Paragraph({ text: "Table with equal widths" }),
+                table2,
+                new Paragraph({ text: "Table without setting widths" }),
+                table3,
+            ],
+        },
     ],
 });
 

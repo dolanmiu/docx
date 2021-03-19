@@ -8,18 +8,18 @@ export enum LineNumberRestartFormat {
 }
 
 export interface ILineNumberAttributes {
-    readonly lineNumberCountBy?: number;
-    readonly lineNumberStart?: number;
-    readonly lineNumberRestart?: LineNumberRestartFormat;
-    readonly lineNumberDistance?: number;
+    readonly countBy?: number;
+    readonly start?: number;
+    readonly restart?: LineNumberRestartFormat;
+    readonly distance?: number;
 }
 
 export class LineNumberAttributes extends XmlAttributeComponent<ILineNumberAttributes> {
     protected readonly xmlKeys = {
-        lineNumberCountBy: "w:countBy",
-        lineNumberStart: "w:start",
-        lineNumberRestart: "w:restart",
-        lineNumberDistance: "w:distance",
+        countBy: "w:countBy",
+        start: "w:start",
+        restart: "w:restart",
+        distance: "w:distance",
     };
 }
 
@@ -28,10 +28,10 @@ export class LineNumberType extends XmlComponent {
         super("w:lnNumType");
         this.root.push(
             new LineNumberAttributes({
-                lineNumberCountBy: countBy,
-                lineNumberStart: start,
-                lineNumberRestart: restart,
-                lineNumberDistance: dist,
+                countBy: countBy,
+                start: start,
+                restart: restart,
+                distance: dist,
             }),
         );
     }

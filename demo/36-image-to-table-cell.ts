@@ -3,8 +3,6 @@
 import * as fs from "fs";
 import { Document, Header, ImageRun, Packer, Paragraph, Table, TableCell, TableRow } from "../build";
 
-const doc = new Document();
-
 const table = new Table({
     rows: [
         new TableRow({
@@ -69,13 +67,17 @@ const table = new Table({
 });
 
 // Adding same table in the body and in the header
-doc.addSection({
-    headers: {
-        default: new Header({
+const doc = new Document({
+    sections: [
+        {
+            headers: {
+                default: new Header({
+                    children: [table],
+                }),
+            },
             children: [table],
-        }),
-    },
-    children: [table],
+        },
+    ],
 });
 
 Packer.toBuffer(doc).then((buffer) => {

@@ -3,13 +3,7 @@ import { ContentTypes } from "./content-types/content-types";
 import { CoreProperties, IPropertiesOptions } from "./core-properties";
 import { CustomProperties } from "./custom-properties";
 import { DocumentWrapper } from "./document-wrapper";
-import {
-    FooterReferenceType,
-    HeaderReferenceType,
-    IPageSizeAttributes,
-    SectionPropertiesOptions,
-} from "./document/body/section-properties";
-import { IPageMarginAttributes } from "./document/body/section-properties/page-margin/page-margin-attributes";
+import { FooterReferenceType, HeaderReferenceType, ISectionPropertiesOptions } from "./document/body/section-properties";
 import { IFileProperties } from "./file-properties";
 import { FooterWrapper, IDocumentFooter } from "./footer-wrapper";
 import { FootnotesWrapper } from "./footnotes-wrapper";
@@ -37,9 +31,7 @@ export interface ISectionOptions {
         readonly first?: Footer;
         readonly even?: Footer;
     };
-    readonly size?: IPageSizeAttributes;
-    readonly margins?: IPageMarginAttributes;
-    readonly properties?: SectionPropertiesOptions;
+    readonly properties?: ISectionPropertiesOptions;
     readonly children: (Paragraph | Table | TableOfContents)[];
 }
 
@@ -61,16 +53,14 @@ export class File {
     private readonly appProperties: AppProperties;
     private readonly styles: Styles;
 
-    constructor(
-        options: IPropertiesOptions = {
-            creator: "Un-named",
-            revision: "1",
-            lastModifiedBy: "Un-named",
-        },
-        fileProperties: IFileProperties = {},
-        sections: ISectionOptions[] = [],
-    ) {
-        this.coreProperties = new CoreProperties(options);
+    constructor(options: IPropertiesOptions, fileProperties: IFileProperties = {}) {
+        this.coreProperties = new CoreProperties({
+            ...options,
+            creator: options.creator ?? "Un-named",
+            revision: options.revision ?? "1",
+            lastModifiedBy: options.lastModifiedBy ?? "Un-named",
+        });
+
         this.numbering = new Numbering(
             options.numbering
                 ? options.numbering
@@ -78,6 +68,7 @@ export class File {
                       config: [],
                   },
         );
+
         this.fileRelationships = new Relationships();
         this.customProperties = new CustomProperties(options.customProperties ?? []);
         this.appProperties = new AppProperties();
@@ -131,12 +122,8 @@ export class File {
             }
         }
 
-        for (const section of sections) {
-            this.documentWrapper.View.Body.addSection(section.properties ? section.properties : {});
-
-            for (const child of section.children) {
-                this.documentWrapper.View.add(child);
-            }
+        for (const section of options.sections) {
+            this.addSection(section);
         }
 
         if (options.footnotes) {
@@ -153,38 +140,29 @@ export class File {
         }
     }
 
-    public addSection({
-        headers = { default: new Header() },
-        footers = { default: new Header() },
-        margins = {},
-        size = {},
-        properties,
-        children,
-    }: ISectionOptions): void {
+    public verifyUpdateFields(): void {
+        if (this.documentWrapper.View.getTablesOfContents().length) {
+            this.settings.addUpdateFields();
+        }
+    }
+
+    private addSection({ headers = {}, footers = {}, children, properties }: ISectionOptions): void {
         this.documentWrapper.View.Body.addSection({
             ...properties,
-            headers: {
+            headerWrapperGroup: {
                 default: headers.default ? this.createHeader(headers.default) : undefined,
                 first: headers.first ? this.createHeader(headers.first) : undefined,
                 even: headers.even ? this.createHeader(headers.even) : undefined,
             },
-            footers: {
+            footerWrapperGroup: {
                 default: footers.default ? this.createFooter(footers.default) : undefined,
                 first: footers.first ? this.createFooter(footers.first) : undefined,
                 even: footers.even ? this.createFooter(footers.even) : undefined,
             },
-            ...margins,
-            ...size,
         });
 
         for (const child of children) {
             this.documentWrapper.View.add(child);
-        }
-    }
-
-    public verifyUpdateFields(): void {
-        if (this.documentWrapper.View.getTablesOfContents().length) {
-            this.settings.addUpdateFields();
         }
     }
 

@@ -3,31 +3,33 @@
 import * as fs from "fs";
 import { AlignmentType, Document, Header, Packer, Paragraph, TextRun } from "../build";
 
-const doc = new Document();
-
-doc.addSection({
-    headers: {
-        default: new Header({
-            children: [
-                new Paragraph({
-                    alignment: AlignmentType.RIGHT,
+const doc = new Document({
+    sections: [
+        {
+            headers: {
+                default: new Header({
                     children: [
-                        new TextRun({
-                            text: "Hello World",
-                            color: "red",
-                            bold: true,
-                            size: 24,
-                            font: {
-                                name: "Garamond",
-                            },
-                            highlight: "yellow",
+                        new Paragraph({
+                            alignment: AlignmentType.RIGHT,
+                            children: [
+                                new TextRun({
+                                    text: "Hello World",
+                                    color: "red",
+                                    bold: true,
+                                    size: 24,
+                                    font: {
+                                        name: "Garamond",
+                                    },
+                                    highlight: "yellow",
+                                }),
+                            ],
                         }),
                     ],
                 }),
-            ],
-        }),
-    },
-    children: [],
+            },
+            children: [],
+        },
+    ],
 });
 
 Packer.toBuffer(doc).then((buffer) => {

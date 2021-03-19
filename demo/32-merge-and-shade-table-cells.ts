@@ -17,8 +17,6 @@ import {
     WidthType,
 } from "../build";
 
-const doc = new Document();
-
 const table = new Table({
     rows: [
         new TableRow({
@@ -376,30 +374,33 @@ const table8 = new Table({
         type: WidthType.PERCENTAGE,
     },
 });
-
-doc.addSection({
-    children: [
-        table,
-        new Paragraph({
-            text: "Another table",
-            heading: HeadingLevel.HEADING_2,
-        }),
-        table2,
-        new Paragraph({
-            text: "Another table",
-            heading: HeadingLevel.HEADING_2,
-        }),
-        table3,
-        new Paragraph("Merging columns 1"),
-        table4,
-        new Paragraph("Merging columns 2"),
-        table5,
-        new Paragraph("Merging columns 3"),
-        table6,
-        new Paragraph("Merging columns 4"),
-        table7,
-        new Paragraph("Merging columns 5"),
-        table8,
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                table,
+                new Paragraph({
+                    text: "Another table",
+                    heading: HeadingLevel.HEADING_2,
+                }),
+                table2,
+                new Paragraph({
+                    text: "Another table",
+                    heading: HeadingLevel.HEADING_2,
+                }),
+                table3,
+                new Paragraph("Merging columns 1"),
+                table4,
+                new Paragraph("Merging columns 2"),
+                table5,
+                new Paragraph("Merging columns 3"),
+                table6,
+                new Paragraph("Merging columns 4"),
+                table7,
+                new Paragraph("Merging columns 5"),
+                table8,
+            ],
+        },
     ],
 });
 

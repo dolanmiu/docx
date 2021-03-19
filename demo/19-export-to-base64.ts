@@ -3,23 +3,25 @@
 import * as fs from "fs";
 import { Document, Packer, Paragraph, TextRun } from "../build";
 
-const doc = new Document();
-
-doc.addSection({
-    children: [
-        new Paragraph({
+const doc = new Document({
+    sections: [
+        {
             children: [
-                new TextRun("Hello World"),
-                new TextRun({
-                    text: "Foo",
-                    bold: true,
-                }),
-                new TextRun({
-                    text: "\tBar",
-                    bold: true,
+                new Paragraph({
+                    children: [
+                        new TextRun("Hello World"),
+                        new TextRun({
+                            text: "Foo",
+                            bold: true,
+                        }),
+                        new TextRun({
+                            text: "\tBar",
+                            bold: true,
+                        }),
+                    ],
                 }),
             ],
-        }),
+        },
     ],
 });
 

@@ -15,8 +15,6 @@ import {
     VerticalAlign,
 } from "../build";
 
-const doc = new Document();
-
 const table = new Table({
     rows: [
         new TableRow({
@@ -160,7 +158,9 @@ const noBorderTable = new Table({
     ],
 });
 
-doc.addSection({ children: [table, new Paragraph("Hello"), noBorderTable] });
+const doc = new Document({
+    sections: [{ children: [table, new Paragraph("Hello"), noBorderTable] }],
+});
 
 Packer.toBuffer(doc).then((buffer) => {
     fs.writeFileSync("My Document.docx", buffer);

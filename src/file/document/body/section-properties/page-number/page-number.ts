@@ -26,16 +26,16 @@ export enum PageNumberSeparator {
 }
 
 export interface IPageNumberTypeAttributes {
-    readonly pageNumberStart?: number;
-    readonly pageNumberFormatType?: PageNumberFormat;
-    readonly pageNumberSeparator?: PageNumberSeparator;
+    readonly start?: number;
+    readonly formatType?: PageNumberFormat;
+    readonly separator?: PageNumberSeparator;
 }
 
 export class PageNumberTypeAttributes extends XmlAttributeComponent<IPageNumberTypeAttributes> {
     protected readonly xmlKeys = {
-        pageNumberStart: "w:start",
-        pageNumberFormatType: "w:fmt",
-        pageNumberSeparator: "w:chapSep",
+        start: "w:start",
+        formatType: "w:fmt",
+        separator: "w:chapSep",
     };
 }
 
@@ -44,9 +44,9 @@ export class PageNumberType extends XmlComponent {
         super("w:pgNumType");
         this.root.push(
             new PageNumberTypeAttributes({
-                pageNumberStart: start,
-                pageNumberFormatType: numberFormat,
-                pageNumberSeparator: separator,
+                start: start,
+                formatType: numberFormat,
+                separator: separator,
             }),
         );
     }

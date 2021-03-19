@@ -1,40 +1,26 @@
 import { expect } from "chai";
-import * as sinon from "sinon";
 
 import { Formatter } from "export/formatter";
 
 import { File } from "./file";
 import { Footer, Header } from "./header";
 import { Paragraph } from "./paragraph";
-import { Table, TableCell, TableRow } from "./table";
-import { TableOfContents } from "./table-of-contents";
 
 describe("File", () => {
     describe("#constructor", () => {
-        it("should create with correct headers and footers by default", () => {
-            const doc = new File();
-
-            doc.addSection({
-                children: [],
-            });
-
-            const tree = new Formatter().format(doc.Document.View.Body);
-
-            expect(tree["w:body"][0]["w:sectPr"][4]["w:headerReference"]._attr["w:type"]).to.equal("default");
-            expect(tree["w:body"][0]["w:sectPr"][5]["w:footerReference"]._attr["w:type"]).to.equal("default");
-        });
-
         it("should create with correct headers and footers", () => {
-            const doc = new File();
-
-            doc.addSection({
-                headers: {
-                    default: new Header(),
-                },
-                footers: {
-                    default: new Footer(),
-                },
-                children: [],
+            const doc = new File({
+                sections: [
+                    {
+                        headers: {
+                            default: new Header(),
+                        },
+                        footers: {
+                            default: new Footer(),
+                        },
+                        children: [],
+                    },
+                ],
             });
 
             const tree = new Formatter().format(doc.Document.View.Body);
@@ -44,16 +30,18 @@ describe("File", () => {
         });
 
         it("should create with first headers and footers", () => {
-            const doc = new File();
-
-            doc.addSection({
-                headers: {
-                    first: new Header(),
-                },
-                footers: {
-                    first: new Footer(),
-                },
-                children: [],
+            const doc = new File({
+                sections: [
+                    {
+                        headers: {
+                            first: new Header(),
+                        },
+                        footers: {
+                            first: new Footer(),
+                        },
+                        children: [],
+                    },
+                ],
             });
 
             const tree = new Formatter().format(doc.Document.View.Body);
@@ -62,20 +50,22 @@ describe("File", () => {
         });
 
         it("should create with correct headers", () => {
-            const doc = new File();
-
-            doc.addSection({
-                headers: {
-                    default: new Header(),
-                    first: new Header(),
-                    even: new Header(),
-                },
-                footers: {
-                    default: new Footer(),
-                    first: new Footer(),
-                    even: new Footer(),
-                },
-                children: [],
+            const doc = new File({
+                sections: [
+                    {
+                        headers: {
+                            default: new Header(),
+                            first: new Header(),
+                            even: new Header(),
+                        },
+                        footers: {
+                            default: new Footer(),
+                            first: new Footer(),
+                            even: new Footer(),
+                        },
+                        children: [],
+                    },
+                ],
             });
 
             const tree = new Formatter().format(doc.Document.View.Body);
@@ -90,11 +80,13 @@ describe("File", () => {
         });
 
         it("should add child", () => {
-            const doc = new File(undefined, undefined, [
-                {
-                    children: [new Paragraph("test")],
-                },
-            ]);
+            const doc = new File({
+                sections: [
+                    {
+                        children: [new Paragraph("test")],
+                    },
+                ],
+            });
 
             const tree = new Formatter().format(doc.Document.View.Body);
 
@@ -171,69 +163,13 @@ describe("File", () => {
         });
     });
 
-    describe("#addSection", () => {
-        it("should call the underlying document's add a Paragraph", () => {
-            const file = new File();
-            const spy = sinon.spy(file.Document.View, "add");
-            file.addSection({
-                children: [new Paragraph({})],
-            });
-
-            expect(spy.called).to.equal(true);
-        });
-
-        it("should call the underlying document's add when adding a Table", () => {
-            const file = new File();
-            const spy = sinon.spy(file.Document.View, "add");
-            file.addSection({
-                children: [
-                    new Table({
-                        rows: [
-                            new TableRow({
-                                children: [
-                                    new TableCell({
-                                        children: [new Paragraph("hello")],
-                                    }),
-                                ],
-                            }),
-                        ],
-                    }),
-                ],
-            });
-
-            expect(spy.called).to.equal(true);
-        });
-
-        it("should call the underlying document's add when adding an Image (paragraph)", () => {
-            const file = new File();
-            const spy = sinon.spy(file.Document.View, "add");
-            // tslint:disable-next-line:no-any
-            file.addSection({
-                children: [new Paragraph("")],
-            });
-
-            expect(spy.called).to.equal(true);
-        });
-    });
-
-    describe("#addSection", () => {
-        it("should call the underlying document's add", () => {
-            const file = new File();
-            const spy = sinon.spy(file.Document.View, "add");
-            file.addSection({
-                children: [new TableOfContents()],
-            });
-
-            expect(spy.called).to.equal(true);
-        });
-    });
-
     describe("#addTrackRevisionsFeature", () => {
         it("should call the underlying document's add", () => {
             const file = new File({
                 features: {
                     trackRevisions: true,
                 },
+                sections: [],
             });
 
             // tslint:disable-next-line: no-unused-expression no-string-literal
@@ -249,6 +185,7 @@ describe("File", () => {
                         children: [new Paragraph("hello")],
                     },
                 },
+                sections: [],
             });
 
             const tree = new Formatter().format(wrapper.FootNotes.View);
@@ -435,6 +372,7 @@ describe("File", () => {
             styles: {
                 default: {},
             },
+            sections: [],
         });
 
         const tree = new Formatter().format(doc.Styles);
@@ -454,6 +392,7 @@ describe("File", () => {
     it("should create with even and odd headers and footers", () => {
         const doc = new File({
             evenAndOddHeaderAndFooters: true,
+            sections: [],
         });
 
         const tree = new Formatter().format(doc.Settings);

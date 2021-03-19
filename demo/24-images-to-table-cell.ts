@@ -3,91 +3,93 @@
 import * as fs from "fs";
 import { Document, ImageRun, Packer, Paragraph, Table, TableCell, TableRow } from "../build";
 
-const doc = new Document();
-
-const table = new Table({
-    rows: [
-        new TableRow({
+const doc = new Document({
+    sections: [
+        {
             children: [
-                new TableCell({
-                    children: [],
-                }),
-                new TableCell({
-                    children: [],
-                }),
-                new TableCell({
-                    children: [],
-                }),
-                new TableCell({
-                    children: [],
-                }),
-            ],
-        }),
-        new TableRow({
-            children: [
-                new TableCell({
-                    children: [],
-                }),
-                new TableCell({
-                    children: [
-                        new Paragraph({
+                new Table({
+                    rows: [
+                        new TableRow({
                             children: [
-                                new ImageRun({
-                                    data: fs.readFileSync("./demo/images/image1.jpeg"),
-                                    transformation: {
-                                        width: 100,
-                                        height: 100,
-                                    },
+                                new TableCell({
+                                    children: [],
+                                }),
+                                new TableCell({
+                                    children: [],
+                                }),
+                                new TableCell({
+                                    children: [],
+                                }),
+                                new TableCell({
+                                    children: [],
+                                }),
+                            ],
+                        }),
+                        new TableRow({
+                            children: [
+                                new TableCell({
+                                    children: [],
+                                }),
+                                new TableCell({
+                                    children: [
+                                        new Paragraph({
+                                            children: [
+                                                new ImageRun({
+                                                    data: fs.readFileSync("./demo/images/image1.jpeg"),
+                                                    transformation: {
+                                                        width: 100,
+                                                        height: 100,
+                                                    },
+                                                }),
+                                            ],
+                                        }),
+                                    ],
+                                }),
+                                new TableCell({
+                                    children: [],
+                                }),
+                                new TableCell({
+                                    children: [],
+                                }),
+                            ],
+                        }),
+                        new TableRow({
+                            children: [
+                                new TableCell({
+                                    children: [],
+                                }),
+                                new TableCell({
+                                    children: [],
+                                }),
+                                new TableCell({
+                                    children: [new Paragraph("Hello")],
+                                }),
+                                new TableCell({
+                                    children: [],
+                                }),
+                            ],
+                        }),
+                        new TableRow({
+                            children: [
+                                new TableCell({
+                                    children: [],
+                                }),
+                                new TableCell({
+                                    children: [],
+                                }),
+                                new TableCell({
+                                    children: [],
+                                }),
+                                new TableCell({
+                                    children: [],
                                 }),
                             ],
                         }),
                     ],
                 }),
-                new TableCell({
-                    children: [],
-                }),
-                new TableCell({
-                    children: [],
-                }),
             ],
-        }),
-        new TableRow({
-            children: [
-                new TableCell({
-                    children: [],
-                }),
-                new TableCell({
-                    children: [],
-                }),
-                new TableCell({
-                    children: [new Paragraph("Hello")],
-                }),
-                new TableCell({
-                    children: [],
-                }),
-            ],
-        }),
-        new TableRow({
-            children: [
-                new TableCell({
-                    children: [],
-                }),
-                new TableCell({
-                    children: [],
-                }),
-                new TableCell({
-                    children: [],
-                }),
-                new TableCell({
-                    children: [],
-                }),
-            ],
-        }),
+        },
     ],
-});
-
-doc.addSection({
-    children: [table],
 });
 
 Packer.toBuffer(doc).then((buffer) => {

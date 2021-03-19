@@ -19,34 +19,46 @@ describe("SectionProperties", () => {
             const media = new Media();
 
             const properties = new SectionProperties({
-                width: 11906,
-                height: 16838,
-                top: convertInchesToTwip(1),
-                right: convertInchesToTwip(1),
-                bottom: convertInchesToTwip(1),
-                left: convertInchesToTwip(1),
-                header: 708,
-                footer: 708,
-                gutter: 0,
-                mirror: false,
+                page: {
+                    size: {
+                        width: 11906,
+                        height: 16838,
+                    },
+                    margin: {
+                        top: convertInchesToTwip(1),
+                        right: convertInchesToTwip(1),
+                        bottom: convertInchesToTwip(1),
+                        left: convertInchesToTwip(1),
+                        header: 708,
+                        footer: 708,
+                        gutter: 0,
+                        mirror: false,
+                    },
+                    pageNumbers: {
+                        start: 10,
+                        formatType: PageNumberFormat.CARDINAL_TEXT,
+                    },
+                },
                 column: {
                     space: 708,
                     count: 1,
                     separate: true,
                 },
-                linePitch: convertInchesToTwip(0.25),
-                headers: {
+                grid: {
+                    linePitch: convertInchesToTwip(0.25),
+                },
+                headerWrapperGroup: {
                     default: new HeaderWrapper(media, 100),
                 },
-                footers: {
+                footerWrapperGroup: {
                     even: new FooterWrapper(media, 200),
                 },
-                pageNumberStart: 10,
-                pageNumberFormatType: PageNumberFormat.CARDINAL_TEXT,
                 titlePage: true,
                 verticalAlign: SectionVerticalAlignValue.TOP,
             });
+
             const tree = new Formatter().format(properties);
+
             expect(Object.keys(tree)).to.deep.equal(["w:sectPr"]);
             expect(tree["w:sectPr"]).to.be.an.instanceof(Array);
             expect(tree["w:sectPr"][0]).to.deep.equal({ "w:pgSz": { _attr: { "w:h": 16838, "w:w": 11906, "w:orient": "portrait" } } });
@@ -98,7 +110,11 @@ describe("SectionProperties", () => {
 
         it("should create section properties with changed options", () => {
             const properties = new SectionProperties({
-                top: 0,
+                page: {
+                    margin: {
+                        top: 0,
+                    },
+                },
             });
             const tree = new Formatter().format(properties);
             expect(Object.keys(tree)).to.deep.equal(["w:sectPr"]);
@@ -122,7 +138,11 @@ describe("SectionProperties", () => {
 
         it("should create section properties with changed options", () => {
             const properties = new SectionProperties({
-                bottom: 0,
+                page: {
+                    margin: {
+                        bottom: 0,
+                    },
+                },
             });
             const tree = new Formatter().format(properties);
             expect(Object.keys(tree)).to.deep.equal(["w:sectPr"]);
@@ -146,8 +166,12 @@ describe("SectionProperties", () => {
 
         it("should create section properties with changed options", () => {
             const properties = new SectionProperties({
-                width: 0,
-                height: 0,
+                page: {
+                    size: {
+                        width: 0,
+                        height: 0,
+                    },
+                },
             });
             const tree = new Formatter().format(properties);
             expect(Object.keys(tree)).to.deep.equal(["w:sectPr"]);
@@ -171,8 +195,12 @@ describe("SectionProperties", () => {
 
         it("should create section properties with page borders", () => {
             const properties = new SectionProperties({
-                pageBorders: {
-                    offsetFrom: PageBorderOffsetFrom.PAGE,
+                page: {
+                    borders: {
+                        pageBorders: {
+                            offsetFrom: PageBorderOffsetFrom.PAGE,
+                        },
+                    },
                 },
             });
             const tree = new Formatter().format(properties);
@@ -185,7 +213,11 @@ describe("SectionProperties", () => {
 
         it("should create section properties with page number type, but without start attribute", () => {
             const properties = new SectionProperties({
-                pageNumberFormatType: PageNumberFormat.UPPER_ROMAN,
+                page: {
+                    pageNumbers: {
+                        formatType: PageNumberFormat.UPPER_ROMAN,
+                    },
+                },
             });
             const tree = new Formatter().format(properties);
             expect(Object.keys(tree)).to.deep.equal(["w:sectPr"]);
@@ -217,10 +249,12 @@ describe("SectionProperties", () => {
 
         it("should create section properties line number type", () => {
             const properties = new SectionProperties({
-                lineNumberCountBy: 2,
-                lineNumberStart: 2,
-                lineNumberRestart: LineNumberRestartFormat.CONTINUOUS,
-                lineNumberDistance: 4,
+                lineNumbers: {
+                    countBy: 2,
+                    start: 2,
+                    restart: LineNumberRestartFormat.CONTINUOUS,
+                    distance: 4,
+                },
             });
             const tree = new Formatter().format(properties);
             expect(Object.keys(tree)).to.deep.equal(["w:sectPr"]);

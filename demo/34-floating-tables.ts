@@ -16,8 +16,6 @@ import {
     WidthType,
 } from "../build";
 
-const doc = new Document();
-
 const table = new Table({
     rows: [
         new TableRow({
@@ -57,8 +55,12 @@ const table = new Table({
     layout: TableLayoutType.FIXED,
 });
 
-doc.addSection({
-    children: [table],
+const doc = new Document({
+    sections: [
+        {
+            children: [table],
+        },
+    ],
 });
 
 Packer.toBuffer(doc).then((buffer) => {

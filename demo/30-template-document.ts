@@ -12,16 +12,21 @@ fs.readFile(filePath, (err, data) => {
     }
 
     importDotx.extract(data).then((templateDocument) => {
-        const doc = new Document(undefined, {
-            template: templateDocument,
-        });
-
-        doc.addSection({
-            properties: {
-                titlePage: templateDocument.titlePageIsDefined,
+        const doc = new Document(
+            {
+                sections: [
+                    {
+                        properties: {
+                            titlePage: templateDocument.titlePageIsDefined,
+                        },
+                        children: [new Paragraph("Hello World")],
+                    },
+                ],
             },
-            children: [new Paragraph("Hello World")],
-        });
+            {
+                template: templateDocument,
+            },
+        );
 
         Packer.toBuffer(doc).then((buffer) => {
             fs.writeFileSync("My Document.docx", buffer);

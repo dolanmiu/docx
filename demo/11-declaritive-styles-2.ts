@@ -17,6 +17,39 @@ import {
     UnderlineType,
 } from "../build";
 
+const table = new Table({
+    rows: [
+        new TableRow({
+            children: [
+                new TableCell({
+                    children: [new Paragraph("Test cell 1.")],
+                }),
+            ],
+        }),
+        new TableRow({
+            children: [
+                new TableCell({
+                    children: [new Paragraph("Test cell 2.")],
+                }),
+            ],
+        }),
+        new TableRow({
+            children: [
+                new TableCell({
+                    children: [new Paragraph("Test cell 3.")],
+                }),
+            ],
+        }),
+        new TableRow({
+            children: [
+                new TableCell({
+                    children: [new Paragraph("Test cell 4.")],
+                }),
+            ],
+        }),
+    ],
+});
+
 const doc = new Document({
     styles: {
         default: {
@@ -124,139 +157,107 @@ const doc = new Document({
             },
         ],
     },
-});
-
-const table = new Table({
-    rows: [
-        new TableRow({
-            children: [
-                new TableCell({
-                    children: [new Paragraph("Test cell 1.")],
+    sections: [
+        {
+            properties: {
+                top: 700,
+                right: 700,
+                bottom: 700,
+                left: 700,
+            },
+            footers: {
+                default: new Footer({
+                    children: [
+                        new Paragraph({
+                            text: "1",
+                            style: "normalPara",
+                            alignment: AlignmentType.RIGHT,
+                        }),
+                    ],
                 }),
-            ],
-        }),
-        new TableRow({
-            children: [
-                new TableCell({
-                    children: [new Paragraph("Test cell 2.")],
-                }),
-            ],
-        }),
-        new TableRow({
-            children: [
-                new TableCell({
-                    children: [new Paragraph("Test cell 3.")],
-                }),
-            ],
-        }),
-        new TableRow({
-            children: [
-                new TableCell({
-                    children: [new Paragraph("Test cell 4.")],
-                }),
-            ],
-        }),
-    ],
-});
-
-doc.addSection({
-    properties: {
-        top: 700,
-        right: 700,
-        bottom: 700,
-        left: 700,
-    },
-    footers: {
-        default: new Footer({
+            },
             children: [
                 new Paragraph({
-                    text: "1",
+                    children: [
+                        new ImageRun({
+                            data: fs.readFileSync("./demo/images/pizza.gif"),
+                            transformation: {
+                                width: 100,
+                                height: 100,
+                            },
+                        }),
+                    ],
+                }),
+                new Paragraph({
+                    text: "HEADING",
+                    heading: HeadingLevel.HEADING_1,
+                    alignment: AlignmentType.CENTER,
+                }),
+                new Paragraph({
+                    text: "Ref. :",
                     style: "normalPara",
-                    alignment: AlignmentType.RIGHT,
+                }),
+                new Paragraph({
+                    text: "Date :",
+                    style: "normalPara",
+                }),
+                new Paragraph({
+                    text: "To,",
+                    style: "normalPara",
+                }),
+                new Paragraph({
+                    text: "The Superindenting Engineer,(O &M)",
+                    style: "normalPara",
+                }),
+                new Paragraph({
+                    text: "Sub : ",
+                    style: "normalPara",
+                }),
+                new Paragraph({
+                    text: "Ref. : ",
+                    style: "normalPara",
+                }),
+                new Paragraph({
+                    text: "Sir,",
+                    style: "normalPara",
+                }),
+                new Paragraph({
+                    text: "BRIEF DESCRIPTION",
+                    style: "normalPara",
+                }),
+                table,
+                new Paragraph({
+                    children: [
+                        new ImageRun({
+                            data: fs.readFileSync("./demo/images/pizza.gif"),
+                            transformation: {
+                                width: 100,
+                                height: 100,
+                            },
+                        }),
+                    ],
+                }),
+                new Paragraph({
+                    text: "Test",
+                    style: "normalPara2",
+                }),
+                new Paragraph({
+                    children: [
+                        new ImageRun({
+                            data: fs.readFileSync("./demo/images/pizza.gif"),
+                            transformation: {
+                                width: 100,
+                                height: 100,
+                            },
+                        }),
+                    ],
+                }),
+                new Paragraph({
+                    text: "Test 2",
+                    style: "normalPara2",
                 }),
             ],
-        }),
-    },
-    children: [
-        new Paragraph({
-            children: [
-                new ImageRun({
-                    data: fs.readFileSync("./demo/images/pizza.gif"),
-                    transformation: {
-                        width: 100,
-                        height: 100,
-                    },
-                }),
-            ],
-        }),
-        new Paragraph({
-            text: "HEADING",
-            heading: HeadingLevel.HEADING_1,
-            alignment: AlignmentType.CENTER,
-        }),
-        new Paragraph({
-            text: "Ref. :",
-            style: "normalPara",
-        }),
-        new Paragraph({
-            text: "Date :",
-            style: "normalPara",
-        }),
-        new Paragraph({
-            text: "To,",
-            style: "normalPara",
-        }),
-        new Paragraph({
-            text: "The Superindenting Engineer,(O &M)",
-            style: "normalPara",
-        }),
-        new Paragraph({
-            text: "Sub : ",
-            style: "normalPara",
-        }),
-        new Paragraph({
-            text: "Ref. : ",
-            style: "normalPara",
-        }),
-        new Paragraph({
-            text: "Sir,",
-            style: "normalPara",
-        }),
-        new Paragraph({
-            text: "BRIEF DESCRIPTION",
-            style: "normalPara",
-        }),
-        table,
-        new Paragraph({
-            children: [
-                new ImageRun({
-                    data: fs.readFileSync("./demo/images/pizza.gif"),
-                    transformation: {
-                        width: 100,
-                        height: 100,
-                    },
-                }),
-            ],
-        }),
-        new Paragraph({
-            text: "Test",
-            style: "normalPara2",
-        }),
-        new Paragraph({
-            children: [
-                new ImageRun({
-                    data: fs.readFileSync("./demo/images/pizza.gif"),
-                    transformation: {
-                        width: 100,
-                        height: 100,
-                    },
-                }),
-            ],
-        }),
-        new Paragraph({
-            text: "Test 2",
-            style: "normalPara2",
-        }),
+        },
     ],
 });
 

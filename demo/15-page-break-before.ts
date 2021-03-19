@@ -3,15 +3,17 @@
 import * as fs from "fs";
 import { Document, Packer, Paragraph } from "../build";
 
-const doc = new Document();
-
-doc.addSection({
-    children: [
-        new Paragraph("Hello World"),
-        new Paragraph({
-            text: "Hello World on another page",
-            pageBreakBefore: true,
-        }),
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph("Hello World"),
+                new Paragraph({
+                    text: "Hello World on another page",
+                    pageBreakBefore: true,
+                }),
+            ],
+        },
     ],
 });
 
