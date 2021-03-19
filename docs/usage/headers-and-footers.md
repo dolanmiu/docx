@@ -5,30 +5,32 @@
 Every Section has a sections which you can define its Headers and Footers:
 
 ```ts
-doc.addSection({
-    headers: {
-        default: new Header({ // The standard default header
-            children: [],
-        }),
-        first: new Header({ // The first header
-            children: [],
-        }),
-        even: new Header({ // The header on every other page
-            children: [],
-        }),
-    },
-    footers: {
-        default: new Footer({ // The standard default footer
-            children: [],
-        }),
-        first: new Footer({ // The first footer
-            children: [],
-        }),
-        even: new Footer({ // The footer on every other page
-            children: [],
-        }),
-    },
-    children: [],
+const doc = new Document({
+    sections: [{
+        headers: {
+            default: new Header({ // The standard default header
+                children: [],
+            }),
+            first: new Header({ // The first header
+                children: [],
+            }),
+            even: new Header({ // The header on every other page
+                children: [],
+            }),
+        },
+        footers: {
+            default: new Footer({ // The standard default footer
+                children: [],
+            }),
+            first: new Footer({ // The first footer
+                children: [],
+            }),
+            even: new Footer({ // The footer on every other page
+                children: [],
+            }),
+        },
+        children: [],
+    }];
 });
 ```
 

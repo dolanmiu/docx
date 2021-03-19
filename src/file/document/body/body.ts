@@ -1,7 +1,7 @@
 import { IContext, IXmlableObject, XmlComponent } from "file/xml-components";
 
 import { Paragraph, ParagraphProperties, TableOfContents } from "../..";
-import { SectionProperties, SectionPropertiesOptions } from "./section-properties/section-properties";
+import { ISectionPropertiesOptions, SectionProperties } from "./section-properties/section-properties";
 
 export class Body extends XmlComponent {
     private readonly sections: SectionProperties[] = [];
@@ -18,7 +18,7 @@ export class Body extends XmlComponent {
      *  - last section should be direct child of body
      * @param options new section options
      */
-    public addSection(options: SectionPropertiesOptions): void {
+    public addSection(options: ISectionPropertiesOptions): void {
         const currentSection = this.sections.pop() as SectionProperties;
         this.root.push(this.createSectionParagraph(currentSection));
 

@@ -6,7 +6,11 @@ describe("Index", () => {
     describe("Document", () => {
         it("should instantiate the Document", () => {
             // tslint:disable-next-line: no-unused-expression
-            expect(new Document()).to.be.ok;
+            expect(
+                new Document({
+                    sections: [],
+                }),
+            ).to.be.ok;
         });
     });
 });

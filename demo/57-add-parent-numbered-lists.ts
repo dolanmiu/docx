@@ -40,46 +40,47 @@ const doc = new Document({
             },
         ],
     },
-});
-
-doc.addSection({
-    children: [
-        new Paragraph({
-            text: "How to make cake",
-            heading: HeadingLevel.HEADING_1,
-        }),
-        new Paragraph({
-            text: "Step 1 - Add sugar",
-            numbering: {
-                reference: "my-number-numbering-reference",
-                level: 0,
-            },
-        }),
-        new Paragraph({
-            text: "Step 2 - Add wheat",
-            numbering: {
-                reference: "my-number-numbering-reference",
-                level: 0,
-            },
-        }),
-        new Paragraph({
-            text: "Step 2a - Stir the wheat in a circle",
-            numbering: {
-                reference: "my-number-numbering-reference",
-                level: 1,
-            },
-        }),
-        new Paragraph({
-            text: "Step 3 - Put in oven",
-            numbering: {
-                reference: "my-number-numbering-reference",
-                level: 0,
-            },
-        }),
-        new Paragraph({
-            text: "How to make cake",
-            heading: HeadingLevel.HEADING_1,
-        }),
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    text: "How to make cake",
+                    heading: HeadingLevel.HEADING_1,
+                }),
+                new Paragraph({
+                    text: "Step 1 - Add sugar",
+                    numbering: {
+                        reference: "my-number-numbering-reference",
+                        level: 0,
+                    },
+                }),
+                new Paragraph({
+                    text: "Step 2 - Add wheat",
+                    numbering: {
+                        reference: "my-number-numbering-reference",
+                        level: 0,
+                    },
+                }),
+                new Paragraph({
+                    text: "Step 2a - Stir the wheat in a circle",
+                    numbering: {
+                        reference: "my-number-numbering-reference",
+                        level: 1,
+                    },
+                }),
+                new Paragraph({
+                    text: "Step 3 - Put in oven",
+                    numbering: {
+                        reference: "my-number-numbering-reference",
+                        level: 0,
+                    },
+                }),
+                new Paragraph({
+                    text: "How to make cake",
+                    heading: HeadingLevel.HEADING_1,
+                }),
+            ],
+        },
     ],
 });
 

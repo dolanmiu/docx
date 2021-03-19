@@ -47,18 +47,19 @@ const doc = new Document({
             },
         ],
     },
-});
-
-doc.addSection({
-    children: [
-        new Paragraph({
-            text: "Hello",
-            style: "myWonkyStyle",
-        }),
-        new Paragraph({
-            text: "World",
-            heading: HeadingLevel.HEADING_2,
-        }),
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    text: "Hello",
+                    style: "myWonkyStyle",
+                }),
+                new Paragraph({
+                    text: "World",
+                    heading: HeadingLevel.HEADING_2,
+                }),
+            ],
+        },
     ],
 });
 

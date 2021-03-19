@@ -18,17 +18,18 @@ const doc = new Document({
             },
         ],
     },
-});
-
-doc.addSection({
-    children: [
-        new Paragraph({
-            text: "KFCを食べるのが好き",
-            heading: HeadingLevel.HEADING_1,
-        }),
-        new Paragraph({
-            text: "こんにちは",
-        }),
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    text: "KFCを食べるのが好き",
+                    heading: HeadingLevel.HEADING_1,
+                }),
+                new Paragraph({
+                    text: "こんにちは",
+                }),
+            ],
+        },
     ],
 });
 

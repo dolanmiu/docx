@@ -1,38 +1,10 @@
 import { expect } from "chai";
 
-import { File, HeadingLevel, Media, Paragraph } from "file";
+import { Media } from "file";
 
 import { ImageReplacer } from "./image-replacer";
 
 describe("ImageReplacer", () => {
-    let file: File;
-
-    beforeEach(() => {
-        file = new File({
-            creator: "Dolan Miu",
-            revision: "1",
-            lastModifiedBy: "Dolan Miu",
-        });
-
-        file.addSection({
-            children: [
-                new Paragraph({
-                    text: "title",
-                    heading: HeadingLevel.TITLE,
-                }),
-                new Paragraph({
-                    text: "Hello world",
-                    heading: HeadingLevel.HEADING_1,
-                }),
-                new Paragraph({
-                    text: "heading 2",
-                    heading: HeadingLevel.HEADING_2,
-                }),
-                new Paragraph("test text"),
-            ],
-        });
-    });
-
     describe("#replace()", () => {
         it("should replace properly", () => {
             const imageReplacer = new ImageReplacer();

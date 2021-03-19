@@ -8,16 +8,17 @@ import { Compiler } from "./next-compiler";
 
 describe("Compiler", () => {
     let compiler: Compiler;
-    let file: File;
 
     beforeEach(() => {
-        file = new File();
         compiler = new Compiler();
     });
 
     describe("#compile()", () => {
         it("should pack all the content", async function () {
             this.timeout(99999999);
+            const file = new File({
+                sections: [],
+            });
             const zipFile = compiler.compile(file);
             const fileNames = Object.keys(zipFile.files).map((f) => zipFile.files[f].name);
 
@@ -38,24 +39,27 @@ describe("Compiler", () => {
         });
 
         it("should pack all additional headers and footers", async function () {
-            file.addSection({
-                headers: {
-                    default: new Header(),
-                },
-                footers: {
-                    default: new Footer(),
-                },
-                children: [],
-            });
-
-            file.addSection({
-                headers: {
-                    default: new Header(),
-                },
-                footers: {
-                    default: new Footer(),
-                },
-                children: [],
+            const file = new File({
+                sections: [
+                    {
+                        headers: {
+                            default: new Header(),
+                        },
+                        footers: {
+                            default: new Footer(),
+                        },
+                        children: [],
+                    },
+                    {
+                        headers: {
+                            default: new Header(),
+                        },
+                        footers: {
+                            default: new Footer(),
+                        },
+                        children: [],
+                    },
+                ],
             });
 
             this.timeout(99999999);
@@ -80,12 +84,15 @@ describe("Compiler", () => {
             // This test is required because before, there was a case where Document was formatted twice, which was inefficient
             // This also caused issues such as running prepForXml multiple times as format() was ran multiple times.
             const paragraph = new Paragraph("");
-            const doc = new File();
-
-            doc.addSection({
-                properties: {},
-                children: [paragraph],
+            const file = new File({
+                sections: [
+                    {
+                        properties: {},
+                        children: [paragraph],
+                    },
+                ],
             });
+
             // tslint:disable-next-line: no-string-literal
             const spy = sinon.spy(compiler["formatter"], "format");
 

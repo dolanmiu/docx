@@ -3,64 +3,70 @@
 import * as fs from "fs";
 import { AlignmentType, Document, Footer, Header, Packer, PageBreak, PageNumber, PageNumberFormat, Paragraph, TextRun } from "../build";
 
-const doc = new Document({});
-
-doc.addSection({
-    headers: {
-        default: new Header({
-            children: [
-                new Paragraph({
+const doc = new Document({
+    sections: [
+        {
+            properties: {
+                page: {
+                    pageNumbers: {
+                        start: 1,
+                        formatType: PageNumberFormat.DECIMAL,
+                    },
+                },
+            },
+            headers: {
+                default: new Header({
                     children: [
-                        new TextRun("Foo Bar corp. "),
-                        new TextRun({
-                            children: ["Page Number ", PageNumber.CURRENT],
-                        }),
-                        new TextRun({
-                            children: [" to ", PageNumber.TOTAL_PAGES],
+                        new Paragraph({
+                            children: [
+                                new TextRun("Foo Bar corp. "),
+                                new TextRun({
+                                    children: ["Page Number ", PageNumber.CURRENT],
+                                }),
+                                new TextRun({
+                                    children: [" to ", PageNumber.TOTAL_PAGES],
+                                }),
+                            ],
                         }),
                     ],
                 }),
-            ],
-        }),
-    },
-    footers: {
-        default: new Footer({
-            children: [
-                new Paragraph({
-                    alignment: AlignmentType.CENTER,
+            },
+            footers: {
+                default: new Footer({
                     children: [
-                        new TextRun("Foo Bar corp. "),
-                        new TextRun({
-                            children: ["Page Number: ", PageNumber.CURRENT],
-                        }),
-                        new TextRun({
-                            children: [" to ", PageNumber.TOTAL_PAGES],
+                        new Paragraph({
+                            alignment: AlignmentType.CENTER,
+                            children: [
+                                new TextRun("Foo Bar corp. "),
+                                new TextRun({
+                                    children: ["Page Number: ", PageNumber.CURRENT],
+                                }),
+                                new TextRun({
+                                    children: [" to ", PageNumber.TOTAL_PAGES],
+                                }),
+                            ],
                         }),
                     ],
                 }),
+            },
+            children: [
+                new Paragraph({
+                    children: [new TextRun("Hello World 1"), new PageBreak()],
+                }),
+                new Paragraph({
+                    children: [new TextRun("Hello World 2"), new PageBreak()],
+                }),
+                new Paragraph({
+                    children: [new TextRun("Hello World 3"), new PageBreak()],
+                }),
+                new Paragraph({
+                    children: [new TextRun("Hello World 4"), new PageBreak()],
+                }),
+                new Paragraph({
+                    children: [new TextRun("Hello World 5"), new PageBreak()],
+                }),
             ],
-        }),
-    },
-    properties: {
-        pageNumberStart: 1,
-        pageNumberFormatType: PageNumberFormat.DECIMAL,
-    },
-    children: [
-        new Paragraph({
-            children: [new TextRun("Hello World 1"), new PageBreak()],
-        }),
-        new Paragraph({
-            children: [new TextRun("Hello World 2"), new PageBreak()],
-        }),
-        new Paragraph({
-            children: [new TextRun("Hello World 3"), new PageBreak()],
-        }),
-        new Paragraph({
-            children: [new TextRun("Hello World 4"), new PageBreak()],
-        }),
-        new Paragraph({
-            children: [new TextRun("Hello World 5"), new PageBreak()],
-        }),
+        },
     ],
 });
 

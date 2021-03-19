@@ -14,23 +14,24 @@ describe("Packer", () => {
             creator: "Dolan Miu",
             revision: "1",
             lastModifiedBy: "Dolan Miu",
-        });
-
-        file.addSection({
-            children: [
-                new Paragraph({
-                    text: "title",
-                    heading: HeadingLevel.TITLE,
-                }),
-                new Paragraph({
-                    text: "Hello world",
-                    heading: HeadingLevel.HEADING_1,
-                }),
-                new Paragraph({
-                    text: "heading 2",
-                    heading: HeadingLevel.HEADING_2,
-                }),
-                new Paragraph("test text"),
+            sections: [
+                {
+                    children: [
+                        new Paragraph({
+                            text: "title",
+                            heading: HeadingLevel.TITLE,
+                        }),
+                        new Paragraph({
+                            text: "Hello world",
+                            heading: HeadingLevel.HEADING_1,
+                        }),
+                        new Paragraph({
+                            text: "heading 2",
+                            heading: HeadingLevel.HEADING_2,
+                        }),
+                        new Paragraph("test text"),
+                    ],
+                },
             ],
         });
     });

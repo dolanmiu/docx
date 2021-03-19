@@ -3,6 +3,11 @@
 import * as fs from "fs";
 import { File, HeadingLevel, Packer, Paragraph, StyleLevel, TableOfContents } from "../build";
 
+// WordprocessingML docs for TableOfContents can be found here:
+// http://officeopenxml.com/WPtableOfContents.php
+
+// Let's define the properties for generate a TOC for heading 1-5 and MySpectacularStyle,
+// making the entries be hyperlinks for the paragraph
 const doc = new File({
     styles: {
         paragraphStyles: [
@@ -19,43 +24,38 @@ const doc = new File({
             },
         ],
     },
-});
-
-// WordprocessingML docs for TableOfContents can be found here:
-// http://officeopenxml.com/WPtableOfContents.php
-
-// Let's define the properties for generate a TOC for heading 1-5 and MySpectacularStyle,
-// making the entries be hyperlinks for the paragraph
-
-doc.addSection({
-    children: [
-        new TableOfContents("Summary", {
-            hyperlink: true,
-            headingStyleRange: "1-5",
-            stylesWithLevels: [new StyleLevel("MySpectacularStyle", 1)],
-        }),
-        new Paragraph({
-            text: "Header #1",
-            heading: HeadingLevel.HEADING_1,
-            pageBreakBefore: true,
-        }),
-        new Paragraph("I'm a little text very nicely written.'"),
-        new Paragraph({
-            text: "Header #2",
-            heading: HeadingLevel.HEADING_1,
-            pageBreakBefore: true,
-        }),
-        new Paragraph("I'm a other text very nicely written.'"),
-        new Paragraph({
-            text: "Header #2.1",
-            heading: HeadingLevel.HEADING_2,
-        }),
-        new Paragraph("I'm a another text very nicely written.'"),
-        new Paragraph({
-            text: "My Spectacular Style #1",
-            style: "MySpectacularStyle",
-            pageBreakBefore: true,
-        }),
+    sections: [
+        {
+            children: [
+                new TableOfContents("Summary", {
+                    hyperlink: true,
+                    headingStyleRange: "1-5",
+                    stylesWithLevels: [new StyleLevel("MySpectacularStyle", 1)],
+                }),
+                new Paragraph({
+                    text: "Header #1",
+                    heading: HeadingLevel.HEADING_1,
+                    pageBreakBefore: true,
+                }),
+                new Paragraph("I'm a little text very nicely written.'"),
+                new Paragraph({
+                    text: "Header #2",
+                    heading: HeadingLevel.HEADING_1,
+                    pageBreakBefore: true,
+                }),
+                new Paragraph("I'm a other text very nicely written.'"),
+                new Paragraph({
+                    text: "Header #2.1",
+                    heading: HeadingLevel.HEADING_2,
+                }),
+                new Paragraph("I'm a another text very nicely written.'"),
+                new Paragraph({
+                    text: "My Spectacular Style #1",
+                    style: "MySpectacularStyle",
+                    pageBreakBefore: true,
+                }),
+            ],
+        },
     ],
 });
 

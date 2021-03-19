@@ -11,12 +11,14 @@ For example, you could have one section which is portrait with a header and foot
 This creates a simple section in a document with one paragraph inside:
 
 ```ts
-doc.addSection({
-    children: [
-        new Paragraph({
-            children: [new TextRun("Hello World")],
-        }),
-    ],
+const doc = new Document({
+    sections: [{
+        children: [
+            new Paragraph({
+                children: [new TextRun("Hello World")],
+            }),
+        ],
+    }];
 });
 ```
 
@@ -35,14 +37,16 @@ Setting the section type determines how the contents of the section will be plac
 -   `ODD_PAGE`
 
 ```ts
-doc.addSection({
-    properties: {
-        type: SectionType.CONTINUOUS,
-    }
-    children: [
-        new Paragraph({
-            children: [new TextRun("Hello World")],
-        }),
-    ],
+const doc = new Document({
+    sections: [{
+        properties: {
+            type: SectionType.CONTINUOUS,
+        }
+        children: [
+            new Paragraph({
+                children: [new TextRun("Hello World")],
+            }),
+        ],
+    }];
 });
 ```

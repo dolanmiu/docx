@@ -57,12 +57,14 @@ text.contents = "Hello World";
 **Do**
 
 ```ts
-doc.addSection({
-    children: [
-        new Paragraph({
-            children: [new TextRun("Hello World")],
-        }),
-    ],
+const doc = new Document({
+    sections: [{
+        children: [
+            new Paragraph({
+                children: [new TextRun("Hello World")],
+            }),
+        ],
+    }];
 });
 ```
 

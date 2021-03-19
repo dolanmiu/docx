@@ -14,8 +14,12 @@ describe("Body", () => {
     describe("#addSection", () => {
         it("should add section with default parameters", () => {
             body.addSection({
-                width: 10000,
-                height: 10000,
+                page: {
+                    size: {
+                        width: 10000,
+                        height: 10000,
+                    },
+                },
             });
 
             const tree = new Formatter().format(body);

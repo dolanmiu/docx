@@ -3,8 +3,6 @@
 import * as fs from "fs";
 import { Document, HeadingLevel, ImageRun, Packer, Paragraph, Table, TableCell, TableRow, VerticalAlign } from "../build";
 
-const doc = new Document();
-
 const table = new Table({
     rows: [
         new TableRow({
@@ -66,24 +64,28 @@ const table = new Table({
     ],
 });
 
-doc.addSection({
-    children: [
-        new Paragraph({
-            text: "Hello World",
-            heading: HeadingLevel.HEADING_1,
-        }),
-        table,
-        new Paragraph({
+const doc = new Document({
+    sections: [
+        {
             children: [
-                new ImageRun({
-                    data: fs.readFileSync("./demo/images/pizza.gif"),
-                    transformation: {
-                        width: 100,
-                        height: 100,
-                    },
+                new Paragraph({
+                    text: "Hello World",
+                    heading: HeadingLevel.HEADING_1,
+                }),
+                table,
+                new Paragraph({
+                    children: [
+                        new ImageRun({
+                            data: fs.readFileSync("./demo/images/pizza.gif"),
+                            transformation: {
+                                width: 100,
+                                height: 100,
+                            },
+                        }),
+                    ],
                 }),
             ],
-        }),
+        },
     ],
 });
 

@@ -12,41 +12,41 @@ const doc = new Document({
         5: { children: [new Paragraph("Test1")] },
         6: { children: [new Paragraph("My amazing reference1")] },
     },
-});
-
-doc.addSection({
-    children: [
-        new Paragraph({
+    sections: [
+        {
             children: [
-                new TextRun({
-                    children: ["Hello", new FootnoteReferenceRun(1)],
+                new Paragraph({
+                    children: [
+                        new TextRun({
+                            children: ["Hello", new FootnoteReferenceRun(1)],
+                        }),
+                        new TextRun({
+                            children: [" World!", new FootnoteReferenceRun(2)],
+                        }),
+                    ],
                 }),
-                new TextRun({
-                    children: [" World!", new FootnoteReferenceRun(2)],
+                new Paragraph({
+                    children: [new TextRun("Hello World"), new FootnoteReferenceRun(3)],
                 }),
             ],
-        }),
-        new Paragraph({
-            children: [new TextRun("Hello World"), new FootnoteReferenceRun(3)],
-        }),
-    ],
-});
-
-doc.addSection({
-    children: [
-        new Paragraph({
+        },
+        {
             children: [
-                new TextRun({
-                    children: ["Hello", new FootnoteReferenceRun(4)],
+                new Paragraph({
+                    children: [
+                        new TextRun({
+                            children: ["Hello", new FootnoteReferenceRun(4)],
+                        }),
+                        new TextRun({
+                            children: [" World!", new FootnoteReferenceRun(5)],
+                        }),
+                    ],
                 }),
-                new TextRun({
-                    children: [" World!", new FootnoteReferenceRun(5)],
+                new Paragraph({
+                    children: [new TextRun("Hello World"), new FootnoteReferenceRun(6)],
                 }),
             ],
-        }),
-        new Paragraph({
-            children: [new TextRun("Hello World"), new FootnoteReferenceRun(6)],
-        }),
+        },
     ],
 });
 

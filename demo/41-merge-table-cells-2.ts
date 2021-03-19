@@ -3,8 +3,6 @@
 import * as fs from "fs";
 import { Document, Packer, Paragraph, Table, TableCell, TableRow } from "../build";
 
-const doc = new Document();
-
 const table = new Table({
     rows: [
         new TableRow({
@@ -252,8 +250,12 @@ const table2 = new Table({
     ],
 });
 
-doc.addSection({
-    children: [table, new Paragraph(""), table2],
+const doc = new Document({
+    sections: [
+        {
+            children: [table, new Paragraph(""), table2],
+        },
+    ],
 });
 
 Packer.toBuffer(doc).then((buffer) => {

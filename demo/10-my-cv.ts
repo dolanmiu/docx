@@ -129,70 +129,76 @@ const achievements = [
 class DocumentCreator {
     // tslint:disable-next-line: typedef
     public create([experiences, educations, skills, achivements]): Document {
-        const document = new Document();
+        const document = new Document({
+            sections: [
+                {
+                    children: [
+                        new Paragraph({
+                            text: "Dolan Miu",
+                            heading: HeadingLevel.TITLE,
+                        }),
+                        this.createContactInfo(PHONE_NUMBER, PROFILE_URL, EMAIL),
+                        this.createHeading("Education"),
+                        ...educations
+                            .map((education) => {
+                                const arr: Paragraph[] = [];
+                                arr.push(
+                                    this.createInstitutionHeader(
+                                        education.schoolName,
+                                        `${education.startDate.year} - ${education.endDate.year}`,
+                                    ),
+                                );
+                                arr.push(this.createRoleText(`${education.fieldOfStudy} - ${education.degree}`));
 
-        document.addSection({
-            children: [
-                new Paragraph({
-                    text: "Dolan Miu",
-                    heading: HeadingLevel.TITLE,
-                }),
-                this.createContactInfo(PHONE_NUMBER, PROFILE_URL, EMAIL),
-                this.createHeading("Education"),
-                ...educations
-                    .map((education) => {
-                        const arr: Paragraph[] = [];
-                        arr.push(
-                            this.createInstitutionHeader(education.schoolName, `${education.startDate.year} - ${education.endDate.year}`),
-                        );
-                        arr.push(this.createRoleText(`${education.fieldOfStudy} - ${education.degree}`));
+                                const bulletPoints = this.splitParagraphIntoBullets(education.notes);
+                                bulletPoints.forEach((bulletPoint) => {
+                                    arr.push(this.createBullet(bulletPoint));
+                                });
 
-                        const bulletPoints = this.splitParagraphIntoBullets(education.notes);
-                        bulletPoints.forEach((bulletPoint) => {
-                            arr.push(this.createBullet(bulletPoint));
-                        });
+                                return arr;
+                            })
+                            .reduce((prev, curr) => prev.concat(curr), []),
+                        this.createHeading("Experience"),
+                        ...experiences
+                            .map((position) => {
+                                const arr: Paragraph[] = [];
 
-                        return arr;
-                    })
-                    .reduce((prev, curr) => prev.concat(curr), []),
-                this.createHeading("Experience"),
-                ...experiences
-                    .map((position) => {
-                        const arr: Paragraph[] = [];
+                                arr.push(
+                                    this.createInstitutionHeader(
+                                        position.company.name,
+                                        this.createPositionDateText(position.startDate, position.endDate, position.isCurrent),
+                                    ),
+                                );
+                                arr.push(this.createRoleText(position.title));
 
-                        arr.push(
-                            this.createInstitutionHeader(
-                                position.company.name,
-                                this.createPositionDateText(position.startDate, position.endDate, position.isCurrent),
-                            ),
-                        );
-                        arr.push(this.createRoleText(position.title));
+                                const bulletPoints = this.splitParagraphIntoBullets(position.summary);
 
-                        const bulletPoints = this.splitParagraphIntoBullets(position.summary);
+                                bulletPoints.forEach((bulletPoint) => {
+                                    arr.push(this.createBullet(bulletPoint));
+                                });
 
-                        bulletPoints.forEach((bulletPoint) => {
-                            arr.push(this.createBullet(bulletPoint));
-                        });
-
-                        return arr;
-                    })
-                    .reduce((prev, curr) => prev.concat(curr), []),
-                this.createHeading("Skills, Achievements and Interests"),
-                this.createSubHeading("Skills"),
-                this.createSkillList(skills),
-                this.createSubHeading("Achievements"),
-                ...this.createAchivementsList(achivements),
-                this.createSubHeading("Interests"),
-                this.createInterests("Programming, Technology, Music Production, Web Design, 3D Modelling, Dancing."),
-                this.createHeading("References"),
-                new Paragraph(
-                    "Dr. Dean Mohamedally Director of Postgraduate Studies Department of Computer Science, University College London Malet Place, Bloomsbury, London WC1E d.mohamedally@ucl.ac.uk",
-                ),
-                new Paragraph("More references upon request"),
-                new Paragraph({
-                    text: "This CV was generated in real-time based on my Linked-In profile from my personal website www.dolan.bio.",
-                    alignment: AlignmentType.CENTER,
-                }),
+                                return arr;
+                            })
+                            .reduce((prev, curr) => prev.concat(curr), []),
+                        this.createHeading("Skills, Achievements and Interests"),
+                        this.createSubHeading("Skills"),
+                        this.createSkillList(skills),
+                        this.createSubHeading("Achievements"),
+                        ...this.createAchivementsList(achivements),
+                        this.createSubHeading("Interests"),
+                        this.createInterests("Programming, Technology, Music Production, Web Design, 3D Modelling, Dancing."),
+                        this.createHeading("References"),
+                        new Paragraph(
+                            "Dr. Dean Mohamedally Director of Postgraduate Studies Department of Computer Science, University College London Malet Place, Bloomsbury, London WC1E d.mohamedally@ucl.ac.uk",
+                        ),
+                        new Paragraph("More references upon request"),
+                        new Paragraph({
+                            text:
+                                "This CV was generated in real-time based on my Linked-In profile from my personal website www.dolan.bio.",
+                            alignment: AlignmentType.CENTER,
+                        }),
+                    ],
+                },
             ],
         });
 

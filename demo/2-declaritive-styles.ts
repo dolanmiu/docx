@@ -99,90 +99,91 @@ const doc = new Document({
             },
         ],
     },
-});
-
-doc.addSection({
-    children: [
-        new Paragraph({
-            text: "Test heading1, bold and italicized",
-            heading: HeadingLevel.HEADING_1,
-        }),
-        new Paragraph("Some simple content"),
-        new Paragraph({
-            text: "Test heading2 with double red underline",
-            heading: HeadingLevel.HEADING_2,
-        }),
-        new Paragraph({
-            text: "Option1",
-            numbering: {
-                reference: "my-crazy-numbering",
-                level: 0,
-            },
-            style: "aside",
-        }),
-        new Paragraph({
-            text: "Option5 -- override 2 to 5",
-            numbering: {
-                reference: "my-crazy-numbering",
-                level: 0,
-            },
-        }),
-        new Paragraph({
-            text: "Option3",
-            numbering: {
-                reference: "my-crazy-numbering",
-                level: 0,
-            },
-        }),
-        new Paragraph({
+    sections: [
+        {
             children: [
-                new TextRun({
-                    text: "Some monospaced content",
-                    font: {
-                        name: "Monospace",
+                new Paragraph({
+                    text: "Test heading1, bold and italicized",
+                    heading: HeadingLevel.HEADING_1,
+                }),
+                new Paragraph("Some simple content"),
+                new Paragraph({
+                    text: "Test heading2 with double red underline",
+                    heading: HeadingLevel.HEADING_2,
+                }),
+                new Paragraph({
+                    text: "Option1",
+                    numbering: {
+                        reference: "my-crazy-numbering",
+                        level: 0,
+                    },
+                    style: "aside",
+                }),
+                new Paragraph({
+                    text: "Option5 -- override 2 to 5",
+                    numbering: {
+                        reference: "my-crazy-numbering",
+                        level: 0,
                     },
                 }),
+                new Paragraph({
+                    text: "Option3",
+                    numbering: {
+                        reference: "my-crazy-numbering",
+                        level: 0,
+                    },
+                }),
+                new Paragraph({
+                    children: [
+                        new TextRun({
+                            text: "Some monospaced content",
+                            font: {
+                                name: "Monospace",
+                            },
+                        }),
+                    ],
+                }),
+                new Paragraph({
+                    text: "An aside, in light gray italics and indented",
+                    style: "aside",
+                }),
+                new Paragraph({
+                    text: "This is normal, but well-spaced text",
+                    style: "wellSpaced",
+                }),
+                new Paragraph({
+                    children: [
+                        new TextRun({
+                            text: "This is a bold run,",
+                            bold: true,
+                        }),
+                        new TextRun(" switching to normal "),
+                        new TextRun({
+                            text: "and then underlined ",
+                            underline: {},
+                        }),
+                        new TextRun({
+                            text: "and then emphasis-mark ",
+                            emphasisMark: {},
+                        }),
+                        new TextRun({
+                            text: "and back to normal.",
+                        }),
+                    ],
+                }),
+                new Paragraph({
+                    style: "Strong",
+                    children: [
+                        new TextRun({
+                            text: "Strong Style",
+                        }),
+                        new TextRun({
+                            text: " - Very strong.",
+                        }),
+                    ],
+                }),
             ],
-        }),
-        new Paragraph({
-            text: "An aside, in light gray italics and indented",
-            style: "aside",
-        }),
-        new Paragraph({
-            text: "This is normal, but well-spaced text",
-            style: "wellSpaced",
-        }),
-        new Paragraph({
-            children: [
-                new TextRun({
-                    text: "This is a bold run,",
-                    bold: true,
-                }),
-                new TextRun(" switching to normal "),
-                new TextRun({
-                    text: "and then underlined ",
-                    underline: {},
-                }),
-                new TextRun({
-                    text: "and then emphasis-mark ",
-                    emphasisMark: {},
-                }),
-                new TextRun({
-                    text: "and back to normal.",
-                }),
-            ],
-        }),
-        new Paragraph({
-            style: "Strong",
-            children: [
-                new TextRun({
-                    text: "Strong Style",
-                }),
-                new TextRun({
-                    text: " - Very strong.",
-                }),
-            ],
-        }),
+        },
     ],
 });
 

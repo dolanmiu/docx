@@ -26,6 +26,27 @@ import {
     Note that this setting enables to track *new changes* after teh file is generated, so this example will still show inserted and deleted text runs when you remove it.
 */
 
+const paragraph = new Paragraph({
+    children: [
+        new TextRun("This is a simple demo "),
+        new TextRun({
+            text: "on how to ",
+        }),
+        new InsertedTextRun({
+            text: "mark a text as an insertion ",
+            id: 0,
+            author: "Firstname Lastname",
+            date: "2020-10-06T09:00:00Z",
+        }),
+        new DeletedTextRun({
+            text: "or a deletion.",
+            id: 1,
+            author: "Firstname Lastname",
+            date: "2020-10-06T09:00:00Z",
+        }),
+    ],
+});
+
 const doc = new Document({
     footnotes: {
         1: {
@@ -53,96 +74,76 @@ const doc = new Document({
     features: {
         trackRevisions: true,
     },
-});
-
-const paragraph = new Paragraph({
-    children: [
-        new TextRun("This is a simple demo "),
-        new TextRun({
-            text: "on how to ",
-        }),
-        new InsertedTextRun({
-            text: "mark a text as an insertion ",
-            id: 0,
-            author: "Firstname Lastname",
-            date: "2020-10-06T09:00:00Z",
-        }),
-        new DeletedTextRun({
-            text: "or a deletion.",
-            id: 1,
-            author: "Firstname Lastname",
-            date: "2020-10-06T09:00:00Z",
-        }),
-    ],
-});
-
-doc.addSection({
-    properties: {},
-    children: [
-        paragraph,
-        new Paragraph({
+    sections: [
+        {
+            properties: {},
             children: [
-                new TextRun("This is a demo "),
-                new DeletedTextRun({
-                    break: 1,
-                    text: "in order",
-                    color: "red",
-                    bold: true,
-                    size: 24,
-                    font: {
-                        name: "Garamond",
-                    },
-                    shading: {
-                        type: ShadingType.REVERSE_DIAGONAL_STRIPE,
-                        color: "00FFFF",
-                        fill: "FF0000",
-                    },
-                    id: 2,
-                    author: "Firstname Lastname",
-                    date: "2020-10-06T09:00:00Z",
-                }),
-                new InsertedTextRun({
-                    text: "to show how to ",
-                    bold: false,
-                    id: 3,
-                    author: "Firstname Lastname",
-                    date: "2020-10-06T09:05:00Z",
-                }),
-                new TextRun({
-                    bold: true,
-                    children: ["\tuse Inserted and Deleted TextRuns.", new FootnoteReferenceRun(1)],
-                }),
-            ],
-        }),
-    ],
-    footers: {
-        default: new Footer({
-            children: [
+                paragraph,
                 new Paragraph({
-                    alignment: AlignmentType.CENTER,
                     children: [
-                        new TextRun("Awesome LLC"),
-                        new TextRun({
-                            children: ["Page Number: ", PageNumber.CURRENT],
-                        }),
+                        new TextRun("This is a demo "),
                         new DeletedTextRun({
-                            children: [" to ", PageNumber.TOTAL_PAGES],
-                            id: 4,
+                            break: 1,
+                            text: "in order",
+                            color: "red",
+                            bold: true,
+                            size: 24,
+                            font: {
+                                name: "Garamond",
+                            },
+                            shading: {
+                                type: ShadingType.REVERSE_DIAGONAL_STRIPE,
+                                color: "00FFFF",
+                                fill: "FF0000",
+                            },
+                            id: 2,
                             author: "Firstname Lastname",
-                            date: "2020-10-06T09:05:00Z",
+                            date: "2020-10-06T09:00:00Z",
                         }),
                         new InsertedTextRun({
-                            children: [" from ", PageNumber.TOTAL_PAGES],
-                            bold: true,
-                            id: 5,
+                            text: "to show how to ",
+                            bold: false,
+                            id: 3,
                             author: "Firstname Lastname",
                             date: "2020-10-06T09:05:00Z",
+                        }),
+                        new TextRun({
+                            bold: true,
+                            children: ["\tuse Inserted and Deleted TextRuns.", new FootnoteReferenceRun(1)],
                         }),
                     ],
                 }),
             ],
-        }),
-    },
+            footers: {
+                default: new Footer({
+                    children: [
+                        new Paragraph({
+                            alignment: AlignmentType.CENTER,
+                            children: [
+                                new TextRun("Awesome LLC"),
+                                new TextRun({
+                                    children: ["Page Number: ", PageNumber.CURRENT],
+                                }),
+                                new DeletedTextRun({
+                                    children: [" to ", PageNumber.TOTAL_PAGES],
+                                    id: 4,
+                                    author: "Firstname Lastname",
+                                    date: "2020-10-06T09:05:00Z",
+                                }),
+                                new InsertedTextRun({
+                                    children: [" from ", PageNumber.TOTAL_PAGES],
+                                    bold: true,
+                                    id: 5,
+                                    author: "Firstname Lastname",
+                                    date: "2020-10-06T09:05:00Z",
+                                }),
+                            ],
+                        }),
+                    ],
+                }),
+            },
+        },
+    ],
 });
 
 Packer.toBuffer(doc).then((buffer) => {

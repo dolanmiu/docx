@@ -3,12 +3,14 @@ import { ICustomPropertyOptions } from "../custom-properties";
 import { IDocumentBackgroundOptions } from "../document";
 
 import { DocumentAttributes } from "../document/document-attributes";
+import { ISectionOptions } from "../file";
 import { INumberingOptions } from "../numbering";
 import { Paragraph } from "../paragraph";
 import { IStylesOptions } from "../styles";
 import { Created, Creator, Description, Keywords, LastModifiedBy, Modified, Revision, Subject, Title } from "./components";
 
 export interface IPropertiesOptions {
+    readonly sections: ISectionOptions[];
     readonly title?: string;
     readonly subject?: string;
     readonly creator?: string;
@@ -34,7 +36,7 @@ export interface IPropertiesOptions {
 }
 
 export class CoreProperties extends XmlComponent {
-    constructor(options: IPropertiesOptions) {
+    constructor(options: Omit<IPropertiesOptions, "sections">) {
         super("cp:coreProperties");
         this.root.push(
             new DocumentAttributes({
