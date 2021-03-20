@@ -18,11 +18,8 @@ const doc = new Document(
             { name: "Subtitle", value: "Subtitle" },
             { name: "Address", value: "Address" },
         ],
+        sections: [],
     },
-    // No file properties
-    {},
-    // No sections
-    [],
 );
 
 Packer.toBuffer(doc).then((buffer) => {
