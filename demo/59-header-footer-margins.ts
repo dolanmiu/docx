@@ -7,8 +7,12 @@ const doc = new Document({
     sections: [
         {
             properties: {
-                header: 100,
-                footer: 50,
+                page: {
+                    margin: {
+                        header: 100,
+                        footer: 50,
+                    },
+                },
             },
             headers: {
                 default: new Header({
