@@ -37,20 +37,14 @@ const image = new ImageRun({
 Add it into the document by adding the image into a paragraph:
 
 ```ts
-doc.addSection({
-    children: [new Paragraph(image)],
-});
-```
-
-Or:
-
-```ts
-doc.addSection({
-    children: [
-        new Paragraph({
-            children: [image],
-        }),
-    ],
+const doc = new Document({
+    sections: [{
+        children: [
+            new Paragraph({
+                children: [image],
+            }),
+        ],
+    }];
 });
 ```
 
@@ -59,16 +53,22 @@ doc.addSection({
 Adding images can be easily done by creating an instance of `ImageRun`. This can be added in a `Paragraph` or `Hyperlink`:
 
 ```ts
-const image = new ImageRun({
-    data: [IMAGE_BUFFER],
-    transformation: {
-        width: [IMAGE_SIZE],
-        height: [IMAGE_SIZE],
-    },
-});
-
-doc.addSection({
-    children: [new Paragraph(image)],
+const doc = new Document({
+    sections: [{
+        children: [
+            new Paragraph({
+                children: [
+                    new ImageRun({
+                        data: [IMAGE_BUFFER],
+                        transformation: {
+                            width: [IMAGE_SIZE],
+                            height: [IMAGE_SIZE],
+                        },
+                    }),
+                ],
+            }),
+        ],
+    }];
 });
 ```
 

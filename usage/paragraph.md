@@ -35,20 +35,24 @@ const paragraph = new Paragraph({
 After you create the paragraph, you must add the paragraph into a `section`:
 
 ```ts
-doc.addSection({
-    children: [paragraph],
+const doc = new Document({
+    sections: [{
+        children: [paragraph],
+    }];
 });
 ```
 
 Or the preferred convension, define the paragraph inside the section and remove the usage of variables:
 
 ```ts
-doc.addSection({
-    children: [
-        new Paragraph({
-            children: [new TextRun("Lorem Ipsum Foo Bar"), new TextRun("Hello World")],
-        }),
-    ],
+const doc = new Document({
+    sections: [{
+        children: [
+            new Paragraph({
+                children: [new TextRun("Lorem Ipsum Foo Bar"), new TextRun("Hello World")],
+            }),
+        ],
+    }];
 });
 ```
 
