@@ -19,7 +19,7 @@
 [![codecov][codecov-image]][codecov-url]
 
 <p align="center">
-    <img src="https://i.imgur.com/tBO0XBR.png" alt="drawing"/>
+    <img src="https://i.imgur.com/QeL1HuU.png" alt="drawing"/>
 </p>
 
 # Demo
