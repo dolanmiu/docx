@@ -33,12 +33,12 @@ Here are examples of `docx` being used with basic `HTML/JS` in a browser environ
 
 Here is an example of `docx` working in `Angular`:
 
-*   https://stackblitz.com/edit/angular-afvxtz
+*   https://stackblitz.com/edit/angular-docx
 
 Here is an example of `docx` working in `React`:
 
-*   https://stackblitz.com/edit/react-ts-qq25sp
-*   https://stackblitz.com/edit/react-ts-qdqu7z (adding images to Word Document)
+*   https://stackblitz.com/edit/react-docx
+*   https://stackblitz.com/edit/react-docx-images (adding images to Word Document)
 
 Here is an example of `docx` working in `Vue.js`:
 
