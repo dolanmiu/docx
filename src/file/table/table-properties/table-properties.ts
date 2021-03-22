@@ -31,6 +31,10 @@ export class TableProperties extends IgnoreIfEmptyXmlComponent {
     constructor(options: ITablePropertiesOptions) {
         super("w:tblPr");
 
+        if (options.style) {
+            this.root.push(new TableStyle(options.style));
+        }
+
         this.root.push(new TableCellMargin(options.cellMargin || {}));
 
         if (options.borders) {
@@ -59,10 +63,6 @@ export class TableProperties extends IgnoreIfEmptyXmlComponent {
 
         if (options.visuallyRightToLeft) {
             this.root.push(new VisuallyRightToLeft());
-        }
-
-        if (options.style) {
-            this.root.push(new TableStyle(options.style));
         }
     }
 }
