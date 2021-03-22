@@ -1,10 +1,11 @@
 import { uniqueId } from "convenience-functions";
 
+import { IContext, IXmlableObject } from "file/xml-components";
+
 import { Drawing, IFloating } from "../../drawing";
 import { IMediaTransformation } from "../../media";
 import { IMediaData } from "../../media/data";
 import { Run } from "../run";
-import { IContext, IXmlableObject } from "/file/xml-components";
 
 export interface IImageOptions {
     readonly data: Buffer | string | Uint8Array | ArrayBuffer;
