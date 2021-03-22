@@ -29,7 +29,7 @@
 Here are examples of `docx` being used with basic `HTML/JS` in a browser environment:
 
 *   https://codepen.io/dolanmiu/pen/RwNeObg
-*   https://jsfiddle.net/dolanmiu/kqxrj35u/1/
+*   https://jsfiddle.net/dolanmiu/onadx1gu/
 
 Here is an example of `docx` working in `Angular`:
 
