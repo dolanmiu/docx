@@ -20,7 +20,7 @@ describe("Utility", () => {
     describe("#uniqueNumericId", () => {
         it("should generate a unique ID", () => {
             // tslint:disable-next-line: no-unused-expression
-            expect(uniqueNumericId()).to.not.be.empty;
+            expect(uniqueNumericId()).to.not.be.undefined;
         });
     });
 

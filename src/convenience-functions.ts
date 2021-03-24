@@ -1,6 +1,6 @@
-import { customAlphabet, nanoid } from "nanoid/non-secure";
+import { nanoid } from "nanoid/non-secure";
 
-const numericNanoId = customAlphabet("0123456789", 15);
+let currentCount = 0;
 
 // Twip - twentieths of a point
 export const convertMillimetersToTwip = (millimeters: number): number => {
@@ -12,7 +12,7 @@ export const convertInchesToTwip = (inches: number): number => {
 };
 
 export const uniqueNumericId = (): number => {
-    return parseFloat(numericNanoId());
+    return currentCount++;
 };
 
 export const uniqueId = (): string => {
