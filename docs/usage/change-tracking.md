@@ -27,7 +27,7 @@ const paragraph = new Paragraph({
 });
 ```
 
-Note that for a `InsertedTextRun` and `DeletedTextRun`, it is not possible to simply call it with only a text as in `new TextRun("some text")`, since the additonal fields for change tracking need to be provided. Similar to a normal `TextRun` you can add additional text properties.
+Note that for a `InsertedTextRun` and `DeletedTextRun`, it is not possible to simply call it with only a text as in `new TextRun("some text")`, since the additional fields for change tracking need to be provided. Similar to a normal `TextRun` you can add additional text properties.
 
 ```ts
 import { Paragraph, TextRun, InsertedTextRun, DeletedTextRun } from "docx";
@@ -48,7 +48,7 @@ const paragraph = new Paragraph({
 });
 ```
 
-In addtion to marking text as inserted or deleted, change tracking can also be added via the document settings. This will enable new changes to be tracked as well.
+In addition to marking text as inserted or deleted, change tracking can also be added via the document settings. This will enable new changes to be tracked as well.
 
 ```ts
 import { Document } from "docx";

@@ -2,7 +2,7 @@
 
 You can generate table of contents with `docx`. More information can be found [here](http://officeopenxml.com/WPtableOfContents.php).
 
-> Tables of Contents are fields and, by design, it's content is only generated or updated by Word. We can't do it programatically.
+> Tables of Contents are fields and, by design, it's content is only generated or updated by Word. We can't do it programmatically.
 > This is why, when you open a the file, Word you will prompt the message "This document contains fields that may refer to other files. Do you want to update the fields in this document?".
 > You have say yes to Word generate the content of all table of contents.
 
