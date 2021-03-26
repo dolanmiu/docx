@@ -68,7 +68,7 @@
     "@types/request-promise": "^4.1.42",
     "@types/sinon": "^9.0.4",
     "@types/webpack": "^5.0.0",
-    "awesome-typescript-loader": "^3.4.1",
+    "awesome-typescript-loader": "^5.2.1",
     "chai": "^3.5.0",
     "docsify-cli": "^4.3.0",
     "glob": "^7.1.2",
