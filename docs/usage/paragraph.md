@@ -1,6 +1,6 @@
 # Paragraph
 
-> Everything (text, images, graphs etc) in OpenXML is organised in paragraphs.
+> Everything (text, images, graphs etc) in OpenXML is organized in paragraphs.
 
 !> Paragraphs requires an understanding of [Sections](sections.md).
 
@@ -42,7 +42,7 @@ const doc = new Document({
 });
 ```
 
-Or the preferred convension, define the paragraph inside the section and remove the usage of variables:
+Or the preferred convention, define the paragraph inside the section and remove the usage of variables:
 
 ```ts
 const doc = new Document({

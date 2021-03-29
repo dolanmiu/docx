@@ -78,7 +78,7 @@ const doc = new Document({
 
 > Positioning is the method on how to place the image on the document
 
-![Word Image Positiong](https://user-images.githubusercontent.com/34742290/41765548-b0946302-7604-11e8-96f9-166a9f0b8f39.png)
+![Word Image Positioning](https://user-images.githubusercontent.com/34742290/41765548-b0946302-7604-11e8-96f9-166a9f0b8f39.png)
 
 Three types of image positioning is supported:
 
@@ -89,7 +89,7 @@ By default, images are exported as `Inline` elements.
 
 ### Usage
 
-Pass `options` into the `[POSITION_OPTIONS]` metioned in the [Intro above](#Intro).
+Pass `options` into the `[POSITION_OPTIONS]` mentioned in the [Intro above](#Intro).
 
 ## Floating
 
