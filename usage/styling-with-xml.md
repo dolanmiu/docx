@@ -3,7 +3,7 @@
 ## Setup
 
 1.  Create a new word document in Microsoft Word
-2.  Customise the styles on the Ribbon Bar.
+2.  Customize the styles on the Ribbon Bar.
     For example, modify the `Normal`, `Heading 1`, `Heading 2` like so:
 
     ![image](https://user-images.githubusercontent.com/2917613/41195113-65edebfa-6c1f-11e8-97b4-77de2d60044a.png)

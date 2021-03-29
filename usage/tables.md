@@ -6,7 +6,7 @@
 
 -   `Tables` contain a list of `Rows`
 -   `Rows` contain a list of `TableCells`
--   `TableCells` contain a list of `Parahraphs` and/or `Tables`. You can add `Tables` as tables can be nested inside each other
+-   `TableCells` contain a list of `Paragraphs` and/or `Tables`. You can add `Tables` as tables can be nested inside each other
 
 Create a simple table like so:
 
@@ -346,7 +346,7 @@ _Source: https://github.com/dolanmiu/docx/blob/master/demo/4-basic-table.ts_
 
 ### Custom borders
 
-Example showing how to add colourful borders to tables
+Example showing how to add colorful borders to tables
 
 [Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/20-table-cell-borders.ts ':include')
 
