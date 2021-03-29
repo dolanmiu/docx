@@ -1,5 +1,5 @@
 import { Document, IDocumentOptions } from "./document";
-import { Footer } from "./footer";
+import { Footer } from "./footer/footer";
 import { FootNotes } from "./footnotes";
 import { Header } from "./header/header";
 import { Relationships } from "./relationships";
