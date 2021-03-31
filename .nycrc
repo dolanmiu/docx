@@ -21,6 +21,5 @@
   ],
   "cache": true,
   "all": true,
-  "instrument": false,
   "sourceMap": true
 }
