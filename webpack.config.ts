@@ -1,8 +1,9 @@
-// tslint:disable:no-object-literal-type-assertion
 import * as path from "path";
-import { Configuration } from "webpack";
+import { Configuration, ProvidePlugin } from "webpack";
 
-module.exports = {
+const configuration: Configuration = {
+    mode: "production",
+
     entry: "./src/index.ts",
 
     output: {
@@ -10,34 +11,36 @@ module.exports = {
         filename: "index.js",
         libraryTarget: "umd",
         library: "docx",
+        globalObject: "this",
     },
 
     resolve: {
-        extensions: [".tsx", ".ts", ".js"],
+        extensions: [".ts", ".js"],
         modules: [path.resolve("./src"), "node_modules"],
+        fallback: {
+            buffer: require.resolve("buffer"),
+            stream: require.resolve("stream-browserify"),
+        },
     },
 
     module: {
         rules: [
             {
                 test: /\.ts$/,
-                loaders: ["awesome-typescript-loader"],
+                loader: "ts-loader",
+                options: {
+                    configFile: "tsconfig.json",
+                },
             },
-            // For coverage testing
-            ...(process.env.NODE_ENV !== "production"
-                ? [
-                      {
-                          test: /\.(ts)/,
-                          include: path.resolve("src"),
-                          loader: "istanbul-instrumenter-loader",
-                          enforce: "post",
-                          exclude: [/node_modules/],
-                      },
-                  ]
-                : []),
         ],
     },
 
-    // Because docx is now targetting web
-    // target: 'node',
-} as Configuration;
+    plugins: [
+        // fix "process is not defined" error
+        new ProvidePlugin({
+            process: "process/browser",
+        }),
+    ],
+};
+
+module.exports = configuration;

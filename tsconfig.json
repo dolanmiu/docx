@@ -13,8 +13,10 @@
         "noUnusedParameters": true,
         "baseUrl": "./src",
         "paths": {
-            "/*": ["./*"]
+            "/*": ["./*"],
+            "convenience-functions": ["./convenience-functions"],
+            "@export/*": ["./export/*"]
         }
     },
-    "exclude": ["node_modules", "tests", "**/_*", "demo", "scripts", "webpack.config.ts"]
+    "include": ["src"]
 }
