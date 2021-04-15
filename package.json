@@ -65,7 +65,7 @@
     "@types/chai": "^4.2.15",
     "@types/mocha": "^8.0.0",
     "@types/request-promise": "^4.1.42",
-    "@types/sinon": "^9.0.4",
+    "@types/sinon": "^10.0.0",
     "@types/webpack": "^5.0.0",
     "buffer": "^6.0.3",
     "chai": "^3.5.0",
