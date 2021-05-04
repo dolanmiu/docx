@@ -10,7 +10,7 @@ import { PageBreak } from "./formatting/page-break";
 import { Bookmark, ConcreteHyperlink, ExternalHyperlink, InternalHyperlink } from "./links";
 import { Math } from "./math";
 import { IParagraphPropertiesOptions, ParagraphProperties } from "./properties";
-import { ImageRun, Run, SequentialIdentifier, SymbolRun, TextRun } from "./run";
+import { ImageRun, Run, SequentialIdentifier, SimpleField, SimpleMailMergeField, SymbolRun, TextRun } from "./run";
 
 export type ParagraphChild =
     | TextRun
@@ -24,7 +24,9 @@ export type ParagraphChild =
     | ExternalHyperlink
     | InsertedTextRun
     | DeletedTextRun
-    | Math;
+    | Math
+    | SimpleField
+    | SimpleMailMergeField;
 
 export interface IParagraphOptions extends IParagraphPropertiesOptions {
     readonly text?: string;
