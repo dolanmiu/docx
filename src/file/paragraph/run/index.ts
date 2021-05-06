@@ -8,3 +8,4 @@ export * from "./sequential-identifier";
 export * from "./underline";
 export * from "./emphasis-mark";
 export * from "./tab";
+export * from "./simple-field";
