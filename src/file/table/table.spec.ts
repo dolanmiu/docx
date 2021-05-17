@@ -178,9 +178,6 @@ describe("Table", () => {
             expect(tree).to.deep.equal({
                 "w:tbl": [
                     { "w:tblPr": [DEFAULT_TABLE_PROPERTIES, BORDERS, WIDTHS] },
-                    {
-                        "w:tblGrid": [{ "w:gridCol": { _attr: { "w:w": 100 } } }, { "w:gridCol": { _attr: { "w:w": 100 } } }],
-                    },
                     { "w:tr": [cell, cell] },
                     { "w:tr": [cell, cell] },
                     { "w:tr": [cell, cell] },
@@ -225,9 +222,6 @@ describe("Table", () => {
                 "w:tbl": [
                     { "w:tblPr": [DEFAULT_TABLE_PROPERTIES, BORDERS, WIDTHS] },
                     {
-                        "w:tblGrid": [{ "w:gridCol": { _attr: { "w:w": 100 } } }, { "w:gridCol": { _attr: { "w:w": 100 } } }],
-                    },
-                    {
                         "w:tr": [
                             {
                                 "w:tc": [{ "w:tcPr": [{ "w:gridSpan": { _attr: { "w:val": 2 } } }] }, cellP],
@@ -249,6 +243,37 @@ describe("Table", () => {
                             },
                             { "w:tc": [cellP] },
                         ],
+                    },
+                ],
+            });
+        });
+
+        it("creates a table explicit columnWidths", () => {
+            const table = new Table({
+                columnWidths: [200, 400],
+                rows: [
+                    new TableRow({
+                        children: [
+                            new TableCell({
+                                children: [new Paragraph("hello")],
+                            }),
+                            new TableCell({
+                                children: [new Paragraph("hello")],
+                            }),
+                        ],
+                    }),
+                ],
+            });
+            const tree = new Formatter().format(table);
+            const cellP = { "w:p": [{ "w:r": [{ "w:t": [{ _attr: { "xml:space": "preserve" } }, "hello"] }] }] };
+            expect(tree).to.deep.equal({
+                "w:tbl": [
+                    { "w:tblPr": [DEFAULT_TABLE_PROPERTIES, BORDERS, WIDTHS] },
+                    {
+                        "w:tblGrid": [{ "w:gridCol": { _attr: { "w:w": 200 } } }, { "w:gridCol": { _attr: { "w:w": 400 } } }],
+                    },
+                    {
+                        "w:tr": [{ "w:tc": [cellP] }, { "w:tc": [cellP] }],
                     },
                 ],
             });

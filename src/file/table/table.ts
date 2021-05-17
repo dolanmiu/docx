@@ -44,7 +44,7 @@ export class Table extends XmlComponent {
     constructor({
         rows,
         width,
-        columnWidths = Array<number>(Math.max(...rows.map((row) => row.CellCount))).fill(100),
+        columnWidths,
         margins: { marginUnitType, top, bottom, right, left } = { marginUnitType: WidthType.AUTO, top: 0, bottom: 0, right: 0, left: 0 },
         float,
         layout,
@@ -85,7 +85,9 @@ export class Table extends XmlComponent {
             }),
         );
 
-        this.root.push(new TableGrid(columnWidths));
+        if (columnWidths) {
+            this.root.push(new TableGrid(columnWidths));
+        }
 
         for (const row of rows) {
             this.root.push(row);
