@@ -1,8 +1,8 @@
 # Symbol Runs
 
-!> SymbolRuns require an understanding of [Paragraphs](paragraph.md).
+!> SymbolRuns require an understanding of [Paragraphs](usage/paragraph.md).
 
-You can add multiple `symbol runs` in `Paragraphs` along with [text runs](text.md) using the Paragraph's `children` property.
+You can add multiple `symbol runs` in `Paragraphs` along with [text runs](usage/text.md) using the Paragraph's `children` property.
 
 ```ts
 import { Paragraph, TextRun, SymbolRun } from "docx";
@@ -50,4 +50,4 @@ const symbol = new SymbolRun({
 });
 ```
 
-See the [text run](text.md) documentation for more info.
+See the [text run](usage/text.md) documentation for more info.
