@@ -2,7 +2,7 @@
 
 > Everything (text, images, graphs etc) in OpenXML is organized in paragraphs.
 
-!> Paragraphs requires an understanding of [Sections](sections.md).
+!> Paragraphs requires an understanding of [Sections](usage/sections.md).
 
 You can create `Paragraphs` in the following ways:
 
@@ -16,7 +16,7 @@ const paragraph = new Paragraph("Short hand Hello World");
 
 ### Children Method
 
-This method is useful for adding different [text](text.md) with different styles, [symbols](symbols.md), or adding [images](images.md) inline.
+This method is useful for adding different [text](usage/text.md) with different styles, [symbols](usage/symbols.md), or adding [images](usage/images.md) inline.
 
 ```ts
 const paragraph = new Paragraph({

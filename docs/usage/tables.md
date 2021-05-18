@@ -237,12 +237,6 @@ const cell = new TableCell({
 | NIL      | is considered as zero             |
 | PCT      | percent of table width            |
 
-#### Example
-
-```ts
-cell.Properties.setWidth(100, WidthType.DXA);
-```
-
 ### Nested Tables
 
 To have a table within a table, simply add it in the `children` block of a `table cell`:

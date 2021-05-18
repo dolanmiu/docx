@@ -5,35 +5,49 @@
 ?> **Note:** This feature only works on Headers and Footers
 
 ```ts
-doc.Header.createParagraph().addRun(new TextRun("Page Number: ").pageNumber()).addRun(new TextRun("to ").numberOfTotalPages());
+new Paragraph({
+    children: [
+        new TextRun({
+            children: ["Page #: ", PageNumber.CURRENT],
+        })
+    ]
+})
 ```
 
 ## Current page number
 
-To get the current page number, call the `.pageNumber()` method on a `TextRun`. Then add the newly created `TextRun` into a paragraph
-
 ```ts
-pageNumber();
+PageNumber.CURRENT
 ```
 
 For example:
 
 ```ts
-const currentPageRun = new TextRun("Current Page Number: ").pageNumber();
-paragraph.addRun(currentPageRun);
+new Paragraph({
+    children: [
+        new TextRun({
+            children: ["Page Number ", PageNumber.CURRENT],
+        })
+    ]
+})
 ```
 
 ## Total number of pages
 
 ```ts
-numberOfTotalPages();
+PageNumber.TOTAL_PAGES
 ```
 
 For example:
 
 ```ts
-const lastPage = new TextRun("Total Page Number: ").numberOfTotalPages();
-paragraph.addRun(lastPage);
+new Paragraph({
+    children: [
+        new TextRun({
+            children: ["Total Pages Number: ", PageNumber.TOTAL_PAGES],
+        })
+    ]
+})
 ```
 
 
@@ -42,17 +56,14 @@ paragraph.addRun(lastPage);
 You can combine the two to get "Page 2 of 10" effect:
 
 ```ts
-const currentPageRun = new TextRun("Page ").pageNumber();
-const lastPage = new TextRun("of ").numberOfTotalPages();
-
-paragraph.addRun(currentPageRun);
-paragraph.addRun(lastPage);
-```
-
-Or:
-
-```ts
-doc.Header.createParagraph().addRun(new TextRun("Page ").pageNumber()).addRun(new TextRun("of ").numberOfTotalPages());
+new Paragraph({
+    children: [
+        new TextRun("My awesome text here for my university dissertation. ")
+        new TextRun({
+            children: ["Page ", PageNumber.CURRENT, " of ", PageNumber.TOTAL_PAGES],
+        })
+    ]
+})
 ```
 
 ## Examples
