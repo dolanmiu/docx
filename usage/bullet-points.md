@@ -12,14 +12,14 @@ const doc = new Document({
             new Paragraph({
                 text: "Bullet points",
                 bullet: {
-                level: 0 //How deep you want the bullet to be
-            }
+                    level: 0 //How deep you want the bullet to be
+                }
             }),
             new Paragraph({
                 text: "Are awesome",
                 bullet: {
-                level: 0
-            }
+                    level: 0
+                }
             })
         ],
     }];
