@@ -25,8 +25,8 @@ describe("File", () => {
 
             const tree = new Formatter().format(doc.Document.View.Body);
 
-            expect(tree["w:body"][0]["w:sectPr"][4]["w:headerReference"]._attr["w:type"]).to.equal("default");
-            expect(tree["w:body"][0]["w:sectPr"][5]["w:footerReference"]._attr["w:type"]).to.equal("default");
+            expect(tree["w:body"][0]["w:sectPr"][0]["w:headerReference"]._attr["w:type"]).to.equal("default");
+            expect(tree["w:body"][0]["w:sectPr"][1]["w:footerReference"]._attr["w:type"]).to.equal("default");
         });
 
         it("should create with first headers and footers", () => {
@@ -45,8 +45,8 @@ describe("File", () => {
             });
 
             const tree = new Formatter().format(doc.Document.View.Body);
-            expect(tree["w:body"][0]["w:sectPr"][4]["w:headerReference"]._attr["w:type"]).to.equal("first");
-            expect(tree["w:body"][0]["w:sectPr"][5]["w:footerReference"]._attr["w:type"]).to.equal("first");
+            expect(tree["w:body"][0]["w:sectPr"][0]["w:headerReference"]._attr["w:type"]).to.equal("first");
+            expect(tree["w:body"][0]["w:sectPr"][1]["w:footerReference"]._attr["w:type"]).to.equal("first");
         });
 
         it("should create with correct headers", () => {
@@ -70,13 +70,13 @@ describe("File", () => {
 
             const tree = new Formatter().format(doc.Document.View.Body);
 
-            expect(tree["w:body"][0]["w:sectPr"][4]["w:headerReference"]._attr["w:type"]).to.equal("default");
-            expect(tree["w:body"][0]["w:sectPr"][5]["w:headerReference"]._attr["w:type"]).to.equal("first");
-            expect(tree["w:body"][0]["w:sectPr"][6]["w:headerReference"]._attr["w:type"]).to.equal("even");
+            expect(tree["w:body"][0]["w:sectPr"][0]["w:headerReference"]._attr["w:type"]).to.equal("default");
+            expect(tree["w:body"][0]["w:sectPr"][1]["w:headerReference"]._attr["w:type"]).to.equal("first");
+            expect(tree["w:body"][0]["w:sectPr"][2]["w:headerReference"]._attr["w:type"]).to.equal("even");
 
-            expect(tree["w:body"][0]["w:sectPr"][7]["w:footerReference"]._attr["w:type"]).to.equal("default");
-            expect(tree["w:body"][0]["w:sectPr"][8]["w:footerReference"]._attr["w:type"]).to.equal("first");
-            expect(tree["w:body"][0]["w:sectPr"][9]["w:footerReference"]._attr["w:type"]).to.equal("even");
+            expect(tree["w:body"][0]["w:sectPr"][3]["w:footerReference"]._attr["w:type"]).to.equal("default");
+            expect(tree["w:body"][0]["w:sectPr"][4]["w:footerReference"]._attr["w:type"]).to.equal("first");
+            expect(tree["w:body"][0]["w:sectPr"][5]["w:footerReference"]._attr["w:type"]).to.equal("even");
         });
 
         it("should add child", () => {
@@ -136,6 +136,11 @@ describe("File", () => {
                                 },
                             },
                             {
+                                "w:pgNumType": {
+                                    _attr: {},
+                                },
+                            },
+                            {
                                 "w:cols": {
                                     _attr: {
                                         "w:num": 1,
@@ -149,11 +154,6 @@ describe("File", () => {
                                     _attr: {
                                         "w:linePitch": 360,
                                     },
-                                },
-                            },
-                            {
-                                "w:pgNumType": {
-                                    _attr: {},
                                 },
                             },
                         ],

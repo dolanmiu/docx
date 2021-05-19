@@ -89,19 +89,15 @@ export class SectionProperties extends XmlComponent {
     }: ISectionPropertiesOptions = {}) {
         super("w:sectPr");
 
-        this.root.push(new PageSize(width, height, orientation));
-        this.root.push(new PageMargin(top, right, bottom, left, header, footer, gutter, mirror));
-        this.root.push(new Columns(space, count, separate));
-        this.root.push(new DocumentGrid(linePitch));
-
         this.addHeaders(headerWrapperGroup);
         this.addFooters(footerWrapperGroup);
 
-        this.root.push(new PageNumberType(pageNumberStart, pageNumberFormatType, pageNumberSeparator));
-
-        if (lineNumberCountBy || lineNumberStart || lineNumberRestart || lineNumberDistance) {
-            this.root.push(new LineNumberType(lineNumberCountBy, lineNumberStart, lineNumberRestart, lineNumberDistance));
+        if (type) {
+            this.root.push(new Type(type));
         }
+
+        this.root.push(new PageSize(width, height, orientation));
+        this.root.push(new PageMargin(top, right, bottom, left, header, footer, gutter, mirror));
 
         if (pageBorders || pageBorderTop || pageBorderRight || pageBorderBottom || pageBorderLeft) {
             this.root.push(
@@ -115,17 +111,23 @@ export class SectionProperties extends XmlComponent {
             );
         }
 
-        if (titlePage) {
-            this.root.push(new TitlePage());
+        if (lineNumberCountBy || lineNumberStart || lineNumberRestart || lineNumberDistance) {
+            this.root.push(new LineNumberType(lineNumberCountBy, lineNumberStart, lineNumberRestart, lineNumberDistance));
         }
+
+        this.root.push(new PageNumberType(pageNumberStart, pageNumberFormatType, pageNumberSeparator));
+
+        this.root.push(new Columns(space, count, separate));
 
         if (verticalAlign) {
             this.root.push(new SectionVerticalAlign(verticalAlign));
         }
 
-        if (type) {
-            this.root.push(new Type(type));
+        if (titlePage) {
+            this.root.push(new TitlePage());
         }
+
+        this.root.push(new DocumentGrid(linePitch));
     }
 
     private addHeaders(headers: IHeaderFooterGroup<HeaderWrapper>): void {

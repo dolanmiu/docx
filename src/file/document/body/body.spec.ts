@@ -43,13 +43,13 @@ describe("Body", () => {
                                     },
                                 },
                             },
-                            { "w:cols": { _attr: { "w:space": 708, "w:sep": false, "w:num": 1 } } },
-                            { "w:docGrid": { _attr: { "w:linePitch": 360 } } },
                             {
                                 "w:pgNumType": {
                                     _attr: {},
                                 },
                             },
+                            { "w:cols": { _attr: { "w:space": 708, "w:sep": false, "w:num": 1 } } },
+                            { "w:docGrid": { _attr: { "w:linePitch": 360 } } },
                         ],
                     },
                 ],

@@ -77,11 +77,11 @@ export class TableCell extends XmlComponent {
             if (options.borders.top) {
                 properties.Borders.addTopBorder(options.borders.top.style, options.borders.top.size, options.borders.top.color);
             }
-            if (options.borders.bottom) {
-                properties.Borders.addBottomBorder(options.borders.bottom.style, options.borders.bottom.size, options.borders.bottom.color);
-            }
             if (options.borders.left) {
                 properties.Borders.addLeftBorder(options.borders.left.style, options.borders.left.size, options.borders.left.color);
+            }
+            if (options.borders.bottom) {
+                properties.Borders.addBottomBorder(options.borders.bottom.style, options.borders.bottom.size, options.borders.bottom.color);
             }
             if (options.borders.right) {
                 properties.Borders.addRightBorder(options.borders.right.style, options.borders.right.size, options.borders.right.color);

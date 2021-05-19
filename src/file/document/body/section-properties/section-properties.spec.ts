@@ -61,8 +61,10 @@ describe("SectionProperties", () => {
 
             expect(Object.keys(tree)).to.deep.equal(["w:sectPr"]);
             expect(tree["w:sectPr"]).to.be.an.instanceof(Array);
-            expect(tree["w:sectPr"][0]).to.deep.equal({ "w:pgSz": { _attr: { "w:h": 16838, "w:w": 11906, "w:orient": "portrait" } } });
-            expect(tree["w:sectPr"][1]).to.deep.equal({
+            expect(tree["w:sectPr"][0]).to.deep.equal({ "w:headerReference": { _attr: { "r:id": "rId100", "w:type": "default" } } });
+            expect(tree["w:sectPr"][1]).to.deep.equal({ "w:footerReference": { _attr: { "r:id": "rId200", "w:type": "even" } } });
+            expect(tree["w:sectPr"][2]).to.deep.equal({ "w:pgSz": { _attr: { "w:h": 16838, "w:w": 11906, "w:orient": "portrait" } } });
+            expect(tree["w:sectPr"][3]).to.deep.equal({
                 "w:pgMar": {
                     _attr: {
                         "w:bottom": 1440,
@@ -77,11 +79,11 @@ describe("SectionProperties", () => {
                 },
             });
 
-            expect(tree["w:sectPr"][2]).to.deep.equal({ "w:cols": { _attr: { "w:space": 708, "w:sep": true, "w:num": 1 } } });
-            expect(tree["w:sectPr"][3]).to.deep.equal({ "w:docGrid": { _attr: { "w:linePitch": 360 } } });
-            expect(tree["w:sectPr"][4]).to.deep.equal({ "w:headerReference": { _attr: { "r:id": "rId100", "w:type": "default" } } });
-            expect(tree["w:sectPr"][5]).to.deep.equal({ "w:footerReference": { _attr: { "r:id": "rId200", "w:type": "even" } } });
-            expect(tree["w:sectPr"][6]).to.deep.equal({ "w:pgNumType": { _attr: { "w:fmt": "cardinalText", "w:start": 10 } } });
+            expect(tree["w:sectPr"][4]).to.deep.equal({ "w:pgNumType": { _attr: { "w:fmt": "cardinalText", "w:start": 10 } } });
+            expect(tree["w:sectPr"][5]).to.deep.equal({ "w:cols": { _attr: { "w:space": 708, "w:sep": true, "w:num": 1 } } });
+            expect(tree["w:sectPr"][6]).to.deep.equal({ "w:vAlign": { _attr: { "w:val": "top" } } });
+            expect(tree["w:sectPr"][7]).to.deep.equal({ "w:titlePg": { _attr: { "w:val": "1" } } });
+            expect(tree["w:sectPr"][8]).to.deep.equal({ "w:docGrid": { _attr: { "w:linePitch": 360 } } });
         });
 
         it("should create section properties with no options", () => {
@@ -104,8 +106,8 @@ describe("SectionProperties", () => {
                     },
                 },
             });
-            expect(tree["w:sectPr"][2]).to.deep.equal({ "w:cols": { _attr: { "w:space": 708, "w:sep": false, "w:num": 1 } } });
-            expect(tree["w:sectPr"][3]).to.deep.equal({ "w:docGrid": { _attr: { "w:linePitch": 360 } } });
+            expect(tree["w:sectPr"][3]).to.deep.equal({ "w:cols": { _attr: { "w:space": 708, "w:sep": false, "w:num": 1 } } });
+            expect(tree["w:sectPr"][4]).to.deep.equal({ "w:docGrid": { _attr: { "w:linePitch": 360 } } });
         });
 
         it("should create section properties with changed options", () => {

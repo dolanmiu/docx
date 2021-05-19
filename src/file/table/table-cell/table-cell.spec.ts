@@ -569,20 +569,20 @@ describe("TableCell", () => {
                                             },
                                         },
                                         {
-                                            "w:bottom": {
-                                                _attr: {
-                                                    "w:color": "blue",
-                                                    "w:sz": 3,
-                                                    "w:val": "double",
-                                                },
-                                            },
-                                        },
-                                        {
                                             "w:left": {
                                                 _attr: {
                                                     "w:color": "green",
                                                     "w:sz": 3,
                                                     "w:val": "dashDotStroked",
+                                                },
+                                            },
+                                        },
+                                        {
+                                            "w:bottom": {
+                                                _attr: {
+                                                    "w:color": "blue",
+                                                    "w:sz": 3,
+                                                    "w:val": "double",
                                                 },
                                             },
                                         },
