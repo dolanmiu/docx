@@ -34,8 +34,8 @@ export class Form extends XmlComponent {
 
         this.extents = new Extents(options.emus.x, options.emus.y);
 
-        this.root.push(this.extents);
         this.root.push(new Offset());
+        this.root.push(this.extents);
     }
 
     public setXY(x: number, y: number): void {

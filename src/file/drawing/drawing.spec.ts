@@ -111,7 +111,7 @@ describe("Drawing", () => {
                                                             {
                                                                 "pic:cNvPr": {
                                                                     _attr: {
-                                                                        desc: "",
+                                                                        descr: "",
                                                                         id: 0,
                                                                         name: "",
                                                                     },
@@ -167,18 +167,18 @@ describe("Drawing", () => {
                                                                         _attr: {},
                                                                     },
                                                                     {
-                                                                        "a:ext": {
-                                                                            _attr: {
-                                                                                cx: 952500,
-                                                                                cy: 952500,
-                                                                            },
-                                                                        },
-                                                                    },
-                                                                    {
                                                                         "a:off": {
                                                                             _attr: {
                                                                                 x: 0,
                                                                                 y: 0,
+                                                                            },
+                                                                        },
+                                                                    },
+                                                                    {
+                                                                        "a:ext": {
+                                                                            _attr: {
+                                                                                cx: 952500,
+                                                                                cy: 952500,
                                                                             },
                                                                         },
                                                                     },
@@ -341,7 +341,7 @@ describe("Drawing", () => {
                                                             {
                                                                 "pic:cNvPr": {
                                                                     _attr: {
-                                                                        desc: "",
+                                                                        descr: "",
                                                                         id: 0,
                                                                         name: "",
                                                                     },
@@ -397,18 +397,18 @@ describe("Drawing", () => {
                                                                         _attr: {},
                                                                     },
                                                                     {
-                                                                        "a:ext": {
-                                                                            _attr: {
-                                                                                cx: 952500,
-                                                                                cy: 952500,
-                                                                            },
-                                                                        },
-                                                                    },
-                                                                    {
                                                                         "a:off": {
                                                                             _attr: {
                                                                                 x: 0,
                                                                                 y: 0,
+                                                                            },
+                                                                        },
+                                                                    },
+                                                                    {
+                                                                        "a:ext": {
+                                                                            _attr: {
+                                                                                cx: 952500,
+                                                                                cy: 952500,
                                                                             },
                                                                         },
                                                                     },

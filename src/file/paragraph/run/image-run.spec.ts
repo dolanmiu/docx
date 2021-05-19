@@ -168,7 +168,7 @@ describe("ImageRun", () => {
                                                                     {
                                                                         "pic:cNvPr": {
                                                                             _attr: {
-                                                                                desc: "",
+                                                                                descr: "",
                                                                                 id: 0,
                                                                                 name: "",
                                                                             },
@@ -225,18 +225,18 @@ describe("ImageRun", () => {
                                                                                 },
                                                                             },
                                                                             {
-                                                                                "a:ext": {
-                                                                                    _attr: {
-                                                                                        cx: 1905000,
-                                                                                        cy: 1905000,
-                                                                                    },
-                                                                                },
-                                                                            },
-                                                                            {
                                                                                 "a:off": {
                                                                                     _attr: {
                                                                                         x: 0,
                                                                                         y: 0,
+                                                                                    },
+                                                                                },
+                                                                            },
+                                                                            {
+                                                                                "a:ext": {
+                                                                                    _attr: {
+                                                                                        cx: 1905000,
+                                                                                        cy: 1905000,
                                                                                     },
                                                                                 },
                                                                             },
@@ -418,7 +418,7 @@ describe("ImageRun", () => {
                                                                     {
                                                                         "pic:cNvPr": {
                                                                             _attr: {
-                                                                                desc: "",
+                                                                                descr: "",
                                                                                 id: 0,
                                                                                 name: "",
                                                                             },
@@ -475,18 +475,18 @@ describe("ImageRun", () => {
                                                                                 },
                                                                             },
                                                                             {
-                                                                                "a:ext": {
-                                                                                    _attr: {
-                                                                                        cx: 1905000,
-                                                                                        cy: 1905000,
-                                                                                    },
-                                                                                },
-                                                                            },
-                                                                            {
                                                                                 "a:off": {
                                                                                     _attr: {
                                                                                         x: 0,
                                                                                         y: 0,
+                                                                                    },
+                                                                                },
+                                                                            },
+                                                                            {
+                                                                                "a:ext": {
+                                                                                    _attr: {
+                                                                                        cx: 1905000,
+                                                                                        cy: 1905000,
                                                                                     },
                                                                                 },
                                                                             },
@@ -671,7 +671,7 @@ describe("ImageRun", () => {
                                                                     {
                                                                         "pic:cNvPr": {
                                                                             _attr: {
-                                                                                desc: "",
+                                                                                descr: "",
                                                                                 id: 0,
                                                                                 name: "",
                                                                             },
@@ -728,18 +728,18 @@ describe("ImageRun", () => {
                                                                                 },
                                                                             },
                                                                             {
-                                                                                "a:ext": {
-                                                                                    _attr: {
-                                                                                        cx: 1905000,
-                                                                                        cy: 1905000,
-                                                                                    },
-                                                                                },
-                                                                            },
-                                                                            {
                                                                                 "a:off": {
                                                                                     _attr: {
                                                                                         x: 0,
                                                                                         y: 0,
+                                                                                    },
+                                                                                },
+                                                                            },
+                                                                            {
+                                                                                "a:ext": {
+                                                                                    _attr: {
+                                                                                        cx: 1905000,
+                                                                                        cy: 1905000,
                                                                                     },
                                                                                 },
                                                                             },
@@ -927,7 +927,7 @@ describe("ImageRun", () => {
                                                                     {
                                                                         "pic:cNvPr": {
                                                                             _attr: {
-                                                                                desc: "",
+                                                                                descr: "",
                                                                                 id: 0,
                                                                                 name: "",
                                                                             },
@@ -984,18 +984,18 @@ describe("ImageRun", () => {
                                                                                 },
                                                                             },
                                                                             {
-                                                                                "a:ext": {
-                                                                                    _attr: {
-                                                                                        cx: 1905000,
-                                                                                        cy: 1905000,
-                                                                                    },
-                                                                                },
-                                                                            },
-                                                                            {
                                                                                 "a:off": {
                                                                                     _attr: {
                                                                                         x: 0,
                                                                                         y: 0,
+                                                                                    },
+                                                                                },
+                                                                            },
+                                                                            {
+                                                                                "a:ext": {
+                                                                                    _attr: {
+                                                                                        cx: 1905000,
+                                                                                        cy: 1905000,
                                                                                     },
                                                                                 },
                                                                             },
