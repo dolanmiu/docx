@@ -43,7 +43,7 @@ export class Paragraph extends XmlComponent {
             this.properties = new ParagraphProperties({});
             this.root.push(this.properties);
             this.root.push(new TextRun(options));
-            return;
+            return this;
         }
 
         this.properties = new ParagraphProperties(options);
