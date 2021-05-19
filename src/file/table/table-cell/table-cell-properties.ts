@@ -21,7 +21,6 @@ export class TableCellProperties extends IgnoreIfEmptyXmlComponent {
     constructor() {
         super("w:tcPr");
         this.cellBorder = new TableCellBorders();
-        this.root.push(this.cellBorder);
     }
 
     public get Borders(): TableCellBorders {
@@ -66,6 +65,12 @@ export class TableCellProperties extends IgnoreIfEmptyXmlComponent {
 
     public setTextDirection(type: TextDirection): TableCellProperties {
         this.root.push(new TDirection(type));
+
+        return this;
+    }
+
+    public addBorders(): TableCellProperties {
+        this.root.push(this.cellBorder);
 
         return this;
     }

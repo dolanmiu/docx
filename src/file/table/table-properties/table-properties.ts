@@ -35,34 +35,34 @@ export class TableProperties extends IgnoreIfEmptyXmlComponent {
             this.root.push(new TableStyle(options.style));
         }
 
-        this.root.push(new TableCellMargin(options.cellMargin || {}));
+        if (options.float) {
+            this.root.push(new TableFloatProperties(options.float));
+        }
 
-        if (options.borders) {
-            this.root.push(new TableBorders(options.borders));
+        if (options.visuallyRightToLeft) {
+            this.root.push(new VisuallyRightToLeft());
         }
 
         if (options.width) {
             this.root.push(new PreferredTableWidth(options.width.type, options.width.size));
         }
 
-        if (options.float) {
-            this.root.push(new TableFloatProperties(options.float));
-        }
-
-        if (options.layout) {
-            this.root.push(new TableLayout(options.layout));
-        }
-
         if (options.alignment) {
             this.root.push(new Alignment(options.alignment));
+        }
+
+        if (options.borders) {
+            this.root.push(new TableBorders(options.borders));
         }
 
         if (options.shading) {
             this.root.push(new TableShading(options.shading));
         }
 
-        if (options.visuallyRightToLeft) {
-            this.root.push(new VisuallyRightToLeft());
+        if (options.layout) {
+            this.root.push(new TableLayout(options.layout));
         }
+
+        this.root.push(new TableCellMargin(options.cellMargin || {}));
     }
 }

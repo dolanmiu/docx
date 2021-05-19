@@ -15,14 +15,6 @@ import { TableRow } from "./table-row";
 const DEFAULT_TABLE_PROPERTIES = {
     "w:tblCellMar": [
         {
-            "w:bottom": {
-                _attr: {
-                    "w:type": "auto",
-                    "w:w": 0,
-                },
-            },
-        },
-        {
             "w:top": {
                 _attr: {
                     "w:type": "auto",
@@ -32,6 +24,14 @@ const DEFAULT_TABLE_PROPERTIES = {
         },
         {
             "w:left": {
+                _attr: {
+                    "w:type": "auto",
+                    "w:w": 0,
+                },
+            },
+        },
+        {
+            "w:bottom": {
                 _attr: {
                     "w:type": "auto",
                     "w:w": 0,
@@ -177,7 +177,7 @@ describe("Table", () => {
             };
             expect(tree).to.deep.equal({
                 "w:tbl": [
-                    { "w:tblPr": [DEFAULT_TABLE_PROPERTIES, BORDERS, WIDTHS] },
+                    { "w:tblPr": [WIDTHS, BORDERS, DEFAULT_TABLE_PROPERTIES] },
                     {
                         "w:tblGrid": [{ "w:gridCol": { _attr: { "w:w": 100 } } }, { "w:gridCol": { _attr: { "w:w": 100 } } }],
                     },
@@ -223,7 +223,7 @@ describe("Table", () => {
             const cellP = { "w:p": [{ "w:r": [{ "w:t": [{ _attr: { "xml:space": "preserve" } }, "hello"] }] }] };
             expect(tree).to.deep.equal({
                 "w:tbl": [
-                    { "w:tblPr": [DEFAULT_TABLE_PROPERTIES, BORDERS, WIDTHS] },
+                    { "w:tblPr": [WIDTHS, BORDERS, DEFAULT_TABLE_PROPERTIES] },
                     {
                         "w:tblGrid": [{ "w:gridCol": { _attr: { "w:w": 100 } } }, { "w:gridCol": { _attr: { "w:w": 100 } } }],
                     },
@@ -270,7 +270,7 @@ describe("Table", () => {
             const tree = new Formatter().format(table);
             expect(tree).to.have.property("w:tbl").which.is.an("array").with.has.length.at.least(1);
             expect(tree["w:tbl"][0]).to.deep.equal({
-                "w:tblPr": [DEFAULT_TABLE_PROPERTIES, BORDERS, WIDTHS, { "w:tblLayout": { _attr: { "w:type": "fixed" } } }],
+                "w:tblPr": [WIDTHS, BORDERS, { "w:tblLayout": { _attr: { "w:type": "fixed" } } }, DEFAULT_TABLE_PROPERTIES],
             });
         });
 
@@ -290,7 +290,7 @@ describe("Table", () => {
             const tree = new Formatter().format(table);
             expect(tree).to.have.property("w:tbl").which.is.an("array").with.has.length.at.least(1);
             expect(tree["w:tbl"][0]).to.deep.equal({
-                "w:tblPr": [DEFAULT_TABLE_PROPERTIES, BORDERS, WIDTHS, { "w:jc": { _attr: { "w:val": "center" } } }],
+                "w:tblPr": [WIDTHS, { "w:jc": { _attr: { "w:val": "center" } } }, BORDERS, DEFAULT_TABLE_PROPERTIES],
             });
         });
 
@@ -315,8 +315,6 @@ describe("Table", () => {
             expect(tree).to.have.property("w:tbl").which.is.an("array").with.has.length.at.least(1);
             expect(tree["w:tbl"][0]).to.deep.equal({
                 "w:tblPr": [
-                    DEFAULT_TABLE_PROPERTIES,
-                    BORDERS,
                     {
                         "w:tblW": {
                             _attr: {
@@ -325,7 +323,9 @@ describe("Table", () => {
                             },
                         },
                     },
+                    BORDERS,
                     { "w:tblLayout": { _attr: { "w:type": "fixed" } } },
+                    DEFAULT_TABLE_PROPERTIES,
                 ],
             });
         });
@@ -477,9 +477,6 @@ describe("Table", () => {
             expect(tree).to.have.property("w:tbl").which.is.an("array").with.has.length.at.least(1);
             expect(tree["w:tbl"][0]).to.deep.equal({
                 "w:tblPr": [
-                    DEFAULT_TABLE_PROPERTIES,
-                    BORDERS,
-                    WIDTHS,
                     {
                         "w:tblpPr": {
                             _attr: {
@@ -496,6 +493,9 @@ describe("Table", () => {
                             },
                         },
                     },
+                    WIDTHS,
+                    BORDERS,
+                    DEFAULT_TABLE_PROPERTIES,
                 ],
             });
         });

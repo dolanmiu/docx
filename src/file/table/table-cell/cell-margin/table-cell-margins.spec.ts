@@ -20,6 +20,14 @@ describe("TableCellMargin", () => {
                         },
                     },
                     {
+                        "w:start": {
+                            _attr: {
+                                "w:type": "dxa",
+                                "w:w": 0,
+                            },
+                        },
+                    },
+                    {
                         "w:bottom": {
                             _attr: {
                                 "w:type": "dxa",
@@ -29,14 +37,6 @@ describe("TableCellMargin", () => {
                     },
                     {
                         "w:end": {
-                            _attr: {
-                                "w:type": "dxa",
-                                "w:w": 0,
-                            },
-                        },
-                    },
-                    {
-                        "w:start": {
                             _attr: {
                                 "w:type": "dxa",
                                 "w:w": 0,
@@ -66,6 +66,14 @@ describe("TableCellMargin", () => {
                         },
                     },
                     {
+                        "w:start": {
+                            _attr: {
+                                "w:type": "dxa",
+                                "w:w": 5,
+                            },
+                        },
+                    },
+                    {
                         "w:bottom": {
                             _attr: {
                                 "w:type": "dxa",
@@ -75,14 +83,6 @@ describe("TableCellMargin", () => {
                     },
                     {
                         "w:end": {
-                            _attr: {
-                                "w:type": "dxa",
-                                "w:w": 5,
-                            },
-                        },
-                    },
-                    {
-                        "w:start": {
                             _attr: {
                                 "w:type": "dxa",
                                 "w:w": 5,

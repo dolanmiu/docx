@@ -14,8 +14,8 @@ export class TableCellMargin extends XmlComponent {
     constructor({ top = 0, left = 0, right = 0, bottom = 0 }: ITableCellMarginOptions) {
         super("w:tcMar");
         this.root.push(new TopCellMargin(top));
+        this.root.push(new LeftCellMargin(left));
         this.root.push(new BottomCellMargin(bottom));
         this.root.push(new RightCellMargin(right));
-        this.root.push(new LeftCellMargin(left));
     }
 }

@@ -355,6 +355,14 @@ describe("TableCell", () => {
                                         },
                                     },
                                     {
+                                        "w:start": {
+                                            _attr: {
+                                                "w:type": "dxa",
+                                                "w:w": 1,
+                                            },
+                                        },
+                                    },
+                                    {
                                         "w:bottom": {
                                             _attr: {
                                                 "w:type": "dxa",
@@ -364,14 +372,6 @@ describe("TableCell", () => {
                                     },
                                     {
                                         "w:end": {
-                                            _attr: {
-                                                "w:type": "dxa",
-                                                "w:w": 1,
-                                            },
-                                        },
-                                    },
-                                    {
-                                        "w:start": {
                                             _attr: {
                                                 "w:type": "dxa",
                                                 "w:w": 1,

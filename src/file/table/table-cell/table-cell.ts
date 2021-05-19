@@ -57,12 +57,12 @@ export class TableCell extends XmlComponent {
             this.root.push(child);
         }
 
-        if (options.verticalAlign) {
-            properties.setVerticalAlign(options.verticalAlign);
+        if (options.width) {
+            properties.setWidth(options.width.size, options.width.type);
         }
 
-        if (options.textDirection) {
-            properties.setTextDirection(options.textDirection);
+        if (options.columnSpan) {
+            properties.addGridSpan(options.columnSpan);
         }
 
         if (options.verticalMerge) {
@@ -72,23 +72,8 @@ export class TableCell extends XmlComponent {
             properties.addVerticalMerge(VerticalMergeType.RESTART);
         }
 
-        if (options.margins) {
-            properties.addMargins(options.margins);
-        }
-
-        if (options.shading) {
-            properties.setShading(options.shading);
-        }
-
-        if (options.columnSpan) {
-            properties.addGridSpan(options.columnSpan);
-        }
-
-        if (options.width) {
-            properties.setWidth(options.width.size, options.width.type);
-        }
-
         if (options.borders) {
+            properties.addBorders();
             if (options.borders.top) {
                 properties.Borders.addTopBorder(options.borders.top.style, options.borders.top.size, options.borders.top.color);
             }
@@ -101,6 +86,22 @@ export class TableCell extends XmlComponent {
             if (options.borders.right) {
                 properties.Borders.addRightBorder(options.borders.right.style, options.borders.right.size, options.borders.right.color);
             }
+        }
+
+        if (options.shading) {
+            properties.setShading(options.shading);
+        }
+
+        if (options.margins) {
+            properties.addMargins(options.margins);
+        }
+
+        if (options.textDirection) {
+            properties.setTextDirection(options.textDirection);
+        }
+
+        if (options.verticalAlign) {
+            properties.setVerticalAlign(options.verticalAlign);
         }
     }
 
