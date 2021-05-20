@@ -245,15 +245,6 @@ describe("Run", () => {
                     {
                         "w:rPr": [
                             { "w:shd": { _attr: { "w:val": "pct10", "w:fill": "00FFFF", "w:color": "FF0000" } } },
-                            {
-                                "w:shdCs": {
-                                    _attr: {
-                                        "w:val": "pct10",
-                                        "w:fill": "00FFFF",
-                                        "w:color": "FF0000",
-                                    },
-                                },
-                            },
                         ],
                     },
                 ],

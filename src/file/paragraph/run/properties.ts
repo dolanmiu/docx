@@ -16,7 +16,6 @@ import {
     ItalicsComplexScript,
     RightToLeft,
     Shading,
-    ShadowComplexScript,
     Size,
     SizeComplexScript,
     SmallCaps,
@@ -63,7 +62,6 @@ export interface IRunStylePropertiesOptions {
         readonly fill: string;
         readonly color: string;
     };
-    readonly shadingComplexScript?: boolean | IRunStylePropertiesOptions["shading"];
     readonly shadow?: IRunStylePropertiesOptions["shading"];
     readonly emboss?: boolean;
     readonly imprint?: boolean;
@@ -184,11 +182,6 @@ export class RunProperties extends IgnoreIfEmptyXmlComponent {
         const shading = options.shading || options.shadow;
         if (shading) {
             this.push(new Shading(shading.type, shading.fill, shading.color));
-        }
-        const shdCs =
-            options.shadingComplexScript === undefined || options.shadingComplexScript === true ? shading : options.shadingComplexScript;
-        if (shdCs) {
-            this.push(new ShadowComplexScript(shdCs.type, shdCs.fill, shdCs.color));
         }
     }
 
