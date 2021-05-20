@@ -658,29 +658,7 @@ describe("ParagraphStyle", () => {
                     fill: "00FFFF",
                     color: "FF0000",
                 },
-                expected: [
-                    { "w:shd": { _attr: { "w:val": "pct10", "w:fill": "00FFFF", "w:color": "FF0000" } } },
-                ],
-            },
-            {
-                shading: {
-                    type: ShadingType.PERCENT_10,
-                    fill: "00FFFF",
-                    color: "FF0000",
-                },
-                expected: [
-                    { "w:shd": { _attr: { "w:val": "pct10", "w:fill": "00FFFF", "w:color": "FF0000" } } },
-                ],
-            },
-            {
-                shading: {
-                    type: ShadingType.PERCENT_10,
-                    fill: "00FFFF",
-                    color: "FF0000",
-                },
-                expected: [
-                    { "w:shd": { _attr: { "w:val": "pct10", "w:fill": "00FFFF", "w:color": "FF0000" } } },
-                ],
+                expected: [{ "w:shd": { _attr: { "w:val": "pct10", "w:fill": "00FFFF", "w:color": "FF0000" } } }],
             },
             {
                 shading: {
@@ -696,9 +674,23 @@ describe("ParagraphStyle", () => {
                     fill: "00FFFF",
                     color: "FF0000",
                 },
-                expected: [
-                    { "w:shd": { _attr: { "w:val": "pct10", "w:fill": "00FFFF", "w:color": "FF0000" } } },
-                ],
+                expected: [{ "w:shd": { _attr: { "w:val": "pct10", "w:fill": "00FFFF", "w:color": "FF0000" } } }],
+            },
+            {
+                shading: {
+                    type: ShadingType.PERCENT_10,
+                    fill: "00FFFF",
+                    color: "FF0000",
+                },
+                expected: [{ "w:shd": { _attr: { "w:val": "pct10", "w:fill": "00FFFF", "w:color": "FF0000" } } }],
+            },
+            {
+                shading: {
+                    type: ShadingType.PERCENT_10,
+                    fill: "00FFFF",
+                    color: "FF0000",
+                },
+                expected: [{ "w:shd": { _attr: { "w:val": "pct10", "w:fill": "00FFFF", "w:color": "FF0000" } } }],
             },
         ];
         shadingTests.forEach(({ shadow, shading, expected }) => {
