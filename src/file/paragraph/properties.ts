@@ -148,7 +148,6 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
             this.push(new TabStop(TabStopType.LEFT, options.leftTabStop));
         }
 
-
         if (options.bidirectional) {
             this.push(new Bidirectional());
         }
