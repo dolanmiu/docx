@@ -39,7 +39,6 @@ describe("Body", () => {
                                         "w:header": 708,
                                         "w:footer": 708,
                                         "w:gutter": 0,
-                                        "w:mirrorMargins": false,
                                     },
                                 },
                             },

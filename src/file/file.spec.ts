@@ -129,7 +129,6 @@ describe("File", () => {
                                         "w:gutter": 0,
                                         "w:header": 708,
                                         "w:left": 1440,
-                                        "w:mirrorMargins": false,
                                         "w:right": 1440,
                                         "w:top": 1440,
                                     },

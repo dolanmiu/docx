@@ -63,7 +63,6 @@ export class SectionProperties extends XmlComponent {
                 header = 708,
                 footer = 708,
                 gutter = 0,
-                mirror = false,
             } = {},
             pageNumbers: {
                 start: pageNumberStart = undefined,
@@ -97,7 +96,7 @@ export class SectionProperties extends XmlComponent {
         }
 
         this.root.push(new PageSize(width, height, orientation));
-        this.root.push(new PageMargin(top, right, bottom, left, header, footer, gutter, mirror));
+        this.root.push(new PageMargin(top, right, bottom, left, header, footer, gutter));
 
         if (pageBorders || pageBorderTop || pageBorderRight || pageBorderBottom || pageBorderLeft) {
             this.root.push(

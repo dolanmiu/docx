@@ -32,7 +32,6 @@ describe("SectionProperties", () => {
                         header: 708,
                         footer: 708,
                         gutter: 0,
-                        mirror: false,
                     },
                     pageNumbers: {
                         start: 10,
@@ -74,7 +73,6 @@ describe("SectionProperties", () => {
                         "w:left": 1440,
                         "w:header": 708,
                         "w:gutter": 0,
-                        "w:mirrorMargins": false,
                     },
                 },
             });
@@ -102,7 +100,6 @@ describe("SectionProperties", () => {
                         "w:left": 1440,
                         "w:header": 708,
                         "w:gutter": 0,
-                        "w:mirrorMargins": false,
                     },
                 },
             });
@@ -132,7 +129,6 @@ describe("SectionProperties", () => {
                         "w:left": 1440,
                         "w:header": 708,
                         "w:gutter": 0,
-                        "w:mirrorMargins": false,
                     },
                 },
             });
@@ -160,7 +156,6 @@ describe("SectionProperties", () => {
                         "w:left": 1440,
                         "w:header": 708,
                         "w:gutter": 0,
-                        "w:mirrorMargins": false,
                     },
                 },
             });
@@ -189,7 +184,6 @@ describe("SectionProperties", () => {
                         "w:left": 1440,
                         "w:header": 708,
                         "w:gutter": 0,
-                        "w:mirrorMargins": false,
                     },
                 },
             });
