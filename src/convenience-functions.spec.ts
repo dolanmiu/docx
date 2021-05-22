@@ -18,14 +18,14 @@ describe("Utility", () => {
     });
 
     describe("#uniqueNumericId", () => {
-        it("should generate a unique ID", () => {
+        it("should generate a unique incrementing ID", () => {
             // tslint:disable-next-line: no-unused-expression
             expect(uniqueNumericId()).to.not.be.undefined;
         });
     });
 
     describe("#uniqueId", () => {
-        it("should call the underlying header's addChildElement", () => {
+        it("should generate a unique pseudorandom ID", () => {
             // tslint:disable-next-line: no-unused-expression
             expect(uniqueId()).to.not.be.empty;
         });
