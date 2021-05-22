@@ -1,6 +1,12 @@
 import { BorderStyle } from "file/styles";
 import { IgnoreIfEmptyXmlComponent, XmlAttributeComponent, XmlComponent } from "file/xml-components";
 
+interface ITableCellBorderPropertyOptions {
+    readonly style: BorderStyle;
+    readonly size: number;
+    readonly color: string;
+}
+
 class CellBorderAttributes extends XmlAttributeComponent<{
     readonly style: BorderStyle;
     readonly size: number;
@@ -10,69 +16,43 @@ class CellBorderAttributes extends XmlAttributeComponent<{
 }
 
 class BaseTableCellBorder extends XmlComponent {
-    public setProperties(style: BorderStyle, size: number, color: string): BaseTableCellBorder {
-        const attrs = new CellBorderAttributes({
-            style: style,
-            size: size,
-            color: color,
-        });
-        this.root.push(attrs);
-
-        return this;
+    constructor(key: string, options: ITableCellBorderPropertyOptions) {
+        super(key);
+        this.root.push(new CellBorderAttributes(options));
     }
 }
 
+export interface ITableCellBorders {
+    readonly top?: ITableCellBorderPropertyOptions;
+    readonly start?: ITableCellBorderPropertyOptions;
+    readonly left?: ITableCellBorderPropertyOptions;
+    readonly bottom?: ITableCellBorderPropertyOptions;
+    readonly end?: ITableCellBorderPropertyOptions;
+    readonly right?: ITableCellBorderPropertyOptions;
+}
+
 export class TableCellBorders extends IgnoreIfEmptyXmlComponent {
-    constructor() {
+    constructor(options: ITableCellBorders) {
         super("w:tcBorders");
-    }
 
-    public addTopBorder(style: BorderStyle, size: number, color: string): TableCellBorders {
-        const top = new BaseTableCellBorder("w:top");
-        top.setProperties(style, size, color);
-        this.root.push(top);
-
-        return this;
-    }
-
-    public addStartBorder(style: BorderStyle, size: number, color: string): TableCellBorders {
-        const start = new BaseTableCellBorder("w:start");
-        start.setProperties(style, size, color);
-        this.root.push(start);
-
-        return this;
-    }
-
-    public addBottomBorder(style: BorderStyle, size: number, color: string): TableCellBorders {
-        const bottom = new BaseTableCellBorder("w:bottom");
-        bottom.setProperties(style, size, color);
-        this.root.push(bottom);
-
-        return this;
-    }
-
-    public addEndBorder(style: BorderStyle, size: number, color: string): TableCellBorders {
-        const end = new BaseTableCellBorder("w:end");
-        end.setProperties(style, size, color);
-        this.root.push(end);
-
-        return this;
-    }
-
-    public addLeftBorder(style: BorderStyle, size: number, color: string): TableCellBorders {
-        const left = new BaseTableCellBorder("w:left");
-        left.setProperties(style, size, color);
-        this.root.push(left);
-
-        return this;
-    }
-
-    public addRightBorder(style: BorderStyle, size: number, color: string): TableCellBorders {
-        const right = new BaseTableCellBorder("w:right");
-        right.setProperties(style, size, color);
-        this.root.push(right);
-
-        return this;
+        if (options.top) {
+            this.root.push(new BaseTableCellBorder("w:top", options.top));
+        }
+        if (options.start) {
+            this.root.push(new BaseTableCellBorder("w:start", options.start));
+        }
+        if (options.left) {
+            this.root.push(new BaseTableCellBorder("w:left", options.left));
+        }
+        if (options.bottom) {
+            this.root.push(new BaseTableCellBorder("w:bottom", options.bottom));
+        }
+        if (options.end) {
+            this.root.push(new BaseTableCellBorder("w:end", options.end));
+        }
+        if (options.right) {
+            this.root.push(new BaseTableCellBorder("w:right", options.right));
+        }
     }
 }
 
@@ -200,7 +180,7 @@ class TableCellWidthAttributes extends XmlAttributeComponent<{ readonly type: Wi
  * Table cell width element.
  */
 export class TableCellWidth extends XmlComponent {
-    constructor(value: string | number, type: WidthType) {
+    constructor(value: string | number, type: WidthType = WidthType.AUTO) {
         super("w:tcW");
 
         this.root.push(

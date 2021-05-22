@@ -10,15 +10,20 @@ import { TableCellBorders, TableCellWidth, TextDirection, VerticalAlign, Vertica
 describe("TableCellBorders", () => {
     describe("#prepForXml", () => {
         it("should not add empty borders element if there are no borders defined", () => {
-            const tb = new TableCellBorders();
+            const tb = new TableCellBorders({});
             expect(() => new Formatter().format(tb)).to.throw();
         });
     });
 
     describe("#addingBorders", () => {
         it("should add top border", () => {
-            const tb = new TableCellBorders();
-            tb.addTopBorder(BorderStyle.DOTTED, 1, "FF00FF");
+            const tb = new TableCellBorders({
+                top: {
+                    style: BorderStyle.DOTTED,
+                    size: 1,
+                    color: "FF00FF",
+                },
+            });
 
             const tree = new Formatter().format(tb);
             expect(tree).to.deep.equal({
@@ -37,8 +42,13 @@ describe("TableCellBorders", () => {
         });
 
         it("should add start(left) border", () => {
-            const tb = new TableCellBorders();
-            tb.addStartBorder(BorderStyle.SINGLE, 2, "FF00FF");
+            const tb = new TableCellBorders({
+                start: {
+                    style: BorderStyle.SINGLE,
+                    size: 2,
+                    color: "FF00FF",
+                },
+            });
 
             const tree = new Formatter().format(tb);
             expect(tree).to.deep.equal({
@@ -57,8 +67,13 @@ describe("TableCellBorders", () => {
         });
 
         it("should add bottom border", () => {
-            const tb = new TableCellBorders();
-            tb.addBottomBorder(BorderStyle.DOUBLE, 1, "FF00FF");
+            const tb = new TableCellBorders({
+                bottom: {
+                    style: BorderStyle.DOUBLE,
+                    size: 1,
+                    color: "FF00FF",
+                },
+            });
 
             const tree = new Formatter().format(tb);
             expect(tree).to.deep.equal({
@@ -77,8 +92,13 @@ describe("TableCellBorders", () => {
         });
 
         it("should add end(right) border", () => {
-            const tb = new TableCellBorders();
-            tb.addEndBorder(BorderStyle.THICK, 3, "FF00FF");
+            const tb = new TableCellBorders({
+                end: {
+                    style: BorderStyle.THICK,
+                    size: 3,
+                    color: "FF0000",
+                },
+            });
 
             const tree = new Formatter().format(tb);
             expect(tree).to.deep.equal({
@@ -86,7 +106,7 @@ describe("TableCellBorders", () => {
                     {
                         "w:end": {
                             _attr: {
-                                "w:color": "FF00FF",
+                                "w:color": "FF0000",
                                 "w:sz": 3,
                                 "w:val": "thick",
                             },
@@ -97,8 +117,13 @@ describe("TableCellBorders", () => {
         });
 
         it("should add left border", () => {
-            const tb = new TableCellBorders();
-            tb.addLeftBorder(BorderStyle.THICK, 3, "FF00FF");
+            const tb = new TableCellBorders({
+                left: {
+                    style: BorderStyle.THICK,
+                    size: 3,
+                    color: "FF00FF",
+                },
+            });
 
             const tree = new Formatter().format(tb);
             expect(tree).to.deep.equal({
@@ -117,8 +142,13 @@ describe("TableCellBorders", () => {
         });
 
         it("should add right border", () => {
-            const tb = new TableCellBorders();
-            tb.addRightBorder(BorderStyle.THICK, 3, "FF00FF");
+            const tb = new TableCellBorders({
+                right: {
+                    style: BorderStyle.THICK,
+                    size: 3,
+                    color: "FF00FF",
+                },
+            });
 
             const tree = new Formatter().format(tb);
             expect(tree).to.deep.equal({
@@ -137,13 +167,38 @@ describe("TableCellBorders", () => {
         });
 
         it("should add multiple borders", () => {
-            const tb = new TableCellBorders();
-            tb.addTopBorder(BorderStyle.DOTTED, 1, "FF00FF");
-            tb.addEndBorder(BorderStyle.THICK, 3, "FF00FF");
-            tb.addBottomBorder(BorderStyle.DOUBLE, 1, "FF00FF");
-            tb.addStartBorder(BorderStyle.SINGLE, 2, "FF00FF");
-            tb.addLeftBorder(BorderStyle.SINGLE, 2, "FF00FF");
-            tb.addRightBorder(BorderStyle.SINGLE, 2, "FF00FF");
+            const tb = new TableCellBorders({
+                top: {
+                    style: BorderStyle.DOTTED,
+                    size: 1,
+                    color: "FF00FF",
+                },
+                end: {
+                    style: BorderStyle.THICK,
+                    size: 3,
+                    color: "FF00FF",
+                },
+                bottom: {
+                    style: BorderStyle.DOUBLE,
+                    size: 1,
+                    color: "FF00FF",
+                },
+                start: {
+                    style: BorderStyle.SINGLE,
+                    size: 2,
+                    color: "FF00FF",
+                },
+                left: {
+                    style: BorderStyle.SINGLE,
+                    size: 2,
+                    color: "FF00FF",
+                },
+                right: {
+                    style: BorderStyle.SINGLE,
+                    size: 2,
+                    color: "FF00FF",
+                },
+            });
 
             const tree = new Formatter().format(tb);
             expect(tree).to.deep.equal({
@@ -154,24 +209,6 @@ describe("TableCellBorders", () => {
                                 "w:color": "FF00FF",
                                 "w:sz": 1,
                                 "w:val": "dotted",
-                            },
-                        },
-                    },
-                    {
-                        "w:end": {
-                            _attr: {
-                                "w:color": "FF00FF",
-                                "w:sz": 3,
-                                "w:val": "thick",
-                            },
-                        },
-                    },
-                    {
-                        "w:bottom": {
-                            _attr: {
-                                "w:color": "FF00FF",
-                                "w:sz": 1,
-                                "w:val": "double",
                             },
                         },
                     },
@@ -190,6 +227,24 @@ describe("TableCellBorders", () => {
                                 "w:color": "FF00FF",
                                 "w:sz": 2,
                                 "w:val": "single",
+                            },
+                        },
+                    },
+                    {
+                        "w:bottom": {
+                            _attr: {
+                                "w:color": "FF00FF",
+                                "w:sz": 1,
+                                "w:val": "double",
+                            },
+                        },
+                    },
+                    {
+                        "w:end": {
+                            _attr: {
+                                "w:color": "FF00FF",
+                                "w:sz": 3,
+                                "w:val": "thick",
                             },
                         },
                     },

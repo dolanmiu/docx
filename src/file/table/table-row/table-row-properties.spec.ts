@@ -6,49 +6,55 @@ import { TableRowProperties } from "./table-row-properties";
 describe("TableRowProperties", () => {
     describe("#constructor", () => {
         it("creates an initially empty property object", () => {
-            const rowProperties = new TableRowProperties();
+            const rowProperties = new TableRowProperties({});
             // The TableRowProperties is ignorable if there are no attributes,
             // which results in prepForXml returning undefined, which causes
             // the formatter to throw an error if that is the only object it
             // has been asked to format.
             expect(() => new Formatter().format(rowProperties)).to.throw("XMLComponent did not format correctly");
         });
-    });
 
-    describe("#setCantSplit", () => {
         it("sets cantSplit to avoid row been paginated", () => {
-            const rowProperties = new TableRowProperties();
-            rowProperties.setCantSplit();
+            const rowProperties = new TableRowProperties({ cantSplit: true });
             const tree = new Formatter().format(rowProperties);
             expect(tree).to.deep.equal({ "w:trPr": [{ "w:cantSplit": { _attr: { "w:val": true } } }] });
         });
-    });
 
-    describe("#setTableHeader", () => {
         it("sets row as table header (repeat row on each page of table)", () => {
-            const rowProperties = new TableRowProperties();
-            rowProperties.setTableHeader();
+            const rowProperties = new TableRowProperties({ tableHeader: true });
             const tree = new Formatter().format(rowProperties);
             expect(tree).to.deep.equal({ "w:trPr": [{ "w:tblHeader": { _attr: { "w:val": true } } }] });
         });
-    });
 
-    describe("#setHeight", () => {
         it("sets row height exact", () => {
-            const rowProperties = new TableRowProperties();
-            rowProperties.setHeight(100, HeightRule.EXACT);
+            const rowProperties = new TableRowProperties({
+                height: {
+                    value: 100,
+                    rule: HeightRule.EXACT,
+                },
+            });
             const tree = new Formatter().format(rowProperties);
             expect(tree).to.deep.equal({ "w:trPr": [{ "w:trHeight": { _attr: { "w:val": 100, "w:hRule": "exact" } } }] });
         });
+
         it("sets row height auto", () => {
-            const rowProperties = new TableRowProperties();
-            rowProperties.setHeight(100, HeightRule.AUTO);
+            const rowProperties = new TableRowProperties({
+                height: {
+                    value: 100,
+                    rule: HeightRule.AUTO,
+                },
+            });
             const tree = new Formatter().format(rowProperties);
             expect(tree).to.deep.equal({ "w:trPr": [{ "w:trHeight": { _attr: { "w:val": 100, "w:hRule": "auto" } } }] });
         });
+
         it("sets row height at least", () => {
-            const rowProperties = new TableRowProperties();
-            rowProperties.setHeight(100, HeightRule.ATLEAST);
+            const rowProperties = new TableRowProperties({
+                height: {
+                    value: 100,
+                    rule: HeightRule.ATLEAST,
+                },
+            });
             const tree = new Formatter().format(rowProperties);
             expect(tree).to.deep.equal({ "w:trPr": [{ "w:trHeight": { _attr: { "w:val": 100, "w:hRule": "atLeast" } } }] });
         });

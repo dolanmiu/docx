@@ -4,6 +4,7 @@ import { ITableShadingAttributesProperties, TableShading } from "../shading";
 import { ITableCellMarginOptions, TableCellMargin } from "./cell-margin/table-cell-margins";
 import {
     GridSpan,
+    ITableCellBorders,
     TableCellBorders,
     TableCellWidth,
     TDirection,
@@ -15,63 +16,58 @@ import {
     WidthType,
 } from "./table-cell-components";
 
+export interface ITableCellPropertiesOptions {
+    readonly shading?: ITableShadingAttributesProperties;
+    readonly margins?: ITableCellMarginOptions;
+    readonly verticalAlign?: VerticalAlign;
+    readonly textDirection?: TextDirection;
+    readonly verticalMerge?: VerticalMergeType;
+    readonly width?: {
+        readonly size: number | string;
+        readonly type?: WidthType;
+    };
+    readonly columnSpan?: number;
+    readonly rowSpan?: number;
+    readonly borders?: ITableCellBorders;
+}
+
 export class TableCellProperties extends IgnoreIfEmptyXmlComponent {
-    private readonly cellBorder: TableCellBorders;
-
-    constructor() {
+    constructor(options: ITableCellPropertiesOptions) {
         super("w:tcPr");
-        this.cellBorder = new TableCellBorders();
-    }
 
-    public get Borders(): TableCellBorders {
-        return this.cellBorder;
-    }
+        if (options.width) {
+            this.root.push(new TableCellWidth(options.width.size, options.width.type));
+        }
 
-    public addGridSpan(cellSpan: number): TableCellProperties {
-        this.root.push(new GridSpan(cellSpan));
+        if (options.columnSpan) {
+            this.root.push(new GridSpan(options.columnSpan));
+        }
 
-        return this;
-    }
+        if (options.verticalMerge) {
+            this.root.push(new VerticalMerge(options.verticalMerge));
+        } else if (options.rowSpan && options.rowSpan > 1) {
+            // if cell already have a `verticalMerge`, don't handle `rowSpan`
+            this.root.push(new VerticalMerge(VerticalMergeType.RESTART));
+        }
 
-    public addVerticalMerge(type: VerticalMergeType): TableCellProperties {
-        this.root.push(new VerticalMerge(type));
+        if (options.borders) {
+            this.root.push(new TableCellBorders(options.borders));
+        }
 
-        return this;
-    }
+        if (options.shading) {
+            this.root.push(new TableShading(options.shading));
+        }
 
-    public setVerticalAlign(type: VerticalAlign): TableCellProperties {
-        this.root.push(new VAlign(type));
+        if (options.margins) {
+            this.root.push(new TableCellMargin(options.margins));
+        }
 
-        return this;
-    }
+        if (options.textDirection) {
+            this.root.push(new TDirection(options.textDirection));
+        }
 
-    public setWidth(width: string | number, type: WidthType = WidthType.AUTO): TableCellProperties {
-        this.root.push(new TableCellWidth(width, type));
-
-        return this;
-    }
-
-    public setShading(attrs: ITableShadingAttributesProperties): TableCellProperties {
-        this.root.push(new TableShading(attrs));
-
-        return this;
-    }
-
-    public addMargins(options: ITableCellMarginOptions): TableCellProperties {
-        this.root.push(new TableCellMargin(options));
-
-        return this;
-    }
-
-    public setTextDirection(type: TextDirection): TableCellProperties {
-        this.root.push(new TDirection(type));
-
-        return this;
-    }
-
-    public addBorders(): TableCellProperties {
-        this.root.push(this.cellBorder);
-
-        return this;
+        if (options.verticalAlign) {
+            this.root.push(new VAlign(options.verticalAlign));
+        }
     }
 }

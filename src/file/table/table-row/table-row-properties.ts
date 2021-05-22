@@ -3,27 +3,30 @@ import { IgnoreIfEmptyXmlComponent, XmlAttributeComponent, XmlComponent } from "
 
 import { HeightRule, TableRowHeight } from "./table-row-height";
 
+export interface ITableRowPropertiesOptions {
+    readonly cantSplit?: boolean;
+    readonly tableHeader?: boolean;
+    readonly height?: {
+        readonly value: number;
+        readonly rule: HeightRule;
+    };
+}
+
 export class TableRowProperties extends IgnoreIfEmptyXmlComponent {
-    constructor() {
+    constructor(options: ITableRowPropertiesOptions) {
         super("w:trPr");
-    }
 
-    public setCantSplit(): TableRowProperties {
-        this.root.push(new CantSplit());
+        if (options.cantSplit) {
+            this.root.push(new CantSplit());
+        }
 
-        return this;
-    }
+        if (options.tableHeader) {
+            this.root.push(new TableHeader());
+        }
 
-    public setTableHeader(): TableRowProperties {
-        this.root.push(new TableHeader());
-
-        return this;
-    }
-
-    public setHeight(value: number, rule: HeightRule): TableRowProperties {
-        this.root.push(new TableRowHeight(value, rule));
-
-        return this;
+        if (options.height) {
+            this.root.push(new TableRowHeight(options.height.value, options.height.rule));
+        }
     }
 }
 
