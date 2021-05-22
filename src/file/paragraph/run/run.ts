@@ -29,6 +29,12 @@ export class Run extends XmlComponent {
         this.properties = new RunProperties(options);
         this.root.push(this.properties);
 
+        if (options.break) {
+            for (let i = 0; i < options.break; i++) {
+                this.root.push(new Break());
+            }
+        }
+
         if (options.children) {
             for (const child of options.children) {
                 if (typeof child === "string") {
@@ -62,12 +68,6 @@ export class Run extends XmlComponent {
             }
         } else if (options.text) {
             this.root.push(new Text(options.text));
-        }
-
-        if (options.break) {
-            for (let i = 0; i < options.break; i++) {
-                this.root.splice(1, 0, new Break());
-            }
         }
     }
 }
