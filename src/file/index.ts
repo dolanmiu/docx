@@ -16,3 +16,4 @@ export * from "./header";
 export * from "./footnotes";
 export * from "./track-revision";
 export * from "./shared";
+export * from "./border";

@@ -2,6 +2,7 @@ import { expect } from "chai";
 
 import { Formatter } from "export/formatter";
 
+import { BorderStyle } from "file/border";
 import { Border, ThematicBreak } from "./border";
 
 describe("Border", () => {
@@ -11,25 +12,25 @@ describe("Border", () => {
                 top: {
                     color: "red",
                     space: 1,
-                    value: "test",
+                    style: BorderStyle.WAVE,
                     size: 2,
                 },
                 bottom: {
                     color: "red",
                     space: 3,
-                    value: "test",
+                    style: BorderStyle.WAVE,
                     size: 4,
                 },
                 left: {
                     color: "red",
                     space: 5,
-                    value: "test",
+                    style: BorderStyle.WAVE,
                     size: 6,
                 },
                 right: {
                     color: "red",
                     space: 7,
-                    value: "test",
+                    style: BorderStyle.WAVE,
                     size: 8,
                 },
             });
@@ -44,7 +45,7 @@ describe("Border", () => {
                                 "w:color": "red",
                                 "w:space": 1,
                                 "w:sz": 2,
-                                "w:val": "test",
+                                "w:val": "wave",
                             },
                         },
                     },
@@ -54,7 +55,7 @@ describe("Border", () => {
                                 "w:color": "red",
                                 "w:space": 3,
                                 "w:sz": 4,
-                                "w:val": "test",
+                                "w:val": "wave",
                             },
                         },
                     },
@@ -64,7 +65,7 @@ describe("Border", () => {
                                 "w:color": "red",
                                 "w:space": 5,
                                 "w:sz": 6,
-                                "w:val": "test",
+                                "w:val": "wave",
                             },
                         },
                     },
@@ -74,7 +75,7 @@ describe("Border", () => {
                                 "w:color": "red",
                                 "w:space": 7,
                                 "w:sz": 8,
-                                "w:val": "test",
+                                "w:val": "wave",
                             },
                         },
                     },

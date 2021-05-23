@@ -1,7 +1,7 @@
 import { expect } from "chai";
 
 import { Formatter } from "export/formatter";
-import { BorderStyle } from "file/styles";
+import { BorderStyle } from "file/border";
 
 import { TableBorders } from "./table-borders";
 

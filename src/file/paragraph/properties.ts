@@ -4,7 +4,7 @@ import { DocumentWrapper } from "../document-wrapper";
 import { IShadingAttributesProperties, Shading } from "../shading";
 import { Alignment, AlignmentType } from "./formatting/alignment";
 import { Bidirectional } from "./formatting/bidirectional";
-import { Border, IBorderOptions, ThematicBreak } from "./formatting/border";
+import { Border, IBordersOptions, ThematicBreak } from "./formatting/border";
 import { IIndentAttributesProperties, Indent } from "./formatting/indent";
 import { KeepLines, KeepNext } from "./formatting/keep";
 import { PageBreakBefore } from "./formatting/page-break";
@@ -30,7 +30,7 @@ export interface IParagraphStylePropertiesOptions {
 }
 
 export interface IParagraphPropertiesOptions extends IParagraphStylePropertiesOptions {
-    readonly border?: IBorderOptions;
+    readonly border?: IBordersOptions;
     readonly heading?: HeadingLevel;
     readonly bidirectional?: boolean;
     readonly pageBreakBefore?: boolean;

@@ -1,9 +1,11 @@
 // Note that the border type is identical in all places,
 // regardless of where it's used like paragraph/table/etc.
+// PageBorders are a superset, but we're not using any of those extras.
 //
 // http://officeopenxml.com/WPborders.php
 // http://officeopenxml.com/WPtableBorders.php
 // http://officeopenxml.com/WPtableCellProperties-Borders.php
+// http://officeopenxml.com/WPsectionBorders.php
 //
 // This describes the CT_Border type.
 // <xsd:complexType name="CT_Border">
@@ -17,7 +19,6 @@
 //     <xsd:attribute name="shadow" type="s:ST_OnOff" use="optional"/>
 //     <xsd:attribute name="frame" type="s:ST_OnOff" use="optional"/>
 // </xsd:complexType>
-import { BorderStyle } from "file/styles";
 import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
 
 export interface IBorderOptions {
@@ -41,4 +42,34 @@ class TableBordersAttributes extends XmlAttributeComponent<IBorderOptions> {
         size: "w:sz",
         space: "w:space",
     };
+}
+
+export enum BorderStyle {
+    SINGLE = "single",
+    DASH_DOT_STROKED = "dashDotStroked",
+    DASHED = "dashed",
+    DASH_SMALL_GAP = "dashSmallGap",
+    DOT_DASH = "dotDash",
+    DOT_DOT_DASH = "dotDotDash",
+    DOTTED = "dotted",
+    DOUBLE = "double",
+    DOUBLE_WAVE = "doubleWave",
+    INSET = "inset",
+    NIL = "nil",
+    NONE = "none",
+    OUTSET = "outset",
+    THICK = "thick",
+    THICK_THIN_LARGE_GAP = "thickThinLargeGap",
+    THICK_THIN_MEDIUM_GAP = "thickThinMediumGap",
+    THICK_THIN_SMALL_GAP = "thickThinSmallGap",
+    THIN_THICK_LARGE_GAP = "thinThickLargeGap",
+    THIN_THICK_MEDIUM_GAP = "thinThickMediumGap",
+    THIN_THICK_SMALL_GAP = "thinThickSmallGap",
+    THIN_THICK_THIN_LARGE_GAP = "thinThickThinLargeGap",
+    THIN_THICK_THIN_MEDIUM_GAP = "thinThickThinMediumGap",
+    THIN_THICK_THIN_SMALL_GAP = "thinThickThinSmallGap",
+    THREE_D_EMBOSS = "threeDEmboss",
+    THREE_D_ENGRAVE = "threeDEngrave",
+    TRIPLE = "triple",
+    WAVE = "wave",
 }

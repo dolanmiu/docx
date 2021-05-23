@@ -2,7 +2,9 @@ import { assert, expect } from "chai";
 import { SinonStub, stub } from "sinon";
 
 import * as convenienceFunctions from "convenience-functions";
+
 import { Formatter } from "export/formatter";
+import { BorderStyle } from "file/border";
 import { EMPTY_OBJECT } from "file/xml-components";
 
 import { IViewWrapper } from "../document-wrapper";
@@ -467,13 +469,13 @@ describe("Paragraph", () => {
                     left: {
                         color: "auto",
                         space: 1,
-                        value: "single",
+                        style: BorderStyle.SINGLE,
                         size: 6,
                     },
                     right: {
                         color: "auto",
                         space: 1,
-                        value: "single",
+                        style: BorderStyle.SINGLE,
                         size: 6,
                     },
                 },

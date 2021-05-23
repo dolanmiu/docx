@@ -4,6 +4,19 @@
 // http://officeopenxml.com/WPshading.php
 // http://officeopenxml.com/WPtableShading.php
 // http://officeopenxml.com/WPtableCellProperties-Shading.php
+//
+// This describes the CT_Shd type.
+// <xsd:complexType name="CT_Shd">
+//     <xsd:attribute name="val" type="ST_Shd" use="required"/>
+//     <xsd:attribute name="color" type="ST_HexColor" use="optional"/>
+//     <xsd:attribute name="themeColor" type="ST_ThemeColor" use="optional"/>
+//     <xsd:attribute name="themeTint" type="ST_UcharHexNumber" use="optional"/>
+//     <xsd:attribute name="themeShade" type="ST_UcharHexNumber" use="optional"/>
+//     <xsd:attribute name="fill" type="ST_HexColor" use="optional"/>
+//     <xsd:attribute name="themeFill" type="ST_ThemeColor" use="optional"/>
+//     <xsd:attribute name="themeFillTint" type="ST_UcharHexNumber" use="optional"/>
+//     <xsd:attribute name="themeFillShade" type="ST_UcharHexNumber" use="optional"/>
+// </xsd:complexType>
 import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
 
 export interface IShadingAttributesProperties {

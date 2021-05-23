@@ -1,7 +1,7 @@
 import { expect } from "chai";
 
 import { Formatter } from "export/formatter";
-import { BorderStyle } from "file/styles";
+import { BorderStyle } from "file/border";
 
 import { PageBorderDisplay, PageBorders, PageBorderZOrder } from "./page-borders";
 

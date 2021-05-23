@@ -1,7 +1,7 @@
 import { expect } from "chai";
 
 import { Formatter } from "export/formatter";
-import { BorderStyle } from "file/styles";
+import { BorderStyle } from "file/border";
 
 import { ShadingType } from "file/shading";
 import { TableCell } from "./table-cell";
