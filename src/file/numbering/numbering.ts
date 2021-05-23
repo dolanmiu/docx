@@ -149,7 +149,7 @@ export class Numbering extends XmlComponent {
         this.concreteNumberingMap.set(
             "default-bullet-numbering",
             new ConcreteNumbering({
-                numId: 0,
+                numId: 1,
                 abstractNumId: abstractNumbering.id,
                 reference: "default-bullet-numbering",
                 instance: 0,
