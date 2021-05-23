@@ -24,15 +24,8 @@ export class LineNumberAttributes extends XmlAttributeComponent<ILineNumberAttri
 }
 
 export class LineNumberType extends XmlComponent {
-    constructor(countBy?: number, start?: number, restart?: LineNumberRestartFormat, dist?: number) {
+    constructor(options: ILineNumberAttributes) {
         super("w:lnNumType");
-        this.root.push(
-            new LineNumberAttributes({
-                countBy: countBy,
-                start: start,
-                restart: restart,
-                distance: dist,
-            }),
-        );
+        this.root.push(new LineNumberAttributes(options));
     }
 }

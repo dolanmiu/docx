@@ -64,23 +64,13 @@ export class SectionProperties extends XmlComponent {
                 footer = 708,
                 gutter = 0,
             } = {},
-            pageNumbers: {
-                start: pageNumberStart = undefined,
-                formatType: pageNumberFormatType = undefined,
-                separator: pageNumberSeparator = undefined,
-            } = {},
-            borders: {
-                pageBorders = undefined,
-                pageBorderTop = undefined,
-                pageBorderRight = undefined,
-                pageBorderBottom = undefined,
-                pageBorderLeft = undefined,
-            } = {},
+            pageNumbers = {},
+            borders,
         } = {},
         grid: { linePitch = 360 } = {},
         headerWrapperGroup = {},
         footerWrapperGroup = {},
-        lineNumbers: { countBy: lineNumberCountBy, start: lineNumberStart, restart: lineNumberRestart, distance: lineNumberDistance } = {},
+        lineNumbers,
         titlePage = false,
         verticalAlign,
         column: { space = 708, count = 1, separate = false } = {},
@@ -98,23 +88,15 @@ export class SectionProperties extends XmlComponent {
         this.root.push(new PageSize(width, height, orientation));
         this.root.push(new PageMargin(top, right, bottom, left, header, footer, gutter));
 
-        if (pageBorders || pageBorderTop || pageBorderRight || pageBorderBottom || pageBorderLeft) {
-            this.root.push(
-                new PageBorders({
-                    pageBorders: pageBorders,
-                    pageBorderTop: pageBorderTop,
-                    pageBorderRight: pageBorderRight,
-                    pageBorderBottom: pageBorderBottom,
-                    pageBorderLeft: pageBorderLeft,
-                }),
-            );
+        if (borders) {
+            this.root.push(new PageBorders(borders));
         }
 
-        if (lineNumberCountBy || lineNumberStart || lineNumberRestart || lineNumberDistance) {
-            this.root.push(new LineNumberType(lineNumberCountBy, lineNumberStart, lineNumberRestart, lineNumberDistance));
+        if (lineNumbers) {
+            this.root.push(new LineNumberType(lineNumbers));
         }
 
-        this.root.push(new PageNumberType(pageNumberStart, pageNumberFormatType, pageNumberSeparator));
+        this.root.push(new PageNumberType(pageNumbers));
 
         this.root.push(new Columns(space, count, separate));
 

@@ -40,14 +40,8 @@ export class PageNumberTypeAttributes extends XmlAttributeComponent<IPageNumberT
 }
 
 export class PageNumberType extends XmlComponent {
-    constructor(start?: number, numberFormat?: PageNumberFormat, separator?: PageNumberSeparator) {
+    constructor(options: IPageNumberTypeAttributes) {
         super("w:pgNumType");
-        this.root.push(
-            new PageNumberTypeAttributes({
-                start: start,
-                formatType: numberFormat,
-                separator: separator,
-            }),
-        );
+        this.root.push(new PageNumberTypeAttributes(options));
     }
 }
