@@ -7,8 +7,8 @@ import { EMPTY_OBJECT } from "file/xml-components";
 
 import { IViewWrapper } from "../document-wrapper";
 import { File } from "../file";
+import { ShadingType } from "../shading";
 import { HorizontalPositionAlign, VerticalPositionAlign } from "../shared";
-import { ShadingType } from "../table/shading";
 import { AlignmentType, HeadingLevel, LeaderType, PageBreak, TabStopPosition, TabStopType } from "./formatting";
 import { FrameAnchorType } from "./frame";
 import { Bookmark, ExternalHyperlink } from "./links";
@@ -835,7 +835,7 @@ describe("Paragraph", () => {
         it("should set shading to the given value", () => {
             const paragraph = new Paragraph({
                 shading: {
-                    type: ShadingType.REVERSE_DIAGONAL_STRIPE,
+                    val: ShadingType.REVERSE_DIAGONAL_STRIPE,
                     color: "00FFFF",
                     fill: "FF0000",
                 },

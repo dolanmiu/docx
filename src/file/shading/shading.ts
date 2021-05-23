@@ -1,14 +1,18 @@
+// Note that the shading type is identical in all places,
+// regardless of where it's used like paragraph/table/etc.
+//
+// http://officeopenxml.com/WPshading.php
 // http://officeopenxml.com/WPtableShading.php
 // http://officeopenxml.com/WPtableCellProperties-Shading.php
 import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
 
-export interface ITableShadingAttributesProperties {
+export interface IShadingAttributesProperties {
     readonly fill?: string;
     readonly color?: string;
     readonly val?: ShadingType;
 }
 
-class TableShadingAttributes extends XmlAttributeComponent<ITableShadingAttributesProperties> {
+class ShadingAttributes extends XmlAttributeComponent<IShadingAttributesProperties> {
     protected readonly xmlKeys = {
         fill: "w:fill",
         color: "w:color",
@@ -16,10 +20,10 @@ class TableShadingAttributes extends XmlAttributeComponent<ITableShadingAttribut
     };
 }
 
-export class TableShading extends XmlComponent {
-    constructor(attrs: ITableShadingAttributesProperties) {
+export class Shading extends XmlComponent {
+    constructor(attrs: IShadingAttributesProperties) {
         super("w:shd");
-        this.root.push(new TableShadingAttributes(attrs));
+        this.root.push(new ShadingAttributes(attrs));
     }
 }
 

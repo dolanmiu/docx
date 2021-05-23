@@ -6,6 +6,7 @@ export * from "./numbering";
 export * from "./media";
 export * from "./drawing";
 export * from "./document";
+export * from "./shading";
 export * from "./styles";
 export * from "./table-of-contents";
 export * from "./xml-components";

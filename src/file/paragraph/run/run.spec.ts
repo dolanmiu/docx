@@ -2,7 +2,7 @@ import { expect } from "chai";
 
 import { Formatter } from "export/formatter";
 // import { FootnoteReferenceRun } from "file/footnotes/footnote/run/reference-run";
-import { ShadingType } from "file/table";
+import { ShadingType } from "file/shading";
 
 import { Run } from "./";
 import { EmphasisMarkType } from "./emphasis-mark";
@@ -234,7 +234,7 @@ describe("Run", () => {
         it("it should add shadow to the properties", () => {
             const run = new Run({
                 shading: {
-                    type: ShadingType.PERCENT_10,
+                    val: ShadingType.PERCENT_10,
                     fill: "00FFFF",
                     color: "FF0000",
                 },

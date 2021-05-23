@@ -1,7 +1,7 @@
 // http://officeopenxml.com/WPparagraphProperties.php
 import { IContext, IgnoreIfEmptyXmlComponent, IXmlableObject, XmlComponent } from "file/xml-components";
 import { DocumentWrapper } from "../document-wrapper";
-import { ShadingType } from "../table/shading";
+import { IShadingAttributesProperties, Shading } from "../shading";
 import { Alignment, AlignmentType } from "./formatting/alignment";
 import { Bidirectional } from "./formatting/bidirectional";
 import { Border, IBorderOptions, ThematicBreak } from "./formatting/border";
@@ -15,7 +15,6 @@ import { NumberProperties } from "./formatting/unordered-list";
 import { WidowControl } from "./formatting/widow-control";
 import { FrameProperties, IFrameOptions } from "./frame/frame-properties";
 import { OutlineLevel } from "./links";
-import { Shading } from "./run/formatting";
 
 export interface IParagraphStylePropertiesOptions {
     readonly alignment?: AlignmentType;
@@ -50,11 +49,7 @@ export interface IParagraphPropertiesOptions extends IParagraphStylePropertiesOp
         readonly instance?: number;
         readonly custom?: boolean;
     };
-    readonly shading?: {
-        readonly type: ShadingType;
-        readonly fill: string;
-        readonly color: string;
-    };
+    readonly shading?: IShadingAttributesProperties;
     readonly widowControl?: boolean;
     readonly frame?: IFrameOptions;
 }
@@ -131,7 +126,7 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
         }
 
         if (options.shading) {
-            this.push(new Shading(options.shading.type, options.shading.fill, options.shading.color));
+            this.push(new Shading(options.shading));
         }
 
         if (options.rightTabStop) {

@@ -3,7 +3,7 @@ import { expect } from "chai";
 import { Formatter } from "export/formatter";
 import { EmphasisMarkType } from "file/paragraph/run/emphasis-mark";
 import { UnderlineType } from "file/paragraph/run/underline";
-import { ShadingType } from "file/table";
+import { ShadingType } from "file/shading";
 import { EMPTY_OBJECT } from "file/xml-components";
 
 import { StyleForCharacter } from "./character-style";
@@ -777,8 +777,8 @@ describe("CharacterStyle", () => {
 
         const shadingTests = [
             {
-                shadow: {
-                    type: ShadingType.PERCENT_10,
+                shading: {
+                    val: ShadingType.PERCENT_10,
                     fill: "00FFFF",
                     color: "FF0000",
                 },
@@ -786,42 +786,18 @@ describe("CharacterStyle", () => {
             },
             {
                 shading: {
-                    type: ShadingType.PERCENT_10,
-                    fill: "00FFFF",
-                    color: "FF0000",
+                    val: ShadingType.SOLID,
+                    fill: "AA0000",
+                    color: "DD0000",
                 },
-                expected: [{ "w:shd": { _attr: { "w:val": "pct10", "w:fill": "00FFFF", "w:color": "FF0000" } } }],
-            },
-            {
-                shading: {
-                    type: ShadingType.PERCENT_10,
-                    fill: "00FFFF",
-                    color: "FF0000",
-                },
-                expected: [{ "w:shd": { _attr: { "w:val": "pct10", "w:fill": "00FFFF", "w:color": "FF0000" } } }],
-            },
-            {
-                shading: {
-                    type: ShadingType.PERCENT_10,
-                    fill: "00FFFF",
-                    color: "FF0000",
-                },
-                expected: [{ "w:shd": { _attr: { "w:val": "pct10", "w:fill": "00FFFF", "w:color": "FF0000" } } }],
-            },
-            {
-                shading: {
-                    type: ShadingType.PERCENT_10,
-                    fill: "00FFFF",
-                    color: "FF0000",
-                },
-                expected: [{ "w:shd": { _attr: { "w:val": "pct10", "w:fill": "00FFFF", "w:color": "FF0000" } } }],
+                expected: [{ "w:shd": { _attr: { "w:val": "solid", "w:fill": "AA0000", "w:color": "DD0000" } } }],
             },
         ];
-        shadingTests.forEach(({ shadow, shading, expected }) => {
+        shadingTests.forEach(({ shading, expected }) => {
             it("#shadow correctly", () => {
                 const style = new StyleForCharacter({
                     id: "myStyleId",
-                    run: { shadow, shading },
+                    run: { shading },
                 });
                 const tree = new Formatter().format(style);
                 expect(tree).to.deep.equal({

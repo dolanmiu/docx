@@ -2,7 +2,7 @@
 import { IgnoreIfEmptyXmlComponent } from "file/xml-components";
 
 import { Alignment, AlignmentType } from "../../paragraph";
-import { ITableShadingAttributesProperties, TableShading } from "../shading";
+import { IShadingAttributesProperties, Shading } from "../../shading";
 import { WidthType } from "../table-cell";
 import { ITableBordersOptions, TableBorders } from "./table-borders";
 import { ITableCellMarginOptions, TableCellMargin } from "./table-cell-margin";
@@ -20,7 +20,7 @@ export interface ITablePropertiesOptions {
     readonly layout?: TableLayoutType;
     readonly borders?: ITableBordersOptions;
     readonly float?: ITableFloatOptions;
-    readonly shading?: ITableShadingAttributesProperties;
+    readonly shading?: IShadingAttributesProperties;
     readonly style?: string;
     readonly alignment?: AlignmentType;
     readonly cellMargin?: ITableCellMarginOptions;
@@ -56,7 +56,7 @@ export class TableProperties extends IgnoreIfEmptyXmlComponent {
         }
 
         if (options.shading) {
-            this.root.push(new TableShading(options.shading));
+            this.root.push(new Shading(options.shading));
         }
 
         if (options.layout) {

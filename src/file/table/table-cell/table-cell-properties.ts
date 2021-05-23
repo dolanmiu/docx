@@ -1,6 +1,6 @@
 import { IgnoreIfEmptyXmlComponent } from "file/xml-components";
 
-import { ITableShadingAttributesProperties, TableShading } from "../shading";
+import { IShadingAttributesProperties, Shading } from "../../shading";
 import { ITableCellMarginOptions, TableCellMargin } from "./cell-margin/table-cell-margins";
 import {
     GridSpan,
@@ -17,7 +17,7 @@ import {
 } from "./table-cell-components";
 
 export interface ITableCellPropertiesOptions {
-    readonly shading?: ITableShadingAttributesProperties;
+    readonly shading?: IShadingAttributesProperties;
     readonly margins?: ITableCellMarginOptions;
     readonly verticalAlign?: VerticalAlign;
     readonly textDirection?: TextDirection;
@@ -55,7 +55,7 @@ export class TableCellProperties extends IgnoreIfEmptyXmlComponent {
         }
 
         if (options.shading) {
-            this.root.push(new TableShading(options.shading));
+            this.root.push(new Shading(options.shading));
         }
 
         if (options.margins) {

@@ -3,7 +3,7 @@ import { expect } from "chai";
 import { Formatter } from "export/formatter";
 import { BorderStyle } from "file/styles";
 
-import { ShadingType } from "../shading";
+import { ShadingType } from "file/shading";
 import { TableCell } from "./table-cell";
 import { TableCellBorders, TableCellWidth, TextDirection, VerticalAlign, VerticalMergeType, WidthType } from "./table-cell-components";
 

@@ -21,7 +21,7 @@ const doc = new Document({
                                         name: "Garamond",
                                     },
                                     shading: {
-                                        type: ShadingType.REVERSE_DIAGONAL_STRIPE,
+                                        val: ShadingType.REVERSE_DIAGONAL_STRIPE,
                                         color: "00FFFF",
                                         fill: "FF0000",
                                     },
@@ -30,7 +30,7 @@ const doc = new Document({
                         }),
                         new Paragraph({
                             shading: {
-                                type: ShadingType.DIAGONAL_CROSS,
+                                val: ShadingType.DIAGONAL_CROSS,
                                 color: "00FFFF",
                                 fill: "FF0000",
                             },

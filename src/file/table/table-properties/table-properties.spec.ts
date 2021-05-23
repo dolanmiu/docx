@@ -2,8 +2,9 @@ import { expect } from "chai";
 
 import { Formatter } from "export/formatter";
 
-import { AlignmentType } from "../../paragraph";
-import { ShadingType } from "../shading";
+import { AlignmentType } from "file/paragraph";
+import { ShadingType } from "file/shading";
+
 import { WidthType } from "../table-cell";
 import { TableLayoutType } from "./table-layout";
 import { TableProperties } from "./table-properties";

@@ -5,7 +5,7 @@ import { EMPTY_OBJECT } from "file/xml-components";
 
 import { AlignmentType, EmphasisMarkType, TabStopPosition } from "../paragraph";
 import { UnderlineType } from "../paragraph/run/underline";
-import { ShadingType } from "../table";
+import { ShadingType } from "../shading";
 import { AbstractNumbering } from "./abstract-numbering";
 import { LevelFormat, LevelSuffix } from "./level";
 
@@ -618,55 +618,31 @@ describe("AbstractNumbering", () => {
 
             const shadingTests = [
                 {
-                    shadow: {
-                        type: ShadingType.PERCENT_10,
-                        fill: "00FFFF",
-                        color: "FF0000",
+                    shading: {
+                        val: ShadingType.DIAGONAL_STRIPE,
+                        fill: "006622",
+                        color: "0000FF",
                     },
-                    expected: [{ "w:shd": { _attr: { "w:val": "pct10", "w:fill": "00FFFF", "w:color": "FF0000" } } }],
+                    expected: [{ "w:shd": { _attr: { "w:val": "diagStripe", "w:fill": "006622", "w:color": "0000FF" } } }],
                 },
                 {
                     shading: {
-                        type: ShadingType.PERCENT_10,
-                        fill: "00FFFF",
-                        color: "FF0000",
-                    },
-                    expected: [{ "w:shd": { _attr: { "w:val": "pct10", "w:fill": "00FFFF", "w:color": "FF0000" } } }],
-                },
-                {
-                    shading: {
-                        type: ShadingType.PERCENT_10,
-                        fill: "00FFFF",
-                        color: "FF0000",
-                    },
-                    expected: [{ "w:shd": { _attr: { "w:val": "pct10", "w:fill": "00FFFF", "w:color": "FF0000" } } }],
-                },
-                {
-                    shading: {
-                        type: ShadingType.PERCENT_10,
-                        fill: "00FFFF",
-                        color: "FF0000",
-                    },
-                    expected: [{ "w:shd": { _attr: { "w:val": "pct10", "w:fill": "00FFFF", "w:color": "FF0000" } } }],
-                },
-                {
-                    shading: {
-                        type: ShadingType.PERCENT_10,
+                        val: ShadingType.PERCENT_10,
                         fill: "00FFFF",
                         color: "FF0000",
                     },
                     expected: [{ "w:shd": { _attr: { "w:val": "pct10", "w:fill": "00FFFF", "w:color": "FF0000" } } }],
                 },
             ];
-            shadingTests.forEach(({ shadow, shading, expected }) => {
-                it("#shadow correctly", () => {
+            shadingTests.forEach(({ shading, expected }) => {
+                it("#shade correctly", () => {
                     const abstractNumbering = new AbstractNumbering(1, [
                         {
                             level: 0,
                             format: LevelFormat.LOWER_ROMAN,
                             text: "%0.",
                             style: {
-                                run: { shadow, shading },
+                                run: { shading },
                             },
                         },
                     ]);

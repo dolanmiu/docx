@@ -2,12 +2,12 @@ import { expect } from "chai";
 
 import { Formatter } from "export/formatter";
 
-import { ShadingType, TableShading } from "./shading";
+import { Shading, ShadingType } from "./shading";
 
-describe("TableShading", () => {
+describe("Shading", () => {
     describe("#constructor", () => {
         it("should create", () => {
-            const shading = new TableShading({});
+            const shading = new Shading({});
             const tree = new Formatter().format(shading);
             expect(tree).to.deep.equal({
                 "w:shd": {
@@ -17,7 +17,7 @@ describe("TableShading", () => {
         });
 
         it("should create with params", () => {
-            const shading = new TableShading({ val: ShadingType.PERCENT_40, color: "FF0000", fill: "555555" });
+            const shading = new Shading({ val: ShadingType.PERCENT_40, color: "FF0000", fill: "555555" });
             const tree = new Formatter().format(shading);
             expect(tree).to.deep.equal({
                 "w:shd": {

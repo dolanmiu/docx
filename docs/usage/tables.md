@@ -145,7 +145,7 @@ const tableRow = new TableRow({
 | Property      | Type                                | Notes                                                       |
 | ------------- | ----------------------------------- | ----------------------------------------------------------- |
 | children      | `Array<Paragraph or Table>`         | Required. You can nest tables by adding a table into a cell |
-| shading       | `ITableShadingAttributesProperties` | Optional                                                    |
+| shading       | `IShadingAttributesProperties`      | Optional                                                    |
 | margins       | `ITableCellMarginOptions`           | Optional                                                    |
 | verticalAlign | `VerticalAlign`                     | Optional                                                    |
 | columnSpan    | `number`                            | Optional                                                    |

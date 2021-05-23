@@ -1,4 +1,4 @@
-import { ShadingType } from "file/table";
+import { IShadingAttributesProperties, Shading } from "file/shading";
 import { IgnoreIfEmptyXmlComponent, XmlComponent } from "file/xml-components";
 import { EmphasisMark, EmphasisMarkType } from "./emphasis-mark";
 import {
@@ -15,7 +15,6 @@ import {
     Italics,
     ItalicsComplexScript,
     RightToLeft,
-    Shading,
     Size,
     SizeComplexScript,
     SmallCaps,
@@ -57,12 +56,7 @@ export interface IRunStylePropertiesOptions {
     readonly highlight?: string;
     readonly highlightComplexScript?: boolean | string;
     readonly characterSpacing?: number;
-    readonly shading?: {
-        readonly type: ShadingType;
-        readonly fill: string;
-        readonly color: string;
-    };
-    readonly shadow?: IRunStylePropertiesOptions["shading"];
+    readonly shading?: IShadingAttributesProperties;
     readonly emboss?: boolean;
     readonly imprint?: boolean;
 }
@@ -179,9 +173,8 @@ export class RunProperties extends IgnoreIfEmptyXmlComponent {
             this.push(new Imprint());
         }
 
-        const shading = options.shading || options.shadow;
-        if (shading) {
-            this.push(new Shading(shading.type, shading.fill, shading.color));
+        if (options.shading) {
+            this.push(new Shading(options.shading));
         }
     }
 

@@ -3,7 +3,7 @@ import { expect } from "chai";
 import { Formatter } from "export/formatter";
 import { AlignmentType, EmphasisMarkType, TabStopPosition } from "file/paragraph";
 import { UnderlineType } from "file/paragraph/run/underline";
-import { ShadingType } from "file/table";
+import { ShadingType } from "file/shading";
 import { EMPTY_OBJECT } from "file/xml-components";
 
 import { StyleForParagraph } from "./paragraph-style";
@@ -653,8 +653,8 @@ describe("ParagraphStyle", () => {
 
         const shadingTests = [
             {
-                shadow: {
-                    type: ShadingType.PERCENT_10,
+                shading: {
+                    val: ShadingType.PERCENT_10,
                     fill: "00FFFF",
                     color: "FF0000",
                 },
@@ -662,42 +662,18 @@ describe("ParagraphStyle", () => {
             },
             {
                 shading: {
-                    type: ShadingType.PERCENT_10,
-                    fill: "00FFFF",
-                    color: "FF0000",
+                    val: ShadingType.DIAGONAL_CROSS,
+                    fill: "0066FF",
+                    color: "0000FF",
                 },
-                expected: [{ "w:shd": { _attr: { "w:val": "pct10", "w:fill": "00FFFF", "w:color": "FF0000" } } }],
-            },
-            {
-                shading: {
-                    type: ShadingType.PERCENT_10,
-                    fill: "00FFFF",
-                    color: "FF0000",
-                },
-                expected: [{ "w:shd": { _attr: { "w:val": "pct10", "w:fill": "00FFFF", "w:color": "FF0000" } } }],
-            },
-            {
-                shading: {
-                    type: ShadingType.PERCENT_10,
-                    fill: "00FFFF",
-                    color: "FF0000",
-                },
-                expected: [{ "w:shd": { _attr: { "w:val": "pct10", "w:fill": "00FFFF", "w:color": "FF0000" } } }],
-            },
-            {
-                shading: {
-                    type: ShadingType.PERCENT_10,
-                    fill: "00FFFF",
-                    color: "FF0000",
-                },
-                expected: [{ "w:shd": { _attr: { "w:val": "pct10", "w:fill": "00FFFF", "w:color": "FF0000" } } }],
+                expected: [{ "w:shd": { _attr: { "w:val": "diagCross", "w:fill": "0066FF", "w:color": "0000FF" } } }],
             },
         ];
-        shadingTests.forEach(({ shadow, shading, expected }) => {
-            it("#shadow correctly", () => {
+        shadingTests.forEach(({ shading, expected }) => {
+            it("#shade correctly", () => {
                 const style = new StyleForParagraph({
                     id: "myStyleId",
-                    run: { shadow, shading },
+                    run: { shading },
                 });
                 const tree = new Formatter().format(style);
                 expect(tree).to.deep.equal({
