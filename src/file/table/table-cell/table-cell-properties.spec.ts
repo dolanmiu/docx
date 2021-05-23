@@ -2,8 +2,9 @@ import { expect } from "chai";
 
 import { Formatter } from "export/formatter";
 import { BorderStyle } from "file/border";
+import { WidthType } from "../table-width";
 
-import { VerticalAlign, VerticalMergeType, WidthType } from "./table-cell-components";
+import { VerticalAlign, VerticalMergeType } from "./table-cell-components";
 import { TableCellProperties } from "./table-cell-properties";
 
 describe("TableCellProperties", () => {
@@ -67,53 +68,6 @@ describe("TableCellProperties", () => {
             expect(tree).to.deep.equal({ "w:tcPr": [{ "w:shd": { _attr: { "w:fill": "test", "w:color": "000" } } }] });
         });
 
-        it("sets shading", () => {
-            const properties = new TableCellProperties({
-                margins: {},
-            });
-            const tree = new Formatter().format(properties);
-            expect(tree).to.deep.equal({
-                "w:tcPr": [
-                    {
-                        "w:tcMar": [
-                            {
-                                "w:top": {
-                                    _attr: {
-                                        "w:type": "dxa",
-                                        "w:w": 0,
-                                    },
-                                },
-                            },
-                            {
-                                "w:start": {
-                                    _attr: {
-                                        "w:type": "dxa",
-                                        "w:w": 0,
-                                    },
-                                },
-                            },
-                            {
-                                "w:bottom": {
-                                    _attr: {
-                                        "w:type": "dxa",
-                                        "w:w": 0,
-                                    },
-                                },
-                            },
-                            {
-                                "w:end": {
-                                    _attr: {
-                                        "w:type": "dxa",
-                                        "w:w": 0,
-                                    },
-                                },
-                            },
-                        ],
-                    },
-                ],
-            });
-        });
-
         it("should set the TableCellBorders", () => {
             const properties = new TableCellProperties({
                 borders: {
@@ -129,6 +83,29 @@ describe("TableCellProperties", () => {
 
             expect(tree["w:tcPr"][0]).to.deep.equal({
                 "w:tcBorders": [{ "w:top": { _attr: { "w:val": "dashDotStroked", "w:sz": 3, "w:color": "red" } } }],
+            });
+        });
+
+        it("should set the margins", () => {
+            const properties = new TableCellProperties({
+                margins: {
+                    marginUnitType: WidthType.DXA,
+                    top: 5,
+                    left: 10,
+                    bottom: 15,
+                    right: 20,
+                },
+            });
+
+            const tree = new Formatter().format(properties);
+
+            expect(tree["w:tcPr"][0]).to.deep.equal({
+                "w:tcMar": [
+                    { "w:top": { _attr: { "w:type": "dxa", "w:w": 5 } } },
+                    { "w:left": { _attr: { "w:type": "dxa", "w:w": 10 } } },
+                    { "w:bottom": { _attr: { "w:type": "dxa", "w:w": 15 } } },
+                    { "w:right": { _attr: { "w:type": "dxa", "w:w": 20 } } },
+                ],
             });
         });
     });

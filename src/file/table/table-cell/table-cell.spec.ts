@@ -4,8 +4,9 @@ import { Formatter } from "export/formatter";
 import { BorderStyle } from "file/border";
 
 import { ShadingType } from "file/shading";
+import { WidthType } from "../table-width";
 import { TableCell } from "./table-cell";
-import { TableCellBorders, TableCellWidth, TextDirection, VerticalAlign, VerticalMergeType, WidthType } from "./table-cell-components";
+import { TableCellBorders, TextDirection, VerticalAlign, VerticalMergeType } from "./table-cell-components";
 
 describe("TableCellBorders", () => {
     describe("#prepForXml", () => {
@@ -263,23 +264,6 @@ describe("TableCellBorders", () => {
     });
 });
 
-describe("TableCellWidth", () => {
-    describe("#constructor", () => {
-        it("should create object", () => {
-            const tcWidth = new TableCellWidth(100, WidthType.DXA);
-            const tree = new Formatter().format(tcWidth);
-            expect(tree).to.deep.equal({
-                "w:tcW": {
-                    _attr: {
-                        "w:type": "dxa",
-                        "w:w": 100,
-                    },
-                },
-            });
-        });
-    });
-});
-
 describe("TableCell", () => {
     describe("#constructor", () => {
         it("should create", () => {
@@ -410,7 +394,7 @@ describe("TableCell", () => {
                                         },
                                     },
                                     {
-                                        "w:start": {
+                                        "w:left": {
                                             _attr: {
                                                 "w:type": "dxa",
                                                 "w:w": 1,
@@ -426,7 +410,7 @@ describe("TableCell", () => {
                                         },
                                     },
                                     {
-                                        "w:end": {
+                                        "w:right": {
                                             _attr: {
                                                 "w:type": "dxa",
                                                 "w:w": 1,

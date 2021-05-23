@@ -1,19 +1,18 @@
 import { IgnoreIfEmptyXmlComponent } from "file/xml-components";
 
 import { IShadingAttributesProperties, Shading } from "../../shading";
-import { ITableCellMarginOptions, TableCellMargin } from "./cell-margin/table-cell-margins";
+import { ITableCellMarginOptions, TableCellMargin, TableCellMarginElementType } from "../table-properties/table-cell-margin";
+import { ITableWidthProperties, TableWidthElement } from "../table-width";
 import {
     GridSpan,
     ITableCellBorders,
     TableCellBorders,
-    TableCellWidth,
     TDirection,
     TextDirection,
     VAlign,
     VerticalAlign,
     VerticalMerge,
     VerticalMergeType,
-    WidthType,
 } from "./table-cell-components";
 
 export interface ITableCellPropertiesOptions {
@@ -22,10 +21,7 @@ export interface ITableCellPropertiesOptions {
     readonly verticalAlign?: VerticalAlign;
     readonly textDirection?: TextDirection;
     readonly verticalMerge?: VerticalMergeType;
-    readonly width?: {
-        readonly size: number | string;
-        readonly type?: WidthType;
-    };
+    readonly width?: ITableWidthProperties;
     readonly columnSpan?: number;
     readonly rowSpan?: number;
     readonly borders?: ITableCellBorders;
@@ -36,7 +32,7 @@ export class TableCellProperties extends IgnoreIfEmptyXmlComponent {
         super("w:tcPr");
 
         if (options.width) {
-            this.root.push(new TableCellWidth(options.width.size, options.width.type));
+            this.root.push(new TableWidthElement("w:tcW", options.width));
         }
 
         if (options.columnSpan) {
@@ -59,7 +55,7 @@ export class TableCellProperties extends IgnoreIfEmptyXmlComponent {
         }
 
         if (options.margins) {
-            this.root.push(new TableCellMargin(options.margins));
+            this.root.push(new TableCellMargin(TableCellMarginElementType.TABLE_CELL, options.margins));
         }
 
         if (options.textDirection) {

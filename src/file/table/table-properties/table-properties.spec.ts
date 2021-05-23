@@ -5,7 +5,7 @@ import { Formatter } from "export/formatter";
 import { AlignmentType } from "file/paragraph";
 import { ShadingType } from "file/shading";
 
-import { WidthType } from "../table-cell";
+import { WidthType } from "../table-width";
 import { TableLayoutType } from "./table-layout";
 import { TableProperties } from "./table-properties";
 
@@ -78,10 +78,8 @@ describe("TableProperties", () => {
         it("adds a table cell top margin", () => {
             const tp = new TableProperties({
                 cellMargin: {
-                    top: {
-                        value: 1234,
-                        type: WidthType.DXA,
-                    },
+                    marginUnitType: WidthType.DXA,
+                    top: 1234,
                 },
             });
 
@@ -94,10 +92,8 @@ describe("TableProperties", () => {
         it("adds a table cell left margin", () => {
             const tp = new TableProperties({
                 cellMargin: {
-                    left: {
-                        value: 1234,
-                        type: WidthType.DXA,
-                    },
+                    marginUnitType: WidthType.DXA,
+                    left: 1234,
                 },
             });
 

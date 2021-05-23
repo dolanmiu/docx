@@ -1,22 +1,41 @@
 // http://officeopenxml.com/WPtableProperties.php
+//
+// <xsd:complexType name="CT_TblPrBase">
+//     <xsd:sequence>
+//         <xsd:element name="tblStyle" type="CT_String" minOccurs="0"/>
+//         <xsd:element name="tblpPr" type="CT_TblPPr" minOccurs="0" maxOccurs="1"/>
+//         <xsd:element name="tblOverlap" type="CT_TblOverlap" minOccurs="0" maxOccurs="1"/>
+//         <xsd:element name="bidiVisual" type="CT_OnOff" minOccurs="0" maxOccurs="1"/>
+//         <xsd:element name="tblStyleRowBandSize" type="CT_DecimalNumber" minOccurs="0" maxOccurs="1"/>
+//         <xsd:element name="tblStyleColBandSize" type="CT_DecimalNumber" minOccurs="0" maxOccurs="1"/>
+//         <xsd:element name="tblW" type="CT_TblWidth" minOccurs="0" maxOccurs="1"/>
+//         <xsd:element name="jc" type="CT_JcTable" minOccurs="0" maxOccurs="1"/>
+//         <xsd:element name="tblCellSpacing" type="CT_TblWidth" minOccurs="0" maxOccurs="1"/>
+//         <xsd:element name="tblInd" type="CT_TblWidth" minOccurs="0" maxOccurs="1"/>
+//         <xsd:element name="tblBorders" type="CT_TblBorders" minOccurs="0" maxOccurs="1"/>
+//         <xsd:element name="shd" type="CT_Shd" minOccurs="0" maxOccurs="1"/>
+//         <xsd:element name="tblLayout" type="CT_TblLayoutType" minOccurs="0" maxOccurs="1"/>
+//         <xsd:element name="tblCellMar" type="CT_TblCellMar" minOccurs="0" maxOccurs="1"/>
+//         <xsd:element name="tblLook" type="CT_TblLook" minOccurs="0" maxOccurs="1"/>
+//         <xsd:element name="tblCaption" type="CT_String" minOccurs="0" maxOccurs="1"/>
+//         <xsd:element name="tblDescription" type="CT_String" minOccurs="0" maxOccurs="1"/>
+//     </xsd:sequence>
+// </xsd:complexType>
 import { IgnoreIfEmptyXmlComponent } from "file/xml-components";
 
 import { Alignment, AlignmentType } from "../../paragraph";
 import { IShadingAttributesProperties, Shading } from "../../shading";
-import { WidthType } from "../table-cell";
+import { ITableWidthProperties, TableWidthElement } from "../table-width";
 import { ITableBordersOptions, TableBorders } from "./table-borders";
-import { ITableCellMarginOptions, TableCellMargin } from "./table-cell-margin";
+import { ITableCellMarginOptions, TableCellMargin, TableCellMarginElementType } from "./table-cell-margin";
 import { ITableFloatOptions, TableFloatProperties } from "./table-float-properties";
 import { TableLayout, TableLayoutType } from "./table-layout";
 import { TableStyle } from "./table-style";
-import { PreferredTableWidth } from "./table-width";
 import { VisuallyRightToLeft } from "./visually-right-to-left";
 
 export interface ITablePropertiesOptions {
-    readonly width?: {
-        readonly size: number;
-        readonly type?: WidthType;
-    };
+    readonly width?: ITableWidthProperties;
+    readonly indent?: ITableWidthProperties;
     readonly layout?: TableLayoutType;
     readonly borders?: ITableBordersOptions;
     readonly float?: ITableFloatOptions;
@@ -44,11 +63,15 @@ export class TableProperties extends IgnoreIfEmptyXmlComponent {
         }
 
         if (options.width) {
-            this.root.push(new PreferredTableWidth(options.width.type, options.width.size));
+            this.root.push(new TableWidthElement("w:tblW", options.width));
         }
 
         if (options.alignment) {
             this.root.push(new Alignment(options.alignment));
+        }
+
+        if (options.indent) {
+            this.root.push(new TableWidthElement("w:tblInd", options.indent));
         }
 
         if (options.borders) {
@@ -63,6 +86,8 @@ export class TableProperties extends IgnoreIfEmptyXmlComponent {
             this.root.push(new TableLayout(options.layout));
         }
 
-        this.root.push(new TableCellMargin(options.cellMargin || {}));
+        if (options.cellMargin) {
+            this.root.push(new TableCellMargin(TableCellMarginElementType.TABLE, options.cellMargin));
+        }
     }
 }

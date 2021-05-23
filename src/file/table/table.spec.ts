@@ -5,49 +5,12 @@ import { Formatter } from "export/formatter";
 
 import { AlignmentType, Paragraph } from "../paragraph";
 import { Table } from "./table";
-// import { WidthType } from "./table-cell";
 import { RelativeHorizontalPosition, RelativeVerticalPosition, TableAnchorType } from "./table-properties";
 
-import { TableCell, WidthType } from "./table-cell";
+import { TableCell } from "./table-cell";
 import { TableLayoutType } from "./table-properties/table-layout";
 import { TableRow } from "./table-row";
-
-const DEFAULT_TABLE_PROPERTIES = {
-    "w:tblCellMar": [
-        {
-            "w:top": {
-                _attr: {
-                    "w:type": "auto",
-                    "w:w": 0,
-                },
-            },
-        },
-        {
-            "w:left": {
-                _attr: {
-                    "w:type": "auto",
-                    "w:w": 0,
-                },
-            },
-        },
-        {
-            "w:bottom": {
-                _attr: {
-                    "w:type": "auto",
-                    "w:w": 0,
-                },
-            },
-        },
-        {
-            "w:right": {
-                _attr: {
-                    "w:type": "auto",
-                    "w:w": 0,
-                },
-            },
-        },
-    ],
-};
+import { WidthType } from "./table-width";
 
 const BORDERS = {
     "w:tblBorders": [
@@ -177,7 +140,7 @@ describe("Table", () => {
             };
             expect(tree).to.deep.equal({
                 "w:tbl": [
-                    { "w:tblPr": [WIDTHS, BORDERS, DEFAULT_TABLE_PROPERTIES] },
+                    { "w:tblPr": [WIDTHS, BORDERS] },
                     {
                         "w:tblGrid": [{ "w:gridCol": { _attr: { "w:w": 100 } } }, { "w:gridCol": { _attr: { "w:w": 100 } } }],
                     },
@@ -223,7 +186,7 @@ describe("Table", () => {
             const cellP = { "w:p": [{ "w:r": [{ "w:t": [{ _attr: { "xml:space": "preserve" } }, "hello"] }] }] };
             expect(tree).to.deep.equal({
                 "w:tbl": [
-                    { "w:tblPr": [WIDTHS, BORDERS, DEFAULT_TABLE_PROPERTIES] },
+                    { "w:tblPr": [WIDTHS, BORDERS] },
                     {
                         "w:tblGrid": [{ "w:gridCol": { _attr: { "w:w": 100 } } }, { "w:gridCol": { _attr: { "w:w": 100 } } }],
                     },
@@ -270,7 +233,7 @@ describe("Table", () => {
             const tree = new Formatter().format(table);
             expect(tree).to.have.property("w:tbl").which.is.an("array").with.has.length.at.least(1);
             expect(tree["w:tbl"][0]).to.deep.equal({
-                "w:tblPr": [WIDTHS, BORDERS, { "w:tblLayout": { _attr: { "w:type": "fixed" } } }, DEFAULT_TABLE_PROPERTIES],
+                "w:tblPr": [WIDTHS, BORDERS, { "w:tblLayout": { _attr: { "w:type": "fixed" } } }],
             });
         });
 
@@ -290,7 +253,7 @@ describe("Table", () => {
             const tree = new Formatter().format(table);
             expect(tree).to.have.property("w:tbl").which.is.an("array").with.has.length.at.least(1);
             expect(tree["w:tbl"][0]).to.deep.equal({
-                "w:tblPr": [WIDTHS, { "w:jc": { _attr: { "w:val": "center" } } }, BORDERS, DEFAULT_TABLE_PROPERTIES],
+                "w:tblPr": [WIDTHS, { "w:jc": { _attr: { "w:val": "center" } } }, BORDERS],
             });
         });
 
@@ -325,7 +288,6 @@ describe("Table", () => {
                     },
                     BORDERS,
                     { "w:tblLayout": { _attr: { "w:type": "fixed" } } },
-                    DEFAULT_TABLE_PROPERTIES,
                 ],
             });
         });
@@ -495,7 +457,6 @@ describe("Table", () => {
                     },
                     WIDTHS,
                     BORDERS,
-                    DEFAULT_TABLE_PROPERTIES,
                 ],
             });
         });

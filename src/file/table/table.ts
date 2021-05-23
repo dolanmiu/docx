@@ -3,10 +3,12 @@ import { XmlComponent } from "file/xml-components";
 
 import { AlignmentType } from "../paragraph";
 import { TableGrid } from "./grid";
-import { TableCell, VerticalMergeType, WidthType } from "./table-cell";
+import { TableCell, VerticalMergeType } from "./table-cell";
 import { ITableBordersOptions, ITableFloatOptions, TableProperties } from "./table-properties";
+import { ITableCellMarginOptions } from "./table-properties/table-cell-margin";
 import { TableLayoutType } from "./table-properties/table-layout";
 import { TableRow } from "./table-row";
+import { ITableWidthProperties } from "./table-width";
 
 /*
     0-width columns don't get rendered correctly, so we need
@@ -20,18 +22,10 @@ import { TableRow } from "./table-row";
  */
 export interface ITableOptions {
     readonly rows: TableRow[];
-    readonly width?: {
-        readonly size: number;
-        readonly type?: WidthType;
-    };
+    readonly width?: ITableWidthProperties;
     readonly columnWidths?: number[];
-    readonly margins?: {
-        readonly marginUnitType?: WidthType;
-        readonly top?: number;
-        readonly bottom?: number;
-        readonly right?: number;
-        readonly left?: number;
-    };
+    readonly margins?: ITableCellMarginOptions;
+    readonly indent?: ITableWidthProperties;
     readonly float?: ITableFloatOptions;
     readonly layout?: TableLayoutType;
     readonly style?: string;
@@ -45,7 +39,8 @@ export class Table extends XmlComponent {
         rows,
         width,
         columnWidths = Array<number>(Math.max(...rows.map((row) => row.CellCount))).fill(100),
-        margins: { marginUnitType, top, bottom, right, left } = { marginUnitType: WidthType.AUTO, top: 0, bottom: 0, right: 0, left: 0 },
+        margins,
+        indent,
         float,
         layout,
         style,
@@ -59,28 +54,12 @@ export class Table extends XmlComponent {
             new TableProperties({
                 borders: borders ?? {},
                 width: width ?? { size: 100 },
+                indent,
                 float,
                 layout,
                 style,
                 alignment,
-                cellMargin: {
-                    bottom: {
-                        value: bottom || 0,
-                        type: marginUnitType,
-                    },
-                    top: {
-                        value: top || 0,
-                        type: marginUnitType,
-                    },
-                    left: {
-                        value: left || 0,
-                        type: marginUnitType,
-                    },
-                    right: {
-                        value: right || 0,
-                        type: marginUnitType,
-                    },
-                },
+                cellMargin: margins,
                 visuallyRightToLeft,
             }),
         );

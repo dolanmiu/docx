@@ -139,34 +139,3 @@ export class TDirection extends XmlComponent {
         );
     }
 }
-
-export enum WidthType {
-    /** Auto. */
-    AUTO = "auto",
-    /** Value is in twentieths of a point */
-    DXA = "dxa",
-    /** No (empty) value. */
-    NIL = "nil",
-    /** Value is in percentage. */
-    PERCENTAGE = "pct",
-}
-
-class TableCellWidthAttributes extends XmlAttributeComponent<{ readonly type: WidthType; readonly width: string | number }> {
-    protected readonly xmlKeys = { width: "w:w", type: "w:type" };
-}
-
-/**
- * Table cell width element.
- */
-export class TableCellWidth extends XmlComponent {
-    constructor(value: string | number, type: WidthType = WidthType.AUTO) {
-        super("w:tcW");
-
-        this.root.push(
-            new TableCellWidthAttributes({
-                width: value,
-                type: type,
-            }),
-        );
-    }
-}

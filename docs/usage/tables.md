@@ -53,6 +53,18 @@ const table = new Table({
 });
 ```
 
+### Set Indent
+
+```ts
+const table = new Table({
+    ...,
+    indent: {
+        size: 600,
+        type: WidthType.DXA,
+    }
+});
+```
+
 ## Table Row
 
 A table consists of multiple `table rows`. Table rows have a list of `children` which accepts a list of `table cells` explained below. You can create a simple `table row` like so:
@@ -190,12 +202,12 @@ Google DOCS does not support start and end borders, instead they use left and ri
 const cell = new TableCell({
     ...,
     borders: {
-        top: {
+        left: {
             style: BorderStyle.DOT_DOT_DASH,
             size: 3,
             color: "green",
         },
-        bottom: {
+        right: {
             style: BorderStyle.DOT_DOT_DASH,
             size: 3,
             color: "ff8000",
