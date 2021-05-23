@@ -19,9 +19,7 @@ describe("TableProperties", () => {
             // has been asked to format.
             expect(() => new Formatter().format(tp)).to.throw("XMLComponent did not format correctly");
         });
-    });
 
-    describe("#setStyle", () => {
         it("should add a table style property", () => {
             const tp = new TableProperties({
                 style: "TableNormal",
@@ -31,9 +29,7 @@ describe("TableProperties", () => {
                 "w:tblPr": [{ "w:tblStyle": { _attr: { "w:val": "TableNormal" } } }],
             });
         });
-    });
 
-    describe("#setWidth", () => {
         it("should add a table width property", () => {
             const tp = new TableProperties({
                 width: {
@@ -59,9 +55,33 @@ describe("TableProperties", () => {
                 "w:tblPr": [{ "w:tblW": { _attr: { "w:type": "auto", "w:w": 1234 } } }],
             });
         });
-    });
 
-    describe("#setLayout", () => {
+        it("should add a table indent property", () => {
+            const tp = new TableProperties({
+                indent: {
+                    size: 1234,
+                    type: WidthType.DXA,
+                },
+            });
+            const tree = new Formatter().format(tp);
+            expect(tree).to.deep.equal({
+                "w:tblPr": [{ "w:tblInd": { _attr: { "w:type": "dxa", "w:w": 1234 } } }],
+            });
+        });
+
+        it("should add a table indent property with default of AUTO", () => {
+            const tp = new TableProperties({
+                indent: {
+                    size: 1234,
+                },
+            });
+
+            const tree = new Formatter().format(tp);
+            expect(tree).to.deep.equal({
+                "w:tblPr": [{ "w:tblInd": { _attr: { "w:type": "auto", "w:w": 1234 } } }],
+            });
+        });
+
         it("sets the table to fixed width layout", () => {
             const tp = new TableProperties({
                 layout: TableLayoutType.FIXED,
