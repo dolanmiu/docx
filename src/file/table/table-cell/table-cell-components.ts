@@ -1,34 +1,13 @@
-import { BorderStyle } from "file/styles";
+import { BorderElement, IBorderOptions } from "file/border";
 import { IgnoreIfEmptyXmlComponent, XmlAttributeComponent, XmlComponent } from "file/xml-components";
 
-interface ITableCellBorderPropertyOptions {
-    readonly style: BorderStyle;
-    readonly size: number;
-    readonly color: string;
-}
-
-class CellBorderAttributes extends XmlAttributeComponent<{
-    readonly style: BorderStyle;
-    readonly size: number;
-    readonly color: string;
-}> {
-    protected readonly xmlKeys = { style: "w:val", size: "w:sz", color: "w:color" };
-}
-
-class BaseTableCellBorder extends XmlComponent {
-    constructor(key: string, options: ITableCellBorderPropertyOptions) {
-        super(key);
-        this.root.push(new CellBorderAttributes(options));
-    }
-}
-
 export interface ITableCellBorders {
-    readonly top?: ITableCellBorderPropertyOptions;
-    readonly start?: ITableCellBorderPropertyOptions;
-    readonly left?: ITableCellBorderPropertyOptions;
-    readonly bottom?: ITableCellBorderPropertyOptions;
-    readonly end?: ITableCellBorderPropertyOptions;
-    readonly right?: ITableCellBorderPropertyOptions;
+    readonly top?: IBorderOptions;
+    readonly start?: IBorderOptions;
+    readonly left?: IBorderOptions;
+    readonly bottom?: IBorderOptions;
+    readonly end?: IBorderOptions;
+    readonly right?: IBorderOptions;
 }
 
 export class TableCellBorders extends IgnoreIfEmptyXmlComponent {
@@ -36,22 +15,22 @@ export class TableCellBorders extends IgnoreIfEmptyXmlComponent {
         super("w:tcBorders");
 
         if (options.top) {
-            this.root.push(new BaseTableCellBorder("w:top", options.top));
+            this.root.push(new BorderElement("w:top", options.top));
         }
         if (options.start) {
-            this.root.push(new BaseTableCellBorder("w:start", options.start));
+            this.root.push(new BorderElement("w:start", options.start));
         }
         if (options.left) {
-            this.root.push(new BaseTableCellBorder("w:left", options.left));
+            this.root.push(new BorderElement("w:left", options.left));
         }
         if (options.bottom) {
-            this.root.push(new BaseTableCellBorder("w:bottom", options.bottom));
+            this.root.push(new BorderElement("w:bottom", options.bottom));
         }
         if (options.end) {
-            this.root.push(new BaseTableCellBorder("w:end", options.end));
+            this.root.push(new BorderElement("w:end", options.end));
         }
         if (options.right) {
-            this.root.push(new BaseTableCellBorder("w:right", options.right));
+            this.root.push(new BorderElement("w:right", options.right));
         }
     }
 }

@@ -1,6 +1,6 @@
 // http://officeopenxml.com/WPsectionBorders.php
-import { BorderStyle } from "file/styles";
-import { IgnoreIfEmptyXmlComponent, XmlAttributeComponent, XmlComponent } from "file/xml-components";
+import { BorderElement, IBorderOptions } from "file/border";
+import { IgnoreIfEmptyXmlComponent, XmlAttributeComponent } from "file/xml-components";
 
 export enum PageBorderDisplay {
     ALL_PAGES = "allPages",
@@ -24,36 +24,12 @@ export interface IPageBorderAttributes {
     readonly zOrder?: PageBorderZOrder;
 }
 
-export interface IPageBorderConfiguration {
-    readonly style?: BorderStyle;
-    readonly size?: number;
-    readonly color?: string;
-    readonly space?: number;
-}
-
 export interface IPageBordersOptions {
     readonly pageBorders?: IPageBorderAttributes;
-    readonly pageBorderTop?: IPageBorderConfiguration;
-    readonly pageBorderRight?: IPageBorderConfiguration;
-    readonly pageBorderBottom?: IPageBorderConfiguration;
-    readonly pageBorderLeft?: IPageBorderConfiguration;
-}
-
-class PageBordeAttributes extends XmlAttributeComponent<IPageBorderConfiguration> {
-    protected readonly xmlKeys = {
-        style: "w:val",
-        size: "w:size",
-        color: "w:color",
-        space: "w:space",
-    };
-}
-
-class PageBorder extends XmlComponent {
-    constructor(key: string, options: IPageBorderConfiguration) {
-        super(key);
-
-        this.root.push(new PageBordeAttributes(options));
-    }
+    readonly pageBorderTop?: IBorderOptions;
+    readonly pageBorderRight?: IBorderOptions;
+    readonly pageBorderBottom?: IBorderOptions;
+    readonly pageBorderLeft?: IBorderOptions;
 }
 
 class PageBordersAttributes extends XmlAttributeComponent<IPageBorderAttributes> {
@@ -85,16 +61,16 @@ export class PageBorders extends IgnoreIfEmptyXmlComponent {
         }
 
         if (options.pageBorderTop) {
-            this.root.push(new PageBorder("w:top", options.pageBorderTop));
+            this.root.push(new BorderElement("w:top", options.pageBorderTop));
         }
         if (options.pageBorderRight) {
-            this.root.push(new PageBorder("w:right", options.pageBorderRight));
+            this.root.push(new BorderElement("w:right", options.pageBorderRight));
         }
         if (options.pageBorderBottom) {
-            this.root.push(new PageBorder("w:bottom", options.pageBorderBottom));
+            this.root.push(new BorderElement("w:bottom", options.pageBorderBottom));
         }
         if (options.pageBorderLeft) {
-            this.root.push(new PageBorder("w:left", options.pageBorderLeft));
+            this.root.push(new BorderElement("w:left", options.pageBorderLeft));
         }
     }
 }

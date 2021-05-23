@@ -1,155 +1,76 @@
 // http://officeopenxml.com/WPtableBorders.php
+import { BorderElement, IBorderOptions } from "file/border";
 import { BorderStyle } from "file/styles";
-import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
+import { XmlComponent } from "file/xml-components";
 
 export interface ITableBordersOptions {
-    readonly top?: {
-        readonly style: BorderStyle;
-        readonly size: number;
-        readonly color: string;
-    };
-    readonly bottom?: {
-        readonly style: BorderStyle;
-        readonly size: number;
-        readonly color: string;
-    };
-    readonly left?: {
-        readonly style: BorderStyle;
-        readonly size: number;
-        readonly color: string;
-    };
-    readonly right?: {
-        readonly style: BorderStyle;
-        readonly size: number;
-        readonly color: string;
-    };
-    readonly insideHorizontal?: {
-        readonly style: BorderStyle;
-        readonly size: number;
-        readonly color: string;
-    };
-    readonly insideVertical?: {
-        readonly style: BorderStyle;
-        readonly size: number;
-        readonly color: string;
-    };
+    readonly top?: IBorderOptions;
+    readonly bottom?: IBorderOptions;
+    readonly left?: IBorderOptions;
+    readonly right?: IBorderOptions;
+    readonly insideHorizontal?: IBorderOptions;
+    readonly insideVertical?: IBorderOptions;
 }
+
+const NONE_BORDER = {
+    style: BorderStyle.NONE,
+    size: 0,
+    color: "auto",
+};
+
+const DEFAULT_BORDER = {
+    style: BorderStyle.SINGLE,
+    size: 4,
+    color: "auto",
+};
 
 export class TableBorders extends XmlComponent {
     public static readonly NONE = {
-        top: {
-            style: BorderStyle.NONE,
-            size: 0,
-            color: "auto",
-        },
-        bottom: {
-            style: BorderStyle.NONE,
-            size: 0,
-            color: "auto",
-        },
-        left: {
-            style: BorderStyle.NONE,
-            size: 0,
-            color: "auto",
-        },
-        right: {
-            style: BorderStyle.NONE,
-            size: 0,
-            color: "auto",
-        },
-        insideHorizontal: {
-            style: BorderStyle.NONE,
-            size: 0,
-            color: "auto",
-        },
-        insideVertical: {
-            style: BorderStyle.NONE,
-            size: 0,
-            color: "auto",
-        },
+        top: NONE_BORDER,
+        bottom: NONE_BORDER,
+        left: NONE_BORDER,
+        right: NONE_BORDER,
+        insideHorizontal: NONE_BORDER,
+        insideVertical: NONE_BORDER,
     };
 
     constructor(options: ITableBordersOptions) {
         super("w:tblBorders");
 
         if (options.top) {
-            this.root.push(new TableBordersElement("w:top", options.top.style, options.top.size, 0, options.top.color));
+            this.root.push(new BorderElement("w:top", options.top));
         } else {
-            this.root.push(new TableBordersElement("w:top", BorderStyle.SINGLE, 4, 0, "auto"));
+            this.root.push(new BorderElement("w:top", DEFAULT_BORDER));
         }
 
         if (options.left) {
-            this.root.push(new TableBordersElement("w:left", options.left.style, options.left.size, 0, options.left.color));
+            this.root.push(new BorderElement("w:left", options.left));
         } else {
-            this.root.push(new TableBordersElement("w:left", BorderStyle.SINGLE, 4, 0, "auto"));
+            this.root.push(new BorderElement("w:left", DEFAULT_BORDER));
         }
 
         if (options.bottom) {
-            this.root.push(new TableBordersElement("w:bottom", options.bottom.style, options.bottom.size, 0, options.bottom.color));
+            this.root.push(new BorderElement("w:bottom", options.bottom));
         } else {
-            this.root.push(new TableBordersElement("w:bottom", BorderStyle.SINGLE, 4, 0, "auto"));
+            this.root.push(new BorderElement("w:bottom", DEFAULT_BORDER));
         }
 
         if (options.right) {
-            this.root.push(new TableBordersElement("w:right", options.right.style, options.right.size, 0, options.right.color));
+            this.root.push(new BorderElement("w:right", options.right));
         } else {
-            this.root.push(new TableBordersElement("w:right", BorderStyle.SINGLE, 4, 0, "auto"));
+            this.root.push(new BorderElement("w:right", DEFAULT_BORDER));
         }
 
         if (options.insideHorizontal) {
-            this.root.push(
-                new TableBordersElement(
-                    "w:insideH",
-                    options.insideHorizontal.style,
-                    options.insideHorizontal.size,
-                    0,
-                    options.insideHorizontal.color,
-                ),
-            );
+            this.root.push(new BorderElement("w:insideH", options.insideHorizontal));
         } else {
-            this.root.push(new TableBordersElement("w:insideH", BorderStyle.SINGLE, 4, 0, "auto"));
+            this.root.push(new BorderElement("w:insideH", DEFAULT_BORDER));
         }
 
         if (options.insideVertical) {
-            this.root.push(
-                new TableBordersElement(
-                    "w:insideV",
-                    options.insideVertical.style,
-                    options.insideVertical.size,
-                    0,
-                    options.insideVertical.color,
-                ),
-            );
+            this.root.push(new BorderElement("w:insideV", options.insideVertical));
         } else {
-            this.root.push(new TableBordersElement("w:insideV", BorderStyle.SINGLE, 4, 0, "auto"));
+            this.root.push(new BorderElement("w:insideV", DEFAULT_BORDER));
         }
     }
-}
-
-class TableBordersElement extends XmlComponent {
-    constructor(elementName: string, value: string, size: number, space: number, color: string) {
-        super(elementName);
-        this.root.push(
-            new TableBordersAttributes({
-                value,
-                size,
-                space,
-                color,
-            }),
-        );
-    }
-}
-
-class TableBordersAttributes extends XmlAttributeComponent<{
-    readonly value: string;
-    readonly size: number;
-    readonly space: number;
-    readonly color: string;
-}> {
-    protected readonly xmlKeys = {
-        value: "w:val",
-        size: "w:sz",
-        space: "w:space",
-        color: "w:color",
-    };
 }

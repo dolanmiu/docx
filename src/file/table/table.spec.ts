@@ -51,12 +51,12 @@ const DEFAULT_TABLE_PROPERTIES = {
 
 const BORDERS = {
     "w:tblBorders": [
-        { "w:top": { _attr: { "w:val": "single", "w:sz": 4, "w:space": 0, "w:color": "auto" } } },
-        { "w:left": { _attr: { "w:val": "single", "w:sz": 4, "w:space": 0, "w:color": "auto" } } },
-        { "w:bottom": { _attr: { "w:val": "single", "w:sz": 4, "w:space": 0, "w:color": "auto" } } },
-        { "w:right": { _attr: { "w:val": "single", "w:sz": 4, "w:space": 0, "w:color": "auto" } } },
-        { "w:insideH": { _attr: { "w:val": "single", "w:sz": 4, "w:space": 0, "w:color": "auto" } } },
-        { "w:insideV": { _attr: { "w:val": "single", "w:sz": 4, "w:space": 0, "w:color": "auto" } } },
+        { "w:top": { _attr: { "w:val": "single", "w:sz": 4, "w:color": "auto" } } },
+        { "w:left": { _attr: { "w:val": "single", "w:sz": 4, "w:color": "auto" } } },
+        { "w:bottom": { _attr: { "w:val": "single", "w:sz": 4, "w:color": "auto" } } },
+        { "w:right": { _attr: { "w:val": "single", "w:sz": 4, "w:color": "auto" } } },
+        { "w:insideH": { _attr: { "w:val": "single", "w:sz": 4, "w:color": "auto" } } },
+        { "w:insideV": { _attr: { "w:val": "single", "w:sz": 4, "w:color": "auto" } } },
     ],
 };
 
