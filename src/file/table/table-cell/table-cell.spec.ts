@@ -570,17 +570,17 @@ describe("TableCell", () => {
                         top: {
                             style: BorderStyle.DASH_DOT_STROKED,
                             size: 3,
-                            color: "red",
+                            color: "FF0000",
                         },
                         bottom: {
                             style: BorderStyle.DOUBLE,
                             size: 3,
-                            color: "blue",
+                            color: "0000ff",
                         },
                         left: {
                             style: BorderStyle.DASH_DOT_STROKED,
                             size: 3,
-                            color: "green",
+                            color: "00ff00",
                         },
                         right: {
                             style: BorderStyle.DASH_DOT_STROKED,
@@ -601,7 +601,7 @@ describe("TableCell", () => {
                                         {
                                             "w:top": {
                                                 _attr: {
-                                                    "w:color": "red",
+                                                    "w:color": "FF0000",
                                                     "w:sz": 3,
                                                     "w:val": "dashDotStroked",
                                                 },
@@ -610,7 +610,7 @@ describe("TableCell", () => {
                                         {
                                             "w:left": {
                                                 _attr: {
-                                                    "w:color": "green",
+                                                    "w:color": "00ff00",
                                                     "w:sz": 3,
                                                     "w:val": "dashDotStroked",
                                                 },
@@ -619,7 +619,7 @@ describe("TableCell", () => {
                                         {
                                             "w:bottom": {
                                                 _attr: {
-                                                    "w:color": "blue",
+                                                    "w:color": "0000ff",
                                                     "w:sz": 3,
                                                     "w:val": "double",
                                                 },
@@ -628,7 +628,7 @@ describe("TableCell", () => {
                                         {
                                             "w:right": {
                                                 _attr: {
-                                                    "w:color": "#ff8000",
+                                                    "w:color": "ff8000",
                                                     "w:sz": 3,
                                                     "w:val": "dashDotStroked",
                                                 },

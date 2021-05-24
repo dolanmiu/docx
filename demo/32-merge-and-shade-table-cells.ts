@@ -224,22 +224,22 @@ const borders = {
     top: {
         style: BorderStyle.DASH_SMALL_GAP,
         size: 1,
-        color: "red",
+        color: "FF0000",
     },
     bottom: {
         style: BorderStyle.DASH_SMALL_GAP,
         size: 1,
-        color: "red",
+        color: "FF0000",
     },
     left: {
         style: BorderStyle.DASH_SMALL_GAP,
         size: 1,
-        color: "red",
+        color: "FF0000",
     },
     right: {
         style: BorderStyle.DASH_SMALL_GAP,
         size: 1,
-        color: "red",
+        color: "FF0000",
     },
 };
 

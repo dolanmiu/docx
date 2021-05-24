@@ -20,6 +20,7 @@
 //     <xsd:attribute name="frame" type="s:ST_OnOff" use="optional"/>
 // </xsd:complexType>
 import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
+import { hexColorValue } from "../values";
 
 export interface IBorderOptions {
     readonly style: BorderStyle;
@@ -29,9 +30,14 @@ export interface IBorderOptions {
 }
 
 export class BorderElement extends XmlComponent {
-    constructor(elementName: string, options: IBorderOptions) {
+    constructor(elementName: string, { color, ...options }: IBorderOptions) {
         super(elementName);
-        this.root.push(new TableBordersAttributes(options));
+        this.root.push(
+            new TableBordersAttributes({
+                ...options,
+                color: color === undefined ? color : hexColorValue(color),
+            }),
+        );
     }
 }
 

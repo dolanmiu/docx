@@ -43,7 +43,7 @@ describe("SymbolRun", () => {
                 italics: true,
                 bold: true,
                 underline: {
-                    color: "red",
+                    color: "ff0000",
                     type: UnderlineType.DOUBLE,
                 },
                 emphasisMark: {
@@ -63,7 +63,7 @@ describe("SymbolRun", () => {
                             { "w:bCs": { _attr: { "w:val": true } } },
                             { "w:i": { _attr: { "w:val": true } } },
                             { "w:iCs": { _attr: { "w:val": true } } },
-                            { "w:u": { _attr: { "w:val": "double", "w:color": "red" } } },
+                            { "w:u": { _attr: { "w:val": "double", "w:color": "ff0000" } } },
                             { "w:em": { _attr: { "w:val": "dot" } } },
                             { "w:color": { _attr: { "w:val": "00FF00" } } },
                             { "w:sz": { _attr: { "w:val": 40 } } },

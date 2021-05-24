@@ -85,7 +85,7 @@ const doc = new Document({
                         new DeletedTextRun({
                             break: 1,
                             text: "in order",
-                            color: "red",
+                            color: "ff0000",
                             bold: true,
                             size: 24,
                             font: {

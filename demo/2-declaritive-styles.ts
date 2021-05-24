@@ -24,7 +24,7 @@ const doc = new Document({
                     size: 28,
                     bold: true,
                     italics: true,
-                    color: "red",
+                    color: "FF0000",
                 },
                 paragraph: {
                     spacing: {

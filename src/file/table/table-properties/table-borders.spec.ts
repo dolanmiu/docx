@@ -79,7 +79,7 @@ describe("TableBorders", () => {
                     top: {
                         style: BorderStyle.DOUBLE,
                         size: 1,
-                        color: "red",
+                        color: "FF0000",
                     },
                 });
 
@@ -89,7 +89,7 @@ describe("TableBorders", () => {
                         {
                             "w:top": {
                                 _attr: {
-                                    "w:color": "red",
+                                    "w:color": "FF0000",
                                     "w:sz": 1,
                                     "w:val": "double",
                                 },
@@ -151,7 +151,7 @@ describe("TableBorders", () => {
                     left: {
                         style: BorderStyle.DOUBLE,
                         size: 1,
-                        color: "red",
+                        color: "ff0000",
                     },
                 });
                 const tree = new Formatter().format(tableBorders);
@@ -170,7 +170,7 @@ describe("TableBorders", () => {
                         {
                             "w:left": {
                                 _attr: {
-                                    "w:color": "red",
+                                    "w:color": "ff0000",
                                     "w:sz": 1,
                                     "w:val": "double",
                                 },
@@ -223,7 +223,7 @@ describe("TableBorders", () => {
                     bottom: {
                         style: BorderStyle.DOUBLE,
                         size: 1,
-                        color: "red",
+                        color: "ff0000",
                     },
                 });
                 const tree = new Formatter().format(tableBorders);
@@ -251,7 +251,7 @@ describe("TableBorders", () => {
                         {
                             "w:bottom": {
                                 _attr: {
-                                    "w:color": "red",
+                                    "w:color": "ff0000",
                                     "w:sz": 1,
                                     "w:val": "double",
                                 },
@@ -295,7 +295,7 @@ describe("TableBorders", () => {
                     right: {
                         style: BorderStyle.DOUBLE,
                         size: 1,
-                        color: "red",
+                        color: "ff0000",
                     },
                 });
                 const tree = new Formatter().format(tableBorders);
@@ -332,7 +332,7 @@ describe("TableBorders", () => {
                         {
                             "w:right": {
                                 _attr: {
-                                    "w:color": "red",
+                                    "w:color": "ff0000",
                                     "w:sz": 1,
                                     "w:val": "double",
                                 },
@@ -367,7 +367,7 @@ describe("TableBorders", () => {
                     insideHorizontal: {
                         style: BorderStyle.DOUBLE,
                         size: 1,
-                        color: "red",
+                        color: "ff0000",
                     },
                 });
                 const tree = new Formatter().format(tableBorders);
@@ -413,7 +413,7 @@ describe("TableBorders", () => {
                         {
                             "w:insideH": {
                                 _attr: {
-                                    "w:color": "red",
+                                    "w:color": "ff0000",
                                     "w:sz": 1,
                                     "w:val": "double",
                                 },
@@ -439,7 +439,7 @@ describe("TableBorders", () => {
                     insideVertical: {
                         style: BorderStyle.DOUBLE,
                         size: 1,
-                        color: "red",
+                        color: "ff0000",
                     },
                 });
                 const tree = new Formatter().format(tableBorders);
@@ -494,7 +494,7 @@ describe("TableBorders", () => {
                         {
                             "w:insideV": {
                                 _attr: {
-                                    "w:color": "red",
+                                    "w:color": "ff0000",
                                     "w:sz": 1,
                                     "w:val": "double",
                                 },

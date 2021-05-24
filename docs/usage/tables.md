@@ -183,7 +183,7 @@ const cell = new TableCell({
         top: {
             style: BorderStyle.DASH_DOT_STROKED,
             size: 1,
-            color: "red",
+            color: "ff0000",
         },
         bottom: {
             style: BorderStyle.THICK_THIN_MEDIUM_GAP,
@@ -205,7 +205,7 @@ const cell = new TableCell({
         left: {
             style: BorderStyle.DOT_DOT_DASH,
             size: 3,
-            color: "green",
+            color: "00FF00",
         },
         right: {
             style: BorderStyle.DOT_DOT_DASH,

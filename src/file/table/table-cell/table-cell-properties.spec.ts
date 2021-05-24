@@ -73,7 +73,7 @@ describe("TableCellProperties", () => {
                 borders: {
                     top: {
                         style: BorderStyle.DASH_DOT_STROKED,
-                        color: "red",
+                        color: "ff0000",
                         size: 3,
                     },
                 },
@@ -82,7 +82,7 @@ describe("TableCellProperties", () => {
             const tree = new Formatter().format(properties);
 
             expect(tree["w:tcPr"][0]).to.deep.equal({
-                "w:tcBorders": [{ "w:top": { _attr: { "w:val": "dashDotStroked", "w:sz": 3, "w:color": "red" } } }],
+                "w:tcBorders": [{ "w:top": { _attr: { "w:val": "dashDotStroked", "w:sz": 3, "w:color": "ff0000" } } }],
             });
         });
 

@@ -10,25 +10,25 @@ describe("Border", () => {
         it("should create", () => {
             const border = new Border({
                 top: {
-                    color: "red",
+                    color: "FF0000",
                     space: 1,
                     style: BorderStyle.WAVE,
                     size: 2,
                 },
                 bottom: {
-                    color: "red",
+                    color: "FF0000",
                     space: 3,
                     style: BorderStyle.WAVE,
                     size: 4,
                 },
                 left: {
-                    color: "red",
+                    color: "FF0000",
                     space: 5,
                     style: BorderStyle.WAVE,
                     size: 6,
                 },
                 right: {
-                    color: "red",
+                    color: "FF0000",
                     space: 7,
                     style: BorderStyle.WAVE,
                     size: 8,
@@ -42,7 +42,7 @@ describe("Border", () => {
                     {
                         "w:top": {
                             _attr: {
-                                "w:color": "red",
+                                "w:color": "FF0000",
                                 "w:space": 1,
                                 "w:sz": 2,
                                 "w:val": "wave",
@@ -52,7 +52,7 @@ describe("Border", () => {
                     {
                         "w:bottom": {
                             _attr: {
-                                "w:color": "red",
+                                "w:color": "FF0000",
                                 "w:space": 3,
                                 "w:sz": 4,
                                 "w:val": "wave",
@@ -62,7 +62,7 @@ describe("Border", () => {
                     {
                         "w:left": {
                             _attr: {
-                                "w:color": "red",
+                                "w:color": "FF0000",
                                 "w:space": 5,
                                 "w:sz": 6,
                                 "w:val": "wave",
@@ -72,7 +72,7 @@ describe("Border", () => {
                     {
                         "w:right": {
                             _attr: {
-                                "w:color": "red",
+                                "w:color": "FF0000",
                                 "w:space": 7,
                                 "w:sz": 8,
                                 "w:val": "wave",

@@ -1,3 +1,4 @@
+import { hexColorValue } from "file/values";
 import { Attributes, XmlComponent } from "file/xml-components";
 
 export enum UnderlineType {
@@ -26,7 +27,7 @@ export abstract class BaseUnderline extends XmlComponent {
         this.root.push(
             new Attributes({
                 val: underlineType,
-                color: color,
+                color: color === undefined ? color : hexColorValue(color),
             }),
         );
     }

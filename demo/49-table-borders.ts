@@ -24,22 +24,22 @@ const table = new Table({
                         top: {
                             style: BorderStyle.DASH_SMALL_GAP,
                             size: 1,
-                            color: "red",
+                            color: "ff0000",
                         },
                         bottom: {
                             style: BorderStyle.DASH_SMALL_GAP,
                             size: 1,
-                            color: "red",
+                            color: "ff0000",
                         },
                         left: {
                             style: BorderStyle.DASH_SMALL_GAP,
                             size: 1,
-                            color: "red",
+                            color: "ff0000",
                         },
                         right: {
                             style: BorderStyle.DASH_SMALL_GAP,
                             size: 1,
-                            color: "red",
+                            color: "ff0000",
                         },
                     },
                     children: [new Paragraph("Hello")],
