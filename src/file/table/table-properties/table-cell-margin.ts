@@ -35,16 +35,16 @@ export class TableCellMargin extends IgnoreIfEmptyXmlComponent {
     constructor(options: ITableCellMarginOptions) {
         super("w:tblCellMar");
 
-        if (options.bottom) {
-            this.root.push(new BaseTableCellMargin("w:bottom", options.bottom));
-        }
-
         if (options.top) {
             this.root.push(new BaseTableCellMargin("w:top", options.top));
         }
 
         if (options.left) {
             this.root.push(new BaseTableCellMargin("w:left", options.left));
+        }
+
+        if (options.bottom) {
+            this.root.push(new BaseTableCellMargin("w:bottom", options.bottom));
         }
 
         if (options.right) {

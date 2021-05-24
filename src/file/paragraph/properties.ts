@@ -66,70 +66,15 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
         super("w:pPr");
 
         if (!options) {
-            return;
-        }
-
-        if (options.border) {
-            this.push(new Border(options.border));
-        }
-
-        if (options.spacing) {
-            this.push(new Spacing(options.spacing));
-        }
-
-        if (options.outlineLevel !== undefined) {
-            this.push(new OutlineLevel(options.outlineLevel));
-        }
-
-        if (options.alignment) {
-            this.push(new Alignment(options.alignment));
+            return this;
         }
 
         if (options.heading) {
             this.push(new Style(options.heading));
         }
 
-        if (options.bidirectional) {
-            this.push(new Bidirectional());
-        }
-
-        if (options.thematicBreak) {
-            this.push(new ThematicBreak());
-        }
-
-        if (options.pageBreakBefore) {
-            this.push(new PageBreakBefore());
-        }
-
-        if (options.contextualSpacing) {
-            this.push(new ContextualSpacing(options.contextualSpacing));
-        }
-
-        if (options.indent) {
-            this.push(new Indent(options.indent));
-        }
-
-        if (options.keepLines) {
-            this.push(new KeepLines());
-        }
-
-        if (options.keepNext) {
-            this.push(new KeepNext());
-        }
-
-        if (options.tabStops) {
-            for (const tabStop of options.tabStops) {
-                this.push(new TabStop(tabStop.type, tabStop.position, tabStop.leader));
-            }
-        }
-
-        if (options.style) {
-            this.push(new Style(options.style));
-        }
-
         if (options.bullet) {
             this.push(new Style("ListParagraph"));
-            this.push(new NumberProperties(1, options.bullet.level));
         }
 
         if (options.numbering) {
@@ -138,6 +83,37 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
                     this.push(new Style("ListParagraph"));
                 }
             }
+        }
+
+        if (options.style) {
+            this.push(new Style(options.style));
+        }
+
+        if (options.keepNext) {
+            this.push(new KeepNext());
+        }
+
+        if (options.keepLines) {
+            this.push(new KeepLines());
+        }
+
+        if (options.pageBreakBefore) {
+            this.push(new PageBreakBefore());
+        }
+
+        if (options.frame) {
+            this.push(new FrameProperties(options.frame));
+        }
+
+        if (options.widowControl) {
+            this.push(new WidowControl(options.widowControl));
+        }
+
+        if (options.bullet) {
+            this.push(new NumberProperties(1, options.bullet.level));
+        }
+
+        if (options.numbering) {
             this.numberingReferences.push({
                 reference: options.numbering.reference,
                 instance: options.numbering.instance ?? 0,
@@ -146,24 +122,54 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
             this.push(new NumberProperties(`${options.numbering.reference}-${options.numbering.instance ?? 0}`, options.numbering.level));
         }
 
-        if (options.rightTabStop) {
-            this.push(new TabStop(TabStopType.RIGHT, options.rightTabStop));
+        if (options.border) {
+            this.push(new Border(options.border));
         }
 
-        if (options.leftTabStop) {
-            this.push(new TabStop(TabStopType.LEFT, options.leftTabStop));
+        if (options.thematicBreak) {
+            this.push(new ThematicBreak());
         }
 
         if (options.shading) {
             this.push(new Shading(options.shading.type, options.shading.fill, options.shading.color));
         }
 
-        if (options.widowControl) {
-            this.push(new WidowControl(options.widowControl));
+        if (options.rightTabStop) {
+            this.push(new TabStop(TabStopType.RIGHT, options.rightTabStop));
         }
 
-        if (options.frame) {
-            this.push(new FrameProperties(options.frame));
+        if (options.tabStops) {
+            for (const tabStop of options.tabStops) {
+                this.push(new TabStop(tabStop.type, tabStop.position, tabStop.leader));
+            }
+        }
+
+        if (options.leftTabStop) {
+            this.push(new TabStop(TabStopType.LEFT, options.leftTabStop));
+        }
+
+        if (options.bidirectional) {
+            this.push(new Bidirectional());
+        }
+
+        if (options.spacing) {
+            this.push(new Spacing(options.spacing));
+        }
+
+        if (options.indent) {
+            this.push(new Indent(options.indent));
+        }
+
+        if (options.contextualSpacing) {
+            this.push(new ContextualSpacing(options.contextualSpacing));
+        }
+
+        if (options.alignment) {
+            this.push(new Alignment(options.alignment));
+        }
+
+        if (options.outlineLevel !== undefined) {
+            this.push(new OutlineLevel(options.outlineLevel));
         }
     }
 

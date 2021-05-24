@@ -91,6 +91,14 @@ describe("TableCellProperties", () => {
                                 },
                             },
                             {
+                                "w:start": {
+                                    _attr: {
+                                        "w:type": "dxa",
+                                        "w:w": 0,
+                                    },
+                                },
+                            },
+                            {
                                 "w:bottom": {
                                     _attr: {
                                         "w:type": "dxa",
@@ -100,14 +108,6 @@ describe("TableCellProperties", () => {
                             },
                             {
                                 "w:end": {
-                                    _attr: {
-                                        "w:type": "dxa",
-                                        "w:w": 0,
-                                    },
-                                },
-                            },
-                            {
-                                "w:start": {
                                     _attr: {
                                         "w:type": "dxa",
                                         "w:w": 0,

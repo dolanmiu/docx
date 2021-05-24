@@ -623,41 +623,6 @@ describe("AbstractNumbering", () => {
                         fill: "00FFFF",
                         color: "FF0000",
                     },
-                    expected: [
-                        { "w:shd": { _attr: { "w:val": "pct10", "w:fill": "00FFFF", "w:color": "FF0000" } } },
-                        { "w:shdCs": { _attr: { "w:val": "pct10", "w:fill": "00FFFF", "w:color": "FF0000" } } },
-                    ],
-                },
-                {
-                    shading: {
-                        type: ShadingType.PERCENT_10,
-                        fill: "00FFFF",
-                        color: "FF0000",
-                    },
-                    expected: [
-                        { "w:shd": { _attr: { "w:val": "pct10", "w:fill": "00FFFF", "w:color": "FF0000" } } },
-                        { "w:shdCs": { _attr: { "w:val": "pct10", "w:fill": "00FFFF", "w:color": "FF0000" } } },
-                    ],
-                },
-                {
-                    shading: {
-                        type: ShadingType.PERCENT_10,
-                        fill: "00FFFF",
-                        color: "FF0000",
-                    },
-                    shadingComplexScript: true,
-                    expected: [
-                        { "w:shd": { _attr: { "w:val": "pct10", "w:fill": "00FFFF", "w:color": "FF0000" } } },
-                        { "w:shdCs": { _attr: { "w:val": "pct10", "w:fill": "00FFFF", "w:color": "FF0000" } } },
-                    ],
-                },
-                {
-                    shading: {
-                        type: ShadingType.PERCENT_10,
-                        fill: "00FFFF",
-                        color: "FF0000",
-                    },
-                    shadingComplexScript: false,
                     expected: [{ "w:shd": { _attr: { "w:val": "pct10", "w:fill": "00FFFF", "w:color": "FF0000" } } }],
                 },
                 {
@@ -666,18 +631,34 @@ describe("AbstractNumbering", () => {
                         fill: "00FFFF",
                         color: "FF0000",
                     },
-                    shadingComplexScript: {
+                    expected: [{ "w:shd": { _attr: { "w:val": "pct10", "w:fill": "00FFFF", "w:color": "FF0000" } } }],
+                },
+                {
+                    shading: {
                         type: ShadingType.PERCENT_10,
                         fill: "00FFFF",
-                        color: "00FF00",
+                        color: "FF0000",
                     },
-                    expected: [
-                        { "w:shd": { _attr: { "w:val": "pct10", "w:fill": "00FFFF", "w:color": "FF0000" } } },
-                        { "w:shdCs": { _attr: { "w:val": "pct10", "w:fill": "00FFFF", "w:color": "00FF00" } } },
-                    ],
+                    expected: [{ "w:shd": { _attr: { "w:val": "pct10", "w:fill": "00FFFF", "w:color": "FF0000" } } }],
+                },
+                {
+                    shading: {
+                        type: ShadingType.PERCENT_10,
+                        fill: "00FFFF",
+                        color: "FF0000",
+                    },
+                    expected: [{ "w:shd": { _attr: { "w:val": "pct10", "w:fill": "00FFFF", "w:color": "FF0000" } } }],
+                },
+                {
+                    shading: {
+                        type: ShadingType.PERCENT_10,
+                        fill: "00FFFF",
+                        color: "FF0000",
+                    },
+                    expected: [{ "w:shd": { _attr: { "w:val": "pct10", "w:fill": "00FFFF", "w:color": "FF0000" } } }],
                 },
             ];
-            shadingTests.forEach(({ shadow, shading, shadingComplexScript, expected }) => {
+            shadingTests.forEach(({ shadow, shading, expected }) => {
                 it("#shadow correctly", () => {
                     const abstractNumbering = new AbstractNumbering(1, [
                         {
@@ -685,7 +666,7 @@ describe("AbstractNumbering", () => {
                             format: LevelFormat.LOWER_ROMAN,
                             text: "%0.",
                             style: {
-                                run: { shadow, shading, shadingComplexScript },
+                                run: { shadow, shading },
                             },
                         },
                     ]);

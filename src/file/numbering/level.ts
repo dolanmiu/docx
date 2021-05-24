@@ -111,23 +111,22 @@ export class LevelBase extends XmlComponent {
 
     constructor({ level, format, text, alignment = AlignmentType.START, start = 1, style, suffix }: ILevelsOptions) {
         super("w:lvl");
-        this.root.push(
-            new LevelAttributes({
-                ilvl: level,
-                tentative: 1,
-            }),
-        );
 
         this.root.push(new Start(start));
-        this.root.push(new LevelJc(alignment));
 
         if (format) {
             this.root.push(new NumberFormat(format));
         }
 
+        if (suffix) {
+            this.root.push(new Suffix(suffix));
+        }
+
         if (text) {
             this.root.push(new LevelText(text));
         }
+
+        this.root.push(new LevelJc(alignment));
 
         this.paragraphProperties = new ParagraphProperties(style && style.paragraph);
         this.runProperties = new RunProperties(style && style.run);
@@ -135,9 +134,12 @@ export class LevelBase extends XmlComponent {
         this.root.push(this.paragraphProperties);
         this.root.push(this.runProperties);
 
-        if (suffix) {
-            this.root.push(new Suffix(suffix));
-        }
+        this.root.push(
+            new LevelAttributes({
+                ilvl: level,
+                tentative: 1,
+            }),
+        );
     }
 }
 

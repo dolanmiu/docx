@@ -199,16 +199,3 @@ export class Shading extends XmlComponent {
         );
     }
 }
-
-export class ShadowComplexScript extends XmlComponent {
-    constructor(value: string, fill: string, color: string) {
-        super("w:shdCs");
-        this.root.push(
-            new Attributes({
-                val: value,
-                fill: fill,
-                color: color,
-            }),
-        );
-    }
-}

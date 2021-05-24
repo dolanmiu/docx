@@ -6,7 +6,7 @@ export class TextRun extends Run {
         if (typeof options === "string") {
             super({});
             this.root.push(new Text(options));
-            return;
+            return this;
         }
 
         super(options);

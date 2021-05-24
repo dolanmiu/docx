@@ -8,6 +8,6 @@ export class NonVisualPropertiesAttributes extends XmlAttributeComponent<{
     protected readonly xmlKeys = {
         id: "id",
         name: "name",
-        descr: "desc",
+        descr: "descr",
     };
 }
