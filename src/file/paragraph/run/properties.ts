@@ -1,10 +1,9 @@
 import { IShadingAttributesProperties, Shading } from "file/shading";
-import { HpsMeasureElement, IgnoreIfEmptyXmlComponent, OnOffElement, XmlComponent } from "file/xml-components";
+import { HpsMeasureElement, IgnoreIfEmptyXmlComponent, OnOffElement, StringValueElement, XmlComponent } from "file/xml-components";
 import { EmphasisMark, EmphasisMarkType } from "./emphasis-mark";
 import { CharacterSpacing, Color, Highlight, HighlightComplexScript } from "./formatting";
 import { IFontAttributesProperties, RunFonts } from "./run-fonts";
 import { SubScript, SuperScript } from "./script";
-import { Style } from "./style";
 import { Underline, UnderlineType } from "./underline";
 
 interface IFontOptions {
@@ -162,7 +161,7 @@ export class RunProperties extends IgnoreIfEmptyXmlComponent {
         }
 
         if (options.style) {
-            this.push(new Style(options.style));
+            this.push(new StringValueElement("w:rStyle", options.style));
         }
 
         if (options.font) {
