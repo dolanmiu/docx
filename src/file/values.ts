@@ -15,7 +15,7 @@ export function universalMeasureValue(val: string): string {
     if (isNaN(Number(amount))) {
         throw new Error(`Invalid value '${amount}' specified. Expected a valid number.`);
     }
-    return val;
+    return `${Number(amount)}${unit}`;
 }
 const universalMeasureUnits = ["mm", "cm", "in", "pt", "pc", "pi"];
 
@@ -26,7 +26,7 @@ const universalMeasureUnits = ["mm", "cm", "in", "pt", "pc", "pi"];
 // </xsd:simpleType>
 export function positiveUniversalMeasureValue(val: string): string {
     const value = universalMeasureValue(val);
-    if (parseInt(value, 10) < 0) {
+    if (parseFloat(value) < 0) {
         throw new Error(`Invalid value '${value}' specified. Expected a positive number.`);
     }
     return value;
