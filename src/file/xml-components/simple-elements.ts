@@ -44,3 +44,11 @@ export class StringValueElement extends XmlComponent {
         this.root.push(new Attributes({ val }));
     }
 }
+
+// This represents various number element types.
+export class NumberValueElement extends XmlComponent {
+    constructor(name: string, val: number) {
+        super(name);
+        this.root.push(new Attributes({ val }));
+    }
+}
