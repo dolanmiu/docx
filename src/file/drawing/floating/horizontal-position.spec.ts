@@ -49,5 +49,9 @@ describe("HorizontalPosition", () => {
                 ],
             });
         });
+
+        it("should require one of align or offset", () => {
+            expect(() => new HorizontalPosition({})).to.throw();
+        });
     });
 });

@@ -1,6 +1,6 @@
 // http://officeopenxml.com/WPborders.php
 import { BorderElement, BorderStyle, IBorderOptions } from "file/border";
-import { XmlComponent } from "file/xml-components";
+import { IgnoreIfEmptyXmlComponent, XmlComponent } from "file/xml-components";
 
 export interface IBordersOptions {
     readonly top?: IBorderOptions;
@@ -9,7 +9,7 @@ export interface IBordersOptions {
     readonly right?: IBorderOptions;
 }
 
-export class Border extends XmlComponent {
+export class Border extends IgnoreIfEmptyXmlComponent {
     constructor(options: IBordersOptions) {
         super("w:pBdr");
 

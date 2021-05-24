@@ -28,8 +28,4 @@ export class Drawing extends XmlComponent {
             this.root.push(new Anchor(imageData, imageData.transformation, drawingOptions));
         }
     }
-
-    public scale(factorX: number, factorY: number): void {
-        this.inline.scale(factorX, factorY);
-    }
 }

@@ -82,6 +82,11 @@ describe("Border", () => {
                 ],
             });
         });
+
+        it("should not add empty borders element if there are no borders defined", () => {
+            const tb = new Border({});
+            expect(() => new Formatter().format(tb)).to.throw();
+        });
     });
 });
 

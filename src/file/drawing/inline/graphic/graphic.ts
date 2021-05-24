@@ -26,8 +26,4 @@ export class Graphic extends XmlComponent {
 
         this.root.push(this.data);
     }
-
-    public setXY(x: number, y: number): void {
-        this.data.setXY(x, y);
-    }
 }
