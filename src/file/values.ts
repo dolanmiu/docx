@@ -1,5 +1,8 @@
 // Runtime checks and cleanup for value types in the spec that aren't easily expressed through our type system.
 // These will help us to prevent silent failures and corrupted documents.
+//
+// Most of the rest of the types not defined here are either aliases of existing types or enumerations.
+// Enumerations should probably just be implemented as enums, with instructions to end-users, without a runtime check.
 
 // <xsd:simpleType name="ST_DecimalNumber">
 //     <xsd:restriction base="xsd:integer"/>
@@ -21,6 +24,52 @@ export function unsignedDecimalNumber(val: number): number {
     }
     return value;
 }
+
+// The xsd:hexBinary type represents binary data as a sequence of binary octets.
+// It uses hexadecimal encoding, where each binary octet is a two-character hexadecimal number.
+// Lowercase and uppercase letters A through F are permitted. For example, 0FB8 and 0fb8 are two
+// equal xsd:hexBinary representations consisting of two octets.
+// http://www.datypic.com/sc/xsd/t-xsd_hexBinary.html
+function hexBinary(val: string, length: number): string {
+    const expectedLength = length * 2;
+    if (val.length !== expectedLength || isNaN(Number("0x" + val))) {
+        throw new Error(`Invalid hex value '${val}'. Expected ${expectedLength} digit hex value`);
+    }
+    return val;
+}
+
+// <xsd:simpleType name="ST_LongHexNumber">
+//     <xsd:restriction base="xsd:hexBinary">
+//         <xsd:length value="4"/>
+//     </xsd:restriction>
+// </xsd:simpleType>
+export function longHexNumber(val: string): string {
+    return hexBinary(val, 4);
+}
+
+// <xsd:simpleType name="ST_ShortHexNumber">
+//     <xsd:restriction base="xsd:hexBinary">
+//         <xsd:length value="2"/>
+//     </xsd:restriction>
+// </xsd:simpleType>
+export function shortHexNumber(val: string): string {
+    return hexBinary(val, 2);
+}
+
+// <xsd:simpleType name="ST_UcharHexNumber">
+//     <xsd:restriction base="xsd:hexBinary">
+//         <xsd:length value="1"/>
+//     </xsd:restriction>
+// </xsd:simpleType>
+export function uCharHexNumber(val: string): string {
+    return hexBinary(val, 1);
+}
+
+// <xsd:simpleType name="ST_LongHexNumber">
+// <xsd:restriction base="xsd:hexBinary">
+//   <xsd:length value="4"/>
+// </xsd:restriction>
+// </xsd:simpleType>
 
 // <xsd:simpleType name="ST_UniversalMeasure">
 //     <xsd:restriction base="xsd:string">
@@ -62,10 +111,6 @@ export function positiveUniversalMeasureValue(val: string): string {
 //         </xsd:restriction>
 //     </xsd:simpleType>
 
-//     The xsd:hexBinary type represents binary data as a sequence of binary octets.
-//     It uses hexadecimal encoding, where each binary octet is a two-character hexadecimal number.
-//     Lowercase and uppercase letters A through F are permitted. For example, 0FB8 and 0fb8 are two
-//     equal xsd:hexBinary representations consisting of two octets.
 //     <xsd:simpleType name="ST_HexColorRGB">
 //         <xsd:restriction base="xsd:hexBinary">
 //             <xsd:length value="3" fixed="true"/>
@@ -78,10 +123,7 @@ export function hexColorValue(val: string): string {
     // It's super common to see colors prefixed with a pound, but technically invalid here.
     // Most clients work with it, but strip it off anyway for strict compliance.
     const color = val.charAt(0) === "#" ? val.substring(1) : val;
-    if (color.length !== 6 || isNaN(Number("0x" + color))) {
-        throw new Error(`Invalid color value '${color}'. Expected six digit hex value (eg FF9900)`);
-    }
-    return color;
+    return hexBinary(color, 3);
 }
 
 // <xsd:simpleType name="ST_SignedTwipsMeasure">
@@ -96,6 +138,13 @@ export function signedTwipsMeasureValue(val: string | number): string | number {
 // </xsd:simpleType>
 export function hpsMeasureValue(val: string | number): string | number {
     return typeof val === "string" ? positiveUniversalMeasureValue(val) : unsignedDecimalNumber(val);
+}
+
+// <xsd:simpleType name="ST_SignedHpsMeasure">
+//     <xsd:union memberTypes="xsd:integer s:ST_UniversalMeasure"/>
+// </xsd:simpleType>
+export function signedHpsMeasureValue(val: string | number): string | number {
+    return typeof val === "string" ? universalMeasureValue(val) : decimalNumber(val);
 }
 
 // <xsd:simpleType name="ST_TwipsMeasure">
@@ -146,3 +195,26 @@ export const eighthPointMeasureValue = unsignedDecimalNumber;
 //     <xsd:restriction base="s:ST_UnsignedDecimalNumber"/>
 // </xsd:simpleType>
 export const pointMeasureValue = unsignedDecimalNumber;
+
+// <xsd:simpleType name="ST_DateTime">
+//     <xsd:restriction base="xsd:dateTime"/>
+// </xsd:simpleType>
+//
+// http://www.datypic.com/sc/xsd/t-xsd_dateTime.html
+// The type xsd:dateTime represents a specific date and time in the format
+// CCYY-MM-DDThh:mm:ss.sss, which is a concatenation of the date and time forms,
+// separated by a literal letter "T". All of the same rules that apply to the date
+// and time types are applicable to xsd:dateTime as well.
+//
+// An optional time zone expression may be added at the end of the value.
+// The letter Z is used to indicate Coordinated Universal Time (UTC). All other time
+// zones are represented by their difference from Coordinated Universal Time in the
+// format +hh:mm, or -hh:mm. These values may range from -14:00 to 14:00. For example,
+// US Eastern Standard Time, which is five hours behind UTC, is represented as -05:00.
+// If no time zone value is present, it is considered unknown; it is not assumed to be UTC.
+//
+// Luckily, js has this format built in already. See:
+// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date/toISOString
+export function dateTimeValue(val: Date): string {
+    return val.toISOString();
+}
