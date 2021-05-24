@@ -432,8 +432,8 @@ describe("TableCell", () => {
             const cell = new TableCell({
                 children: [],
                 shading: {
-                    fill: "red",
-                    color: "blue",
+                    fill: "FF0000",
+                    color: "0000ff",
                     val: ShadingType.PERCENT_10,
                 },
             });
@@ -447,8 +447,8 @@ describe("TableCell", () => {
                             {
                                 "w:shd": {
                                     _attr: {
-                                        "w:color": "blue",
-                                        "w:fill": "red",
+                                        "w:color": "0000ff",
+                                        "w:fill": "FF0000",
                                         "w:val": "pct10",
                                     },
                                 },

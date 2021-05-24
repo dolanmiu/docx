@@ -18,6 +18,7 @@
 //     <xsd:attribute name="themeFillShade" type="ST_UcharHexNumber" use="optional"/>
 // </xsd:complexType>
 import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
+import { hexColorValue } from "../values";
 
 export interface IShadingAttributesProperties {
     readonly fill?: string;
@@ -34,9 +35,15 @@ class ShadingAttributes extends XmlAttributeComponent<IShadingAttributesProperti
 }
 
 export class Shading extends XmlComponent {
-    constructor(attrs: IShadingAttributesProperties) {
+    constructor({ fill, color, val }: IShadingAttributesProperties) {
         super("w:shd");
-        this.root.push(new ShadingAttributes(attrs));
+        this.root.push(
+            new ShadingAttributes({
+                fill: fill === undefined ? fill : hexColorValue(fill),
+                color: color === undefined ? color : hexColorValue(color),
+                val,
+            }),
+        );
     }
 }
 

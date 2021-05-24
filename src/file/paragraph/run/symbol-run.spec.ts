@@ -49,7 +49,7 @@ describe("SymbolRun", () => {
                 emphasisMark: {
                     type: EmphasisMarkType.DOT,
                 },
-                color: "green",
+                color: "00FF00",
                 size: 40,
                 highlight: "yellow",
             });
@@ -65,7 +65,7 @@ describe("SymbolRun", () => {
                             { "w:iCs": { _attr: { "w:val": true } } },
                             { "w:u": { _attr: { "w:val": "double", "w:color": "red" } } },
                             { "w:em": { _attr: { "w:val": "dot" } } },
-                            { "w:color": { _attr: { "w:val": "green" } } },
+                            { "w:color": { _attr: { "w:val": "00FF00" } } },
                             { "w:sz": { _attr: { "w:val": 40 } } },
                             { "w:szCs": { _attr: { "w:val": 40 } } },
                             { "w:highlight": { _attr: { "w:val": "yellow" } } },

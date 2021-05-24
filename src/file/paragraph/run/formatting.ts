@@ -1,170 +1,55 @@
+import { hexColorValue, signedTwipsMeasureValue } from "file/values";
 import { Attributes, XmlComponent } from "file/xml-components";
 
-export class Bold extends XmlComponent {
-    constructor() {
-        super("w:b");
-        this.root.push(
-            new Attributes({
-                val: true,
-            }),
-        );
-    }
-}
-
-export class BoldComplexScript extends XmlComponent {
-    constructor() {
-        super("w:bCs");
-        this.root.push(
-            new Attributes({
-                val: true,
-            }),
-        );
-    }
-}
-
 export class CharacterSpacing extends XmlComponent {
-    constructor(value: number) {
+    constructor(value: number | string) {
         super("w:spacing");
         this.root.push(
             new Attributes({
-                val: value,
+                val: signedTwipsMeasureValue(value),
             }),
         );
     }
 }
 
-export class Italics extends XmlComponent {
-    constructor() {
-        super("w:i");
-        this.root.push(
-            new Attributes({
-                val: true,
-            }),
-        );
-    }
-}
-
-export class ItalicsComplexScript extends XmlComponent {
-    constructor() {
-        super("w:iCs");
-        this.root.push(
-            new Attributes({
-                val: true,
-            }),
-        );
-    }
-}
-
-export class Caps extends XmlComponent {
-    constructor() {
-        super("w:caps");
-        this.root.push(
-            new Attributes({
-                val: true,
-            }),
-        );
-    }
-}
-
+// <xsd:complexType name="CT_Color">
+//     <xsd:attribute name="val" type="ST_HexColor" use="required"/>
+//     <xsd:attribute name="themeColor" type="ST_ThemeColor" use="optional"/>
+//     <xsd:attribute name="themeTint" type="ST_UcharHexNumber" use="optional"/>
+//     <xsd:attribute name="themeShade" type="ST_UcharHexNumber" use="optional"/>
+// </xsd:complexType>
 export class Color extends XmlComponent {
     constructor(color: string) {
         super("w:color");
         this.root.push(
             new Attributes({
-                val: color,
+                val: hexColorValue(color),
             }),
         );
     }
 }
 
-export class DoubleStrike extends XmlComponent {
-    constructor() {
-        super("w:dstrike");
-        this.root.push(
-            new Attributes({
-                val: true,
-            }),
-        );
-    }
-}
-
-export class Emboss extends XmlComponent {
-    constructor() {
-        super("w:emboss");
-        this.root.push(
-            new Attributes({
-                val: true,
-            }),
-        );
-    }
-}
-
-export class Imprint extends XmlComponent {
-    constructor() {
-        super("w:imprint");
-        this.root.push(
-            new Attributes({
-                val: true,
-            }),
-        );
-    }
-}
-
-export class SmallCaps extends XmlComponent {
-    constructor() {
-        super("w:smallCaps");
-        this.root.push(
-            new Attributes({
-                val: true,
-            }),
-        );
-    }
-}
-
-export class Strike extends XmlComponent {
-    constructor() {
-        super("w:strike");
-        this.root.push(
-            new Attributes({
-                val: true,
-            }),
-        );
-    }
-}
-
-export class Size extends XmlComponent {
-    constructor(size: number) {
-        super("w:sz");
-        this.root.push(
-            new Attributes({
-                val: size,
-            }),
-        );
-    }
-}
-
-export class SizeComplexScript extends XmlComponent {
-    constructor(size: number) {
-        super("w:szCs");
-        this.root.push(
-            new Attributes({
-                val: size,
-            }),
-        );
-    }
-}
-
-export class RightToLeft extends XmlComponent {
-    constructor() {
-        super("w:rtl");
-        this.root.push(
-            new Attributes({
-                val: true,
-            }),
-        );
-    }
-}
-
+// <xsd:simpleType name="ST_HighlightColor">
+//     <xsd:restriction base="xsd:string">
+//         <xsd:enumeration value="black"/>
+//         <xsd:enumeration value="blue"/>
+//         <xsd:enumeration value="cyan"/>
+//         <xsd:enumeration value="green"/>
+//         <xsd:enumeration value="magenta"/>
+//         <xsd:enumeration value="red"/>
+//         <xsd:enumeration value="yellow"/>
+//         <xsd:enumeration value="white"/>
+//         <xsd:enumeration value="darkBlue"/>
+//         <xsd:enumeration value="darkCyan"/>
+//         <xsd:enumeration value="darkGreen"/>
+//         <xsd:enumeration value="darkMagenta"/>
+//         <xsd:enumeration value="darkRed"/>
+//         <xsd:enumeration value="darkYellow"/>
+//         <xsd:enumeration value="darkGray"/>
+//         <xsd:enumeration value="lightGray"/>
+//         <xsd:enumeration value="none"/>
+//     </xsd:restriction>
+// </xsd:simpleType>
 export class Highlight extends XmlComponent {
     constructor(color: string) {
         super("w:highlight");

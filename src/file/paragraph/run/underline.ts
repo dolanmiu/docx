@@ -21,7 +21,7 @@ export enum UnderlineType {
 }
 
 export abstract class BaseUnderline extends XmlComponent {
-    constructor(underlineType: string, color?: string) {
+    constructor(underlineType: UnderlineType, color?: string) {
         super("w:u");
         this.root.push(
             new Attributes({
@@ -40,96 +40,96 @@ export class Underline extends BaseUnderline {
 
 export class DashUnderline extends BaseUnderline {
     constructor() {
-        super("dash");
+        super(UnderlineType.DASH);
     }
 }
 
 export class DashDotDotHeavyUnderline extends BaseUnderline {
     constructor() {
-        super("dashDotDotHeavy");
+        super(UnderlineType.DASHDOTDOTHEAVY);
     }
 }
 
 export class DashDotHeavyUnderline extends BaseUnderline {
     constructor() {
-        super("dashDotHeavy");
+        super(UnderlineType.DASHDOTHEAVY);
     }
 }
 
 export class DashLongUnderline extends BaseUnderline {
     constructor() {
-        super("dashLong");
+        super(UnderlineType.DASHLONG);
     }
 }
 
 export class DashLongHeavyUnderline extends BaseUnderline {
     constructor() {
-        super("dashLongHeavy");
+        super(UnderlineType.DASHLONGHEAVY);
     }
 }
 
 export class DotDashUnderline extends BaseUnderline {
     constructor() {
-        super("dotDash");
+        super(UnderlineType.DOTDASH);
     }
 }
 
 export class DotDotDashUnderline extends BaseUnderline {
     constructor() {
-        super("dotDotDash");
+        super(UnderlineType.DOTDOTDASH);
     }
 }
 
 export class DottedUnderline extends BaseUnderline {
     constructor() {
-        super("dotted");
+        super(UnderlineType.DOTTED);
     }
 }
 
 export class DottedHeavyUnderline extends BaseUnderline {
     constructor() {
-        super("dottedHeavy");
+        super(UnderlineType.DOTTEDHEAVY);
     }
 }
 
 export class DoubleUnderline extends BaseUnderline {
     constructor() {
-        super("double");
+        super(UnderlineType.DOUBLE);
     }
 }
 
 export class SingleUnderline extends BaseUnderline {
     constructor() {
-        super("single");
+        super(UnderlineType.SINGLE);
     }
 }
 
 export class ThickUnderline extends BaseUnderline {
     constructor() {
-        super("thick");
+        super(UnderlineType.THICK);
     }
 }
 
 export class WaveUnderline extends BaseUnderline {
     constructor() {
-        super("wave");
+        super(UnderlineType.WAVE);
     }
 }
 
 export class WavyDoubleUnderline extends BaseUnderline {
     constructor() {
-        super("wavyDouble");
+        super(UnderlineType.WAVYDOUBLE);
     }
 }
 
 export class WavyHeavyUnderline extends BaseUnderline {
     constructor() {
-        super("wavyHeavy");
+        super(UnderlineType.WAVYHEAVY);
     }
 }
 
 export class WordsUnderline extends BaseUnderline {
     constructor() {
-        super("words");
+        super(UnderlineType.WORDS);
     }
 }

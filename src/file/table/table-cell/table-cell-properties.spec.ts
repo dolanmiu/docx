@@ -60,12 +60,12 @@ describe("TableCellProperties", () => {
         it("sets shading", () => {
             const properties = new TableCellProperties({
                 shading: {
-                    fill: "test",
-                    color: "000",
+                    fill: "ffffff",
+                    color: "000000",
                 },
             });
             const tree = new Formatter().format(properties);
-            expect(tree).to.deep.equal({ "w:tcPr": [{ "w:shd": { _attr: { "w:fill": "test", "w:color": "000" } } }] });
+            expect(tree).to.deep.equal({ "w:tcPr": [{ "w:shd": { _attr: { "w:fill": "ffffff", "w:color": "000000" } } }] });
         });
 
         it("should set the TableCellBorders", () => {
