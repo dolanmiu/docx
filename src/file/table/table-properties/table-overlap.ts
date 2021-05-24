@@ -1,5 +1,11 @@
 import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
 
+// <xsd:simpleType name="ST_TblOverlap">
+//     <xsd:restriction base="xsd:string">
+//         <xsd:enumeration value="never"/>
+//         <xsd:enumeration value="overlap"/>
+//     </xsd:restriction>
+// </xsd:simpleType>
 export enum OverlapType {
     NEVER = "never",
     OVERLAP = "overlap",
@@ -8,13 +14,6 @@ export enum OverlapType {
 // <xsd:complexType name="CT_TblOverlap">
 //     <xsd:attribute name="val" type="ST_TblOverlap" use="required"/>
 // </xsd:complexType>
-//     <xsd:simpleType name="ST_TblOverlap">
-//         <xsd:restriction base="xsd:string">
-//             <xsd:enumeration value="never"/>
-//             <xsd:enumeration value="overlap"/>
-//         </xsd:restriction>
-//     </xsd:simpleType>
-
 class TableOverlapAttributes extends XmlAttributeComponent<{ readonly val: OverlapType }> {
     protected readonly xmlKeys = { val: "w:val" };
 }

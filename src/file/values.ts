@@ -136,3 +136,13 @@ export function percentageValue(val: string): string {
 export function measurementOrPercentValue(val: number | string): number | string {
     return typeof val === "number" ? decimalNumber(val) : percentageValue(val);
 }
+
+// <xsd:simpleType name="ST_EighthPointMeasure">
+//     <xsd:restriction base="s:ST_UnsignedDecimalNumber"/>
+// </xsd:simpleType>
+export const eighthPointMeasureValue = unsignedDecimalNumber;
+
+// <xsd:simpleType name="ST_PointMeasure">
+//     <xsd:restriction base="s:ST_UnsignedDecimalNumber"/>
+// </xsd:simpleType>
+export const pointMeasureValue = unsignedDecimalNumber;

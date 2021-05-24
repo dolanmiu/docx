@@ -1,5 +1,21 @@
 import { BorderElement, IBorderOptions } from "file/border";
+import { decimalNumber } from "file/values";
 import { IgnoreIfEmptyXmlComponent, XmlAttributeComponent, XmlComponent } from "file/xml-components";
+
+// <xsd:complexType name="CT_TcBorders">
+// <xsd:sequence>
+//   <xsd:element name="top" type="CT_Border" minOccurs="0"/>
+//   <xsd:element name="start" type="CT_Border" minOccurs="0"/>
+//   <xsd:element name="left" type="CT_Border" minOccurs="0"/>
+//   <xsd:element name="bottom" type="CT_Border" minOccurs="0"/>
+//   <xsd:element name="end" type="CT_Border" minOccurs="0"/>
+//   <xsd:element name="right" type="CT_Border" minOccurs="0"/>
+//   <xsd:element name="insideH" type="CT_Border" minOccurs="0"/>
+//   <xsd:element name="insideV" type="CT_Border" minOccurs="0"/>
+//   <xsd:element name="tl2br" type="CT_Border" minOccurs="0"/>
+//   <xsd:element name="tr2bl" type="CT_Border" minOccurs="0"/>
+// </xsd:sequence>
+// </xsd:complexType>
 
 export interface ITableCellBorders {
     readonly top?: IBorderOptions;
@@ -42,6 +58,10 @@ class GridSpanAttributes extends XmlAttributeComponent<{ readonly val: number }>
     protected readonly xmlKeys = { val: "w:val" };
 }
 
+// <xsd:complexType name="CT_TcPrBase">
+//   ...
+//   <xsd:element name="gridSpan" type="CT_DecimalNumber" minOccurs="0"/>
+// </xsd>
 /**
  * GridSpan element. Should be used in a table cell. Pass the number of columns that this cell need to span.
  */
@@ -51,7 +71,7 @@ export class GridSpan extends XmlComponent {
 
         this.root.push(
             new GridSpanAttributes({
-                val: value,
+                val: decimalNumber(value),
             }),
         );
     }

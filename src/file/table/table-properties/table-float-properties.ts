@@ -1,3 +1,4 @@
+import { signedTwipsMeasureValue, twipsMeasureValue } from "file/values";
 import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
 
 import { OverlapType, TableOverlap } from "./table-overlap";
@@ -43,7 +44,7 @@ export interface ITableFloatOptions {
      * If relativeHorizontalPosition is also specified, then the absoluteHorizontalPosition attribute is ignored.
      * If the attribute is omitted, the value is assumed to be zero.
      */
-    readonly absoluteHorizontalPosition?: number;
+    readonly absoluteHorizontalPosition?: number | string;
 
     /**
      * Specifies a relative horizontal position for the table, relative to the horizontalAnchor attribute.
@@ -74,7 +75,7 @@ export interface ITableFloatOptions {
      * If relativeVerticalPosition is also specified, then the absoluteVerticalPosition attribute is ignored.
      * If the attribute is omitted, the value is assumed to be zero.
      */
-    readonly absoluteVerticalPosition?: number;
+    readonly absoluteVerticalPosition?: number | string;
 
     /**
      * Specifies a relative vertical position for the table, relative to the verticalAnchor attribute.
@@ -92,27 +93,40 @@ export interface ITableFloatOptions {
      * Specifies the minimun distance to be maintained between the table and the top of text in the paragraph
      * below the table. The value is in twentieths of a point. If omitted, the value is assumed to be zero.
      */
-    readonly bottomFromText?: number;
+    readonly bottomFromText?: number | string;
 
     /**
      * Specifies the minimun distance to be maintained between the table and the bottom edge of text in the paragraph
      * above the table. The value is in twentieths of a point. If omitted, the value is assumed to be zero.
      */
-    readonly topFromText?: number;
+    readonly topFromText?: number | string;
 
     /**
      * Specifies the minimun distance to be maintained between the table and the edge of text in the paragraph
      * to the left of the table. The value is in twentieths of a point. If omitted, the value is assumed to be zero.
      */
-    readonly leftFromText?: number;
+    readonly leftFromText?: number | string;
 
     /**
      * Specifies the minimun distance to be maintained between the table and the edge of text in the paragraph
      * to the right of the table. The value is in twentieths of a point. If omitted, the value is assumed to be zero.
      */
-    readonly rightFromText?: number;
+    readonly rightFromText?: number | string;
     readonly overlap?: OverlapType;
 }
+
+// <xsd:complexType name="CT_TblPPr">
+//     <xsd:attribute name="leftFromText" type="s:ST_TwipsMeasure"/>
+//     <xsd:attribute name="rightFromText" type="s:ST_TwipsMeasure"/>
+//     <xsd:attribute name="topFromText" type="s:ST_TwipsMeasure"/>
+//     <xsd:attribute name="bottomFromText" type="s:ST_TwipsMeasure"/>
+//     <xsd:attribute name="vertAnchor" type="ST_VAnchor"/>
+//     <xsd:attribute name="horzAnchor" type="ST_HAnchor"/>
+//     <xsd:attribute name="tblpXSpec" type="s:ST_XAlign"/>
+//     <xsd:attribute name="tblpX" type="ST_SignedTwipsMeasure"/>
+//     <xsd:attribute name="tblpYSpec" type="s:ST_YAlign"/>
+//     <xsd:attribute name="tblpY" type="ST_SignedTwipsMeasure"/>
+// </xsd:complexType>
 
 export class TableFloatOptionsAttributes extends XmlAttributeComponent<ITableFloatOptions> {
     protected readonly xmlKeys = {
@@ -129,23 +143,30 @@ export class TableFloatOptionsAttributes extends XmlAttributeComponent<ITableFlo
     };
 }
 
-// <xsd:complexType name="CT_TblPPr">
-//     <xsd:attribute name="leftFromText" type="s:ST_TwipsMeasure"/>
-//     <xsd:attribute name="rightFromText" type="s:ST_TwipsMeasure"/>
-//     <xsd:attribute name="topFromText" type="s:ST_TwipsMeasure"/>
-//     <xsd:attribute name="bottomFromText" type="s:ST_TwipsMeasure"/>
-//     <xsd:attribute name="vertAnchor" type="ST_VAnchor"/>
-//     <xsd:attribute name="horzAnchor" type="ST_HAnchor"/>
-//     <xsd:attribute name="tblpXSpec" type="s:ST_XAlign"/>
-//     <xsd:attribute name="tblpX" type="ST_SignedTwipsMeasure"/>
-//     <xsd:attribute name="tblpYSpec" type="s:ST_YAlign"/>
-//     <xsd:attribute name="tblpY" type="ST_SignedTwipsMeasure"/>
-// </xsd:complexType>
-
 export class TableFloatProperties extends XmlComponent {
-    constructor(options: ITableFloatOptions) {
+    constructor({
+        leftFromText,
+        rightFromText,
+        topFromText,
+        bottomFromText,
+        absoluteHorizontalPosition,
+        absoluteVerticalPosition,
+        ...options
+    }: ITableFloatOptions) {
         super("w:tblpPr");
-        this.root.push(new TableFloatOptionsAttributes(options));
+        this.root.push(
+            new TableFloatOptionsAttributes({
+                leftFromText: leftFromText === undefined ? undefined : twipsMeasureValue(leftFromText),
+                rightFromText: rightFromText === undefined ? undefined : twipsMeasureValue(rightFromText),
+                topFromText: topFromText === undefined ? undefined : twipsMeasureValue(topFromText),
+                bottomFromText: bottomFromText === undefined ? undefined : twipsMeasureValue(bottomFromText),
+                absoluteHorizontalPosition:
+                    absoluteHorizontalPosition === undefined ? undefined : signedTwipsMeasureValue(absoluteHorizontalPosition),
+                absoluteVerticalPosition:
+                    absoluteVerticalPosition === undefined ? undefined : signedTwipsMeasureValue(absoluteVerticalPosition),
+                ...options,
+            }),
+        );
 
         if (options.overlap) {
             this.root.push(new TableOverlap(options.overlap));

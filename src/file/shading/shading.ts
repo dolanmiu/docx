@@ -39,8 +39,8 @@ export class Shading extends XmlComponent {
         super("w:shd");
         this.root.push(
             new ShadingAttributes({
-                fill: fill === undefined ? fill : hexColorValue(fill),
-                color: color === undefined ? color : hexColorValue(color),
+                fill: fill === undefined ? undefined : hexColorValue(fill),
+                color: color === undefined ? undefined : hexColorValue(color),
                 val,
             }),
         );
