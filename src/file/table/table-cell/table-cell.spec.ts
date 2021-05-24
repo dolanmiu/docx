@@ -2,11 +2,12 @@ import { expect } from "chai";
 
 import { Formatter } from "export/formatter";
 import { BorderStyle } from "file/border";
-
 import { ShadingType } from "file/shading";
+import { VerticalAlign } from "file/vertical-align";
+
 import { WidthType } from "../table-width";
 import { TableCell } from "./table-cell";
-import { TableCellBorders, TextDirection, VerticalAlign, VerticalMergeType } from "./table-cell-components";
+import { TableCellBorders, TextDirection, VerticalMergeType } from "./table-cell-components";
 
 describe("TableCellBorders", () => {
     describe("#prepForXml", () => {

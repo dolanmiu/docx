@@ -1,3 +1,4 @@
+import { VerticalAlign, VerticalAlignElement } from "file/vertical-align";
 import { IgnoreIfEmptyXmlComponent } from "file/xml-components";
 
 import { IShadingAttributesProperties, Shading } from "../../shading";
@@ -9,8 +10,6 @@ import {
     TableCellBorders,
     TDirection,
     TextDirection,
-    VAlign,
-    VerticalAlign,
     VerticalMerge,
     VerticalMergeType,
 } from "./table-cell-components";
@@ -63,7 +62,7 @@ export class TableCellProperties extends IgnoreIfEmptyXmlComponent {
         }
 
         if (options.verticalAlign) {
-            this.root.push(new VAlign(options.verticalAlign));
+            this.root.push(new VerticalAlignElement(options.verticalAlign));
         }
     }
 }

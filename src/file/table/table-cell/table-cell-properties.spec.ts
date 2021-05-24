@@ -2,9 +2,11 @@ import { expect } from "chai";
 
 import { Formatter } from "export/formatter";
 import { BorderStyle } from "file/border";
+import { VerticalAlign } from "file/vertical-align";
+
 import { WidthType } from "../table-width";
 
-import { VerticalAlign, VerticalMergeType } from "./table-cell-components";
+import { VerticalMergeType } from "./table-cell-components";
 import { TableCellProperties } from "./table-cell-properties";
 
 describe("TableCellProperties", () => {

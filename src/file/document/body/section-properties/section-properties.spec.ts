@@ -5,13 +5,13 @@ import { Formatter } from "export/formatter";
 import { FooterWrapper } from "file/footer-wrapper";
 import { HeaderWrapper } from "file/header-wrapper";
 import { Media } from "file/media";
+import { VerticalAlign } from "file/vertical-align";
 import { LineNumberRestartFormat } from "./line-number";
 
 import { PageBorderOffsetFrom } from "./page-border";
 import { PageNumberFormat } from "./page-number";
 import { SectionProperties } from "./section-properties";
 import { SectionType } from "./type/section-type-attributes";
-import { SectionVerticalAlignValue } from "./vertical-align";
 
 describe("SectionProperties", () => {
     describe("#constructor()", () => {
@@ -53,7 +53,7 @@ describe("SectionProperties", () => {
                     even: new FooterWrapper(media, 200),
                 },
                 titlePage: true,
-                verticalAlign: SectionVerticalAlignValue.TOP,
+                verticalAlign: VerticalAlign.TOP,
             });
 
             const tree = new Formatter().format(properties);

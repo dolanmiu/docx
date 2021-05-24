@@ -110,31 +110,6 @@ export class VerticalMerge extends XmlComponent {
     }
 }
 
-export enum VerticalAlign {
-    BOTTOM = "bottom",
-    CENTER = "center",
-    TOP = "top",
-}
-
-class VAlignAttributes extends XmlAttributeComponent<{ readonly val: VerticalAlign }> {
-    protected readonly xmlKeys = { val: "w:val" };
-}
-
-/**
- * Vertical align element.
- */
-export class VAlign extends XmlComponent {
-    constructor(value: VerticalAlign) {
-        super("w:vAlign");
-
-        this.root.push(
-            new VAlignAttributes({
-                val: value,
-            }),
-        );
-    }
-}
-
 export enum TextDirection {
     BOTTOM_TO_TOP_LEFT_TO_RIGHT = "btLr",
     LEFT_TO_RIGHT_TOP_TO_BOTTOM = "lrTb",
