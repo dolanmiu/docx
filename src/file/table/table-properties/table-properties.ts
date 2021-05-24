@@ -21,7 +21,7 @@
 //         <xsd:element name="tblDescription" type="CT_String" minOccurs="0" maxOccurs="1"/>
 //     </xsd:sequence>
 // </xsd:complexType>
-import { IgnoreIfEmptyXmlComponent } from "file/xml-components";
+import { IgnoreIfEmptyXmlComponent, OnOffElement, StringValueElement } from "file/xml-components";
 
 import { Alignment, AlignmentType } from "../../paragraph";
 import { IShadingAttributesProperties, Shading } from "../../shading";
@@ -30,8 +30,6 @@ import { ITableBordersOptions, TableBorders } from "./table-borders";
 import { ITableCellMarginOptions, TableCellMargin, TableCellMarginElementType } from "./table-cell-margin";
 import { ITableFloatOptions, TableFloatProperties } from "./table-float-properties";
 import { TableLayout, TableLayoutType } from "./table-layout";
-import { TableStyle } from "./table-style";
-import { VisuallyRightToLeft } from "./visually-right-to-left";
 
 export interface ITablePropertiesOptions {
     readonly width?: ITableWidthProperties;
@@ -51,15 +49,15 @@ export class TableProperties extends IgnoreIfEmptyXmlComponent {
         super("w:tblPr");
 
         if (options.style) {
-            this.root.push(new TableStyle(options.style));
+            this.root.push(new StringValueElement("w:tblStyle", options.style));
         }
 
         if (options.float) {
             this.root.push(new TableFloatProperties(options.float));
         }
 
-        if (options.visuallyRightToLeft) {
-            this.root.push(new VisuallyRightToLeft());
+        if (options.visuallyRightToLeft !== undefined) {
+            this.root.push(new OnOffElement("w:bidiVisual", options.visuallyRightToLeft));
         }
 
         if (options.width) {

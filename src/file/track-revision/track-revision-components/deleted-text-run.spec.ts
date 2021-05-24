@@ -54,18 +54,10 @@ describe("DeletedTextRun", () => {
                             {
                                 "w:rPr": [
                                     {
-                                        "w:b": {
-                                            _attr: {
-                                                "w:val": true,
-                                            },
-                                        },
+                                        "w:b": {},
                                     },
                                     {
-                                        "w:bCs": {
-                                            _attr: {
-                                                "w:val": true,
-                                            },
-                                        },
+                                        "w:bCs": {},
                                     },
                                 ],
                             },

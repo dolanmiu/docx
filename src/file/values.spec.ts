@@ -4,6 +4,7 @@ import {
     hpsMeasureValue,
     positiveUniversalMeasureValue,
     signedTwipsMeasureValue,
+    twipsMeasureValue,
     universalMeasureValue,
     unsignedDecimalNumber,
 } from "./values";
@@ -86,6 +87,20 @@ describe("values", () => {
         it("should throw on invalid values", () => {
             expect(() => signedTwipsMeasureValue(NaN)).to.throw();
             expect(() => signedTwipsMeasureValue("foo")).to.throw();
+        });
+    });
+
+    describe("twipsMeasureValue", () => {
+        it("should allow valid values", () => {
+            expect(twipsMeasureValue(1243)).to.eq(1243);
+            expect(twipsMeasureValue("5mm")).to.eq("5mm");
+            expect(twipsMeasureValue("10.in")).to.eq("10in");
+        });
+        it("should throw on invalid values", () => {
+            expect(() => twipsMeasureValue(-12)).to.throw();
+            expect(() => twipsMeasureValue(NaN)).to.throw();
+            expect(() => twipsMeasureValue("foo")).to.throw();
+            expect(() => twipsMeasureValue("-5mm")).to.throw();
         });
     });
 

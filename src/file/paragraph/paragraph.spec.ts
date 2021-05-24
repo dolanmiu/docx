@@ -416,7 +416,7 @@ describe("Paragraph", () => {
     });
 
     describe("#contextualSpacing()", () => {
-        it("should add contextualSpacing to JSON, and set 1 if true", () => {
+        it("should add contextualSpacing", () => {
             const paragraph = new Paragraph({
                 contextualSpacing: true,
             });
@@ -424,7 +424,20 @@ describe("Paragraph", () => {
             expect(tree).to.deep.equal({
                 "w:p": [
                     {
-                        "w:pPr": [{ "w:contextualSpacing": { _attr: { "w:val": 1 } } }],
+                        "w:pPr": [{ "w:contextualSpacing": {} }],
+                    },
+                ],
+            });
+        });
+        it("should remove contextualSpacing", () => {
+            const paragraph = new Paragraph({
+                contextualSpacing: false,
+            });
+            const tree = new Formatter().format(paragraph);
+            expect(tree).to.deep.equal({
+                "w:p": [
+                    {
+                        "w:pPr": [{ "w:contextualSpacing": { _attr: { "w:val": false } } }],
                     },
                 ],
             });

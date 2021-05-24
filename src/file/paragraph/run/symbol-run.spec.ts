@@ -59,10 +59,10 @@ describe("SymbolRun", () => {
                 "w:r": [
                     {
                         "w:rPr": [
-                            { "w:b": { _attr: { "w:val": true } } },
-                            { "w:bCs": { _attr: { "w:val": true } } },
-                            { "w:i": { _attr: { "w:val": true } } },
-                            { "w:iCs": { _attr: { "w:val": true } } },
+                            { "w:b": {} },
+                            { "w:bCs": {} },
+                            { "w:i": {} },
+                            { "w:iCs": {} },
                             { "w:u": { _attr: { "w:val": "double", "w:color": "ff0000" } } },
                             { "w:em": { _attr: { "w:val": "dot" } } },
                             { "w:color": { _attr: { "w:val": "00FF00" } } },

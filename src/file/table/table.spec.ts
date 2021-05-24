@@ -282,7 +282,7 @@ describe("Table", () => {
                         "w:tblW": {
                             _attr: {
                                 "w:type": "pct",
-                                "w:w": "100%",
+                                "w:w": 100,
                             },
                         },
                     },

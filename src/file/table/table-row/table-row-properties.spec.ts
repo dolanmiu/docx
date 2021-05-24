@@ -17,13 +17,13 @@ describe("TableRowProperties", () => {
         it("sets cantSplit to avoid row been paginated", () => {
             const rowProperties = new TableRowProperties({ cantSplit: true });
             const tree = new Formatter().format(rowProperties);
-            expect(tree).to.deep.equal({ "w:trPr": [{ "w:cantSplit": { _attr: { "w:val": true } } }] });
+            expect(tree).to.deep.equal({ "w:trPr": [{ "w:cantSplit": {} }] });
         });
 
         it("sets row as table header (repeat row on each page of table)", () => {
             const rowProperties = new TableRowProperties({ tableHeader: true });
             const tree = new Formatter().format(rowProperties);
-            expect(tree).to.deep.equal({ "w:trPr": [{ "w:tblHeader": { _attr: { "w:val": true } } }] });
+            expect(tree).to.deep.equal({ "w:trPr": [{ "w:tblHeader": {} }] });
         });
 
         it("sets row height exact", () => {

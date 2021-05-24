@@ -98,18 +98,19 @@ export class RunProperties extends IgnoreIfEmptyXmlComponent {
             return;
         }
 
-        if (options.bold) {
-            this.push(new OnOffElement("w:b"));
+        if (options.bold !== undefined) {
+            this.push(new OnOffElement("w:b", options.bold));
         }
-        if ((options.boldComplexScript === undefined && options.bold) || options.boldComplexScript) {
-            this.push(new OnOffElement("w:bCs"));
+        if ((options.boldComplexScript === undefined && options.bold !== undefined) || options.boldComplexScript) {
+            this.push(new OnOffElement("w:bCs", options.boldComplexScript ?? options.bold));
         }
 
-        if (options.italics) {
-            this.push(new OnOffElement("w:i"));
+        if (options.italics !== undefined) {
+            this.push(new OnOffElement("w:i", options.italics));
         }
-        if ((options.italicsComplexScript === undefined && options.italics) || options.italicsComplexScript) {
-            this.push(new OnOffElement("w:iCs"));
+
+        if ((options.italicsComplexScript === undefined && options.italics !== undefined) || options.italicsComplexScript) {
+            this.push(new OnOffElement("w:iCs", options.italicsComplexScript ?? options.italics));
         }
 
         if (options.underline) {
@@ -124,7 +125,7 @@ export class RunProperties extends IgnoreIfEmptyXmlComponent {
             this.push(new Color(options.color));
         }
 
-        if (options.size) {
+        if (options.size !== undefined) {
             this.push(new HpsMeasureElement("w:sz", options.size));
         }
         const szCs =
@@ -133,23 +134,23 @@ export class RunProperties extends IgnoreIfEmptyXmlComponent {
             this.push(new HpsMeasureElement("w:szCs", szCs));
         }
 
-        if (options.rightToLeft) {
-            this.push(new OnOffElement("w:rtl"));
+        if (options.rightToLeft !== undefined) {
+            this.push(new OnOffElement("w:rtl", options.rightToLeft));
         }
 
         // These two are mutually exclusive
-        if (options.smallCaps) {
-            this.push(new OnOffElement("w:smallCaps"));
-        } else if (options.allCaps) {
-            this.push(new OnOffElement("w:caps"));
+        if (options.smallCaps !== undefined) {
+            this.push(new OnOffElement("w:smallCaps", options.smallCaps));
+        } else if (options.allCaps !== undefined) {
+            this.push(new OnOffElement("w:caps", options.allCaps));
         }
 
-        if (options.strike) {
-            this.push(new OnOffElement("w:strike"));
+        if (options.strike !== undefined) {
+            this.push(new OnOffElement("w:strike", options.strike));
         }
 
-        if (options.doubleStrike) {
-            this.push(new OnOffElement("w:dstrike"));
+        if (options.doubleStrike !== undefined) {
+            this.push(new OnOffElement("w:dstrike", options.doubleStrike));
         }
 
         if (options.subScript) {
@@ -189,12 +190,12 @@ export class RunProperties extends IgnoreIfEmptyXmlComponent {
             this.push(new CharacterSpacing(options.characterSpacing));
         }
 
-        if (options.emboss) {
-            this.push(new OnOffElement("w:emboss"));
+        if (options.emboss !== undefined) {
+            this.push(new OnOffElement("w:emboss", options.emboss));
         }
 
-        if (options.imprint) {
-            this.push(new OnOffElement("w:imprint"));
+        if (options.imprint !== undefined) {
+            this.push(new OnOffElement("w:imprint", options.imprint));
         }
 
         if (options.shading) {

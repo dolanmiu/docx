@@ -53,11 +53,7 @@ describe("TableRow", () => {
                     {
                         "w:trPr": [
                             {
-                                "w:cantSplit": {
-                                    _attr: {
-                                        "w:val": true,
-                                    },
-                                },
+                                "w:cantSplit": {},
                             },
                         ],
                     },
@@ -76,11 +72,7 @@ describe("TableRow", () => {
                     {
                         "w:trPr": [
                             {
-                                "w:tblHeader": {
-                                    _attr: {
-                                        "w:val": true,
-                                    },
-                                },
+                                "w:tblHeader": {},
                             },
                         ],
                     },
@@ -141,11 +133,7 @@ describe("TableRow", () => {
                     {
                         "w:trPr": [
                             {
-                                "w:tblHeader": {
-                                    _attr: {
-                                        "w:val": true,
-                                    },
-                                },
+                                "w:tblHeader": {},
                             },
                         ],
                     },

@@ -242,11 +242,7 @@ describe("ParagraphStyle", () => {
                     {
                         "w:pPr": [
                             {
-                                "w:contextualSpacing": {
-                                    _attr: {
-                                        "w:val": 1,
-                                    },
-                                },
+                                "w:contextualSpacing": {},
                             },
                         ],
                     },
@@ -404,7 +400,7 @@ describe("ParagraphStyle", () => {
                 "w:style": [
                     { _attr: { "w:type": "paragraph", "w:styleId": "myStyleId" } },
                     {
-                        "w:rPr": [{ "w:smallCaps": { _attr: { "w:val": true } } }],
+                        "w:rPr": [{ "w:smallCaps": {} }],
                     },
                 ],
             });
@@ -422,7 +418,7 @@ describe("ParagraphStyle", () => {
                 "w:style": [
                     { _attr: { "w:type": "paragraph", "w:styleId": "myStyleId" } },
                     {
-                        "w:rPr": [{ "w:caps": { _attr: { "w:val": true } } }],
+                        "w:rPr": [{ "w:caps": {} }],
                     },
                 ],
             });
@@ -440,7 +436,7 @@ describe("ParagraphStyle", () => {
                 "w:style": [
                     { _attr: { "w:type": "paragraph", "w:styleId": "myStyleId" } },
                     {
-                        "w:rPr": [{ "w:strike": { _attr: { "w:val": true } } }],
+                        "w:rPr": [{ "w:strike": {} }],
                     },
                 ],
             });
@@ -458,7 +454,7 @@ describe("ParagraphStyle", () => {
                 "w:style": [
                     { _attr: { "w:type": "paragraph", "w:styleId": "myStyleId" } },
                     {
-                        "w:rPr": [{ "w:dstrike": { _attr: { "w:val": true } } }],
+                        "w:rPr": [{ "w:dstrike": {} }],
                     },
                 ],
             });
@@ -562,17 +558,17 @@ describe("ParagraphStyle", () => {
         const boldTests = [
             {
                 bold: true,
-                expected: [{ "w:b": { _attr: { "w:val": true } } }, { "w:bCs": { _attr: { "w:val": true } } }],
+                expected: [{ "w:b": {} }, { "w:bCs": {} }],
             },
             {
                 bold: true,
                 boldComplexScript: true,
-                expected: [{ "w:b": { _attr: { "w:val": true } } }, { "w:bCs": { _attr: { "w:val": true } } }],
+                expected: [{ "w:b": {} }, { "w:bCs": {} }],
             },
             {
                 bold: true,
                 boldComplexScript: false,
-                expected: [{ "w:b": { _attr: { "w:val": true } } }],
+                expected: [{ "w:b": {} }],
             },
         ];
         boldTests.forEach(({ bold, boldComplexScript, expected }) => {
@@ -591,17 +587,17 @@ describe("ParagraphStyle", () => {
         const italicsTests = [
             {
                 italics: true,
-                expected: [{ "w:i": { _attr: { "w:val": true } } }, { "w:iCs": { _attr: { "w:val": true } } }],
+                expected: [{ "w:i": {} }, { "w:iCs": {} }],
             },
             {
                 italics: true,
                 italicsComplexScript: true,
-                expected: [{ "w:i": { _attr: { "w:val": true } } }, { "w:iCs": { _attr: { "w:val": true } } }],
+                expected: [{ "w:i": {} }, { "w:iCs": {} }],
             },
             {
                 italics: true,
                 italicsComplexScript: false,
-                expected: [{ "w:i": { _attr: { "w:val": true } } }],
+                expected: [{ "w:i": {} }],
             },
         ];
         italicsTests.forEach(({ italics, italicsComplexScript, expected }) => {

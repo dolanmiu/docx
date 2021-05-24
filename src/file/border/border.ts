@@ -33,7 +33,7 @@ export class BorderElement extends XmlComponent {
     constructor(elementName: string, { color, ...options }: IBorderOptions) {
         super(elementName);
         this.root.push(
-            new TableBordersAttributes({
+            new BordersAttributes({
                 ...options,
                 color: color === undefined ? color : hexColorValue(color),
             }),
@@ -41,7 +41,7 @@ export class BorderElement extends XmlComponent {
     }
 }
 
-class TableBordersAttributes extends XmlAttributeComponent<IBorderOptions> {
+class BordersAttributes extends XmlAttributeComponent<IBorderOptions> {
     protected readonly xmlKeys = {
         style: "w:val",
         color: "w:color",

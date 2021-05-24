@@ -351,7 +351,7 @@ describe("AbstractNumbering", () => {
                 ]);
                 const tree = new Formatter().format(abstractNumbering);
                 expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({
-                    "w:rPr": [{ "w:smallCaps": { _attr: { "w:val": true } } }],
+                    "w:rPr": [{ "w:smallCaps": {} }],
                 });
             });
 
@@ -370,7 +370,7 @@ describe("AbstractNumbering", () => {
                 ]);
                 const tree = new Formatter().format(abstractNumbering);
                 expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({
-                    "w:rPr": [{ "w:caps": { _attr: { "w:val": true } } }],
+                    "w:rPr": [{ "w:caps": {} }],
                 });
             });
 
@@ -390,7 +390,7 @@ describe("AbstractNumbering", () => {
 
                 const tree = new Formatter().format(abstractNumbering);
                 expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({
-                    "w:rPr": [{ "w:strike": { _attr: { "w:val": true } } }],
+                    "w:rPr": [{ "w:strike": {} }],
                 });
             });
 
@@ -409,7 +409,7 @@ describe("AbstractNumbering", () => {
                 ]);
                 const tree = new Formatter().format(abstractNumbering);
                 expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({
-                    "w:rPr": [{ "w:dstrike": { _attr: { "w:val": true } } }],
+                    "w:rPr": [{ "w:dstrike": {} }],
                 });
             });
 
@@ -515,17 +515,17 @@ describe("AbstractNumbering", () => {
             const boldTests = [
                 {
                     bold: true,
-                    expected: [{ "w:b": { _attr: { "w:val": true } } }, { "w:bCs": { _attr: { "w:val": true } } }],
+                    expected: [{ "w:b": {} }, { "w:bCs": {} }],
                 },
                 {
                     bold: true,
                     boldComplexScript: true,
-                    expected: [{ "w:b": { _attr: { "w:val": true } } }, { "w:bCs": { _attr: { "w:val": true } } }],
+                    expected: [{ "w:b": {} }, { "w:bCs": {} }],
                 },
                 {
                     bold: true,
                     boldComplexScript: false,
-                    expected: [{ "w:b": { _attr: { "w:val": true } } }],
+                    expected: [{ "w:b": {} }],
                 },
             ];
             boldTests.forEach(({ bold, boldComplexScript, expected }) => {
@@ -548,17 +548,17 @@ describe("AbstractNumbering", () => {
             const italicsTests = [
                 {
                     italics: true,
-                    expected: [{ "w:i": { _attr: { "w:val": true } } }, { "w:iCs": { _attr: { "w:val": true } } }],
+                    expected: [{ "w:i": {} }, { "w:iCs": {} }],
                 },
                 {
                     italics: true,
                     italicsComplexScript: true,
-                    expected: [{ "w:i": { _attr: { "w:val": true } } }, { "w:iCs": { _attr: { "w:val": true } } }],
+                    expected: [{ "w:i": {} }, { "w:iCs": {} }],
                 },
                 {
                     italics: true,
                     italicsComplexScript: false,
-                    expected: [{ "w:i": { _attr: { "w:val": true } } }],
+                    expected: [{ "w:i": {} }],
                 },
             ];
             italicsTests.forEach(({ italics, italicsComplexScript, expected }) => {

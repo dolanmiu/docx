@@ -129,6 +129,19 @@ export class TableFloatOptionsAttributes extends XmlAttributeComponent<ITableFlo
     };
 }
 
+// <xsd:complexType name="CT_TblPPr">
+//     <xsd:attribute name="leftFromText" type="s:ST_TwipsMeasure"/>
+//     <xsd:attribute name="rightFromText" type="s:ST_TwipsMeasure"/>
+//     <xsd:attribute name="topFromText" type="s:ST_TwipsMeasure"/>
+//     <xsd:attribute name="bottomFromText" type="s:ST_TwipsMeasure"/>
+//     <xsd:attribute name="vertAnchor" type="ST_VAnchor"/>
+//     <xsd:attribute name="horzAnchor" type="ST_HAnchor"/>
+//     <xsd:attribute name="tblpXSpec" type="s:ST_XAlign"/>
+//     <xsd:attribute name="tblpX" type="ST_SignedTwipsMeasure"/>
+//     <xsd:attribute name="tblpYSpec" type="s:ST_YAlign"/>
+//     <xsd:attribute name="tblpY" type="ST_SignedTwipsMeasure"/>
+// </xsd:complexType>
+
 export class TableFloatProperties extends XmlComponent {
     constructor(options: ITableFloatOptions) {
         super("w:tblpPr");

@@ -1,18 +1,15 @@
 // http://officeopenxml.com/WPparagraphProperties.php
-import { IContext, IgnoreIfEmptyXmlComponent, IXmlableObject, XmlComponent } from "file/xml-components";
+import { IContext, IgnoreIfEmptyXmlComponent, IXmlableObject, OnOffElement, XmlComponent } from "file/xml-components";
 import { DocumentWrapper } from "../document-wrapper";
 import { IShadingAttributesProperties, Shading } from "../shading";
 import { Alignment, AlignmentType } from "./formatting/alignment";
-import { Bidirectional } from "./formatting/bidirectional";
 import { Border, IBordersOptions, ThematicBreak } from "./formatting/border";
 import { IIndentAttributesProperties, Indent } from "./formatting/indent";
-import { KeepLines, KeepNext } from "./formatting/keep";
 import { PageBreakBefore } from "./formatting/page-break";
-import { ContextualSpacing, ISpacingProperties, Spacing } from "./formatting/spacing";
+import { ISpacingProperties, Spacing } from "./formatting/spacing";
 import { HeadingLevel, Style } from "./formatting/style";
 import { LeaderType, TabStop, TabStopPosition, TabStopType } from "./formatting/tab-stop";
 import { NumberProperties } from "./formatting/unordered-list";
-import { WidowControl } from "./formatting/widow-control";
 import { FrameProperties, IFrameOptions } from "./frame/frame-properties";
 import { OutlineLevel } from "./links";
 
@@ -84,12 +81,12 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
             this.push(new Style(options.style));
         }
 
-        if (options.keepNext) {
-            this.push(new KeepNext());
+        if (options.keepNext !== undefined) {
+            this.push(new OnOffElement("w:keepNext", options.keepNext));
         }
 
-        if (options.keepLines) {
-            this.push(new KeepLines());
+        if (options.keepLines !== undefined) {
+            this.push(new OnOffElement("w:keepLines", options.keepLines));
         }
 
         if (options.pageBreakBefore) {
@@ -100,8 +97,8 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
             this.push(new FrameProperties(options.frame));
         }
 
-        if (options.widowControl) {
-            this.push(new WidowControl(options.widowControl));
+        if (options.widowControl !== undefined) {
+            this.push(new OnOffElement("w:widowControl", options.widowControl));
         }
 
         if (options.bullet) {
@@ -143,8 +140,8 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
             this.push(new TabStop(TabStopType.LEFT, options.leftTabStop));
         }
 
-        if (options.bidirectional) {
-            this.push(new Bidirectional());
+        if (options.bidirectional !== undefined) {
+            this.push(new OnOffElement("w:bidi", options.contextualSpacing));
         }
 
         if (options.spacing) {
@@ -155,8 +152,8 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
             this.push(new Indent(options.indent));
         }
 
-        if (options.contextualSpacing) {
-            this.push(new ContextualSpacing(options.contextualSpacing));
+        if (options.contextualSpacing !== undefined) {
+            this.push(new OnOffElement("w:contextualSpacing", options.contextualSpacing));
         }
 
         if (options.alignment) {
