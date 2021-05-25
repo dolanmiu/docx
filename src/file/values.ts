@@ -183,7 +183,13 @@ export function percentageValue(val: string): string {
 // </xsd:simpleType>
 
 export function measurementOrPercentValue(val: number | string): number | string {
-    return typeof val === "number" ? decimalNumber(val) : percentageValue(val);
+    if (typeof val === "number") {
+        return decimalNumber(val);
+    }
+    if (val.slice(-1) === '%') {
+        return percentageValue(val);
+    }
+    return universalMeasureValue(val);
 }
 
 // <xsd:simpleType name="ST_EighthPointMeasure">
