@@ -1,7 +1,7 @@
 // Multiple sections and headers
 // Import from 'docx' rather than '../build' if you install from npm
 import * as fs from "fs";
-import { Document, Footer, Header, Packer, PageNumber, PageNumberFormat, PageOrientation, Paragraph, TextRun } from "../build";
+import { Document, Footer, Header, Packer, PageNumber, NumberFormat, PageOrientation, Paragraph, TextRun } from "../build";
 
 const doc = new Document({
     sections: [
@@ -13,7 +13,7 @@ const doc = new Document({
                 page: {
                     pageNumbers: {
                         start: 1,
-                        formatType: PageNumberFormat.DECIMAL,
+                        formatType: NumberFormat.DECIMAL,
                     },
                 },
             },
@@ -38,7 +38,7 @@ const doc = new Document({
                     },
                     pageNumbers: {
                         start: 1,
-                        formatType: PageNumberFormat.DECIMAL,
+                        formatType: NumberFormat.DECIMAL,
                     },
                 },
             },
@@ -85,7 +85,7 @@ const doc = new Document({
                         orientation: PageOrientation.PORTRAIT,
                     },
                     pageNumbers: {
-                        formatType: PageNumberFormat.UPPER_ROMAN,
+                        formatType: NumberFormat.UPPER_ROMAN,
                     },
                 },
             },
@@ -116,7 +116,7 @@ const doc = new Document({
                     },
                     pageNumbers: {
                         start: 25,
-                        formatType: PageNumberFormat.DECIMAL,
+                        formatType: NumberFormat.DECIMAL,
                     },
                 },
             },
