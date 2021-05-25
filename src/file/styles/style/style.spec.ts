@@ -5,11 +5,14 @@ import { Style } from "./style";
 describe("Style", () => {
     describe("#constructor()", () => {
         it("should set the given properties", () => {
-            const style = new Style({
-                type: "paragraph",
-                styleId: "myStyleId",
-                default: true,
-            });
+            const style = new Style(
+                {
+                    type: "paragraph",
+                    styleId: "myStyleId",
+                    default: true,
+                },
+                {},
+            );
             const tree = new Formatter().format(style);
             expect(tree).to.deep.equal({
                 "w:style": { _attr: { "w:type": "paragraph", "w:styleId": "myStyleId", "w:default": true } },
@@ -22,7 +25,7 @@ describe("Style", () => {
                     type: "paragraph",
                     styleId: "myStyleId",
                 },
-                "Style Name",
+                { name: "Style Name" },
             );
             const tree = new Formatter().format(style);
             expect(tree).to.deep.equal({

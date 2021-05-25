@@ -154,6 +154,21 @@ describe("Default Styles", () => {
             "w:style": [
                 { _attr: { "w:type": "paragraph", "w:styleId": "FootnoteText" } },
                 { "w:name": { _attr: { "w:val": "footnote text" } } },
+                { "w:basedOn": { _attr: { "w:val": "Normal" } } },
+                { "w:link": { _attr: { "w:val": "FootnoteTextChar" } } },
+                {
+                    "w:uiPriority": {
+                        _attr: {
+                            "w:val": 99,
+                        },
+                    },
+                },
+                {
+                    "w:semiHidden": EMPTY_OBJECT,
+                },
+                {
+                    "w:unhideWhenUsed": EMPTY_OBJECT,
+                },
                 {
                     "w:pPr": [
                         {
@@ -185,21 +200,6 @@ describe("Default Styles", () => {
                         },
                     ],
                 },
-                { "w:basedOn": { _attr: { "w:val": "Normal" } } },
-                { "w:link": { _attr: { "w:val": "FootnoteTextChar" } } },
-                {
-                    "w:semiHidden": EMPTY_OBJECT,
-                },
-                {
-                    "w:uiPriority": {
-                        _attr: {
-                            "w:val": 99,
-                        },
-                    },
-                },
-                {
-                    "w:unhideWhenUsed": EMPTY_OBJECT,
-                },
             ],
         });
     });
@@ -211,6 +211,20 @@ describe("Default Styles", () => {
             "w:style": [
                 { _attr: { "w:type": "character", "w:styleId": "FootnoteReference" } },
                 { "w:name": { _attr: { "w:val": "footnote reference" } } },
+                { "w:basedOn": { _attr: { "w:val": "DefaultParagraphFont" } } },
+                {
+                    "w:uiPriority": {
+                        _attr: {
+                            "w:val": 99,
+                        },
+                    },
+                },
+                {
+                    "w:semiHidden": EMPTY_OBJECT,
+                },
+                {
+                    "w:unhideWhenUsed": EMPTY_OBJECT,
+                },
                 {
                     "w:rPr": [
                         {
@@ -221,21 +235,6 @@ describe("Default Styles", () => {
                             },
                         },
                     ],
-                },
-                {
-                    "w:uiPriority": {
-                        _attr: {
-                            "w:val": 99,
-                        },
-                    },
-                },
-                {
-                    "w:unhideWhenUsed": EMPTY_OBJECT,
-                },
-                { "w:basedOn": { _attr: { "w:val": "DefaultParagraphFont" } } },
-
-                {
-                    "w:semiHidden": EMPTY_OBJECT,
                 },
             ],
         });
@@ -248,6 +247,21 @@ describe("Default Styles", () => {
             "w:style": [
                 { _attr: { "w:type": "character", "w:styleId": "FootnoteTextChar" } },
                 { "w:name": { _attr: { "w:val": "Footnote Text Char" } } },
+                { "w:basedOn": { _attr: { "w:val": "DefaultParagraphFont" } } },
+                { "w:link": { _attr: { "w:val": "FootnoteText" } } },
+                {
+                    "w:uiPriority": {
+                        _attr: {
+                            "w:val": 99,
+                        },
+                    },
+                },
+                {
+                    "w:semiHidden": EMPTY_OBJECT,
+                },
+                {
+                    "w:unhideWhenUsed": EMPTY_OBJECT,
+                },
                 {
                     "w:rPr": [
                         {
@@ -266,21 +280,6 @@ describe("Default Styles", () => {
                         },
                     ],
                 },
-                {
-                    "w:uiPriority": {
-                        _attr: {
-                            "w:val": 99,
-                        },
-                    },
-                },
-                {
-                    "w:unhideWhenUsed": EMPTY_OBJECT,
-                },
-                { "w:basedOn": { _attr: { "w:val": "DefaultParagraphFont" } } },
-                { "w:link": { _attr: { "w:val": "FootnoteText" } } },
-                {
-                    "w:semiHidden": EMPTY_OBJECT,
-                },
             ],
         });
     });
@@ -292,6 +291,17 @@ describe("Default Styles", () => {
             "w:style": [
                 { _attr: { "w:type": "character", "w:styleId": "Hyperlink" } },
                 { "w:name": { _attr: { "w:val": "Hyperlink" } } },
+                { "w:basedOn": { _attr: { "w:val": "DefaultParagraphFont" } } },
+                {
+                    "w:uiPriority": {
+                        _attr: {
+                            "w:val": 99,
+                        },
+                    },
+                },
+                {
+                    "w:unhideWhenUsed": EMPTY_OBJECT,
+                },
                 {
                     "w:rPr": [
                         { "w:u": { _attr: { "w:val": "single" } } },
@@ -304,17 +314,6 @@ describe("Default Styles", () => {
                         },
                     ],
                 },
-                {
-                    "w:uiPriority": {
-                        _attr: {
-                            "w:val": 99,
-                        },
-                    },
-                },
-                {
-                    "w:unhideWhenUsed": EMPTY_OBJECT,
-                },
-                { "w:basedOn": { _attr: { "w:val": "DefaultParagraphFont" } } },
             ],
         });
     });

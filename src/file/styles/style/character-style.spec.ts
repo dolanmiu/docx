@@ -66,9 +66,6 @@ describe("CharacterStyle", () => {
                 "w:style": [
                     { _attr: { "w:type": "character", "w:styleId": "myStyleId" } },
                     {
-                        "w:rPr": [{ "w:smallCaps": {} }],
-                    },
-                    {
                         "w:uiPriority": {
                             _attr: {
                                 "w:val": 99,
@@ -77,6 +74,9 @@ describe("CharacterStyle", () => {
                     },
                     {
                         "w:unhideWhenUsed": EMPTY_OBJECT,
+                    },
+                    {
+                        "w:rPr": [{ "w:smallCaps": {} }],
                     },
                 ],
             });
@@ -94,9 +94,6 @@ describe("CharacterStyle", () => {
                 "w:style": [
                     { _attr: { "w:type": "character", "w:styleId": "myStyleId" } },
                     {
-                        "w:rPr": [{ "w:caps": {} }],
-                    },
-                    {
                         "w:uiPriority": {
                             _attr: {
                                 "w:val": 99,
@@ -105,6 +102,9 @@ describe("CharacterStyle", () => {
                     },
                     {
                         "w:unhideWhenUsed": EMPTY_OBJECT,
+                    },
+                    {
+                        "w:rPr": [{ "w:caps": {} }],
                     },
                 ],
             });
@@ -122,9 +122,6 @@ describe("CharacterStyle", () => {
                 "w:style": [
                     { _attr: { "w:type": "character", "w:styleId": "myStyleId" } },
                     {
-                        "w:rPr": [{ "w:strike": {} }],
-                    },
-                    {
                         "w:uiPriority": {
                             _attr: {
                                 "w:val": 99,
@@ -133,6 +130,9 @@ describe("CharacterStyle", () => {
                     },
                     {
                         "w:unhideWhenUsed": EMPTY_OBJECT,
+                    },
+                    {
+                        "w:rPr": [{ "w:strike": {} }],
                     },
                 ],
             });
@@ -150,9 +150,6 @@ describe("CharacterStyle", () => {
                 "w:style": [
                     { _attr: { "w:type": "character", "w:styleId": "myStyleId" } },
                     {
-                        "w:rPr": [{ "w:dstrike": {} }],
-                    },
-                    {
                         "w:uiPriority": {
                             _attr: {
                                 "w:val": 99,
@@ -161,6 +158,9 @@ describe("CharacterStyle", () => {
                     },
                     {
                         "w:unhideWhenUsed": EMPTY_OBJECT,
+                    },
+                    {
+                        "w:rPr": [{ "w:dstrike": {} }],
                     },
                 ],
             });
@@ -178,6 +178,16 @@ describe("CharacterStyle", () => {
                 "w:style": [
                     { _attr: { "w:type": "character", "w:styleId": "myStyleId" } },
                     {
+                        "w:uiPriority": {
+                            _attr: {
+                                "w:val": 99,
+                            },
+                        },
+                    },
+                    {
+                        "w:unhideWhenUsed": EMPTY_OBJECT,
+                    },
+                    {
                         "w:rPr": [
                             {
                                 "w:vertAlign": {
@@ -187,16 +197,6 @@ describe("CharacterStyle", () => {
                                 },
                             },
                         ],
-                    },
-                    {
-                        "w:uiPriority": {
-                            _attr: {
-                                "w:val": 99,
-                            },
-                        },
-                    },
-                    {
-                        "w:unhideWhenUsed": EMPTY_OBJECT,
                     },
                 ],
             });
@@ -214,6 +214,16 @@ describe("CharacterStyle", () => {
                 "w:style": [
                     { _attr: { "w:type": "character", "w:styleId": "myStyleId" } },
                     {
+                        "w:uiPriority": {
+                            _attr: {
+                                "w:val": 99,
+                            },
+                        },
+                    },
+                    {
+                        "w:unhideWhenUsed": EMPTY_OBJECT,
+                    },
+                    {
                         "w:rPr": [
                             {
                                 "w:rFonts": {
@@ -226,16 +236,6 @@ describe("CharacterStyle", () => {
                                 },
                             },
                         ],
-                    },
-                    {
-                        "w:uiPriority": {
-                            _attr: {
-                                "w:val": 99,
-                            },
-                        },
-                    },
-                    {
-                        "w:unhideWhenUsed": EMPTY_OBJECT,
                     },
                 ],
             });
@@ -256,6 +256,16 @@ describe("CharacterStyle", () => {
                 "w:style": [
                     { _attr: { "w:type": "character", "w:styleId": "myStyleId" } },
                     {
+                        "w:uiPriority": {
+                            _attr: {
+                                "w:val": 99,
+                            },
+                        },
+                    },
+                    {
+                        "w:unhideWhenUsed": EMPTY_OBJECT,
+                    },
+                    {
                         "w:rPr": [
                             {
                                 "w:rFonts": {
@@ -266,16 +276,6 @@ describe("CharacterStyle", () => {
                                 },
                             },
                         ],
-                    },
-                    {
-                        "w:uiPriority": {
-                            _attr: {
-                                "w:val": 99,
-                            },
-                        },
-                    },
-                    {
-                        "w:unhideWhenUsed": EMPTY_OBJECT,
                     },
                 ],
             });
@@ -293,9 +293,6 @@ describe("CharacterStyle", () => {
                 "w:style": [
                     { _attr: { "w:type": "character", "w:styleId": "myStyleId" } },
                     {
-                        "w:rPr": [{ "w:spacing": { _attr: { "w:val": 100 } } }],
-                    },
-                    {
                         "w:uiPriority": {
                             _attr: {
                                 "w:val": 99,
@@ -304,6 +301,9 @@ describe("CharacterStyle", () => {
                     },
                     {
                         "w:unhideWhenUsed": EMPTY_OBJECT,
+                    },
+                    {
+                        "w:rPr": [{ "w:spacing": { _attr: { "w:val": 100 } } }],
                     },
                 ],
             });
@@ -317,6 +317,7 @@ describe("CharacterStyle", () => {
             expect(tree).to.deep.equal({
                 "w:style": [
                     { _attr: { "w:type": "character", "w:styleId": "myStyleId" } },
+                    { "w:basedOn": { _attr: { "w:val": "otherId" } } },
                     {
                         "w:uiPriority": {
                             _attr: {
@@ -327,7 +328,6 @@ describe("CharacterStyle", () => {
                     {
                         "w:unhideWhenUsed": EMPTY_OBJECT,
                     },
-                    { "w:basedOn": { _attr: { "w:val": "otherId" } } },
                 ],
             });
         });
@@ -366,9 +366,6 @@ describe("CharacterStyle", () => {
                     "w:style": [
                         { _attr: { "w:type": "character", "w:styleId": "myStyleId" } },
                         {
-                            "w:rPr": expected,
-                        },
-                        {
                             "w:uiPriority": {
                                 _attr: {
                                     "w:val": 99,
@@ -377,6 +374,9 @@ describe("CharacterStyle", () => {
                         },
                         {
                             "w:unhideWhenUsed": EMPTY_OBJECT,
+                        },
+                        {
+                            "w:rPr": expected,
                         },
                     ],
                 });
@@ -396,9 +396,6 @@ describe("CharacterStyle", () => {
                     "w:style": [
                         { _attr: { "w:type": "character", "w:styleId": "myStyleId" } },
                         {
-                            "w:rPr": [{ "w:u": { _attr: { "w:val": "single" } } }],
-                        },
-                        {
                             "w:uiPriority": {
                                 _attr: {
                                     "w:val": 99,
@@ -407,6 +404,9 @@ describe("CharacterStyle", () => {
                         },
                         {
                             "w:unhideWhenUsed": EMPTY_OBJECT,
+                        },
+                        {
+                            "w:rPr": [{ "w:u": { _attr: { "w:val": "single" } } }],
                         },
                     ],
                 });
@@ -426,9 +426,6 @@ describe("CharacterStyle", () => {
                     "w:style": [
                         { _attr: { "w:type": "character", "w:styleId": "myStyleId" } },
                         {
-                            "w:rPr": [{ "w:u": { _attr: { "w:val": "double" } } }],
-                        },
-                        {
                             "w:uiPriority": {
                                 _attr: {
                                     "w:val": 99,
@@ -437,6 +434,9 @@ describe("CharacterStyle", () => {
                         },
                         {
                             "w:unhideWhenUsed": EMPTY_OBJECT,
+                        },
+                        {
+                            "w:rPr": [{ "w:u": { _attr: { "w:val": "double" } } }],
                         },
                     ],
                 });
@@ -457,9 +457,6 @@ describe("CharacterStyle", () => {
                     "w:style": [
                         { _attr: { "w:type": "character", "w:styleId": "myStyleId" } },
                         {
-                            "w:rPr": [{ "w:u": { _attr: { "w:val": "double", "w:color": "005599" } } }],
-                        },
-                        {
                             "w:uiPriority": {
                                 _attr: {
                                     "w:val": 99,
@@ -468,6 +465,9 @@ describe("CharacterStyle", () => {
                         },
                         {
                             "w:unhideWhenUsed": EMPTY_OBJECT,
+                        },
+                        {
+                            "w:rPr": [{ "w:u": { _attr: { "w:val": "double", "w:color": "005599" } } }],
                         },
                     ],
                 });
@@ -487,9 +487,6 @@ describe("CharacterStyle", () => {
                     "w:style": [
                         { _attr: { "w:type": "character", "w:styleId": "myStyleId" } },
                         {
-                            "w:rPr": [{ "w:em": { _attr: { "w:val": "dot" } } }],
-                        },
-                        {
                             "w:uiPriority": {
                                 _attr: {
                                     "w:val": 99,
@@ -498,6 +495,9 @@ describe("CharacterStyle", () => {
                         },
                         {
                             "w:unhideWhenUsed": EMPTY_OBJECT,
+                        },
+                        {
+                            "w:rPr": [{ "w:em": { _attr: { "w:val": "dot" } } }],
                         },
                     ],
                 });
@@ -517,9 +517,6 @@ describe("CharacterStyle", () => {
                     "w:style": [
                         { _attr: { "w:type": "character", "w:styleId": "myStyleId" } },
                         {
-                            "w:rPr": [{ "w:em": { _attr: { "w:val": "dot" } } }],
-                        },
-                        {
                             "w:uiPriority": {
                                 _attr: {
                                     "w:val": 99,
@@ -528,6 +525,9 @@ describe("CharacterStyle", () => {
                         },
                         {
                             "w:unhideWhenUsed": EMPTY_OBJECT,
+                        },
+                        {
+                            "w:rPr": [{ "w:em": { _attr: { "w:val": "dot" } } }],
                         },
                     ],
                 });
@@ -546,6 +546,16 @@ describe("CharacterStyle", () => {
                 "w:style": [
                     { _attr: { "w:type": "character", "w:styleId": "myStyleId" } },
                     {
+                        "w:uiPriority": {
+                            _attr: {
+                                "w:val": 99,
+                            },
+                        },
+                    },
+                    {
+                        "w:unhideWhenUsed": EMPTY_OBJECT,
+                    },
+                    {
                         "w:rPr": [
                             {
                                 "w:vertAlign": {
@@ -555,16 +565,6 @@ describe("CharacterStyle", () => {
                                 },
                             },
                         ],
-                    },
-                    {
-                        "w:uiPriority": {
-                            _attr: {
-                                "w:val": 99,
-                            },
-                        },
-                    },
-                    {
-                        "w:unhideWhenUsed": EMPTY_OBJECT,
                     },
                 ],
             });
@@ -582,9 +582,6 @@ describe("CharacterStyle", () => {
                 "w:style": [
                     { _attr: { "w:type": "character", "w:styleId": "myStyleId" } },
                     {
-                        "w:rPr": [{ "w:color": { _attr: { "w:val": "123456" } } }],
-                    },
-                    {
                         "w:uiPriority": {
                             _attr: {
                                 "w:val": 99,
@@ -593,6 +590,9 @@ describe("CharacterStyle", () => {
                     },
                     {
                         "w:unhideWhenUsed": EMPTY_OBJECT,
+                    },
+                    {
+                        "w:rPr": [{ "w:color": { _attr: { "w:val": "123456" } } }],
                     },
                 ],
             });
@@ -625,9 +625,6 @@ describe("CharacterStyle", () => {
                     "w:style": [
                         { _attr: { "w:type": "character", "w:styleId": "myStyleId" } },
                         {
-                            "w:rPr": expected,
-                        },
-                        {
                             "w:uiPriority": {
                                 _attr: {
                                     "w:val": 99,
@@ -636,6 +633,9 @@ describe("CharacterStyle", () => {
                         },
                         {
                             "w:unhideWhenUsed": EMPTY_OBJECT,
+                        },
+                        {
+                            "w:rPr": expected,
                         },
                     ],
                 });
@@ -669,9 +669,6 @@ describe("CharacterStyle", () => {
                     "w:style": [
                         { _attr: { "w:type": "character", "w:styleId": "myStyleId" } },
                         {
-                            "w:rPr": expected,
-                        },
-                        {
                             "w:uiPriority": {
                                 _attr: {
                                     "w:val": 99,
@@ -680,6 +677,9 @@ describe("CharacterStyle", () => {
                         },
                         {
                             "w:unhideWhenUsed": EMPTY_OBJECT,
+                        },
+                        {
+                            "w:rPr": expected,
                         },
                     ],
                 });
@@ -692,6 +692,7 @@ describe("CharacterStyle", () => {
             expect(tree).to.deep.equal({
                 "w:style": [
                     { _attr: { "w:type": "character", "w:styleId": "myStyleId" } },
+                    { "w:link": { _attr: { "w:val": "MyLink" } } },
                     {
                         "w:uiPriority": {
                             _attr: {
@@ -702,7 +703,6 @@ describe("CharacterStyle", () => {
                     {
                         "w:unhideWhenUsed": EMPTY_OBJECT,
                     },
-                    { "w:link": { _attr: { "w:val": "MyLink" } } },
                 ],
             });
         });
@@ -720,8 +720,8 @@ describe("CharacterStyle", () => {
                             },
                         },
                     },
-                    { "w:unhideWhenUsed": EMPTY_OBJECT },
                     { "w:semiHidden": EMPTY_OBJECT },
+                    { "w:unhideWhenUsed": EMPTY_OBJECT },
                 ],
             });
         });
@@ -758,9 +758,6 @@ describe("CharacterStyle", () => {
                     "w:style": [
                         { _attr: { "w:type": "character", "w:styleId": "myStyleId" } },
                         {
-                            "w:rPr": expected,
-                        },
-                        {
                             "w:uiPriority": {
                                 _attr: {
                                     "w:val": 99,
@@ -769,6 +766,9 @@ describe("CharacterStyle", () => {
                         },
                         {
                             "w:unhideWhenUsed": EMPTY_OBJECT,
+                        },
+                        {
+                            "w:rPr": expected,
                         },
                     ],
                 });
@@ -804,9 +804,6 @@ describe("CharacterStyle", () => {
                     "w:style": [
                         { _attr: { "w:type": "character", "w:styleId": "myStyleId" } },
                         {
-                            "w:rPr": expected,
-                        },
-                        {
                             "w:uiPriority": {
                                 _attr: {
                                     "w:val": 99,
@@ -815,6 +812,9 @@ describe("CharacterStyle", () => {
                         },
                         {
                             "w:unhideWhenUsed": EMPTY_OBJECT,
+                        },
+                        {
+                            "w:rPr": expected,
                         },
                     ],
                 });
