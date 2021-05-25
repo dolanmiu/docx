@@ -1,6 +1,6 @@
 import { XmlComponent } from "file/xml-components";
 
-import { HeaderReferenceType } from "./document";
+import { HeaderFooterReferenceType } from "./document";
 import { IViewWrapper } from "./document-wrapper";
 import { Header } from "./header/header";
 import { Media } from "./media";
@@ -10,7 +10,7 @@ import { Table } from "./table";
 
 export interface IDocumentHeader {
     readonly header: HeaderWrapper;
-    readonly type: HeaderReferenceType;
+    readonly type: HeaderFooterReferenceType;
 }
 
 export class HeaderWrapper implements IViewWrapper {

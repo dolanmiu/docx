@@ -74,8 +74,8 @@ describe("PageBorders", () => {
                 },
             });
             expect(tree["w:pgBorders"][2]).to.deep.equal({
-                "w:right": {
-                    _attr: { "w:color": "223344", "w:sz": 20, "w:val": "double" },
+                "w:left": {
+                    _attr: { "w:color": "889900", "w:sz": 40, "w:val": "dotted" },
                 },
             });
             expect(tree["w:pgBorders"][3]).to.deep.equal({
@@ -84,8 +84,8 @@ describe("PageBorders", () => {
                 },
             });
             expect(tree["w:pgBorders"][4]).to.deep.equal({
-                "w:left": {
-                    _attr: { "w:color": "889900", "w:sz": 40, "w:val": "dotted" },
+                "w:right": {
+                    _attr: { "w:color": "223344", "w:sz": 20, "w:val": "double" },
                 },
             });
         });

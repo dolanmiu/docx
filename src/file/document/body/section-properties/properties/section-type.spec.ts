@@ -1,8 +1,7 @@
 import { expect } from "chai";
 
 import { Formatter } from "export/formatter";
-import { Type } from "./section-type";
-import { SectionType } from "./section-type-attributes";
+import { SectionType, Type } from "./section-type";
 
 describe("Type", () => {
     it("should create with even page section type", () => {

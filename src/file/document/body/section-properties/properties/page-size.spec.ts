@@ -2,8 +2,7 @@ import { expect } from "chai";
 
 import { Formatter } from "export/formatter";
 
-import { PageSize } from "./page-size";
-import { PageOrientation } from "./page-size-attributes";
+import { PageOrientation, PageSize } from "./page-size";
 
 describe("PageSize", () => {
     describe("#constructor()", () => {
