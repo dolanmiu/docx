@@ -52,3 +52,14 @@ export class NumberValueElement extends XmlComponent {
         this.root.push(new Attributes({ val }));
     }
 }
+
+// Simple nodes containing text.
+//
+// new StringContainer("hello", "world")
+// <hello>world</hello>
+export class StringContainer extends XmlComponent {
+    constructor(name: string, val: string) {
+        super(name);
+        this.root.push(val);
+    }
+}
