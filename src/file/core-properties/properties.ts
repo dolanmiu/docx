@@ -29,6 +29,7 @@ export interface IPropertiesOptions {
     readonly background?: IDocumentBackgroundOptions;
     readonly features?: {
         readonly trackRevisions?: boolean;
+        readonly updateFields?: boolean;
     };
     readonly compatabilityModeVersion?: number;
     readonly customProperties?: ICustomPropertyOptions[];

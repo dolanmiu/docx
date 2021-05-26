@@ -186,7 +186,7 @@ export function measurementOrPercentValue(val: number | string): number | string
     if (typeof val === "number") {
         return decimalNumber(val);
     }
-    if (val.slice(-1) === '%') {
+    if (val.slice(-1) === "%") {
         return percentageValue(val);
     }
     return universalMeasureValue(val);

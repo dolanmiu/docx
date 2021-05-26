@@ -7,83 +7,37 @@ import { Settings } from "./settings";
 describe("Settings", () => {
     describe("#constructor", () => {
         it("should create a empty Settings with correct rootKey", () => {
-            const settings = new Settings({
-                evenAndOddHeaders: false,
-            });
+            const settings = new Settings({});
             const tree = new Formatter().format(settings);
-            let keys = Object.keys(tree);
-            expect(keys).is.an.instanceof(Array);
-            expect(keys).has.length(1);
-            expect(keys[0]).to.be.equal("w:settings");
-            keys = Object.keys(tree["w:settings"]);
-            expect(keys).is.an.instanceof(Array);
-            expect(keys).has.length(3);
+
+            expect(Object.keys(tree)).has.length(1);
+            expect(tree["w:settings"]).to.be.an("array");
         });
-    });
-    describe("#addUpdateFields", () => {
-        const assertSettingsWithUpdateFields = (settings: Settings) => {
-            const tree = new Formatter().format(settings);
-            let keys = Object.keys(tree);
-            expect(keys).is.an.instanceof(Array);
-            expect(keys).has.length(1);
-            expect(keys[0]).to.be.equal("w:settings");
-            const rootArray = tree["w:settings"];
-            expect(rootArray).is.an.instanceof(Array);
-            expect(rootArray).has.length(4);
-            keys = Object.keys(rootArray[0]);
-            expect(keys).is.an.instanceof(Array);
-            expect(keys).has.length(1);
-            expect(keys[0]).to.be.equal("_attr");
-            keys = Object.keys(rootArray[3]);
-            expect(keys).is.an.instanceof(Array);
-            expect(keys).has.length(1);
-            expect(keys[0]).to.be.equal("w:updateFields");
-            const updateFields = rootArray[3]["w:updateFields"];
-            keys = Object.keys(updateFields);
-            expect(keys).is.an.instanceof(Array);
-            expect(keys).has.length(1);
-            expect(keys[0]).to.be.equal("_attr");
-            const updateFieldsAttr = updateFields._attr;
-            expect(updateFieldsAttr["w:val"]).to.be.equal(true);
-        };
-        it("should add a UpdateFields with value true", () => {
+
+        it("should add updateFields setting", () => {
             const settings = new Settings({
-                evenAndOddHeaders: false,
-            });
-            settings.addUpdateFields();
-            assertSettingsWithUpdateFields(settings);
-        });
-        it("should add a UpdateFields with value true only once", () => {
-            const settings = new Settings({
-                evenAndOddHeaders: false,
-            });
-            settings.addUpdateFields();
-            assertSettingsWithUpdateFields(settings);
-            settings.addUpdateFields();
-            assertSettingsWithUpdateFields(settings);
-        });
-    });
-    describe("#addCompatibility", () => {
-        it("should add an empty Compatibility by default", () => {
-            const settings = new Settings({
-                evenAndOddHeaders: false,
+                updateFields: true,
             });
 
             const tree = new Formatter().format(settings);
-            let keys: string[] = Object.keys(tree);
-            expect(keys[0]).to.be.equal("w:settings");
-            const rootArray = tree["w:settings"];
-            expect(rootArray).is.an.instanceof(Array);
-            expect(rootArray).has.length(3);
-            keys = Object.keys(rootArray[0]);
-            expect(keys).is.an.instanceof(Array);
-            expect(keys).has.length(1);
-            expect(keys[0]).to.be.equal("_attr");
-            keys = Object.keys(rootArray[1]);
-            expect(keys).is.an.instanceof(Array);
-            expect(keys).has.length(1);
-            expect(keys[0]).to.be.equal("w:compat");
-            expect(rootArray[1]["w:compat"][0]).to.deep.equal({
+            expect(Object.keys(tree)).has.length(1);
+            expect(tree["w:settings"]).to.be.an("array");
+
+            expect(tree["w:settings"]).to.deep.include({
+                "w:updateFields": {},
+            });
+        });
+
+        it("should indicate modern word compatibility by default", () => {
+            const settings = new Settings({});
+
+            const tree = new Formatter().format(settings);
+            expect(Object.keys(tree)).has.length(1);
+            expect(tree["w:settings"]).to.be.an("array");
+
+            const compat = tree["w:settings"][2];
+            expect(compat).to.be.an("object").with.keys("w:compat");
+            expect(compat["w:compat"]).to.deep.include({
                 "w:compatSetting": {
                     _attr: {
                         "w:val": 15,
@@ -93,81 +47,19 @@ describe("Settings", () => {
                 },
             });
         });
-    });
-    describe("#addTrackRevisions", () => {
-        it("should add an empty Track Revisions", () => {
+
+        it("should add trackRevisions setting", () => {
             const settings = new Settings({
-                evenAndOddHeaders: false,
+                trackRevisions: true,
             });
-            settings.addTrackRevisions();
 
             const tree = new Formatter().format(settings);
-            let keys: string[] = Object.keys(tree);
-            expect(keys[0]).to.be.equal("w:settings");
-            const rootArray = tree["w:settings"];
-            expect(rootArray).is.an.instanceof(Array);
-            expect(rootArray).has.length(4);
-            keys = Object.keys(rootArray[0]);
-            expect(keys).is.an.instanceof(Array);
-            expect(keys).has.length(1);
-            expect(keys[0]).to.be.equal("_attr");
-            keys = Object.keys(rootArray[3]);
-            expect(keys).is.an.instanceof(Array);
-            expect(keys).has.length(1);
-            expect(keys[0]).to.be.equal("w:trackRevisions");
-        });
-    });
-    describe("#addTrackRevisionsTwice", () => {
-        it("should add an empty Track Revisions if called twice", () => {
-            const settings = new Settings({
-                evenAndOddHeaders: false,
+            expect(Object.keys(tree)).has.length(1);
+            expect(tree["w:settings"]).to.be.an("array");
+
+            expect(tree["w:settings"]).to.deep.include({
+                "w:trackRevisions": {},
             });
-            settings.addTrackRevisions();
-            settings.addTrackRevisions();
-
-            const tree = new Formatter().format(settings);
-            let keys: string[] = Object.keys(tree);
-            expect(keys[0]).to.be.equal("w:settings");
-            const rootArray = tree["w:settings"];
-            expect(rootArray).is.an.instanceof(Array);
-            expect(rootArray).has.length(4);
-            keys = Object.keys(rootArray[0]);
-            expect(keys).is.an.instanceof(Array);
-            expect(keys).has.length(1);
-            expect(keys[0]).to.be.equal("_attr");
-            keys = Object.keys(rootArray[3]);
-            expect(keys).is.an.instanceof(Array);
-            expect(keys).has.length(1);
-            expect(keys[0]).to.be.equal("w:trackRevisions");
-        });
-    });
-
-    describe("#addTrackRevisionsTwice", () => {
-        it("should add an empty Track Revisions if called twice", () => {
-            const settings = new Settings({
-                evenAndOddHeaders: true,
-            });
-            settings.addTrackRevisions();
-            settings.addTrackRevisions();
-
-            const tree = new Formatter().format(settings);
-            let keys: string[] = Object.keys(tree);
-            expect(keys[0]).to.be.equal("w:settings");
-            const rootArray = tree["w:settings"];
-            expect(rootArray).is.an.instanceof(Array);
-            expect(rootArray).has.length(5);
-            keys = Object.keys(rootArray[0]);
-            expect(keys).is.an.instanceof(Array);
-            expect(keys).has.length(1);
-            expect(keys[0]).to.be.equal("_attr");
-            keys = Object.keys(rootArray[4]);
-            expect(keys).is.an.instanceof(Array);
-            expect(keys).has.length(1);
-            expect(keys[0]).to.be.equal("w:trackRevisions");
-            keys = Object.keys(rootArray[2]);
-            expect(keys).is.an.instanceof(Array);
-            expect(keys).has.length(1);
-            expect(keys[0]).to.be.equal("w:evenAndOddHeaders");
         });
     });
 });

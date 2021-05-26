@@ -165,20 +165,6 @@ describe("File", () => {
         });
     });
 
-    describe("#addTrackRevisionsFeature", () => {
-        it("should call the underlying document's add", () => {
-            const file = new File({
-                features: {
-                    trackRevisions: true,
-                },
-                sections: [],
-            });
-
-            // tslint:disable-next-line: no-unused-expression no-string-literal
-            expect(file.Settings["trackRevisions"]).to.exist;
-        });
-    });
-
     describe("#createFootnote", () => {
         it("should create footnote", () => {
             const wrapper = new File({

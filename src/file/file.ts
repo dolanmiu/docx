@@ -78,6 +78,8 @@ export class File {
         this.settings = new Settings({
             compatabilityModeVersion: options.compatabilityModeVersion,
             evenAndOddHeaders: options.evenAndOddHeaderAndFooters ? true : false,
+            trackRevisions: options.features?.trackRevisions,
+            updateFields: options.features?.updateFields,
         });
 
         this.media = fileProperties.template && fileProperties.template.media ? fileProperties.template.media : new Media();
@@ -131,18 +133,6 @@ export class File {
             for (const key in options.footnotes) {
                 this.footnotesWrapper.View.createFootNote(parseFloat(key), options.footnotes[key].children);
             }
-        }
-
-        if (options.features) {
-            if (options.features.trackRevisions) {
-                this.settings.addTrackRevisions();
-            }
-        }
-    }
-
-    public verifyUpdateFields(): void {
-        if (this.documentWrapper.View.getTablesOfContents().length) {
-            this.settings.addUpdateFields();
         }
     }
 
