@@ -69,8 +69,4 @@ export class Document extends XmlComponent {
     public get Body(): Body {
         return this.body;
     }
-
-    public getTablesOfContents(): TableOfContents[] {
-        return this.body.getTablesOfContents();
-    }
 }

@@ -1,6 +1,6 @@
 import { IContext, IXmlableObject, XmlComponent } from "file/xml-components";
 
-import { Paragraph, ParagraphProperties, TableOfContents } from "../..";
+import { Paragraph, ParagraphProperties } from "../..";
 import { ISectionPropertiesOptions, SectionProperties } from "./section-properties/section-properties";
 
 export class Body extends XmlComponent {
@@ -36,10 +36,6 @@ export class Body extends XmlComponent {
 
     public push(component: XmlComponent): void {
         this.root.push(component);
-    }
-
-    public getTablesOfContents(): TableOfContents[] {
-        return this.root.filter((child) => child instanceof TableOfContents) as TableOfContents[];
     }
 
     private createSectionParagraph(section: SectionProperties): Paragraph {

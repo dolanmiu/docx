@@ -7,6 +7,7 @@ import { ISectionOptions } from "../file";
 import { INumberingOptions } from "../numbering";
 import { Paragraph } from "../paragraph";
 import { IStylesOptions } from "../styles";
+import { dateTimeValue } from "../values";
 
 export interface IPropertiesOptions {
     readonly sections: ISectionOptions[];
@@ -103,6 +104,6 @@ class TimestampElement extends XmlComponent {
                 type: "dcterms:W3CDTF",
             }),
         );
-        this.root.push(new Date().toISOString());
+        this.root.push(dateTimeValue(new Date()));
     }
 }

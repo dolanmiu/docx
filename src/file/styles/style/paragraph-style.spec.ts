@@ -78,7 +78,7 @@ describe("ParagraphStyle", () => {
             const style = new StyleForParagraph({
                 id: "myStyleId",
                 paragraph: {
-                    indent: { left: 720 },
+                    indent: { left: 720, right: 500 },
                 },
             });
             const tree = new Formatter().format(style);
@@ -86,7 +86,7 @@ describe("ParagraphStyle", () => {
                 "w:style": [
                     { _attr: { "w:type": "paragraph", "w:styleId": "myStyleId" } },
                     {
-                        "w:pPr": [{ "w:ind": { _attr: { "w:left": 720 } } }],
+                        "w:pPr": [{ "w:ind": { _attr: { "w:left": 720, "w:right": 500 } } }],
                     },
                 ],
             });
