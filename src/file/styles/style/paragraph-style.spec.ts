@@ -650,7 +650,7 @@ describe("ParagraphStyle", () => {
         const shadingTests = [
             {
                 shading: {
-                    val: ShadingType.PERCENT_10,
+                    type: ShadingType.PERCENT_10,
                     fill: "00FFFF",
                     color: "FF0000",
                 },
@@ -658,7 +658,7 @@ describe("ParagraphStyle", () => {
             },
             {
                 shading: {
-                    val: ShadingType.DIAGONAL_CROSS,
+                    type: ShadingType.DIAGONAL_CROSS,
                     fill: "0066FF",
                     color: "0000FF",
                 },

@@ -83,7 +83,7 @@ const text = new TextRun({
 const text = new TextRun({
     text: "shading",
     shading: {
-        val: ShadingType.REVERSE_DIAGONAL_STRIPE,
+        type: ShadingType.REVERSE_DIAGONAL_STRIPE,
         color: "00FFFF",
         fill: "FF0000",
     },

@@ -129,7 +129,7 @@ describe("TableProperties", () => {
             const tp = new TableProperties({
                 shading: {
                     fill: "b79c2f",
-                    val: ShadingType.REVERSE_DIAGONAL_STRIPE,
+                    type: ShadingType.REVERSE_DIAGONAL_STRIPE,
                     color: "auto",
                 },
             });

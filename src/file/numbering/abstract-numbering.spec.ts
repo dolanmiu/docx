@@ -619,7 +619,7 @@ describe("AbstractNumbering", () => {
             const shadingTests = [
                 {
                     shading: {
-                        val: ShadingType.DIAGONAL_STRIPE,
+                        type: ShadingType.DIAGONAL_STRIPE,
                         fill: "006622",
                         color: "0000FF",
                     },
@@ -627,7 +627,7 @@ describe("AbstractNumbering", () => {
                 },
                 {
                     shading: {
-                        val: ShadingType.PERCENT_10,
+                        type: ShadingType.PERCENT_10,
                         fill: "00FFFF",
                         color: "FF0000",
                     },

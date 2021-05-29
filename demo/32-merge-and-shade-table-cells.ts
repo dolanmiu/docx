@@ -98,7 +98,7 @@ const table3 = new Table({
                     children: [new Paragraph("Bar1")],
                     shading: {
                         fill: "b79c2f",
-                        val: ShadingType.REVERSE_DIAGONAL_STRIPE,
+                        type: ShadingType.REVERSE_DIAGONAL_STRIPE,
                         color: "auto",
                     },
                 }),
@@ -106,7 +106,7 @@ const table3 = new Table({
                     children: [new Paragraph("Bar2")],
                     shading: {
                         fill: "42c5f4",
-                        val: ShadingType.PERCENT_95,
+                        type: ShadingType.PERCENT_95,
                         color: "auto",
                     },
                 }),
@@ -114,7 +114,7 @@ const table3 = new Table({
                     children: [new Paragraph("Bar3")],
                     shading: {
                         fill: "880aa8",
-                        val: ShadingType.PERCENT_10,
+                        type: ShadingType.PERCENT_10,
                         color: "e2df0b",
                     },
                 }),
@@ -122,7 +122,7 @@ const table3 = new Table({
                     children: [new Paragraph("Bar4")],
                     shading: {
                         fill: "FF0000",
-                        val: ShadingType.CLEAR,
+                        type: ShadingType.CLEAR,
                         color: "auto",
                     },
                 }),

@@ -23,25 +23,25 @@ import { hexColorValue } from "../values";
 export interface IShadingAttributesProperties {
     readonly fill?: string;
     readonly color?: string;
-    readonly val?: ShadingType;
+    readonly type?: ShadingType;
 }
 
 class ShadingAttributes extends XmlAttributeComponent<IShadingAttributesProperties> {
     protected readonly xmlKeys = {
         fill: "w:fill",
         color: "w:color",
-        val: "w:val",
+        type: "w:val",
     };
 }
 
 export class Shading extends XmlComponent {
-    constructor({ fill, color, val }: IShadingAttributesProperties) {
+    constructor({ fill, color, type }: IShadingAttributesProperties) {
         super("w:shd");
         this.root.push(
             new ShadingAttributes({
                 fill: fill === undefined ? undefined : hexColorValue(fill),
                 color: color === undefined ? undefined : hexColorValue(color),
-                val,
+                type,
             }),
         );
     }

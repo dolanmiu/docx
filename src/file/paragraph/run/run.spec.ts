@@ -226,7 +226,7 @@ describe("Run", () => {
         it("it should add shadow to the properties", () => {
             const run = new Run({
                 shading: {
-                    val: ShadingType.PERCENT_10,
+                    type: ShadingType.PERCENT_10,
                     fill: "00FFFF",
                     color: "FF0000",
                 },

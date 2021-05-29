@@ -850,7 +850,7 @@ describe("Paragraph", () => {
         it("should set shading to the given value", () => {
             const paragraph = new Paragraph({
                 shading: {
-                    val: ShadingType.REVERSE_DIAGONAL_STRIPE,
+                    type: ShadingType.REVERSE_DIAGONAL_STRIPE,
                     color: "00FFFF",
                     fill: "FF0000",
                 },

@@ -156,7 +156,7 @@ Add color to an entire paragraph block
 const paragraph = new Paragraph({
     text: "shading",
     shading: {
-        val: ShadingType.REVERSE_DIAGONAL_STRIPE,
+        type: ShadingType.REVERSE_DIAGONAL_STRIPE,
         color: "00FFFF",
         fill: "FF0000",
     },

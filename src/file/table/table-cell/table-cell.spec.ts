@@ -435,7 +435,7 @@ describe("TableCell", () => {
                 shading: {
                     fill: "FF0000",
                     color: "0000ff",
-                    val: ShadingType.PERCENT_10,
+                    type: ShadingType.PERCENT_10,
                 },
             });
 

@@ -778,7 +778,7 @@ describe("CharacterStyle", () => {
         const shadingTests = [
             {
                 shading: {
-                    val: ShadingType.PERCENT_10,
+                    type: ShadingType.PERCENT_10,
                     fill: "00FFFF",
                     color: "FF0000",
                 },
@@ -786,7 +786,7 @@ describe("CharacterStyle", () => {
             },
             {
                 shading: {
-                    val: ShadingType.SOLID,
+                    type: ShadingType.SOLID,
                     fill: "AA0000",
                     color: "DD0000",
                 },
