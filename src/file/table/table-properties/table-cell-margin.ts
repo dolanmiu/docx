@@ -1,54 +1,61 @@
-import { IgnoreIfEmptyXmlComponent, XmlAttributeComponent, XmlComponent } from "file/xml-components";
-
-import { WidthType } from "../table-cell";
-
-class TableCellMarginAttributes extends XmlAttributeComponent<{ readonly type: WidthType; readonly value: number }> {
-    protected readonly xmlKeys = { value: "w:w", type: "w:type" };
-}
-
-interface IBaseTableCellMarginOptions {
-    readonly value: number;
-    readonly type?: WidthType;
-}
-
-class BaseTableCellMargin extends XmlComponent {
-    constructor(rootKey: string, options: IBaseTableCellMarginOptions) {
-        super(rootKey);
-
-        this.root.push(
-            new TableCellMarginAttributes({
-                type: options.type ?? WidthType.DXA,
-                value: options.value,
-            }),
-        );
-    }
-}
+import { IgnoreIfEmptyXmlComponent } from "file/xml-components";
+import { TableWidthElement, WidthType } from "../table-width";
 
 export interface ITableCellMarginOptions {
-    readonly top?: IBaseTableCellMarginOptions;
-    readonly bottom?: IBaseTableCellMarginOptions;
-    readonly left?: IBaseTableCellMarginOptions;
-    readonly right?: IBaseTableCellMarginOptions;
+    readonly marginUnitType?: WidthType;
+    readonly top?: number;
+    readonly bottom?: number;
+    readonly left?: number;
+    readonly right?: number;
+}
+
+// Technically two different types, but they're identical
+//
+// <xsd:complexType name="CT_TcMar">
+//     <xsd:sequence>
+//     <xsd:element name="top" type="CT_TblWidth" minOccurs="0" maxOccurs="1"/>
+//     <xsd:element name="start" type="CT_TblWidth" minOccurs="0" maxOccurs="1"/>
+//     <xsd:element name="left" type="CT_TblWidth" minOccurs="0"/>
+//     <xsd:element name="bottom" type="CT_TblWidth" minOccurs="0" maxOccurs="1"/>
+//     <xsd:element name="end" type="CT_TblWidth" minOccurs="0" maxOccurs="1"/>
+//     <xsd:element name="right" type="CT_TblWidth" minOccurs="0"/>
+//     </xsd:sequence>
+// </xsd:complexType>
+
+// <xsd:complexType name="CT_TblCellMar">
+//     <xsd:sequence>
+//     <xsd:element name="top" type="CT_TblWidth" minOccurs="0" maxOccurs="1"/>
+//     <xsd:element name="start" type="CT_TblWidth" minOccurs="0" maxOccurs="1"/>
+//     <xsd:element name="left" type="CT_TblWidth" minOccurs="0"/>
+//     <xsd:element name="bottom" type="CT_TblWidth" minOccurs="0" maxOccurs="1"/>
+//     <xsd:element name="end" type="CT_TblWidth" minOccurs="0" maxOccurs="1"/>
+//     <xsd:element name="right" type="CT_TblWidth" minOccurs="0"/>
+//     </xsd:sequence>
+// </xsd:complexType>
+
+export enum TableCellMarginElementType {
+    TABLE = "w:tblCellMar",
+    TABLE_CELL = "w:tcMar",
 }
 
 export class TableCellMargin extends IgnoreIfEmptyXmlComponent {
-    constructor(options: ITableCellMarginOptions) {
-        super("w:tblCellMar");
+    constructor(type: TableCellMarginElementType, { marginUnitType = WidthType.DXA, top, left, bottom, right }: ITableCellMarginOptions) {
+        super(type);
 
-        if (options.top) {
-            this.root.push(new BaseTableCellMargin("w:top", options.top));
+        if (top !== undefined) {
+            this.root.push(new TableWidthElement("w:top", { type: marginUnitType, size: top }));
         }
 
-        if (options.left) {
-            this.root.push(new BaseTableCellMargin("w:left", options.left));
+        if (left !== undefined) {
+            this.root.push(new TableWidthElement("w:left", { type: marginUnitType, size: left }));
         }
 
-        if (options.bottom) {
-            this.root.push(new BaseTableCellMargin("w:bottom", options.bottom));
+        if (bottom !== undefined) {
+            this.root.push(new TableWidthElement("w:bottom", { type: marginUnitType, size: bottom }));
         }
 
-        if (options.right) {
-            this.root.push(new BaseTableCellMargin("w:right", options.right));
+        if (right !== undefined) {
+            this.root.push(new TableWidthElement("w:right", { type: marginUnitType, size: right }));
         }
     }
 }

@@ -3,7 +3,7 @@ import { ContentTypes } from "./content-types/content-types";
 import { CoreProperties, IPropertiesOptions } from "./core-properties";
 import { CustomProperties } from "./custom-properties";
 import { DocumentWrapper } from "./document-wrapper";
-import { FooterReferenceType, HeaderReferenceType, ISectionPropertiesOptions } from "./document/body/section-properties";
+import { HeaderFooterReferenceType, ISectionPropertiesOptions } from "./document/body/section-properties";
 import { IFileProperties } from "./file-properties";
 import { FooterWrapper, IDocumentFooter } from "./footer-wrapper";
 import { FootnotesWrapper } from "./footnotes-wrapper";
@@ -78,6 +78,8 @@ export class File {
         this.settings = new Settings({
             compatabilityModeVersion: options.compatabilityModeVersion,
             evenAndOddHeaders: options.evenAndOddHeaderAndFooters ? true : false,
+            trackRevisions: options.features?.trackRevisions,
+            updateFields: options.features?.updateFields,
         });
 
         this.media = fileProperties.template && fileProperties.template.media ? fileProperties.template.media : new Media();
@@ -132,18 +134,6 @@ export class File {
                 this.footnotesWrapper.View.createFootNote(parseFloat(key), options.footnotes[key].children);
             }
         }
-
-        if (options.features) {
-            if (options.features.trackRevisions) {
-                this.settings.addTrackRevisions();
-            }
-        }
-    }
-
-    public verifyUpdateFields(): void {
-        if (this.documentWrapper.View.getTablesOfContents().length) {
-            this.settings.addUpdateFields();
-        }
     }
 
     private addSection({ headers = {}, footers = {}, children, properties }: ISectionOptions): void {
@@ -188,7 +178,7 @@ export class File {
         return wrapper;
     }
 
-    private addHeaderToDocument(header: HeaderWrapper, type: HeaderReferenceType = HeaderReferenceType.DEFAULT): void {
+    private addHeaderToDocument(header: HeaderWrapper, type: HeaderFooterReferenceType = HeaderFooterReferenceType.DEFAULT): void {
         this.headers.push({ header, type });
         this.documentWrapper.Relationships.createRelationship(
             header.View.ReferenceId,
@@ -198,7 +188,7 @@ export class File {
         this.contentTypes.addHeader(this.headers.length);
     }
 
-    private addFooterToDocument(footer: FooterWrapper, type: FooterReferenceType = FooterReferenceType.DEFAULT): void {
+    private addFooterToDocument(footer: FooterWrapper, type: HeaderFooterReferenceType = HeaderFooterReferenceType.DEFAULT): void {
         this.footers.push({ footer, type });
         this.documentWrapper.Relationships.createRelationship(
             footer.View.ReferenceId,

@@ -3,7 +3,6 @@ import { BaseXmlComponent, ImportedXmlComponent, XmlComponent } from "file/xml-c
 import { StyleForCharacter, StyleForParagraph } from "./style";
 import { ICharacterStyleOptions } from "./style/character-style";
 import { IParagraphStyleOptions } from "./style/paragraph-style";
-export * from "./border";
 
 export interface IStylesOptions {
     readonly default?: IDefaultStylesOptions;
@@ -13,6 +12,13 @@ export interface IStylesOptions {
     readonly importedStyles?: (XmlComponent | StyleForParagraph | StyleForCharacter | ImportedXmlComponent)[];
 }
 
+// <xsd:complexType name="CT_Styles">
+// <xsd:sequence>
+//   <xsd:element name="docDefaults" type="CT_DocDefaults" minOccurs="0"/>
+//   <xsd:element name="latentStyles" type="CT_LatentStyles" minOccurs="0" maxOccurs="1"/>
+//   <xsd:element name="style" type="CT_Style" minOccurs="0" maxOccurs="unbounded"/>
+// </xsd:sequence>
+// </xsd:complexType>
 export class Styles extends XmlComponent {
     constructor(options: IStylesOptions) {
         super("w:styles");

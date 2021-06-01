@@ -1,78 +1,53 @@
-import { BorderStyle } from "file/styles";
+import { BorderElement, IBorderOptions } from "file/border";
+import { decimalNumber } from "file/values";
 import { IgnoreIfEmptyXmlComponent, XmlAttributeComponent, XmlComponent } from "file/xml-components";
 
-class CellBorderAttributes extends XmlAttributeComponent<{
-    readonly style: BorderStyle;
-    readonly size: number;
-    readonly color: string;
-}> {
-    protected readonly xmlKeys = { style: "w:val", size: "w:sz", color: "w:color" };
-}
+// <xsd:complexType name="CT_TcBorders">
+// <xsd:sequence>
+//   <xsd:element name="top" type="CT_Border" minOccurs="0"/>
+//   <xsd:element name="start" type="CT_Border" minOccurs="0"/>
+//   <xsd:element name="left" type="CT_Border" minOccurs="0"/>
+//   <xsd:element name="bottom" type="CT_Border" minOccurs="0"/>
+//   <xsd:element name="end" type="CT_Border" minOccurs="0"/>
+//   <xsd:element name="right" type="CT_Border" minOccurs="0"/>
+//   <xsd:element name="insideH" type="CT_Border" minOccurs="0"/>
+//   <xsd:element name="insideV" type="CT_Border" minOccurs="0"/>
+//   <xsd:element name="tl2br" type="CT_Border" minOccurs="0"/>
+//   <xsd:element name="tr2bl" type="CT_Border" minOccurs="0"/>
+// </xsd:sequence>
+// </xsd:complexType>
 
-class BaseTableCellBorder extends XmlComponent {
-    public setProperties(style: BorderStyle, size: number, color: string): BaseTableCellBorder {
-        const attrs = new CellBorderAttributes({
-            style: style,
-            size: size,
-            color: color,
-        });
-        this.root.push(attrs);
-
-        return this;
-    }
+export interface ITableCellBorders {
+    readonly top?: IBorderOptions;
+    readonly start?: IBorderOptions;
+    readonly left?: IBorderOptions;
+    readonly bottom?: IBorderOptions;
+    readonly end?: IBorderOptions;
+    readonly right?: IBorderOptions;
 }
 
 export class TableCellBorders extends IgnoreIfEmptyXmlComponent {
-    constructor() {
+    constructor(options: ITableCellBorders) {
         super("w:tcBorders");
-    }
 
-    public addTopBorder(style: BorderStyle, size: number, color: string): TableCellBorders {
-        const top = new BaseTableCellBorder("w:top");
-        top.setProperties(style, size, color);
-        this.root.push(top);
-
-        return this;
-    }
-
-    public addStartBorder(style: BorderStyle, size: number, color: string): TableCellBorders {
-        const start = new BaseTableCellBorder("w:start");
-        start.setProperties(style, size, color);
-        this.root.push(start);
-
-        return this;
-    }
-
-    public addBottomBorder(style: BorderStyle, size: number, color: string): TableCellBorders {
-        const bottom = new BaseTableCellBorder("w:bottom");
-        bottom.setProperties(style, size, color);
-        this.root.push(bottom);
-
-        return this;
-    }
-
-    public addEndBorder(style: BorderStyle, size: number, color: string): TableCellBorders {
-        const end = new BaseTableCellBorder("w:end");
-        end.setProperties(style, size, color);
-        this.root.push(end);
-
-        return this;
-    }
-
-    public addLeftBorder(style: BorderStyle, size: number, color: string): TableCellBorders {
-        const left = new BaseTableCellBorder("w:left");
-        left.setProperties(style, size, color);
-        this.root.push(left);
-
-        return this;
-    }
-
-    public addRightBorder(style: BorderStyle, size: number, color: string): TableCellBorders {
-        const right = new BaseTableCellBorder("w:right");
-        right.setProperties(style, size, color);
-        this.root.push(right);
-
-        return this;
+        if (options.top) {
+            this.root.push(new BorderElement("w:top", options.top));
+        }
+        if (options.start) {
+            this.root.push(new BorderElement("w:start", options.start));
+        }
+        if (options.left) {
+            this.root.push(new BorderElement("w:left", options.left));
+        }
+        if (options.bottom) {
+            this.root.push(new BorderElement("w:bottom", options.bottom));
+        }
+        if (options.end) {
+            this.root.push(new BorderElement("w:end", options.end));
+        }
+        if (options.right) {
+            this.root.push(new BorderElement("w:right", options.right));
+        }
     }
 }
 
@@ -83,6 +58,10 @@ class GridSpanAttributes extends XmlAttributeComponent<{ readonly val: number }>
     protected readonly xmlKeys = { val: "w:val" };
 }
 
+// <xsd:complexType name="CT_TcPrBase">
+//   ...
+//   <xsd:element name="gridSpan" type="CT_DecimalNumber" minOccurs="0"/>
+// </xsd>
 /**
  * GridSpan element. Should be used in a table cell. Pass the number of columns that this cell need to span.
  */
@@ -92,7 +71,7 @@ export class GridSpan extends XmlComponent {
 
         this.root.push(
             new GridSpanAttributes({
-                val: value,
+                val: decimalNumber(value),
             }),
         );
     }
@@ -131,31 +110,6 @@ export class VerticalMerge extends XmlComponent {
     }
 }
 
-export enum VerticalAlign {
-    BOTTOM = "bottom",
-    CENTER = "center",
-    TOP = "top",
-}
-
-class VAlignAttributes extends XmlAttributeComponent<{ readonly val: VerticalAlign }> {
-    protected readonly xmlKeys = { val: "w:val" };
-}
-
-/**
- * Vertical align element.
- */
-export class VAlign extends XmlComponent {
-    constructor(value: VerticalAlign) {
-        super("w:vAlign");
-
-        this.root.push(
-            new VAlignAttributes({
-                val: value,
-            }),
-        );
-    }
-}
-
 export enum TextDirection {
     BOTTOM_TO_TOP_LEFT_TO_RIGHT = "btLr",
     LEFT_TO_RIGHT_TOP_TO_BOTTOM = "lrTb",
@@ -176,37 +130,6 @@ export class TDirection extends XmlComponent {
         this.root.push(
             new TDirectionAttributes({
                 val: value,
-            }),
-        );
-    }
-}
-
-export enum WidthType {
-    /** Auto. */
-    AUTO = "auto",
-    /** Value is in twentieths of a point */
-    DXA = "dxa",
-    /** No (empty) value. */
-    NIL = "nil",
-    /** Value is in percentage. */
-    PERCENTAGE = "pct",
-}
-
-class TableCellWidthAttributes extends XmlAttributeComponent<{ readonly type: WidthType; readonly width: string | number }> {
-    protected readonly xmlKeys = { width: "w:w", type: "w:type" };
-}
-
-/**
- * Table cell width element.
- */
-export class TableCellWidth extends XmlComponent {
-    constructor(value: string | number, type: WidthType) {
-        super("w:tcW");
-
-        this.root.push(
-            new TableCellWidthAttributes({
-                width: value,
-                type: type,
             }),
         );
     }

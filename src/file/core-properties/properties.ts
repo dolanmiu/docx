@@ -1,4 +1,4 @@
-import { XmlComponent } from "file/xml-components";
+import { StringContainer, XmlComponent } from "file/xml-components";
 import { ICustomPropertyOptions } from "../custom-properties";
 import { IDocumentBackgroundOptions } from "../document";
 
@@ -7,7 +7,7 @@ import { ISectionOptions } from "../file";
 import { INumberingOptions } from "../numbering";
 import { Paragraph } from "../paragraph";
 import { IStylesOptions } from "../styles";
-import { Created, Creator, Description, Keywords, LastModifiedBy, Modified, Revision, Subject, Title } from "./components";
+import { dateTimeValue } from "../values";
 
 export interface IPropertiesOptions {
     readonly sections: ISectionOptions[];
@@ -29,11 +29,34 @@ export interface IPropertiesOptions {
     readonly background?: IDocumentBackgroundOptions;
     readonly features?: {
         readonly trackRevisions?: boolean;
+        readonly updateFields?: boolean;
     };
     readonly compatabilityModeVersion?: number;
     readonly customProperties?: ICustomPropertyOptions[];
     readonly evenAndOddHeaderAndFooters?: boolean;
 }
+
+// <xs:element name="coreProperties" type="CT_CoreProperties"/>
+
+// <xs:complexType name="CT_CoreProperties">
+//   <xs:all>
+//     <xs:element name="category" minOccurs="0" maxOccurs="1" type="xs:string"/>
+//     <xs:element name="contentStatus" minOccurs="0" maxOccurs="1" type="xs:string"/>
+//     <xs:element ref="dcterms:created" minOccurs="0" maxOccurs="1"/>
+//     <xs:element ref="dc:creator" minOccurs="0" maxOccurs="1"/>
+//     <xs:element ref="dc:description" minOccurs="0" maxOccurs="1"/>
+//     <xs:element ref="dc:identifier" minOccurs="0" maxOccurs="1"/>
+//     <xs:element name="keywords" minOccurs="0" maxOccurs="1" type="CT_Keywords"/>
+//     <xs:element ref="dc:language" minOccurs="0" maxOccurs="1"/>
+//     <xs:element name="lastModifiedBy" minOccurs="0" maxOccurs="1" type="xs:string"/>
+//     <xs:element name="lastPrinted" minOccurs="0" maxOccurs="1" type="xs:dateTime"/>
+//     <xs:element ref="dcterms:modified" minOccurs="0" maxOccurs="1"/>
+//     <xs:element name="revision" minOccurs="0" maxOccurs="1" type="xs:string"/>
+//     <xs:element ref="dc:subject" minOccurs="0" maxOccurs="1"/>
+//     <xs:element ref="dc:title" minOccurs="0" maxOccurs="1"/>
+//     <xs:element name="version" minOccurs="0" maxOccurs="1" type="xs:string"/>
+//   </xs:all>
+// </xs:complexType>
 
 export class CoreProperties extends XmlComponent {
     constructor(options: Omit<IPropertiesOptions, "sections">) {
@@ -48,27 +71,39 @@ export class CoreProperties extends XmlComponent {
             }),
         );
         if (options.title) {
-            this.root.push(new Title(options.title));
+            this.root.push(new StringContainer("dc:title", options.title));
         }
         if (options.subject) {
-            this.root.push(new Subject(options.subject));
+            this.root.push(new StringContainer("dc:subject", options.subject));
         }
         if (options.creator) {
-            this.root.push(new Creator(options.creator));
+            this.root.push(new StringContainer("dc:creator", options.creator));
         }
         if (options.keywords) {
-            this.root.push(new Keywords(options.keywords));
+            this.root.push(new StringContainer("cp:keywords", options.keywords));
         }
         if (options.description) {
-            this.root.push(new Description(options.description));
+            this.root.push(new StringContainer("dc:description", options.description));
         }
         if (options.lastModifiedBy) {
-            this.root.push(new LastModifiedBy(options.lastModifiedBy));
+            this.root.push(new StringContainer("cp:lastModifiedBy", options.lastModifiedBy));
         }
         if (options.revision) {
-            this.root.push(new Revision(options.revision));
+            this.root.push(new StringContainer("cp:revision", options.revision));
         }
-        this.root.push(new Created());
-        this.root.push(new Modified());
+        this.root.push(new TimestampElement("dcterms:created"));
+        this.root.push(new TimestampElement("dcterms:modified"));
+    }
+}
+
+class TimestampElement extends XmlComponent {
+    constructor(name: string) {
+        super(name);
+        this.root.push(
+            new DocumentAttributes({
+                type: "dcterms:W3CDTF",
+            }),
+        );
+        this.root.push(dateTimeValue(new Date()));
     }
 }

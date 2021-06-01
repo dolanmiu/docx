@@ -16,6 +16,16 @@ export interface INumberingOptions {
     }[];
 }
 
+// <xsd:element name="numbering" type="CT_Numbering"/>
+//
+//     <xsd:complexType name="CT_Numbering">
+//         <xsd:sequence>
+//             <xsd:element name="numPicBullet" type="CT_NumPicBullet" minOccurs="0" maxOccurs="unbounded"/>
+//             <xsd:element name="abstractNum" type="CT_AbstractNum" minOccurs="0" maxOccurs="unbounded"/>
+//             <xsd:element name="num" type="CT_Num" minOccurs="0" maxOccurs="unbounded"/>
+//             <xsd:element name="numIdMacAtCleanup" type="CT_DecimalNumber" minOccurs="0"/>
+//         </xsd:sequence>
+//     </xsd:complexType>
 export class Numbering extends XmlComponent {
     private readonly abstractNumberingMap = new Map<string, AbstractNumbering>();
     private readonly concreteNumberingMap = new Map<string, ConcreteNumbering>();
@@ -149,7 +159,7 @@ export class Numbering extends XmlComponent {
         this.concreteNumberingMap.set(
             "default-bullet-numbering",
             new ConcreteNumbering({
-                numId: 0,
+                numId: 1,
                 abstractNumId: abstractNumbering.id,
                 reference: "default-bullet-numbering",
                 instance: 0,

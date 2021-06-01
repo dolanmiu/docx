@@ -1,5 +1,6 @@
 // http://officeopenxml.com/WPnumbering-numFmt.php
-import { Attributes, XmlAttributeComponent, XmlComponent } from "file/xml-components";
+import { decimalNumber } from "file/values";
+import { Attributes, NumberValueElement, XmlAttributeComponent, XmlComponent } from "file/xml-components";
 import { AlignmentType } from "../paragraph/formatting";
 import { IParagraphStylePropertiesOptions, ParagraphProperties } from "../paragraph/properties";
 import { IRunStylePropertiesOptions, RunProperties } from "../paragraph/run/properties";
@@ -31,17 +32,10 @@ class LevelAttributes extends XmlAttributeComponent<{
     };
 }
 
-class Start extends XmlComponent {
-    constructor(value: number) {
-        super("w:start");
-        this.root.push(
-            new Attributes({
-                val: value,
-            }),
-        );
-    }
-}
-
+// <xsd:complexType name="CT_NumFmt">
+//     <xsd:attribute name="val" type="ST_NumberFormat" use="required"/>
+//     <xsd:attribute name="format" type="s:ST_String" use="optional"/>
+// </xsd:complexType>
 class NumberFormat extends XmlComponent {
     constructor(value: string) {
         super("w:numFmt");
@@ -53,6 +47,10 @@ class NumberFormat extends XmlComponent {
     }
 }
 
+// <xsd:complexType name="CT_LevelText">
+//     <xsd:attribute name="val" type="s:ST_String" use="optional"/>
+//     <xsd:attribute name="null" type="s:ST_OnOff" use="optional"/>
+// </xsd:complexType>
 class LevelText extends XmlComponent {
     constructor(value: string) {
         super("w:lvlText");
@@ -94,6 +92,16 @@ export interface ILevelsOptions {
     };
 }
 
+// <xsd:complexType name="CT_LevelSuffix">
+//     <xsd:attribute name="val" type="ST_LevelSuffix" use="required"/>
+// </xsd:complexType>
+//     <xsd:simpleType name="ST_LevelSuffix">
+//         <xsd:restriction base="xsd:string">
+//             <xsd:enumeration value="tab"/>
+//             <xsd:enumeration value="space"/>
+//             <xsd:enumeration value="nothing"/>
+//         </xsd:restriction>
+//     </xsd:simpleType>
 class Suffix extends XmlComponent {
     constructor(value: LevelSuffix) {
         super("w:suff");
@@ -105,6 +113,25 @@ class Suffix extends XmlComponent {
     }
 }
 
+// <xsd:complexType name="CT_Lvl">
+//     <xsd:sequence>
+//         <xsd:element name="start" type="CT_DecimalNumber" minOccurs="0"/>
+//         <xsd:element name="numFmt" type="CT_NumFmt" minOccurs="0"/>
+//         <xsd:element name="lvlRestart" type="CT_DecimalNumber" minOccurs="0"/>
+//         <xsd:element name="pStyle" type="CT_String" minOccurs="0"/>
+//         <xsd:element name="isLgl" type="CT_OnOff" minOccurs="0"/>
+//         <xsd:element name="suff" type="CT_LevelSuffix" minOccurs="0"/>
+//         <xsd:element name="lvlText" type="CT_LevelText" minOccurs="0"/>
+//         <xsd:element name="lvlPicBulletId" type="CT_DecimalNumber" minOccurs="0"/>
+//         <xsd:element name="legacy" type="CT_LvlLegacy" minOccurs="0"/>
+//         <xsd:element name="lvlJc" type="CT_Jc" minOccurs="0"/>
+//         <xsd:element name="pPr" type="CT_PPrGeneral" minOccurs="0"/>
+//         <xsd:element name="rPr" type="CT_RPr" minOccurs="0"/>
+//     </xsd:sequence>
+//     <xsd:attribute name="ilvl" type="ST_DecimalNumber" use="required"/>
+//     <xsd:attribute name="tplc" type="ST_LongHexNumber" use="optional"/>
+//     <xsd:attribute name="tentative" type="s:ST_OnOff" use="optional"/>
+// </xsd:complexType>
 export class LevelBase extends XmlComponent {
     private readonly paragraphProperties: ParagraphProperties;
     private readonly runProperties: RunProperties;
@@ -112,7 +139,7 @@ export class LevelBase extends XmlComponent {
     constructor({ level, format, text, alignment = AlignmentType.START, start = 1, style, suffix }: ILevelsOptions) {
         super("w:lvl");
 
-        this.root.push(new Start(start));
+        this.root.push(new NumberValueElement("w:start", decimalNumber(start)));
 
         if (format) {
             this.root.push(new NumberFormat(format));
@@ -136,7 +163,7 @@ export class LevelBase extends XmlComponent {
 
         this.root.push(
             new LevelAttributes({
-                ilvl: level,
+                ilvl: decimalNumber(level),
                 tentative: 1,
             }),
         );

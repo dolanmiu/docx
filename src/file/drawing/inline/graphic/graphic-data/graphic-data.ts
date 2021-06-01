@@ -20,8 +20,4 @@ export class GraphicData extends XmlComponent {
 
         this.root.push(this.pic);
     }
-
-    public setXY(x: number, y: number): void {
-        this.pic.setXY(x, y);
-    }
 }

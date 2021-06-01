@@ -5,13 +5,30 @@ import { Formatter } from "export/formatter";
 import { FooterWrapper } from "file/footer-wrapper";
 import { HeaderWrapper } from "file/header-wrapper";
 import { Media } from "file/media";
-import { LineNumberRestartFormat } from "./line-number";
+import { NumberFormat } from "file/shared/number-format";
+import { VerticalAlign } from "file/vertical-align";
 
-import { PageBorderOffsetFrom } from "./page-border";
-import { PageNumberFormat } from "./page-number";
-import { SectionProperties } from "./section-properties";
-import { SectionType } from "./type/section-type-attributes";
-import { SectionVerticalAlignValue } from "./vertical-align";
+import { PageOrientation } from "./properties";
+import { LineNumberRestartFormat } from "./properties/line-number";
+import { PageBorderOffsetFrom } from "./properties/page-borders";
+import { SectionType } from "./properties/section-type";
+import { sectionMarginDefaults, sectionPageSizeDefaults, SectionProperties } from "./section-properties";
+
+const DEFAULT_MARGINS = {
+    "w:bottom": sectionMarginDefaults.BOTTOM,
+    "w:footer": sectionMarginDefaults.FOOTER,
+    "w:top": sectionMarginDefaults.TOP,
+    "w:right": sectionMarginDefaults.RIGHT,
+    "w:left": sectionMarginDefaults.LEFT,
+    "w:header": sectionMarginDefaults.HEADER,
+    "w:gutter": sectionMarginDefaults.GUTTER,
+};
+
+const PAGE_SIZE_DEFAULTS = {
+    "w:h": sectionPageSizeDefaults.HEIGHT,
+    "w:orient": sectionPageSizeDefaults.ORIENTATION,
+    "w:w": sectionPageSizeDefaults.WIDTH,
+};
 
 describe("SectionProperties", () => {
     describe("#constructor()", () => {
@@ -21,26 +38,27 @@ describe("SectionProperties", () => {
             const properties = new SectionProperties({
                 page: {
                     size: {
-                        width: 11906,
-                        height: 16838,
+                        width: 1190,
+                        height: 1680,
+                        orientation: PageOrientation.PORTRAIT,
                     },
                     margin: {
-                        top: convertInchesToTwip(1),
-                        right: convertInchesToTwip(1),
-                        bottom: convertInchesToTwip(1),
-                        left: convertInchesToTwip(1),
-                        header: 708,
-                        footer: 708,
-                        gutter: 0,
+                        top: "2in",
+                        right: "2in",
+                        bottom: "2in",
+                        left: "2in",
+                        header: 808,
+                        footer: 808,
+                        gutter: 10,
                     },
                     pageNumbers: {
                         start: 10,
-                        formatType: PageNumberFormat.CARDINAL_TEXT,
+                        formatType: NumberFormat.CARDINAL_TEXT,
                     },
                 },
                 column: {
-                    space: 708,
-                    count: 1,
+                    space: 208,
+                    count: 2,
                     separate: true,
                 },
                 grid: {
@@ -53,7 +71,7 @@ describe("SectionProperties", () => {
                     even: new FooterWrapper(media, 200),
                 },
                 titlePage: true,
-                verticalAlign: SectionVerticalAlignValue.TOP,
+                verticalAlign: VerticalAlign.TOP,
             });
 
             const tree = new Formatter().format(properties);
@@ -62,25 +80,25 @@ describe("SectionProperties", () => {
             expect(tree["w:sectPr"]).to.be.an.instanceof(Array);
             expect(tree["w:sectPr"][0]).to.deep.equal({ "w:headerReference": { _attr: { "r:id": "rId100", "w:type": "default" } } });
             expect(tree["w:sectPr"][1]).to.deep.equal({ "w:footerReference": { _attr: { "r:id": "rId200", "w:type": "even" } } });
-            expect(tree["w:sectPr"][2]).to.deep.equal({ "w:pgSz": { _attr: { "w:h": 16838, "w:w": 11906, "w:orient": "portrait" } } });
+            expect(tree["w:sectPr"][2]).to.deep.equal({ "w:pgSz": { _attr: { "w:h": 1680, "w:w": 1190, "w:orient": "portrait" } } });
             expect(tree["w:sectPr"][3]).to.deep.equal({
                 "w:pgMar": {
                     _attr: {
-                        "w:bottom": 1440,
-                        "w:footer": 708,
-                        "w:top": 1440,
-                        "w:right": 1440,
-                        "w:left": 1440,
-                        "w:header": 708,
-                        "w:gutter": 0,
+                        "w:bottom": "2in",
+                        "w:footer": 808,
+                        "w:top": "2in",
+                        "w:right": "2in",
+                        "w:left": "2in",
+                        "w:header": 808,
+                        "w:gutter": 10,
                     },
                 },
             });
 
             expect(tree["w:sectPr"][4]).to.deep.equal({ "w:pgNumType": { _attr: { "w:fmt": "cardinalText", "w:start": 10 } } });
-            expect(tree["w:sectPr"][5]).to.deep.equal({ "w:cols": { _attr: { "w:space": 708, "w:sep": true, "w:num": 1 } } });
+            expect(tree["w:sectPr"][5]).to.deep.equal({ "w:cols": { _attr: { "w:space": 208, "w:sep": true, "w:num": 2 } } });
             expect(tree["w:sectPr"][6]).to.deep.equal({ "w:vAlign": { _attr: { "w:val": "top" } } });
-            expect(tree["w:sectPr"][7]).to.deep.equal({ "w:titlePg": { _attr: { "w:val": "1" } } });
+            expect(tree["w:sectPr"][7]).to.deep.equal({ "w:titlePg": {} });
             expect(tree["w:sectPr"][8]).to.deep.equal({ "w:docGrid": { _attr: { "w:linePitch": 360 } } });
         });
 
@@ -89,22 +107,12 @@ describe("SectionProperties", () => {
             const tree = new Formatter().format(properties);
             expect(Object.keys(tree)).to.deep.equal(["w:sectPr"]);
             expect(tree["w:sectPr"]).to.be.an.instanceof(Array);
-            expect(tree["w:sectPr"][0]).to.deep.equal({ "w:pgSz": { _attr: { "w:h": 16838, "w:w": 11906, "w:orient": "portrait" } } });
+            expect(tree["w:sectPr"][0]).to.deep.equal({ "w:pgSz": { _attr: PAGE_SIZE_DEFAULTS } });
             expect(tree["w:sectPr"][1]).to.deep.equal({
-                "w:pgMar": {
-                    _attr: {
-                        "w:bottom": 1440,
-                        "w:footer": 708,
-                        "w:top": 1440,
-                        "w:right": 1440,
-                        "w:left": 1440,
-                        "w:header": 708,
-                        "w:gutter": 0,
-                    },
-                },
+                "w:pgMar": { _attr: DEFAULT_MARGINS },
             });
-            expect(tree["w:sectPr"][3]).to.deep.equal({ "w:cols": { _attr: { "w:space": 708, "w:sep": false, "w:num": 1 } } });
-            expect(tree["w:sectPr"][4]).to.deep.equal({ "w:docGrid": { _attr: { "w:linePitch": 360 } } });
+            // expect(tree["w:sectPr"][3]).to.deep.equal({ "w:cols": { _attr: { "w:space": 708, "w:sep": false, "w:num": 1 } } });
+            expect(tree["w:sectPr"][3]).to.deep.equal({ "w:docGrid": { _attr: { "w:linePitch": 360 } } });
         });
 
         it("should create section properties with changed options", () => {
@@ -118,17 +126,12 @@ describe("SectionProperties", () => {
             const tree = new Formatter().format(properties);
             expect(Object.keys(tree)).to.deep.equal(["w:sectPr"]);
             expect(tree["w:sectPr"]).to.be.an.instanceof(Array);
-            expect(tree["w:sectPr"][0]).to.deep.equal({ "w:pgSz": { _attr: { "w:h": 16838, "w:w": 11906, "w:orient": "portrait" } } });
+            expect(tree["w:sectPr"][0]).to.deep.equal({ "w:pgSz": { _attr: PAGE_SIZE_DEFAULTS } });
             expect(tree["w:sectPr"][1]).to.deep.equal({
                 "w:pgMar": {
                     _attr: {
-                        "w:bottom": 1440,
-                        "w:footer": 708,
+                        ...DEFAULT_MARGINS,
                         "w:top": 0,
-                        "w:right": 1440,
-                        "w:left": 1440,
-                        "w:header": 708,
-                        "w:gutter": 0,
                     },
                 },
             });
@@ -145,17 +148,12 @@ describe("SectionProperties", () => {
             const tree = new Formatter().format(properties);
             expect(Object.keys(tree)).to.deep.equal(["w:sectPr"]);
             expect(tree["w:sectPr"]).to.be.an.instanceof(Array);
-            expect(tree["w:sectPr"][0]).to.deep.equal({ "w:pgSz": { _attr: { "w:h": 16838, "w:w": 11906, "w:orient": "portrait" } } });
+            expect(tree["w:sectPr"][0]).to.deep.equal({ "w:pgSz": { _attr: PAGE_SIZE_DEFAULTS } });
             expect(tree["w:sectPr"][1]).to.deep.equal({
                 "w:pgMar": {
                     _attr: {
+                        ...DEFAULT_MARGINS,
                         "w:bottom": 0,
-                        "w:footer": 708,
-                        "w:top": 1440,
-                        "w:right": 1440,
-                        "w:left": 1440,
-                        "w:header": 708,
-                        "w:gutter": 0,
                     },
                 },
             });
@@ -167,24 +165,25 @@ describe("SectionProperties", () => {
                     size: {
                         width: 0,
                         height: 0,
+                        orientation: PageOrientation.LANDSCAPE,
                     },
                 },
             });
             const tree = new Formatter().format(properties);
             expect(Object.keys(tree)).to.deep.equal(["w:sectPr"]);
             expect(tree["w:sectPr"]).to.be.an.instanceof(Array);
-            expect(tree["w:sectPr"][0]).to.deep.equal({ "w:pgSz": { _attr: { "w:h": 0, "w:w": 0, "w:orient": "portrait" } } });
+            expect(tree["w:sectPr"][0]).to.deep.equal({
+                "w:pgSz": {
+                    _attr: {
+                        "w:h": 0,
+                        "w:orient": PageOrientation.LANDSCAPE,
+                        "w:w": 0,
+                    },
+                },
+            });
             expect(tree["w:sectPr"][1]).to.deep.equal({
                 "w:pgMar": {
-                    _attr: {
-                        "w:bottom": 1440,
-                        "w:footer": 708,
-                        "w:top": 1440,
-                        "w:right": 1440,
-                        "w:left": 1440,
-                        "w:header": 708,
-                        "w:gutter": 0,
-                    },
+                    _attr: DEFAULT_MARGINS,
                 },
             });
         });
@@ -211,7 +210,7 @@ describe("SectionProperties", () => {
             const properties = new SectionProperties({
                 page: {
                     pageNumbers: {
-                        formatType: PageNumberFormat.UPPER_ROMAN,
+                        formatType: NumberFormat.UPPER_ROMAN,
                     },
                 },
             });

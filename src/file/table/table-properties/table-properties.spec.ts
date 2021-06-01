@@ -2,9 +2,10 @@ import { expect } from "chai";
 
 import { Formatter } from "export/formatter";
 
-import { AlignmentType } from "../../paragraph";
-import { ShadingType } from "../shading";
-import { WidthType } from "../table-cell";
+import { AlignmentType } from "file/paragraph";
+import { ShadingType } from "file/shading";
+
+import { WidthType } from "../table-width";
 import { TableLayoutType } from "./table-layout";
 import { TableProperties } from "./table-properties";
 
@@ -18,9 +19,7 @@ describe("TableProperties", () => {
             // has been asked to format.
             expect(() => new Formatter().format(tp)).to.throw("XMLComponent did not format correctly");
         });
-    });
 
-    describe("#setStyle", () => {
         it("should add a table style property", () => {
             const tp = new TableProperties({
                 style: "TableNormal",
@@ -30,9 +29,7 @@ describe("TableProperties", () => {
                 "w:tblPr": [{ "w:tblStyle": { _attr: { "w:val": "TableNormal" } } }],
             });
         });
-    });
 
-    describe("#setWidth", () => {
         it("should add a table width property", () => {
             const tp = new TableProperties({
                 width: {
@@ -58,9 +55,33 @@ describe("TableProperties", () => {
                 "w:tblPr": [{ "w:tblW": { _attr: { "w:type": "auto", "w:w": 1234 } } }],
             });
         });
-    });
 
-    describe("#setLayout", () => {
+        it("should add a table indent property", () => {
+            const tp = new TableProperties({
+                indent: {
+                    size: 1234,
+                    type: WidthType.DXA,
+                },
+            });
+            const tree = new Formatter().format(tp);
+            expect(tree).to.deep.equal({
+                "w:tblPr": [{ "w:tblInd": { _attr: { "w:type": "dxa", "w:w": 1234 } } }],
+            });
+        });
+
+        it("should add a table indent property with default of AUTO", () => {
+            const tp = new TableProperties({
+                indent: {
+                    size: 1234,
+                },
+            });
+
+            const tree = new Formatter().format(tp);
+            expect(tree).to.deep.equal({
+                "w:tblPr": [{ "w:tblInd": { _attr: { "w:type": "auto", "w:w": 1234 } } }],
+            });
+        });
+
         it("sets the table to fixed width layout", () => {
             const tp = new TableProperties({
                 layout: TableLayoutType.FIXED,
@@ -77,10 +98,8 @@ describe("TableProperties", () => {
         it("adds a table cell top margin", () => {
             const tp = new TableProperties({
                 cellMargin: {
-                    top: {
-                        value: 1234,
-                        type: WidthType.DXA,
-                    },
+                    marginUnitType: WidthType.DXA,
+                    top: 1234,
                 },
             });
 
@@ -93,10 +112,8 @@ describe("TableProperties", () => {
         it("adds a table cell left margin", () => {
             const tp = new TableProperties({
                 cellMargin: {
-                    left: {
-                        value: 1234,
-                        type: WidthType.DXA,
-                    },
+                    marginUnitType: WidthType.DXA,
+                    left: 1234,
                 },
             });
 
@@ -112,7 +129,7 @@ describe("TableProperties", () => {
             const tp = new TableProperties({
                 shading: {
                     fill: "b79c2f",
-                    val: ShadingType.REVERSE_DIAGONAL_STRIPE,
+                    type: ShadingType.REVERSE_DIAGONAL_STRIPE,
                     color: "auto",
                 },
             });

@@ -1,5 +1,5 @@
 // http://officeopenxml.com/WPspacing.php
-import { Attributes, XmlAttributeComponent, XmlComponent } from "file/xml-components";
+import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
 
 export enum LineRuleType {
     AT_LEAST = "atLeast",
@@ -28,16 +28,5 @@ export class Spacing extends XmlComponent {
     constructor(options: ISpacingProperties) {
         super("w:spacing");
         this.root.push(new SpacingAttributes(options));
-    }
-}
-
-export class ContextualSpacing extends XmlComponent {
-    constructor(value: boolean) {
-        super("w:contextualSpacing");
-        this.root.push(
-            new Attributes({
-                val: value === false ? 0 : 1,
-            }),
-        );
     }
 }

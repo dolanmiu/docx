@@ -9,6 +9,9 @@ import { File, HeadingLevel, Packer, Paragraph, StyleLevel, TableOfContents } fr
 // Let's define the properties for generate a TOC for heading 1-5 and MySpectacularStyle,
 // making the entries be hyperlinks for the paragraph
 const doc = new File({
+    features: {
+        updateFields: true,
+    },
     styles: {
         paragraphStyles: [
             {

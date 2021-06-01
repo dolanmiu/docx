@@ -2,13 +2,15 @@ import { assert, expect } from "chai";
 import { SinonStub, stub } from "sinon";
 
 import * as convenienceFunctions from "convenience-functions";
+
 import { Formatter } from "export/formatter";
+import { BorderStyle } from "file/border";
 import { EMPTY_OBJECT } from "file/xml-components";
 
 import { IViewWrapper } from "../document-wrapper";
 import { File } from "../file";
+import { ShadingType } from "../shading";
 import { HorizontalPositionAlign, VerticalPositionAlign } from "../shared";
-import { ShadingType } from "../table/shading";
 import { AlignmentType, HeadingLevel, LeaderType, PageBreak, TabStopPosition, TabStopType } from "./formatting";
 import { FrameAnchorType } from "./frame";
 import { Bookmark, ExternalHyperlink } from "./links";
@@ -414,7 +416,7 @@ describe("Paragraph", () => {
     });
 
     describe("#contextualSpacing()", () => {
-        it("should add contextualSpacing to JSON, and set 1 if true", () => {
+        it("should add contextualSpacing", () => {
             const paragraph = new Paragraph({
                 contextualSpacing: true,
             });
@@ -422,7 +424,20 @@ describe("Paragraph", () => {
             expect(tree).to.deep.equal({
                 "w:p": [
                     {
-                        "w:pPr": [{ "w:contextualSpacing": { _attr: { "w:val": 1 } } }],
+                        "w:pPr": [{ "w:contextualSpacing": {} }],
+                    },
+                ],
+            });
+        });
+        it("should remove contextualSpacing", () => {
+            const paragraph = new Paragraph({
+                contextualSpacing: false,
+            });
+            const tree = new Formatter().format(paragraph);
+            expect(tree).to.deep.equal({
+                "w:p": [
+                    {
+                        "w:pPr": [{ "w:contextualSpacing": { _attr: { "w:val": false } } }],
                     },
                 ],
             });
@@ -467,13 +482,13 @@ describe("Paragraph", () => {
                     left: {
                         color: "auto",
                         space: 1,
-                        value: "single",
+                        style: BorderStyle.SINGLE,
                         size: 6,
                     },
                     right: {
                         color: "auto",
                         space: 1,
-                        value: "single",
+                        style: BorderStyle.SINGLE,
                         size: 6,
                     },
                 },

@@ -34,8 +34,8 @@ describe("DocumentBackground", () => {
             const documentBackground = new DocumentBackground({
                 color: "ffff00",
                 themeColor: "test",
-                themeShade: "test",
-                themeTint: "test",
+                themeShade: "0A",
+                themeTint: "0B",
             });
             const tree = new Formatter().format(documentBackground);
             expect(tree).to.deep.equal({
@@ -43,8 +43,8 @@ describe("DocumentBackground", () => {
                     _attr: {
                         "w:color": "ffff00",
                         "w:themeColor": "test",
-                        "w:themeShade": "test",
-                        "w:themeTint": "test",
+                        "w:themeShade": "0A",
+                        "w:themeTint": "0B",
                     },
                 },
             });

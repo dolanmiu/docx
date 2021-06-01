@@ -2,6 +2,7 @@ import { expect } from "chai";
 
 import { Formatter } from "export/formatter";
 
+import { BorderStyle } from "file/border";
 import { Border, ThematicBreak } from "./border";
 
 describe("Border", () => {
@@ -9,27 +10,27 @@ describe("Border", () => {
         it("should create", () => {
             const border = new Border({
                 top: {
-                    color: "red",
+                    color: "FF0000",
                     space: 1,
-                    value: "test",
+                    style: BorderStyle.WAVE,
                     size: 2,
                 },
                 bottom: {
-                    color: "red",
+                    color: "FF0000",
                     space: 3,
-                    value: "test",
+                    style: BorderStyle.WAVE,
                     size: 4,
                 },
                 left: {
-                    color: "red",
+                    color: "FF0000",
                     space: 5,
-                    value: "test",
+                    style: BorderStyle.WAVE,
                     size: 6,
                 },
                 right: {
-                    color: "red",
+                    color: "FF0000",
                     space: 7,
-                    value: "test",
+                    style: BorderStyle.WAVE,
                     size: 8,
                 },
             });
@@ -41,45 +42,50 @@ describe("Border", () => {
                     {
                         "w:top": {
                             _attr: {
-                                "w:color": "red",
+                                "w:color": "FF0000",
                                 "w:space": 1,
                                 "w:sz": 2,
-                                "w:val": "test",
+                                "w:val": "wave",
                             },
                         },
                     },
                     {
                         "w:bottom": {
                             _attr: {
-                                "w:color": "red",
+                                "w:color": "FF0000",
                                 "w:space": 3,
                                 "w:sz": 4,
-                                "w:val": "test",
+                                "w:val": "wave",
                             },
                         },
                     },
                     {
                         "w:left": {
                             _attr: {
-                                "w:color": "red",
+                                "w:color": "FF0000",
                                 "w:space": 5,
                                 "w:sz": 6,
-                                "w:val": "test",
+                                "w:val": "wave",
                             },
                         },
                     },
                     {
                         "w:right": {
                             _attr: {
-                                "w:color": "red",
+                                "w:color": "FF0000",
                                 "w:space": 7,
                                 "w:sz": 8,
-                                "w:val": "test",
+                                "w:val": "wave",
                             },
                         },
                     },
                 ],
             });
+        });
+
+        it("should not add empty borders element if there are no borders defined", () => {
+            const tb = new Border({});
+            expect(() => new Formatter().format(tb)).to.throw();
         });
     });
 });

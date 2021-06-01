@@ -1,29 +1,21 @@
 // http://officeopenxml.com/WPsection.php
 // tslint:disable: no-unnecessary-initializer
 
-import { convertInchesToTwip } from "convenience-functions";
 import { FooterWrapper } from "file/footer-wrapper";
 import { HeaderWrapper } from "file/header-wrapper";
-import { XmlComponent } from "file/xml-components";
+import { VerticalAlign, VerticalAlignElement } from "file/vertical-align";
+import { OnOffElement, XmlComponent } from "file/xml-components";
 
-import { Columns } from "./columns/columns";
-import { DocumentGrid } from "./doc-grid/doc-grid";
-import { IDocGridAttributesProperties } from "./doc-grid/doc-grid-attributes";
-import { FooterReferenceType } from "./footer-reference";
-import { FooterReference } from "./footer-reference/footer-reference";
-import { HeaderReferenceType } from "./header-reference";
-import { HeaderReference } from "./header-reference/header-reference";
-import { ILineNumberAttributes, LineNumberType } from "./line-number";
-import { IPageBordersOptions, PageBorders } from "./page-border";
-import { PageMargin } from "./page-margin/page-margin";
-import { IPageMarginAttributes } from "./page-margin/page-margin-attributes";
-import { IPageNumberTypeAttributes, PageNumberType } from "./page-number";
-import { PageSize } from "./page-size/page-size";
-import { IPageSizeAttributes, PageOrientation } from "./page-size/page-size-attributes";
-import { TitlePage } from "./title-page/title-page";
-import { Type } from "./type/section-type";
-import { SectionType } from "./type/section-type-attributes";
-import { SectionVerticalAlign, SectionVerticalAlignValue } from "./vertical-align";
+import { HeaderFooterReference, HeaderFooterReferenceType, HeaderFooterType } from "./properties/header-footer-reference";
+
+import { Columns, IColumnsAttributes } from "./properties/columns";
+import { DocumentGrid, IDocGridAttributesProperties } from "./properties/doc-grid";
+import { ILineNumberAttributes, LineNumberType } from "./properties/line-number";
+import { IPageBordersOptions, PageBorders } from "./properties/page-borders";
+import { IPageMarginAttributes, PageMargin } from "./properties/page-margin";
+import { IPageNumberTypeAttributes, PageNumberType } from "./properties/page-number";
+import { IPageSizeAttributes, PageOrientation, PageSize } from "./properties/page-size";
+import { SectionType, Type } from "./properties/section-type";
 
 export interface IHeaderFooterGroup<T> {
     readonly default?: T;
@@ -43,53 +35,93 @@ export interface ISectionPropertiesOptions {
     readonly footerWrapperGroup?: IHeaderFooterGroup<FooterWrapper>;
     readonly lineNumbers?: ILineNumberAttributes;
     readonly titlePage?: boolean;
-    readonly verticalAlign?: SectionVerticalAlignValue;
-    readonly column?: {
-        readonly space?: number;
-        readonly count?: number;
-        readonly separate?: boolean;
-    };
+    readonly verticalAlign?: VerticalAlign;
+    readonly column?: IColumnsAttributes;
     readonly type?: SectionType;
 }
+
+// <xsd:complexType name="CT_SectPr">
+//     <xsd:sequence>
+//         <xsd:group ref="EG_HdrFtrReferences" minOccurs="0" maxOccurs="6"/>
+//         <xsd:group ref="EG_SectPrContents" minOccurs="0"/>
+//         <xsd:element name="sectPrChange" type="CT_SectPrChange" minOccurs="0"/>
+//     </xsd:sequence>
+//     <xsd:attributeGroup ref="AG_SectPrAttributes"/>
+// </xsd:complexType>
+
+// <xsd:group name="EG_SectPrContents">
+// <xsd:sequence>
+//   <xsd:element name="footnotePr" type="CT_FtnProps" minOccurs="0"/>
+//   <xsd:element name="endnotePr" type="CT_EdnProps" minOccurs="0"/>
+//   <xsd:element name="type" type="CT_SectType" minOccurs="0"/>
+//   <xsd:element name="pgSz" type="CT_PageSz" minOccurs="0"/>
+//   <xsd:element name="pgMar" type="CT_PageMar" minOccurs="0"/>
+//   <xsd:element name="paperSrc" type="CT_PaperSource" minOccurs="0"/>
+//   <xsd:element name="pgBorders" type="CT_PageBorders" minOccurs="0"/>
+//   <xsd:element name="lnNumType" type="CT_LineNumber" minOccurs="0"/>
+//   <xsd:element name="pgNumType" type="CT_PageNumber" minOccurs="0"/>
+//   <xsd:element name="cols" type="CT_Columns" minOccurs="0"/>
+//   <xsd:element name="formProt" type="CT_OnOff" minOccurs="0"/>
+//   <xsd:element name="vAlign" type="CT_VerticalJc" minOccurs="0"/>
+//   <xsd:element name="noEndnote" type="CT_OnOff" minOccurs="0"/>
+//   <xsd:element name="titlePg" type="CT_OnOff" minOccurs="0"/>
+//   <xsd:element name="textDirection" type="CT_TextDirection" minOccurs="0"/>
+//   <xsd:element name="bidi" type="CT_OnOff" minOccurs="0"/>
+//   <xsd:element name="rtlGutter" type="CT_OnOff" minOccurs="0"/>
+//   <xsd:element name="docGrid" type="CT_DocGrid" minOccurs="0"/>
+//   <xsd:element name="printerSettings" type="CT_Rel" minOccurs="0"/>
+// </xsd:sequence>
+// </xsd:group>
+
+export const sectionMarginDefaults = {
+    TOP: "1in",
+    RIGHT: "1in",
+    BOTTOM: "1in",
+    LEFT: "1in",
+    HEADER: 708,
+    FOOTER: 708,
+    GUTTER: 0,
+};
+
+export const sectionPageSizeDefaults = {
+    WIDTH: 11906,
+    HEIGHT: 16838,
+    ORIENTATION: PageOrientation.PORTRAIT,
+};
+
 export class SectionProperties extends XmlComponent {
     constructor({
         page: {
-            size: { width = 11906, height = 16838, orientation = PageOrientation.PORTRAIT } = {},
+            size: {
+                width = sectionPageSizeDefaults.WIDTH,
+                height = sectionPageSizeDefaults.HEIGHT,
+                orientation = sectionPageSizeDefaults.ORIENTATION,
+            } = {},
             margin: {
-                top = convertInchesToTwip(1),
-                right = convertInchesToTwip(1),
-                bottom = convertInchesToTwip(1),
-                left = convertInchesToTwip(1),
-                header = 708,
-                footer = 708,
-                gutter = 0,
+                top = sectionMarginDefaults.TOP,
+                right = sectionMarginDefaults.RIGHT,
+                bottom = sectionMarginDefaults.BOTTOM,
+                left = sectionMarginDefaults.LEFT,
+                header = sectionMarginDefaults.HEADER,
+                footer = sectionMarginDefaults.FOOTER,
+                gutter = sectionMarginDefaults.GUTTER,
             } = {},
-            pageNumbers: {
-                start: pageNumberStart = undefined,
-                formatType: pageNumberFormatType = undefined,
-                separator: pageNumberSeparator = undefined,
-            } = {},
-            borders: {
-                pageBorders = undefined,
-                pageBorderTop = undefined,
-                pageBorderRight = undefined,
-                pageBorderBottom = undefined,
-                pageBorderLeft = undefined,
-            } = {},
+            pageNumbers = {},
+            borders,
         } = {},
         grid: { linePitch = 360 } = {},
         headerWrapperGroup = {},
         footerWrapperGroup = {},
-        lineNumbers: { countBy: lineNumberCountBy, start: lineNumberStart, restart: lineNumberRestart, distance: lineNumberDistance } = {},
-        titlePage = false,
+        lineNumbers,
+        titlePage,
         verticalAlign,
-        column: { space = 708, count = 1, separate = false } = {},
+        column,
         type,
     }: ISectionPropertiesOptions = {}) {
         super("w:sectPr");
 
-        this.addHeaders(headerWrapperGroup);
-        this.addFooters(footerWrapperGroup);
+        this.addHeaderFooterGroup(HeaderFooterType.HEADER, headerWrapperGroup);
+        this.addHeaderFooterGroup(HeaderFooterType.FOOTER, footerWrapperGroup);
 
         if (type) {
             this.root.push(new Type(type));
@@ -98,90 +130,58 @@ export class SectionProperties extends XmlComponent {
         this.root.push(new PageSize(width, height, orientation));
         this.root.push(new PageMargin(top, right, bottom, left, header, footer, gutter));
 
-        if (pageBorders || pageBorderTop || pageBorderRight || pageBorderBottom || pageBorderLeft) {
-            this.root.push(
-                new PageBorders({
-                    pageBorders: pageBorders,
-                    pageBorderTop: pageBorderTop,
-                    pageBorderRight: pageBorderRight,
-                    pageBorderBottom: pageBorderBottom,
-                    pageBorderLeft: pageBorderLeft,
-                }),
-            );
+        if (borders) {
+            this.root.push(new PageBorders(borders));
         }
 
-        if (lineNumberCountBy || lineNumberStart || lineNumberRestart || lineNumberDistance) {
-            this.root.push(new LineNumberType(lineNumberCountBy, lineNumberStart, lineNumberRestart, lineNumberDistance));
+        if (lineNumbers) {
+            this.root.push(new LineNumberType(lineNumbers));
         }
 
-        this.root.push(new PageNumberType(pageNumberStart, pageNumberFormatType, pageNumberSeparator));
+        this.root.push(new PageNumberType(pageNumbers));
 
-        this.root.push(new Columns(space, count, separate));
+        if (column) {
+            this.root.push(new Columns(column));
+        }
 
         if (verticalAlign) {
-            this.root.push(new SectionVerticalAlign(verticalAlign));
+            this.root.push(new VerticalAlignElement(verticalAlign));
         }
 
-        if (titlePage) {
-            this.root.push(new TitlePage());
+        if (titlePage !== undefined) {
+            this.root.push(new OnOffElement("w:titlePg", titlePage));
         }
 
         this.root.push(new DocumentGrid(linePitch));
     }
 
-    private addHeaders(headers: IHeaderFooterGroup<HeaderWrapper>): void {
-        if (headers.default) {
+    private addHeaderFooterGroup(
+        type: HeaderFooterType,
+        group: IHeaderFooterGroup<HeaderWrapper> | IHeaderFooterGroup<FooterWrapper>,
+    ): void {
+        if (group.default) {
             this.root.push(
-                new HeaderReference({
-                    headerType: HeaderReferenceType.DEFAULT,
-                    headerId: headers.default.View.ReferenceId,
+                new HeaderFooterReference(type, {
+                    type: HeaderFooterReferenceType.DEFAULT,
+                    id: group.default.View.ReferenceId,
                 }),
             );
         }
 
-        if (headers.first) {
+        if (group.first) {
             this.root.push(
-                new HeaderReference({
-                    headerType: HeaderReferenceType.FIRST,
-                    headerId: headers.first.View.ReferenceId,
+                new HeaderFooterReference(type, {
+                    type: HeaderFooterReferenceType.FIRST,
+                    id: group.first.View.ReferenceId,
                 }),
             );
         }
 
-        if (headers.even) {
+        if (group.even) {
             this.root.push(
-                new HeaderReference({
-                    headerType: HeaderReferenceType.EVEN,
-                    headerId: headers.even.View.ReferenceId,
-                }),
-            );
-        }
-    }
-
-    private addFooters(footers: IHeaderFooterGroup<FooterWrapper>): void {
-        if (footers.default) {
-            this.root.push(
-                new FooterReference({
-                    footerType: FooterReferenceType.DEFAULT,
-                    footerId: footers.default.View.ReferenceId,
-                }),
-            );
-        }
-
-        if (footers.first) {
-            this.root.push(
-                new FooterReference({
-                    footerType: FooterReferenceType.FIRST,
-                    footerId: footers.first.View.ReferenceId,
-                }),
-            );
-        }
-
-        if (footers.even) {
-            this.root.push(
-                new FooterReference({
-                    footerType: FooterReferenceType.EVEN,
-                    footerId: footers.even.View.ReferenceId,
+                new HeaderFooterReference(type, {
+                    type: HeaderFooterReferenceType.EVEN,
+                    id: group.even.View.ReferenceId,
                 }),
             );
         }

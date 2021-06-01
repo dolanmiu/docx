@@ -86,11 +86,7 @@ describe("ParagraphProperties", () => {
             expect(tree).to.deep.equal({
                 "w:pPr": [
                     {
-                        "w:widowControl": {
-                            _attr: {
-                                "w:val": true,
-                            },
-                        },
+                        "w:widowControl": {},
                     },
                 ],
             });

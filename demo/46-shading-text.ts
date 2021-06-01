@@ -14,7 +14,7 @@ const doc = new Document({
                             children: [
                                 new TextRun({
                                     text: "Hello World",
-                                    color: "red",
+                                    color: "FF0000",
                                     bold: true,
                                     size: 24,
                                     font: {

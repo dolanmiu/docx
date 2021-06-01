@@ -12,7 +12,7 @@ export const convertInchesToTwip = (inches: number): number => {
 };
 
 export const uniqueNumericId = (): number => {
-    return currentCount++;
+    return ++currentCount;
 };
 
 export const uniqueId = (): string => {

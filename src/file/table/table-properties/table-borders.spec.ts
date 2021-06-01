@@ -1,7 +1,7 @@
 import { expect } from "chai";
 
 import { Formatter } from "export/formatter";
-import { BorderStyle } from "file/styles";
+import { BorderStyle } from "file/border";
 
 import { TableBorders } from "./table-borders";
 
@@ -18,7 +18,6 @@ describe("TableBorders", () => {
                             "w:top": {
                                 _attr: {
                                     "w:color": "auto",
-                                    "w:space": 0,
                                     "w:sz": 4,
                                     "w:val": "single",
                                 },
@@ -28,7 +27,6 @@ describe("TableBorders", () => {
                             "w:left": {
                                 _attr: {
                                     "w:color": "auto",
-                                    "w:space": 0,
                                     "w:sz": 4,
                                     "w:val": "single",
                                 },
@@ -38,7 +36,6 @@ describe("TableBorders", () => {
                             "w:bottom": {
                                 _attr: {
                                     "w:color": "auto",
-                                    "w:space": 0,
                                     "w:sz": 4,
                                     "w:val": "single",
                                 },
@@ -48,7 +45,6 @@ describe("TableBorders", () => {
                             "w:right": {
                                 _attr: {
                                     "w:color": "auto",
-                                    "w:space": 0,
                                     "w:sz": 4,
                                     "w:val": "single",
                                 },
@@ -58,7 +54,6 @@ describe("TableBorders", () => {
                             "w:insideH": {
                                 _attr: {
                                     "w:color": "auto",
-                                    "w:space": 0,
                                     "w:sz": 4,
                                     "w:val": "single",
                                 },
@@ -68,7 +63,6 @@ describe("TableBorders", () => {
                             "w:insideV": {
                                 _attr: {
                                     "w:color": "auto",
-                                    "w:space": 0,
                                     "w:sz": 4,
                                     "w:val": "single",
                                 },
@@ -85,7 +79,7 @@ describe("TableBorders", () => {
                     top: {
                         style: BorderStyle.DOUBLE,
                         size: 1,
-                        color: "red",
+                        color: "FF0000",
                     },
                 });
 
@@ -95,8 +89,7 @@ describe("TableBorders", () => {
                         {
                             "w:top": {
                                 _attr: {
-                                    "w:color": "red",
-                                    "w:space": 0,
+                                    "w:color": "FF0000",
                                     "w:sz": 1,
                                     "w:val": "double",
                                 },
@@ -106,7 +99,6 @@ describe("TableBorders", () => {
                             "w:left": {
                                 _attr: {
                                     "w:color": "auto",
-                                    "w:space": 0,
                                     "w:sz": 4,
                                     "w:val": "single",
                                 },
@@ -116,7 +108,6 @@ describe("TableBorders", () => {
                             "w:bottom": {
                                 _attr: {
                                     "w:color": "auto",
-                                    "w:space": 0,
                                     "w:sz": 4,
                                     "w:val": "single",
                                 },
@@ -126,7 +117,6 @@ describe("TableBorders", () => {
                             "w:right": {
                                 _attr: {
                                     "w:color": "auto",
-                                    "w:space": 0,
                                     "w:sz": 4,
                                     "w:val": "single",
                                 },
@@ -136,7 +126,6 @@ describe("TableBorders", () => {
                             "w:insideH": {
                                 _attr: {
                                     "w:color": "auto",
-                                    "w:space": 0,
                                     "w:sz": 4,
                                     "w:val": "single",
                                 },
@@ -146,7 +135,6 @@ describe("TableBorders", () => {
                             "w:insideV": {
                                 _attr: {
                                     "w:color": "auto",
-                                    "w:space": 0,
                                     "w:sz": 4,
                                     "w:val": "single",
                                 },
@@ -163,7 +151,7 @@ describe("TableBorders", () => {
                     left: {
                         style: BorderStyle.DOUBLE,
                         size: 1,
-                        color: "red",
+                        color: "ff0000",
                     },
                 });
                 const tree = new Formatter().format(tableBorders);
@@ -174,7 +162,6 @@ describe("TableBorders", () => {
                             "w:top": {
                                 _attr: {
                                     "w:color": "auto",
-                                    "w:space": 0,
                                     "w:sz": 4,
                                     "w:val": "single",
                                 },
@@ -183,8 +170,7 @@ describe("TableBorders", () => {
                         {
                             "w:left": {
                                 _attr: {
-                                    "w:color": "red",
-                                    "w:space": 0,
+                                    "w:color": "ff0000",
                                     "w:sz": 1,
                                     "w:val": "double",
                                 },
@@ -194,7 +180,6 @@ describe("TableBorders", () => {
                             "w:bottom": {
                                 _attr: {
                                     "w:color": "auto",
-                                    "w:space": 0,
                                     "w:sz": 4,
                                     "w:val": "single",
                                 },
@@ -204,7 +189,6 @@ describe("TableBorders", () => {
                             "w:right": {
                                 _attr: {
                                     "w:color": "auto",
-                                    "w:space": 0,
                                     "w:sz": 4,
                                     "w:val": "single",
                                 },
@@ -214,7 +198,6 @@ describe("TableBorders", () => {
                             "w:insideH": {
                                 _attr: {
                                     "w:color": "auto",
-                                    "w:space": 0,
                                     "w:sz": 4,
                                     "w:val": "single",
                                 },
@@ -224,7 +207,6 @@ describe("TableBorders", () => {
                             "w:insideV": {
                                 _attr: {
                                     "w:color": "auto",
-                                    "w:space": 0,
                                     "w:sz": 4,
                                     "w:val": "single",
                                 },
@@ -241,7 +223,7 @@ describe("TableBorders", () => {
                     bottom: {
                         style: BorderStyle.DOUBLE,
                         size: 1,
-                        color: "red",
+                        color: "ff0000",
                     },
                 });
                 const tree = new Formatter().format(tableBorders);
@@ -252,7 +234,6 @@ describe("TableBorders", () => {
                             "w:top": {
                                 _attr: {
                                     "w:color": "auto",
-                                    "w:space": 0,
                                     "w:sz": 4,
                                     "w:val": "single",
                                 },
@@ -262,7 +243,6 @@ describe("TableBorders", () => {
                             "w:left": {
                                 _attr: {
                                     "w:color": "auto",
-                                    "w:space": 0,
                                     "w:sz": 4,
                                     "w:val": "single",
                                 },
@@ -271,8 +251,7 @@ describe("TableBorders", () => {
                         {
                             "w:bottom": {
                                 _attr: {
-                                    "w:color": "red",
-                                    "w:space": 0,
+                                    "w:color": "ff0000",
                                     "w:sz": 1,
                                     "w:val": "double",
                                 },
@@ -282,7 +261,6 @@ describe("TableBorders", () => {
                             "w:right": {
                                 _attr: {
                                     "w:color": "auto",
-                                    "w:space": 0,
                                     "w:sz": 4,
                                     "w:val": "single",
                                 },
@@ -292,7 +270,6 @@ describe("TableBorders", () => {
                             "w:insideH": {
                                 _attr: {
                                     "w:color": "auto",
-                                    "w:space": 0,
                                     "w:sz": 4,
                                     "w:val": "single",
                                 },
@@ -302,7 +279,6 @@ describe("TableBorders", () => {
                             "w:insideV": {
                                 _attr: {
                                     "w:color": "auto",
-                                    "w:space": 0,
                                     "w:sz": 4,
                                     "w:val": "single",
                                 },
@@ -319,7 +295,7 @@ describe("TableBorders", () => {
                     right: {
                         style: BorderStyle.DOUBLE,
                         size: 1,
-                        color: "red",
+                        color: "ff0000",
                     },
                 });
                 const tree = new Formatter().format(tableBorders);
@@ -330,7 +306,6 @@ describe("TableBorders", () => {
                             "w:top": {
                                 _attr: {
                                     "w:color": "auto",
-                                    "w:space": 0,
                                     "w:sz": 4,
                                     "w:val": "single",
                                 },
@@ -340,7 +315,6 @@ describe("TableBorders", () => {
                             "w:left": {
                                 _attr: {
                                     "w:color": "auto",
-                                    "w:space": 0,
                                     "w:sz": 4,
                                     "w:val": "single",
                                 },
@@ -350,7 +324,6 @@ describe("TableBorders", () => {
                             "w:bottom": {
                                 _attr: {
                                     "w:color": "auto",
-                                    "w:space": 0,
                                     "w:sz": 4,
                                     "w:val": "single",
                                 },
@@ -359,8 +332,7 @@ describe("TableBorders", () => {
                         {
                             "w:right": {
                                 _attr: {
-                                    "w:color": "red",
-                                    "w:space": 0,
+                                    "w:color": "ff0000",
                                     "w:sz": 1,
                                     "w:val": "double",
                                 },
@@ -370,7 +342,6 @@ describe("TableBorders", () => {
                             "w:insideH": {
                                 _attr: {
                                     "w:color": "auto",
-                                    "w:space": 0,
                                     "w:sz": 4,
                                     "w:val": "single",
                                 },
@@ -380,7 +351,6 @@ describe("TableBorders", () => {
                             "w:insideV": {
                                 _attr: {
                                     "w:color": "auto",
-                                    "w:space": 0,
                                     "w:sz": 4,
                                     "w:val": "single",
                                 },
@@ -397,7 +367,7 @@ describe("TableBorders", () => {
                     insideHorizontal: {
                         style: BorderStyle.DOUBLE,
                         size: 1,
-                        color: "red",
+                        color: "ff0000",
                     },
                 });
                 const tree = new Formatter().format(tableBorders);
@@ -408,7 +378,6 @@ describe("TableBorders", () => {
                             "w:top": {
                                 _attr: {
                                     "w:color": "auto",
-                                    "w:space": 0,
                                     "w:sz": 4,
                                     "w:val": "single",
                                 },
@@ -418,7 +387,6 @@ describe("TableBorders", () => {
                             "w:left": {
                                 _attr: {
                                     "w:color": "auto",
-                                    "w:space": 0,
                                     "w:sz": 4,
                                     "w:val": "single",
                                 },
@@ -428,7 +396,6 @@ describe("TableBorders", () => {
                             "w:bottom": {
                                 _attr: {
                                     "w:color": "auto",
-                                    "w:space": 0,
                                     "w:sz": 4,
                                     "w:val": "single",
                                 },
@@ -438,7 +405,6 @@ describe("TableBorders", () => {
                             "w:right": {
                                 _attr: {
                                     "w:color": "auto",
-                                    "w:space": 0,
                                     "w:sz": 4,
                                     "w:val": "single",
                                 },
@@ -447,8 +413,7 @@ describe("TableBorders", () => {
                         {
                             "w:insideH": {
                                 _attr: {
-                                    "w:color": "red",
-                                    "w:space": 0,
+                                    "w:color": "ff0000",
                                     "w:sz": 1,
                                     "w:val": "double",
                                 },
@@ -458,7 +423,6 @@ describe("TableBorders", () => {
                             "w:insideV": {
                                 _attr: {
                                     "w:color": "auto",
-                                    "w:space": 0,
                                     "w:sz": 4,
                                     "w:val": "single",
                                 },
@@ -475,7 +439,7 @@ describe("TableBorders", () => {
                     insideVertical: {
                         style: BorderStyle.DOUBLE,
                         size: 1,
-                        color: "red",
+                        color: "ff0000",
                     },
                 });
                 const tree = new Formatter().format(tableBorders);
@@ -486,7 +450,6 @@ describe("TableBorders", () => {
                             "w:top": {
                                 _attr: {
                                     "w:color": "auto",
-                                    "w:space": 0,
                                     "w:sz": 4,
                                     "w:val": "single",
                                 },
@@ -496,7 +459,6 @@ describe("TableBorders", () => {
                             "w:left": {
                                 _attr: {
                                     "w:color": "auto",
-                                    "w:space": 0,
                                     "w:sz": 4,
                                     "w:val": "single",
                                 },
@@ -506,7 +468,6 @@ describe("TableBorders", () => {
                             "w:bottom": {
                                 _attr: {
                                     "w:color": "auto",
-                                    "w:space": 0,
                                     "w:sz": 4,
                                     "w:val": "single",
                                 },
@@ -516,7 +477,6 @@ describe("TableBorders", () => {
                             "w:right": {
                                 _attr: {
                                     "w:color": "auto",
-                                    "w:space": 0,
                                     "w:sz": 4,
                                     "w:val": "single",
                                 },
@@ -526,7 +486,6 @@ describe("TableBorders", () => {
                             "w:insideH": {
                                 _attr: {
                                     "w:color": "auto",
-                                    "w:space": 0,
                                     "w:sz": 4,
                                     "w:val": "single",
                                 },
@@ -535,8 +494,7 @@ describe("TableBorders", () => {
                         {
                             "w:insideV": {
                                 _attr: {
-                                    "w:color": "red",
-                                    "w:space": 0,
+                                    "w:color": "ff0000",
                                     "w:sz": 1,
                                     "w:val": "double",
                                 },
@@ -558,7 +516,6 @@ describe("TableBorders", () => {
                             "w:top": {
                                 _attr: {
                                     "w:color": "auto",
-                                    "w:space": 0,
                                     "w:sz": 0,
                                     "w:val": "none",
                                 },
@@ -568,7 +525,6 @@ describe("TableBorders", () => {
                             "w:left": {
                                 _attr: {
                                     "w:color": "auto",
-                                    "w:space": 0,
                                     "w:sz": 0,
                                     "w:val": "none",
                                 },
@@ -578,7 +534,6 @@ describe("TableBorders", () => {
                             "w:bottom": {
                                 _attr: {
                                     "w:color": "auto",
-                                    "w:space": 0,
                                     "w:sz": 0,
                                     "w:val": "none",
                                 },
@@ -588,7 +543,6 @@ describe("TableBorders", () => {
                             "w:right": {
                                 _attr: {
                                     "w:color": "auto",
-                                    "w:space": 0,
                                     "w:sz": 0,
                                     "w:val": "none",
                                 },
@@ -598,7 +552,6 @@ describe("TableBorders", () => {
                             "w:insideH": {
                                 _attr: {
                                     "w:color": "auto",
-                                    "w:space": 0,
                                     "w:sz": 0,
                                     "w:val": "none",
                                 },
@@ -608,7 +561,6 @@ describe("TableBorders", () => {
                             "w:insideV": {
                                 _attr: {
                                     "w:color": "auto",
-                                    "w:space": 0,
                                     "w:sz": 0,
                                     "w:val": "none",
                                 },

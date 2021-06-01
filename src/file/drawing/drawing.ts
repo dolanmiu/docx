@@ -15,6 +15,13 @@ export interface IDrawingOptions {
     readonly floating?: IFloating;
 }
 
+// <xsd:complexType name="CT_Drawing">
+// <xsd:choice minOccurs="1" maxOccurs="unbounded">
+//   <xsd:element ref="wp:anchor" minOccurs="0"/>
+//   <xsd:element ref="wp:inline" minOccurs="0"/>
+// </xsd:choice>
+// </xsd:complexType>
+
 export class Drawing extends XmlComponent {
     private readonly inline: Inline;
 
@@ -27,9 +34,5 @@ export class Drawing extends XmlComponent {
         } else {
             this.root.push(new Anchor(imageData, imageData.transformation, drawingOptions));
         }
-    }
-
-    public scale(factorX: number, factorY: number): void {
-        this.inline.scale(factorX, factorY);
     }
 }

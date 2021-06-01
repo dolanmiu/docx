@@ -8,11 +8,25 @@ import { GraphicFrameProperties } from "./../graphic-frame/graphic-frame-propert
 import { Graphic } from "./../inline/graphic";
 import { InlineAttributes } from "./inline-attributes";
 
+// <xsd:complexType name="CT_Inline">
+//     <xsd:sequence>
+//         <xsd:element name="extent" type="a:CT_PositiveSize2D"/>
+//         <xsd:element name="effectExtent" type="CT_EffectExtent" minOccurs="0"/>
+//         <xsd:element name="docPr" type="a:CT_NonVisualDrawingProps" minOccurs="1" maxOccurs="1"/>
+//         <xsd:element name="cNvGraphicFramePr" type="a:CT_NonVisualGraphicFrameProperties"
+//             minOccurs="0" maxOccurs="1"/>
+//         <xsd:element ref="a:graphic" minOccurs="1" maxOccurs="1"/>
+//     </xsd:sequence>
+//     <xsd:attribute name="distT" type="ST_WrapDistance" use="optional"/>
+//     <xsd:attribute name="distB" type="ST_WrapDistance" use="optional"/>
+//     <xsd:attribute name="distL" type="ST_WrapDistance" use="optional"/>
+//     <xsd:attribute name="distR" type="ST_WrapDistance" use="optional"/>
+// </xsd:complexType>
 export class Inline extends XmlComponent {
     private readonly extent: Extent;
     private readonly graphic: Graphic;
 
-    constructor(mediaData: IMediaData, private readonly transform: IMediaDataTransformation) {
+    constructor(mediaData: IMediaData, transform: IMediaDataTransformation) {
         super("wp:inline");
 
         this.root.push(
@@ -32,13 +46,5 @@ export class Inline extends XmlComponent {
         this.root.push(new DocProperties());
         this.root.push(new GraphicFrameProperties());
         this.root.push(this.graphic);
-    }
-
-    public scale(factorX: number, factorY: number): void {
-        const newX = Math.round(this.transform.emus.x * factorX);
-        const newY = Math.round(this.transform.emus.y * factorY);
-
-        this.extent.setXY(newX, newY);
-        this.graphic.setXY(newX, newY);
     }
 }

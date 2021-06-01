@@ -15,11 +15,4 @@ export class Extent extends XmlComponent {
 
         this.root.push(this.attributes);
     }
-
-    public setXY(x: number, y: number): void {
-        this.attributes.set({
-            cx: x,
-            cy: y,
-        });
-    }
 }

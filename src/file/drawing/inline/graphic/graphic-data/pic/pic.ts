@@ -8,8 +8,6 @@ import { PicAttributes } from "./pic-attributes";
 import { ShapeProperties } from "./shape-properties/shape-properties";
 
 export class Pic extends XmlComponent {
-    private readonly shapeProperties: ShapeProperties;
-
     constructor(mediaData: IMediaData, transform: IMediaDataTransformation) {
         super("pic:pic");
 
@@ -19,14 +17,8 @@ export class Pic extends XmlComponent {
             }),
         );
 
-        this.shapeProperties = new ShapeProperties(transform);
-
         this.root.push(new NonVisualPicProperties());
         this.root.push(new BlipFill(mediaData));
         this.root.push(new ShapeProperties(transform));
-    }
-
-    public setXY(x: number, y: number): void {
-        this.shapeProperties.setXY(x, y);
     }
 }

@@ -2,18 +2,35 @@ import { expect } from "chai";
 
 import { Formatter } from "export/formatter";
 
-import { Bold } from "./formatting";
+import { CharacterSpacing, Color } from "./formatting";
 
-describe("Bold", () => {
+describe("CharacterSpacing", () => {
     describe("#constructor()", () => {
         it("should create", () => {
-            const currentBold = new Bold();
+            const element = new CharacterSpacing(32);
 
-            const tree = new Formatter().format(currentBold);
+            const tree = new Formatter().format(element);
             expect(tree).to.deep.equal({
-                "w:b": {
+                "w:spacing": {
                     _attr: {
-                        "w:val": true,
+                        "w:val": 32,
+                    },
+                },
+            });
+        });
+    });
+});
+
+describe("Color", () => {
+    describe("#constructor()", () => {
+        it("should create", () => {
+            const element = new Color("#FFFFFF");
+
+            const tree = new Formatter().format(element);
+            expect(tree).to.deep.equal({
+                "w:color": {
+                    _attr: {
+                        "w:val": "FFFFFF",
                     },
                 },
             });

@@ -1,8 +1,7 @@
 import * as JSZip from "jszip";
 import { Element as XMLElement, ElementCompact as XMLElementCompact, xml2js } from "xml-js";
 
-import { FooterReferenceType } from "file/document/body/section-properties/footer-reference";
-import { HeaderReferenceType } from "file/document/body/section-properties/header-reference";
+import { HeaderFooterReferenceType } from "file/document/body/section-properties";
 import { FooterWrapper, IDocumentFooter } from "file/footer-wrapper";
 import { HeaderWrapper, IDocumentHeader } from "file/header-wrapper";
 import { Media } from "file/media";
@@ -17,8 +16,8 @@ const schemeToType = {
 };
 
 interface IDocumentRefs {
-    readonly headers: { readonly id: number; readonly type: HeaderReferenceType }[];
-    readonly footers: { readonly id: number; readonly type: FooterReferenceType }[];
+    readonly headers: { readonly id: number; readonly type: HeaderFooterReferenceType }[];
+    readonly footers: { readonly id: number; readonly type: HeaderFooterReferenceType }[];
 }
 
 enum RelationshipType {
@@ -219,7 +218,7 @@ export class ImportDotx {
                 throw Error("header referecne element has no attributes");
             }
             return {
-                type: item._attributes["w:type"] as HeaderReferenceType,
+                type: item._attributes["w:type"] as HeaderFooterReferenceType,
                 id: this.parseRefId(item._attributes["r:id"] as string),
             };
         });
@@ -239,7 +238,7 @@ export class ImportDotx {
                 throw Error("footer referecne element has no attributes");
             }
             return {
-                type: item._attributes["w:type"] as FooterReferenceType,
+                type: item._attributes["w:type"] as HeaderFooterReferenceType,
                 id: this.parseRefId(item._attributes["r:id"] as string),
             };
         });

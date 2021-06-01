@@ -37,8 +37,4 @@ export class Form extends XmlComponent {
         this.root.push(new Offset());
         this.root.push(this.extents);
     }
-
-    public setXY(x: number, y: number): void {
-        this.extents.setXY(x, y);
-    }
 }

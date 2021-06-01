@@ -49,5 +49,9 @@ describe("VerticalPosition", () => {
                 ],
             });
         });
+
+        it("should require one of align or offset", () => {
+            expect(() => new VerticalPosition({})).to.throw();
+        });
     });
 });

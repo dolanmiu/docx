@@ -5,7 +5,7 @@ import { EMPTY_OBJECT } from "file/xml-components";
 
 import { AlignmentType, EmphasisMarkType, TabStopPosition } from "../paragraph";
 import { UnderlineType } from "../paragraph/run/underline";
-import { ShadingType } from "../table";
+import { ShadingType } from "../shading";
 import { AbstractNumbering } from "./abstract-numbering";
 import { LevelFormat, LevelSuffix } from "./level";
 
@@ -351,7 +351,7 @@ describe("AbstractNumbering", () => {
                 ]);
                 const tree = new Formatter().format(abstractNumbering);
                 expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({
-                    "w:rPr": [{ "w:smallCaps": { _attr: { "w:val": true } } }],
+                    "w:rPr": [{ "w:smallCaps": {} }],
                 });
             });
 
@@ -370,7 +370,7 @@ describe("AbstractNumbering", () => {
                 ]);
                 const tree = new Formatter().format(abstractNumbering);
                 expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({
-                    "w:rPr": [{ "w:caps": { _attr: { "w:val": true } } }],
+                    "w:rPr": [{ "w:caps": {} }],
                 });
             });
 
@@ -390,7 +390,7 @@ describe("AbstractNumbering", () => {
 
                 const tree = new Formatter().format(abstractNumbering);
                 expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({
-                    "w:rPr": [{ "w:strike": { _attr: { "w:val": true } } }],
+                    "w:rPr": [{ "w:strike": {} }],
                 });
             });
 
@@ -409,7 +409,7 @@ describe("AbstractNumbering", () => {
                 ]);
                 const tree = new Formatter().format(abstractNumbering);
                 expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({
-                    "w:rPr": [{ "w:dstrike": { _attr: { "w:val": true } } }],
+                    "w:rPr": [{ "w:dstrike": {} }],
                 });
             });
 
@@ -515,17 +515,17 @@ describe("AbstractNumbering", () => {
             const boldTests = [
                 {
                     bold: true,
-                    expected: [{ "w:b": { _attr: { "w:val": true } } }, { "w:bCs": { _attr: { "w:val": true } } }],
+                    expected: [{ "w:b": {} }, { "w:bCs": {} }],
                 },
                 {
                     bold: true,
                     boldComplexScript: true,
-                    expected: [{ "w:b": { _attr: { "w:val": true } } }, { "w:bCs": { _attr: { "w:val": true } } }],
+                    expected: [{ "w:b": {} }, { "w:bCs": {} }],
                 },
                 {
                     bold: true,
                     boldComplexScript: false,
-                    expected: [{ "w:b": { _attr: { "w:val": true } } }],
+                    expected: [{ "w:b": {} }],
                 },
             ];
             boldTests.forEach(({ bold, boldComplexScript, expected }) => {
@@ -548,17 +548,17 @@ describe("AbstractNumbering", () => {
             const italicsTests = [
                 {
                     italics: true,
-                    expected: [{ "w:i": { _attr: { "w:val": true } } }, { "w:iCs": { _attr: { "w:val": true } } }],
+                    expected: [{ "w:i": {} }, { "w:iCs": {} }],
                 },
                 {
                     italics: true,
                     italicsComplexScript: true,
-                    expected: [{ "w:i": { _attr: { "w:val": true } } }, { "w:iCs": { _attr: { "w:val": true } } }],
+                    expected: [{ "w:i": {} }, { "w:iCs": {} }],
                 },
                 {
                     italics: true,
                     italicsComplexScript: false,
-                    expected: [{ "w:i": { _attr: { "w:val": true } } }],
+                    expected: [{ "w:i": {} }],
                 },
             ];
             italicsTests.forEach(({ italics, italicsComplexScript, expected }) => {
@@ -618,36 +618,12 @@ describe("AbstractNumbering", () => {
 
             const shadingTests = [
                 {
-                    shadow: {
-                        type: ShadingType.PERCENT_10,
-                        fill: "00FFFF",
-                        color: "FF0000",
-                    },
-                    expected: [{ "w:shd": { _attr: { "w:val": "pct10", "w:fill": "00FFFF", "w:color": "FF0000" } } }],
-                },
-                {
                     shading: {
-                        type: ShadingType.PERCENT_10,
-                        fill: "00FFFF",
-                        color: "FF0000",
+                        type: ShadingType.DIAGONAL_STRIPE,
+                        fill: "006622",
+                        color: "0000FF",
                     },
-                    expected: [{ "w:shd": { _attr: { "w:val": "pct10", "w:fill": "00FFFF", "w:color": "FF0000" } } }],
-                },
-                {
-                    shading: {
-                        type: ShadingType.PERCENT_10,
-                        fill: "00FFFF",
-                        color: "FF0000",
-                    },
-                    expected: [{ "w:shd": { _attr: { "w:val": "pct10", "w:fill": "00FFFF", "w:color": "FF0000" } } }],
-                },
-                {
-                    shading: {
-                        type: ShadingType.PERCENT_10,
-                        fill: "00FFFF",
-                        color: "FF0000",
-                    },
-                    expected: [{ "w:shd": { _attr: { "w:val": "pct10", "w:fill": "00FFFF", "w:color": "FF0000" } } }],
+                    expected: [{ "w:shd": { _attr: { "w:val": "diagStripe", "w:fill": "006622", "w:color": "0000FF" } } }],
                 },
                 {
                     shading: {
@@ -658,15 +634,15 @@ describe("AbstractNumbering", () => {
                     expected: [{ "w:shd": { _attr: { "w:val": "pct10", "w:fill": "00FFFF", "w:color": "FF0000" } } }],
                 },
             ];
-            shadingTests.forEach(({ shadow, shading, expected }) => {
-                it("#shadow correctly", () => {
+            shadingTests.forEach(({ shading, expected }) => {
+                it("#shade correctly", () => {
                     const abstractNumbering = new AbstractNumbering(1, [
                         {
                             level: 0,
                             format: LevelFormat.LOWER_ROMAN,
                             text: "%0.",
                             style: {
-                                run: { shadow, shading },
+                                run: { shading },
                             },
                         },
                     ]);

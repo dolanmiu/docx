@@ -11,6 +11,31 @@ import { Extent } from "./../extent/extent";
 import { GraphicFrameProperties } from "./../graphic-frame/graphic-frame-properties";
 import { AnchorAttributes } from "./anchor-attributes";
 
+// <xsd:complexType name="CT_Anchor">
+//     <xsd:sequence>
+//         <xsd:element name="simplePos" type="a:CT_Point2D"/>
+//         <xsd:element name="positionH" type="CT_PosH"/>
+//         <xsd:element name="positionV" type="CT_PosV"/>
+//         <xsd:element name="extent" type="a:CT_PositiveSize2D"/>
+//         <xsd:element name="effectExtent" type="CT_EffectExtent" minOccurs="0"/>
+//         <xsd:group ref="EG_WrapType"/>
+//         <xsd:element name="docPr" type="a:CT_NonVisualDrawingProps" minOccurs="1" maxOccurs="1"/>
+//         <xsd:element name="cNvGraphicFramePr" type="a:CT_NonVisualGraphicFrameProperties"
+//             minOccurs="0" maxOccurs="1"/>
+//         <xsd:element ref="a:graphic" minOccurs="1" maxOccurs="1"/>
+//     </xsd:sequence>
+//     <xsd:attribute name="distT" type="ST_WrapDistance" use="optional"/>
+//     <xsd:attribute name="distB" type="ST_WrapDistance" use="optional"/>
+//     <xsd:attribute name="distL" type="ST_WrapDistance" use="optional"/>
+//     <xsd:attribute name="distR" type="ST_WrapDistance" use="optional"/>
+//     <xsd:attribute name="simplePos" type="xsd:boolean"/>
+//     <xsd:attribute name="relativeHeight" type="xsd:unsignedInt" use="required"/>
+//     <xsd:attribute name="behindDoc" type="xsd:boolean" use="required"/>
+//     <xsd:attribute name="locked" type="xsd:boolean" use="required"/>
+//     <xsd:attribute name="layoutInCell" type="xsd:boolean" use="required"/>
+//     <xsd:attribute name="hidden" type="xsd:boolean" use="optional"/>
+//     <xsd:attribute name="allowOverlap" type="xsd:boolean" use="required"/>
+// </xsd:complexType>
 export class Anchor extends XmlComponent {
     constructor(mediaData: IMediaData, transform: IMediaDataTransformation, drawingOptions: IDrawingOptions) {
         super("wp:anchor");

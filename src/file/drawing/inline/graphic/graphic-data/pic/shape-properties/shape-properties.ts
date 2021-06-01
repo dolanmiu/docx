@@ -26,8 +26,4 @@ export class ShapeProperties extends XmlComponent {
         // this.root.push(new NoFill());
         // this.root.push(new Outline());
     }
-
-    public setXY(x: number, y: number): void {
-        this.form.setXY(x, y);
-    }
 }

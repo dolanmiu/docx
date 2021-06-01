@@ -3,7 +3,7 @@ import { expect } from "chai";
 import { Formatter } from "export/formatter";
 import { AlignmentType, EmphasisMarkType, TabStopPosition } from "file/paragraph";
 import { UnderlineType } from "file/paragraph/run/underline";
-import { ShadingType } from "file/table";
+import { ShadingType } from "file/shading";
 import { EMPTY_OBJECT } from "file/xml-components";
 
 import { StyleForParagraph } from "./paragraph-style";
@@ -78,7 +78,7 @@ describe("ParagraphStyle", () => {
             const style = new StyleForParagraph({
                 id: "myStyleId",
                 paragraph: {
-                    indent: { left: 720 },
+                    indent: { left: 720, right: 500 },
                 },
             });
             const tree = new Formatter().format(style);
@@ -86,7 +86,7 @@ describe("ParagraphStyle", () => {
                 "w:style": [
                     { _attr: { "w:type": "paragraph", "w:styleId": "myStyleId" } },
                     {
-                        "w:pPr": [{ "w:ind": { _attr: { "w:left": 720 } } }],
+                        "w:pPr": [{ "w:ind": { _attr: { "w:left": 720, "w:right": 500 } } }],
                     },
                 ],
             });
@@ -242,11 +242,7 @@ describe("ParagraphStyle", () => {
                     {
                         "w:pPr": [
                             {
-                                "w:contextualSpacing": {
-                                    _attr: {
-                                        "w:val": 1,
-                                    },
-                                },
+                                "w:contextualSpacing": {},
                             },
                         ],
                     },
@@ -404,7 +400,7 @@ describe("ParagraphStyle", () => {
                 "w:style": [
                     { _attr: { "w:type": "paragraph", "w:styleId": "myStyleId" } },
                     {
-                        "w:rPr": [{ "w:smallCaps": { _attr: { "w:val": true } } }],
+                        "w:rPr": [{ "w:smallCaps": {} }],
                     },
                 ],
             });
@@ -422,7 +418,7 @@ describe("ParagraphStyle", () => {
                 "w:style": [
                     { _attr: { "w:type": "paragraph", "w:styleId": "myStyleId" } },
                     {
-                        "w:rPr": [{ "w:caps": { _attr: { "w:val": true } } }],
+                        "w:rPr": [{ "w:caps": {} }],
                     },
                 ],
             });
@@ -440,7 +436,7 @@ describe("ParagraphStyle", () => {
                 "w:style": [
                     { _attr: { "w:type": "paragraph", "w:styleId": "myStyleId" } },
                     {
-                        "w:rPr": [{ "w:strike": { _attr: { "w:val": true } } }],
+                        "w:rPr": [{ "w:strike": {} }],
                     },
                 ],
             });
@@ -458,7 +454,7 @@ describe("ParagraphStyle", () => {
                 "w:style": [
                     { _attr: { "w:type": "paragraph", "w:styleId": "myStyleId" } },
                     {
-                        "w:rPr": [{ "w:dstrike": { _attr: { "w:val": true } } }],
+                        "w:rPr": [{ "w:dstrike": {} }],
                     },
                 ],
             });
@@ -562,17 +558,17 @@ describe("ParagraphStyle", () => {
         const boldTests = [
             {
                 bold: true,
-                expected: [{ "w:b": { _attr: { "w:val": true } } }, { "w:bCs": { _attr: { "w:val": true } } }],
+                expected: [{ "w:b": {} }, { "w:bCs": {} }],
             },
             {
                 bold: true,
                 boldComplexScript: true,
-                expected: [{ "w:b": { _attr: { "w:val": true } } }, { "w:bCs": { _attr: { "w:val": true } } }],
+                expected: [{ "w:b": {} }, { "w:bCs": {} }],
             },
             {
                 bold: true,
                 boldComplexScript: false,
-                expected: [{ "w:b": { _attr: { "w:val": true } } }],
+                expected: [{ "w:b": {} }],
             },
         ];
         boldTests.forEach(({ bold, boldComplexScript, expected }) => {
@@ -591,17 +587,17 @@ describe("ParagraphStyle", () => {
         const italicsTests = [
             {
                 italics: true,
-                expected: [{ "w:i": { _attr: { "w:val": true } } }, { "w:iCs": { _attr: { "w:val": true } } }],
+                expected: [{ "w:i": {} }, { "w:iCs": {} }],
             },
             {
                 italics: true,
                 italicsComplexScript: true,
-                expected: [{ "w:i": { _attr: { "w:val": true } } }, { "w:iCs": { _attr: { "w:val": true } } }],
+                expected: [{ "w:i": {} }, { "w:iCs": {} }],
             },
             {
                 italics: true,
                 italicsComplexScript: false,
-                expected: [{ "w:i": { _attr: { "w:val": true } } }],
+                expected: [{ "w:i": {} }],
             },
         ];
         italicsTests.forEach(({ italics, italicsComplexScript, expected }) => {
@@ -653,14 +649,6 @@ describe("ParagraphStyle", () => {
 
         const shadingTests = [
             {
-                shadow: {
-                    type: ShadingType.PERCENT_10,
-                    fill: "00FFFF",
-                    color: "FF0000",
-                },
-                expected: [{ "w:shd": { _attr: { "w:val": "pct10", "w:fill": "00FFFF", "w:color": "FF0000" } } }],
-            },
-            {
                 shading: {
                     type: ShadingType.PERCENT_10,
                     fill: "00FFFF",
@@ -670,34 +658,18 @@ describe("ParagraphStyle", () => {
             },
             {
                 shading: {
-                    type: ShadingType.PERCENT_10,
-                    fill: "00FFFF",
-                    color: "FF0000",
+                    type: ShadingType.DIAGONAL_CROSS,
+                    fill: "0066FF",
+                    color: "0000FF",
                 },
-                expected: [{ "w:shd": { _attr: { "w:val": "pct10", "w:fill": "00FFFF", "w:color": "FF0000" } } }],
-            },
-            {
-                shading: {
-                    type: ShadingType.PERCENT_10,
-                    fill: "00FFFF",
-                    color: "FF0000",
-                },
-                expected: [{ "w:shd": { _attr: { "w:val": "pct10", "w:fill": "00FFFF", "w:color": "FF0000" } } }],
-            },
-            {
-                shading: {
-                    type: ShadingType.PERCENT_10,
-                    fill: "00FFFF",
-                    color: "FF0000",
-                },
-                expected: [{ "w:shd": { _attr: { "w:val": "pct10", "w:fill": "00FFFF", "w:color": "FF0000" } } }],
+                expected: [{ "w:shd": { _attr: { "w:val": "diagCross", "w:fill": "0066FF", "w:color": "0000FF" } } }],
             },
         ];
-        shadingTests.forEach(({ shadow, shading, expected }) => {
-            it("#shadow correctly", () => {
+        shadingTests.forEach(({ shading, expected }) => {
+            it("#shade correctly", () => {
                 const style = new StyleForParagraph({
                     id: "myStyleId",
-                    run: { shadow, shading },
+                    run: { shading },
                 });
                 const tree = new Formatter().format(style);
                 expect(tree).to.deep.equal({

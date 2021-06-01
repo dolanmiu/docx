@@ -36,17 +36,17 @@ const doc = new Document({
                                         top: {
                                             style: BorderStyle.DASH_DOT_STROKED,
                                             size: 3,
-                                            color: "red",
+                                            color: "FF0000",
                                         },
                                         bottom: {
                                             style: BorderStyle.DOUBLE,
                                             size: 3,
-                                            color: "blue",
+                                            color: "0000FF",
                                         },
                                         left: {
                                             style: BorderStyle.DASH_DOT_STROKED,
                                             size: 3,
-                                            color: "green",
+                                            color: "00FF00",
                                         },
                                         right: {
                                             style: BorderStyle.DASH_DOT_STROKED,

@@ -1,3 +1,4 @@
+import { decimalNumber } from "file/values";
 import { Attributes, XmlAttributeComponent, XmlComponent } from "file/xml-components";
 
 class AbstractNumId extends XmlComponent {
@@ -28,6 +29,17 @@ export interface IConcreteNumberingOptions {
     };
 }
 
+// <xsd:complexType name="CT_Numbering">
+//     ...
+//     <xsd:element name="num" type="CT_Num" minOccurs="0" maxOccurs="unbounded"/>
+
+//         <xsd:complexType name="CT_Num">
+//             <xsd:sequence>
+//                 <xsd:element name="abstractNumId" type="CT_DecimalNumber" minOccurs="1"/>
+//                 <xsd:element name="lvlOverride" type="CT_NumLvl" minOccurs="0" maxOccurs="9"/>
+//             </xsd:sequence>
+//             <xsd:attribute name="numId" type="ST_DecimalNumber" use="required"/>
+//         </xsd:complexType>
 export class ConcreteNumbering extends XmlComponent {
     public readonly numId: number;
     public readonly reference: string;
@@ -42,11 +54,11 @@ export class ConcreteNumbering extends XmlComponent {
 
         this.root.push(
             new NumAttributes({
-                numId: options.numId,
+                numId: decimalNumber(options.numId),
             }),
         );
 
-        this.root.push(new AbstractNumId(options.abstractNumId));
+        this.root.push(new AbstractNumId(decimalNumber(options.abstractNumId)));
 
         if (options.overrideLevel) {
             this.root.push(new LevelOverride(options.overrideLevel.num, options.overrideLevel.start));

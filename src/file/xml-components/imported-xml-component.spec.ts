@@ -20,28 +20,24 @@ const xmlString = `
     `;
 
 const convertedXmlElement = {
-    deleted: false,
     root: [
         {
-            deleted: false,
             rootKey: "w:p",
             root: [
-                { deleted: false, rootKey: "_attr", root: { "w:one": "value 1", "w:two": "value 2" } },
-                { deleted: false, rootKey: "w:rPr", root: [{ deleted: false, rootKey: "w:noProof", root: ["some value"] }] },
+                { rootKey: "_attr", root: { "w:one": "value 1", "w:two": "value 2" } },
+                { rootKey: "w:rPr", root: [{ rootKey: "w:noProof", root: ["some value"] }] },
                 {
-                    deleted: false,
                     rootKey: "w:r",
                     root: [
-                        { deleted: false, rootKey: "_attr", root: { active: "true" } },
-                        { deleted: false, rootKey: "w:t", root: ["Text 1"] },
+                        { rootKey: "_attr", root: { active: "true" } },
+                        { rootKey: "w:t", root: ["Text 1"] },
                     ],
                 },
                 {
-                    deleted: false,
                     rootKey: "w:r",
                     root: [
-                        { deleted: false, rootKey: "_attr", root: { active: "true" } },
-                        { deleted: false, rootKey: "w:t", root: ["Text 2"] },
+                        { rootKey: "_attr", root: { active: "true" } },
+                        { rootKey: "w:t", root: ["Text 2"] },
                     ],
                 },
             ],

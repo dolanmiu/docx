@@ -1,7 +1,7 @@
 // Example how to display page numbers
 // Import from 'docx' rather than '../build' if you install from npm
 import * as fs from "fs";
-import { AlignmentType, Document, Footer, Header, Packer, PageBreak, PageNumber, PageNumberFormat, Paragraph, TextRun } from "../build";
+import { AlignmentType, Document, Footer, Header, Packer, PageBreak, PageNumber, NumberFormat, Paragraph, TextRun } from "../build";
 
 const doc = new Document({
     sections: [
@@ -10,7 +10,7 @@ const doc = new Document({
                 page: {
                     pageNumbers: {
                         start: 1,
-                        formatType: PageNumberFormat.DECIMAL,
+                        formatType: NumberFormat.DECIMAL,
                     },
                 },
             },

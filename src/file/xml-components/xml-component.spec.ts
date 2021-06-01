@@ -1,41 +1,62 @@
 import { expect } from "chai";
 
 import { Formatter } from "export/formatter";
-import { EMPTY_OBJECT, XmlComponent } from "./";
-import { IContext } from "./base";
+import { Attributes, BaseXmlComponent, XmlComponent } from "./";
 
-class TestComponent extends XmlComponent {}
+class TestComponent extends XmlComponent {
+    public push(el: BaseXmlComponent): void {
+        this.root.push(el);
+    }
+}
 
 describe("XmlComponent", () => {
-    let xmlComponent: TestComponent;
-
-    beforeEach(() => {
-        xmlComponent = new TestComponent("w:test");
-    });
-
     describe("#constructor()", () => {
         it("should create an Xml Component which has the correct rootKey", () => {
+            const xmlComponent = new TestComponent("w:test");
             const tree = new Formatter().format(xmlComponent);
             expect(tree).to.deep.equal({
                 "w:test": {},
             });
         });
-    });
+        it("should handle children elements", () => {
+            const xmlComponent = new TestComponent("w:test");
+            xmlComponent.push(
+                new Attributes({
+                    val: "test",
+                }),
+            );
+            xmlComponent.push(new TestComponent("innerTest"));
 
-    describe("#prepForXml()", () => {
-        it("should skip deleted elements", () => {
-            const child = new TestComponent("w:test1");
-            child.delete();
-            xmlComponent.addChildElement(child);
+            const tree = new Formatter().format(xmlComponent);
+            expect(tree).to.deep.equal({
+                "w:test": [
+                    {
+                        _attr: {
+                            "w:val": "test",
+                        },
+                    },
+                    {
+                        innerTest: {},
+                    },
+                ],
+            });
+        });
+        it("should hoist attrs if only attrs are present", () => {
+            const xmlComponent = new TestComponent("w:test");
+            xmlComponent.push(
+                new Attributes({
+                    val: "test",
+                }),
+            );
 
-            // tslint:disable-next-line: no-object-literal-type-assertion
-            const xml = xmlComponent.prepForXml({} as IContext);
-
-            if (!xml) {
-                return;
-            }
-
-            expect(xml["w:test"]).to.deep.equal(EMPTY_OBJECT);
+            const tree = new Formatter().format(xmlComponent);
+            expect(tree).to.deep.equal({
+                "w:test": {
+                    _attr: {
+                        "w:val": "test",
+                    },
+                },
+            });
         });
     });
 });

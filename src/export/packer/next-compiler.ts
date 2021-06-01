@@ -70,7 +70,6 @@ export class Compiler {
     }
 
     private xmlifyFile(file: File, prettify?: boolean): IXmlifyedFileMapping {
-        file.verifyUpdateFields();
         const documentRelationshipCount = file.Document.Relationships.RelationshipCount + 1;
 
         const documentXmlData = xml(
@@ -78,7 +77,13 @@ export class Compiler {
                 viewWrapper: file.Document,
                 file,
             }),
-            prettify,
+            {
+                indent: prettify,
+                declaration: {
+                    standalone: "yes",
+                    encoding: "UTF-8",
+                },
+            },
         );
         const documentMediaDatas = this.imageReplacer.getMediaData(documentXmlData, file.Media);
 
@@ -98,7 +103,12 @@ export class Compiler {
                             viewWrapper: file.Document,
                             file,
                         }),
-                        prettify,
+                        {
+                            indent: prettify,
+                            declaration: {
+                                encoding: "UTF-8",
+                            },
+                        },
                     );
                 })(),
                 path: "word/_rels/document.xml.rels",
@@ -118,7 +128,13 @@ export class Compiler {
                         viewWrapper: file.Document,
                         file,
                     }),
-                    prettify,
+                    {
+                        indent: prettify,
+                        declaration: {
+                            standalone: "yes",
+                            encoding: "UTF-8",
+                        },
+                    },
                 ),
                 path: "word/styles.xml",
             },
@@ -129,6 +145,7 @@ export class Compiler {
                         file,
                     }),
                     {
+                        indent: prettify,
                         declaration: {
                             standalone: "yes",
                             encoding: "UTF-8",
@@ -143,7 +160,13 @@ export class Compiler {
                         viewWrapper: file.Document,
                         file,
                     }),
-                    prettify,
+                    {
+                        indent: prettify,
+                        declaration: {
+                            standalone: "yes",
+                            encoding: "UTF-8",
+                        },
+                    },
                 ),
                 path: "word/numbering.xml",
             },
@@ -153,7 +176,12 @@ export class Compiler {
                         viewWrapper: file.Document,
                         file,
                     }),
-                    prettify,
+                    {
+                        indent: prettify,
+                        declaration: {
+                            encoding: "UTF-8",
+                        },
+                    },
                 ),
                 path: "_rels/.rels",
             },
@@ -163,7 +191,12 @@ export class Compiler {
                         viewWrapper: headerWrapper,
                         file,
                     }),
-                    prettify,
+                    {
+                        indent: prettify,
+                        declaration: {
+                            encoding: "UTF-8",
+                        },
+                    },
                 );
                 const mediaDatas = this.imageReplacer.getMediaData(xmlData, file.Media);
 
@@ -181,7 +214,12 @@ export class Compiler {
                             viewWrapper: headerWrapper,
                             file,
                         }),
-                        prettify,
+                        {
+                            indent: prettify,
+                            declaration: {
+                                encoding: "UTF-8",
+                            },
+                        },
                     ),
                     path: `word/_rels/header${index + 1}.xml.rels`,
                 };
@@ -192,7 +230,12 @@ export class Compiler {
                         viewWrapper: footerWrapper,
                         file,
                     }),
-                    prettify,
+                    {
+                        indent: prettify,
+                        declaration: {
+                            encoding: "UTF-8",
+                        },
+                    },
                 );
                 const mediaDatas = this.imageReplacer.getMediaData(xmlData, file.Media);
 
@@ -210,7 +253,12 @@ export class Compiler {
                             viewWrapper: footerWrapper,
                             file,
                         }),
-                        prettify,
+                        {
+                            indent: prettify,
+                            declaration: {
+                                encoding: "UTF-8",
+                            },
+                        },
                     ),
                     path: `word/_rels/footer${index + 1}.xml.rels`,
                 };
@@ -221,7 +269,12 @@ export class Compiler {
                         viewWrapper: headerWrapper,
                         file,
                     }),
-                    prettify,
+                    {
+                        indent: prettify,
+                        declaration: {
+                            encoding: "UTF-8",
+                        },
+                    },
                 );
                 const mediaDatas = this.imageReplacer.getMediaData(tempXmlData, file.Media);
                 // TODO: 0 needs to be changed when headers get relationships of their own
@@ -238,7 +291,12 @@ export class Compiler {
                         viewWrapper: footerWrapper,
                         file,
                     }),
-                    prettify,
+                    {
+                        indent: prettify,
+                        declaration: {
+                            encoding: "UTF-8",
+                        },
+                    },
                 );
                 const mediaDatas = this.imageReplacer.getMediaData(tempXmlData, file.Media);
                 // TODO: 0 needs to be changed when headers get relationships of their own
@@ -255,7 +313,12 @@ export class Compiler {
                         viewWrapper: file.Document,
                         file,
                     }),
-                    prettify,
+                    {
+                        indent: prettify,
+                        declaration: {
+                            encoding: "UTF-8",
+                        },
+                    },
                 ),
                 path: "[Content_Types].xml",
             },
@@ -265,7 +328,13 @@ export class Compiler {
                         viewWrapper: file.Document,
                         file,
                     }),
-                    prettify,
+                    {
+                        indent: prettify,
+                        declaration: {
+                            standalone: "yes",
+                            encoding: "UTF-8",
+                        },
+                    },
                 ),
                 path: "docProps/custom.xml",
             },
@@ -275,7 +344,13 @@ export class Compiler {
                         viewWrapper: file.Document,
                         file,
                     }),
-                    prettify,
+                    {
+                        indent: prettify,
+                        declaration: {
+                            standalone: "yes",
+                            encoding: "UTF-8",
+                        },
+                    },
                 ),
                 path: "docProps/app.xml",
             },
@@ -285,7 +360,12 @@ export class Compiler {
                         viewWrapper: file.FootNotes,
                         file: file,
                     }),
-                    prettify,
+                    {
+                        indent: prettify,
+                        declaration: {
+                            encoding: "UTF-8",
+                        },
+                    },
                 ),
                 path: "word/footnotes.xml",
             },
@@ -295,7 +375,12 @@ export class Compiler {
                         viewWrapper: file.FootNotes,
                         file: file,
                     }),
-                    prettify,
+                    {
+                        indent: prettify,
+                        declaration: {
+                            encoding: "UTF-8",
+                        },
+                    },
                 ),
                 path: "word/_rels/footnotes.xml.rels",
             },
@@ -305,7 +390,13 @@ export class Compiler {
                         viewWrapper: file.Document,
                         file,
                     }),
-                    prettify,
+                    {
+                        indent: prettify,
+                        declaration: {
+                            standalone: "yes",
+                            encoding: "UTF-8",
+                        },
+                    },
                 ),
                 path: "word/settings.xml",
             },

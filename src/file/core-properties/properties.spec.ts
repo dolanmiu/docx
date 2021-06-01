@@ -27,8 +27,7 @@ describe("Properties", () => {
             const tree = new Formatter().format(properties);
             expect(Object.keys(tree)).to.deep.equal(["cp:coreProperties"]);
             expect(tree["cp:coreProperties"]).to.be.an.instanceof(Array);
-            expect(Object.keys(tree["cp:coreProperties"][0])).to.deep.equal(["_attr"]);
-            expect(tree["cp:coreProperties"][1]).to.deep.equal({ "dc:title": ["test document"] });
+            expect(tree["cp:coreProperties"]).to.deep.include({ "dc:title": ["test document"] });
         });
 
         it("should create properties with all the attributes given", () => {
@@ -44,9 +43,9 @@ describe("Properties", () => {
             const tree = new Formatter().format(properties);
             expect(Object.keys(tree)).to.deep.equal(["cp:coreProperties"]);
             expect(tree["cp:coreProperties"]).to.be.an.instanceof(Array);
+
             const key = (obj) => Object.keys(obj)[0];
-            const props = tree["cp:coreProperties"].map(key).sort();
-            expect(props).to.deep.equal([
+            expect(tree["cp:coreProperties"].map(key)).to.include.members([
                 "_attr",
                 "cp:keywords",
                 "cp:lastModifiedBy",
@@ -58,7 +57,7 @@ describe("Properties", () => {
                 "dcterms:created",
                 "dcterms:modified",
             ]);
-            expect(tree["cp:coreProperties"].slice(1, -2).sort((a, b) => (key(a) < key(b) ? -1 : 1))).to.deep.equal([
+            expect(tree["cp:coreProperties"]).to.deep.include.members([
                 { "cp:keywords": ["test docx"] },
                 { "cp:lastModifiedBy": ["the author"] },
                 { "cp:revision": ["123"] },

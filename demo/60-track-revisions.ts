@@ -20,10 +20,12 @@ import {
     - https://docs.microsoft.com/en-us/dotnet/api/documentformat.openxml.wordprocessing.insertedrun
     - https://docs.microsoft.com/en-us/dotnet/api/documentformat.openxml.wordprocessing.deletedrun
 
-    The method `addTrackRevisions()` adds an element `<w:trackRevisions />` to the `settings.xml` file. This specifies that the application shall track *new* revisions made to the existing document.
+    The setting `features: { trackRevisions: true }` adds an element `<w:trackRevisions />` to the `settings.xml` file.
+    This specifies that the application shall track *new* revisions made to the existing document.
     See also https://docs.microsoft.com/en-us/dotnet/api/documentformat.openxml.wordprocessing.trackrevisions
 
-    Note that this setting enables to track *new changes* after teh file is generated, so this example will still show inserted and deleted text runs when you remove it.
+    Note that this setting enables to track *new changes* after teh file is generated, so this example will still
+    show inserted and deleted text runs when you remove it.
 */
 
 const paragraph = new Paragraph({
@@ -85,7 +87,7 @@ const doc = new Document({
                         new DeletedTextRun({
                             break: 1,
                             text: "in order",
-                            color: "red",
+                            color: "ff0000",
                             bold: true,
                             size: 24,
                             font: {
