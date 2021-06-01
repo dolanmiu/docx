@@ -37,7 +37,7 @@ const paragraph = new Paragraph({
         new TextRun("This is a simple demo"),
         new DeletedTextRun({
             text: "with a deletion.",
-            color: "red",
+            color: "ff0000",
             bold: true,
             size: 24,
             id: 0,

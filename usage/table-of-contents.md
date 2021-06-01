@@ -12,14 +12,29 @@ The complete documentation can be found [here](https://www.ecma-international.or
 
 All you need to do is create a `TableOfContents` object and assign it to the document.
 
-```ts
-const toc = new TableOfContents("Summary", {
-    hyperlink: true,
-    headingStyleRange: "1-5",
-    stylesWithLevels: [new StyleLevel("MySpectacularStyle", 1)],
-});
+**Note**: updateFields feature must be enabled for TableOfContents to update correctly.
 
-doc.addTableOfContents(toc);
+```ts
+const doc = new Document({
+    features: {
+        updateFields: true,
+    },
+    sections: [
+        {
+            children: [
+                new TableOfContents("Summary", {
+                    hyperlink: true,
+                    headingStyleRange: "1-5",
+                }),
+                new Paragraph({
+                    text: "Header #1",
+                    heading: HeadingLevel.HEADING_1,
+                    pageBreakBefore: true,
+                }),
+            ]
+        }
+    ]
+});
 ```
 
 ## Table of Contents Options
