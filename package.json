@@ -75,7 +75,7 @@
     "mocha": "^8.3.2",
     "nyc": "^15.1.0",
     "pre-commit": "^1.2.2",
-    "prettier": "^2.1.2",
+    "prettier": "^2.3.1",
     "process": "^0.11.10",
     "prompt": "^1.0.0",
     "replace-in-file": "^6.2.0",

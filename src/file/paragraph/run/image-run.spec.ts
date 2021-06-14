@@ -40,13 +40,13 @@ describe("ImageRun", () => {
             });
 
             const tree = new Formatter().format(currentImageRun, {
-                file: ({
+                file: {
                     Media: {
                         // tslint:disable-next-line: no-empty
                         addImage: () => {},
                     },
-                } as unknown) as File,
-                viewWrapper: ({} as unknown) as IViewWrapper,
+                } as unknown as File,
+                viewWrapper: {} as unknown as IViewWrapper,
             });
             expect(tree).to.deep.equal({
                 "w:r": [
@@ -290,13 +290,13 @@ describe("ImageRun", () => {
             });
 
             const tree = new Formatter().format(currentImageRun, {
-                file: ({
+                file: {
                     Media: {
                         // tslint:disable-next-line: no-empty
                         addImage: () => {},
                     },
-                } as unknown) as File,
-                viewWrapper: ({} as unknown) as IViewWrapper,
+                } as unknown as File,
+                viewWrapper: {} as unknown as IViewWrapper,
             });
             expect(tree).to.deep.equal({
                 "w:r": [
@@ -542,13 +542,13 @@ describe("ImageRun", () => {
             });
 
             const tree = new Formatter().format(currentImageRun, {
-                file: ({
+                file: {
                     Media: {
                         // tslint:disable-next-line: no-empty
                         addImage: () => {},
                     },
-                } as unknown) as File,
-                viewWrapper: ({} as unknown) as IViewWrapper,
+                } as unknown as File,
+                viewWrapper: {} as unknown as IViewWrapper,
             });
 
             expect(tree).to.deep.equal({
@@ -798,13 +798,13 @@ describe("ImageRun", () => {
             });
 
             const tree = new Formatter().format(currentImageRun, {
-                file: ({
+                file: {
                     Media: {
                         // tslint:disable-next-line: no-empty
                         addImage: () => {},
                     },
-                } as unknown) as File,
-                viewWrapper: ({} as unknown) as IViewWrapper,
+                } as unknown as File,
+                viewWrapper: {} as unknown as IViewWrapper,
             });
 
             expect(tree).to.deep.equal({

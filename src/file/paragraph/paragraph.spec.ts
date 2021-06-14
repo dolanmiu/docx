@@ -932,13 +932,13 @@ describe("Paragraph", () => {
                     }),
                 ],
             });
-            const viewWrapperMock = ({
+            const viewWrapperMock = {
                 Relationships: {
                     createRelationship: () => ({}),
                 },
-            } as unknown) as IViewWrapper;
+            } as unknown as IViewWrapper;
 
-            const file = ({} as unknown) as File;
+            const file = {} as unknown as File;
             paragraph.prepForXml({
                 viewWrapper: viewWrapperMock,
                 file: file,

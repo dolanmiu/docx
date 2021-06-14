@@ -36,7 +36,7 @@ describe("ImageReplacer", () => {
     describe("#getMediaData()", () => {
         it("should get media data", () => {
             const imageReplacer = new ImageReplacer();
-            const result = imageReplacer.getMediaData("test {test-image} test", ({
+            const result = imageReplacer.getMediaData("test {test-image} test", {
                 Array: [
                     {
                         stream: Buffer.from(""),
@@ -53,7 +53,7 @@ describe("ImageReplacer", () => {
                         },
                     },
                 ],
-            } as unknown) as Media);
+            } as unknown as Media);
 
             expect(result).to.have.length(1);
         });
