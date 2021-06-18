@@ -14,13 +14,13 @@ const doc = new Document({
                         top: {
                             color: "auto",
                             space: 1,
-                            value: BorderStyle.SINGLE,
+                            style: BorderStyle.SINGLE,
                             size: 6,
                         },
                         bottom: {
                             color: "auto",
                             space: 1,
-                            value: BorderStyle.SINGLE,
+                            style: BorderStyle.SINGLE,
                             size: 6,
                         },
                     },
