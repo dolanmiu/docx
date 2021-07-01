@@ -33,6 +33,11 @@ jobs:
               run: npm ci
             - name: Test
               run: npm run test.coverage
+            - name: Codecov
+              uses: codecov/codecov-action@v1
+              with:
+                  fail_ci_if_error: true
+                  verbose: true
     lint:
         name: Lint
         runs-on: ubuntu-latest
