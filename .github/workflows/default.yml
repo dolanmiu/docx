@@ -33,6 +33,11 @@ jobs:
               run: npm ci
             - name: Test
               run: npm run test.coverage
+            - name: Codecov
+              uses: codecov/codecov-action@v1
+              with:
+                  fail_ci_if_error: true
+                  verbose: true
     lint:
         name: Lint
         runs-on: ubuntu-latest
@@ -132,12 +137,3 @@ jobs:
                   npm run ts-node -- ./demo/61-text-frame.ts
                   npm run ts-node -- ./demo/62-paragraph-spacing.ts
                   npm run ts-node -- ./demo/63-odd-even-header-footer.ts
-    codecov:
-        name: Codecov
-        runs-on: ubuntu-latest
-        steps:
-            - uses: actions/checkout@master
-            - uses: codecov/codecov-action@v1
-            with:
-                fail_ci_if_error: true
-                verbose: true
