@@ -6,7 +6,7 @@ import { IContext, IXmlableObject, XmlComponent } from "file/xml-components";
 
 import { TargetModeType } from "../relationships/relationship/relationship";
 import { DeletedTextRun, InsertedTextRun } from "../track-revision";
-import { PageBreak } from "./formatting/page-break";
+import { PageBreak, ColumnBreak } from "./formatting/break";
 import { Bookmark, ConcreteHyperlink, ExternalHyperlink, InternalHyperlink } from "./links";
 import { Math } from "./math";
 import { IParagraphPropertiesOptions, ParagraphProperties } from "./properties";
@@ -18,6 +18,7 @@ export type ParagraphChild =
     | SymbolRun
     | Bookmark
     | PageBreak
+    | ColumnBreak
     | SequentialIdentifier
     | FootnoteReferenceRun
     | InternalHyperlink

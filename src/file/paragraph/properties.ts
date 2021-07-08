@@ -5,7 +5,7 @@ import { IShadingAttributesProperties, Shading } from "../shading";
 import { Alignment, AlignmentType } from "./formatting/alignment";
 import { Border, IBordersOptions, ThematicBreak } from "./formatting/border";
 import { IIndentAttributesProperties, Indent } from "./formatting/indent";
-import { PageBreakBefore } from "./formatting/page-break";
+import { PageBreakBefore } from "./formatting/break";
 import { ISpacingProperties, Spacing } from "./formatting/spacing";
 import { HeadingLevel, Style } from "./formatting/style";
 import { LeaderType, TabStop, TabStopPosition, TabStopType } from "./formatting/tab-stop";
