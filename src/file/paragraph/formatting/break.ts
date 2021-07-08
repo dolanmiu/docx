@@ -2,12 +2,18 @@
 import { Attributes, XmlComponent } from "file/xml-components";
 import { Run } from "../run";
 
+enum BreakType {
+    COLUMN = "column",
+    PAGE = "page",
+    // textWrapping breaks are the default and already exposed via the "Run" class
+}
+
 class Break extends XmlComponent {
-    constructor() {
+    constructor(type: BreakType) {
         super("w:br");
         this.root.push(
             new Attributes({
-                type: "page",
+                type,
             }),
         );
     }
@@ -16,7 +22,14 @@ class Break extends XmlComponent {
 export class PageBreak extends Run {
     constructor() {
         super({});
-        this.root.push(new Break());
+        this.root.push(new Break(BreakType.PAGE));
+    }
+}
+
+export class ColumnBreak extends Run {
+    constructor() {
+        super({});
+        this.root.push(new Break(BreakType.COLUMN));
     }
 }
 
