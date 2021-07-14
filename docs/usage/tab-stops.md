@@ -103,7 +103,7 @@ const paragraph = new Paragraph({
 });
 ```
 
-2268 is the distance fro0oum the left side.
+2268 is the distance from the left side.
 
 ## Max Right Tab Stop
 
