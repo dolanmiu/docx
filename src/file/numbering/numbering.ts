@@ -29,7 +29,7 @@ export interface INumberingOptions {
 export class Numbering extends XmlComponent {
     private readonly abstractNumberingMap = new Map<string, AbstractNumbering>();
     private readonly concreteNumberingMap = new Map<string, ConcreteNumbering>();
-    private readonly referenceConfigMap = new Map<string, ILevelsOptions>();
+    private readonly referenceConfigMap = new Map<string, object>();
 
     constructor(options: INumberingOptions) {
         super("w:numbering");
@@ -208,6 +208,10 @@ export class Numbering extends XmlComponent {
             abstractNumId: abstractNumbering.id,
             reference,
             instance,
+            overrideLevel: {
+                num: 0,
+                start: 1,
+            },
         };
 
         const referenceConfigLevels = this.referenceConfigMap.get(reference);
@@ -216,11 +220,6 @@ export class Numbering extends XmlComponent {
             concreteNumberingSettings.overrideLevel = {
                 num: 0,
                 start: firstLevelStartNumber,
-            };
-        } else {
-            concreteNumberingSettings.overrideLevel = {
-                num: 0,
-                start: 1,
             };
         }
 
