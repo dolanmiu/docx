@@ -29,6 +29,7 @@ export interface INumberingOptions {
 export class Numbering extends XmlComponent {
     private readonly abstractNumberingMap = new Map<string, AbstractNumbering>();
     private readonly concreteNumberingMap = new Map<string, ConcreteNumbering>();
+    private readonly referenceConfigMap = new Map<string, ILevelsOptions>();
 
     constructor(options: INumberingOptions) {
         super("w:numbering");
@@ -174,6 +175,7 @@ export class Numbering extends XmlComponent {
 
         for (const con of options.config) {
             this.abstractNumberingMap.set(con.reference, new AbstractNumbering(uniqueNumericId(), con.levels));
+            this.referenceConfigMap.set(con.reference, con.levels);
         }
     }
 
@@ -201,19 +203,28 @@ export class Numbering extends XmlComponent {
             return;
         }
 
-        this.concreteNumberingMap.set(
-            fullReference,
-            new ConcreteNumbering({
-                numId: uniqueNumericId(),
-                abstractNumId: abstractNumbering.id,
-                reference,
-                instance,
-                overrideLevel: {
-                    num: 0,
-                    start: 1,
-                },
-            }),
-        );
+        const concreteNumberingSettings = {
+            numId: uniqueNumericId(),
+            abstractNumId: abstractNumbering.id,
+            reference,
+            instance,
+        };
+
+        const referenceConfigLevels = this.referenceConfigMap.get(reference);
+        const firstLevelStartNumber = referenceConfigLevels?.[0]?.start;
+        if (firstLevelStartNumber) {
+            concreteNumberingSettings.overrideLevel = {
+                num: 0,
+                start: firstLevelStartNumber,
+            };
+        } else {
+            concreteNumberingSettings.overrideLevel = {
+                num: 0,
+                start: 1,
+            };
+        }
+
+        this.concreteNumberingMap.set(fullReference, new ConcreteNumbering(concreteNumberingSettings));
     }
 
     public get ConcreteNumbering(): ConcreteNumbering[] {
