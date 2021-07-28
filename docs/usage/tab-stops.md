@@ -12,7 +12,7 @@ Simply declare the tab stops on the paragraph, as shown below. Use the tab chara
 
 ```ts
 const paragraph = new Paragraph({
-    children: [new TextRun({ text: "Hey everyone", bold: true}, new TextRun("\t11th November 1999")],
+    children: [new TextRun({ text: "Hey everyone", bold: true}), new TextRun("\t11th November 1999")],
     tabStops: [
         {
             type: TabStopType.RIGHT,
