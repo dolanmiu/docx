@@ -229,4 +229,7 @@ export class Numbering extends XmlComponent {
     public get ConcreteNumbering(): ConcreteNumbering[] {
         return Array.from(this.concreteNumberingMap.values());
     }
+    public get ReferenceConfig(): object[] {
+        return Array.from(this.referenceConfigMap.values());
+    }
 }

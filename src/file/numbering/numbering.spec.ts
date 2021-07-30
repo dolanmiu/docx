@@ -112,5 +112,26 @@ describe("Numbering", () => {
                 expect(numbering.ConcreteNumbering).to.have.length(2);
             });
         });
+        describe("#referenceConfigMap", () => {
+            it("should store level configs into referenceConfigMap", () => {
+                const numbering = new Numbering({
+                    config: [
+                        {
+                            reference: "test-reference",
+                            levels: [
+                                {
+                                    level: 0,
+                                    start: 10,
+                                },
+                            ],
+                        },
+                    ],
+                });
+                numbering.createConcreteNumberingInstance("test-reference", 0);
+                const referenceConfig = numbering.ReferenceConfig[0];
+                const zeroLevelConfig = referenceConfig[0];
+                expect(zeroLevelConfig.start).to.be.equal(10);
+            });
+        });
     });
 });
