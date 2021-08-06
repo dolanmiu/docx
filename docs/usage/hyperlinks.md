@@ -24,6 +24,17 @@ const link = this.doc.createInternalHyperLink('anchorForChapter1', 'This is a li
 paragraph.addHyperLink(link);
 ```
 
+You can also get the page number of the bookmark by creating a page reference to it:
+
+```ts
+new Paragraph({
+    children: [
+        new TextRun("The chapter1 can be seen on page "),
+        new PageRef("anchorForChapter1"),
+    ]
+})
+```
+
 ## External
 
 To create an external hyperlink you just need to specify the url and the text of the link, then add it to a paragraph with `doc.createHyperlink(url, text)`:
