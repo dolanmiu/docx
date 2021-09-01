@@ -2,15 +2,15 @@
 import { uniqueId } from "convenience-functions";
 import { XmlComponent } from "file/xml-components";
 
-import { TextRun } from "../run";
+import { ParagraphChild } from "../paragraph";
 import { BookmarkEndAttributes, BookmarkStartAttributes } from "./bookmark-attributes";
 
 export class Bookmark {
     public readonly start: BookmarkStart;
-    public readonly children: TextRun[];
+    public readonly children: ParagraphChild[];
     public readonly end: BookmarkEnd;
 
-    constructor(options: { readonly id: string; readonly children: TextRun[] }) {
+    constructor(options: { readonly id: string; readonly children: ParagraphChild[] }) {
         const linkId = uniqueId();
 
         this.start = new BookmarkStart(options.id, linkId);
