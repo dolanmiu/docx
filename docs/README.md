@@ -44,7 +44,7 @@ const doc = new Document({
                 ],
             }),
         ],
-    }];
+    }],
 });
 
 // Used to export the file into a .docx file
