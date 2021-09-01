@@ -95,7 +95,7 @@ describe("InternalHyperlink", () => {
     describe("#constructor()", () => {
         it("should create", () => {
             const internalHyperlink = new InternalHyperlink({
-                child: new TextRun("test"),
+                children: [new TextRun("test")],
                 anchor: "test-id",
             });
 

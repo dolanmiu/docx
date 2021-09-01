@@ -33,8 +33,8 @@ export class ConcreteHyperlink extends XmlComponent {
 }
 
 export class InternalHyperlink extends ConcreteHyperlink {
-    constructor(options: { readonly child: ParagraphChild; readonly anchor: string }) {
-        super([options.child], uniqueId(), options.anchor);
+    constructor(options: { readonly children: ParagraphChild[]; readonly anchor: string }) {
+        super(options.children, uniqueId(), options.anchor);
     }
 }
 
