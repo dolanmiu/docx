@@ -18,10 +18,12 @@ const doc = new Document({
                         new Paragraph({
                             children: [
                                 new InternalHyperlink({
-                                    child: new TextRun({
-                                        text: "Click here!",
-                                        style: "Hyperlink",
-                                    }),
+                                    children: [
+                                        new TextRun({
+                                            text: "Click here!",
+                                            style: "Hyperlink",
+                                        }),
+                                    ],
                                     anchor: "myAnchorId",
                                 }),
                             ],
@@ -47,19 +49,23 @@ const doc = new Document({
                 new Paragraph({
                     children: [
                         new InternalHyperlink({
-                            child: new TextRun({
-                                text: "Anchor Text",
-                                style: "Hyperlink",
-                            }),
+                            children: [
+                                new TextRun({
+                                    text: "Styled",
+                                    bold: true,
+                                    style: "Hyperlink",
+                                }),
+                                new TextRun({
+                                    text: " Anchor Text",
+                                    style: "Hyperlink",
+                                }),
+                            ],
                             anchor: "myAnchorId",
                         }),
                     ],
                 }),
                 new Paragraph({
-                    children: [
-                        new TextRun("The bookmark can be seen on page "),
-                        new PageRef("myAnchorId"),
-                    ]
+                    children: [new TextRun("The bookmark can be seen on page "), new PageRef("myAnchorId")],
                 }),
             ],
         },
