@@ -44,7 +44,7 @@ You can also get the page number of the bookmark by creating a page reference to
 const paragraph = new Paragraph({
     children: [
         new TextRun("Chapter 1 can be seen on page "),
-        new PageRef("anchorForChapter1"),
+        new PageReference("anchorForChapter1"),
     ],
 });
 ```

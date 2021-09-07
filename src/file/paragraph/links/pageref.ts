@@ -1,13 +1,13 @@
 // See https://www.ecma-international.org/publications/standards/Ecma-376.htm (at Part 1, Page 1234)
 import { Begin, End } from "file/paragraph/run/field";
 import { Run } from "../run";
-import { PageRefFieldInstruction } from "./pageref-field-instruction";
-import type { IPageRefOptions } from "./pageref-properties";
+import { PageReferenceFieldInstruction } from "./pageref-field-instruction";
+import type { IPageReferenceOptions } from "./pageref-properties";
 
-export class PageRef extends Run {
-    constructor(bookmarkId: string, options: IPageRefOptions = {}) {
+export class PageReference extends Run {
+    constructor(bookmarkId: string, options: IPageReferenceOptions = {}) {
         super({
-            children: [new Begin(true), new PageRefFieldInstruction(bookmarkId, options), new End()],
+            children: [new Begin(true), new PageReferenceFieldInstruction(bookmarkId, options), new End()],
         });
     }
 }

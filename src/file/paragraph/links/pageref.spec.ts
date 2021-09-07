@@ -1,12 +1,12 @@
 import { expect } from "chai";
 
 import { Formatter } from "export/formatter";
-import { PageRef } from "./pageref";
+import { PageReference } from "./pageref";
 
-describe("PageRef", () => {
+describe("PageReference", () => {
     describe("#constructor()", () => {
         it("should construct a pageref without options", () => {
-            const pageref = new PageRef("some_bookmark");
+            const pageref = new PageReference("some_bookmark");
             const tree = new Formatter().format(pageref);
             expect(tree).to.be.deep.equal({
                 "w:r": [
@@ -40,8 +40,8 @@ describe("PageRef", () => {
         });
 
         it("should construct a pageref with all the options", () => {
-            const pageref = new PageRef("some_bookmark", { hyperlink: true, useRelativePosition: true });
-            const tree = new Formatter().format(pageref);
+            const pageReference = new PageReference("some_bookmark", { hyperlink: true, useRelativePosition: true });
+            const tree = new Formatter().format(pageReference);
             expect(tree).to.be.deep.equal({
                 "w:r": [
                     {

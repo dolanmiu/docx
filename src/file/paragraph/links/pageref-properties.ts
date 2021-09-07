@@ -1,6 +1,6 @@
 // Options according to https://www.ecma-international.org/publications/standards/Ecma-376.htm (at Part 1, Page 1234)
 
-export interface IPageRefOptions {
+export interface IPageReferenceOptions {
     /**
      * \h option - Creates a hyperlink to the bookmarked paragraph.
      */
