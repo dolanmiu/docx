@@ -29,6 +29,7 @@ export interface INumberingOptions {
 export class Numbering extends XmlComponent {
     private readonly abstractNumberingMap = new Map<string, AbstractNumbering>();
     private readonly concreteNumberingMap = new Map<string, ConcreteNumbering>();
+    private readonly referenceConfigMap = new Map<string, object>();
 
     constructor(options: INumberingOptions) {
         super("w:numbering");
@@ -174,6 +175,7 @@ export class Numbering extends XmlComponent {
 
         for (const con of options.config) {
             this.abstractNumberingMap.set(con.reference, new AbstractNumbering(uniqueNumericId(), con.levels));
+            this.referenceConfigMap.set(con.reference, con.levels);
         }
     }
 
@@ -201,22 +203,33 @@ export class Numbering extends XmlComponent {
             return;
         }
 
-        this.concreteNumberingMap.set(
-            fullReference,
-            new ConcreteNumbering({
-                numId: uniqueNumericId(),
-                abstractNumId: abstractNumbering.id,
-                reference,
-                instance,
-                overrideLevel: {
-                    num: 0,
-                    start: 1,
-                },
-            }),
-        );
+        const concreteNumberingSettings = {
+            numId: uniqueNumericId(),
+            abstractNumId: abstractNumbering.id,
+            reference,
+            instance,
+            overrideLevel: {
+                num: 0,
+                start: 1,
+            },
+        };
+
+        const referenceConfigLevels = this.referenceConfigMap.get(reference);
+        const firstLevelStartNumber = referenceConfigLevels && referenceConfigLevels[0].start;
+        if (firstLevelStartNumber && Number.isInteger(firstLevelStartNumber)) {
+            concreteNumberingSettings.overrideLevel = {
+                num: 0,
+                start: firstLevelStartNumber,
+            };
+        }
+
+        this.concreteNumberingMap.set(fullReference, new ConcreteNumbering(concreteNumberingSettings));
     }
 
     public get ConcreteNumbering(): ConcreteNumbering[] {
         return Array.from(this.concreteNumberingMap.values());
+    }
+    public get ReferenceConfig(): object[] {
+        return Array.from(this.referenceConfigMap.values());
     }
 }

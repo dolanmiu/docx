@@ -15,6 +15,7 @@
 	* [Image](usage/images.md)
 	* [Headers & Footers](usage/headers-and-footers.md)
 	* [Bullet Points](usage/bullet-points.md)
+    * [Hyperlinks](usage/hyperlinks.md)
     * [Numbering](usage/numbering.md)
     * [Tables](usage/tables.md)
 	* [Tab Stops](usage/tab-stops.md)
