@@ -15,6 +15,7 @@ import {
     TableRow,
     TabStopPosition,
     UnderlineType,
+    LevelFormat,
 } from "../build";
 
 const table = new Table({
@@ -51,6 +52,19 @@ const table = new Table({
 });
 
 const doc = new Document({
+    numbering:{
+        config:[{
+            reference: 'ref1',
+            levels: [
+            {
+                level: 0,
+                format: LevelFormat.DECIMAL,
+                text: '%1)',
+                start: 50,
+            }
+            ],
+        }]
+    },
     styles: {
         default: {
             heading1: {
@@ -153,6 +167,28 @@ const doc = new Document({
                 basedOn: "Normal",
                 paragraph: {
                     spacing: { line: 276, before: 20 * 72 * 0.1, after: 20 * 72 * 0.05 },
+                },
+            },
+            {
+                id: "numberedPara",
+                name: "Numbered Para",
+                basedOn: "Normal",
+                next: "Normal",
+                quickFormat: true,
+                run: {
+                    font: "Calibri",
+                    size: 26,
+                    bold: true,
+                },
+                paragraph: {
+                    spacing: { line: 276, before: 20 * 72 * 0.1, after: 20 * 72 * 0.05 },
+                    rightTabStop: TabStopPosition.MAX,
+                    leftTabStop: 453.543307087,
+                    numbering : {
+                        reference: 'ref1',
+                        instance: 0,
+                        level: 0,
+                    }
                 },
             },
         ],
@@ -259,6 +295,14 @@ const doc = new Document({
                 new Paragraph({
                     text: "Test 2",
                     style: "normalPara2",
+                }),
+                new Paragraph({
+                    text: "Numbered paragraph that has numbering attached to custom styles",
+                    style: "numberedPara",
+                }),
+                new Paragraph({
+                    text: "Numbered para would show up in the styles pane at Word",
+                    style: "numberedPara",
                 }),
             ],
         },
