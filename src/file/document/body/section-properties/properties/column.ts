@@ -8,19 +8,19 @@ export interface IColumnAttributes {
 
 export class ColumnAttributes extends XmlAttributeComponent<IColumnAttributes> {
     protected readonly xmlKeys = {
-        width: 'w:w',
-        space: 'w:space',
-    }
+        width: "w:w",
+        space: "w:space",
+    };
 }
 
 export class Column extends XmlComponent {
-    constructor({width, space}: IColumnAttributes) {
+    constructor({ width, space }: IColumnAttributes) {
         super("w:col");
         this.root.push(
             new ColumnAttributes({
                 width: twipsMeasureValue(width),
                 space: space === undefined ? undefined : twipsMeasureValue(space),
-            })
-        )
+            }),
+        );
     }
 }

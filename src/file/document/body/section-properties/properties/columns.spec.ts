@@ -1,7 +1,8 @@
 import { expect } from "chai";
-import { Columns } from ".";
+
 import { Formatter } from "export/formatter";
-import { Column } from "./column";
+
+import { Column, Columns } from ".";
 
 describe("Columns", () => {
     describe("#constructor()", () => {
