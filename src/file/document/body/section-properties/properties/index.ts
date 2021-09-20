@@ -1,3 +1,4 @@
+export * from "./column";
 export * from "./columns";
 export * from "./doc-grid";
 // export * from "./header-reference";

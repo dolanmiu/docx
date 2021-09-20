@@ -1,5 +1,6 @@
 import { decimalNumber, twipsMeasureValue } from "file/values";
 import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
+import { Column } from "./column";
 
 // <xsd:complexType name="CT_Columns">
 //     <xsd:sequence minOccurs="0">
@@ -15,6 +16,7 @@ export interface IColumnsAttributes {
     readonly count?: number;
     readonly separate?: boolean;
     readonly equalWidth?: boolean;
+    readonly children?: Column[];
 }
 
 export class ColumnsAttributes extends XmlAttributeComponent<IColumnsAttributes> {
@@ -27,7 +29,7 @@ export class ColumnsAttributes extends XmlAttributeComponent<IColumnsAttributes>
 }
 
 export class Columns extends XmlComponent {
-    constructor({ space, count, separate, equalWidth }: IColumnsAttributes) {
+    constructor({ space, count, separate, equalWidth, children }: IColumnsAttributes) {
         super("w:cols");
         this.root.push(
             new ColumnsAttributes({
@@ -37,5 +39,9 @@ export class Columns extends XmlComponent {
                 equalWidth,
             }),
         );
+
+        if (!equalWidth && children) {
+            children.forEach((column) => this.addChildElement(column));
+        }
     }
 }
