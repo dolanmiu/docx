@@ -13,7 +13,7 @@ import { NumberProperties } from "./formatting/unordered-list";
 import { FrameProperties, IFrameOptions } from "./frame/frame-properties";
 import { OutlineLevel } from "./links";
 
-export interface IParagraphStylePropertiesOptions {
+export interface ILevelParagraphStylePropertiesOptions {
     readonly alignment?: AlignmentType;
     readonly thematicBreak?: boolean;
     readonly contextualSpacing?: boolean;
@@ -24,6 +24,9 @@ export interface IParagraphStylePropertiesOptions {
     readonly keepNext?: boolean;
     readonly keepLines?: boolean;
     readonly outlineLevel?: number;
+}
+
+export interface IParagraphStylePropertiesOptions extends ILevelParagraphStylePropertiesOptions {
     readonly numbering?: {
         readonly reference: string;
         readonly level: number;
