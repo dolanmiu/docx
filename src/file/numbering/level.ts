@@ -2,7 +2,7 @@
 import { decimalNumber } from "file/values";
 import { Attributes, NumberValueElement, XmlAttributeComponent, XmlComponent } from "file/xml-components";
 import { AlignmentType } from "../paragraph/formatting";
-import { IParagraphStylePropertiesOptions, ParagraphProperties } from "../paragraph/properties";
+import { ILevelParagraphStylePropertiesOptions, ParagraphProperties } from "../paragraph/properties";
 import { IRunStylePropertiesOptions, RunProperties } from "../paragraph/run/properties";
 
 export enum LevelFormat {
@@ -88,7 +88,7 @@ export interface ILevelsOptions {
     readonly suffix?: LevelSuffix;
     readonly style?: {
         readonly run?: IRunStylePropertiesOptions;
-        readonly paragraph?: IParagraphStylePropertiesOptions;
+        readonly paragraph?: ILevelParagraphStylePropertiesOptions;
     };
 }
 

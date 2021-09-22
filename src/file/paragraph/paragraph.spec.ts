@@ -927,7 +927,7 @@ describe("Paragraph", () => {
             const paragraph = new Paragraph({
                 children: [
                     new ExternalHyperlink({
-                        child: new TextRun("test"),
+                        children: [new TextRun("test")],
                         link: "http://www.google.com",
                     }),
                 ],

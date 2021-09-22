@@ -48,7 +48,6 @@
   ],
   "types": "./build/index.d.ts",
   "dependencies": {
-    "@types/jszip": "^3.1.4",
     "@types/node": "^16.0.0",
     "jszip": "^3.1.5",
     "nanoid": "^3.1.20",
@@ -90,8 +89,8 @@
     "tsconfig-paths": "^3.9.0",
     "tslint": "^6.1.3",
     "tslint-immutable": "^6.0.1",
-    "typedoc": "^0.21.1",
-    "typescript": "4.3.5",
+    "typedoc": "^0.22.3",
+    "typescript": "4.4.3",
     "webpack": "^5.28.0",
     "webpack-cli": "^4.6.0"
   },

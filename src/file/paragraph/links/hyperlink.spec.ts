@@ -10,10 +10,12 @@ describe("ConcreteHyperlink", () => {
 
     beforeEach(() => {
         hyperlink = new ConcreteHyperlink(
-            new TextRun({
-                text: "https://example.com",
-                style: "Hyperlink",
-            }),
+            [
+                new TextRun({
+                    text: "https://example.com",
+                    style: "Hyperlink",
+                }),
+            ],
             "superid",
         );
     });
@@ -42,10 +44,12 @@ describe("ConcreteHyperlink", () => {
         describe("with optional anchor parameter", () => {
             beforeEach(() => {
                 hyperlink = new ConcreteHyperlink(
-                    new TextRun({
-                        text: "Anchor Text",
-                        style: "Hyperlink",
-                    }),
+                    [
+                        new TextRun({
+                            text: "Anchor Text",
+                            style: "Hyperlink",
+                        }),
+                    ],
                     "superid2",
                     "anchor",
                 );
@@ -78,7 +82,7 @@ describe("ExternalHyperlink", () => {
     describe("#constructor()", () => {
         it("should create", () => {
             const externalHyperlink = new ExternalHyperlink({
-                child: new TextRun("test"),
+                children: [new TextRun("test")],
                 link: "http://www.google.com",
             });
 
@@ -91,7 +95,7 @@ describe("InternalHyperlink", () => {
     describe("#constructor()", () => {
         it("should create", () => {
             const internalHyperlink = new InternalHyperlink({
-                child: new TextRun("test"),
+                children: [new TextRun("test")],
                 anchor: "test-id",
             });
 

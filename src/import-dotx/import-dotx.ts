@@ -215,7 +215,7 @@ export class ImportDotx {
         }
         const headers = headersXmlArray.map((item) => {
             if (item._attributes === undefined) {
-                throw Error("header referecne element has no attributes");
+                throw Error("header reference element has no attributes");
             }
             return {
                 type: item._attributes["w:type"] as HeaderFooterReferenceType,
@@ -235,7 +235,7 @@ export class ImportDotx {
 
         const footers = footersXmlArray.map((item) => {
             if (item._attributes === undefined) {
-                throw Error("footer referecne element has no attributes");
+                throw Error("footer reference element has no attributes");
             }
             return {
                 type: item._attributes["w:type"] as HeaderFooterReferenceType,

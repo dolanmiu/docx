@@ -123,19 +123,23 @@ export class Compiler {
                 path: "word/document.xml",
             },
             Styles: {
-                data: xml(
-                    this.formatter.format(file.Styles, {
-                        viewWrapper: file.Document,
-                        file,
-                    }),
-                    {
-                        indent: prettify,
-                        declaration: {
-                            standalone: "yes",
-                            encoding: "UTF-8",
+                data: (() => {
+                    const xmlStyles = xml(
+                        this.formatter.format(file.Styles, {
+                            viewWrapper: file.Document,
+                            file,
+                        }),
+                        {
+                            indent: prettify,
+                            declaration: {
+                                standalone: "yes",
+                                encoding: "UTF-8",
+                            },
                         },
-                    },
-                ),
+                    );
+                    const referencedXmlStyles = this.numberingReplacer.replace(xmlStyles, file.Numbering.ConcreteNumbering);
+                    return referencedXmlStyles;
+                })(),
                 path: "word/styles.xml",
             },
             Properties: {

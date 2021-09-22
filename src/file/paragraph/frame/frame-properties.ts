@@ -1,6 +1,7 @@
 // http://officeopenxml.com/WPparagraph-textFrames.php
 import { HorizontalPositionAlign, VerticalPositionAlign } from "file/shared/alignment";
 import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
+import { HeightRule } from "/file";
 
 export enum DropCapType {
     NONE = "none",
@@ -42,7 +43,7 @@ export interface IFrameOptions {
         readonly horizontal: number;
         readonly vertical: number;
     };
-    readonly rule?: number;
+    readonly rule?: HeightRule;
     readonly alignment: {
         readonly x: HorizontalPositionAlign;
         readonly y: VerticalPositionAlign;
@@ -62,7 +63,7 @@ export class FramePropertiesAttributes extends XmlAttributeComponent<{
     readonly anchorVertical?: FrameAnchorType;
     readonly spaceHorizontal?: number;
     readonly spaceVertical?: number;
-    readonly rule?: number;
+    readonly rule?: HeightRule;
     readonly alignmentX?: HorizontalPositionAlign;
     readonly alignmentY?: VerticalPositionAlign;
 }> {
