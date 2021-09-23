@@ -180,12 +180,12 @@ Adding spacing between paragraphs
 
 ### ISpacingProperties
 
-| Property | Type           | Notes    |
-| -------- | -------------- | -------- |
-| after    | `number`       | Optional |
-| before   | `number`       | Optional |
-| line     | `number`       | Optional |
-| lineRule | `LineRuleType` | Optional |
+| Property | Type           | Notes    | Possible Values               |
+| -------- | -------------- | -------- | ----------------------------- |
+| after    | `number`       | Optional |                               |
+| before   | `number`       | Optional |                               |
+| line     | `number`       | Optional |                               |
+| lineRule | `LineRuleType` | Optional | `AT_LEAST`, `EXACTLY`, `AUTO` |
 
 **Example:**
 
