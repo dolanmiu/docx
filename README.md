@@ -10,7 +10,6 @@
 
 [![NPM version][npm-image]][npm-url]
 [![Downloads per month][downloads-image]][downloads-url]
-[![Build Status][travis-image]][travis-url]
 [![GitHub Action Workflow Status][github-actions-workflow-image]][github-actions-workflow-url]
 [![Dependency Status][daviddm-image]][daviddm-url]
 [![Known Vulnerabilities][snky-image]][snky-url]
@@ -103,8 +102,6 @@ Made with 💖
 [npm-url]: https://npmjs.org/package/docx
 [downloads-image]: https://img.shields.io/npm/dm/docx.svg
 [downloads-url]: https://npmjs.org/package/docx
-[travis-image]: https://travis-ci.org/dolanmiu/docx.svg?branch=master
-[travis-url]: https://travis-ci.org/dolanmiu/docx
 [github-actions-workflow-image]: https://github.com/dolanmiu/docx/workflows/Default/badge.svg
 [github-actions-workflow-url]: https://github.com/dolanmiu/docx/actions
 [daviddm-image]: https://david-dm.org/dolanmiu/docx.svg?theme=shields.io
