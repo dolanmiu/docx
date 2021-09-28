@@ -52,6 +52,7 @@ export interface IParagraphPropertiesOptions extends IParagraphStylePropertiesOp
     readonly shading?: IShadingAttributesProperties;
     readonly widowControl?: boolean;
     readonly frame?: IFrameOptions;
+    readonly suppressLineNumbers?: boolean;
 }
 
 export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
@@ -165,6 +166,10 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
 
         if (options.outlineLevel !== undefined) {
             this.push(new OutlineLevel(options.outlineLevel));
+        }
+
+        if (options.suppressLineNumbers !== undefined) {
+            this.push(new OnOffElement("w:suppressLineNumbers", options.suppressLineNumbers));
         }
     }
 
