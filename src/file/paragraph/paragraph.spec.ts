@@ -830,6 +830,18 @@ describe("Paragraph", () => {
         });
     });
 
+    describe("#suppressLineNumbers", () => {
+        it("should disable line numbers", () => {
+            const paragraph = new Paragraph({
+                suppressLineNumbers: true,
+            });
+            const tree = new Formatter().format(paragraph);
+            expect(tree).to.deep.equal({
+                "w:p": [{ "w:pPr": [{ "w:suppressLineNumbers": EMPTY_OBJECT }] }],
+            });
+        });
+    });
+
     describe("#outlineLevel", () => {
         it("should set paragraph outline level to the given value", () => {
             const paragraph = new Paragraph({
