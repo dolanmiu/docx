@@ -1,4 +1,5 @@
 // http://officeopenxml.com/WPparagraphProperties.php
+// https://c-rex.net/projects/samples/ooxml/e1/Part4/OOXML_P4_DOCX_suppressLineNumbers_topic_ID0ECJAO.html
 import { IContext, IgnoreIfEmptyXmlComponent, IXmlableObject, OnOffElement, XmlComponent } from "file/xml-components";
 import { DocumentWrapper } from "../document-wrapper";
 import { IShadingAttributesProperties, Shading } from "../shading";
@@ -52,6 +53,7 @@ export interface IParagraphPropertiesOptions extends IParagraphStylePropertiesOp
     readonly shading?: IShadingAttributesProperties;
     readonly widowControl?: boolean;
     readonly frame?: IFrameOptions;
+    readonly suppressLineNumbers?: boolean;
 }
 
 export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
@@ -165,6 +167,10 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
 
         if (options.outlineLevel !== undefined) {
             this.push(new OutlineLevel(options.outlineLevel));
+        }
+
+        if (options.suppressLineNumbers !== undefined) {
+            this.push(new OnOffElement("w:suppressLineNumbers", options.suppressLineNumbers));
         }
     }
 
