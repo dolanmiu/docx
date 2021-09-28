@@ -13,9 +13,9 @@
         "noUnusedParameters": true,
         "baseUrl": "./src",
         "paths": {
-            "/*": ["./*"],
             "convenience-functions": ["./convenience-functions"],
-            "@export/*": ["./export/*"]
+            "@export/*": ["./export/*"],
+            "file/*": ["./file/*"]
         }
     },
     "include": ["src"]

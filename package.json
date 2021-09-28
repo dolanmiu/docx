@@ -10,7 +10,7 @@
     "test.watch": "npm test -- --watch",
     "prepublishOnly": "npm run build --production",
     "lint": "tslint --project .",
-    "build": "npm run webpack",
+    "build": "npm run webpack && npm run fix-types",
     "webpack": "rimraf ./build && webpack --config ./webpack.config.ts",
     "demo": "npm run build && npm run ts-node --skip-project ./demo",
     "typedoc": "rimraf ./build && typedoc src/index.ts --tsconfig tsconfig.typedoc.json",
