@@ -257,7 +257,7 @@ describe("Table", () => {
             });
         });
 
-        it("should set the table to provided width", () => {
+        it("should set the table to provided 100% width", () => {
             const table = new Table({
                 rows: [
                     new TableRow({
@@ -282,7 +282,42 @@ describe("Table", () => {
                         "w:tblW": {
                             _attr: {
                                 "w:type": "pct",
-                                "w:w": 100,
+                                "w:w": "100%",
+                            },
+                        },
+                    },
+                    BORDERS,
+                    { "w:tblLayout": { _attr: { "w:type": "fixed" } } },
+                ],
+            });
+        });
+
+        it("should set the table to provided 1000 DXA", () => {
+            const table = new Table({
+                rows: [
+                    new TableRow({
+                        children: [
+                            new TableCell({
+                                children: [new Paragraph("hello")],
+                            }),
+                        ],
+                    }),
+                ],
+                width: {
+                    size: 1000,
+                    type: WidthType.DXA,
+                },
+                layout: TableLayoutType.FIXED,
+            });
+            const tree = new Formatter().format(table);
+            expect(tree).to.have.property("w:tbl").which.is.an("array").with.has.length.at.least(1);
+            expect(tree["w:tbl"][0]).to.deep.equal({
+                "w:tblPr": [
+                    {
+                        "w:tblW": {
+                            _attr: {
+                                "w:type": "dxa",
+                                "w:w": 1000,
                             },
                         },
                     },
