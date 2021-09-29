@@ -1,4 +1,4 @@
-name: Default
+name: Schema Validator
 on:
     push:
         branches:
