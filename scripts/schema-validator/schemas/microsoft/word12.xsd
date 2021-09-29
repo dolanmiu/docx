@@ -1,0 +1,3 @@
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:s="http://schemas.openxmlformats.org/officeDocument/2006/sharedTypes">
+   <xsd:import namespace="http://schemas.openxmlformats.org/wordprocessingml/2006/main" schemaLocation="../ISO-IEC29500-4_2016/wml.xsd"/>
+</xsd:schema>
