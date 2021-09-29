@@ -1,4 +1,4 @@
-name: Schema Validator
+name: Demos
 on:
     push:
         branches:
