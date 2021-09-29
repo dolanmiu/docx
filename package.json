@@ -19,7 +19,7 @@
     "fix-types": "ts-node scripts/types-absolute-fixer.ts",
     "e2e": "ts-node scripts/e2e.ts",
     "serve.docs": "cd docs && docsify serve",
-    "validate": "ts-node scripts/schema-validator",
+    "extract": "ts-node scripts/schema-validator",
     "ts-node": "ts-node --skip-project"
   },
   "pre-commit": [
