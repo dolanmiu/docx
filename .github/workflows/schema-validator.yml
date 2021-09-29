@@ -43,6 +43,7 @@ jobs:
               run: npm run extract
             - name: Validate XML
               uses: ChristophWurst/xmllint-action@v1
+              with:
                 xml-file: build/extracted-doc/word/document.xml
                 xml-schema-file: scripts/schema-validator/schemas/microsoft/wml-2010.xsd
             - name: Run Demo
@@ -51,6 +52,7 @@ jobs:
               run: npm run extract
             - name: Validate XML
               uses: ChristophWurst/xmllint-action@v1
+              with:
                 xml-file: build/extracted-doc/word/document.xml
                 xml-schema-file: scripts/schema-validator/schemas/microsoft/wml-2010.xsd
             - name: Run Demo
@@ -59,6 +61,7 @@ jobs:
               run: npm run extract
             - name: Validate XML
               uses: ChristophWurst/xmllint-action@v1
+              with:
                 xml-file: build/extracted-doc/word/document.xml
                 xml-schema-file: scripts/schema-validator/schemas/microsoft/wml-2010.xsd
             - name: Run Demo
@@ -67,6 +70,7 @@ jobs:
               run: npm run extract
             - name: Validate XML
               uses: ChristophWurst/xmllint-action@v1
+              with:
                 xml-file: build/extracted-doc/word/document.xml
                 xml-schema-file: scripts/schema-validator/schemas/microsoft/wml-2010.xsd
             - name: Run Demo
@@ -75,6 +79,7 @@ jobs:
               run: npm run extract
             - name: Validate XML
               uses: ChristophWurst/xmllint-action@v1
+              with:
                 xml-file: build/extracted-doc/word/document.xml
                 xml-schema-file: scripts/schema-validator/schemas/microsoft/wml-2010.xsd
             - name: Run Demo
@@ -83,6 +88,7 @@ jobs:
               run: npm run extract
             - name: Validate XML
               uses: ChristophWurst/xmllint-action@v1
+              with:
                 xml-file: build/extracted-doc/word/document.xml
                 xml-schema-file: scripts/schema-validator/schemas/microsoft/wml-2010.xsd
             - name: Run Demo
@@ -91,6 +97,7 @@ jobs:
               run: npm run extract
             - name: Validate XML
               uses: ChristophWurst/xmllint-action@v1
+              with:
                 xml-file: build/extracted-doc/word/document.xml
                 xml-schema-file: scripts/schema-validator/schemas/microsoft/wml-2010.xsd
             - name: Run Demo
@@ -99,6 +106,7 @@ jobs:
               run: npm run extract
             - name: Validate XML
               uses: ChristophWurst/xmllint-action@v1
+              with:
                 xml-file: build/extracted-doc/word/document.xml
                 xml-schema-file: scripts/schema-validator/schemas/microsoft/wml-2010.xsd
             - name: Run Demo
@@ -107,6 +115,7 @@ jobs:
               run: npm run extract
             - name: Validate XML
               uses: ChristophWurst/xmllint-action@v1
+              with:
                 xml-file: build/extracted-doc/word/document.xml
                 xml-schema-file: scripts/schema-validator/schemas/microsoft/wml-2010.xsd
             - name: Run Demo
@@ -115,6 +124,7 @@ jobs:
               run: npm run extract
             - name: Validate XML
               uses: ChristophWurst/xmllint-action@v1
+              with:
                 xml-file: build/extracted-doc/word/document.xml
                 xml-schema-file: scripts/schema-validator/schemas/microsoft/wml-2010.xsd
             - name: Run Demo
@@ -123,6 +133,7 @@ jobs:
               run: npm run extract
             - name: Validate XML
               uses: ChristophWurst/xmllint-action@v1
+              with:
                 xml-file: build/extracted-doc/word/document.xml
                 xml-schema-file: scripts/schema-validator/schemas/microsoft/wml-2010.xsd
             - name: Run Demo
@@ -131,6 +142,7 @@ jobs:
               run: npm run extract
             - name: Validate XML
               uses: ChristophWurst/xmllint-action@v1
+              with:
                 xml-file: build/extracted-doc/word/document.xml
                 xml-schema-file: scripts/schema-validator/schemas/microsoft/wml-2010.xsd
             - name: Run Demo
@@ -139,6 +151,7 @@ jobs:
               run: npm run extract
             - name: Validate XML
               uses: ChristophWurst/xmllint-action@v1
+              with:
                 xml-file: build/extracted-doc/word/document.xml
                 xml-schema-file: scripts/schema-validator/schemas/microsoft/wml-2010.xsd
             - name: Run Demo
@@ -147,6 +160,7 @@ jobs:
               run: npm run extract
             - name: Validate XML
               uses: ChristophWurst/xmllint-action@v1
+              with:
                 xml-file: build/extracted-doc/word/document.xml
                 xml-schema-file: scripts/schema-validator/schemas/microsoft/wml-2010.xsd
             - name: Run Demo
@@ -155,6 +169,7 @@ jobs:
               run: npm run extract
             - name: Validate XML
               uses: ChristophWurst/xmllint-action@v1
+              with:
                 xml-file: build/extracted-doc/word/document.xml
                 xml-schema-file: scripts/schema-validator/schemas/microsoft/wml-2010.xsd
             - name: Run Demo
@@ -163,6 +178,7 @@ jobs:
               run: npm run extract
             - name: Validate XML
               uses: ChristophWurst/xmllint-action@v1
+              with:
                 xml-file: build/extracted-doc/word/document.xml
                 xml-schema-file: scripts/schema-validator/schemas/microsoft/wml-2010.xsd
             - name: Run Demo
@@ -171,6 +187,7 @@ jobs:
               run: npm run extract
             - name: Validate XML
               uses: ChristophWurst/xmllint-action@v1
+              with:
                 xml-file: build/extracted-doc/word/document.xml
                 xml-schema-file: scripts/schema-validator/schemas/microsoft/wml-2010.xsd
             - name: Run Demo
@@ -179,6 +196,7 @@ jobs:
               run: npm run extract
             - name: Validate XML
               uses: ChristophWurst/xmllint-action@v1
+              with:
                 xml-file: build/extracted-doc/word/document.xml
                 xml-schema-file: scripts/schema-validator/schemas/microsoft/wml-2010.xsd
             - name: Run Demo
@@ -187,6 +205,7 @@ jobs:
               run: npm run extract
             - name: Validate XML
               uses: ChristophWurst/xmllint-action@v1
+              with:
                 xml-file: build/extracted-doc/word/document.xml
                 xml-schema-file: scripts/schema-validator/schemas/microsoft/wml-2010.xsd
             - name: Run Demo
@@ -195,6 +214,7 @@ jobs:
               run: npm run extract
             - name: Validate XML
               uses: ChristophWurst/xmllint-action@v1
+              with:
                 xml-file: build/extracted-doc/word/document.xml
                 xml-schema-file: scripts/schema-validator/schemas/microsoft/wml-2010.xsd
             - name: Run Demo
@@ -203,6 +223,7 @@ jobs:
               run: npm run extract
             - name: Validate XML
               uses: ChristophWurst/xmllint-action@v1
+              with:
                 xml-file: build/extracted-doc/word/document.xml
                 xml-schema-file: scripts/schema-validator/schemas/microsoft/wml-2010.xsd
             - name: Run Demo
@@ -211,6 +232,7 @@ jobs:
               run: npm run extract
             - name: Validate XML
               uses: ChristophWurst/xmllint-action@v1
+              with:
                 xml-file: build/extracted-doc/word/document.xml
                 xml-schema-file: scripts/schema-validator/schemas/microsoft/wml-2010.xsd
             - name: Run Demo
@@ -219,6 +241,7 @@ jobs:
               run: npm run extract
             - name: Validate XML
               uses: ChristophWurst/xmllint-action@v1
+              with:
                 xml-file: build/extracted-doc/word/document.xml
                 xml-schema-file: scripts/schema-validator/schemas/microsoft/wml-2010.xsd
             - name: Run Demo
@@ -227,6 +250,7 @@ jobs:
               run: npm run extract
             - name: Validate XML
               uses: ChristophWurst/xmllint-action@v1
+              with:
                 xml-file: build/extracted-doc/word/document.xml
                 xml-schema-file: scripts/schema-validator/schemas/microsoft/wml-2010.xsd
             - name: Run Demo
@@ -235,6 +259,7 @@ jobs:
               run: npm run extract
             - name: Validate XML
               uses: ChristophWurst/xmllint-action@v1
+              with:
                 xml-file: build/extracted-doc/word/document.xml
                 xml-schema-file: scripts/schema-validator/schemas/microsoft/wml-2010.xsd
             - name: Run Demo
@@ -243,6 +268,7 @@ jobs:
               run: npm run extract
             - name: Validate XML
               uses: ChristophWurst/xmllint-action@v1
+              with:
                 xml-file: build/extracted-doc/word/document.xml
                 xml-schema-file: scripts/schema-validator/schemas/microsoft/wml-2010.xsd
             - name: Run Demo
@@ -251,6 +277,7 @@ jobs:
               run: npm run extract
             - name: Validate XML
               uses: ChristophWurst/xmllint-action@v1
+              with:
                 xml-file: build/extracted-doc/word/document.xml
                 xml-schema-file: scripts/schema-validator/schemas/microsoft/wml-2010.xsd
             - name: Run Demo
@@ -259,6 +286,7 @@ jobs:
               run: npm run extract
             - name: Validate XML
               uses: ChristophWurst/xmllint-action@v1
+              with:
                 xml-file: build/extracted-doc/word/document.xml
                 xml-schema-file: scripts/schema-validator/schemas/microsoft/wml-2010.xsd
             - name: Run Demo
@@ -267,6 +295,7 @@ jobs:
               run: npm run extract
             - name: Validate XML
               uses: ChristophWurst/xmllint-action@v1
+              with:
                 xml-file: build/extracted-doc/word/document.xml
                 xml-schema-file: scripts/schema-validator/schemas/microsoft/wml-2010.xsd
             - name: Run Demo
@@ -275,6 +304,7 @@ jobs:
               run: npm run extract
             - name: Validate XML
               uses: ChristophWurst/xmllint-action@v1
+              with:
                 xml-file: build/extracted-doc/word/document.xml
                 xml-schema-file: scripts/schema-validator/schemas/microsoft/wml-2010.xsd
             - name: Run Demo
@@ -283,6 +313,7 @@ jobs:
               run: npm run extract
             - name: Validate XML
               uses: ChristophWurst/xmllint-action@v1
+              with:
                 xml-file: build/extracted-doc/word/document.xml
                 xml-schema-file: scripts/schema-validator/schemas/microsoft/wml-2010.xsd
             - name: Run Demo
@@ -291,6 +322,7 @@ jobs:
               run: npm run extract
             - name: Validate XML
               uses: ChristophWurst/xmllint-action@v1
+              with:
                 xml-file: build/extracted-doc/word/document.xml
                 xml-schema-file: scripts/schema-validator/schemas/microsoft/wml-2010.xsd
             - name: Run Demo
@@ -299,6 +331,7 @@ jobs:
               run: npm run extract
             - name: Validate XML
               uses: ChristophWurst/xmllint-action@v1
+              with:
                 xml-file: build/extracted-doc/word/document.xml
                 xml-schema-file: scripts/schema-validator/schemas/microsoft/wml-2010.xsd
             - name: Run Demo
@@ -307,6 +340,7 @@ jobs:
               run: npm run extract
             - name: Validate XML
               uses: ChristophWurst/xmllint-action@v1
+              with:
                 xml-file: build/extracted-doc/word/document.xml
                 xml-schema-file: scripts/schema-validator/schemas/microsoft/wml-2010.xsd
             - name: Run Demo
@@ -315,6 +349,7 @@ jobs:
               run: npm run extract
             - name: Validate XML
               uses: ChristophWurst/xmllint-action@v1
+              with:
                 xml-file: build/extracted-doc/word/document.xml
                 xml-schema-file: scripts/schema-validator/schemas/microsoft/wml-2010.xsd
             - name: Run Demo
@@ -323,6 +358,7 @@ jobs:
               run: npm run extract
             - name: Validate XML
               uses: ChristophWurst/xmllint-action@v1
+              with:
                 xml-file: build/extracted-doc/word/document.xml
                 xml-schema-file: scripts/schema-validator/schemas/microsoft/wml-2010.xsd
             - name: Run Demo
@@ -331,6 +367,7 @@ jobs:
               run: npm run extract
             - name: Validate XML
               uses: ChristophWurst/xmllint-action@v1
+              with:
                 xml-file: build/extracted-doc/word/document.xml
                 xml-schema-file: scripts/schema-validator/schemas/microsoft/wml-2010.xsd
             - name: Run Demo
@@ -339,6 +376,7 @@ jobs:
               run: npm run extract
             - name: Validate XML
               uses: ChristophWurst/xmllint-action@v1
+              with:
                 xml-file: build/extracted-doc/word/document.xml
                 xml-schema-file: scripts/schema-validator/schemas/microsoft/wml-2010.xsd
             - name: Run Demo
@@ -347,6 +385,7 @@ jobs:
               run: npm run extract
             - name: Validate XML
               uses: ChristophWurst/xmllint-action@v1
+              with:
                 xml-file: build/extracted-doc/word/document.xml
                 xml-schema-file: scripts/schema-validator/schemas/microsoft/wml-2010.xsd
             - name: Run Demo
@@ -355,6 +394,7 @@ jobs:
               run: npm run extract
             - name: Validate XML
               uses: ChristophWurst/xmllint-action@v1
+              with:
                 xml-file: build/extracted-doc/word/document.xml
                 xml-schema-file: scripts/schema-validator/schemas/microsoft/wml-2010.xsd
             - name: Run Demo
@@ -363,6 +403,7 @@ jobs:
               run: npm run extract
             - name: Validate XML
               uses: ChristophWurst/xmllint-action@v1
+              with:
                 xml-file: build/extracted-doc/word/document.xml
                 xml-schema-file: scripts/schema-validator/schemas/microsoft/wml-2010.xsd
             - name: Run Demo
@@ -371,6 +412,7 @@ jobs:
               run: npm run extract
             - name: Validate XML
               uses: ChristophWurst/xmllint-action@v1
+              with:
                 xml-file: build/extracted-doc/word/document.xml
                 xml-schema-file: scripts/schema-validator/schemas/microsoft/wml-2010.xsd
             - name: Run Demo
@@ -379,6 +421,7 @@ jobs:
               run: npm run extract
             - name: Validate XML
               uses: ChristophWurst/xmllint-action@v1
+              with:
                 xml-file: build/extracted-doc/word/document.xml
                 xml-schema-file: scripts/schema-validator/schemas/microsoft/wml-2010.xsd
             - name: Run Demo
@@ -387,6 +430,7 @@ jobs:
               run: npm run extract
             - name: Validate XML
               uses: ChristophWurst/xmllint-action@v1
+              with:
                 xml-file: build/extracted-doc/word/document.xml
                 xml-schema-file: scripts/schema-validator/schemas/microsoft/wml-2010.xsd
             - name: Run Demo
@@ -395,6 +439,7 @@ jobs:
               run: npm run extract
             - name: Validate XML
               uses: ChristophWurst/xmllint-action@v1
+              with:
                 xml-file: build/extracted-doc/word/document.xml
                 xml-schema-file: scripts/schema-validator/schemas/microsoft/wml-2010.xsd
             - name: Run Demo
@@ -403,6 +448,7 @@ jobs:
               run: npm run extract
             - name: Validate XML
               uses: ChristophWurst/xmllint-action@v1
+              with:
                 xml-file: build/extracted-doc/word/document.xml
                 xml-schema-file: scripts/schema-validator/schemas/microsoft/wml-2010.xsd
             - name: Run Demo
@@ -411,6 +457,7 @@ jobs:
               run: npm run extract
             - name: Validate XML
               uses: ChristophWurst/xmllint-action@v1
+              with:
                 xml-file: build/extracted-doc/word/document.xml
                 xml-schema-file: scripts/schema-validator/schemas/microsoft/wml-2010.xsd
             - name: Run Demo
@@ -419,6 +466,7 @@ jobs:
               run: npm run extract
             - name: Validate XML
               uses: ChristophWurst/xmllint-action@v1
+              with:
                 xml-file: build/extracted-doc/word/document.xml
                 xml-schema-file: scripts/schema-validator/schemas/microsoft/wml-2010.xsd
             - name: Run Demo
@@ -427,6 +475,7 @@ jobs:
               run: npm run extract
             - name: Validate XML
               uses: ChristophWurst/xmllint-action@v1
+              with:
                 xml-file: build/extracted-doc/word/document.xml
                 xml-schema-file: scripts/schema-validator/schemas/microsoft/wml-2010.xsd
             - name: Run Demo
@@ -435,6 +484,7 @@ jobs:
               run: npm run extract
             - name: Validate XML
               uses: ChristophWurst/xmllint-action@v1
+              with:
                 xml-file: build/extracted-doc/word/document.xml
                 xml-schema-file: scripts/schema-validator/schemas/microsoft/wml-2010.xsd
             - name: Run Demo
@@ -443,6 +493,7 @@ jobs:
               run: npm run extract
             - name: Validate XML
               uses: ChristophWurst/xmllint-action@v1
+              with:
                 xml-file: build/extracted-doc/word/document.xml
                 xml-schema-file: scripts/schema-validator/schemas/microsoft/wml-2010.xsd
             - name: Run Demo
@@ -451,6 +502,7 @@ jobs:
               run: npm run extract
             - name: Validate XML
               uses: ChristophWurst/xmllint-action@v1
+              with:
                 xml-file: build/extracted-doc/word/document.xml
                 xml-schema-file: scripts/schema-validator/schemas/microsoft/wml-2010.xsd
             - name: Run Demo
@@ -459,6 +511,7 @@ jobs:
               run: npm run extract
             - name: Validate XML
               uses: ChristophWurst/xmllint-action@v1
+              with:
                 xml-file: build/extracted-doc/word/document.xml
                 xml-schema-file: scripts/schema-validator/schemas/microsoft/wml-2010.xsd
             - name: Run Demo
@@ -467,6 +520,7 @@ jobs:
               run: npm run extract
             - name: Validate XML
               uses: ChristophWurst/xmllint-action@v1
+              with:
                 xml-file: build/extracted-doc/word/document.xml
                 xml-schema-file: scripts/schema-validator/schemas/microsoft/wml-2010.xsd
             - name: Run Demo
@@ -475,6 +529,7 @@ jobs:
               run: npm run extract
             - name: Validate XML
               uses: ChristophWurst/xmllint-action@v1
+              with:
                 xml-file: build/extracted-doc/word/document.xml
                 xml-schema-file: scripts/schema-validator/schemas/microsoft/wml-2010.xsd
             - name: Run Demo
@@ -483,6 +538,7 @@ jobs:
               run: npm run extract
             - name: Validate XML
               uses: ChristophWurst/xmllint-action@v1
+              with:
                 xml-file: build/extracted-doc/word/document.xml
                 xml-schema-file: scripts/schema-validator/schemas/microsoft/wml-2010.xsd
             - name: Run Demo
@@ -491,6 +547,7 @@ jobs:
               run: npm run extract
             - name: Validate XML
               uses: ChristophWurst/xmllint-action@v1
+              with:
                 xml-file: build/extracted-doc/word/document.xml
                 xml-schema-file: scripts/schema-validator/schemas/microsoft/wml-2010.xsd
             - name: Run Demo
@@ -499,6 +556,7 @@ jobs:
               run: npm run extract
             - name: Validate XML
               uses: ChristophWurst/xmllint-action@v1
+              with:
                 xml-file: build/extracted-doc/word/document.xml
                 xml-schema-file: scripts/schema-validator/schemas/microsoft/wml-2010.xsd
             - name: Run Demo
@@ -507,6 +565,7 @@ jobs:
               run: npm run extract
             - name: Validate XML
               uses: ChristophWurst/xmllint-action@v1
+              with:
                 xml-file: build/extracted-doc/word/document.xml
                 xml-schema-file: scripts/schema-validator/schemas/microsoft/wml-2010.xsd
             - name: Run Demo
@@ -515,6 +574,7 @@ jobs:
               run: npm run extract
             - name: Validate XML
               uses: ChristophWurst/xmllint-action@v1
+              with:
                 xml-file: build/extracted-doc/word/document.xml
                 xml-schema-file: scripts/schema-validator/schemas/microsoft/wml-2010.xsd
             - name: Run Demo
@@ -523,6 +583,7 @@ jobs:
               run: npm run extract
             - name: Validate XML
               uses: ChristophWurst/xmllint-action@v1
+              with:
                 xml-file: build/extracted-doc/word/document.xml
                 xml-schema-file: scripts/schema-validator/schemas/microsoft/wml-2010.xsd
             - name: Run Demo
@@ -531,6 +592,7 @@ jobs:
               run: npm run extract
             - name: Validate XML
               uses: ChristophWurst/xmllint-action@v1
+              with:
                 xml-file: build/extracted-doc/word/document.xml
                 xml-schema-file: scripts/schema-validator/schemas/microsoft/wml-2010.xsd
             - name: Run Demo
@@ -539,6 +601,7 @@ jobs:
               run: npm run extract
             - name: Validate XML
               uses: ChristophWurst/xmllint-action@v1
+              with:
                 xml-file: build/extracted-doc/word/document.xml
                 xml-schema-file: scripts/schema-validator/schemas/microsoft/wml-2010.xsd
             - name: Run Demo
@@ -547,6 +610,7 @@ jobs:
               run: npm run extract
             - name: Validate XML
               uses: ChristophWurst/xmllint-action@v1
+              with:
                 xml-file: build/extracted-doc/word/document.xml
                 xml-schema-file: scripts/schema-validator/schemas/microsoft/wml-2010.xsd
             - name: Run Demo
@@ -555,6 +619,7 @@ jobs:
               run: npm run extract
             - name: Validate XML
               uses: ChristophWurst/xmllint-action@v1
+              with:
                 xml-file: build/extracted-doc/word/document.xml
                 xml-schema-file: scripts/schema-validator/schemas/microsoft/wml-2010.xsd
             - name: Run Demo
@@ -563,6 +628,7 @@ jobs:
               run: npm run extract
             - name: Validate XML
               uses: ChristophWurst/xmllint-action@v1
+              with:
                 xml-file: build/extracted-doc/word/document.xml
                 xml-schema-file: scripts/schema-validator/schemas/microsoft/wml-2010.xsd
             - name: Run Demo
@@ -571,6 +637,7 @@ jobs:
               run: npm run extract
             - name: Validate XML
               uses: ChristophWurst/xmllint-action@v1
+              with:
                 xml-file: build/extracted-doc/word/document.xml
                 xml-schema-file: scripts/schema-validator/schemas/microsoft/wml-2010.xsd
             - name: Run Demo
@@ -579,6 +646,7 @@ jobs:
               run: npm run extract
             - name: Validate XML
               uses: ChristophWurst/xmllint-action@v1
+              with:
                 xml-file: build/extracted-doc/word/document.xml
                 xml-schema-file: scripts/schema-validator/schemas/microsoft/wml-2010.xsd
             - name: Run Demo
@@ -587,6 +655,7 @@ jobs:
               run: npm run extract
             - name: Validate XML
               uses: ChristophWurst/xmllint-action@v1
+              with:
                 xml-file: build/extracted-doc/word/document.xml
                 xml-schema-file: scripts/schema-validator/schemas/microsoft/wml-2010.xsd
             - name: Run Demo
@@ -595,5 +664,6 @@ jobs:
               run: npm run extract
             - name: Validate XML
               uses: ChristophWurst/xmllint-action@v1
+              with:
                 xml-file: build/extracted-doc/word/document.xml
                 xml-schema-file: scripts/schema-validator/schemas/microsoft/wml-2010.xsd
