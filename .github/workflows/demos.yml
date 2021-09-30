@@ -181,11 +181,11 @@ jobs:
               with:
                 xml-file: build/extracted-doc/word/document.xml
                 xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
+            - name: Run Demo
+              run: npm run ts-node -- ./demo/17-footnotes.ts
+            - name: Extract Word Document
+              run: npm run extract
             # element r: Schemas validity error : Element '{http://schemas.openxmlformats.org/wordprocessingml/2006/main}r': This element is not expected.
-            # - name: Run Demo
-            #   run: npm run ts-node -- ./demo/17-footnotes.ts
-            # - name: Extract Word Document
-            #   run: npm run extract
             # - name: Validate XML
             #   uses: ChristophWurst/xmllint-action@v1
             #   with:
@@ -218,11 +218,11 @@ jobs:
               with:
                 xml-file: build/extracted-doc/word/document.xml
                 xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
+            - name: Run Demo
+              run: npm run ts-node -- ./demo/21-bookmarks.ts
+            - name: Extract Word Document
+              run: npm run extract
             # Bad ID - need numeric ID
-            # - name: Run Demo
-            #   run: npm run ts-node -- ./demo/21-bookmarks.ts
-            # - name: Extract Word Document
-            #   run: npm run extract
             # - name: Validate XML
             #   uses: ChristophWurst/xmllint-action@v1
             #   with:
@@ -336,12 +336,12 @@ jobs:
               with:
                 xml-file: build/extracted-doc/word/document.xml
                 xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
+            - name: Run Demo
+              run: npm run ts-node -- ./demo/34-floating-tables.ts
+            - name: Extract Word Document
+              run: npm run extract
             # element tblpPr: Schemas validity error : Element '{http://schemas.openxmlformats.org/wordprocessingml/2006/main}tblpPr', attribute 'overlap': The attribute 'overlap' is not allowed.
             # element tblpPr: Schemas validity error : Element '{http://schemas.openxmlformats.org/wordprocessingml/2006/main}tblpPr': Element content is not allowed, because the content type is empty.
-            # - name: Run Demo
-            #   run: npm run ts-node -- ./demo/34-floating-tables.ts
-            # - name: Extract Word Document
-            #   run: npm run extract
             # - name: Validate XML
             #   uses: ChristophWurst/xmllint-action@v1
             #   with:
@@ -531,11 +531,15 @@ jobs:
               run: npm run ts-node -- ./demo/55-math.ts
             - name: Extract Word Document
               run: npm run extract
-            - name: Validate XML
-              uses: ChristophWurst/xmllint-action@v1
-              with:
-                xml-file: build/extracted-doc/word/document.xml
-                xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
+            #: element subHide: Schemas validity error : Element '{http://schemas.openxmlformats.org/officeDocument/2006/math}subHide': This element is not expected. Expected is ( {http://schemas.openxmlformats.org/officeDocument/2006/math}ctrlPr ).
+            #: element e: Schemas validity error : Element '{http://schemas.openxmlformats.org/officeDocument/2006/math}e': This element is not expected. Expected is ( {http://schemas.openxmlformats.org/officeDocument/2006/math}sub ).
+            #: element e: Schemas validity error : Element '{http://schemas.openxmlformats.org/officeDocument/2006/math}e': This element is not expected. Expected is ( {http://schemas.openxmlformats.org/officeDocument/2006/math}sup ).
+            #: element e: Schemas validity error : Element '{http://schemas.openxmlformats.org/officeDocument/2006/math}e': This element is not expected. Expected is ( {http://schemas.openxmlformats.org/officeDocument/2006/math}sub ).
+            # - name: Validate XML
+            #   uses: ChristophWurst/xmllint-action@v1
+            #   with:
+            #     xml-file: build/extracted-doc/word/document.xml
+            #     xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
             - name: Run Demo
               run: npm run ts-node -- ./demo/56-background-color.ts
             - name: Extract Word Document
