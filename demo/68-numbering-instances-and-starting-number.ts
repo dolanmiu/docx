@@ -1,5 +1,5 @@
 import * as fs from "fs";
-import { Document, Packer, Paragraph, PageNumberFormat } from "../build";
+import { Document, Packer, Paragraph, LevelFormat } from "../build";
 
 const doc = new Document({
     numbering: {
@@ -9,7 +9,7 @@ const doc = new Document({
                 levels: [
                     {
                         level: 0,
-                        format: PageNumberFormat.DECIMAL,
+                        format: LevelFormat.DECIMAL,
                         text: "%1",
                         start: 10,
                     },
@@ -20,7 +20,7 @@ const doc = new Document({
                 levels: [
                     {
                         level: 0,
-                        format: PageNumberFormat.DECIMAL,
+                        format: LevelFormat.DECIMAL,
                         text: "%1",
                     },
                 ],
