@@ -4,15 +4,15 @@
 
 !> **Note**: The unit of measurement for a tab stop is in [DXA](https://stackoverflow.com/questions/14360183/default-wordml-unit-measurement-pixel-or-point-or-inches)
 
-![Word 2013 Tabs](http://www.teachucomp.com/wp-content/uploads/blog-4-22-2015-UsingTabStopsInWord-1024x577.png "Word 2013 Tab Stops")
+![Word 2013 Tabs](https://support.content.office.net/en-us/media/d75ca75d-9fe9-4d46-9a8b-4534c13acbc5.png "Word 2013 Tab Stops")
 
-Simply call the relevant methods on the paragraph listed below. Then just add a `tab()` method call to a text object. Adding multiple `tabStops` will mean you would have to chain `tab()` until the desired `tabStop` is selected. Example is shown below.
+Simply declare the tab stops on the paragraph, as shown below. Use the tab character `\t` to indicate the tab position within the `text` property of a `TextRun`. Adding multiple `tabStops` will mean you can add additional `\t` characters until the desired `tabStop` is selected. Example is shown below.
 
 ## Example
 
 ```ts
 const paragraph = new Paragraph({
-    children: [new TextRun("Hey everyone").bold(), new TextRun(\t"11th November 1999")],
+    children: [new TextRun({ text: "Hey everyone", bold: true}), new TextRun("\t11th November 1999")],
     tabStops: [
         {
             type: TabStopType.RIGHT,
@@ -26,7 +26,7 @@ The example above will create a left aligned text, and a right aligned text on t
 
 ```ts
 const paragraph = new Paragraph({
-    children: [new TextRun("Second tab stop here I come!")],
+    children: [new TextRun("\t\tSecond tab stop here I come!")],
     tabStops: [
         {
             type: TabStopType.RIGHT,
@@ -46,7 +46,7 @@ You can add multiple tab stops of the same `type` too.
 
 ```ts
 const paragraph = new Paragraph({
-    children: [new TextRun("Multiple tab stops!")],
+    children: [new TextRun("Multiple \ttab \tstops!")],
     tabStops: [
         {
             type: TabStopType.RIGHT,
@@ -103,7 +103,7 @@ const paragraph = new Paragraph({
 });
 ```
 
-2268 is the distance fro0oum the left side.
+2268 is the distance from the left side.
 
 ## Max Right Tab Stop
 

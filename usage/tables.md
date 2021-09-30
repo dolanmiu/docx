@@ -242,12 +242,12 @@ const cell = new TableCell({
 
 `WidthType` values can be:
 
-| Property | Notes                             |
-| -------- | --------------------------------- |
-| AUTO     |                                   |
-| DXA      | value is in twentieths of a point |
-| NIL      | is considered as zero             |
-| PCT      | percent of table width            |
+| Property   | Notes                             |
+| ---------- | --------------------------------- |
+| AUTO       |                                   |
+| DXA        | Value is in twentieths of a point |
+| NIL        | Is considered as zero             |
+| PERCENTAGE | Percent of table width            |
 
 ### Nested Tables
 
