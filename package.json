@@ -5,7 +5,7 @@
   "main": "build/index.js",
   "scripts": {
     "pretest": "rimraf ./build",
-    "test": "mocha -r ts-node/register -r tsconfig-paths/register \"src/**/*.ts\"",
+    "test": "TS_NODE_PROJECT=\"tsconfig.spec.json\" mocha -r ts-node/register -r tsconfig-paths/register \"src/**/*.ts\"",
     "test.coverage": "nyc npm test",
     "test.watch": "npm test -- --watch",
     "prepublishOnly": "npm run build --production",
