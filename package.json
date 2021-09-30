@@ -19,7 +19,7 @@
     "fix-types": "ts-node --skip-project scripts/types-absolute-fixer.ts",
     "e2e": "ts-node scripts/e2e.ts",
     "serve.docs": "cd docs && docsify serve",
-    "extract": "ts-node scripts/extract-document.ts",
+    "extract": "ts-node --project tsconfig.spec.json scripts/extract-document.ts",
     "ts-node": "ts-node --skip-project"
   },
   "pre-commit": [
