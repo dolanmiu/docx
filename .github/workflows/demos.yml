@@ -8,18 +8,14 @@ on:
             - master
 
 jobs:
-    install:
-        name: Install
+    demos:
+        name: Run Demos and Validate
         runs-on: ubuntu-latest
         steps:
             - name: Checkout Repo
               uses: actions/checkout@master
             - name: Install Dependencies
               run: npm ci
-    demos:
-        name: Run Demos and Validate
-        runs-on: ubuntu-latest
-        steps:
             - name: Run Demo
               run: npm run ts-node -- ./demo/1-basic.ts
             - name: Extract Word Document
