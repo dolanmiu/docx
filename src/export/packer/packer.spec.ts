@@ -12,7 +12,7 @@ describe("Packer", () => {
     beforeEach(() => {
         file = new File({
             creator: "Dolan Miu",
-            revision: "1",
+            revision: 1,
             lastModifiedBy: "Dolan Miu",
             sections: [
                 {
