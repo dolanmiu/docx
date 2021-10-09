@@ -38,7 +38,7 @@ describe("Properties", () => {
                 keywords: "test docx",
                 description: "testing document",
                 lastModifiedBy: "the author",
-                revision: "123",
+                revision: 123,
             });
             const tree = new Formatter().format(properties);
             expect(Object.keys(tree)).to.deep.equal(["cp:coreProperties"]);

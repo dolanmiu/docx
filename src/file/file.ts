@@ -57,7 +57,7 @@ export class File {
         this.coreProperties = new CoreProperties({
             ...options,
             creator: options.creator ?? "Un-named",
-            revision: options.revision ?? "1",
+            revision: options.revision ?? 1,
             lastModifiedBy: options.lastModifiedBy ?? "Un-named",
         });
 
