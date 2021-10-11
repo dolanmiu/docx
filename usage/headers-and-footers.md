@@ -8,24 +8,24 @@ Every Section has a sections which you can define its Headers and Footers:
 const doc = new Document({
     sections: [{
         headers: {
-            default: new Header({ // The standard default header
+            default: new Header({ // The standard default header on every page or header on odd pages when the 'Different Odd & Even Pages' option is activated
                 children: [],
             }),
-            first: new Header({ // The first header
+            first: new Header({ // The header on first page when the 'Different First Page' option is activated
                 children: [],
             }),
-            even: new Header({ // The header on every other page
+            even: new Header({ // The header on even pages when the 'Different Odd & Even Pages' option is activated
                 children: [],
             }),
         },
         footers: {
-            default: new Footer({ // The standard default footer
+            default: new Footer({ // The standard default footer on every page or footer on odd pages when the 'Different Odd & Even Pages' option is activated
                 children: [],
             }),
-            first: new Footer({ // The first footer
+            first: new Footer({ // The footer on first page when the 'Different First Page' option is activated
                 children: [],
             }),
-            even: new Footer({ // The footer on every other page
+            even: new Footer({ // The footer on even pages when the 'Different Odd & Even Pages' option is activated
                 children: [],
             }),
         },
