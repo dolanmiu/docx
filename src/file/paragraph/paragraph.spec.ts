@@ -22,6 +22,9 @@ describe("Paragraph", () => {
         stub(convenienceFunctions, "uniqueId").callsFake(() => {
             return "test-unique-id";
         });
+        stub(convenienceFunctions, "uniqueNumericId").callsFake(() => {
+            return -101;
+        });
     });
 
     after(() => {
@@ -716,7 +719,7 @@ describe("Paragraph", () => {
                 {
                     "w:bookmarkStart": {
                         _attr: {
-                            "w:id": "test-unique-id",
+                            "w:id": -101,
                             "w:name": "test-id",
                         },
                     },
@@ -738,7 +741,7 @@ describe("Paragraph", () => {
                 {
                     "w:bookmarkEnd": {
                         _attr: {
-                            "w:id": "test-unique-id",
+                            "w:id": -101,
                         },
                     },
                 },

@@ -1,7 +1,7 @@
 import { XmlAttributeComponent } from "file/xml-components";
 
 export class BookmarkStartAttributes extends XmlAttributeComponent<{
-    readonly id: string;
+    readonly id: number;
     readonly name: string;
 }> {
     protected readonly xmlKeys = {
@@ -11,7 +11,7 @@ export class BookmarkStartAttributes extends XmlAttributeComponent<{
 }
 
 export class BookmarkEndAttributes extends XmlAttributeComponent<{
-    readonly id: string;
+    readonly id: number;
 }> {
     protected readonly xmlKeys = {
         id: "w:id",
