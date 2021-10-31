@@ -680,7 +680,7 @@ jobs:
                   xml-file: build/extracted-doc/word/document.xml
                   xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
             - name: Run Demo
-              run: npm run ts-node -- ./demo/71-line-numbers-suppression.ts
+              run: npm run ts-node -- ./demo/71-page-borders-2.ts
             - name: Extract Word Document
               run: npm run extract
             - name: Validate XML
