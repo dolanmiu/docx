@@ -6,14 +6,12 @@ import { DocumentBackground } from "./document-background";
 
 describe("DocumentBackground", () => {
     describe("#constructor()", () => {
-        it("should create a DocumentBackground with no options and set color to auto", () => {
+        it("should create a DocumentBackground with no options", () => {
             const documentBackground = new DocumentBackground({});
             const tree = new Formatter().format(documentBackground);
             expect(tree).to.deep.equal({
                 "w:background": {
-                    _attr: {
-                        "w:color": "FFFFFF",
-                    },
+                    _attr: {},
                 },
             });
         });
