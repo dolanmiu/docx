@@ -40,9 +40,7 @@ describe("Document", () => {
                     },
                     {
                         "w:background": {
-                            _attr: {
-                                "w:color": "FFFFFF",
-                            },
+                            _attr: {},
                         },
                     },
                     { "w:body": {} },

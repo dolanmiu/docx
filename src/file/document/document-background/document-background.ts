@@ -26,7 +26,7 @@ import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
 // </xsd:simpleType>
 
 export class DocumentBackgroundAttributes extends XmlAttributeComponent<{
-    readonly color: string;
+    readonly color?: string;
     readonly themeColor?: string;
     readonly themeShade?: string;
     readonly themeTint?: string;
@@ -68,7 +68,7 @@ export class DocumentBackground extends XmlComponent {
 
         this.root.push(
             new DocumentBackgroundAttributes({
-                color: hexColorValue(options.color ? options.color : "FFFFFF"),
+                color: options.color === undefined ? undefined : hexColorValue(options.color),
                 themeColor: options.themeColor,
                 themeShade: options.themeShade === undefined ? undefined : uCharHexNumber(options.themeShade),
                 themeTint: options.themeTint === undefined ? undefined : uCharHexNumber(options.themeTint),
