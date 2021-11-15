@@ -24,12 +24,14 @@
   },
   "pre-commit": [
     "style",
-    "lint"
+    "lint",
+    "build"
   ],
   "files": [
     "src",
     "build",
-    "template"
+    "template",
+    "webpack.config.ts"
   ],
   "repository": {
     "type": "git",
