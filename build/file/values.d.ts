@@ -1,0 +1,17 @@
+export declare function decimalNumber(val: number): number;
+export declare function unsignedDecimalNumber(val: number): number;
+export declare function longHexNumber(val: string): string;
+export declare function shortHexNumber(val: string): string;
+export declare function uCharHexNumber(val: string): string;
+export declare function universalMeasureValue(val: string): string;
+export declare function positiveUniversalMeasureValue(val: string): string;
+export declare function hexColorValue(val: string): string;
+export declare function signedTwipsMeasureValue(val: string | number): string | number;
+export declare function hpsMeasureValue(val: string | number): string | number;
+export declare function signedHpsMeasureValue(val: string | number): string | number;
+export declare function twipsMeasureValue(val: string | number): string | number;
+export declare function percentageValue(val: string): string;
+export declare function measurementOrPercentValue(val: number | string): number | string;
+export declare const eighthPointMeasureValue: typeof unsignedDecimalNumber;
+export declare const pointMeasureValue: typeof unsignedDecimalNumber;
+export declare function dateTimeValue(val: Date): string;
