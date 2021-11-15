@@ -1,6 +1,44 @@
 import { hexColorValue, signedTwipsMeasureValue } from "file/values";
 import { Attributes, XmlComponent } from "file/xml-components";
 
+export { Underline } from "./underline";
+export { EmphasisMark } from "./emphasis-mark";
+export { SubScript, SuperScript } from "./script";
+export { RunFonts, IFontAttributesProperties } from "./run-fonts";
+
+export class Bold extends XmlComponent {
+    constructor() {
+        super("w:b");
+        this.root.push(
+            new Attributes({
+                val: true,
+            }),
+        );
+    }
+}
+
+export class BoldWithExactValue extends XmlComponent {
+    constructor(value: string) {
+        super("w:b");
+        this.root.push(
+            new Attributes({
+                val: value,
+            }),
+        );
+    }
+}
+
+export class BoldComplexScript extends XmlComponent {
+    constructor() {
+        super("w:bCs");
+        this.root.push(
+            new Attributes({
+                val: true,
+            }),
+        );
+    }
+}
+
 export class CharacterSpacing extends XmlComponent {
     constructor(value: number | string) {
         super("w:spacing");
