@@ -73,6 +73,17 @@ class LevelJc extends XmlComponent {
     }
 }
 
+class LvlRestart extends XmlComponent {
+    constructor(value: number) {
+        super("w:lvlRestart");
+        this.root.push(
+            new Attributes({
+                val: value,
+            }),
+        );
+    }
+}
+
 export enum LevelSuffix {
     NOTHING = "nothing",
     SPACE = "space",
@@ -90,6 +101,7 @@ export interface ILevelsOptions {
         readonly run?: IRunStylePropertiesOptions;
         readonly paragraph?: ILevelParagraphStylePropertiesOptions;
     };
+    readonly levelRestart?: number;
 }
 
 // <xsd:complexType name="CT_LevelSuffix">
@@ -136,7 +148,7 @@ export class LevelBase extends XmlComponent {
     private readonly paragraphProperties: ParagraphProperties;
     private readonly runProperties: RunProperties;
 
-    constructor({ level, format, text, alignment = AlignmentType.START, start = 1, style, suffix }: ILevelsOptions) {
+    constructor({ level, format, text, alignment = AlignmentType.START, start = 1, style, suffix, levelRestart }: ILevelsOptions) {
         super("w:lvl");
 
         this.root.push(new NumberValueElement("w:start", decimalNumber(start)));
@@ -147,6 +159,9 @@ export class LevelBase extends XmlComponent {
 
         if (suffix) {
             this.root.push(new Suffix(suffix));
+        }
+        if (levelRestart !== undefined) {
+            this.root.push(new LvlRestart(levelRestart));
         }
 
         if (text) {

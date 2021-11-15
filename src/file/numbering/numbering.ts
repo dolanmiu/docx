@@ -27,6 +27,8 @@ export interface INumberingOptions {
 //         </xsd:sequence>
 //     </xsd:complexType>
 export class Numbering extends XmlComponent {
+    // tslint:disable-next-line:readonly-keyword
+    private nextId: number;
     private readonly abstractNumberingMap = new Map<string, AbstractNumbering>();
     private readonly concreteNumberingMap = new Map<string, ConcreteNumbering>();
     private readonly referenceConfigMap = new Map<string, object>();
@@ -54,6 +56,8 @@ export class Numbering extends XmlComponent {
                 Ignorable: "w14 w15 wp14",
             }),
         );
+
+        this.nextId = 0;
 
         const abstractNumbering = new AbstractNumbering(uniqueNumericId(), [
             {
@@ -204,7 +208,7 @@ export class Numbering extends XmlComponent {
         }
 
         const concreteNumberingSettings = {
-            numId: uniqueNumericId(),
+            numId: uniqueNumericId() || this.nextId++,
             abstractNumId: abstractNumbering.id,
             reference,
             instance,
