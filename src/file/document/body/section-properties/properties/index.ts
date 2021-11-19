@@ -7,6 +7,7 @@ export * from "./page-number";
 export * from "./page-borders";
 export * from "./page-margin";
 export * from "./page-borders";
+export * from "./page-text-direction";
 export * from "./line-number";
 export * from "./section-type";
 export * from "./header-footer-reference";
