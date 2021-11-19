@@ -14,7 +14,7 @@ export declare class Numbering extends XmlComponent {
     private readonly referenceConfigMap;
     constructor(options: INumberingOptions);
     prepForXml(context: IContext): IXmlableObject | undefined;
-    createConcreteNumberingInstance(reference: string, instance: number): void;
+    createConcreteNumberingInstance(reference: string, instance: number, numId?: number): void;
     get ConcreteNumbering(): ConcreteNumbering[];
     get ReferenceConfig(): object[];
 }

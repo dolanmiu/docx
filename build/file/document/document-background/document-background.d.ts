@@ -1,6 +1,6 @@
 import { XmlAttributeComponent, XmlComponent } from "../../../file/xml-components";
 export declare class DocumentBackgroundAttributes extends XmlAttributeComponent<{
-    readonly color: string;
+    readonly color?: string;
     readonly themeColor?: string;
     readonly themeShade?: string;
     readonly themeTint?: string;

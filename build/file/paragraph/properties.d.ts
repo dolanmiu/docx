@@ -25,6 +25,7 @@ export interface IParagraphStylePropertiesOptions extends ILevelParagraphStylePr
         readonly level: number;
         readonly instance?: number;
         readonly custom?: boolean;
+        readonly numId?: number;
     };
 }
 export interface IParagraphPropertiesOptions extends IParagraphStylePropertiesOptions {

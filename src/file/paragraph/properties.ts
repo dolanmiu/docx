@@ -33,6 +33,7 @@ export interface IParagraphStylePropertiesOptions extends ILevelParagraphStylePr
         readonly level: number;
         readonly instance?: number;
         readonly custom?: boolean;
+        readonly numId?: number;
     };
 }
 
@@ -57,7 +58,7 @@ export interface IParagraphPropertiesOptions extends IParagraphStylePropertiesOp
 }
 
 export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
-    private readonly numberingReferences: { readonly reference: string; readonly instance: number }[] = [];
+    private readonly numberingReferences: { readonly reference: string; readonly instance: number; readonly numId?: number }[] = [];
 
     constructor(options?: IParagraphPropertiesOptions) {
         super("w:pPr");
@@ -114,6 +115,7 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
             this.numberingReferences.push({
                 reference: options.numbering.reference,
                 instance: options.numbering.instance ?? 0,
+                numId: options.numbering.numId,
             });
 
             this.push(new NumberProperties(`${options.numbering.reference}-${options.numbering.instance ?? 0}`, options.numbering.level));
@@ -181,7 +183,7 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
     public prepForXml(context: IContext): IXmlableObject | undefined {
         if (context.viewWrapper instanceof DocumentWrapper) {
             for (const reference of this.numberingReferences) {
-                context.file.Numbering.createConcreteNumberingInstance(reference.reference, reference.instance);
+                context.file.Numbering.createConcreteNumberingInstance(reference.reference, reference.instance, reference.numId);
             }
         }
 

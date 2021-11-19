@@ -194,7 +194,7 @@ export class Numbering extends XmlComponent {
         return super.prepForXml(context);
     }
 
-    public createConcreteNumberingInstance(reference: string, instance: number): void {
+    public createConcreteNumberingInstance(reference: string, instance: number, numId?: number): void {
         const abstractNumbering = this.abstractNumberingMap.get(reference);
 
         if (!abstractNumbering) {
@@ -208,7 +208,7 @@ export class Numbering extends XmlComponent {
         }
 
         const concreteNumberingSettings = {
-            numId: uniqueNumericId() || this.nextId++,
+            numId: numId || uniqueNumericId() || this.nextId++,
             abstractNumId: abstractNumbering.id,
             reference,
             instance,
