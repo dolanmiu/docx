@@ -199,7 +199,7 @@ export class Settings extends XmlComponent {
 
         this.root.push(
             new Compatibility({
-                version: options.compatabilityModeVersion || 15,
+                version: options.compatabilityModeVersion,
             }),
         );
     }
