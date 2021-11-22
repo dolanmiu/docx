@@ -151,6 +151,7 @@ export interface ISettingsOptions {
     readonly evenAndOddHeaders?: boolean;
     readonly trackRevisions?: boolean;
     readonly updateFields?: boolean;
+    readonly doNotExpandShiftReturn?: boolean;
 }
 
 export class Settings extends XmlComponent {
@@ -200,6 +201,7 @@ export class Settings extends XmlComponent {
         this.root.push(
             new Compatibility({
                 version: options.compatabilityModeVersion,
+                doNotExpandShiftReturn: options.doNotExpandShiftReturn,
             }),
         );
     }

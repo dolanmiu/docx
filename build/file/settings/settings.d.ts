@@ -43,6 +43,7 @@ export interface ISettingsOptions {
     readonly evenAndOddHeaders?: boolean;
     readonly trackRevisions?: boolean;
     readonly updateFields?: boolean;
+    readonly doNotExpandShiftReturn?: boolean;
 }
 export declare class Settings extends XmlComponent {
     constructor(options: ISettingsOptions);

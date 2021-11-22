@@ -28,6 +28,7 @@ export interface IPropertiesOptions {
         readonly updateFields?: boolean;
     };
     readonly compatabilityModeVersion?: number;
+    readonly doNotExpandShiftReturn?: boolean;
     readonly customProperties?: ICustomPropertyOptions[];
     readonly evenAndOddHeaderAndFooters?: boolean;
 }
