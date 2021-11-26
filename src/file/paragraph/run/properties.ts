@@ -1,3 +1,5 @@
+import { ChangeAttributes, IChangedAttributesProperties } from "../../track-revision/track-revision";
+
 import { IShadingAttributesProperties, Shading } from "file/shading";
 import { HpsMeasureElement, IgnoreIfEmptyXmlComponent, OnOffElement, StringValueElement, XmlComponent } from "file/xml-components";
 import { EmphasisMark, EmphasisMarkType } from "./emphasis-mark";
@@ -40,11 +42,14 @@ export interface IRunStylePropertiesOptions {
     readonly shading?: IShadingAttributesProperties;
     readonly emboss?: boolean;
     readonly imprint?: boolean;
+    readonly revision?: IRunPropertiesChangeOptions;
 }
 
 export interface IRunPropertiesOptions extends IRunStylePropertiesOptions {
     readonly style?: string;
 }
+
+export interface IRunPropertiesChangeOptions extends IRunPropertiesOptions, IChangedAttributesProperties {}
 
 // <xsd:group name="EG_RPrBase">
 //     <xsd:choice>
@@ -200,9 +205,27 @@ export class RunProperties extends IgnoreIfEmptyXmlComponent {
         if (options.shading) {
             this.push(new Shading(options.shading));
         }
+
+        if (options.revision) {
+            this.push(new RunPropertiesChange(options.revision));
+        }
     }
 
     public push(item: XmlComponent): void {
         this.root.push(item);
+    }
+}
+
+export class RunPropertiesChange extends XmlComponent {
+    constructor(options: IRunPropertiesChangeOptions) {
+        super("w:rPrChange");
+        this.root.push(
+            new ChangeAttributes({
+                id: options.id,
+                author: options.author,
+                date: options.date,
+            }),
+        );
+        this.addChildElement(new RunProperties(options as IRunPropertiesOptions));
     }
 }

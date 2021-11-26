@@ -428,4 +428,64 @@ describe("Run", () => {
             });
         });
     });
+
+    describe("#revisions", () => {
+        it("should add style revisions", () => {
+            const run = new Run({
+                bold: true,
+                italics: true,
+                revision: {
+                    id: 0,
+                    author: "Firstname Lastname",
+                    date: "123",
+                    bold: false,
+                    italics: true,
+                },
+            });
+            const tree = new Formatter().format(run);
+            expect(tree).to.deep.equal({
+                "w:r": [
+                    {
+                        "w:rPr": [
+                            { "w:b": {} },
+                            {
+                                "w:bCs": {},
+                            },
+                            { "w:i": {} },
+                            {
+                                "w:iCs": {},
+                            },
+                            {
+                                "w:rPrChange": [
+                                    {
+                                        _attr: {
+                                            "w:author": "Firstname Lastname",
+                                            "w:date": "123",
+                                            "w:id": 0,
+                                        },
+                                    },
+                                    {
+                                        "w:rPr": [
+                                            { "w:b": { _attr: { "w:val": false } } },
+                                            {
+                                                "w:bCs": {
+                                                    _attr: {
+                                                        "w:val": false,
+                                                    },
+                                                },
+                                            },
+                                            { "w:i": {} },
+                                            {
+                                                "w:iCs": {},
+                                            },
+                                        ],
+                                    },
+                                ],
+                            },
+                        ],
+                    },
+                ],
+            });
+        });
+    });
 });
