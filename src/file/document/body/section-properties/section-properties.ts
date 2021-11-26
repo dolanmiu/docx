@@ -15,7 +15,7 @@ import { IPageBordersOptions, PageBorders } from "./properties/page-borders";
 import { IPageMarginAttributes, PageMargin } from "./properties/page-margin";
 import { IPageNumberTypeAttributes, PageNumberType } from "./properties/page-number";
 import { IPageSizeAttributes, PageOrientation, PageSize } from "./properties/page-size";
-import { PageTDirection, PageTextDirection } from "./properties/page-text-direction";
+import { PageTextDirection, PageTextDirectionType } from "./properties/page-text-direction";
 import { SectionType, Type } from "./properties/section-type";
 
 export interface IHeaderFooterGroup<T> {
@@ -30,7 +30,7 @@ export interface ISectionPropertiesOptions {
         readonly margin?: IPageMarginAttributes;
         readonly pageNumbers?: IPageNumberTypeAttributes;
         readonly borders?: IPageBordersOptions;
-        readonly textDirection?: PageTextDirection;
+        readonly textDirection?: PageTextDirectionType;
     };
     readonly grid?: IDocGridAttributesProperties;
     readonly headerWrapperGroup?: IHeaderFooterGroup<HeaderWrapper>;
@@ -156,7 +156,7 @@ export class SectionProperties extends XmlComponent {
         }
 
         if (textDirection) {
-            this.root.push(new PageTDirection(textDirection));
+            this.root.push(new PageTextDirection(textDirection));
         }
 
         this.root.push(new DocumentGrid(linePitch));

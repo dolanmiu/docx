@@ -11,7 +11,7 @@ import { VerticalAlign } from "file/vertical-align";
 import { PageOrientation } from "./properties";
 import { LineNumberRestartFormat } from "./properties/line-number";
 import { PageBorderOffsetFrom } from "./properties/page-borders";
-import { PageTextDirection } from "./properties/page-text-direction";
+import { PageTextDirectionType } from "./properties/page-text-direction";
 import { SectionType } from "./properties/section-type";
 import { sectionMarginDefaults, sectionPageSizeDefaults, SectionProperties } from "./section-properties";
 
@@ -263,7 +263,7 @@ describe("SectionProperties", () => {
         it("should create section properties with text flow direction", () => {
             const properties = new SectionProperties({
                 page: {
-                    textDirection: PageTextDirection.TOP_TO_BOTTOM_RIGHT_TO_LEFT,
+                    textDirection: PageTextDirectionType.TOP_TO_BOTTOM_RIGHT_TO_LEFT,
                 },
             });
             const tree = new Formatter().format(properties);
