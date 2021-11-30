@@ -1,3 +1,4 @@
+import { IChangedAttributesProperties } from "../../track-revision/track-revision";
 import { IShadingAttributesProperties } from "../../../file/shading";
 import { IgnoreIfEmptyXmlComponent, XmlComponent } from "../../../file/xml-components";
 import { EmphasisMarkType } from "./emphasis-mark";
@@ -36,12 +37,18 @@ export interface IRunStylePropertiesOptions {
     readonly shading?: IShadingAttributesProperties;
     readonly emboss?: boolean;
     readonly imprint?: boolean;
+    readonly revision?: IRunPropertiesChangeOptions;
 }
 export interface IRunPropertiesOptions extends IRunStylePropertiesOptions {
     readonly style?: string;
 }
+export interface IRunPropertiesChangeOptions extends IRunPropertiesOptions, IChangedAttributesProperties {
+}
 export declare class RunProperties extends IgnoreIfEmptyXmlComponent {
     constructor(options?: IRunPropertiesOptions);
     push(item: XmlComponent): void;
+}
+export declare class RunPropertiesChange extends XmlComponent {
+    constructor(options: IRunPropertiesChangeOptions);
 }
 export {};

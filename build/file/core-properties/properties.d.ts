@@ -29,6 +29,7 @@ export interface IPropertiesOptions {
     };
     readonly compatabilityModeVersion?: number;
     readonly doNotExpandShiftReturn?: boolean;
+    readonly autoHyphenation?: boolean;
     readonly customProperties?: ICustomPropertyOptions[];
     readonly evenAndOddHeaderAndFooters?: boolean;
 }

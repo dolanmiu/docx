@@ -9,6 +9,7 @@ import { IPageBordersOptions } from "./properties/page-borders";
 import { IPageMarginAttributes } from "./properties/page-margin";
 import { IPageNumberTypeAttributes } from "./properties/page-number";
 import { IPageSizeAttributes, PageOrientation } from "./properties/page-size";
+import { PageTextDirectionType } from "./properties/page-text-direction";
 import { SectionType } from "./properties/section-type";
 export interface IHeaderFooterGroup<T> {
     readonly default?: T;
@@ -21,6 +22,7 @@ export interface ISectionPropertiesOptions {
         readonly margin?: IPageMarginAttributes;
         readonly pageNumbers?: IPageNumberTypeAttributes;
         readonly borders?: IPageBordersOptions;
+        readonly textDirection?: PageTextDirectionType;
     };
     readonly grid?: IDocGridAttributesProperties;
     readonly headerWrapperGroup?: IHeaderFooterGroup<HeaderWrapper>;
@@ -46,6 +48,6 @@ export declare const sectionPageSizeDefaults: {
     ORIENTATION: PageOrientation;
 };
 export declare class SectionProperties extends XmlComponent {
-    constructor({ page: { size: { width, height, orientation, }, margin: { top, right, bottom, left, header, footer, gutter, }, pageNumbers, borders, }, grid: { linePitch }, headerWrapperGroup, footerWrapperGroup, lineNumbers, titlePage, verticalAlign, column, type, }?: ISectionPropertiesOptions);
+    constructor({ page: { size: { width, height, orientation, }, margin: { top, right, bottom, left, header, footer, gutter, }, pageNumbers, borders, textDirection, }, grid: { linePitch }, headerWrapperGroup, footerWrapperGroup, lineNumbers, titlePage, verticalAlign, column, type, }?: ISectionPropertiesOptions);
     private addHeaderFooterGroup;
 }

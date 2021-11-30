@@ -152,6 +152,7 @@ export interface ISettingsOptions {
     readonly trackRevisions?: boolean;
     readonly updateFields?: boolean;
     readonly doNotExpandShiftReturn?: boolean;
+    readonly autoHyphenation?: boolean;
 }
 
 export class Settings extends XmlComponent {
@@ -196,6 +197,10 @@ export class Settings extends XmlComponent {
 
         if (options.updateFields !== undefined) {
             this.root.push(new OnOffElement("w:updateFields", options.updateFields));
+        }
+
+        if (options.autoHyphenation !== undefined) {
+            this.root.push(new OnOffElement("w:autoHyphenation", options.autoHyphenation));
         }
 
         this.root.push(

@@ -78,6 +78,7 @@ export class File {
         this.settings = new Settings({
             compatabilityModeVersion: options.compatabilityModeVersion,
             doNotExpandShiftReturn: options.doNotExpandShiftReturn,
+            autoHyphenation: options.autoHyphenation,
             evenAndOddHeaders: options.evenAndOddHeaderAndFooters ? true : false,
             trackRevisions: options.features?.trackRevisions,
             updateFields: options.features?.updateFields,
