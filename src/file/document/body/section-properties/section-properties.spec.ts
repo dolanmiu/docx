@@ -11,6 +11,7 @@ import { VerticalAlign } from "file/vertical-align";
 import { PageOrientation } from "./properties";
 import { LineNumberRestartFormat } from "./properties/line-number";
 import { PageBorderOffsetFrom } from "./properties/page-borders";
+import { PageTextDirectionType } from "./properties/page-text-direction";
 import { SectionType } from "./properties/section-type";
 import { sectionMarginDefaults, sectionPageSizeDefaults, SectionProperties } from "./section-properties";
 
@@ -256,6 +257,20 @@ describe("SectionProperties", () => {
             const type = tree["w:sectPr"].find((item) => item["w:lnNumType"] !== undefined);
             expect(type).to.deep.equal({
                 "w:lnNumType": { _attr: { "w:countBy": 2, "w:distance": 4, "w:restart": "continuous", "w:start": 2 } },
+            });
+        });
+
+        it("should create section properties with text flow direction", () => {
+            const properties = new SectionProperties({
+                page: {
+                    textDirection: PageTextDirectionType.TOP_TO_BOTTOM_RIGHT_TO_LEFT,
+                },
+            });
+            const tree = new Formatter().format(properties);
+            expect(Object.keys(tree)).to.deep.equal(["w:sectPr"]);
+            const type = tree["w:sectPr"].find((item) => item["w:textDirection"] !== undefined);
+            expect(type).to.deep.equal({
+                "w:textDirection": { _attr: { "w:val": "tbRl" } },
             });
         });
     });

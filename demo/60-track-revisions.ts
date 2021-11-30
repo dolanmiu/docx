@@ -113,6 +113,16 @@ const doc = new Document({
                             bold: true,
                             children: ["\tuse Inserted and Deleted TextRuns.", new FootnoteReferenceRun(1)],
                         }),
+                        new TextRun({
+                            bold: true,
+                            text: "And some style changes",
+                            revision: {
+                                id: 4,
+                                author: "Firstname Lastname",
+                                date: "2020-10-06T09:05:00Z",
+                                bold: false,
+                            }
+                        }),
                     ],
                 }),
             ],

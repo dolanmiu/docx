@@ -85,8 +85,9 @@ Read the contribution guidelines [here](https://docx.js.org/#/contribution-guide
 [<img src="https://i.imgur.com/QEZXU5b.png" alt="drawing" height="50"/>](https://www.beekast.com/)
 [<img src="https://i.imgur.com/XVU6aoi.png" alt="drawing" height="50"/>](https://herraizsoto.com/)
 [<img src="https://i.imgur.com/fn1xccG.png" alt="drawing" height="50"/>](http://www.ativer.com.br/)
-[<img src="https://i.imgur.com/cmykN7c.png" alt="drawing" />](https://www.arity.co/)
+[<img src="https://i.imgur.com/cmykN7c.png" alt="drawing"/>](https://www.arity.co/)
 [<img src="https://i.imgur.com/PXo25um.png" alt="drawing" height="50"/>](https://www.circadianrisk.com/)
+[<img src="https://i.imgur.com/AKGhtlh.png" alt="drawing"/>](https://lexense.com/)
 
 
 ...and many more!
