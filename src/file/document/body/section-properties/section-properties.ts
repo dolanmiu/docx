@@ -112,7 +112,7 @@ export class SectionProperties extends XmlComponent {
             borders,
             textDirection,
         } = {},
-        grid: { linePitch = 360 } = {},
+        grid: { linePitch = 360, charSpace, type: gridType } = {},
         headerWrapperGroup = {},
         footerWrapperGroup = {},
         lineNumbers,
@@ -159,7 +159,7 @@ export class SectionProperties extends XmlComponent {
             this.root.push(new PageTextDirection(textDirection));
         }
 
-        this.root.push(new DocumentGrid(linePitch));
+        this.root.push(new DocumentGrid(linePitch, charSpace, gridType));
     }
 
     private addHeaderFooterGroup(

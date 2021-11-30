@@ -9,6 +9,7 @@ import { NumberFormat } from "file/shared/number-format";
 import { VerticalAlign } from "file/vertical-align";
 
 import { PageOrientation } from "./properties";
+import { DocumentGridType } from "./properties/doc-grid";
 import { LineNumberRestartFormat } from "./properties/line-number";
 import { PageBorderOffsetFrom } from "./properties/page-borders";
 import { PageTextDirectionType } from "./properties/page-text-direction";
@@ -64,6 +65,7 @@ describe("SectionProperties", () => {
                 },
                 grid: {
                     linePitch: convertInchesToTwip(0.25),
+                    type: DocumentGridType.LINES,
                 },
                 headerWrapperGroup: {
                     default: new HeaderWrapper(media, 100),
@@ -100,7 +102,7 @@ describe("SectionProperties", () => {
             expect(tree["w:sectPr"][5]).to.deep.equal({ "w:cols": { _attr: { "w:space": 208, "w:sep": true, "w:num": 2 } } });
             expect(tree["w:sectPr"][6]).to.deep.equal({ "w:vAlign": { _attr: { "w:val": "top" } } });
             expect(tree["w:sectPr"][7]).to.deep.equal({ "w:titlePg": {} });
-            expect(tree["w:sectPr"][8]).to.deep.equal({ "w:docGrid": { _attr: { "w:linePitch": 360 } } });
+            expect(tree["w:sectPr"][8]).to.deep.equal({ "w:docGrid": { _attr: { "w:linePitch": 360, "w:type": "lines" } } });
         });
 
         it("should create section properties with no options", () => {
