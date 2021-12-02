@@ -1,5 +1,5 @@
 <p align="center">
-    <img alt="clippy the assistant" src="https://i.imgur.com/37uBGhO.gif">
+    <img src="./logo/logo-animate.svg" width="100%" height="300" alt="clippy the assistant">
 </p>
 
 <p align="center">
