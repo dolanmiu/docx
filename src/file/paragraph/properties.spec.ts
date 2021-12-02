@@ -91,5 +91,31 @@ describe("ParagraphProperties", () => {
                 ],
             });
         });
+
+        it("should create with bidirectional", () => {
+            const properties = new ParagraphProperties({
+                bidirectional: true,
+            });
+            const tree = new Formatter().format(properties, {
+                // tslint:disable-next-line: no-object-literal-type-assertion
+                file: {
+                    Numbering: {
+                        createConcreteNumberingInstance: (_: string, __: number) => {
+                            return;
+                        },
+                    },
+                } as File,
+                // tslint:disable-next-line: no-object-literal-type-assertion
+                viewWrapper: new DocumentWrapper({ background: {} }),
+            });
+
+            expect(tree).to.deep.equal({
+                "w:pPr": [
+                    {
+                        "w:bidi": {},
+                    },
+                ],
+            });
+        });
     });
 });
