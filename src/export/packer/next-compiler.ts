@@ -44,14 +44,9 @@ export class Compiler {
     public compile(file: File, prettifyXml?: boolean): JSZip {
         const zip = new JSZip();
         const xmlifiedFileMapping = this.xmlifyFile(file, prettifyXml);
+        const map = new Map<string, IXmlifyedFile | IXmlifyedFile[]>(Object.entries(xmlifiedFileMapping));
 
-        for (const key in xmlifiedFileMapping) {
-            if (!xmlifiedFileMapping[key]) {
-                continue;
-            }
-
-            const obj = xmlifiedFileMapping[key] as IXmlifyedFile | IXmlifyedFile[];
-
+        for (const [, obj] of map) {
             if (Array.isArray(obj)) {
                 for (const subFile of obj) {
                     zip.file(subFile.path, subFile.data);

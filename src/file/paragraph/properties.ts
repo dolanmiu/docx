@@ -146,7 +146,7 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
         }
 
         if (options.bidirectional !== undefined) {
-            this.push(new OnOffElement("w:bidi", options.contextualSpacing));
+            this.push(new OnOffElement("w:bidi", options.bidirectional));
         }
 
         if (options.spacing) {

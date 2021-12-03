@@ -70,23 +70,57 @@ describe("ParagraphProperties", () => {
             const properties = new ParagraphProperties({
                 widowControl: true,
             });
-            const tree = new Formatter().format(properties, {
-                // tslint:disable-next-line: no-object-literal-type-assertion
-                file: {
-                    Numbering: {
-                        createConcreteNumberingInstance: (_: string, __: number) => {
-                            return;
-                        },
-                    },
-                } as File,
-                // tslint:disable-next-line: no-object-literal-type-assertion
-                viewWrapper: new DocumentWrapper({ background: {} }),
-            });
+            const tree = new Formatter().format(properties);
 
             expect(tree).to.deep.equal({
                 "w:pPr": [
                     {
                         "w:widowControl": {},
+                    },
+                ],
+            });
+        });
+
+        it("should create with the bidirectional property", () => {
+            const properties = new ParagraphProperties({
+                bidirectional: true,
+            });
+            const tree = new Formatter().format(properties);
+
+            expect(tree).to.deep.equal({
+                "w:pPr": [
+                    {
+                        "w:bidi": {},
+                    },
+                ],
+            });
+        });
+
+        it("should create with the contextualSpacing property", () => {
+            const properties = new ParagraphProperties({
+                contextualSpacing: true,
+            });
+            const tree = new Formatter().format(properties);
+
+            expect(tree).to.deep.equal({
+                "w:pPr": [
+                    {
+                        "w:contextualSpacing": {},
+                    },
+                ],
+            });
+        });
+
+        it("should create with the suppressLineNumbers property", () => {
+            const properties = new ParagraphProperties({
+                suppressLineNumbers: true,
+            });
+            const tree = new Formatter().format(properties);
+
+            expect(tree).to.deep.equal({
+                "w:pPr": [
+                    {
+                        "w:suppressLineNumbers": {},
                     },
                 ],
             });
