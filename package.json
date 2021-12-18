@@ -5,7 +5,7 @@
   "main": "build/index.js",
   "scripts": {
     "pretest": "rimraf ./build",
-    "test": "TS_NODE_PROJECT=\"tsconfig.spec.json\" mocha -r ts-node/register -r tsconfig-paths/register \"src/**/*.ts\"",
+    "test": "cross-env TS_NODE_PROJECT=\"tsconfig.spec.json\" mocha -r ts-node/register -r tsconfig-paths/register \"src/**/*.ts\"",
     "test.coverage": "nyc npm test",
     "test.watch": "npm test -- --watch",
     "prepublishOnly": "npm run build --production",
@@ -73,6 +73,7 @@
     "@types/webpack": "^5.0.0",
     "buffer": "^6.0.3",
     "chai": "^3.5.0",
+    "cross-env": "^7.0.3",
     "docsify-cli": "^4.3.0",
     "glob": "^7.1.2",
     "jszip": "^3.1.5",
