@@ -12,7 +12,7 @@ const doc = new Document({
             new Paragraph({
                 text: "Bullet points",
                 bullet: {
-                    level: 0 //How deep you want the bullet to be
+                    level: 0 // How deep you want the bullet to be. Maximum level is 9
                 }
             }),
             new Paragraph({
