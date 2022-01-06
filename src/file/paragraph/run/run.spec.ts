@@ -1,6 +1,7 @@
 import { expect } from "chai";
 
 import { Formatter } from "export/formatter";
+import { BorderStyle } from "file/border";
 // import { FootnoteReferenceRun } from "file/footnotes/footnote/run/reference-run";
 import { ShadingType } from "file/shading";
 
@@ -481,6 +482,38 @@ describe("Run", () => {
                                         ],
                                     },
                                 ],
+                            },
+                        ],
+                    },
+                ],
+            });
+        });
+    });
+
+    describe("#border", () => {
+        it("should correctly set the border", () => {
+            const run = new Run({
+                border: {
+                    color: "auto",
+                    space: 1,
+                    style: BorderStyle.SINGLE,
+                    size: 6,
+                },
+            });
+            const tree = new Formatter().format(run);
+            expect(tree).to.deep.equal({
+                "w:r": [
+                    {
+                        "w:rPr": [
+                            {
+                                "w:bdr": {
+                                    _attr: {
+                                        "w:color": "auto",
+                                        "w:space": 1,
+                                        "w:sz": 6,
+                                        "w:val": "single",
+                                    },
+                                },
                             },
                         ],
                     },

@@ -1,5 +1,6 @@
 import { ChangeAttributes, IChangedAttributesProperties } from "../../track-revision/track-revision";
 
+import { BorderElement, IBorderOptions } from "file/border";
 import { IShadingAttributesProperties, Shading } from "file/shading";
 import { HpsMeasureElement, IgnoreIfEmptyXmlComponent, OnOffElement, StringValueElement, XmlComponent } from "file/xml-components";
 import { EmphasisMark, EmphasisMarkType } from "./emphasis-mark";
@@ -43,6 +44,7 @@ export interface IRunStylePropertiesOptions {
     readonly emboss?: boolean;
     readonly imprint?: boolean;
     readonly revision?: IRunPropertiesChangeOptions;
+    readonly border?: IBorderOptions;
 }
 
 export interface IRunPropertiesOptions extends IRunStylePropertiesOptions {
@@ -208,6 +210,10 @@ export class RunProperties extends IgnoreIfEmptyXmlComponent {
 
         if (options.revision) {
             this.push(new RunPropertiesChange(options.revision));
+        }
+
+        if (options.border) {
+            this.push(new BorderElement("w:bdr", options.border));
         }
     }
 
