@@ -157,7 +157,8 @@ export class ImportDotx {
         const hyperLinkReferences = this.findReferenceFiles(xmlRef).filter((r) => r.type === RelationshipType.HYPERLINK);
 
         for (const r of wrapperImagesReferences) {
-            const buffer = await zipContent.files[`word/${r.target}`].async("nodebuffer");
+            const bufferType = JSZip.support.arraybuffer ? "arraybuffer" : "nodebuffer";
+            const buffer = await zipContent.files[`word/${r.target}`].async(bufferType);
             const mediaData = media.addMedia(buffer, {
                 width: 100,
                 height: 100,
