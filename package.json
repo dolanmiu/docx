@@ -72,7 +72,7 @@
     "@types/unzipper": "^0.10.4",
     "@types/webpack": "^5.0.0",
     "buffer": "^6.0.3",
-    "chai": "^3.5.0",
+    "chai": "^4.3.5",
     "cross-env": "^7.0.3",
     "docsify-cli": "^4.3.0",
     "glob": "^7.1.2",
