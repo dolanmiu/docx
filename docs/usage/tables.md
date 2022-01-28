@@ -104,7 +104,7 @@ Here is a list of options you can add to the `table row`:
 | children    | `Array<TableCell>`                     | Required |
 | cantSplit   | `boolean`                              | Optional |
 | tableHeader | `boolean`                              | Optional |
-| height      | `{ height: number, rule: HeightRule }` | Optional |
+| height      | `{ value: number, rule: HeightRule }`  | Optional |
 
 ### Repeat row
 
