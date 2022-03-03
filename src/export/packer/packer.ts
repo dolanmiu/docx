@@ -2,7 +2,7 @@ import { File } from "file";
 import { Compiler } from "./next-compiler";
 
 export class Packer {
-    public static async toBuffer(file: File, prettify?: boolean): Promise<Buffer> {
+    public static async toBuffer(file: File, prettify?: boolean | string): Promise<Buffer> {
         const zip = this.compiler.compile(file, prettify);
         const zipData = await zip.generateAsync({
             type: "nodebuffer",

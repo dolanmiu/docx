@@ -28,6 +28,7 @@ interface IXmlifyedFileMapping {
     readonly FootNotes: IXmlifyedFile;
     readonly FootNotesRelationships: IXmlifyedFile;
     readonly Settings: IXmlifyedFile;
+    readonly Comments?: IXmlifyedFile;
 }
 
 export class Compiler {
@@ -41,7 +42,7 @@ export class Compiler {
         this.numberingReplacer = new NumberingReplacer();
     }
 
-    public compile(file: File, prettifyXml?: boolean): JSZip {
+    public compile(file: File, prettifyXml?: boolean | string): JSZip {
         const zip = new JSZip();
         const xmlifiedFileMapping = this.xmlifyFile(file, prettifyXml);
         const map = new Map<string, IXmlifyedFile | IXmlifyedFile[]>(Object.entries(xmlifiedFileMapping));
@@ -64,7 +65,7 @@ export class Compiler {
         return zip;
     }
 
-    private xmlifyFile(file: File, prettify?: boolean): IXmlifyedFileMapping {
+    private xmlifyFile(file: File, prettify?: boolean | string): IXmlifyedFileMapping {
         const documentRelationshipCount = file.Document.Relationships.RelationshipCount + 1;
 
         const documentXmlData = xml(
@@ -112,7 +113,6 @@ export class Compiler {
                 data: (() => {
                     const xmlData = this.imageReplacer.replace(documentXmlData, documentMediaDatas, documentRelationshipCount);
                     const referenedXmlData = this.numberingReplacer.replace(xmlData, file.Numbering.ConcreteNumbering);
-
                     return referenedXmlData;
                 })(),
                 path: "word/document.xml",
@@ -398,6 +398,25 @@ export class Compiler {
                     },
                 ),
                 path: "word/settings.xml",
+            },
+            Comments: {
+                data: (() => {
+                    const data = xml(
+                        this.formatter.format(file.Comments, {
+                            viewWrapper: file.Document,
+                            file,
+                        }),
+                        {
+                            indent: prettify,
+                            declaration: {
+                                standalone: "yes",
+                                encoding: "UTF-8",
+                            },
+                        },
+                    );
+                    return data;
+                })(),
+                path: "word/comments.xml",
             },
         };
     }

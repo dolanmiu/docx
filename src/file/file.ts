@@ -1,3 +1,4 @@
+import { Comments } from "./paragraph/run/comment-run";
 import { AppProperties } from "./app-properties/app-properties";
 import { ContentTypes } from "./content-types/content-types";
 import { CoreProperties, IPropertiesOptions } from "./core-properties";
@@ -52,6 +53,7 @@ export class File {
     private readonly customProperties: CustomProperties;
     private readonly appProperties: AppProperties;
     private readonly styles: Styles;
+    private readonly comments: Comments;
 
     constructor(options: IPropertiesOptions, fileProperties: IFileProperties = {}) {
         this.coreProperties = new CoreProperties({
@@ -92,7 +94,7 @@ export class File {
         if (fileProperties.template && options.externalStyles) {
             throw Error("can not use both template and external styles");
         }
-        if (fileProperties.template) {
+        if (fileProperties.template && fileProperties.template.styles) {
             const stylesFactory = new ExternalStylesFactory();
             this.styles = stylesFactory.newInstance(fileProperties.template.styles);
         } else if (options.externalStyles) {
@@ -133,6 +135,9 @@ export class File {
             for (const key in options.footnotes) {
                 this.footnotesWrapper.View.createFootNote(parseFloat(key), options.footnotes[key].children);
             }
+        }
+        if (fileProperties.template && fileProperties.template.comments) {
+            this.comments = fileProperties.template.comments;
         }
     }
 
@@ -240,6 +245,11 @@ export class File {
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/settings",
             "settings.xml",
         );
+        this.documentWrapper.Relationships.createRelationship(
+            this.currentRelationshipId++,
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments",
+            "comments.xml",
+        );
     }
 
     public get Document(): DocumentWrapper {
@@ -292,5 +302,9 @@ export class File {
 
     public get Settings(): Settings {
         return this.settings;
+    }
+
+    public get Comments(): Comments {
+        return this.comments;
     }
 }

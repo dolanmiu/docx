@@ -1,3 +1,4 @@
+import { CommentRangeStart, CommentRangeEnd, CommentReference, Comments, Comment } from "./run/comment-run";
 // http://officeopenxml.com/WPparagraph.php
 
 import { uniqueId } from "convenience-functions";
@@ -27,7 +28,12 @@ export type ParagraphChild =
     | DeletedTextRun
     | Math
     | SimpleField
-    | SimpleMailMergeField;
+    | SimpleMailMergeField
+    | Comments
+    | Comment
+    | CommentRangeStart
+    | CommentRangeEnd
+    | CommentReference;
 
 export interface IParagraphOptions extends IParagraphPropertiesOptions {
     readonly text?: string;
