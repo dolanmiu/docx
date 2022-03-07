@@ -10,7 +10,7 @@ interface ICommentOptions {
 }
 
 class CommentAttributes extends XmlAttributeComponent<ICommentOptions> {
-    protected readonly xmlKeys = { id: "w:id", initias: "w:initials", author: "w:author", date: "w:date" };
+    protected readonly xmlKeys = { id: "w:id", initials: "w:initials", author: "w:author", date: "w:date" };
 }
 
 const COMMENT_ATTRIBUTES_MAP = {

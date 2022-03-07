@@ -71,6 +71,10 @@ export class File {
                   },
         );
 
+        if (options.comments) {
+            this.comments = options.comments;
+        }
+
         this.fileRelationships = new Relationships();
         this.customProperties = new CustomProperties(options.customProperties ?? []);
         this.appProperties = new AppProperties();
@@ -135,9 +139,6 @@ export class File {
             for (const key in options.footnotes) {
                 this.footnotesWrapper.View.createFootNote(parseFloat(key), options.footnotes[key].children);
             }
-        }
-        if (fileProperties.template && fileProperties.template.comments) {
-            this.comments = fileProperties.template.comments;
         }
     }
 

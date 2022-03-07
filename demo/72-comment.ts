@@ -1,9 +1,10 @@
 // Simple example to add text to a document
 // Import from 'docx' rather than '../build' if you install from npm
 import * as fs from "fs";
-import { Document, Packer, Paragraph, TextRun, CommentRangeStart, CommentRangeEnd, Comments, Comment, CommentReference } from "../build";
+import { Document, Packer, Paragraph, TextRun, CommentRangeStart, CommentRangeEnd, Comments, Comment, CommentReference, PrettityType } from "../build";
 
 const doc = new Document({
+  comments: new Comments([new Comment({ id: '0', author: 'Ray Chen', date: new Date().toISOString() }, 'comment text content')]),
   sections: [
     {
       properties: {},
@@ -28,14 +29,8 @@ const doc = new Document({
       ],
     },
   ],
-}, {
-  template: {
-    currentRelationshipId: 1,
-    // global comments data, every comment has a unique id
-    comments: new Comments([new Comment({ id: '0', author: 'Ray Chen', date: new Date().toISOString() }, 'comment text content')]),
-  }
-}
+},
 );
-Packer.toBuffer(doc, '  ').then((buffer) => {
+Packer.toBuffer(doc, PrettityType.WITH_2_BLANKS).then((buffer) => {
   fs.writeFileSync("document-comments.docx", buffer);
 });

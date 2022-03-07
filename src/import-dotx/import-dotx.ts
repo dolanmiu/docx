@@ -1,4 +1,3 @@
-import { Comments } from "./../file/paragraph/run/comment-run";
 import * as JSZip from "jszip";
 import { Element as XMLElement, ElementCompact as XMLElementCompact, xml2js } from "xml-js";
 
@@ -38,12 +37,11 @@ interface IRelationshipFileInfo {
 // https://fileinfo.com/extension/dotx
 export interface IDocumentTemplate {
     readonly currentRelationshipId: number;
-    readonly headers?: IDocumentHeader[];
-    readonly footers?: IDocumentFooter[];
-    readonly styles?: string;
-    readonly titlePageIsDefined?: boolean;
-    readonly media?: Media;
-    readonly comments?: Comments;
+    readonly headers: IDocumentHeader[];
+    readonly footers: IDocumentFooter[];
+    readonly styles: string;
+    readonly titlePageIsDefined: boolean;
+    readonly media: Media;
 }
 
 export class ImportDotx {
