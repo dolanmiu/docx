@@ -24,15 +24,11 @@ export enum FrameWrap {
     TIGHT = "tight",
 }
 
-export interface IFrameOptions {
+interface IBaseFrameOptions {
     readonly anchorLock?: boolean;
     readonly dropCap?: DropCapType;
     readonly width: number;
     readonly height: number;
-    readonly position: {
-        readonly x: number;
-        readonly y: number;
-    };
     readonly wrap?: FrameWrap;
     readonly lines?: number;
     readonly anchor: {
@@ -44,19 +40,33 @@ export interface IFrameOptions {
         readonly vertical: number;
     };
     readonly rule?: HeightRule;
+}
+
+export interface IXYFrameOptions extends IBaseFrameOptions {
+    readonly position: {
+        readonly x: number;
+        readonly y: number;
+    };
+}
+
+export interface IAlignmentFrameOptions extends IBaseFrameOptions {
     readonly alignment: {
         readonly x: HorizontalPositionAlign;
         readonly y: VerticalPositionAlign;
     };
 }
 
+// Be wary of Typescript's Open types:
+// https://stackoverflow.com/q/46370222/3481582
+export type IFrameOptions = IXYFrameOptions | IAlignmentFrameOptions;
+
 export class FramePropertiesAttributes extends XmlAttributeComponent<{
     readonly anchorLock?: boolean;
     readonly dropCap?: DropCapType;
     readonly width: number;
     readonly height: number;
-    readonly x: number;
-    readonly y: number;
+    readonly x?: number;
+    readonly y?: number;
     readonly wrap?: FrameWrap;
     readonly lines?: number;
     readonly anchorHorizontal?: FrameAnchorType;
@@ -95,15 +105,15 @@ export class FrameProperties extends XmlComponent {
                 dropCap: options.dropCap,
                 width: options.width,
                 height: options.height,
-                x: options.position.x,
-                y: options.position.y,
+                x: (options as IXYFrameOptions).position ? (options as IXYFrameOptions).position.x : undefined,
+                y: (options as IXYFrameOptions).position ? (options as IXYFrameOptions).position.y : undefined,
                 anchorHorizontal: options.anchor.horizontal,
                 anchorVertical: options.anchor.vertical,
                 spaceHorizontal: options.space?.horizontal,
                 spaceVertical: options.space?.vertical,
                 rule: options.rule,
-                alignmentX: options.alignment.x,
-                alignmentY: options.alignment.y,
+                alignmentX: (options as IAlignmentFrameOptions).alignment.x ? (options as IAlignmentFrameOptions).alignment.x : undefined,
+                alignmentY: (options as IAlignmentFrameOptions).alignment.x ? (options as IAlignmentFrameOptions).alignment.y : undefined,
                 lines: options.lines,
                 wrap: options.wrap,
             }),
