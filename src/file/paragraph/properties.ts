@@ -111,7 +111,7 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
             this.push(new NumberProperties(1, options.bullet.level));
         }
 
-        if (options.numbering) {
+        if (options.numbering && options.numbering.numId !== 0) {
             this.numberingReferences.push({
                 reference: options.numbering.reference,
                 instance: options.numbering.instance ?? 0,
