@@ -189,7 +189,16 @@ export class Numbering extends XmlComponent {
         }
 
         for (const numbering of this.concreteNumberingMap.values()) {
-            this.root.push(numbering);
+            if (
+                numbering.reference !== "default-bullet-numbering" ||
+                ![...this.concreteNumberingMap.values()].find(
+                  (numbering) =>
+                    numbering.reference !== "default-bullet-numbering" &&
+                    numbering.numId === 1
+                )
+            ) {
+                this.root.push(numbering);
+            }
         }
         return super.prepForXml(context);
     }
