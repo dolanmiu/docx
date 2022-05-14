@@ -88,7 +88,7 @@
     "request-promise": "^4.2.2",
     "rimraf": "^3.0.2",
     "shelljs": "^0.8.4",
-    "sinon": "^13.0.0",
+    "sinon": "^14.0.0",
     "stream-browserify": "^3.0.0",
     "ts-loader": "^9.0.0",
     "ts-node": "^10.2.1",
