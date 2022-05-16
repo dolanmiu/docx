@@ -1,7 +1,7 @@
 // tslint:disable:no-console
-import * as fs from "fs";
-import * as prompt from "prompt";
-import * as shelljs from "shelljs";
+import fs from "fs";
+import prompt from "prompt";
+import shelljs from "shelljs";
 
 console.log("What demo do you wish to run? (Enter a number)");
 
@@ -17,8 +17,8 @@ const schema = {
 
 prompt.start();
 
-prompt.get(schema, (_, result) => {
-    const demoNumber = result.number;
+prompt.get(schema as any, (_, result) => {
+    const demoNumber = result.number as string;
     const files = fs.readdirSync("./demo").filter((fn) => fn.startsWith(demoNumber));
 
     if (files.length === 0) {

@@ -36,6 +36,6 @@ describe("Bookmark", () => {
 
     it("should create a bookmark with the correct attributes on the bookmark end element", () => {
         const newJson = Utility.jsonify(bookmark);
-        expect(newJson.end.root[0].root.id).to.be.a("string");
+        expect(newJson.end.root[0].root.id).to.be.a("number");
     });
 });

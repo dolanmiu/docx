@@ -16,22 +16,36 @@ import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
 //     <xsd:attribute name="linePitch" type="ST_DecimalNumber"/>
 //     <xsd:attribute name="charSpace" type="ST_DecimalNumber"/>
 // </xsd:complexType>
+
+export enum DocumentGridType {
+    DEFAULT = "default",
+    LINES = "lines",
+    LINES_AND_CHARS = "linesAndChars",
+    SNAP_TO_CHARS = "snapToChars",
+}
 export interface IDocGridAttributesProperties {
+    readonly type?: DocumentGridType;
     readonly linePitch?: number;
+    readonly charSpace?: number;
 }
 
 export class DocGridAttributes extends XmlAttributeComponent<IDocGridAttributesProperties> {
     protected readonly xmlKeys = {
+        type: "w:type",
         linePitch: "w:linePitch",
+        charSpace: "w:charSpace",
     };
 }
 
 export class DocumentGrid extends XmlComponent {
-    constructor(linePitch: number) {
+    constructor(linePitch: number, charSpace?: number, type?: DocumentGridType) {
         super("w:docGrid");
+
         this.root.push(
             new DocGridAttributes({
+                type: type,
                 linePitch: decimalNumber(linePitch),
+                charSpace: charSpace ? decimalNumber(charSpace) : undefined,
             }),
         );
     }

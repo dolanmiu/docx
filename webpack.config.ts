@@ -1,7 +1,7 @@
-import * as path from "path";
-import { Configuration, ProvidePlugin } from "webpack";
+const path = require("path");
+const { ProvidePlugin } = require("webpack");
 
-const configuration: Configuration = {
+const configuration = {
     mode: "production",
 
     entry: "./src/index.ts",

@@ -1,6 +1,7 @@
 import { expect } from "chai";
 
 import { Formatter } from "export/formatter";
+import { BorderStyle } from "file/border";
 // import { FootnoteReferenceRun } from "file/footnotes/footnote/run/reference-run";
 import { ShadingType } from "file/shading";
 
@@ -425,6 +426,98 @@ describe("Run", () => {
             const tree = new Formatter().format(run);
             expect(tree).to.deep.equal({
                 "w:r": [{ "w:rPr": [{ "w:rStyle": { _attr: { "w:val": "myRunStyle" } } }] }],
+            });
+        });
+    });
+
+    describe("#revisions", () => {
+        it("should add style revisions", () => {
+            const run = new Run({
+                bold: true,
+                italics: true,
+                revision: {
+                    id: 0,
+                    author: "Firstname Lastname",
+                    date: "123",
+                    bold: false,
+                    italics: true,
+                },
+            });
+            const tree = new Formatter().format(run);
+            expect(tree).to.deep.equal({
+                "w:r": [
+                    {
+                        "w:rPr": [
+                            { "w:b": {} },
+                            {
+                                "w:bCs": {},
+                            },
+                            { "w:i": {} },
+                            {
+                                "w:iCs": {},
+                            },
+                            {
+                                "w:rPrChange": [
+                                    {
+                                        _attr: {
+                                            "w:author": "Firstname Lastname",
+                                            "w:date": "123",
+                                            "w:id": 0,
+                                        },
+                                    },
+                                    {
+                                        "w:rPr": [
+                                            { "w:b": { _attr: { "w:val": false } } },
+                                            {
+                                                "w:bCs": {
+                                                    _attr: {
+                                                        "w:val": false,
+                                                    },
+                                                },
+                                            },
+                                            { "w:i": {} },
+                                            {
+                                                "w:iCs": {},
+                                            },
+                                        ],
+                                    },
+                                ],
+                            },
+                        ],
+                    },
+                ],
+            });
+        });
+    });
+
+    describe("#border", () => {
+        it("should correctly set the border", () => {
+            const run = new Run({
+                border: {
+                    color: "auto",
+                    space: 1,
+                    style: BorderStyle.SINGLE,
+                    size: 6,
+                },
+            });
+            const tree = new Formatter().format(run);
+            expect(tree).to.deep.equal({
+                "w:r": [
+                    {
+                        "w:rPr": [
+                            {
+                                "w:bdr": {
+                                    _attr: {
+                                        "w:color": "auto",
+                                        "w:space": 1,
+                                        "w:sz": 6,
+                                        "w:val": "single",
+                                    },
+                                },
+                            },
+                        ],
+                    },
+                ],
             });
         });
     });

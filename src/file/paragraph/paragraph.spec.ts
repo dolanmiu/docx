@@ -22,6 +22,9 @@ describe("Paragraph", () => {
         stub(convenienceFunctions, "uniqueId").callsFake(() => {
             return "test-unique-id";
         });
+        stub(convenienceFunctions, "uniqueNumericId").callsFake(() => {
+            return -101;
+        });
     });
 
     after(() => {
@@ -716,7 +719,7 @@ describe("Paragraph", () => {
                 {
                     "w:bookmarkStart": {
                         _attr: {
-                            "w:id": "test-unique-id",
+                            "w:id": -101,
                             "w:name": "test-id",
                         },
                     },
@@ -738,7 +741,7 @@ describe("Paragraph", () => {
                 {
                     "w:bookmarkEnd": {
                         _attr: {
-                            "w:id": "test-unique-id",
+                            "w:id": -101,
                         },
                     },
                 },
@@ -826,6 +829,18 @@ describe("Paragraph", () => {
             const tree = new Formatter().format(paragraph);
             expect(tree).to.deep.equal({
                 "w:p": [{ "w:pPr": [{ "w:bidi": EMPTY_OBJECT }] }],
+            });
+        });
+    });
+
+    describe("#suppressLineNumbers", () => {
+        it("should disable line numbers", () => {
+            const paragraph = new Paragraph({
+                suppressLineNumbers: true,
+            });
+            const tree = new Formatter().format(paragraph);
+            expect(tree).to.deep.equal({
+                "w:p": [{ "w:pPr": [{ "w:suppressLineNumbers": EMPTY_OBJECT }] }],
             });
         });
     });

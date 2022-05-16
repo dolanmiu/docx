@@ -7,15 +7,16 @@
         "preserveConstEnums": true,
         "outDir": "./build",
         "rootDir": "./src",
-        "module": "commonjs",
+        "module": "es6",
+        "moduleResolution": "node",
         "declaration": true,
         "noUnusedLocals": true,
         "noUnusedParameters": true,
         "baseUrl": "./src",
         "paths": {
-            "/*": ["./*"],
             "convenience-functions": ["./convenience-functions"],
-            "@export/*": ["./export/*"]
+            "@export/*": ["./export/*"],
+            "file/*": ["./file/*"]
         }
     },
     "include": ["src"]

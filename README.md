@@ -1,5 +1,5 @@
 <p align="center">
-    <img alt="clippy the assistant" src="https://i.imgur.com/37uBGhO.gif">
+    <img src="./logo/logo-animate.svg" width="100%" height="300" alt="clippy the assistant">
 </p>
 
 <p align="center">
@@ -10,7 +10,6 @@
 
 [![NPM version][npm-image]][npm-url]
 [![Downloads per month][downloads-image]][downloads-url]
-[![Build Status][travis-image]][travis-url]
 [![GitHub Action Workflow Status][github-actions-workflow-image]][github-actions-workflow-url]
 [![Dependency Status][daviddm-image]][daviddm-url]
 [![Known Vulnerabilities][snky-image]][snky-url]
@@ -86,8 +85,9 @@ Read the contribution guidelines [here](https://docx.js.org/#/contribution-guide
 [<img src="https://i.imgur.com/QEZXU5b.png" alt="drawing" height="50"/>](https://www.beekast.com/)
 [<img src="https://i.imgur.com/XVU6aoi.png" alt="drawing" height="50"/>](https://herraizsoto.com/)
 [<img src="https://i.imgur.com/fn1xccG.png" alt="drawing" height="50"/>](http://www.ativer.com.br/)
-[<img src="https://i.imgur.com/cmykN7c.png" alt="drawing" />](https://www.arity.co/)
+[<img src="https://i.imgur.com/cmykN7c.png" alt="drawing"/>](https://www.arity.co/)
 [<img src="https://i.imgur.com/PXo25um.png" alt="drawing" height="50"/>](https://www.circadianrisk.com/)
+[<img src="https://i.imgur.com/AKGhtlh.png" alt="drawing"/>](https://lexense.com/)
 
 
 ...and many more!
@@ -103,8 +103,6 @@ Made with 💖
 [npm-url]: https://npmjs.org/package/docx
 [downloads-image]: https://img.shields.io/npm/dm/docx.svg
 [downloads-url]: https://npmjs.org/package/docx
-[travis-image]: https://travis-ci.org/dolanmiu/docx.svg?branch=master
-[travis-url]: https://travis-ci.org/dolanmiu/docx
 [github-actions-workflow-image]: https://github.com/dolanmiu/docx/workflows/Default/badge.svg
 [github-actions-workflow-url]: https://github.com/dolanmiu/docx/actions
 [daviddm-image]: https://david-dm.org/dolanmiu/docx.svg?theme=shields.io
