@@ -113,4 +113,41 @@ describe("Packer", () => {
             (Packer as any).compiler.compile.restore();
         });
     });
+
+    describe("#toStream()", () => {
+        it("should create a standard docx file", (done) => {
+            // tslint:disable-next-line: no-any
+            stub((Packer as any).compiler, "compile").callsFake(() => ({
+                // tslint:disable-next-line: no-empty
+                generateAsync: () => mock({}),
+            }));
+            // let bytes = new Buffer('');
+            const stream = Packer.toStream(file);
+
+            stream.on("error", (err) => {
+                done(err);
+            });
+
+            stream.on("end", () => {
+                done();
+            });
+        });
+
+        it("should handle exception if it throws any", (done) => {
+            // tslint:disable-next-line:no-any
+            const compiler = stub((Packer as any).compiler, "compile");
+
+            compiler.throwsException();
+            const stream = Packer.toStream(file);
+
+            stream.on("error", (err) => {
+                done(err);
+            });
+        });
+
+        afterEach(() => {
+            // tslint:disable-next-line:no-any
+            (Packer as any).compiler.compile.restore();
+        });
+    });
 });
