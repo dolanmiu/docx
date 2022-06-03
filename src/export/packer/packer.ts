@@ -35,5 +35,17 @@ export class Packer {
         return zipData;
     }
 
+    public static toStream(file: File, prettify?: boolean): NodeJS.ReadableStream {
+        const zip = this.compiler.compile(file, prettify);
+        const zipData = zip.generateNodeStream({
+            type: "nodebuffer",
+            mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            compression: "DEFLATE",
+            streamFiles: true,
+        });
+
+        return zipData;
+    }
+
     private static readonly compiler = new Compiler();
 }
