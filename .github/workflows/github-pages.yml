@@ -12,7 +12,7 @@ jobs:
             - name: Checkout Repo
               uses: actions/checkout@master
             - name: Install Dependencies
-              run: npm ci
+              run: npm ci --force
             - name: Build 🔧
               run: |
                   npm run typedoc
@@ -30,7 +30,7 @@ jobs:
             - name: Checkout Repo 🛎️
               uses: actions/checkout@master
             - name: Install Dependencies
-              run: npm ci
+              run: npm ci --force
             - name: Download Artifact
               uses: actions/download-artifact@master
               with:
