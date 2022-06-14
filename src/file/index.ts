@@ -19,3 +19,4 @@ export * from "./shared";
 export * from "./border";
 export * from "./values";
 export * from "./vertical-align";
+export * from "./space-type";

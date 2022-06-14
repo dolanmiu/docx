@@ -4,6 +4,7 @@ import { Formatter } from "export/formatter";
 import { BorderStyle } from "file/border";
 // import { FootnoteReferenceRun } from "file/footnotes/footnote/run/reference-run";
 import { ShadingType } from "file/shading";
+import { SpaceType } from "file/space-type";
 
 import { Run } from "./";
 import { EmphasisMarkType } from "./emphasis-mark";
@@ -518,6 +519,22 @@ describe("Run", () => {
                         ],
                     },
                 ],
+            });
+        });
+    });
+
+    describe("#space", () => {
+        it("should correctly set the border", () => {
+            const run = new Run({
+                space: SpaceType.PRESERVE,
+            });
+            const tree = new Formatter().format(run);
+            expect(tree).to.deep.equal({
+                "w:r": {
+                    _attr: {
+                        "xml:space": "preserve",
+                    },
+                },
             });
         });
     });
