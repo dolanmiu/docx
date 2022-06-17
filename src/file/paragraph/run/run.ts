@@ -3,11 +3,13 @@ import { XmlComponent } from "file/xml-components";
 
 import { FootnoteReferenceRun } from "file/footnotes/footnote/run/reference-run";
 import { FieldInstruction } from "file/table-of-contents/field-instruction";
+
 import { Break } from "./break";
 import { Begin, End, Separate } from "./field";
 import { NumberOfPages, NumberOfPagesSection, Page } from "./page-number";
 import { IRunPropertiesOptions, RunProperties } from "./properties";
 import { Text } from "./run-components/text";
+import { TextAttributes } from "./text-attributes";
 
 export interface IRunOptions extends IRunPropertiesOptions {
     readonly children?: (Begin | FieldInstruction | Separate | End | PageNumber | FootnoteReferenceRun | string)[];
@@ -33,6 +35,10 @@ export class Run extends XmlComponent {
             for (let i = 0; i < options.break; i++) {
                 this.root.push(new Break());
             }
+        }
+
+        if (options.space) {
+            this.root.push(new TextAttributes({ space: options.space }));
         }
 
         if (options.children) {

@@ -43,19 +43,27 @@ describe("Compiler", () => {
                 sections: [
                     {
                         headers: {
-                            default: new Header(),
+                            default: new Header({
+                                children: [new Paragraph("test")],
+                            }),
                         },
                         footers: {
-                            default: new Footer(),
+                            default: new Footer({
+                                children: [new Paragraph("test")],
+                            }),
                         },
                         children: [],
                     },
                     {
                         headers: {
-                            default: new Header(),
+                            default: new Header({
+                                children: [new Paragraph("test")],
+                            }),
                         },
                         footers: {
-                            default: new Footer(),
+                            default: new Footer({
+                                children: [new Paragraph("test")],
+                            }),
                         },
                         children: [],
                     },
@@ -98,6 +106,40 @@ describe("Compiler", () => {
 
             compiler.compile(file);
             expect(spy.callCount).to.equal(12);
+        });
+
+        it("should work with media datas", () => {
+            // This test is required because before, there was a case where Document was formatted twice, which was inefficient
+            // This also caused issues such as running prepForXml multiple times as format() was ran multiple times.
+            const paragraph = new Paragraph("");
+            const file = new File({
+                sections: [
+                    {
+                        properties: {},
+                        children: [paragraph],
+                    },
+                ],
+            });
+
+            // tslint:disable-next-line: no-string-literal
+            sinon.stub(compiler["imageReplacer"], "getMediaData").returns([
+                {
+                    stream: Buffer.from(""),
+                    fileName: "test",
+                    transformation: {
+                        pixels: {
+                            x: 100,
+                            y: 100,
+                        },
+                        emus: {
+                            x: 100,
+                            y: 100,
+                        },
+                    },
+                },
+            ]);
+
+            compiler.compile(file);
         });
     });
 });

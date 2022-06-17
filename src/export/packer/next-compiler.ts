@@ -280,8 +280,10 @@ export class Compiler {
                 // TODO: 0 needs to be changed when headers get relationships of their own
                 const xmlData = this.imageReplacer.replace(tempXmlData, mediaDatas, 0);
 
+                const referenedXmlData = this.numberingReplacer.replace(xmlData, file.Numbering.ConcreteNumbering);
+
                 return {
-                    data: xmlData,
+                    data: referenedXmlData,
                     path: `word/header${index + 1}.xml`,
                 };
             }),
@@ -302,8 +304,10 @@ export class Compiler {
                 // TODO: 0 needs to be changed when headers get relationships of their own
                 const xmlData = this.imageReplacer.replace(tempXmlData, mediaDatas, 0);
 
+                const referenedXmlData = this.numberingReplacer.replace(xmlData, file.Numbering.ConcreteNumbering);
+
                 return {
-                    data: xmlData,
+                    data: referenedXmlData,
                     path: `word/footer${index + 1}.xml`,
                 };
             }),
