@@ -1,5 +1,6 @@
-import { Comments } from './../paragraph/run/comment-run';
+import { Comments } from "file/paragraph/run/comment-run";
 import { StringContainer, XmlComponent } from "file/xml-components";
+
 import { ICustomPropertyOptions } from "../custom-properties";
 import { IDocumentBackgroundOptions } from "../document";
 

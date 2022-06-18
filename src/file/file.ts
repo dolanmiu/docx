@@ -1,4 +1,3 @@
-import { Comments } from "./paragraph/run/comment-run";
 import { AppProperties } from "./app-properties/app-properties";
 import { ContentTypes } from "./content-types/content-types";
 import { CoreProperties, IPropertiesOptions } from "./core-properties";
@@ -13,6 +12,7 @@ import { HeaderWrapper, IDocumentHeader } from "./header-wrapper";
 import { Media } from "./media";
 import { Numbering } from "./numbering";
 import { Paragraph } from "./paragraph";
+import { Comments } from "./paragraph/run/comment-run";
 import { Relationships } from "./relationships";
 import { Settings } from "./settings";
 import { Styles } from "./styles";

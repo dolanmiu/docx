@@ -8,7 +8,7 @@ export enum PrettityType {
     NONE = "",
     WITH_2_BLANKS = "  ",
     WITH_4_BLANKS = "    ",
-    WITH_TAB = "\t"
+    WITH_TAB = "\t",
 }
 
 export class Packer {

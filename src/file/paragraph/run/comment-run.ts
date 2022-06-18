@@ -1,6 +1,7 @@
+import { Paragraph } from "file/paragraph";
+import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
+
 import { TextRun } from "./text-run";
-import { Paragraph } from "./../paragraph";
-import { XmlAttributeComponent, XmlComponent } from "../../../file/xml-components";
 
 interface ICommentOptions {
     readonly id: string;
@@ -119,6 +120,7 @@ interface ICommentsAttrs {
 export class CommentRangeStart extends XmlComponent {
     constructor(options: ICommentOptions) {
         super("w:commentRangeStart");
+
         this.root.push(new CommentAttributes(options));
     }
 }
@@ -126,6 +128,7 @@ export class CommentRangeStart extends XmlComponent {
 export class CommentRangeEnd extends XmlComponent {
     constructor(options: ICommentOptions) {
         super("w:commentRangeEnd");
+
         this.root.push(new CommentAttributes(options));
     }
 }
@@ -133,6 +136,7 @@ export class CommentRangeEnd extends XmlComponent {
 export class CommentReference extends XmlComponent {
     constructor(options: ICommentOptions) {
         super("w:commentReference");
+
         this.root.push(new CommentAttributes(options));
     }
 }
@@ -140,14 +144,18 @@ export class CommentReference extends XmlComponent {
 export class Comment extends XmlComponent {
     constructor(options: ICommentOptions, text: string) {
         super("w:comment");
+
         this.root.push(new CommentAttributes(options));
+
         this.addChildElement(new Paragraph({ children: [new TextRun(text)] }));
     }
 }
 export class Comments extends XmlComponent {
     constructor(comments: Comment[]) {
         super("w:comments");
+
         this.root.push(new RootCommentsAttributes(COMMENT_ATTRIBUTES_MAP));
+
         comments.forEach((comment) => {
             this.addChildElement(comment);
         });

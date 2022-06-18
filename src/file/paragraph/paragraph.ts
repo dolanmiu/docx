@@ -1,6 +1,4 @@
-import { CommentRangeStart, CommentRangeEnd, CommentReference, Comments, Comment } from "./run/comment-run";
 // http://officeopenxml.com/WPparagraph.php
-
 import { uniqueId } from "convenience-functions";
 import { FootnoteReferenceRun } from "file/footnotes/footnote/run/reference-run";
 import { IContext, IXmlableObject, XmlComponent } from "file/xml-components";
@@ -12,6 +10,7 @@ import { Bookmark, ConcreteHyperlink, ExternalHyperlink, InternalHyperlink } fro
 import { Math } from "./math";
 import { IParagraphPropertiesOptions, ParagraphProperties } from "./properties";
 import { ImageRun, Run, SequentialIdentifier, SimpleField, SimpleMailMergeField, SymbolRun, TextRun } from "./run";
+import { Comment, CommentRangeEnd, CommentRangeStart, CommentReference, Comments } from "./run/comment-run";
 
 export type ParagraphChild =
     | TextRun

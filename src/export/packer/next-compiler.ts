@@ -406,6 +406,10 @@ export class Compiler {
             },
             Comments: {
                 data: (() => {
+                    if (!file.Comments) {
+                        return;
+                    }
+
                     const data = xml(
                         this.formatter.format(file.Comments, {
                             viewWrapper: file.Document,
