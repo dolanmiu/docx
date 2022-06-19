@@ -30,5 +30,5 @@ const doc = new Document({
 });
 
 Packer.toBuffer(doc).then((buffer) => {
-    fs.writeFileSync("document-comments.docx", buffer);
+    fs.writeFileSync("My Document.docx", buffer);
 });
