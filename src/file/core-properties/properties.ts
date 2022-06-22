@@ -1,4 +1,4 @@
-import { Comments } from "file/paragraph/run/comment-run";
+import { ICommentsOptions } from "file/paragraph/run/comment-run";
 import { StringContainer, XmlComponent } from "file/xml-components";
 
 import { ICustomPropertyOptions } from "../custom-properties";
@@ -23,7 +23,7 @@ export interface IPropertiesOptions {
     readonly externalStyles?: string;
     readonly styles?: IStylesOptions;
     readonly numbering?: INumberingOptions;
-    readonly comments?: Comments;
+    readonly comments?: ICommentsOptions;
     readonly footnotes?: {
         readonly [key: string]: {
             readonly children: Paragraph[];

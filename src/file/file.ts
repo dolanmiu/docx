@@ -72,7 +72,7 @@ export class File {
         );
 
         if (options.comments) {
-            this.comments = options.comments;
+            this.comments = new Comments(options.comments);
         }
 
         this.fileRelationships = new Relationships();
