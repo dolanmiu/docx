@@ -8,12 +8,10 @@ import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
 // <xsd:restriction base="xsd:string">
 //   <xsd:enumeration value="top"/>
 //   <xsd:enumeration value="center"/>
-//   <xsd:enumeration value="both"/>
 //   <xsd:enumeration value="bottom"/>
 // </xsd:restriction>
 // </xsd:simpleType>
 export enum VerticalAlign {
-    BOTH = "both",
     BOTTOM = "bottom",
     CENTER = "center",
     TOP = "top",
