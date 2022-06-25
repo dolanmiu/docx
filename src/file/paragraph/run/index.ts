@@ -9,3 +9,4 @@ export * from "./underline";
 export * from "./emphasis-mark";
 export * from "./tab";
 export * from "./simple-field";
+export * from "./comment-run";

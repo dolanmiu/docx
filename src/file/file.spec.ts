@@ -387,4 +387,30 @@ describe("File", () => {
 
         expect(tree["w:settings"][2]).to.deep.equal({ "w:evenAndOddHeaders": {} });
     });
+
+    describe("#comments", () => {
+        it("should create comments", () => {
+            const doc = new File({
+                comments: {
+                    children: [],
+                },
+                sections: [],
+            });
+
+            // tslint:disable-next-line: no-unused-expression
+            expect(doc.Comments).to.not.be.undefined;
+        });
+    });
+
+    describe("#numbering", () => {
+        it("should create", () => {
+            const doc = new File({
+                numbering: { config: [] },
+                sections: [],
+            });
+
+            // tslint:disable-next-line: no-unused-expression
+            expect(doc.Numbering).to.not.be.undefined;
+        });
+    });
 });

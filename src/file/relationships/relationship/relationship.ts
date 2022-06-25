@@ -16,7 +16,8 @@ export type RelationshipType =
     | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/custom-properties"
     | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties"
     | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink"
-    | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/footnotes";
+    | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/footnotes"
+    | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments";
 
 export enum TargetModeType {
     EXTERNAL = "External",
