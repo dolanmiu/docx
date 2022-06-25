@@ -18,6 +18,9 @@ describe("Compiler", () => {
             this.timeout(99999999);
             const file = new File({
                 sections: [],
+                comments: {
+                    children: [],
+                },
             });
             const zipFile = compiler.compile(file);
             const fileNames = Object.keys(zipFile.files).map((f) => zipFile.files[f].name);
