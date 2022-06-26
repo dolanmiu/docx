@@ -1,4 +1,4 @@
-import { XmlAttributeComponent } from "file/xml-components";
+import { XmlAttributeComponent } from "@file/xml-components";
 
 export interface IDocumentAttributesProperties {
     readonly wpc?: string;

@@ -1,6 +1,6 @@
 import { expect } from "chai";
 
-import { Formatter } from "export/formatter";
+import { Formatter } from "@export/formatter";
 
 import { MathRun } from "../math-run";
 import { MathFunctionName } from "./math-function-name";

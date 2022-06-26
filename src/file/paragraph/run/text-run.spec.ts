@@ -1,7 +1,7 @@
 import { expect } from "chai";
 
-import { Formatter } from "export/formatter";
-import { FootnoteReferenceRun } from "file/footnotes/footnote/run/reference-run";
+import { Formatter } from "@export/formatter";
+import { FootnoteReferenceRun } from "@file/footnotes/footnote/run/reference-run";
 
 import { TextRun } from "./text-run";
 

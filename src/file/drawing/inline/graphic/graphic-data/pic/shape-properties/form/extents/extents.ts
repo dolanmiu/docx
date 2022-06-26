@@ -1,5 +1,5 @@
 // http://officeopenxml.com/drwSp-size.php
-import { XmlComponent } from "file/xml-components";
+import { XmlComponent } from "@file/xml-components";
 import { ExtentsAttributes } from "./extents-attributes";
 
 export class Extents extends XmlComponent {

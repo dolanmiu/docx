@@ -1,5 +1,5 @@
-import { IMediaData } from "file/media";
-import { XmlComponent } from "file/xml-components";
+import { IMediaData } from "@file/media";
+import { XmlComponent } from "@file/xml-components";
 
 import { Blip } from "./blip";
 import { SourceRectangle } from "./source-rectangle";

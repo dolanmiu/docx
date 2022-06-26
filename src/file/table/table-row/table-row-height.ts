@@ -1,5 +1,5 @@
-import { twipsMeasureValue } from "file/values";
-import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
+import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
+import { twipsMeasureValue } from "@util/values";
 
 // <xsd:complexType name="CT_Height">
 //     <xsd:attribute name="val" type="s:ST_TwipsMeasure"/>

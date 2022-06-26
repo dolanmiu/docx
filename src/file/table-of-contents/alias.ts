@@ -1,4 +1,4 @@
-import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
+import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
 
 class AliasAttributes extends XmlAttributeComponent<{ readonly alias: string }> {
     protected readonly xmlKeys = { alias: "w:val" };

@@ -1,7 +1,8 @@
 import * as JSZip from "jszip";
 import * as xml from "xml";
 
-import { File } from "file";
+import { File } from "@file/file";
+
 import { Formatter } from "../formatter";
 import { ImageReplacer } from "./image-replacer";
 import { NumberingReplacer } from "./numbering-replacer";

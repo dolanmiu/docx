@@ -1,5 +1,6 @@
-import { ICommentsOptions } from "file/paragraph/run/comment-run";
-import { StringContainer, XmlComponent } from "file/xml-components";
+import { ICommentsOptions } from "@file/paragraph/run/comment-run";
+import { StringContainer, XmlComponent } from "@file/xml-components";
+import { dateTimeValue } from "@util/values";
 
 import { ICustomPropertyOptions } from "../custom-properties";
 import { IDocumentBackgroundOptions } from "../document";
@@ -9,7 +10,6 @@ import { ISectionOptions } from "../file";
 import { INumberingOptions } from "../numbering";
 import { Paragraph } from "../paragraph";
 import { IStylesOptions } from "../styles";
-import { dateTimeValue } from "../values";
 
 export interface IPropertiesOptions {
     readonly sections: ISectionOptions[];

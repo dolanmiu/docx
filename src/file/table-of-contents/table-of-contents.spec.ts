@@ -1,6 +1,6 @@
 import { expect } from "chai";
 
-import { Formatter } from "export/formatter";
+import { Formatter } from "@export/formatter";
 
 import { TableOfContents } from "./table-of-contents";
 import { StyleLevel } from "./table-of-contents-properties";

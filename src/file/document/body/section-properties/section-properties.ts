@@ -1,10 +1,10 @@
 // http://officeopenxml.com/WPsection.php
 // tslint:disable: no-unnecessary-initializer
 
-import { FooterWrapper } from "file/footer-wrapper";
-import { HeaderWrapper } from "file/header-wrapper";
-import { VerticalAlign, VerticalAlignElement } from "file/vertical-align";
-import { OnOffElement, XmlComponent } from "file/xml-components";
+import { FooterWrapper } from "@file/footer-wrapper";
+import { HeaderWrapper } from "@file/header-wrapper";
+import { VerticalAlign, VerticalAlignElement } from "@file/vertical-align";
+import { OnOffElement, XmlComponent } from "@file/xml-components";
 
 import { HeaderFooterReference, HeaderFooterReferenceType, HeaderFooterType } from "./properties/header-footer-reference";
 

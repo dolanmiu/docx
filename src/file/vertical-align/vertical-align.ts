@@ -1,4 +1,4 @@
-import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
+import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
 
 // <xsd:complexType name="CT_VerticalJc">
 //     <xsd:attribute name="val" type="ST_VerticalJc" use="required"/>

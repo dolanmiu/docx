@@ -1,5 +1,5 @@
-import { IMediaData } from "file/media";
-import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
+import { IMediaData } from "@file/media";
+import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
 
 class BlipAttributes extends XmlAttributeComponent<{
     readonly embed: string;

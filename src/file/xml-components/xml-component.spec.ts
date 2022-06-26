@@ -1,6 +1,6 @@
 import { expect } from "chai";
 
-import { Formatter } from "export/formatter";
+import { Formatter } from "@export/formatter";
 import { Attributes, BaseXmlComponent, XmlComponent } from "./";
 
 class TestComponent extends XmlComponent {

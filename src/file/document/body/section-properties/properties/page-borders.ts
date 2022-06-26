@@ -1,6 +1,6 @@
 // http://officeopenxml.com/WPsectionBorders.php
-import { BorderElement, IBorderOptions } from "file/border";
-import { IgnoreIfEmptyXmlComponent, XmlAttributeComponent } from "file/xml-components";
+import { BorderElement, IBorderOptions } from "@file/border";
+import { IgnoreIfEmptyXmlComponent, XmlAttributeComponent } from "@file/xml-components";
 
 // <xsd:simpleType name="ST_PageBorderDisplay">
 // <xsd:restriction base="xsd:string">

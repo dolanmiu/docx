@@ -1,5 +1,5 @@
 // http://officeopenxml.com/WPtableGrid.php
-import { XmlComponent } from "file/xml-components";
+import { XmlComponent } from "@file/xml-components";
 
 import { AlignmentType } from "../paragraph";
 import { TableGrid } from "./grid";

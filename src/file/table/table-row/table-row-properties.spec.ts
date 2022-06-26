@@ -1,6 +1,8 @@
 import { expect } from "chai";
-import { Formatter } from "export/formatter";
-import { HeightRule } from "file/table/table-row/table-row-height";
+
+import { Formatter } from "@export/formatter";
+import { HeightRule } from "@file/table/table-row/table-row-height";
+
 import { TableRowProperties } from "./table-row-properties";
 
 describe("TableRowProperties", () => {

@@ -1,5 +1,5 @@
-import { signedTwipsMeasureValue, twipsMeasureValue } from "file/values";
-import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
+import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
+import { signedTwipsMeasureValue, twipsMeasureValue } from "@util/values";
 
 // <xsd:complexType name="CT_PageMar">
 //     <xsd:attribute name="top" type="ST_SignedTwipsMeasure" use="required"/>

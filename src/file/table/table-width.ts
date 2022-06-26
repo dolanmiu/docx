@@ -1,6 +1,6 @@
 // http://officeopenxml.com/WPtableWidth.php
-import { measurementOrPercentValue } from "file/values";
-import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
+import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
+import { measurementOrPercentValue } from "@util/values";
 
 // <xsd:simpleType name="ST_TblWidth">
 //   <xsd:restriction base="xsd:string">

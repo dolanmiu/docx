@@ -1,7 +1,7 @@
 import { expect } from "chai";
 
-import { Formatter } from "export/formatter";
-import { EMPTY_OBJECT } from "file/xml-components";
+import { Formatter } from "@export/formatter";
+import { EMPTY_OBJECT } from "@file/xml-components";
 
 import { Styles } from "./styles";
 

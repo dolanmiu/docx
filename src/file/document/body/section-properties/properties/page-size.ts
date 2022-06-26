@@ -1,5 +1,5 @@
-import { twipsMeasureValue } from "file/values";
-import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
+import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
+import { twipsMeasureValue } from "@util/values";
 
 // <xsd:simpleType name="ST_PageOrientation">
 // <xsd:restriction base="xsd:string">

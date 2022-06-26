@@ -1,5 +1,5 @@
-import { hexColorValue } from "file/values";
-import { Attributes, XmlComponent } from "file/xml-components";
+import { Attributes, XmlComponent } from "@file/xml-components";
+import { hexColorValue } from "@util/values";
 
 export enum UnderlineType {
     SINGLE = "single",

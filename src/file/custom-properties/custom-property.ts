@@ -1,4 +1,4 @@
-import { XmlComponent } from "file/xml-components";
+import { XmlComponent } from "@file/xml-components";
 import { CustomPropertyAttributes } from "./custom-property-attributes";
 
 export interface ICustomPropertyOptions {

@@ -1,6 +1,6 @@
 // http://officeopenxml.com/WPindentation.php
-import { signedTwipsMeasureValue, twipsMeasureValue } from "file/values";
-import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
+import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
+import { signedTwipsMeasureValue, twipsMeasureValue } from "@util/values";
 
 export interface IIndentAttributesProperties {
     readonly start?: number | string;

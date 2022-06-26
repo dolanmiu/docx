@@ -1,11 +1,11 @@
 import { assert, expect } from "chai";
 import { SinonStub, stub } from "sinon";
 
-import * as convenienceFunctions from "convenience-functions";
+import * as convenienceFunctions from "@util/convenience-functions";
 
-import { Formatter } from "export/formatter";
-import { BorderStyle } from "file/border";
-import { EMPTY_OBJECT } from "file/xml-components";
+import { Formatter } from "@export/formatter";
+import { BorderStyle } from "@file/border";
+import { EMPTY_OBJECT } from "@file/xml-components";
 
 import { IViewWrapper } from "../document-wrapper";
 import { File } from "../file";

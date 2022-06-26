@@ -1,4 +1,4 @@
-import { IContext, IXmlableObject, XmlComponent } from "file/xml-components";
+import { IContext, IXmlableObject, XmlComponent } from "@file/xml-components";
 import { CustomPropertiesAttributes } from "./custom-properties-attributes";
 import { CustomProperty, ICustomPropertyOptions } from "./custom-property";
 

@@ -1,10 +1,10 @@
 import { expect } from "chai";
 
-import { Formatter } from "export/formatter";
-import { AlignmentType, EmphasisMarkType, TabStopPosition } from "file/paragraph";
-import { UnderlineType } from "file/paragraph/run/underline";
-import { ShadingType } from "file/shading";
-import { EMPTY_OBJECT } from "file/xml-components";
+import { Formatter } from "@export/formatter";
+import { AlignmentType, EmphasisMarkType, TabStopPosition } from "@file/paragraph";
+import { UnderlineType } from "@file/paragraph/run/underline";
+import { ShadingType } from "@file/shading";
+import { EMPTY_OBJECT } from "@file/xml-components";
 
 import { StyleForParagraph } from "./paragraph-style";
 

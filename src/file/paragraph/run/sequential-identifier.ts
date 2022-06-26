@@ -1,5 +1,5 @@
-import { Run } from "file/paragraph/run";
-import { Begin, End, Separate } from "file/paragraph/run/field";
+import { Run } from "@file/paragraph/run";
+import { Begin, End, Separate } from "@file/paragraph/run/field";
 import { SequentialIdentifierInstruction } from "./sequential-identifier-instruction";
 
 export class SequentialIdentifier extends Run {

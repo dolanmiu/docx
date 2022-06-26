@@ -1,5 +1,5 @@
-import { twipsMeasureValue } from "file/values";
-import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
+import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
+import { twipsMeasureValue } from "@util/values";
 
 export interface IColumnAttributes {
     readonly width: number | string;

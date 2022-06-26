@@ -1,10 +1,10 @@
 import { expect } from "chai";
 import { SinonStub, stub } from "sinon";
 
-import * as convenienceFunctions from "convenience-functions";
-import { Formatter } from "export/formatter";
-import { IViewWrapper } from "file/document-wrapper";
-import { File } from "file/file";
+import { Formatter } from "@export/formatter";
+import { IViewWrapper } from "@file/document-wrapper";
+import { File } from "@file/file";
+import * as convenienceFunctions from "@util/convenience-functions";
 
 import { ImageRun } from "./image-run";
 

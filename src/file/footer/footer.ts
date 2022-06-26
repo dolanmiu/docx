@@ -1,5 +1,5 @@
 // http://officeopenxml.com/WPfooters.php
-import { InitializableXmlComponent, XmlComponent } from "file/xml-components";
+import { InitializableXmlComponent, XmlComponent } from "@file/xml-components";
 import { Paragraph } from "../paragraph";
 import { Table } from "../table";
 import { FooterAttributes } from "./footer-attributes";

@@ -1,4 +1,4 @@
-import { XmlAttributeComponent } from "file/xml-components";
+import { XmlAttributeComponent } from "@file/xml-components";
 
 export class FootnotesAttributes extends XmlAttributeComponent<{
     readonly wpc?: string;

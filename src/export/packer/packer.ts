@@ -1,4 +1,5 @@
-import { File } from "file";
+import { File } from "@file/file";
+
 import { Compiler } from "./next-compiler";
 
 /**

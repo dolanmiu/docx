@@ -1,4 +1,4 @@
-import { XmlComponent } from "file/xml-components";
+import { XmlComponent } from "@file/xml-components";
 import { DefaultAttributes } from "./default-attributes";
 
 export class Default extends XmlComponent {

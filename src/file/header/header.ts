@@ -1,5 +1,5 @@
 // http://officeopenxml.com/WPheaders.php
-import { InitializableXmlComponent, XmlComponent } from "file/xml-components";
+import { InitializableXmlComponent, XmlComponent } from "@file/xml-components";
 import { Paragraph } from "../paragraph";
 import { Table } from "../table";
 import { HeaderAttributes } from "./header-attributes";

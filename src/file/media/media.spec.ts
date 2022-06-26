@@ -2,7 +2,7 @@
 import { expect } from "chai";
 import { SinonStub, stub } from "sinon";
 
-import * as convenienceFunctions from "convenience-functions";
+import * as convenienceFunctions from "@util/convenience-functions";
 
 import { Media } from "./media";
 
