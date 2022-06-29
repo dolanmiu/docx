@@ -12,6 +12,7 @@ import { HeaderWrapper, IDocumentHeader } from "./header-wrapper";
 import { Media } from "./media";
 import { Numbering } from "./numbering";
 import { Paragraph } from "./paragraph";
+import { Comments } from "./paragraph/run/comment-run";
 import { Relationships } from "./relationships";
 import { Settings } from "./settings";
 import { Styles } from "./styles";
@@ -52,6 +53,7 @@ export class File {
     private readonly customProperties: CustomProperties;
     private readonly appProperties: AppProperties;
     private readonly styles: Styles;
+    private readonly comments: Comments;
 
     constructor(options: IPropertiesOptions, fileProperties: IFileProperties = {}) {
         this.coreProperties = new CoreProperties({
@@ -68,6 +70,10 @@ export class File {
                       config: [],
                   },
         );
+
+        if (options.comments) {
+            this.comments = new Comments(options.comments);
+        }
 
         this.fileRelationships = new Relationships();
         this.customProperties = new CustomProperties(options.customProperties ?? []);
@@ -92,7 +98,7 @@ export class File {
         if (fileProperties.template && options.externalStyles) {
             throw Error("can not use both template and external styles");
         }
-        if (fileProperties.template) {
+        if (fileProperties.template && fileProperties.template.styles) {
             const stylesFactory = new ExternalStylesFactory();
             this.styles = stylesFactory.newInstance(fileProperties.template.styles);
         } else if (options.externalStyles) {
@@ -240,6 +246,11 @@ export class File {
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/settings",
             "settings.xml",
         );
+        this.documentWrapper.Relationships.createRelationship(
+            this.currentRelationshipId++,
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments",
+            "comments.xml",
+        );
     }
 
     public get Document(): DocumentWrapper {
@@ -292,5 +303,9 @@ export class File {
 
     public get Settings(): Settings {
         return this.settings;
+    }
+
+    public get Comments(): Comments {
+        return this.comments;
     }
 }

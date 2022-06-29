@@ -1,0 +1,13 @@
+{
+    "diff": true,
+    "spec": "src/**/*.ts",
+    "extension": ["ts"],
+    "package": "./package.json",
+    "reporter": "spec",
+    "slow": "75",
+    "timeout": "2000",
+    "ui": "bdd",
+    "watch-files": ["src/**/*.ts"],
+    "watch-ignore": ["build", "demo"],
+    "require": ["mocha.env", "ts-node/register", "tsconfig-paths/register"]
+}

@@ -42,6 +42,17 @@ Example showing basic header and footer
 
 _Source: https://github.com/dolanmiu/docx/blob/master/demo/8-header-footer.ts_
 
+## Different First Page
+
+To specify `'Different First Page'`, set `titlePage: true` in the sections array as shown below.
+
+```
+sections: [
+        {
+          properties: {
+            titlePage: true,
+```
+
 ## Multiple Headers and Footers
 
 More headers and footers can be accomplished by creating more `Section`. New headers and footers can be set per `Section`
