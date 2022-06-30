@@ -1,6 +1,6 @@
 // http://officeopenxml.com/WPhyperlink.php
-import { uniqueId } from "convenience-functions";
-import { XmlComponent } from "file/xml-components";
+import { XmlComponent } from "@file/xml-components";
+import { uniqueId } from "@util/convenience-functions";
 
 import { ParagraphChild } from "../paragraph";
 import { HyperlinkAttributes, IHyperlinkAttributesProperties } from "./hyperlink-attributes";

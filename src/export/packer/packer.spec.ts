@@ -2,7 +2,8 @@
 import { assert } from "chai";
 import { mock, stub } from "sinon";
 
-import { File, HeadingLevel, Paragraph } from "file";
+import { File } from "@file/file";
+import { HeadingLevel, Paragraph } from "@file/paragraph";
 
 import { Packer } from "./packer";
 

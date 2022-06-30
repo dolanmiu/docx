@@ -1,5 +1,6 @@
-import { decimalNumber, twipsMeasureValue } from "file/values";
-import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
+import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
+import { decimalNumber, twipsMeasureValue } from "@util/values";
+
 import { Column } from "./column";
 
 // <xsd:complexType name="CT_Columns">

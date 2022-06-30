@@ -1,4 +1,4 @@
-import { XmlAttributeComponent } from "file/xml-components";
+import { XmlAttributeComponent } from "@file/xml-components";
 import { IDistance } from "../drawing";
 
 // distT, distB etc have no effect on inline images, only floating

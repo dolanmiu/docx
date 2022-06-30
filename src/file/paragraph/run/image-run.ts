@@ -1,6 +1,6 @@
-import { uniqueId } from "convenience-functions";
+import { uniqueId } from "@util/convenience-functions";
 
-import { IContext, IXmlableObject } from "file/xml-components";
+import { IContext, IXmlableObject } from "@file/xml-components";
 
 import { Drawing, IFloating } from "../../drawing";
 import { IMediaTransformation } from "../../media";

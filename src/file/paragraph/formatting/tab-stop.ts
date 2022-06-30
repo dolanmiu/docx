@@ -1,5 +1,5 @@
 // http://officeopenxml.com/WPtab.php
-import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
+import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
 
 export class TabStop extends XmlComponent {
     constructor(type: TabStopType, position: number, leader?: LeaderType) {

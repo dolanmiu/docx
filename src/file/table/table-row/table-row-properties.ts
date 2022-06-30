@@ -27,7 +27,7 @@
 //         </xsd:extension>
 //     </xsd:complexContent>
 // </xsd:complexType>
-import { IgnoreIfEmptyXmlComponent, OnOffElement } from "file/xml-components";
+import { IgnoreIfEmptyXmlComponent, OnOffElement } from "@file/xml-components";
 
 import { HeightRule, TableRowHeight } from "./table-row-height";
 

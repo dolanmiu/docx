@@ -1,6 +1,7 @@
 // http://officeopenxml.com/WPnumbering-numFmt.php
-import { decimalNumber } from "file/values";
-import { Attributes, NumberValueElement, XmlAttributeComponent, XmlComponent } from "file/xml-components";
+import { Attributes, NumberValueElement, XmlAttributeComponent, XmlComponent } from "@file/xml-components";
+import { decimalNumber } from "@util/values";
+
 import { AlignmentType } from "../paragraph/formatting";
 import { ILevelParagraphStylePropertiesOptions, ParagraphProperties } from "../paragraph/properties";
 import { IRunStylePropertiesOptions, RunProperties } from "../paragraph/run/properties";

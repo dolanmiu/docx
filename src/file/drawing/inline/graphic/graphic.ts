@@ -1,5 +1,5 @@
-import { IMediaData, IMediaDataTransformation } from "file/media";
-import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
+import { IMediaData, IMediaDataTransformation } from "@file/media";
+import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
 
 import { GraphicData } from "./graphic-data";
 

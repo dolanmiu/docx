@@ -1,12 +1,12 @@
 import { expect } from "chai";
 
-import { convertInchesToTwip } from "convenience-functions";
-import { Formatter } from "export/formatter";
-import { FooterWrapper } from "file/footer-wrapper";
-import { HeaderWrapper } from "file/header-wrapper";
-import { Media } from "file/media";
-import { NumberFormat } from "file/shared/number-format";
-import { VerticalAlign } from "file/vertical-align";
+import { Formatter } from "@export/formatter";
+import { FooterWrapper } from "@file/footer-wrapper";
+import { HeaderWrapper } from "@file/header-wrapper";
+import { Media } from "@file/media";
+import { NumberFormat } from "@file/shared/number-format";
+import { VerticalAlign } from "@file/vertical-align";
+import { convertInchesToTwip } from "@util/convenience-functions";
 
 import { PageOrientation } from "./properties";
 import { DocumentGridType } from "./properties/doc-grid";

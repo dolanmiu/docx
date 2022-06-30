@@ -1,5 +1,5 @@
 // http://www.datypic.com/sc/ooxml/e-m_sSub-1.html
-import { XmlComponent } from "file/xml-components";
+import { XmlComponent } from "@file/xml-components";
 
 import { MathComponent } from "../../math-component";
 import { MathBase, MathSubScriptElement } from "../../n-ary";

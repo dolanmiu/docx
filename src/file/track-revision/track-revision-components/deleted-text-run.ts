@@ -1,4 +1,4 @@
-import { XmlComponent } from "file/xml-components";
+import { XmlComponent } from "@file/xml-components";
 
 import { IRunOptions, RunProperties } from "../../index";
 import { Break } from "../../paragraph/run/break";

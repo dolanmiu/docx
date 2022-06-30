@@ -1,4 +1,4 @@
-import { OnOffElement, XmlAttributeComponent, XmlComponent } from "file/xml-components";
+import { OnOffElement, XmlAttributeComponent, XmlComponent } from "@file/xml-components";
 
 import { Compatibility } from "./compatibility";
 

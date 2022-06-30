@@ -1,6 +1,6 @@
 // http://officeopenxml.com/drwPic.php
-import { IMediaData, IMediaDataTransformation } from "file/media";
-import { XmlComponent } from "file/xml-components";
+import { IMediaData, IMediaDataTransformation } from "@file/media";
+import { XmlComponent } from "@file/xml-components";
 
 import { BlipFill } from "./blip/blip-fill";
 import { NonVisualPicProperties } from "./non-visual-pic-properties/non-visual-pic-properties";

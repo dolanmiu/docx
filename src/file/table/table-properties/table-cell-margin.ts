@@ -1,4 +1,4 @@
-import { IgnoreIfEmptyXmlComponent } from "file/xml-components";
+import { IgnoreIfEmptyXmlComponent } from "@file/xml-components";
 import { TableWidthElement, WidthType } from "../table-width";
 
 export interface ITableCellMarginOptions {

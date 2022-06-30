@@ -1,4 +1,4 @@
-import { OnOffElement, StringValueElement, XmlAttributeComponent, XmlComponent } from "file/xml-components";
+import { OnOffElement, StringValueElement, XmlAttributeComponent, XmlComponent } from "@file/xml-components";
 import { Name, UiPriority } from "./components";
 
 // <xsd:complexType name="CT_Style">

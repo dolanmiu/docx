@@ -1,8 +1,8 @@
 // http://officeopenxml.com/WPtext.php
-import { XmlComponent } from "file/xml-components";
+import { XmlComponent } from "@file/xml-components";
 
-import { FootnoteReferenceRun } from "file/footnotes/footnote/run/reference-run";
-import { FieldInstruction } from "file/table-of-contents/field-instruction";
+import { FootnoteReferenceRun } from "@file/footnotes/footnote/run/reference-run";
+import { FieldInstruction } from "@file/table-of-contents/field-instruction";
 
 import { Break } from "./break";
 import { Begin, End, Separate } from "./field";

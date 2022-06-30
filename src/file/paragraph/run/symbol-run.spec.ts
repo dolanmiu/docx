@@ -2,7 +2,7 @@ import { expect } from "chai";
 
 import { EmphasisMarkType } from "./emphasis-mark";
 
-import { Formatter } from "export/formatter";
+import { Formatter } from "@export/formatter";
 
 import { UnderlineType } from "./underline";
 

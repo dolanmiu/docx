@@ -1,4 +1,4 @@
-import { convertToXmlComponent, ImportedRootElementAttributes, ImportedXmlComponent } from "file/xml-components";
+import { convertToXmlComponent, ImportedRootElementAttributes, ImportedXmlComponent } from "@file/xml-components";
 import { Element as XMLElement, xml2js } from "xml-js";
 import { Styles } from "./";
 

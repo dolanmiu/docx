@@ -1,5 +1,7 @@
 import { expect } from "chai";
-import { Formatter } from "export/formatter";
+
+import { Formatter } from "@export/formatter";
+
 import { DeletedNumberOfPages, DeletedNumberOfPagesSection, DeletedPage } from "./deleted-page-number";
 
 describe("Deleted Page", () => {

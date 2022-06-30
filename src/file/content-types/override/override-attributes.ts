@@ -1,4 +1,4 @@
-import { XmlAttributeComponent } from "file/xml-components";
+import { XmlAttributeComponent } from "@file/xml-components";
 
 export class OverrideAttributes extends XmlAttributeComponent<{
     readonly contentType: string;

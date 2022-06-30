@@ -1,4 +1,4 @@
-import { Attributes, XmlComponent } from "file/xml-components";
+import { Attributes, XmlComponent } from "@file/xml-components";
 
 export enum HeadingLevel {
     HEADING_1 = "Heading1",

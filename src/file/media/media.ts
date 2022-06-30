@@ -1,7 +1,6 @@
-import { uniqueId } from "convenience-functions";
+import { uniqueId } from "@util/convenience-functions";
 
 import { IMediaData } from "./data";
-// import { Image } from "./image";
 
 export interface IMediaTransformation {
     readonly width: number;

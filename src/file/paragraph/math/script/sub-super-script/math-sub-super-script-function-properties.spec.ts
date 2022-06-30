@@ -1,6 +1,6 @@
 import { expect } from "chai";
 
-import { Formatter } from "export/formatter";
+import { Formatter } from "@export/formatter";
 import { MathSubSuperScriptProperties } from "./math-sub-super-script-function-properties";
 
 describe("MathSubSuperScriptProperties", () => {

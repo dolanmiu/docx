@@ -1,4 +1,4 @@
-import { IRunStylePropertiesOptions, RunProperties } from "file/paragraph/run/properties";
+import { IRunStylePropertiesOptions, RunProperties } from "@file/paragraph/run/properties";
 
 import { IStyleOptions, Style } from "./style";
 

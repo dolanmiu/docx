@@ -1,6 +1,6 @@
-import { Attributes, XmlComponent } from "file/xml-components";
+import { Attributes, XmlComponent } from "@file/xml-components";
 
-import { hpsMeasureValue } from "../values";
+import { hpsMeasureValue } from "@util/values";
 
 // This represents element type CT_OnOff, which indicate a boolean value.
 //

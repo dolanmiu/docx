@@ -1,5 +1,5 @@
-import { SpaceType } from "file/space-type";
-import { XmlComponent } from "file/xml-components";
+import { SpaceType } from "@file/space-type";
+import { XmlComponent } from "@file/xml-components";
 
 import { TextAttributes } from "../run/text-attributes";
 import { IPageReferenceOptions } from "./pageref-properties";

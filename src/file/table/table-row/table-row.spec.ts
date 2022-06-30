@@ -1,10 +1,10 @@
 import { expect } from "chai";
 
-import { Formatter } from "export/formatter";
+import { Formatter } from "@export/formatter";
 
-import { Paragraph } from "file/paragraph";
-import { HeightRule } from "file/table/table-row/table-row-height";
-import { EMPTY_OBJECT } from "file/xml-components";
+import { Paragraph } from "@file/paragraph";
+import { HeightRule } from "@file/table/table-row/table-row-height";
+import { EMPTY_OBJECT } from "@file/xml-components";
 import { TableCell } from "../table-cell";
 import { TableRow } from "./table-row";
 

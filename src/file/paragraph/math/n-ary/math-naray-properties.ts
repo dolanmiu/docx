@@ -1,5 +1,5 @@
 // http://www.datypic.com/sc/ooxml/e-m_naryPr-1.html
-import { XmlComponent } from "file/xml-components";
+import { XmlComponent } from "@file/xml-components";
 
 import { MathAccentCharacter } from "./math-accent-character";
 import { MathLimitLocation } from "./math-limit-location";

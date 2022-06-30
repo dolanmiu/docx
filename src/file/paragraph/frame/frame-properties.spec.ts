@@ -1,7 +1,7 @@
 import { expect } from "chai";
 
-import { Formatter } from "export/formatter";
-import { HorizontalPositionAlign, VerticalPositionAlign } from "file/shared";
+import { Formatter } from "@export/formatter";
+import { HorizontalPositionAlign, VerticalPositionAlign } from "@file/shared";
 
 import { FrameAnchorType, FrameProperties } from "./frame-properties";
 

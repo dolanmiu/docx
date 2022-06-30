@@ -2,7 +2,9 @@
 import { expect } from "chai";
 import * as sinon from "sinon";
 
-import { File, Footer, Header, Paragraph } from "file";
+import { File } from "@file/file";
+import { Footer, Header } from "@file/header";
+import { Paragraph } from "@file/paragraph";
 
 import { Compiler } from "./next-compiler";
 

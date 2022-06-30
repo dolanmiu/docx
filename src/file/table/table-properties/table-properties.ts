@@ -21,7 +21,7 @@
 //         <xsd:element name="tblDescription" type="CT_String" minOccurs="0" maxOccurs="1"/>
 //     </xsd:sequence>
 // </xsd:complexType>
-import { IgnoreIfEmptyXmlComponent, OnOffElement, StringValueElement } from "file/xml-components";
+import { IgnoreIfEmptyXmlComponent, OnOffElement, StringValueElement } from "@file/xml-components";
 
 import { Alignment, AlignmentType } from "../../paragraph";
 import { IShadingAttributesProperties, Shading } from "../../shading";

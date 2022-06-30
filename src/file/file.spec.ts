@@ -1,6 +1,6 @@
 import { expect } from "chai";
 
-import { Formatter } from "export/formatter";
+import { Formatter } from "@export/formatter";
 import { sectionMarginDefaults, sectionPageSizeDefaults } from "./document";
 
 import { File } from "./file";

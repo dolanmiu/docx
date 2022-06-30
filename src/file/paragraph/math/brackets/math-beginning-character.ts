@@ -1,5 +1,5 @@
 // http://www.datypic.com/sc/ooxml/e-m_begChr-1.html
-import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
+import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
 
 class MathBeginningCharacterAttributes extends XmlAttributeComponent<{ readonly character: string }> {
     protected readonly xmlKeys = { character: "m:val" };

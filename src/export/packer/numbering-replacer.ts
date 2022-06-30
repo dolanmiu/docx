@@ -1,4 +1,4 @@
-import { ConcreteNumbering } from "file";
+import { ConcreteNumbering } from "@file/numbering";
 
 export class NumberingReplacer {
     public replace(xmlData: string, concreteNumberings: ConcreteNumbering[]): string {

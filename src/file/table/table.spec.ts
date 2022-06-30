@@ -1,7 +1,7 @@
 /* tslint:disable:no-unused-expression */
 import { expect } from "chai";
 
-import { Formatter } from "export/formatter";
+import { Formatter } from "@export/formatter";
 
 import { AlignmentType, Paragraph } from "../paragraph";
 import { Table } from "./table";
