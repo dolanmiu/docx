@@ -90,25 +90,25 @@ export interface ITableFloatOptions {
     readonly relativeVerticalPosition?: RelativeVerticalPosition;
 
     /**
-     * Specifies the minimun distance to be maintained between the table and the top of text in the paragraph
+     * Specifies the minimum distance to be maintained between the table and the top of text in the paragraph
      * below the table. The value is in twentieths of a point. If omitted, the value is assumed to be zero.
      */
     readonly bottomFromText?: number | string;
 
     /**
-     * Specifies the minimun distance to be maintained between the table and the bottom edge of text in the paragraph
+     * Specifies the minimum distance to be maintained between the table and the bottom edge of text in the paragraph
      * above the table. The value is in twentieths of a point. If omitted, the value is assumed to be zero.
      */
     readonly topFromText?: number | string;
 
     /**
-     * Specifies the minimun distance to be maintained between the table and the edge of text in the paragraph
+     * Specifies the minimum distance to be maintained between the table and the edge of text in the paragraph
      * to the left of the table. The value is in twentieths of a point. If omitted, the value is assumed to be zero.
      */
     readonly leftFromText?: number | string;
 
     /**
-     * Specifies the minimun distance to be maintained between the table and the edge of text in the paragraph
+     * Specifies the minimum distance to be maintained between the table and the edge of text in the paragraph
      * to the right of the table. The value is in twentieths of a point. If omitted, the value is assumed to be zero.
      */
     readonly rightFromText?: number | string;

@@ -1,0 +1,30 @@
+// cSpell Settings
+{
+    // Version of the setting file.  Always 0.2
+    "version": "0.2",
+    // language - current active spelling language
+    "language": "en_US",
+    "dictionaries": ["en_US", "typescript", "softwareTerms", "fonts"],
+    // words - list of words to be always considered correct
+    "words": [
+        "Xmlable",
+        "twip",
+        "twips",
+        "jsonify",
+        "Media",
+        "falsey",
+        "aiueo",
+        "iroha",
+        "aiueo",
+        "iroha",
+        "chosung",
+        "Abjad",
+        "Initializable"
+    ],
+    "ignoreRegExpList": ["/w:.+/", "/s:.+/", "/a:.+/", "/pic:.+/", "/xmlns:.+/", "/[^\\s]{40,}/", "/<xsd:.+/>/", "/[A-Z_]+ = \".+\"/", "/XmlAttributeComponent<{(.|\\n| )+}>/"],
+    "allowCompoundWords": true,
+    // flagWords - list of words to be always considered incorrect
+    // This is useful for offensive words and common spelling errors.
+    // For example "hte" should be "the"
+    "flagWords": ["hte"]
+}

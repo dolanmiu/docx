@@ -141,12 +141,12 @@ export class ImportDotx {
     }
 
     private async addRelationshipToWrapper(
-        relationhipFile: IRelationshipFileInfo,
+        relationshipFile: IRelationshipFileInfo,
         zipContent: JSZip,
         wrapper: HeaderWrapper | FooterWrapper,
         media: Media,
     ): Promise<void> {
-        const refFile = zipContent.files[`word/_rels/${relationhipFile.target}.rels`];
+        const refFile = zipContent.files[`word/_rels/${relationshipFile.target}.rels`];
 
         if (!refFile) {
             return;
