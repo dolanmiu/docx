@@ -6,7 +6,7 @@ import { File } from "@file/file";
 import { Formatter } from "../formatter";
 import { ImageReplacer } from "./image-replacer";
 import { NumberingReplacer } from "./numbering-replacer";
-import { PrettityType } from "./packer";
+import { PrettifyType } from "./packer";
 
 interface IXmlifyedFile {
     readonly data: string;
@@ -44,7 +44,7 @@ export class Compiler {
         this.numberingReplacer = new NumberingReplacer();
     }
 
-    public compile(file: File, prettifyXml?: boolean | PrettityType): JSZip {
+    public compile(file: File, prettifyXml?: boolean | PrettifyType): JSZip {
         const zip = new JSZip();
         const xmlifiedFileMapping = this.xmlifyFile(file, prettifyXml);
         const map = new Map<string, IXmlifyedFile | IXmlifyedFile[]>(Object.entries(xmlifiedFileMapping));
@@ -67,7 +67,7 @@ export class Compiler {
         return zip;
     }
 
-    private xmlifyFile(file: File, prettify?: boolean | PrettityType): IXmlifyedFileMapping {
+    private xmlifyFile(file: File, prettify?: boolean | PrettifyType): IXmlifyedFileMapping {
         const documentRelationshipCount = file.Document.Relationships.RelationshipCount + 1;
 
         const documentXmlData = xml(

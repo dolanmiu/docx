@@ -16,7 +16,7 @@
     "typedoc": "rimraf ./build && typedoc src/index.ts --tsconfig tsconfig.typedoc.json",
     "style": "prettier -l \"src/**/*.ts\"",
     "style.fix": "npm run style -- --write",
-    "cspell": "cspell  \"/**/*.{ts,scss,html}\"",
+    "cspell": "cspell \"src/**/*.ts\" && cspell \"demo/**/*.{ts,scss,html}\" && cspell \"docs/**/*.{ts,md,html}\"",
     "fix-types": "ts-node --skip-project scripts/types-absolute-fixer.ts",
     "e2e": "ts-node scripts/e2e.ts",
     "serve.docs": "cd docs && docsify serve",

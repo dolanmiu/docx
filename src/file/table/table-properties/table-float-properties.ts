@@ -27,6 +27,7 @@ export enum RelativeVerticalPosition {
 }
 
 export interface ITableFloatOptions {
+    /* cSpell:disable */
     /**
      * Specifies the horizontal anchor or the base object from which the horizontal positioning in the
      * tblpX or tblpXSpec attribute should be determined.
@@ -35,6 +36,7 @@ export interface ITableFloatOptions {
      * text - relative to the vertical edge of the text margin for the column in which the anchor paragraph is located
      * If omitted, the value is assumed to be page.
      */
+    /* cSpell:enable */
     readonly horizontalAnchor?: TableAnchorType;
 
     /**

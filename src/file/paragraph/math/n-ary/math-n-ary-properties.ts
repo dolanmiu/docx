@@ -6,7 +6,7 @@ import { MathLimitLocation } from "./math-limit-location";
 import { MathSubScriptHide } from "./math-sub-script-hide";
 import { MathSuperScriptHide } from "./math-super-script-hide";
 
-export class MathNArayProperties extends XmlComponent {
+export class MathNAryProperties extends XmlComponent {
     constructor(accent: string, hasSuperScript: boolean, hasSubScript: boolean) {
         super("m:naryPr");
 
