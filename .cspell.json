@@ -4,14 +4,13 @@
     "version": "0.2",
     // language - current active spelling language
     "language": "en_US",
-    "dictionaries": ["en_US", "typescript", "softwareTerms", "fonts"],
+    "dictionaries": ["en_US", "typescript", "softwareTerms", "fonts", "npm"],
     // words - list of words to be always considered correct
     "words": [
         "Xmlable",
         "twip",
         "twips",
         "jsonify",
-        "Media",
         "falsey",
         "aiueo",
         "iroha",
@@ -31,7 +30,8 @@
         "NUMPAGES",
         "ATLEAST",
         "ooxml",
-        "clippy"
+        "clippy",
+        "docsify"
     ],
     "ignoreRegExpList": [
         "/\"w:.+\"/",
@@ -49,7 +49,7 @@
         "\\.to\\.include\\.members\\(\\[[^\\]]+]\\)",
         "/new [a-zA-Z]+\\({[^£]+}\\)/g"
     ],
-    "ignorePaths": ["package.json"],
+    "ignorePaths": ["package.json", "docs/api"],
     "allowCompoundWords": true,
     // flagWords - list of words to be always considered incorrect
     // This is useful for offensive words and common spelling errors.
