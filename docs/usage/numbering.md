@@ -37,7 +37,7 @@ sub-sublists, etc. Each level includes the following properties:
     numbers from each numbering level before this one. Thus a level
     text of `%d)` with a number format of `lowerLetter` would result in
     the sequence "a)", "b)", ...
-*   and a few others, which you can see in the OXML spec section 17.9.6
+*   and a few others, which you can see in the OOXML spec section 17.9.6
 
 ## Document-level bullets/numbering definitions (concrete)
 

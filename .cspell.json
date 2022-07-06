@@ -29,15 +29,17 @@
         "jszip",
         "rsid",
         "NUMPAGES",
-        "ATLEAST"
+        "ATLEAST",
+        "ooxml",
+        "clippy"
     ],
     "ignoreRegExpList": [
-        "/w:.+/",
-        "/s:.+/",
-        "/a:.+/",
-        "/pic:.+/",
-        "/xmlns:.+/",
-        "/vt:.+/",
+        "/\"w:.+\"/",
+        "/\"s:.+\"/",
+        "/\"a:.+\"/",
+        "/\"pic:.+\"/",
+        "/\"xmlns:.+\"/",
+        "/\"vt:.+\"/",
         "/[^\\s]{40,}/",
         "/<xsd:.+/>/",
         "/[A-Z_]+ = \".+\"/",
@@ -47,6 +49,7 @@
         "\\.to\\.include\\.members\\(\\[[^\\]]+]\\)",
         "/new [a-zA-Z]+\\({[^£]+}\\)/g"
     ],
+    "ignorePaths": ["package.json"],
     "allowCompoundWords": true,
     // flagWords - list of words to be always considered incorrect
     // This is useful for offensive words and common spelling errors.

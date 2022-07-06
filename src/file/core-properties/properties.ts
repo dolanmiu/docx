@@ -41,6 +41,7 @@ export interface IPropertiesOptions {
 
 // <xs:element name="coreProperties" type="CT_CoreProperties"/>
 
+/* cSpell:disable */
 // <xs:complexType name="CT_CoreProperties">
 //   <xs:all>
 //     <xs:element name="category" minOccurs="0" maxOccurs="1" type="xs:string"/>
@@ -60,6 +61,7 @@ export interface IPropertiesOptions {
 //     <xs:element name="version" minOccurs="0" maxOccurs="1" type="xs:string"/>
 //   </xs:all>
 // </xs:complexType>
+/* cSpell:enable */
 
 export class CoreProperties extends XmlComponent {
     constructor(options: Omit<IPropertiesOptions, "sections">) {
