@@ -26,13 +26,15 @@ Please write good commit messages when making a commit: https://chris.beams.io/p
 
 **Do not:**
 
+<!-- cspell:disable -->
 ```
 c // What?
-rtl // Adding acryonyms without explaining anything else is not helpful
+rtl // Adding acronyms without explaining anything else is not helpful
 works! // Glad its working, but the message is not helpful
 demo updated // Getting better, but capitalize the first letter
 Unesesary coment removed // Make sure to use correct spelling
 ```
+<!-- cspell:enable -->
 
 **Do**
 
@@ -42,9 +44,9 @@ Unesesary coment removed // Make sure to use correct spelling
     public float(tableFloatOptions: ITableFloatOptions): Table
 ```
 
-## Delcariative API
+## Declarative API
 
-Make sure the API is declarative, so no _method calling_ or _mutation_. This is a design decision, consistent with the rest of the project. There are benefits to delcariative code over other styles of code, explained here: https://dzone.com/articles/why-declarative-coding-makes-you-a-better-programm
+Make sure the API is declarative, so no _method calling_ or _mutation_. This is a design decision, consistent with the rest of the project. There are benefits to declarative code over other styles of code, explained here: https://dzone.com/articles/why-declarative-coding-makes-you-a-better-programm
 
 **Do not:**
 
