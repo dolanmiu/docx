@@ -52,18 +52,20 @@ const table = new Table({
 });
 
 const doc = new Document({
-    numbering:{
-        config:[{
-            reference: 'ref1',
-            levels: [
+    numbering: {
+        config: [
             {
-                level: 0,
-                format: LevelFormat.DECIMAL,
-                text: '%1)',
-                start: 50,
-            }
-            ],
-        }]
+                reference: "ref1",
+                levels: [
+                    {
+                        level: 0,
+                        format: LevelFormat.DECIMAL,
+                        text: "%1)",
+                        start: 50,
+                    },
+                ],
+            },
+        ],
     },
     styles: {
         default: {
@@ -184,11 +186,11 @@ const doc = new Document({
                     spacing: { line: 276, before: 20 * 72 * 0.1, after: 20 * 72 * 0.05 },
                     rightTabStop: TabStopPosition.MAX,
                     leftTabStop: 453.543307087,
-                    numbering : {
-                        reference: 'ref1',
+                    numbering: {
+                        reference: "ref1",
                         instance: 0,
                         level: 0,
-                    }
+                    },
                 },
             },
         ],

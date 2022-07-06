@@ -123,8 +123,7 @@ const noBorderTable = new Table({
                 new TableCell({
                     children: [
                         new Paragraph({
-                            text:
-                                "Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah",
+                            text: "Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah",
                             heading: HeadingLevel.HEADING_1,
                         }),
                     ],

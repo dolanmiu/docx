@@ -5,7 +5,7 @@ import { Compiler } from "./next-compiler";
 /**
  * Use blanks to prettify
  */
-export enum PrettityType {
+export enum PrettifyType {
     NONE = "",
     WITH_2_BLANKS = "  ",
     WITH_4_BLANKS = "    ",
@@ -13,7 +13,7 @@ export enum PrettityType {
 }
 
 export class Packer {
-    public static async toBuffer(file: File, prettify?: boolean | PrettityType): Promise<Buffer> {
+    public static async toBuffer(file: File, prettify?: boolean | PrettifyType): Promise<Buffer> {
         const zip = this.compiler.compile(file, prettify);
         const zipData = await zip.generateAsync({
             type: "nodebuffer",
@@ -24,7 +24,7 @@ export class Packer {
         return zipData;
     }
 
-    public static async toBase64String(file: File, prettify?: boolean | PrettityType): Promise<string> {
+    public static async toBase64String(file: File, prettify?: boolean | PrettifyType): Promise<string> {
         const zip = this.compiler.compile(file, prettify);
         const zipData = await zip.generateAsync({
             type: "base64",
@@ -35,7 +35,7 @@ export class Packer {
         return zipData;
     }
 
-    public static async toBlob(file: File, prettify?: boolean | PrettityType): Promise<Blob> {
+    public static async toBlob(file: File, prettify?: boolean | PrettifyType): Promise<Blob> {
         const zip = this.compiler.compile(file, prettify);
         const zipData = await zip.generateAsync({
             type: "blob",

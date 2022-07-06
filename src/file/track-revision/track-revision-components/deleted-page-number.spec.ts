@@ -13,7 +13,7 @@ describe("Deleted Page", () => {
     });
 });
 
-describe("Delted NumberOfPages", () => {
+describe("Deleted NumberOfPages", () => {
     describe("#constructor()", () => {
         it("uses the font name for both ascii and hAnsi", () => {
             const tree = new Formatter().format(new DeletedNumberOfPages());

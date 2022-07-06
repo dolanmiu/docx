@@ -13,11 +13,13 @@ const doc = new Document({
                 },
             },
             children: [
-                new Paragraph({ children: [
-                    new TextRun('This text will be in the first column.'),
-                    new ColumnBreak(),
-                    new TextRun('This text will be in the second column.'),
-                ] }),
+                new Paragraph({
+                    children: [
+                        new TextRun("This text will be in the first column."),
+                        new ColumnBreak(),
+                        new TextRun("This text will be in the second column."),
+                    ],
+                }),
             ],
         },
     ],

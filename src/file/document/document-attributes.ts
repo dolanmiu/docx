@@ -1,5 +1,6 @@
 import { XmlAttributeComponent } from "@file/xml-components";
 
+/* cSpell:disable */
 export interface IDocumentAttributesProperties {
     readonly wpc?: string;
     readonly mc?: string;
@@ -41,6 +42,7 @@ export interface IDocumentAttributesProperties {
     readonly w16sdtdh?: string;
     readonly w16se?: string;
 }
+/* cSpell:enable */
 
 export class DocumentAttributes extends XmlAttributeComponent<IDocumentAttributesProperties> {
     protected readonly xmlKeys = {

@@ -1,4 +1,4 @@
-// Example on how to customise the look at feel using Styles
+// Example on how to customize the look at feel using Styles
 // Import from 'docx' rather than '../build' if you install from npm
 import * as fs from "fs";
 import {
