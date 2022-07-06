@@ -121,7 +121,7 @@ Add borders to a `Paragraph`. Good for making the `Paragraph` stand out
 | -------- | -------- | -------- |
 | color    | `string` | Required |
 | space    | `number` | Required |
-| value    | `string` | Required |
+| style    | `string` | Required |
 | size     | `number` | Required |
 
 **Example:**
@@ -135,13 +135,13 @@ const paragraph = new Paragraph({
         top: {
             color: "auto",
             space: 1,
-            value: "single",
+            style: "single",
             size: 6,
         },
         bottom: {
             color: "auto",
             space: 1,
-            value: "single",
+            style: "single",
             size: 6,
         },
     },
