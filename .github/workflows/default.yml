@@ -58,3 +58,13 @@ jobs:
               run: npm ci --force
             - name: Prettier
               run: npm run style
+    cspell:
+        name: CSpell
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout Repo
+              uses: actions/checkout@master
+            - name: Install Dependencies
+              run: npm ci --force
+            - name: Prettier
+              run: npm run cspell
