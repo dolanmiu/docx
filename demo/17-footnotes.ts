@@ -18,10 +18,15 @@ const doc = new Document({
                 new Paragraph({
                     children: [
                         new TextRun({
-                            children: ["Hello", new FootnoteReferenceRun(1)],
+                            children: ["Hello"],
                         }),
+                        new FootnoteReferenceRun(1),
                         new TextRun({
-                            children: [" World!", new FootnoteReferenceRun(2)],
+                            children: [" World!"],
+                        }),
+                        new FootnoteReferenceRun(2),
+                        new TextRun({
+                            children: [" GitHub!"],
                         }),
                     ],
                 }),
@@ -35,15 +40,17 @@ const doc = new Document({
                 new Paragraph({
                     children: [
                         new TextRun({
-                            children: ["Hello", new FootnoteReferenceRun(4)],
+                            children: ["Hello"],
                         }),
+                        new FootnoteReferenceRun(4),
                         new TextRun({
-                            children: [" World!", new FootnoteReferenceRun(5)],
+                            children: [" World!"],
                         }),
+                        new FootnoteReferenceRun(5),
                     ],
                 }),
                 new Paragraph({
-                    children: [new TextRun("Hello World"), new FootnoteReferenceRun(6)],
+                    children: [new TextRun("Hello World Again"), new FootnoteReferenceRun(6)],
                 }),
             ],
         },
