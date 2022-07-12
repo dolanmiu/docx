@@ -4,7 +4,8 @@ import * as sinon from "sinon";
 
 import { File } from "@file/file";
 import { Footer, Header } from "@file/header";
-import { Paragraph } from "@file/paragraph";
+import { ImageRun, Paragraph } from "@file/paragraph";
+import * as convenienceFunctions from "@util/convenience-functions";
 
 import { Compiler } from "./next-compiler";
 
@@ -13,6 +14,14 @@ describe("Compiler", () => {
 
     beforeEach(() => {
         compiler = new Compiler();
+    });
+
+    before(() => {
+        sinon.stub(convenienceFunctions, "uniqueId").callsFake(() => "test");
+    });
+
+    after(() => {
+        (convenienceFunctions.uniqueId as sinon.SinonStub).restore();
     });
 
     describe("#compile()", () => {
@@ -111,18 +120,38 @@ describe("Compiler", () => {
             const spy = sinon.spy(compiler["formatter"], "format");
 
             compiler.compile(file);
-            expect(spy.callCount).to.equal(12);
+            expect(spy.callCount).to.equal(13);
         });
 
         it("should work with media datas", () => {
             // This test is required because before, there was a case where Document was formatted twice, which was inefficient
             // This also caused issues such as running prepForXml multiple times as format() was ran multiple times.
-            const paragraph = new Paragraph("");
             const file = new File({
                 sections: [
                     {
-                        properties: {},
-                        children: [paragraph],
+                        headers: {
+                            default: new Header({
+                                children: [new Paragraph("test")],
+                            }),
+                        },
+                        footers: {
+                            default: new Footer({
+                                children: [new Paragraph("test")],
+                            }),
+                        },
+                        children: [
+                            new Paragraph({
+                                children: [
+                                    new ImageRun({
+                                        data: Buffer.from("", "base64"),
+                                        transformation: {
+                                            width: 100,
+                                            height: 100,
+                                        },
+                                    }),
+                                ],
+                            }),
+                        ],
                     },
                 ],
             });

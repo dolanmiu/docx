@@ -406,26 +406,19 @@ export class Compiler {
                 path: "word/settings.xml",
             },
             Comments: {
-                data: (() => {
-                    if (!file.Comments) {
-                        return;
-                    }
-
-                    const data = xml(
-                        this.formatter.format(file.Comments, {
-                            viewWrapper: file.Document,
-                            file,
-                        }),
-                        {
-                            indent: prettify,
-                            declaration: {
-                                standalone: "yes",
-                                encoding: "UTF-8",
-                            },
+                data: xml(
+                    this.formatter.format(file.Comments, {
+                        viewWrapper: file.Document,
+                        file,
+                    }),
+                    {
+                        indent: prettify,
+                        declaration: {
+                            standalone: "yes",
+                            encoding: "UTF-8",
                         },
-                    );
-                    return data;
-                })(),
+                    },
+                ),
                 path: "word/comments.xml",
             },
         };
