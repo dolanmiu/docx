@@ -111,7 +111,7 @@ describe("Compiler", () => {
             const spy = sinon.spy(compiler["formatter"], "format");
 
             compiler.compile(file);
-            expect(spy.callCount).to.equal(12);
+            expect(spy.callCount).to.equal(13);
         });
 
         it("should work with media datas", () => {
