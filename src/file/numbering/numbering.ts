@@ -225,6 +225,16 @@ export class Numbering extends XmlComponent {
                       },
         };
 
+        const referenceConfigLevels = this.referenceConfigMap.get(reference);
+        // @ts-ignore
+        const firstLevelStartNumber = referenceConfigLevels && referenceConfigLevels[0].start;
+        if (firstLevelStartNumber && Number.isInteger(firstLevelStartNumber)) {
+            concreteNumberingSettings.overrideLevel = {
+                num: 0,
+                start: firstLevelStartNumber,
+            };
+        }
+
         this.concreteNumberingMap.set(fullReference, new ConcreteNumbering(concreteNumberingSettings));
     }
 

@@ -26,7 +26,7 @@ export interface IDrawingOptions {
 // </xsd:complexType>
 
 export class Drawing extends XmlComponent {
-    private readonly inline: Inline;
+    private readonly inline: Inline | undefined;
 
     public constructor(imageData: IMediaData, drawingOptions: IDrawingOptions = {}) {
         super("w:drawing");

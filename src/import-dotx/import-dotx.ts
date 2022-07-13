@@ -195,10 +195,12 @@ export class ImportDotx {
                 }
                 return {
                     id: this.parseRefId(item._attributes.Id as string),
+                    // @ts-ignore
                     type: schemeToType[item._attributes.Type as string],
                     target: item._attributes.Target as string,
                 };
             })
+            // @ts-ignore
             .filter((item) => item.type !== null);
         return relationships;
     }
