@@ -1,5 +1,5 @@
 /* tslint:disable */
-function createLsdException(name, uiPriority, qFormat?, semiHidden?, unhideWhenUsed?) {
+function createLsdException(name: string, uiPriority?: number, qFormat?: number, semiHidden?: number, unhideWhenUsed?: number) {
     "use strict";
 
     return [

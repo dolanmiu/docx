@@ -16,9 +16,12 @@ export abstract class XmlAttributeComponent<T> extends BaseXmlComponent {
     public prepForXml(_: IContext): IXmlableObject {
         const attrs = {};
         Object.keys(this.root).forEach((key) => {
+            // @ts-ignore
             const value = this.root[key];
             if (value !== undefined) {
+                // @ts-ignore
                 const newKey = (this.xmlKeys && this.xmlKeys[key]) || key;
+                // @ts-ignore
                 attrs[newKey] = value;
             }
         });

@@ -1,5 +1,5 @@
-import * as JSZip from "jszip";
-import * as xml from "xml";
+import JSZip from "jszip";
+import xml from "xml";
 
 import { File } from "@file/file";
 
@@ -44,7 +44,7 @@ export class Compiler {
         this.numberingReplacer = new NumberingReplacer();
     }
 
-    public compile(file: File, prettifyXml?: boolean | PrettifyType): JSZip {
+    public compile(file: File, prettifyXml?: PrettifyType): JSZip {
         const zip = new JSZip();
         const xmlifiedFileMapping = this.xmlifyFile(file, prettifyXml);
         const map = new Map<string, IXmlifyedFile | IXmlifyedFile[]>(Object.entries(xmlifiedFileMapping));
@@ -67,7 +67,7 @@ export class Compiler {
         return zip;
     }
 
-    private xmlifyFile(file: File, prettify?: boolean | PrettifyType): IXmlifyedFileMapping {
+    private xmlifyFile(file: File, prettify?: PrettifyType): IXmlifyedFileMapping {
         const documentRelationshipCount = file.Document.Relationships.RelationshipCount + 1;
 
         const documentXmlData = xml(

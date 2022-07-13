@@ -2,6 +2,7 @@
     "compilerOptions": {
         "target": "es6",
         "strictNullChecks": true,
+        "strict": true,
         "sourceMap": true,
         "removeComments": true,
         "preserveConstEnums": true,
@@ -13,6 +14,7 @@
         "noUnusedLocals": true,
         "noUnusedParameters": true,
         "baseUrl": "./src",
+        "esModuleInterop": true,
         "paths": {
             "@util/*": ["./util/*"],
             "@export/*": ["./export/*"],

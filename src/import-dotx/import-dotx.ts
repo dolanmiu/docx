@@ -1,4 +1,4 @@
-import * as JSZip from "jszip";
+import JSZip from "jszip";
 import { Element as XMLElement, ElementCompact as XMLElementCompact, xml2js } from "xml-js";
 
 import { HeaderFooterReferenceType } from "@file/document/body/section-properties";
@@ -193,10 +193,12 @@ export class ImportDotx {
                 }
                 return {
                     id: this.parseRefId(item._attributes.Id as string),
+                    // @ts-ignore
                     type: schemeToType[item._attributes.Type as string],
                     target: item._attributes.Target as string,
                 };
             })
+            // @ts-ignore
             .filter((item) => item.type !== null);
         return relationships;
     }
