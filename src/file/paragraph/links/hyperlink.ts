@@ -38,6 +38,9 @@ export class InternalHyperlink extends ConcreteHyperlink {
     }
 }
 
-export class ExternalHyperlink {
-    constructor(public readonly options: { readonly children: ParagraphChild[]; readonly link: string }) {}
+export class ExternalHyperlink extends XmlComponent {
+    constructor(public readonly options: { readonly children: ParagraphChild[]; readonly link: string })
+    {
+        super("w:externalHyperlink");
+    }
 }
