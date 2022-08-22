@@ -37,6 +37,14 @@ describe("Packer", () => {
         });
     });
 
+    describe("#toString()", () => {
+        it("should return a non-empty string", async () => {
+            const result = await Packer.toString(file);
+
+            assert.isAbove(result.length, 0);
+        });
+    });
+
     describe("#toBuffer()", () => {
         it("should create a standard docx file", async function () {
             this.timeout(99999999);

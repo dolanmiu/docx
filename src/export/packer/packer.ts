@@ -13,6 +13,17 @@ export enum PrettifyType {
 }
 
 export class Packer {
+    public static async toString(file: File, prettify?: boolean | PrettifyType): Promise<string> {
+        const zip = this.compiler.compile(file, prettify);
+        const zipData = await zip.generateAsync({
+            type: "string",
+            mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            compression: "DEFLATE",
+        });
+
+        return zipData;
+    }
+
     public static async toBuffer(file: File, prettify?: boolean | PrettifyType): Promise<Buffer> {
         const zip = this.compiler.compile(file, prettify);
         const zipData = await zip.generateAsync({
