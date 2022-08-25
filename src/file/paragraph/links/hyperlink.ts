@@ -39,8 +39,7 @@ export class InternalHyperlink extends ConcreteHyperlink {
 }
 
 export class ExternalHyperlink extends XmlComponent {
-    constructor(public readonly options: { readonly children: ParagraphChild[]; readonly link: string })
-    {
+    constructor(public readonly options: { readonly children: ParagraphChild[]; readonly link: string }) {
         super("w:externalHyperlink");
     }
 }
