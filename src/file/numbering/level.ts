@@ -38,7 +38,7 @@ class LevelAttributes extends XmlAttributeComponent<{
 //     <xsd:attribute name="format" type="s:ST_String" use="optional"/>
 // </xsd:complexType>
 class NumberFormat extends XmlComponent {
-    constructor(value: string) {
+    public constructor(value: string) {
         super("w:numFmt");
         this.root.push(
             new Attributes({
@@ -53,7 +53,7 @@ class NumberFormat extends XmlComponent {
 //     <xsd:attribute name="null" type="s:ST_OnOff" use="optional"/>
 // </xsd:complexType>
 class LevelText extends XmlComponent {
-    constructor(value: string) {
+    public constructor(value: string) {
         super("w:lvlText");
         this.root.push(
             new Attributes({
@@ -64,7 +64,7 @@ class LevelText extends XmlComponent {
 }
 
 class LevelJc extends XmlComponent {
-    constructor(value: AlignmentType) {
+    public constructor(value: AlignmentType) {
         super("w:lvlJc");
         this.root.push(
             new Attributes({
@@ -104,7 +104,7 @@ export interface ILevelsOptions {
 //         </xsd:restriction>
 //     </xsd:simpleType>
 class Suffix extends XmlComponent {
-    constructor(value: LevelSuffix) {
+    public constructor(value: LevelSuffix) {
         super("w:suff");
         this.root.push(
             new Attributes({
@@ -137,7 +137,7 @@ export class LevelBase extends XmlComponent {
     private readonly paragraphProperties: ParagraphProperties;
     private readonly runProperties: RunProperties;
 
-    constructor({ level, format, text, alignment = AlignmentType.START, start = 1, style, suffix }: ILevelsOptions) {
+    public constructor({ level, format, text, alignment = AlignmentType.START, start = 1, style, suffix }: ILevelsOptions) {
         super("w:lvl");
 
         this.root.push(new NumberValueElement("w:start", decimalNumber(start)));
@@ -180,7 +180,7 @@ export class LevelBase extends XmlComponent {
 export class Level extends LevelBase {
     // This is the level that sits under abstractNum. We make a
     // handful of properties required
-    constructor(options: ILevelsOptions) {
+    public constructor(options: ILevelsOptions) {
         super(options);
     }
 }

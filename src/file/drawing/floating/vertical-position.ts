@@ -13,7 +13,7 @@ class VerticalPositionAttributes extends XmlAttributeComponent<{
 }
 
 export class VerticalPosition extends XmlComponent {
-    constructor(verticalPosition: IVerticalPositionOptions) {
+    public constructor(verticalPosition: IVerticalPositionOptions) {
         super("wp:positionV");
 
         this.root.push(

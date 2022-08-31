@@ -9,7 +9,7 @@ enum BreakType {
 }
 
 class Break extends XmlComponent {
-    constructor(type: BreakType) {
+    public constructor(type: BreakType) {
         super("w:br");
         this.root.push(
             new Attributes({
@@ -20,14 +20,14 @@ class Break extends XmlComponent {
 }
 
 export class PageBreak extends Run {
-    constructor() {
+    public constructor() {
         super({});
         this.root.push(new Break(BreakType.PAGE));
     }
 }
 
 export class ColumnBreak extends Run {
-    constructor() {
+    public constructor() {
         super({});
         this.root.push(new Break(BreakType.COLUMN));
     }
@@ -37,7 +37,7 @@ export class ColumnBreak extends Run {
  * Add page break before the paragraph if there is no one added before.
  */
 export class PageBreakBefore extends XmlComponent {
-    constructor() {
+    public constructor() {
         super("w:pageBreakBefore");
     }
 }

@@ -27,7 +27,7 @@ export interface ITableCellPropertiesOptions {
 }
 
 export class TableCellProperties extends IgnoreIfEmptyXmlComponent {
-    constructor(options: ITableCellPropertiesOptions) {
+    public constructor(options: ITableCellPropertiesOptions) {
         super("w:tcPr");
 
         if (options.width) {

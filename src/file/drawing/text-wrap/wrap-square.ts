@@ -19,7 +19,7 @@ class WrapSquareAttributes extends XmlAttributeComponent<IWrapSquareAttributes> 
 }
 
 export class WrapSquare extends XmlComponent {
-    constructor(
+    public constructor(
         textWrapping: ITextWrapping,
         margins: IMargins = {
             top: 0,

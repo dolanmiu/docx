@@ -17,7 +17,7 @@ export class FooterWrapper implements IViewWrapper {
     private readonly footer: Footer;
     private readonly relationships: Relationships;
 
-    constructor(private readonly media: Media, referenceId: number, initContent?: XmlComponent) {
+    public constructor(private readonly media: Media, referenceId: number, initContent?: XmlComponent) {
         this.footer = new Footer(referenceId, initContent);
         this.relationships = new Relationships();
     }

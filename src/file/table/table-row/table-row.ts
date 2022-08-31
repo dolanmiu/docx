@@ -7,7 +7,7 @@ export interface ITableRowOptions extends ITableRowPropertiesOptions {
 }
 
 export class TableRow extends XmlComponent {
-    constructor(private readonly options: ITableRowOptions) {
+    public constructor(private readonly options: ITableRowOptions) {
         super("w:tr");
         this.root.push(new TableRowProperties(options));
 

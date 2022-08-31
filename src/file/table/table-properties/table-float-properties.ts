@@ -146,7 +146,7 @@ export class TableFloatOptionsAttributes extends XmlAttributeComponent<ITableFlo
 }
 
 export class TableFloatProperties extends XmlComponent {
-    constructor({
+    public constructor({
         leftFromText,
         rightFromText,
         topFromText,

@@ -14,7 +14,7 @@ export interface IMathSumOptions {
 }
 
 export class MathSum extends XmlComponent {
-    constructor(options: IMathSumOptions) {
+    public constructor(options: IMathSumOptions) {
         super("m:nary");
 
         this.root.push(new MathNAryProperties("∑", !!options.superScript, !!options.subScript));

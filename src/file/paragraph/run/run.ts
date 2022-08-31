@@ -26,7 +26,7 @@ export enum PageNumber {
 export class Run extends XmlComponent {
     protected readonly properties: RunProperties;
 
-    constructor(options: IRunOptions) {
+    public constructor(options: IRunOptions) {
         super("w:r");
         this.properties = new RunProperties(options);
         this.root.push(this.properties);

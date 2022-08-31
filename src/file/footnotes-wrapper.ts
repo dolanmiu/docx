@@ -6,7 +6,7 @@ export class FootnotesWrapper implements IViewWrapper {
     private readonly footnotess: FootNotes;
     private readonly relationships: Relationships;
 
-    constructor() {
+    public constructor() {
         this.footnotess = new FootNotes();
         this.relationships = new Relationships();
     }

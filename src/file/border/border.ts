@@ -33,7 +33,7 @@ export interface IBorderOptions {
 }
 
 export class BorderElement extends XmlComponent {
-    constructor(elementName: string, { color, size, space, style }: IBorderOptions) {
+    public constructor(elementName: string, { color, size, space, style }: IBorderOptions) {
         super(elementName);
         this.root.push(
             new BordersAttributes({

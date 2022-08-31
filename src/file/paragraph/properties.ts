@@ -59,7 +59,7 @@ export interface IParagraphPropertiesOptions extends IParagraphStylePropertiesOp
 export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
     private readonly numberingReferences: { readonly reference: string; readonly instance: number }[] = [];
 
-    constructor(options?: IParagraphPropertiesOptions) {
+    public constructor(options?: IParagraphPropertiesOptions) {
         super("w:pPr");
 
         if (!options) {

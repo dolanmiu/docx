@@ -11,7 +11,7 @@ export interface IMathSuperScriptOptions {
 }
 
 export class MathSuperScript extends XmlComponent {
-    constructor(options: IMathSuperScriptOptions) {
+    public constructor(options: IMathSuperScriptOptions) {
         super("m:sSup");
 
         this.root.push(new MathSuperScriptProperties());

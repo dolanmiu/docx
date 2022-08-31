@@ -2,7 +2,7 @@ export class StyleLevel {
     public readonly styleName: string;
     public readonly level: number;
 
-    constructor(styleName: string, level: number) {
+    public constructor(styleName: string, level: number) {
         this.styleName = styleName;
         this.level = level;
     }

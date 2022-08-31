@@ -99,7 +99,7 @@ export interface IRunPropertiesChangeOptions extends IRunPropertiesOptions, ICha
 //     </xsd:choice>
 // </xsd:group>
 export class RunProperties extends IgnoreIfEmptyXmlComponent {
-    constructor(options?: IRunPropertiesOptions) {
+    public constructor(options?: IRunPropertiesOptions) {
         super("w:rPr");
 
         if (!options) {
@@ -225,7 +225,7 @@ export class RunProperties extends IgnoreIfEmptyXmlComponent {
 }
 
 export class RunPropertiesChange extends XmlComponent {
-    constructor(options: IRunPropertiesChangeOptions) {
+    public constructor(options: IRunPropertiesChangeOptions) {
         super("w:rPrChange");
         this.root.push(
             new ChangeAttributes({

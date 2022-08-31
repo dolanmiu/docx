@@ -22,7 +22,7 @@ export enum UnderlineType {
 }
 
 export class Underline extends XmlComponent {
-    constructor(underlineType: UnderlineType = UnderlineType.SINGLE, color?: string) {
+    public constructor(underlineType: UnderlineType = UnderlineType.SINGLE, color?: string) {
         super("w:u");
         this.root.push(
             new Attributes({

@@ -7,7 +7,7 @@ export abstract class XmlComponent extends BaseXmlComponent {
     // tslint:disable-next-line:readonly-keyword no-any
     protected root: (BaseXmlComponent | string | any)[];
 
-    constructor(rootKey: string) {
+    public constructor(rootKey: string) {
         super(rootKey);
         this.root = new Array<BaseXmlComponent | string>();
     }

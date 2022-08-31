@@ -52,7 +52,7 @@ export enum HeaderFooterType {
     FOOTER = "w:footerReference",
 }
 export class HeaderFooterReference extends XmlComponent {
-    constructor(type: HeaderFooterType, options: IHeaderFooterOptions) {
+    public constructor(type: HeaderFooterType, options: IHeaderFooterOptions) {
         super(type);
 
         this.root.push(

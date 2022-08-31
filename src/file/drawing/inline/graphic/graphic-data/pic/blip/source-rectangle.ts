@@ -1,7 +1,7 @@
 import { XmlComponent } from "@file/xml-components";
 
 export class SourceRectangle extends XmlComponent {
-    constructor() {
+    public constructor() {
         super("a:srcRect");
     }
 }

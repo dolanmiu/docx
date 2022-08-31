@@ -5,7 +5,7 @@ import { TextAttributes } from "../run/text-attributes";
 import { IPageReferenceOptions } from "./pageref-properties";
 
 export class PageReferenceFieldInstruction extends XmlComponent {
-    constructor(bookmarkId: string, options: IPageReferenceOptions = {}) {
+    public constructor(bookmarkId: string, options: IPageReferenceOptions = {}) {
         super("w:instrText");
         this.root.push(new TextAttributes({ space: SpaceType.PRESERVE }));
 

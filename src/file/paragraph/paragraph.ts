@@ -42,7 +42,7 @@ export interface IParagraphOptions extends IParagraphPropertiesOptions {
 export class Paragraph extends XmlComponent {
     private readonly properties: ParagraphProperties;
 
-    constructor(options: string | IParagraphOptions) {
+    public constructor(options: string | IParagraphOptions) {
         super("w:p");
 
         if (typeof options === "string") {

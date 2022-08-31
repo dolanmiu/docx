@@ -8,7 +8,7 @@ export abstract class XmlAttributeComponent<T> extends BaseXmlComponent {
     protected root: T;
     protected readonly xmlKeys?: AttributeMap<T>;
 
-    constructor(properties: T) {
+    public constructor(properties: T) {
         super("_attr");
         this.root = properties;
     }

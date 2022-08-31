@@ -14,7 +14,7 @@ class WrapTopAndBottomAttributes extends XmlAttributeComponent<{
 }
 
 export class WrapTopAndBottom extends XmlComponent {
-    constructor(
+    public constructor(
         margins: IMargins = {
             top: 0,
             bottom: 0,

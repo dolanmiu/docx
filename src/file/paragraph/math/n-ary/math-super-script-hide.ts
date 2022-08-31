@@ -6,7 +6,7 @@ class MathSuperScriptHideAttributes extends XmlAttributeComponent<{ readonly hid
 }
 
 export class MathSuperScriptHide extends XmlComponent {
-    constructor() {
+    public constructor() {
         super("m:supHide");
 
         this.root.push(new MathSuperScriptHideAttributes({ hide: 1 }));

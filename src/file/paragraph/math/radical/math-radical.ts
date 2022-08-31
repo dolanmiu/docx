@@ -12,7 +12,7 @@ export interface IMathRadicalOptions {
 }
 
 export class MathRadical extends XmlComponent {
-    constructor(options: IMathRadicalOptions) {
+    public constructor(options: IMathRadicalOptions) {
         super("m:rad");
 
         this.root.push(new MathRadicalProperties(!!options.degree));

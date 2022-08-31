@@ -35,7 +35,7 @@ export interface ITableOptions {
 }
 
 export class Table extends XmlComponent {
-    constructor({
+    public constructor({
         rows,
         width,
         columnWidths = Array<number>(Math.max(...rows.map((row) => row.CellCount))).fill(100),

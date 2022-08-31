@@ -12,7 +12,7 @@ export interface IMathPreSubSuperScriptOptions {
 }
 
 export class MathPreSubSuperScript extends XmlComponent {
-    constructor(options: IMathPreSubSuperScriptOptions) {
+    public constructor(options: IMathPreSubSuperScriptOptions) {
         super("m:sPre");
 
         this.root.push(new MathPreSubSuperScriptProperties());

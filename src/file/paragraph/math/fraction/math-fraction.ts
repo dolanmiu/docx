@@ -10,7 +10,7 @@ export interface IMathFractionOptions {
 }
 
 export class MathFraction extends XmlComponent {
-    constructor(options: IMathFractionOptions) {
+    public constructor(options: IMathFractionOptions) {
         super("m:f");
 
         this.root.push(new MathNumerator(options.numerator));

@@ -19,7 +19,7 @@ export class LatentStyleExceptionAttributes extends XmlAttributeComponent<ILaten
 }
 
 export class LatentStyleException extends XmlComponent {
-    constructor(attributes: ILatentStyleExceptionAttributesProperties) {
+    public constructor(attributes: ILatentStyleExceptionAttributesProperties) {
         super("w:lsdException");
         this.root.push(new LatentStyleExceptionAttributes(attributes));
     }

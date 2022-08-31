@@ -3,7 +3,7 @@ import { RelationshipsAttributes } from "./attributes";
 import { Relationship, RelationshipType, TargetModeType } from "./relationship/relationship";
 
 export class Relationships extends XmlComponent {
-    constructor() {
+    public constructor() {
         super("Relationships");
         this.root.push(
             new RelationshipsAttributes({

@@ -19,7 +19,7 @@ class TableOverlapAttributes extends XmlAttributeComponent<{ readonly val: Overl
 }
 
 export class TableOverlap extends XmlComponent {
-    constructor(type: OverlapType) {
+    public constructor(type: OverlapType) {
         super("w:tblOverlap");
         this.root.push(new TableOverlapAttributes({ val: type }));
     }

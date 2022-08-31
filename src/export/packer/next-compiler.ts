@@ -38,7 +38,7 @@ export class Compiler {
     private readonly imageReplacer: ImageReplacer;
     private readonly numberingReplacer: NumberingReplacer;
 
-    constructor() {
+    public constructor() {
         this.formatter = new Formatter();
         this.imageReplacer = new ImageReplacer();
         this.numberingReplacer = new NumberingReplacer();

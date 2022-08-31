@@ -4,7 +4,7 @@ import { XmlComponent } from "@file/xml-components";
 import { TextAttributes } from "../text-attributes";
 
 export class Text extends XmlComponent {
-    constructor(text: string) {
+    public constructor(text: string) {
         super("w:t");
         this.root.push(new TextAttributes({ space: SpaceType.PRESERVE }));
 

@@ -7,7 +7,7 @@ export class CustomProperties extends XmlComponent {
     private nextId: number;
     private readonly properties: CustomProperty[] = [];
 
-    constructor(properties: ICustomPropertyOptions[]) {
+    public constructor(properties: ICustomPropertyOptions[]) {
         super("Properties");
 
         this.root.push(

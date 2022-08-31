@@ -31,7 +31,7 @@ export class Numbering extends XmlComponent {
     private readonly concreteNumberingMap = new Map<string, ConcreteNumbering>();
     private readonly referenceConfigMap = new Map<string, object>();
 
-    constructor(options: INumberingOptions) {
+    public constructor(options: INumberingOptions) {
         super("w:numbering");
         this.root.push(
             new DocumentAttributes({

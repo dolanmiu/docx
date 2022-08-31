@@ -64,7 +64,7 @@ export interface IPropertiesOptions {
 /* cSpell:enable */
 
 export class CoreProperties extends XmlComponent {
-    constructor(options: Omit<IPropertiesOptions, "sections">) {
+    public constructor(options: Omit<IPropertiesOptions, "sections">) {
         super("cp:coreProperties");
         this.root.push(
             new DocumentAttributes({
@@ -102,7 +102,7 @@ export class CoreProperties extends XmlComponent {
 }
 
 class TimestampElement extends XmlComponent {
-    constructor(name: string) {
+    public constructor(name: string) {
         super(name);
         this.root.push(
             new DocumentAttributes({

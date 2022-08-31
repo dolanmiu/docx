@@ -7,7 +7,7 @@ import { Pic } from "./pic";
 export class GraphicData extends XmlComponent {
     private readonly pic: Pic;
 
-    constructor(mediaData: IMediaData, transform: IMediaDataTransformation) {
+    public constructor(mediaData: IMediaData, transform: IMediaDataTransformation) {
         super("a:graphicData");
 
         this.root.push(

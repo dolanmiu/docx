@@ -15,7 +15,7 @@ export interface IMediaTransformation {
 export class Media {
     private readonly map: Map<string, IMediaData>;
 
-    constructor() {
+    public constructor() {
         this.map = new Map<string, IMediaData>();
     }
 

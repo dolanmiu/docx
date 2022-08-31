@@ -41,7 +41,7 @@ class IndentAttributes extends XmlAttributeComponent<IIndentAttributesProperties
 //     ...
 //     <xsd:element name="ind" type="CT_Ind" minOccurs="0"/>
 export class Indent extends XmlComponent {
-    constructor({ start, end, left, right, hanging, firstLine }: IIndentAttributesProperties) {
+    public constructor({ start, end, left, right, hanging, firstLine }: IIndentAttributesProperties) {
         super("w:ind");
         this.root.push(
             new IndentAttributes({

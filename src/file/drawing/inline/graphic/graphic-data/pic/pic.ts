@@ -8,7 +8,7 @@ import { PicAttributes } from "./pic-attributes";
 import { ShapeProperties } from "./shape-properties/shape-properties";
 
 export class Pic extends XmlComponent {
-    constructor(mediaData: IMediaData, transform: IMediaDataTransformation) {
+    public constructor(mediaData: IMediaData, transform: IMediaDataTransformation) {
         super("pic:pic");
 
         this.root.push(

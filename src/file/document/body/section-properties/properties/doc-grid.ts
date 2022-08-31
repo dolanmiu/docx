@@ -38,7 +38,7 @@ export class DocGridAttributes extends XmlAttributeComponent<IDocGridAttributesP
 }
 
 export class DocumentGrid extends XmlComponent {
-    constructor(linePitch: number, charSpace?: number, type?: DocumentGridType) {
+    public constructor(linePitch: number, charSpace?: number, type?: DocumentGridType) {
         super("w:docGrid");
 
         this.root.push(

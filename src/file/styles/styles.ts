@@ -20,7 +20,7 @@ export interface IStylesOptions {
 // </xsd:sequence>
 // </xsd:complexType>
 export class Styles extends XmlComponent {
-    constructor(options: IStylesOptions) {
+    public constructor(options: IStylesOptions) {
         super("w:styles");
 
         if (options.initialStyles) {

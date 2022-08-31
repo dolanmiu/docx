@@ -7,7 +7,7 @@ import { FooterAttributes } from "./footer-attributes";
 export class Footer extends InitializableXmlComponent {
     private readonly refId: number;
 
-    constructor(referenceNumber: number, initContent?: XmlComponent) {
+    public constructor(referenceNumber: number, initContent?: XmlComponent) {
         super("w:ftr", initContent);
         this.refId = referenceNumber;
         if (!initContent) {

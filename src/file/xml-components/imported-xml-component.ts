@@ -52,7 +52,7 @@ export class ImportedXmlComponent extends XmlComponent {
      */
 
     // tslint:disable-next-line:variable-name
-    constructor(rootKey: string, _attr?: any) {
+    public constructor(rootKey: string, _attr?: any) {
         super(rootKey);
         if (_attr) {
             this.root.push(new ImportedXmlComponentAttributes(_attr));
@@ -69,7 +69,7 @@ export class ImportedXmlComponent extends XmlComponent {
  */
 export class ImportedRootElementAttributes extends XmlComponent {
     // tslint:disable-next-line:variable-name
-    constructor(private readonly _attr: any) {
+    public constructor(private readonly _attr: any) {
         super("");
     }
 

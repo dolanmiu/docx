@@ -6,7 +6,7 @@ import { SourceRectangle } from "./source-rectangle";
 import { Stretch } from "./stretch";
 
 export class BlipFill extends XmlComponent {
-    constructor(mediaData: IMediaData) {
+    public constructor(mediaData: IMediaData) {
         super("pic:blipFill");
 
         this.root.push(new Blip(mediaData));

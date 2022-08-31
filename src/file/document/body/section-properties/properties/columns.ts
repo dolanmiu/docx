@@ -30,7 +30,7 @@ export class ColumnsAttributes extends XmlAttributeComponent<IColumnsAttributes>
 }
 
 export class Columns extends XmlComponent {
-    constructor({ space, count, separate, equalWidth, children }: IColumnsAttributes) {
+    public constructor({ space, count, separate, equalWidth, children }: IColumnsAttributes) {
         super("w:cols");
         this.root.push(
             new ColumnsAttributes({

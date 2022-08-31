@@ -10,7 +10,7 @@ export interface ITableCellOptions extends ITableCellPropertiesOptions {
 }
 
 export class TableCell extends XmlComponent {
-    constructor(readonly options: ITableCellOptions) {
+    public constructor(readonly options: ITableCellOptions) {
         super("w:tc");
 
         this.root.push(new TableCellProperties(options));

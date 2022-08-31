@@ -1,13 +1,13 @@
 import { XmlComponent } from "@file/xml-components";
 
 class FillRectangle extends XmlComponent {
-    constructor() {
+    public constructor() {
         super("a:fillRect");
     }
 }
 
 export class Stretch extends XmlComponent {
-    constructor() {
+    public constructor() {
         super("a:stretch");
         this.root.push(new FillRectangle());
     }

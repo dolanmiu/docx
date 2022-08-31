@@ -7,7 +7,7 @@ import { XmlComponent } from "@file/xml-components";
 // TODO: this is unused and undocumented currently.
 // I think the intended use was for users to import, and insert as a child of `Run`.
 export class Tab extends XmlComponent {
-    constructor() {
+    public constructor() {
         super("w:tab");
     }
 }

@@ -1,7 +1,7 @@
 import { XmlComponent } from "@file/xml-components";
 
 export class FootnoteRef extends XmlComponent {
-    constructor() {
+    public constructor() {
         super("w:footnoteRef");
     }
 }

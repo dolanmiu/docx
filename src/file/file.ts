@@ -55,7 +55,7 @@ export class File {
     private readonly styles: Styles;
     private readonly comments: Comments;
 
-    constructor(options: IPropertiesOptions, fileProperties: IFileProperties = {}) {
+    public constructor(options: IPropertiesOptions, fileProperties: IFileProperties = {}) {
         this.coreProperties = new CoreProperties({
             ...options,
             creator: options.creator ?? "Un-named",

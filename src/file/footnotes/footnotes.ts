@@ -7,7 +7,7 @@ import { SeperatorRun } from "./footnote/run/seperator-run";
 import { FootnotesAttributes } from "./footnotes-attributes";
 
 export class FootNotes extends XmlComponent {
-    constructor() {
+    public constructor() {
         super("w:footnotes");
 
         this.root.push(

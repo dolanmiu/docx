@@ -6,7 +6,7 @@ class MathEndingCharacterAttributes extends XmlAttributeComponent<{ readonly cha
 }
 
 export class MathEndingCharacter extends XmlComponent {
-    constructor(character: string) {
+    public constructor(character: string) {
         super("m:endChr");
 
         this.root.push(new MathEndingCharacterAttributes({ character }));

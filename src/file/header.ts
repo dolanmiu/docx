@@ -6,9 +6,9 @@ export interface IHeaderOptions {
 }
 
 export class Header {
-    constructor(public readonly options: IHeaderOptions = { children: [] }) {}
+    public constructor(public readonly options: IHeaderOptions = { children: [] }) {}
 }
 
 export class Footer {
-    constructor(public readonly options: IHeaderOptions = { children: [] }) {}
+    public constructor(public readonly options: IHeaderOptions = { children: [] }) {}
 }

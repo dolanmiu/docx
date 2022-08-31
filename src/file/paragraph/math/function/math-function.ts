@@ -12,7 +12,7 @@ export interface IMathFunctionOptions {
 }
 
 export class MathFunction extends XmlComponent {
-    constructor(options: IMathFunctionOptions) {
+    public constructor(options: IMathFunctionOptions) {
         super("m:func");
 
         this.root.push(new MathFunctionProperties());

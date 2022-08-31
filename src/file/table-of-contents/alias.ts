@@ -5,7 +5,7 @@ class AliasAttributes extends XmlAttributeComponent<{ readonly alias: string }> 
 }
 
 export class Alias extends XmlComponent {
-    constructor(alias: string) {
+    public constructor(alias: string) {
         super("w:alias");
         this.root.push(new AliasAttributes({ alias }));
     }

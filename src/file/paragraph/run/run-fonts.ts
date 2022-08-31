@@ -19,12 +19,12 @@ class RunFontAttributes extends XmlAttributeComponent<IFontAttributesProperties>
 }
 
 export class RunFonts extends XmlComponent {
-    constructor(name: string, hint?: string);
-    constructor(attrs: string | IFontAttributesProperties);
-    constructor(nameOrAttrs: string | IFontAttributesProperties, hint?: string) {
+    public constructor(name: string, hint?: string);
+    public constructor(attrs: string | IFontAttributesProperties);
+    public constructor(nameOrAttrs: string | IFontAttributesProperties, hint?: string) {
         super("w:rFonts");
         if (typeof nameOrAttrs === "string") {
-            // use constructor(name: string, hint?: string);
+            // use public constructor(name: string, hint?: string);
             const name = nameOrAttrs;
             this.root.push(
                 new RunFontAttributes({
@@ -36,7 +36,7 @@ export class RunFonts extends XmlComponent {
                 }),
             );
         } else {
-            // use constructor(attrs: IRunFontAttributesProperties);
+            // use public constructor(attrs: IRunFontAttributesProperties);
             const attrs = nameOrAttrs;
             this.root.push(new RunFontAttributes(attrs));
         }

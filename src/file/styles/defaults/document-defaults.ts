@@ -13,7 +13,7 @@ export class DocumentDefaults extends XmlComponent {
     private readonly runPropertiesDefaults: RunPropertiesDefaults;
     private readonly paragraphPropertiesDefaults: ParagraphPropertiesDefaults;
 
-    constructor(options: IDocumentDefaultsOptions) {
+    public constructor(options: IDocumentDefaultsOptions) {
         super("w:docDefaults");
 
         this.runPropertiesDefaults = new RunPropertiesDefaults(options.run);

@@ -6,7 +6,7 @@ import { ISectionPropertiesOptions, SectionProperties } from "./section-properti
 export class Body extends XmlComponent {
     private readonly sections: SectionProperties[] = [];
 
-    constructor() {
+    public constructor() {
         super("w:body");
     }
 

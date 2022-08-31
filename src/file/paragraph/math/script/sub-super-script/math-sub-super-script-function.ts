@@ -12,7 +12,7 @@ export interface IMathSubSuperScriptOptions {
 }
 
 export class MathSubSuperScript extends XmlComponent {
-    constructor(options: IMathSubSuperScriptOptions) {
+    public constructor(options: IMathSubSuperScriptOptions) {
         super("m:sSubSup");
 
         this.root.push(new MathSubSuperScriptProperties());
