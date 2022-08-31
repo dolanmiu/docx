@@ -68,7 +68,9 @@ export class Media {
                     .map((c) => c.charCodeAt(0)),
             );
         } else {
+            /* eslint @typescript-eslint/no-require-imports: 0 */
             const b = require("buf" + "fer");
+            /* eslint @typescript-eslint/no-require-imports: 2 */
             return new b.Buffer(dataURI, "base64");
         }
     }

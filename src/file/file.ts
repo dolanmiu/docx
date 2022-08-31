@@ -63,13 +63,7 @@ export class File {
             lastModifiedBy: options.lastModifiedBy ?? "Un-named",
         });
 
-        this.numbering = new Numbering(
-            options.numbering
-                ? options.numbering
-                : {
-                      config: [],
-                  },
-        );
+        this.numbering = new Numbering(options.numbering ? options.numbering : { config: [] });
 
         this.comments = new Comments(options.comments ?? { children: [] });
         this.fileRelationships = new Relationships();

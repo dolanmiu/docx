@@ -106,6 +106,9 @@ module.exports = {
                 FunctionExpression: {
                     parameters: "first",
                 },
+                SwitchCase: 1,
+                flatTernaryExpressions: false,
+                ignoredNodes: [],
             },
         ],
         "@typescript-eslint/naming-convention": [
@@ -113,9 +116,9 @@ module.exports = {
             {
                 selector: ["objectLiteralProperty"],
                 leadingUnderscore: "allow",
-                format: ["camelCase"],
-                custom: {
-                    regex: "^w:.+",
+                format: ["camelCase", "PascalCase"],
+                filter: {
+                    regex: "(^[a-z]+:.+)|_attr|[0-9]",
                     match: false,
                 },
             },
@@ -204,7 +207,7 @@ module.exports = {
         "no-throw-literal": "error",
         "no-trailing-spaces": "error",
         "no-undef-init": "error",
-        "no-underscore-dangle": "error",
+        "no-underscore-dangle": ["error", { allow: ["_attr"] }],
         "no-unsafe-finally": "error",
         "no-unused-expressions": "off",
         "no-unused-labels": "error",
@@ -252,13 +255,14 @@ module.exports = {
                 },
             },
         ],
+        "@typescript-eslint/explicit-function-return-type": "off",
     },
     overrides: [
         {
-            // enable the rule specifically for TypeScript files
             files: ["*.spec.ts"],
             rules: {
-                "@typescript-eslint/explicit-function-return-type": "off",
+                "@typescript-eslint/no-unused-expressions": "off",
+                "@typescript-eslint/dot-notation": "off",
             },
         },
     ],

@@ -19,12 +19,8 @@ import { TextRun } from "./run";
 
 describe("Paragraph", () => {
     before(() => {
-        stub(convenienceFunctions, "uniqueId").callsFake(() => {
-            return "test-unique-id";
-        });
-        stub(convenienceFunctions, "uniqueNumericId").callsFake(() => {
-            return -101;
-        });
+        stub(convenienceFunctions, "uniqueId").callsFake(() => "test-unique-id");
+        stub(convenienceFunctions, "uniqueNumericId").callsFake(() => -101);
     });
 
     after(() => {

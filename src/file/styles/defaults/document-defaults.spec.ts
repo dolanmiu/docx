@@ -1,8 +1,8 @@
 import { expect } from "chai";
 
-import { DocumentDefaults } from "./document-defaults";
-
 import { Formatter } from "@export/formatter";
+
+import { DocumentDefaults } from "./document-defaults";
 
 describe("DocumentDefaults", () => {
     it("#constructor", () => {

@@ -1,5 +1,4 @@
-/* tslint:disable */
-function createLsdException(name, uiPriority, qFormat?, semiHidden?, unhideWhenUsed?) {
+const createLsdException = (name, uiPriority, qFormat?, semiHidden?, unhideWhenUsed?) => {
     "use strict";
 
     return [
@@ -13,9 +12,9 @@ function createLsdException(name, uiPriority, qFormat?, semiHidden?, unhideWhenU
             },
         },
     ];
-}
+};
 
-export function DefaultStyle() {
+export const DefaultStyle = () => {
     var style = {
         "w:styles": [
             {
@@ -208,4 +207,4 @@ export function DefaultStyle() {
     };
 
     return style;
-}
+};

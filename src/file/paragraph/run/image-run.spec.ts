@@ -10,9 +10,7 @@ import { ImageRun } from "./image-run";
 
 describe("ImageRun", () => {
     before(() => {
-        stub(convenienceFunctions, "uniqueId").callsFake(() => {
-            return "test-unique-id";
-        });
+        stub(convenienceFunctions, "uniqueId").callsFake(() => "test-unique-id");
     });
 
     after(() => {

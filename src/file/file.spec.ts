@@ -397,7 +397,6 @@ describe("File", () => {
                 sections: [],
             });
 
-            // tslint:disable-next-line: no-unused-expression
             expect(doc.Comments).to.not.be.undefined;
         });
     });
@@ -409,7 +408,6 @@ describe("File", () => {
                 sections: [],
             });
 
-            // tslint:disable-next-line: no-unused-expression
             expect(doc.Numbering).to.not.be.undefined;
         });
     });

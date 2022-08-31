@@ -1,6 +1,8 @@
 // tslint:disable:no-any
 import { Element as XmlElement, xml2js } from "xml-js";
-import { IXmlableObject, XmlAttributeComponent, XmlComponent } from ".";
+
+import { IXmlableObject, XmlAttributeComponent, XmlComponent } from "@file/xml-components";
+
 import { IContext } from "./base";
 
 /**
@@ -8,7 +10,7 @@ import { IContext } from "./base";
  * @param element the xml element in json presentation
  */
 
-export function convertToXmlComponent(element: XmlElement): ImportedXmlComponent | string | undefined {
+export const convertToXmlComponent = (element: XmlElement): ImportedXmlComponent | string | undefined => {
     switch (element.type) {
         case undefined:
         case "element":
@@ -26,7 +28,7 @@ export function convertToXmlComponent(element: XmlElement): ImportedXmlComponent
         default:
             return undefined;
     }
-}
+};
 
 class ImportedXmlComponentAttributes extends XmlAttributeComponent<any> {
     // noop

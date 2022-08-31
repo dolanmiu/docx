@@ -1,11 +1,9 @@
 import { expect } from "chai";
 
-import { EmphasisMarkType } from "./emphasis-mark";
-
 import { Formatter } from "@export/formatter";
 
+import { EmphasisMarkType } from "./emphasis-mark";
 import { UnderlineType } from "./underline";
-
 import { SymbolRun } from "./symbol-run";
 
 describe("SymbolRun", () => {

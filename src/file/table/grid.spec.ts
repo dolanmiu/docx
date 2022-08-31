@@ -1,10 +1,10 @@
 import { expect } from "chai";
 
+import { EMPTY_OBJECT } from "@file/xml-components";
 import { Formatter } from "@export/formatter";
 
 import { GridCol, TableGrid } from "./grid";
 
-import { EMPTY_OBJECT } from "@file/xml-components";
 
 describe("GridCol", () => {
     describe("#constructor", () => {

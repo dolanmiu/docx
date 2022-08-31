@@ -180,9 +180,6 @@ export class LevelBase extends XmlComponent {
 export class Level extends LevelBase {
     // This is the level that sits under abstractNum. We make a
     // handful of properties required
-    public constructor(options: ILevelsOptions) {
-        super(options);
-    }
 }
 
 export class LevelForOverride extends LevelBase {}

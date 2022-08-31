@@ -7,9 +7,7 @@ describe("DocumentWrapper", () => {
         it("should create", () => {
             const file = new DocumentWrapper({ background: {} });
 
-            // tslint:disable-next-line: no-unused-expression
             expect(file.View).to.be.ok;
-            // tslint:disable-next-line: no-unused-expression
             expect(file.Relationships).to.be.ok;
         });
     });
