@@ -64,7 +64,7 @@
   "homepage": "https://github.com/dolanmiu/docx#readme",
   "devDependencies": {
     "@types/chai": "^4.2.15",
-    "@types/glob": "^7.1.4",
+    "@types/glob": "^8.0.0",
     "@types/mocha": "^9.0.0",
     "@types/prompt": "^1.1.1",
     "@types/request-promise": "^4.1.42",
