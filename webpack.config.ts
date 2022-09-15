@@ -23,6 +23,9 @@ const configuration = {
             stream: require.resolve("stream-browserify"),
         },
         plugins: [new TsconfigPathsPlugin()],
+        alias: {
+            jszip: require.resolve('jszip/lib/index.js'),
+        },
     },
 
     module: {

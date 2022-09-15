@@ -122,4 +122,52 @@ describe("Packer", () => {
             (Packer as any).compiler.compile.restore();
         });
     });
+
+    describe("#toStream()", () => {
+        it("should create a standard docx file", async () => {
+            // tslint:disable-next-line: no-any
+            stub((Packer as any).compiler, "compile").callsFake(() => ({
+                // tslint:disable-next-line: no-empty
+                generateNodeStream: () => ({
+                    on: (event: string, cb: () => void) => {
+                        if (event === "end") {
+                            cb();
+                        }
+                    },
+                }),
+            }));
+            const stream = await Packer.toStream(file);
+            return new Promise((resolve, reject) => {
+                stream.on("error", () => {
+                    reject();
+                });
+
+                stream.on("end", () => {
+                    resolve();
+                });
+            });
+        });
+
+        it("should handle exception if it throws any", async () => {
+            // tslint:disable-next-line:no-any
+            const compiler = stub((Packer as any).compiler, "compile").callsFake(() => ({
+                // tslint:disable-next-line: no-empty
+                on: (event: string, cb: () => void) => {
+                    if (event === "error") {
+                        cb();
+                    }
+                },
+            }));
+
+            compiler.throwsException();
+            return Packer.toStream(file).catch((error) => {
+                assert.isDefined(error);
+            });
+        });
+
+        afterEach(() => {
+            // tslint:disable-next-line:no-any
+            (Packer as any).compiler.compile.restore();
+        });
+    });
 });
