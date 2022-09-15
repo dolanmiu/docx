@@ -98,7 +98,7 @@ export interface ITableOfContentsOptions {
      * with each doublet being a comma-separated set of style name and table of content level.
      * \t can be combined with \o.
      */
-    readonly stylesWithLevels?: StyleLevel[];
+    readonly stylesWithLevels?: readonly StyleLevel[];
 
     /**
      * \u Uses the applied paragraph outline level.

@@ -4,7 +4,7 @@ import { XmlComponent } from "@file/xml-components";
 import { MathComponent } from "../math-component";
 
 export class MathBase extends XmlComponent {
-    public constructor(children: MathComponent[]) {
+    public constructor(children: readonly MathComponent[]) {
         super("m:e");
 
         for (const child of children) {

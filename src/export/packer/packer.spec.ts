@@ -54,8 +54,8 @@ describe("Packer", () => {
             assert.isTrue(buffer.byteLength > 0);
         });
 
-        it("should handle exception if it throws any", () => {
-            // tslint:disable-next-line:no-any
+        it("should handle exception if it throws any", async () => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const compiler = stub((Packer as any).compiler, "compile");
 
             compiler.throwsException();
@@ -65,7 +65,7 @@ describe("Packer", () => {
         });
 
         after(() => {
-            // tslint:disable-next-line:no-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (Packer as any).compiler.compile.restore();
         });
     });
@@ -80,7 +80,7 @@ describe("Packer", () => {
         });
 
         it("should handle exception if it throws any", () => {
-            // tslint:disable-next-line:no-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const compiler = stub((Packer as any).compiler, "compile");
 
             compiler.throwsException();
@@ -90,14 +90,14 @@ describe("Packer", () => {
         });
 
         after(() => {
-            // tslint:disable-next-line:no-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (Packer as any).compiler.compile.restore();
         });
     });
 
     describe("#toBlob()", () => {
         it("should create a standard docx file", async () => {
-            // tslint:disable-next-line: no-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             stub((Packer as any).compiler, "compile").callsFake(() => ({
                 // tslint:disable-next-line: no-empty
                 generateAsync: () => mock({}),
@@ -108,7 +108,7 @@ describe("Packer", () => {
         });
 
         it("should handle exception if it throws any", () => {
-            // tslint:disable-next-line:no-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const compiler = stub((Packer as any).compiler, "compile");
 
             compiler.throwsException();
@@ -118,14 +118,14 @@ describe("Packer", () => {
         });
 
         afterEach(() => {
-            // tslint:disable-next-line:no-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (Packer as any).compiler.compile.restore();
         });
     });
 
     describe("#toStream()", () => {
         it("should create a standard docx file", async () => {
-            // tslint:disable-next-line: no-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             stub((Packer as any).compiler, "compile").callsFake(() => ({
                 // tslint:disable-next-line: no-empty
                 generateNodeStream: () => ({
@@ -149,7 +149,7 @@ describe("Packer", () => {
         });
 
         it("should handle exception if it throws any", async () => {
-            // tslint:disable-next-line:no-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const compiler = stub((Packer as any).compiler, "compile").callsFake(() => ({
                 // tslint:disable-next-line: no-empty
                 on: (event: string, cb: () => void) => {
@@ -166,7 +166,7 @@ describe("Packer", () => {
         });
 
         afterEach(() => {
-            // tslint:disable-next-line:no-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (Packer as any).compiler.compile.restore();
         });
     });

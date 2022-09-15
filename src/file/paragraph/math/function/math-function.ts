@@ -7,8 +7,8 @@ import { MathFunctionName } from "./math-function-name";
 import { MathFunctionProperties } from "./math-function-properties";
 
 export interface IMathFunctionOptions {
-    readonly children: MathComponent[];
-    readonly name: MathComponent[];
+    readonly children: readonly MathComponent[];
+    readonly name: readonly MathComponent[];
 }
 
 export class MathFunction extends XmlComponent {

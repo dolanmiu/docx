@@ -67,7 +67,7 @@ export class FootNotes extends XmlComponent {
         this.root.push(spacing);
     }
 
-    public createFootNote(id: number, paragraph: Paragraph[]): void {
+    public createFootNote(id: number, paragraph: readonly Paragraph[]): void {
         const footnote = new Footnote({
             id: id,
             children: paragraph,

@@ -48,7 +48,7 @@ describe("External styles factory", () => {
 
     describe("#parse", () => {
         it("should parse w:styles attributes", () => {
-            // tslint:disable-next-line:no-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const importedStyle = new ExternalStylesFactory().newInstance(externalStyles) as any;
 
             expect(importedStyle.rootKey).to.equal("w:styles");
@@ -59,7 +59,7 @@ describe("External styles factory", () => {
         });
 
         it("should parse other child elements of w:styles", () => {
-            // tslint:disable-next-line:no-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const importedStyle = new ExternalStylesFactory().newInstance(externalStyles) as any;
             expect(importedStyle.root[1]).to.deep.equal({
                 root: [
@@ -147,7 +147,7 @@ describe("External styles factory", () => {
         });
 
         it("should parse styles elements", () => {
-            // tslint:disable-next-line:no-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const importedStyle = new ExternalStylesFactory().newInstance(externalStyles) as any;
 
             expect(importedStyle.root.length).to.equal(5);

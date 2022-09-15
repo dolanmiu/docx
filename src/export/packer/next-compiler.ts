@@ -20,10 +20,10 @@ interface IXmlifyedFileMapping {
     readonly Numbering: IXmlifyedFile;
     readonly Relationships: IXmlifyedFile;
     readonly FileRelationships: IXmlifyedFile;
-    readonly Headers: IXmlifyedFile[];
-    readonly Footers: IXmlifyedFile[];
-    readonly HeaderRelationships: IXmlifyedFile[];
-    readonly FooterRelationships: IXmlifyedFile[];
+    readonly Headers: readonly IXmlifyedFile[];
+    readonly Footers: readonly IXmlifyedFile[];
+    readonly HeaderRelationships: readonly IXmlifyedFile[];
+    readonly FooterRelationships: readonly IXmlifyedFile[];
     readonly ContentTypes: IXmlifyedFile;
     readonly CustomProperties: IXmlifyedFile;
     readonly AppProperties: IXmlifyedFile;
@@ -47,15 +47,15 @@ export class Compiler {
     public compile(file: File, prettifyXml?: boolean | PrettifyType): JSZip {
         const zip = new JSZip();
         const xmlifiedFileMapping = this.xmlifyFile(file, prettifyXml);
-        const map = new Map<string, IXmlifyedFile | IXmlifyedFile[]>(Object.entries(xmlifiedFileMapping));
+        const map = new Map<string, IXmlifyedFile | readonly IXmlifyedFile[]>(Object.entries(xmlifiedFileMapping));
 
         for (const [, obj] of map) {
             if (Array.isArray(obj)) {
-                for (const subFile of obj) {
+                for (const subFile of obj as readonly IXmlifyedFile[]) {
                     zip.file(subFile.path, subFile.data);
                 }
             } else {
-                zip.file(obj.path, obj.data);
+                zip.file((obj as IXmlifyedFile).path, (obj as IXmlifyedFile).data);
             }
         }
 

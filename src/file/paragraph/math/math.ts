@@ -4,7 +4,7 @@ import { XmlComponent } from "@file/xml-components";
 import { MathComponent } from "./math-component";
 
 export interface IMathOptions {
-    readonly children: MathComponent[];
+    readonly children: readonly MathComponent[];
 }
 
 export class Math extends XmlComponent {

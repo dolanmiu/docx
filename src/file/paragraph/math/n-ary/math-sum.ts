@@ -8,9 +8,9 @@ import { MathSubScriptElement } from "./math-sub-script";
 import { MathSuperScriptElement } from "./math-super-script";
 
 export interface IMathSumOptions {
-    readonly children: MathComponent[];
-    readonly subScript?: MathComponent[];
-    readonly superScript?: MathComponent[];
+    readonly children: readonly MathComponent[];
+    readonly subScript?: readonly MathComponent[];
+    readonly superScript?: readonly MathComponent[];
 }
 
 export class MathSum extends XmlComponent {

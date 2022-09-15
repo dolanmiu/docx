@@ -26,9 +26,7 @@ describe("ParagraphProperties", () => {
                 // tslint:disable-next-line: no-object-literal-type-assertion
                 file: {
                     Numbering: {
-                        createConcreteNumberingInstance: (_: string, __: number) => {
-                            return;
-                        },
+                        createConcreteNumberingInstance: (_: string, __: number) => undefined,
                     },
                 } as File,
                 // tslint:disable-next-line: no-object-literal-type-assertion

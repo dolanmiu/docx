@@ -118,7 +118,7 @@ class Suffix extends XmlComponent {
 // http://officeopenxml.com/WPnumbering-isLgl.php
 // https://docs.microsoft.com/en-us/dotnet/api/documentformat.openxml.wordprocessing.islegalnumberingstyle?view=openxml-2.8.1
 class IsLegalNumberingStyle extends XmlComponent {
-    constructor() {
+    public constructor() {
         super("w:isLgl");
     }
 }

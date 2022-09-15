@@ -41,7 +41,7 @@ export interface IParagraphPropertiesOptions extends IParagraphStylePropertiesOp
     readonly heading?: HeadingLevel;
     readonly bidirectional?: boolean;
     readonly pageBreakBefore?: boolean;
-    readonly tabStops?: {
+    readonly tabStops?: readonly {
         readonly position: number | TabStopPosition;
         readonly type: TabStopType;
         readonly leader?: LeaderType;
@@ -57,6 +57,7 @@ export interface IParagraphPropertiesOptions extends IParagraphStylePropertiesOp
 }
 
 export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
+    // eslint-disable-next-line functional/prefer-readonly-type
     private readonly numberingReferences: { readonly reference: string; readonly instance: number }[] = [];
 
     public constructor(options?: IParagraphPropertiesOptions) {

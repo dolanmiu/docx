@@ -3,7 +3,7 @@ import { XmlComponent } from "@file/xml-components";
 import { MathComponent } from "../math-component";
 
 export class MathFunctionName extends XmlComponent {
-    public constructor(children: MathComponent[]) {
+    public constructor(children: readonly MathComponent[]) {
         super("m:fName");
 
         for (const child of children) {

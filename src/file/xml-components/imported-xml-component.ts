@@ -1,4 +1,4 @@
-// tslint:disable:no-any
+// eslint-disable @typescript-eslint/no-explicit-any
 import { Element as XmlElement, xml2js } from "xml-js";
 
 import { IXmlableObject, XmlAttributeComponent, XmlComponent } from "@file/xml-components";
@@ -7,6 +7,7 @@ import { IContext } from "./base";
 
 /**
  * Converts the given xml element (in json format) into XmlComponent.
+ *
  * @param element the xml element in json presentation
  */
 

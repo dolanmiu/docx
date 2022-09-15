@@ -17,7 +17,7 @@ export interface IColumnsAttributes {
     readonly count?: number;
     readonly separate?: boolean;
     readonly equalWidth?: boolean;
-    readonly children?: Column[];
+    readonly children?: readonly Column[];
 }
 
 export class ColumnsAttributes extends XmlAttributeComponent<IColumnsAttributes> {

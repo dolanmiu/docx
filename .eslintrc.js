@@ -29,7 +29,7 @@ module.exports = {
         "eslint-plugin-jsdoc",
         "eslint-plugin-prefer-arrow",
         "@typescript-eslint",
-        "@typescript-eslint/tslint",
+        "functional",
     ],
     root: true,
     rules: {
@@ -162,6 +162,7 @@ module.exports = {
         "@typescript-eslint/unified-signatures": "error",
         "arrow-body-style": "error",
         complexity: "off",
+        "consistent-return": "error",
         "constructor-super": "error",
         curly: "error",
         "dot-notation": "off",
@@ -232,30 +233,18 @@ module.exports = {
         "unicorn/prefer-ternary": "error",
         "use-isnan": "error",
         "valid-typeof": "off",
-        "@typescript-eslint/tslint/config": [
+        "@typescript-eslint/explicit-function-return-type": "off",
+        "functional/immutable-data": [
             "error",
             {
-                rules: {
-                    "no-delete": true,
-                    "no-method-signature": true,
-                    "no-mixed-interface": true,
-                    "readonly-keyword": true,
-                    "return-undefined": true,
-                    whitespace: [
-                        true,
-                        "check-branch",
-                        "check-decl",
-                        "check-operator",
-                        "check-separator",
-                        "check-type",
-                        "check-typecast",
-                        "check-type-operator",
-                        "check-rest-spread",
-                    ],
-                },
+                assumeTypes: true,
+                ignoreImmediateMutation: true,
+                ignoreAccessorPattern: ["**.root*", "**.numberingReferences*", "**.sections*", "**.properties*"],
             },
         ],
-        "@typescript-eslint/explicit-function-return-type": "off",
+        "functional/no-method-signature": "error",
+        "functional/no-mixed-type": "error",
+        "functional/prefer-readonly-type": "error",
     },
     overrides: [
         {

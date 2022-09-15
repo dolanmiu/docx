@@ -6,7 +6,7 @@ import { Table } from "../table";
 import { ITableCellPropertiesOptions, TableCellProperties } from "./table-cell-properties";
 
 export interface ITableCellOptions extends ITableCellPropertiesOptions {
-    readonly children: (Paragraph | Table)[];
+    readonly children: readonly (Paragraph | Table)[];
 }
 
 export class TableCell extends XmlComponent {

@@ -2,8 +2,8 @@ import { expect } from "chai";
 
 import { Formatter } from "@export/formatter";
 
-import { Level, LevelFormat, LevelSuffix } from "./level";
 import { AlignmentType } from "..";
+import { Level, LevelFormat, LevelSuffix } from "./level";
 
 describe("Level", () => {
     describe("#constructor", () => {

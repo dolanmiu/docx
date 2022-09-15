@@ -7,10 +7,10 @@ import { BookmarkEndAttributes, BookmarkStartAttributes } from "./bookmark-attri
 
 export class Bookmark {
     public readonly start: BookmarkStart;
-    public readonly children: ParagraphChild[];
+    public readonly children: readonly ParagraphChild[];
     public readonly end: BookmarkEnd;
 
-    public constructor(options: { readonly id: string; readonly children: ParagraphChild[] }) {
+    public constructor(options: { readonly id: string; readonly children: readonly ParagraphChild[] }) {
         const linkId = uniqueNumericId();
 
         this.start = new BookmarkStart(options.id, linkId);

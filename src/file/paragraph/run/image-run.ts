@@ -62,6 +62,7 @@ export class ImageRun extends Run {
                     .map((c) => c.charCodeAt(0)),
             );
         } else {
+            // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
             const b = require("buf" + "fer");
             return new b.Buffer(dataURI, "base64");
         }

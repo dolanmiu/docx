@@ -6,8 +6,8 @@ import { MathBase, MathSuperScriptElement } from "../../n-ary";
 import { MathSuperScriptProperties } from "./math-super-script-function-properties";
 
 export interface IMathSuperScriptOptions {
-    readonly children: MathComponent[];
-    readonly superScript: MathComponent[];
+    readonly children: readonly MathComponent[];
+    readonly superScript: readonly MathComponent[];
 }
 
 export class MathSuperScript extends XmlComponent {

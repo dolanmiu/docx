@@ -33,15 +33,17 @@ export interface ISectionOptions {
         readonly even?: Footer;
     };
     readonly properties?: ISectionPropertiesOptions;
-    readonly children: (Paragraph | Table | TableOfContents)[];
+    readonly children: readonly (Paragraph | Table | TableOfContents)[];
 }
 
 export class File {
-    // tslint:disable-next-line:readonly-keyword
+    // eslint-disable-next-line functional/immutable-data
     private currentRelationshipId: number = 1;
 
     private readonly documentWrapper: DocumentWrapper;
+    // eslint-disable-next-line functional/immutable-data
     private readonly headers: IDocumentHeader[] = [];
+    // eslint-disable-next-line functional/immutable-data
     private readonly footers: IDocumentFooter[] = [];
     private readonly coreProperties: CoreProperties;
     private readonly numbering: Numbering;
@@ -268,11 +270,11 @@ export class File {
         return this.fileRelationships;
     }
 
-    public get Headers(): HeaderWrapper[] {
+    public get Headers(): readonly HeaderWrapper[] {
         return this.headers.map((item) => item.header);
     }
 
-    public get Footers(): FooterWrapper[] {
+    public get Footers(): readonly FooterWrapper[] {
         return this.footers.map((item) => item.footer);
     }
 

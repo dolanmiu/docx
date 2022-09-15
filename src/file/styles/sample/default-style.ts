@@ -1,4 +1,4 @@
-const createLsdException = (name, uiPriority, qFormat?, semiHidden?, unhideWhenUsed?) => {
+const createLsdException = (name: string, uiPriority?: number, qFormat?: number, semiHidden?: number, unhideWhenUsed?: number) => {
     "use strict";
 
     return [
@@ -14,8 +14,9 @@ const createLsdException = (name, uiPriority, qFormat?, semiHidden?, unhideWhenU
     ];
 };
 
-export const DefaultStyle = () => {
-    var style = {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const DefaultStyle = (): Record<string, any> => {
+    const style = {
         "w:styles": [
             {
                 _attr: {

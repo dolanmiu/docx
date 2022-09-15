@@ -43,27 +43,21 @@ const hexBinary = (val: string, length: number): string => {
 //         <xsd:length value="4"/>
 //     </xsd:restriction>
 // </xsd:simpleType>
-export const longHexNumber = (val: string): string => {
-    return hexBinary(val, 4);
-};
+export const longHexNumber = (val: string): string => hexBinary(val, 4);
 
 // <xsd:simpleType name="ST_ShortHexNumber">
 //     <xsd:restriction base="xsd:hexBinary">
 //         <xsd:length value="2"/>
 //     </xsd:restriction>
 // </xsd:simpleType>
-export const shortHexNumber = (val: string): string => {
-    return hexBinary(val, 2);
-};
+export const shortHexNumber = (val: string): string => hexBinary(val, 2);
 
 // <xsd:simpleType name="ST_UcharHexNumber">
 //     <xsd:restriction base="xsd:hexBinary">
 //         <xsd:length value="1"/>
 //     </xsd:restriction>
 // </xsd:simpleType>
-export const uCharHexNumber = (val: string): string => {
-    return hexBinary(val, 1);
-};
+export const uCharHexNumber = (val: string): string => hexBinary(val, 1);
 
 // <xsd:simpleType name="ST_LongHexNumber">
 // <xsd:restriction base="xsd:hexBinary">
@@ -129,30 +123,26 @@ export const hexColorValue = (val: string): string => {
 // <xsd:simpleType name="ST_SignedTwipsMeasure">
 //     <xsd:union memberTypes="xsd:integer s:ST_UniversalMeasure"/>
 // </xsd:simpleType>
-export const signedTwipsMeasureValue = (val: string | number): string | number => {
-    return typeof val === "string" ? universalMeasureValue(val) : decimalNumber(val);
-};
+export const signedTwipsMeasureValue = (val: string | number): string | number =>
+    typeof val === "string" ? universalMeasureValue(val) : decimalNumber(val);
 
 // <xsd:simpleType name="ST_HpsMeasure">
 //     <xsd:union memberTypes="s:ST_UnsignedDecimalNumber s:ST_PositiveUniversalMeasure"/>
 // </xsd:simpleType>
-export const hpsMeasureValue = (val: string | number): string | number => {
-    return typeof val === "string" ? positiveUniversalMeasureValue(val) : unsignedDecimalNumber(val);
-};
+export const hpsMeasureValue = (val: string | number): string | number =>
+    typeof val === "string" ? positiveUniversalMeasureValue(val) : unsignedDecimalNumber(val);
 
 // <xsd:simpleType name="ST_SignedHpsMeasure">
 //     <xsd:union memberTypes="xsd:integer s:ST_UniversalMeasure"/>
 // </xsd:simpleType>
-export const signedHpsMeasureValue = (val: string | number): string | number => {
-    return typeof val === "string" ? universalMeasureValue(val) : decimalNumber(val);
-};
+export const signedHpsMeasureValue = (val: string | number): string | number =>
+    typeof val === "string" ? universalMeasureValue(val) : decimalNumber(val);
 
 // <xsd:simpleType name="ST_TwipsMeasure">
 //     <xsd:union memberTypes="ST_UnsignedDecimalNumber ST_PositiveUniversalMeasure"/>
 // </xsd:simpleType>
-export const twipsMeasureValue = (val: string | number): string | number => {
-    return typeof val === "string" ? positiveUniversalMeasureValue(val) : unsignedDecimalNumber(val);
-};
+export const twipsMeasureValue = (val: string | number): string | number =>
+    typeof val === "string" ? positiveUniversalMeasureValue(val) : unsignedDecimalNumber(val);
 
 // <xsd:simpleType name="ST_Percentage">
 //     <xsd:restriction base="xsd:string">
@@ -222,6 +212,4 @@ export const pointMeasureValue = unsignedDecimalNumber;
 //
 // Luckily, js has this format built in already. See:
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date/toISOString
-export const dateTimeValue = (val: Date): string => {
-    return val.toISOString();
-};
+export const dateTimeValue = (val: Date): string => val.toISOString();

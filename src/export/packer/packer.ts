@@ -1,5 +1,5 @@
-import { File } from "@file/file";
 import { Stream } from "stream";
+import { File } from "@file/file";
 
 import { Compiler } from "./next-compiler";
 

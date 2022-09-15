@@ -12,7 +12,7 @@ export interface ICommentOptions {
 }
 
 export interface ICommentsOptions {
-    readonly children: ICommentOptions[];
+    readonly children: readonly ICommentOptions[];
 }
 
 class CommentAttributes extends XmlAttributeComponent<{
