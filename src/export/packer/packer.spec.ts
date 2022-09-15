@@ -152,7 +152,7 @@ describe("Packer", () => {
             }));
 
             compiler.throwsException();
-            return await Packer.toStream(file).catch((error) => {
+            return Packer.toStream(file).catch((error) => {
                 assert.isDefined(error);
             });
         });
