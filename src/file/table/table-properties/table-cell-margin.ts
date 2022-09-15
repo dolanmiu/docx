@@ -39,7 +39,10 @@ export enum TableCellMarginElementType {
 }
 
 export class TableCellMargin extends IgnoreIfEmptyXmlComponent {
-    public constructor(type: TableCellMarginElementType, { marginUnitType = WidthType.DXA, top, left, bottom, right }: ITableCellMarginOptions) {
+    public constructor(
+        type: TableCellMarginElementType,
+        { marginUnitType = WidthType.DXA, top, left, bottom, right }: ITableCellMarginOptions,
+    ) {
         super(type);
 
         if (top !== undefined) {

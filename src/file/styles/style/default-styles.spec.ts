@@ -5,7 +5,6 @@ import { EMPTY_OBJECT } from "@file/xml-components";
 
 import * as defaultStyles from "./default-styles";
 
-
 describe("Default Styles", () => {
     it("HeadingStyle#constructor", () => {
         const style = new defaultStyles.HeadingStyle({

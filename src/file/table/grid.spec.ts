@@ -5,7 +5,6 @@ import { Formatter } from "@export/formatter";
 
 import { GridCol, TableGrid } from "./grid";
 
-
 describe("GridCol", () => {
     describe("#constructor", () => {
         it("sets the width attribute to the value given", () => {

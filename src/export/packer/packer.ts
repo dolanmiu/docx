@@ -1,4 +1,5 @@
 import { File } from "@file/file";
+import { Stream } from "stream";
 
 import { Compiler } from "./next-compiler";
 
@@ -50,6 +51,18 @@ export class Packer {
         const zip = this.compiler.compile(file, prettify);
         const zipData = await zip.generateAsync({
             type: "blob",
+            mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            compression: "DEFLATE",
+        });
+
+        return zipData;
+    }
+
+    public static async toStream(file: File, prettify?: boolean | PrettifyType): Promise<Stream> {
+        const zip = this.compiler.compile(file, prettify);
+        const zipData = zip.generateNodeStream({
+            type: "nodebuffer",
+            streamFiles: true,
             mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
             compression: "DEFLATE",
         });
