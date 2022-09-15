@@ -87,6 +87,7 @@ export interface ILevelsOptions {
     readonly alignment?: AlignmentType;
     readonly start?: number;
     readonly suffix?: LevelSuffix;
+    readonly isLegalNumberingStyle?: boolean;
     readonly style?: {
         readonly run?: IRunStylePropertiesOptions;
         readonly paragraph?: ILevelParagraphStylePropertiesOptions;
@@ -114,6 +115,14 @@ class Suffix extends XmlComponent {
     }
 }
 
+// http://officeopenxml.com/WPnumbering-isLgl.php
+// https://docs.microsoft.com/en-us/dotnet/api/documentformat.openxml.wordprocessing.islegalnumberingstyle?view=openxml-2.8.1
+class IsLegalNumberingStyle extends XmlComponent {
+    constructor() {
+        super("w:isLgl");
+    }
+}
+
 // <xsd:complexType name="CT_Lvl">
 //     <xsd:sequence>
 //         <xsd:element name="start" type="CT_DecimalNumber" minOccurs="0"/>
@@ -137,7 +146,7 @@ export class LevelBase extends XmlComponent {
     private readonly paragraphProperties: ParagraphProperties;
     private readonly runProperties: RunProperties;
 
-    constructor({ level, format, text, alignment = AlignmentType.START, start = 1, style, suffix }: ILevelsOptions) {
+    constructor({ level, format, text, alignment = AlignmentType.START, start = 1, style, suffix, isLegalNumberingStyle }: ILevelsOptions) {
         super("w:lvl");
 
         this.root.push(new NumberValueElement("w:start", decimalNumber(start)));
@@ -148,6 +157,10 @@ export class LevelBase extends XmlComponent {
 
         if (suffix) {
             this.root.push(new Suffix(suffix));
+        }
+
+        if (isLegalNumberingStyle) {
+            this.root.push(new IsLegalNumberingStyle());
         }
 
         if (text) {
