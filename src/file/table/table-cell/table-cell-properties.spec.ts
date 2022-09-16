@@ -1,8 +1,8 @@
 import { expect } from "chai";
 
-import { Formatter } from "export/formatter";
-import { BorderStyle } from "file/border";
-import { VerticalAlign } from "file/vertical-align";
+import { Formatter } from "@export/formatter";
+import { BorderStyle } from "@file/border";
+import { VerticalAlign } from "@file/vertical-align";
 
 import { WidthType } from "../table-width";
 

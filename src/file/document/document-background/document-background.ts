@@ -1,7 +1,7 @@
 // http://officeopenxml.com/WPdocument.php
 // http://www.datypic.com/sc/ooxml/e-w_background-1.html
-import { hexColorValue, uCharHexNumber } from "file/values";
-import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
+import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
+import { hexColorValue, uCharHexNumber } from "@util/values";
 
 // <xsd:simpleType name="ST_ThemeColor">
 // <xsd:restriction base="xsd:string">

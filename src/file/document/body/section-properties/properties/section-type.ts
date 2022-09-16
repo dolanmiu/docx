@@ -1,5 +1,5 @@
 // http://officeopenxml.com/WPsection.php
-import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
+import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
 
 // <xsd:simpleType name="ST_SectionMark">
 // <xsd:restriction base="xsd:string">

@@ -1,15 +1,15 @@
 import { expect } from "chai";
 
-import { Formatter } from "export/formatter";
+import { Formatter } from "@export/formatter";
 
-import { MathNArayProperties } from "./math-naray-properties";
+import { MathNAryProperties } from "./math-n-ary-properties";
 
-describe("MathNArayProperties", () => {
+describe("MathNAryProperties", () => {
     describe("#constructor()", () => {
-        it("should create a MathNArayProperties with correct root key", () => {
-            const mathNArayProperties = new MathNArayProperties("∑", true, true);
+        it("should create a MathNAryProperties with correct root key", () => {
+            const mathNAryProperties = new MathNAryProperties("∑", true, true);
 
-            const tree = new Formatter().format(mathNArayProperties);
+            const tree = new Formatter().format(mathNAryProperties);
             expect(tree).to.deep.equal({
                 "m:naryPr": [
                     {
@@ -31,9 +31,9 @@ describe("MathNArayProperties", () => {
         });
 
         it("should add super-script hide attributes", () => {
-            const mathNArayProperties = new MathNArayProperties("∑", false, true);
+            const mathNAryProperties = new MathNAryProperties("∑", false, true);
 
-            const tree = new Formatter().format(mathNArayProperties);
+            const tree = new Formatter().format(mathNAryProperties);
             expect(tree).to.deep.equal({
                 "m:naryPr": [
                     {
@@ -62,9 +62,9 @@ describe("MathNArayProperties", () => {
         });
 
         it("should add sub-script hide attributes", () => {
-            const mathNArayProperties = new MathNArayProperties("∑", true, false);
+            const mathNAryProperties = new MathNAryProperties("∑", true, false);
 
-            const tree = new Formatter().format(mathNArayProperties);
+            const tree = new Formatter().format(mathNAryProperties);
             expect(tree).to.deep.equal({
                 "m:naryPr": [
                     {
@@ -93,9 +93,9 @@ describe("MathNArayProperties", () => {
         });
 
         it("should add both super-script and sub-script hide attributes", () => {
-            const mathNArayProperties = new MathNArayProperties("∑", false, false);
+            const mathNAryProperties = new MathNAryProperties("∑", false, false);
 
-            const tree = new Formatter().format(mathNArayProperties);
+            const tree = new Formatter().format(mathNAryProperties);
             expect(tree).to.deep.equal({
                 "m:naryPr": [
                     {

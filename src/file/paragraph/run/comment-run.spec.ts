@@ -1,6 +1,6 @@
 import { expect } from "chai";
 
-import { Formatter } from "export/formatter";
+import { Formatter } from "@export/formatter";
 import { Comment, CommentRangeEnd, CommentRangeStart, CommentReference, Comments } from "./comment-run";
 
 describe("CommentRangeStart", () => {

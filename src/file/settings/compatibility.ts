@@ -1,4 +1,4 @@
-import { OnOffElement, XmlComponent } from "file/xml-components";
+import { OnOffElement, XmlComponent } from "@file/xml-components";
 import { CompatibilitySetting } from "./compatibility-setting/compatibility-setting";
 
 // <xsd:complexType name="CT_Compat">

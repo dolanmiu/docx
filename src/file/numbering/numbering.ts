@@ -1,8 +1,8 @@
 // http://officeopenxml.com/WPnumbering.php
 // https://stackoverflow.com/questions/58622437/purpose-of-abstractnum-and-numberinginstance
-import { convertInchesToTwip, uniqueNumericId } from "convenience-functions";
-import { AlignmentType } from "file/paragraph";
-import { IContext, IXmlableObject, XmlComponent } from "file/xml-components";
+import { AlignmentType } from "@file/paragraph";
+import { IContext, IXmlableObject, XmlComponent } from "@file/xml-components";
+import { convertInchesToTwip, uniqueNumericId } from "@util/convenience-functions";
 
 import { DocumentAttributes } from "../document/document-attributes";
 import { AbstractNumbering } from "./abstract-numbering";

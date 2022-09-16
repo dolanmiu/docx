@@ -2,9 +2,9 @@ import { assert, expect } from "chai";
 import * as sinon from "sinon";
 
 import { Formatter } from "@export/formatter";
-import { Paragraph, TextRun } from "file";
-import { CoreProperties } from "file/core-properties";
-import { Attributes } from "file/xml-components";
+import { CoreProperties } from "@file/core-properties";
+import { Paragraph, TextRun } from "@file/paragraph";
+import { Attributes } from "@file/xml-components";
 
 describe("Formatter", () => {
     let formatter: Formatter;

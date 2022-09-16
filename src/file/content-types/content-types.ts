@@ -1,4 +1,4 @@
-import { XmlComponent } from "file/xml-components";
+import { XmlComponent } from "@file/xml-components";
 import { ContentTypeAttributes } from "./content-types-attributes";
 import { Default } from "./default/default";
 import { Override } from "./override/override";

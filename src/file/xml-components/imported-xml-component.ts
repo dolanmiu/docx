@@ -13,8 +13,8 @@ export function convertToXmlComponent(element: XmlElement): ImportedXmlComponent
         case undefined:
         case "element":
             const xmlComponent = new ImportedXmlComponent(element.name as string, element.attributes);
-            const childElments = element.elements || [];
-            for (const childElm of childElments) {
+            const childElements = element.elements || [];
+            for (const childElm of childElements) {
                 const child = convertToXmlComponent(childElm);
                 if (child !== undefined) {
                     xmlComponent.push(child);

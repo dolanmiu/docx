@@ -1,8 +1,8 @@
 import { expect } from "chai";
 
-import { Formatter } from "export/formatter";
+import { Formatter } from "@export/formatter";
 
-import { BorderStyle } from "file/border";
+import { BorderStyle } from "@file/border";
 import { Border, ThematicBreak } from "./border";
 
 describe("Border", () => {

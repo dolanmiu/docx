@@ -1,4 +1,4 @@
-import { XmlComponent } from "file/xml-components";
+import { XmlComponent } from "@file/xml-components";
 import { RelationshipAttributes } from "./relationship-attributes";
 
 export type RelationshipType =

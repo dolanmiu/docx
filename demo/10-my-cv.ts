@@ -43,7 +43,7 @@ interface Skill {
     readonly name: string;
 }
 
-interface Achivement {
+interface Achievement {
     readonly issuer: string;
     readonly name: string;
 }
@@ -64,7 +64,7 @@ const experiences: Experience[] = [
     {
         isCurrent: false,
         summary:
-            "Full-stack developer working with Angular, Node and TypeScript. Working for the iShares platform. Emphasis on Dev-ops and developing the continous integration pipeline.",
+            "Full-stack developer working with Angular, Node and TypeScript. Working for the iShares platform. Emphasis on Dev-ops and developing the continuous integration pipeline.",
         title: "Software Developer",
         endDate: {
             month: 11,
@@ -98,6 +98,7 @@ const experiences: Experience[] = [
     {
         isCurrent: false,
         summary:
+            // cspell:disable-next-line
             "Develop web commerce platforms for various high profile clients.\n\nCreated a log analysis web application with the Play Framework in Java, incorporating Test Driven Development. It asynchronously uploads and processes large (2 GB) log files, and outputs meaningful results in context with the problem. \n\nAnalysis  and  development  of  the payment system infrastructure and user accounts section to be used by several clients of the company such as Waitrose, Tally Weijl, DJ Sports, Debenhams, Ann Summers, John Lewis and others.\n\nTechnologies used include WebSphere Commerce, Java, JavaScript and JSP.",
         title: "Java Developer",
         endDate: {
@@ -118,7 +119,7 @@ const education: Education[] = [
     {
         degree: "Master of Science (MSc)",
         fieldOfStudy: "Computer Science",
-        notes: "Exam Results: 1st Class with Distinction, Dissertation: 1st Class with Distinction\n\nRelevant Courses: Java and C# Programming, Software Engineering, Artificial Intelligence, \nComputational Photography, Algorithmics, Architecture and Hardware.\n\nCreated a Windows 8 game in JavaScript for the dissertation. \n\nCreated an award-winning 3D stereoscopic game in C# using XNA.",
+        notes: "Exam Results: 1st Class with Distinction, Dissertation: 1st Class with Distinction\n\nRelevant Courses: Java and C# Programming, Software Engineering, Artificial Intelligence, \nComputational Photography, Algorithms, Architecture and Hardware.\n\nCreated a Windows 8 game in JavaScript for the dissertation. \n\nCreated an award-winning 3D stereoscopic game in C# using XNA.",
         schoolName: "University College London",
         startDate: {
             year: 2012,
@@ -156,7 +157,7 @@ const skills: Skill[] = [
     },
 ];
 
-const achievements: Achivement[] = [
+const achievements: Achievement[] = [
     {
         issuer: "Oracle",
         name: "Oracle Certified Expert",
@@ -165,7 +166,7 @@ const achievements: Achivement[] = [
 
 class DocumentCreator {
     // tslint:disable-next-line: typedef
-    public create([experiences, educations, skills, achivements]: [Experience[], Education[], Skill[], Achivement[]]): Document {
+    public create([experiences, educations, skills, achievements]: [Experience[], Education[], Skill[], Achievement[]]): Document {
         const document = new Document({
             sections: [
                 {
@@ -221,7 +222,7 @@ class DocumentCreator {
                         this.createSubHeading("Skills"),
                         this.createSkillList(skills),
                         this.createSubHeading("Achievements"),
-                        ...this.createAchivementsList(achivements),
+                        ...this.createAchievementsList(achievements),
                         this.createSubHeading("Interests"),
                         this.createInterests("Programming, Technology, Music Production, Web Design, 3D Modelling, Dancing."),
                         this.createHeading("References"),
@@ -318,8 +319,8 @@ class DocumentCreator {
     }
 
     // tslint:disable-next-line:no-any
-    public createAchivementsList(achivements: any[]): Paragraph[] {
-        return achivements.map(
+    public createAchievementsList(achievements: any[]): Paragraph[] {
+        return achievements.map(
             (achievement) =>
                 new Paragraph({
                     text: achievement.name,

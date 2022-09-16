@@ -1,6 +1,6 @@
-import { IContext, IXmlableObject, XmlComponent } from "file/xml-components";
+import { Paragraph, ParagraphProperties } from "@file/paragraph";
+import { IContext, IXmlableObject, XmlComponent } from "@file/xml-components";
 
-import { Paragraph, ParagraphProperties } from "../..";
 import { ISectionPropertiesOptions, SectionProperties } from "./section-properties/section-properties";
 
 export class Body extends XmlComponent {

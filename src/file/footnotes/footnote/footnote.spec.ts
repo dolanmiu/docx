@@ -1,7 +1,7 @@
 import { expect } from "chai";
 
-import { Formatter } from "export/formatter";
-import { Paragraph, TextRun } from "file/paragraph";
+import { Formatter } from "@export/formatter";
+import { Paragraph, TextRun } from "@file/paragraph";
 
 import { Footnote, FootnoteType } from "./footnote";
 

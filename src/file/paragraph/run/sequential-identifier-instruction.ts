@@ -1,6 +1,6 @@
 // http://officeopenxml.com/WPfieldInstructions.php
-import { SpaceType } from "file/space-type";
-import { XmlComponent } from "file/xml-components";
+import { SpaceType } from "@file/space-type";
+import { XmlComponent } from "@file/xml-components";
 
 import { TextAttributes } from "./text-attributes";
 

@@ -16,6 +16,7 @@
 
     <body>
         <div id="app"></div>
+        <script src="//cdn.jsdelivr.net/npm/docsify-plugin-carbon@1/index.min.js"></script>
         <script>
             window.$docsify = {
                 name: "docx",
@@ -24,6 +25,12 @@
                 subMaxLevel: 2,
                 search: "auto",
                 coverpage: true,
+                plugins: [
+                    // Change to your Carbon property ID
+                    // cSpell:disable
+                    DocsifyCarbon.create("CEAIP237", "docx"),
+                    // cSpell:enable
+                ],
             };
         </script>
         <script src="//unpkg.com/docsify/lib/docsify.min.js"></script>

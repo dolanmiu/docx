@@ -208,6 +208,7 @@ export const pointMeasureValue = unsignedDecimalNumber;
 //
 // http://www.datypic.com/sc/xsd/t-xsd_dateTime.html
 // The type xsd:dateTime represents a specific date and time in the format
+/* cspell:disable-next-line */
 // CCYY-MM-DDThh:mm:ss.sss, which is a concatenation of the date and time forms,
 // separated by a literal letter "T". All of the same rules that apply to the date
 // and time types are applicable to xsd:dateTime as well.

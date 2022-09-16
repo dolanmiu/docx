@@ -1,4 +1,4 @@
-import { XmlAttributeComponent } from "file/xml-components";
+import { XmlAttributeComponent } from "@file/xml-components";
 
 export class EffectExtentAttributes extends XmlAttributeComponent<{
     readonly b?: number;

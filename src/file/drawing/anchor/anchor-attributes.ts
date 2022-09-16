@@ -1,4 +1,4 @@
-import { XmlAttributeComponent } from "file/xml-components";
+import { XmlAttributeComponent } from "@file/xml-components";
 import { IDistance } from "../drawing";
 
 export interface IAnchorAttributes extends IDistance {

@@ -1,7 +1,7 @@
 // http://officeopenxml.com/WPparagraph.php
-import { uniqueId } from "convenience-functions";
-import { FootnoteReferenceRun } from "file/footnotes/footnote/run/reference-run";
-import { IContext, IXmlableObject, XmlComponent } from "file/xml-components";
+import { FootnoteReferenceRun } from "@file/footnotes";
+import { IContext, IXmlableObject, XmlComponent } from "@file/xml-components";
+import { uniqueId } from "@util/convenience-functions";
 
 import { TargetModeType } from "../relationships/relationship/relationship";
 import { DeletedTextRun, InsertedTextRun } from "../track-revision";

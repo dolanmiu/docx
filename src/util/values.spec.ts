@@ -73,6 +73,7 @@ describe("values", () => {
         it("should throw on invalid values", () => {
             expect(() => shortHexNumber("11")).to.throw();
             expect(() => shortHexNumber("112233")).to.throw();
+            /* cspell:disable-next-line */
             expect(() => shortHexNumber("FFFG")).to.throw();
         });
     });

@@ -1,5 +1,5 @@
-import { IMediaData } from "file/media";
-import { XmlComponent } from "file/xml-components";
+import { IMediaData } from "@file/media";
+import { XmlComponent } from "@file/xml-components";
 import { Anchor } from "./anchor";
 import { IFloating } from "./floating";
 import { Inline } from "./inline";

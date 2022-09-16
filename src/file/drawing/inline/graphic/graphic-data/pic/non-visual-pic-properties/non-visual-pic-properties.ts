@@ -1,4 +1,4 @@
-import { XmlComponent } from "file/xml-components";
+import { XmlComponent } from "@file/xml-components";
 import { ChildNonVisualProperties } from "./child-non-visual-pic-properties/child-non-visual-pic-properties";
 import { NonVisualProperties } from "./non-visual-properties/non-visual-properties";
 

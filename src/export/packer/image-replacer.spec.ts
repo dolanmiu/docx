@@ -1,6 +1,6 @@
 import { expect } from "chai";
 
-import { Media } from "file";
+import { Media } from "@file/media";
 
 import { ImageReplacer } from "./image-replacer";
 

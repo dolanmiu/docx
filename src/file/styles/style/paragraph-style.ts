@@ -1,5 +1,5 @@
-import { IParagraphStylePropertiesOptions, IRunStylePropertiesOptions, ParagraphProperties } from "file/paragraph";
-import { RunProperties } from "file/paragraph/run/properties";
+import { IParagraphStylePropertiesOptions, IRunStylePropertiesOptions, ParagraphProperties } from "@file/paragraph";
+import { RunProperties } from "@file/paragraph/run/properties";
 import { IStyleOptions, Style } from "./style";
 
 export interface IBaseParagraphStyleOptions extends IStyleOptions {

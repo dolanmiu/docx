@@ -1,5 +1,5 @@
 // http://officeopenxml.com/WPtextSpecialContent-break.php
-import { XmlComponent } from "file/xml-components";
+import { XmlComponent } from "@file/xml-components";
 
 // <xsd:group name="EG_RunInnerContent">
 //   ...

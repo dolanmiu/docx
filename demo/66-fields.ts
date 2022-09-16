@@ -4,7 +4,7 @@ import * as fs from "fs";
 import { Bookmark, Document, Packer, Paragraph, SimpleField, TextRun } from "../build";
 
 const doc = new Document({
-    creator: 'Me',
+    creator: "Me",
     sections: [
         {
             properties: {},

@@ -1,5 +1,6 @@
 const path = require("path");
 const { ProvidePlugin } = require("webpack");
+const TsconfigPathsPlugin = require("tsconfig-paths-webpack-plugin");
 
 const configuration = {
     mode: "production",
@@ -21,6 +22,10 @@ const configuration = {
             buffer: require.resolve("buffer"),
             stream: require.resolve("stream-browserify"),
         },
+        plugins: [new TsconfigPathsPlugin()],
+        alias: {
+            jszip: require.resolve('jszip/lib/index.js'),
+        },
     },
 
     module: {
@@ -29,7 +34,7 @@ const configuration = {
                 test: /\.ts$/,
                 loader: "ts-loader",
                 options: {
-                    configFile: "tsconfig.json",
+                    configFile: "tsconfig.lib.json",
                 },
             },
         ],

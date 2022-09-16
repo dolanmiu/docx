@@ -1,5 +1,5 @@
 // http://www.datypic.com/sc/ooxml/e-m_subHide-1.html
-import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
+import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
 
 class MathSubScriptHideAttributes extends XmlAttributeComponent<{ readonly hide: number }> {
     protected readonly xmlKeys = { hide: "m:val" };

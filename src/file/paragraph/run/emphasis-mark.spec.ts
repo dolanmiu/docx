@@ -1,6 +1,6 @@
 import { expect } from "chai";
 
-import { Formatter } from "export/formatter";
+import { Formatter } from "@export/formatter";
 
 import * as em from "./emphasis-mark";
 

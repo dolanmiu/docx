@@ -1,6 +1,6 @@
 // http://officeopenxml.com/drwPicInline.php
-import { IMediaData, IMediaDataTransformation } from "file/media";
-import { XmlComponent } from "file/xml-components";
+import { IMediaData, IMediaDataTransformation } from "@file/media";
+import { XmlComponent } from "@file/xml-components";
 import { DocProperties } from "./../doc-properties/doc-properties";
 import { EffectExtent } from "./../effect-extent/effect-extent";
 import { Extent } from "./../extent/extent";

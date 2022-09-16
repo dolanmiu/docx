@@ -1,6 +1,6 @@
 // http://officeopenxml.com/drwPicFloating-position.php
 // http://officeopenxml.com/drwPicFloating.php
-import { HorizontalPositionAlign, VerticalPositionAlign } from "file/shared/alignment";
+import { HorizontalPositionAlign, VerticalPositionAlign } from "@file/shared/alignment";
 
 import { ITextWrapping } from "../text-wrap";
 

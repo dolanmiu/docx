@@ -1,5 +1,5 @@
-import { VerticalAlign, VerticalAlignElement } from "file/vertical-align";
-import { IgnoreIfEmptyXmlComponent } from "file/xml-components";
+import { VerticalAlign, VerticalAlignElement } from "@file/vertical-align";
+import { IgnoreIfEmptyXmlComponent } from "@file/xml-components";
 
 import { IShadingAttributesProperties, Shading } from "../../shading";
 import { ITableCellMarginOptions, TableCellMargin, TableCellMarginElementType } from "../table-properties/table-cell-margin";

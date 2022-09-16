@@ -1,6 +1,6 @@
 // http://officeopenxml.com/WPhyperlink.php
-import { uniqueId } from "convenience-functions";
-import { XmlComponent } from "file/xml-components";
+import { XmlComponent } from "@file/xml-components";
+import { uniqueId } from "@util/convenience-functions";
 
 import { ParagraphChild } from "../paragraph";
 import { HyperlinkAttributes, IHyperlinkAttributesProperties } from "./hyperlink-attributes";
@@ -38,6 +38,8 @@ export class InternalHyperlink extends ConcreteHyperlink {
     }
 }
 
-export class ExternalHyperlink {
-    constructor(public readonly options: { readonly children: ParagraphChild[]; readonly link: string }) {}
+export class ExternalHyperlink extends XmlComponent {
+    constructor(public readonly options: { readonly children: ParagraphChild[]; readonly link: string }) {
+        super("w:externalHyperlink");
+    }
 }

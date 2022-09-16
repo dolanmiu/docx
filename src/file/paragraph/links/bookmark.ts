@@ -1,6 +1,6 @@
 // http://officeopenxml.com/WPbookmark.php
-import { uniqueNumericId } from "convenience-functions";
-import { XmlComponent } from "file/xml-components";
+import { XmlComponent } from "@file/xml-components";
+import { uniqueNumericId } from "@util/convenience-functions";
 
 import { ParagraphChild } from "../paragraph";
 import { BookmarkEndAttributes, BookmarkStartAttributes } from "./bookmark-attributes";

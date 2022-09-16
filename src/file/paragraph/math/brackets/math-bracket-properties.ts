@@ -1,5 +1,5 @@
 // http://www.datypic.com/sc/ooxml/e-m_dPr-1.html
-import { XmlComponent } from "file/xml-components";
+import { XmlComponent } from "@file/xml-components";
 
 import { MathBeginningCharacter } from "./math-beginning-character";
 import { MathEndingCharacter } from "./math-ending-char";

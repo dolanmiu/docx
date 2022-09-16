@@ -71,10 +71,7 @@ export class File {
                   },
         );
 
-        if (options.comments) {
-            this.comments = new Comments(options.comments);
-        }
-
+        this.comments = new Comments(options.comments ?? { children: [] });
         this.fileRelationships = new Relationships();
         this.customProperties = new CustomProperties(options.customProperties ?? []);
         this.appProperties = new AppProperties();

@@ -1,4 +1,4 @@
-import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
+import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
 
 export enum PageTextDirectionType {
     LEFT_TO_RIGHT_TOP_TO_BOTTOM = "lrTb",

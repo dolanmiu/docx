@@ -17,6 +17,5 @@ export * from "./footnotes";
 export * from "./track-revision";
 export * from "./shared";
 export * from "./border";
-export * from "./values";
 export * from "./vertical-align";
 export * from "./space-type";

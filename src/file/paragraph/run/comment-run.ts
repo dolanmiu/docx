@@ -1,5 +1,5 @@
-import { Paragraph } from "file/paragraph";
-import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
+import { Paragraph } from "@file/paragraph";
+import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
 
 import { TextRun } from "./text-run";
 

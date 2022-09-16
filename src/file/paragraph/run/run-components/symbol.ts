@@ -1,4 +1,4 @@
-import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
+import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
 
 class SymbolAttributes extends XmlAttributeComponent<{
     readonly char: string;

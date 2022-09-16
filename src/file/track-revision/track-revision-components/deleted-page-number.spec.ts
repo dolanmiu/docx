@@ -1,5 +1,7 @@
 import { expect } from "chai";
-import { Formatter } from "export/formatter";
+
+import { Formatter } from "@export/formatter";
+
 import { DeletedNumberOfPages, DeletedNumberOfPagesSection, DeletedPage } from "./deleted-page-number";
 
 describe("Deleted Page", () => {
@@ -11,7 +13,7 @@ describe("Deleted Page", () => {
     });
 });
 
-describe("Delted NumberOfPages", () => {
+describe("Deleted NumberOfPages", () => {
     describe("#constructor()", () => {
         it("uses the font name for both ascii and hAnsi", () => {
             const tree = new Formatter().format(new DeletedNumberOfPages());

@@ -1,6 +1,6 @@
 import { expect } from "chai";
 
-import { Formatter } from "export/formatter";
+import { Formatter } from "@export/formatter";
 
 import { MathRun } from "../math-run";
 import { MathSubScriptElement } from "./math-sub-script";

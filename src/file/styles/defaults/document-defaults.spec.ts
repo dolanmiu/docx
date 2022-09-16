@@ -2,7 +2,7 @@ import { expect } from "chai";
 
 import { DocumentDefaults } from "./document-defaults";
 
-import { Formatter } from "export/formatter";
+import { Formatter } from "@export/formatter";
 
 describe("DocumentDefaults", () => {
     it("#constructor", () => {

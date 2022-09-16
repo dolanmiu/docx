@@ -1,8 +1,8 @@
 import { expect } from "chai";
 import { SinonStub, stub } from "sinon";
 
-import * as convenienceFunctions from "convenience-functions";
-import { Formatter } from "export/formatter";
+import { Formatter } from "@export/formatter";
+import * as convenienceFunctions from "@util/convenience-functions";
 
 import { Numbering } from "./numbering";
 

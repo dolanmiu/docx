@@ -1,5 +1,6 @@
-import { ICommentsOptions } from "file/paragraph/run/comment-run";
-import { StringContainer, XmlComponent } from "file/xml-components";
+import { ICommentsOptions } from "@file/paragraph/run/comment-run";
+import { StringContainer, XmlComponent } from "@file/xml-components";
+import { dateTimeValue } from "@util/values";
 
 import { ICustomPropertyOptions } from "../custom-properties";
 import { IDocumentBackgroundOptions } from "../document";
@@ -9,7 +10,6 @@ import { ISectionOptions } from "../file";
 import { INumberingOptions } from "../numbering";
 import { Paragraph } from "../paragraph";
 import { IStylesOptions } from "../styles";
-import { dateTimeValue } from "../values";
 
 export interface IPropertiesOptions {
     readonly sections: ISectionOptions[];
@@ -41,6 +41,7 @@ export interface IPropertiesOptions {
 
 // <xs:element name="coreProperties" type="CT_CoreProperties"/>
 
+/* cSpell:disable */
 // <xs:complexType name="CT_CoreProperties">
 //   <xs:all>
 //     <xs:element name="category" minOccurs="0" maxOccurs="1" type="xs:string"/>
@@ -60,6 +61,7 @@ export interface IPropertiesOptions {
 //     <xs:element name="version" minOccurs="0" maxOccurs="1" type="xs:string"/>
 //   </xs:all>
 // </xs:complexType>
+/* cSpell:enable */
 
 export class CoreProperties extends XmlComponent {
     constructor(options: Omit<IPropertiesOptions, "sections">) {

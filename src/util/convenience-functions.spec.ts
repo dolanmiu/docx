@@ -4,13 +4,13 @@ import { convertInchesToTwip, convertMillimetersToTwip, uniqueId, uniqueNumericI
 
 describe("Utility", () => {
     describe("#convertMillimetersToTwip", () => {
-        it("should call the underlying header's addChildElement for Paragraph", () => {
+        it("should convert millimeters to TWIP", () => {
             expect(convertMillimetersToTwip(1000)).to.equal(56692);
         });
     });
 
     describe("#convertInchesToTwip", () => {
-        it("should call the underlying header's addChildElement", () => {
+        it("should convert inches to TWIP", () => {
             expect(convertInchesToTwip(1)).to.equal(1440);
             expect(convertInchesToTwip(0.5)).to.equal(720);
             expect(convertInchesToTwip(0.25)).to.equal(360);

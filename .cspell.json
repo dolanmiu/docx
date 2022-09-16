@@ -1,0 +1,58 @@
+// cSpell Settings
+{
+    // Version of the setting file.  Always 0.2
+    "version": "0.2",
+    // language - current active spelling language
+    "language": "en_US",
+    "dictionaries": ["en_US", "typescript", "softwareTerms", "fonts", "npm"],
+    // words - list of words to be always considered correct
+    "words": [
+        "Xmlable",
+        "twip",
+        "twips",
+        "jsonify",
+        "falsey",
+        "aiueo",
+        "iroha",
+        "aiueo",
+        "iroha",
+        "chosung",
+        "Abjad",
+        "Initializable",
+        "rels",
+        "dolan",
+        "xmlify",
+        "Xmlifyed",
+        "xmlified",
+        "datas",
+        "jszip",
+        "rsid",
+        "NUMPAGES",
+        "ATLEAST",
+        "ooxml",
+        "clippy",
+        "docsify"
+    ],
+    "ignoreRegExpList": [
+        "/\"w:.+\"/",
+        "/\"s:.+\"/",
+        "/\"a:.+\"/",
+        "/\"pic:.+\"/",
+        "/\"xmlns:.+\"/",
+        "/\"vt:.+\"/",
+        "/[^\\s]{40,}/",
+        "/<xsd:.+/>/",
+        "/[A-Z_]+ = \".+\"/",
+        "/XmlAttributeComponent<{[^}]+}>/g",
+        "/xmlKeys = {[^}]+}/g",
+        "/\\.to\\.deep\\.equal\\({[^)]+}\\)/g",
+        "\\.to\\.include\\.members\\(\\[[^\\]]+]\\)",
+        "/new [a-zA-Z]+\\({[^£]+}\\)/g"
+    ],
+    "ignorePaths": ["package.json", "docs/api"],
+    "allowCompoundWords": true,
+    // flagWords - list of words to be always considered incorrect
+    // This is useful for offensive words and common spelling errors.
+    // For example "hte" should be "the"
+    "flagWords": ["hte"]
+}

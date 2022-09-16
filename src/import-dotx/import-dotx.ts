@@ -1,12 +1,12 @@
 import * as JSZip from "jszip";
 import { Element as XMLElement, ElementCompact as XMLElementCompact, xml2js } from "xml-js";
 
-import { HeaderFooterReferenceType } from "file/document/body/section-properties";
-import { FooterWrapper, IDocumentFooter } from "file/footer-wrapper";
-import { HeaderWrapper, IDocumentHeader } from "file/header-wrapper";
-import { Media } from "file/media";
-import { TargetModeType } from "file/relationships/relationship/relationship";
-import { convertToXmlComponent, ImportedXmlComponent } from "file/xml-components";
+import { HeaderFooterReferenceType } from "@file/document/body/section-properties";
+import { FooterWrapper, IDocumentFooter } from "@file/footer-wrapper";
+import { HeaderWrapper, IDocumentHeader } from "@file/header-wrapper";
+import { Media } from "@file/media";
+import { TargetModeType } from "@file/relationships/relationship/relationship";
+import { convertToXmlComponent, ImportedXmlComponent } from "@file/xml-components";
 
 const schemeToType = {
     "http://schemas.openxmlformats.org/officeDocument/2006/relationships/header": "header",
@@ -141,12 +141,12 @@ export class ImportDotx {
     }
 
     private async addRelationshipToWrapper(
-        relationhipFile: IRelationshipFileInfo,
+        relationshipFile: IRelationshipFileInfo,
         zipContent: JSZip,
         wrapper: HeaderWrapper | FooterWrapper,
         media: Media,
     ): Promise<void> {
-        const refFile = zipContent.files[`word/_rels/${relationhipFile.target}.rels`];
+        const refFile = zipContent.files[`word/_rels/${relationshipFile.target}.rels`];
 
         if (!refFile) {
             return;

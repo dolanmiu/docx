@@ -1,6 +1,6 @@
 import { expect } from "chai";
 
-import { Formatter } from "export/formatter";
+import { Formatter } from "@export/formatter";
 import { HeaderFooterReference, HeaderFooterReferenceType, HeaderFooterType } from "./header-footer-reference";
 
 describe("HeaderFooterReference", () => {

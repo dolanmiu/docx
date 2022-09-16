@@ -121,7 +121,7 @@ const doc = new Document({
                                 author: "Firstname Lastname",
                                 date: "2020-10-06T09:05:00Z",
                                 bold: false,
-                            }
+                            },
                         }),
                     ],
                 }),

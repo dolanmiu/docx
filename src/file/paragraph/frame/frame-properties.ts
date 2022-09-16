@@ -1,7 +1,7 @@
 // http://officeopenxml.com/WPparagraph-textFrames.php
-import { HeightRule } from "file";
-import { HorizontalPositionAlign, VerticalPositionAlign } from "file/shared/alignment";
-import { XmlAttributeComponent, XmlComponent } from "file/xml-components";
+import { HorizontalPositionAlign, VerticalPositionAlign } from "@file/shared/alignment";
+import { HeightRule } from "@file/table";
+import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
 
 export enum DropCapType {
     NONE = "none",

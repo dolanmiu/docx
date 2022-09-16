@@ -1,4 +1,4 @@
-import { XmlComponent } from "file/xml-components";
+import { XmlComponent } from "@file/xml-components";
 import { TableCell } from "../table-cell";
 import { ITableRowPropertiesOptions, TableRowProperties } from "./table-row-properties";
 

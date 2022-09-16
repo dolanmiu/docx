@@ -1,5 +1,5 @@
-import { hexColorValue, signedTwipsMeasureValue } from "file/values";
-import { Attributes, XmlComponent } from "file/xml-components";
+import { Attributes, XmlComponent } from "@file/xml-components";
+import { hexColorValue, signedTwipsMeasureValue } from "@util/values";
 
 export class CharacterSpacing extends XmlComponent {
     constructor(value: number | string) {

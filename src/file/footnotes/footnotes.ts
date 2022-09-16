@@ -1,4 +1,4 @@
-import { XmlComponent } from "file/xml-components";
+import { XmlComponent } from "@file/xml-components";
 
 import { LineRuleType, Paragraph } from "../paragraph";
 import { Footnote, FootnoteType } from "./footnote/footnote";

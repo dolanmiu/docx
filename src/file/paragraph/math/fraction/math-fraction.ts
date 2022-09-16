@@ -1,4 +1,4 @@
-import { XmlComponent } from "file/xml-components";
+import { XmlComponent } from "@file/xml-components";
 
 import { MathComponent } from "../math-component";
 import { MathDenominator } from "./math-denominator";
