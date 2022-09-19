@@ -1,4 +1,4 @@
-// Simple example to add text to a document
+// Exporting the document as a stream
 // Import from 'docx' rather than '../build' if you install from npm
 import * as fs from "fs";
 import { Document, Packer, Paragraph, TextRun } from "../build";
@@ -26,6 +26,5 @@ const doc = new Document({
     ],
 });
 
-Packer.toStream(doc).then((stream) => {
-    stream.pipe(fs.createWriteStream("My Document.docx"));
-});
+const stream = Packer.toStream(doc);
+stream.pipe(fs.createWriteStream("My Document.docx"));

@@ -32,7 +32,7 @@ export const unsignedDecimalNumber = (val: number): number => {
 // http://www.datypic.com/sc/xsd/t-xsd_hexBinary.html
 const hexBinary = (val: string, length: number): string => {
     const expectedLength = length * 2;
-    if (val.length !== expectedLength || isNaN(Number("0x" + val))) {
+    if (val.length !== expectedLength || isNaN(Number(`0x${val}`))) {
         throw new Error(`Invalid hex value '${val}'. Expected ${expectedLength} digit hex value`);
     }
     return val;

@@ -37,13 +37,13 @@ export interface ISectionOptions {
 }
 
 export class File {
-    // eslint-disable-next-line functional/immutable-data
+    // eslint-disable-next-line functional/prefer-readonly-type
     private currentRelationshipId: number = 1;
 
     private readonly documentWrapper: DocumentWrapper;
-    // eslint-disable-next-line functional/immutable-data
+    // eslint-disable-next-line functional/prefer-readonly-type
     private readonly headers: IDocumentHeader[] = [];
-    // eslint-disable-next-line functional/immutable-data
+    // eslint-disable-next-line functional/prefer-readonly-type
     private readonly footers: IDocumentFooter[] = [];
     private readonly coreProperties: CoreProperties;
     private readonly numbering: Numbering;
@@ -128,7 +128,7 @@ export class File {
         }
 
         if (options.footnotes) {
-            // tslint:disable-next-line: forin
+            // eslint-disable-next-line guard-for-in
             for (const key in options.footnotes) {
                 this.footnotesWrapper.View.createFootNote(parseFloat(key), options.footnotes[key].children);
             }
@@ -156,6 +156,7 @@ export class File {
     }
 
     private createHeader(header: Header): HeaderWrapper {
+        // eslint-disable-next-line functional/immutable-data
         const wrapper = new HeaderWrapper(this.media, this.currentRelationshipId++);
 
         for (const child of header.options.children) {
@@ -167,6 +168,7 @@ export class File {
     }
 
     private createFooter(footer: Footer): FooterWrapper {
+        // eslint-disable-next-line functional/immutable-data
         const wrapper = new FooterWrapper(this.media, this.currentRelationshipId++);
 
         for (const child of footer.options.children) {
@@ -178,6 +180,7 @@ export class File {
     }
 
     private addHeaderToDocument(header: HeaderWrapper, type: HeaderFooterReferenceType = HeaderFooterReferenceType.DEFAULT): void {
+        // eslint-disable-next-line functional/immutable-data
         this.headers.push({ header, type });
         this.documentWrapper.Relationships.createRelationship(
             header.View.ReferenceId,
@@ -188,6 +191,7 @@ export class File {
     }
 
     private addFooterToDocument(footer: FooterWrapper, type: HeaderFooterReferenceType = HeaderFooterReferenceType.DEFAULT): void {
+        // eslint-disable-next-line functional/immutable-data
         this.footers.push({ footer, type });
         this.documentWrapper.Relationships.createRelationship(
             footer.View.ReferenceId,
@@ -220,26 +224,31 @@ export class File {
         );
 
         this.documentWrapper.Relationships.createRelationship(
+            // eslint-disable-next-line functional/immutable-data
             this.currentRelationshipId++,
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles",
             "styles.xml",
         );
         this.documentWrapper.Relationships.createRelationship(
+            // eslint-disable-next-line functional/immutable-data
             this.currentRelationshipId++,
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering",
             "numbering.xml",
         );
         this.documentWrapper.Relationships.createRelationship(
+            // eslint-disable-next-line functional/immutable-data
             this.currentRelationshipId++,
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/footnotes",
             "footnotes.xml",
         );
         this.documentWrapper.Relationships.createRelationship(
+            // eslint-disable-next-line functional/immutable-data
             this.currentRelationshipId++,
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/settings",
             "settings.xml",
         );
         this.documentWrapper.Relationships.createRelationship(
+            // eslint-disable-next-line functional/immutable-data
             this.currentRelationshipId++,
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments",
             "comments.xml",

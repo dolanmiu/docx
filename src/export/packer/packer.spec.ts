@@ -54,7 +54,7 @@ describe("Packer", () => {
             assert.isTrue(buffer.byteLength > 0);
         });
 
-        it("should handle exception if it throws any", async () => {
+        it("should handle exception if it throws any", () => {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const compiler = stub((Packer as any).compiler, "compile");
 
@@ -139,7 +139,7 @@ describe("Packer", () => {
             const stream = await Packer.toStream(file);
             return new Promise((resolve, reject) => {
                 stream.on("error", () => {
-                    reject();
+                    reject(new Error());
                 });
 
                 stream.on("end", () => {
@@ -148,7 +148,7 @@ describe("Packer", () => {
             });
         });
 
-        it("should handle exception if it throws any", async () => {
+        it("should handle exception if it throws any", () => {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const compiler = stub((Packer as any).compiler, "compile").callsFake(() => ({
                 // tslint:disable-next-line: no-empty
@@ -160,9 +160,11 @@ describe("Packer", () => {
             }));
 
             compiler.throwsException();
-            return Packer.toStream(file).catch((error) => {
+            try {
+                Packer.toStream(file);
+            } catch (error) {
                 assert.isDefined(error);
-            });
+            }
         });
 
         afterEach(() => {

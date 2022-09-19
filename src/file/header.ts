@@ -6,13 +6,17 @@ export interface IHeaderOptions {
 }
 
 export class Header {
-    public constructor(public readonly options: IHeaderOptions = { children: [] }) {
-        // noop
+    public readonly options: IHeaderOptions;
+
+    public constructor(options: IHeaderOptions = { children: [] }) {
+        this.options = options;
     }
 }
 
 export class Footer {
-    public constructor(public readonly options: IHeaderOptions = { children: [] }) {
-        // noop
+    public readonly options: IHeaderOptions;
+
+    public constructor(options: IHeaderOptions = { children: [] }) {
+        this.options = options;
     }
 }

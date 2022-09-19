@@ -58,7 +58,7 @@ export class Packer {
         return zipData;
     }
 
-    public static async toStream(file: File, prettify?: boolean | PrettifyType): Promise<Stream> {
+    public static toStream(file: File, prettify?: boolean | PrettifyType): Stream {
         const zip = this.compiler.compile(file, prettify);
         const zipData = zip.generateNodeStream({
             type: "nodebuffer",

@@ -12,6 +12,7 @@ https://github.com/typescript-eslint/tslint-to-eslint-config/blob/master/docs/FA
 Happy linting! 💖
 */
 module.exports = {
+    extends: "eslint:recommended",
     env: {
         browser: true,
         es6: true,
@@ -33,6 +34,31 @@ module.exports = {
     ],
     root: true,
     rules: {
+        "no-undef": "off",
+        "no-extra-boolean-cast": "off",
+        "no-alert": "error",
+        "no-self-compare": "error",
+        "no-unreachable-loop": "error",
+        "no-template-curly-in-string": "error",
+        "no-unused-private-class-members": "error",
+        "no-extend-native": "error",
+        "no-floating-decimal": "error",
+        "no-implied-eval": "error",
+        "no-iterator": "error",
+        "no-lone-blocks": "error",
+        "no-loop-func": "error",
+        "no-new-object": "error",
+        "no-proto": "error",
+        "no-useless-catch": "error",
+        "one-var-declaration-per-line": "error",
+        "prefer-arrow-callback": "error",
+        "prefer-destructuring": "error",
+        "prefer-exponentiation-operator": "error",
+        "prefer-promise-reject-errors": "error",
+        "prefer-regex-literals": "error",
+        "prefer-spread": "error",
+        "prefer-template": "error",
+        "require-await": "error",
         "@typescript-eslint/adjacent-overload-signatures": "error",
         "@typescript-eslint/array-type": [
             "error",
@@ -93,22 +119,6 @@ module.exports = {
                 allowDirectConstAssertionInArrowFunctions: true,
                 allowHigherOrderFunctions: false,
                 allowTypedFunctionExpressions: false,
-            },
-        ],
-        "@typescript-eslint/indent": [
-            "error",
-            4,
-            {
-                ObjectExpression: "first",
-                FunctionDeclaration: {
-                    parameters: "first",
-                },
-                FunctionExpression: {
-                    parameters: "first",
-                },
-                SwitchCase: 1,
-                flatTernaryExpressions: false,
-                ignoredNodes: [],
             },
         ],
         "@typescript-eslint/naming-convention": [
@@ -176,7 +186,7 @@ module.exports = {
         "import/order": "error",
         indent: "off",
         "jsdoc/check-alignment": "error",
-        "jsdoc/check-indentation": "error",
+        "jsdoc/check-indentation": "off",
         "jsdoc/newline-after-description": "error",
         "max-classes-per-file": "off",
         "max-len": "off",
@@ -245,6 +255,7 @@ module.exports = {
         "functional/no-method-signature": "error",
         "functional/no-mixed-type": "error",
         "functional/prefer-readonly-type": "error",
+        "no-unused-vars": ["error", { argsIgnorePattern: "^[_]+$" }],
     },
     overrides: [
         {
@@ -252,6 +263,7 @@ module.exports = {
             rules: {
                 "@typescript-eslint/no-unused-expressions": "off",
                 "@typescript-eslint/dot-notation": "off",
+                "prefer-destructuring": "off",
             },
         },
     ],

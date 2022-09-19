@@ -33,6 +33,7 @@ export class CustomProperties extends XmlComponent {
     }
 
     public addCustomProperty(property: ICustomPropertyOptions): void {
+        // eslint-disable-next-line functional/immutable-data
         this.properties.push(new CustomProperty(this.nextId++, property));
     }
 }
