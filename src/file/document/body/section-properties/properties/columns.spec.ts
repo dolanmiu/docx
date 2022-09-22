@@ -13,6 +13,13 @@ describe("Columns", () => {
             expect(tree["w:cols"]).to.deep.equal({ _attr: { "w:num": 3, "w:space": 720 } });
         });
 
+        it("should create set space and count to undefined if they are undefined", () => {
+            const columns = new Columns({});
+            const tree = new Formatter().format(columns);
+
+            expect(tree["w:cols"]).to.deep.equal({ _attr: {} });
+        });
+
         it("should ignore individual column attributes if equalWidth is true", () => {
             const unequalColumns = [new Column({ width: 1000, space: 400 }), new Column({ width: 2000 })];
             const columns = new Columns({ count: 3, space: 720, equalWidth: true, children: unequalColumns });
