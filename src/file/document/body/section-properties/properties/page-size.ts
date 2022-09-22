@@ -33,7 +33,7 @@ export class PageSizeAttributes extends XmlAttributeComponent<IPageSizeAttribute
 }
 
 export class PageSize extends XmlComponent {
-    constructor(width: number | string, height: number | string, orientation: PageOrientation) {
+    public constructor(width: number | string, height: number | string, orientation: PageOrientation) {
         super("w:pgSz");
 
         const flip = orientation === PageOrientation.LANDSCAPE;

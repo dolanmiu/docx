@@ -1,9 +1,10 @@
 import { expect } from "chai";
 import { Element, xml2js } from "xml-js";
 
-import { EMPTY_OBJECT, ImportedXmlComponent } from "./";
+import { EMPTY_OBJECT } from "@file/xml-components";
+
+import { convertToXmlComponent, ImportedXmlComponent } from "./imported-xml-component";
 import { IContext } from "./base";
-import { convertToXmlComponent } from "./imported-xml-component";
 
 const xmlString = `
         <w:p w:one="value 1" w:two="value 2">

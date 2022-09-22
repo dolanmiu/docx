@@ -5,7 +5,7 @@ import { PageReferenceFieldInstruction } from "./pageref-field-instruction";
 import type { IPageReferenceOptions } from "./pageref-properties";
 
 export class PageReference extends Run {
-    constructor(bookmarkId: string, options: IPageReferenceOptions = {}) {
+    public constructor(bookmarkId: string, options: IPageReferenceOptions = {}) {
         super({
             children: [new Begin(true), new PageReferenceFieldInstruction(bookmarkId, options), new End()],
         });

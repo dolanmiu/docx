@@ -13,7 +13,7 @@ import { hpsMeasureValue } from "@util/values";
 //     <xsd:attribute name="val" type="s:ST_OnOff"/>
 // </xsd:complexType>
 export class OnOffElement extends XmlComponent {
-    constructor(name: string, val: boolean | undefined = true) {
+    public constructor(name: string, val: boolean | undefined = true) {
         super(name);
         if (val !== true) {
             this.root.push(new Attributes({ val }));
@@ -27,7 +27,7 @@ export class OnOffElement extends XmlComponent {
 //     <xsd:attribute name="val" type="ST_HpsMeasure" use="required"/>
 // </xsd:complexType>
 export class HpsMeasureElement extends XmlComponent {
-    constructor(name: string, val: number | string) {
+    public constructor(name: string, val: number | string) {
         super(name);
         this.root.push(new Attributes({ val: hpsMeasureValue(val) }));
     }
@@ -39,7 +39,7 @@ export class HpsMeasureElement extends XmlComponent {
 //     <xsd:attribute name="val" type="s:ST_String" use="required"/>
 // </xsd:complexType>
 export class StringValueElement extends XmlComponent {
-    constructor(name: string, val: string) {
+    public constructor(name: string, val: string) {
         super(name);
         this.root.push(new Attributes({ val }));
     }
@@ -47,7 +47,7 @@ export class StringValueElement extends XmlComponent {
 
 // This represents various number element types.
 export class NumberValueElement extends XmlComponent {
-    constructor(name: string, val: number) {
+    public constructor(name: string, val: number) {
         super(name);
         this.root.push(new Attributes({ val }));
     }
@@ -58,7 +58,7 @@ export class NumberValueElement extends XmlComponent {
 // new StringContainer("hello", "world")
 // <hello>world</hello>
 export class StringContainer extends XmlComponent {
-    constructor(name: string, val: string) {
+    public constructor(name: string, val: string) {
         super(name);
         this.root.push(val);
     }

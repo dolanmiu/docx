@@ -4,7 +4,7 @@ import { XmlComponent } from "@file/xml-components";
 import { MathComponent } from "../math-component";
 
 export class MathSubScriptElement extends XmlComponent {
-    constructor(children: MathComponent[]) {
+    public constructor(children: readonly MathComponent[]) {
         super("m:sub");
 
         for (const child of children) {

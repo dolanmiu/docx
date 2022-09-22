@@ -24,7 +24,7 @@ export enum TargetModeType {
 }
 
 export class Relationship extends XmlComponent {
-    constructor(id: string, type: RelationshipType, target: string, targetMode?: TargetModeType) {
+    public constructor(id: string, type: RelationshipType, target: string, targetMode?: TargetModeType) {
         super("Relationship");
 
         this.root.push(

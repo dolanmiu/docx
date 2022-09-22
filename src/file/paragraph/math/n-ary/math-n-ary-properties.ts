@@ -7,7 +7,7 @@ import { MathSubScriptHide } from "./math-sub-script-hide";
 import { MathSuperScriptHide } from "./math-super-script-hide";
 
 export class MathNAryProperties extends XmlComponent {
-    constructor(accent: string, hasSuperScript: boolean, hasSubScript: boolean) {
+    public constructor(accent: string, hasSuperScript: boolean, hasSubScript: boolean) {
         super("m:naryPr");
 
         this.root.push(new MathAccentCharacter(accent));

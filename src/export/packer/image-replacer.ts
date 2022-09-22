@@ -1,7 +1,7 @@
 import { IMediaData, Media } from "@file/media";
 
 export class ImageReplacer {
-    public replace(xmlData: string, mediaData: IMediaData[], offset: number): string {
+    public replace(xmlData: string, mediaData: readonly IMediaData[], offset: number): string {
         let currentXmlData = xmlData;
 
         mediaData.forEach((image, i) => {
@@ -11,7 +11,7 @@ export class ImageReplacer {
         return currentXmlData;
     }
 
-    public getMediaData(xmlData: string, media: Media): IMediaData[] {
+    public getMediaData(xmlData: string, media: Media): readonly IMediaData[] {
         return media.Array.filter((image) => xmlData.search(`{${image.fileName}}`) > 0);
     }
 }

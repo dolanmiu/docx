@@ -10,7 +10,7 @@ export interface IContext {
 export abstract class BaseXmlComponent {
     protected readonly rootKey: string;
 
-    constructor(rootKey: string) {
+    public constructor(rootKey: string) {
         this.rootKey = rootKey;
     }
 

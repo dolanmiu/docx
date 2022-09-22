@@ -2,7 +2,7 @@ import { Attributes, XmlAttributeComponent, XmlComponent } from "@file/xml-compo
 import { decimalNumber } from "@util/values";
 
 class AbstractNumId extends XmlComponent {
-    constructor(value: number) {
+    public constructor(value: number) {
         super("w:abstractNumId");
         this.root.push(
             new Attributes({
@@ -45,7 +45,7 @@ export class ConcreteNumbering extends XmlComponent {
     public readonly reference: string;
     public readonly instance: number;
 
-    constructor(options: IConcreteNumberingOptions) {
+    public constructor(options: IConcreteNumberingOptions) {
         super("w:num");
 
         this.numId = options.numId;
@@ -71,7 +71,7 @@ class LevelOverrideAttributes extends XmlAttributeComponent<{ readonly ilvl: num
 }
 
 export class LevelOverride extends XmlComponent {
-    constructor(levelNum: number, start?: number) {
+    public constructor(levelNum: number, start?: number) {
         super("w:lvlOverride");
         this.root.push(new LevelOverrideAttributes({ ilvl: levelNum }));
         if (start !== undefined) {
@@ -85,7 +85,7 @@ class StartOverrideAttributes extends XmlAttributeComponent<{ readonly val: numb
 }
 
 class StartOverride extends XmlComponent {
-    constructor(start: number) {
+    public constructor(start: number) {
         super("w:startOverride");
         this.root.push(new StartOverrideAttributes({ val: start }));
     }

@@ -37,7 +37,7 @@ import { AnchorAttributes } from "./anchor-attributes";
 //     <xsd:attribute name="allowOverlap" type="xsd:boolean" use="required"/>
 // </xsd:complexType>
 export class Anchor extends XmlComponent {
-    constructor(mediaData: IMediaData, transform: IMediaDataTransformation, drawingOptions: IDrawingOptions) {
+    public constructor(mediaData: IMediaData, transform: IMediaDataTransformation, drawingOptions: IDrawingOptions) {
         super("wp:anchor");
 
         const floating: IFloating = {

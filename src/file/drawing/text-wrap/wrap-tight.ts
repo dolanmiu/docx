@@ -14,7 +14,7 @@ class WrapTightAttributes extends XmlAttributeComponent<{
 }
 
 export class WrapTight extends XmlComponent {
-    constructor(
+    public constructor(
         margins: IMargins = {
             top: 0,
             bottom: 0,

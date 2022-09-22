@@ -13,7 +13,7 @@ export enum HyperlinkType {
 export class ConcreteHyperlink extends XmlComponent {
     public readonly linkId: string;
 
-    constructor(children: ParagraphChild[], relationshipId: string, anchor?: string) {
+    public constructor(children: readonly ParagraphChild[], relationshipId: string, anchor?: string) {
         super("w:hyperlink");
 
         this.linkId = relationshipId;
@@ -33,13 +33,13 @@ export class ConcreteHyperlink extends XmlComponent {
 }
 
 export class InternalHyperlink extends ConcreteHyperlink {
-    constructor(options: { readonly children: ParagraphChild[]; readonly anchor: string }) {
+    public constructor(options: { readonly children: readonly ParagraphChild[]; readonly anchor: string }) {
         super(options.children, uniqueId(), options.anchor);
     }
 }
 
 export class ExternalHyperlink extends XmlComponent {
-    constructor(public readonly options: { readonly children: ParagraphChild[]; readonly link: string }) {
+    public constructor(public readonly options: { readonly children: readonly ParagraphChild[]; readonly link: string }) {
         super("w:externalHyperlink");
     }
 }

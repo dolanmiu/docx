@@ -1,7 +1,7 @@
 import { Attributes, XmlComponent } from "@file/xml-components";
 
 export abstract class VerticalAlign extends XmlComponent {
-    constructor(type: string) {
+    public constructor(type: string) {
         super("w:vertAlign");
         this.root.push(
             new Attributes({
@@ -12,13 +12,13 @@ export abstract class VerticalAlign extends XmlComponent {
 }
 
 export class SuperScript extends VerticalAlign {
-    constructor() {
+    public constructor() {
         super("superscript");
     }
 }
 
 export class SubScript extends VerticalAlign {
-    constructor() {
+    public constructor() {
         super("subscript");
     }
 }

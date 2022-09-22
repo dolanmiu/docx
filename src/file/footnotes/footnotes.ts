@@ -7,7 +7,7 @@ import { SeperatorRun } from "./footnote/run/seperator-run";
 import { FootnotesAttributes } from "./footnotes-attributes";
 
 export class FootNotes extends XmlComponent {
-    constructor() {
+    public constructor() {
         super("w:footnotes");
 
         this.root.push(
@@ -67,7 +67,7 @@ export class FootNotes extends XmlComponent {
         this.root.push(spacing);
     }
 
-    public createFootNote(id: number, paragraph: Paragraph[]): void {
+    public createFootNote(id: number, paragraph: readonly Paragraph[]): void {
         const footnote = new Footnote({
             id: id,
             children: paragraph,

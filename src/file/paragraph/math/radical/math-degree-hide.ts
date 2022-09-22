@@ -6,7 +6,7 @@ class MathDegreeHideAttributes extends XmlAttributeComponent<{ readonly hide: nu
 }
 
 export class MathDegreeHide extends XmlComponent {
-    constructor() {
+    public constructor() {
         super("m:degHide");
 
         this.root.push(new MathDegreeHideAttributes({ hide: 1 }));

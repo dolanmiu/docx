@@ -41,7 +41,7 @@ describe("HeaderWrapper", () => {
         it("should call the underlying header's addChildElement", () => {
             const file = new HeaderWrapper(new Media(), 1);
             const spy = sinon.spy(file.View, "addChildElement");
-            // tslint:disable-next-line:no-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             file.addChildElement({} as any);
 
             expect(spy.called).to.equal(true);

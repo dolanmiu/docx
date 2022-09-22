@@ -92,7 +92,7 @@ export const sectionPageSizeDefaults = {
 };
 
 export class SectionProperties extends XmlComponent {
-    constructor({
+    public constructor({
         page: {
             size: {
                 width = sectionPageSizeDefaults.WIDTH,

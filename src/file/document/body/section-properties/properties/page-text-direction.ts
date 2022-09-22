@@ -10,7 +10,7 @@ class PageTextDirectionAttributes extends XmlAttributeComponent<{ readonly val: 
 }
 
 export class PageTextDirection extends XmlComponent {
-    constructor(value: PageTextDirectionType) {
+    public constructor(value: PageTextDirectionType) {
         super("w:textDirection");
 
         this.root.push(

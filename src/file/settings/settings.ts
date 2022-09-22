@@ -154,7 +154,7 @@ export interface ISettingsOptions {
 }
 
 export class Settings extends XmlComponent {
-    constructor(options: ISettingsOptions) {
+    public constructor(options: ISettingsOptions) {
         super("w:settings");
         this.root.push(
             new SettingsAttributes({

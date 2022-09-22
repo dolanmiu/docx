@@ -12,7 +12,7 @@ class SimplePosAttributes extends XmlAttributeComponent<{
 }
 
 export class SimplePos extends XmlComponent {
-    constructor() {
+    public constructor() {
         super("wp:simplePos");
 
         // NOTE: It's not fully supported in Microsoft Word, but this element is needed anyway

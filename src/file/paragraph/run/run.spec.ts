@@ -2,13 +2,11 @@ import { expect } from "chai";
 
 import { Formatter } from "@export/formatter";
 import { BorderStyle } from "@file/border";
-// import { FootnoteReferenceRun } from "@file/footnotes/footnote/run/reference-run";
 import { ShadingType } from "@file/shading";
 import { SpaceType } from "@file/space-type";
 
-import { Run } from "./";
 import { EmphasisMarkType } from "./emphasis-mark";
-import { PageNumber } from "./run";
+import { PageNumber, Run } from "./run";
 import { UnderlineType } from "./underline";
 
 describe("Run", () => {

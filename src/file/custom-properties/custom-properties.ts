@@ -3,11 +3,12 @@ import { CustomPropertiesAttributes } from "./custom-properties-attributes";
 import { CustomProperty, ICustomPropertyOptions } from "./custom-property";
 
 export class CustomProperties extends XmlComponent {
-    // tslint:disable-next-line:readonly-keyword
+    // eslint-disable-next-line functional/prefer-readonly-type
     private nextId: number;
+    // eslint-disable-next-line functional/prefer-readonly-type
     private readonly properties: CustomProperty[] = [];
 
-    constructor(properties: ICustomPropertyOptions[]) {
+    public constructor(properties: readonly ICustomPropertyOptions[]) {
         super("Properties");
 
         this.root.push(
@@ -32,6 +33,7 @@ export class CustomProperties extends XmlComponent {
     }
 
     public addCustomProperty(property: ICustomPropertyOptions): void {
+        // eslint-disable-next-line functional/immutable-data
         this.properties.push(new CustomProperty(this.nextId++, property));
     }
 }

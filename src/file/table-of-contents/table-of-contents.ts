@@ -10,7 +10,7 @@ import { StructuredDocumentTagProperties } from "./sdt-properties";
 import { ITableOfContentsOptions } from "./table-of-contents-properties";
 
 export class TableOfContents extends XmlComponent {
-    constructor(alias: string = "Table of Contents", properties?: ITableOfContentsOptions) {
+    public constructor(alias: string = "Table of Contents", properties?: ITableOfContentsOptions) {
         super("w:sdt");
         this.root.push(new StructuredDocumentTagProperties(alias));
 

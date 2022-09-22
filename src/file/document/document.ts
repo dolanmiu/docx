@@ -33,7 +33,7 @@ export interface IDocumentOptions {
 export class Document extends XmlComponent {
     private readonly body: Body;
 
-    constructor(options: IDocumentOptions) {
+    public constructor(options: IDocumentOptions) {
         super("w:document");
         this.root.push(
             new DocumentAttributes({

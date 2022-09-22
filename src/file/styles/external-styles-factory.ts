@@ -23,6 +23,7 @@ export class ExternalStylesFactory {
      *   <w:docDefaults>Or any other element will be parsed to</w:docDefaults>
      *
      * </w:styles>
+     *
      * @param externalStyles context from styles.xml
      */
     public newInstance(xmlData: string): Styles {

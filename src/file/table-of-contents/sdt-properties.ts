@@ -3,7 +3,7 @@ import { XmlComponent } from "@file/xml-components";
 import { Alias } from "./alias";
 
 export class StructuredDocumentTagProperties extends XmlComponent {
-    constructor(alias: string) {
+    public constructor(alias: string) {
         super("w:sdtPr");
         this.root.push(new Alias(alias));
     }

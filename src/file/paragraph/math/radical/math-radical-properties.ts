@@ -3,7 +3,7 @@ import { XmlComponent } from "@file/xml-components";
 import { MathDegreeHide } from "./math-degree-hide";
 
 export class MathRadicalProperties extends XmlComponent {
-    constructor(hasDegree: boolean) {
+    public constructor(hasDegree: boolean) {
         super("m:radPr");
 
         if (!hasDegree) {

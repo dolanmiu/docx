@@ -25,7 +25,7 @@ class SpacingAttributes extends XmlAttributeComponent<ISpacingProperties> {
 }
 
 export class Spacing extends XmlComponent {
-    constructor(options: ISpacingProperties) {
+    public constructor(options: ISpacingProperties) {
         super("w:spacing");
         this.root.push(new SpacingAttributes(options));
     }

@@ -17,7 +17,7 @@ export interface IColumnsAttributes {
     readonly count?: number;
     readonly separate?: boolean;
     readonly equalWidth?: boolean;
-    readonly children?: Column[];
+    readonly children?: readonly Column[];
 }
 
 export class ColumnsAttributes extends XmlAttributeComponent<IColumnsAttributes> {
@@ -30,7 +30,7 @@ export class ColumnsAttributes extends XmlAttributeComponent<IColumnsAttributes>
 }
 
 export class Columns extends XmlComponent {
-    constructor({ space, count, separate, equalWidth, children }: IColumnsAttributes) {
+    public constructor({ space, count, separate, equalWidth, children }: IColumnsAttributes) {
         super("w:cols");
         this.root.push(
             new ColumnsAttributes({

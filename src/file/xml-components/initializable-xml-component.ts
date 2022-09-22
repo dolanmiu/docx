@@ -1,7 +1,7 @@
 import { XmlComponent } from "@file/xml-components";
 
 export abstract class InitializableXmlComponent extends XmlComponent {
-    constructor(rootKey: string, initComponent?: InitializableXmlComponent) {
+    public constructor(rootKey: string, initComponent?: InitializableXmlComponent) {
         super(rootKey);
 
         if (initComponent) {

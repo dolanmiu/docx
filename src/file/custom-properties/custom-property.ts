@@ -7,7 +7,7 @@ export interface ICustomPropertyOptions {
 }
 
 export class CustomProperty extends XmlComponent {
-    constructor(id: number, properties: ICustomPropertyOptions) {
+    public constructor(id: number, properties: ICustomPropertyOptions) {
         super("property");
         this.root.push(
             new CustomPropertyAttributes({
@@ -21,7 +21,7 @@ export class CustomProperty extends XmlComponent {
 }
 
 export class CustomPropertyValue extends XmlComponent {
-    constructor(value: string) {
+    public constructor(value: string) {
         super("vt:lpwstr");
         this.root.push(value);
     }

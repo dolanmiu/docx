@@ -1,18 +1,22 @@
-// tslint:disable:no-any
 import { Element as XmlElement, xml2js } from "xml-js";
-import { IXmlableObject, XmlAttributeComponent, XmlComponent } from ".";
+
+import { IXmlableObject, XmlAttributeComponent, XmlComponent } from "@file/xml-components";
+
 import { IContext } from "./base";
 
 /**
  * Converts the given xml element (in json format) into XmlComponent.
+ *
  * @param element the xml element in json presentation
  */
 
-export function convertToXmlComponent(element: XmlElement): ImportedXmlComponent | string | undefined {
+export const convertToXmlComponent = (element: XmlElement): ImportedXmlComponent | string | undefined => {
     switch (element.type) {
         case undefined:
         case "element":
+            // eslint-disable-next-line no-case-declarations
             const xmlComponent = new ImportedXmlComponent(element.name as string, element.attributes);
+            // eslint-disable-next-line no-case-declarations
             const childElements = element.elements || [];
             for (const childElm of childElements) {
                 const child = convertToXmlComponent(childElm);
@@ -26,8 +30,9 @@ export function convertToXmlComponent(element: XmlElement): ImportedXmlComponent
         default:
             return undefined;
     }
-}
+};
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 class ImportedXmlComponentAttributes extends XmlAttributeComponent<any> {
     // noop
 }
@@ -51,8 +56,8 @@ export class ImportedXmlComponent extends XmlComponent {
      * @param importedContent xml content of the imported component
      */
 
-    // tslint:disable-next-line:variable-name
-    constructor(rootKey: string, _attr?: any) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    public constructor(rootKey: string, _attr?: any) {
         super(rootKey);
         if (_attr) {
             this.root.push(new ImportedXmlComponentAttributes(_attr));
@@ -68,8 +73,8 @@ export class ImportedXmlComponent extends XmlComponent {
  * Used for the attributes of root element that is being imported.
  */
 export class ImportedRootElementAttributes extends XmlComponent {
-    // tslint:disable-next-line:variable-name
-    constructor(private readonly _attr: any) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    public constructor(private readonly _attr: any) {
         super("");
     }
 

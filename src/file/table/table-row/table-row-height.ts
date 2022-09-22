@@ -30,7 +30,7 @@ export class TableRowHeightAttributes extends XmlAttributeComponent<{
 }
 
 export class TableRowHeight extends XmlComponent {
-    constructor(value: number | string, rule: HeightRule) {
+    public constructor(value: number | string, rule: HeightRule) {
         super("w:trHeight");
 
         this.root.push(

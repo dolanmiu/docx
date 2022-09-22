@@ -12,7 +12,7 @@ import { Text } from "./run-components/text";
 import { TextAttributes } from "./text-attributes";
 
 export interface IRunOptions extends IRunPropertiesOptions {
-    readonly children?: (Begin | FieldInstruction | Separate | End | PageNumber | FootnoteReferenceRun | string)[];
+    readonly children?: readonly (Begin | FieldInstruction | Separate | End | PageNumber | FootnoteReferenceRun | string)[];
     readonly break?: number;
     readonly text?: string;
 }
@@ -26,7 +26,7 @@ export enum PageNumber {
 export class Run extends XmlComponent {
     protected readonly properties: RunProperties;
 
-    constructor(options: IRunOptions) {
+    public constructor(options: IRunOptions) {
         super("w:r");
         this.properties = new RunProperties(options);
         this.root.push(this.properties);
