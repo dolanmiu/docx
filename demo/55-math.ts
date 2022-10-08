@@ -16,6 +16,7 @@ import {
     MathSubScript,
     MathSubSuperScript,
     MathSum,
+    MathIntegral,
     MathSuperScript,
     Packer,
     Paragraph,
@@ -78,6 +79,35 @@ const doc = new Document({
                                     subScript: [new MathRun("i")],
                                 }),
                                 new MathSum({
+                                    children: [
+                                        new MathRadical({
+                                            children: [new MathRun("i")],
+                                        }),
+                                    ],
+                                    subScript: [new MathRun("i")],
+                                    superScript: [new MathRun("10")],
+                                }),
+                            ],
+                        }),
+                    ],
+                }),
+                new Paragraph({
+                    children: [
+                        new Math({
+                            children: [
+                                new MathIntegral({
+                                    children: [new MathRun("test")],
+                                }),
+                                new MathIntegral({
+                                    children: [
+                                        new MathSuperScript({
+                                            children: [new MathRun("e")],
+                                            superScript: [new MathRun("2")],
+                                        }),
+                                    ],
+                                    subScript: [new MathRun("i")],
+                                }),
+                                new MathIntegral({
                                     children: [
                                         new MathRadical({
                                             children: [new MathRun("i")],

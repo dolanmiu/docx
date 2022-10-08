@@ -10,7 +10,9 @@ export class MathNAryProperties extends XmlComponent {
     public constructor(accent: string, hasSuperScript: boolean, hasSubScript: boolean) {
         super("m:naryPr");
 
-        this.root.push(new MathAccentCharacter(accent));
+        if (!!accent){
+            this.root.push(new MathAccentCharacter(accent));
+        }
         this.root.push(new MathLimitLocation());
 
         if (!hasSuperScript) {
