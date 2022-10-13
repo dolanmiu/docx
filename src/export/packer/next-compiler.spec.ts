@@ -25,7 +25,7 @@ describe("Compiler", () => {
     });
 
     describe("#compile()", () => {
-        it("should pack all the content", async function () {
+        it("should pack all the content", function () {
             this.timeout(99999999);
             const file = new File({
                 sections: [],
@@ -53,7 +53,7 @@ describe("Compiler", () => {
             expect(fileNames).to.include("_rels/.rels");
         });
 
-        it("should pack all additional headers and footers", async function () {
+        it("should pack all additional headers and footers", function () {
             const file = new File({
                 sections: [
                     {

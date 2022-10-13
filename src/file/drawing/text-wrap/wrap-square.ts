@@ -1,8 +1,9 @@
 // http://officeopenxml.com/drwPicFloating-textWrap.php
 import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
-import { ITextWrapping, TextWrappingSide } from ".";
+
 import { IDistance } from "../drawing";
 import { IMargins } from "../floating";
+import { ITextWrapping, TextWrappingSide } from "./text-wrapping";
 
 interface IWrapSquareAttributes extends IDistance {
     readonly wrapText?: TextWrappingSide;
@@ -19,7 +20,7 @@ class WrapSquareAttributes extends XmlAttributeComponent<IWrapSquareAttributes> 
 }
 
 export class WrapSquare extends XmlComponent {
-    constructor(
+    public constructor(
         textWrapping: ITextWrapping,
         margins: IMargins = {
             top: 0,

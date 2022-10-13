@@ -79,7 +79,7 @@ export interface ICompatibilityOptions {
 }
 
 export class Compatibility extends XmlComponent {
-    constructor(options: ICompatibilityOptions) {
+    public constructor(options: ICompatibilityOptions) {
         super("w:compat");
 
         // Don't justify lines ending in soft line break setting

@@ -13,9 +13,10 @@ export interface IMediaTransformation {
 }
 
 export class Media {
+    // eslint-disable-next-line functional/prefer-readonly-type
     private readonly map: Map<string, IMediaData>;
 
-    constructor() {
+    public constructor() {
         this.map = new Map<string, IMediaData>();
     }
 
@@ -68,6 +69,7 @@ export class Media {
                     .map((c) => c.charCodeAt(0)),
             );
         } else {
+            // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
             const b = require("buf" + "fer");
             return new b.Buffer(dataURI, "base64");
         }

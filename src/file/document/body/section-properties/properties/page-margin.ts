@@ -33,7 +33,7 @@ export class PageMarginAttributes extends XmlAttributeComponent<IPageMarginAttri
 }
 
 export class PageMargin extends XmlComponent {
-    constructor(
+    public constructor(
         top: number | string,
         right: number | string,
         bottom: number | string,

@@ -7,12 +7,12 @@ import { MathDegree } from "./math-degree";
 import { MathRadicalProperties } from "./math-radical-properties";
 
 export interface IMathRadicalOptions {
-    readonly children: MathComponent[];
-    readonly degree?: MathComponent[];
+    readonly children: readonly MathComponent[];
+    readonly degree?: readonly MathComponent[];
 }
 
 export class MathRadical extends XmlComponent {
-    constructor(options: IMathRadicalOptions) {
+    public constructor(options: IMathRadicalOptions) {
         super("m:rad");
 
         this.root.push(new MathRadicalProperties(!!options.degree));

@@ -45,7 +45,7 @@ export interface ITablePropertiesOptions {
 }
 
 export class TableProperties extends IgnoreIfEmptyXmlComponent {
-    constructor(options: ITablePropertiesOptions) {
+    public constructor(options: ITablePropertiesOptions) {
         super("w:tblPr");
 
         if (options.style) {

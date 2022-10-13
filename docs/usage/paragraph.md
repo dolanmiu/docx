@@ -111,7 +111,7 @@ const paragraph = new Paragraph({
 
 ## Border
 
-Add borders to a `Paragraph`. Good for making the `Paragraph` stand out
+Add borders to a `Paragraph`. Good for making the `Paragraph` stand out. Border top and border bottom can be used as a horizontal rule (also known as horizontal line).
 
 #### IBorderPropertyOptions
 

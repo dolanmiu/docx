@@ -6,8 +6,8 @@ import { IDrawingOptions } from "../drawing";
 import { TextWrappingType } from "../text-wrap";
 import { Anchor } from "./anchor";
 
-function createAnchor(drawingOptions: IDrawingOptions): Anchor {
-    return new Anchor(
+const createAnchor = (drawingOptions: IDrawingOptions): Anchor =>
+    new Anchor(
         {
             fileName: "test.png",
             stream: new Buffer(""),
@@ -34,7 +34,6 @@ function createAnchor(drawingOptions: IDrawingOptions): Anchor {
         },
         drawingOptions,
     );
-}
 
 describe("Anchor", () => {
     let anchor: Anchor;

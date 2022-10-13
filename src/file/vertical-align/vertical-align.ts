@@ -25,7 +25,7 @@ export class VerticalAlignAttributes extends XmlAttributeComponent<{
 }
 
 export class VerticalAlignElement extends XmlComponent {
-    constructor(value: VerticalAlign) {
+    public constructor(value: VerticalAlign) {
         super("w:vAlign");
         this.root.push(new VerticalAlignAttributes({ verticalAlign: value }));
     }

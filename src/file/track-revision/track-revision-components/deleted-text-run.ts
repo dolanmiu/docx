@@ -13,7 +13,7 @@ interface IDeletedRunOptions extends IRunOptions, IChangedAttributesProperties {
 export class DeletedTextRun extends XmlComponent {
     protected readonly deletedTextRunWrapper: DeletedTextRunWrapper;
 
-    constructor(options: IDeletedRunOptions) {
+    public constructor(options: IDeletedRunOptions) {
         super("w:del");
         this.root.push(
             new ChangeAttributes({
@@ -28,7 +28,7 @@ export class DeletedTextRun extends XmlComponent {
 }
 
 class DeletedTextRunWrapper extends XmlComponent {
-    constructor(options: IRunOptions) {
+    public constructor(options: IRunOptions) {
         super("w:r");
         this.root.push(new RunProperties(options));
 

@@ -5,7 +5,7 @@ import { ExtentAttributes } from "./extent-attributes";
 export class Extent extends XmlComponent {
     private readonly attributes: ExtentAttributes;
 
-    constructor(x: number, y: number) {
+    public constructor(x: number, y: number) {
         super("wp:extent");
 
         this.attributes = new ExtentAttributes({

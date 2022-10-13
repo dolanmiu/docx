@@ -97,7 +97,7 @@ export class FramePropertiesAttributes extends XmlAttributeComponent<{
 }
 
 export class FrameProperties extends XmlComponent {
-    constructor(options: IFrameOptions) {
+    public constructor(options: IFrameOptions) {
         super("w:framePr");
         this.root.push(
             new FramePropertiesAttributes({

@@ -26,7 +26,7 @@ export class Inline extends XmlComponent {
     private readonly extent: Extent;
     private readonly graphic: Graphic;
 
-    constructor(mediaData: IMediaData, transform: IMediaDataTransformation) {
+    public constructor(mediaData: IMediaData, transform: IMediaDataTransformation) {
         super("wp:inline");
 
         this.root.push(

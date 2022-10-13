@@ -12,7 +12,7 @@ export interface ICommentOptions {
 }
 
 export interface ICommentsOptions {
-    readonly children: ICommentOptions[];
+    readonly children: readonly ICommentOptions[];
 }
 
 class CommentAttributes extends XmlAttributeComponent<{
@@ -96,7 +96,7 @@ class RootCommentsAttributes extends XmlAttributeComponent<{
 }
 
 export class CommentRangeStart extends XmlComponent {
-    constructor(id: number) {
+    public constructor(id: number) {
         super("w:commentRangeStart");
 
         this.root.push(new CommentRangeAttributes({ id }));
@@ -104,7 +104,7 @@ export class CommentRangeStart extends XmlComponent {
 }
 
 export class CommentRangeEnd extends XmlComponent {
-    constructor(id: number) {
+    public constructor(id: number) {
         super("w:commentRangeEnd");
 
         this.root.push(new CommentRangeAttributes({ id }));
@@ -112,7 +112,7 @@ export class CommentRangeEnd extends XmlComponent {
 }
 
 export class CommentReference extends XmlComponent {
-    constructor(id: number) {
+    public constructor(id: number) {
         super("w:commentReference");
 
         this.root.push(new CommentRangeAttributes({ id }));
@@ -120,7 +120,7 @@ export class CommentReference extends XmlComponent {
 }
 
 export class Comment extends XmlComponent {
-    constructor({ id, initials, author, date = new Date(), text }: ICommentOptions) {
+    public constructor({ id, initials, author, date = new Date(), text }: ICommentOptions) {
         super("w:comment");
 
         this.root.push(
@@ -136,7 +136,7 @@ export class Comment extends XmlComponent {
     }
 }
 export class Comments extends XmlComponent {
-    constructor({ children }: ICommentsOptions) {
+    public constructor({ children }: ICommentsOptions) {
         super("w:comments");
 
         this.root.push(

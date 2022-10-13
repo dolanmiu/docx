@@ -6,6 +6,7 @@ import { sectionMarginDefaults, sectionPageSizeDefaults } from "./document";
 import { File } from "./file";
 import { Footer, Header } from "./header";
 import { Paragraph } from "./paragraph";
+import { Media } from "./media";
 
 const PAGE_SIZE_DEFAULTS = {
     "w:h": sectionPageSizeDefaults.HEIGHT,
@@ -397,7 +398,6 @@ describe("File", () => {
                 sections: [],
             });
 
-            // tslint:disable-next-line: no-unused-expression
             expect(doc.Comments).to.not.be.undefined;
         });
     });
@@ -409,8 +409,61 @@ describe("File", () => {
                 sections: [],
             });
 
-            // tslint:disable-next-line: no-unused-expression
             expect(doc.Numbering).to.not.be.undefined;
+        });
+    });
+
+    describe("#getters", () => {
+        it("should have defined getters", () => {
+            const doc = new File({
+                sections: [],
+            });
+
+            expect(doc.CoreProperties).to.not.be.undefined;
+            expect(doc.Media).to.not.be.undefined;
+            expect(doc.FileRelationships).to.not.be.undefined;
+            expect(doc.Headers).to.not.be.undefined;
+            expect(doc.Footers).to.not.be.undefined;
+            expect(doc.ContentTypes).to.not.be.undefined;
+            expect(doc.CustomProperties).to.not.be.undefined;
+            expect(doc.AppProperties).to.not.be.undefined;
+            expect(doc.FootNotes).to.not.be.undefined;
+            expect(doc.Settings).to.not.be.undefined;
+            expect(doc.Comments).to.not.be.undefined;
+        });
+    });
+
+    describe("#templates", () => {
+        // Test will be deprecated when import-dotx and templates are deprecated
+        it("should work with template", () => {
+            const doc = new File(
+                {
+                    sections: [],
+                },
+                {
+                    template: {
+                        currentRelationshipId: 1,
+                        headers: [],
+                        footers: [],
+                        styles: "",
+                        titlePageIsDefined: true,
+                        media: new Media(),
+                    },
+                },
+            );
+
+            expect(doc).to.not.be.undefined;
+        });
+    });
+
+    describe("#externalStyles", () => {
+        it("should work with external styles", () => {
+            const doc = new File({
+                sections: [],
+                externalStyles: "",
+            });
+
+            expect(doc.Styles).to.not.be.undefined;
         });
     });
 });

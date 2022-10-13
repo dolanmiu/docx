@@ -7,9 +7,9 @@ import { IParagraphStyleOptions } from "./style/paragraph-style";
 export interface IStylesOptions {
     readonly default?: IDefaultStylesOptions;
     readonly initialStyles?: BaseXmlComponent;
-    readonly paragraphStyles?: IParagraphStyleOptions[];
-    readonly characterStyles?: ICharacterStyleOptions[];
-    readonly importedStyles?: (XmlComponent | StyleForParagraph | StyleForCharacter | ImportedXmlComponent)[];
+    readonly paragraphStyles?: readonly IParagraphStyleOptions[];
+    readonly characterStyles?: readonly ICharacterStyleOptions[];
+    readonly importedStyles?: readonly (XmlComponent | StyleForParagraph | StyleForCharacter | ImportedXmlComponent)[];
 }
 
 // <xsd:complexType name="CT_Styles">
@@ -20,7 +20,7 @@ export interface IStylesOptions {
 // </xsd:sequence>
 // </xsd:complexType>
 export class Styles extends XmlComponent {
-    constructor(options: IStylesOptions) {
+    public constructor(options: IStylesOptions) {
         super("w:styles");
 
         if (options.initialStyles) {

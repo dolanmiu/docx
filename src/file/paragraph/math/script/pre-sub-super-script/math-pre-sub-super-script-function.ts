@@ -6,13 +6,13 @@ import { MathBase, MathSubScriptElement, MathSuperScriptElement } from "../../n-
 import { MathPreSubSuperScriptProperties } from "./math-pre-sub-super-script-function-properties";
 
 export interface IMathPreSubSuperScriptOptions {
-    readonly children: MathComponent[];
-    readonly subScript: MathComponent[];
-    readonly superScript: MathComponent[];
+    readonly children: readonly MathComponent[];
+    readonly subScript: readonly MathComponent[];
+    readonly superScript: readonly MathComponent[];
 }
 
 export class MathPreSubSuperScript extends XmlComponent {
-    constructor(options: IMathPreSubSuperScriptOptions) {
+    public constructor(options: IMathPreSubSuperScriptOptions) {
         super("m:sPre");
 
         this.root.push(new MathPreSubSuperScriptProperties());

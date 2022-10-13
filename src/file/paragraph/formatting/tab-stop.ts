@@ -2,7 +2,7 @@
 import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
 
 export class TabStop extends XmlComponent {
-    constructor(type: TabStopType, position: number, leader?: LeaderType) {
+    public constructor(type: TabStopType, position: number, leader?: LeaderType) {
         super("w:tabs");
         this.root.push(new TabStopItem(type, position, leader));
     }
@@ -41,7 +41,7 @@ export class TabAttributes extends XmlAttributeComponent<{
 }
 
 export class TabStopItem extends XmlComponent {
-    constructor(value: TabStopType, position: string | number, leader?: LeaderType) {
+    public constructor(value: TabStopType, position: string | number, leader?: LeaderType) {
         super("w:tab");
         this.root.push(
             new TabAttributes({

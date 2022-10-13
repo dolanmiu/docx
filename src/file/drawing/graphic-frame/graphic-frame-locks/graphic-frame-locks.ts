@@ -2,7 +2,7 @@ import { XmlComponent } from "@file/xml-components";
 import { GraphicFrameLockAttributes } from "./graphic-frame-lock-attributes";
 
 export class GraphicFrameLocks extends XmlComponent {
-    constructor() {
+    public constructor() {
         super("a:graphicFrameLocks");
 
         this.root.push(

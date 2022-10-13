@@ -4,7 +4,7 @@ import { Default } from "./default/default";
 import { Override } from "./override/override";
 
 export class ContentTypes extends XmlComponent {
-    constructor() {
+    public constructor() {
         super("Types");
 
         this.root.push(

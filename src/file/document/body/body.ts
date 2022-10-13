@@ -4,9 +4,10 @@ import { IContext, IXmlableObject, XmlComponent } from "@file/xml-components";
 import { ISectionPropertiesOptions, SectionProperties } from "./section-properties/section-properties";
 
 export class Body extends XmlComponent {
+    // eslint-disable-next-line functional/prefer-readonly-type
     private readonly sections: SectionProperties[] = [];
 
-    constructor() {
+    public constructor() {
         super("w:body");
     }
 
@@ -16,6 +17,7 @@ export class Body extends XmlComponent {
      * The spec says:
      *  - section element should be in the last paragraph of the section
      *  - last section should be direct child of body
+     *
      * @param options new section options
      */
     public addSection(options: ISectionPropertiesOptions): void {

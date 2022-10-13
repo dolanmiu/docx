@@ -5,7 +5,7 @@ import { MathBeginningCharacter } from "./math-beginning-character";
 import { MathEndingCharacter } from "./math-ending-char";
 
 export class MathBracketProperties extends XmlComponent {
-    constructor(options?: { readonly beginningCharacter: string; readonly endingCharacter: string }) {
+    public constructor(options?: { readonly beginningCharacter: string; readonly endingCharacter: string }) {
         super("m:dPr");
 
         if (!!options) {

@@ -33,7 +33,7 @@ export class TableBorders extends XmlComponent {
         insideVertical: NONE_BORDER,
     };
 
-    constructor(options: ITableBordersOptions) {
+    public constructor(options: ITableBordersOptions) {
         super("w:tblBorders");
 
         if (options.top) {

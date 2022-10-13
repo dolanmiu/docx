@@ -8,7 +8,7 @@ import { ITableOfContentsOptions } from "./table-of-contents-properties";
 export class FieldInstruction extends XmlComponent {
     private readonly properties: ITableOfContentsOptions;
 
-    constructor(properties: ITableOfContentsOptions = {}) {
+    public constructor(properties: ITableOfContentsOptions = {}) {
         super("w:instrText");
 
         this.properties = properties;

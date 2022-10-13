@@ -19,7 +19,7 @@ class TableLayoutAttributes extends XmlAttributeComponent<{ readonly type: Table
 //     <xsd:attribute name="type" type="ST_TblLayoutType"/>
 // </xsd:complexType>
 export class TableLayout extends XmlComponent {
-    constructor(type: TableLayoutType) {
+    public constructor(type: TableLayoutType) {
         super("w:tblLayout");
         this.root.push(new TableLayoutAttributes({ type }));
     }

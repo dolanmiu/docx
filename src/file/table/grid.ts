@@ -13,7 +13,7 @@ import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
 import { twipsMeasureValue } from "@util/values";
 
 export class TableGrid extends XmlComponent {
-    constructor(widths: number[] | string[]) {
+    public constructor(widths: readonly number[] | readonly string[]) {
         super("w:tblGrid");
         for (const width of widths) {
             this.root.push(new GridCol(width));
@@ -26,7 +26,7 @@ class GridColAttributes extends XmlAttributeComponent<{ readonly w: number | str
 }
 
 export class GridCol extends XmlComponent {
-    constructor(width?: number | string) {
+    public constructor(width?: number | string) {
         super("w:gridCol");
         if (width !== undefined) {
             this.root.push(new GridColAttributes({ w: twipsMeasureValue(width) }));

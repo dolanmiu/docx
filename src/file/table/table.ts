@@ -21,9 +21,9 @@ import { ITableWidthProperties } from "./table-width";
     algorithm will expand columns to fit its content
  */
 export interface ITableOptions {
-    readonly rows: TableRow[];
+    readonly rows: readonly TableRow[];
     readonly width?: ITableWidthProperties;
-    readonly columnWidths?: number[];
+    readonly columnWidths?: readonly number[];
     readonly margins?: ITableCellMarginOptions;
     readonly indent?: ITableWidthProperties;
     readonly float?: ITableFloatOptions;
@@ -35,9 +35,10 @@ export interface ITableOptions {
 }
 
 export class Table extends XmlComponent {
-    constructor({
+    public constructor({
         rows,
         width,
+        // eslint-disable-next-line functional/immutable-data
         columnWidths = Array<number>(Math.max(...rows.map((row) => row.CellCount))).fill(100),
         margins,
         indent,

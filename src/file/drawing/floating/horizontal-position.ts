@@ -13,7 +13,7 @@ class HorizontalPositionAttributes extends XmlAttributeComponent<{
 }
 
 export class HorizontalPosition extends XmlComponent {
-    constructor(horizontalPosition: IHorizontalPositionOptions) {
+    public constructor(horizontalPosition: IHorizontalPositionOptions) {
         super("wp:positionH");
 
         this.root.push(

@@ -1,5 +1,5 @@
-import { File } from "@file/file";
 import { Stream } from "stream";
+import { File } from "@file/file";
 
 import { Compiler } from "./next-compiler";
 
@@ -58,7 +58,7 @@ export class Packer {
         return zipData;
     }
 
-    public static async toStream(file: File, prettify?: boolean | PrettifyType): Promise<Stream> {
+    public static toStream(file: File, prettify?: boolean | PrettifyType): Stream {
         const zip = this.compiler.compile(file, prettify);
         const zipData = zip.generateNodeStream({
             type: "nodebuffer",

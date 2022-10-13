@@ -4,10 +4,10 @@ import { IXmlableObject } from "./xmlable-object";
 export const EMPTY_OBJECT = Object.seal({});
 
 export abstract class XmlComponent extends BaseXmlComponent {
-    // tslint:disable-next-line:readonly-keyword no-any
+    // eslint-disable-next-line functional/prefer-readonly-type, @typescript-eslint/no-explicit-any
     protected root: (BaseXmlComponent | string | any)[];
 
-    constructor(rootKey: string) {
+    public constructor(rootKey: string) {
         super(rootKey);
         this.root = new Array<BaseXmlComponent | string>();
     }
@@ -46,5 +46,7 @@ export abstract class IgnoreIfEmptyXmlComponent extends XmlComponent {
         if (result && (typeof result[this.rootKey] !== "object" || Object.keys(result[this.rootKey]).length)) {
             return result;
         }
+
+        return undefined;
     }
 }

@@ -21,7 +21,7 @@ export class FormAttributes extends XmlAttributeComponent<{
 export class Form extends XmlComponent {
     private readonly extents: Extents;
 
-    constructor(options: IMediaDataTransformation) {
+    public constructor(options: IMediaDataTransformation) {
         super("a:xfrm");
 
         this.root.push(

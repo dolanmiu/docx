@@ -3,11 +3,11 @@ import { TableCell } from "../table-cell";
 import { ITableRowPropertiesOptions, TableRowProperties } from "./table-row-properties";
 
 export interface ITableRowOptions extends ITableRowPropertiesOptions {
-    readonly children: TableCell[];
+    readonly children: readonly TableCell[];
 }
 
 export class TableRow extends XmlComponent {
-    constructor(private readonly options: ITableRowOptions) {
+    public constructor(private readonly options: ITableRowOptions) {
         super("w:tr");
         this.root.push(new TableRowProperties(options));
 
@@ -20,7 +20,7 @@ export class TableRow extends XmlComponent {
         return this.options.children.length;
     }
 
-    public get cells(): TableCell[] {
+    public get cells(): readonly TableCell[] {
         return this.root.filter((xmlComponent) => xmlComponent instanceof TableCell);
     }
 

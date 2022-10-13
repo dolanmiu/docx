@@ -25,7 +25,7 @@ export interface IDrawingOptions {
 export class Drawing extends XmlComponent {
     private readonly inline: Inline;
 
-    constructor(imageData: IMediaData, drawingOptions: IDrawingOptions = {}) {
+    public constructor(imageData: IMediaData, drawingOptions: IDrawingOptions = {}) {
         super("w:drawing");
 
         if (!drawingOptions.floating) {

@@ -8,11 +8,11 @@
 
 -   Follow Prettier standards, and consider using the [Prettier VSCode](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode) plugin.
 
--   Follow the `TSLint` rules
+-   Follow the `ESLint` rules
 
 ## Always think about the user
 
-Put yourself in their position, and imagine how they would feel about your feature you wrote.
+Put yourself in their position, and imagine how they would feel about the feature you wrote.
 
 1. Is it easy to use?
 2. Has it been documented well?

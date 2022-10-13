@@ -18,7 +18,7 @@ export class AlignmentAttributes extends XmlAttributeComponent<{ readonly val: A
 }
 
 export class Alignment extends XmlComponent {
-    constructor(type: AlignmentType) {
+    public constructor(type: AlignmentType) {
         super("w:jc");
         this.root.push(new AlignmentAttributes({ val: type }));
     }
