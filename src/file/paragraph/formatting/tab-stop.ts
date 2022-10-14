@@ -8,14 +8,18 @@ export interface TabStopDefinition {
 }    
 
 export class TabStop extends XmlComponent {
-    public constructor(tabDefs: (TabStopDefinition[] | TabStopDefinition))  {
+    public constructor(tabDefs: (TabStopDefinition[] | TabStopDefinition | TabStopType), position?: number, leader?: LeaderType)  {
         super("w:tabs");
-        if (Array.isArray(tabDefs)) {
-            tabDefs.forEach((function(tabDef) {
-                this.root.push(new TabStopItem(tabDef));
-            }).bind(this));
+        if (typeof tabDefs === "string"){
+            this.root.push(new TabStopItem(tabDefs, position, leader));
         } else {
-            this.root.push(new TabStopItem(tabDefs));
+            if (Array.isArray(tabDefs)) {
+                tabDefs.forEach((function(tabDef) {
+                    this.root.push(new TabStopItem(tabDef));
+                }).bind(this));
+            } else {
+                this.root.push(new TabStopItem(tabDefs));
+            }
         }
     }
 }
@@ -53,14 +57,26 @@ export class TabAttributes extends XmlAttributeComponent<{
 }
 
 export class TabStopItem extends XmlComponent {
-    public constructor(tabDef: TabStopDefinition) {
+    public constructor(tabDef: (TabStopDefinition |  TabStopType), position?: number, leader?: LeaderType) {
         super("w:tab");
-        this.root.push(
-            new TabAttributes({
-                val: tabDef.type,
-                pos: tabDef.position,
-                leader: tabDef.leader,
-            })
-        );
+        if (typeof tabDef === "string") {
+            if (typeof position === "number")
+                this.root.push(
+                    new TabAttributes({
+                        val: tabDef,
+                        pos: position,
+                        leader,
+                    }),
+                );
+            else throw Error("Undefined position: " + position);
+        } else {
+            this.root.push(
+                new TabAttributes({
+                    val: tabDef.type,
+                    pos: tabDef.position,
+                    leader: tabDef.leader,
+                })
+            );
+        }
     }
 }
