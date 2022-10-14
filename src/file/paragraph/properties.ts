@@ -9,7 +9,7 @@ import { PageBreakBefore } from "./formatting/break";
 import { IIndentAttributesProperties, Indent } from "./formatting/indent";
 import { ISpacingProperties, Spacing } from "./formatting/spacing";
 import { HeadingLevel, Style } from "./formatting/style";
-import { LeaderType, TabStop, TabStopPosition, TabStopType } from "./formatting/tab-stop";
+import { LeaderType, TabStop, TabStopDefinition, TabStopPosition, TabStopType } from "./formatting/tab-stop";
 import { NumberProperties } from "./formatting/unordered-list";
 import { FrameProperties, IFrameOptions } from "./frame/frame-properties";
 import { OutlineLevel } from "./links";
@@ -132,19 +132,29 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
             this.push(new Shading(options.shading));
         }
 
+        /**
+         * FIX: Multitab support for Libre Writer
+         * Ensure there is only one w:tabs tag with multiple w:tab
+         */
+        let tabDefs: TabStopDefinition[] = [];
         if (options.rightTabStop) {
-            this.push(new TabStop(TabStopType.RIGHT, options.rightTabStop));
+            tabDefs.push({ type: TabStopType.RIGHT, position: options.rightTabStop});
         }
 
         if (options.tabStops) {
-            for (const tabStop of options.tabStops) {
-                this.push(new TabStop(tabStop.type, tabStop.position, tabStop.leader));
-            }
+            tabDefs = tabDefs.concat(options.tabStops);
         }
 
         if (options.leftTabStop) {
-            this.push(new TabStop(TabStopType.LEFT, options.leftTabStop));
+            tabDefs.push({ type: TabStopType.LEFT, position: options.leftTabStop });
         }
+
+        if (tabDefs.length) {
+            this.push(new TabStop(tabDefs));
+        }
+        /**
+         *  FIX - END 
+         */
 
         if (options.bidirectional !== undefined) {
             this.push(new OnOffElement("w:bidi", options.bidirectional));
