@@ -138,7 +138,7 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
          */
         let tabDefs: TabStopDefinition[] = [];
         if (options.rightTabStop) {
-            tabDefs.push({ type: TabStopType.RIGHT, position: options.rightTabStop});
+            tabDefs.push({ type: TabStopType.RIGHT, position: options.rightTabStop });
         }
 
         if (options.tabStops) {
@@ -153,7 +153,7 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
             this.push(new TabStop(tabDefs));
         }
         /**
-         *  FIX - END 
+         *  FIX - END
          */
 
         if (options.bidirectional !== undefined) {
