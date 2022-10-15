@@ -64,5 +64,39 @@ describe("MathIntegral", () => {
                 ],
             });
         });
+
+        it("should create a MathIntegral with correct root key without sub-script and super-scripts", () => {
+            const mathIntegral = new MathIntegral({
+                children: [new MathRun("1")],
+            });
+
+            const tree = new Formatter().format(mathIntegral);
+            expect(tree).to.deep.equal({
+                "m:nary": [
+                    {
+                        "m:naryPr": [
+                            {
+                                "m:limLoc": {
+                                    _attr: {
+                                        "m:val": "undOvr",
+                                    },
+                                },
+                            },
+                        ],
+                    },
+                    {
+                        "m:e": [
+                            {
+                                "m:r": [
+                                    {
+                                        "m:t": ["1"],
+                                    },
+                                ],
+                            },
+                        ],
+                    },
+                ],
+            });
+        });
     });
 });
