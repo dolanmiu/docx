@@ -2,26 +2,17 @@
 import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
 
 export interface TabStopDefinition {
-    type: TabStopType;
-    position: number | TabStopPosition;
-    leader?: LeaderType;
+    readonly type: TabStopType;
+    readonly position: number | TabStopPosition;
+    readonly leader?: LeaderType;
 }
 
 export class TabStop extends XmlComponent {
-    public constructor(tabDefs: TabStopDefinition[] | TabStopDefinition | TabStopType, position?: number, leader?: LeaderType) {
+    public constructor(tabDefinitions: readonly TabStopDefinition[]) {
         super("w:tabs");
-        if (typeof tabDefs === "string") {
-            this.root.push(new TabStopItem(tabDefs, position, leader));
-        } else {
-            if (Array.isArray(tabDefs)) {
-                tabDefs.forEach(
-                    function (tabDef) {
-                        this.root.push(new TabStopItem(tabDef));
-                    }.bind(this),
-                );
-            } else {
-                this.root.push(new TabStopItem(tabDefs));
-            }
+
+        for (const tabDefinition of tabDefinitions) {
+            this.root.push(new TabStopItem(tabDefinition));
         }
     }
 }
@@ -59,26 +50,14 @@ export class TabAttributes extends XmlAttributeComponent<{
 }
 
 export class TabStopItem extends XmlComponent {
-    public constructor(tabDef: TabStopDefinition | TabStopType, position?: number, leader?: LeaderType) {
+    public constructor({ type, position, leader }: TabStopDefinition) {
         super("w:tab");
-        if (typeof tabDef === "string") {
-            if (typeof position === "number")
-                this.root.push(
-                    new TabAttributes({
-                        val: tabDef,
-                        pos: position,
-                        leader,
-                    }),
-                );
-            else throw Error("Undefined position: " + position);
-        } else {
-            this.root.push(
-                new TabAttributes({
-                    val: tabDef.type,
-                    pos: tabDef.position,
-                    leader: tabDef.leader,
-                }),
-            );
-        }
+        this.root.push(
+            new TabAttributes({
+                val: type,
+                pos: position,
+                leader: leader,
+            }),
+        );
     }
 }

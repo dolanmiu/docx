@@ -9,7 +9,7 @@ import { PageBreakBefore } from "./formatting/break";
 import { IIndentAttributesProperties, Indent } from "./formatting/indent";
 import { ISpacingProperties, Spacing } from "./formatting/spacing";
 import { HeadingLevel, Style } from "./formatting/style";
-import { LeaderType, TabStop, TabStopDefinition, TabStopPosition, TabStopType } from "./formatting/tab-stop";
+import { TabStop, TabStopDefinition, TabStopType } from "./formatting/tab-stop";
 import { NumberProperties } from "./formatting/unordered-list";
 import { FrameProperties, IFrameOptions } from "./frame/frame-properties";
 import { OutlineLevel } from "./links";
@@ -41,11 +41,7 @@ export interface IParagraphPropertiesOptions extends IParagraphStylePropertiesOp
     readonly heading?: HeadingLevel;
     readonly bidirectional?: boolean;
     readonly pageBreakBefore?: boolean;
-    readonly tabStops?: readonly {
-        readonly position: number | TabStopPosition;
-        readonly type: TabStopType;
-        readonly leader?: LeaderType;
-    }[];
+    readonly tabStops?: readonly TabStopDefinition[];
     readonly style?: string;
     readonly bullet?: {
         readonly level: number;
@@ -136,21 +132,14 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
          * FIX: Multitab support for Libre Writer
          * Ensure there is only one w:tabs tag with multiple w:tab
          */
-        let tabDefs: TabStopDefinition[] = [];
-        if (options.rightTabStop) {
-            tabDefs.push({ type: TabStopType.RIGHT, position: options.rightTabStop });
-        }
+        const tabDefinitions: readonly TabStopDefinition[] = [
+            ...(options.rightTabStop ? [{ type: TabStopType.RIGHT, position: options.rightTabStop }] : []),
+            ...(options.tabStops ? options.tabStops : []),
+            ...(options.leftTabStop ? [{ type: TabStopType.LEFT, position: options.leftTabStop }] : []),
+        ];
 
-        if (options.tabStops) {
-            tabDefs = tabDefs.concat(options.tabStops);
-        }
-
-        if (options.leftTabStop) {
-            tabDefs.push({ type: TabStopType.LEFT, position: options.leftTabStop });
-        }
-
-        if (tabDefs.length) {
-            this.push(new TabStop(tabDefs));
+        if (tabDefinitions.length > 0) {
+            this.push(new TabStop(tabDefinitions));
         }
         /**
          *  FIX - END
