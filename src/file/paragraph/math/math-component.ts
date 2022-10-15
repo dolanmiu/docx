@@ -2,8 +2,7 @@ import { MathAngledBrackets, MathCurlyBrackets, MathRoundBrackets, MathSquareBra
 import { MathFraction } from "./fraction";
 import { MathFunction } from "./function";
 import { MathRun } from "./math-run";
-import { MathSum } from "./n-ary";
-import { MathIntegral } from "./n-ary";
+import { MathSum, MathIntegral } from "./n-ary";
 import { MathRadical } from "./radical";
 import { MathSubScript, MathSubSuperScript, MathSuperScript } from "./script";
 
