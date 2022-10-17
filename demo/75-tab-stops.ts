@@ -70,7 +70,7 @@ const doc = new Document({
                     tabStops: reciptTabStops,
                     children: [
                         new TextRun({
-                            text: "\t\tTotal: 200",
+                            text: "\t\t\tTotal: 200",
                             bold: true
                         })
                     ],
