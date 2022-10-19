@@ -86,3 +86,34 @@ topLevelP.setNumbering(concrete, 0);
 subP.setNumbering(concrete, 1);
 subSubP.setNumbering(concrete, 2);
 ```
+
+## Unindent numbering 
+
+Default:1.  test
+
+After:1.test
+
+Use default numbering have indent,If you want unindent numbering
+
+How to custom number see the demo:
+https://runkit.com/dolanmiu/docx-demo3
+
+```ts
+
+enum LevelSuffix {
+    NOTHING = "nothing",
+    SPACE = "space",
+    TAB = "tab"
+}
+
+// custom numbering 
+const levels=[
+{
+    level: 0,
+    format: "decimal",
+    text: "%1.",
+    alignment: AlignmentType.START,
+    suffix: LevelSuffix.NOTHING,    // Cancel intent
+}]
+    
+```
