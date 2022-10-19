@@ -9,7 +9,7 @@ import { PageBreakBefore } from "./formatting/break";
 import { IIndentAttributesProperties, Indent } from "./formatting/indent";
 import { ISpacingProperties, Spacing } from "./formatting/spacing";
 import { HeadingLevel, Style } from "./formatting/style";
-import { LeaderType, TabStop, TabStopPosition, TabStopType } from "./formatting/tab-stop";
+import { TabStop, TabStopDefinition, TabStopType } from "./formatting/tab-stop";
 import { NumberProperties } from "./formatting/unordered-list";
 import { FrameProperties, IFrameOptions } from "./frame/frame-properties";
 import { OutlineLevel } from "./links";
@@ -41,11 +41,7 @@ export interface IParagraphPropertiesOptions extends IParagraphStylePropertiesOp
     readonly heading?: HeadingLevel;
     readonly bidirectional?: boolean;
     readonly pageBreakBefore?: boolean;
-    readonly tabStops?: readonly {
-        readonly position: number | TabStopPosition;
-        readonly type: TabStopType;
-        readonly leader?: LeaderType;
-    }[];
+    readonly tabStops?: readonly TabStopDefinition[];
     readonly style?: string;
     readonly bullet?: {
         readonly level: number;
@@ -132,19 +128,22 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
             this.push(new Shading(options.shading));
         }
 
-        if (options.rightTabStop) {
-            this.push(new TabStop(TabStopType.RIGHT, options.rightTabStop));
-        }
+        /**
+         * FIX: Multitab support for Libre Writer
+         * Ensure there is only one w:tabs tag with multiple w:tab
+         */
+        const tabDefinitions: readonly TabStopDefinition[] = [
+            ...(options.rightTabStop ? [{ type: TabStopType.RIGHT, position: options.rightTabStop }] : []),
+            ...(options.tabStops ? options.tabStops : []),
+            ...(options.leftTabStop ? [{ type: TabStopType.LEFT, position: options.leftTabStop }] : []),
+        ];
 
-        if (options.tabStops) {
-            for (const tabStop of options.tabStops) {
-                this.push(new TabStop(tabStop.type, tabStop.position, tabStop.leader));
-            }
+        if (tabDefinitions.length > 0) {
+            this.push(new TabStop(tabDefinitions));
         }
-
-        if (options.leftTabStop) {
-            this.push(new TabStop(TabStopType.LEFT, options.leftTabStop));
-        }
+        /**
+         *  FIX - END
+         */
 
         if (options.bidirectional !== undefined) {
             this.push(new OnOffElement("w:bidi", options.bidirectional));

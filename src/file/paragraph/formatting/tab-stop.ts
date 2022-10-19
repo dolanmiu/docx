@@ -1,10 +1,19 @@
 // http://officeopenxml.com/WPtab.php
 import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
 
+export interface TabStopDefinition {
+    readonly type: TabStopType;
+    readonly position: number | TabStopPosition;
+    readonly leader?: LeaderType;
+}
+
 export class TabStop extends XmlComponent {
-    public constructor(type: TabStopType, position: number, leader?: LeaderType) {
+    public constructor(tabDefinitions: readonly TabStopDefinition[]) {
         super("w:tabs");
-        this.root.push(new TabStopItem(type, position, leader));
+
+        for (const tabDefinition of tabDefinitions) {
+            this.root.push(new TabStopItem(tabDefinition));
+        }
     }
 }
 
@@ -41,13 +50,13 @@ export class TabAttributes extends XmlAttributeComponent<{
 }
 
 export class TabStopItem extends XmlComponent {
-    public constructor(value: TabStopType, position: string | number, leader?: LeaderType) {
+    public constructor({ type, position, leader }: TabStopDefinition) {
         super("w:tab");
         this.root.push(
             new TabAttributes({
-                val: value,
+                val: type,
                 pos: position,
-                leader,
+                leader: leader,
             }),
         );
     }
