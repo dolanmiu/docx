@@ -4,19 +4,18 @@ import * as fs from "fs";
 import { Document, HeadingLevel, Packer, Paragraph, TabStopPosition, TabStopType, TextRun } from "../build";
 
 const columnWidth = TabStopPosition.MAX / 4;
-const reciptTabStops = [
-    // no need to define first left tab column
-    // the right aligned tab column position should point to the end of column
-    // i.e. in this case 
-    // (end position of 1st) + (end position of current)
-    // columnWidth + columnWidth = columnWidth * 2
-    
-    {  type: TabStopType.RIGHT, position: columnWidth * 2 },
-    {  type: TabStopType.RIGHT, position: columnWidth * 3 },
-    {  type: TabStopType.RIGHT, position: TabStopPosition.MAX } 
-], twoTabStops = [
-    {  type: TabStopType.RIGHT, position: TabStopPosition.MAX }
-];
+const receiptTabStops = [
+        // no need to define first left tab column
+        // the right aligned tab column position should point to the end of column
+        // i.e. in this case
+        // (end position of 1st) + (end position of current)
+        // columnWidth + columnWidth = columnWidth * 2
+
+        { type: TabStopType.RIGHT, position: columnWidth * 2 },
+        { type: TabStopType.RIGHT, position: columnWidth * 3 },
+        { type: TabStopType.RIGHT, position: TabStopPosition.MAX },
+    ],
+    twoTabStops = [{ type: TabStopType.RIGHT, position: TabStopPosition.MAX }];
 
 const doc = new Document({
     sections: [
@@ -25,62 +24,57 @@ const doc = new Document({
             children: [
                 new Paragraph({
                     heading: HeadingLevel.HEADING_1,
-                    children: [ new TextRun("Recipt 001")],
+                    children: [new TextRun("Receipt 001")],
                 }),
                 new Paragraph({
                     tabStops: twoTabStops,
-                    children: [ 
-                        new TextRun({ 
+                    children: [
+                        new TextRun({
                             text: "To Bob.\tBy Alice.",
-                            bold: true
-                        })
+                            bold: true,
+                        }),
                     ],
-                    
                 }),
                 new Paragraph({
                     tabStops: twoTabStops,
-                    children: [ 
-                        new TextRun("Foo Inc\tBar Inc")
-                    ],
+                    children: [new TextRun("Foo Inc\tBar Inc")],
                 }),
-                new Paragraph({text: ""}),
+                new Paragraph({ text: "" }),
                 new Paragraph({
-                    tabStops: reciptTabStops,
-                    
+                    tabStops: receiptTabStops,
+
                     children: [
                         new TextRun({
                             text: "Item\tPrice\tQuantity\tSub-total",
-                            bold: true
-                        })
+                            bold: true,
+                        }),
                     ],
                 }),
                 new Paragraph({
-                    tabStops: reciptTabStops,
+                    tabStops: receiptTabStops,
                     text: "Item 3\t10\t5\t50",
                 }),
                 new Paragraph({
-                    tabStops: reciptTabStops,
+                    tabStops: receiptTabStops,
                     text: "Item 3\t10\t5\t50",
                 }),
                 new Paragraph({
-                    tabStops: reciptTabStops,
-                    text: "Item 3\t10\t5\t50"
+                    tabStops: receiptTabStops,
+                    text: "Item 3\t10\t5\t50",
                 }),
                 new Paragraph({
-                    tabStops: reciptTabStops,
+                    tabStops: receiptTabStops,
                     children: [
                         new TextRun({
                             text: "\t\t\tTotal: 200",
-                            bold: true
-                        })
+                            bold: true,
+                        }),
                     ],
-                })
+                }),
             ],
         },
     ],
 });
 
-
 const stream = Packer.toStream(doc);
 stream.pipe(fs.createWriteStream("My Document.docx"));
-
