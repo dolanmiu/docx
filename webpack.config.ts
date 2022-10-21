@@ -12,7 +12,7 @@ const configuration = {
         filename: "index.js",
         libraryTarget: "umd",
         library: "docx",
-        globalObject: "this",
+        globalObject: "globalThis",
     },
 
     resolve: {
