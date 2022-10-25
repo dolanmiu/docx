@@ -95,6 +95,20 @@ const doc = new Document({
                 },
             },
         ],
+        characterStyles: [
+            {
+                id: "strikeUnderlineCharacter",
+                name: "Strike Underline",
+                basedOn: "Normal",
+                quickFormat: true,
+                run: {
+                    strike: true,
+                    underline: {
+                        type: UnderlineType.SINGLE,
+                    },
+                },
+            },
+        ],
     },
     numbering: {
         config: [
@@ -199,6 +213,20 @@ const doc = new Document({
                     children: [
                         new TextRun({
                             text: "Underline and Strike",
+                        }),
+                    ],
+                }),
+                new Paragraph({
+                    children: [
+                        new TextRun({
+                            text: "Hello World ",
+                        }),
+                        new TextRun({
+                            style: "strikeUnderlineCharacter",
+                            text: "Underline and Strike",
+                        }),
+                        new TextRun({
+                            text: " Another Hello World",
                         }),
                     ],
                 }),
