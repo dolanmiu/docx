@@ -75,7 +75,7 @@
     "@typescript-eslint/eslint-plugin": "^5.36.1",
     "@typescript-eslint/parser": "^5.36.1",
     "buffer": "^6.0.3",
-    "chai": "^3.5.0",
+    "chai": "^4.3.6",
     "cspell": "^6.2.2",
     "docsify-cli": "^4.3.0",
     "eslint": "^8.23.0",

@@ -56,19 +56,35 @@ describe("ConcreteNumbering", () => {
                 },
             });
             const tree = new Formatter().format(concreteNumbering);
-            expect(tree["w:num"]).to.include({
-                "w:lvlOverride": [
+            expect(tree).to.deep.equal({
+                "w:num": [
                     {
                         _attr: {
-                            "w:ilvl": 1,
+                            "w:numId": 0,
                         },
                     },
                     {
-                        "w:startOverride": {
+                        "w:abstractNumId": {
                             _attr: {
-                                "w:val": 9,
+                                "w:val": 1,
                             },
                         },
+                    },
+                    {
+                        "w:lvlOverride": [
+                            {
+                                _attr: {
+                                    "w:ilvl": 1,
+                                },
+                            },
+                            {
+                                "w:startOverride": {
+                                    _attr: {
+                                        "w:val": 9,
+                                    },
+                                },
+                            },
+                        ],
                     },
                 ],
             });
