@@ -3,7 +3,6 @@ import { expect } from "chai";
 import { Formatter } from "@export/formatter";
 import { BorderStyle } from "@file/border";
 import { ShadingType } from "@file/shading";
-import { SpaceType } from "@file/space-type";
 
 import { EmphasisMarkType } from "./emphasis-mark";
 import { PageNumber, Run } from "./run";
@@ -517,22 +516,6 @@ describe("Run", () => {
                         ],
                     },
                 ],
-            });
-        });
-    });
-
-    describe("#space", () => {
-        it("should correctly set the border", () => {
-            const run = new Run({
-                space: SpaceType.PRESERVE,
-            });
-            const tree = new Formatter().format(run);
-            expect(tree).to.deep.equal({
-                "w:r": {
-                    _attr: {
-                        "xml:space": "preserve",
-                    },
-                },
             });
         });
     });

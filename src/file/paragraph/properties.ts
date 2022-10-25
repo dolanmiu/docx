@@ -11,6 +11,7 @@ import { ISpacingProperties, Spacing } from "./formatting/spacing";
 import { HeadingLevel, Style } from "./formatting/style";
 import { TabStop, TabStopDefinition, TabStopType } from "./formatting/tab-stop";
 import { NumberProperties } from "./formatting/unordered-list";
+import { WordWrap } from "./formatting/word-wrap";
 import { FrameProperties, IFrameOptions } from "./frame/frame-properties";
 import { OutlineLevel } from "./links";
 
@@ -50,6 +51,7 @@ export interface IParagraphPropertiesOptions extends IParagraphStylePropertiesOp
     readonly widowControl?: boolean;
     readonly frame?: IFrameOptions;
     readonly suppressLineNumbers?: boolean;
+    readonly wordWrap?: boolean;
 }
 
 export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
@@ -126,6 +128,10 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
 
         if (options.shading) {
             this.push(new Shading(options.shading));
+        }
+
+        if (options.wordWrap) {
+            this.push(new WordWrap());
         }
 
         /**
