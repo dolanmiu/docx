@@ -182,6 +182,17 @@ const doc = new Document({
                         }),
                     ],
                 }),
+                new Paragraph({
+                    children: [
+                        new TextRun({
+                            strike: true,
+                            underline: {
+                                type: UnderlineType.SINGLE,
+                            },
+                            text: "Underline and Strike",
+                        }),
+                    ],
+                }),
             ],
         },
     ],
