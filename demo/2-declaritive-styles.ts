@@ -82,6 +82,18 @@ const doc = new Document({
                     spacing: { line: 276, before: 20 * 72 * 0.1, after: 20 * 72 * 0.05 },
                 },
             },
+            {
+                id: "strikeUnderline",
+                name: "Strike Underline",
+                basedOn: "Normal",
+                quickFormat: true,
+                run: {
+                    strike: true,
+                    underline: {
+                        type: UnderlineType.SINGLE,
+                    },
+                },
+            },
         ],
     },
     numbering: {
@@ -183,12 +195,9 @@ const doc = new Document({
                     ],
                 }),
                 new Paragraph({
+                    style: "strikeUnderline",
                     children: [
                         new TextRun({
-                            strike: true,
-                            underline: {
-                                type: UnderlineType.SINGLE,
-                            },
                             text: "Underline and Strike",
                         }),
                     ],
