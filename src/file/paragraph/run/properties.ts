@@ -1,6 +1,5 @@
 import { BorderElement, IBorderOptions } from "@file/border";
 import { IShadingAttributesProperties, Shading } from "@file/shading";
-import { SpaceType } from "@file/space-type";
 import { ChangeAttributes, IChangedAttributesProperties } from "@file/track-revision/track-revision";
 import { HpsMeasureElement, IgnoreIfEmptyXmlComponent, OnOffElement, StringValueElement, XmlComponent } from "@file/xml-components";
 
@@ -46,7 +45,6 @@ export interface IRunStylePropertiesOptions {
     readonly imprint?: boolean;
     readonly revision?: IRunPropertiesChangeOptions;
     readonly border?: IBorderOptions;
-    readonly space?: SpaceType;
 }
 
 export interface IRunPropertiesOptions extends IRunStylePropertiesOptions {

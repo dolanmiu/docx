@@ -123,5 +123,24 @@ describe("ParagraphProperties", () => {
                 ],
             });
         });
+
+        it("should create with the wordWrap property", () => {
+            const properties = new ParagraphProperties({
+                wordWrap: true,
+            });
+            const tree = new Formatter().format(properties);
+
+            expect(tree).to.deep.equal({
+                "w:pPr": [
+                    {
+                        "w:wordWrap": {
+                            _attr: {
+                                "w:val": 0,
+                            },
+                        },
+                    },
+                ],
+            });
+        });
     });
 });
