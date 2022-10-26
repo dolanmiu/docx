@@ -25,6 +25,7 @@ describe("Paragraph", () => {
 
     after(() => {
         (convenienceFunctions.uniqueId as SinonStub).restore();
+        (convenienceFunctions.uniqueNumericId as SinonStub).restore();
     });
 
     describe("#constructor()", () => {

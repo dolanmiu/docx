@@ -1,6 +1,8 @@
 import { IMediaData } from "@file/media";
 import { XmlComponent } from "@file/xml-components";
+
 import { Anchor } from "./anchor";
+import { DocPropertiesOptions } from "./doc-properties/doc-properties";
 import { IFloating } from "./floating";
 import { Inline } from "./inline";
 
@@ -13,6 +15,7 @@ export interface IDistance {
 
 export interface IDrawingOptions {
     readonly floating?: IFloating;
+    readonly docProperties?: DocPropertiesOptions;
 }
 
 // <xsd:complexType name="CT_Drawing">
@@ -29,7 +32,11 @@ export class Drawing extends XmlComponent {
         super("w:drawing");
 
         if (!drawingOptions.floating) {
-            this.inline = new Inline(imageData, imageData.transformation);
+            this.inline = new Inline({
+                mediaData: imageData,
+                transform: imageData.transformation,
+                docProperties: drawingOptions.docProperties,
+            });
             this.root.push(this.inline);
         } else {
             this.root.push(new Anchor(imageData, imageData.transformation, drawingOptions));
