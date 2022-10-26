@@ -9,9 +9,10 @@ import { Begin, End, Separate } from "./field";
 import { NumberOfPages, NumberOfPagesSection, Page } from "./page-number";
 import { IRunPropertiesOptions, RunProperties } from "./properties";
 import { Text } from "./run-components/text";
+import { Tab } from "./tab";
 
 export interface IRunOptions extends IRunPropertiesOptions {
-    readonly children?: readonly (Begin | FieldInstruction | Separate | End | PageNumber | FootnoteReferenceRun | string)[];
+    readonly children?: readonly (Begin | FieldInstruction | Separate | End | PageNumber | FootnoteReferenceRun | Tab | string)[];
     readonly break?: number;
     readonly text?: string;
 }
