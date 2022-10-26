@@ -1,6 +1,8 @@
 import { expect } from "chai";
+import { SinonStub, stub } from "sinon";
 
 import { Formatter } from "@export/formatter";
+import * as convenienceFunctions from "@util/convenience-functions";
 
 import { Drawing, IDrawingOptions } from "./drawing";
 
@@ -26,6 +28,14 @@ const createDrawing = (drawingOptions?: IDrawingOptions): Drawing =>
     );
 
 describe("Drawing", () => {
+    before(() => {
+        stub(convenienceFunctions, "uniqueNumericId").callsFake(() => 0);
+    });
+
+    after(() => {
+        (convenienceFunctions.uniqueNumericId as SinonStub).restore();
+    });
+
     let currentBreak: Drawing;
 
     describe("#constructor()", () => {
@@ -68,6 +78,7 @@ describe("Drawing", () => {
                                         descr: "",
                                         id: 0,
                                         name: "",
+                                        title: "",
                                     },
                                 },
                             },
@@ -298,6 +309,7 @@ describe("Drawing", () => {
                                         descr: "",
                                         id: 0,
                                         name: "",
+                                        title: "",
                                     },
                                 },
                             },

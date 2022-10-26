@@ -11,10 +11,12 @@ import { ImageRun } from "./image-run";
 describe("ImageRun", () => {
     before(() => {
         stub(convenienceFunctions, "uniqueId").callsFake(() => "test-unique-id");
+        stub(convenienceFunctions, "uniqueNumericId").callsFake(() => 0);
     });
 
     after(() => {
         (convenienceFunctions.uniqueId as SinonStub).restore();
+        (convenienceFunctions.uniqueNumericId as SinonStub).restore();
     });
 
     describe("#constructor()", () => {
@@ -125,6 +127,7 @@ describe("ImageRun", () => {
                                                 descr: "",
                                                 id: 0,
                                                 name: "",
+                                                title: "",
                                             },
                                         },
                                     },
@@ -375,6 +378,7 @@ describe("ImageRun", () => {
                                                 descr: "",
                                                 id: 0,
                                                 name: "",
+                                                title: "",
                                             },
                                         },
                                     },
@@ -629,6 +633,7 @@ describe("ImageRun", () => {
                                                 descr: "",
                                                 id: 0,
                                                 name: "",
+                                                title: "",
                                             },
                                         },
                                     },
@@ -886,6 +891,7 @@ describe("ImageRun", () => {
                                                 descr: "",
                                                 id: 0,
                                                 name: "",
+                                                title: "",
                                             },
                                         },
                                     },

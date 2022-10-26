@@ -25,6 +25,11 @@ const doc = new Document({
                                 width: 100,
                                 height: 100,
                             },
+                            altText: {
+                                title: "This is an ultimate title",
+                                description: "This is an ultimate image",
+                                name: "My Ultimate Image",
+                            },
                         }),
                     ],
                 }),
