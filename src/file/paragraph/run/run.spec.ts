@@ -519,4 +519,42 @@ describe("Run", () => {
             });
         });
     });
+
+    describe("#vanish and #specVanish", () => {
+        it("should correctly set vanish", () => {
+            const run = new Run({
+                vanish: true,
+            });
+            const tree = new Formatter().format(run);
+            expect(tree).to.deep.equal({
+                "w:r": [
+                    {
+                        "w:rPr": [
+                            {
+                                "w:vanish": {},
+                            },
+                        ],
+                    },
+                ],
+            });
+        });
+
+        it("should correctly set specVanish", () => {
+            const run = new Run({
+                specVanish: true,
+            });
+            const tree = new Formatter().format(run);
+            expect(tree).to.deep.equal({
+                "w:r": [
+                    {
+                        "w:rPr": [
+                            {
+                                "w:specVanish": {},
+                            },
+                        ],
+                    },
+                ],
+            });
+        });
+    });
 });

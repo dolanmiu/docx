@@ -45,6 +45,8 @@ export interface IRunStylePropertiesOptions {
     readonly imprint?: boolean;
     readonly revision?: IRunPropertiesChangeOptions;
     readonly border?: IBorderOptions;
+    readonly vanish?: boolean;
+    readonly specVanish?: boolean;
 }
 
 export interface IRunPropertiesOptions extends IRunStylePropertiesOptions {
@@ -214,6 +216,17 @@ export class RunProperties extends IgnoreIfEmptyXmlComponent {
 
         if (options.border) {
             this.push(new BorderElement("w:bdr", options.border));
+        }
+
+        if (options.vanish) {
+            // https://c-rex.net/projects/samples/ooxml/e1/Part4/OOXML_P4_DOCX_vanish_topic_ID0E6W3O.html
+            // http://www.datypic.com/sc/ooxml/e-w_vanish-1.html
+            this.push(new OnOffElement("w:vanish", options.vanish));
+        }
+
+        if (options.specVanish) {
+            // https://c-rex.net/projects/samples/ooxml/e1/Part4/OOXML_P4_DOCX_specVanish_topic_ID0EIE1O.html
+            this.push(new OnOffElement("w:specVanish", options.vanish));
         }
     }
 
