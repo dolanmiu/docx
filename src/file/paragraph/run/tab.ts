@@ -1,3 +1,4 @@
+// https://c-rex.net/projects/samples/ooxml/e1/Part4/OOXML_P4_DOCX_tab_topic_ID0EM6AO.html
 import { XmlComponent } from "@file/xml-components";
 
 // <xsd:group name="EG_RunInnerContent">

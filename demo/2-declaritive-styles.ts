@@ -195,6 +195,14 @@ const doc = new Document({
                         new TextRun({
                             text: "and back to normal.",
                         }),
+                        new TextRun({
+                            text: "This text will be invisible!",
+                            vanish: true,
+                        }),
+                        new TextRun({
+                            text: "This text will be VERY invisible! Word processors cannot override this!",
+                            specVanish: true,
+                        }),
                     ],
                 }),
                 new Paragraph({
