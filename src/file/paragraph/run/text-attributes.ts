@@ -1,4 +1,4 @@
-import { SpaceType } from "@file/space-type";
+import { SpaceType } from "@file/shared";
 import { XmlAttributeComponent } from "@file/xml-components";
 
 export class TextAttributes extends XmlAttributeComponent<{ readonly space: SpaceType }> {
