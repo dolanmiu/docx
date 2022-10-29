@@ -1,7 +1,7 @@
 // Export to base64 string - Useful in a browser environment.
 // Import from 'docx' rather than '../build' if you install from npm
 import * as fs from "fs";
-import { Document, Packer, Paragraph, TextRun } from "../build";
+import { Document, Packer, Paragraph, Tab, TextRun } from "../build";
 
 const doc = new Document({
     sections: [
@@ -15,7 +15,7 @@ const doc = new Document({
                             bold: true,
                         }),
                         new TextRun({
-                            text: "\tBar",
+                            children: [new Tab(), "Bar"],
                             bold: true,
                         }),
                     ],

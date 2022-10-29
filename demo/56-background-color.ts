@@ -1,7 +1,7 @@
 // Change background colour of whole document
 // Import from 'docx' rather than '../build' if you install from npm
 import * as fs from "fs";
-import { Document, Packer, Paragraph, TextRun } from "../build";
+import { Document, Packer, Paragraph, Tab, TextRun } from "../build";
 
 const doc = new Document({
     background: {
@@ -19,7 +19,7 @@ const doc = new Document({
                             bold: true,
                         }),
                         new TextRun({
-                            text: "\tGithub is the best",
+                            children: [new Tab(), "Github is the best"],
                             bold: true,
                         }),
                     ],

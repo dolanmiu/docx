@@ -12,6 +12,7 @@ import {
     PageNumber,
     Paragraph,
     ShadingType,
+    Tab,
     TextRun,
 } from "../build";
 
@@ -111,7 +112,7 @@ const doc = new Document({
                         }),
                         new TextRun({
                             bold: true,
-                            children: ["\tuse Inserted and Deleted TextRuns.", new FootnoteReferenceRun(1)],
+                            children: [new Tab(), "use Inserted and Deleted TextRuns.", new FootnoteReferenceRun(1)],
                         }),
                         new TextRun({
                             bold: true,

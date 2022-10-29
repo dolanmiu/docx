@@ -8,6 +8,7 @@ import {
     HorizontalPositionAlign,
     Packer,
     Paragraph,
+    Tab,
     TextRun,
     VerticalPositionAlign,
 } from "../build";
@@ -67,7 +68,7 @@ const doc = new Document({
                             bold: true,
                         }),
                         new TextRun({
-                            text: "\tGithub is the best",
+                            children: [new Tab(), "Github is the best"],
                             bold: true,
                         }),
                     ],
