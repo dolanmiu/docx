@@ -1,0 +1,87 @@
+// Add compatibility options
+// Import from 'docx' rather than '../build' if you install from npm
+import * as fs from "fs";
+import { Document, Packer, Paragraph, TextRun } from "../build";
+
+const doc = new Document({
+    compatibility: {
+        useSingleBorderforContiguousCells: true,
+        wordPerfectJustification: true,
+        noTabStopForHangingIndent: true,
+        noLeading: true,
+        spaceForUnderline: true,
+        noColumnBalance: true,
+        balanceSingleByteDoubleByteWidth: true,
+        noExtraLineSpacing: true,
+        doNotLeaveBackslashAlone: true,
+        underlineTrailingSpaces: true,
+        doNotExpandShiftReturn: true,
+        spacingInWholePoints: true,
+        lineWrapLikeWord6: true,
+        printBodyTextBeforeHeader: true,
+        printColorsBlack: true,
+        spaceWidth: true,
+        showBreaksInFrames: true,
+        subFontBySize: true,
+        suppressBottomSpacing: true,
+        suppressTopSpacing: true,
+        suppressSpacingAtTopOfPage: true,
+        suppressTopSpacingWP: true,
+        suppressSpBfAfterPgBrk: true,
+        swapBordersFacingPages: true,
+        convertMailMergeEsc: true,
+        truncateFontHeightsLikeWP6: true,
+        macWordSmallCaps: true,
+        usePrinterMetrics: true,
+        doNotSuppressParagraphBorders: true,
+        wrapTrailSpaces: true,
+        footnoteLayoutLikeWW8: true,
+        shapeLayoutLikeWW8: true,
+        alignTablesRowByRow: true,
+        forgetLastTabAlignment: true,
+        adjustLineHeightInTable: true,
+        autoSpaceLikeWord95: true,
+        noSpaceRaiseLower: true,
+        doNotUseHTMLParagraphAutoSpacing: true,
+        layoutRawTableWidth: true,
+        layoutTableRowsApart: true,
+        useWord97LineBreakRules: true,
+        doNotBreakWrappedTables: true,
+        doNotSnapToGridInCell: true,
+        selectFieldWithFirstOrLastCharacter: true,
+        applyBreakingRules: true,
+        doNotWrapTextWithPunctuation: true,
+        doNotUseEastAsianBreakRules: true,
+        useWord2002TableStyleRules: true,
+        growAutofit: true,
+        useFELayout: true,
+        useNormalStyleForList: true,
+        doNotUseIndentAsNumberingTabStop: true,
+        useAlternateEastAsianLineBreakRules: true,
+        allowSpaceOfSameStyleInTable: true,
+        doNotSuppressIndentation: true,
+        doNotAutofitConstrainedTables: true,
+        autofitToFirstFixedWidthCell: true,
+        underlineTabInNumberingList: true,
+        displayHangulFixedWidth: true,
+        splitPgBreakAndParaMark: true,
+        doNotVerticallyAlignCellWithSp: true,
+        doNotBreakConstrainedForcedTable: true,
+        ignoreVerticalAlignmentInTextboxes: true,
+        useAnsiKerningPairs: true,
+        cachedColumnBalance: true,
+    },
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [new TextRun("Hello World")],
+                }),
+            ],
+        },
+    ],
+});
+
+Packer.toBuffer(doc).then((buffer) => {
+    fs.writeFileSync("My Document.docx", buffer);
+});

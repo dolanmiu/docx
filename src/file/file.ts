@@ -75,7 +75,8 @@ export class File {
         this.contentTypes = new ContentTypes();
         this.documentWrapper = new DocumentWrapper({ background: options.background || {} });
         this.settings = new Settings({
-            compatabilityModeVersion: options.compatabilityModeVersion,
+            compatibilityModeVersion: options.compatabilityModeVersion,
+            compatibility: options.compatibility,
             evenAndOddHeaders: options.evenAndOddHeaderAndFooters ? true : false,
             trackRevisions: options.features?.trackRevisions,
             updateFields: options.features?.updateFields,
