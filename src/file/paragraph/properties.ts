@@ -52,6 +52,7 @@ export interface IParagraphPropertiesOptions extends IParagraphStylePropertiesOp
     readonly frame?: IFrameOptions;
     readonly suppressLineNumbers?: boolean;
     readonly wordWrap?: boolean;
+    readonly scale?: number;
 }
 
 export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {

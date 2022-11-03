@@ -1,7 +1,5 @@
-import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
+import { StringEnumValueElement, XmlAttributeComponent, XmlComponent } from "@file/xml-components";
 import { signedTwipsMeasureValue, twipsMeasureValue } from "@util/values";
-
-import { OverlapType, TableOverlap } from "./table-overlap";
 
 export enum TableAnchorType {
     MARGIN = "margin",
@@ -24,6 +22,17 @@ export enum RelativeVerticalPosition {
     OUTSIDE = "outside",
     INLINE = "inline",
     TOP = "top",
+}
+
+// <xsd:simpleType name="ST_TblOverlap">
+//     <xsd:restriction base="xsd:string">
+//         <xsd:enumeration value="never"/>
+//         <xsd:enumeration value="overlap"/>
+//     </xsd:restriction>
+// </xsd:simpleType>
+export enum OverlapType {
+    NEVER = "never",
+    OVERLAP = "overlap",
 }
 
 export interface ITableFloatOptions {
@@ -171,7 +180,10 @@ export class TableFloatProperties extends XmlComponent {
         );
 
         if (options.overlap) {
-            this.root.push(new TableOverlap(options.overlap));
+            // <xsd:complexType name="CT_TblOverlap">
+            //     <xsd:attribute name="val" type="ST_TblOverlap" use="required"/>
+            // </xsd:complexType>
+            this.root.push(new StringEnumValueElement<OverlapType>("w:tblOverlap", options.overlap));
         }
     }
 }

@@ -236,6 +236,18 @@ const doc = new Document({
                         new TextRun({
                             text: " Another Hello World",
                         }),
+                        new TextRun({
+                            scale: 50,
+                            text: " Scaled text",
+                        }),
+                    ],
+                }),
+                new Paragraph({
+                    scale: 200,
+                    children: [
+                        new TextRun({
+                            text: "Scaled paragraph",
+                        }),
                     ],
                 }),
             ],

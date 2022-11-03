@@ -1,7 +1,14 @@
 import { BorderElement, IBorderOptions } from "@file/border";
 import { IShadingAttributesProperties, Shading } from "@file/shading";
 import { ChangeAttributes, IChangedAttributesProperties } from "@file/track-revision/track-revision";
-import { HpsMeasureElement, IgnoreIfEmptyXmlComponent, OnOffElement, StringValueElement, XmlComponent } from "@file/xml-components";
+import {
+    HpsMeasureElement,
+    IgnoreIfEmptyXmlComponent,
+    NumberValueElement,
+    OnOffElement,
+    StringValueElement,
+    XmlComponent,
+} from "@file/xml-components";
 
 import { EmphasisMark, EmphasisMarkType } from "./emphasis-mark";
 import { CharacterSpacing, Color, Highlight, HighlightComplexScript } from "./formatting";
@@ -47,6 +54,7 @@ export interface IRunStylePropertiesOptions {
     readonly border?: IBorderOptions;
     readonly vanish?: boolean;
     readonly specVanish?: boolean;
+    readonly scale?: number;
 }
 
 export interface IRunPropertiesOptions extends IRunStylePropertiesOptions {
@@ -227,6 +235,10 @@ export class RunProperties extends IgnoreIfEmptyXmlComponent {
         if (options.specVanish) {
             // https://c-rex.net/projects/samples/ooxml/e1/Part4/OOXML_P4_DOCX_specVanish_topic_ID0EIE1O.html
             this.push(new OnOffElement("w:specVanish", options.vanish));
+        }
+
+        if (options.scale !== undefined) {
+            this.push(new NumberValueElement("w:w", options.scale));
         }
     }
 
