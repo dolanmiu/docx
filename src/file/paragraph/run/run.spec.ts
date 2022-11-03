@@ -556,5 +556,29 @@ describe("Run", () => {
                 ],
             });
         });
+
+        describe("#scale", () => {
+            it("should correctly set the border", () => {
+                const run = new Run({
+                    scale: 200,
+                });
+                const tree = new Formatter().format(run);
+                expect(tree).to.deep.equal({
+                    "w:r": [
+                        {
+                            "w:rPr": [
+                                {
+                                    "w:w": {
+                                        _attr: {
+                                            "w:val": 200,
+                                        },
+                                    },
+                                },
+                            ],
+                        },
+                    ],
+                });
+            });
+        });
     });
 });

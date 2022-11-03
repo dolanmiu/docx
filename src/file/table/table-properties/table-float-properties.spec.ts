@@ -2,8 +2,13 @@ import { expect } from "chai";
 
 import { Formatter } from "@export/formatter";
 
-import { RelativeHorizontalPosition, RelativeVerticalPosition, TableAnchorType, TableFloatProperties } from "./table-float-properties";
-import { OverlapType } from "./table-overlap";
+import {
+    OverlapType,
+    RelativeHorizontalPosition,
+    RelativeVerticalPosition,
+    TableAnchorType,
+    TableFloatProperties,
+} from "./table-float-properties";
 
 describe("Table Float Properties", () => {
     describe("#constructor", () => {

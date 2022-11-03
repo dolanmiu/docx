@@ -53,6 +53,13 @@ export class NumberValueElement extends XmlComponent {
     }
 }
 
+export class StringEnumValueElement<T extends string> extends XmlComponent {
+    public constructor(name: string, val: T) {
+        super(name);
+        this.root.push(new Attributes({ val }));
+    }
+}
+
 // Simple nodes containing text.
 //
 // new StringContainer("hello", "world")
