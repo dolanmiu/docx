@@ -76,7 +76,7 @@ This is the list of options for a paragraph. A detailed explanation is below:
 | indent                         | `IIndentAttributesProperties`                                                                                       | Optional   |                                                                                                            |
 | keepLines                      | `boolean`                                                                                                           | Optional   |                                                                                                            |
 | keepNext                       | `boolean`                                                                                                           | Optional   |                                                                                                            |
-| children                       | `(TextRun or ImageRun or Hyperlink)[]`                                                                            | Optional   |                                                                                                            |
+| children                       | `(TextRun or ImageRun or Hyperlink)[]`                                                                              | Optional   |                                                                                                            |
 | style                          | `string`                                                                                                            | Optional   |                                                                                                            |
 | [tabStop](usage/tab-stops)     | `{ left?: ITabStopOptions; right?: ITabStopOptions; maxRight?: { leader: LeaderType; }; center?: ITabStopOptions }` | Optional   |                                                                                                            |
 | [bullet](usage/bullet-points)  | `{ level: number }`                                                                                                 | Optional   |                                                                                                            |
@@ -180,12 +180,14 @@ Adding spacing between paragraphs
 
 ### ISpacingProperties
 
-| Property | Type           | Notes    | Possible Values               |
-| -------- | -------------- | -------- | ----------------------------- |
-| after    | `number`       | Optional |                               |
-| before   | `number`       | Optional |                               |
-| line     | `number`       | Optional |                               |
-| lineRule | `LineRuleType` | Optional | `AT_LEAST`, `EXACTLY`, `AUTO` |
+| Property | Type           | Notes    | Possible Values                        |
+| -------- | -------------- | -------- | -------------------------------------- |
+| after    | `number`       | Optional |                                        |
+| before   | `number`       | Optional |                                        |
+| line     | `number`       | Optional |                                        |
+| lineRule | `LineRuleType` | Optional | `AT_LEAST`, `EXACTLY`, `EXACT`, `AUTO` |
+
+Note: The `lineRule` property has different values depending on the version of Word you are using. The `EXACTLY` value is only available in Word 2016 and above. Use `EXACT` for greater support, including LibreOffice etc. Read this issue for more information: https://github.com/dolanmiu/docx/issues/1773.
 
 **Example:**
 
