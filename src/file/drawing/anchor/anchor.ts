@@ -90,7 +90,7 @@ export class Anchor extends XmlComponent {
             this.root.push(new WrapNone());
         }
 
-        this.root.push(new DocProperties());
+        this.root.push(new DocProperties(drawingOptions.docProperties));
         this.root.push(new GraphicFrameProperties());
         this.root.push(new Graphic(mediaData, transform));
     }

@@ -1,6 +1,6 @@
 import { OnOffElement, XmlAttributeComponent, XmlComponent } from "@file/xml-components";
 
-import { Compatibility } from "./compatibility";
+import { Compatibility, ICompatibilityOptions } from "./compatibility";
 
 export class SettingsAttributes extends XmlAttributeComponent<{
     readonly wpc?: string;
@@ -147,10 +147,11 @@ export class SettingsAttributes extends XmlAttributeComponent<{
 // </xsd:complexType>
 
 export interface ISettingsOptions {
-    readonly compatabilityModeVersion?: number;
+    readonly compatibilityModeVersion?: number;
     readonly evenAndOddHeaders?: boolean;
     readonly trackRevisions?: boolean;
     readonly updateFields?: boolean;
+    readonly compatibility?: ICompatibilityOptions;
 }
 
 export class Settings extends XmlComponent {
@@ -199,7 +200,8 @@ export class Settings extends XmlComponent {
 
         this.root.push(
             new Compatibility({
-                version: options.compatabilityModeVersion || 15,
+                ...(options.compatibility ?? {}),
+                version: options.compatibility?.version ?? options.compatibilityModeVersion ?? 15,
             }),
         );
     }

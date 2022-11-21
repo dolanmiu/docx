@@ -1,7 +1,7 @@
 // Example of making content of section vertically aligned
 // Import from 'docx' rather than '../build' if you install from npm
 import * as fs from "fs";
-import { Document, Packer, Paragraph, VerticalAlign, TextRun } from "../build";
+import { Document, Packer, Paragraph, VerticalAlign, TextRun, Tab } from "../build";
 
 const doc = new Document({
     sections: [
@@ -18,7 +18,7 @@ const doc = new Document({
                             bold: true,
                         }),
                         new TextRun({
-                            text: "\tGithub is the best",
+                            children: [new Tab(), "Github is the best"],
                             bold: true,
                         }),
                     ],

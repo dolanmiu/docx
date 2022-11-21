@@ -8,7 +8,7 @@ describe("LeftTabStop", () => {
     let tabStop: TabStop;
 
     beforeEach(() => {
-        tabStop = new TabStop(TabStopType.LEFT, 100);
+        tabStop = new TabStop([{ type: TabStopType.LEFT, position: 100 }]);
     });
 
     describe("#constructor()", () => {
@@ -32,7 +32,7 @@ describe("RightTabStop", () => {
     let tabStop: TabStop;
 
     beforeEach(() => {
-        tabStop = new TabStop(TabStopType.RIGHT, 100, LeaderType.DOT);
+        tabStop = new TabStop([{ type: TabStopType.RIGHT, position: 100, leader: LeaderType.DOT }]);
     });
 
     describe("#constructor()", () => {

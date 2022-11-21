@@ -1,4 +1,5 @@
 import { ICommentsOptions } from "@file/paragraph/run/comment-run";
+import { ICompatibilityOptions } from "@file/settings/compatibility";
 import { StringContainer, XmlComponent } from "@file/xml-components";
 import { dateTimeValue } from "@util/values";
 
@@ -35,6 +36,7 @@ export interface IPropertiesOptions {
         readonly updateFields?: boolean;
     };
     readonly compatabilityModeVersion?: number;
+    readonly compatibility?: ICompatibilityOptions;
     readonly customProperties?: readonly ICustomPropertyOptions[];
     readonly evenAndOddHeaderAndFooters?: boolean;
 }

@@ -8,11 +8,30 @@ const doc = new Document({
         {
             children: [
                 new Paragraph({
+                    wordWrap: true,
                     children: [
                         new TextRun("我今天遛狗去公园"),
                         new TextRun({
                             text: "456435234523456435564745673456345456435234523456435564745673456345456435234523456435564745673456345456435234523456435564745673456345456435234523456435564745673456345",
-                            space: SpaceType.PRESERVE,
+                        }),
+                    ],
+                }),
+                new Paragraph({
+                    wordWrap: true,
+                    children: [
+                        new TextRun(
+                            "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua",
+                        ),
+                        new TextRun({
+                            text: "456435234523456435564745673456345456435234523456435564745673456345456435234523456435564745673456345456435234523456435564745673456345456435234523456435564745673456345",
+                        }),
+                    ],
+                }),
+                new Paragraph({
+                    children: [
+                        new TextRun("我今天遛狗去公园"),
+                        new TextRun({
+                            text: "456435234523456435564745673456345456435234523456435564745673456345456435234523456435564745673456345456435234523456435564745673456345456435234523456435564745673456345",
                         }),
                     ],
                 }),
@@ -23,7 +42,6 @@ const doc = new Document({
                         ),
                         new TextRun({
                             text: "456435234523456435564745673456345456435234523456435564745673456345456435234523456435564745673456345456435234523456435564745673456345456435234523456435564745673456345",
-                            space: SpaceType.PRESERVE,
                         }),
                     ],
                 }),

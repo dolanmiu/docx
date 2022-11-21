@@ -4,6 +4,7 @@ import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
 export enum LineRuleType {
     AT_LEAST = "atLeast",
     EXACTLY = "exactly",
+    EXACT = "exact",
     AUTO = "auto",
 }
 export interface ISpacingProperties {
