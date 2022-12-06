@@ -222,6 +222,15 @@ const doc = new Document({
                         new TextRun({
                             text: "Underline and Strike",
                         }),
+                        new TextRun({
+                            text: " Override Underline ",
+                            underline: {
+                                type: UnderlineType.NONE,
+                            },
+                        }),
+                        new TextRun({
+                            text: "Strike and Underline",
+                        }),
                     ],
                 }),
                 new Paragraph({
