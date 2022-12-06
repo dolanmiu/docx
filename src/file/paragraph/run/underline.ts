@@ -19,6 +19,7 @@ export enum UnderlineType {
     WAVE = "wave",
     WAVYHEAVY = "wavyHeavy",
     WAVYDOUBLE = "wavyDouble",
+    NONE = "none",
 }
 
 export class Underline extends XmlComponent {
