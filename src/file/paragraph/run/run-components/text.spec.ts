@@ -29,7 +29,6 @@ describe("Text", () => {
         it("adds the passed in text to the component with options and sets default space type", () => {
             const t = new Text({
                 text: " this is\n text",
-                space: SpaceType.DEFAULT,
             });
             const f = new Formatter().format(t);
             expect(f).to.deep.equal({
