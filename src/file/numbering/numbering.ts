@@ -164,10 +164,10 @@ export class Numbering extends XmlComponent {
                 abstractNumId: abstractNumbering.id,
                 reference: "default-bullet-numbering",
                 instance: 0,
-                overrideLevel: {
+                overrideLevels: [{
                     num: 0,
                     start: 1,
-                },
+                }],
             }),
         );
 
