@@ -12,9 +12,11 @@ describe("ConcreteNumbering", () => {
                 abstractNumId: 1,
                 reference: "1",
                 instance: 0,
-                overrideLevels: [{
-                    num: 3,
-                }],
+                overrideLevels: [
+                    {
+                        num: 3,
+                    },
+                ],
             });
 
             const tree = new Formatter().format(concreteNumbering);
@@ -50,10 +52,7 @@ describe("ConcreteNumbering", () => {
                 abstractNumId: 1,
                 reference: "1",
                 instance: 0,
-                overrideLevels: [
-                    { num: 3 },
-                    { num: 5 }
-                ],
+                overrideLevels: [{ num: 3 }, { num: 5 }],
             });
 
             const tree = new Formatter().format(concreteNumbering);
@@ -96,10 +95,12 @@ describe("ConcreteNumbering", () => {
                 abstractNumId: 1,
                 reference: "1",
                 instance: 0,
-                overrideLevels: [{
-                    num: 1,
-                    start: 9,
-                }],
+                overrideLevels: [
+                    {
+                        num: 1,
+                        start: 9,
+                    },
+                ],
             });
             const tree = new Formatter().format(concreteNumbering);
             expect(tree).to.deep.equal({
@@ -150,7 +151,7 @@ describe("ConcreteNumbering", () => {
                     {
                         num: 3,
                         start: 10,
-                    }
+                    },
                 ],
             });
             const tree = new Formatter().format(concreteNumbering);
@@ -216,8 +217,8 @@ describe("ConcreteNumbering", () => {
                         start: 9,
                     },
                     {
-                        num: 3
-                    }
+                        num: 3,
+                    },
                 ],
             });
             const tree = new Formatter().format(concreteNumbering);
@@ -257,7 +258,7 @@ describe("ConcreteNumbering", () => {
                                 _attr: {
                                     "w:ilvl": 3,
                                 },
-                            }
+                            },
                         ],
                     },
                 ],
@@ -270,9 +271,11 @@ describe("ConcreteNumbering", () => {
                 abstractNumId: 1,
                 reference: "1",
                 instance: 0,
-                overrideLevels: [{
-                    num: 1,
-                }],
+                overrideLevels: [
+                    {
+                        num: 1,
+                    },
+                ],
             });
             const tree = new Formatter().format(concreteNumbering);
             expect(tree).to.deep.equal({
