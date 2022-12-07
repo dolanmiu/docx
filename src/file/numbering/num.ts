@@ -62,8 +62,10 @@ export class ConcreteNumbering extends XmlComponent {
 
         this.root.push(new AbstractNumId(decimalNumber(options.abstractNumId)));
 
-        if (options.overrideLevel) {
-            this.root.push(new LevelOverride(options.overrideLevel.num, options.overrideLevel.start));
+        if (options.overrideLevels && options.overrideLevels.length) {
+            for(const level of options.overrideLevels){
+                this.root.push(new LevelOverride(level.num, level.start));
+            }
         }
     }
 }
