@@ -18,15 +18,17 @@ class NumAttributes extends XmlAttributeComponent<{
     protected readonly xmlKeys = { numId: "w:numId" };
 }
 
+interface IOverrideLevel {
+    readonly num: number;
+    readonly start?: number;
+}
+
 export interface IConcreteNumberingOptions {
     readonly numId: number;
     readonly abstractNumId: number;
     readonly reference: string;
     readonly instance: number;
-    readonly overrideLevel?: {
-        readonly num: number;
-        readonly start?: number;
-    };
+    readonly overrideLevels?: readonly IOverrideLevel[];
 }
 
 // <xsd:complexType name="CT_Numbering">
