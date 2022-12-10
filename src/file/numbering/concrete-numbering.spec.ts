@@ -253,13 +253,11 @@ describe("ConcreteNumbering", () => {
                         ],
                     },
                     {
-                        "w:lvlOverride": [
-                            {
-                                _attr: {
-                                    "w:ilvl": 3,
-                                },
+                        "w:lvlOverride": {
+                            _attr: {
+                                "w:ilvl": 3,
                             },
-                        ],
+                        },
                     },
                 ],
             });
