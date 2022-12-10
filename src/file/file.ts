@@ -73,7 +73,7 @@ export class File {
         this.appProperties = new AppProperties();
         this.footnotesWrapper = new FootnotesWrapper();
         this.contentTypes = new ContentTypes();
-        this.documentWrapper = new DocumentWrapper({ background: options.background || {} });
+        this.documentWrapper = new DocumentWrapper({ background: options.background });
         this.settings = new Settings({
             compatibilityModeVersion: options.compatabilityModeVersion,
             compatibility: options.compatibility,
