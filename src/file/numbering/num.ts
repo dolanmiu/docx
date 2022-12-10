@@ -18,15 +18,17 @@ class NumAttributes extends XmlAttributeComponent<{
     protected readonly xmlKeys = { numId: "w:numId" };
 }
 
+interface IOverrideLevel {
+    readonly num: number;
+    readonly start?: number;
+}
+
 export interface IConcreteNumberingOptions {
     readonly numId: number;
     readonly abstractNumId: number;
     readonly reference: string;
     readonly instance: number;
-    readonly overrideLevel?: {
-        readonly num: number;
-        readonly start?: number;
-    };
+    readonly overrideLevels?: readonly IOverrideLevel[];
 }
 
 // <xsd:complexType name="CT_Numbering">
@@ -60,8 +62,10 @@ export class ConcreteNumbering extends XmlComponent {
 
         this.root.push(new AbstractNumId(decimalNumber(options.abstractNumId)));
 
-        if (options.overrideLevel) {
-            this.root.push(new LevelOverride(options.overrideLevel.num, options.overrideLevel.start));
+        if (options.overrideLevels && options.overrideLevels.length) {
+            for (const level of options.overrideLevels) {
+                this.root.push(new LevelOverride(level.num, level.start));
+            }
         }
     }
 }
