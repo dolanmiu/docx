@@ -12,13 +12,9 @@ export class Relationships extends XmlComponent {
         );
     }
 
-    public addRelationship(relationship: Relationship): void {
-        this.root.push(relationship);
-    }
-
     public createRelationship(id: number | string, type: RelationshipType, target: string, targetMode?: TargetModeType): Relationship {
         const relationship = new Relationship(`rId${id}`, type, target, targetMode);
-        this.addRelationship(relationship);
+        this.root.push(relationship);
 
         return relationship;
     }
