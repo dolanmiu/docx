@@ -1,4 +1,4 @@
-import { Attributes, XmlComponent } from "@file/xml-components";
+import { AttributeData, AttributePayload, Attributes, NextAttributeComponent, XmlComponent } from "@file/xml-components";
 
 import { hpsMeasureValue } from "@util/values";
 
@@ -68,5 +68,15 @@ export class StringContainer extends XmlComponent {
     public constructor(name: string, val: string) {
         super(name);
         this.root.push(val);
+    }
+}
+
+export class BuilderElement<T extends AttributeData> extends XmlComponent {
+    public constructor(options: { readonly attributes?: AttributePayload<T>; readonly name: string }) {
+        super(options.name);
+
+        if (options.attributes) {
+            this.root.push(new NextAttributeComponent(options.attributes));
+        }
     }
 }

@@ -2,6 +2,7 @@ import { BorderElement, IBorderOptions } from "@file/border";
 import { IShadingAttributesProperties, Shading } from "@file/shading";
 import { ChangeAttributes, IChangedAttributesProperties } from "@file/track-revision/track-revision";
 import {
+    BuilderElement,
     HpsMeasureElement,
     IgnoreIfEmptyXmlComponent,
     NumberValueElement,
@@ -51,6 +52,16 @@ export interface IRunStylePropertiesOptions {
     readonly emboss?: boolean;
     readonly imprint?: boolean;
     readonly revision?: IRunPropertiesChangeOptions;
+    // <xsd:complexType name="CT_Language">
+    //   <xsd:attribute name="val" type="s:ST_Lang" use="optional"/>
+    //   <xsd:attribute name="eastAsia" type="s:ST_Lang" use="optional"/>
+    //   <xsd:attribute name="bidi" type="s:ST_Lang" use="optional"/>
+    // </xsd:complexType>
+    readonly language?: {
+        readonly value?: string;
+        readonly eastAsia?: string;
+        readonly bidirectional?: string;
+    };
     readonly border?: IBorderOptions;
     readonly vanish?: boolean;
     readonly specVanish?: boolean;
@@ -239,6 +250,32 @@ export class RunProperties extends IgnoreIfEmptyXmlComponent {
 
         if (options.scale !== undefined) {
             this.push(new NumberValueElement("w:w", options.scale));
+        }
+
+        if (options.language) {
+            this.push(
+                new BuilderElement<{
+                    readonly value: string;
+                    readonly eastAsia: string;
+                    readonly bidirectional: string;
+                }>({
+                    name: "w:lang",
+                    attributes: {
+                        value: {
+                            key: "w:val",
+                            value: options.language.value,
+                        },
+                        eastAsia: {
+                            key: "w:eastAsia",
+                            value: options.language.eastAsia,
+                        },
+                        bidirectional: {
+                            key: "w:bidi",
+                            value: options.language.bidirectional,
+                        },
+                    },
+                }),
+            );
         }
     }
 
