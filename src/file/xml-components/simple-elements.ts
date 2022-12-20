@@ -72,7 +72,11 @@ export class StringContainer extends XmlComponent {
 }
 
 export class BuilderElement<T extends AttributeData> extends XmlComponent {
-    public constructor(options: { readonly attributes?: AttributePayload<T>; readonly name: string }) {
+    public constructor(options: {
+        readonly name: string;
+        readonly attributes?: AttributePayload<T>;
+        readonly children?: readonly XmlComponent[];
+    }) {
         super(options.name);
 
         if (options.attributes) {

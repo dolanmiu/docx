@@ -1,16 +1,10 @@
 import { BaseXmlComponent, IContext } from "./base";
-import { IXmlableObject } from "./xmlable-object";
+import { IXmlableObject, IXmlAttribute } from "./xmlable-object";
 
 export type AttributeMap<T> = { readonly [P in keyof T]: string };
 
 export type AttributeData = { readonly [key: string]: boolean | number | string };
-export type AttributePayload<T extends AttributeData> = Record<
-    keyof T,
-    {
-        readonly key: string;
-        readonly value?: T[keyof T];
-    }
->;
+export type AttributePayload<T> = { readonly [P in keyof T]: { readonly key: string; readonly value: T[P] } };
 
 export abstract class XmlAttributeComponent<T extends object> extends BaseXmlComponent {
     protected readonly xmlKeys?: AttributeMap<T>;
@@ -39,13 +33,9 @@ export class NextAttributeComponent<T extends AttributeData> extends BaseXmlComp
     }
 
     public prepForXml(_: IContext): IXmlableObject {
-        const attrs = {};
-        Object.values(this.root).forEach(({ key, value }) => {
-            if (value !== undefined) {
-                // eslint-disable-next-line functional/immutable-data
-                attrs[key] = value;
-            }
-        });
+        const attrs = Object.values<{ readonly key: string; readonly value: string | boolean | number }>(this.root)
+            .filter(({ value }) => !!value)
+            .reduce((acc, { key, value }) => ({ ...acc, [key]: value }), {} as IXmlAttribute);
         return { _attr: attrs };
     }
 }
