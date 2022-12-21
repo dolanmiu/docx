@@ -580,5 +580,35 @@ describe("Run", () => {
                 });
             });
         });
+
+        describe("#language", () => {
+            it("should correctly set the language", () => {
+                const run = new Run({
+                    language: {
+                        value: "en-US",
+                        eastAsia: "zh-CN",
+                        bidirectional: "ar-SA",
+                    },
+                });
+                const tree = new Formatter().format(run);
+                expect(tree).to.deep.equal({
+                    "w:r": [
+                        {
+                            "w:rPr": [
+                                {
+                                    "w:lang": {
+                                        _attr: {
+                                            "w:val": "en-US",
+                                            "w:eastAsia": "zh-CN",
+                                            "w:bidi": "ar-SA",
+                                        },
+                                    },
+                                },
+                            ],
+                        },
+                    ],
+                });
+            });
+        });
     });
 });

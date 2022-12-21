@@ -12,6 +12,7 @@ import {
 
 import { EmphasisMark, EmphasisMarkType } from "./emphasis-mark";
 import { CharacterSpacing, Color, Highlight, HighlightComplexScript } from "./formatting";
+import { createLanguageComponent, ILanguageOptions } from "./language";
 import { IFontAttributesProperties, RunFonts } from "./run-fonts";
 import { SubScript, SuperScript } from "./script";
 import { Underline, UnderlineType } from "./underline";
@@ -51,6 +52,7 @@ export interface IRunStylePropertiesOptions {
     readonly emboss?: boolean;
     readonly imprint?: boolean;
     readonly revision?: IRunPropertiesChangeOptions;
+    readonly language?: ILanguageOptions;
     readonly border?: IBorderOptions;
     readonly vanish?: boolean;
     readonly specVanish?: boolean;
@@ -239,6 +241,10 @@ export class RunProperties extends IgnoreIfEmptyXmlComponent {
 
         if (options.scale !== undefined) {
             this.push(new NumberValueElement("w:w", options.scale));
+        }
+
+        if (options.language) {
+            this.push(createLanguageComponent(options.language));
         }
     }
 
