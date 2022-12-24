@@ -1,7 +1,7 @@
-// Exporting the document as a stream
+// Example of using tab stops
 // Import from 'docx' rather than '../build' if you install from npm
 import * as fs from "fs";
-import { Document, HeadingLevel, Packer, Paragraph, TabStopPosition, TabStopType, TextRun } from "../build";
+import { Document, HeadingLevel, Packer, Paragraph, TabStopPosition, TabStopType, TextRun, Tab } from "../build";
 
 const columnWidth = TabStopPosition.MAX / 4;
 const receiptTabStops = [
@@ -30,7 +30,7 @@ const doc = new Document({
                     tabStops: twoTabStops,
                     children: [
                         new TextRun({
-                            text: "To Bob.\tBy Alice.",
+                            children: ["To Bob.", new Tab(), "By Alice."],
                             bold: true,
                         }),
                     ],

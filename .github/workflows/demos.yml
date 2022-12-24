@@ -716,3 +716,93 @@ jobs:
               with:
                   xml-file: build/extracted-doc/word/document.xml
                   xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
+            - name: Run Demo
+              run: npm run ts-node -- ./demo/75-tab-stops.ts
+            - name: Extract Word Document
+              run: npm run extract
+            - name: Validate XML
+              uses: ChristophWurst/xmllint-action@v1
+              with:
+                  xml-file: build/extracted-doc/word/document.xml
+                  xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
+            - name: Run Demo
+              run: npm run ts-node -- ./demo/76-compatibility.ts
+            - name: Extract Word Document
+              run: npm run extract
+            - name: Validate XML
+              uses: ChristophWurst/xmllint-action@v1
+              with:
+                  xml-file: build/extracted-doc/word/document.xml
+                  xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
+            - name: Run Demo
+              run: npm run ts-node -- ./demo/77-side-by-side-tables.ts
+            - name: Extract Word Document
+              run: npm run extract
+            - name: Validate XML
+              uses: ChristophWurst/xmllint-action@v1
+              with:
+                  xml-file: build/extracted-doc/word/document.xml
+                  xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
+            - name: Run Demo
+              run: npm run ts-node -- ./demo/78-thai-distributed.ts
+            - name: Extract Word Document
+              run: npm run extract
+            - name: Validate XML
+              uses: ChristophWurst/xmllint-action@v1
+              with:
+                  xml-file: build/extracted-doc/word/document.xml
+                  xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
+            - name: Run Demo
+              run: npm run ts-node -- ./demo/79-table-from-data-source.ts
+            - name: Extract Word Document
+              run: npm run extract
+            - name: Validate XML
+              uses: ChristophWurst/xmllint-action@v1
+              with:
+                  xml-file: build/extracted-doc/word/document.xml
+                  xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
+            - name: Run Demo
+              run: npm run ts-node -- ./demo/80-thai-distributed.ts
+            - name: Extract Word Document
+              run: npm run extract
+            - name: Validate XML
+              uses: ChristophWurst/xmllint-action@v1
+              with:
+                  xml-file: build/extracted-doc/word/document.xml
+                  xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
+            - name: Run Demo
+              run: npm run ts-node -- ./demo/81-continuous-header.ts
+            - name: Extract Word Document
+              run: npm run extract
+            - name: Validate XML
+              uses: ChristophWurst/xmllint-action@v1
+              with:
+                  xml-file: build/extracted-doc/word/document.xml
+                  xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
+            - name: Run Demo
+              run: npm run ts-node -- ./demo/82-new-headers-new-section.ts
+            - name: Extract Word Document
+              run: npm run extract
+            - name: Validate XML
+              uses: ChristophWurst/xmllint-action@v1
+              with:
+                  xml-file: build/extracted-doc/word/document.xml
+                  xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
+            - name: Run Demo
+              run: npm run ts-node -- ./demo/83-setting-languages.ts
+            - name: Extract Word Document
+              run: npm run extract
+            - name: Validate XML
+              uses: ChristophWurst/xmllint-action@v1
+              with:
+                  xml-file: build/extracted-doc/word/document.xml
+                  xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
+            - name: Run Demo
+              run: npm run ts-node -- ./demo/84-positional-tabs.ts
+            - name: Extract Word Document
+              run: npm run extract
+            - name: Validate XML
+              uses: ChristophWurst/xmllint-action@v1
+              with:
+                  xml-file: build/extracted-doc/word/document.xml
+                  xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd

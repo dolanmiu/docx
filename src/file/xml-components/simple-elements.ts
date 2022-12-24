@@ -35,6 +35,11 @@ export class HpsMeasureElement extends XmlComponent {
 
 // This represents element type CT_String, which indicate a string value.
 //
+// <xsd:complexType name="CT_Empty"/>
+export class EmptyElement extends XmlComponent {}
+
+// This represents element type CT_Empty, which indicate aan empty element.
+//
 // <xsd:complexType name="CT_String">
 //     <xsd:attribute name="val" type="s:ST_String" use="required"/>
 // </xsd:complexType>

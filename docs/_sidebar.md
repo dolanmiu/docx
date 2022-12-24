@@ -20,7 +20,7 @@
     -   [Hyperlinks](usage/hyperlinks.md)
     -   [Numbering](usage/numbering.md)
     -   [Tables](usage/tables.md)
-    -   [Tab Stops](usage/tab-stops.md)
+    -   [Tabs](usage/tabs.md)
     -   [Table of Contents](usage/table-of-contents.md)
     -   [Page Numbers](usage/page-numbers.md)
     -   [Change Tracking](usage/change-tracking.md)
