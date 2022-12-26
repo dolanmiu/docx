@@ -34,7 +34,7 @@ export class NextAttributeComponent<T extends AttributeData> extends BaseXmlComp
 
     public prepForXml(_: IContext): IXmlableObject {
         const attrs = Object.values<{ readonly key: string; readonly value: string | boolean | number }>(this.root)
-            .filter(({ value }) => !!value)
+            .filter(({ value }) => value !== undefined)
             .reduce((acc, { key, value }) => ({ ...acc, [key]: value }), {} as IXmlAttribute);
         return { _attr: attrs };
     }

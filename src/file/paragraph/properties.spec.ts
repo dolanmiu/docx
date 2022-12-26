@@ -31,6 +31,7 @@ describe("ParagraphProperties", () => {
                 } as File,
                 // tslint:disable-next-line: no-object-literal-type-assertion
                 viewWrapper: new DocumentWrapper({ background: {} }),
+                stack: [],
             });
 
             expect(tree).to.deep.equal({
