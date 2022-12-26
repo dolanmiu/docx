@@ -5,6 +5,8 @@ import { IXmlableObject } from "./xmlable-object";
 export interface IContext {
     readonly file: File;
     readonly viewWrapper: IViewWrapper;
+    // eslint-disable-next-line functional/prefer-readonly-type
+    readonly stack: IXmlableObject[];
 }
 
 export abstract class BaseXmlComponent {
