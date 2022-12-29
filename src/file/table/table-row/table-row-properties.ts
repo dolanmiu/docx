@@ -28,6 +28,7 @@
 //     </xsd:complexContent>
 // </xsd:complexType>
 import { IgnoreIfEmptyXmlComponent, OnOffElement } from "@file/xml-components";
+import { PositiveUniversalMeasure } from "@util/values";
 
 import { HeightRule, TableRowHeight } from "./table-row-height";
 
@@ -35,7 +36,7 @@ export interface ITableRowPropertiesOptions {
     readonly cantSplit?: boolean;
     readonly tableHeader?: boolean;
     readonly height?: {
-        readonly value: number | string;
+        readonly value: number | PositiveUniversalMeasure;
         readonly rule: HeightRule;
     };
 }

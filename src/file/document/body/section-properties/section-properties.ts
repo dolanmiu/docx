@@ -5,9 +5,9 @@ import { FooterWrapper } from "@file/footer-wrapper";
 import { HeaderWrapper } from "@file/header-wrapper";
 import { VerticalAlign, VerticalAlignElement } from "@file/vertical-align";
 import { OnOffElement, XmlComponent } from "@file/xml-components";
+import { PositiveUniversalMeasure, UniversalMeasure } from "@util/values";
 
 import { HeaderFooterReference, HeaderFooterReferenceType, HeaderFooterType } from "./properties/header-footer-reference";
-
 import { Columns, IColumnsAttributes } from "./properties/columns";
 import { DocumentGrid, IDocGridAttributesProperties } from "./properties/doc-grid";
 import { ILineNumberAttributes, LineNumberType } from "./properties/line-number";
@@ -17,7 +17,6 @@ import { IPageNumberTypeAttributes, PageNumberType } from "./properties/page-num
 import { IPageSizeAttributes, PageOrientation, PageSize } from "./properties/page-size";
 import { PageTextDirection, PageTextDirectionType } from "./properties/page-text-direction";
 import { SectionType, Type } from "./properties/section-type";
-import { PositiveUniversalMeasure, UniversalMeasure } from "@util/values";
 
 export interface IHeaderFooterGroup<T> {
     readonly default?: T;

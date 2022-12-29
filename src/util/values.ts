@@ -87,7 +87,7 @@ export const uCharHexNumber = (val: string): string => hexBinary(val, 1);
 //         <xsd:pattern value="-?[0-9]+(\.[0-9]+)?(mm|cm|in|pt|pc|pi)"/>
 //     </xsd:restriction>
 // </xsd:simpleType>
-export const universalMeasureValue = (val: UniversalMeasure): string => {
+export const universalMeasureValue = (val: UniversalMeasure): UniversalMeasure => {
     const unit = val.slice(-2);
     if (!universalMeasureUnits.includes(unit)) {
         throw new Error(`Invalid unit '${unit}' specified. Valid units are ${universalMeasureUnits.join(", ")}`);
@@ -96,7 +96,7 @@ export const universalMeasureValue = (val: UniversalMeasure): string => {
     if (isNaN(Number(amount))) {
         throw new Error(`Invalid value '${amount}' specified. Expected a valid number.`);
     }
-    return `${Number(amount)}${unit}`;
+    return `${Number(amount)}${unit}` as UniversalMeasure;
 };
 const universalMeasureUnits = ["mm", "cm", "in", "pt", "pc", "pi"];
 
@@ -105,12 +105,12 @@ const universalMeasureUnits = ["mm", "cm", "in", "pt", "pc", "pi"];
 //         <xsd:pattern value="[0-9]+(\.[0-9]+)?(mm|cm|in|pt|pc|pi)"/>
 //     </xsd:restriction>
 // </xsd:simpleType>
-export const positiveUniversalMeasureValue = (val: PositiveUniversalMeasure): string => {
+export const positiveUniversalMeasureValue = (val: PositiveUniversalMeasure): PositiveUniversalMeasure => {
     const value = universalMeasureValue(val);
     if (parseFloat(value) < 0) {
         throw new Error(`Invalid value '${value}' specified. Expected a positive number.`);
     }
-    return value;
+    return value as PositiveUniversalMeasure;
 };
 
 // <xsd:simpleType name="ST_HexColor">
@@ -141,7 +141,7 @@ export const hexColorValue = (val: string): string => {
 //     <xsd:union memberTypes="xsd:integer s:ST_UniversalMeasure"/>
 // </xsd:simpleType>
 export const signedTwipsMeasureValue = (val: UniversalMeasure | number): UniversalMeasure | number =>
-    typeof val === "string" ? val : decimalNumber(val);
+    typeof val === "string" ? universalMeasureValue(val) : decimalNumber(val);
 
 // <xsd:simpleType name="ST_HpsMeasure">
 //     <xsd:union memberTypes="s:ST_UnsignedDecimalNumber s:ST_PositiveUniversalMeasure"/>
@@ -159,7 +159,7 @@ export const signedHpsMeasureValue = (val: UniversalMeasure | number): string | 
 //     <xsd:union memberTypes="ST_UnsignedDecimalNumber ST_PositiveUniversalMeasure"/>
 // </xsd:simpleType>
 export const twipsMeasureValue = (val: PositiveUniversalMeasure | number): PositiveUniversalMeasure | number =>
-    typeof val === "string" ? val : unsignedDecimalNumber(val);
+    typeof val === "string" ? positiveUniversalMeasureValue(val) : unsignedDecimalNumber(val);
 
 // <xsd:simpleType name="ST_Percentage">
 //     <xsd:restriction base="xsd:string">
@@ -196,7 +196,7 @@ export const measurementOrPercentValue = (val: number | Percentage | UniversalMe
     if (val.slice(-1) === "%") {
         return percentageValue(val as Percentage);
     }
-    return val as UniversalMeasure;
+    return universalMeasureValue(val as UniversalMeasure);
 };
 
 // <xsd:simpleType name="ST_EighthPointMeasure">
