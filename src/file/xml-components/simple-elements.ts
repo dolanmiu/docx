@@ -1,6 +1,6 @@
 import { AttributeData, AttributePayload, Attributes, NextAttributeComponent, XmlComponent } from "@file/xml-components";
 
-import { hpsMeasureValue } from "@util/values";
+import { hpsMeasureValue, PositiveUniversalMeasure } from "@util/values";
 
 // This represents element type CT_OnOff, which indicate a boolean value.
 //
@@ -26,8 +26,13 @@ export class OnOffElement extends XmlComponent {
 // <xsd:complexType name="CT_HpsMeasure">
 //     <xsd:attribute name="val" type="ST_HpsMeasure" use="required"/>
 // </xsd:complexType>
+
+// <xsd:simpleType name="ST_HpsMeasure">
+//     <xsd:union memberTypes="s:ST_UnsignedDecimalNumber s:ST_PositiveUniversalMeasure" />
+// </xsd:simpleType>
+
 export class HpsMeasureElement extends XmlComponent {
-    public constructor(name: string, val: number | string) {
+    public constructor(name: string, val: number | PositiveUniversalMeasure) {
         super(name);
         this.root.push(new Attributes({ val: hpsMeasureValue(val) }));
     }

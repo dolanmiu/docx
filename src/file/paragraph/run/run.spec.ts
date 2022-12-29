@@ -7,6 +7,7 @@ import { ShadingType } from "@file/shading";
 import { EmphasisMarkType } from "./emphasis-mark";
 import { PageNumber, Run } from "./run";
 import { UnderlineType } from "./underline";
+import { TextEffect } from "./properties";
 
 describe("Run", () => {
     describe("#bold()", () => {
@@ -603,6 +604,118 @@ describe("Run", () => {
                                             "w:bidi": "ar-SA",
                                         },
                                     },
+                                },
+                            ],
+                        },
+                    ],
+                });
+            });
+        });
+
+        describe("#position", () => {
+            it("should correctly set the position", () => {
+                const run = new Run({
+                    position: "2mm",
+                });
+                const tree = new Formatter().format(run);
+                expect(tree).to.deep.equal({
+                    "w:r": [
+                        {
+                            "w:rPr": [
+                                {
+                                    "w:position": {
+                                        _attr: {
+                                            "w:val": "2mm",
+                                        },
+                                    },
+                                },
+                            ],
+                        },
+                    ],
+                });
+            });
+        });
+
+        describe("#effect", () => {
+            it("should correctly set the effect", () => {
+                const run = new Run({
+                    effect: TextEffect.ANTS_BLACK,
+                });
+                const tree = new Formatter().format(run);
+                expect(tree).to.deep.equal({
+                    "w:r": [
+                        {
+                            "w:rPr": [
+                                {
+                                    "w:effect": {
+                                        _attr: {
+                                            "w:val": "antsBlack",
+                                        },
+                                    },
+                                },
+                            ],
+                        },
+                    ],
+                });
+            });
+        });
+
+        describe("#math", () => {
+            it("should correctly set the math", () => {
+                const run = new Run({
+                    math: true,
+                });
+                const tree = new Formatter().format(run);
+                expect(tree).to.deep.equal({
+                    "w:r": [
+                        {
+                            "w:rPr": [
+                                {
+                                    "w:oMath": {},
+                                },
+                            ],
+                        },
+                    ],
+                });
+            });
+        });
+
+        describe("#kern", () => {
+            it("should correctly set the kern", () => {
+                const run = new Run({
+                    kern: "2mm",
+                });
+                const tree = new Formatter().format(run);
+                expect(tree).to.deep.equal({
+                    "w:r": [
+                        {
+                            "w:rPr": [
+                                {
+                                    "w:kern": {
+                                        _attr: {
+                                            "w:val": "2mm",
+                                        },
+                                    },
+                                },
+                            ],
+                        },
+                    ],
+                });
+            });
+        });
+
+        describe("#snapToGrid", () => {
+            it("should correctly set the snapToGrid", () => {
+                const run = new Run({
+                    snapToGrid: true,
+                });
+                const tree = new Formatter().format(run);
+                expect(tree).to.deep.equal({
+                    "w:r": [
+                        {
+                            "w:rPr": [
+                                {
+                                    "w:snapToGrid": {},
                                 },
                             ],
                         },

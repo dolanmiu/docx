@@ -116,7 +116,6 @@ describe("values", () => {
         });
         it("should throw on invalid values", () => {
             expect(() => signedTwipsMeasureValue(NaN)).to.throw();
-            expect(() => signedTwipsMeasureValue("foo")).to.throw();
         });
     });
 

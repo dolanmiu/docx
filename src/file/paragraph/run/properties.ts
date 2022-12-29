@@ -9,6 +9,7 @@ import {
     StringValueElement,
     XmlComponent,
 } from "@file/xml-components";
+import { PositiveUniversalMeasure, UniversalMeasure } from "@util/values";
 
 import { EmphasisMark, EmphasisMarkType } from "./emphasis-mark";
 import { CharacterSpacing, Color, Highlight, HighlightComplexScript } from "./formatting";
@@ -22,6 +23,16 @@ interface IFontOptions {
     readonly hint?: string;
 }
 
+export enum TextEffect {
+    BLINK_BACKGROUND = "blinkBackground",
+    LIGHTS = "lights",
+    ANTS_BLACK = "antsBlack",
+    ANTS_RED = "antsRed",
+    SHIMMER = "shimmer",
+    SPARKLE = "sparkle",
+    NONE = "none",
+}
+
 export interface IRunStylePropertiesOptions {
     readonly bold?: boolean;
     readonly boldComplexScript?: boolean;
@@ -31,12 +42,15 @@ export interface IRunStylePropertiesOptions {
         readonly color?: string;
         readonly type?: UnderlineType;
     };
+    readonly effect?: TextEffect;
     readonly emphasisMark?: {
         readonly type?: EmphasisMarkType;
     };
     readonly color?: string;
-    readonly size?: number | string;
-    readonly sizeComplexScript?: boolean | number | string;
+    readonly kern?: number | PositiveUniversalMeasure;
+    readonly position?: UniversalMeasure;
+    readonly size?: number | PositiveUniversalMeasure;
+    readonly sizeComplexScript?: boolean | number | PositiveUniversalMeasure;
     readonly rightToLeft?: boolean;
     readonly smallCaps?: boolean;
     readonly allCaps?: boolean;
@@ -54,9 +68,11 @@ export interface IRunStylePropertiesOptions {
     readonly revision?: IRunPropertiesChangeOptions;
     readonly language?: ILanguageOptions;
     readonly border?: IBorderOptions;
+    readonly snapToGrid?: boolean;
     readonly vanish?: boolean;
     readonly specVanish?: boolean;
     readonly scale?: number;
+    readonly math?: boolean;
 }
 
 export interface IRunPropertiesOptions extends IRunStylePropertiesOptions {
@@ -135,12 +151,24 @@ export class RunProperties extends IgnoreIfEmptyXmlComponent {
             this.push(new Underline(options.underline.type, options.underline.color));
         }
 
+        if (options.effect) {
+            this.push(new StringValueElement("w:effect", options.effect));
+        }
+
         if (options.emphasisMark) {
             this.push(new EmphasisMark(options.emphasisMark.type));
         }
 
         if (options.color) {
             this.push(new Color(options.color));
+        }
+
+        if (options.kern) {
+            this.push(new HpsMeasureElement("w:kern", options.kern));
+        }
+
+        if (options.position) {
+            this.push(new StringValueElement("w:position", options.position));
         }
 
         if (options.size !== undefined) {
@@ -228,6 +256,10 @@ export class RunProperties extends IgnoreIfEmptyXmlComponent {
             this.push(new BorderElement("w:bdr", options.border));
         }
 
+        if (options.snapToGrid) {
+            this.push(new OnOffElement("w:snapToGrid", options.snapToGrid));
+        }
+
         if (options.vanish) {
             // https://c-rex.net/projects/samples/ooxml/e1/Part4/OOXML_P4_DOCX_vanish_topic_ID0E6W3O.html
             // http://www.datypic.com/sc/ooxml/e-w_vanish-1.html
@@ -245,6 +277,10 @@ export class RunProperties extends IgnoreIfEmptyXmlComponent {
 
         if (options.language) {
             this.push(createLanguageComponent(options.language));
+        }
+
+        if (options.math) {
+            this.push(new OnOffElement("w:oMath", options.math));
         }
     }
 

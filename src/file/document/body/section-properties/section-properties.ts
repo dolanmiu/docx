@@ -17,6 +17,7 @@ import { IPageNumberTypeAttributes, PageNumberType } from "./properties/page-num
 import { IPageSizeAttributes, PageOrientation, PageSize } from "./properties/page-size";
 import { PageTextDirection, PageTextDirectionType } from "./properties/page-text-direction";
 import { SectionType, Type } from "./properties/section-type";
+import { PositiveUniversalMeasure, UniversalMeasure } from "@util/values";
 
 export interface IHeaderFooterGroup<T> {
     readonly default?: T;
@@ -76,10 +77,10 @@ export interface ISectionPropertiesOptions {
 // </xsd:group>
 
 export const sectionMarginDefaults = {
-    TOP: "1in",
-    RIGHT: "1in",
-    BOTTOM: "1in",
-    LEFT: "1in",
+    TOP: "1in" as UniversalMeasure,
+    RIGHT: "1in" as PositiveUniversalMeasure,
+    BOTTOM: "1in" as UniversalMeasure,
+    LEFT: "1in" as PositiveUniversalMeasure,
     HEADER: 708,
     FOOTER: 708,
     GUTTER: 0,

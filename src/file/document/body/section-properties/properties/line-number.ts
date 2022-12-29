@@ -1,6 +1,6 @@
 // http://officeopenxml.com/WPsectionLineNumbering.php
-import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
-import { decimalNumber, twipsMeasureValue } from "@util/values";
+import { NextAttributeComponent, XmlComponent } from "@file/xml-components";
+import { decimalNumber, PositiveUniversalMeasure, twipsMeasureValue } from "@util/values";
 
 // <xsd:simpleType name="ST_LineNumberRestart">
 // <xsd:restriction base="xsd:string">
@@ -26,27 +26,23 @@ export interface ILineNumberAttributes {
     readonly countBy?: number;
     readonly start?: number;
     readonly restart?: LineNumberRestartFormat;
-    readonly distance?: number | string;
-}
-
-export class LineNumberAttributes extends XmlAttributeComponent<ILineNumberAttributes> {
-    protected readonly xmlKeys = {
-        countBy: "w:countBy",
-        start: "w:start",
-        restart: "w:restart",
-        distance: "w:distance",
-    };
+    readonly distance?: number | PositiveUniversalMeasure;
 }
 
 export class LineNumberType extends XmlComponent {
     public constructor({ countBy, start, restart, distance }: ILineNumberAttributes) {
         super("w:lnNumType");
         this.root.push(
-            new LineNumberAttributes({
-                countBy: countBy === undefined ? undefined : decimalNumber(countBy),
-                start: start === undefined ? undefined : decimalNumber(start),
-                restart,
-                distance: distance === undefined ? undefined : twipsMeasureValue(distance),
+            new NextAttributeComponent<{
+                readonly countBy?: number;
+                readonly start?: number;
+                readonly restart?: LineNumberRestartFormat;
+                readonly distance?: number | PositiveUniversalMeasure;
+            }>({
+                countBy: { key: "w:countBy", value: countBy === undefined ? undefined : decimalNumber(countBy) },
+                start: { key: "w:start", value: start === undefined ? undefined : decimalNumber(start) },
+                restart: { key: "w:restart", value: restart },
+                distance: { key: "w:distance", value: distance === undefined ? undefined : twipsMeasureValue(distance) },
             }),
         );
     }
