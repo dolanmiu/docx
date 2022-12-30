@@ -23,11 +23,11 @@ export class Text extends XmlComponent {
         if (typeof options === "string") {
             this.root.push(new TextAttributes({ space: SpaceType.PRESERVE }));
             this.root.push(options);
-            return;
+            return this;
         } else {
             this.root.push(new TextAttributes({ space: options.space ?? SpaceType.DEFAULT }));
             this.root.push(options.text);
-            return;
+            return this;
         }
     }
 }
