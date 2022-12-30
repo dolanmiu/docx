@@ -6,7 +6,7 @@ export interface IContext {
     readonly file: File;
     readonly viewWrapper: IViewWrapper;
     // eslint-disable-next-line functional/prefer-readonly-type
-    readonly stack: IXmlableObject[];
+    readonly stack: BaseXmlComponent[];
 }
 
 export abstract class BaseXmlComponent {

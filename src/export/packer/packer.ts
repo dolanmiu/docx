@@ -14,7 +14,7 @@ export enum PrettifyType {
 }
 
 export class Packer {
-    public static async toString(file: File, prettify?: boolean | PrettifyType): Promise<string> {
+    public static async toString(file: File, prettify?: PrettifyType): Promise<string> {
         const zip = this.compiler.compile(file, prettify);
         const zipData = await zip.generateAsync({
             type: "string",
@@ -25,7 +25,7 @@ export class Packer {
         return zipData;
     }
 
-    public static async toBuffer(file: File, prettify?: boolean | PrettifyType): Promise<Buffer> {
+    public static async toBuffer(file: File, prettify?: PrettifyType): Promise<Buffer> {
         const zip = this.compiler.compile(file, prettify);
         const zipData = await zip.generateAsync({
             type: "nodebuffer",
@@ -58,7 +58,7 @@ export class Packer {
         return zipData;
     }
 
-    public static toStream(file: File, prettify?: boolean | PrettifyType): Stream {
+    public static toStream(file: File, prettify?: PrettifyType): Stream {
         const zip = this.compiler.compile(file, prettify);
         const zipData = zip.generateNodeStream({
             type: "nodebuffer",

@@ -21,8 +21,8 @@ export abstract class XmlAttributeComponent<T extends object> extends BaseXmlCom
             if (value !== undefined) {
                 // @ts-ignore
                 const newKey = (this.xmlKeys && this.xmlKeys[key]) || key;
-                // eslint-disable-next-line functional/immutable-data
-                attrs[newKey] = value;
+                // @ts-ignore
+                attrs[newKey] = value; // eslint-disable-line functional/immutable-data
             }
         });
         return { _attr: attrs };
