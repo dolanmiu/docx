@@ -1,5 +1,5 @@
-import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
-import { signedTwipsMeasureValue, twipsMeasureValue } from "@util/values";
+import { NextAttributeComponent, XmlComponent } from "@file/xml-components";
+import { PositiveUniversalMeasure, signedTwipsMeasureValue, twipsMeasureValue, UniversalMeasure } from "@util/values";
 
 // <xsd:complexType name="CT_PageMar">
 //     <xsd:attribute name="top" type="ST_SignedTwipsMeasure" use="required"/>
@@ -10,48 +10,36 @@ import { signedTwipsMeasureValue, twipsMeasureValue } from "@util/values";
 //     <xsd:attribute name="footer" type="s:ST_TwipsMeasure" use="required"/>
 //     <xsd:attribute name="gutter" type="s:ST_TwipsMeasure" use="required"/>
 // </xsd:complexType>
-export interface IPageMarginAttributes {
-    readonly top?: number | string;
-    readonly right?: number | string;
-    readonly bottom?: number | string;
-    readonly left?: number | string;
-    readonly header?: number | string;
-    readonly footer?: number | string;
-    readonly gutter?: number | string;
-}
-
-export class PageMarginAttributes extends XmlAttributeComponent<IPageMarginAttributes> {
-    protected readonly xmlKeys = {
-        top: "w:top",
-        right: "w:right",
-        bottom: "w:bottom",
-        left: "w:left",
-        header: "w:header",
-        footer: "w:footer",
-        gutter: "w:gutter",
-    };
-}
+export type IPageMarginAttributes = {
+    readonly top?: number | UniversalMeasure;
+    readonly right?: number | PositiveUniversalMeasure;
+    readonly bottom?: number | UniversalMeasure;
+    readonly left?: number | PositiveUniversalMeasure;
+    readonly header?: number | PositiveUniversalMeasure;
+    readonly footer?: number | PositiveUniversalMeasure;
+    readonly gutter?: number | PositiveUniversalMeasure;
+};
 
 export class PageMargin extends XmlComponent {
     public constructor(
-        top: number | string,
-        right: number | string,
-        bottom: number | string,
-        left: number | string,
-        header: number | string,
-        footer: number | string,
-        gutter: number | string,
+        top: number | UniversalMeasure,
+        right: number | PositiveUniversalMeasure,
+        bottom: number | UniversalMeasure,
+        left: number | PositiveUniversalMeasure,
+        header: number | PositiveUniversalMeasure,
+        footer: number | PositiveUniversalMeasure,
+        gutter: number | PositiveUniversalMeasure,
     ) {
         super("w:pgMar");
         this.root.push(
-            new PageMarginAttributes({
-                top: signedTwipsMeasureValue(top),
-                right: twipsMeasureValue(right),
-                bottom: signedTwipsMeasureValue(bottom),
-                left: twipsMeasureValue(left),
-                header: twipsMeasureValue(header),
-                footer: twipsMeasureValue(footer),
-                gutter: twipsMeasureValue(gutter),
+            new NextAttributeComponent<IPageMarginAttributes>({
+                top: { key: "w:top", value: signedTwipsMeasureValue(top) },
+                right: { key: "w:right", value: twipsMeasureValue(right) },
+                bottom: { key: "w:bottom", value: signedTwipsMeasureValue(bottom) },
+                left: { key: "w:left", value: twipsMeasureValue(left) },
+                header: { key: "w:header", value: twipsMeasureValue(header) },
+                footer: { key: "w:footer", value: twipsMeasureValue(footer) },
+                gutter: { key: "w:gutter", value: twipsMeasureValue(gutter) },
             }),
         );
     }

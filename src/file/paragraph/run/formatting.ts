@@ -1,8 +1,8 @@
 import { Attributes, XmlComponent } from "@file/xml-components";
-import { hexColorValue, signedTwipsMeasureValue } from "@util/values";
+import { hexColorValue, signedTwipsMeasureValue, UniversalMeasure } from "@util/values";
 
 export class CharacterSpacing extends XmlComponent {
-    public constructor(value: number | string) {
+    public constructor(value: number | UniversalMeasure) {
         super("w:spacing");
         this.root.push(
             new Attributes({

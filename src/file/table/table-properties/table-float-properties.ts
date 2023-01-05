@@ -1,5 +1,5 @@
 import { StringEnumValueElement, XmlAttributeComponent, XmlComponent } from "@file/xml-components";
-import { signedTwipsMeasureValue, twipsMeasureValue } from "@util/values";
+import { PositiveUniversalMeasure, signedTwipsMeasureValue, twipsMeasureValue, UniversalMeasure } from "@util/values";
 
 export enum TableAnchorType {
     MARGIN = "margin",
@@ -55,7 +55,7 @@ export interface ITableFloatOptions {
      * If relativeHorizontalPosition is also specified, then the absoluteHorizontalPosition attribute is ignored.
      * If the attribute is omitted, the value is assumed to be zero.
      */
-    readonly absoluteHorizontalPosition?: number | string;
+    readonly absoluteHorizontalPosition?: number | UniversalMeasure;
 
     /**
      * Specifies a relative horizontal position for the table, relative to the horizontalAnchor attribute.
@@ -86,7 +86,7 @@ export interface ITableFloatOptions {
      * If relativeVerticalPosition is also specified, then the absoluteVerticalPosition attribute is ignored.
      * If the attribute is omitted, the value is assumed to be zero.
      */
-    readonly absoluteVerticalPosition?: number | string;
+    readonly absoluteVerticalPosition?: number | UniversalMeasure;
 
     /**
      * Specifies a relative vertical position for the table, relative to the verticalAnchor attribute.
@@ -104,25 +104,25 @@ export interface ITableFloatOptions {
      * Specifies the minimum distance to be maintained between the table and the top of text in the paragraph
      * below the table. The value is in twentieths of a point. If omitted, the value is assumed to be zero.
      */
-    readonly bottomFromText?: number | string;
+    readonly bottomFromText?: number | PositiveUniversalMeasure;
 
     /**
      * Specifies the minimum distance to be maintained between the table and the bottom edge of text in the paragraph
      * above the table. The value is in twentieths of a point. If omitted, the value is assumed to be zero.
      */
-    readonly topFromText?: number | string;
+    readonly topFromText?: number | PositiveUniversalMeasure;
 
     /**
      * Specifies the minimum distance to be maintained between the table and the edge of text in the paragraph
      * to the left of the table. The value is in twentieths of a point. If omitted, the value is assumed to be zero.
      */
-    readonly leftFromText?: number | string;
+    readonly leftFromText?: number | PositiveUniversalMeasure;
 
     /**
      * Specifies the minimum distance to be maintained between the table and the edge of text in the paragraph
      * to the right of the table. The value is in twentieths of a point. If omitted, the value is assumed to be zero.
      */
-    readonly rightFromText?: number | string;
+    readonly rightFromText?: number | PositiveUniversalMeasure;
     readonly overlap?: OverlapType;
 }
 
