@@ -89,16 +89,9 @@ export const uCharHexNumber = (val: string): string => hexBinary(val, 1);
 // </xsd:simpleType>
 export const universalMeasureValue = (val: UniversalMeasure): UniversalMeasure => {
     const unit = val.slice(-2);
-    if (!universalMeasureUnits.includes(unit)) {
-        throw new Error(`Invalid unit '${unit}' specified. Valid units are ${universalMeasureUnits.join(", ")}`);
-    }
     const amount = val.substring(0, val.length - 2);
-    if (isNaN(Number(amount))) {
-        throw new Error(`Invalid value '${amount}' specified. Expected a valid number.`);
-    }
     return `${Number(amount)}${unit}` as UniversalMeasure;
 };
-const universalMeasureUnits = ["mm", "cm", "in", "pt", "pc", "pi"];
 
 // <xsd:simpleType name="ST_PositiveUniversalMeasure">
 //     <xsd:restriction base="ST_UniversalMeasure">
@@ -167,13 +160,7 @@ export const twipsMeasureValue = (val: PositiveUniversalMeasure | number): Posit
 //     </xsd:restriction>
 // </xsd:simpleType>
 export const percentageValue = (val: Percentage): Percentage => {
-    if (val.slice(-1) !== "%") {
-        throw new Error(`Invalid value '${val}'. Expected percentage value (eg '55%')`);
-    }
     const percent = val.substring(0, val.length - 1);
-    if (isNaN(Number(percent))) {
-        throw new Error(`Invalid value '${percent}' specified. Expected a valid number.`);
-    }
     return `${Number(percent)}%`;
 };
 
