@@ -75,7 +75,7 @@ export class PageBorders extends IgnoreIfEmptyXmlComponent {
         super("w:pgBorders");
 
         if (!options) {
-            return;
+            return this;
         }
 
         if (options.pageBorders) {
