@@ -11,15 +11,13 @@ import { Footer, Header } from "./header";
 import { HeaderWrapper, IDocumentHeader } from "./header-wrapper";
 import { Media } from "./media";
 import { Numbering } from "./numbering";
-import { Paragraph } from "./paragraph";
 import { Comments } from "./paragraph/run/comment-run";
 import { Relationships } from "./relationships";
 import { Settings } from "./settings";
 import { Styles } from "./styles";
 import { ExternalStylesFactory } from "./styles/external-styles-factory";
 import { DefaultStylesFactory } from "./styles/factory";
-import { Table } from "./table";
-import { TableOfContents } from "./table-of-contents";
+import { FileChild } from "./file-child";
 
 export interface ISectionOptions {
     readonly headers?: {
@@ -33,7 +31,7 @@ export interface ISectionOptions {
         readonly even?: Footer;
     };
     readonly properties?: ISectionPropertiesOptions;
-    readonly children: readonly (Paragraph | Table | TableOfContents)[];
+    readonly children: readonly FileChild[];
 }
 
 export class File {

@@ -1,5 +1,5 @@
 // http://officeopenxml.com/WPtableGrid.php
-import { XmlComponent } from "@file/xml-components";
+import { FileChild } from "@file/file-child";
 
 import { AlignmentType } from "../paragraph";
 import { TableGrid } from "./grid";
@@ -34,7 +34,7 @@ export interface ITableOptions {
     readonly visuallyRightToLeft?: boolean;
 }
 
-export class Table extends XmlComponent {
+export class Table extends FileChild {
     public constructor({
         rows,
         width,
