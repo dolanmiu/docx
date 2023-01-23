@@ -1,7 +1,8 @@
 // http://officeopenxml.com/WPparagraph.php
 import { FootnoteReferenceRun } from "@file/footnotes";
-import { IContext, IXmlableObject, XmlComponent } from "@file/xml-components";
+import { IContext, IXmlableObject } from "@file/xml-components";
 import { uniqueId } from "@util/convenience-functions";
+import { FileChild } from "@file/file-child";
 
 import { TargetModeType } from "../relationships/relationship/relationship";
 import { DeletedTextRun, InsertedTextRun } from "../track-revision";
@@ -39,7 +40,7 @@ export interface IParagraphOptions extends IParagraphPropertiesOptions {
     readonly children?: readonly ParagraphChild[];
 }
 
-export class Paragraph extends XmlComponent {
+export class Paragraph extends FileChild {
     private readonly properties: ParagraphProperties;
 
     public constructor(options: string | IParagraphOptions) {

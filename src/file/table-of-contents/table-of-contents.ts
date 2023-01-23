@@ -3,13 +3,13 @@
 import { Paragraph } from "@file/paragraph";
 import { Run } from "@file/paragraph/run";
 import { Begin, End, Separate } from "@file/paragraph/run/field";
-import { XmlComponent } from "@file/xml-components";
+import { FileChild } from "@file/file-child";
 import { FieldInstruction } from "./field-instruction";
 import { StructuredDocumentTagContent } from "./sdt-content";
 import { StructuredDocumentTagProperties } from "./sdt-properties";
 import { ITableOfContentsOptions } from "./table-of-contents-properties";
 
-export class TableOfContents extends XmlComponent {
+export class TableOfContents extends FileChild {
     public constructor(alias: string = "Table of Contents", properties?: ITableOfContentsOptions) {
         super("w:sdt");
         this.root.push(new StructuredDocumentTagProperties(alias));
