@@ -79,7 +79,7 @@
     "cspell": "^6.2.2",
     "docsify-cli": "^4.3.0",
     "eslint": "^8.23.0",
-    "eslint-plugin-functional": "^4.3.1",
+    "eslint-plugin-functional": "^5.0.0",
     "eslint-plugin-import": "^2.26.0",
     "eslint-plugin-jsdoc": "^39.3.6",
     "eslint-plugin-no-null": "^1.0.2",
