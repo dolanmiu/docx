@@ -250,9 +250,12 @@ module.exports = {
                 ignoreAccessorPattern: ["**.root*", "**.numberingReferences*", "**.sections*", "**.properties*"],
             },
         ],
-        "functional/no-method-signature": "error",
-        "functional/no-mixed-type": "error",
+        "functional/prefer-property-signatures": "error",
+        "functional/no-mixed-types": "error",
+        // TODO: Deprecated. Use prefer-immutable-types and type-declaration-immutability instead
         "functional/prefer-readonly-type": "error",
+        // "functional/prefer-immutable-types": "error",
+        // "functional/type-declaration-immutability": "error",
         "no-unused-vars": ["error", { argsIgnorePattern: "^[_]+$" }],
     },
     overrides: [
