@@ -1,4 +1,10 @@
-const createLsdException = (name: string, uiPriority?: number, qFormat?: number, semiHidden?: number, unhideWhenUsed?: number): readonly object[] => {
+const createLsdException = (
+    name: string,
+    uiPriority?: number,
+    qFormat?: number,
+    semiHidden?: number,
+    unhideWhenUsed?: number,
+): readonly object[] => {
     "use strict";
 
     return [
