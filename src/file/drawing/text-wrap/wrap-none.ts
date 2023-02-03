@@ -2,7 +2,7 @@
 import { XmlComponent } from "@file/xml-components";
 
 export class WrapNone extends XmlComponent {
-    constructor() {
+    public constructor() {
         super("wp:wrapNone");
     }
 }

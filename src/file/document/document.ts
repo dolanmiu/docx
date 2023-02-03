@@ -8,7 +8,7 @@ import { DocumentAttributes } from "./document-attributes";
 import { DocumentBackground, IDocumentBackgroundOptions } from "./document-background";
 
 export interface IDocumentOptions {
-    readonly background: IDocumentBackgroundOptions;
+    readonly background?: IDocumentBackgroundOptions;
 }
 
 // <xsd:element name="document" type="CT_Document"/>
@@ -33,7 +33,7 @@ export interface IDocumentOptions {
 export class Document extends XmlComponent {
     private readonly body: Body;
 
-    constructor(options: IDocumentOptions) {
+    public constructor(options: IDocumentOptions) {
         super("w:document");
         this.root.push(
             new DocumentAttributes({
@@ -73,7 +73,9 @@ export class Document extends XmlComponent {
             }),
         );
         this.body = new Body();
-        this.root.push(new DocumentBackground(options.background));
+        if (options.background) {
+            this.root.push(new DocumentBackground(options.background));
+        }
         this.root.push(this.body);
     }
 

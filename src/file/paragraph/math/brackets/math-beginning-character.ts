@@ -6,7 +6,7 @@ class MathBeginningCharacterAttributes extends XmlAttributeComponent<{ readonly 
 }
 
 export class MathBeginningCharacter extends XmlComponent {
-    constructor(character: string) {
+    public constructor(character: string) {
         super("m:begChr");
 
         this.root.push(new MathBeginningCharacterAttributes({ character }));

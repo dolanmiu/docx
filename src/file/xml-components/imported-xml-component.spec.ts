@@ -1,9 +1,10 @@
 import { expect } from "chai";
 import { Element, xml2js } from "xml-js";
 
-import { EMPTY_OBJECT, ImportedXmlComponent } from "./";
+import { EMPTY_OBJECT } from "@file/xml-components";
+
+import { convertToXmlComponent, ImportedRootElementAttributes, ImportedXmlComponent } from "./imported-xml-component";
 import { IContext } from "./base";
-import { convertToXmlComponent } from "./imported-xml-component";
 
 const xmlString = `
         <w:p w:one="value 1" w:two="value 2">
@@ -61,7 +62,7 @@ describe("ImportedXmlComponent", () => {
     describe("#prepForXml()", () => {
         it("should transform for xml", () => {
             // tslint:disable-next-line: no-object-literal-type-assertion
-            const converted = importedXmlComponent.prepForXml({} as IContext);
+            const converted = importedXmlComponent.prepForXml({ stack: [] } as unknown as IContext);
             expect(converted).to.deep.equal({
                 "w:test": [
                     {
@@ -88,6 +89,30 @@ describe("ImportedXmlComponent", () => {
             const xmlObj = xml2js(xmlString, { compact: false }) as Element;
             const converted = convertToXmlComponent(xmlObj);
             expect(converted).to.deep.equal(convertedXmlElement);
+        });
+
+        it("should return undefined if xml type is invalid", () => {
+            const xmlObj = { type: "invalid" } as Element;
+            const converted = convertToXmlComponent(xmlObj);
+            expect(converted).to.equal(undefined);
+        });
+    });
+});
+
+describe("ImportedRootElementAttributes", () => {
+    let attributes: ImportedRootElementAttributes;
+
+    beforeEach(() => {
+        attributes = new ImportedRootElementAttributes({});
+    });
+
+    describe("#prepForXml()", () => {
+        it("should work", () => {
+            // tslint:disable-next-line: no-object-literal-type-assertion
+            const converted = attributes.prepForXml({} as IContext);
+            expect(converted).to.deep.equal({
+                _attr: {},
+            });
         });
     });
 });

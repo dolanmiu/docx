@@ -1,7 +1,7 @@
 // Example of how to change page borders
 // Import from 'docx' rather than '../build' if you install from npm
 import * as fs from "fs";
-import { Document, HeadingLevel, Packer, Paragraph, TextRun } from "../build";
+import { Document, HeadingLevel, Packer, Paragraph, Tab, TextRun } from "../build";
 
 const doc = new Document({
     sections: [
@@ -25,7 +25,7 @@ const doc = new Document({
                             bold: true,
                         }),
                         new TextRun({
-                            text: "\tGithub is the best",
+                            children: [new Tab(), "Github is the best"],
                             bold: true,
                         }),
                     ],

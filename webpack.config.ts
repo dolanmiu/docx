@@ -12,7 +12,7 @@ const configuration = {
         filename: "index.js",
         libraryTarget: "umd",
         library: "docx",
-        globalObject: "this",
+        globalObject: "globalThis",
     },
 
     resolve: {
@@ -23,6 +23,9 @@ const configuration = {
             stream: require.resolve("stream-browserify"),
         },
         plugins: [new TsconfigPathsPlugin()],
+        alias: {
+            jszip: require.resolve('jszip/lib/index.js'),
+        },
     },
 
     module: {

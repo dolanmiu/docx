@@ -3,7 +3,7 @@ import { HorizontalPositionAlign, VerticalPositionAlign } from "@file/shared/ali
 import { XmlComponent } from "@file/xml-components";
 
 export class Align extends XmlComponent {
-    constructor(value: HorizontalPositionAlign | VerticalPositionAlign) {
+    public constructor(value: HorizontalPositionAlign | VerticalPositionAlign) {
         super("wp:align");
         this.root.push(value);
     }

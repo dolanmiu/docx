@@ -10,7 +10,7 @@ export interface IBordersOptions {
 }
 
 export class Border extends IgnoreIfEmptyXmlComponent {
-    constructor(options: IBordersOptions) {
+    public constructor(options: IBordersOptions) {
         super("w:pBdr");
 
         if (options.top) {
@@ -32,7 +32,7 @@ export class Border extends IgnoreIfEmptyXmlComponent {
 }
 
 export class ThematicBreak extends XmlComponent {
-    constructor() {
+    public constructor() {
         super("w:pBdr");
         const bottom = new BorderElement("w:bottom", {
             color: "auto",

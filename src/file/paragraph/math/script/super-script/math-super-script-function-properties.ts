@@ -2,7 +2,7 @@
 import { XmlComponent } from "@file/xml-components";
 
 export class MathSuperScriptProperties extends XmlComponent {
-    constructor() {
+    public constructor() {
         super("m:sSupPr");
     }
 }

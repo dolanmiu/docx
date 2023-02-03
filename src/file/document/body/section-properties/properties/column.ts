@@ -14,7 +14,7 @@ export class ColumnAttributes extends XmlAttributeComponent<IColumnAttributes> {
 }
 
 export class Column extends XmlComponent {
-    constructor({ width, space }: IColumnAttributes) {
+    public constructor({ width, space }: IColumnAttributes) {
         super("w:col");
         this.root.push(
             new ColumnAttributes({

@@ -2,7 +2,7 @@ import { Attributes, XmlAttributeComponent, XmlComponent } from "@file/xml-compo
 import { decimalNumber } from "@util/values";
 
 class AbstractNumId extends XmlComponent {
-    constructor(value: number) {
+    public constructor(value: number) {
         super("w:abstractNumId");
         this.root.push(
             new Attributes({
@@ -18,15 +18,17 @@ class NumAttributes extends XmlAttributeComponent<{
     protected readonly xmlKeys = { numId: "w:numId" };
 }
 
+interface IOverrideLevel {
+    readonly num: number;
+    readonly start?: number;
+}
+
 export interface IConcreteNumberingOptions {
     readonly numId: number;
     readonly abstractNumId: number;
     readonly reference: string;
     readonly instance: number;
-    readonly overrideLevel?: {
-        readonly num: number;
-        readonly start?: number;
-    };
+    readonly overrideLevels?: readonly IOverrideLevel[];
 }
 
 // <xsd:complexType name="CT_Numbering">
@@ -45,7 +47,7 @@ export class ConcreteNumbering extends XmlComponent {
     public readonly reference: string;
     public readonly instance: number;
 
-    constructor(options: IConcreteNumberingOptions) {
+    public constructor(options: IConcreteNumberingOptions) {
         super("w:num");
 
         this.numId = options.numId;
@@ -60,8 +62,10 @@ export class ConcreteNumbering extends XmlComponent {
 
         this.root.push(new AbstractNumId(decimalNumber(options.abstractNumId)));
 
-        if (options.overrideLevel) {
-            this.root.push(new LevelOverride(options.overrideLevel.num, options.overrideLevel.start));
+        if (options.overrideLevels && options.overrideLevels.length) {
+            for (const level of options.overrideLevels) {
+                this.root.push(new LevelOverride(level.num, level.start));
+            }
         }
     }
 }
@@ -71,7 +75,7 @@ class LevelOverrideAttributes extends XmlAttributeComponent<{ readonly ilvl: num
 }
 
 export class LevelOverride extends XmlComponent {
-    constructor(levelNum: number, start?: number) {
+    public constructor(levelNum: number, start?: number) {
         super("w:lvlOverride");
         this.root.push(new LevelOverrideAttributes({ ilvl: levelNum }));
         if (start !== undefined) {
@@ -85,7 +89,7 @@ class StartOverrideAttributes extends XmlAttributeComponent<{ readonly val: numb
 }
 
 class StartOverride extends XmlComponent {
-    constructor(start: number) {
+    public constructor(start: number) {
         super("w:startOverride");
         this.root.push(new StartOverrideAttributes({ val: start }));
     }

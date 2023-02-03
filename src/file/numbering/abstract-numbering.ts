@@ -32,7 +32,7 @@ class AbstractNumberingAttributes extends XmlAttributeComponent<{
 export class AbstractNumbering extends XmlComponent {
     public readonly id: number;
 
-    constructor(id: number, levelOptions: ILevelsOptions[]) {
+    public constructor(id: number, levelOptions: readonly ILevelsOptions[]) {
         super("w:abstractNum");
         this.root.push(
             new AbstractNumberingAttributes({

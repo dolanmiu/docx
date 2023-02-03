@@ -29,11 +29,12 @@ Here are examples of `docx` being used with basic `HTML/JS` in a browser environ
 -   https://codepen.io/dolanmiu/pen/RwNeObg
 -   https://jsfiddle.net/dolanmiu/onadx1gu/
 
-Here is an example of `docx` working in `Angular`:
+Here are examples of `docx` working in `Angular`:
 
 -   https://stackblitz.com/edit/angular-docx
+-   https://stackblitz.com/edit/angular-wmd6k3
 
-Here is an example of `docx` working in `React`:
+Here are examples of `docx` working in `React`:
 
 -   https://stackblitz.com/edit/react-docx
 -   https://stackblitz.com/edit/react-docx-images (adding images to Word Document)

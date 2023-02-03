@@ -2,7 +2,7 @@ import { Attributes, XmlComponent } from "@file/xml-components";
 import { hexColorValue, signedTwipsMeasureValue } from "@util/values";
 
 export class CharacterSpacing extends XmlComponent {
-    constructor(value: number | string) {
+    public constructor(value: number | string) {
         super("w:spacing");
         this.root.push(
             new Attributes({
@@ -19,7 +19,7 @@ export class CharacterSpacing extends XmlComponent {
 //     <xsd:attribute name="themeShade" type="ST_UcharHexNumber" use="optional"/>
 // </xsd:complexType>
 export class Color extends XmlComponent {
-    constructor(color: string) {
+    public constructor(color: string) {
         super("w:color");
         this.root.push(
             new Attributes({
@@ -51,7 +51,7 @@ export class Color extends XmlComponent {
 //     </xsd:restriction>
 // </xsd:simpleType>
 export class Highlight extends XmlComponent {
-    constructor(color: string) {
+    public constructor(color: string) {
         super("w:highlight");
         this.root.push(
             new Attributes({
@@ -62,7 +62,7 @@ export class Highlight extends XmlComponent {
 }
 
 export class HighlightComplexScript extends XmlComponent {
-    constructor(color: string) {
+    public constructor(color: string) {
         super("w:highlightCs");
         this.root.push(
             new Attributes({

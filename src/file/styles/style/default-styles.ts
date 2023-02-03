@@ -6,7 +6,7 @@ import { IBaseCharacterStyleOptions, StyleForCharacter } from "./character-style
 import { IBaseParagraphStyleOptions, IParagraphStyleOptions, StyleForParagraph } from "./paragraph-style";
 
 export class HeadingStyle extends StyleForParagraph {
-    constructor(options: IParagraphStyleOptions) {
+    public constructor(options: IParagraphStyleOptions) {
         super({
             ...options,
             basedOn: "Normal",
@@ -17,7 +17,7 @@ export class HeadingStyle extends StyleForParagraph {
 }
 
 export class TitleStyle extends HeadingStyle {
-    constructor(options: IBaseParagraphStyleOptions) {
+    public constructor(options: IBaseParagraphStyleOptions) {
         super({
             ...options,
             id: "Title",
@@ -27,7 +27,7 @@ export class TitleStyle extends HeadingStyle {
 }
 
 export class Heading1Style extends HeadingStyle {
-    constructor(options: IBaseParagraphStyleOptions) {
+    public constructor(options: IBaseParagraphStyleOptions) {
         super({
             ...options,
             id: "Heading1",
@@ -37,7 +37,7 @@ export class Heading1Style extends HeadingStyle {
 }
 
 export class Heading2Style extends HeadingStyle {
-    constructor(options: IBaseParagraphStyleOptions) {
+    public constructor(options: IBaseParagraphStyleOptions) {
         super({
             ...options,
             id: "Heading2",
@@ -47,7 +47,7 @@ export class Heading2Style extends HeadingStyle {
 }
 
 export class Heading3Style extends HeadingStyle {
-    constructor(options: IBaseParagraphStyleOptions) {
+    public constructor(options: IBaseParagraphStyleOptions) {
         super({
             ...options,
             id: "Heading3",
@@ -57,7 +57,7 @@ export class Heading3Style extends HeadingStyle {
 }
 
 export class Heading4Style extends HeadingStyle {
-    constructor(options: IBaseParagraphStyleOptions) {
+    public constructor(options: IBaseParagraphStyleOptions) {
         super({
             ...options,
             id: "Heading4",
@@ -67,7 +67,7 @@ export class Heading4Style extends HeadingStyle {
 }
 
 export class Heading5Style extends HeadingStyle {
-    constructor(options: IBaseParagraphStyleOptions) {
+    public constructor(options: IBaseParagraphStyleOptions) {
         super({
             ...options,
             id: "Heading5",
@@ -77,7 +77,7 @@ export class Heading5Style extends HeadingStyle {
 }
 
 export class Heading6Style extends HeadingStyle {
-    constructor(options: IBaseParagraphStyleOptions) {
+    public constructor(options: IBaseParagraphStyleOptions) {
         super({
             ...options,
             id: "Heading6",
@@ -87,7 +87,7 @@ export class Heading6Style extends HeadingStyle {
 }
 
 export class StrongStyle extends HeadingStyle {
-    constructor(options: IBaseParagraphStyleOptions) {
+    public constructor(options: IBaseParagraphStyleOptions) {
         super({
             ...options,
             id: "Strong",
@@ -97,7 +97,7 @@ export class StrongStyle extends HeadingStyle {
 }
 
 export class ListParagraph extends StyleForParagraph {
-    constructor(options: IBaseParagraphStyleOptions) {
+    public constructor(options: IBaseParagraphStyleOptions) {
         super({
             ...options,
             id: "ListParagraph",
@@ -109,7 +109,7 @@ export class ListParagraph extends StyleForParagraph {
 }
 
 export class FootnoteText extends StyleForParagraph {
-    constructor(options: IBaseParagraphStyleOptions) {
+    public constructor(options: IBaseParagraphStyleOptions) {
         super({
             ...options,
             id: "FootnoteText",
@@ -134,7 +134,7 @@ export class FootnoteText extends StyleForParagraph {
 }
 
 export class FootnoteReferenceStyle extends StyleForCharacter {
-    constructor(options: IBaseCharacterStyleOptions) {
+    public constructor(options: IBaseCharacterStyleOptions) {
         super({
             ...options,
             id: "FootnoteReference",
@@ -149,7 +149,7 @@ export class FootnoteReferenceStyle extends StyleForCharacter {
 }
 
 export class FootnoteTextChar extends StyleForCharacter {
-    constructor(options: IBaseCharacterStyleOptions) {
+    public constructor(options: IBaseCharacterStyleOptions) {
         super({
             ...options,
             id: "FootnoteTextChar",
@@ -165,7 +165,7 @@ export class FootnoteTextChar extends StyleForCharacter {
 }
 
 export class HyperlinkStyle extends StyleForCharacter {
-    constructor(options: IBaseCharacterStyleOptions) {
+    public constructor(options: IBaseCharacterStyleOptions) {
         super({
             ...options,
             id: "Hyperlink",

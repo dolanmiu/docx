@@ -4,7 +4,7 @@ import { AdjustmentValues } from "./adjustment-values/adjustment-values";
 import { PresetGeometryAttributes } from "./preset-geometry-attributes";
 
 export class PresetGeometry extends XmlComponent {
-    constructor() {
+    public constructor() {
         super("a:prstGeom");
 
         this.root.push(

@@ -1,4 +1,8 @@
-import { assert } from "chai";
+import { assert, expect } from "chai";
+import { SinonStub, stub } from "sinon";
+
+import { Formatter } from "@export/formatter";
+import * as convenienceFunctions from "@util/convenience-functions";
 
 import { Utility } from "tests/utility";
 
@@ -6,8 +10,8 @@ import { IDrawingOptions } from "../drawing";
 import { TextWrappingType } from "../text-wrap";
 import { Anchor } from "./anchor";
 
-function createAnchor(drawingOptions: IDrawingOptions): Anchor {
-    return new Anchor(
+const createAnchor = (drawingOptions: IDrawingOptions): Anchor =>
+    new Anchor(
         {
             fileName: "test.png",
             stream: new Buffer(""),
@@ -34,9 +38,16 @@ function createAnchor(drawingOptions: IDrawingOptions): Anchor {
         },
         drawingOptions,
     );
-}
 
 describe("Anchor", () => {
+    before(() => {
+        stub(convenienceFunctions, "uniqueNumericId").callsFake(() => 0);
+    });
+
+    after(() => {
+        (convenienceFunctions.uniqueNumericId as SinonStub).restore();
+    });
+
     let anchor: Anchor;
 
     describe("#constructor()", () => {
@@ -361,6 +372,237 @@ describe("Anchor", () => {
 
             assert.include(anchorAttributes, {
                 relativeHeight: 120,
+            });
+        });
+
+        it("should create a Drawing with doc properties", () => {
+            anchor = createAnchor({
+                floating: {
+                    verticalPosition: {
+                        offset: 0,
+                    },
+                    horizontalPosition: {
+                        offset: 0,
+                    },
+                    zIndex: 120,
+                },
+                docProperties: {
+                    name: "test",
+                    description: "test",
+                    title: "test",
+                },
+            });
+            const tree = new Formatter().format(anchor);
+            expect(tree).to.deep.equal({
+                "wp:anchor": [
+                    {
+                        _attr: {
+                            allowOverlap: "1",
+                            behindDoc: "0",
+                            distB: 0,
+                            distL: 0,
+                            distR: 0,
+                            distT: 0,
+                            layoutInCell: "1",
+                            locked: "0",
+                            relativeHeight: 120,
+                            simplePos: "0",
+                        },
+                    },
+                    {
+                        "wp:simplePos": {
+                            _attr: {
+                                x: 0,
+                                y: 0,
+                            },
+                        },
+                    },
+                    {
+                        "wp:positionH": [
+                            {
+                                _attr: {
+                                    relativeFrom: "page",
+                                },
+                            },
+                            {
+                                "wp:posOffset": ["0"],
+                            },
+                        ],
+                    },
+                    {
+                        "wp:positionV": [
+                            {
+                                _attr: {
+                                    relativeFrom: "page",
+                                },
+                            },
+                            {
+                                "wp:posOffset": ["0"],
+                            },
+                        ],
+                    },
+                    {
+                        "wp:extent": {
+                            _attr: {
+                                cx: 952500,
+                                cy: 952500,
+                            },
+                        },
+                    },
+                    {
+                        "wp:effectExtent": {
+                            _attr: {
+                                b: 0,
+                                l: 0,
+                                r: 0,
+                                t: 0,
+                            },
+                        },
+                    },
+                    {
+                        "wp:wrapNone": {},
+                    },
+                    {
+                        "wp:docPr": {
+                            _attr: {
+                                descr: "test",
+                                id: 0,
+                                name: "test",
+                                title: "test",
+                            },
+                        },
+                    },
+                    {
+                        "wp:cNvGraphicFramePr": [
+                            {
+                                "a:graphicFrameLocks": {
+                                    _attr: {
+                                        noChangeAspect: 1,
+                                        "xmlns:a": "http://schemas.openxmlformats.org/drawingml/2006/main",
+                                    },
+                                },
+                            },
+                        ],
+                    },
+                    {
+                        "a:graphic": [
+                            {
+                                _attr: {
+                                    "xmlns:a": "http://schemas.openxmlformats.org/drawingml/2006/main",
+                                },
+                            },
+                            {
+                                "a:graphicData": [
+                                    {
+                                        _attr: {
+                                            uri: "http://schemas.openxmlformats.org/drawingml/2006/picture",
+                                        },
+                                    },
+                                    {
+                                        "pic:pic": [
+                                            {
+                                                _attr: {
+                                                    "xmlns:pic": "http://schemas.openxmlformats.org/drawingml/2006/picture",
+                                                },
+                                            },
+                                            {
+                                                "pic:nvPicPr": [
+                                                    {
+                                                        "pic:cNvPr": {
+                                                            _attr: {
+                                                                descr: "",
+                                                                id: 0,
+                                                                name: "",
+                                                            },
+                                                        },
+                                                    },
+                                                    {
+                                                        "pic:cNvPicPr": [
+                                                            {
+                                                                "a:picLocks": {
+                                                                    _attr: {
+                                                                        noChangeArrowheads: 1,
+                                                                        noChangeAspect: 1,
+                                                                    },
+                                                                },
+                                                            },
+                                                        ],
+                                                    },
+                                                ],
+                                            },
+                                            {
+                                                "pic:blipFill": [
+                                                    {
+                                                        "a:blip": {
+                                                            _attr: {
+                                                                cstate: "none",
+                                                                "r:embed": "rId{test.png}",
+                                                            },
+                                                        },
+                                                    },
+                                                    {
+                                                        "a:srcRect": {},
+                                                    },
+                                                    {
+                                                        "a:stretch": [
+                                                            {
+                                                                "a:fillRect": {},
+                                                            },
+                                                        ],
+                                                    },
+                                                ],
+                                            },
+                                            {
+                                                "pic:spPr": [
+                                                    {
+                                                        _attr: {
+                                                            bwMode: "auto",
+                                                        },
+                                                    },
+                                                    {
+                                                        "a:xfrm": [
+                                                            {
+                                                                _attr: {},
+                                                            },
+                                                            {
+                                                                "a:off": {
+                                                                    _attr: {
+                                                                        x: 0,
+                                                                        y: 0,
+                                                                    },
+                                                                },
+                                                            },
+                                                            {
+                                                                "a:ext": {
+                                                                    _attr: {
+                                                                        cx: 952500,
+                                                                        cy: 952500,
+                                                                    },
+                                                                },
+                                                            },
+                                                        ],
+                                                    },
+                                                    {
+                                                        "a:prstGeom": [
+                                                            {
+                                                                _attr: {
+                                                                    prst: "rect",
+                                                                },
+                                                            },
+                                                            {
+                                                                "a:avLst": {},
+                                                            },
+                                                        ],
+                                                    },
+                                                ],
+                                            },
+                                        ],
+                                    },
+                                ],
+                            },
+                        ],
+                    },
+                ],
             });
         });
     });

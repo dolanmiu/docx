@@ -41,7 +41,7 @@ export class PageNumberTypeAttributes extends XmlAttributeComponent<IPageNumberT
     };
 }
 export class PageNumberType extends XmlComponent {
-    constructor({ start, formatType, separator }: IPageNumberTypeAttributes) {
+    public constructor({ start, formatType, separator }: IPageNumberTypeAttributes) {
         super("w:pgNumType");
         this.root.push(
             new PageNumberTypeAttributes({

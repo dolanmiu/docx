@@ -3,6 +3,7 @@ import { SinonStub, stub } from "sinon";
 
 import * as convenienceFunctions from "@util/convenience-functions";
 
+import { HorizontalPositionAlign, VerticalPositionAlign } from "@file/shared";
 import { Formatter } from "@export/formatter";
 import { BorderStyle } from "@file/border";
 import { EMPTY_OBJECT } from "@file/xml-components";
@@ -10,7 +11,6 @@ import { EMPTY_OBJECT } from "@file/xml-components";
 import { IViewWrapper } from "../document-wrapper";
 import { File } from "../file";
 import { ShadingType } from "../shading";
-import { HorizontalPositionAlign, VerticalPositionAlign } from "../shared";
 import { AlignmentType, HeadingLevel, LeaderType, PageBreak, TabStopPosition, TabStopType } from "./formatting";
 import { FrameAnchorType } from "./frame";
 import { Bookmark, ExternalHyperlink } from "./links";
@@ -19,16 +19,13 @@ import { TextRun } from "./run";
 
 describe("Paragraph", () => {
     before(() => {
-        stub(convenienceFunctions, "uniqueId").callsFake(() => {
-            return "test-unique-id";
-        });
-        stub(convenienceFunctions, "uniqueNumericId").callsFake(() => {
-            return -101;
-        });
+        stub(convenienceFunctions, "uniqueId").callsFake(() => "test-unique-id");
+        stub(convenienceFunctions, "uniqueNumericId").callsFake(() => -101);
     });
 
     after(() => {
         (convenienceFunctions.uniqueId as SinonStub).restore();
+        (convenienceFunctions.uniqueNumericId as SinonStub).restore();
     });
 
     describe("#constructor()", () => {
@@ -957,6 +954,7 @@ describe("Paragraph", () => {
             paragraph.prepForXml({
                 viewWrapper: viewWrapperMock,
                 file: file,
+                stack: [],
             });
             const tree = new Formatter().format(paragraph);
             expect(tree).to.deep.equal({

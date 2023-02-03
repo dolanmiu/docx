@@ -6,7 +6,7 @@ class MathLimitLocationAttributes extends XmlAttributeComponent<{ readonly value
 }
 
 export class MathLimitLocation extends XmlComponent {
-    constructor() {
+    public constructor() {
         super("m:limLoc");
 
         this.root.push(new MathLimitLocationAttributes({ value: "undOvr" }));

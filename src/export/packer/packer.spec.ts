@@ -37,6 +37,14 @@ describe("Packer", () => {
         });
     });
 
+    describe("#toString()", () => {
+        it("should return a non-empty string", async () => {
+            const result = await Packer.toString(file);
+
+            assert.isAbove(result.length, 0);
+        });
+    });
+
     describe("#toBuffer()", () => {
         it("should create a standard docx file", async function () {
             this.timeout(99999999);
@@ -47,7 +55,7 @@ describe("Packer", () => {
         });
 
         it("should handle exception if it throws any", () => {
-            // tslint:disable-next-line:no-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const compiler = stub((Packer as any).compiler, "compile");
 
             compiler.throwsException();
@@ -57,7 +65,7 @@ describe("Packer", () => {
         });
 
         after(() => {
-            // tslint:disable-next-line:no-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (Packer as any).compiler.compile.restore();
         });
     });
@@ -72,7 +80,7 @@ describe("Packer", () => {
         });
 
         it("should handle exception if it throws any", () => {
-            // tslint:disable-next-line:no-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const compiler = stub((Packer as any).compiler, "compile");
 
             compiler.throwsException();
@@ -82,14 +90,14 @@ describe("Packer", () => {
         });
 
         after(() => {
-            // tslint:disable-next-line:no-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (Packer as any).compiler.compile.restore();
         });
     });
 
     describe("#toBlob()", () => {
         it("should create a standard docx file", async () => {
-            // tslint:disable-next-line: no-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             stub((Packer as any).compiler, "compile").callsFake(() => ({
                 // tslint:disable-next-line: no-empty
                 generateAsync: () => mock({}),
@@ -100,7 +108,7 @@ describe("Packer", () => {
         });
 
         it("should handle exception if it throws any", () => {
-            // tslint:disable-next-line:no-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const compiler = stub((Packer as any).compiler, "compile");
 
             compiler.throwsException();
@@ -110,7 +118,57 @@ describe("Packer", () => {
         });
 
         afterEach(() => {
-            // tslint:disable-next-line:no-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (Packer as any).compiler.compile.restore();
+        });
+    });
+
+    describe("#toStream()", () => {
+        it("should create a standard docx file", async () => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            stub((Packer as any).compiler, "compile").callsFake(() => ({
+                // tslint:disable-next-line: no-empty
+                generateNodeStream: () => ({
+                    on: (event: string, cb: () => void) => {
+                        if (event === "end") {
+                            cb();
+                        }
+                    },
+                }),
+            }));
+            const stream = await Packer.toStream(file);
+            return new Promise((resolve, reject) => {
+                stream.on("error", () => {
+                    reject(new Error());
+                });
+
+                stream.on("end", () => {
+                    resolve();
+                });
+            });
+        });
+
+        it("should handle exception if it throws any", () => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const compiler = stub((Packer as any).compiler, "compile").callsFake(() => ({
+                // tslint:disable-next-line: no-empty
+                on: (event: string, cb: () => void) => {
+                    if (event === "error") {
+                        cb();
+                    }
+                },
+            }));
+
+            compiler.throwsException();
+            try {
+                Packer.toStream(file);
+            } catch (error) {
+                assert.isDefined(error);
+            }
+        });
+
+        afterEach(() => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (Packer as any).compiler.compile.restore();
         });
     });

@@ -27,7 +27,7 @@ export interface ITableCellBorders {
 }
 
 export class TableCellBorders extends IgnoreIfEmptyXmlComponent {
-    constructor(options: ITableCellBorders) {
+    public constructor(options: ITableCellBorders) {
         super("w:tcBorders");
 
         if (options.top) {
@@ -66,7 +66,7 @@ class GridSpanAttributes extends XmlAttributeComponent<{ readonly val: number }>
  * GridSpan element. Should be used in a table cell. Pass the number of columns that this cell need to span.
  */
 export class GridSpan extends XmlComponent {
-    constructor(value: number) {
+    public constructor(value: number) {
         super("w:gridSpan");
 
         this.root.push(
@@ -99,7 +99,7 @@ class VerticalMergeAttributes extends XmlAttributeComponent<{ readonly val: Vert
  * Vertical merge element. Should be used in a table cell.
  */
 export class VerticalMerge extends XmlComponent {
-    constructor(value: VerticalMergeType) {
+    public constructor(value: VerticalMergeType) {
         super("w:vMerge");
 
         this.root.push(
@@ -124,7 +124,7 @@ class TDirectionAttributes extends XmlAttributeComponent<{ readonly val: TextDir
  * Text Direction within a table cell
  */
 export class TDirection extends XmlComponent {
-    constructor(value: TextDirection) {
+    public constructor(value: TextDirection) {
         super("w:textDirection");
 
         this.root.push(

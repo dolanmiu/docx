@@ -14,7 +14,7 @@ export interface ICharacterStyleOptions extends IBaseCharacterStyleOptions {
 export class StyleForCharacter extends Style {
     private readonly runProperties: RunProperties;
 
-    constructor(options: ICharacterStyleOptions) {
+    public constructor(options: ICharacterStyleOptions) {
         super(
             { type: "character", styleId: options.id },
             {

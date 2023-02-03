@@ -10,13 +10,13 @@ import { ImageRun } from "./image-run";
 
 describe("ImageRun", () => {
     before(() => {
-        stub(convenienceFunctions, "uniqueId").callsFake(() => {
-            return "test-unique-id";
-        });
+        stub(convenienceFunctions, "uniqueId").callsFake(() => "test-unique-id");
+        stub(convenienceFunctions, "uniqueNumericId").callsFake(() => 0);
     });
 
     after(() => {
         (convenienceFunctions.uniqueId as SinonStub).restore();
+        (convenienceFunctions.uniqueNumericId as SinonStub).restore();
     });
 
     describe("#constructor()", () => {
@@ -42,11 +42,12 @@ describe("ImageRun", () => {
             const tree = new Formatter().format(currentImageRun, {
                 file: {
                     Media: {
-                        // tslint:disable-next-line: no-empty
+                        // eslint-disable-next-line @typescript-eslint/no-empty-function
                         addImage: () => {},
                     },
                 } as unknown as File,
                 viewWrapper: {} as unknown as IViewWrapper,
+                stack: [],
             });
             expect(tree).to.deep.equal({
                 "w:r": [
@@ -127,6 +128,7 @@ describe("ImageRun", () => {
                                                 descr: "",
                                                 id: 0,
                                                 name: "",
+                                                title: "",
                                             },
                                         },
                                     },
@@ -292,11 +294,12 @@ describe("ImageRun", () => {
             const tree = new Formatter().format(currentImageRun, {
                 file: {
                     Media: {
-                        // tslint:disable-next-line: no-empty
+                        // eslint-disable-next-line @typescript-eslint/no-empty-function
                         addImage: () => {},
                     },
                 } as unknown as File,
                 viewWrapper: {} as unknown as IViewWrapper,
+                stack: [],
             });
             expect(tree).to.deep.equal({
                 "w:r": [
@@ -377,6 +380,7 @@ describe("ImageRun", () => {
                                                 descr: "",
                                                 id: 0,
                                                 name: "",
+                                                title: "",
                                             },
                                         },
                                     },
@@ -521,6 +525,7 @@ describe("ImageRun", () => {
         });
 
         it("should return UInt8Array if atob is present", () => {
+            // eslint-disable-next-line functional/immutable-data
             global.atob = () => "atob result";
 
             const currentImageRun = new ImageRun({
@@ -544,11 +549,12 @@ describe("ImageRun", () => {
             const tree = new Formatter().format(currentImageRun, {
                 file: {
                     Media: {
-                        // tslint:disable-next-line: no-empty
+                        // eslint-disable-next-line @typescript-eslint/no-empty-function
                         addImage: () => {},
                     },
                 } as unknown as File,
                 viewWrapper: {} as unknown as IViewWrapper,
+                stack: [],
             });
 
             expect(tree).to.deep.equal({
@@ -630,6 +636,7 @@ describe("ImageRun", () => {
                                                 descr: "",
                                                 id: 0,
                                                 name: "",
+                                                title: "",
                                             },
                                         },
                                     },
@@ -772,11 +779,12 @@ describe("ImageRun", () => {
                 ],
             });
 
-            // tslint:disable-next-line: no-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any, functional/immutable-data
             (global as any).atob = undefined;
         });
 
         it("should use data as is if its not a string", () => {
+            // eslint-disable-next-line functional/immutable-data
             global.atob = () => "atob result";
 
             const currentImageRun = new ImageRun({
@@ -800,11 +808,12 @@ describe("ImageRun", () => {
             const tree = new Formatter().format(currentImageRun, {
                 file: {
                     Media: {
-                        // tslint:disable-next-line: no-empty
+                        // eslint-disable-next-line @typescript-eslint/no-empty-function
                         addImage: () => {},
                     },
                 } as unknown as File,
                 viewWrapper: {} as unknown as IViewWrapper,
+                stack: [],
             });
 
             expect(tree).to.deep.equal({
@@ -886,6 +895,7 @@ describe("ImageRun", () => {
                                                 descr: "",
                                                 id: 0,
                                                 name: "",
+                                                title: "",
                                             },
                                         },
                                     },
@@ -1028,7 +1038,7 @@ describe("ImageRun", () => {
                 ],
             });
 
-            // tslint:disable-next-line: no-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any, functional/immutable-data
             (global as any).atob = undefined;
         });
     });

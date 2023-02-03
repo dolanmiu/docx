@@ -1,7 +1,6 @@
 import { expect } from "chai";
 
 import { Formatter } from "@export/formatter";
-import { EMPTY_OBJECT } from "@file/xml-components";
 
 import { AlignmentType, EmphasisMarkType, TabStopPosition } from "../paragraph";
 import { UnderlineType } from "../paragraph/run/underline";
@@ -26,11 +25,61 @@ describe("AbstractNumbering", () => {
                 },
             ]);
             const tree = new Formatter().format(abstractNumbering);
-            expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({ _attr: { "w:ilvl": 3, "w15:tentative": 1 } });
-            expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({ "w:start": { _attr: { "w:val": 1 } } });
-            expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({ "w:lvlJc": { _attr: { "w:val": "end" } } });
-            expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({ "w:numFmt": { _attr: { "w:val": LevelFormat.LOWER_LETTER } } });
-            expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({ "w:lvlText": { _attr: { "w:val": "%1)" } } });
+            expect(tree).to.deep.equal({
+                "w:abstractNum": [
+                    {
+                        _attr: {
+                            "w15:restartNumberingAfterBreak": 0,
+                            "w:abstractNumId": 1,
+                        },
+                    },
+                    {
+                        "w:multiLevelType": {
+                            _attr: {
+                                "w:val": "hybridMultilevel",
+                            },
+                        },
+                    },
+                    {
+                        "w:lvl": [
+                            {
+                                "w:start": {
+                                    _attr: {
+                                        "w:val": 1,
+                                    },
+                                },
+                            },
+                            {
+                                "w:numFmt": {
+                                    _attr: {
+                                        "w:val": LevelFormat.LOWER_LETTER,
+                                    },
+                                },
+                            },
+                            {
+                                "w:lvlText": {
+                                    _attr: {
+                                        "w:val": "%1)",
+                                    },
+                                },
+                            },
+                            {
+                                "w:lvlJc": {
+                                    _attr: {
+                                        "w:val": "end",
+                                    },
+                                },
+                            },
+                            {
+                                _attr: {
+                                    "w15:tentative": 1,
+                                    "w:ilvl": 3,
+                                },
+                            },
+                        ],
+                    },
+                ],
+            });
         });
 
         it("uses 'start' as the default alignment", () => {
@@ -42,11 +91,61 @@ describe("AbstractNumbering", () => {
                 },
             ]);
             const tree = new Formatter().format(abstractNumbering);
-            expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({ _attr: { "w:ilvl": 3, "w15:tentative": 1 } });
-            expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({ "w:start": { _attr: { "w:val": 1 } } });
-            expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({ "w:lvlJc": { _attr: { "w:val": "start" } } });
-            expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({ "w:numFmt": { _attr: { "w:val": LevelFormat.LOWER_LETTER } } });
-            expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({ "w:lvlText": { _attr: { "w:val": "%1)" } } });
+            expect(tree).to.deep.equal({
+                "w:abstractNum": [
+                    {
+                        _attr: {
+                            "w15:restartNumberingAfterBreak": 0,
+                            "w:abstractNumId": 1,
+                        },
+                    },
+                    {
+                        "w:multiLevelType": {
+                            _attr: {
+                                "w:val": "hybridMultilevel",
+                            },
+                        },
+                    },
+                    {
+                        "w:lvl": [
+                            {
+                                "w:start": {
+                                    _attr: {
+                                        "w:val": 1,
+                                    },
+                                },
+                            },
+                            {
+                                "w:numFmt": {
+                                    _attr: {
+                                        "w:val": LevelFormat.LOWER_LETTER,
+                                    },
+                                },
+                            },
+                            {
+                                "w:lvlText": {
+                                    _attr: {
+                                        "w:val": "%1)",
+                                    },
+                                },
+                            },
+                            {
+                                "w:lvlJc": {
+                                    _attr: {
+                                        "w:val": "start",
+                                    },
+                                },
+                            },
+                            {
+                                _attr: {
+                                    "w15:tentative": 1,
+                                    "w:ilvl": 3,
+                                },
+                            },
+                        ],
+                    },
+                ],
+            });
         });
 
         it("has suffix", () => {
@@ -60,7 +159,69 @@ describe("AbstractNumbering", () => {
                 },
             ]);
             const tree = new Formatter().format(abstractNumbering);
-            expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({ "w:suff": { _attr: { "w:val": "space" } } });
+            expect(tree).to.deep.equal({
+                "w:abstractNum": [
+                    {
+                        _attr: {
+                            "w15:restartNumberingAfterBreak": 0,
+                            "w:abstractNumId": 1,
+                        },
+                    },
+                    {
+                        "w:multiLevelType": {
+                            _attr: {
+                                "w:val": "hybridMultilevel",
+                            },
+                        },
+                    },
+                    {
+                        "w:lvl": [
+                            {
+                                "w:start": {
+                                    _attr: {
+                                        "w:val": 1,
+                                    },
+                                },
+                            },
+                            {
+                                "w:numFmt": {
+                                    _attr: {
+                                        "w:val": "lowerLetter",
+                                    },
+                                },
+                            },
+                            {
+                                "w:suff": {
+                                    _attr: {
+                                        "w:val": "space",
+                                    },
+                                },
+                            },
+                            {
+                                "w:lvlText": {
+                                    _attr: {
+                                        "w:val": "%1)",
+                                    },
+                                },
+                            },
+                            {
+                                "w:lvlJc": {
+                                    _attr: {
+                                        "w:val": "end",
+                                    },
+                                },
+                            },
+                            {
+                                _attr: {
+                                    "w15:tentative": 1,
+                                    "w:ilvl": 3,
+                                },
+                            },
+                        ],
+                    },
+                ],
+            });
+            // expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({ "w:suff": { _attr: { "w:val": "space" } } });
         });
 
         describe("formatting methods: paragraph properties", () => {
@@ -78,8 +239,71 @@ describe("AbstractNumbering", () => {
                     },
                 ]);
                 const tree = new Formatter().format(abstractNumbering);
-                expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({
-                    "w:pPr": [{ "w:ind": { _attr: { "w:left": 720 } } }],
+                expect(tree).to.deep.equal({
+                    "w:abstractNum": [
+                        {
+                            _attr: {
+                                "w15:restartNumberingAfterBreak": 0,
+                                "w:abstractNumId": 1,
+                            },
+                        },
+                        {
+                            "w:multiLevelType": {
+                                _attr: {
+                                    "w:val": "hybridMultilevel",
+                                },
+                            },
+                        },
+                        {
+                            "w:lvl": [
+                                {
+                                    "w:start": {
+                                        _attr: {
+                                            "w:val": 1,
+                                        },
+                                    },
+                                },
+                                {
+                                    "w:numFmt": {
+                                        _attr: {
+                                            "w:val": "lowerRoman",
+                                        },
+                                    },
+                                },
+                                {
+                                    "w:lvlText": {
+                                        _attr: {
+                                            "w:val": "%0.",
+                                        },
+                                    },
+                                },
+                                {
+                                    "w:lvlJc": {
+                                        _attr: {
+                                            "w:val": "start",
+                                        },
+                                    },
+                                },
+                                {
+                                    "w:pPr": [
+                                        {
+                                            "w:ind": {
+                                                _attr: {
+                                                    "w:left": 720,
+                                                },
+                                            },
+                                        },
+                                    ],
+                                },
+                                {
+                                    _attr: {
+                                        "w15:tentative": 1,
+                                        "w:ilvl": 0,
+                                    },
+                                },
+                            ],
+                        },
+                    ],
                 });
             });
 
@@ -97,8 +321,72 @@ describe("AbstractNumbering", () => {
                     },
                 ]);
                 const tree = new Formatter().format(abstractNumbering);
-                expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({
-                    "w:pPr": [{ "w:spacing": { _attr: { "w:before": 50, "w:after": 150 } } }],
+                expect(tree).to.deep.equal({
+                    "w:abstractNum": [
+                        {
+                            _attr: {
+                                "w15:restartNumberingAfterBreak": 0,
+                                "w:abstractNumId": 1,
+                            },
+                        },
+                        {
+                            "w:multiLevelType": {
+                                _attr: {
+                                    "w:val": "hybridMultilevel",
+                                },
+                            },
+                        },
+                        {
+                            "w:lvl": [
+                                {
+                                    "w:start": {
+                                        _attr: {
+                                            "w:val": 1,
+                                        },
+                                    },
+                                },
+                                {
+                                    "w:numFmt": {
+                                        _attr: {
+                                            "w:val": "lowerRoman",
+                                        },
+                                    },
+                                },
+                                {
+                                    "w:lvlText": {
+                                        _attr: {
+                                            "w:val": "%0.",
+                                        },
+                                    },
+                                },
+                                {
+                                    "w:lvlJc": {
+                                        _attr: {
+                                            "w:val": "start",
+                                        },
+                                    },
+                                },
+                                {
+                                    "w:pPr": [
+                                        {
+                                            "w:spacing": {
+                                                _attr: {
+                                                    "w:after": 150,
+                                                    "w:before": 50,
+                                                },
+                                            },
+                                        },
+                                    ],
+                                },
+                                {
+                                    _attr: {
+                                        "w15:tentative": 1,
+                                        "w:ilvl": 0,
+                                    },
+                                },
+                            ],
+                        },
+                    ],
                 });
             });
 
@@ -116,8 +404,71 @@ describe("AbstractNumbering", () => {
                     },
                 ]);
                 const tree = new Formatter().format(abstractNumbering);
-                expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({
-                    "w:pPr": [{ "w:jc": { _attr: { "w:val": "center" } } }],
+                expect(tree).to.deep.equal({
+                    "w:abstractNum": [
+                        {
+                            _attr: {
+                                "w15:restartNumberingAfterBreak": 0,
+                                "w:abstractNumId": 1,
+                            },
+                        },
+                        {
+                            "w:multiLevelType": {
+                                _attr: {
+                                    "w:val": "hybridMultilevel",
+                                },
+                            },
+                        },
+                        {
+                            "w:lvl": [
+                                {
+                                    "w:start": {
+                                        _attr: {
+                                            "w:val": 1,
+                                        },
+                                    },
+                                },
+                                {
+                                    "w:numFmt": {
+                                        _attr: {
+                                            "w:val": "lowerRoman",
+                                        },
+                                    },
+                                },
+                                {
+                                    "w:lvlText": {
+                                        _attr: {
+                                            "w:val": "%0.",
+                                        },
+                                    },
+                                },
+                                {
+                                    "w:lvlJc": {
+                                        _attr: {
+                                            "w:val": "start",
+                                        },
+                                    },
+                                },
+                                {
+                                    "w:pPr": [
+                                        {
+                                            "w:jc": {
+                                                _attr: {
+                                                    "w:val": "center",
+                                                },
+                                            },
+                                        },
+                                    ],
+                                },
+                                {
+                                    _attr: {
+                                        "w15:tentative": 1,
+                                        "w:ilvl": 0,
+                                    },
+                                },
+                            ],
+                        },
+                    ],
                 });
             });
 
@@ -135,8 +486,71 @@ describe("AbstractNumbering", () => {
                     },
                 ]);
                 const tree = new Formatter().format(abstractNumbering);
-                expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({
-                    "w:pPr": [{ "w:jc": { _attr: { "w:val": "left" } } }],
+                expect(tree).to.deep.equal({
+                    "w:abstractNum": [
+                        {
+                            _attr: {
+                                "w15:restartNumberingAfterBreak": 0,
+                                "w:abstractNumId": 1,
+                            },
+                        },
+                        {
+                            "w:multiLevelType": {
+                                _attr: {
+                                    "w:val": "hybridMultilevel",
+                                },
+                            },
+                        },
+                        {
+                            "w:lvl": [
+                                {
+                                    "w:start": {
+                                        _attr: {
+                                            "w:val": 1,
+                                        },
+                                    },
+                                },
+                                {
+                                    "w:numFmt": {
+                                        _attr: {
+                                            "w:val": "lowerRoman",
+                                        },
+                                    },
+                                },
+                                {
+                                    "w:lvlText": {
+                                        _attr: {
+                                            "w:val": "%0.",
+                                        },
+                                    },
+                                },
+                                {
+                                    "w:lvlJc": {
+                                        _attr: {
+                                            "w:val": "start",
+                                        },
+                                    },
+                                },
+                                {
+                                    "w:pPr": [
+                                        {
+                                            "w:jc": {
+                                                _attr: {
+                                                    "w:val": "left",
+                                                },
+                                            },
+                                        },
+                                    ],
+                                },
+                                {
+                                    _attr: {
+                                        "w15:tentative": 1,
+                                        "w:ilvl": 0,
+                                    },
+                                },
+                            ],
+                        },
+                    ],
                 });
             });
 
@@ -154,8 +568,71 @@ describe("AbstractNumbering", () => {
                     },
                 ]);
                 const tree = new Formatter().format(abstractNumbering);
-                expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({
-                    "w:pPr": [{ "w:jc": { _attr: { "w:val": "right" } } }],
+                expect(tree).to.deep.equal({
+                    "w:abstractNum": [
+                        {
+                            _attr: {
+                                "w15:restartNumberingAfterBreak": 0,
+                                "w:abstractNumId": 1,
+                            },
+                        },
+                        {
+                            "w:multiLevelType": {
+                                _attr: {
+                                    "w:val": "hybridMultilevel",
+                                },
+                            },
+                        },
+                        {
+                            "w:lvl": [
+                                {
+                                    "w:start": {
+                                        _attr: {
+                                            "w:val": 1,
+                                        },
+                                    },
+                                },
+                                {
+                                    "w:numFmt": {
+                                        _attr: {
+                                            "w:val": "lowerRoman",
+                                        },
+                                    },
+                                },
+                                {
+                                    "w:lvlText": {
+                                        _attr: {
+                                            "w:val": "%0.",
+                                        },
+                                    },
+                                },
+                                {
+                                    "w:lvlJc": {
+                                        _attr: {
+                                            "w:val": "start",
+                                        },
+                                    },
+                                },
+                                {
+                                    "w:pPr": [
+                                        {
+                                            "w:jc": {
+                                                _attr: {
+                                                    "w:val": "right",
+                                                },
+                                            },
+                                        },
+                                    ],
+                                },
+                                {
+                                    _attr: {
+                                        "w15:tentative": 1,
+                                        "w:ilvl": 0,
+                                    },
+                                },
+                            ],
+                        },
+                    ],
                 });
             });
 
@@ -173,8 +650,71 @@ describe("AbstractNumbering", () => {
                     },
                 ]);
                 const tree = new Formatter().format(abstractNumbering);
-                expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({
-                    "w:pPr": [{ "w:jc": { _attr: { "w:val": "both" } } }],
+                expect(tree).to.deep.equal({
+                    "w:abstractNum": [
+                        {
+                            _attr: {
+                                "w15:restartNumberingAfterBreak": 0,
+                                "w:abstractNumId": 1,
+                            },
+                        },
+                        {
+                            "w:multiLevelType": {
+                                _attr: {
+                                    "w:val": "hybridMultilevel",
+                                },
+                            },
+                        },
+                        {
+                            "w:lvl": [
+                                {
+                                    "w:start": {
+                                        _attr: {
+                                            "w:val": 1,
+                                        },
+                                    },
+                                },
+                                {
+                                    "w:numFmt": {
+                                        _attr: {
+                                            "w:val": "lowerRoman",
+                                        },
+                                    },
+                                },
+                                {
+                                    "w:lvlText": {
+                                        _attr: {
+                                            "w:val": "%0.",
+                                        },
+                                    },
+                                },
+                                {
+                                    "w:lvlJc": {
+                                        _attr: {
+                                            "w:val": "start",
+                                        },
+                                    },
+                                },
+                                {
+                                    "w:pPr": [
+                                        {
+                                            "w:jc": {
+                                                _attr: {
+                                                    "w:val": "both",
+                                                },
+                                            },
+                                        },
+                                    ],
+                                },
+                                {
+                                    _attr: {
+                                        "w15:tentative": 1,
+                                        "w:ilvl": 0,
+                                    },
+                                },
+                            ],
+                        },
+                    ],
                 });
             });
 
@@ -192,18 +732,73 @@ describe("AbstractNumbering", () => {
                     },
                 ]);
                 const tree = new Formatter().format(abstractNumbering);
-                expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({
-                    "w:pPr": [
+                expect(tree).to.deep.equal({
+                    "w:abstractNum": [
                         {
-                            "w:pBdr": [
+                            _attr: {
+                                "w15:restartNumberingAfterBreak": 0,
+                                "w:abstractNumId": 1,
+                            },
+                        },
+                        {
+                            "w:multiLevelType": {
+                                _attr: {
+                                    "w:val": "hybridMultilevel",
+                                },
+                            },
+                        },
+                        {
+                            "w:lvl": [
                                 {
-                                    "w:bottom": {
+                                    "w:start": {
                                         _attr: {
-                                            "w:color": "auto",
-                                            "w:space": 1,
-                                            "w:val": "single",
-                                            "w:sz": 6,
+                                            "w:val": 1,
                                         },
+                                    },
+                                },
+                                {
+                                    "w:numFmt": {
+                                        _attr: {
+                                            "w:val": "lowerRoman",
+                                        },
+                                    },
+                                },
+                                {
+                                    "w:lvlText": {
+                                        _attr: {
+                                            "w:val": "%0.",
+                                        },
+                                    },
+                                },
+                                {
+                                    "w:lvlJc": {
+                                        _attr: {
+                                            "w:val": "start",
+                                        },
+                                    },
+                                },
+                                {
+                                    "w:pPr": [
+                                        {
+                                            "w:pBdr": [
+                                                {
+                                                    "w:bottom": {
+                                                        _attr: {
+                                                            "w:color": "auto",
+                                                            "w:space": 1,
+                                                            "w:sz": 6,
+                                                            "w:val": "single",
+                                                        },
+                                                    },
+                                                },
+                                            ],
+                                        },
+                                    ],
+                                },
+                                {
+                                    _attr: {
+                                        "w15:tentative": 1,
+                                        "w:ilvl": 0,
                                     },
                                 },
                             ],
@@ -226,10 +821,74 @@ describe("AbstractNumbering", () => {
                     },
                 ]);
                 const tree = new Formatter().format(abstractNumbering);
-                expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({
-                    "w:pPr": [
+                expect(tree).to.deep.equal({
+                    "w:abstractNum": [
                         {
-                            "w:tabs": [{ "w:tab": { _attr: { "w:val": "left", "w:pos": 1200 } } }],
+                            _attr: {
+                                "w15:restartNumberingAfterBreak": 0,
+                                "w:abstractNumId": 1,
+                            },
+                        },
+                        {
+                            "w:multiLevelType": {
+                                _attr: {
+                                    "w:val": "hybridMultilevel",
+                                },
+                            },
+                        },
+                        {
+                            "w:lvl": [
+                                {
+                                    "w:start": {
+                                        _attr: {
+                                            "w:val": 1,
+                                        },
+                                    },
+                                },
+                                {
+                                    "w:numFmt": {
+                                        _attr: {
+                                            "w:val": "lowerRoman",
+                                        },
+                                    },
+                                },
+                                {
+                                    "w:lvlText": {
+                                        _attr: {
+                                            "w:val": "%0.",
+                                        },
+                                    },
+                                },
+                                {
+                                    "w:lvlJc": {
+                                        _attr: {
+                                            "w:val": "start",
+                                        },
+                                    },
+                                },
+                                {
+                                    "w:pPr": [
+                                        {
+                                            "w:tabs": [
+                                                {
+                                                    "w:tab": {
+                                                        _attr: {
+                                                            "w:pos": 1200,
+                                                            "w:val": "left",
+                                                        },
+                                                    },
+                                                },
+                                            ],
+                                        },
+                                    ],
+                                },
+                                {
+                                    _attr: {
+                                        "w15:tentative": 1,
+                                        "w:ilvl": 0,
+                                    },
+                                },
+                            ],
                         },
                     ],
                 });
@@ -249,10 +908,74 @@ describe("AbstractNumbering", () => {
                     },
                 ]);
                 const tree = new Formatter().format(abstractNumbering);
-                expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({
-                    "w:pPr": [
+                expect(tree).to.deep.equal({
+                    "w:abstractNum": [
                         {
-                            "w:tabs": [{ "w:tab": { _attr: { "w:val": "right", "w:pos": 9026 } } }],
+                            _attr: {
+                                "w15:restartNumberingAfterBreak": 0,
+                                "w:abstractNumId": 1,
+                            },
+                        },
+                        {
+                            "w:multiLevelType": {
+                                _attr: {
+                                    "w:val": "hybridMultilevel",
+                                },
+                            },
+                        },
+                        {
+                            "w:lvl": [
+                                {
+                                    "w:start": {
+                                        _attr: {
+                                            "w:val": 1,
+                                        },
+                                    },
+                                },
+                                {
+                                    "w:numFmt": {
+                                        _attr: {
+                                            "w:val": "lowerRoman",
+                                        },
+                                    },
+                                },
+                                {
+                                    "w:lvlText": {
+                                        _attr: {
+                                            "w:val": "%0.",
+                                        },
+                                    },
+                                },
+                                {
+                                    "w:lvlJc": {
+                                        _attr: {
+                                            "w:val": "start",
+                                        },
+                                    },
+                                },
+                                {
+                                    "w:pPr": [
+                                        {
+                                            "w:tabs": [
+                                                {
+                                                    "w:tab": {
+                                                        _attr: {
+                                                            "w:pos": 9026,
+                                                            "w:val": "right",
+                                                        },
+                                                    },
+                                                },
+                                            ],
+                                        },
+                                    ],
+                                },
+                                {
+                                    _attr: {
+                                        "w15:tentative": 1,
+                                        "w:ilvl": 0,
+                                    },
+                                },
+                            ],
                         },
                     ],
                 });
@@ -272,8 +995,67 @@ describe("AbstractNumbering", () => {
                     },
                 ]);
                 const tree = new Formatter().format(abstractNumbering);
-                expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({
-                    "w:pPr": [{ "w:keepLines": EMPTY_OBJECT }],
+                expect(tree).to.deep.equal({
+                    "w:abstractNum": [
+                        {
+                            _attr: {
+                                "w15:restartNumberingAfterBreak": 0,
+                                "w:abstractNumId": 1,
+                            },
+                        },
+                        {
+                            "w:multiLevelType": {
+                                _attr: {
+                                    "w:val": "hybridMultilevel",
+                                },
+                            },
+                        },
+                        {
+                            "w:lvl": [
+                                {
+                                    "w:start": {
+                                        _attr: {
+                                            "w:val": 1,
+                                        },
+                                    },
+                                },
+                                {
+                                    "w:numFmt": {
+                                        _attr: {
+                                            "w:val": "lowerRoman",
+                                        },
+                                    },
+                                },
+                                {
+                                    "w:lvlText": {
+                                        _attr: {
+                                            "w:val": "%0.",
+                                        },
+                                    },
+                                },
+                                {
+                                    "w:lvlJc": {
+                                        _attr: {
+                                            "w:val": "start",
+                                        },
+                                    },
+                                },
+                                {
+                                    "w:pPr": [
+                                        {
+                                            "w:keepLines": {},
+                                        },
+                                    ],
+                                },
+                                {
+                                    _attr: {
+                                        "w15:tentative": 1,
+                                        "w:ilvl": 0,
+                                    },
+                                },
+                            ],
+                        },
+                    ],
                 });
             });
 
@@ -291,8 +1073,67 @@ describe("AbstractNumbering", () => {
                     },
                 ]);
                 const tree = new Formatter().format(abstractNumbering);
-                expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({
-                    "w:pPr": [{ "w:keepNext": EMPTY_OBJECT }],
+                expect(tree).to.deep.equal({
+                    "w:abstractNum": [
+                        {
+                            _attr: {
+                                "w15:restartNumberingAfterBreak": 0,
+                                "w:abstractNumId": 1,
+                            },
+                        },
+                        {
+                            "w:multiLevelType": {
+                                _attr: {
+                                    "w:val": "hybridMultilevel",
+                                },
+                            },
+                        },
+                        {
+                            "w:lvl": [
+                                {
+                                    "w:start": {
+                                        _attr: {
+                                            "w:val": 1,
+                                        },
+                                    },
+                                },
+                                {
+                                    "w:numFmt": {
+                                        _attr: {
+                                            "w:val": "lowerRoman",
+                                        },
+                                    },
+                                },
+                                {
+                                    "w:lvlText": {
+                                        _attr: {
+                                            "w:val": "%0.",
+                                        },
+                                    },
+                                },
+                                {
+                                    "w:lvlJc": {
+                                        _attr: {
+                                            "w:val": "start",
+                                        },
+                                    },
+                                },
+                                {
+                                    "w:pPr": [
+                                        {
+                                            "w:keepNext": {},
+                                        },
+                                    ],
+                                },
+                                {
+                                    _attr: {
+                                        "w15:tentative": 1,
+                                        "w:ilvl": 0,
+                                    },
+                                },
+                            ],
+                        },
+                    ],
                 });
             });
         });
@@ -332,7 +1173,64 @@ describe("AbstractNumbering", () => {
                         },
                     ]);
                     const tree = new Formatter().format(abstractNumbering);
-                    expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({ "w:rPr": expected });
+                    expect(tree).to.deep.equal({
+                        "w:abstractNum": [
+                            {
+                                _attr: {
+                                    "w15:restartNumberingAfterBreak": 0,
+                                    "w:abstractNumId": 1,
+                                },
+                            },
+                            {
+                                "w:multiLevelType": {
+                                    _attr: {
+                                        "w:val": "hybridMultilevel",
+                                    },
+                                },
+                            },
+                            {
+                                "w:lvl": [
+                                    {
+                                        "w:start": {
+                                            _attr: {
+                                                "w:val": 1,
+                                            },
+                                        },
+                                    },
+                                    {
+                                        "w:numFmt": {
+                                            _attr: {
+                                                "w:val": "lowerRoman",
+                                            },
+                                        },
+                                    },
+                                    {
+                                        "w:lvlText": {
+                                            _attr: {
+                                                "w:val": "%0.",
+                                            },
+                                        },
+                                    },
+                                    {
+                                        "w:lvlJc": {
+                                            _attr: {
+                                                "w:val": "start",
+                                            },
+                                        },
+                                    },
+                                    {
+                                        "w:rPr": expected,
+                                    },
+                                    {
+                                        _attr: {
+                                            "w15:tentative": 1,
+                                            "w:ilvl": 0,
+                                        },
+                                    },
+                                ],
+                            },
+                        ],
+                    });
                 });
             });
 
@@ -350,8 +1248,67 @@ describe("AbstractNumbering", () => {
                     },
                 ]);
                 const tree = new Formatter().format(abstractNumbering);
-                expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({
-                    "w:rPr": [{ "w:smallCaps": {} }],
+                expect(tree).to.deep.equal({
+                    "w:abstractNum": [
+                        {
+                            _attr: {
+                                "w15:restartNumberingAfterBreak": 0,
+                                "w:abstractNumId": 1,
+                            },
+                        },
+                        {
+                            "w:multiLevelType": {
+                                _attr: {
+                                    "w:val": "hybridMultilevel",
+                                },
+                            },
+                        },
+                        {
+                            "w:lvl": [
+                                {
+                                    "w:start": {
+                                        _attr: {
+                                            "w:val": 1,
+                                        },
+                                    },
+                                },
+                                {
+                                    "w:numFmt": {
+                                        _attr: {
+                                            "w:val": "lowerRoman",
+                                        },
+                                    },
+                                },
+                                {
+                                    "w:lvlText": {
+                                        _attr: {
+                                            "w:val": "%0.",
+                                        },
+                                    },
+                                },
+                                {
+                                    "w:lvlJc": {
+                                        _attr: {
+                                            "w:val": "start",
+                                        },
+                                    },
+                                },
+                                {
+                                    "w:rPr": [
+                                        {
+                                            "w:smallCaps": {},
+                                        },
+                                    ],
+                                },
+                                {
+                                    _attr: {
+                                        "w15:tentative": 1,
+                                        "w:ilvl": 0,
+                                    },
+                                },
+                            ],
+                        },
+                    ],
                 });
             });
 
@@ -369,8 +1326,67 @@ describe("AbstractNumbering", () => {
                     },
                 ]);
                 const tree = new Formatter().format(abstractNumbering);
-                expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({
-                    "w:rPr": [{ "w:caps": {} }],
+                expect(tree).to.deep.equal({
+                    "w:abstractNum": [
+                        {
+                            _attr: {
+                                "w15:restartNumberingAfterBreak": 0,
+                                "w:abstractNumId": 1,
+                            },
+                        },
+                        {
+                            "w:multiLevelType": {
+                                _attr: {
+                                    "w:val": "hybridMultilevel",
+                                },
+                            },
+                        },
+                        {
+                            "w:lvl": [
+                                {
+                                    "w:start": {
+                                        _attr: {
+                                            "w:val": 1,
+                                        },
+                                    },
+                                },
+                                {
+                                    "w:numFmt": {
+                                        _attr: {
+                                            "w:val": "lowerRoman",
+                                        },
+                                    },
+                                },
+                                {
+                                    "w:lvlText": {
+                                        _attr: {
+                                            "w:val": "%0.",
+                                        },
+                                    },
+                                },
+                                {
+                                    "w:lvlJc": {
+                                        _attr: {
+                                            "w:val": "start",
+                                        },
+                                    },
+                                },
+                                {
+                                    "w:rPr": [
+                                        {
+                                            "w:caps": {},
+                                        },
+                                    ],
+                                },
+                                {
+                                    _attr: {
+                                        "w15:tentative": 1,
+                                        "w:ilvl": 0,
+                                    },
+                                },
+                            ],
+                        },
+                    ],
                 });
             });
 
@@ -389,8 +1405,67 @@ describe("AbstractNumbering", () => {
                 ]);
 
                 const tree = new Formatter().format(abstractNumbering);
-                expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({
-                    "w:rPr": [{ "w:strike": {} }],
+                expect(tree).to.deep.equal({
+                    "w:abstractNum": [
+                        {
+                            _attr: {
+                                "w15:restartNumberingAfterBreak": 0,
+                                "w:abstractNumId": 1,
+                            },
+                        },
+                        {
+                            "w:multiLevelType": {
+                                _attr: {
+                                    "w:val": "hybridMultilevel",
+                                },
+                            },
+                        },
+                        {
+                            "w:lvl": [
+                                {
+                                    "w:start": {
+                                        _attr: {
+                                            "w:val": 1,
+                                        },
+                                    },
+                                },
+                                {
+                                    "w:numFmt": {
+                                        _attr: {
+                                            "w:val": "lowerRoman",
+                                        },
+                                    },
+                                },
+                                {
+                                    "w:lvlText": {
+                                        _attr: {
+                                            "w:val": "%0.",
+                                        },
+                                    },
+                                },
+                                {
+                                    "w:lvlJc": {
+                                        _attr: {
+                                            "w:val": "start",
+                                        },
+                                    },
+                                },
+                                {
+                                    "w:rPr": [
+                                        {
+                                            "w:strike": {},
+                                        },
+                                    ],
+                                },
+                                {
+                                    _attr: {
+                                        "w15:tentative": 1,
+                                        "w:ilvl": 0,
+                                    },
+                                },
+                            ],
+                        },
+                    ],
                 });
             });
 
@@ -408,8 +1483,67 @@ describe("AbstractNumbering", () => {
                     },
                 ]);
                 const tree = new Formatter().format(abstractNumbering);
-                expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({
-                    "w:rPr": [{ "w:dstrike": {} }],
+                expect(tree).to.deep.equal({
+                    "w:abstractNum": [
+                        {
+                            _attr: {
+                                "w15:restartNumberingAfterBreak": 0,
+                                "w:abstractNumId": 1,
+                            },
+                        },
+                        {
+                            "w:multiLevelType": {
+                                _attr: {
+                                    "w:val": "hybridMultilevel",
+                                },
+                            },
+                        },
+                        {
+                            "w:lvl": [
+                                {
+                                    "w:start": {
+                                        _attr: {
+                                            "w:val": 1,
+                                        },
+                                    },
+                                },
+                                {
+                                    "w:numFmt": {
+                                        _attr: {
+                                            "w:val": "lowerRoman",
+                                        },
+                                    },
+                                },
+                                {
+                                    "w:lvlText": {
+                                        _attr: {
+                                            "w:val": "%0.",
+                                        },
+                                    },
+                                },
+                                {
+                                    "w:lvlJc": {
+                                        _attr: {
+                                            "w:val": "start",
+                                        },
+                                    },
+                                },
+                                {
+                                    "w:rPr": [
+                                        {
+                                            "w:dstrike": {},
+                                        },
+                                    ],
+                                },
+                                {
+                                    _attr: {
+                                        "w15:tentative": 1,
+                                        "w:ilvl": 0,
+                                    },
+                                },
+                            ],
+                        },
+                    ],
                 });
             });
 
@@ -427,8 +1561,63 @@ describe("AbstractNumbering", () => {
                     },
                 ]);
                 const tree = new Formatter().format(abstractNumbering);
-                expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({
-                    "w:rPr": [{ "w:vertAlign": { _attr: { "w:val": "subscript" } } }],
+                expect(tree).to.deep.equal({
+                    "w:abstractNum": [
+                        {
+                            _attr: {
+                                "w15:restartNumberingAfterBreak": 0,
+                                "w:abstractNumId": 1,
+                            },
+                        },
+                        {
+                            "w:multiLevelType": {
+                                _attr: {
+                                    "w:val": "hybridMultilevel",
+                                },
+                            },
+                        },
+                        {
+                            "w:lvl": [
+                                {
+                                    "w:start": {
+                                        _attr: {
+                                            "w:val": 1,
+                                        },
+                                    },
+                                },
+                                {
+                                    "w:numFmt": {
+                                        _attr: {
+                                            "w:val": "lowerRoman",
+                                        },
+                                    },
+                                },
+                                {
+                                    "w:lvlText": {
+                                        _attr: {
+                                            "w:val": "%0.",
+                                        },
+                                    },
+                                },
+                                {
+                                    "w:lvlJc": {
+                                        _attr: {
+                                            "w:val": "start",
+                                        },
+                                    },
+                                },
+                                {
+                                    "w:rPr": [{ "w:vertAlign": { _attr: { "w:val": "subscript" } } }],
+                                },
+                                {
+                                    _attr: {
+                                        "w15:tentative": 1,
+                                        "w:ilvl": 0,
+                                    },
+                                },
+                            ],
+                        },
+                    ],
                 });
             });
 
@@ -446,8 +1635,63 @@ describe("AbstractNumbering", () => {
                     },
                 ]);
                 const tree = new Formatter().format(abstractNumbering);
-                expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({
-                    "w:rPr": [{ "w:vertAlign": { _attr: { "w:val": "superscript" } } }],
+                expect(tree).to.deep.equal({
+                    "w:abstractNum": [
+                        {
+                            _attr: {
+                                "w15:restartNumberingAfterBreak": 0,
+                                "w:abstractNumId": 1,
+                            },
+                        },
+                        {
+                            "w:multiLevelType": {
+                                _attr: {
+                                    "w:val": "hybridMultilevel",
+                                },
+                            },
+                        },
+                        {
+                            "w:lvl": [
+                                {
+                                    "w:start": {
+                                        _attr: {
+                                            "w:val": 1,
+                                        },
+                                    },
+                                },
+                                {
+                                    "w:numFmt": {
+                                        _attr: {
+                                            "w:val": "lowerRoman",
+                                        },
+                                    },
+                                },
+                                {
+                                    "w:lvlText": {
+                                        _attr: {
+                                            "w:val": "%0.",
+                                        },
+                                    },
+                                },
+                                {
+                                    "w:lvlJc": {
+                                        _attr: {
+                                            "w:val": "start",
+                                        },
+                                    },
+                                },
+                                {
+                                    "w:rPr": [{ "w:vertAlign": { _attr: { "w:val": "superscript" } } }],
+                                },
+                                {
+                                    _attr: {
+                                        "w15:tentative": 1,
+                                        "w:ilvl": 0,
+                                    },
+                                },
+                            ],
+                        },
+                    ],
                 });
             });
 
@@ -465,17 +1709,72 @@ describe("AbstractNumbering", () => {
                     },
                 ]);
                 const tree = new Formatter().format(abstractNumbering);
-                expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({
-                    "w:rPr": [
+                expect(tree).to.deep.equal({
+                    "w:abstractNum": [
                         {
-                            "w:rFonts": {
+                            _attr: {
+                                "w15:restartNumberingAfterBreak": 0,
+                                "w:abstractNumId": 1,
+                            },
+                        },
+                        {
+                            "w:multiLevelType": {
                                 _attr: {
-                                    "w:ascii": "Times",
-                                    "w:cs": "Times",
-                                    "w:eastAsia": "Times",
-                                    "w:hAnsi": "Times",
+                                    "w:val": "hybridMultilevel",
                                 },
                             },
+                        },
+                        {
+                            "w:lvl": [
+                                {
+                                    "w:start": {
+                                        _attr: {
+                                            "w:val": 1,
+                                        },
+                                    },
+                                },
+                                {
+                                    "w:numFmt": {
+                                        _attr: {
+                                            "w:val": "lowerRoman",
+                                        },
+                                    },
+                                },
+                                {
+                                    "w:lvlText": {
+                                        _attr: {
+                                            "w:val": "%0.",
+                                        },
+                                    },
+                                },
+                                {
+                                    "w:lvlJc": {
+                                        _attr: {
+                                            "w:val": "start",
+                                        },
+                                    },
+                                },
+                                {
+                                    "w:rPr": [
+                                        {
+                                            "w:rFonts": {
+                                                _attr: {
+                                                    "w:ascii": "Times",
+                                                    "w:cs": "Times",
+                                                    "w:eastAsia": "Times",
+                                                    "w:hAnsi": "Times",
+                                                },
+                                            },
+                                        },
+                                    ],
+                                },
+                                {
+                                    _attr: {
+                                        "w15:tentative": 1,
+                                        "w:ilvl": 0,
+                                    },
+                                },
+                            ],
                         },
                     ],
                 });
@@ -498,15 +1797,70 @@ describe("AbstractNumbering", () => {
                     },
                 ]);
                 const tree = new Formatter().format(abstractNumbering);
-                expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({
-                    "w:rPr": [
+                expect(tree).to.deep.equal({
+                    "w:abstractNum": [
                         {
-                            "w:rFonts": {
+                            _attr: {
+                                "w15:restartNumberingAfterBreak": 0,
+                                "w:abstractNumId": 1,
+                            },
+                        },
+                        {
+                            "w:multiLevelType": {
                                 _attr: {
-                                    "w:ascii": "Times",
-                                    "w:eastAsia": "KaiTi",
+                                    "w:val": "hybridMultilevel",
                                 },
                             },
+                        },
+                        {
+                            "w:lvl": [
+                                {
+                                    "w:start": {
+                                        _attr: {
+                                            "w:val": 1,
+                                        },
+                                    },
+                                },
+                                {
+                                    "w:numFmt": {
+                                        _attr: {
+                                            "w:val": "lowerRoman",
+                                        },
+                                    },
+                                },
+                                {
+                                    "w:lvlText": {
+                                        _attr: {
+                                            "w:val": "%0.",
+                                        },
+                                    },
+                                },
+                                {
+                                    "w:lvlJc": {
+                                        _attr: {
+                                            "w:val": "start",
+                                        },
+                                    },
+                                },
+                                {
+                                    "w:rPr": [
+                                        {
+                                            "w:rFonts": {
+                                                _attr: {
+                                                    "w:ascii": "Times",
+                                                    "w:eastAsia": "KaiTi",
+                                                },
+                                            },
+                                        },
+                                    ],
+                                },
+                                {
+                                    _attr: {
+                                        "w15:tentative": 1,
+                                        "w:ilvl": 0,
+                                    },
+                                },
+                            ],
                         },
                     ],
                 });
@@ -541,7 +1895,64 @@ describe("AbstractNumbering", () => {
                         },
                     ]);
                     const tree = new Formatter().format(abstractNumbering);
-                    expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({ "w:rPr": expected });
+                    expect(tree).to.deep.equal({
+                        "w:abstractNum": [
+                            {
+                                _attr: {
+                                    "w15:restartNumberingAfterBreak": 0,
+                                    "w:abstractNumId": 1,
+                                },
+                            },
+                            {
+                                "w:multiLevelType": {
+                                    _attr: {
+                                        "w:val": "hybridMultilevel",
+                                    },
+                                },
+                            },
+                            {
+                                "w:lvl": [
+                                    {
+                                        "w:start": {
+                                            _attr: {
+                                                "w:val": 1,
+                                            },
+                                        },
+                                    },
+                                    {
+                                        "w:numFmt": {
+                                            _attr: {
+                                                "w:val": "lowerRoman",
+                                            },
+                                        },
+                                    },
+                                    {
+                                        "w:lvlText": {
+                                            _attr: {
+                                                "w:val": "%0.",
+                                            },
+                                        },
+                                    },
+                                    {
+                                        "w:lvlJc": {
+                                            _attr: {
+                                                "w:val": "start",
+                                            },
+                                        },
+                                    },
+                                    {
+                                        "w:rPr": expected,
+                                    },
+                                    {
+                                        _attr: {
+                                            "w15:tentative": 1,
+                                            "w:ilvl": 0,
+                                        },
+                                    },
+                                ],
+                            },
+                        ],
+                    });
                 });
             });
 
@@ -574,7 +1985,64 @@ describe("AbstractNumbering", () => {
                         },
                     ]);
                     const tree = new Formatter().format(abstractNumbering);
-                    expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({ "w:rPr": expected });
+                    expect(tree).to.deep.equal({
+                        "w:abstractNum": [
+                            {
+                                _attr: {
+                                    "w15:restartNumberingAfterBreak": 0,
+                                    "w:abstractNumId": 1,
+                                },
+                            },
+                            {
+                                "w:multiLevelType": {
+                                    _attr: {
+                                        "w:val": "hybridMultilevel",
+                                    },
+                                },
+                            },
+                            {
+                                "w:lvl": [
+                                    {
+                                        "w:start": {
+                                            _attr: {
+                                                "w:val": 1,
+                                            },
+                                        },
+                                    },
+                                    {
+                                        "w:numFmt": {
+                                            _attr: {
+                                                "w:val": "lowerRoman",
+                                            },
+                                        },
+                                    },
+                                    {
+                                        "w:lvlText": {
+                                            _attr: {
+                                                "w:val": "%0.",
+                                            },
+                                        },
+                                    },
+                                    {
+                                        "w:lvlJc": {
+                                            _attr: {
+                                                "w:val": "start",
+                                            },
+                                        },
+                                    },
+                                    {
+                                        "w:rPr": expected,
+                                    },
+                                    {
+                                        _attr: {
+                                            "w15:tentative": 1,
+                                            "w:ilvl": 0,
+                                        },
+                                    },
+                                ],
+                            },
+                        ],
+                    });
                 });
             });
 
@@ -612,7 +2080,64 @@ describe("AbstractNumbering", () => {
                         },
                     ]);
                     const tree = new Formatter().format(abstractNumbering);
-                    expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({ "w:rPr": expected });
+                    expect(tree).to.deep.equal({
+                        "w:abstractNum": [
+                            {
+                                _attr: {
+                                    "w15:restartNumberingAfterBreak": 0,
+                                    "w:abstractNumId": 1,
+                                },
+                            },
+                            {
+                                "w:multiLevelType": {
+                                    _attr: {
+                                        "w:val": "hybridMultilevel",
+                                    },
+                                },
+                            },
+                            {
+                                "w:lvl": [
+                                    {
+                                        "w:start": {
+                                            _attr: {
+                                                "w:val": 1,
+                                            },
+                                        },
+                                    },
+                                    {
+                                        "w:numFmt": {
+                                            _attr: {
+                                                "w:val": "lowerRoman",
+                                            },
+                                        },
+                                    },
+                                    {
+                                        "w:lvlText": {
+                                            _attr: {
+                                                "w:val": "%0.",
+                                            },
+                                        },
+                                    },
+                                    {
+                                        "w:lvlJc": {
+                                            _attr: {
+                                                "w:val": "start",
+                                            },
+                                        },
+                                    },
+                                    {
+                                        "w:rPr": expected,
+                                    },
+                                    {
+                                        _attr: {
+                                            "w15:tentative": 1,
+                                            "w:ilvl": 0,
+                                        },
+                                    },
+                                ],
+                            },
+                        ],
+                    });
                 });
             });
 
@@ -647,7 +2172,64 @@ describe("AbstractNumbering", () => {
                         },
                     ]);
                     const tree = new Formatter().format(abstractNumbering);
-                    expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({ "w:rPr": expected });
+                    expect(tree).to.deep.equal({
+                        "w:abstractNum": [
+                            {
+                                _attr: {
+                                    "w15:restartNumberingAfterBreak": 0,
+                                    "w:abstractNumId": 1,
+                                },
+                            },
+                            {
+                                "w:multiLevelType": {
+                                    _attr: {
+                                        "w:val": "hybridMultilevel",
+                                    },
+                                },
+                            },
+                            {
+                                "w:lvl": [
+                                    {
+                                        "w:start": {
+                                            _attr: {
+                                                "w:val": 1,
+                                            },
+                                        },
+                                    },
+                                    {
+                                        "w:numFmt": {
+                                            _attr: {
+                                                "w:val": "lowerRoman",
+                                            },
+                                        },
+                                    },
+                                    {
+                                        "w:lvlText": {
+                                            _attr: {
+                                                "w:val": "%0.",
+                                            },
+                                        },
+                                    },
+                                    {
+                                        "w:lvlJc": {
+                                            _attr: {
+                                                "w:val": "start",
+                                            },
+                                        },
+                                    },
+                                    {
+                                        "w:rPr": expected,
+                                    },
+                                    {
+                                        _attr: {
+                                            "w15:tentative": 1,
+                                            "w:ilvl": 0,
+                                        },
+                                    },
+                                ],
+                            },
+                        ],
+                    });
                 });
             });
 
@@ -666,8 +2248,63 @@ describe("AbstractNumbering", () => {
                         },
                     ]);
                     const tree = new Formatter().format(abstractNumbering);
-                    expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({
-                        "w:rPr": [{ "w:u": { _attr: { "w:val": "single" } } }],
+                    expect(tree).to.deep.equal({
+                        "w:abstractNum": [
+                            {
+                                _attr: {
+                                    "w15:restartNumberingAfterBreak": 0,
+                                    "w:abstractNumId": 1,
+                                },
+                            },
+                            {
+                                "w:multiLevelType": {
+                                    _attr: {
+                                        "w:val": "hybridMultilevel",
+                                    },
+                                },
+                            },
+                            {
+                                "w:lvl": [
+                                    {
+                                        "w:start": {
+                                            _attr: {
+                                                "w:val": 1,
+                                            },
+                                        },
+                                    },
+                                    {
+                                        "w:numFmt": {
+                                            _attr: {
+                                                "w:val": "lowerRoman",
+                                            },
+                                        },
+                                    },
+                                    {
+                                        "w:lvlText": {
+                                            _attr: {
+                                                "w:val": "%0.",
+                                            },
+                                        },
+                                    },
+                                    {
+                                        "w:lvlJc": {
+                                            _attr: {
+                                                "w:val": "start",
+                                            },
+                                        },
+                                    },
+                                    {
+                                        "w:rPr": [{ "w:u": { _attr: { "w:val": "single" } } }],
+                                    },
+                                    {
+                                        _attr: {
+                                            "w15:tentative": 1,
+                                            "w:ilvl": 0,
+                                        },
+                                    },
+                                ],
+                            },
+                        ],
                     });
                 });
 
@@ -687,8 +2324,63 @@ describe("AbstractNumbering", () => {
                         },
                     ]);
                     const tree = new Formatter().format(abstractNumbering);
-                    expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({
-                        "w:rPr": [{ "w:u": { _attr: { "w:val": "double" } } }],
+                    expect(tree).to.deep.equal({
+                        "w:abstractNum": [
+                            {
+                                _attr: {
+                                    "w15:restartNumberingAfterBreak": 0,
+                                    "w:abstractNumId": 1,
+                                },
+                            },
+                            {
+                                "w:multiLevelType": {
+                                    _attr: {
+                                        "w:val": "hybridMultilevel",
+                                    },
+                                },
+                            },
+                            {
+                                "w:lvl": [
+                                    {
+                                        "w:start": {
+                                            _attr: {
+                                                "w:val": 1,
+                                            },
+                                        },
+                                    },
+                                    {
+                                        "w:numFmt": {
+                                            _attr: {
+                                                "w:val": "lowerRoman",
+                                            },
+                                        },
+                                    },
+                                    {
+                                        "w:lvlText": {
+                                            _attr: {
+                                                "w:val": "%0.",
+                                            },
+                                        },
+                                    },
+                                    {
+                                        "w:lvlJc": {
+                                            _attr: {
+                                                "w:val": "start",
+                                            },
+                                        },
+                                    },
+                                    {
+                                        "w:rPr": [{ "w:u": { _attr: { "w:val": "double" } } }],
+                                    },
+                                    {
+                                        _attr: {
+                                            "w15:tentative": 1,
+                                            "w:ilvl": 0,
+                                        },
+                                    },
+                                ],
+                            },
+                        ],
                     });
                 });
 
@@ -709,8 +2401,63 @@ describe("AbstractNumbering", () => {
                         },
                     ]);
                     const tree = new Formatter().format(abstractNumbering);
-                    expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({
-                        "w:rPr": [{ "w:u": { _attr: { "w:val": "double", "w:color": "005599" } } }],
+                    expect(tree).to.deep.equal({
+                        "w:abstractNum": [
+                            {
+                                _attr: {
+                                    "w15:restartNumberingAfterBreak": 0,
+                                    "w:abstractNumId": 1,
+                                },
+                            },
+                            {
+                                "w:multiLevelType": {
+                                    _attr: {
+                                        "w:val": "hybridMultilevel",
+                                    },
+                                },
+                            },
+                            {
+                                "w:lvl": [
+                                    {
+                                        "w:start": {
+                                            _attr: {
+                                                "w:val": 1,
+                                            },
+                                        },
+                                    },
+                                    {
+                                        "w:numFmt": {
+                                            _attr: {
+                                                "w:val": "lowerRoman",
+                                            },
+                                        },
+                                    },
+                                    {
+                                        "w:lvlText": {
+                                            _attr: {
+                                                "w:val": "%0.",
+                                            },
+                                        },
+                                    },
+                                    {
+                                        "w:lvlJc": {
+                                            _attr: {
+                                                "w:val": "start",
+                                            },
+                                        },
+                                    },
+                                    {
+                                        "w:rPr": [{ "w:u": { _attr: { "w:val": "double", "w:color": "005599" } } }],
+                                    },
+                                    {
+                                        _attr: {
+                                            "w15:tentative": 1,
+                                            "w:ilvl": 0,
+                                        },
+                                    },
+                                ],
+                            },
+                        ],
                     });
                 });
             });
@@ -730,8 +2477,63 @@ describe("AbstractNumbering", () => {
                         },
                     ]);
                     const tree = new Formatter().format(abstractNumbering);
-                    expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({
-                        "w:rPr": [{ "w:em": { _attr: { "w:val": "dot" } } }],
+                    expect(tree).to.deep.equal({
+                        "w:abstractNum": [
+                            {
+                                _attr: {
+                                    "w15:restartNumberingAfterBreak": 0,
+                                    "w:abstractNumId": 1,
+                                },
+                            },
+                            {
+                                "w:multiLevelType": {
+                                    _attr: {
+                                        "w:val": "hybridMultilevel",
+                                    },
+                                },
+                            },
+                            {
+                                "w:lvl": [
+                                    {
+                                        "w:start": {
+                                            _attr: {
+                                                "w:val": 1,
+                                            },
+                                        },
+                                    },
+                                    {
+                                        "w:numFmt": {
+                                            _attr: {
+                                                "w:val": "lowerRoman",
+                                            },
+                                        },
+                                    },
+                                    {
+                                        "w:lvlText": {
+                                            _attr: {
+                                                "w:val": "%0.",
+                                            },
+                                        },
+                                    },
+                                    {
+                                        "w:lvlJc": {
+                                            _attr: {
+                                                "w:val": "start",
+                                            },
+                                        },
+                                    },
+                                    {
+                                        "w:rPr": [{ "w:em": { _attr: { "w:val": "dot" } } }],
+                                    },
+                                    {
+                                        _attr: {
+                                            "w15:tentative": 1,
+                                            "w:ilvl": 0,
+                                        },
+                                    },
+                                ],
+                            },
+                        ],
                     });
                 });
 
@@ -751,8 +2553,63 @@ describe("AbstractNumbering", () => {
                         },
                     ]);
                     const tree = new Formatter().format(abstractNumbering);
-                    expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({
-                        "w:rPr": [{ "w:em": { _attr: { "w:val": "dot" } } }],
+                    expect(tree).to.deep.equal({
+                        "w:abstractNum": [
+                            {
+                                _attr: {
+                                    "w15:restartNumberingAfterBreak": 0,
+                                    "w:abstractNumId": 1,
+                                },
+                            },
+                            {
+                                "w:multiLevelType": {
+                                    _attr: {
+                                        "w:val": "hybridMultilevel",
+                                    },
+                                },
+                            },
+                            {
+                                "w:lvl": [
+                                    {
+                                        "w:start": {
+                                            _attr: {
+                                                "w:val": 1,
+                                            },
+                                        },
+                                    },
+                                    {
+                                        "w:numFmt": {
+                                            _attr: {
+                                                "w:val": "lowerRoman",
+                                            },
+                                        },
+                                    },
+                                    {
+                                        "w:lvlText": {
+                                            _attr: {
+                                                "w:val": "%0.",
+                                            },
+                                        },
+                                    },
+                                    {
+                                        "w:lvlJc": {
+                                            _attr: {
+                                                "w:val": "start",
+                                            },
+                                        },
+                                    },
+                                    {
+                                        "w:rPr": [{ "w:em": { _attr: { "w:val": "dot" } } }],
+                                    },
+                                    {
+                                        _attr: {
+                                            "w15:tentative": 1,
+                                            "w:ilvl": 0,
+                                        },
+                                    },
+                                ],
+                            },
+                        ],
                     });
                 });
             });
@@ -771,8 +2628,63 @@ describe("AbstractNumbering", () => {
                     },
                 ]);
                 const tree = new Formatter().format(abstractNumbering);
-                expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({
-                    "w:rPr": [{ "w:color": { _attr: { "w:val": "123456" } } }],
+                expect(tree).to.deep.equal({
+                    "w:abstractNum": [
+                        {
+                            _attr: {
+                                "w15:restartNumberingAfterBreak": 0,
+                                "w:abstractNumId": 1,
+                            },
+                        },
+                        {
+                            "w:multiLevelType": {
+                                _attr: {
+                                    "w:val": "hybridMultilevel",
+                                },
+                            },
+                        },
+                        {
+                            "w:lvl": [
+                                {
+                                    "w:start": {
+                                        _attr: {
+                                            "w:val": 1,
+                                        },
+                                    },
+                                },
+                                {
+                                    "w:numFmt": {
+                                        _attr: {
+                                            "w:val": "lowerRoman",
+                                        },
+                                    },
+                                },
+                                {
+                                    "w:lvlText": {
+                                        _attr: {
+                                            "w:val": "%0.",
+                                        },
+                                    },
+                                },
+                                {
+                                    "w:lvlJc": {
+                                        _attr: {
+                                            "w:val": "start",
+                                        },
+                                    },
+                                },
+                                {
+                                    "w:rPr": [{ "w:color": { _attr: { "w:val": "123456" } } }],
+                                },
+                                {
+                                    _attr: {
+                                        "w15:tentative": 1,
+                                        "w:ilvl": 0,
+                                    },
+                                },
+                            ],
+                        },
+                    ],
                 });
             });
         });

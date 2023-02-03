@@ -17,7 +17,7 @@ export class HeaderWrapper implements IViewWrapper {
     private readonly header: Header;
     private readonly relationships: Relationships;
 
-    constructor(private readonly media: Media, referenceId: number, initContent?: XmlComponent) {
+    public constructor(private readonly media: Media, referenceId: number, initContent?: XmlComponent) {
         this.header = new Header(referenceId, initContent);
         this.relationships = new Relationships();
     }

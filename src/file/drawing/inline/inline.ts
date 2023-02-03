@@ -1,12 +1,18 @@
 // http://officeopenxml.com/drwPicInline.php
 import { IMediaData, IMediaDataTransformation } from "@file/media";
 import { XmlComponent } from "@file/xml-components";
-import { DocProperties } from "./../doc-properties/doc-properties";
+import { DocProperties, DocPropertiesOptions } from "./../doc-properties/doc-properties";
 import { EffectExtent } from "./../effect-extent/effect-extent";
 import { Extent } from "./../extent/extent";
 import { GraphicFrameProperties } from "./../graphic-frame/graphic-frame-properties";
 import { Graphic } from "./../inline/graphic";
 import { InlineAttributes } from "./inline-attributes";
+
+interface InlineOptions {
+    readonly mediaData: IMediaData;
+    readonly transform: IMediaDataTransformation;
+    readonly docProperties?: DocPropertiesOptions;
+}
 
 // <xsd:complexType name="CT_Inline">
 //     <xsd:sequence>
@@ -26,7 +32,7 @@ export class Inline extends XmlComponent {
     private readonly extent: Extent;
     private readonly graphic: Graphic;
 
-    constructor(mediaData: IMediaData, transform: IMediaDataTransformation) {
+    public constructor({ mediaData, transform, docProperties }: InlineOptions) {
         super("wp:inline");
 
         this.root.push(
@@ -43,7 +49,7 @@ export class Inline extends XmlComponent {
 
         this.root.push(this.extent);
         this.root.push(new EffectExtent());
-        this.root.push(new DocProperties());
+        this.root.push(new DocProperties(docProperties));
         this.root.push(new GraphicFrameProperties());
         this.root.push(this.graphic);
     }

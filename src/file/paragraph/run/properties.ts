@@ -1,11 +1,18 @@
 import { BorderElement, IBorderOptions } from "@file/border";
 import { IShadingAttributesProperties, Shading } from "@file/shading";
-import { SpaceType } from "@file/space-type";
 import { ChangeAttributes, IChangedAttributesProperties } from "@file/track-revision/track-revision";
-import { HpsMeasureElement, IgnoreIfEmptyXmlComponent, OnOffElement, StringValueElement, XmlComponent } from "@file/xml-components";
+import {
+    HpsMeasureElement,
+    IgnoreIfEmptyXmlComponent,
+    NumberValueElement,
+    OnOffElement,
+    StringValueElement,
+    XmlComponent,
+} from "@file/xml-components";
 
 import { EmphasisMark, EmphasisMarkType } from "./emphasis-mark";
 import { CharacterSpacing, Color, Highlight, HighlightComplexScript } from "./formatting";
+import { createLanguageComponent, ILanguageOptions } from "./language";
 import { IFontAttributesProperties, RunFonts } from "./run-fonts";
 import { SubScript, SuperScript } from "./script";
 import { Underline, UnderlineType } from "./underline";
@@ -45,8 +52,11 @@ export interface IRunStylePropertiesOptions {
     readonly emboss?: boolean;
     readonly imprint?: boolean;
     readonly revision?: IRunPropertiesChangeOptions;
+    readonly language?: ILanguageOptions;
     readonly border?: IBorderOptions;
-    readonly space?: SpaceType;
+    readonly vanish?: boolean;
+    readonly specVanish?: boolean;
+    readonly scale?: number;
 }
 
 export interface IRunPropertiesOptions extends IRunStylePropertiesOptions {
@@ -99,7 +109,7 @@ export interface IRunPropertiesChangeOptions extends IRunPropertiesOptions, ICha
 //     </xsd:choice>
 // </xsd:group>
 export class RunProperties extends IgnoreIfEmptyXmlComponent {
-    constructor(options?: IRunPropertiesOptions) {
+    public constructor(options?: IRunPropertiesOptions) {
         super("w:rPr");
 
         if (!options) {
@@ -217,6 +227,25 @@ export class RunProperties extends IgnoreIfEmptyXmlComponent {
         if (options.border) {
             this.push(new BorderElement("w:bdr", options.border));
         }
+
+        if (options.vanish) {
+            // https://c-rex.net/projects/samples/ooxml/e1/Part4/OOXML_P4_DOCX_vanish_topic_ID0E6W3O.html
+            // http://www.datypic.com/sc/ooxml/e-w_vanish-1.html
+            this.push(new OnOffElement("w:vanish", options.vanish));
+        }
+
+        if (options.specVanish) {
+            // https://c-rex.net/projects/samples/ooxml/e1/Part4/OOXML_P4_DOCX_specVanish_topic_ID0EIE1O.html
+            this.push(new OnOffElement("w:specVanish", options.vanish));
+        }
+
+        if (options.scale !== undefined) {
+            this.push(new NumberValueElement("w:w", options.scale));
+        }
+
+        if (options.language) {
+            this.push(createLanguageComponent(options.language));
+        }
     }
 
     public push(item: XmlComponent): void {
@@ -225,7 +254,7 @@ export class RunProperties extends IgnoreIfEmptyXmlComponent {
 }
 
 export class RunPropertiesChange extends XmlComponent {
-    constructor(options: IRunPropertiesChangeOptions) {
+    public constructor(options: IRunPropertiesChangeOptions) {
         super("w:rPrChange");
         this.root.push(
             new ChangeAttributes({

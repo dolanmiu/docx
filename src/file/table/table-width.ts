@@ -35,7 +35,7 @@ class TableWidthAttributes extends XmlAttributeComponent<ITableWidthProperties> 
 }
 
 export class TableWidthElement extends XmlComponent {
-    constructor(name: string, { type = WidthType.AUTO, size }: ITableWidthProperties) {
+    public constructor(name: string, { type = WidthType.AUTO, size }: ITableWidthProperties) {
         super(name);
         // super("w:tblW");
         let tableWidthValue = size;

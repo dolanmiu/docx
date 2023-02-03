@@ -1,3 +1,4 @@
+import { Stream } from "stream";
 import { File } from "@file/file";
 
 import { Compiler } from "./next-compiler";
@@ -13,6 +14,17 @@ export enum PrettifyType {
 }
 
 export class Packer {
+    public static async toString(file: File, prettify?: PrettifyType): Promise<string> {
+        const zip = this.compiler.compile(file, prettify);
+        const zipData = await zip.generateAsync({
+            type: "string",
+            mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            compression: "DEFLATE",
+        });
+
+        return zipData;
+    }
+
     public static async toBuffer(file: File, prettify?: PrettifyType): Promise<Buffer> {
         const zip = this.compiler.compile(file, prettify);
         const zipData = await zip.generateAsync({
@@ -39,6 +51,18 @@ export class Packer {
         const zip = this.compiler.compile(file, prettify);
         const zipData = await zip.generateAsync({
             type: "blob",
+            mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            compression: "DEFLATE",
+        });
+
+        return zipData;
+    }
+
+    public static toStream(file: File, prettify?: PrettifyType): Stream {
+        const zip = this.compiler.compile(file, prettify);
+        const zipData = zip.generateNodeStream({
+            type: "nodebuffer",
+            streamFiles: true,
             mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
             compression: "DEFLATE",
         });

@@ -36,13 +36,13 @@ export type ParagraphChild =
 
 export interface IParagraphOptions extends IParagraphPropertiesOptions {
     readonly text?: string;
-    readonly children?: ParagraphChild[];
+    readonly children?: readonly ParagraphChild[];
 }
 
 export class Paragraph extends XmlComponent {
     private readonly properties: ParagraphProperties;
 
-    constructor(options: string | IParagraphOptions) {
+    public constructor(options: string | IParagraphOptions) {
         super("w:p");
 
         if (typeof options === "string") {

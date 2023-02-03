@@ -41,7 +41,7 @@ export interface ITableRowPropertiesOptions {
 }
 
 export class TableRowProperties extends IgnoreIfEmptyXmlComponent {
-    constructor(options: ITableRowPropertiesOptions) {
+    public constructor(options: ITableRowPropertiesOptions) {
         super("w:trPr");
 
         if (options.cantSplit !== undefined) {

@@ -1,7 +1,7 @@
 // Generate a CV
 // Import from 'docx' rather than '../build' if you install from npm
 import * as fs from "fs";
-import { AlignmentType, Document, HeadingLevel, Packer, Paragraph, TabStopPosition, TabStopType, TextRun } from "../build";
+import { AlignmentType, Document, HeadingLevel, Packer, Paragraph, Tab, TabStopPosition, TabStopType, TextRun } from "../build";
 
 // tslint:disable:no-shadowed-variable
 
@@ -284,7 +284,7 @@ class DocumentCreator {
                     bold: true,
                 }),
                 new TextRun({
-                    text: `\t${dateText}`,
+                    children: [new Tab(), dateText],
                     bold: true,
                 }),
             ],

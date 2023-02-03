@@ -1,10 +1,10 @@
-import { SpaceType } from "@file/space-type";
+import { SpaceType } from "@file/shared";
 import { XmlComponent } from "@file/xml-components";
 
 import { TextAttributes } from "./text-attributes";
 
 export class Page extends XmlComponent {
-    constructor() {
+    public constructor() {
         super("w:instrText");
         this.root.push(new TextAttributes({ space: SpaceType.PRESERVE }));
         this.root.push("PAGE");
@@ -12,7 +12,7 @@ export class Page extends XmlComponent {
 }
 
 export class NumberOfPages extends XmlComponent {
-    constructor() {
+    public constructor() {
         super("w:instrText");
         this.root.push(new TextAttributes({ space: SpaceType.PRESERVE }));
         this.root.push("NUMPAGES");
@@ -20,7 +20,7 @@ export class NumberOfPages extends XmlComponent {
 }
 
 export class NumberOfPagesSection extends XmlComponent {
-    constructor() {
+    public constructor() {
         super("w:instrText");
         this.root.push(new TextAttributes({ space: SpaceType.PRESERVE }));
         this.root.push("SECTIONPAGES");

@@ -1,4 +1,5 @@
 import { expect } from "chai";
+import * as sinon from "sinon";
 
 import { Formatter } from "@export/formatter";
 import { Comment, CommentRangeEnd, CommentRangeStart, CommentReference, Comments } from "./comment-run";
@@ -40,12 +41,54 @@ describe("CommentReference", () => {
 });
 
 describe("Comment", () => {
+    let clock: sinon.SinonFakeTimers;
+
+    beforeEach(() => {
+        const now = new Date("1999-01-01T00:00:00.000Z");
+        clock = sinon.useFakeTimers(now.getTime());
+    });
+
+    afterEach(() => {
+        clock.restore();
+    });
+
     describe("#constructor()", () => {
         it("should create", () => {
             const component = new Comment({
                 id: 0,
                 text: "test-comment",
-                date: new Date(1999, 0, 1),
+                date: new Date("1999-01-01T00:00:00.000Z"),
+            });
+            const tree = new Formatter().format(component);
+            expect(tree).to.deep.equal({
+                "w:comment": [
+                    { _attr: { "w:id": 0, "w:date": "1999-01-01T00:00:00.000Z" } },
+                    {
+                        "w:p": [
+                            {
+                                "w:r": [
+                                    {
+                                        "w:t": [
+                                            {
+                                                _attr: {
+                                                    "xml:space": "preserve",
+                                                },
+                                            },
+                                            "test-comment",
+                                        ],
+                                    },
+                                ],
+                            },
+                        ],
+                    },
+                ],
+            });
+        });
+
+        it("should create by using default date", () => {
+            const component = new Comment({
+                id: 0,
+                text: "test-comment",
             });
             const tree = new Formatter().format(component);
             expect(tree).to.deep.equal({
@@ -83,12 +126,12 @@ describe("Comments", () => {
                     {
                         id: 0,
                         text: "test-comment",
-                        date: new Date(1999, 0, 1),
+                        date: new Date("1999-01-01T00:00:00.000Z"),
                     },
                     {
                         id: 1,
                         text: "test-comment-2",
-                        date: new Date(1999, 0, 1),
+                        date: new Date("1999-01-01T00:00:00.000Z"),
                     },
                 ],
             });

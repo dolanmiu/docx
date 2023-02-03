@@ -7,7 +7,7 @@ class FldSimpleAttrs extends XmlAttributeComponent<{ readonly instr: string }> {
 }
 
 export class SimpleField extends XmlComponent {
-    constructor(instruction: string, cachedValue?: string) {
+    public constructor(instruction: string, cachedValue?: string) {
         super("w:fldSimple");
         this.root.push(new FldSimpleAttrs({ instr: instruction }));
         if (cachedValue !== undefined) {
@@ -17,7 +17,7 @@ export class SimpleField extends XmlComponent {
 }
 
 export class SimpleMailMergeField extends SimpleField {
-    constructor(fieldName: string) {
+    public constructor(fieldName: string) {
         super(` MERGEFIELD ${fieldName} `, `«${fieldName}»`);
     }
 }

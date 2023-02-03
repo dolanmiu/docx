@@ -18,7 +18,8 @@
         "paths": {
             "@util/*": ["./util/*"],
             "@export/*": ["./export/*"],
-            "@file/*": ["./file/*"]
+            "@file/*": ["./file/*"],
+            "@shared": ["./shared/index.ts"]
         }
     },
     "include": ["src"]

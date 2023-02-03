@@ -13,7 +13,7 @@ export class DocumentWrapper implements IViewWrapper {
     private readonly document: Document;
     private readonly relationships: Relationships;
 
-    constructor(options: IDocumentOptions) {
+    public constructor(options: IDocumentOptions) {
         this.document = new Document(options);
         this.relationships = new Relationships();
     }

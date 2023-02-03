@@ -1,7 +1,7 @@
 import { ConcreteNumbering } from "@file/numbering";
 
 export class NumberingReplacer {
-    public replace(xmlData: string, concreteNumberings: ConcreteNumbering[]): string {
+    public replace(xmlData: string, concreteNumberings: readonly ConcreteNumbering[]): string {
         let currentXmlData = xmlData;
 
         for (const concreteNumbering of concreteNumberings) {

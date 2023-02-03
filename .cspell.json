@@ -47,7 +47,9 @@
         "/xmlKeys = {[^}]+}/g",
         "/\\.to\\.deep\\.equal\\({[^)]+}\\)/g",
         "\\.to\\.include\\.members\\(\\[[^\\]]+]\\)",
-        "/new [a-zA-Z]+\\({[^£]+}\\)/g"
+        "/new [a-zA-Z]+\\({[^£]+}\\)/g",
+        "/<element name=\"[a-z]+\"/gi",
+        "/<attribute name=\"[a-z]+\"/gi"
     ],
     "ignorePaths": ["package.json", "docs/api"],
     "allowCompoundWords": true,

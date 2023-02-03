@@ -1,7 +1,7 @@
 import { XmlComponent } from "@file/xml-components";
 
 export class NoFill extends XmlComponent {
-    constructor() {
+    public constructor() {
         super("a:noFill");
     }
 }

@@ -1,9 +1,9 @@
 {
   "check-coverage": true,
-  "statements": 99.62,
-  "branches": 96.81,
-  "functions": 99.82,
-  "lines": 99.62,
+  "statements": 99.79,
+  "branches": 98.41,
+  "functions": 100,
+  "lines": 99.73,
   "include": [
     "src/**/*.ts"
   ],

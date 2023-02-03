@@ -6,7 +6,7 @@ import { MathBase } from "../n-ary";
 import { MathBracketProperties } from "./math-bracket-properties";
 
 export class MathRoundBrackets extends XmlComponent {
-    constructor(options: { readonly children: MathComponent[] }) {
+    public constructor(options: { readonly children: readonly MathComponent[] }) {
         super("m:d");
 
         this.root.push(new MathBracketProperties());

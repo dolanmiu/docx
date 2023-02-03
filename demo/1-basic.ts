@@ -1,7 +1,7 @@
 // Simple example to add text to a document
 // Import from 'docx' rather than '../build' if you install from npm
 import * as fs from "fs";
-import { Document, Packer, Paragraph, TextRun } from "../build";
+import { Document, Packer, Paragraph, Tab, TextRun } from "../build";
 
 const doc = new Document({
     sections: [
@@ -14,9 +14,10 @@ const doc = new Document({
                         new TextRun({
                             text: "Foo Bar",
                             bold: true,
+                            size: 40,
                         }),
                         new TextRun({
-                            text: "\tGithub is the best",
+                            children: [new Tab(), "Github is the best"],
                             bold: true,
                         }),
                     ],

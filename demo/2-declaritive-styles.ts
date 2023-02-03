@@ -82,6 +82,32 @@ const doc = new Document({
                     spacing: { line: 276, before: 20 * 72 * 0.1, after: 20 * 72 * 0.05 },
                 },
             },
+            {
+                id: "strikeUnderline",
+                name: "Strike Underline",
+                basedOn: "Normal",
+                quickFormat: true,
+                run: {
+                    strike: true,
+                    underline: {
+                        type: UnderlineType.SINGLE,
+                    },
+                },
+            },
+        ],
+        characterStyles: [
+            {
+                id: "strikeUnderlineCharacter",
+                name: "Strike Underline",
+                basedOn: "Normal",
+                quickFormat: true,
+                run: {
+                    strike: true,
+                    underline: {
+                        type: UnderlineType.SINGLE,
+                    },
+                },
+            },
         ],
     },
     numbering: {
@@ -169,6 +195,14 @@ const doc = new Document({
                         new TextRun({
                             text: "and back to normal.",
                         }),
+                        new TextRun({
+                            text: "This text will be invisible!",
+                            vanish: true,
+                        }),
+                        new TextRun({
+                            text: "This text will be VERY invisible! Word processors cannot override this!",
+                            specVanish: true,
+                        }),
                     ],
                 }),
                 new Paragraph({
@@ -179,6 +213,49 @@ const doc = new Document({
                         }),
                         new TextRun({
                             text: " - Very strong.",
+                        }),
+                    ],
+                }),
+                new Paragraph({
+                    style: "strikeUnderline",
+                    children: [
+                        new TextRun({
+                            text: "Underline and Strike",
+                        }),
+                        new TextRun({
+                            text: " Override Underline ",
+                            underline: {
+                                type: UnderlineType.NONE,
+                            },
+                        }),
+                        new TextRun({
+                            text: "Strike and Underline",
+                        }),
+                    ],
+                }),
+                new Paragraph({
+                    children: [
+                        new TextRun({
+                            text: "Hello World ",
+                        }),
+                        new TextRun({
+                            style: "strikeUnderlineCharacter",
+                            text: "Underline and Strike",
+                        }),
+                        new TextRun({
+                            text: " Another Hello World",
+                        }),
+                        new TextRun({
+                            scale: 50,
+                            text: " Scaled text",
+                        }),
+                    ],
+                }),
+                new Paragraph({
+                    scale: 200,
+                    children: [
+                        new TextRun({
+                            text: "Scaled paragraph",
                         }),
                     ],
                 }),

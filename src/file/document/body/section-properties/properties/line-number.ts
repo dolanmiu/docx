@@ -39,7 +39,7 @@ export class LineNumberAttributes extends XmlAttributeComponent<ILineNumberAttri
 }
 
 export class LineNumberType extends XmlComponent {
-    constructor({ countBy, start, restart, distance }: ILineNumberAttributes) {
+    public constructor({ countBy, start, restart, distance }: ILineNumberAttributes) {
         super("w:lnNumType");
         this.root.push(
             new LineNumberAttributes({

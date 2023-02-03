@@ -16,7 +16,7 @@ export class StyleForParagraph extends Style {
     private readonly paragraphProperties: ParagraphProperties;
     private readonly runProperties: RunProperties;
 
-    constructor(options: IParagraphStyleOptions) {
+    public constructor(options: IParagraphStyleOptions) {
         super({ type: "paragraph", styleId: options.id }, options);
 
         this.paragraphProperties = new ParagraphProperties(options.paragraph);

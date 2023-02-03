@@ -1,4 +1,5 @@
 import { ICommentsOptions } from "@file/paragraph/run/comment-run";
+import { ICompatibilityOptions } from "@file/settings/compatibility";
 import { StringContainer, XmlComponent } from "@file/xml-components";
 import { dateTimeValue } from "@util/values";
 
@@ -12,7 +13,7 @@ import { Paragraph } from "../paragraph";
 import { IStylesOptions } from "../styles";
 
 export interface IPropertiesOptions {
-    readonly sections: ISectionOptions[];
+    readonly sections: readonly ISectionOptions[];
     readonly title?: string;
     readonly subject?: string;
     readonly creator?: string;
@@ -26,7 +27,7 @@ export interface IPropertiesOptions {
     readonly comments?: ICommentsOptions;
     readonly footnotes?: {
         readonly [key: string]: {
-            readonly children: Paragraph[];
+            readonly children: readonly Paragraph[];
         };
     };
     readonly background?: IDocumentBackgroundOptions;
@@ -35,7 +36,8 @@ export interface IPropertiesOptions {
         readonly updateFields?: boolean;
     };
     readonly compatabilityModeVersion?: number;
-    readonly customProperties?: ICustomPropertyOptions[];
+    readonly compatibility?: ICompatibilityOptions;
+    readonly customProperties?: readonly ICustomPropertyOptions[];
     readonly evenAndOddHeaderAndFooters?: boolean;
 }
 
@@ -64,7 +66,7 @@ export interface IPropertiesOptions {
 /* cSpell:enable */
 
 export class CoreProperties extends XmlComponent {
-    constructor(options: Omit<IPropertiesOptions, "sections">) {
+    public constructor(options: Omit<IPropertiesOptions, "sections">) {
         super("cp:coreProperties");
         this.root.push(
             new DocumentAttributes({
@@ -102,7 +104,7 @@ export class CoreProperties extends XmlComponent {
 }
 
 class TimestampElement extends XmlComponent {
-    constructor(name: string) {
+    public constructor(name: string) {
         super(name);
         this.root.push(
             new DocumentAttributes({

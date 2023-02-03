@@ -63,7 +63,7 @@ export interface IDocumentBackgroundOptions {
 // </xsd:complexType>
 
 export class DocumentBackground extends XmlComponent {
-    constructor(options: IDocumentBackgroundOptions) {
+    public constructor(options: IDocumentBackgroundOptions) {
         super("w:background");
 
         this.root.push(

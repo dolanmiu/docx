@@ -1,5 +1,4 @@
-/* tslint:disable */
-function createLsdException(name: string, uiPriority?: number, qFormat?: number, semiHidden?: number, unhideWhenUsed?: number) {
+const createLsdException = (name: string, uiPriority?: number, qFormat?: number, semiHidden?: number, unhideWhenUsed?: number) => {
     "use strict";
 
     return [
@@ -13,10 +12,11 @@ function createLsdException(name: string, uiPriority?: number, qFormat?: number,
             },
         },
     ];
-}
+};
 
-export function DefaultStyle() {
-    var style = {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const DefaultStyle = (): Record<string, any> => {
+    const style = {
         "w:styles": [
             {
                 _attr: {
@@ -208,4 +208,4 @@ export function DefaultStyle() {
     };
 
     return style;
-}
+};

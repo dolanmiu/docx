@@ -4,6 +4,7 @@ import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
 export enum LineRuleType {
     AT_LEAST = "atLeast",
     EXACTLY = "exactly",
+    EXACT = "exact",
     AUTO = "auto",
 }
 export interface ISpacingProperties {
@@ -25,7 +26,7 @@ class SpacingAttributes extends XmlAttributeComponent<ISpacingProperties> {
 }
 
 export class Spacing extends XmlComponent {
-    constructor(options: ISpacingProperties) {
+    public constructor(options: ISpacingProperties) {
         super("w:spacing");
         this.root.push(new SpacingAttributes(options));
     }

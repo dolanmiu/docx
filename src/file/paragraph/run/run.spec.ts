@@ -2,13 +2,10 @@ import { expect } from "chai";
 
 import { Formatter } from "@export/formatter";
 import { BorderStyle } from "@file/border";
-// import { FootnoteReferenceRun } from "@file/footnotes/footnote/run/reference-run";
 import { ShadingType } from "@file/shading";
-import { SpaceType } from "@file/space-type";
 
-import { Run } from "./";
 import { EmphasisMarkType } from "./emphasis-mark";
-import { PageNumber } from "./run";
+import { PageNumber, Run } from "./run";
 import { UnderlineType } from "./underline";
 
 describe("Run", () => {
@@ -523,18 +520,94 @@ describe("Run", () => {
         });
     });
 
-    describe("#space", () => {
-        it("should correctly set the border", () => {
+    describe("#vanish and #specVanish", () => {
+        it("should correctly set vanish", () => {
             const run = new Run({
-                space: SpaceType.PRESERVE,
+                vanish: true,
             });
             const tree = new Formatter().format(run);
             expect(tree).to.deep.equal({
-                "w:r": {
-                    _attr: {
-                        "xml:space": "preserve",
+                "w:r": [
+                    {
+                        "w:rPr": [
+                            {
+                                "w:vanish": {},
+                            },
+                        ],
                     },
-                },
+                ],
+            });
+        });
+
+        it("should correctly set specVanish", () => {
+            const run = new Run({
+                specVanish: true,
+            });
+            const tree = new Formatter().format(run);
+            expect(tree).to.deep.equal({
+                "w:r": [
+                    {
+                        "w:rPr": [
+                            {
+                                "w:specVanish": {},
+                            },
+                        ],
+                    },
+                ],
+            });
+        });
+
+        describe("#scale", () => {
+            it("should correctly set the border", () => {
+                const run = new Run({
+                    scale: 200,
+                });
+                const tree = new Formatter().format(run);
+                expect(tree).to.deep.equal({
+                    "w:r": [
+                        {
+                            "w:rPr": [
+                                {
+                                    "w:w": {
+                                        _attr: {
+                                            "w:val": 200,
+                                        },
+                                    },
+                                },
+                            ],
+                        },
+                    ],
+                });
+            });
+        });
+
+        describe("#language", () => {
+            it("should correctly set the language", () => {
+                const run = new Run({
+                    language: {
+                        value: "en-US",
+                        eastAsia: "zh-CN",
+                        bidirectional: "ar-SA",
+                    },
+                });
+                const tree = new Formatter().format(run);
+                expect(tree).to.deep.equal({
+                    "w:r": [
+                        {
+                            "w:rPr": [
+                                {
+                                    "w:lang": {
+                                        _attr: {
+                                            "w:val": "en-US",
+                                            "w:eastAsia": "zh-CN",
+                                            "w:bidi": "ar-SA",
+                                        },
+                                    },
+                                },
+                            ],
+                        },
+                    ],
+                });
             });
         });
     });

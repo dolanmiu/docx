@@ -12,7 +12,7 @@ class BlipAttributes extends XmlAttributeComponent<{
 }
 
 export class Blip extends XmlComponent {
-    constructor(mediaData: IMediaData) {
+    public constructor(mediaData: IMediaData) {
         super("a:blip");
         this.root.push(
             new BlipAttributes({

@@ -41,7 +41,7 @@ describe("FooterWrapper", () => {
         it("should call the underlying footer's addChildElement", () => {
             const file = new FooterWrapper(new Media(), 1);
             const spy = sinon.spy(file.View, "addChildElement");
-            // tslint:disable-next-line:no-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             file.addChildElement({} as any);
 
             expect(spy.called).to.equal(true);

@@ -20,10 +20,10 @@ interface IXmlifyedFileMapping {
     readonly Numbering: IXmlifyedFile;
     readonly Relationships: IXmlifyedFile;
     readonly FileRelationships: IXmlifyedFile;
-    readonly Headers: IXmlifyedFile[];
-    readonly Footers: IXmlifyedFile[];
-    readonly HeaderRelationships: IXmlifyedFile[];
-    readonly FooterRelationships: IXmlifyedFile[];
+    readonly Headers: readonly IXmlifyedFile[];
+    readonly Footers: readonly IXmlifyedFile[];
+    readonly HeaderRelationships: readonly IXmlifyedFile[];
+    readonly FooterRelationships: readonly IXmlifyedFile[];
     readonly ContentTypes: IXmlifyedFile;
     readonly CustomProperties: IXmlifyedFile;
     readonly AppProperties: IXmlifyedFile;
@@ -38,7 +38,7 @@ export class Compiler {
     private readonly imageReplacer: ImageReplacer;
     private readonly numberingReplacer: NumberingReplacer;
 
-    constructor() {
+    public constructor() {
         this.formatter = new Formatter();
         this.imageReplacer = new ImageReplacer();
         this.numberingReplacer = new NumberingReplacer();
@@ -47,15 +47,15 @@ export class Compiler {
     public compile(file: File, prettifyXml?: PrettifyType): JSZip {
         const zip = new JSZip();
         const xmlifiedFileMapping = this.xmlifyFile(file, prettifyXml);
-        const map = new Map<string, IXmlifyedFile | IXmlifyedFile[]>(Object.entries(xmlifiedFileMapping));
+        const map = new Map<string, IXmlifyedFile | readonly IXmlifyedFile[]>(Object.entries(xmlifiedFileMapping));
 
         for (const [, obj] of map) {
             if (Array.isArray(obj)) {
-                for (const subFile of obj) {
+                for (const subFile of obj as readonly IXmlifyedFile[]) {
                     zip.file(subFile.path, subFile.data);
                 }
             } else {
-                zip.file(obj.path, obj.data);
+                zip.file((obj as IXmlifyedFile).path, (obj as IXmlifyedFile).data);
             }
         }
 
@@ -74,6 +74,7 @@ export class Compiler {
             this.formatter.format(file.Document.View, {
                 viewWrapper: file.Document,
                 file,
+                stack: [],
             }),
             {
                 indent: prettify,
@@ -100,6 +101,7 @@ export class Compiler {
                         this.formatter.format(file.Document.Relationships, {
                             viewWrapper: file.Document,
                             file,
+                            stack: [],
                         }),
                         {
                             indent: prettify,
@@ -125,6 +127,7 @@ export class Compiler {
                         this.formatter.format(file.Styles, {
                             viewWrapper: file.Document,
                             file,
+                            stack: [],
                         }),
                         {
                             indent: prettify,
@@ -144,6 +147,7 @@ export class Compiler {
                     this.formatter.format(file.CoreProperties, {
                         viewWrapper: file.Document,
                         file,
+                        stack: [],
                     }),
                     {
                         indent: prettify,
@@ -160,6 +164,7 @@ export class Compiler {
                     this.formatter.format(file.Numbering, {
                         viewWrapper: file.Document,
                         file,
+                        stack: [],
                     }),
                     {
                         indent: prettify,
@@ -176,6 +181,7 @@ export class Compiler {
                     this.formatter.format(file.FileRelationships, {
                         viewWrapper: file.Document,
                         file,
+                        stack: [],
                     }),
                     {
                         indent: prettify,
@@ -191,6 +197,7 @@ export class Compiler {
                     this.formatter.format(headerWrapper.View, {
                         viewWrapper: headerWrapper,
                         file,
+                        stack: [],
                     }),
                     {
                         indent: prettify,
@@ -214,6 +221,7 @@ export class Compiler {
                         this.formatter.format(headerWrapper.Relationships, {
                             viewWrapper: headerWrapper,
                             file,
+                            stack: [],
                         }),
                         {
                             indent: prettify,
@@ -230,6 +238,7 @@ export class Compiler {
                     this.formatter.format(footerWrapper.View, {
                         viewWrapper: footerWrapper,
                         file,
+                        stack: [],
                     }),
                     {
                         indent: prettify,
@@ -253,6 +262,7 @@ export class Compiler {
                         this.formatter.format(footerWrapper.Relationships, {
                             viewWrapper: footerWrapper,
                             file,
+                            stack: [],
                         }),
                         {
                             indent: prettify,
@@ -269,6 +279,7 @@ export class Compiler {
                     this.formatter.format(headerWrapper.View, {
                         viewWrapper: headerWrapper,
                         file,
+                        stack: [],
                     }),
                     {
                         indent: prettify,
@@ -293,6 +304,7 @@ export class Compiler {
                     this.formatter.format(footerWrapper.View, {
                         viewWrapper: footerWrapper,
                         file,
+                        stack: [],
                     }),
                     {
                         indent: prettify,
@@ -317,6 +329,7 @@ export class Compiler {
                     this.formatter.format(file.ContentTypes, {
                         viewWrapper: file.Document,
                         file,
+                        stack: [],
                     }),
                     {
                         indent: prettify,
@@ -332,6 +345,7 @@ export class Compiler {
                     this.formatter.format(file.CustomProperties, {
                         viewWrapper: file.Document,
                         file,
+                        stack: [],
                     }),
                     {
                         indent: prettify,
@@ -348,6 +362,7 @@ export class Compiler {
                     this.formatter.format(file.AppProperties, {
                         viewWrapper: file.Document,
                         file,
+                        stack: [],
                     }),
                     {
                         indent: prettify,
@@ -363,7 +378,8 @@ export class Compiler {
                 data: xml(
                     this.formatter.format(file.FootNotes.View, {
                         viewWrapper: file.FootNotes,
-                        file: file,
+                        file,
+                        stack: [],
                     }),
                     {
                         indent: prettify,
@@ -378,7 +394,8 @@ export class Compiler {
                 data: xml(
                     this.formatter.format(file.FootNotes.Relationships, {
                         viewWrapper: file.FootNotes,
-                        file: file,
+                        file,
+                        stack: [],
                     }),
                     {
                         indent: prettify,
@@ -394,6 +411,7 @@ export class Compiler {
                     this.formatter.format(file.Settings, {
                         viewWrapper: file.Document,
                         file,
+                        stack: [],
                     }),
                     {
                         indent: prettify,
@@ -410,6 +428,7 @@ export class Compiler {
                     this.formatter.format(file.Comments, {
                         viewWrapper: file.Document,
                         file,
+                        stack: [],
                     }),
                     {
                         indent: prettify,
