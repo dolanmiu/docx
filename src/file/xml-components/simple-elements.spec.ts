@@ -18,7 +18,7 @@ describe("BuilderElement", () => {
         });
 
         it("should create a simple BuilderElement with attributes", () => {
-            const element = new BuilderElement<{ testAttr: string }>({
+            const element = new BuilderElement<{ readonly testAttr: string }>({
                 name: "test",
                 attributes: {
                     testAttr: {
