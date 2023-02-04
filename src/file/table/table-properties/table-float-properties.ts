@@ -1,4 +1,4 @@
-import { NextAttributeComponent, StringEnumValueElement, XmlAttributeComponent, XmlComponent } from "@file/xml-components";
+import { NextAttributeComponent, StringEnumValueElement, XmlComponent } from "@file/xml-components";
 import { PositiveUniversalMeasure, signedTwipsMeasureValue, twipsMeasureValue, UniversalMeasure } from "@util/values";
 
 export enum TableAnchorType {
@@ -138,21 +138,6 @@ export type ITableFloatOptions = {
 //     <xsd:attribute name="tblpYSpec" type="s:ST_YAlign"/>
 //     <xsd:attribute name="tblpY" type="ST_SignedTwipsMeasure"/>
 // </xsd:complexType>
-
-export class TableFloatOptionsAttributes extends XmlAttributeComponent<ITableFloatOptions> {
-    protected readonly xmlKeys = {
-        horizontalAnchor: "w:horzAnchor",
-        verticalAnchor: "w:vertAnchor",
-        absoluteHorizontalPosition: "w:tblpX",
-        relativeHorizontalPosition: "w:tblpXSpec",
-        absoluteVerticalPosition: "w:tblpY",
-        relativeVerticalPosition: "w:tblpYSpec",
-        bottomFromText: "w:bottomFromText",
-        topFromText: "w:topFromText",
-        leftFromText: "w:leftFromText",
-        rightFromText: "w:rightFromText",
-    };
-}
 
 export class TableFloatProperties extends XmlComponent {
     public constructor({
