@@ -92,5 +92,7 @@ export class BuilderElement<T extends AttributeData> extends XmlComponent {
         if (options.attributes) {
             this.root.push(new NextAttributeComponent(options.attributes));
         }
+
+        // TODO: Children
     }
 }
