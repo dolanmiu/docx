@@ -38,9 +38,7 @@ describe("Table Float Properties", () => {
             expect(tree).to.deep.equal({
                 "w:tblpPr": [
                     {
-                        _attr: {
-                            overlap: "never",
-                        },
+                        _attr: {},
                     },
                     {
                         "w:tblOverlap": {
