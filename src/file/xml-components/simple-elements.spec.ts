@@ -5,7 +5,7 @@ import { Formatter } from "@export/formatter";
 import { BuilderElement } from "./simple-elements";
 
 describe("BuilderElement", () => {
-    describe.only("#constructor()", () => {
+    describe("#constructor()", () => {
         it("should create a simple BuilderElement", () => {
             const element = new BuilderElement({
                 name: "test",
