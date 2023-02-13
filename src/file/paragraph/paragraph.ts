@@ -10,8 +10,10 @@ import { ColumnBreak, PageBreak } from "./formatting/break";
 import { Bookmark, ConcreteHyperlink, ExternalHyperlink, InternalHyperlink } from "./links";
 import { Math } from "./math";
 import { IParagraphPropertiesOptions, ParagraphProperties } from "./properties";
-import { ImageRun, Run, SequentialIdentifier, SimpleField, SimpleMailMergeField, SymbolRun, TextRun } from "./run";
+import { ImageRun, PageNumber, Run, SequentialIdentifier, SimpleField, SimpleMailMergeField, SymbolRun, TextRun } from "./run";
 import { Comment, CommentRangeEnd, CommentRangeStart, CommentReference, Comments } from "./run/comment-run";
+import { Begin, End, Separate } from "./run/field";
+import { NumberOfPages, NumberOfPagesSection, Page } from "./run/page-number";
 
 export type ParagraphChild =
     | TextRun
@@ -33,7 +35,8 @@ export type ParagraphChild =
     | Comment
     | CommentRangeStart
     | CommentRangeEnd
-    | CommentReference;
+    | CommentReference
+    | PageNumber;
 
 export interface IParagraphOptions extends IParagraphPropertiesOptions {
     readonly text?: string;
@@ -63,6 +66,34 @@ export class Paragraph extends FileChild {
 
         if (options.children) {
             for (const child of options.children) {
+                if (typeof child === "string") {
+                    switch (child) {
+                        case PageNumber.CURRENT:
+                            this.root.push(new TextRun({ children: [new Begin()] }));
+                            this.root.push(new TextRun({ children: [new Page()] }));
+                            this.root.push(new TextRun({ children: [new Separate()] }));
+                            this.root.push(new TextRun({ children: [new End()] }));
+                            break;
+                        case PageNumber.TOTAL_PAGES:
+                            this.root.push(new TextRun({ children: [new Begin()] }));
+                            this.root.push(new TextRun({ children: [new NumberOfPages()] }));
+                            this.root.push(new TextRun({ children: [new Separate()] }));
+                            this.root.push(new TextRun("0"));
+                            this.root.push(new TextRun({ children: [new End()] }));
+                            break;
+                        case PageNumber.TOTAL_PAGES_IN_SECTION:
+                            this.root.push(new TextRun({ children: [new Begin()] }));
+                            this.root.push(new TextRun({ children: [new NumberOfPagesSection()] }));
+                            this.root.push(new TextRun({ children: [new Separate()] }));
+                            this.root.push(new TextRun({ children: [new End()] }));
+                            break;
+                        default:
+                            this.root.push(new TextRun(child));
+                            break;
+                    }
+                    continue;
+                }
+
                 if (child instanceof Bookmark) {
                     this.root.push(child.start);
                     for (const textRun of child.children) {
