@@ -74,7 +74,6 @@ Check the [demo folder](https://github.com/dolanmiu/docx/tree/master/demo) for e
 Read the contribution guidelines [here](https://docx.js.org/#/contribution-guidelines).
 
 # Used by
-
 [<img src="https://i.imgur.com/zy5qWmI.png" alt="drawing" height="50"/>](https://hfour.com/)
 [<img src="https://i.imgur.com/OYP5tgS.png" alt="drawing" height="50"/>](https://fuzzproductions.com/)
 [<img src="https://i.imgur.com/zUDMfZ3.png" alt="drawing" height="50"/>](https://www.mettzer.com/)
@@ -88,6 +87,7 @@ Read the contribution guidelines [here](https://docx.js.org/#/contribution-guide
 [<img src="https://i.imgur.com/cmykN7c.png" alt="drawing"/>](https://www.arity.co/)
 [<img src="https://i.imgur.com/PXo25um.png" alt="drawing" height="50"/>](https://www.circadianrisk.com/)
 [<img src="https://i.imgur.com/AKGhtlh.png" alt="drawing"/>](https://lexense.com/)
+[<img src="https://i.imgur.com/9tqJaHw.png" alt="drawing" height="50"/>](https://novelpad.co/)
 
 ...and many more!
 
