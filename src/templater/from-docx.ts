@@ -1,25 +1,31 @@
 import * as JSZip from "jszip";
-import { xml2js, ElementCompact, js2xml } from "xml-js";
+import { xml2js, Element, js2xml } from "xml-js";
 import { replacer } from "./replacer";
+import { findLocationOfText } from "./traverser";
 
 // eslint-disable-next-line functional/prefer-readonly-type
 type InputDataType = Buffer | string | number[] | Uint8Array | ArrayBuffer | Blob | NodeJS.ReadableStream;
 
-export interface PatchDocumentOptions {
+export interface IPatch {
     readonly children: any[];
+    readonly text: string;
+}
+export interface PatchDocumentOptions {
+    readonly patches: readonly IPatch[];
 }
 
 export const patchDocument = async (data: InputDataType, options: PatchDocumentOptions): Promise<Buffer> => {
     const zipContent = await JSZip.loadAsync(data);
 
-    const map = new Map<string, ElementCompact>();
-    console.log(options);
+    const map = new Map<string, Element>();
 
     for (const [key, value] of Object.entries(zipContent.files)) {
         const json = toJson(await value.async("text"));
         if (key === "word/document.xml") {
-            console.log(json);
-            replacer(json, options);
+            for (const patch of options.patches) {
+                findLocationOfText(json, patch.text);
+                replacer(json, patch);
+            }
         }
 
         map.set(key, json);
@@ -42,12 +48,12 @@ export const patchDocument = async (data: InputDataType, options: PatchDocumentO
     return zipData;
 };
 
-const toJson = (xmlData: string): ElementCompact => {
-    const xmlObj = xml2js(xmlData, { compact: false }) as ElementCompact;
+const toJson = (xmlData: string): Element => {
+    const xmlObj = xml2js(xmlData, { compact: false }) as Element;
     return xmlObj;
 };
 
-const toXml = (jsonObj: ElementCompact): string => {
+const toXml = (jsonObj: Element): string => {
     const output = js2xml(jsonObj);
     return output;
 };
