@@ -1,37 +1,55 @@
 import { Element } from "xml-js";
 
+import { ElementWrapper } from "./traverser";
+
 export interface IRenderedParagraphNode {
     readonly text: string;
     readonly runs: readonly IRenderedRunNode[];
+    readonly index: number;
+    readonly path: readonly number[];
 }
 
-interface IParts {
+interface StartAndEnd {
+    readonly start: number;
+    readonly end: number;
+}
+
+type IParts = {
     readonly text: string;
     readonly index: number;
-}
+} & StartAndEnd;
 
-export interface IRenderedRunNode {
+export type IRenderedRunNode = {
     readonly text: string;
     readonly parts: readonly IParts[];
     readonly index: number;
-}
+} & StartAndEnd;
 
-export const renderParagraphNode = (node: Element): IRenderedParagraphNode => {
-    if (node.name !== "w:p") {
-        throw new Error(`Invalid node type: ${node.name}`);
+export const renderParagraphNode = (node: ElementWrapper): IRenderedParagraphNode => {
+    if (node.element.name !== "w:p") {
+        throw new Error(`Invalid node type: ${node.element.name}`);
     }
 
-    if (!node.elements) {
+    if (!node.element.elements) {
         return {
             text: "",
             runs: [],
+            index: -1,
+            path: [],
         };
     }
 
-    const runs = node.elements
+    let currentRunStringLength = 0;
+
+    const runs = node.element.elements
         .map((element, i) => ({ element, i }))
         .filter(({ element }) => element.name === "w:r")
-        .map(({ element, i }) => renderRunNode(element, i))
+        .map(({ element, i }) => {
+            const renderedRunNode = renderRunNode(element, i, currentRunStringLength);
+            currentRunStringLength += renderedRunNode.text.length;
+
+            return renderedRunNode;
+        })
         .filter((e) => !!e)
         .map((e) => e as IRenderedRunNode);
 
@@ -40,10 +58,12 @@ export const renderParagraphNode = (node: Element): IRenderedParagraphNode => {
     return {
         text,
         runs,
+        index: node.index,
+        path: buildNodePath(node),
     };
 };
 
-const renderRunNode = (node: Element, index: number): IRenderedRunNode => {
+const renderRunNode = (node: Element, index: number, currentRunStringIndex: number): IRenderedRunNode => {
     if (node.name !== "w:r") {
         throw new Error(`Invalid node type: ${node.name}`);
     }
@@ -53,8 +73,12 @@ const renderRunNode = (node: Element, index: number): IRenderedRunNode => {
             text: "",
             parts: [],
             index: -1,
+            start: currentRunStringIndex,
+            end: currentRunStringIndex,
         };
     }
+
+    let currentTextStringIndex = currentRunStringIndex;
 
     const parts = node.elements
         .map((element, i: number) =>
@@ -62,6 +86,12 @@ const renderRunNode = (node: Element, index: number): IRenderedRunNode => {
                 ? {
                       text: element.elements[0].text?.toString() ?? "",
                       index: i,
+                      start: currentTextStringIndex,
+                      end: (() => {
+                          // Side effect
+                          currentTextStringIndex += (element.elements[0].text?.toString() ?? "").length - 1;
+                          return currentTextStringIndex;
+                      })(),
                   }
                 : undefined,
         )
@@ -74,5 +104,10 @@ const renderRunNode = (node: Element, index: number): IRenderedRunNode => {
         text,
         parts,
         index,
+        start: currentRunStringIndex,
+        end: currentTextStringIndex,
     };
 };
+
+const buildNodePath = (node: ElementWrapper): readonly number[] =>
+    node.parent ? [...buildNodePath(node.parent), node.index] : [node.index];

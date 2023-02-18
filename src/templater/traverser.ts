@@ -1,5 +1,12 @@
 import { Element } from "xml-js";
+
 import { IRenderedParagraphNode, renderParagraphNode } from "./run-renderer";
+
+export interface ElementWrapper {
+    readonly element: Element;
+    readonly index: number;
+    readonly parent: ElementWrapper | undefined;
+}
 
 export interface ILocationOfText {
     readonly parent: Element;
@@ -12,14 +19,27 @@ export interface ILocationOfText {
     readonly endElement?: Element;
 }
 
-export const findLocationOfText = (node: Element, text: string): void => {
+const elementsToWrapper = (wrapper: ElementWrapper): readonly ElementWrapper[] =>
+    wrapper.element.elements?.map((e, i) => ({
+        element: e,
+        index: i,
+        parent: wrapper,
+    })) ?? [];
+
+export const findLocationOfText = (node: Element, text: string): readonly IRenderedParagraphNode[] => {
     let renderedParagraphs: readonly IRenderedParagraphNode[] = [];
 
     // eslint-disable-next-line functional/prefer-readonly-type
-    const queue: Element[] = [...(node.elements ?? [])];
+    const queue: ElementWrapper[] = [
+        ...(elementsToWrapper({
+            element: node,
+            index: 0,
+            parent: undefined,
+        }) ?? []),
+    ];
 
     // eslint-disable-next-line functional/immutable-data
-    let currentNode: Element | undefined;
+    let currentNode: ElementWrapper | undefined;
     while (queue.length > 0) {
         // eslint-disable-next-line functional/immutable-data
         currentNode = queue.shift();
@@ -28,16 +48,15 @@ export const findLocationOfText = (node: Element, text: string): void => {
             break;
         }
 
-        if (currentNode.name === "w:p") {
+        if (currentNode.element.name === "w:p") {
             renderedParagraphs = [...renderedParagraphs, renderParagraphNode(currentNode)];
         } else {
             // eslint-disable-next-line functional/immutable-data
-            queue.push(...(currentNode.elements ?? []));
+            queue.push(...(elementsToWrapper(currentNode) ?? []));
         }
     }
 
     const filteredParagraphs = renderedParagraphs.filter((p) => p.text.includes(text));
 
-    console.log("paragrapghs", JSON.stringify(filteredParagraphs, null, 2));
-    return undefined;
+    return filteredParagraphs;
 };

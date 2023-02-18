@@ -1,7 +1,8 @@
 import * as JSZip from "jszip";
-import { xml2js, Element, js2xml } from "xml-js";
+import { Element, js2xml } from "xml-js";
 import { replacer } from "./replacer";
 import { findLocationOfText } from "./traverser";
+import { toJson } from "./util";
 
 // eslint-disable-next-line functional/prefer-readonly-type
 type InputDataType = Buffer | string | number[] | Uint8Array | ArrayBuffer | Blob | NodeJS.ReadableStream;
@@ -23,8 +24,8 @@ export const patchDocument = async (data: InputDataType, options: PatchDocumentO
         const json = toJson(await value.async("text"));
         if (key === "word/document.xml") {
             for (const patch of options.patches) {
-                findLocationOfText(json, patch.text);
-                replacer(json, patch);
+                const renderedParagraphs = findLocationOfText(json, patch.text);
+                replacer(json, patch, renderedParagraphs);
             }
         }
 
@@ -46,11 +47,6 @@ export const patchDocument = async (data: InputDataType, options: PatchDocumentO
     });
 
     return zipData;
-};
-
-const toJson = (xmlData: string): Element => {
-    const xmlObj = xml2js(xmlData, { compact: false }) as Element;
-    return xmlObj;
 };
 
 const toXml = (jsonObj: Element): string => {
