@@ -1,25 +1,23 @@
-import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
-import { twipsMeasureValue } from "@util/values";
+import { NextAttributeComponent, XmlComponent } from "@file/xml-components";
+import { PositiveUniversalMeasure, twipsMeasureValue } from "@util/values";
 
-export interface IColumnAttributes {
-    readonly width: number | string;
-    readonly space?: number | string;
-}
+// <xsd:complexType name="CT_Column">
+//     <xsd:attribute name="w" type="s:ST_TwipsMeasure" use="optional" />
+//     <xsd:attribute name="space" type="s:ST_TwipsMeasure" use="optional" default="0" />
+// </xsd:complexType>
 
-export class ColumnAttributes extends XmlAttributeComponent<IColumnAttributes> {
-    protected readonly xmlKeys = {
-        width: "w:w",
-        space: "w:space",
-    };
-}
+type IColumnAttributes = {
+    readonly width: number | PositiveUniversalMeasure;
+    readonly space?: number | PositiveUniversalMeasure;
+};
 
 export class Column extends XmlComponent {
     public constructor({ width, space }: IColumnAttributes) {
         super("w:col");
         this.root.push(
-            new ColumnAttributes({
-                width: twipsMeasureValue(width),
-                space: space === undefined ? undefined : twipsMeasureValue(space),
+            new NextAttributeComponent<IColumnAttributes>({
+                width: { key: "w:w", value: twipsMeasureValue(width) },
+                space: { key: "w:space", value: space === undefined ? undefined : twipsMeasureValue(space) },
             }),
         );
     }

@@ -11,7 +11,7 @@ export class SymbolRun extends Run {
         if (typeof options === "string") {
             super({});
             this.root.push(new Symbol(options));
-            return;
+            return this;
         }
 
         super(options);

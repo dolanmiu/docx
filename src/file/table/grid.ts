@@ -9,11 +9,11 @@
 //     </xsd:sequence>
 // </xsd:complexType>
 
-import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
-import { twipsMeasureValue } from "@util/values";
+import { NextAttributeComponent, XmlComponent } from "@file/xml-components";
+import { PositiveUniversalMeasure, twipsMeasureValue } from "@util/values";
 
 export class TableGrid extends XmlComponent {
-    public constructor(widths: readonly number[] | readonly string[]) {
+    public constructor(widths: readonly number[] | readonly PositiveUniversalMeasure[]) {
         super("w:tblGrid");
         for (const width of widths) {
             this.root.push(new GridCol(width));
@@ -21,15 +21,15 @@ export class TableGrid extends XmlComponent {
     }
 }
 
-class GridColAttributes extends XmlAttributeComponent<{ readonly w: number | string }> {
-    protected readonly xmlKeys = { w: "w:w" };
-}
-
 export class GridCol extends XmlComponent {
-    public constructor(width?: number | string) {
+    public constructor(width?: number | PositiveUniversalMeasure) {
         super("w:gridCol");
         if (width !== undefined) {
-            this.root.push(new GridColAttributes({ w: twipsMeasureValue(width) }));
+            this.root.push(
+                new NextAttributeComponent<{ readonly width: number | PositiveUniversalMeasure }>({
+                    width: { key: "w:w", value: twipsMeasureValue(width) },
+                }),
+            );
         }
     }
 }

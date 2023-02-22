@@ -954,6 +954,7 @@ describe("Paragraph", () => {
             paragraph.prepForXml({
                 viewWrapper: viewWrapperMock,
                 file: file,
+                stack: [],
             });
             const tree = new Formatter().format(paragraph);
             expect(tree).to.deep.equal({

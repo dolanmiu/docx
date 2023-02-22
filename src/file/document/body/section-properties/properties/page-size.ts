@@ -1,5 +1,5 @@
-import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
-import { twipsMeasureValue } from "@util/values";
+import { NextAttributeComponent, XmlComponent } from "@file/xml-components";
+import { PositiveUniversalMeasure, twipsMeasureValue } from "@util/values";
 
 // <xsd:simpleType name="ST_PageOrientation">
 // <xsd:restriction base="xsd:string">
@@ -18,22 +18,14 @@ export enum PageOrientation {
 //     <xsd:attribute name="orient" type="ST_PageOrientation" use="optional"/>
 //     <xsd:attribute name="code" type="ST_DecimalNumber" use="optional"/>
 // </xsd:complexType>
-export interface IPageSizeAttributes {
-    readonly width?: number | string;
-    readonly height?: number | string;
+export type IPageSizeAttributes = {
+    readonly width?: number | PositiveUniversalMeasure;
+    readonly height?: number | PositiveUniversalMeasure;
     readonly orientation?: PageOrientation;
-}
-
-export class PageSizeAttributes extends XmlAttributeComponent<IPageSizeAttributes> {
-    protected readonly xmlKeys = {
-        width: "w:w",
-        height: "w:h",
-        orientation: "w:orient",
-    };
-}
+};
 
 export class PageSize extends XmlComponent {
-    public constructor(width: number | string, height: number | string, orientation: PageOrientation) {
+    public constructor(width: number | PositiveUniversalMeasure, height: number | PositiveUniversalMeasure, orientation: PageOrientation) {
         super("w:pgSz");
 
         const flip = orientation === PageOrientation.LANDSCAPE;
@@ -42,10 +34,10 @@ export class PageSize extends XmlComponent {
         const heightTwips = twipsMeasureValue(height);
 
         this.root.push(
-            new PageSizeAttributes({
-                width: flip ? heightTwips : widthTwips,
-                height: flip ? widthTwips : heightTwips,
-                orientation: orientation,
+            new NextAttributeComponent<IPageSizeAttributes>({
+                width: { key: "w:w", value: flip ? heightTwips : widthTwips },
+                height: { key: "w:h", value: flip ? widthTwips : heightTwips },
+                orientation: { key: "w:orient", value: orientation },
             }),
         );
     }

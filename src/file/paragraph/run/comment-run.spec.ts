@@ -44,7 +44,7 @@ describe("Comment", () => {
     let clock: sinon.SinonFakeTimers;
 
     beforeEach(() => {
-        const now = new Date(1999, 0, 1);
+        const now = new Date("1999-01-01T00:00:00.000Z");
         clock = sinon.useFakeTimers(now.getTime());
     });
 
@@ -57,7 +57,7 @@ describe("Comment", () => {
             const component = new Comment({
                 id: 0,
                 text: "test-comment",
-                date: new Date(1999, 0, 1),
+                date: new Date("1999-01-01T00:00:00.000Z"),
             });
             const tree = new Formatter().format(component);
             expect(tree).to.deep.equal({
@@ -126,12 +126,12 @@ describe("Comments", () => {
                     {
                         id: 0,
                         text: "test-comment",
-                        date: new Date(1999, 0, 1),
+                        date: new Date("1999-01-01T00:00:00.000Z"),
                     },
                     {
                         id: 1,
                         text: "test-comment-2",
-                        date: new Date(1999, 0, 1),
+                        date: new Date("1999-01-01T00:00:00.000Z"),
                     },
                 ],
             });

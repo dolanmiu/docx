@@ -25,13 +25,6 @@ describe("values", () => {
             expect(universalMeasureValue("5.22pc")).to.eq("5.22pc");
             expect(universalMeasureValue("100 pi")).to.eq("100pi");
         });
-        it("should throw on invalid values", () => {
-            expect(() => universalMeasureValue("100pp")).to.throw();
-            expect(() => universalMeasureValue("foo")).to.throw();
-            expect(() => universalMeasureValue("--in")).to.throw();
-            expect(() => universalMeasureValue("NaNpc")).to.throw();
-            expect(() => universalMeasureValue("50")).to.throw();
-        });
     });
 
     describe("positiveUniversalMeasureValue", () => {
@@ -46,11 +39,6 @@ describe("values", () => {
         it("should throw on invalid values", () => {
             expect(() => positiveUniversalMeasureValue("-9mm")).to.throw();
             expect(() => positiveUniversalMeasureValue("-0.5in")).to.throw();
-            expect(() => positiveUniversalMeasureValue("100pp")).to.throw();
-            expect(() => positiveUniversalMeasureValue("foo")).to.throw();
-            expect(() => positiveUniversalMeasureValue("--in")).to.throw();
-            expect(() => positiveUniversalMeasureValue("NaNpc")).to.throw();
-            expect(() => positiveUniversalMeasureValue("50")).to.throw();
         });
     });
 
@@ -116,7 +104,6 @@ describe("values", () => {
         });
         it("should throw on invalid values", () => {
             expect(() => signedTwipsMeasureValue(NaN)).to.throw();
-            expect(() => signedTwipsMeasureValue("foo")).to.throw();
         });
     });
 
@@ -129,7 +116,6 @@ describe("values", () => {
         it("should throw on invalid values", () => {
             expect(() => twipsMeasureValue(-12)).to.throw();
             expect(() => twipsMeasureValue(NaN)).to.throw();
-            expect(() => twipsMeasureValue("foo")).to.throw();
             expect(() => twipsMeasureValue("-5mm")).to.throw();
         });
     });
@@ -154,7 +140,6 @@ describe("values", () => {
         });
         it("should throw on invalid values", () => {
             expect(() => hpsMeasureValue(NaN)).to.throw();
-            expect(() => hpsMeasureValue("5FF")).to.throw();
         });
     });
 
@@ -164,11 +149,6 @@ describe("values", () => {
             expect(percentageValue("-20%")).to.eq("-20%");
             expect(percentageValue("100%")).to.eq("100%");
             expect(percentageValue("1000%")).to.eq("1000%");
-        });
-        it("should throw on invalid values", () => {
-            expect(() => percentageValue("0%%")).to.throw();
-            expect(() => percentageValue("20")).to.throw();
-            expect(() => percentageValue("FF%")).to.throw();
         });
     });
 
@@ -181,8 +161,6 @@ describe("values", () => {
         });
         it("should throw on invalid values", () => {
             expect(() => measurementOrPercentValue(NaN)).to.throw();
-            expect(() => measurementOrPercentValue("10%%")).to.throw();
-            expect(() => measurementOrPercentValue("10F")).to.throw();
         });
     });
 

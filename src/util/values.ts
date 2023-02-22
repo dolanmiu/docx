@@ -4,6 +4,23 @@
 // Most of the rest of the types not defined here are either aliases of existing types or enumerations.
 // Enumerations should probably just be implemented as enums, with instructions to end-users, without a runtime check.
 
+// -?[0-9]+(\.[0-9]+)?(mm|cm|in|pt|pc|pi)
+export type UniversalMeasure = `${"-" | ""}${number}${"mm" | "cm" | "in" | "pt" | "pc" | "pi"}`;
+
+// <xsd:simpleType name="ST_PositiveUniversalMeasure">
+//     <xsd:restriction base="ST_UniversalMeasure">
+//         <xsd:pattern value="[0-9]+(\.[0-9]+)?(mm|cm|in|pt|pc|pi)" />
+//     </xsd:restriction>
+// </xsd:simpleType>
+export type PositiveUniversalMeasure = `${number}${"mm" | "cm" | "in" | "pt" | "pc" | "pi"}`;
+
+// <xsd:simpleType name="ST_Percentage">
+//     <xsd:restriction base="xsd:string">
+//         <xsd:pattern value="-?[0-9]+(\.[0-9]+)?%"/>
+//     </xsd:restriction>
+// </xsd:simpleType>
+export type Percentage = `${"-" | ""}${number}%`;
+
 // <xsd:simpleType name="ST_DecimalNumber">
 //     <xsd:restriction base="xsd:integer"/>
 // </xsd:simpleType>
@@ -70,30 +87,23 @@ export const uCharHexNumber = (val: string): string => hexBinary(val, 1);
 //         <xsd:pattern value="-?[0-9]+(\.[0-9]+)?(mm|cm|in|pt|pc|pi)"/>
 //     </xsd:restriction>
 // </xsd:simpleType>
-export const universalMeasureValue = (val: string): string => {
+export const universalMeasureValue = (val: UniversalMeasure): UniversalMeasure => {
     const unit = val.slice(-2);
-    if (!universalMeasureUnits.includes(unit)) {
-        throw new Error(`Invalid unit '${unit}' specified. Valid units are ${universalMeasureUnits.join(", ")}`);
-    }
     const amount = val.substring(0, val.length - 2);
-    if (isNaN(Number(amount))) {
-        throw new Error(`Invalid value '${amount}' specified. Expected a valid number.`);
-    }
-    return `${Number(amount)}${unit}`;
+    return `${Number(amount)}${unit}` as UniversalMeasure;
 };
-const universalMeasureUnits = ["mm", "cm", "in", "pt", "pc", "pi"];
 
 // <xsd:simpleType name="ST_PositiveUniversalMeasure">
 //     <xsd:restriction base="ST_UniversalMeasure">
 //         <xsd:pattern value="[0-9]+(\.[0-9]+)?(mm|cm|in|pt|pc|pi)"/>
 //     </xsd:restriction>
 // </xsd:simpleType>
-export const positiveUniversalMeasureValue = (val: string): string => {
+export const positiveUniversalMeasureValue = (val: PositiveUniversalMeasure): PositiveUniversalMeasure => {
     const value = universalMeasureValue(val);
     if (parseFloat(value) < 0) {
         throw new Error(`Invalid value '${value}' specified. Expected a positive number.`);
     }
-    return value;
+    return value as PositiveUniversalMeasure;
 };
 
 // <xsd:simpleType name="ST_HexColor">
@@ -123,25 +133,25 @@ export const hexColorValue = (val: string): string => {
 // <xsd:simpleType name="ST_SignedTwipsMeasure">
 //     <xsd:union memberTypes="xsd:integer s:ST_UniversalMeasure"/>
 // </xsd:simpleType>
-export const signedTwipsMeasureValue = (val: string | number): string | number =>
+export const signedTwipsMeasureValue = (val: UniversalMeasure | number): UniversalMeasure | number =>
     typeof val === "string" ? universalMeasureValue(val) : decimalNumber(val);
 
 // <xsd:simpleType name="ST_HpsMeasure">
 //     <xsd:union memberTypes="s:ST_UnsignedDecimalNumber s:ST_PositiveUniversalMeasure"/>
 // </xsd:simpleType>
-export const hpsMeasureValue = (val: string | number): string | number =>
+export const hpsMeasureValue = (val: PositiveUniversalMeasure | number): string | number =>
     typeof val === "string" ? positiveUniversalMeasureValue(val) : unsignedDecimalNumber(val);
 
 // <xsd:simpleType name="ST_SignedHpsMeasure">
 //     <xsd:union memberTypes="xsd:integer s:ST_UniversalMeasure"/>
 // </xsd:simpleType>
-export const signedHpsMeasureValue = (val: string | number): string | number =>
+export const signedHpsMeasureValue = (val: UniversalMeasure | number): string | number =>
     typeof val === "string" ? universalMeasureValue(val) : decimalNumber(val);
 
 // <xsd:simpleType name="ST_TwipsMeasure">
 //     <xsd:union memberTypes="ST_UnsignedDecimalNumber ST_PositiveUniversalMeasure"/>
 // </xsd:simpleType>
-export const twipsMeasureValue = (val: string | number): string | number =>
+export const twipsMeasureValue = (val: PositiveUniversalMeasure | number): PositiveUniversalMeasure | number =>
     typeof val === "string" ? positiveUniversalMeasureValue(val) : unsignedDecimalNumber(val);
 
 // <xsd:simpleType name="ST_Percentage">
@@ -149,14 +159,8 @@ export const twipsMeasureValue = (val: string | number): string | number =>
 //         <xsd:pattern value="-?[0-9]+(\.[0-9]+)?%"/>
 //     </xsd:restriction>
 // </xsd:simpleType>
-export const percentageValue = (val: string): string => {
-    if (val.slice(-1) !== "%") {
-        throw new Error(`Invalid value '${val}'. Expected percentage value (eg '55%')`);
-    }
+export const percentageValue = (val: Percentage): Percentage => {
     const percent = val.substring(0, val.length - 1);
-    if (isNaN(Number(percent))) {
-        throw new Error(`Invalid value '${percent}' specified. Expected a valid number.`);
-    }
     return `${Number(percent)}%`;
 };
 
@@ -172,14 +176,14 @@ export const percentageValue = (val: string): string => {
 //     <xsd:restriction base="xsd:integer"/>
 // </xsd:simpleType>
 
-export const measurementOrPercentValue = (val: number | string): number | string => {
+export const measurementOrPercentValue = (val: number | Percentage | UniversalMeasure): number | UniversalMeasure | Percentage => {
     if (typeof val === "number") {
         return decimalNumber(val);
     }
     if (val.slice(-1) === "%") {
-        return percentageValue(val);
+        return percentageValue(val as Percentage);
     }
-    return universalMeasureValue(val);
+    return universalMeasureValue(val as UniversalMeasure);
 };
 
 // <xsd:simpleType name="ST_EighthPointMeasure">

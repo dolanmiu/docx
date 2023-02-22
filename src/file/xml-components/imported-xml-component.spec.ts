@@ -62,7 +62,7 @@ describe("ImportedXmlComponent", () => {
     describe("#prepForXml()", () => {
         it("should transform for xml", () => {
             // tslint:disable-next-line: no-object-literal-type-assertion
-            const converted = importedXmlComponent.prepForXml({} as IContext);
+            const converted = importedXmlComponent.prepForXml({ stack: [] } as unknown as IContext);
             expect(converted).to.deep.equal({
                 "w:test": [
                     {

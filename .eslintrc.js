@@ -96,8 +96,8 @@ module.exports = {
         "@typescript-eslint/explicit-function-return-type": [
             "error",
             {
-                allowExpressions: false,
-                allowTypedFunctionExpressions: false,
+                allowExpressions: true,
+                allowTypedFunctionExpressions: true,
                 allowHigherOrderFunctions: false,
                 allowDirectConstAssertionInArrowFunctions: true,
                 allowConciseArrowFunctionExpressionsStartingWithVoid: true,
@@ -214,7 +214,6 @@ module.exports = {
         "no-sequences": "error",
         "no-shadow": "off",
         "no-sparse-arrays": "error",
-        "no-template-curly-in-string": "error",
         "no-throw-literal": "error",
         "no-trailing-spaces": "error",
         "no-undef-init": "error",
@@ -243,7 +242,6 @@ module.exports = {
         "unicorn/prefer-ternary": "error",
         "use-isnan": "error",
         "valid-typeof": "off",
-        "@typescript-eslint/explicit-function-return-type": "off",
         "functional/immutable-data": [
             "error",
             {
@@ -252,9 +250,12 @@ module.exports = {
                 ignoreAccessorPattern: ["**.root*", "**.numberingReferences*", "**.sections*", "**.properties*"],
             },
         ],
-        "functional/no-method-signature": "error",
-        "functional/no-mixed-type": "error",
+        "functional/prefer-property-signatures": "error",
+        "functional/no-mixed-types": "error",
+        // TODO: Deprecated. Use prefer-immutable-types and type-declaration-immutability instead
         "functional/prefer-readonly-type": "error",
+        // "functional/prefer-immutable-types": "error",
+        // "functional/type-declaration-immutability": "error",
         "no-unused-vars": ["error", { argsIgnorePattern: "^[_]+$" }],
     },
     overrides: [
@@ -264,6 +265,7 @@ module.exports = {
                 "@typescript-eslint/no-unused-expressions": "off",
                 "@typescript-eslint/dot-notation": "off",
                 "prefer-destructuring": "off",
+                "@typescript-eslint/explicit-function-return-type": "off",
             },
         },
     ],

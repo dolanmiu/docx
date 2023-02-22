@@ -1,5 +1,5 @@
-import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
-import { decimalNumber, twipsMeasureValue } from "@util/values";
+import { NextAttributeComponent, XmlComponent } from "@file/xml-components";
+import { decimalNumber, PositiveUniversalMeasure, twipsMeasureValue } from "@util/values";
 
 import { Column } from "./column";
 
@@ -12,32 +12,23 @@ import { Column } from "./column";
 //     <xsd:attribute name="num" type="ST_DecimalNumber" use="optional" default="1"/>
 //     <xsd:attribute name="sep" type="s:ST_OnOff" use="optional"/>
 // </xsd:complexType>
-export interface IColumnsAttributes {
-    readonly space?: number | string;
+export type IColumnsAttributes = {
+    readonly space?: number | PositiveUniversalMeasure;
     readonly count?: number;
     readonly separate?: boolean;
     readonly equalWidth?: boolean;
     readonly children?: readonly Column[];
-}
-
-export class ColumnsAttributes extends XmlAttributeComponent<IColumnsAttributes> {
-    protected readonly xmlKeys = {
-        space: "w:space",
-        count: "w:num",
-        separate: "w:sep",
-        equalWidth: "w:equalWidth",
-    };
-}
+};
 
 export class Columns extends XmlComponent {
     public constructor({ space, count, separate, equalWidth, children }: IColumnsAttributes) {
         super("w:cols");
         this.root.push(
-            new ColumnsAttributes({
-                space: space === undefined ? undefined : twipsMeasureValue(space),
-                count: count === undefined ? undefined : decimalNumber(count),
-                separate,
-                equalWidth,
+            new NextAttributeComponent<Omit<IColumnsAttributes, "children">>({
+                space: { key: "w:space", value: space === undefined ? undefined : twipsMeasureValue(space) },
+                count: { key: "w:num", value: count === undefined ? undefined : decimalNumber(count) },
+                separate: { key: "w:sep", value: separate },
+                equalWidth: { key: "w:equalWidth", value: equalWidth },
             }),
         );
 
