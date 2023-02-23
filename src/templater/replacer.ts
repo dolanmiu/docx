@@ -1,27 +1,51 @@
-import { Formatter } from "@export/formatter";
-import { Paragraph, TextRun } from "@file/paragraph";
 import { Element } from "xml-js";
 import * as xml from "xml";
+
+import { Formatter } from "@export/formatter";
+import { Paragraph, TextRun } from "@file/paragraph";
 
 import { IPatch } from "./from-docx";
 import { toJson } from "./util";
 import { IRenderedParagraphNode } from "./run-renderer";
+import { replaceTokenInParagraphElement } from "./paragraph-token-replacer";
 
 const formatter = new Formatter();
+
+const SPLIT_TOKEN = "ɵ";
 
 export const replacer = (json: Element, options: IPatch, renderedParagraphs: readonly IRenderedParagraphNode[]): Element => {
     for (const child of options.children) {
         if (child instanceof Paragraph) {
             console.log("is para");
         } else if (child instanceof TextRun) {
-            const text = formatter.format(child);
-            const textJson = toJson(xml(text));
             console.log("paragrapghs", JSON.stringify(renderedParagraphs, null, 2));
-            const paragraphElement = goToElementFromPath(json, renderedParagraphs[0].path);
-            console.log(paragraphElement);
-            // eslint-disable-next-line functional/immutable-data
-            paragraphElement.elements = textJson.elements;
-            console.log("is text", text);
+            for (const renderedParagraph of renderedParagraphs) {
+                const textJson = toJson(xml(formatter.format(child)));
+                const paragraphElement = goToElementFromPath(json, renderedParagraph.path);
+
+                const startIndex = renderedParagraph.text.indexOf(options.text);
+                const endIndex = startIndex + options.text.length - 1;
+
+                if (startIndex === 0 && endIndex === renderedParagraph.text.length - 1) {
+                    // Easy case where the text is the entire paragraph
+                    // eslint-disable-next-line functional/immutable-data
+                    paragraphElement.elements = textJson.elements;
+                } else {
+                    // Hard case where the text is only part of the paragraph
+
+                    console.log("hard case");
+                    console.log("paragraphElement", JSON.stringify(paragraphElement, null, 2));
+
+                    replaceTokenInParagraphElement({
+                        paragraphElement,
+                        renderedParagraph,
+                        originalText: options.text,
+                        replacementText: SPLIT_TOKEN,
+                    });
+
+                    console.log("paragraphElement after", JSON.stringify(paragraphElement, null, 2));
+                }
+            }
         }
     }
 
