@@ -8,6 +8,7 @@ import { IPatch } from "./from-docx";
 import { toJson } from "./util";
 import { IRenderedParagraphNode } from "./run-renderer";
 import { replaceTokenInParagraphElement } from "./paragraph-token-replacer";
+import { findRunElementIndexWithToken, splitRunElement } from "./paragraph-split-inject";
 
 const formatter = new Formatter();
 
@@ -18,7 +19,6 @@ export const replacer = (json: Element, options: IPatch, renderedParagraphs: rea
         if (child instanceof Paragraph) {
             console.log("is para");
         } else if (child instanceof TextRun) {
-            console.log("paragrapghs", JSON.stringify(renderedParagraphs, null, 2));
             for (const renderedParagraph of renderedParagraphs) {
                 const textJson = toJson(xml(formatter.format(child)));
                 const paragraphElement = goToElementFromPath(json, renderedParagraph.path);
@@ -33,9 +33,6 @@ export const replacer = (json: Element, options: IPatch, renderedParagraphs: rea
                 } else {
                     // Hard case where the text is only part of the paragraph
 
-                    console.log("hard case");
-                    console.log("paragraphElement", JSON.stringify(paragraphElement, null, 2));
-
                     replaceTokenInParagraphElement({
                         paragraphElement,
                         renderedParagraph,
@@ -43,6 +40,12 @@ export const replacer = (json: Element, options: IPatch, renderedParagraphs: rea
                         replacementText: SPLIT_TOKEN,
                     });
 
+                    const index = findRunElementIndexWithToken(paragraphElement, SPLIT_TOKEN);
+
+                    const { left, right } = splitRunElement(paragraphElement.elements![index], SPLIT_TOKEN);
+                    // eslint-disable-next-line functional/immutable-data
+                    paragraphElement.elements!.splice(index, 1, left, ...textJson.elements!, right);
+                    console.log(index, JSON.stringify(paragraphElement.elements![index], null, 2));
                     console.log("paragraphElement after", JSON.stringify(paragraphElement, null, 2));
                 }
             }

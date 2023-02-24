@@ -82,7 +82,7 @@ const renderRunNode = (node: Element, index: number, currentRunStringIndex: numb
 
     const parts = node.elements
         .map((element, i: number) =>
-            element.name === "w:t" && element.elements
+            element.name === "w:t" && element.elements && element.elements.length > 0
                 ? {
                       text: element.elements[0].text?.toString() ?? "",
                       index: i,

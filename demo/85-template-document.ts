@@ -9,6 +9,18 @@ patchDocument(fs.readFileSync("demo/assets/simple-template.docx"), {
             children: [new TextRun("John Doe")],
             text: "{{ name }}",
         },
+        {
+            children: [new TextRun("Heading wow!")],
+            text: "{{ table_heading_1 }}",
+        },
+        {
+            children: [new TextRun("#657")],
+            text: "{{ item_1 }}",
+        },
+        {
+            children: [new TextRun("Lorem ipsum paragraph")],
+            text: "{{ paragraph_replace }}",
+        },
     ],
 }).then((doc) => {
     fs.writeFileSync("My Document.docx", doc);

@@ -1,10 +1,6 @@
 import { Element } from "xml-js";
-import * as xml from "xml";
 
-import { Formatter } from "@export/formatter";
-import { Text } from "@file/paragraph/run/run-components/text";
-
-import { toJson } from "./util";
+import { createTextElementContents } from "./util";
 import { IRenderedParagraphNode } from "./run-renderer";
 
 enum ReplaceMode {
@@ -12,8 +8,6 @@ enum ReplaceMode {
     MIDDLE,
     END,
 }
-
-const formatter = new Formatter();
 
 export const replaceTokenInParagraphElement = ({
     paragraphElement,
@@ -63,10 +57,8 @@ export const replaceTokenInParagraphElement = ({
 };
 
 const patchTextElement = (element: Element, text: string): Element => {
-    const textJson = toJson(xml(formatter.format(new Text({ text }))));
-
     // eslint-disable-next-line functional/immutable-data
-    element.elements = textJson.elements;
+    element.elements = createTextElementContents(text);
 
     return element;
 };
