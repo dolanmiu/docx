@@ -20,5 +20,10 @@
             "@shared": ["./shared/index.ts"]
         }
     },
+    "ts-node": {
+        "compilerOptions": {
+            "module": "commonjs"
+        }
+    },
     "include": ["src"]
 }
