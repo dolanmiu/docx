@@ -1,4 +1,4 @@
-// Simple template example
+// Patch a document with patches
 // Import from 'docx' rather than '../build' if you install from npm
 import * as fs from "fs";
 import {
@@ -15,38 +15,32 @@ import {
 } from "../src";
 
 patchDocument(fs.readFileSync("demo/assets/simple-template.docx"), {
-    patches: [
-        {
+    patches: {
+        "name":{
             type: PatchType.PARAGRAPH,
             children: [new TextRun("Sir. "), new TextRun("John Doe"), new TextRun("(The Conqueror)")],
-            text: "{{ name }}",
         },
-        {
+        "table_heading_1": {
             type: PatchType.PARAGRAPH,
             children: [new TextRun("Heading wow!")],
-            text: "{{ table_heading_1 }}",
         },
-        {
+        "item_1": {
             type: PatchType.PARAGRAPH,
             children: [new TextRun("#657")],
-            text: "{{ item_1 }}",
         },
-        {
+        "paragraph_replace": {
             type: PatchType.DOCUMENT,
             children: [new Paragraph("Lorem ipsum paragraph"), new Paragraph("Another paragraph")],
-            text: "{{ paragraph_replace }}",
         },
-        {
+        "header_adjective": {
             type: PatchType.PARAGRAPH,
             children: [new TextRun("Delightful Header")],
-            text: "{{ header_adjective }}",
         },
-        {
+        "footer_text": {
             type: PatchType.PARAGRAPH,
             children: [new TextRun("replaced just as well")],
-            text: "{{ footer_text }}",
         },
-        {
+        "table": {
             type: PatchType.DOCUMENT,
             children: [
                 new Table({
@@ -108,11 +102,11 @@ patchDocument(fs.readFileSync("demo/assets/simple-template.docx"), {
                             ],
                         }),
                     ],
+
                 }),
             ],
-            text: "{{ table }}",
         },
-    ],
+    },
 }).then((doc) => {
     fs.writeFileSync("My Document.docx", doc);
 });

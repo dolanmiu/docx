@@ -26,12 +26,10 @@ type FilePatch = {
     readonly children: readonly FileChild[];
 };
 
-export type IPatch = {
-    readonly text: string;
-} & (ParagraphPatch | FilePatch);
+export type IPatch = ParagraphPatch | FilePatch;
 
 export interface PatchDocumentOptions {
-    readonly patches: readonly IPatch[];
+    readonly patches: { readonly [key: string]: IPatch };
 }
 
 export const patchDocument = async (data: InputDataType, options: PatchDocumentOptions): Promise<Buffer> => {
@@ -42,9 +40,10 @@ export const patchDocument = async (data: InputDataType, options: PatchDocumentO
     for (const [key, value] of Object.entries(zipContent.files)) {
         const json = toJson(await value.async("text"));
         if (key.startsWith("word/")) {
-            for (const patch of options.patches) {
-                const renderedParagraphs = findLocationOfText(json, patch.text);
-                replacer(json, patch, renderedParagraphs);
+            for (const [patchKey, patchValue] of Object.entries(options.patches)) {
+                const patchText = `{{${patchKey}}}`;
+                const renderedParagraphs = findLocationOfText(json, patchText);
+                replacer(json, patchValue, patchText, renderedParagraphs);
             }
         }
 

@@ -14,48 +14,31 @@ const formatter = new Formatter();
 
 const SPLIT_TOKEN = "ɵ";
 
-export const replacer = (json: Element, options: IPatch, renderedParagraphs: readonly IRenderedParagraphNode[]): Element => {
+export const replacer = (json: Element, patch: IPatch, patchText: string, renderedParagraphs: readonly IRenderedParagraphNode[]): Element => {
     for (const renderedParagraph of renderedParagraphs) {
-        const textJson = options.children.map((c) => toJson(xml(formatter.format(c as XmlComponent)))).map((c) => c.elements![0]);
+        const textJson = patch.children.map((c) => toJson(xml(formatter.format(c as XmlComponent)))).map((c) => c.elements![0]);
 
-        if (options.type === PatchType.DOCUMENT) {
+        if (patch.type === PatchType.DOCUMENT) {
             const parentElement = goToParentElementFromPath(json, renderedParagraph.path);
             const elementIndex = getLastElementIndexFromPath(renderedParagraph.path);
-            // Easy case where the text is the entire paragraph
-            // We can assume that the Paragraph/Table only has one element
             // eslint-disable-next-line functional/immutable-data, prefer-destructuring
             parentElement.elements?.splice(elementIndex, 1, ...textJson);
-            // console.log(JSON.stringify(renderedParagraphs, null, 2));
-            // console.log(JSON.stringify(textJson, null, 2));
-            // console.log("paragraphElement after", JSON.stringify(parentElement.elements![elementIndex], null, 2));
-        } else if (options.type === PatchType.PARAGRAPH) {
+        } else if (patch.type === PatchType.PARAGRAPH) {
+            // Hard case where the text is only part of the paragraph
             const paragraphElement = goToElementFromPath(json, renderedParagraph.path);
-            const startIndex = renderedParagraph.text.indexOf(options.text);
-            const endIndex = startIndex + options.text.length - 1;
 
-            if (startIndex === 0 && endIndex === renderedParagraph.text.length - 1) {
-                // Easy case where the text is the entire paragraph
-                // eslint-disable-next-line functional/immutable-data
-                paragraphElement.elements = textJson;
-                console.log(JSON.stringify(paragraphElement, null, 2));
-            } else {
-                // Hard case where the text is only part of the paragraph
+            replaceTokenInParagraphElement({
+                paragraphElement,
+                renderedParagraph,
+                originalText: patchText,
+                replacementText: SPLIT_TOKEN,
+            });
 
-                replaceTokenInParagraphElement({
-                    paragraphElement,
-                    renderedParagraph,
-                    originalText: options.text,
-                    replacementText: SPLIT_TOKEN,
-                });
+            const index = findRunElementIndexWithToken(paragraphElement, SPLIT_TOKEN);
 
-                const index = findRunElementIndexWithToken(paragraphElement, SPLIT_TOKEN);
-
-                const { left, right } = splitRunElement(paragraphElement.elements![index], SPLIT_TOKEN);
-                // eslint-disable-next-line functional/immutable-data
-                paragraphElement.elements!.splice(index, 1, left, ...textJson, right);
-                // console.log(index, JSON.stringify(paragraphElement.elements![index], null, 2));
-                // console.log("paragraphElement after", JSON.stringify(paragraphElement, null, 2));
-            }
+            const { left, right } = splitRunElement(paragraphElement.elements![index], SPLIT_TOKEN);
+            // eslint-disable-next-line functional/immutable-data
+            paragraphElement.elements!.splice(index, 1, left, ...textJson, right);
         }
     }
 
