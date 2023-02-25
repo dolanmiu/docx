@@ -1,5 +1,9 @@
 import * as JSZip from "jszip";
 import { Element, js2xml } from "xml-js";
+
+import { ParagraphChild } from "@file/paragraph";
+import { FileChild } from "@file/file-child";
+
 import { replacer } from "./replacer";
 import { findLocationOfText } from "./traverser";
 import { toJson } from "./util";
@@ -7,10 +11,25 @@ import { toJson } from "./util";
 // eslint-disable-next-line functional/prefer-readonly-type
 type InputDataType = Buffer | string | number[] | Uint8Array | ArrayBuffer | Blob | NodeJS.ReadableStream;
 
-export interface IPatch {
-    readonly children: any[];
-    readonly text: string;
+export enum PatchType {
+    DOCUMENT = "file",
+    PARAGRAPH = "paragraph",
 }
+
+type ParagraphPatch = {
+    readonly type: PatchType.PARAGRAPH;
+    readonly children: readonly ParagraphChild[];
+};
+
+type FilePatch = {
+    readonly type: PatchType.DOCUMENT;
+    readonly children: readonly FileChild[];
+};
+
+export type IPatch = {
+    readonly text: string;
+} & (ParagraphPatch | FilePatch);
+
 export interface PatchDocumentOptions {
     readonly patches: readonly IPatch[];
 }
