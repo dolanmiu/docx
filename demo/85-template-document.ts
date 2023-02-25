@@ -37,6 +37,16 @@ patchDocument(fs.readFileSync("demo/assets/simple-template.docx"), {
             text: "{{ paragraph_replace }}",
         },
         {
+            type: PatchType.PARAGRAPH,
+            children: [new TextRun("Delightful Header")],
+            text: "{{ header_adjective }}",
+        },
+        {
+            type: PatchType.PARAGRAPH,
+            children: [new TextRun("replaced just as well")],
+            text: "{{ footer_text }}",
+        },
+        {
             type: PatchType.DOCUMENT,
             children: [
                 new Table({

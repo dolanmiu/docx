@@ -41,7 +41,7 @@ export const patchDocument = async (data: InputDataType, options: PatchDocumentO
 
     for (const [key, value] of Object.entries(zipContent.files)) {
         const json = toJson(await value.async("text"));
-        if (key === "word/document.xml") {
+        if (key.startsWith("word/")) {
             for (const patch of options.patches) {
                 const renderedParagraphs = findLocationOfText(json, patch.text);
                 replacer(json, patch, renderedParagraphs);
