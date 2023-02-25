@@ -8,17 +8,6 @@ export interface ElementWrapper {
     readonly parent: ElementWrapper | undefined;
 }
 
-export interface ILocationOfText {
-    readonly parent: Element;
-    readonly startIndex: number;
-    readonly endIndex: number;
-    readonly currentText: string;
-    // This is optional because the text could start in the middle of a tag
-    readonly startElement?: Element;
-    // This is optional because the text could end in the middle of a tag
-    readonly endElement?: Element;
-}
-
 const elementsToWrapper = (wrapper: ElementWrapper): readonly ElementWrapper[] =>
     wrapper.element.elements?.map((e, i) => ({
         element: e,
@@ -56,7 +45,5 @@ export const findLocationOfText = (node: Element, text: string): readonly IRende
         }
     }
 
-    const filteredParagraphs = renderedParagraphs.filter((p) => p.text.includes(text));
-
-    return filteredParagraphs;
+    return renderedParagraphs.filter((p) => p.text.includes(text));
 };

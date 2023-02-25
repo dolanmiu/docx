@@ -14,7 +14,12 @@ const formatter = new Formatter();
 
 const SPLIT_TOKEN = "ɵ";
 
-export const replacer = (json: Element, patch: IPatch, patchText: string, renderedParagraphs: readonly IRenderedParagraphNode[]): Element => {
+export const replacer = (
+    json: Element,
+    patch: IPatch,
+    patchText: string,
+    renderedParagraphs: readonly IRenderedParagraphNode[],
+): Element => {
     for (const renderedParagraph of renderedParagraphs) {
         const textJson = patch.children.map((c) => toJson(xml(formatter.format(c as XmlComponent)))).map((c) => c.elements![0]);
 
@@ -24,7 +29,6 @@ export const replacer = (json: Element, patch: IPatch, patchText: string, render
             // eslint-disable-next-line functional/immutable-data, prefer-destructuring
             parentElement.elements?.splice(elementIndex, 1, ...textJson);
         } else if (patch.type === PatchType.PARAGRAPH) {
-            // Hard case where the text is only part of the paragraph
             const paragraphElement = goToElementFromPath(json, renderedParagraph.path);
 
             replaceTokenInParagraphElement({

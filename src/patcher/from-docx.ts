@@ -43,6 +43,7 @@ export const patchDocument = async (data: InputDataType, options: PatchDocumentO
             for (const [patchKey, patchValue] of Object.entries(options.patches)) {
                 const patchText = `{{${patchKey}}}`;
                 const renderedParagraphs = findLocationOfText(json, patchText);
+                // TODO: mutates json. Make it immutable
                 replacer(json, patchValue, patchText, renderedParagraphs);
             }
         }

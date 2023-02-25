@@ -16,31 +16,31 @@ import {
 
 patchDocument(fs.readFileSync("demo/assets/simple-template.docx"), {
     patches: {
-        "name":{
+        name: {
             type: PatchType.PARAGRAPH,
             children: [new TextRun("Sir. "), new TextRun("John Doe"), new TextRun("(The Conqueror)")],
         },
-        "table_heading_1": {
+        table_heading_1: {
             type: PatchType.PARAGRAPH,
             children: [new TextRun("Heading wow!")],
         },
-        "item_1": {
+        item_1: {
             type: PatchType.PARAGRAPH,
             children: [new TextRun("#657")],
         },
-        "paragraph_replace": {
+        paragraph_replace: {
             type: PatchType.DOCUMENT,
             children: [new Paragraph("Lorem ipsum paragraph"), new Paragraph("Another paragraph")],
         },
-        "header_adjective": {
+        header_adjective: {
             type: PatchType.PARAGRAPH,
             children: [new TextRun("Delightful Header")],
         },
-        "footer_text": {
+        footer_text: {
             type: PatchType.PARAGRAPH,
             children: [new TextRun("replaced just as well")],
         },
-        "table": {
+        table: {
             type: PatchType.DOCUMENT,
             children: [
                 new Table({
@@ -102,7 +102,6 @@ patchDocument(fs.readFileSync("demo/assets/simple-template.docx"), {
                             ],
                         }),
                     ],
-
                 }),
             ],
         },

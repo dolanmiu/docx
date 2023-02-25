@@ -17,3 +17,10 @@ export const createTextElementContents = (text: string): Element[] => {
 
     return textJson.elements![0].elements ?? [];
 };
+
+export const patchSpaceAttribute = (element: Element): Element => ({
+    ...element,
+    attributes: {
+        "xml:space": "preserve",
+    },
+});

@@ -1,5 +1,5 @@
 import { Element } from "xml-js";
-import { createTextElementContents } from "./util";
+import { createTextElementContents, patchSpaceAttribute } from "./util";
 
 export const findRunElementIndexWithToken = (paragraphElement: Element, token: string): number => {
     for (let i = 0; i < (paragraphElement.elements ?? []).length; i++) {
@@ -29,9 +29,7 @@ export const splitRunElement = (runElement: Element, token: string): { readonly 
                     const splitText = text.split(token);
                     const newElements = splitText.map((t) => ({
                         ...e,
-                        attributes: {
-                            "xml:space": "preserve",
-                        },
+                        ...patchSpaceAttribute(e),
                         elements: createTextElementContents(t),
                     }));
                     splitIndex = i;

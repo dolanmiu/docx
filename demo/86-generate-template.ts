@@ -8,7 +8,7 @@ const doc = new Document({
         {
             children: [
                 new Paragraph({
-                    children: [new TextRun("{{ template }}")],
+                    children: [new TextRun("{{template}}")],
                 }),
             ],
         },

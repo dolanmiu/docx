@@ -1,6 +1,6 @@
 import { Element } from "xml-js";
 
-import { createTextElementContents } from "./util";
+import { createTextElementContents, patchSpaceAttribute } from "./util";
 import { IRenderedParagraphNode } from "./run-renderer";
 
 enum ReplaceMode {
@@ -43,6 +43,11 @@ export const replaceTokenInParagraphElement = ({
                     if (endIndex <= end) {
                         const lastPart = text.substring(endIndex - start + 1);
                         patchTextElement(paragraphElement.elements![run.index].elements![index], lastPart);
+                        const currentElement = paragraphElement.elements![run.index].elements![index];
+                        // We need to add xml:space="preserve" to the last element to preserve the whitespace
+                        // Otherwise, the text will be merged with the next element
+                        // eslint-disable-next-line functional/immutable-data
+                        paragraphElement.elements![run.index].elements![index] = patchSpaceAttribute(currentElement);
                         replaceMode = ReplaceMode.END;
                     } else {
                         patchTextElement(paragraphElement.elements![run.index].elements![index], "");
