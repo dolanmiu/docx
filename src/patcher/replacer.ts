@@ -2,7 +2,7 @@ import { Element } from "xml-js";
 import * as xml from "xml";
 
 import { Formatter } from "@export/formatter";
-import { XmlComponent } from "@file/xml-components";
+import { IContext, XmlComponent } from "@file/xml-components";
 
 import { IPatch, PatchType } from "./from-docx";
 import { toJson } from "./util";
@@ -19,9 +19,13 @@ export const replacer = (
     patch: IPatch,
     patchText: string,
     renderedParagraphs: readonly IRenderedParagraphNode[],
+    context: IContext,
 ): Element => {
     for (const renderedParagraph of renderedParagraphs) {
-        const textJson = patch.children.map((c) => toJson(xml(formatter.format(c as XmlComponent)))).map((c) => c.elements![0]);
+        const textJson = patch.children
+            // eslint-disable-next-line no-loop-func
+            .map((c) => toJson(xml(formatter.format(c as XmlComponent, context))))
+            .map((c) => c.elements![0]);
 
         if (patch.type === PatchType.DOCUMENT) {
             const parentElement = goToParentElementFromPath(json, renderedParagraph.path);
@@ -30,7 +34,6 @@ export const replacer = (
             parentElement.elements?.splice(elementIndex, 1, ...textJson);
         } else if (patch.type === PatchType.PARAGRAPH) {
             const paragraphElement = goToElementFromPath(json, renderedParagraph.path);
-
             replaceTokenInParagraphElement({
                 paragraphElement,
                 renderedParagraph,

@@ -20,6 +20,7 @@ export class Media {
         this.map = new Map<string, IMediaData>();
     }
 
+    // TODO: Unused
     public addMedia(data: Buffer | string | Uint8Array | ArrayBuffer, transformation: IMediaTransformation): IMediaData {
         const key = `${uniqueId()}.png`;
 

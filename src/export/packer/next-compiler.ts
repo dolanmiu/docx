@@ -59,9 +59,8 @@ export class Compiler {
             }
         }
 
-        for (const data of file.Media.Array) {
-            const mediaData = data.stream;
-            zip.file(`word/media/${data.fileName}`, mediaData);
+        for (const { stream, fileName } of file.Media.Array) {
+            zip.file(`word/media/${fileName}`, stream);
         }
 
         return zip;

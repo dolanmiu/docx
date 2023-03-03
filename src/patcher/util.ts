@@ -24,3 +24,7 @@ export const patchSpaceAttribute = (element: Element): Element => ({
         "xml:space": "preserve",
     },
 });
+
+// eslint-disable-next-line functional/prefer-readonly-type
+export const getFirstLevelElements = (relationships: Element, id: string): Element[] =>
+    relationships.elements?.filter((e) => e.name === id)[0].elements ?? [];
