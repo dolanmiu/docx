@@ -2,6 +2,7 @@
 // Import from 'docx' rather than '../build' if you install from npm
 import * as fs from "fs";
 import {
+    ExternalHyperlink,
     HeadingLevel,
     ImageRun,
     Paragraph,
@@ -39,7 +40,19 @@ patchDocument(fs.readFileSync("demo/assets/simple-template.docx"), {
         },
         footer_text: {
             type: PatchType.PARAGRAPH,
-            children: [new TextRun("replaced just as well")],
+            children: [
+                new TextRun("replaced just as"),
+                new TextRun(" well"),
+                new ExternalHyperlink({
+                    children: [
+                        new TextRun({
+                            text: "BBC News Link",
+                            style: "Hyperlink",
+                        }),
+                    ],
+                    link: "https://www.bbc.co.uk/news",
+                }),
+            ],
         },
         image_test: {
             type: PatchType.PARAGRAPH,
