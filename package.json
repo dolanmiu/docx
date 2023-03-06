@@ -84,7 +84,7 @@
     "eslint-plugin-jsdoc": "^40.0.0",
     "eslint-plugin-no-null": "^1.0.2",
     "eslint-plugin-prefer-arrow": "^1.2.3",
-    "eslint-plugin-unicorn": "^45.0.0",
+    "eslint-plugin-unicorn": "^46.0.0",
     "glob": "^8.0.1",
     "jszip": "^3.1.5",
     "mocha": "^10.0.0",
