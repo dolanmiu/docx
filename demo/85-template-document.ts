@@ -28,7 +28,17 @@ patchDocument(fs.readFileSync("demo/assets/simple-template.docx"), {
         },
         item_1: {
             type: PatchType.PARAGRAPH,
-            children: [new TextRun("#657")],
+            children: [
+                new TextRun("#657"),
+                new ExternalHyperlink({
+                    children: [
+                        new TextRun({
+                            text: "BBC News Link",
+                        }),
+                    ],
+                    link: "https://www.bbc.co.uk/news",
+                }),
+            ],
         },
         paragraph_replace: {
             type: PatchType.DOCUMENT,
@@ -47,7 +57,6 @@ patchDocument(fs.readFileSync("demo/assets/simple-template.docx"), {
                     children: [
                         new TextRun({
                             text: "BBC News Link",
-                            style: "Hyperlink",
                         }),
                     ],
                     link: "https://www.bbc.co.uk/news",

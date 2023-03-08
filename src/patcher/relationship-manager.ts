@@ -1,6 +1,6 @@
 import { Element } from "xml-js";
 
-import { RelationshipType } from "@file/relationships/relationship/relationship";
+import { RelationshipType, TargetModeType } from "@file/relationships/relationship/relationship";
 import { getFirstLevelElements } from "./util";
 
 const getIdFromRelationshipId = (relationshipId: string): number => parseInt(relationshipId.substring(3), 10);
@@ -15,7 +15,13 @@ export const getNextRelationshipIndex = (relationships: Element): number => {
     );
 };
 
-export const appendRelationship = (relationships: Element, id: number, type: RelationshipType, target: string): void => {
+export const appendRelationship = (
+    relationships: Element,
+    id: number | string,
+    type: RelationshipType,
+    target: string,
+    targetMode?: TargetModeType,
+): void => {
     const relationshipElements = getFirstLevelElements(relationships, "Relationships");
     // eslint-disable-next-line functional/immutable-data
     relationshipElements.push({
@@ -23,6 +29,7 @@ export const appendRelationship = (relationships: Element, id: number, type: Rel
             Id: `rId${id}`,
             Type: type,
             Target: target,
+            TargetMode: targetMode,
         },
         name: "Relationship",
         type: "element",
