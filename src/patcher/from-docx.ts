@@ -56,13 +56,10 @@ const imageReplacer = new ImageReplacer();
 export const patchDocument = async (data: InputDataType, options: PatchDocumentOptions): Promise<Buffer> => {
     const zipContent = await JSZip.loadAsync(data);
 
-    const context: IContext = {
-        file: {
-            Media: new Media(),
-        } as unknown as File,
-        viewWrapper: {} as unknown as IViewWrapper,
-        stack: [],
-    };
+    const contexts = new Map<string, IContext>();
+    const file = {
+        Media: new Media(),
+    } as unknown as File;
 
     const map = new Map<string, Element>();
 
@@ -75,6 +72,26 @@ export const patchDocument = async (data: InputDataType, options: PatchDocumentO
     for (const [key, value] of Object.entries(zipContent.files)) {
         const json = toJson(await value.async("text"));
         if (key.startsWith("word/") && !key.endsWith(".xml.rels")) {
+            const context: IContext = {
+                file,
+                viewWrapper: {
+                    Relationships: {
+                        createRelationship: (linkId: string, _: string, target: string, __: TargetModeType) => {
+                            // eslint-disable-next-line functional/immutable-data
+                            hyperlinkRelationshipAdditions.push({
+                                key,
+                                hyperlink: {
+                                    id: linkId,
+                                    link: target,
+                                },
+                            });
+                        },
+                    },
+                } as unknown as IViewWrapper,
+                stack: [],
+            };
+            contexts.set(key, context);
+
             for (const [patchKey, patchValue] of Object.entries(options.patches)) {
                 const patchText = `{{${patchKey}}}`;
                 const renderedParagraphs = findLocationOfText(json, patchText);
@@ -194,7 +211,7 @@ export const patchDocument = async (data: InputDataType, options: PatchDocumentO
         zip.file(key, output);
     }
 
-    for (const { stream, fileName } of context.file.Media.Array) {
+    for (const { stream, fileName } of file.Media.Array) {
         zip.file(`word/media/${fileName}`, stream);
     }
 

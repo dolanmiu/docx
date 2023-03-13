@@ -42,7 +42,23 @@ patchDocument(fs.readFileSync("demo/assets/simple-template.docx"), {
         },
         paragraph_replace: {
             type: PatchType.DOCUMENT,
-            children: [new Paragraph("Lorem ipsum paragraph"), new Paragraph("Another paragraph")],
+            children: [
+                new Paragraph("Lorem ipsum paragraph"),
+                new Paragraph("Another paragraph"),
+                new Paragraph({
+                    children: [
+                        new TextRun("This is a "),
+                        new ExternalHyperlink({
+                            children: [
+                                new TextRun({
+                                    text: "Google Link",
+                                }),
+                            ],
+                            link: "https://www.google.co.uk",
+                        }),
+                    ],
+                }),
+            ],
         },
         header_adjective: {
             type: PatchType.PARAGRAPH,
