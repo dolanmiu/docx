@@ -169,15 +169,8 @@ export const patchDocument = async (data: InputDataType, options: PatchDocumentO
         // eslint-disable-next-line functional/immutable-data
         const relationshipKey = `word/_rels/${key.split("/").pop()}.rels`;
 
-        if (!map.has(relationshipKey)) {
-            map.set(relationshipKey, createRelationshipFile());
-        }
-
-        const relationshipsJson = map.get(relationshipKey);
-
-        if (!relationshipsJson) {
-            throw new Error("Could not find relationships file");
-        }
+        const relationshipsJson = map.get(relationshipKey) ?? createRelationshipFile();
+        map.set(relationshipKey, relationshipsJson);
 
         appendRelationship(
             relationshipsJson,
