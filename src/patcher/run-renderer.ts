@@ -64,10 +64,6 @@ export const renderParagraphNode = (node: ElementWrapper): IRenderedParagraphNod
 };
 
 const renderRunNode = (node: Element, index: number, currentRunStringIndex: number): IRenderedRunNode => {
-    if (node.name !== "w:r") {
-        throw new Error(`Invalid node type: ${node.name}`);
-    }
-
     if (!node.elements) {
         return {
             text: "",

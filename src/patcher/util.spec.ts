@@ -32,14 +32,18 @@ describe("util", () => {
 
     describe("getFirstLevelElements", () => {
         it("should return an empty array if no elements are found", () => {
-            const output = toJson("<Relationships></Relationships>");
-            const elements = getFirstLevelElements(output, "Relationships");
+            const elements = getFirstLevelElements(
+                { elements: [{ type: "element", name: "Relationships", elements: [] }] },
+                "Relationships",
+            );
             expect(elements).to.deep.equal([]);
         });
 
         it("should return an array if elements are found", () => {
-            const output = toJson("<Relationships><Relationship></Relationship></Relationships>");
-            const elements = getFirstLevelElements(output, "Relationships");
+            const elements = getFirstLevelElements(
+                { elements: [{ type: "element", name: "Relationships", elements: [{ type: "element", name: "Relationship" }] }] },
+                "Relationships",
+            );
             expect(elements).to.deep.equal([{ type: "element", name: "Relationship" }]);
         });
     });

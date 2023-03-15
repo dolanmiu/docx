@@ -21,7 +21,7 @@ export const appendRelationship = (
     type: RelationshipType,
     target: string,
     targetMode?: TargetModeType,
-): void => {
+): readonly Element[] => {
     const relationshipElements = getFirstLevelElements(relationships, "Relationships");
     // eslint-disable-next-line functional/immutable-data
     relationshipElements.push({
@@ -34,4 +34,6 @@ export const appendRelationship = (
         name: "Relationship",
         type: "element",
     });
+
+    return relationshipElements;
 };

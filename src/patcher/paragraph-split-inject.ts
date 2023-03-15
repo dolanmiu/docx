@@ -14,7 +14,7 @@ export const findRunElementIndexWithToken = (paragraphElement: Element, token: s
             }
         }
     }
-    // return -1;
+
     throw new Error("Token not found");
 };
 

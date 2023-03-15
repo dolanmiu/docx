@@ -55,7 +55,6 @@ const imageReplacer = new ImageReplacer();
 
 export const patchDocument = async (data: InputDataType, options: PatchDocumentOptions): Promise<Buffer> => {
     const zipContent = await JSZip.loadAsync(data);
-
     const contexts = new Map<string, IContext>();
     const file = {
         Media: new Media(),
