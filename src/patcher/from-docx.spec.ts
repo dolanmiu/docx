@@ -1,10 +1,14 @@
-import { expect } from "chai";
+import * as chai from "chai";
 import * as sinon from "sinon";
 import * as JSZip from "jszip";
+import * as chaiAsPromised from "chai-as-promised";
 
 import { ExternalHyperlink, ImageRun, Paragraph, TextRun } from "@file/paragraph";
 
 import { patchDocument, PatchType } from "./from-docx";
+
+chai.use(chaiAsPromised);
+const { expect } = chai;
 
 const MOCK_XML = `
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -201,138 +205,114 @@ const MOCK_XML = `
 
 describe("from-docx", () => {
     describe("patchDocument", () => {
-        beforeEach(() => {
-            sinon.createStubInstance(JSZip, {});
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            sinon.stub(JSZip, "loadAsync").callsFake(
-                () =>
-                    new Promise<JSZip>((resolve) => {
-                        const zip = new JSZip();
+        describe("document.xml and [Content_Types].xml", () => {
+            before(() => {
+                sinon.createStubInstance(JSZip, {});
+                sinon.stub(JSZip, "loadAsync").callsFake(
+                    () =>
+                        new Promise<JSZip>((resolve) => {
+                            const zip = new JSZip();
 
-                        zip.file("word/document.xml", MOCK_XML);
-                        zip.file("[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`);
-                        resolve(zip);
-                    }),
-            );
-        });
-
-        afterEach(() => {
-            (JSZip.loadAsync as unknown as sinon.SinonStub).restore();
-        });
-
-        it("should patch the document", async () => {
-            const output = await patchDocument(Buffer.from(""), {
-                patches: {
-                    name: {
-                        type: PatchType.PARAGRAPH,
-                        children: [new TextRun("Sir. "), new TextRun("John Doe"), new TextRun("(The Conqueror)")],
-                    },
-                    item_1: {
-                        type: PatchType.PARAGRAPH,
-                        children: [
-                            new TextRun("#657"),
-                            new ExternalHyperlink({
-                                children: [
-                                    new TextRun({
-                                        text: "BBC News Link",
-                                    }),
-                                ],
-                                link: "https://www.bbc.co.uk/news",
-                            }),
-                        ],
-                    },
-                    // eslint-disable-next-line @typescript-eslint/naming-convention
-                    paragraph_replace: {
-                        type: PatchType.DOCUMENT,
-                        children: [
-                            new Paragraph({
-                                children: [
-                                    new TextRun("This is a "),
-                                    new ExternalHyperlink({
-                                        children: [
-                                            new TextRun({
-                                                text: "Google Link",
-                                            }),
-                                        ],
-                                        link: "https://www.google.co.uk",
-                                    }),
-                                    new ImageRun({
-                                        data: Buffer.from(""),
-                                        transformation: { width: 100, height: 100 },
-                                    }),
-                                ],
-                            }),
-                        ],
-                    },
-                    // eslint-disable-next-line @typescript-eslint/naming-convention
-                    image_test: {
-                        type: PatchType.PARAGRAPH,
-                        children: [
-                            new ImageRun({
-                                data: Buffer.from(""),
-                                transformation: { width: 100, height: 100 },
-                            }),
-                        ],
-                    },
-                },
+                            zip.file("word/document.xml", MOCK_XML);
+                            zip.file("[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`);
+                            resolve(zip);
+                        }),
+                );
             });
-            expect(output).to.not.be.undefined;
-        });
 
-        it("should patch the document", async () => {
-            const output = await patchDocument(Buffer.from(""), {
-                patches: {},
+            after(() => {
+                (JSZip.loadAsync as unknown as sinon.SinonStub).restore();
             });
-            expect(output).to.not.be.undefined;
-        });
 
-        it("should use the relationships file rather than create one", () => {
-            (JSZip.loadAsync as unknown as sinon.SinonStub).restore();
-            sinon.createStubInstance(JSZip, {});
-            sinon.stub(JSZip, "loadAsync").callsFake(
-                () =>
-                    new Promise<JSZip>((resolve) => {
-                        const zip = new JSZip();
-
-                        zip.file("word/document.xml", MOCK_XML);
-                        zip.file("word/_rels/document.xml.rels", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`);
-                        zip.file("[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`);
-                        resolve(zip);
-                    }),
-            );
-
-            const output = patchDocument(Buffer.from(""), {
-                patches: {
-                    // eslint-disable-next-line @typescript-eslint/naming-convention
-                    image_test: {
-                        type: PatchType.PARAGRAPH,
-                        children: [
-                            new ImageRun({
-                                data: Buffer.from(""),
-                                transformation: { width: 100, height: 100 },
-                            }),
-                        ],
+            it("should patch the document", async () => {
+                const output = await patchDocument(Buffer.from(""), {
+                    patches: {
+                        name: {
+                            type: PatchType.PARAGRAPH,
+                            children: [new TextRun("Sir. "), new TextRun("John Doe"), new TextRun("(The Conqueror)")],
+                        },
+                        item_1: {
+                            type: PatchType.PARAGRAPH,
+                            children: [
+                                new TextRun("#657"),
+                                new ExternalHyperlink({
+                                    children: [
+                                        new TextRun({
+                                            text: "BBC News Link",
+                                        }),
+                                    ],
+                                    link: "https://www.bbc.co.uk/news",
+                                }),
+                            ],
+                        },
+                        // eslint-disable-next-line @typescript-eslint/naming-convention
+                        paragraph_replace: {
+                            type: PatchType.DOCUMENT,
+                            children: [
+                                new Paragraph({
+                                    children: [
+                                        new TextRun("This is a "),
+                                        new ExternalHyperlink({
+                                            children: [
+                                                new TextRun({
+                                                    text: "Google Link",
+                                                }),
+                                            ],
+                                            link: "https://www.google.co.uk",
+                                        }),
+                                        new ImageRun({
+                                            data: Buffer.from(""),
+                                            transformation: { width: 100, height: 100 },
+                                        }),
+                                    ],
+                                }),
+                            ],
+                        },
+                        // eslint-disable-next-line @typescript-eslint/naming-convention
+                        image_test: {
+                            type: PatchType.PARAGRAPH,
+                            children: [
+                                new ImageRun({
+                                    data: Buffer.from(""),
+                                    transformation: { width: 100, height: 100 },
+                                }),
+                            ],
+                        },
                     },
-                },
+                });
+                expect(output).to.not.be.undefined;
             });
-            expect(output).to.not.be.undefined;
+
+            it("should patch the document", async () => {
+                const output = await patchDocument(Buffer.from(""), {
+                    patches: {},
+                });
+                expect(output).to.not.be.undefined;
+            });
         });
 
-        it("should throw an error if the content types is not found", () => {
-            (JSZip.loadAsync as unknown as sinon.SinonStub).restore();
-            sinon.createStubInstance(JSZip, {});
-            sinon.stub(JSZip, "loadAsync").callsFake(
-                () =>
-                    new Promise<JSZip>((resolve) => {
-                        const zip = new JSZip();
+        describe("document.xml and [Content_Types].xml with relationships", () => {
+            before(() => {
+                sinon.createStubInstance(JSZip, {});
+                sinon.stub(JSZip, "loadAsync").callsFake(
+                    () =>
+                        new Promise<JSZip>((resolve) => {
+                            const zip = new JSZip();
 
-                        zip.file("word/document.xml", MOCK_XML);
-                        resolve(zip);
-                    }),
-            );
+                            zip.file("word/document.xml", MOCK_XML);
+                            zip.file("word/_rels/document.xml.rels", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`);
+                            zip.file("[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`);
+                            resolve(zip);
+                        }),
+                );
+            });
 
-            expect(() =>
-                patchDocument(Buffer.from(""), {
+            after(() => {
+                (JSZip.loadAsync as unknown as sinon.SinonStub).restore();
+            });
+
+            it("should use the relationships file rather than create one", async () => {
+                const output = await patchDocument(Buffer.from(""), {
                     patches: {
                         // eslint-disable-next-line @typescript-eslint/naming-convention
                         image_test: {
@@ -345,8 +325,46 @@ describe("from-docx", () => {
                             ],
                         },
                     },
-                }),
-            ).to.throw();
+                });
+                expect(output).to.not.be.undefined;
+            });
+        });
+
+        describe("document.xml", () => {
+            before(() => {
+                sinon.createStubInstance(JSZip, {});
+                sinon.stub(JSZip, "loadAsync").callsFake(
+                    () =>
+                        new Promise<JSZip>((resolve) => {
+                            const zip = new JSZip();
+
+                            zip.file("word/document.xml", MOCK_XML);
+                            resolve(zip);
+                        }),
+                );
+            });
+
+            after(() => {
+                (JSZip.loadAsync as unknown as sinon.SinonStub).restore();
+            });
+
+            it("should throw an error if the content types is not found", () =>
+                expect(
+                    patchDocument(Buffer.from(""), {
+                        patches: {
+                            // eslint-disable-next-line @typescript-eslint/naming-convention
+                            image_test: {
+                                type: PatchType.PARAGRAPH,
+                                children: [
+                                    new ImageRun({
+                                        data: Buffer.from(""),
+                                        transformation: { width: 100, height: 100 },
+                                    }),
+                                ],
+                            },
+                        },
+                    }),
+                ).to.eventually.be.rejected);
         });
     });
 });
