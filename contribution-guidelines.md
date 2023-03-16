@@ -1,9 +1,19 @@
 # Contribution Guidelines
 
--   Include documentation reference(s) at the top of each file:
+-   Include documentation reference(s) at the top of each file as a comment. For example:
 
     ```ts
     // http://officeopenxml.com/WPdocument.php
+    ```
+
+    <!-- cSpell:ignore datypic -->
+    It can be a link to `officeopenxml.com` or `datypic.com` etc.
+    It could also be a reference to the official ECMA-376 standard: https://www.ecma-international.org/publications-and-standards/standards/ecma-376/
+
+-   Include a portion of the schema as a comment for cross reference. For example:
+
+    ```ts
+    // <xsd:element name="tbl" type="CT_Tbl" minOccurs="0" maxOccurs="1"/>
     ```
 
 -   Follow Prettier standards, and consider using the [Prettier VSCode](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode) plugin.
