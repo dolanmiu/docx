@@ -56,6 +56,7 @@ patchDocument(fs.readFileSync("demo/assets/simple-template.docx"), {
                             ],
                             link: "https://www.google.co.uk",
                         }),
+                        new ImageRun({ data: fs.readFileSync("./demo/images/dog.png"), transformation: { width: 100, height: 100 } }),
                     ],
                 }),
             ],

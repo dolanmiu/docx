@@ -140,25 +140,18 @@ export const patchDocument = async (data: InputDataType, options: PatchDocumentO
     for (const { key, mediaDatas } of imageRelationshipAdditions) {
         // eslint-disable-next-line functional/immutable-data
         const relationshipKey = `word/_rels/${key.split("/").pop()}.rels`;
-
-        if (!map.has(relationshipKey)) {
-            map.set(relationshipKey, createRelationshipFile());
-        }
-
-        const relationshipsJson = map.get(relationshipKey);
-
-        if (!relationshipsJson) {
-            throw new Error("Could not find relationships file");
-        }
+        const relationshipsJson = map.get(relationshipKey) ?? createRelationshipFile();
+        map.set(relationshipKey, relationshipsJson);
 
         const index = getNextRelationshipIndex(relationshipsJson);
         const newJson = imageReplacer.replace(JSON.stringify(map.get(key)), mediaDatas, index);
         map.set(key, JSON.parse(newJson) as Element);
 
-        for (const { fileName } of mediaDatas) {
+        for (let i = 0; i < mediaDatas.length; i++) {
+            const { fileName } = mediaDatas[i];
             appendRelationship(
                 relationshipsJson,
-                index,
+                index + i,
                 "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
                 `media/${fileName}`,
             );

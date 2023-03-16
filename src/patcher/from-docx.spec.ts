@@ -201,7 +201,7 @@ const MOCK_XML = `
 
 describe("from-docx", () => {
     describe("patchDocument", () => {
-        before(() => {
+        beforeEach(() => {
             sinon.createStubInstance(JSZip, {});
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             sinon.stub(JSZip, "loadAsync").callsFake(
@@ -216,11 +216,11 @@ describe("from-docx", () => {
             );
         });
 
-        after(() => {
+        afterEach(() => {
             (JSZip.loadAsync as unknown as sinon.SinonStub).restore();
         });
 
-        it("should find the index of a run element with a token", async () => {
+        it("should patch the document", async () => {
             const output = await patchDocument(Buffer.from(""), {
                 patches: {
                     name: {
@@ -256,6 +256,10 @@ describe("from-docx", () => {
                                         ],
                                         link: "https://www.google.co.uk",
                                     }),
+                                    new ImageRun({
+                                        data: Buffer.from(""),
+                                        transformation: { width: 100, height: 100 },
+                                    }),
                                 ],
                             }),
                         ],
@@ -273,6 +277,76 @@ describe("from-docx", () => {
                 },
             });
             expect(output).to.not.be.undefined;
+        });
+
+        it("should patch the document", async () => {
+            const output = await patchDocument(Buffer.from(""), {
+                patches: {},
+            });
+            expect(output).to.not.be.undefined;
+        });
+
+        it("should use the relationships file rather than create one", () => {
+            (JSZip.loadAsync as unknown as sinon.SinonStub).restore();
+            sinon.createStubInstance(JSZip, {});
+            sinon.stub(JSZip, "loadAsync").callsFake(
+                () =>
+                    new Promise<JSZip>((resolve) => {
+                        const zip = new JSZip();
+
+                        zip.file("word/document.xml", MOCK_XML);
+                        zip.file("word/_rels/document.xml.rels", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`);
+                        zip.file("[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`);
+                        resolve(zip);
+                    }),
+            );
+
+            const output = patchDocument(Buffer.from(""), {
+                patches: {
+                    // eslint-disable-next-line @typescript-eslint/naming-convention
+                    image_test: {
+                        type: PatchType.PARAGRAPH,
+                        children: [
+                            new ImageRun({
+                                data: Buffer.from(""),
+                                transformation: { width: 100, height: 100 },
+                            }),
+                        ],
+                    },
+                },
+            });
+            expect(output).to.not.be.undefined;
+        });
+
+        it("should throw an error if the content types is not found", () => {
+            (JSZip.loadAsync as unknown as sinon.SinonStub).restore();
+            sinon.createStubInstance(JSZip, {});
+            sinon.stub(JSZip, "loadAsync").callsFake(
+                () =>
+                    new Promise<JSZip>((resolve) => {
+                        const zip = new JSZip();
+
+                        zip.file("word/document.xml", MOCK_XML);
+                        resolve(zip);
+                    }),
+            );
+
+            expect(() =>
+                patchDocument(Buffer.from(""), {
+                    patches: {
+                        // eslint-disable-next-line @typescript-eslint/naming-convention
+                        image_test: {
+                            type: PatchType.PARAGRAPH,
+                            children: [
+                                new ImageRun({
+                                    data: Buffer.from(""),
+                                    transformation: { width: 100, height: 100 },
+                                }),
+                            ],
+                        },
+                    },
+                }),
+            ).to.throw();
         });
     });
 });

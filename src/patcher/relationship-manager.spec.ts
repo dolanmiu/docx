@@ -20,6 +20,32 @@ describe("relationship-manager", () => {
             });
             expect(output).to.deep.equal(2);
         });
+
+        it("should work with an empty relationship Id", () => {
+            const output = getNextRelationshipIndex({
+                elements: [
+                    {
+                        type: "element",
+                        name: "Relationships",
+                        elements: [{ type: "element", name: "Relationship" }],
+                    },
+                ],
+            });
+            expect(output).to.deep.equal(1);
+        });
+
+        it("should work with no relationships", () => {
+            const output = getNextRelationshipIndex({
+                elements: [
+                    {
+                        type: "element",
+                        name: "Relationships",
+                        elements: [],
+                    },
+                ],
+            });
+            expect(output).to.deep.equal(1);
+        });
     });
 
     describe("appendRelationship", () => {

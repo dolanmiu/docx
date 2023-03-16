@@ -27,25 +27,31 @@ export const replacer = (
             .map((c) => toJson(xml(formatter.format(c as XmlComponent, context))))
             .map((c) => c.elements![0]);
 
-        if (patch.type === PatchType.DOCUMENT) {
-            const parentElement = goToParentElementFromPath(json, renderedParagraph.path);
-            const elementIndex = getLastElementIndexFromPath(renderedParagraph.path);
-            // eslint-disable-next-line functional/immutable-data, prefer-destructuring
-            parentElement.elements?.splice(elementIndex, 1, ...textJson);
-        } else if (patch.type === PatchType.PARAGRAPH) {
-            const paragraphElement = goToElementFromPath(json, renderedParagraph.path);
-            replaceTokenInParagraphElement({
-                paragraphElement,
-                renderedParagraph,
-                originalText: patchText,
-                replacementText: SPLIT_TOKEN,
-            });
+        switch (patch.type) {
+            case PatchType.DOCUMENT: {
+                const parentElement = goToParentElementFromPath(json, renderedParagraph.path);
+                const elementIndex = getLastElementIndexFromPath(renderedParagraph.path);
+                // eslint-disable-next-line functional/immutable-data, prefer-destructuring
+                parentElement.elements!.splice(elementIndex, 1, ...textJson);
+                break;
+            }
+            case PatchType.PARAGRAPH:
+            default: {
+                const paragraphElement = goToElementFromPath(json, renderedParagraph.path);
+                replaceTokenInParagraphElement({
+                    paragraphElement,
+                    renderedParagraph,
+                    originalText: patchText,
+                    replacementText: SPLIT_TOKEN,
+                });
 
-            const index = findRunElementIndexWithToken(paragraphElement, SPLIT_TOKEN);
+                const index = findRunElementIndexWithToken(paragraphElement, SPLIT_TOKEN);
 
-            const { left, right } = splitRunElement(paragraphElement.elements![index], SPLIT_TOKEN);
-            // eslint-disable-next-line functional/immutable-data
-            paragraphElement.elements!.splice(index, 1, left, ...textJson, right);
+                const { left, right } = splitRunElement(paragraphElement.elements![index], SPLIT_TOKEN);
+                // eslint-disable-next-line functional/immutable-data
+                paragraphElement.elements!.splice(index, 1, left, ...textJson, right);
+                break;
+            }
         }
     }
 

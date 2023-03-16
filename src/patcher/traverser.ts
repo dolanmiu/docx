@@ -20,28 +20,24 @@ export const findLocationOfText = (node: Element, text: string): readonly IRende
 
     // eslint-disable-next-line functional/prefer-readonly-type
     const queue: ElementWrapper[] = [
-        ...(elementsToWrapper({
+        ...elementsToWrapper({
             element: node,
             index: 0,
             parent: undefined,
-        }) ?? []),
+        }),
     ];
 
     // eslint-disable-next-line functional/immutable-data
     let currentNode: ElementWrapper | undefined;
     while (queue.length > 0) {
         // eslint-disable-next-line functional/immutable-data
-        currentNode = queue.shift();
-
-        if (!currentNode) {
-            break;
-        }
+        currentNode = queue.shift()!; // This is safe because we check the length of the queue
 
         if (currentNode.element.name === "w:p") {
             renderedParagraphs = [...renderedParagraphs, renderParagraphNode(currentNode)];
         } else {
             // eslint-disable-next-line functional/immutable-data
-            queue.push(...(elementsToWrapper(currentNode) ?? []));
+            queue.push(...elementsToWrapper(currentNode));
         }
     }
 

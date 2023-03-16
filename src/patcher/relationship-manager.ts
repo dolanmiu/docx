@@ -3,15 +3,18 @@ import { Element } from "xml-js";
 import { RelationshipType, TargetModeType } from "@file/relationships/relationship/relationship";
 import { getFirstLevelElements } from "./util";
 
-const getIdFromRelationshipId = (relationshipId: string): number => parseInt(relationshipId.substring(3), 10);
+const getIdFromRelationshipId = (relationshipId: string): number => {
+    const output = parseInt(relationshipId.substring(3), 10);
+    return isNaN(output) ? 0 : output;
+};
 
 export const getNextRelationshipIndex = (relationships: Element): number => {
     const relationshipElements = getFirstLevelElements(relationships, "Relationships");
 
     return (
-        (relationshipElements
+        relationshipElements
             .map((e) => getIdFromRelationshipId(e.attributes?.Id?.toString() ?? ""))
-            .reduce((acc, curr) => Math.max(acc, curr), 0) ?? 0) + 1
+            .reduce((acc, curr) => Math.max(acc, curr), 0) + 1
     );
 };
 

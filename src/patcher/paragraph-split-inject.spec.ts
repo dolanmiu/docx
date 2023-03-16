@@ -32,6 +32,60 @@ describe("paragraph-split-inject", () => {
             );
             expect(output).to.deep.equal(0);
         });
+
+        it("should throw an exception when ran with empty elements", () => {
+            expect(() =>
+                findRunElementIndexWithToken(
+                    {
+                        name: "w:p",
+                        type: "element",
+                    },
+                    "hello",
+                ),
+            ).to.throw();
+        });
+
+        it("should throw an exception when ran with empty elements", () => {
+            expect(() =>
+                findRunElementIndexWithToken(
+                    {
+                        name: "w:p",
+                        type: "element",
+                        elements: [
+                            {
+                                name: "w:r",
+                                type: "element",
+                            },
+                        ],
+                    },
+                    "hello",
+                ),
+            ).to.throw();
+        });
+
+        it("should throw an exception when ran with empty elements", () => {
+            expect(() =>
+                findRunElementIndexWithToken(
+                    {
+                        name: "w:p",
+                        type: "element",
+                        elements: [
+                            {
+                                name: "w:r",
+                                type: "element",
+                                elements: [
+                                    {
+                                        name: "w:t",
+                                        type: "element",
+                                    },
+                                ],
+                            },
+                        ],
+                    },
+                    "hello",
+                ),
+            ).to.throw();
+        });
     });
 
     describe("splitRunElement", () => {
@@ -50,6 +104,10 @@ describe("paragraph-split-inject", () => {
                                     text: "hello*world",
                                 },
                             ],
+                        },
+                        {
+                            name: "w:x",
+                            type: "element",
                         },
                     ],
                 },
@@ -91,7 +149,72 @@ describe("paragraph-split-inject", () => {
                             name: "w:t",
                             type: "element",
                         },
+                        {
+                            name: "w:x",
+                            type: "element",
+                        },
                     ],
+                    name: "w:r",
+                    type: "element",
+                },
+            });
+        });
+
+        it("should try to split even if elements is empty for text", () => {
+            const output = splitRunElement(
+                {
+                    name: "w:r",
+                    type: "element",
+                    elements: [
+                        {
+                            name: "w:t",
+                            type: "element",
+                        },
+                    ],
+                },
+                "*",
+            );
+
+            expect(output).to.deep.equal({
+                left: {
+                    elements: [
+                        {
+                            attributes: {
+                                "xml:space": "preserve",
+                            },
+                            elements: [],
+                            name: "w:t",
+                            type: "element",
+                        },
+                    ],
+                    name: "w:r",
+                    type: "element",
+                },
+                right: {
+                    elements: [],
+                    name: "w:r",
+                    type: "element",
+                },
+            });
+        });
+
+        it("should return empty elements", () => {
+            const output = splitRunElement(
+                {
+                    name: "w:r",
+                    type: "element",
+                },
+                "*",
+            );
+
+            expect(output).to.deep.equal({
+                left: {
+                    elements: [],
+                    name: "w:r",
+                    type: "element",
+                },
+                right: {
+                    elements: [],
                     name: "w:r",
                     type: "element",
                 },
