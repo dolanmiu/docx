@@ -41,7 +41,6 @@ const MOCK_JSON = {
                 "xmlns:wpi": "http://schemas.microsoft.com/office/word/2010/wordprocessingInk",
                 "xmlns:wne": "http://schemas.microsoft.com/office/word/2006/wordml",
                 "xmlns:wps": "http://schemas.microsoft.com/office/word/2010/wordprocessingShape",
-                "mc:Ignorable": "w14 w15 w16se w16cid w16 w16cex w16sdtdh wp14",
             },
             elements: [
                 {

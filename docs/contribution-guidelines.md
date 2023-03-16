@@ -6,6 +6,7 @@
     // http://officeopenxml.com/WPdocument.php
     ```
 
+    <!-- cSpell:ignore datypic -->
     It can be a link to `officeopenxml.com` or `datypic.com` etc.
     It could also be a reference to the official ECMA-376 standard: https://www.ecma-international.org/publications-and-standards/standards/ecma-376/
 
