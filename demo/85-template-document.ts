@@ -14,7 +14,7 @@ import {
     TextDirection,
     TextRun,
     VerticalAlign,
-} from "../src";
+} from "../build";
 
 patchDocument(fs.readFileSync("demo/assets/simple-template.docx"), {
     patches: {
