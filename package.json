@@ -64,6 +64,7 @@
   "homepage": "https://github.com/dolanmiu/docx#readme",
   "devDependencies": {
     "@types/chai": "^4.2.15",
+    "@types/chai-as-promised": "^7.1.5",
     "@types/glob": "^8.0.0",
     "@types/mocha": "^10.0.0",
     "@types/prompt": "^1.1.1",
@@ -76,6 +77,7 @@
     "@typescript-eslint/parser": "^5.36.1",
     "buffer": "^6.0.3",
     "chai": "^4.3.6",
+    "chai-as-promised": "^7.1.1",
     "cspell": "^6.2.2",
     "docsify-cli": "^4.3.0",
     "eslint": "^8.23.0",

@@ -1,0 +1,18 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Run Demo",
+            "type": "node",
+            "request": "launch",
+            "runtimeArgs": [
+                "-r",
+                "${workspaceFolder}/node_modules/ts-node/register",
+                "-r",
+                "${workspaceFolder}/node_modules/tsconfig-paths/register"
+            ],
+            "cwd": "${workspaceRoot}",
+            "program": "${workspaceFolder}/demo/85-template-document.ts"
+        }
+    ]
+}
