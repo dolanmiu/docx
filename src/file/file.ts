@@ -4,7 +4,6 @@ import { CoreProperties, IPropertiesOptions } from "./core-properties";
 import { CustomProperties } from "./custom-properties";
 import { DocumentWrapper } from "./document-wrapper";
 import { HeaderFooterReferenceType, ISectionPropertiesOptions } from "./document/body/section-properties";
-import { IFileProperties } from "./file-properties";
 import { FooterWrapper, IDocumentFooter } from "./footer-wrapper";
 import { FootnotesWrapper } from "./footnotes-wrapper";
 import { Footer, Header } from "./header";
@@ -55,7 +54,7 @@ export class File {
     private readonly styles: Styles;
     private readonly comments: Comments;
 
-    public constructor(options: IPropertiesOptions, fileProperties: IFileProperties = {}) {
+    public constructor(options: IPropertiesOptions) {
         this.coreProperties = new CoreProperties({
             ...options,
             creator: options.creator ?? "Un-named",
@@ -80,20 +79,9 @@ export class File {
             updateFields: options.features?.updateFields,
         });
 
-        this.media = fileProperties.template && fileProperties.template.media ? fileProperties.template.media : new Media();
+        this.media = new Media();
 
-        if (fileProperties.template) {
-            this.currentRelationshipId = fileProperties.template.currentRelationshipId + 1;
-        }
-
-        // set up styles
-        if (fileProperties.template && options.externalStyles) {
-            throw Error("can not use both template and external styles");
-        }
-        if (fileProperties.template && fileProperties.template.styles) {
-            const stylesFactory = new ExternalStylesFactory();
-            this.styles = stylesFactory.newInstance(fileProperties.template.styles);
-        } else if (options.externalStyles) {
+        if (options.externalStyles) {
             const stylesFactory = new ExternalStylesFactory();
             this.styles = stylesFactory.newInstance(options.externalStyles);
         } else if (options.styles) {
@@ -109,18 +97,6 @@ export class File {
         }
 
         this.addDefaultRelationships();
-
-        if (fileProperties.template && fileProperties.template.headers) {
-            for (const templateHeader of fileProperties.template.headers) {
-                this.addHeaderToDocument(templateHeader.header, templateHeader.type);
-            }
-        }
-
-        if (fileProperties.template && fileProperties.template.footers) {
-            for (const templateFooter of fileProperties.template.footers) {
-                this.addFooterToDocument(templateFooter.footer, templateFooter.type);
-            }
-        }
 
         for (const section of options.sections) {
             this.addSection(section);
