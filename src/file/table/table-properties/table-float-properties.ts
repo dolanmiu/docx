@@ -1,4 +1,4 @@
-import { StringEnumValueElement, XmlAttributeComponent, XmlComponent } from "@file/xml-components";
+import { NextAttributeComponent, StringEnumValueElement, XmlComponent } from "@file/xml-components";
 import { PositiveUniversalMeasure, signedTwipsMeasureValue, twipsMeasureValue, UniversalMeasure } from "@util/values";
 
 export enum TableAnchorType {
@@ -35,7 +35,7 @@ export enum OverlapType {
     OVERLAP = "overlap",
 }
 
-export interface ITableFloatOptions {
+export type ITableFloatOptions = {
     /* cSpell:disable */
     /**
      * Specifies the horizontal anchor or the base object from which the horizontal positioning in the
@@ -124,7 +124,7 @@ export interface ITableFloatOptions {
      */
     readonly rightFromText?: number | PositiveUniversalMeasure;
     readonly overlap?: OverlapType;
-}
+};
 
 // <xsd:complexType name="CT_TblPPr">
 //     <xsd:attribute name="leftFromText" type="s:ST_TwipsMeasure"/>
@@ -139,51 +139,65 @@ export interface ITableFloatOptions {
 //     <xsd:attribute name="tblpY" type="ST_SignedTwipsMeasure"/>
 // </xsd:complexType>
 
-export class TableFloatOptionsAttributes extends XmlAttributeComponent<ITableFloatOptions> {
-    protected readonly xmlKeys = {
-        horizontalAnchor: "w:horzAnchor",
-        verticalAnchor: "w:vertAnchor",
-        absoluteHorizontalPosition: "w:tblpX",
-        relativeHorizontalPosition: "w:tblpXSpec",
-        absoluteVerticalPosition: "w:tblpY",
-        relativeVerticalPosition: "w:tblpYSpec",
-        bottomFromText: "w:bottomFromText",
-        topFromText: "w:topFromText",
-        leftFromText: "w:leftFromText",
-        rightFromText: "w:rightFromText",
-    };
-}
-
 export class TableFloatProperties extends XmlComponent {
     public constructor({
+        horizontalAnchor,
+        verticalAnchor,
+        absoluteHorizontalPosition,
+        relativeHorizontalPosition,
+        absoluteVerticalPosition,
+        relativeVerticalPosition,
+        bottomFromText,
+        topFromText,
         leftFromText,
         rightFromText,
-        topFromText,
-        bottomFromText,
-        absoluteHorizontalPosition,
-        absoluteVerticalPosition,
-        ...options
+        overlap,
     }: ITableFloatOptions) {
         super("w:tblpPr");
         this.root.push(
-            new TableFloatOptionsAttributes({
-                leftFromText: leftFromText === undefined ? undefined : twipsMeasureValue(leftFromText),
-                rightFromText: rightFromText === undefined ? undefined : twipsMeasureValue(rightFromText),
-                topFromText: topFromText === undefined ? undefined : twipsMeasureValue(topFromText),
-                bottomFromText: bottomFromText === undefined ? undefined : twipsMeasureValue(bottomFromText),
-                absoluteHorizontalPosition:
-                    absoluteHorizontalPosition === undefined ? undefined : signedTwipsMeasureValue(absoluteHorizontalPosition),
-                absoluteVerticalPosition:
-                    absoluteVerticalPosition === undefined ? undefined : signedTwipsMeasureValue(absoluteVerticalPosition),
-                ...options,
+            new NextAttributeComponent<Omit<ITableFloatOptions, "overlap">>({
+                leftFromText: { key: "w:leftFromText", value: leftFromText === undefined ? undefined : twipsMeasureValue(leftFromText) },
+                rightFromText: {
+                    key: "w:rightFromText",
+                    value: rightFromText === undefined ? undefined : twipsMeasureValue(rightFromText),
+                },
+                topFromText: { key: "w:topFromText", value: topFromText === undefined ? undefined : twipsMeasureValue(topFromText) },
+                bottomFromText: {
+                    key: "w:bottomFromText",
+                    value: bottomFromText === undefined ? undefined : twipsMeasureValue(bottomFromText),
+                },
+                absoluteHorizontalPosition: {
+                    key: "w:tblpX",
+                    value: absoluteHorizontalPosition === undefined ? undefined : signedTwipsMeasureValue(absoluteHorizontalPosition),
+                },
+                absoluteVerticalPosition: {
+                    key: "w:tblpY",
+                    value: absoluteVerticalPosition === undefined ? undefined : signedTwipsMeasureValue(absoluteVerticalPosition),
+                },
+                horizontalAnchor: {
+                    key: "w:horzAnchor",
+                    value: horizontalAnchor === undefined ? undefined : horizontalAnchor,
+                },
+                relativeHorizontalPosition: {
+                    key: "w:tblpXSpec",
+                    value: relativeHorizontalPosition,
+                },
+                relativeVerticalPosition: {
+                    key: "w:tblpYSpec",
+                    value: relativeVerticalPosition,
+                },
+                verticalAnchor: {
+                    key: "w:vertAnchor",
+                    value: verticalAnchor,
+                },
             }),
         );
 
-        if (options.overlap) {
+        if (overlap) {
             // <xsd:complexType name="CT_TblOverlap">
             //     <xsd:attribute name="val" type="ST_TblOverlap" use="required"/>
             // </xsd:complexType>
-            this.root.push(new StringEnumValueElement<OverlapType>("w:tblOverlap", options.overlap));
+            this.root.push(new StringEnumValueElement<OverlapType>("w:tblOverlap", overlap));
         }
     }
 }
