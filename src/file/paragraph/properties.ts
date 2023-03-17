@@ -53,6 +53,11 @@ export interface IParagraphPropertiesOptions extends IParagraphStylePropertiesOp
     readonly suppressLineNumbers?: boolean;
     readonly wordWrap?: boolean;
     readonly scale?: number;
+    /**
+     * This element specifies whether inter-character spacing shall automatically be adjusted between regions of numbers and regions of East Asian text in the current paragraph. These regions shall be determined by the Unicode character values of the text content within the paragraph.
+     * This only works in Microsoft Word. It is not part of the ECMA-376 OOXML standard.
+     */
+    readonly autoSpaceEastAsianText?: boolean;
 }
 
 export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
@@ -178,6 +183,10 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
 
         if (options.suppressLineNumbers !== undefined) {
             this.push(new OnOffElement("w:suppressLineNumbers", options.suppressLineNumbers));
+        }
+
+        if (options.autoSpaceEastAsianText !== undefined) {
+            this.push(new OnOffElement("w:autoSpaceDN", options.autoSpaceEastAsianText));
         }
     }
 

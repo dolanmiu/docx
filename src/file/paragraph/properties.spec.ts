@@ -125,6 +125,21 @@ describe("ParagraphProperties", () => {
             });
         });
 
+        it("should create with the autoSpaceEastAsianText property", () => {
+            const properties = new ParagraphProperties({
+                autoSpaceEastAsianText: true,
+            });
+            const tree = new Formatter().format(properties);
+
+            expect(tree).to.deep.equal({
+                "w:pPr": [
+                    {
+                        "w:autoSpaceDN": {},
+                    },
+                ],
+            });
+        });
+
         it("should create with the wordWrap property", () => {
             const properties = new ParagraphProperties({
                 wordWrap: true,
