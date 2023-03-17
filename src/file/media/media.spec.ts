@@ -21,16 +21,21 @@ describe("Media", () => {
 
             media.addImage("test2.png", {
                 stream: Buffer.from(""),
-                fileName: "test2.png",
+                fileName: "test.png",
                 transformation: {
                     pixels: {
-                        x: Math.round(1),
-                        y: Math.round(1),
+                        x: Math.round(100),
+                        y: Math.round(100),
+                    },
+                    flip: {
+                        vertical: true,
+                        horizontal: true,
                     },
                     emus: {
                         x: Math.round(1 * 9525),
                         y: Math.round(1 * 9525),
                     },
+                    rotation: 90,
                 },
             });
 
@@ -50,10 +55,10 @@ describe("Media", () => {
                     horizontal: true,
                 },
                 emus: {
-                    x: 952500,
-                    y: 952500,
+                    x: 9525,
+                    y: 9525,
                 },
-                rotation: 5400000,
+                rotation: 90,
             });
         });
     });
