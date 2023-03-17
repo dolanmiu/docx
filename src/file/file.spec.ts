@@ -1,12 +1,11 @@
 import { expect } from "chai";
 
 import { Formatter } from "@export/formatter";
-import { sectionMarginDefaults, sectionPageSizeDefaults } from "./document";
 
+import { sectionMarginDefaults, sectionPageSizeDefaults } from "./document";
 import { File } from "./file";
 import { Footer, Header } from "./header";
 import { Paragraph } from "./paragraph";
-import { Media } from "./media";
 
 const PAGE_SIZE_DEFAULTS = {
     "w:h": sectionPageSizeDefaults.HEIGHT,
@@ -430,29 +429,6 @@ describe("File", () => {
             expect(doc.FootNotes).to.not.be.undefined;
             expect(doc.Settings).to.not.be.undefined;
             expect(doc.Comments).to.not.be.undefined;
-        });
-    });
-
-    describe("#templates", () => {
-        // Test will be deprecated when import-dotx and templates are deprecated
-        it("should work with template", () => {
-            const doc = new File(
-                {
-                    sections: [],
-                },
-                {
-                    template: {
-                        currentRelationshipId: 1,
-                        headers: [],
-                        footers: [],
-                        styles: "",
-                        titlePageIsDefined: true,
-                        media: new Media(),
-                    },
-                },
-            );
-
-            expect(doc).to.not.be.undefined;
         });
     });
 
