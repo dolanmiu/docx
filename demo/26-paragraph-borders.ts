@@ -26,6 +26,17 @@ const doc = new Document({
                     },
                 }),
                 new Paragraph({
+                    text: "",
+                    border: {
+                        top: {
+                            color: "auto",
+                            space: 1,
+                            style: BorderStyle.SINGLE,
+                            size: 6,
+                        },
+                    },
+                }),
+                new Paragraph({
                     children: [
                         new TextRun({
                             text: "This will ",
