@@ -28,9 +28,7 @@
     "lint"
   ],
   "files": [
-    "src",
-    "build",
-    "template"
+    "build"
   ],
   "repository": {
     "type": "git",
