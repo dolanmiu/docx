@@ -1,6 +1,8 @@
 -   [Getting Started](/)
 
--   [Examples](https://github.com/dolanmiu/docx/tree/master/demo)
+-   Examples
+
+    -   [Demos](https://github.com/dolanmiu/docx/tree/master/demo)
 
 -   API
 
@@ -35,6 +37,10 @@
 -   Exporting
 
     -   [Packers](usage/packers.md)
+
+-   Modifying Existing Documents
+
+    -   [Patcher](usage/patcher.md)
 
 -   Utility
 
