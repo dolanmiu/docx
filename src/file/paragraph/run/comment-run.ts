@@ -1,11 +1,9 @@
-import { Paragraph } from "@file/paragraph";
+import { FileChild } from "@file/file-child";
 import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
-
-import { TextRun } from "./text-run";
 
 export interface ICommentOptions {
     readonly id: number;
-    readonly text: string;
+    readonly children: readonly FileChild[];
     readonly initials?: string;
     readonly author?: string;
     readonly date?: Date;
@@ -120,7 +118,7 @@ export class CommentReference extends XmlComponent {
 }
 
 export class Comment extends XmlComponent {
-    public constructor({ id, initials, author, date = new Date(), text }: ICommentOptions) {
+    public constructor({ id, initials, author, date = new Date(), children }: ICommentOptions) {
         super("w:comment");
 
         this.root.push(
@@ -132,7 +130,9 @@ export class Comment extends XmlComponent {
             }),
         );
 
-        this.root.push(new Paragraph({ children: [new TextRun(text)] }));
+        for (const child of children) {
+            this.root.push(child);
+        }
     }
 }
 export class Comments extends XmlComponent {

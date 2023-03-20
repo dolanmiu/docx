@@ -1,6 +1,6 @@
 {
   "name": "docx",
-  "version": "7.8.2",
+  "version": "8.0.0",
   "description": "Easily generate .docx files with JS/TS with a nice declarative API. Works for Node and on the Browser.",
   "main": "build/index.js",
   "scripts": {
@@ -28,9 +28,7 @@
     "lint"
   ],
   "files": [
-    "src",
-    "build",
-    "template"
+    "build"
   ],
   "repository": {
     "type": "git",
@@ -65,11 +63,10 @@
   "devDependencies": {
     "@types/chai": "^4.2.15",
     "@types/chai-as-promised": "^7.1.5",
-    "@types/glob": "^8.0.0",
     "@types/mocha": "^10.0.0",
     "@types/prompt": "^1.1.1",
     "@types/request-promise": "^4.1.42",
-    "@types/shelljs": "^0.8.9",
+    "@types/shelljs": "^0.8.11",
     "@types/sinon": "^10.0.0",
     "@types/unzipper": "^0.10.4",
     "@types/webpack": "^5.0.0",
@@ -87,7 +84,7 @@
     "eslint-plugin-no-null": "^1.0.2",
     "eslint-plugin-prefer-arrow": "^1.2.3",
     "eslint-plugin-unicorn": "^46.0.0",
-    "glob": "^8.0.1",
+    "glob": "^9.3.0",
     "jszip": "^3.1.5",
     "mocha": "^10.0.0",
     "nyc": "^15.1.0",
@@ -107,7 +104,7 @@
     "tsconfig-paths": "^4.0.0",
     "tsconfig-paths-webpack-plugin": "^4.0.0",
     "typedoc": "^0.23.2",
-    "typescript": "4.9.5",
+    "typescript": "5.0.2",
     "unzipper": "^0.10.11",
     "webpack": "^5.28.0",
     "webpack-cli": "^5.0.0"

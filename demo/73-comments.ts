@@ -5,7 +5,34 @@ import { Document, Packer, Paragraph, TextRun, CommentRangeStart, CommentRangeEn
 
 const doc = new Document({
     comments: {
-        children: [{ id: 0, author: "Ray Chen", date: new Date(), text: "comment text content" }],
+        children: [
+            {
+                id: 0,
+                author: "Ray Chen",
+                date: new Date(),
+                children: [
+                    new Paragraph({
+                        children: [
+                            new TextRun({
+                                text: "some initial text content",
+                            }),
+                        ],
+                    }),
+                    new Paragraph({
+                        children: [
+                            new TextRun({
+                                text: "comment text content",
+                            }),
+                            new TextRun({ text: "", break: 1 }),
+                            new TextRun({
+                                text: "More text here",
+                                bold: true,
+                            }),
+                        ],
+                    }),
+                ],
+            },
+        ],
     },
     sections: [
         {
