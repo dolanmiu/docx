@@ -71,8 +71,8 @@ export const patchDocument = async (data: InputDataType, options: PatchDocumentO
     const binaryContentMap = new Map<string, Buffer>();
 
     for (const [key, value] of Object.entries(zipContent.files)) {
-        if (!key.endsWith('.xml') && !key.endsWith('.rels')) {
-            binaryContentMap.set(key, await value.async("nodebuffer"))
+        if (!key.endsWith(".xml") && !key.endsWith(".rels")) {
+            binaryContentMap.set(key, await value.async("nodebuffer"));
             continue;
         }
 
