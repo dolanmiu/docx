@@ -59,7 +59,7 @@
   "bugs": {
     "url": "https://github.com/dolanmiu/docx/issues"
   },
-  "homepage": "https://github.com/dolanmiu/docx#readme",
+  "homepage": "https://docx.js.org",
   "devDependencies": {
     "@types/chai": "^4.2.15",
     "@types/chai-as-promised": "^7.1.5",
