@@ -8,7 +8,6 @@ export interface IBaseCharacterStyleOptions extends IStyleOptions {
 
 export interface ICharacterStyleOptions extends IBaseCharacterStyleOptions {
     readonly id: string;
-    readonly name?: string;
 }
 
 export class StyleForCharacter extends Style {
