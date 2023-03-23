@@ -9,7 +9,6 @@ export interface IBaseParagraphStyleOptions extends IStyleOptions {
 
 export interface IParagraphStyleOptions extends IBaseParagraphStyleOptions {
     readonly id: string;
-    readonly name?: string;
 }
 
 export class StyleForParagraph extends Style {
