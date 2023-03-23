@@ -68,7 +68,14 @@ export const patchDocument = async (data: InputDataType, options: PatchDocumentO
     const hyperlinkRelationshipAdditions: IHyperlinkRelationshipAddition[] = [];
     let hasMedia = false;
 
+    const binaryContentMap = new Map<string, Buffer>();
+
     for (const [key, value] of Object.entries(zipContent.files)) {
+        if (!key.endsWith(".xml") && !key.endsWith(".rels")) {
+            binaryContentMap.set(key, await value.async("nodebuffer"));
+            continue;
+        }
+
         const json = toJson(await value.async("text"));
         if (key.startsWith("word/") && !key.endsWith(".xml.rels")) {
             const context: IContext = {
@@ -194,6 +201,10 @@ export const patchDocument = async (data: InputDataType, options: PatchDocumentO
         const output = toXml(value);
 
         zip.file(key, output);
+    }
+
+    for (const [key, value] of binaryContentMap) {
+        zip.file(key, value);
     }
 
     for (const { stream, fileName } of file.Media.Array) {

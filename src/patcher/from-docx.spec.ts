@@ -206,8 +206,7 @@ const MOCK_XML = `
 describe("from-docx", () => {
     describe("patchDocument", () => {
         describe("document.xml and [Content_Types].xml", () => {
-            before(() => {
-                sinon.createStubInstance(JSZip, {});
+            beforeEach(() => {
                 sinon.stub(JSZip, "loadAsync").callsFake(
                     () =>
                         new Promise<JSZip>((resolve) => {
@@ -220,7 +219,7 @@ describe("from-docx", () => {
                 );
             });
 
-            after(() => {
+            afterEach(() => {
                 (JSZip.loadAsync as unknown as sinon.SinonStub).restore();
             });
 
@@ -292,8 +291,7 @@ describe("from-docx", () => {
         });
 
         describe("document.xml and [Content_Types].xml with relationships", () => {
-            before(() => {
-                sinon.createStubInstance(JSZip, {});
+            beforeEach(() => {
                 sinon.stub(JSZip, "loadAsync").callsFake(
                     () =>
                         new Promise<JSZip>((resolve) => {
@@ -307,7 +305,7 @@ describe("from-docx", () => {
                 );
             });
 
-            after(() => {
+            afterEach(() => {
                 (JSZip.loadAsync as unknown as sinon.SinonStub).restore();
             });
 
@@ -322,6 +320,14 @@ describe("from-docx", () => {
                                     data: Buffer.from(""),
                                     transformation: { width: 100, height: 100 },
                                 }),
+                                new ExternalHyperlink({
+                                    children: [
+                                        new TextRun({
+                                            text: "Google Link",
+                                        }),
+                                    ],
+                                    link: "https://www.google.co.uk",
+                                }),
                             ],
                         },
                     },
@@ -331,8 +337,7 @@ describe("from-docx", () => {
         });
 
         describe("document.xml", () => {
-            before(() => {
-                sinon.createStubInstance(JSZip, {});
+            beforeEach(() => {
                 sinon.stub(JSZip, "loadAsync").callsFake(
                     () =>
                         new Promise<JSZip>((resolve) => {
@@ -344,7 +349,45 @@ describe("from-docx", () => {
                 );
             });
 
-            after(() => {
+            afterEach(() => {
+                (JSZip.loadAsync as unknown as sinon.SinonStub).restore();
+            });
+
+            it("should throw an error if the content types is not found", () =>
+                expect(
+                    patchDocument(Buffer.from(""), {
+                        patches: {
+                            // eslint-disable-next-line @typescript-eslint/naming-convention
+                            image_test: {
+                                type: PatchType.PARAGRAPH,
+                                children: [
+                                    new ImageRun({
+                                        data: Buffer.from(""),
+                                        transformation: { width: 100, height: 100 },
+                                    }),
+                                ],
+                            },
+                        },
+                    }),
+                ).to.eventually.be.rejected);
+        });
+
+        describe("Images", () => {
+            beforeEach(() => {
+                sinon.stub(JSZip, "loadAsync").callsFake(
+                    () =>
+                        new Promise<JSZip>((resolve) => {
+                            const zip = new JSZip();
+
+                            zip.file("word/document.xml", MOCK_XML);
+                            zip.file("word/document.bmp", "");
+
+                            resolve(zip);
+                        }),
+                );
+            });
+
+            afterEach(() => {
                 (JSZip.loadAsync as unknown as sinon.SinonStub).restore();
             });
 
