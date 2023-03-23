@@ -30,9 +30,15 @@ export const replaceTokenInParagraphElement = ({
             switch (replaceMode) {
                 case ReplaceMode.START:
                     if (startIndex >= start) {
-                        const partToReplace = run.text.substring(Math.max(startIndex, start), Math.min(endIndex, end) + 1);
+                        const offsetStartIndex = startIndex - start;
+                        const offsetEndIndex = Math.min(endIndex, end) - start;
+                        const partToReplace = run.text.substring(offsetStartIndex, offsetEndIndex + 1);
                         // We use a token to split the text if the replacement is within the same run
                         // If not, we just add text to the middle of the run later
+                        if (partToReplace === "") {
+                            continue;
+                        }
+
                         const firstPart = text.replace(partToReplace, replacementText);
                         patchTextElement(paragraphElement.elements![run.index].elements![index], firstPart);
                         replaceMode = ReplaceMode.MIDDLE;
