@@ -23,7 +23,13 @@ export interface ILevelParagraphStylePropertiesOptions {
     readonly leftTabStop?: number;
     readonly indent?: IIndentAttributesProperties;
     readonly spacing?: ISpacingProperties;
+    /**
+     * Specifies that the paragraph (or at least part of it) should be rendered on the same page as the next paragraph when possible. If multiple paragraphs are to be kept together but they exceed a page, then the set of paragraphs begin on a new page and page breaks are used thereafter as needed.
+     */
     readonly keepNext?: boolean;
+    /**
+     * Specifies that all lines of the paragraph are to be kept on a single page when possible.
+     */
     readonly keepLines?: boolean;
     readonly outlineLevel?: number;
 }
