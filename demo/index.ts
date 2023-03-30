@@ -1,7 +1,8 @@
 // tslint:disable:no-console
 import fs from "fs";
 import prompt from "prompt";
-import shelljs from "shelljs";
+// import shelljs from "shelljs";
+import { $ } from "execa";
 
 console.log("What demo do you wish to run? (Enter a number)");
 
@@ -17,7 +18,7 @@ const schema = {
 
 prompt.start();
 
-prompt.get(schema as any, (_, result) => {
+prompt.get(schema as any, async (_, result) => {
     const demoNumber = result.number as string;
     const files = fs.readdirSync("./demo").filter((fn) => fn.startsWith(demoNumber));
 
@@ -29,9 +30,14 @@ prompt.get(schema as any, (_, result) => {
     const filePath = `./demo/${files[0]}`;
 
     console.log(`Running demo ${demoNumber}: ${files[0]}`);
-    if (shelljs.exec(`npm run ts-node -- ${filePath}`).code === 0) {
-        console.log("Document created successfully");
-    } else {
-        console.error("Something went wrong with the demo");
-    }
+    const { stdout } = await $`npm run ts-node -- ${filePath}`;
+    console.log(stdout);
+
+    // if (shelljs.exec(`npm run ts-node -- ${filePath}`).code === 0) {
+    //     console.log("Document created successfully");
+    // } else {
+    //     console.error("Something went wrong with the demo");
+    // }
 });
+
+exports = {};
