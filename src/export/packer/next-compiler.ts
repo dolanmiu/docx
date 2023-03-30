@@ -31,6 +31,7 @@ interface IXmlifyedFileMapping {
     readonly FootNotesRelationships: IXmlifyedFile;
     readonly Settings: IXmlifyedFile;
     readonly Comments?: IXmlifyedFile;
+    readonly FontTable?: IXmlifyedFile;
 }
 
 export class Compiler {
@@ -439,6 +440,23 @@ export class Compiler {
                 ),
                 path: "word/comments.xml",
             },
+            // FontTable: {
+            //     data: xml(
+            //         this.formatter.format(file.FontTable, {
+            //             viewWrapper: file.Document,
+            //             file,
+            //             stack: [],
+            //         }),
+            //         {
+            //             indent: prettify,
+            //             declaration: {
+            //                 standalone: "yes",
+            //                 encoding: "UTF-8",
+            //             },
+            //         },
+            //     ),
+            //     path: "word/fontTable.xml",
+            // },
         };
     }
 }
