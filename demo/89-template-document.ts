@@ -1,7 +1,7 @@
 // Patch a document with patches
 // Import from 'docx' rather than '../build' if you install from npm
 import * as fs from "fs";
-import { IPatch, patchDocument, PatchType, TextRun } from "../src";
+import { IPatch, patchDocument, PatchType, TextRun } from "../build";
 
 export const font = "Trebuchet MS";
 export const getPatches = (fields: { [key: string]: string }) => {
