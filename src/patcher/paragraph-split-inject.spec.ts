@@ -86,6 +86,59 @@ describe("paragraph-split-inject", () => {
                 ),
             ).to.throw();
         });
+
+        it("should continue if text run doesn't have text", () => {
+            expect(() =>
+                findRunElementIndexWithToken(
+                    {
+                        name: "w:p",
+                        type: "element",
+                        elements: [
+                            {
+                                name: "w:r",
+                                type: "element",
+                                elements: [
+                                    {
+                                        name: "w:t",
+                                        type: "element",
+                                    },
+                                ],
+                            },
+                        ],
+                    },
+                    "hello",
+                ),
+            ).to.throw();
+        });
+
+        it("should continue if text run doesn't have text", () => {
+            expect(() =>
+                findRunElementIndexWithToken(
+                    {
+                        name: "w:p",
+                        type: "element",
+                        elements: [
+                            {
+                                name: "w:r",
+                                type: "element",
+                                elements: [
+                                    {
+                                        name: "w:t",
+                                        type: "element",
+                                        elements: [
+                                            {
+                                                type: "text",
+                                            },
+                                        ],
+                                    },
+                                ],
+                            },
+                        ],
+                    },
+                    "hello",
+                ),
+            ).to.throw();
+        });
     });
 
     describe("splitRunElement", () => {
