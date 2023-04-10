@@ -103,7 +103,7 @@
     "ts-node": "^10.2.1",
     "tsconfig-paths": "^4.0.0",
     "tsconfig-paths-webpack-plugin": "^4.0.0",
-    "typedoc": "^0.23.2",
+    "typedoc": "^0.24.1",
     "typescript": "5.0.3",
     "unzipper": "^0.10.11",
     "webpack": "^5.28.0",
