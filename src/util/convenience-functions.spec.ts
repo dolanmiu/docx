@@ -1,6 +1,6 @@
 import { expect } from "chai";
 
-import { convertInchesToTwip, convertMillimetersToTwip, uniqueId, uniqueNumericId } from "./convenience-functions";
+import { convertInchesToTwip, convertMillimetersToTwip, uniqueId, uniqueNumericIdCreator } from "./convenience-functions";
 
 describe("Utility", () => {
     describe("#convertMillimetersToTwip", () => {
@@ -17,8 +17,9 @@ describe("Utility", () => {
         });
     });
 
-    describe("#uniqueNumericId", () => {
+    describe("#uniqueNumericIdCreator", () => {
         it("should generate a unique incrementing ID", () => {
+            const uniqueNumericId = uniqueNumericIdCreator();
             expect(uniqueNumericId()).to.not.be.undefined;
         });
     });
