@@ -41,11 +41,11 @@ const createAnchor = (drawingOptions: IDrawingOptions): Anchor =>
 
 describe("Anchor", () => {
     before(() => {
-        stub(convenienceFunctions, "uniqueNumericId").callsFake(() => 0);
+        stub(convenienceFunctions, "docPropertiesUniqueNumericId").callsFake(() => 0);
     });
 
     after(() => {
-        (convenienceFunctions.uniqueNumericId as SinonStub).restore();
+        (convenienceFunctions.docPropertiesUniqueNumericId as SinonStub).restore();
     });
 
     let anchor: Anchor;

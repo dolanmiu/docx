@@ -8,11 +8,13 @@ import { Numbering } from "./numbering";
 
 describe("Numbering", () => {
     before(() => {
-        stub(convenienceFunctions, "uniqueNumericId").callsFake(() => 0);
+        stub(convenienceFunctions, "abstractNumUniqueNumericId").callsFake(() => 0);
+        stub(convenienceFunctions, "concreteNumUniqueNumericId").callsFake(() => 0);
     });
 
     after(() => {
-        (convenienceFunctions.uniqueNumericId as SinonStub).restore();
+        (convenienceFunctions.abstractNumUniqueNumericId as SinonStub).restore();
+        (convenienceFunctions.concreteNumUniqueNumericId as SinonStub).restore();
     });
 
     describe("#constructor", () => {

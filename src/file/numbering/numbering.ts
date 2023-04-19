@@ -2,7 +2,7 @@
 // https://stackoverflow.com/questions/58622437/purpose-of-abstractnum-and-numberinginstance
 import { AlignmentType } from "@file/paragraph";
 import { IContext, IXmlableObject, XmlComponent } from "@file/xml-components";
-import { convertInchesToTwip, uniqueNumericIdCreator } from "@util/convenience-functions";
+import { abstractNumUniqueNumericId, concreteNumUniqueNumericId, convertInchesToTwip } from "@util/convenience-functions";
 
 import { DocumentAttributes } from "../document/document-attributes";
 import { AbstractNumbering } from "./abstract-numbering";
@@ -15,9 +15,6 @@ export interface INumberingOptions {
         readonly reference: string;
     }[];
 }
-
-const abstractNumUniqueNumericId = uniqueNumericIdCreator();
-const concreteNumUniqueNumericId = uniqueNumericIdCreator(1); // Setting initial to 1 as we have numId = 1 for "default-bullet-numbering"
 
 // <xsd:element name="numbering" type="CT_Numbering"/>
 //
