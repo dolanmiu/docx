@@ -30,14 +30,6 @@ const createDrawing = (drawingOptions?: IDrawingOptions): Drawing =>
     );
 
 describe("Drawing", () => {
-    before(() => {
-        stub(convenienceFunctions, "docPropertiesUniqueNumericId").callsFake(() => 0);
-    });
-
-    after(() => {
-        (convenienceFunctions.docPropertiesUniqueNumericId as SinonStub).restore();
-    });
-
     let currentBreak: Drawing;
 
     describe("#constructor()", () => {

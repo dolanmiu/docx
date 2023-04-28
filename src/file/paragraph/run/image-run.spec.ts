@@ -11,12 +11,10 @@ import { ImageRun } from "./image-run";
 describe("ImageRun", () => {
     before(() => {
         stub(convenienceFunctions, "uniqueId").callsFake(() => "test-unique-id");
-        stub(convenienceFunctions, "docPropertiesUniqueNumericId").callsFake(() => 0);
     });
 
     after(() => {
         (convenienceFunctions.uniqueId as SinonStub).restore();
-        (convenienceFunctions.docPropertiesUniqueNumericId as SinonStub).restore();
     });
 
     describe("#constructor()", () => {

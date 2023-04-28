@@ -40,14 +40,6 @@ const createAnchor = (drawingOptions: IDrawingOptions): Anchor =>
     );
 
 describe("Anchor", () => {
-    before(() => {
-        stub(convenienceFunctions, "docPropertiesUniqueNumericId").callsFake(() => 0);
-    });
-
-    after(() => {
-        (convenienceFunctions.docPropertiesUniqueNumericId as SinonStub).restore();
-    });
-
     let anchor: Anchor;
 
     describe("#constructor()", () => {

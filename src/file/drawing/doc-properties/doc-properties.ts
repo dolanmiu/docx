@@ -2,7 +2,7 @@
 import { IContext, IXmlableObject, NextAttributeComponent, XmlComponent } from "@file/xml-components";
 import { ConcreteHyperlink } from "@file/paragraph";
 
-import { docPropertiesUniqueNumericId } from "@util/convenience-functions";
+import { docPropertiesUniqueNumericIdGen } from "@util/convenience-functions";
 
 import { createHyperlinkClick } from "./doc-properties-children";
 
@@ -25,6 +25,8 @@ export interface DocPropertiesOptions {
 }
 
 export class DocProperties extends XmlComponent {
+    private readonly docPropertiesUniqueNumericId = docPropertiesUniqueNumericIdGen();
+
     public constructor({ name, description, title }: DocPropertiesOptions = { name: "", description: "", title: "" }) {
         super("wp:docPr");
 
@@ -32,7 +34,7 @@ export class DocProperties extends XmlComponent {
             new NextAttributeComponent({
                 id: {
                     key: "id",
-                    value: docPropertiesUniqueNumericId(),
+                    value: this.docPropertiesUniqueNumericId(),
                 },
                 name: {
                     key: "name",

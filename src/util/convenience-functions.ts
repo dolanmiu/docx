@@ -11,9 +11,9 @@ export const uniqueNumericIdCreator = (initial = 0): (() => number) => {
     return () => ++currentCount;
 };
 
-export const abstractNumUniqueNumericId = uniqueNumericIdCreator();
-export const concreteNumUniqueNumericId = uniqueNumericIdCreator(1); // Setting initial to 1 as we have numId = 1 for "default-bullet-numbering"
-export const docPropertiesUniqueNumericId = uniqueNumericIdCreator();
-export const bookmarkUniqueNumericId = uniqueNumericIdCreator();
+export const abstractNumUniqueNumericIdGen = () => uniqueNumericIdCreator();
+export const concreteNumUniqueNumericIdGen = () => uniqueNumericIdCreator(1); // Setting initial to 1 as we have numId = 1 for "default-bullet-numbering"
+export const docPropertiesUniqueNumericIdGen = () => uniqueNumericIdCreator();
+export const bookmarkUniqueNumericIdGen = () => uniqueNumericIdCreator();
 
 export const uniqueId = (): string => nanoid().toLowerCase();

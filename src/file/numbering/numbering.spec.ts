@@ -7,16 +7,6 @@ import * as convenienceFunctions from "@util/convenience-functions";
 import { Numbering } from "./numbering";
 
 describe("Numbering", () => {
-    before(() => {
-        stub(convenienceFunctions, "abstractNumUniqueNumericId").callsFake(() => 0);
-        stub(convenienceFunctions, "concreteNumUniqueNumericId").callsFake(() => 0);
-    });
-
-    after(() => {
-        (convenienceFunctions.abstractNumUniqueNumericId as SinonStub).restore();
-        (convenienceFunctions.concreteNumUniqueNumericId as SinonStub).restore();
-    });
-
     describe("#constructor", () => {
         it("creates a default numbering with one abstract and one concrete instance", () => {
             const numbering = new Numbering({
