@@ -3,7 +3,7 @@ import { expect } from "chai";
 import { ExternalStylesFactory } from "./external-styles-factory";
 
 describe("External styles factory", () => {
-    let externalStyles;
+    let externalStyles: string;
 
     beforeEach(() => {
         externalStyles = `

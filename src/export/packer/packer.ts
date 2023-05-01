@@ -15,7 +15,7 @@ export enum PrettifyType {
 
 export class Packer {
     public static async toString(file: File, prettify?: boolean | PrettifyType): Promise<string> {
-        const zip = this.compiler.compile(file, prettify);
+        const zip = this.compiler.compile(file, prettify === true ? PrettifyType.WITH_2_BLANKS : prettify === false ? undefined : prettify);
         const zipData = await zip.generateAsync({
             type: "string",
             mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -26,7 +26,7 @@ export class Packer {
     }
 
     public static async toBuffer(file: File, prettify?: boolean | PrettifyType): Promise<Buffer> {
-        const zip = this.compiler.compile(file, prettify);
+        const zip = this.compiler.compile(file, prettify === true ? PrettifyType.WITH_2_BLANKS : prettify === false ? undefined : prettify);
         const zipData = await zip.generateAsync({
             type: "nodebuffer",
             mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -37,7 +37,7 @@ export class Packer {
     }
 
     public static async toBase64String(file: File, prettify?: boolean | PrettifyType): Promise<string> {
-        const zip = this.compiler.compile(file, prettify);
+        const zip = this.compiler.compile(file, prettify === true ? PrettifyType.WITH_2_BLANKS : prettify === false ? undefined : prettify);
         const zipData = await zip.generateAsync({
             type: "base64",
             mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -48,7 +48,7 @@ export class Packer {
     }
 
     public static async toBlob(file: File, prettify?: boolean | PrettifyType): Promise<Blob> {
-        const zip = this.compiler.compile(file, prettify);
+        const zip = this.compiler.compile(file, prettify === true ? PrettifyType.WITH_2_BLANKS : prettify === false ? undefined : prettify);
         const zipData = await zip.generateAsync({
             type: "blob",
             mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -59,7 +59,7 @@ export class Packer {
     }
 
     public static toStream(file: File, prettify?: boolean | PrettifyType): Stream {
-        const zip = this.compiler.compile(file, prettify);
+        const zip = this.compiler.compile(file, prettify === true ? PrettifyType.WITH_2_BLANKS : prettify === false ? undefined : prettify);
         const zipData = zip.generateNodeStream({
             type: "nodebuffer",
             streamFiles: true,

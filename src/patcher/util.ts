@@ -1,5 +1,5 @@
 import { xml2js, Element } from "xml-js";
-import * as xml from "xml";
+import xml from "xml";
 
 import { Formatter } from "@export/formatter";
 import { Text } from "@file/paragraph/run/run-components/text";

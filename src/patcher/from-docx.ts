@@ -1,4 +1,4 @@
-import * as JSZip from "jszip";
+import JSZip from "jszip";
 import { Element, js2xml } from "xml-js";
 
 import { ConcreteHyperlink, ExternalHyperlink, ParagraphChild } from "@file/paragraph";

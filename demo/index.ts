@@ -39,5 +39,3 @@ prompt.get(schema as any, async (_, result) => {
     //     console.error("Something went wrong with the demo");
     // }
 });
-
-exports = {};

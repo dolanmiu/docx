@@ -14,11 +14,14 @@ export abstract class XmlAttributeComponent<T extends object> extends BaseXmlCom
     }
 
     public prepForXml(_: IContext): IXmlableObject {
-        const attrs = {};
+        // eslint-disable-next-line functional/prefer-readonly-type
+        const attrs: { [key: string]: string } = {};
         Object.keys(this.root).forEach((key) => {
-            const value = this.root[key];
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const value = (this.root as any)[key];
             if (value !== undefined) {
-                const newKey = (this.xmlKeys && this.xmlKeys[key]) || key;
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const newKey = (this.xmlKeys && (this.xmlKeys as any)[key]) || key;
                 // eslint-disable-next-line functional/immutable-data
                 attrs[newKey] = value;
             }

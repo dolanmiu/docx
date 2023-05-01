@@ -1,7 +1,7 @@
 import * as chai from "chai";
 import * as sinon from "sinon";
-import * as JSZip from "jszip";
-import * as chaiAsPromised from "chai-as-promised";
+import JSZip from "jszip";
+import chaiAsPromised from "chai-as-promised";
 
 import { ExternalHyperlink, ImageRun, Paragraph, TextRun } from "@file/paragraph";
 
