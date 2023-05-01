@@ -2,7 +2,7 @@
 import { IContext, IXmlableObject, NextAttributeComponent, XmlComponent } from "@file/xml-components";
 import { ConcreteHyperlink } from "@file/paragraph";
 
-import { uniqueNumericId } from "@util/convenience-functions";
+import { docPropertiesUniqueNumericId } from "@util/convenience-functions";
 
 import { createHyperlinkClick } from "./doc-properties-children";
 
@@ -32,7 +32,7 @@ export class DocProperties extends XmlComponent {
             new NextAttributeComponent({
                 id: {
                     key: "id",
-                    value: uniqueNumericId(),
+                    value: docPropertiesUniqueNumericId(),
                 },
                 name: {
                     key: "name",

@@ -1,6 +1,6 @@
 {
   "name": "docx",
-  "version": "8.0.1",
+  "version": "8.0.3",
   "description": "Easily generate .docx files with JS/TS with a nice declarative API. Works for Node and on the Browser.",
   "main": "build/index.js",
   "scripts": {
@@ -105,7 +105,7 @@
     "tsconfig-paths": "^4.0.0",
     "tsconfig-paths-webpack-plugin": "^4.0.0",
     "typedoc": "^0.23.2",
-    "typescript": "5.0.2",
+    "typescript": "5.0.3",
     "unzipper": "^0.10.11",
     "webpack": "^5.28.0",
     "webpack-cli": "^5.0.0"

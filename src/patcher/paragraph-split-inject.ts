@@ -8,7 +8,11 @@ export const findRunElementIndexWithToken = (paragraphElement: Element, token: s
             const textElement = (element.elements ?? []).filter((e) => e.type === "element" && e.name === "w:t");
 
             for (const text of textElement) {
-                if ((text.elements?.[0].text as string)?.includes(token)) {
+                if (!text.elements?.[0]) {
+                    continue;
+                }
+
+                if ((text.elements[0].text as string)?.includes(token)) {
                     return i;
                 }
             }
