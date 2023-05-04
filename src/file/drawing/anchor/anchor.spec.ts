@@ -1,8 +1,6 @@
 import { assert, expect } from "chai";
-import { SinonStub, stub } from "sinon";
 
 import { Formatter } from "@export/formatter";
-import * as convenienceFunctions from "@util/convenience-functions";
 
 import { Utility } from "tests/utility";
 
@@ -40,14 +38,6 @@ const createAnchor = (drawingOptions: IDrawingOptions): Anchor =>
     );
 
 describe("Anchor", () => {
-    before(() => {
-        stub(convenienceFunctions, "docPropertiesUniqueNumericId").callsFake(() => 0);
-    });
-
-    after(() => {
-        (convenienceFunctions.docPropertiesUniqueNumericId as SinonStub).restore();
-    });
-
     let anchor: Anchor;
 
     describe("#constructor()", () => {
@@ -466,7 +456,7 @@ describe("Anchor", () => {
                         "wp:docPr": {
                             _attr: {
                                 descr: "test",
-                                id: 0,
+                                id: 1,
                                 name: "test",
                                 title: "test",
                             },

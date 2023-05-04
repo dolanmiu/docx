@@ -1,9 +1,7 @@
 import { expect } from "chai";
-import { SinonStub, stub } from "sinon";
 
 import { IContext } from "@file/xml-components";
 import { Formatter } from "@export/formatter";
-import * as convenienceFunctions from "@util/convenience-functions";
 
 import { ConcreteHyperlink, TextRun } from "../";
 import { Drawing, IDrawingOptions } from "./drawing";
@@ -30,14 +28,6 @@ const createDrawing = (drawingOptions?: IDrawingOptions): Drawing =>
     );
 
 describe("Drawing", () => {
-    before(() => {
-        stub(convenienceFunctions, "docPropertiesUniqueNumericId").callsFake(() => 0);
-    });
-
-    after(() => {
-        (convenienceFunctions.docPropertiesUniqueNumericId as SinonStub).restore();
-    });
-
     let currentBreak: Drawing;
 
     describe("#constructor()", () => {
@@ -78,7 +68,7 @@ describe("Drawing", () => {
                                 "wp:docPr": {
                                     _attr: {
                                         descr: "",
-                                        id: 0,
+                                        id: 1,
                                         name: "",
                                         title: "",
                                     },
@@ -309,7 +299,7 @@ describe("Drawing", () => {
                                 "wp:docPr": {
                                     _attr: {
                                         descr: "",
-                                        id: 0,
+                                        id: 1,
                                         name: "",
                                         title: "",
                                     },
@@ -543,7 +533,7 @@ describe("Drawing", () => {
                                     {
                                         _attr: {
                                             descr: "",
-                                            id: 0,
+                                            id: 1,
                                             name: "",
                                             title: "",
                                         },

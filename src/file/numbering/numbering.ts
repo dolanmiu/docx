@@ -2,7 +2,7 @@
 // https://stackoverflow.com/questions/58622437/purpose-of-abstractnum-and-numberinginstance
 import { AlignmentType } from "@file/paragraph";
 import { IContext, IXmlableObject, XmlComponent } from "@file/xml-components";
-import { abstractNumUniqueNumericId, concreteNumUniqueNumericId, convertInchesToTwip } from "@util/convenience-functions";
+import { abstractNumUniqueNumericIdGen, concreteNumUniqueNumericIdGen, convertInchesToTwip } from "@util/convenience-functions";
 
 import { DocumentAttributes } from "../document/document-attributes";
 import { AbstractNumbering } from "./abstract-numbering";
@@ -30,6 +30,8 @@ export class Numbering extends XmlComponent {
     private readonly abstractNumberingMap = new Map<string, AbstractNumbering>();
     private readonly concreteNumberingMap = new Map<string, ConcreteNumbering>();
     private readonly referenceConfigMap = new Map<string, object>();
+    private readonly abstractNumUniqueNumericId = abstractNumUniqueNumericIdGen();
+    private readonly concreteNumUniqueNumericId = concreteNumUniqueNumericIdGen();
 
     public constructor(options: INumberingOptions) {
         super("w:numbering");
@@ -55,7 +57,7 @@ export class Numbering extends XmlComponent {
             }),
         );
 
-        const abstractNumbering = new AbstractNumbering(abstractNumUniqueNumericId(), [
+        const abstractNumbering = new AbstractNumbering(this.abstractNumUniqueNumericId(), [
             {
                 level: 0,
                 format: LevelFormat.BULLET,
@@ -176,7 +178,7 @@ export class Numbering extends XmlComponent {
         this.abstractNumberingMap.set("default-bullet-numbering", abstractNumbering);
 
         for (const con of options.config) {
-            this.abstractNumberingMap.set(con.reference, new AbstractNumbering(abstractNumUniqueNumericId(), con.levels));
+            this.abstractNumberingMap.set(con.reference, new AbstractNumbering(this.abstractNumUniqueNumericId(), con.levels));
             this.referenceConfigMap.set(con.reference, con.levels);
         }
     }
@@ -209,7 +211,7 @@ export class Numbering extends XmlComponent {
         const firstLevelStartNumber = referenceConfigLevels && referenceConfigLevels[0].start;
 
         const concreteNumberingSettings = {
-            numId: concreteNumUniqueNumericId(),
+            numId: this.concreteNumUniqueNumericId(),
             abstractNumId: abstractNumbering.id,
             reference,
             instance,
