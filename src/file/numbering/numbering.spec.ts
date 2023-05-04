@@ -1,8 +1,6 @@
 import { expect } from "chai";
-import { SinonStub, stub } from "sinon";
 
 import { Formatter } from "@export/formatter";
-import * as convenienceFunctions from "@util/convenience-functions";
 
 import { Numbering } from "./numbering";
 
@@ -18,7 +16,7 @@ describe("Numbering", () => {
             const abstractNums = tree["w:numbering"].filter((el) => el["w:abstractNum"]);
             expect(abstractNums).to.have.lengthOf(1);
             expect(abstractNums[0]["w:abstractNum"]).to.deep.include.members([
-                { _attr: { "w:abstractNumId": 0, "w15:restartNumberingAfterBreak": 0 } },
+                { _attr: { "w:abstractNumId": 1, "w15:restartNumberingAfterBreak": 0 } },
                 { "w:multiLevelType": { _attr: { "w:val": "hybridMultilevel" } } },
             ]);
 

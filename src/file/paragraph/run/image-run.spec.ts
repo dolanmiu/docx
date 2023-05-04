@@ -124,7 +124,7 @@ describe("ImageRun", () => {
                                         "wp:docPr": {
                                             _attr: {
                                                 descr: "",
-                                                id: 0,
+                                                id: 1,
                                                 name: "",
                                                 title: "",
                                             },
@@ -376,7 +376,7 @@ describe("ImageRun", () => {
                                         "wp:docPr": {
                                             _attr: {
                                                 descr: "",
-                                                id: 0,
+                                                id: 1,
                                                 name: "",
                                                 title: "",
                                             },
@@ -632,7 +632,7 @@ describe("ImageRun", () => {
                                         "wp:docPr": {
                                             _attr: {
                                                 descr: "",
-                                                id: 0,
+                                                id: 1,
                                                 name: "",
                                                 title: "",
                                             },
@@ -891,7 +891,7 @@ describe("ImageRun", () => {
                                         "wp:docPr": {
                                             _attr: {
                                                 descr: "",
-                                                id: 0,
+                                                id: 1,
                                                 name: "",
                                                 title: "",
                                             },

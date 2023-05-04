@@ -5,15 +5,21 @@ export const convertMillimetersToTwip = (millimeters: number): number => Math.fl
 
 export const convertInchesToTwip = (inches: number): number => Math.floor(inches * 72 * 20);
 
-export const uniqueNumericIdCreator = (initial = 0): (() => number) => {
+export type UniqueNumericIdCreator = () => number;
+
+export const uniqueNumericIdCreator = (initial = 0): UniqueNumericIdCreator => {
     let currentCount = initial;
 
     return () => ++currentCount;
 };
 
-export const abstractNumUniqueNumericIdGen = () => uniqueNumericIdCreator();
-export const concreteNumUniqueNumericIdGen = () => uniqueNumericIdCreator(1); // Setting initial to 1 as we have numId = 1 for "default-bullet-numbering"
-export const docPropertiesUniqueNumericIdGen = () => uniqueNumericIdCreator();
-export const bookmarkUniqueNumericIdGen = () => uniqueNumericIdCreator();
+export const abstractNumUniqueNumericIdGen = (): UniqueNumericIdCreator => uniqueNumericIdCreator();
+
+// Setting initial to 1 as we have numId = 1 for "default-bullet-numbering"
+export const concreteNumUniqueNumericIdGen = (): UniqueNumericIdCreator => uniqueNumericIdCreator(1);
+
+export const docPropertiesUniqueNumericIdGen = (): UniqueNumericIdCreator => uniqueNumericIdCreator();
+
+export const bookmarkUniqueNumericIdGen = (): UniqueNumericIdCreator => uniqueNumericIdCreator();
 
 export const uniqueId = (): string => nanoid().toLowerCase();
