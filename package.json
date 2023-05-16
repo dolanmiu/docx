@@ -80,7 +80,7 @@
     "eslint": "^8.23.0",
     "eslint-plugin-functional": "^5.0.1",
     "eslint-plugin-import": "^2.26.0",
-    "eslint-plugin-jsdoc": "^40.0.0",
+    "eslint-plugin-jsdoc": "^44.2.4",
     "eslint-plugin-no-null": "^1.0.2",
     "eslint-plugin-prefer-arrow": "^1.2.3",
     "eslint-plugin-unicorn": "^46.0.0",
