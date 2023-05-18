@@ -95,7 +95,7 @@
     "replace-in-file": "^6.2.0",
     "request": "^2.88.0",
     "request-promise": "^4.2.2",
-    "rimraf": "^4.0.4",
+    "rimraf": "^5.0.1",
     "shelljs": "^0.8.4",
     "sinon": "^15.0.0",
     "stream-browserify": "^3.0.0",
