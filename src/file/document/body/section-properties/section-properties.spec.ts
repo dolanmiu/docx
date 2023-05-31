@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { expect } from "chai";
 
 import { Formatter } from "@export/formatter";
@@ -203,7 +204,7 @@ describe("SectionProperties", () => {
             });
             const tree = new Formatter().format(properties);
             expect(Object.keys(tree)).to.deep.equal(["w:sectPr"]);
-            const pgBorders = tree["w:sectPr"].find((item) => item["w:pgBorders"] !== undefined);
+            const pgBorders = tree["w:sectPr"].find((item: any) => item["w:pgBorders"] !== undefined);
             expect(pgBorders).to.deep.equal({
                 "w:pgBorders": { _attr: { "w:offsetFrom": "page" } },
             });
@@ -219,7 +220,7 @@ describe("SectionProperties", () => {
             });
             const tree = new Formatter().format(properties);
             expect(Object.keys(tree)).to.deep.equal(["w:sectPr"]);
-            const pgNumType = tree["w:sectPr"].find((item) => item["w:pgNumType"] !== undefined);
+            const pgNumType = tree["w:sectPr"].find((item: any) => item["w:pgNumType"] !== undefined);
             expect(pgNumType).to.deep.equal({
                 "w:pgNumType": { _attr: { "w:fmt": "upperRoman" } },
             });
@@ -229,7 +230,7 @@ describe("SectionProperties", () => {
             const properties = new SectionProperties({});
             const tree = new Formatter().format(properties);
             expect(Object.keys(tree)).to.deep.equal(["w:sectPr"]);
-            const pgNumType = tree["w:sectPr"].find((item) => item["w:pgNumType"] !== undefined);
+            const pgNumType = tree["w:sectPr"].find((item: any) => item["w:pgNumType"] !== undefined);
             expect(pgNumType).to.deep.equal({ "w:pgNumType": { _attr: {} } });
         });
 
@@ -239,7 +240,7 @@ describe("SectionProperties", () => {
             });
             const tree = new Formatter().format(properties);
             expect(Object.keys(tree)).to.deep.equal(["w:sectPr"]);
-            const type = tree["w:sectPr"].find((item) => item["w:type"] !== undefined);
+            const type = tree["w:sectPr"].find((item: any) => item["w:type"] !== undefined);
             expect(type).to.deep.equal({
                 "w:type": { _attr: { "w:val": "continuous" } },
             });
@@ -256,7 +257,7 @@ describe("SectionProperties", () => {
             });
             const tree = new Formatter().format(properties);
             expect(Object.keys(tree)).to.deep.equal(["w:sectPr"]);
-            const type = tree["w:sectPr"].find((item) => item["w:lnNumType"] !== undefined);
+            const type = tree["w:sectPr"].find((item: any) => item["w:lnNumType"] !== undefined);
             expect(type).to.deep.equal({
                 "w:lnNumType": { _attr: { "w:countBy": 2, "w:distance": 4, "w:restart": "continuous", "w:start": 2 } },
             });
@@ -270,7 +271,7 @@ describe("SectionProperties", () => {
             });
             const tree = new Formatter().format(properties);
             expect(Object.keys(tree)).to.deep.equal(["w:sectPr"]);
-            const type = tree["w:sectPr"].find((item) => item["w:textDirection"] !== undefined);
+            const type = tree["w:sectPr"].find((item: any) => item["w:textDirection"] !== undefined);
             expect(type).to.deep.equal({
                 "w:textDirection": { _attr: { "w:val": "tbRl" } },
             });

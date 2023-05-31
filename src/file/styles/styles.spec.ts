@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { expect } from "chai";
 
 import { Formatter } from "@export/formatter";
@@ -15,7 +16,7 @@ describe("Styles", () => {
                     },
                 ],
             });
-            const tree = new Formatter().format(styles)["w:styles"].filter((x) => !x._attr);
+            const tree = new Formatter().format(styles)["w:styles"].filter((x: any) => !x._attr);
             expect(tree).to.deep.equal([
                 {
                     "w:style": { _attr: { "w:type": "paragraph", "w:styleId": "pStyleId" } },
@@ -32,7 +33,7 @@ describe("Styles", () => {
                     },
                 ],
             });
-            const tree = new Formatter().format(styles)["w:styles"].filter((x) => !x._attr);
+            const tree = new Formatter().format(styles)["w:styles"].filter((x: any) => !x._attr);
             expect(tree).to.deep.equal([
                 {
                     "w:style": [
@@ -53,7 +54,7 @@ describe("Styles", () => {
                     },
                 ],
             });
-            const tree = new Formatter().format(styles)["w:styles"].filter((x) => !x._attr);
+            const tree = new Formatter().format(styles)["w:styles"].filter((x: any) => !x._attr);
             expect(tree).to.deep.equal([
                 {
                     "w:style": [
@@ -82,7 +83,7 @@ describe("Styles", () => {
                     },
                 ],
             });
-            const tree = new Formatter().format(styles)["w:styles"].filter((x) => !x._attr);
+            const tree = new Formatter().format(styles)["w:styles"].filter((x: any) => !x._attr);
             expect(tree).to.deep.equal([
                 {
                     "w:style": [

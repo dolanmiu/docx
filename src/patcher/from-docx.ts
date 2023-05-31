@@ -123,7 +123,8 @@ export const patchDocument = async (data: InputDataType, options: PatchDocumentO
                                 return element;
                             }
                         }),
-                    },
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    } as any,
                     patchText,
                     renderedParagraphs,
                     context,
