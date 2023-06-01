@@ -20,12 +20,12 @@ import { TextRun } from "./run";
 describe("Paragraph", () => {
     before(() => {
         stub(convenienceFunctions, "uniqueId").callsFake(() => "test-unique-id");
-        stub(convenienceFunctions, "bookmarkUniqueNumericId").callsFake(() => -101);
+        stub(convenienceFunctions, "bookmarkUniqueNumericIdGen").callsFake(() => () => -101);
     });
 
     after(() => {
         (convenienceFunctions.uniqueId as SinonStub).restore();
-        (convenienceFunctions.bookmarkUniqueNumericId as SinonStub).restore();
+        (convenienceFunctions.bookmarkUniqueNumericIdGen as SinonStub).restore();
     });
 
     describe("#constructor()", () => {
