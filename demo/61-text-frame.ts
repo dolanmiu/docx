@@ -11,7 +11,7 @@ import {
     Tab,
     TextRun,
     VerticalPositionAlign,
-} from "../build";
+} from "docx";
 
 const doc = new Document({
     sections: [

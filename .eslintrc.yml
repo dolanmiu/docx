@@ -5,7 +5,9 @@ env:
     node: true
 parser: "@typescript-eslint/parser"
 parserOptions:
-    project: tsconfig.json
+    project:
+        - tsconfig.json
+        - demo/tsconfig.json
     sourceType: module
 plugins:
     - eslint-plugin-import
@@ -226,6 +228,8 @@ rules:
     no-unused-vars:
         - error
         - argsIgnorePattern: ^[_]+$
+ignorePatterns:
+    - vite.config.ts
 overrides:
     - files:
           - "*.spec.ts"

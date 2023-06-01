@@ -2,20 +2,33 @@
   "name": "docx",
   "version": "8.0.3",
   "description": "Easily generate .docx files with JS/TS with a nice declarative API. Works for Node and on the Browser.",
-  "main": "build/index.js",
   "type": "module",
+  "main": "build/index.umd.cjs",
+  "module": "./build/index.js",
+  "types": "./build/index.d.ts",
+  "exports": {
+    ".": {
+      "browser": {
+        "default": "./build/index.umd.cjs"
+      },
+      "require": "./build/index.cjs",
+      "types": "./build/index.d.ts",
+      "import": "./build/index.js",
+      "default": "./build/index.js"
+    }
+  },
+  "files": [
+    "build"
+  ],
   "scripts": {
-    "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview",
     "pretest": "rimraf ./build",
     "test": "mocha --config=.mocharc.json",
     "test.coverage": "nyc npm test",
     "test.watch": "npm test -- --watch",
-    "prepublishOnly": "npm run build --production",
+    "prepublishOnly": "npm run build --omit=dev",
     "lint": "eslint --ext .ts src",
-    "webpack": "rimraf ./build && webpack --config ./webpack.config.ts",
-    "demo": "ts-node --esm ./demo/index.ts",
+    "demo": "ts-node --project demo/tsconfig.json ./demo/index.ts",
     "typedoc": "rimraf ./build && typedoc src/index.ts --tsconfig tsconfig.typedoc.json",
     "style": "prettier -l \"{src,scripts,demo}/**/*.{ts,html}\"",
     "style.fix": "npm run style -- --write",
@@ -24,14 +37,11 @@
     "e2e": "ts-node scripts/e2e.ts",
     "serve.docs": "cd docs && docsify serve",
     "extract": "ts-node --project tsconfig.spec.json scripts/extract-document.ts",
-    "ts-node": "ts-node --skip-project"
+    "ts-node": "ts-node --project demo/tsconfig.json"
   },
   "pre-commit": [
     "style",
     "lint"
-  ],
-  "files": [
-    "build"
   ],
   "repository": {
     "type": "git",
@@ -49,10 +59,10 @@
     "officegen",
     "clippy"
   ],
-  "types": "./build/index.d.ts",
   "dependencies": {
     "@types/node": "^18.0.0",
-    "jszip": "^3.1.5",
+    "fflate": "^0.8.0",
+    "jszip": "3.2.0",
     "nanoid": "^3.3.4",
     "xml": "^1.0.1",
     "xml-js": "^1.6.8"
@@ -101,7 +111,6 @@
     "request": "^2.88.0",
     "request-promise": "^4.2.2",
     "rimraf": "^4.0.4",
-    "shelljs": "^0.8.4",
     "sinon": "^15.0.0",
     "stream-browserify": "^3.0.0",
     "ts-loader": "^9.0.0",
@@ -112,6 +121,8 @@
     "typescript": "5.0.3",
     "unzipper": "^0.10.11",
     "vite": "^4.3.2",
+    "vite-plugin-dts": "^2.3.0",
+    "vite-plugin-node-polyfills": "^0.8.2",
     "vite-tsconfig-paths": "^4.2.0",
     "webpack": "^5.28.0",
     "webpack-cli": "^5.0.0"

@@ -1,17 +1,7 @@
 // Example on how to customize the look at feel using Styles
 // Import from 'docx' rather than '../build' if you install from npm
 import * as fs from "fs";
-import {
-    AlignmentType,
-    convertInchesToTwip,
-    Document,
-    HeadingLevel,
-    LevelFormat,
-    Packer,
-    Paragraph,
-    TextRun,
-    UnderlineType,
-} from "../build";
+import { AlignmentType, convertInchesToTwip, Document, HeadingLevel, LevelFormat, Packer, Paragraph, TextRun, UnderlineType } from "docx";
 
 const doc = new Document({
     creator: "Clippy",

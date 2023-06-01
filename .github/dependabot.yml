@@ -16,10 +16,6 @@ updates:
     - 14.14.29
     - 14.14.30
     - 15.0.0
-  - dependency-name: webpack
-    versions:
-    - 5.31.2
-    - 5.35.0
   - dependency-name: ts-loader
     versions:
     - 9.1.0
