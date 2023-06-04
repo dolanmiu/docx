@@ -1,7 +1,7 @@
 // Use fields to include dynamic text
-// Import from 'docx' rather than '../build' if you install from npm
+
 import * as fs from "fs";
-import { Bookmark, Document, Packer, Paragraph, SimpleField, TextRun } from "../build";
+import { Bookmark, Document, Packer, Paragraph, SimpleField, TextRun } from "docx";
 
 const doc = new Document({
     creator: "Me",

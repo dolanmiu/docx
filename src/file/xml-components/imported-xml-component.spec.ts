@@ -1,4 +1,4 @@
-import { expect } from "chai";
+import { beforeEach, describe, expect, it } from "vitest";
 import { Element, xml2js } from "xml-js";
 
 import { EMPTY_OBJECT } from "@file/xml-components";

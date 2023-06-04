@@ -1,5 +1,5 @@
 // tslint:disable:no-string-literal
-import { expect } from "chai";
+import { describe, expect, it } from "vitest";
 
 import { Formatter } from "@export/formatter";
 

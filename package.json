@@ -22,8 +22,7 @@
   ],
   "scripts": {
     "build": "tsc && vite build",
-    "pretest": "rimraf ./build",
-    "test": "mocha --config=.mocharc.json",
+    "test": "vitest",
     "test.coverage": "nyc npm test",
     "test.watch": "npm test -- --watch",
     "prepublishOnly": "npm run build --omit=dev",
@@ -124,6 +123,7 @@
     "vite-plugin-dts": "^2.3.0",
     "vite-plugin-node-polyfills": "^0.8.2",
     "vite-tsconfig-paths": "^4.2.0",
+    "vitest": "^0.31.4",
     "webpack": "^5.28.0",
     "webpack-cli": "^5.0.0"
   },

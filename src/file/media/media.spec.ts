@@ -1,18 +1,17 @@
 // tslint:disable:object-literal-key-quotes
-import { expect } from "chai";
-import { SinonStub, stub } from "sinon";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import * as convenienceFunctions from "@util/convenience-functions";
 
 import { Media } from "./media";
 
 describe("Media", () => {
-    before(() => {
-        stub(convenienceFunctions, "uniqueId").callsFake(() => "test");
+    beforeEach(() => {
+        vi.spyOn(convenienceFunctions, "uniqueId").mockReturnValue("test");
     });
 
-    after(() => {
-        (convenienceFunctions.uniqueId as SinonStub).restore();
+    afterEach(() => {
+        vi.resetAllMocks();
     });
 
     describe("#Array", () => {

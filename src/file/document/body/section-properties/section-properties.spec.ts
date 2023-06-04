@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { expect } from "chai";
+import { describe, expect, it } from "vitest";
 
 import { Formatter } from "@export/formatter";
 import { FooterWrapper } from "@file/footer-wrapper";

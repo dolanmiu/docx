@@ -1,7 +1,7 @@
 // Example demonstrating line numbers with suppression.
-// Import from 'docx' rather than '../build' if you install from npm
+
 import * as fs from "fs";
-import { Document, HeadingLevel, LineNumberRestartFormat, Packer, Paragraph } from "../build";
+import { Document, HeadingLevel, LineNumberRestartFormat, Packer, Paragraph } from "docx";
 
 const doc = new Document({
     sections: [

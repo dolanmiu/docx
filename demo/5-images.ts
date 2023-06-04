@@ -1,5 +1,5 @@
 // Example of how to add images to the document - You can use Buffers, UInt8Arrays or Base64 strings
-// Import from 'docx' rather than '../build' if you install from npm
+
 import * as fs from "fs";
 import {
     Document,
@@ -10,7 +10,7 @@ import {
     Paragraph,
     VerticalPositionAlign,
     VerticalPositionRelativeFrom,
-} from "../build";
+} from "docx";
 
 const doc = new Document({
     sections: [

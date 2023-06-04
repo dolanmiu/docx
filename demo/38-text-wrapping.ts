@@ -1,8 +1,8 @@
 // Example of how to "wrap" text around an image
-// Import from 'docx' rather than '../build' if you install from npm
+
 import * as fs from "fs";
-// import { Document, Packer, Paragraph } from "../build";
-import { Document, ImageRun, Packer, Paragraph, TextWrappingSide, TextWrappingType } from "../build";
+// import { Document, Packer, Paragraph } from "docx";
+import { Document, ImageRun, Packer, Paragraph, TextWrappingSide, TextWrappingType } from "docx";
 
 const doc = new Document({
     sections: [

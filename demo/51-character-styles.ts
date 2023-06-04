@@ -1,7 +1,7 @@
 // Custom character styles using JavaScript configuration
-// Import from 'docx' rather than '../build' if you install from npm
+
 import * as fs from "fs";
-import { Document, Packer, Paragraph, TextRun } from "../build";
+import { Document, Packer, Paragraph, TextRun } from "docx";
 
 const doc = new Document({
     styles: {

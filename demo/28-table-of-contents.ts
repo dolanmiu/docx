@@ -1,7 +1,7 @@
 // Table of contents
-// Import from 'docx' rather than '../build' if you install from npm
+
 import * as fs from "fs";
-import { File, HeadingLevel, Packer, Paragraph, StyleLevel, TableOfContents } from "../build";
+import { File, HeadingLevel, Packer, Paragraph, StyleLevel, TableOfContents } from "docx";
 
 // WordprocessingML docs for TableOfContents can be found here:
 // http://officeopenxml.com/WPtableOfContents.php

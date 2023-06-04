@@ -1,5 +1,5 @@
 // Simple example to add text to a document
-// Import from 'docx' rather than '../build' if you install from npm
+
 import * as fs from "fs";
 import {
     Document,
@@ -21,7 +21,7 @@ import {
     Packer,
     Paragraph,
     TextRun,
-} from "../build";
+} from "docx";
 
 const doc = new Document({
     sections: [

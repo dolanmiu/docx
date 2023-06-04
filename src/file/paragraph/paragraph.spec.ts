@@ -1,5 +1,4 @@
-import { assert, expect } from "chai";
-import { SinonStub, stub } from "sinon";
+import { afterEach, assert, beforeEach, describe, expect, it, vi } from "vitest";
 
 import * as convenienceFunctions from "@util/convenience-functions";
 
@@ -18,14 +17,13 @@ import { Paragraph } from "./paragraph";
 import { TextRun } from "./run";
 
 describe("Paragraph", () => {
-    before(() => {
-        stub(convenienceFunctions, "uniqueId").callsFake(() => "test-unique-id");
-        stub(convenienceFunctions, "bookmarkUniqueNumericIdGen").callsFake(() => () => -101);
+    beforeEach(() => {
+        vi.spyOn(convenienceFunctions, "uniqueId").mockReturnValue("test-unique-id");
+        vi.spyOn(convenienceFunctions, "bookmarkUniqueNumericIdGen").mockReturnValue(() => -101);
     });
 
-    after(() => {
-        (convenienceFunctions.uniqueId as SinonStub).restore();
-        (convenienceFunctions.bookmarkUniqueNumericIdGen as SinonStub).restore();
+    afterEach(() => {
+        vi.restoreAllMocks();
     });
 
     describe("#constructor()", () => {

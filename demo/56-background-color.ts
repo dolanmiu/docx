@@ -1,7 +1,7 @@
 // Change background colour of whole document
-// Import from 'docx' rather than '../build' if you install from npm
+
 import * as fs from "fs";
-import { Document, Packer, Paragraph, Tab, TextRun } from "../build";
+import { Document, Packer, Paragraph, Tab, TextRun } from "docx";
 
 const doc = new Document({
     background: {

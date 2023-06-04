@@ -1,3 +1,4 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as chai from "chai";
 import * as sinon from "sinon";
 import JSZip from "jszip";
@@ -8,7 +9,6 @@ import { ExternalHyperlink, ImageRun, Paragraph, TextRun } from "@file/paragraph
 import { patchDocument, PatchType } from "./from-docx";
 
 chai.use(chaiAsPromised);
-const { expect } = chai;
 
 const MOCK_XML = `
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -220,7 +220,7 @@ describe("from-docx", () => {
             });
 
             afterEach(() => {
-                (JSZip.loadAsync as unknown as sinon.SinonStub).restore();
+                vi.restoreAllMocks();
             });
 
             it("should patch the document", async () => {
@@ -306,7 +306,7 @@ describe("from-docx", () => {
             });
 
             afterEach(() => {
-                (JSZip.loadAsync as unknown as sinon.SinonStub).restore();
+                vi.restoreAllMocks();
             });
 
             it("should use the relationships file rather than create one", async () => {
@@ -350,7 +350,7 @@ describe("from-docx", () => {
             });
 
             afterEach(() => {
-                (JSZip.loadAsync as unknown as sinon.SinonStub).restore();
+                vi.restoreAllMocks();
             });
 
             it("should throw an error if the content types is not found", () =>
@@ -388,7 +388,7 @@ describe("from-docx", () => {
             });
 
             afterEach(() => {
-                (JSZip.loadAsync as unknown as sinon.SinonStub).restore();
+                vi.restoreAllMocks();
             });
 
             it("should throw an error if the content types is not found", () =>

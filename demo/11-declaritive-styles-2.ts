@@ -1,5 +1,5 @@
 // Setting styles with JavaScript configuration
-// Import from 'docx' rather than '../build' if you install from npm
+
 import * as fs from "fs";
 import {
     AlignmentType,
@@ -16,7 +16,7 @@ import {
     TabStopPosition,
     UnderlineType,
     LevelFormat,
-} from "../build";
+} from "docx";
 
 const table = new Table({
     rows: [

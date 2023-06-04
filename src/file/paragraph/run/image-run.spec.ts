@@ -1,5 +1,4 @@
-import { expect } from "chai";
-import { SinonStub, stub } from "sinon";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 import { Formatter } from "@export/formatter";
 import { IViewWrapper } from "@file/document-wrapper";
@@ -9,12 +8,12 @@ import * as convenienceFunctions from "@util/convenience-functions";
 import { ImageRun } from "./image-run";
 
 describe("ImageRun", () => {
-    before(() => {
-        stub(convenienceFunctions, "uniqueId").callsFake(() => "test-unique-id");
+    beforeAll(() => {
+        vi.spyOn(convenienceFunctions, "uniqueId").mockReturnValue("test-unique-id");
     });
 
-    after(() => {
-        (convenienceFunctions.uniqueId as SinonStub).restore();
+    afterAll(() => {
+        vi.resetAllMocks();
     });
 
     describe("#constructor()", () => {

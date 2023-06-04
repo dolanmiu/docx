@@ -1,7 +1,7 @@
 // Example of how to set the document to landscape
-// Import from 'docx' rather than '../build' if you install from npm
+
 import * as fs from "fs";
-import { Document, Packer, PageOrientation, Paragraph } from "../build";
+import { Document, Packer, PageOrientation, Paragraph } from "docx";
 
 const doc = new Document({
     sections: [

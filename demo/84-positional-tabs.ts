@@ -1,5 +1,5 @@
 // Simple example apply positional tabs to a document
-// Import from 'docx' rather than '../build' if you install from npm
+
 import * as fs from "fs";
 import {
     Document,
@@ -11,7 +11,7 @@ import {
     PositionalTabAlignment,
     PositionalTabRelativeTo,
     PositionalTabLeader,
-} from "../build";
+} from "docx";
 
 const doc = new Document({
     sections: [

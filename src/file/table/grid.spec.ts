@@ -1,4 +1,4 @@
-import { expect } from "chai";
+import { describe, expect, it } from "vitest";
 
 import { EMPTY_OBJECT } from "@file/xml-components";
 import { Formatter } from "@export/formatter";

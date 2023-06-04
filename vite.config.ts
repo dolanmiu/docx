@@ -1,4 +1,4 @@
-import { defineConfig } from "vite";
+import { defineConfig } from "vitest/config";
 import { resolve } from "path";
 import tsconfigPaths from "vite-tsconfig-paths";
 import dts from "vite-plugin-dts";

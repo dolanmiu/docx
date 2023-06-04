@@ -1,7 +1,7 @@
 // Generate a CV
-// Import from 'docx' rather than '../build' if you install from npm
+
 import * as fs from "fs";
-import { AlignmentType, Document, HeadingLevel, Packer, Paragraph, Tab, TabStopPosition, TabStopType, TextRun } from "../build";
+import { AlignmentType, Document, HeadingLevel, Packer, Paragraph, Tab, TabStopPosition, TabStopType, TextRun } from "docx";
 
 // tslint:disable:no-shadowed-variable
 

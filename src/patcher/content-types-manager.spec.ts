@@ -1,4 +1,4 @@
-import { expect } from "chai";
+import { describe, expect, it } from "vitest";
 import { appendContentType } from "./content-types-manager";
 
 describe("content-types-manager", () => {

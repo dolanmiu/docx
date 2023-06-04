@@ -1,5 +1,5 @@
 import { TargetModeType } from "@file/relationships/relationship/relationship";
-import { expect } from "chai";
+import { describe, expect, it } from "vitest";
 
 import { appendRelationship, getNextRelationshipIndex } from "./relationship-manager";
 

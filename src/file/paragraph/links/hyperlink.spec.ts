@@ -1,4 +1,4 @@
-import { expect } from "chai";
+import { beforeEach, describe, expect, it } from "vitest";
 
 import { Formatter } from "@export/formatter";
 

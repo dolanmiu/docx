@@ -1,4 +1,4 @@
-import { assert } from "chai";
+import { assert, beforeEach, describe, it } from "vitest";
 
 import { Utility } from "tests/utility";
 

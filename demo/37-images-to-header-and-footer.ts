@@ -1,7 +1,7 @@
 // Add images to header and footer
-// Import from 'docx' rather than '../build' if you install from npm
+
 import * as fs from "fs";
-import { Document, Header, ImageRun, Packer, Paragraph } from "../build";
+import { Document, Header, ImageRun, Packer, Paragraph } from "docx";
 
 const doc = new Document({
     sections: [

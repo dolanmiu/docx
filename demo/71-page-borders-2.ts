@@ -1,7 +1,7 @@
 // Example demonstrating page borders with style, colors and size
-// Import from 'docx' rather than '../build' if you install from npm
+
 import * as fs from "fs";
-import { Document, Packer, TextRun, Paragraph, BorderStyle, PageBorderDisplay, PageBorderOffsetFrom, PageBorderZOrder } from "../build";
+import { Document, Packer, TextRun, Paragraph, BorderStyle, PageBorderDisplay, PageBorderOffsetFrom, PageBorderZOrder } from "docx";
 
 const doc = new Document({
     sections: [

@@ -1,4 +1,4 @@
-import { expect } from "chai";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import * as sinon from "sinon";
 
 import { Formatter } from "@export/formatter";

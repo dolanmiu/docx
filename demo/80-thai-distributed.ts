@@ -1,7 +1,7 @@
 // Simple example to add text to a document
-// Import from 'docx' rather than '../build' if you install from npm
+
 import * as fs from "fs";
-import { AlignmentType, convertMillimetersToTwip, Document, Packer, Paragraph, TextRun } from "../build";
+import { AlignmentType, convertMillimetersToTwip, Document, Packer, Paragraph, TextRun } from "docx";
 
 const doc = new Document({
     styles: {

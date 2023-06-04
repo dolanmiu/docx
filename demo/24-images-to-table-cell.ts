@@ -1,7 +1,7 @@
 // Add image to table cell
-// Import from 'docx' rather than '../build' if you install from npm
+
 import * as fs from "fs";
-import { Document, ImageRun, Packer, Paragraph, Table, TableCell, TableRow } from "../build";
+import { Document, ImageRun, Packer, Paragraph, Table, TableCell, TableRow } from "docx";
 
 const doc = new Document({
     sections: [

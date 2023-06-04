@@ -2,7 +2,7 @@ import { IViewWrapper } from "@file/document-wrapper";
 import { File } from "@file/file";
 import { Paragraph, TextRun } from "@file/paragraph";
 import { IContext } from "@file/xml-components";
-import { expect } from "chai";
+import { describe, expect, it } from "vitest";
 import * as sinon from "sinon";
 
 import { PatchType } from "./from-docx";

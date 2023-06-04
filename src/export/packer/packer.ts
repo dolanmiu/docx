@@ -51,15 +51,12 @@ export class Packer {
 
     public static toStream(file: File, prettify?: boolean | PrettifyType): Stream {
         const zip = this.compiler.compile(file, prettify === true ? PrettifyType.WITH_2_BLANKS : prettify === false ? undefined : prettify);
-
         const stream = new Stream();
-        // eslint-disable-next-line functional/immutable-data
-        stream.pipe = (dest) => {
-            zip.then((z) => {
-                dest.write(z);
-            });
-            return dest;
-        };
+
+        zip.then((z) => {
+            stream.emit("data", z);
+            stream.emit("end");
+        });
 
         return stream;
     }
