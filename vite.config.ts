@@ -33,4 +33,7 @@ export default defineConfig({
             include: [/node_modules/],
         },
     },
+    test: {
+        environment: "jsdom",
+    },
 });

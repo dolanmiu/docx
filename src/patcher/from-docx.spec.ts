@@ -1,6 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as chai from "chai";
-import * as sinon from "sinon";
 import JSZip from "jszip";
 import chaiAsPromised from "chai-as-promised";
 
@@ -207,15 +206,14 @@ describe("from-docx", () => {
     describe("patchDocument", () => {
         describe("document.xml and [Content_Types].xml", () => {
             beforeEach(() => {
-                sinon.stub(JSZip, "loadAsync").callsFake(
-                    () =>
-                        new Promise<JSZip>((resolve) => {
-                            const zip = new JSZip();
+                vi.spyOn(JSZip, "loadAsync").mockReturnValue(
+                    new Promise<JSZip>((resolve) => {
+                        const zip = new JSZip();
 
-                            zip.file("word/document.xml", MOCK_XML);
-                            zip.file("[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`);
-                            resolve(zip);
-                        }),
+                        zip.file("word/document.xml", MOCK_XML);
+                        zip.file("[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`);
+                        resolve(zip);
+                    }),
                 );
             });
 
@@ -292,16 +290,15 @@ describe("from-docx", () => {
 
         describe("document.xml and [Content_Types].xml with relationships", () => {
             beforeEach(() => {
-                sinon.stub(JSZip, "loadAsync").callsFake(
-                    () =>
-                        new Promise<JSZip>((resolve) => {
-                            const zip = new JSZip();
+                vi.spyOn(JSZip, "loadAsync").mockReturnValue(
+                    new Promise<JSZip>((resolve) => {
+                        const zip = new JSZip();
 
-                            zip.file("word/document.xml", MOCK_XML);
-                            zip.file("word/_rels/document.xml.rels", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`);
-                            zip.file("[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`);
-                            resolve(zip);
-                        }),
+                        zip.file("word/document.xml", MOCK_XML);
+                        zip.file("word/_rels/document.xml.rels", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`);
+                        zip.file("[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`);
+                        resolve(zip);
+                    }),
                 );
             });
 
@@ -338,14 +335,13 @@ describe("from-docx", () => {
 
         describe("document.xml", () => {
             beforeEach(() => {
-                sinon.stub(JSZip, "loadAsync").callsFake(
-                    () =>
-                        new Promise<JSZip>((resolve) => {
-                            const zip = new JSZip();
+                vi.spyOn(JSZip, "loadAsync").mockReturnValue(
+                    new Promise<JSZip>((resolve) => {
+                        const zip = new JSZip();
 
-                            zip.file("word/document.xml", MOCK_XML);
-                            resolve(zip);
-                        }),
+                        zip.file("word/document.xml", MOCK_XML);
+                        resolve(zip);
+                    }),
                 );
             });
 
@@ -374,16 +370,15 @@ describe("from-docx", () => {
 
         describe("Images", () => {
             beforeEach(() => {
-                sinon.stub(JSZip, "loadAsync").callsFake(
-                    () =>
-                        new Promise<JSZip>((resolve) => {
-                            const zip = new JSZip();
+                vi.spyOn(JSZip, "loadAsync").mockReturnValue(
+                    new Promise<JSZip>((resolve) => {
+                        const zip = new JSZip();
 
-                            zip.file("word/document.xml", MOCK_XML);
-                            zip.file("word/document.bmp", "");
+                        zip.file("word/document.xml", MOCK_XML);
+                        zip.file("word/document.bmp", "");
 
-                            resolve(zip);
-                        }),
+                        resolve(zip);
+                    }),
                 );
             });
 
