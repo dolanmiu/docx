@@ -1,133 +1,117 @@
 {
-  "name": "docx",
-  "version": "8.0.4",
-  "description": "Easily generate .docx files with JS/TS with a nice declarative API. Works for Node and on the Browser.",
-  "type": "module",
-  "main": "build/index.umd.cjs",
-  "module": "./build/index.js",
-  "types": "./build/index.d.ts",
-  "exports": {
-    ".": {
-      "browser": {
-        "default": "./build/index.umd.cjs"
-      },
-      "require": "./build/index.cjs",
-      "types": "./build/index.d.ts",
-      "import": "./build/index.js",
-      "default": "./build/index.js"
+    "name": "docx",
+    "version": "8.0.4",
+    "description": "Easily generate .docx files with JS/TS with a nice declarative API. Works for Node and on the Browser.",
+    "type": "module",
+    "main": "build/index.umd.cjs",
+    "module": "./build/index.js",
+    "types": "./build/index.d.ts",
+    "exports": {
+        ".": {
+            "browser": {
+                "default": "./build/index.umd.cjs"
+            },
+            "require": "./build/index.cjs",
+            "types": "./build/index.d.ts",
+            "import": "./build/index.js",
+            "default": "./build/index.js"
+        }
+    },
+    "files": [
+        "build"
+    ],
+    "scripts": {
+        "build": "tsc && vite build",
+        "test": "vitest run",
+        "test.coverage": "nyc npm test",
+        "test.watch": "vitest",
+        "prepublishOnly": "npm run build --omit=dev",
+        "lint": "eslint --ext .ts src",
+        "predemo": "npm run build",
+        "demo": "ts-node --project demo/tsconfig.json ./demo/index.ts",
+        "typedoc": "typedoc src/index.ts --tsconfig tsconfig.typedoc.json",
+        "style": "prettier -l \"{src,scripts,demo}/**/*.{ts,html}\"",
+        "style.fix": "npm run style -- --write",
+        "cspell": "cspell \"{src,demo,docs,scripts}/**/*.{ts,scss,html,md}\" && cspell \"./*.*\"",
+        "serve.docs": "cd docs && docsify serve",
+        "extract": "ts-node scripts/extract-document.ts",
+        "ts-node": "ts-node --project demo/tsconfig.json"
+    },
+    "pre-commit": [
+        "style",
+        "lint"
+    ],
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/dolanmiu/docx.git"
+    },
+    "keywords": [
+        "docx",
+        "office",
+        "word",
+        "generate",
+        "creator",
+        "create",
+        "document",
+        "doc",
+        "officegen",
+        "clippy"
+    ],
+    "dependencies": {
+        "@types/node": "^18.0.0",
+        "fflate": "^0.8.0",
+        "jszip": "^3.10.1",
+        "nanoid": "^3.3.4",
+        "xml": "^1.0.1",
+        "xml-js": "^1.6.8"
+    },
+    "author": "Dolan Miu",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/dolanmiu/docx/issues"
+    },
+    "homepage": "https://docx.js.org",
+    "devDependencies": {
+        "@types/chai": "^4.2.15",
+        "@types/chai-as-promised": "^7.1.5",
+        "@types/inquirer": "^9.0.3",
+        "@types/prompt": "^1.1.1",
+        "@types/unzipper": "^0.10.4",
+        "@types/xml": "^1.0.8",
+        "@typescript-eslint/eslint-plugin": "^5.36.1",
+        "@typescript-eslint/parser": "^5.36.1",
+        "chai": "^4.3.6",
+        "chai-as-promised": "^7.1.1",
+        "cspell": "^6.2.2",
+        "docsify-cli": "^4.3.0",
+        "eslint": "^8.23.0",
+        "eslint-plugin-functional": "^5.0.8",
+        "eslint-plugin-import": "^2.26.0",
+        "eslint-plugin-jsdoc": "^40.0.0",
+        "eslint-plugin-no-null": "^1.0.2",
+        "eslint-plugin-prefer-arrow": "^1.2.3",
+        "eslint-plugin-unicorn": "^46.0.0",
+        "execa": "^7.1.1",
+        "glob": "^9.3.0",
+        "inquirer": "^9.2.7",
+        "jsdom": "^22.1.0",
+        "nyc": "^15.1.0",
+        "pre-commit": "^1.2.2",
+        "prettier": "^2.3.1",
+        "process": "^0.11.10",
+        "prompt": "^1.0.0",
+        "ts-node": "^10.2.1",
+        "tsconfig-paths": "^4.0.0",
+        "typedoc": "^0.23.2",
+        "typescript": "5.0.3",
+        "unzipper": "^0.10.11",
+        "vite": "^4.3.2",
+        "vite-plugin-dts": "^2.3.0",
+        "vite-plugin-node-polyfills": "^0.8.2",
+        "vite-tsconfig-paths": "^4.2.0",
+        "vitest": "^0.31.4"
+    },
+    "engines": {
+        "node": ">=10"
     }
-  },
-  "files": [
-    "build"
-  ],
-  "scripts": {
-    "build": "tsc && vite build",
-    "test": "vitest",
-    "test.coverage": "nyc npm test",
-    "test.watch": "npm test -- --watch",
-    "prepublishOnly": "npm run build --omit=dev",
-    "lint": "eslint --ext .ts src",
-    "demo": "ts-node --project demo/tsconfig.json ./demo/index.ts",
-    "typedoc": "rimraf ./build && typedoc src/index.ts --tsconfig tsconfig.typedoc.json",
-    "style": "prettier -l \"{src,scripts,demo}/**/*.{ts,html}\"",
-    "style.fix": "npm run style -- --write",
-    "cspell": "cspell \"{src,demo,docs,scripts}/**/*.{ts,scss,html,md}\" && cspell \"./*.*\"",
-    "e2e": "ts-node scripts/e2e.ts",
-    "serve.docs": "cd docs && docsify serve",
-    "extract": "ts-node --project tsconfig.spec.json scripts/extract-document.ts",
-    "ts-node": "ts-node --project demo/tsconfig.json"
-  },
-  "pre-commit": [
-    "style",
-    "lint"
-  ],
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/dolanmiu/docx.git"
-  },
-  "keywords": [
-    "docx",
-    "office",
-    "word",
-    "generate",
-    "creator",
-    "create",
-    "document",
-    "doc",
-    "officegen",
-    "clippy"
-  ],
-  "dependencies": {
-    "@types/node": "^18.0.0",
-    "fflate": "^0.8.0",
-    "jszip": "3.2.0",
-    "nanoid": "^3.3.4",
-    "xml": "^1.0.1",
-    "xml-js": "^1.6.8"
-  },
-  "author": "Dolan Miu",
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/dolanmiu/docx/issues"
-  },
-  "homepage": "https://docx.js.org",
-  "devDependencies": {
-    "@types/chai": "^4.2.15",
-    "@types/chai-as-promised": "^7.1.5",
-    "@types/mocha": "^10.0.0",
-    "@types/prompt": "^1.1.1",
-    "@types/request-promise": "^4.1.42",
-    "@types/shelljs": "^0.8.11",
-    "@types/sinon": "^10.0.0",
-    "@types/unzipper": "^0.10.4",
-    "@types/webpack": "^5.0.0",
-    "@types/xml": "^1.0.8",
-    "@typescript-eslint/eslint-plugin": "^5.36.1",
-    "@typescript-eslint/parser": "^5.36.1",
-    "buffer": "^6.0.3",
-    "chai": "^4.3.6",
-    "chai-as-promised": "^7.1.1",
-    "cspell": "^6.2.2",
-    "docsify-cli": "^4.3.0",
-    "eslint": "^8.23.0",
-    "eslint-plugin-functional": "^5.0.1",
-    "eslint-plugin-import": "^2.26.0",
-    "eslint-plugin-jsdoc": "^40.0.0",
-    "eslint-plugin-no-null": "^1.0.2",
-    "eslint-plugin-prefer-arrow": "^1.2.3",
-    "eslint-plugin-unicorn": "^46.0.0",
-    "execa": "^7.1.1",
-    "glob": "^9.3.0",
-    "jsdom": "^22.1.0",
-    "jszip": "^3.1.5",
-    "mocha": "^10.0.0",
-    "nyc": "^15.1.0",
-    "pre-commit": "^1.2.2",
-    "prettier": "^2.3.1",
-    "process": "^0.11.10",
-    "prompt": "^1.0.0",
-    "replace-in-file": "^6.2.0",
-    "request": "^2.88.0",
-    "request-promise": "^4.2.2",
-    "rimraf": "^4.0.4",
-    "sinon": "^15.0.0",
-    "stream-browserify": "^3.0.0",
-    "ts-loader": "^9.0.0",
-    "ts-node": "^10.2.1",
-    "tsconfig-paths": "^4.0.0",
-    "tsconfig-paths-webpack-plugin": "^4.0.0",
-    "typedoc": "^0.23.2",
-    "typescript": "5.0.3",
-    "unzipper": "^0.10.11",
-    "vite": "^4.3.2",
-    "vite-plugin-dts": "^2.3.0",
-    "vite-plugin-node-polyfills": "^0.8.2",
-    "vite-tsconfig-paths": "^4.2.0",
-    "vitest": "^0.31.4",
-    "webpack": "^5.28.0",
-    "webpack-cli": "^5.0.0"
-  },
-  "engines": {
-    "node": ">=10"
-  }
 }

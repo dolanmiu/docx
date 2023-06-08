@@ -1,34 +1,53 @@
 /* eslint-disable no-console */
 import fs from "fs";
-import prompt, { Schema } from "prompt";
+import path from "path";
+import inquirer from "inquirer";
 import { $ } from "execa";
 
-console.log("What demo do you wish to run? (Enter a number)");
-
-const schema: Schema = {
-    properties: {
-        demoNumber: {
-            pattern: /^[0-9]+$/,
-            message: "Please enter a number.",
-            required: true,
-        },
-    },
+export type Answers = {
+    type: "list" | "number";
+    demoNumber?: number;
+    demoFile?: number;
 };
 
-prompt.start();
+const dir = "./demo";
+const fileNames = fs.readdirSync(dir);
 
-prompt.get(schema, async (_, result) => {
-    const demoNumber = result.demoNumber as string;
-    const files = fs.readdirSync("./demo").filter((fn) => fn.startsWith(demoNumber));
+const keys = fileNames.map((f) => path.parse(f).name);
 
-    if (files.length === 0) {
-        console.error(`demo number ${demoNumber} does not exist`);
-        return;
-    }
+const answers = await inquirer.prompt<Answers>([
+    {
+        type: "list",
+        name: "type",
+        message: "Select demo from a list or via number",
+        choices: ["list", "number"],
+    },
+    {
+        type: "list",
+        name: "demoFile",
+        message: "What demo do you wish to run?",
+        choices: keys,
+        filter: (input) => parseInt(input.split("-")[0]),
+        when: (answers) => answers.type === "list",
+    },
+    {
+        type: "number",
+        name: "demoNumber",
+        message: "What demo do you wish to run? (Enter a number)",
+        default: 1,
+        when: (answers) => answers.type === "number",
+    },
+]);
 
-    const filePath = `./demo/${files[0]}`;
+const demoNumber = answers.demoNumber ?? answers.demoFile ?? 1;
+const files = fs.readdirSync(dir).filter((fn) => fn.startsWith(demoNumber.toString()));
+
+if (files.length === 0) {
+    console.error(`demo number ${demoNumber} does not exist`);
+} else {
+    const filePath = path.join(dir, files[0]);
 
     console.log(`Running demo ${demoNumber}: ${files[0]}`);
     await $`ts-node --project demo/tsconfig.json ${filePath}`;
     console.log("Successfully created document!");
-});
+}

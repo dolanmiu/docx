@@ -2,8 +2,7 @@ import { IViewWrapper } from "@file/document-wrapper";
 import { File } from "@file/file";
 import { Paragraph, TextRun } from "@file/paragraph";
 import { IContext } from "@file/xml-components";
-import { describe, expect, it } from "vitest";
-import * as sinon from "sinon";
+import { describe, expect, it, vi } from "vitest";
 
 import { PatchType } from "./from-docx";
 
@@ -63,7 +62,8 @@ describe("replacer", () => {
                 },
                 "hello",
                 [],
-                sinon.mock() as unknown as IContext,
+                // eslint-disable-next-line functional/prefer-readonly-type
+                vi.fn<[], IContext>()(),
             );
 
             expect(output).to.deep.equal({

@@ -1,5 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import * as sinon from "sinon";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { Formatter } from "@export/formatter";
 
@@ -43,15 +42,15 @@ describe("CommentReference", () => {
 });
 
 describe("Comment", () => {
-    let clock: sinon.SinonFakeTimers;
-
     beforeEach(() => {
         const now = new Date("1999-01-01T00:00:00.000Z");
-        clock = sinon.useFakeTimers(now.getTime());
+        vi.useFakeTimers({
+            now: now.getTime(),
+        });
     });
 
     afterEach(() => {
-        clock.restore();
+        vi.restoreAllMocks();
     });
 
     describe("#constructor()", () => {

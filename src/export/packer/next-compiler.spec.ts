@@ -1,6 +1,5 @@
 /* tslint:disable:typedef space-before-function-paren */
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import * as sinon from "sinon";
 import * as fflate from "fflate";
 
 import { File } from "@file/file";
@@ -140,10 +139,10 @@ describe("Compiler", () => {
             });
 
             // tslint:disable-next-line: no-string-literal
-            const spy = sinon.spy(compiler["formatter"], "format");
+            const spy = vi.spyOn(compiler["formatter"], "format");
 
             compiler.compile(file);
-            expect(spy.callCount).to.equal(13);
+            expect(spy).toBeCalledTimes(13);
         });
 
         it("should work with media datas", () => {
@@ -179,8 +178,7 @@ describe("Compiler", () => {
                 ],
             });
 
-            // tslint:disable-next-line: no-string-literal
-            sinon.stub(compiler["imageReplacer"], "getMediaData").returns([
+            vi.spyOn(compiler["imageReplacer"], "getMediaData").mockReturnValue([
                 {
                     stream: Buffer.from(""),
                     fileName: "test",
