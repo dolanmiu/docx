@@ -22,7 +22,7 @@
 <ul class="tsd-hierarchy">
 <li><span class="target">IParagraphStyleOptions</span></li></ul></li></ul></section><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/33332bc/src/file/styles/style/paragraph-style.ts#L10">src/file/styles/style/paragraph-style.ts:10</a></li></ul></aside>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/9137907/src/file/styles/style/paragraph-style.ts#L10">src/file/styles/style/paragraph-style.ts:10</a></li></ul></aside>
 <section class="tsd-panel-group tsd-index-group">
 <section class="tsd-panel tsd-index-panel">
 <details class="tsd-index-content tsd-index-accordion" open><summary class="tsd-accordion-summary tsd-index-summary">
@@ -33,7 +33,7 @@
 <div class="tsd-index-list"><a href="IParagraphStyleOptions.html#basedOn" class="tsd-index-link tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><rect fill="var(--color-icon-background)" stroke="#FF984D" stroke-width="1.5" x="1" y="1" width="22" height="22" rx="12" id="icon-1024-path"></rect><path d="M9.354 16V7.24H12.174C12.99 7.24 13.638 7.476 14.118 7.948C14.606 8.412 14.85 9.036 14.85 9.82C14.85 10.604 14.606 11.232 14.118 11.704C13.638 12.168 12.99 12.4 12.174 12.4H10.434V16H9.354ZM10.434 11.428H12.174C12.646 11.428 13.022 11.284 13.302 10.996C13.59 10.7 13.734 10.308 13.734 9.82C13.734 9.324 13.59 8.932 13.302 8.644C13.022 8.356 12.646 8.212 12.174 8.212H10.434V11.428Z" fill="var(--color-text)" id="icon-1024-text"></path></svg><span>based<wbr/>On?</span></a>
 <a href="IParagraphStyleOptions.html#id" class="tsd-index-link tsd-kind-property tsd-parent-kind-interface"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>id</span></a>
 <a href="IParagraphStyleOptions.html#link" class="tsd-index-link tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>link?</span></a>
-<a href="IParagraphStyleOptions.html#name" class="tsd-index-link tsd-kind-property tsd-parent-kind-interface"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>name?</span></a>
+<a href="IParagraphStyleOptions.html#name" class="tsd-index-link tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>name?</span></a>
 <a href="IParagraphStyleOptions.html#next" class="tsd-index-link tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>next?</span></a>
 <a href="IParagraphStyleOptions.html#paragraph" class="tsd-index-link tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>paragraph?</span></a>
 <a href="IParagraphStyleOptions.html#quickFormat" class="tsd-index-link tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>quick<wbr/>Format?</span></a>
@@ -46,69 +46,74 @@
 <h2>Properties</h2>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><a id="basedOn" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagOptional">Optional</code> <code class="tsd-tag ts-flagReadonly">Readonly</code> <span>based<wbr/>On</span><a href="#basedOn" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none" id="icon-anchor-a"></path><path d="M10 14a3.5 3.5 0 0 0 5 0l4 -4a3.5 3.5 0 0 0 -5 -5l-.5 .5" id="icon-anchor-b"></path><path d="M14 10a3.5 3.5 0 0 0 -5 0l-4 4a3.5 3.5 0 0 0 5 5l.5 -.5" id="icon-anchor-c"></path></svg></a></h3>
-<div class="tsd-signature">based<wbr/>On<span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span></div><aside class="tsd-sources">
+<div class="tsd-signature">based<wbr/>On<span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span></div>
+<div class="tsd-comment tsd-typography"><p>Specifies the style upon which the current style is based-that is, the style from which the current style inherits. It is the mechanism for implementing style inheritance.
+Note that if the type of the current style must match the type of the style upon which it is based or the basedOn element will be ignored.
+However, if the current style is a numbering style, then the <code>basedOn</code> element is ignored.</p>
+<p><strong>WARNING</strong>: You cannot set <code>basedOn</code> to be the same as <code>name</code>. This is akin to inheriting from itself. This creates a cyclic dependency and cause undesirable behavior.</p>
+</div><aside class="tsd-sources">
 <p>Inherited from <a href="IBaseParagraphStyleOptions.html">IBaseParagraphStyleOptions</a>.<a href="IBaseParagraphStyleOptions.html#basedOn">basedOn</a></p>
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/33332bc/src/file/styles/style/style.ts#L44">src/file/styles/style/style.ts:44</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/9137907/src/file/styles/style/style.ts#L51">src/file/styles/style/style.ts:51</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface"><a id="id" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagReadonly">Readonly</code> <span>id</span><a href="#id" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <div class="tsd-signature">id<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/33332bc/src/file/styles/style/paragraph-style.ts#L11">src/file/styles/style/paragraph-style.ts:11</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/9137907/src/file/styles/style/paragraph-style.ts#L11">src/file/styles/style/paragraph-style.ts:11</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><a id="link" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagOptional">Optional</code> <code class="tsd-tag ts-flagReadonly">Readonly</code> <span>link</span><a href="#link" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <div class="tsd-signature">link<span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span></div><aside class="tsd-sources">
 <p>Inherited from <a href="IBaseParagraphStyleOptions.html">IBaseParagraphStyleOptions</a>.<a href="IBaseParagraphStyleOptions.html#link">link</a></p>
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/33332bc/src/file/styles/style/style.ts#L46">src/file/styles/style/style.ts:46</a></li></ul></aside></section>
-<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface"><a id="name" class="tsd-anchor"></a>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/9137907/src/file/styles/style/style.ts#L53">src/file/styles/style/style.ts:53</a></li></ul></aside></section>
+<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><a id="name" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagOptional">Optional</code> <code class="tsd-tag ts-flagReadonly">Readonly</code> <span>name</span><a href="#name" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <div class="tsd-signature">name<span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span></div><aside class="tsd-sources">
-<p>Overrides <a href="IBaseParagraphStyleOptions.html">IBaseParagraphStyleOptions</a>.<a href="IBaseParagraphStyleOptions.html#name">name</a></p>
+<p>Inherited from <a href="IBaseParagraphStyleOptions.html">IBaseParagraphStyleOptions</a>.<a href="IBaseParagraphStyleOptions.html#name">name</a></p>
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/33332bc/src/file/styles/style/paragraph-style.ts#L12">src/file/styles/style/paragraph-style.ts:12</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/9137907/src/file/styles/style/style.ts#L43">src/file/styles/style/style.ts:43</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><a id="next" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagOptional">Optional</code> <code class="tsd-tag ts-flagReadonly">Readonly</code> <span>next</span><a href="#next" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <div class="tsd-signature">next<span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span></div><aside class="tsd-sources">
 <p>Inherited from <a href="IBaseParagraphStyleOptions.html">IBaseParagraphStyleOptions</a>.<a href="IBaseParagraphStyleOptions.html#next">next</a></p>
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/33332bc/src/file/styles/style/style.ts#L45">src/file/styles/style/style.ts:45</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/9137907/src/file/styles/style/style.ts#L52">src/file/styles/style/style.ts:52</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><a id="paragraph" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagOptional">Optional</code> <code class="tsd-tag ts-flagReadonly">Readonly</code> <span>paragraph</span><a href="#paragraph" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <div class="tsd-signature">paragraph<span class="tsd-signature-symbol">?:</span> <a href="IParagraphStylePropertiesOptions.html" class="tsd-signature-type" data-tsd-kind="Interface">IParagraphStylePropertiesOptions</a></div><aside class="tsd-sources">
 <p>Inherited from <a href="IBaseParagraphStyleOptions.html">IBaseParagraphStyleOptions</a>.<a href="IBaseParagraphStyleOptions.html#paragraph">paragraph</a></p>
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/33332bc/src/file/styles/style/paragraph-style.ts#L6">src/file/styles/style/paragraph-style.ts:6</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/9137907/src/file/styles/style/paragraph-style.ts#L6">src/file/styles/style/paragraph-style.ts:6</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><a id="quickFormat" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagOptional">Optional</code> <code class="tsd-tag ts-flagReadonly">Readonly</code> <span>quick<wbr/>Format</span><a href="#quickFormat" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <div class="tsd-signature">quick<wbr/>Format<span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">boolean</span></div><aside class="tsd-sources">
 <p>Inherited from <a href="IBaseParagraphStyleOptions.html">IBaseParagraphStyleOptions</a>.<a href="IBaseParagraphStyleOptions.html#quickFormat">quickFormat</a></p>
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/33332bc/src/file/styles/style/style.ts#L50">src/file/styles/style/style.ts:50</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/9137907/src/file/styles/style/style.ts#L57">src/file/styles/style/style.ts:57</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><a id="run" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagOptional">Optional</code> <code class="tsd-tag ts-flagReadonly">Readonly</code> <span>run</span><a href="#run" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <div class="tsd-signature">run<span class="tsd-signature-symbol">?:</span> <a href="IRunStylePropertiesOptions.html" class="tsd-signature-type" data-tsd-kind="Interface">IRunStylePropertiesOptions</a></div><aside class="tsd-sources">
 <p>Inherited from <a href="IBaseParagraphStyleOptions.html">IBaseParagraphStyleOptions</a>.<a href="IBaseParagraphStyleOptions.html#run">run</a></p>
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/33332bc/src/file/styles/style/paragraph-style.ts#L7">src/file/styles/style/paragraph-style.ts:7</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/9137907/src/file/styles/style/paragraph-style.ts#L7">src/file/styles/style/paragraph-style.ts:7</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><a id="semiHidden" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagOptional">Optional</code> <code class="tsd-tag ts-flagReadonly">Readonly</code> <span>semi<wbr/>Hidden</span><a href="#semiHidden" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <div class="tsd-signature">semi<wbr/>Hidden<span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">boolean</span></div><aside class="tsd-sources">
 <p>Inherited from <a href="IBaseParagraphStyleOptions.html">IBaseParagraphStyleOptions</a>.<a href="IBaseParagraphStyleOptions.html#semiHidden">semiHidden</a></p>
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/33332bc/src/file/styles/style/style.ts#L48">src/file/styles/style/style.ts:48</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/9137907/src/file/styles/style/style.ts#L55">src/file/styles/style/style.ts:55</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><a id="uiPriority" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagOptional">Optional</code> <code class="tsd-tag ts-flagReadonly">Readonly</code> <span>ui<wbr/>Priority</span><a href="#uiPriority" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <div class="tsd-signature">ui<wbr/>Priority<span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">number</span></div><aside class="tsd-sources">
 <p>Inherited from <a href="IBaseParagraphStyleOptions.html">IBaseParagraphStyleOptions</a>.<a href="IBaseParagraphStyleOptions.html#uiPriority">uiPriority</a></p>
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/33332bc/src/file/styles/style/style.ts#L47">src/file/styles/style/style.ts:47</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/9137907/src/file/styles/style/style.ts#L54">src/file/styles/style/style.ts:54</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><a id="unhideWhenUsed" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagOptional">Optional</code> <code class="tsd-tag ts-flagReadonly">Readonly</code> <span>unhide<wbr/>When<wbr/>Used</span><a href="#unhideWhenUsed" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <div class="tsd-signature">unhide<wbr/>When<wbr/>Used<span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">boolean</span></div><aside class="tsd-sources">
 <p>Inherited from <a href="IBaseParagraphStyleOptions.html">IBaseParagraphStyleOptions</a>.<a href="IBaseParagraphStyleOptions.html#unhideWhenUsed">unhideWhenUsed</a></p>
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/33332bc/src/file/styles/style/style.ts#L49">src/file/styles/style/style.ts:49</a></li></ul></aside></section></section></div>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/9137907/src/file/styles/style/style.ts#L56">src/file/styles/style/style.ts:56</a></li></ul></aside></section></section></div>
 <div class="col-4 col-menu menu-sticky-wrap menu-highlight">
 <div class="tsd-navigation settings">
 <details class="tsd-index-accordion"><summary class="tsd-accordion-summary">
@@ -135,7 +140,7 @@
 <li class="tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><a href="IParagraphStyleOptions.html#basedOn" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>based<wbr/>On?</a></li>
 <li class="tsd-kind-property tsd-parent-kind-interface"><a href="IParagraphStyleOptions.html#id" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>id</a></li>
 <li class="tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><a href="IParagraphStyleOptions.html#link" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>link?</a></li>
-<li class="tsd-kind-property tsd-parent-kind-interface"><a href="IParagraphStyleOptions.html#name" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>name?</a></li>
+<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><a href="IParagraphStyleOptions.html#name" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>name?</a></li>
 <li class="tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><a href="IParagraphStyleOptions.html#next" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>next?</a></li>
 <li class="tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><a href="IParagraphStyleOptions.html#paragraph" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>paragraph?</a></li>
 <li class="tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><a href="IParagraphStyleOptions.html#quickFormat" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>quick<wbr/>Format?</a></li>
