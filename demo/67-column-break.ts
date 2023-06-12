@@ -1,7 +1,7 @@
 // Section with 2 columns including a column break
-// Import from 'docx' rather than '../build' if you install from npm
+
 import * as fs from "fs";
-import { Document, Packer, Paragraph, ColumnBreak, TextRun } from "../build";
+import { Document, Packer, Paragraph, ColumnBreak, TextRun } from "docx";
 
 const doc = new Document({
     sections: [

@@ -1,7 +1,7 @@
 // Example on how to preserve word wrap text. Works with all languages.
-// Import from 'docx' rather than '../build' if you install from npm
+
 import * as fs from "fs";
-import { Document, Packer, Paragraph, TextRun, SpaceType } from "../build";
+import { Document, Packer, Paragraph, TextRun } from "docx";
 
 const doc = new Document({
     sections: [

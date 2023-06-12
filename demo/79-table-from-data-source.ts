@@ -1,5 +1,5 @@
 // Example of how you would create a table and add data to it from a data source
-// Import from 'docx' rather than '../build' if you install from npm
+
 import * as fs from "fs";
 import {
     Document,
@@ -13,7 +13,7 @@ import {
     TextDirection,
     TextRun,
     WidthType,
-} from "../build";
+} from "docx";
 
 interface StockPrice {
     readonly date: Date;

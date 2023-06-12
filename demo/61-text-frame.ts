@@ -1,5 +1,5 @@
 // Text Frame (Text Box) example
-// Import from 'docx' rather than '../build' if you install from npm
+
 import * as fs from "fs";
 import {
     BorderStyle,
@@ -11,7 +11,7 @@ import {
     Tab,
     TextRun,
     VerticalPositionAlign,
-} from "../build";
+} from "docx";
 
 const doc = new Document({
     sections: [

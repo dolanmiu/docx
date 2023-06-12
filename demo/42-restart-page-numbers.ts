@@ -1,7 +1,7 @@
 // Page numbers - Start from 0 on a new section
-// Import from 'docx' rather than '../build' if you install from npm
+
 import * as fs from "fs";
-import { AlignmentType, Document, Header, Packer, PageBreak, PageNumber, PageNumberSeparator, Paragraph, TextRun } from "../build";
+import { AlignmentType, Document, Header, Packer, PageBreak, PageNumber, PageNumberSeparator, Paragraph, TextRun } from "docx";
 
 const doc = new Document({
     sections: [

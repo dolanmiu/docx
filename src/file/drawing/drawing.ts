@@ -26,18 +26,16 @@ export interface IDrawingOptions {
 // </xsd:complexType>
 
 export class Drawing extends XmlComponent {
-    private readonly inline: Inline;
-
     public constructor(imageData: IMediaData, drawingOptions: IDrawingOptions = {}) {
         super("w:drawing");
 
         if (!drawingOptions.floating) {
-            this.inline = new Inline({
+            const inline = new Inline({
                 mediaData: imageData,
                 transform: imageData.transformation,
                 docProperties: drawingOptions.docProperties,
             });
-            this.root.push(this.inline);
+            this.root.push(inline);
         } else {
             this.root.push(new Anchor(imageData, imageData.transformation, drawingOptions));
         }

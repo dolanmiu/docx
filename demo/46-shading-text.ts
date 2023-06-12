@@ -1,7 +1,7 @@
 // Shading text
-// Import from 'docx' rather than '../build' if you install from npm
+
 import * as fs from "fs";
-import { AlignmentType, Document, Header, Packer, Paragraph, ShadingType, TextRun } from "../build";
+import { AlignmentType, Document, Header, Packer, Paragraph, ShadingType, TextRun } from "docx";
 
 const doc = new Document({
     sections: [

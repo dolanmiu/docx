@@ -1,14 +1,9 @@
-import * as chai from "chai";
-import * as sinon from "sinon";
-import * as JSZip from "jszip";
-import * as chaiAsPromised from "chai-as-promised";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import JSZip from "jszip";
 
 import { ExternalHyperlink, ImageRun, Paragraph, TextRun } from "@file/paragraph";
 
 import { patchDocument, PatchType } from "./from-docx";
-
-chai.use(chaiAsPromised);
-const { expect } = chai;
 
 const MOCK_XML = `
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -207,20 +202,19 @@ describe("from-docx", () => {
     describe("patchDocument", () => {
         describe("document.xml and [Content_Types].xml", () => {
             beforeEach(() => {
-                sinon.stub(JSZip, "loadAsync").callsFake(
-                    () =>
-                        new Promise<JSZip>((resolve) => {
-                            const zip = new JSZip();
+                vi.spyOn(JSZip, "loadAsync").mockReturnValue(
+                    new Promise<JSZip>((resolve) => {
+                        const zip = new JSZip();
 
-                            zip.file("word/document.xml", MOCK_XML);
-                            zip.file("[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`);
-                            resolve(zip);
-                        }),
+                        zip.file("word/document.xml", MOCK_XML);
+                        zip.file("[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`);
+                        resolve(zip);
+                    }),
                 );
             });
 
             afterEach(() => {
-                (JSZip.loadAsync as unknown as sinon.SinonStub).restore();
+                vi.restoreAllMocks();
             });
 
             it("should patch the document", async () => {
@@ -292,21 +286,20 @@ describe("from-docx", () => {
 
         describe("document.xml and [Content_Types].xml with relationships", () => {
             beforeEach(() => {
-                sinon.stub(JSZip, "loadAsync").callsFake(
-                    () =>
-                        new Promise<JSZip>((resolve) => {
-                            const zip = new JSZip();
+                vi.spyOn(JSZip, "loadAsync").mockReturnValue(
+                    new Promise<JSZip>((resolve) => {
+                        const zip = new JSZip();
 
-                            zip.file("word/document.xml", MOCK_XML);
-                            zip.file("word/_rels/document.xml.rels", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`);
-                            zip.file("[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`);
-                            resolve(zip);
-                        }),
+                        zip.file("word/document.xml", MOCK_XML);
+                        zip.file("word/_rels/document.xml.rels", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`);
+                        zip.file("[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`);
+                        resolve(zip);
+                    }),
                 );
             });
 
             afterEach(() => {
-                (JSZip.loadAsync as unknown as sinon.SinonStub).restore();
+                vi.restoreAllMocks();
             });
 
             it("should use the relationships file rather than create one", async () => {
@@ -338,19 +331,18 @@ describe("from-docx", () => {
 
         describe("document.xml", () => {
             beforeEach(() => {
-                sinon.stub(JSZip, "loadAsync").callsFake(
-                    () =>
-                        new Promise<JSZip>((resolve) => {
-                            const zip = new JSZip();
+                vi.spyOn(JSZip, "loadAsync").mockReturnValue(
+                    new Promise<JSZip>((resolve) => {
+                        const zip = new JSZip();
 
-                            zip.file("word/document.xml", MOCK_XML);
-                            resolve(zip);
-                        }),
+                        zip.file("word/document.xml", MOCK_XML);
+                        resolve(zip);
+                    }),
                 );
             });
 
             afterEach(() => {
-                (JSZip.loadAsync as unknown as sinon.SinonStub).restore();
+                vi.restoreAllMocks();
             });
 
             it("should throw an error if the content types is not found", () =>
@@ -369,26 +361,25 @@ describe("from-docx", () => {
                             },
                         },
                     }),
-                ).to.eventually.be.rejected);
+                ).rejects.toThrowError());
         });
 
         describe("Images", () => {
             beforeEach(() => {
-                sinon.stub(JSZip, "loadAsync").callsFake(
-                    () =>
-                        new Promise<JSZip>((resolve) => {
-                            const zip = new JSZip();
+                vi.spyOn(JSZip, "loadAsync").mockReturnValue(
+                    new Promise<JSZip>((resolve) => {
+                        const zip = new JSZip();
 
-                            zip.file("word/document.xml", MOCK_XML);
-                            zip.file("word/document.bmp", "");
+                        zip.file("word/document.xml", MOCK_XML);
+                        zip.file("word/document.bmp", "");
 
-                            resolve(zip);
-                        }),
+                        resolve(zip);
+                    }),
                 );
             });
 
             afterEach(() => {
-                (JSZip.loadAsync as unknown as sinon.SinonStub).restore();
+                vi.restoreAllMocks();
             });
 
             it("should throw an error if the content types is not found", () =>
@@ -407,7 +398,7 @@ describe("from-docx", () => {
                             },
                         },
                     }),
-                ).to.eventually.be.rejected);
+                ).rejects.toThrowError());
         });
     });
 });

@@ -3,9 +3,8 @@
 // to the document in Word after the document has been generated. Standard properties (such as creator, title
 // and subject) cover typical use cases, but sometimes custom properties are required.
 
-// Import from 'docx' rather than '../build' if you install from npm
 import * as fs from "fs";
-import { Document, Packer } from "../build";
+import { Document, Packer } from "docx";
 
 const doc = new Document(
     // Standard properties

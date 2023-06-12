@@ -5,36 +5,3 @@ updates:
   schedule:
     interval: daily
   open-pull-requests-limit: 10
-  ignore:
-  - dependency-name: "@types/node"
-    versions:
-    - 14.14.22
-    - 14.14.24
-    - 14.14.25
-    - 14.14.26
-    - 14.14.28
-    - 14.14.29
-    - 14.14.30
-    - 15.0.0
-  - dependency-name: webpack
-    versions:
-    - 5.31.2
-    - 5.35.0
-  - dependency-name: ts-loader
-    versions:
-    - 9.1.0
-  - dependency-name: awesome-typescript-loader
-    versions:
-    - 5.2.1
-  - dependency-name: chai
-    versions:
-    - 4.2.0
-    - 4.3.0
-    - 4.3.1
-    - 4.3.3
-  - dependency-name: replace-in-file
-    versions:
-    - 6.1.0
-  - dependency-name: "@types/chai"
-    versions:
-    - 4.2.14

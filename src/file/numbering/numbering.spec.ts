@@ -1,4 +1,4 @@
-import { expect } from "chai";
+import { describe, expect, it } from "vitest";
 
 import { Formatter } from "@export/formatter";
 
@@ -13,7 +13,8 @@ describe("Numbering", () => {
 
             const tree = new Formatter().format(numbering);
             expect(Object.keys(tree)).to.deep.equal(["w:numbering"]);
-            const abstractNums = tree["w:numbering"].filter((el) => el["w:abstractNum"]);
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const abstractNums: readonly any[] = tree["w:numbering"].filter((el: any) => el["w:abstractNum"]);
             expect(abstractNums).to.have.lengthOf(1);
             expect(abstractNums[0]["w:abstractNum"]).to.deep.include.members([
                 { _attr: { "w:abstractNumId": 1, "w15:restartNumberingAfterBreak": 0 } },

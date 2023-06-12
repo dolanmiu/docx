@@ -29,7 +29,8 @@ export interface INumberingOptions {
 export class Numbering extends XmlComponent {
     private readonly abstractNumberingMap = new Map<string, AbstractNumbering>();
     private readonly concreteNumberingMap = new Map<string, ConcreteNumbering>();
-    private readonly referenceConfigMap = new Map<string, object>();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    private readonly referenceConfigMap = new Map<string, Record<string, any>>();
     private readonly abstractNumUniqueNumericId = abstractNumUniqueNumericIdGen();
     private readonly concreteNumUniqueNumericId = concreteNumUniqueNumericIdGen();
 
@@ -233,7 +234,8 @@ export class Numbering extends XmlComponent {
     public get ConcreteNumbering(): readonly ConcreteNumbering[] {
         return Array.from(this.concreteNumberingMap.values());
     }
-    public get ReferenceConfig(): readonly object[] {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    public get ReferenceConfig(): readonly Record<string, any>[] {
         return Array.from(this.referenceConfigMap.values());
     }
 }

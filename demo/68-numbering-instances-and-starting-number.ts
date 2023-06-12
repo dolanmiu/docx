@@ -1,5 +1,5 @@
 import * as fs from "fs";
-import { Document, Packer, Paragraph, LevelFormat } from "../build";
+import { Document, Packer, Paragraph, LevelFormat } from "docx";
 
 const doc = new Document({
     numbering: {

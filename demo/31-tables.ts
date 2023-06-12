@@ -1,7 +1,7 @@
 // Example of how you would create a table and add data to it
-// Import from 'docx' rather than '../build' if you install from npm
+
 import * as fs from "fs";
-import { Document, HeadingLevel, Packer, Paragraph, Table, TableCell, TableRow, VerticalAlign, TextDirection } from "../build";
+import { Document, HeadingLevel, Packer, Paragraph, Table, TableCell, TableRow, VerticalAlign, TextDirection } from "docx";
 
 const doc = new Document({
     sections: [

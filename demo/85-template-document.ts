@@ -1,5 +1,5 @@
 // Patch a document with patches
-// Import from 'docx' rather than '../build' if you install from npm
+
 import * as fs from "fs";
 import {
     ExternalHyperlink,
@@ -14,7 +14,7 @@ import {
     TextDirection,
     TextRun,
     VerticalAlign,
-} from "../build";
+} from "docx";
 
 patchDocument(fs.readFileSync("demo/assets/simple-template.docx"), {
     patches: {

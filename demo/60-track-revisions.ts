@@ -1,5 +1,5 @@
 // Track Revisions aka. "Track Changes"
-// Import from 'docx' rather than '../build' if you install from npm
+
 import * as fs from "fs";
 import {
     AlignmentType,
@@ -14,7 +14,7 @@ import {
     ShadingType,
     Tab,
     TextRun,
-} from "../build";
+} from "docx";
 
 /*
     For reference, see

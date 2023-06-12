@@ -1,7 +1,7 @@
 // Add custom borders to table cell
-// Import from 'docx' rather than '../build' if you install from npm
+
 import * as fs from "fs";
-import { BorderStyle, Document, Packer, Paragraph, Table, TableCell, TableRow } from "../build";
+import { BorderStyle, Document, Packer, Paragraph, Table, TableCell, TableRow } from "docx";
 
 const doc = new Document({
     sections: [

@@ -1,7 +1,7 @@
 // Example of using headers and footers in a new section
-// Import from 'docx' rather than '../build' if you install from npm
+
 import * as fs from "fs";
-import { Document, Footer, Header, Packer, Paragraph, SectionType, Tab, TextRun } from "../build";
+import { Document, Footer, Header, Packer, Paragraph, TextRun } from "docx";
 
 const doc = new Document({
     creator: "Creator",

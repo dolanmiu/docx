@@ -1,5 +1,5 @@
 // Example of how you would create a table with float positions
-// Import from 'docx' rather than '../build' if you install from npm
+
 import * as fs from "fs";
 import {
     Document,
@@ -14,7 +14,7 @@ import {
     TableLayoutType,
     TableRow,
     WidthType,
-} from "../build";
+} from "docx";
 
 const table = new Table({
     rows: [

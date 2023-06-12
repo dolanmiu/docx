@@ -191,9 +191,13 @@ Please write a test of every file you make and suffix it with `.spec.ts`.
 Here is a template of a test:
 
 ```ts
-import { assert } from "chai";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 describe("ClassName", () => {
+    afterEach(() => {
+        // TODO
+    });
+
     beforeEach(() => {
         // TODO
     });

@@ -1,4 +1,4 @@
-import * as JSZip from "jszip";
+import JSZip from "jszip";
 import { Element, js2xml } from "xml-js";
 
 import { ConcreteHyperlink, ExternalHyperlink, ParagraphChild } from "@file/paragraph";
@@ -123,7 +123,8 @@ export const patchDocument = async (data: InputDataType, options: PatchDocumentO
                                 return element;
                             }
                         }),
-                    },
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    } as any,
                     patchText,
                     renderedParagraphs,
                     context,

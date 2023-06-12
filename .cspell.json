@@ -4,13 +4,7 @@
     "version": "0.2",
     // language - current active spelling language
     "language": "en_US",
-    "dictionaries": [
-        "en_US",
-        "typescript",
-        "softwareTerms",
-        "fonts",
-        "npm"
-    ],
+    "dictionaries": ["en_US", "typescript", "softwareTerms", "fonts", "npm"],
     // words - list of words to be always considered correct
     "words": [
         "Abjad",
@@ -21,13 +15,17 @@
         "datas",
         "docsify",
         "dolan",
+        "execa",
         "falsey",
+        "iife",
         "Initializable",
         "iroha",
         "jsonify",
         "jszip",
         "NUMPAGES",
         "odttf",
+        "ondata",
+        "onfile",
         "ooxml",
         "panose",
         "rels",
@@ -57,15 +55,10 @@
         "/<element name=\"[a-z]+\"/gi",
         "/<attribute name=\"[a-z]+\"/gi"
     ],
-    "ignorePaths": [
-        "package.json",
-        "docs/api"
-    ],
+    "ignorePaths": ["package.json", "docs/api", "*.docx", "build"],
     "allowCompoundWords": true,
     // flagWords - list of words to be always considered incorrect
     // This is useful for offensive words and common spelling errors.
     // For example "hte" should be "the"
-    "flagWords": [
-        "hte"
-    ]
+    "flagWords": ["hte"]
 }

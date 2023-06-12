@@ -1,7 +1,7 @@
 // Sections with multiple columns
-// Import from 'docx' rather than '../build' if you install from npm
+
 import * as fs from "fs";
-import { Column, Document, Packer, Paragraph } from "../build";
+import { Column, Document, Packer, Paragraph } from "docx";
 
 const doc = new Document({
     sections: [

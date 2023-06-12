@@ -1,6 +1,6 @@
 // Example of how you would merge cells together (Rows and Columns) and apply shading
 // Also includes an example on how to center tables
-// Import from 'docx' rather than '../build' if you install from npm
+
 import * as fs from "fs";
 import {
     AlignmentType,
@@ -15,7 +15,7 @@ import {
     TableCell,
     TableRow,
     WidthType,
-} from "../build";
+} from "docx";
 
 const table = new Table({
     rows: [

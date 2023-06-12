@@ -1,7 +1,7 @@
 // Multiple sections and headers
-// Import from 'docx' rather than '../build' if you install from npm
+
 import * as fs from "fs";
-import { Document, Footer, Header, Packer, PageNumber, NumberFormat, PageOrientation, Paragraph, TextRun } from "../build";
+import { Document, Footer, Header, Packer, PageNumber, NumberFormat, PageOrientation, Paragraph, TextRun } from "docx";
 
 const doc = new Document({
     sections: [

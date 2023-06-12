@@ -1,5 +1,4 @@
-import { expect } from "chai";
-import * as sinon from "sinon";
+import { describe, expect, it, vi } from "vitest";
 
 import { FooterWrapper } from "./footer-wrapper";
 import { Media } from "./media";
@@ -10,15 +9,15 @@ describe("FooterWrapper", () => {
     describe("#add", () => {
         it("should call the underlying footer's addParagraph", () => {
             const file = new FooterWrapper(new Media(), 1);
-            const spy = sinon.spy(file.View, "add");
+            const spy = vi.spyOn(file.View, "add");
             file.add(new Paragraph({}));
 
-            expect(spy.called).to.equal(true);
+            expect(spy).toBeCalled();
         });
 
         it("should call the underlying footer's addParagraph", () => {
             const file = new FooterWrapper(new Media(), 1);
-            const spy = sinon.spy(file.View, "add");
+            const spy = vi.spyOn(file.View, "add");
             file.add(
                 new Table({
                     rows: [
@@ -33,18 +32,18 @@ describe("FooterWrapper", () => {
                 }),
             );
 
-            expect(spy.called).to.equal(true);
+            expect(spy).toBeCalled();
         });
     });
 
     describe("#addChildElement", () => {
         it("should call the underlying footer's addChildElement", () => {
             const file = new FooterWrapper(new Media(), 1);
-            const spy = sinon.spy(file.View, "addChildElement");
+            const spy = vi.spyOn(file.View, "addChildElement");
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             file.addChildElement({} as any);
 
-            expect(spy.called).to.equal(true);
+            expect(spy).toBeCalled();
         });
     });
 

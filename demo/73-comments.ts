@@ -1,7 +1,7 @@
 // Simple example to add comments to a document
-// Import from 'docx' rather than '../build' if you install from npm
+
 import * as fs from "fs";
-import { Document, Packer, Paragraph, TextRun, CommentRangeStart, CommentRangeEnd, CommentReference } from "../build";
+import { Document, Packer, Paragraph, TextRun, CommentRangeStart, CommentRangeEnd, CommentReference } from "docx";
 
 const doc = new Document({
     comments: {

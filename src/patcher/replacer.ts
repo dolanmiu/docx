@@ -1,5 +1,5 @@
 import { Element } from "xml-js";
-import * as xml from "xml";
+import xml from "xml";
 
 import { Formatter } from "@export/formatter";
 import { IContext, XmlComponent } from "@file/xml-components";

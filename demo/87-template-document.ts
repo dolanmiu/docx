@@ -1,7 +1,7 @@
 // Patch a document with patches
-// Import from 'docx' rather than '../build' if you install from npm
+
 import * as fs from "fs";
-import { patchDocument, PatchType, TextRun } from "../build";
+import { patchDocument, PatchType, TextRun } from "docx";
 
 patchDocument(fs.readFileSync("demo/assets/simple-template-2.docx"), {
     patches: {

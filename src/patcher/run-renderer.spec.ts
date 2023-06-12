@@ -1,4 +1,4 @@
-import { expect } from "chai";
+import { describe, expect, it } from "vitest";
 import { renderParagraphNode } from "./run-renderer";
 
 describe("run-renderer", () => {

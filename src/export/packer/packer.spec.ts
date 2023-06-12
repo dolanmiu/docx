@@ -1,11 +1,9 @@
-/* tslint:disable:typedef space-before-function-paren */
-import { assert } from "chai";
-import { mock, stub } from "sinon";
+import { afterEach, assert, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { File } from "@file/file";
 import { HeadingLevel, Paragraph } from "@file/paragraph";
 
-import { Packer } from "./packer";
+import { Packer, PrettifyType } from "./packer";
 
 describe("Packer", () => {
     let file: File;
@@ -37,6 +35,39 @@ describe("Packer", () => {
         });
     });
 
+    describe("prettify", () => {
+        afterEach(() => {
+            vi.restoreAllMocks();
+        });
+
+        it("should use a default prettify value", async () => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const spy = vi.spyOn((Packer as any).compiler, "compile");
+
+            await Packer.toString(file, true);
+
+            expect(spy).toBeCalledWith(expect.anything(), PrettifyType.WITH_2_BLANKS);
+        });
+
+        it("should use a prettify value", async () => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const spy = vi.spyOn((Packer as any).compiler, "compile");
+
+            await Packer.toString(file, PrettifyType.WITH_4_BLANKS);
+
+            expect(spy).toBeCalledWith(expect.anything(), PrettifyType.WITH_4_BLANKS);
+        });
+
+        it("should use an undefined prettify value", async () => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const spy = vi.spyOn((Packer as any).compiler, "compile");
+
+            await Packer.toString(file, false);
+
+            expect(spy).toBeCalledWith(expect.anything(), undefined);
+        });
+    });
+
     describe("#toString()", () => {
         it("should return a non-empty string", async () => {
             const result = await Packer.toString(file);
@@ -46,62 +77,71 @@ describe("Packer", () => {
     });
 
     describe("#toBuffer()", () => {
-        it("should create a standard docx file", async function () {
-            this.timeout(99999999);
-            const buffer = await Packer.toBuffer(file);
+        it(
+            "should create a standard docx file",
+            async () => {
+                const buffer = await Packer.toBuffer(file);
 
-            assert.isDefined(buffer);
-            assert.isTrue(buffer.byteLength > 0);
-        });
+                assert.isDefined(buffer);
+                assert.isTrue(buffer.byteLength > 0);
+            },
+            {
+                timeout: 99999999,
+            },
+        );
 
         it("should handle exception if it throws any", () => {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const compiler = stub((Packer as any).compiler, "compile");
+            vi.spyOn((Packer as any).compiler, "compile").mockImplementation(() => {
+                throw new Error();
+            });
 
-            compiler.throwsException();
             return Packer.toBuffer(file).catch((error) => {
                 assert.isDefined(error);
             });
         });
 
-        after(() => {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (Packer as any).compiler.compile.restore();
+        afterEach(() => {
+            vi.restoreAllMocks();
         });
     });
 
     describe("#toBase64String()", () => {
-        it("should create a standard docx file", async function () {
-            this.timeout(99999999);
-            const str = await Packer.toBase64String(file);
-
-            assert.isDefined(str);
-            assert.isTrue(str.length > 0);
-        });
+        it(
+            "should create a standard docx file",
+            async () => {
+                const str = await Packer.toBase64String(file);
+                expect(str).toBeDefined();
+                expect(str.length).toBeGreaterThan(0);
+            },
+            {
+                timeout: 99999999,
+            },
+        );
 
         it("should handle exception if it throws any", () => {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const compiler = stub((Packer as any).compiler, "compile");
+            vi.spyOn((Packer as any).compiler, "compile").mockImplementation(() => {
+                throw new Error();
+            });
 
-            compiler.throwsException();
             return Packer.toBase64String(file).catch((error) => {
                 assert.isDefined(error);
             });
         });
 
-        after(() => {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (Packer as any).compiler.compile.restore();
+        afterEach(() => {
+            vi.resetAllMocks();
         });
     });
 
     describe("#toBlob()", () => {
         it("should create a standard docx file", async () => {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            stub((Packer as any).compiler, "compile").callsFake(() => ({
+            vi.spyOn((Packer as any).compiler, "compile").mockReturnValue({
                 // tslint:disable-next-line: no-empty
-                generateAsync: () => mock({}),
-            }));
+                generateAsync: () => vi.fn(),
+            });
             const str = await Packer.toBlob(file);
 
             assert.isDefined(str);
@@ -109,35 +149,30 @@ describe("Packer", () => {
 
         it("should handle exception if it throws any", () => {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const compiler = stub((Packer as any).compiler, "compile");
+            vi.spyOn((Packer as any).compiler, "compile").mockImplementation(() => {
+                throw new Error();
+            });
 
-            compiler.throwsException();
             return Packer.toBlob(file).catch((error) => {
                 assert.isDefined(error);
             });
         });
 
         afterEach(() => {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (Packer as any).compiler.compile.restore();
+            vi.resetAllMocks();
         });
     });
 
     describe("#toStream()", () => {
         it("should create a standard docx file", async () => {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            stub((Packer as any).compiler, "compile").callsFake(() => ({
+            vi.spyOn((Packer as any).compiler, "compile").mockReturnValue({
                 // tslint:disable-next-line: no-empty
-                generateNodeStream: () => ({
-                    on: (event: string, cb: () => void) => {
-                        if (event === "end") {
-                            cb();
-                        }
-                    },
-                }),
-            }));
-            const stream = await Packer.toStream(file);
-            return new Promise((resolve, reject) => {
+                generateAsync: () => Promise.resolve(vi.fn()),
+            });
+            const stream = Packer.toStream(file);
+
+            const p = new Promise<void>((resolve, reject) => {
                 stream.on("error", () => {
                     reject(new Error());
                 });
@@ -146,20 +181,15 @@ describe("Packer", () => {
                     resolve();
                 });
             });
+            await p;
         });
 
         it("should handle exception if it throws any", () => {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const compiler = stub((Packer as any).compiler, "compile").callsFake(() => ({
-                // tslint:disable-next-line: no-empty
-                on: (event: string, cb: () => void) => {
-                    if (event === "error") {
-                        cb();
-                    }
-                },
-            }));
+            vi.spyOn((Packer as any).compiler, "compile").mockImplementation(() => {
+                throw new Error();
+            });
 
-            compiler.throwsException();
             try {
                 Packer.toStream(file);
             } catch (error) {
@@ -168,8 +198,7 @@ describe("Packer", () => {
         });
 
         afterEach(() => {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (Packer as any).compiler.compile.restore();
+            vi.resetAllMocks();
         });
     });
 });

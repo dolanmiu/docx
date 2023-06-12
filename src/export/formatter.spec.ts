@@ -1,5 +1,4 @@
-import { assert, expect } from "chai";
-import * as sinon from "sinon";
+import { assert, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { Formatter } from "@export/formatter";
 import { CoreProperties } from "@file/core-properties";
@@ -109,10 +108,10 @@ describe("Formatter", () => {
 
         it("should call the prep method only once", () => {
             const paragraph = new Paragraph("");
-            const spy = sinon.spy(paragraph, "prepForXml");
+            const spy = vi.spyOn(paragraph, "prepForXml");
 
             formatter.format(paragraph);
-            expect(spy.calledOnce).to.equal(true);
+            expect(spy).toBeCalledTimes(1);
         });
     });
 });

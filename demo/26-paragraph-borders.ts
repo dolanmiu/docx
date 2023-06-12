@@ -1,7 +1,7 @@
 // Creates two paragraphs, one with a border and one without
-// Import from 'docx' rather than '../build' if you install from npm
+
 import * as fs from "fs";
-import { BorderStyle, Document, Packer, Paragraph, TextRun } from "../build";
+import { BorderStyle, Document, Packer, Paragraph, TextRun } from "docx";
 
 const doc = new Document({
     sections: [

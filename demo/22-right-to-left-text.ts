@@ -1,7 +1,7 @@
 // This demo shows right to left for special languages
-// Import from 'docx' rather than '../build' if you install from npm
+
 import * as fs from "fs";
-import { Document, Packer, Paragraph, Table, TableCell, TableRow, TextRun } from "../build";
+import { Document, Packer, Paragraph, Table, TableCell, TableRow, TextRun } from "docx";
 
 const doc = new Document({
     sections: [

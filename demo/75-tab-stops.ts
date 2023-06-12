@@ -1,21 +1,21 @@
 // Example of using tab stops
-// Import from 'docx' rather than '../build' if you install from npm
+
 import * as fs from "fs";
-import { Document, HeadingLevel, Packer, Paragraph, TabStopPosition, TabStopType, TextRun } from "../build";
+import { Document, HeadingLevel, Packer, Paragraph, TabStopPosition, TabStopType, TextRun } from "docx";
 
 const columnWidth = TabStopPosition.MAX / 4;
 const receiptTabStops = [
-        // no need to define first left tab column
-        // the right aligned tab column position should point to the end of column
-        // i.e. in this case
-        // (end position of 1st) + (end position of current)
-        // columnWidth + columnWidth = columnWidth * 2
+    // no need to define first left tab column
+    // the right aligned tab column position should point to the end of column
+    // i.e. in this case
+    // (end position of 1st) + (end position of current)
+    // columnWidth + columnWidth = columnWidth * 2
 
-        { type: TabStopType.RIGHT, position: columnWidth * 2 },
-        { type: TabStopType.RIGHT, position: columnWidth * 3 },
-        { type: TabStopType.RIGHT, position: TabStopPosition.MAX },
-    ],
-    twoTabStops = [{ type: TabStopType.RIGHT, position: TabStopPosition.MAX }];
+    { type: TabStopType.RIGHT, position: columnWidth * 2 },
+    { type: TabStopType.RIGHT, position: columnWidth * 3 },
+    { type: TabStopType.RIGHT, position: TabStopPosition.MAX },
+];
+const twoTabStops = [{ type: TabStopType.RIGHT, position: TabStopPosition.MAX }];
 
 const doc = new Document({
     sections: [

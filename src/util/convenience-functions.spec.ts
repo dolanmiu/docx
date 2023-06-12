@@ -1,4 +1,4 @@
-import { expect } from "chai";
+import { describe, expect, it } from "vitest";
 
 import { convertInchesToTwip, convertMillimetersToTwip, uniqueId, uniqueNumericIdCreator } from "./convenience-functions";
 
