@@ -88,7 +88,7 @@
         "eslint-plugin-prefer-arrow": "^1.2.3",
         "eslint-plugin-unicorn": "^46.0.0",
         "execa": "^7.1.1",
-        "glob": "^9.3.0",
+        "glob": "^10.2.7",
         "inquirer": "^9.2.7",
         "jsdom": "^22.1.0",
         "pre-commit": "^1.2.2",
