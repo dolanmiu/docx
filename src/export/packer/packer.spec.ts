@@ -41,6 +41,7 @@ describe("Packer", () => {
         });
 
         it("should use a default prettify value", async () => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const spy = vi.spyOn((Packer as any).compiler, "compile");
 
             await Packer.toString(file, true);
@@ -49,6 +50,7 @@ describe("Packer", () => {
         });
 
         it("should use a prettify value", async () => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const spy = vi.spyOn((Packer as any).compiler, "compile");
 
             await Packer.toString(file, PrettifyType.WITH_4_BLANKS);
@@ -57,6 +59,7 @@ describe("Packer", () => {
         });
 
         it("should use an undefined prettify value", async () => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const spy = vi.spyOn((Packer as any).compiler, "compile");
 
             await Packer.toString(file, false);
