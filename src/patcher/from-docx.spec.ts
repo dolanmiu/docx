@@ -361,7 +361,7 @@ describe("from-docx", () => {
                             },
                         },
                     }),
-                ).to.eventually.be.rejected);
+                ).rejects);
         });
 
         describe("Images", () => {
@@ -398,7 +398,7 @@ describe("from-docx", () => {
                             },
                         },
                     }),
-                ).to.eventually.be.rejected);
+                ).rejects);
         });
     });
 });
