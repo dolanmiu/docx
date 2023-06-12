@@ -1,6 +1,5 @@
 import { Stream } from "stream";
 import { File } from "@file/file";
-import { strFromU8 } from "fflate";
 
 import { Compiler } from "./next-compiler";
 
@@ -14,46 +13,63 @@ export enum PrettifyType {
     WITH_TAB = "\t",
 }
 
+const convertPrettifyType = (prettify?: boolean | PrettifyType): PrettifyType | undefined =>
+    prettify === true ? PrettifyType.WITH_2_BLANKS : prettify === false ? undefined : prettify;
+
 export class Packer {
     public static async toString(file: File, prettify?: boolean | PrettifyType): Promise<string> {
-        const zip = await this.compiler.compile(
-            file,
-            prettify === true ? PrettifyType.WITH_2_BLANKS : prettify === false ? undefined : prettify,
-        );
-        return strFromU8(zip);
+        const zip = this.compiler.compile(file, convertPrettifyType(prettify));
+        const zipData = await zip.generateAsync({
+            type: "string",
+            mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            compression: "DEFLATE",
+        });
+
+        return zipData;
     }
 
     public static async toBuffer(file: File, prettify?: boolean | PrettifyType): Promise<Buffer> {
-        const zip = await this.compiler.compile(
-            file,
-            prettify === true ? PrettifyType.WITH_2_BLANKS : prettify === false ? undefined : prettify,
-        );
-        return Buffer.from(zip.buffer);
+        const zip = this.compiler.compile(file, convertPrettifyType(prettify));
+        const zipData = await zip.generateAsync({
+            type: "nodebuffer",
+            mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            compression: "DEFLATE",
+        });
+
+        return zipData;
     }
 
     public static async toBase64String(file: File, prettify?: boolean | PrettifyType): Promise<string> {
-        const zip = await this.compiler.compile(
-            file,
-            prettify === true ? PrettifyType.WITH_2_BLANKS : prettify === false ? undefined : prettify,
-        );
+        const zip = this.compiler.compile(file, convertPrettifyType(prettify));
+        const zipData = await zip.generateAsync({
+            type: "base64",
+            mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            compression: "DEFLATE",
+        });
 
-        return Promise.resolve(strFromU8(zip));
+        return zipData;
     }
 
     public static async toBlob(file: File, prettify?: boolean | PrettifyType): Promise<Blob> {
-        const zip = await this.compiler.compile(
-            file,
-            prettify === true ? PrettifyType.WITH_2_BLANKS : prettify === false ? undefined : prettify,
-        );
+        const zip = this.compiler.compile(file, convertPrettifyType(prettify));
+        const zipData = await zip.generateAsync({
+            type: "blob",
+            mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            compression: "DEFLATE",
+        });
 
-        return new Blob([zip.buffer]);
+        return zipData;
     }
 
     public static toStream(file: File, prettify?: boolean | PrettifyType): Stream {
-        const zip = this.compiler.compile(file, prettify === true ? PrettifyType.WITH_2_BLANKS : prettify === false ? undefined : prettify);
         const stream = new Stream();
+        const zip = this.compiler.compile(file, convertPrettifyType(prettify));
 
-        zip.then((z) => {
+        zip.generateAsync({
+            type: "nodebuffer",
+            mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            compression: "DEFLATE",
+        }).then((z) => {
             stream.emit("data", z);
             stream.emit("end");
         });

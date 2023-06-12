@@ -3,7 +3,7 @@ import { afterEach, assert, beforeEach, describe, expect, it, vi } from "vitest"
 import { File } from "@file/file";
 import { HeadingLevel, Paragraph } from "@file/paragraph";
 
-import { Packer } from "./packer";
+import { Packer, PrettifyType } from "./packer";
 
 describe("Packer", () => {
     let file: File;
@@ -32,6 +32,36 @@ describe("Packer", () => {
                     ],
                 },
             ],
+        });
+    });
+
+    describe("prettify", () => {
+        afterEach(() => {
+            vi.restoreAllMocks();
+        });
+
+        it("should use a default prettify value", async () => {
+            const spy = vi.spyOn((Packer as any).compiler, "compile");
+
+            await Packer.toString(file, true);
+
+            expect(spy).toBeCalledWith(expect.anything(), PrettifyType.WITH_2_BLANKS);
+        });
+
+        it("should use a prettify value", async () => {
+            const spy = vi.spyOn((Packer as any).compiler, "compile");
+
+            await Packer.toString(file, PrettifyType.WITH_4_BLANKS);
+
+            expect(spy).toBeCalledWith(expect.anything(), PrettifyType.WITH_4_BLANKS);
+        });
+
+        it("should use an undefined prettify value", async () => {
+            const spy = vi.spyOn((Packer as any).compiler, "compile");
+
+            await Packer.toString(file, false);
+
+            expect(spy).toBeCalledWith(expect.anything(), undefined);
         });
     });
 
@@ -133,7 +163,10 @@ describe("Packer", () => {
     describe("#toStream()", () => {
         it("should create a standard docx file", async () => {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            vi.spyOn((Packer as any).compiler, "compile").mockReturnValue(Promise.resolve(new Uint8Array(255)));
+            vi.spyOn((Packer as any).compiler, "compile").mockReturnValue({
+                // tslint:disable-next-line: no-empty
+                generateAsync: () => Promise.resolve(vi.fn()),
+            });
             const stream = Packer.toStream(file);
 
             const p = new Promise<void>((resolve, reject) => {

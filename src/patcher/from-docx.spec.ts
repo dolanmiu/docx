@@ -1,13 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import * as chai from "chai";
 import JSZip from "jszip";
-import chaiAsPromised from "chai-as-promised";
 
 import { ExternalHyperlink, ImageRun, Paragraph, TextRun } from "@file/paragraph";
 
 import { patchDocument, PatchType } from "./from-docx";
-
-chai.use(chaiAsPromised);
 
 const MOCK_XML = `
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>

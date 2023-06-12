@@ -1,6 +1,4 @@
-/* tslint:disable:typedef space-before-function-paren */
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import * as fflate from "fflate";
 
 import { File } from "@file/file";
 import { Footer, Header } from "@file/header";
@@ -8,21 +6,6 @@ import { ImageRun, Paragraph } from "@file/paragraph";
 import * as convenienceFunctions from "@util/convenience-functions";
 
 import { Compiler } from "./next-compiler";
-
-const unzip = (zipFile: Uint8Array): Promise<ReadonlySet<string>> => {
-    const set = new Set<string>();
-    const unzipper = new fflate.Unzip((file) => {
-        set.add(file.name);
-    });
-
-    return new Promise<ReadonlySet<string>>((resolve) => {
-        setTimeout(() => {
-            resolve(set);
-        }, 1000);
-
-        unzipper.push(zipFile, true);
-    });
-};
 
 describe("Compiler", () => {
     let compiler: Compiler;
@@ -42,18 +25,18 @@ describe("Compiler", () => {
     describe("#compile()", () => {
         it(
             "should pack all the content",
-            async () => {
+            () => {
                 const file = new File({
                     sections: [],
                     comments: {
                         children: [],
                     },
                 });
-                const zipFile = await compiler.compile(file);
-                const fileNames = await unzip(zipFile);
+                const zipFile = compiler.compile(file);
+                const fileNames = Object.keys(zipFile.files).map((f) => zipFile.files[f].name);
 
-                expect(fileNames).has.length(13);
-                expect(fileNames).to.include("word/document.xml");
+                expect(fileNames).is.an.instanceof(Array);
+                expect(fileNames).has.length(17);
                 expect(fileNames).to.include("word/document.xml");
                 expect(fileNames).to.include("word/styles.xml");
                 expect(fileNames).to.include("docProps/core.xml");
@@ -75,7 +58,7 @@ describe("Compiler", () => {
 
         it(
             "should pack all additional headers and footers",
-            async () => {
+            () => {
                 const file = new File({
                     sections: [
                         {
@@ -107,10 +90,12 @@ describe("Compiler", () => {
                     ],
                 });
 
-                const zipFile = await compiler.compile(file);
-                const fileNames = await unzip(zipFile);
+                const zipFile = compiler.compile(file);
+                const fileNames = Object.keys(zipFile.files).map((f) => zipFile.files[f].name);
 
-                expect(fileNames).has.length(21);
+                expect(fileNames).is.an.instanceof(Array);
+                expect(fileNames).has.length(25);
+
                 expect(fileNames).to.include("word/header1.xml");
                 expect(fileNames).to.include("word/_rels/header1.xml.rels");
                 expect(fileNames).to.include("word/header2.xml");

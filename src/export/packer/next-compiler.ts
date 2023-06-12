@@ -1,4 +1,4 @@
-import { strToU8, zip } from "fflate";
+import JSZip from "jszip";
 import xml from "xml";
 
 import { File } from "@file/file";
@@ -44,39 +44,26 @@ export class Compiler {
         this.numberingReplacer = new NumberingReplacer();
     }
 
-    public compile(file: File, prettifyXml?: PrettifyType): Promise<Uint8Array> {
+    public compile(file: File, prettifyXml?: PrettifyType): JSZip {
+        const zip = new JSZip();
         const xmlifiedFileMapping = this.xmlifyFile(file, prettifyXml);
         const map = new Map<string, IXmlifyedFile | readonly IXmlifyedFile[]>(Object.entries(xmlifiedFileMapping));
 
-        return new Promise<Uint8Array>((resolve, reject) => {
-            zip(
-                {
-                    ...Array.from(map.entries()).reduce((acc, [, obj]) => {
-                        if (Array.isArray(obj)) {
-                            for (const subFile of obj as readonly IXmlifyedFile[]) {
-                                // eslint-disable-next-line functional/immutable-data
-                                acc[subFile.path] = strToU8(subFile.data);
-                            }
-                        } else {
-                            // eslint-disable-next-line functional/immutable-data
-                            acc[(obj as IXmlifyedFile).path] = strToU8((obj as IXmlifyedFile).data);
-                        }
+        for (const [, obj] of map) {
+            if (Array.isArray(obj)) {
+                for (const subFile of obj as readonly IXmlifyedFile[]) {
+                    zip.file(subFile.path, subFile.data);
+                }
+            } else {
+                zip.file((obj as IXmlifyedFile).path, (obj as IXmlifyedFile).data);
+            }
+        }
 
-                        return acc;
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    }, {} as any),
-                    ...file.Media.Array.reduce((acc, { stream, fileName }) => ({ ...acc, [`word/media/${fileName}`]: stream }), {}),
-                },
-                {},
-                (err, data) => {
-                    if (err) {
-                        reject(err);
-                    } else {
-                        resolve(data);
-                    }
-                },
-            );
-        });
+        for (const { stream, fileName } of file.Media.Array) {
+            zip.file(`word/media/${fileName}`, stream);
+        }
+
+        return zip;
     }
 
     private xmlifyFile(file: File, prettify?: PrettifyType): IXmlifyedFileMapping {

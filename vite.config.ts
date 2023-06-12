@@ -22,6 +22,7 @@ export default defineConfig({
         },
     },
     build: {
+        minify: false,
         lib: {
             entry: [resolve(__dirname, "src/index.ts")],
             name: "docx",
@@ -35,5 +36,13 @@ export default defineConfig({
     },
     test: {
         environment: "jsdom",
+        coverage: {
+            provider: "c8",
+            reporter: ["text", "json", "html"],
+            statements: 99.93,
+            branches: 98.85,
+            functions: 100,
+            lines: 99.93,
+        },
     },
 });
