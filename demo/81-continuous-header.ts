@@ -1,7 +1,7 @@
 // Example of a continuous header
 
 import * as fs from "fs";
-import { Document, Footer, Header, Packer, Paragraph, SectionType, Tab, TextRun } from "docx";
+import { Document, Footer, Header, Packer, Paragraph, SectionType, TextRun } from "docx";
 
 const doc = new Document({
     creator: "Creator",

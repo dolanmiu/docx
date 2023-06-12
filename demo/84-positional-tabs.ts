@@ -6,7 +6,6 @@ import {
     Packer,
     Paragraph,
     PositionalTab,
-    Tab,
     TextRun,
     PositionalTabAlignment,
     PositionalTabRelativeTo,
