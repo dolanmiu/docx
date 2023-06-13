@@ -16,7 +16,7 @@ plugins:
     - eslint-plugin-jsdoc
     - eslint-plugin-prefer-arrow
     - "@typescript-eslint"
-    - functional
+    - eslint-plugin-functional
 root: true
 rules:
     no-undef: "off"
@@ -153,7 +153,6 @@ rules:
     indent: "off"
     jsdoc/check-alignment: error
     jsdoc/check-indentation: "off"
-    jsdoc/newline-after-description: error
     max-classes-per-file: "off"
     max-len: "off"
     new-parens: error
