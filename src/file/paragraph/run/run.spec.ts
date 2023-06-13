@@ -18,9 +18,7 @@ describe("Run", () => {
             expect(tree).to.deep.equal({
                 "w:r": [
                     {
-                        "w:rPr": [
-                            { "w:noProof": {} },
-                        ],
+                        "w:rPr": [{ "w:noProof": {} }],
                     },
                 ],
             });
@@ -32,9 +30,7 @@ describe("Run", () => {
         expect(tree).to.deep.equal({
             "w:r": [
                 {
-                    "w:rPr": [
-                        { "w:noProof": { _attr: { "w:val": false } } },
-                    ],
+                    "w:rPr": [{ "w:noProof": { _attr: { "w:val": false } } }],
                 },
             ],
         });
