@@ -7,6 +7,7 @@ import { Formatter } from "../formatter";
 import { ImageReplacer } from "./image-replacer";
 import { NumberingReplacer } from "./numbering-replacer";
 import { PrettifyType } from "./packer";
+import { obfuscate } from "@file/fonts/obfuscate-ttf-to-odttf";
 
 interface IXmlifyedFile {
     readonly data: string;
@@ -32,6 +33,7 @@ interface IXmlifyedFileMapping {
     readonly Settings: IXmlifyedFile;
     readonly Comments?: IXmlifyedFile;
     readonly FontTable?: IXmlifyedFile;
+    readonly FontTableRelationships?: IXmlifyedFile;
 }
 
 export class Compiler {
@@ -62,6 +64,10 @@ export class Compiler {
 
         for (const { stream, fileName } of file.Media.Array) {
             zip.file(`word/media/${fileName}`, stream);
+        }
+
+        for (const { data: buffer, name } of file.FontTable.options) {
+            zip.file(`word/fonts/${name}`, obfuscate(buffer, name));
         }
 
         return zip;
@@ -440,23 +446,41 @@ export class Compiler {
                 ),
                 path: "word/comments.xml",
             },
-            // FontTable: {
-            //     data: xml(
-            //         this.formatter.format(file.FontTable, {
-            //             viewWrapper: file.Document,
-            //             file,
-            //             stack: [],
-            //         }),
-            //         {
-            //             indent: prettify,
-            //             declaration: {
-            //                 standalone: "yes",
-            //                 encoding: "UTF-8",
-            //             },
-            //         },
-            //     ),
-            //     path: "word/fontTable.xml",
-            // },
+            FontTable: {
+                data: xml(
+                    this.formatter.format(file.FontTable.View, {
+                        viewWrapper: file.Document,
+                        file,
+                        stack: [],
+                    }),
+                    {
+                        indent: prettify,
+                        declaration: {
+                            standalone: "yes",
+                            encoding: "UTF-8",
+                        },
+                    },
+                ),
+                path: "word/fontTable.xml",
+            },
+            FontTableRelationships: {
+                data: (() => {
+                    return xml(
+                        this.formatter.format(file.FontTable.Relationships, {
+                            viewWrapper: file.Document,
+                            file,
+                            stack: [],
+                        }),
+                        {
+                            indent: prettify,
+                            declaration: {
+                                encoding: "UTF-8",
+                            },
+                        },
+                    );
+                })(),
+                path: "word/_rels/fontTable.xml.rels",
+            },
         };
     }
 }

@@ -17,7 +17,8 @@ export type RelationshipType =
     | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties"
     | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink"
     | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/footnotes"
-    | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments";
+    | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments"
+    | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/font";
 
 export const TargetModeType = {
     EXTERNAL: "External",

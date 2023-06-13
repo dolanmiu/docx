@@ -62,6 +62,7 @@ export interface IFontOptions {
     readonly embedBold?: IFontRelationshipOptions;
     readonly embedItalic?: IFontRelationshipOptions;
     readonly embedBoldItalic?: IFontRelationshipOptions;
+    readonly data: Buffer;
 }
 
 const createFontRelationship = ({ id, fontKey, subsetted }: IFontRelationshipOptions): XmlComponent =>
