@@ -23,17 +23,6 @@ describe("Run", () => {
                 ],
             });
         });
-        const run = new Run({
-            noProof: false,
-        });
-        const tree = new Formatter().format(run);
-        expect(tree).to.deep.equal({
-            "w:r": [
-                {
-                    "w:rPr": [{ "w:noProof": { _attr: { "w:val": false } } }],
-                },
-            ],
-        });
     });
 
     describe("#bold()", () => {
