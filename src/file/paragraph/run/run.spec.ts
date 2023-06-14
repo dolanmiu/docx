@@ -9,7 +9,7 @@ import { PageNumber, Run } from "./run";
 import { UnderlineType } from "./underline";
 import { TextEffect } from "./properties";
 describe("Run", () => {
-    describe("#noproof()", () => {
+    describe("#noProof()", () => {
         it("turns off spelling and grammar checkers for a run", () => {
             const run = new Run({
                 noProof: true,
