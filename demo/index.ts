@@ -14,6 +14,14 @@ const dir = "./demo";
 const fileNames = fs.readdirSync(dir);
 
 const keys = fileNames.map((f) => path.parse(f).name);
+const getFileNumber = (file: string): number => {
+    const nameParts = file.split("-");
+    const firstPart = nameParts[0];
+
+    return Number(firstPart);
+};
+
+const demoFiles = keys.filter((file) => !isNaN(getFileNumber(file))).sort((a, b) => getFileNumber(a) - getFileNumber(b));
 
 const answers = await inquirer.prompt<Answers>([
     {
@@ -26,7 +34,7 @@ const answers = await inquirer.prompt<Answers>([
         type: "list",
         name: "demoFile",
         message: "What demo do you wish to run?",
-        choices: keys,
+        choices: demoFiles,
         filter: (input) => parseInt(input.split("-")[0]),
         when: (answers) => answers.type === "list",
     },
