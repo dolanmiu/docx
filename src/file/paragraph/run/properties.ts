@@ -1,3 +1,4 @@
+// https://www.ecma-international.org/wp-content/uploads/ECMA-376-1_5th_edition_december_2016.zip page 297, section 17.3.2.21
 import { BorderElement, IBorderOptions } from "@file/border";
 import { IShadingAttributesProperties, Shading } from "@file/shading";
 import { ChangeAttributes, IChangedAttributesProperties } from "@file/track-revision/track-revision";
@@ -34,6 +35,7 @@ export enum TextEffect {
 }
 
 export interface IRunStylePropertiesOptions {
+    readonly noProof?: boolean;
     readonly bold?: boolean;
     readonly boldComplexScript?: boolean;
     readonly italics?: boolean;
@@ -131,7 +133,9 @@ export class RunProperties extends IgnoreIfEmptyXmlComponent {
         if (!options) {
             return;
         }
-
+        if (options.noProof !== undefined) {
+            this.push(new OnOffElement("w:noProof", options.noProof));
+        }
         if (options.bold !== undefined) {
             this.push(new OnOffElement("w:b", options.bold));
         }

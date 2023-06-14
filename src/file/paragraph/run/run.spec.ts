@@ -8,8 +8,23 @@ import { EmphasisMarkType } from "./emphasis-mark";
 import { PageNumber, Run } from "./run";
 import { UnderlineType } from "./underline";
 import { TextEffect } from "./properties";
-
 describe("Run", () => {
+    describe("#noProof()", () => {
+        it("turns off spelling and grammar checkers for a run", () => {
+            const run = new Run({
+                noProof: true,
+            });
+            const tree = new Formatter().format(run);
+            expect(tree).to.deep.equal({
+                "w:r": [
+                    {
+                        "w:rPr": [{ "w:noProof": {} }],
+                    },
+                ],
+            });
+        });
+    });
+
     describe("#bold()", () => {
         it("it should add bold to the properties", () => {
             const run = new Run({

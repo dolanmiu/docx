@@ -59,3 +59,6 @@ My Document.docx
 
 # Temporary folder
 tmp
+
+# Exclude Mac .DS_Store files
+.DS_Store
