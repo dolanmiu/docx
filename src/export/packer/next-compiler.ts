@@ -2,12 +2,12 @@ import JSZip from "jszip";
 import xml from "xml";
 
 import { File } from "@file/file";
+import { obfuscate } from "@file/fonts/obfuscate-ttf-to-odttf";
 
 import { Formatter } from "../formatter";
 import { ImageReplacer } from "./image-replacer";
 import { NumberingReplacer } from "./numbering-replacer";
 import { PrettifyType } from "./packer";
-import { obfuscate } from "@file/fonts/obfuscate-ttf-to-odttf";
 
 interface IXmlifyedFile {
     readonly data: string;
@@ -464,8 +464,8 @@ export class Compiler {
                 path: "word/fontTable.xml",
             },
             FontTableRelationships: {
-                data: (() => {
-                    return xml(
+                data: (() =>
+                    xml(
                         this.formatter.format(file.FontTable.Relationships, {
                             viewWrapper: file.Document,
                             file,
@@ -477,8 +477,7 @@ export class Compiler {
                                 encoding: "UTF-8",
                             },
                         },
-                    );
-                })(),
+                    ))(),
                 path: "word/_rels/fontTable.xml.rels",
             },
         };
