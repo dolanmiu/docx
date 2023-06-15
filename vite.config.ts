@@ -37,7 +37,7 @@ export default defineConfig({
     test: {
         environment: "jsdom",
         coverage: {
-            provider: "c8",
+            provider: "v8",
             reporter: ["text", "json", "html"],
             statements: 99.93,
             branches: 98.85,
