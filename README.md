@@ -2,7 +2,7 @@
 
 ## Installation
 
-```sh
+```terminal
 npm install --save docx
 ```
 
