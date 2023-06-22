@@ -14,6 +14,13 @@ describe("CheckBox", () => {
                     {
                         "w:sdtPr": [
                             {
+                                "w:alias": {
+                                    _attr: {
+                                        "w:val": "Checkbox",
+                                    },
+                                },
+                            },
+                            {
                                 "w14:checkbox": [
                                     {
                                         "w14:checked": {
@@ -85,6 +92,13 @@ describe("CheckBox", () => {
                     {
                         "w:sdtPr": [
                             {
+                                "w:alias": {
+                                    _attr: {
+                                        "w:val": "Checkbox",
+                                    },
+                                },
+                            },
+                            {
                                 "w14:checkbox": [
                                     {
                                         "w14:checked": {
@@ -152,6 +166,13 @@ describe("CheckBox", () => {
                 "w:sdt": [
                     {
                         "w:sdtPr": [
+                            {
+                                "w:alias": {
+                                    _attr: {
+                                        "w:val": "Checkbox",
+                                    },
+                                },
+                            },
                             {
                                 "w14:checkbox": [
                                     {

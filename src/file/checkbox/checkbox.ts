@@ -12,11 +12,9 @@ export class CheckBox extends XmlComponent {
     public constructor(options?: ICheckboxSymbolOptions) {
         super("w:sdt");
 
-        this.root.push(
-            new StructuredDocumentTagProperties(undefined, {
-                children: [new CheckBoxUtil(options)],
-            }),
-        );
+        const properties = new StructuredDocumentTagProperties("Checkbox");
+        properties.addChildElement(new CheckBoxUtil(options));
+        this.root.push(properties);
 
         const content = new StructuredDocumentTagContent();
         const checkedFont: string | undefined = options?.checkedState?.font;
