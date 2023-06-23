@@ -65,7 +65,7 @@ describe("CheckBox", () => {
         it.each([
             ["2713", "Segoe UI Symbol", "2713", "Segoe UI Symbol"],
             [undefined, undefined, "2612", "MS Gothic"],
-        ])("should create a CheckBoxUtil with proper root and custom values", (inputChar, inputFont, actualChar, actualFont) => {
+        ])("should create a CheckBox with proper root and custom values", (inputChar, inputFont, actualChar, actualFont) => {
             const checkBox = new CheckBox("Custom Checkbox", {
                 checked: true,
                 checkedState: {
@@ -140,7 +140,7 @@ describe("CheckBox", () => {
             });
         });
 
-        it("should create a CheckBoxUtil with proper root, custom state, and no alias", () => {
+        it("should create a CheckBox with proper root, custom state, and no alias", () => {
             const checkBox = new CheckBox(undefined, {
                 checked: false,
                 checkedState: {
