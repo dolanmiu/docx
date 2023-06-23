@@ -4,7 +4,7 @@ import { CheckBox } from ".";
 
 describe("CheckBox", () => {
     describe("#constructor()", () => {
-        it("should create a CheckBoxUtil with proper root and default values", () => {
+        it("should create a CheckBox with proper root and default values (no alias, no custom state)", () => {
             const checkBox = new CheckBox();
 
             const tree = new Formatter().format(checkBox);
@@ -13,13 +13,6 @@ describe("CheckBox", () => {
                 "w:sdt": [
                     {
                         "w:sdtPr": [
-                            {
-                                "w:alias": {
-                                    _attr: {
-                                        "w:val": "Checkbox",
-                                    },
-                                },
-                            },
                             {
                                 "w14:checkbox": [
                                     {
@@ -73,7 +66,7 @@ describe("CheckBox", () => {
             ["2713", "Segoe UI Symbol", "2713", "Segoe UI Symbol"],
             [undefined, undefined, "2612", "MS Gothic"],
         ])("should create a CheckBoxUtil with proper root and custom values", (inputChar, inputFont, actualChar, actualFont) => {
-            const checkBox = new CheckBox({
+            const checkBox = new CheckBox("Custom Checkbox", {
                 checked: true,
                 checkedState: {
                     value: inputChar,
@@ -94,7 +87,7 @@ describe("CheckBox", () => {
                             {
                                 "w:alias": {
                                     _attr: {
-                                        "w:val": "Checkbox",
+                                        "w:val": "Custom Checkbox",
                                     },
                                 },
                             },
@@ -147,8 +140,8 @@ describe("CheckBox", () => {
             });
         });
 
-        it("should create a CheckBoxUtil with proper root and custom values", () => {
-            const checkBox = new CheckBox({
+        it("should create a CheckBoxUtil with proper root, custom state, and no alias", () => {
+            const checkBox = new CheckBox(undefined, {
                 checked: false,
                 checkedState: {
                     value: "2713",
@@ -166,13 +159,6 @@ describe("CheckBox", () => {
                 "w:sdt": [
                     {
                         "w:sdtPr": [
-                            {
-                                "w:alias": {
-                                    _attr: {
-                                        "w:val": "Checkbox",
-                                    },
-                                },
-                            },
                             {
                                 "w14:checkbox": [
                                     {
