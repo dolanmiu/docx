@@ -9,10 +9,10 @@ export class CheckBox extends XmlComponent {
     private readonly DEFAULT_UNCHECKED_SYMBOL: string = "2610";
     private readonly DEFAULT_CHECKED_SYMBOL: string = "2612";
     private readonly DEFAULT_FONT: string = "MS Gothic";
-    public constructor(alias?: string, options?: ICheckboxSymbolOptions) {
+    public constructor(options?: ICheckboxSymbolOptions) {
         super("w:sdt");
 
-        const properties = new StructuredDocumentTagProperties(alias);
+        const properties = new StructuredDocumentTagProperties(options?.alias);
         properties.addChildElement(new CheckBoxUtil(options));
         this.root.push(properties);
 

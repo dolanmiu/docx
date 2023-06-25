@@ -4,7 +4,8 @@ import { StringValueElement, XmlComponent } from "@file/xml-components";
 export class StructuredDocumentTagProperties extends XmlComponent {
     public constructor(alias?: string) {
         super("w:sdtPr");
-        if (typeof alias === "string") {
+
+        if (alias) {
             this.root.push(new StringValueElement("w:alias", alias));
         }
     }

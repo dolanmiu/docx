@@ -16,6 +16,7 @@ export interface ICheckboxSymbolProperties {
 }
 
 export interface ICheckboxSymbolOptions {
+    readonly alias?: string;
     readonly checked?: boolean;
     readonly checkedState?: ICheckboxSymbolProperties;
     readonly uncheckedState?: ICheckboxSymbolProperties;

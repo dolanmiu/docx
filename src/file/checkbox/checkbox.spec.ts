@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { Formatter } from "@export/formatter";
-import { CheckBox } from ".";
+
+import { CheckBox } from "./checkbox";
 
 describe("CheckBox", () => {
     describe("#constructor()", () => {
@@ -66,7 +67,8 @@ describe("CheckBox", () => {
             ["2713", "Segoe UI Symbol", "2713", "Segoe UI Symbol"],
             [undefined, undefined, "2612", "MS Gothic"],
         ])("should create a CheckBox with proper root and custom values", (inputChar, inputFont, actualChar, actualFont) => {
-            const checkBox = new CheckBox("Custom Checkbox", {
+            const checkBox = new CheckBox({
+                alias: "Custom Checkbox",
                 checked: true,
                 checkedState: {
                     value: inputChar,
@@ -141,7 +143,7 @@ describe("CheckBox", () => {
         });
 
         it("should create a CheckBox with proper root, custom state, and no alias", () => {
-            const checkBox = new CheckBox(undefined, {
+            const checkBox = new CheckBox({
                 checked: false,
                 checkedState: {
                     value: "2713",
