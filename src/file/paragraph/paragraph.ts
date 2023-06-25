@@ -6,6 +6,7 @@ import { FileChild } from "@file/file-child";
 
 import { TargetModeType } from "../relationships/relationship/relationship";
 import { DeletedTextRun, InsertedTextRun } from "../track-revision";
+import { CheckBox } from "../checkbox";
 import { ColumnBreak, PageBreak } from "./formatting/break";
 import { Bookmark, ConcreteHyperlink, ExternalHyperlink, InternalHyperlink } from "./links";
 import { Math } from "./math";
@@ -33,7 +34,8 @@ export type ParagraphChild =
     | Comment
     | CommentRangeStart
     | CommentRangeEnd
-    | CommentReference;
+    | CommentReference
+    | CheckBox;
 
 export interface IParagraphOptions extends IParagraphPropertiesOptions {
     readonly text?: string;
