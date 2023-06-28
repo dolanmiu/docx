@@ -43,6 +43,15 @@ const doc = new Document({
                     color: "#FF0000",
                 },
             },
+            document: {
+                run: {
+                    size: "11pt",
+                    font: "Calibri",
+                },
+                paragraph: {
+                    alignment: AlignmentType.RIGHT,
+                },
+            },
         },
         paragraphStyles: [
             {
