@@ -318,4 +318,45 @@ describe("Default Styles", () => {
             ],
         });
     });
+
+    it("HyperlinkStyle#constructor", () => {
+        const style = new defaultStyles.HyperlinkStyle({
+            run: {
+                color: "FF0000",
+                underline: {
+                    color: "0000FF",
+                },
+            },
+        });
+        const tree = new Formatter().format(style);
+        expect(tree).to.deep.equal({
+            "w:style": [
+                { _attr: { "w:type": "character", "w:styleId": "Hyperlink" } },
+                { "w:name": { _attr: { "w:val": "Hyperlink" } } },
+                { "w:basedOn": { _attr: { "w:val": "DefaultParagraphFont" } } },
+                {
+                    "w:uiPriority": {
+                        _attr: {
+                            "w:val": 99,
+                        },
+                    },
+                },
+                {
+                    "w:unhideWhenUsed": EMPTY_OBJECT,
+                },
+                {
+                    "w:rPr": [
+                        { "w:u": { _attr: { "w:color": "0000FF", "w:val": "single" } } },
+                        {
+                            "w:color": {
+                                _attr: {
+                                    "w:val": "FF0000",
+                                },
+                            },
+                        },
+                    ],
+                },
+            ],
+        });
+    });
 });

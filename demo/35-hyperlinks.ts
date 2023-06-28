@@ -4,6 +4,18 @@ import * as fs from "fs";
 import { Document, ExternalHyperlink, Footer, FootnoteReferenceRun, ImageRun, Packer, Paragraph, TextRun } from "docx";
 
 const doc = new Document({
+    styles: {
+        default: {
+            hyperlink: {
+                run: {
+                    color: "FF0000",
+                    underline: {
+                        color: "0000FF",
+                    },
+                },
+            },
+        },
+    },
     footnotes: {
         1: {
             children: [
