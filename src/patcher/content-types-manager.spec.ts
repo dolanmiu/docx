@@ -47,5 +47,31 @@ describe("content-types-manager", () => {
                 type: "element",
             });
         });
+
+        it("should not append duplicate content type", () => {
+            const element = {
+                type: "element",
+                name: "xml",
+                elements: [
+                    {
+                        type: "element",
+                        name: "Types",
+                        elements: [
+                            {
+                                type: "element",
+                                name: "Default",
+                                attributes: {
+                                    ContentType: "image/png",
+                                    Extension: "png",
+                                },
+                            },
+                        ],
+                    },
+                ],
+            };
+            appendContentType(element, "image/png", "png");
+
+            expect(element.elements.length).toBe(1);
+        });
     });
 });
