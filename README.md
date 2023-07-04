@@ -12,7 +12,6 @@
 [![Downloads per month][downloads-image]][downloads-url]
 [![GitHub Action Workflow Status][github-actions-workflow-image]][github-actions-workflow-url]
 [![Known Vulnerabilities][snky-image]][snky-url]
-[![Chat on Gitter][gitter-image]][gitter-url]
 [![PRs Welcome][pr-image]][pr-url]
 [![codecov][codecov-image]][codecov-url]
 
@@ -107,8 +106,6 @@ Made with 💖
 [github-actions-workflow-url]: https://github.com/dolanmiu/docx/actions
 [snky-image]: https://snyk.io/test/github/dolanmiu/docx/badge.svg
 [snky-url]: https://snyk.io/test/github/dolanmiu/docx
-[gitter-image]: https://badges.gitter.im/dolanmiu/docx.svg
-[gitter-url]: https://gitter.im/docx-lib/Lobby
 [pr-image]: https://img.shields.io/badge/PRs-welcome-brightgreen.svg
 [pr-url]: http://makeapullrequest.com
 [codecov-image]: https://codecov.io/gh/dolanmiu/docx/branch/master/graph/badge.svg
