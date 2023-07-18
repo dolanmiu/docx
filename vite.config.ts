@@ -10,6 +10,9 @@ export default defineConfig({
         dts(),
         nodePolyfills({
             exclude: ["fs"],
+            globals: {
+                Buffer: false,
+            },
             protocolImports: true,
         }),
     ],
