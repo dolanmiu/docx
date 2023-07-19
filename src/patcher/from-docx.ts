@@ -53,7 +53,7 @@ export interface PatchDocumentOptions {
 
 const imageReplacer = new ImageReplacer();
 
-export const patchDocument = async (data: InputDataType, options: PatchDocumentOptions): Promise<Buffer> => {
+export const patchDocument = async (data: InputDataType, options: PatchDocumentOptions): Promise<Uint8Array> => {
     const zipContent = await JSZip.loadAsync(data);
     const contexts = new Map<string, IContext>();
     const file = {
@@ -213,7 +213,7 @@ export const patchDocument = async (data: InputDataType, options: PatchDocumentO
     }
 
     return zip.generateAsync({
-        type: "nodebuffer",
+        type: "uint8array",
         mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         compression: "DEFLATE",
     });

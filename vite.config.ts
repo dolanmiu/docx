@@ -10,6 +10,9 @@ export default defineConfig({
         dts(),
         nodePolyfills({
             exclude: ["fs"],
+            globals: {
+                Buffer: false,
+            },
             protocolImports: true,
         }),
     ],
@@ -26,7 +29,25 @@ export default defineConfig({
         lib: {
             entry: [resolve(__dirname, "src/index.ts")],
             name: "docx",
-            fileName: "index",
+            fileName: (d) => {
+                if (d === "umd") {
+                    return "index.umd.js";
+                }
+
+                if (d === "cjs") {
+                    return "index.cjs";
+                }
+
+                if (d === "es") {
+                    return "index.js";
+                }
+
+                if (d === "iife") {
+                    return "index.iife.js";
+                }
+
+                return "unknown";
+            },
             formats: ["iife", "es", "cjs", "umd"],
         },
         outDir: resolve(__dirname, "build"),
