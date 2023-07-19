@@ -2,19 +2,12 @@ import { defineConfig } from "vitest/config";
 import { resolve } from "path";
 import tsconfigPaths from "vite-tsconfig-paths";
 import dts from "vite-plugin-dts";
-import { nodePolyfills } from "vite-plugin-node-polyfills";
+import pkg from './package.json';
 
 export default defineConfig({
     plugins: [
         tsconfigPaths(),
         dts(),
-        nodePolyfills({
-            exclude: ["fs"],
-            globals: {
-                Buffer: false,
-            },
-            protocolImports: true,
-        }),
     ],
     resolve: {
         alias: {
@@ -53,6 +46,9 @@ export default defineConfig({
         outDir: resolve(__dirname, "build"),
         commonjsOptions: {
             include: [/node_modules/],
+        },
+        rollupOptions: {
+            external: [...Object.keys(pkg.dependencies || {}), 'stream']
         },
     },
     test: {
