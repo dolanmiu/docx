@@ -8,9 +8,6 @@
     "types": "./build/index.d.ts",
     "exports": {
         ".": {
-            "browser": {
-                "default": "./build/index.umd.js"
-            },
             "require": "./build/index.cjs",
             "types": "./build/index.d.ts",
             "import": "./build/index.js",
