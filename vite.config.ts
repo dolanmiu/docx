@@ -9,7 +9,7 @@ export default defineConfig({
         tsconfigPaths(),
         dts(),
         nodePolyfills({
-            exclude: ["fs"],
+            exclude: [],
             globals: {
                 Buffer: false,
             },

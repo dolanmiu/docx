@@ -68,11 +68,11 @@ export const patchDocument = async (data: InputDataType, options: PatchDocumentO
     const hyperlinkRelationshipAdditions: IHyperlinkRelationshipAddition[] = [];
     let hasMedia = false;
 
-    const binaryContentMap = new Map<string, Buffer>();
+    const binaryContentMap = new Map<string, Uint8Array>();
 
     for (const [key, value] of Object.entries(zipContent.files)) {
         if (!key.endsWith(".xml") && !key.endsWith(".rels")) {
-            binaryContentMap.set(key, await value.async("nodebuffer"));
+            binaryContentMap.set(key, await value.async("uint8array"));
             continue;
         }
 
