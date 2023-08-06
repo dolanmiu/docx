@@ -53,7 +53,7 @@ export interface PatchDocumentOptions {
 
 const imageReplacer = new ImageReplacer();
 
-export const patchDocument = async (data: InputDataType, options: PatchDocumentOptions): Promise<Buffer> => {
+export const patchDocument = async (data: InputDataType, options: PatchDocumentOptions): Promise<Uint8Array> => {
     const zipContent = await JSZip.loadAsync(data);
     const contexts = new Map<string, IContext>();
     const file = {
@@ -68,11 +68,11 @@ export const patchDocument = async (data: InputDataType, options: PatchDocumentO
     const hyperlinkRelationshipAdditions: IHyperlinkRelationshipAddition[] = [];
     let hasMedia = false;
 
-    const binaryContentMap = new Map<string, Buffer>();
+    const binaryContentMap = new Map<string, Uint8Array>();
 
     for (const [key, value] of Object.entries(zipContent.files)) {
         if (!key.endsWith(".xml") && !key.endsWith(".rels")) {
-            binaryContentMap.set(key, await value.async("nodebuffer"));
+            binaryContentMap.set(key, await value.async("uint8array"));
             continue;
         }
 
@@ -213,7 +213,7 @@ export const patchDocument = async (data: InputDataType, options: PatchDocumentO
     }
 
     return zip.generateAsync({
-        type: "nodebuffer",
+        type: "uint8array",
         mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         compression: "DEFLATE",
     });

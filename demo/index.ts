@@ -5,9 +5,9 @@ import inquirer from "inquirer";
 import { $ } from "execa";
 
 export type Answers = {
-    type: "list" | "number";
-    demoNumber?: number;
-    demoFile?: number;
+    readonly type: "list" | "number";
+    readonly demoNumber?: number;
+    readonly demoFile?: number;
 };
 
 const dir = "./demo";
@@ -15,8 +15,7 @@ const fileNames = fs.readdirSync(dir);
 
 const keys = fileNames.map((f) => path.parse(f).name);
 const getFileNumber = (file: string): number => {
-    const nameParts = file.split("-");
-    const firstPart = nameParts[0];
+    const [firstPart] = file.split("-");
 
     return Number(firstPart);
 };
@@ -35,15 +34,15 @@ const answers = await inquirer.prompt<Answers>([
         name: "demoFile",
         message: "What demo do you wish to run?",
         choices: demoFiles,
-        filter: (input) => parseInt(input.split("-")[0]),
-        when: (answers) => answers.type === "list",
+        filter: (input) => parseInt(input.split("-")[0], 10),
+        when: (a) => a.type === "list",
     },
     {
         type: "number",
         name: "demoNumber",
         message: "What demo do you wish to run? (Enter a number)",
         default: 1,
-        when: (answers) => answers.type === "number",
+        when: (a) => a.type === "number",
     },
 ]);
 
@@ -56,6 +55,7 @@ if (files.length === 0) {
     const filePath = path.join(dir, files[0]);
 
     console.log(`Running demo ${demoNumber}: ${files[0]}`);
-    await $`ts-node --project demo/tsconfig.json ${filePath}`;
+    const { stdout } = await $`ts-node --project demo/tsconfig.json ${filePath}`;
+    console.log(stdout);
     console.log("Successfully created document!");
 }
