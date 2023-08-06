@@ -1,5 +1,7 @@
 # Bullets and Numbering
 
+!> Bullets and Numbering requires an understanding of [Sections](usage/sections.md) and [Paragraphs](usage/paragraph.md).
+
 `docx` is quite flexible in its bullets and numbering system, allowing
 the user great freedom in how bullets and numbers are to be styled and
 displayed. E.g., numbers can be shown using Arabic numerals, roman
@@ -8,112 +10,128 @@ format also supports re-using bullets/numbering styles throughout the
 document, so that different lists using the same style need not
 redefine them.
 
-Because of this flexibility, bullets and numbering in DOCX involves a
-couple of moving pieces:
+## Configuration
 
-1.  Document-level bullets/numbering definitions (abstract)
-2.  Document-level bullets/numbering definitions (concrete)
-3.  Paragraph-level bullets/numbering selection
-
-## Document-level bullets/numbering definitions (abstract)
-
-Every document contains a set of abstract bullets/numbering
-definitions which define the formatting and layout of paragraphs using
-those bullets/numbering. An abstract numbering system defines how
-bullets/numbers are to be shown for lists, including any sublists that
-may be used. Thus each abstract definition includes a series of
-_levels_ which form a sequence starting at 0 indicating the top-level
-list look and increasing from there to describe the sublists, then
-sub-sublists, etc. Each level includes the following properties:
-
-*   **level**: This is its 0-based index in the definition stack
-*   **numberFormat**: This indicates how the bullet or number should be
-    generated. Options include `bullet` (meaning don't count), `decimal`
-    (arabic numerals), `upperRoman`, `lowerRoman`, `hex`, and many
-    more.
-*   **levelText**: This is a format string using the output of the
-    `numberFormat` function and generating a string to insert before
-    every item in the list. You may use `%1`, `%2`, ... to reference the
-    numbers from each numbering level before this one. Thus a level
-    text of `%d)` with a number format of `lowerLetter` would result in
-    the sequence "a)", "b)", ...
-*   and a few others, which you can see in the OOXML spec section 17.9.6
-
-## Document-level bullets/numbering definitions (concrete)
-
-Concrete definitions are sort of like concrete subclasses of the
-abstract definitions. They indicate their parent and are allowed to
-override certain level definitions. Thus two lists that differ only in
-how sub-sub-lists are to be displayed can share the same abstract
-numbering definition and have slightly different concrete definitions.
-
-## Paragraph-level bullets/numbering selection
-
-In order to use a bullets/numbering definition (which must be
-concrete), paragraphs need to select it, similar to applying a CSS
-class to an element, using both the concrete numbering definition ID
-and the level number that the paragraph should be at. Additionally, MS
-Word and LibreOffice typically apply a "ListParagraph" style to
-paragraphs that are being numbered.
-
-## Using bullets/numbering in `docx`
-
-`docx` includes a pre-defined bullet style which you can add to your
-paragraphs using `para.bullets()`. If you require different bullet
-styles or numbering of any kind, you'll have to use the
-`docx.Numbering` class.
-
-First you need to create a new numbering container class and use it to
-create your abstract numbering style, define your levels, and create
-your concrete numbering style:
+Numbering is configured by adding config into `Document`:
 
 ```ts
-const numbering = new docx.Numbering();
-
-const abstractNum = numbering.createAbstractNumbering();
-abstractNum.createLevel(0, "upperRoman", "%1", "start").addParagraphProperty(new Indent(720, 260));
-abstractNum.createLevel(1, "decimal", "%2.", "start").addParagraphProperty(new Indent(1440, 980));
-abstractNum.createLevel(2, "lowerLetter", "%3)", "start").addParagraphProperty(new Indent(2160, 1700));
-
-const concrete = numbering.createConcreteNumbering(abstractNum);
+new Document({
+    numbering: {
+        config: [...]
+    }
+})
 ```
 
-You can then apply your concrete style to paragraphs using the
-`setNumbering` method:
+Each `config` entry includes the following properties:
+
+. Each level includes the following properties:
+
+| Property  | Type              | Notes    | Possible Values                                                                                                                                                        |
+| --------- | ----------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| reference | `string`          | Required | A unique `string`                                                                                                                                                      |
+| levels    | `ILevelOptions[]` | Required | a series of _levels_ which form a sequence starting at 0 indicating the top-level list look and increasing from there to describe the sublists, then sub-sublists, etc |
+
+### Level Options
+
+Levels define the numbering definition itself, what it looks like, the indention, the alignment and the style. The reason why it is an array is because it allows the ability to create sub-lists. A sub list will have a different configuration because you may want the sub-list to have a different indentation or different bullet.
+
+| Property  | Type          | Notes    | Possible Values                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| --------- | ------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| level     | `number`      | Required | The list level this definition is for. `0` is for the root level, `1` is for a sub list, `2` is for a sub-sub-list etc.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| format    | `LevelFormat` | Optional | `DECIMAL`, `UPPER_ROMAN`, `LOWER_ROMAN`, `UPPER_LETTER`, `LOWER_LETTER`, `ORDINAL`, `CARDINAL_TEXT`, `ORDINAL_TEXT`, `HEX`, `CHICAGO`, `IDEOGRAPH__DIGITAL`, `JAPANESE_COUNTING`, `AIUEO`, `IROHA`, `DECIMAL_FULL_WIDTH`, `DECIMAL_HALF_WIDTH`, `JAPANESE_LEGAL`, `JAPANESE_DIGITAL_TEN_THOUSAND`, `DECIMAL_ENCLOSED_CIRCLE`, `DECIMAL_FULL_WIDTH2`, `AIUEO_FULL_WIDTH`, `IROHA_FULL_WIDTH`, `DECIMAL_ZERO`, `BULLET`, `GANADA`, `CHOSUNG`, `DECIMAL_ENCLOSED_FULLSTOP`, `DECIMAL_ENCLOSED_PARENTHESES`, `DECIMAL_ENCLOSED_CIRCLE_CHINESE`, `IDEOGRAPH_ENCLOSED_CIRCLE`, `IDEOGRAPH_TRADITIONAL`, `IDEOGRAPH_ZODIAC`, `IDEOGRAPH_ZODIAC_TRADITIONAL`, `TAIWANESE_COUNTING`, `IDEOGRAPH_LEGAL_TRADITIONAL`, `TAIWANESE_COUNTING_THOUSAND`, `TAIWANESE_DIGITAL`, `CHINESE_COUNTING`, `CHINESE_LEGAL_SIMPLIFIED`, `CHINESE_COUNTING_THOUSAND`, `KOREAN_DIGITAL`, `KOREAN_COUNTING`, `KOREAN_LEGAL`, `KOREAN_DIGITAL2`, `VIETNAMESE_COUNTING`, `RUSSIAN_LOWER`, `RUSSIAN_UPPER`, `NONE`, `NUMBER_IN_DASH`, `HEBREW1`, `HEBREW2`, `ARABIC_ALPHA`, `ARABIC_ABJAD`, `HINDI_VOWELS`, `HINDI_CONSONANTS`, `HINDI_NUMBERS`, `HINDI_COUNTING`, `THAI_LETTERS`, `THAI_NUMBERS`, `THAI_COUNTING`, `BAHT_TEXT`, `DOLLAR_TEXT`, `CUSTOM` |
+| text      | `string`      | Optional | A unique `string` to describe the shape of the bullet                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| alignment | `string`      | Required | `START`, `CENTER`, `END`, `BOTH`, `MEDIUM_KASHIDA`, `DISTRIBUTE`, `NUM_TAB`, `HIGH_KASHIDA`, `LOW_KASHIDA`, `THAI_DISTRIBUTE`, `LEFT`, `RIGHT`, `JUSTIFIED`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| style     | `string`      | Optional | [Sections](usage/styling-with-js.md)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+
+## Using ordered lists in `docx`
+
+Add a `numbering` section to the `Document` to numbering style, define your levels. Use `LevelFormat.UPPER_ROMAN` for the `format` in `levels`:
 
 ```ts
-topLevelP.setNumbering(concrete, 0);
-subP.setNumbering(concrete, 1);
-subSubP.setNumbering(concrete, 2);
+const doc = new Document({
+    ...
+    numbering: {
+        config: [
+            {
+                reference: "my-numbering",
+                levels: [
+                    {
+                        level: 0,
+                        format: LevelFormat.UPPER_ROMAN,
+                        text: "%1",
+                        alignment: AlignmentType.START,
+                        style: {
+                            paragraph: {
+                                indent: { left: 2880, hanging: 2420 },
+                            },
+                        },
+                    },
+                    ...
+                ],
+            },
+        ],
+    },
+    ...
+});
 ```
 
-## Unindent numbering 
-
-Default:1.  test
-
-After:1.test
-
-Use default numbering have indent,If you want unindent numbering
-
-How to custom number see the demo:
-https://runkit.com/dolanmiu/docx-demo3
+And then on a `Paragraph`, we can add use the numbering created:
 
 ```ts
-
-enum LevelSuffix {
-    NOTHING = "nothing",
-    SPACE = "space",
-    TAB = "tab"
-}
-
-// custom numbering 
-const levels=[
-{
-    level: 0,
-    format: "decimal",
-    text: "%1.",
-    alignment: AlignmentType.START,
-    suffix: LevelSuffix.NOTHING,    // Cancel intent
-}]
-    
+new Paragraph({
+    text: "Hey you!",
+    numbering: {
+        reference: "my-numbering",
+        level: 0,
+    },
+}),
 ```
+
+## Un-ordered lists / Bullet points
+
+Add a `numbering` section to the `Document` to numbering style, define your levels. Use `LevelFormat.BULLET` for the `format` in `levels`:
+
+```ts
+const doc = new Document({
+    ...
+    numbering: {
+        config: [
+            {
+                reference: "my-bullet-points",
+                levels: [
+                    {
+                        level: 0,
+                        format: LevelFormat.BULLET,
+                        text: "\u1F60",
+                        alignment: AlignmentType.LEFT,
+                        style: {
+                            paragraph: {
+                                indent: { left: convertInchesToTwip(0.5), hanging: convertInchesToTwip(0.25) },
+                            },
+                        },
+                    },
+                ],
+            },
+        ],
+    },
+    ...
+});
+```
+
+And then on a `Paragraph`, we can add use the numbering created:
+
+```ts
+new Paragraph({
+    text: "Hey you!",
+    numbering: {
+        reference: "my-bullet-points",
+        level: 0,
+    },
+}),
+```
+
+## Full Example
+
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/3-numbering-and-bullet-points.ts ":include")
+
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/3-numbering-and-bullet-points.ts_
