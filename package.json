@@ -67,7 +67,6 @@
     },
     "homepage": "https://docx.js.org",
     "devDependencies": {
-        "@esbuild/win32-x64": "^0.18.3",
         "@types/inquirer": "^9.0.3",
         "@types/prompt": "^1.1.1",
         "@types/unzipper": "^0.10.4",
