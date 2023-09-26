@@ -4,14 +4,14 @@
     "description": "Easily generate .docx files with JS/TS with a nice declarative API. Works for Node and on the Browser.",
     "type": "module",
     "main": "build/index.umd.js",
-    "module": "./build/index.js",
+    "module": "./build/index.mjs",
     "types": "./build/index.d.ts",
     "exports": {
         ".": {
             "require": "./build/index.cjs",
             "types": "./build/index.d.ts",
-            "import": "./build/index.js",
-            "default": "./build/index.js"
+            "import": "./build/index.mjs",
+            "default": "./build/index.mjs"
         }
     },
     "files": [

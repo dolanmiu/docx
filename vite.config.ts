@@ -39,7 +39,7 @@ export default defineConfig({
                 }
 
                 if (d === "es") {
-                    return "index.js";
+                    return "index.mjs";
                 }
 
                 if (d === "iife") {
