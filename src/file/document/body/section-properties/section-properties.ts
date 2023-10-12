@@ -5,7 +5,6 @@ import { FooterWrapper } from "@file/footer-wrapper";
 import { HeaderWrapper } from "@file/header-wrapper";
 import { VerticalAlign, VerticalAlignElement } from "@file/vertical-align";
 import { OnOffElement, XmlComponent } from "@file/xml-components";
-import { PositiveUniversalMeasure, UniversalMeasure } from "@util/values";
 
 import { HeaderFooterReference, HeaderFooterReferenceType, HeaderFooterType } from "./properties/header-footer-reference";
 import { Columns, IColumnsAttributes } from "./properties/columns";
@@ -76,10 +75,10 @@ export interface ISectionPropertiesOptions {
 // </xsd:group>
 
 export const sectionMarginDefaults = {
-    TOP: "1in" as UniversalMeasure,
-    RIGHT: "1in" as PositiveUniversalMeasure,
-    BOTTOM: "1in" as UniversalMeasure,
-    LEFT: "1in" as PositiveUniversalMeasure,
+    TOP: 1440,
+    RIGHT: 1440,
+    BOTTOM: 1440,
+    LEFT: 1440,
     HEADER: 708,
     FOOTER: 708,
     GUTTER: 0,
