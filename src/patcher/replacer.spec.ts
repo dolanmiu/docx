@@ -44,6 +44,28 @@ const MOCK_JSON = {
                         },
                     ],
                 },
+                {
+                    type: "element",
+                    name: "w:p",
+                    elements: [
+                        {
+                            type: "element",
+                            name: "w:r",
+                            elements: [
+                                {
+                                    type: "element",
+                                    name: "w:rPr",
+                                    elements: [{ type: "element", name: "w:b", attributes: { "w:val": "1" } }],
+                                },
+                                {
+                                    type: "element",
+                                    name: "w:t",
+                                    elements: [{ type: "text", text: "What a {{bold}} text!" }],
+                                },
+                            ],
+                        },
+                    ],
+                },
             ],
         },
     ],
@@ -113,6 +135,93 @@ describe("replacer", () => {
             );
 
             expect(JSON.stringify(output)).to.contain("Delightful Header");
+        });
+
+        it("should replace paragraph type keeping original styling if keepOriginalStyles is true", () => {
+            const output = replacer(
+                MOCK_JSON,
+                {
+                    type: PatchType.PARAGRAPH,
+                    children: [new TextRun("sweet")],
+                },
+                "{{bold}}",
+                [
+                    {
+                        text: "What a {{bold}} text!",
+                        runs: [
+                            {
+                                text: "What a {{bold}} text!",
+                                parts: [{ text: "What a {{bold}} text!", index: 1, start: 0, end: 21 }],
+                                index: 0,
+                                start: 0,
+                                end: 21,
+                            },
+                        ],
+                        index: 0,
+                        path: [0, 0, 1],
+                    },
+                ],
+                {
+                    file: {} as unknown as File,
+                    viewWrapper: {
+                        Relationships: {},
+                    } as unknown as IViewWrapper,
+                    stack: [],
+                },
+                true,
+            );
+
+            expect(JSON.stringify(output)).to.contain("sweet");
+            expect(output.elements![0].elements![1].elements).toMatchObject([
+                {
+                    type: "element",
+                    name: "w:r",
+                    elements: [
+                        {
+                            type: "element",
+                            name: "w:rPr",
+                            elements: [{ type: "element", name: "w:b", attributes: { "w:val": "1" } }],
+                        },
+                        {
+                            type: "element",
+                            name: "w:t",
+                            elements: [{ type: "text", text: "What a " }],
+                        },
+                    ],
+                },
+                {
+                    type: "element",
+                    name: "w:r",
+                    elements: [
+                        {
+                            type: "element",
+                            name: "w:rPr",
+                            elements: [{ type: "element", name: "w:b", attributes: { "w:val": "1" } }],
+                        },
+                        {
+                            type: "element",
+                            name: "w:t",
+                            elements: [{ type: "text", text: "sweet" }],
+                        },
+                    ],
+                },
+                {
+                    type: "element",
+                    name: "w:r",
+                    elements: [
+                        {
+                            type: "element",
+                            name: "w:rPr",
+                            elements: [{ type: "element", name: "w:b", attributes: { "w:val": "1" } }],
+                        },
+                        {
+                            type: "element",
+                            name: "w:t",
+                            elements: [{ type: "text", text: " text!" }],
+                        },
+                    ],
+                },
+            ]);
         });
 
         it("should replace document type", () => {

@@ -20,6 +20,7 @@ export const replacer = (
     patchText: string,
     renderedParagraphs: readonly IRenderedParagraphNode[],
     context: IContext,
+    keepOriginalStyles: boolean = false,
 ): Element => {
     for (const renderedParagraph of renderedParagraphs) {
         const textJson = patch.children
@@ -47,9 +48,29 @@ export const replacer = (
 
                 const index = findRunElementIndexWithToken(paragraphElement, SPLIT_TOKEN);
 
-                const { left, right } = splitRunElement(paragraphElement.elements![index], SPLIT_TOKEN);
+                const runElementToBeReplaced = paragraphElement.elements![index];
+                const { left, right } = splitRunElement(runElementToBeReplaced, SPLIT_TOKEN);
+
+                let newRunElements = textJson;
+                let patchedRightElement = right;
+
+                if (keepOriginalStyles) {
+                    const runElementNonTextualElements =
+                        runElementToBeReplaced.elements?.filter((e) => e.type === "element" && e.name !== "w:t") ?? [];
+
+                    newRunElements = textJson.map((e) => ({
+                        ...e,
+                        elements: [...runElementNonTextualElements, ...(e.elements ?? [])],
+                    }));
+
+                    patchedRightElement = {
+                        ...right,
+                        elements: [...runElementNonTextualElements, ...(right.elements ?? [])],
+                    };
+                }
+
                 // eslint-disable-next-line functional/immutable-data
-                paragraphElement.elements!.splice(index, 1, left, ...textJson, right);
+                paragraphElement.elements!.splice(index, 1, left, ...newRunElements, patchedRightElement);
                 break;
             }
         }
