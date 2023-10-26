@@ -216,7 +216,7 @@ export class Numbering extends XmlComponent {
             abstractNumId: abstractNumbering.id,
             reference,
             instance,
-            overrideLevel:
+            overrideLevels: [
                 firstLevelStartNumber && Number.isInteger(firstLevelStartNumber)
                     ? {
                           num: 0,
@@ -226,6 +226,7 @@ export class Numbering extends XmlComponent {
                           num: 0,
                           start: 1,
                       },
+            ],
         };
 
         this.concreteNumberingMap.set(fullReference, new ConcreteNumbering(concreteNumberingSettings));
