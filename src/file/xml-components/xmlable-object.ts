@@ -1,7 +1,7 @@
 export interface IXmlAttribute {
     readonly [key: string]: string | number | boolean;
 }
-export interface IXmlableObject extends Object {
+export interface IXmlableObject extends Record<string, unknown> {
     // readonly _attr?: IXmlAttribute;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     readonly [key: string]: any;
