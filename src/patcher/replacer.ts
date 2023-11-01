@@ -55,17 +55,18 @@ export const replacer = (
                 let patchedRightElement = right;
 
                 if (keepOriginalStyles) {
-                    const runElementNonTextualElements =
-                        runElementToBeReplaced.elements?.filter((e) => e.type === "element" && e.name !== "w:t") ?? [];
+                    const runElementNonTextualElements = runElementToBeReplaced.elements!.filter(
+                        (e) => e.type === "element" && e.name !== "w:t",
+                    );
 
                     newRunElements = textJson.map((e) => ({
                         ...e,
-                        elements: [...runElementNonTextualElements, ...(e.elements ?? [])],
+                        elements: [...runElementNonTextualElements, ...e.elements!],
                     }));
 
                     patchedRightElement = {
                         ...right,
-                        elements: [...runElementNonTextualElements, ...(right.elements ?? [])],
+                        elements: [...runElementNonTextualElements, ...right.elements!],
                     };
                 }
 
