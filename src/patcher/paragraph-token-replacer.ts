@@ -43,6 +43,7 @@ export const replaceTokenInParagraphElement = ({
                         patchTextElement(paragraphElement.elements![run.index].elements![index], firstPart);
                         replaceMode = ReplaceMode.MIDDLE;
                         continue;
+                        /* c8 ignore next 2 */
                     }
                     break;
                 case ReplaceMode.MIDDLE:
@@ -59,6 +60,7 @@ export const replaceTokenInParagraphElement = ({
                         patchTextElement(paragraphElement.elements![run.index].elements![index], "");
                     }
                     break;
+                /* c8 ignore next */
                 default:
             }
         }

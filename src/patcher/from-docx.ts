@@ -49,6 +49,7 @@ export type IPatch = ParagraphPatch | FilePatch;
 
 export interface PatchDocumentOptions {
     readonly patches: { readonly [key: string]: IPatch };
+    readonly keepOriginalStyles?: boolean;
 }
 
 const imageReplacer = new ImageReplacer();
@@ -128,6 +129,7 @@ export const patchDocument = async (data: InputDataType, options: PatchDocumentO
                     patchText,
                     renderedParagraphs,
                     context,
+                    options.keepOriginalStyles,
                 );
             }
 
