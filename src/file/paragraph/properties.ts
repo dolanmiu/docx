@@ -1,5 +1,6 @@
 // http://officeopenxml.com/WPparagraphProperties.php
 // https://c-rex.net/projects/samples/ooxml/e1/Part4/OOXML_P4_DOCX_suppressLineNumbers_topic_ID0ECJAO.html
+/* eslint-disable functional/immutable-data */
 import { IContext, IgnoreIfEmptyXmlComponent, IXmlableObject, OnOffElement, XmlComponent } from "@file/xml-components";
 import { DocumentWrapper } from "../document-wrapper";
 import { IShadingAttributesProperties, Shading } from "../shading";

@@ -80,6 +80,7 @@ export class Document extends XmlComponent {
     }
 
     public add(item: Paragraph | Table | TableOfContents | ConcreteHyperlink): Document {
+        // eslint-disable-next-line functional/immutable-data
         this.body.push(item);
         return this;
     }

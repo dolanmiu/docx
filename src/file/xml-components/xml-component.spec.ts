@@ -20,11 +20,13 @@ describe("XmlComponent", () => {
         });
         it("should handle children elements", () => {
             const xmlComponent = new TestComponent("w:test");
+            // eslint-disable-next-line functional/immutable-data
             xmlComponent.push(
                 new Attributes({
                     val: "test",
                 }),
             );
+            // eslint-disable-next-line functional/immutable-data
             xmlComponent.push(new TestComponent("innerTest"));
 
             const tree = new Formatter().format(xmlComponent);
@@ -43,6 +45,7 @@ describe("XmlComponent", () => {
         });
         it("should hoist attrs if only attrs are present", () => {
             const xmlComponent = new TestComponent("w:test");
+            // eslint-disable-next-line functional/immutable-data
             xmlComponent.push(
                 new Attributes({
                     val: "test",

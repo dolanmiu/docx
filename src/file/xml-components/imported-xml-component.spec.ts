@@ -55,6 +55,7 @@ describe("ImportedXmlComponent", () => {
             otherAttr: "2",
         };
         importedXmlComponent = new ImportedXmlComponent("w:test", attributes);
+        // eslint-disable-next-line functional/immutable-data
         importedXmlComponent.push(new ImportedXmlComponent("w:child"));
     });
 
