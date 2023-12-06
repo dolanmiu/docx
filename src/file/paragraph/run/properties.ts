@@ -261,7 +261,7 @@ export class RunProperties extends IgnoreIfEmptyXmlComponent {
             this.push(new BorderElement("w:bdr", options.border));
         }
 
-        if (options.snapToGrid) {
+        if (options.snapToGrid !== undefined) {
             this.push(new OnOffElement("w:snapToGrid", options.snapToGrid));
         }
 
