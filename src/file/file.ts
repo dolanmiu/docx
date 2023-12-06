@@ -154,7 +154,10 @@ export class File {
         return wrapper;
     }
 
-    private addHeaderToDocument(header: HeaderWrapper, type: HeaderFooterReferenceType = HeaderFooterReferenceType.DEFAULT): void {
+    private addHeaderToDocument(
+        header: HeaderWrapper,
+        type: (typeof HeaderFooterReferenceType)[keyof typeof HeaderFooterReferenceType] = HeaderFooterReferenceType.DEFAULT,
+    ): void {
         // eslint-disable-next-line functional/immutable-data
         this.headers.push({ header, type });
         this.documentWrapper.Relationships.createRelationship(
@@ -165,7 +168,10 @@ export class File {
         this.contentTypes.addHeader(this.headers.length);
     }
 
-    private addFooterToDocument(footer: FooterWrapper, type: HeaderFooterReferenceType = HeaderFooterReferenceType.DEFAULT): void {
+    private addFooterToDocument(
+        footer: FooterWrapper,
+        type: (typeof HeaderFooterReferenceType)[keyof typeof HeaderFooterReferenceType] = HeaderFooterReferenceType.DEFAULT,
+    ): void {
         // eslint-disable-next-line functional/immutable-data
         this.footers.push({ footer, type });
         this.documentWrapper.Relationships.createRelationship(

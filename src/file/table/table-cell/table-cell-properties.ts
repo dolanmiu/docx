@@ -17,9 +17,9 @@ import {
 export interface ITableCellPropertiesOptions {
     readonly shading?: IShadingAttributesProperties;
     readonly margins?: ITableCellMarginOptions;
-    readonly verticalAlign?: VerticalAlign;
-    readonly textDirection?: TextDirection;
-    readonly verticalMerge?: VerticalMergeType;
+    readonly verticalAlign?: (typeof VerticalAlign)[keyof typeof VerticalAlign];
+    readonly textDirection?: (typeof TextDirection)[keyof typeof TextDirection];
+    readonly verticalMerge?: (typeof VerticalMergeType)[keyof typeof VerticalMergeType];
     readonly width?: ITableWidthProperties;
     readonly columnSpan?: number;
     readonly rowSpan?: number;

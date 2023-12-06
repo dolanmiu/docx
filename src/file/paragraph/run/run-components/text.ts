@@ -12,7 +12,7 @@ import { TextAttributes } from "../text-attributes";
 // </xsd:complexType>
 
 interface ITextOptions {
-    readonly space?: SpaceType;
+    readonly space?: (typeof SpaceType)[keyof typeof SpaceType];
     readonly text?: string;
 }
 

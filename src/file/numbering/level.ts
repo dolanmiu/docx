@@ -75,71 +75,75 @@ import { IRunStylePropertiesOptions, RunProperties } from "../paragraph/run/prop
 //         <xsd:enumeration value="custom"/>
 //     </xsd:restriction>
 // </xsd:simpleType>
-export enum LevelFormat {
-    DECIMAL = "decimal",
-    UPPER_ROMAN = "upperRoman",
-    LOWER_ROMAN = "lowerRoman",
-    UPPER_LETTER = "upperLetter",
-    LOWER_LETTER = "lowerLetter",
-    ORDINAL = "ordinal",
-    CARDINAL_TEXT = "cardinalText",
-    ORDINAL_TEXT = "ordinalText",
-    HEX = "hex",
-    CHICAGO = "chicago",
-    IDEOGRAPH__DIGITAL = "ideographDigital",
-    JAPANESE_COUNTING = "japaneseCounting",
-    AIUEO = "aiueo",
-    IROHA = "iroha",
-    DECIMAL_FULL_WIDTH = "decimalFullWidth",
-    DECIMAL_HALF_WIDTH = "decimalHalfWidth",
-    JAPANESE_LEGAL = "japaneseLegal",
-    JAPANESE_DIGITAL_TEN_THOUSAND = "japaneseDigitalTenThousand",
-    DECIMAL_ENCLOSED_CIRCLE = "decimalEnclosedCircle",
-    DECIMAL_FULL_WIDTH2 = "decimalFullWidth2",
-    AIUEO_FULL_WIDTH = "aiueoFullWidth",
-    IROHA_FULL_WIDTH = "irohaFullWidth",
-    DECIMAL_ZERO = "decimalZero",
-    BULLET = "bullet",
-    GANADA = "ganada",
-    CHOSUNG = "chosung",
-    DECIMAL_ENCLOSED_FULLSTOP = "decimalEnclosedFullstop",
-    DECIMAL_ENCLOSED_PARENTHESES = "decimalEnclosedParen",
-    DECIMAL_ENCLOSED_CIRCLE_CHINESE = "decimalEnclosedCircleChinese",
-    IDEOGRAPH_ENCLOSED_CIRCLE = "ideographEnclosedCircle",
-    IDEOGRAPH_TRADITIONAL = "ideographTraditional",
-    IDEOGRAPH_ZODIAC = "ideographZodiac",
-    IDEOGRAPH_ZODIAC_TRADITIONAL = "ideographZodiacTraditional",
-    TAIWANESE_COUNTING = "taiwaneseCounting",
-    IDEOGRAPH_LEGAL_TRADITIONAL = "ideographLegalTraditional",
-    TAIWANESE_COUNTING_THOUSAND = "taiwaneseCountingThousand",
-    TAIWANESE_DIGITAL = "taiwaneseDigital",
-    CHINESE_COUNTING = "chineseCounting",
-    CHINESE_LEGAL_SIMPLIFIED = "chineseLegalSimplified",
-    CHINESE_COUNTING_THOUSAND = "chineseCountingThousand",
-    KOREAN_DIGITAL = "koreanDigital",
-    KOREAN_COUNTING = "koreanCounting",
-    KOREAN_LEGAL = "koreanLegal",
-    KOREAN_DIGITAL2 = "koreanDigital2",
-    VIETNAMESE_COUNTING = "vietnameseCounting",
-    RUSSIAN_LOWER = "russianLower",
-    RUSSIAN_UPPER = "russianUpper",
-    NONE = "none",
-    NUMBER_IN_DASH = "numberInDash",
-    HEBREW1 = "hebrew1",
-    HEBREW2 = "hebrew2",
-    ARABIC_ALPHA = "arabicAlpha",
-    ARABIC_ABJAD = "arabicAbjad",
-    HINDI_VOWELS = "hindiVowels",
-    HINDI_CONSONANTS = "hindiConsonants",
-    HINDI_NUMBERS = "hindiNumbers",
-    HINDI_COUNTING = "hindiCounting",
-    THAI_LETTERS = "thaiLetters",
-    THAI_NUMBERS = "thaiNumbers",
-    THAI_COUNTING = "thaiCounting",
-    BAHT_TEXT = "bahtText",
-    DOLLAR_TEXT = "dollarText",
-    CUSTOM = "custom",
-}
+
+/* eslint-disable @typescript-eslint/naming-convention */
+export const LevelFormat = {
+    DECIMAL: "decimal",
+    UPPER_ROMAN: "upperRoman",
+    LOWER_ROMAN: "lowerRoman",
+    UPPER_LETTER: "upperLetter",
+    LOWER_LETTER: "lowerLetter",
+    ORDINAL: "ordinal",
+    CARDINAL_TEXT: "cardinalText",
+    ORDINAL_TEXT: "ordinalText",
+    HEX: "hex",
+    CHICAGO: "chicago",
+    IDEOGRAPH__DIGITAL: "ideographDigital",
+    JAPANESE_COUNTING: "japaneseCounting",
+    AIUEO: "aiueo",
+    IROHA: "iroha",
+    DECIMAL_FULL_WIDTH: "decimalFullWidth",
+    DECIMAL_HALF_WIDTH: "decimalHalfWidth",
+    JAPANESE_LEGAL: "japaneseLegal",
+    JAPANESE_DIGITAL_TEN_THOUSAND: "japaneseDigitalTenThousand",
+    DECIMAL_ENCLOSED_CIRCLE: "decimalEnclosedCircle",
+    DECIMAL_FULL_WIDTH2: "decimalFullWidth2",
+    AIUEO_FULL_WIDTH: "aiueoFullWidth",
+    IROHA_FULL_WIDTH: "irohaFullWidth",
+    DECIMAL_ZERO: "decimalZero",
+    BULLET: "bullet",
+    GANADA: "ganada",
+    CHOSUNG: "chosung",
+    DECIMAL_ENCLOSED_FULLSTOP: "decimalEnclosedFullstop",
+    DECIMAL_ENCLOSED_PARENTHESES: "decimalEnclosedParen",
+    DECIMAL_ENCLOSED_CIRCLE_CHINESE: "decimalEnclosedCircleChinese",
+    IDEOGRAPH_ENCLOSED_CIRCLE: "ideographEnclosedCircle",
+    IDEOGRAPH_TRADITIONAL: "ideographTraditional",
+    IDEOGRAPH_ZODIAC: "ideographZodiac",
+    IDEOGRAPH_ZODIAC_TRADITIONAL: "ideographZodiacTraditional",
+    TAIWANESE_COUNTING: "taiwaneseCounting",
+    IDEOGRAPH_LEGAL_TRADITIONAL: "ideographLegalTraditional",
+    TAIWANESE_COUNTING_THOUSAND: "taiwaneseCountingThousand",
+    TAIWANESE_DIGITAL: "taiwaneseDigital",
+    CHINESE_COUNTING: "chineseCounting",
+    CHINESE_LEGAL_SIMPLIFIED: "chineseLegalSimplified",
+    CHINESE_COUNTING_THOUSAND: "chineseCountingThousand",
+    KOREAN_DIGITAL: "koreanDigital",
+    KOREAN_COUNTING: "koreanCounting",
+    KOREAN_LEGAL: "koreanLegal",
+    KOREAN_DIGITAL2: "koreanDigital2",
+    VIETNAMESE_COUNTING: "vietnameseCounting",
+    RUSSIAN_LOWER: "russianLower",
+    RUSSIAN_UPPER: "russianUpper",
+    NONE: "none",
+    NUMBER_IN_DASH: "numberInDash",
+    HEBREW1: "hebrew1",
+    HEBREW2: "hebrew2",
+    ARABIC_ALPHA: "arabicAlpha",
+    ARABIC_ABJAD: "arabicAbjad",
+    HINDI_VOWELS: "hindiVowels",
+    HINDI_CONSONANTS: "hindiConsonants",
+    HINDI_NUMBERS: "hindiNumbers",
+    HINDI_COUNTING: "hindiCounting",
+    THAI_LETTERS: "thaiLetters",
+    THAI_NUMBERS: "thaiNumbers",
+    THAI_COUNTING: "thaiCounting",
+    BAHT_TEXT: "bahtText",
+    DOLLAR_TEXT: "dollarText",
+    CUSTOM: "custom",
+} as const;
+
+/* eslint-enable */
 
 class LevelAttributes extends XmlAttributeComponent<{
     readonly ilvl?: number;
@@ -182,7 +186,7 @@ class LevelText extends XmlComponent {
 }
 
 class LevelJc extends XmlComponent {
-    public constructor(value: AlignmentType) {
+    public constructor(value: (typeof AlignmentType)[keyof typeof AlignmentType]) {
         super("w:lvlJc");
         this.root.push(
             new Attributes({
@@ -192,19 +196,19 @@ class LevelJc extends XmlComponent {
     }
 }
 
-export enum LevelSuffix {
-    NOTHING = "nothing",
-    SPACE = "space",
-    TAB = "tab",
-}
+export const LevelSuffix = {
+    NOTHING: "nothing",
+    SPACE: "space",
+    TAB: "tab",
+} as const;
 
 export interface ILevelsOptions {
     readonly level: number;
-    readonly format?: LevelFormat;
+    readonly format?: (typeof LevelFormat)[keyof typeof LevelFormat];
     readonly text?: string;
-    readonly alignment?: AlignmentType;
+    readonly alignment?: (typeof AlignmentType)[keyof typeof AlignmentType];
     readonly start?: number;
-    readonly suffix?: LevelSuffix;
+    readonly suffix?: (typeof LevelSuffix)[keyof typeof LevelSuffix];
     readonly isLegalNumberingStyle?: boolean;
     readonly style?: {
         readonly run?: IRunStylePropertiesOptions;
@@ -223,7 +227,7 @@ export interface ILevelsOptions {
 //         </xsd:restriction>
 //     </xsd:simpleType>
 class Suffix extends XmlComponent {
-    public constructor(value: LevelSuffix) {
+    public constructor(value: (typeof LevelSuffix)[keyof typeof LevelSuffix]) {
         super("w:suff");
         this.root.push(
             new Attributes({

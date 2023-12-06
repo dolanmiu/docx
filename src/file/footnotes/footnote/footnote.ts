@@ -4,14 +4,15 @@ import { XmlComponent } from "@file/xml-components";
 import { FootnoteAttributes } from "./footnote-attributes";
 import { FootnoteRefRun } from "./run/footnote-ref-run";
 
-export enum FootnoteType {
-    SEPERATOR = "separator",
-    CONTINUATION_SEPERATOR = "continuationSeparator",
-}
+export const FootnoteType = {
+    SEPERATOR: "separator",
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    CONTINUATION_SEPERATOR: "continuationSeparator",
+} as const;
 
 export interface IFootnoteOptions {
     readonly id: number;
-    readonly type?: FootnoteType;
+    readonly type?: (typeof FootnoteType)[keyof typeof FootnoteType];
     readonly children: readonly Paragraph[];
 }
 

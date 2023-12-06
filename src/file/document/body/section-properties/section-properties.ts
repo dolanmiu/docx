@@ -29,16 +29,16 @@ export interface ISectionPropertiesOptions {
         readonly margin?: IPageMarginAttributes;
         readonly pageNumbers?: IPageNumberTypeAttributes;
         readonly borders?: IPageBordersOptions;
-        readonly textDirection?: PageTextDirectionType;
+        readonly textDirection?: (typeof PageTextDirectionType)[keyof typeof PageTextDirectionType];
     };
     readonly grid?: IDocGridAttributesProperties;
     readonly headerWrapperGroup?: IHeaderFooterGroup<HeaderWrapper>;
     readonly footerWrapperGroup?: IHeaderFooterGroup<FooterWrapper>;
     readonly lineNumbers?: ILineNumberAttributes;
     readonly titlePage?: boolean;
-    readonly verticalAlign?: VerticalAlign;
+    readonly verticalAlign?: (typeof VerticalAlign)[keyof typeof VerticalAlign];
     readonly column?: IColumnsAttributes;
-    readonly type?: SectionType;
+    readonly type?: (typeof SectionType)[keyof typeof SectionType];
 }
 
 // <xsd:complexType name="CT_SectPr">
@@ -162,7 +162,7 @@ export class SectionProperties extends XmlComponent {
     }
 
     private addHeaderFooterGroup(
-        type: HeaderFooterType,
+        type: (typeof HeaderFooterType)[keyof typeof HeaderFooterType],
         group: IHeaderFooterGroup<HeaderWrapper> | IHeaderFooterGroup<FooterWrapper>,
     ): void {
         if (group.default) {

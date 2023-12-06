@@ -1,17 +1,19 @@
 // http://officeopenxml.com/WPspacing.php
 import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
 
-export enum LineRuleType {
-    AT_LEAST = "atLeast",
-    EXACTLY = "exactly",
-    EXACT = "exact",
-    AUTO = "auto",
-}
+export const LineRuleType = {
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    AT_LEAST: "atLeast",
+    EXACTLY: "exactly",
+    EXACT: "exact",
+    AUTO: "auto",
+} as const;
+
 export interface ISpacingProperties {
     readonly after?: number;
     readonly before?: number;
     readonly line?: number;
-    readonly lineRule?: LineRuleType;
+    readonly lineRule?: (typeof LineRuleType)[keyof typeof LineRuleType];
     readonly beforeAutoSpacing?: boolean;
     readonly afterAutoSpacing?: boolean;
 }

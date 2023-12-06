@@ -7,11 +7,11 @@ import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
 //   <xsd:enumeration value="first"/>
 // </xsd:restriction>
 // </xsd:simpleType>
-export enum HeaderFooterReferenceType {
-    DEFAULT = "default",
-    FIRST = "first",
-    EVEN = "even",
-}
+export const HeaderFooterReferenceType = {
+    DEFAULT: "default",
+    FIRST: "first",
+    EVEN: "even",
+} as const;
 
 // </xsd:complexType>
 // <xsd:group name="EG_HdrFtrReferences">
@@ -33,12 +33,12 @@ export enum HeaderFooterReferenceType {
 // </xsd:complexType>
 
 export interface IHeaderFooterOptions {
-    readonly type?: HeaderFooterReferenceType;
+    readonly type?: (typeof HeaderFooterReferenceType)[keyof typeof HeaderFooterReferenceType];
     readonly id?: number;
 }
 
 class FooterReferenceAttributes extends XmlAttributeComponent<{
-    readonly type: HeaderFooterReferenceType;
+    readonly type: (typeof HeaderFooterReferenceType)[keyof typeof HeaderFooterReferenceType];
     readonly id: string;
 }> {
     protected readonly xmlKeys = {
@@ -47,12 +47,13 @@ class FooterReferenceAttributes extends XmlAttributeComponent<{
     };
 }
 
-export enum HeaderFooterType {
-    HEADER = "w:headerReference",
-    FOOTER = "w:footerReference",
-}
+export const HeaderFooterType = {
+    HEADER: "w:headerReference",
+    FOOTER: "w:footerReference",
+} as const;
+
 export class HeaderFooterReference extends XmlComponent {
-    public constructor(type: HeaderFooterType, options: IHeaderFooterOptions) {
+    public constructor(type: (typeof HeaderFooterType)[keyof typeof HeaderFooterType], options: IHeaderFooterOptions) {
         super(type);
 
         this.root.push(

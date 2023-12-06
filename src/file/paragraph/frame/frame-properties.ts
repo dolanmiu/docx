@@ -3,43 +3,44 @@ import { HorizontalPositionAlign, VerticalPositionAlign } from "@file/shared/ali
 import { HeightRule } from "@file/table";
 import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
 
-export enum DropCapType {
-    NONE = "none",
-    DROP = "drop",
-    MARGIN = "margin",
-}
+export const DropCapType = {
+    NONE: "none",
+    DROP: "drop",
+    MARGIN: "margin",
+} as const;
 
-export enum FrameAnchorType {
-    MARGIN = "margin",
-    PAGE = "page",
-    TEXT = "text",
-}
+export const FrameAnchorType = {
+    MARGIN: "margin",
+    PAGE: "page",
+    TEXT: "text",
+} as const;
 
-export enum FrameWrap {
-    AROUND = "around",
-    AUTO = "auto",
-    NONE = "none",
-    NOT_BESIDE = "notBeside",
-    THROUGH = "through",
-    TIGHT = "tight",
-}
+export const FrameWrap = {
+    AROUND: "around",
+    AUTO: "auto",
+    NONE: "none",
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    NOT_BESIDE: "notBeside",
+    THROUGH: "through",
+    TIGHT: "tight",
+} as const;
 
 interface IBaseFrameOptions {
     readonly anchorLock?: boolean;
-    readonly dropCap?: DropCapType;
+    readonly dropCap?: (typeof DropCapType)[keyof typeof DropCapType];
     readonly width: number;
     readonly height: number;
-    readonly wrap?: FrameWrap;
+    readonly wrap?: (typeof FrameWrap)[keyof typeof FrameWrap];
     readonly lines?: number;
     readonly anchor: {
-        readonly horizontal: FrameAnchorType;
-        readonly vertical: FrameAnchorType;
+        readonly horizontal: (typeof FrameAnchorType)[keyof typeof FrameAnchorType];
+        readonly vertical: (typeof FrameAnchorType)[keyof typeof FrameAnchorType];
     };
     readonly space?: {
         readonly horizontal: number;
         readonly vertical: number;
     };
-    readonly rule?: HeightRule;
+    readonly rule?: (typeof HeightRule)[keyof typeof HeightRule];
 }
 
 export interface IXYFrameOptions extends IBaseFrameOptions {
@@ -51,8 +52,8 @@ export interface IXYFrameOptions extends IBaseFrameOptions {
 
 export interface IAlignmentFrameOptions extends IBaseFrameOptions {
     readonly alignment: {
-        readonly x: HorizontalPositionAlign;
-        readonly y: VerticalPositionAlign;
+        readonly x: (typeof HorizontalPositionAlign)[keyof typeof HorizontalPositionAlign];
+        readonly y: (typeof VerticalPositionAlign)[keyof typeof VerticalPositionAlign];
     };
 }
 
@@ -62,20 +63,20 @@ export type IFrameOptions = IXYFrameOptions | IAlignmentFrameOptions;
 
 export class FramePropertiesAttributes extends XmlAttributeComponent<{
     readonly anchorLock?: boolean;
-    readonly dropCap?: DropCapType;
+    readonly dropCap?: (typeof DropCapType)[keyof typeof DropCapType];
     readonly width: number;
     readonly height: number;
     readonly x?: number;
     readonly y?: number;
-    readonly wrap?: FrameWrap;
+    readonly wrap?: (typeof FrameWrap)[keyof typeof FrameWrap];
     readonly lines?: number;
-    readonly anchorHorizontal?: FrameAnchorType;
-    readonly anchorVertical?: FrameAnchorType;
+    readonly anchorHorizontal?: (typeof FrameAnchorType)[keyof typeof FrameAnchorType];
+    readonly anchorVertical?: (typeof FrameAnchorType)[keyof typeof FrameAnchorType];
     readonly spaceHorizontal?: number;
     readonly spaceVertical?: number;
-    readonly rule?: HeightRule;
-    readonly alignmentX?: HorizontalPositionAlign;
-    readonly alignmentY?: VerticalPositionAlign;
+    readonly rule?: (typeof HeightRule)[keyof typeof HeightRule];
+    readonly alignmentX?: (typeof HorizontalPositionAlign)[keyof typeof HorizontalPositionAlign];
+    readonly alignmentY?: (typeof VerticalPositionAlign)[keyof typeof VerticalPositionAlign];
 }> {
     protected readonly xmlKeys = {
         anchorLock: "w:anchorLock",

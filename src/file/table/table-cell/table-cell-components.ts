@@ -80,18 +80,20 @@ export class GridSpan extends XmlComponent {
 /**
  * Vertical merge types.
  */
-export enum VerticalMergeType {
+export const VerticalMergeType = {
     /**
      * Cell that is merged with upper one.
      */
-    CONTINUE = "continue",
+    CONTINUE: "continue",
     /**
      * Cell that is starting the vertical merge.
      */
-    RESTART = "restart",
-}
+    RESTART: "restart",
+} as const;
 
-class VerticalMergeAttributes extends XmlAttributeComponent<{ readonly val: VerticalMergeType }> {
+class VerticalMergeAttributes extends XmlAttributeComponent<{
+    readonly val: (typeof VerticalMergeType)[keyof typeof VerticalMergeType];
+}> {
     protected readonly xmlKeys = { val: "w:val" };
 }
 
@@ -99,7 +101,7 @@ class VerticalMergeAttributes extends XmlAttributeComponent<{ readonly val: Vert
  * Vertical merge element. Should be used in a table cell.
  */
 export class VerticalMerge extends XmlComponent {
-    public constructor(value: VerticalMergeType) {
+    public constructor(value: (typeof VerticalMergeType)[keyof typeof VerticalMergeType]) {
         super("w:vMerge");
 
         this.root.push(
@@ -110,13 +112,18 @@ export class VerticalMerge extends XmlComponent {
     }
 }
 
-export enum TextDirection {
-    BOTTOM_TO_TOP_LEFT_TO_RIGHT = "btLr",
-    LEFT_TO_RIGHT_TOP_TO_BOTTOM = "lrTb",
-    TOP_TO_BOTTOM_RIGHT_TO_LEFT = "tbRl",
-}
+export const TextDirection = {
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    BOTTOM_TO_TOP_LEFT_TO_RIGHT: "btLr",
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    LEFT_TO_RIGHT_TOP_TO_BOTTOM: "lrTb",
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    TOP_TO_BOTTOM_RIGHT_TO_LEFT: "tbRl",
+} as const;
 
-class TDirectionAttributes extends XmlAttributeComponent<{ readonly val: TextDirection }> {
+class TDirectionAttributes extends XmlAttributeComponent<{
+    readonly val: (typeof TextDirection)[keyof typeof TextDirection];
+}> {
     protected readonly xmlKeys = { val: "w:val" };
 }
 
@@ -124,7 +131,7 @@ class TDirectionAttributes extends XmlAttributeComponent<{ readonly val: TextDir
  * Text Direction within a table cell
  */
 export class TDirection extends XmlComponent {
-    public constructor(value: TextDirection) {
+    public constructor(value: (typeof TextDirection)[keyof typeof TextDirection]) {
         super("w:textDirection");
 
         this.root.push(

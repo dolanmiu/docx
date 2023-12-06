@@ -6,18 +6,21 @@ import { Compiler } from "./next-compiler";
 /**
  * Use blanks to prettify
  */
-export enum PrettifyType {
-    NONE = "",
-    WITH_2_BLANKS = "  ",
-    WITH_4_BLANKS = "    ",
-    WITH_TAB = "\t",
-}
+export const PrettifyType = {
+    NONE: "",
+    WITH_2_BLANKS: "  ",
+    WITH_4_BLANKS: "    ",
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    WITH_TAB: "\t",
+} as const;
 
-const convertPrettifyType = (prettify?: boolean | PrettifyType): PrettifyType | undefined =>
+const convertPrettifyType = (
+    prettify?: boolean | (typeof PrettifyType)[keyof typeof PrettifyType],
+): (typeof PrettifyType)[keyof typeof PrettifyType] | undefined =>
     prettify === true ? PrettifyType.WITH_2_BLANKS : prettify === false ? undefined : prettify;
 
 export class Packer {
-    public static async toString(file: File, prettify?: boolean | PrettifyType): Promise<string> {
+    public static async toString(file: File, prettify?: boolean | (typeof PrettifyType)[keyof typeof PrettifyType]): Promise<string> {
         const zip = this.compiler.compile(file, convertPrettifyType(prettify));
         const zipData = await zip.generateAsync({
             type: "string",
@@ -28,7 +31,7 @@ export class Packer {
         return zipData;
     }
 
-    public static async toBuffer(file: File, prettify?: boolean | PrettifyType): Promise<Buffer> {
+    public static async toBuffer(file: File, prettify?: boolean | (typeof PrettifyType)[keyof typeof PrettifyType]): Promise<Buffer> {
         const zip = this.compiler.compile(file, convertPrettifyType(prettify));
         const zipData = await zip.generateAsync({
             type: "nodebuffer",
@@ -39,7 +42,7 @@ export class Packer {
         return zipData;
     }
 
-    public static async toBase64String(file: File, prettify?: boolean | PrettifyType): Promise<string> {
+    public static async toBase64String(file: File, prettify?: boolean | (typeof PrettifyType)[keyof typeof PrettifyType]): Promise<string> {
         const zip = this.compiler.compile(file, convertPrettifyType(prettify));
         const zipData = await zip.generateAsync({
             type: "base64",
@@ -50,7 +53,7 @@ export class Packer {
         return zipData;
     }
 
-    public static async toBlob(file: File, prettify?: boolean | PrettifyType): Promise<Blob> {
+    public static async toBlob(file: File, prettify?: boolean | (typeof PrettifyType)[keyof typeof PrettifyType]): Promise<Blob> {
         const zip = this.compiler.compile(file, convertPrettifyType(prettify));
         const zipData = await zip.generateAsync({
             type: "blob",
@@ -61,7 +64,7 @@ export class Packer {
         return zipData;
     }
 
-    public static toStream(file: File, prettify?: boolean | PrettifyType): Stream {
+    public static toStream(file: File, prettify?: boolean | (typeof PrettifyType)[keyof typeof PrettifyType]): Stream {
         const stream = new Stream();
         const zip = this.compiler.compile(file, convertPrettifyType(prettify));
 

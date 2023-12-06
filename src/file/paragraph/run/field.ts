@@ -1,12 +1,15 @@
 import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
 
-enum FieldCharacterType {
-    BEGIN = "begin",
-    END = "end",
-    SEPARATE = "separate",
-}
+const FieldCharacterType = {
+    BEGIN: "begin",
+    END: "end",
+    SEPARATE: "separate",
+} as const;
 
-class FidCharAttrs extends XmlAttributeComponent<{ readonly type: FieldCharacterType; readonly dirty?: boolean }> {
+class FidCharAttrs extends XmlAttributeComponent<{
+    readonly type: (typeof FieldCharacterType)[keyof typeof FieldCharacterType];
+    readonly dirty?: boolean;
+}> {
     protected readonly xmlKeys = { type: "w:fldCharType", dirty: "w:dirty" };
 }
 

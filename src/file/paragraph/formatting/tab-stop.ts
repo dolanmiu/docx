@@ -2,9 +2,9 @@
 import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
 
 export interface TabStopDefinition {
-    readonly type: TabStopType;
-    readonly position: number | TabStopPosition;
-    readonly leader?: LeaderType;
+    readonly type: (typeof TabStopType)[keyof typeof TabStopType];
+    readonly position: number | (typeof TabStopPosition)[keyof typeof TabStopPosition];
+    readonly leader?: (typeof LeaderType)[keyof typeof LeaderType];
 }
 
 export class TabStop extends XmlComponent {
@@ -17,34 +17,35 @@ export class TabStop extends XmlComponent {
     }
 }
 
-export enum TabStopType {
-    LEFT = "left",
-    RIGHT = "right",
-    CENTER = "center",
-    BAR = "bar",
-    CLEAR = "clear",
-    DECIMAL = "decimal",
-    END = "end",
-    NUM = "num",
-    START = "start",
-}
+export const TabStopType = {
+    LEFT: "left",
+    RIGHT: "right",
+    CENTER: "center",
+    BAR: "bar",
+    CLEAR: "clear",
+    DECIMAL: "decimal",
+    END: "end",
+    NUM: "num",
+    START: "start",
+} as const;
 
-export enum LeaderType {
-    DOT = "dot",
-    HYPHEN = "hyphen",
-    MIDDLE_DOT = "middleDot",
-    NONE = "none",
-    UNDERSCORE = "underscore",
-}
+export const LeaderType = {
+    DOT: "dot",
+    HYPHEN: "hyphen",
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    MIDDLE_DOT: "middleDot",
+    NONE: "none",
+    UNDERSCORE: "underscore",
+} as const;
 
-export enum TabStopPosition {
-    MAX = 9026,
-}
+export const TabStopPosition = {
+    MAX: 9026,
+} as const;
 
 export class TabAttributes extends XmlAttributeComponent<{
-    readonly val: TabStopType;
+    readonly val: (typeof TabStopType)[keyof typeof TabStopType];
     readonly pos: string | number;
-    readonly leader?: LeaderType;
+    readonly leader?: (typeof LeaderType)[keyof typeof LeaderType];
 }> {
     protected readonly xmlKeys = { val: "w:val", pos: "w:pos", leader: "w:leader" };
 }

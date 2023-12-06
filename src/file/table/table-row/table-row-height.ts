@@ -13,24 +13,24 @@ import { PositiveUniversalMeasure, twipsMeasureValue } from "@util/values";
 //         <xsd:enumeration value="atLeast"/>
 //     </xsd:restriction>
 // </xsd:simpleType>
-export enum HeightRule {
+export const HeightRule = {
     /** Height is determined based on the content, so value is ignored. */
-    AUTO = "auto",
+    AUTO: "auto",
     /** At least the value specified */
-    ATLEAST = "atLeast",
+    ATLEAST: "atLeast",
     /** Exactly the value specified */
-    EXACT = "exact",
-}
+    EXACT: "exact",
+} as const;
 
 export class TableRowHeightAttributes extends XmlAttributeComponent<{
     readonly value: number | string;
-    readonly rule: HeightRule;
+    readonly rule: (typeof HeightRule)[keyof typeof HeightRule];
 }> {
     protected readonly xmlKeys = { value: "w:val", rule: "w:hRule" };
 }
 
 export class TableRowHeight extends XmlComponent {
-    public constructor(value: number | PositiveUniversalMeasure, rule: HeightRule) {
+    public constructor(value: number | PositiveUniversalMeasure, rule: (typeof HeightRule)[keyof typeof HeightRule]) {
         super("w:trHeight");
 
         this.root.push(

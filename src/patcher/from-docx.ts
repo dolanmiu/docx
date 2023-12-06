@@ -20,18 +20,18 @@ import { appendContentType } from "./content-types-manager";
 // eslint-disable-next-line functional/prefer-readonly-type
 type InputDataType = Buffer | string | number[] | Uint8Array | ArrayBuffer | Blob | NodeJS.ReadableStream;
 
-export enum PatchType {
-    DOCUMENT = "file",
-    PARAGRAPH = "paragraph",
-}
+export const PatchType = {
+    DOCUMENT: "file",
+    PARAGRAPH: "paragraph",
+} as const;
 
 type ParagraphPatch = {
-    readonly type: PatchType.PARAGRAPH;
+    readonly type: typeof PatchType.PARAGRAPH;
     readonly children: readonly ParagraphChild[];
 };
 
 type FilePatch = {
-    readonly type: PatchType.DOCUMENT;
+    readonly type: typeof PatchType.DOCUMENT;
     readonly children: readonly FileChild[];
 };
 
@@ -83,7 +83,12 @@ export const patchDocument = async (data: InputDataType, options: PatchDocumentO
                 file,
                 viewWrapper: {
                     Relationships: {
-                        createRelationship: (linkId: string, _: string, target: string, __: TargetModeType) => {
+                        createRelationship: (
+                            linkId: string,
+                            _: string,
+                            target: string,
+                            __: (typeof TargetModeType)[keyof typeof TargetModeType],
+                        ) => {
                             // eslint-disable-next-line functional/immutable-data
                             hyperlinkRelationshipAdditions.push({
                                 key,

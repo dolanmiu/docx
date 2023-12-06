@@ -7,10 +7,10 @@ import { PositiveUniversalMeasure, twipsMeasureValue } from "@util/values";
 //   <xsd:enumeration value="landscape"/>
 // </xsd:restriction>
 // </xsd:simpleType>
-export enum PageOrientation {
-    PORTRAIT = "portrait",
-    LANDSCAPE = "landscape",
-}
+export const PageOrientation = {
+    PORTRAIT: "portrait",
+    LANDSCAPE: "landscape",
+} as const;
 
 // <xsd:complexType name="CT_PageSz">
 //     <xsd:attribute name="w" type="s:ST_TwipsMeasure"/>
@@ -21,11 +21,15 @@ export enum PageOrientation {
 export type IPageSizeAttributes = {
     readonly width?: number | PositiveUniversalMeasure;
     readonly height?: number | PositiveUniversalMeasure;
-    readonly orientation?: PageOrientation;
+    readonly orientation?: (typeof PageOrientation)[keyof typeof PageOrientation];
 };
 
 export class PageSize extends XmlComponent {
-    public constructor(width: number | PositiveUniversalMeasure, height: number | PositiveUniversalMeasure, orientation: PageOrientation) {
+    public constructor(
+        width: number | PositiveUniversalMeasure,
+        height: number | PositiveUniversalMeasure,
+        orientation: (typeof PageOrientation)[keyof typeof PageOrientation],
+    ) {
         super("w:pgSz");
 
         const flip = orientation === PageOrientation.LANDSCAPE;

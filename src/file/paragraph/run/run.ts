@@ -71,7 +71,7 @@ export interface IRunOptions extends IRunPropertiesOptions {
         | FieldInstruction
         | Separate
         | End
-        | PageNumber
+        | (typeof PageNumber)[keyof typeof PageNumber]
         | FootnoteReferenceRun
         | Break
         | AnnotationReference
@@ -98,11 +98,14 @@ export interface IRunOptions extends IRunPropertiesOptions {
     readonly text?: string;
 }
 
-export enum PageNumber {
-    CURRENT = "CURRENT",
-    TOTAL_PAGES = "TOTAL_PAGES",
-    TOTAL_PAGES_IN_SECTION = "TOTAL_PAGES_IN_SECTION",
-}
+/* eslint-disable @typescript-eslint/naming-convention */
+export const PageNumber = {
+    CURRENT: "CURRENT",
+    TOTAL_PAGES: "TOTAL_PAGES",
+    TOTAL_PAGES_IN_SECTION: "TOTAL_PAGES_IN_SECTION",
+} as const;
+
+/* eslint-enable */
 
 export class Run extends XmlComponent {
     protected readonly properties: RunProperties;

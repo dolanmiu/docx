@@ -10,16 +10,17 @@ import { measurementOrPercentValue, Percentage, UniversalMeasure } from "@util/v
 //     <xsd:enumeration value="auto"/>
 //   </xsd:restriction>
 // </xsd:simpleType>
-export enum WidthType {
+
+export const WidthType = {
     /** Auto. */
-    AUTO = "auto",
+    AUTO: "auto",
     /** Value is in twentieths of a point */
-    DXA = "dxa",
+    DXA: "dxa",
     /** No (empty) value. */
-    NIL = "nil",
+    NIL: "nil",
     /** Value is in percentage. */
-    PERCENTAGE = "pct",
-}
+    PERCENTAGE: "pct",
+} as const;
 
 // <xsd:complexType name="CT_TblWidth">
 //     <xsd:attribute name="w" type="ST_MeasurementOrPercent"/>
@@ -27,7 +28,7 @@ export enum WidthType {
 // </xsd:complexType>
 export type ITableWidthProperties = {
     readonly size: number | Percentage | UniversalMeasure;
-    readonly type?: WidthType;
+    readonly type?: (typeof WidthType)[keyof typeof WidthType];
 };
 
 export class TableWidthElement extends XmlComponent {

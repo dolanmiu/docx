@@ -6,12 +6,14 @@ import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
 //         <xsd:enumeration value="autofit"/>
 //     </xsd:restriction>
 // </xsd:simpleType>
-export enum TableLayoutType {
-    AUTOFIT = "autofit",
-    FIXED = "fixed",
-}
+export const TableLayoutType = {
+    AUTOFIT: "autofit",
+    FIXED: "fixed",
+} as const;
 
-class TableLayoutAttributes extends XmlAttributeComponent<{ readonly type: TableLayoutType }> {
+class TableLayoutAttributes extends XmlAttributeComponent<{
+    readonly type: (typeof TableLayoutType)[keyof typeof TableLayoutType];
+}> {
     protected readonly xmlKeys = { type: "w:type" };
 }
 
@@ -19,7 +21,7 @@ class TableLayoutAttributes extends XmlAttributeComponent<{ readonly type: Table
 //     <xsd:attribute name="type" type="ST_TblLayoutType"/>
 // </xsd:complexType>
 export class TableLayout extends XmlComponent {
-    public constructor(type: TableLayoutType) {
+    public constructor(type: (typeof TableLayoutType)[keyof typeof TableLayoutType]) {
         super("w:tblLayout");
         this.root.push(new TableLayoutAttributes({ type }));
     }

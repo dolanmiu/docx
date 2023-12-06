@@ -25,15 +25,18 @@ interface IFontOptions {
     readonly hint?: string;
 }
 
-export enum TextEffect {
-    BLINK_BACKGROUND = "blinkBackground",
-    LIGHTS = "lights",
-    ANTS_BLACK = "antsBlack",
-    ANTS_RED = "antsRed",
-    SHIMMER = "shimmer",
-    SPARKLE = "sparkle",
-    NONE = "none",
-}
+/* eslint-disable @typescript-eslint/naming-convention */
+export const TextEffect = {
+    BLINK_BACKGROUND: "blinkBackground",
+    LIGHTS: "lights",
+    ANTS_BLACK: "antsBlack",
+    ANTS_RED: "antsRed",
+    SHIMMER: "shimmer",
+    SPARKLE: "sparkle",
+    NONE: "none",
+} as const;
+
+/* eslint-enable */
 
 export interface IRunStylePropertiesOptions {
     readonly noProof?: boolean;
@@ -43,11 +46,11 @@ export interface IRunStylePropertiesOptions {
     readonly italicsComplexScript?: boolean;
     readonly underline?: {
         readonly color?: string;
-        readonly type?: UnderlineType;
+        readonly type?: (typeof UnderlineType)[keyof typeof UnderlineType];
     };
-    readonly effect?: TextEffect;
+    readonly effect?: (typeof TextEffect)[keyof typeof TextEffect];
     readonly emphasisMark?: {
-        readonly type?: EmphasisMarkType;
+        readonly type?: (typeof EmphasisMarkType)[keyof typeof EmphasisMarkType];
     };
     readonly color?: string;
     readonly kern?: number | PositiveUniversalMeasure;
@@ -127,6 +130,8 @@ export interface IRunPropertiesChangeOptions extends IRunPropertiesOptions, ICha
 //     <xsd:element name="oMath" type="CT_OnOff"/>
 //     </xsd:choice>
 // </xsd:group>
+/* eslint-disable functional/immutable-data */
+
 export class RunProperties extends IgnoreIfEmptyXmlComponent {
     public constructor(options?: IRunPropertiesOptions) {
         super("w:rPr");
@@ -293,6 +298,8 @@ export class RunProperties extends IgnoreIfEmptyXmlComponent {
         this.root.push(item);
     }
 }
+
+/* eslint-enable */
 
 export class RunPropertiesChange extends XmlComponent {
     public constructor(options: IRunPropertiesChangeOptions) {
