@@ -158,5 +158,37 @@ describe("ParagraphProperties", () => {
                 ],
             });
         });
+
+        it("should create with the run property", () => {
+            const properties = new ParagraphProperties({
+                run: {
+                    size: "10pt",
+                },
+            });
+            const tree = new Formatter().format(properties);
+
+            expect(tree).to.deep.equal({
+                "w:pPr": [
+                    {
+                        "w:rPr": [
+                            {
+                                "w:sz": {
+                                    _attr: {
+                                        "w:val": "10pt",
+                                    },
+                                },
+                            },
+                            {
+                                "w:szCs": {
+                                    _attr: {
+                                        "w:val": "10pt",
+                                    },
+                                },
+                            },
+                        ],
+                    },
+                ],
+            });
+        });
     });
 });
