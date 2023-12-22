@@ -6,5 +6,8 @@
             "docx": ["../build"]
         }
     },
-    "include": ["../demo"]
+    "include": ["../demo"],
+    "ts-node": {
+        "esm": true
+    }
 }
