@@ -157,9 +157,9 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
          * Ensure there is only one w:tabs tag with multiple w:tab
          */
         const tabDefinitions: readonly TabStopDefinition[] = [
-            ...(options.rightTabStop ? [{ type: TabStopType.RIGHT, position: options.rightTabStop }] : []),
+            ...(options.rightTabStop !== undefined ? [{ type: TabStopType.RIGHT, position: options.rightTabStop }] : []),
             ...(options.tabStops ? options.tabStops : []),
-            ...(options.leftTabStop ? [{ type: TabStopType.LEFT, position: options.leftTabStop }] : []),
+            ...(options.leftTabStop !== undefined ? [{ type: TabStopType.LEFT, position: options.leftTabStop }] : []),
         ];
 
         if (tabDefinitions.length > 0) {
