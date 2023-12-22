@@ -15,6 +15,7 @@ import { NumberProperties } from "./formatting/unordered-list";
 import { WordWrap } from "./formatting/word-wrap";
 import { FrameProperties, IFrameOptions } from "./frame/frame-properties";
 import { OutlineLevel } from "./links";
+import { IRunOptions, RunProperties } from ".";
 
 export interface ILevelParagraphStylePropertiesOptions {
     readonly alignment?: AlignmentType;
@@ -65,6 +66,10 @@ export interface IParagraphPropertiesOptions extends IParagraphStylePropertiesOp
      * This only works in Microsoft Word. It is not part of the ECMA-376 OOXML standard.
      */
     readonly autoSpaceEastAsianText?: boolean;
+    /**
+     * Reference: ECMA-376, 3rd Edition (June, 2011), Fundamentals and Markup Language Reference § 17.3.1.29.
+     */
+    readonly run?: IRunOptions;
 }
 
 export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
@@ -194,6 +199,10 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
 
         if (options.autoSpaceEastAsianText !== undefined) {
             this.push(new OnOffElement("w:autoSpaceDN", options.autoSpaceEastAsianText));
+        }
+
+        if (options.run) {
+            this.push(new RunProperties(options.run));
         }
     }
 
