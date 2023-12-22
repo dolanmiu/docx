@@ -213,8 +213,7 @@ rules:
     valid-typeof: "off"
     functional/immutable-data:
         - error
-        - assumeTypes: true
-          ignoreImmediateMutation: true
+        - ignoreImmediateMutation: true
           ignoreAccessorPattern:
               - "**.root*"
               - "**.numberingReferences*"
