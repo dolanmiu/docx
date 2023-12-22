@@ -93,7 +93,7 @@
         "tsconfig-paths": "^4.0.0",
         "tsx": "^4.7.0",
         "typedoc": "^0.24.8",
-        "typescript": "5.1.6",
+        "typescript": "5.3.3",
         "unzipper": "^0.10.11",
         "vite": "^5.0.10",
         "vite-plugin-dts": "^3.3.1",
