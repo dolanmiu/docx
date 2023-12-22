@@ -38,7 +38,7 @@ jobs:
                   name: build
                   path: build
             - name: Run Demo
-              run: npm run ts-node -- --esm ./demo/1-basic.ts
+              run: npm run ts-node -- ./demo/1-basic.ts
             - name: Extract Word Document
               run: npm run extract
             - name: Validate XML
