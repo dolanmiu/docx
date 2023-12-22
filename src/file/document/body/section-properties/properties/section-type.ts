@@ -10,19 +10,22 @@ import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
 //   <xsd:enumeration value="oddPage"/>
 // </xsd:restriction>
 // </xsd:simpleType>
-export enum SectionType {
-    NEXT_PAGE = "nextPage",
-    NEXT_COLUMN = "nextColumn",
-    CONTINUOUS = "continuous",
-    EVEN_PAGE = "evenPage",
-    ODD_PAGE = "oddPage",
-}
+
+/* eslint-disable @typescript-eslint/naming-convention */
+export const SectionType = {
+    NEXT_PAGE: "nextPage",
+    NEXT_COLUMN: "nextColumn",
+    CONTINUOUS: "continuous",
+    EVEN_PAGE: "evenPage",
+    ODD_PAGE: "oddPage",
+} as const;
+/* eslint-enable */
 
 // <xsd:complexType name="CT_SectType">
 //     <xsd:attribute name="val" type="ST_SectionMark"/>
 // </xsd:complexType>
 export class SectionTypeAttributes extends XmlAttributeComponent<{
-    readonly val: SectionType;
+    readonly val: (typeof SectionType)[keyof typeof SectionType];
 }> {
     protected readonly xmlKeys = {
         val: "w:val",
@@ -30,7 +33,7 @@ export class SectionTypeAttributes extends XmlAttributeComponent<{
 }
 
 export class Type extends XmlComponent {
-    public constructor(value: SectionType) {
+    public constructor(value: (typeof SectionType)[keyof typeof SectionType]) {
         super("w:type");
         this.root.push(new SectionTypeAttributes({ val: value }));
     }

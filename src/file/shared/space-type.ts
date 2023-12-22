@@ -1,4 +1,4 @@
-export enum SpaceType {
-    DEFAULT = "default",
-    PRESERVE = "preserve",
-}
+export const SpaceType = {
+    DEFAULT: "default",
+    PRESERVE: "preserve",
+} as const;

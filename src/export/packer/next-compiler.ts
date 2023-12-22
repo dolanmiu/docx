@@ -44,7 +44,7 @@ export class Compiler {
         this.numberingReplacer = new NumberingReplacer();
     }
 
-    public compile(file: File, prettifyXml?: PrettifyType): JSZip {
+    public compile(file: File, prettifyXml?: (typeof PrettifyType)[keyof typeof PrettifyType]): JSZip {
         const zip = new JSZip();
         const xmlifiedFileMapping = this.xmlifyFile(file, prettifyXml);
         const map = new Map<string, IXmlifyedFile | readonly IXmlifyedFile[]>(Object.entries(xmlifiedFileMapping));
@@ -66,7 +66,7 @@ export class Compiler {
         return zip;
     }
 
-    private xmlifyFile(file: File, prettify?: PrettifyType): IXmlifyedFileMapping {
+    private xmlifyFile(file: File, prettify?: (typeof PrettifyType)[keyof typeof PrettifyType]): IXmlifyedFileMapping {
         const documentRelationshipCount = file.Document.Relationships.RelationshipCount + 1;
 
         const documentXmlData = xml(

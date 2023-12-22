@@ -11,13 +11,14 @@ import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
 //   <xsd:enumeration value="bottom"/>
 // </xsd:restriction>
 // </xsd:simpleType>
-export enum VerticalAlign {
-    BOTTOM = "bottom",
-    CENTER = "center",
-    TOP = "top",
-}
+export const VerticalAlign = {
+    BOTTOM: "bottom",
+    CENTER: "center",
+    TOP: "top",
+} as const;
+
 export class VerticalAlignAttributes extends XmlAttributeComponent<{
-    readonly verticalAlign?: VerticalAlign;
+    readonly verticalAlign?: (typeof VerticalAlign)[keyof typeof VerticalAlign];
 }> {
     protected readonly xmlKeys = {
         verticalAlign: "w:val",
@@ -25,7 +26,7 @@ export class VerticalAlignAttributes extends XmlAttributeComponent<{
 }
 
 export class VerticalAlignElement extends XmlComponent {
-    public constructor(value: VerticalAlign) {
+    public constructor(value: (typeof VerticalAlign)[keyof typeof VerticalAlign]) {
         super("w:vAlign");
         this.root.push(new VerticalAlignAttributes({ verticalAlign: value }));
     }

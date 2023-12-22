@@ -1,8 +1,8 @@
 import { IgnoreIfEmptyXmlComponent } from "@file/xml-components";
-import { TableWidthElement, WidthType } from "../table-width";
+import { TableWidthElement, WidthType } from "@file/table";
 
 export interface ITableCellMarginOptions {
-    readonly marginUnitType?: WidthType;
+    readonly marginUnitType?: (typeof WidthType)[keyof typeof WidthType];
     readonly top?: number;
     readonly bottom?: number;
     readonly left?: number;
@@ -33,14 +33,15 @@ export interface ITableCellMarginOptions {
 //     </xsd:sequence>
 // </xsd:complexType>
 
-export enum TableCellMarginElementType {
-    TABLE = "w:tblCellMar",
-    TABLE_CELL = "w:tcMar",
-}
+export const TableCellMarginElementType = {
+    TABLE: "w:tblCellMar",
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    TABLE_CELL: "w:tcMar",
+} as const;
 
 export class TableCellMargin extends IgnoreIfEmptyXmlComponent {
     public constructor(
-        type: TableCellMarginElementType,
+        type: (typeof TableCellMarginElementType)[keyof typeof TableCellMarginElementType],
         { marginUnitType = WidthType.DXA, top, left, bottom, right }: ITableCellMarginOptions,
     ) {
         super(type);

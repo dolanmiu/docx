@@ -37,7 +37,7 @@ export interface ITableRowPropertiesOptions {
     readonly tableHeader?: boolean;
     readonly height?: {
         readonly value: number | PositiveUniversalMeasure;
-        readonly rule: HeightRule;
+        readonly rule: (typeof HeightRule)[keyof typeof HeightRule];
     };
 }
 

@@ -7,11 +7,11 @@ import { NextAttributeComponent, XmlComponent } from "@file/xml-components";
 //         <xsd:enumeration value="right" />
 //     </xsd:restriction>
 // </xsd:simpleType>
-export enum PositionalTabAlignment {
-    LEFT = "left",
-    CENTER = "center",
-    RIGHT = "right",
-}
+export const PositionalTabAlignment = {
+    LEFT: "left",
+    CENTER: "center",
+    RIGHT: "right",
+} as const;
 
 // <xsd:simpleType name="ST_PTabRelativeTo">
 //     <xsd:restriction base="xsd:string">
@@ -19,10 +19,10 @@ export enum PositionalTabAlignment {
 //         <xsd:enumeration value="indent" />
 //     </xsd:restriction>
 // </xsd:simpleType>
-export enum PositionalTabRelativeTo {
-    MARGIN = "margin",
-    INDENT = "indent",
-}
+export const PositionalTabRelativeTo = {
+    MARGIN: "margin",
+    INDENT: "indent",
+} as const;
 
 // <xsd:simpleType name="ST_PTabLeader">
 //     <xsd:restriction base="xsd:string">
@@ -33,18 +33,19 @@ export enum PositionalTabRelativeTo {
 //         <xsd:enumeration value="middleDot" />
 //     </xsd:restriction>
 // </xsd:simpleType>
-export enum PositionalTabLeader {
-    NONE = "none",
-    DOT = "dot",
-    HYPHEN = "hyphen",
-    UNDERSCORE = "underscore",
-    MIDDLE_DOT = "middleDot",
-}
+export const PositionalTabLeader = {
+    NONE: "none",
+    DOT: "dot",
+    HYPHEN: "hyphen",
+    UNDERSCORE: "underscore",
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    MIDDLE_DOT: "middleDot",
+} as const;
 
 export interface PositionalTabOptions {
-    readonly alignment: PositionalTabAlignment;
-    readonly relativeTo: PositionalTabRelativeTo;
-    readonly leader: PositionalTabLeader;
+    readonly alignment: (typeof PositionalTabAlignment)[keyof typeof PositionalTabAlignment];
+    readonly relativeTo: (typeof PositionalTabRelativeTo)[keyof typeof PositionalTabRelativeTo];
+    readonly leader: (typeof PositionalTabLeader)[keyof typeof PositionalTabLeader];
 }
 
 // <xsd:complexType name="CT_PTab">
@@ -58,9 +59,9 @@ export class PositionalTab extends XmlComponent {
 
         this.root.push(
             new NextAttributeComponent<{
-                readonly alignment: PositionalTabAlignment;
-                readonly relativeTo: PositionalTabRelativeTo;
-                readonly leader: PositionalTabLeader;
+                readonly alignment: (typeof PositionalTabAlignment)[keyof typeof PositionalTabAlignment];
+                readonly relativeTo: (typeof PositionalTabRelativeTo)[keyof typeof PositionalTabRelativeTo];
+                readonly leader: (typeof PositionalTabLeader)[keyof typeof PositionalTabLeader];
             }>({
                 alignment: {
                     key: "w:alignment",

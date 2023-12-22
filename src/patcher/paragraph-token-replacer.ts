@@ -3,11 +3,11 @@ import { Element } from "xml-js";
 import { createTextElementContents, patchSpaceAttribute } from "./util";
 import { IRenderedParagraphNode } from "./run-renderer";
 
-enum ReplaceMode {
-    START,
-    MIDDLE,
-    END,
-}
+const ReplaceMode = {
+    START: 0,
+    MIDDLE: 1,
+    END: 2,
+} as const;
 
 export const replaceTokenInParagraphElement = ({
     paragraphElement,
@@ -23,7 +23,7 @@ export const replaceTokenInParagraphElement = ({
     const startIndex = renderedParagraph.text.indexOf(originalText);
     const endIndex = startIndex + originalText.length - 1;
 
-    let replaceMode = ReplaceMode.START;
+    let replaceMode: (typeof ReplaceMode)[keyof typeof ReplaceMode] = ReplaceMode.START;
 
     for (const run of renderedParagraph.runs) {
         for (const { text, index, start, end } of run.parts) {

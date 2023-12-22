@@ -19,12 +19,17 @@ export type RelationshipType =
     | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/footnotes"
     | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments";
 
-export enum TargetModeType {
-    EXTERNAL = "External",
-}
+export const TargetModeType = {
+    EXTERNAL: "External",
+} as const;
 
 export class Relationship extends XmlComponent {
-    public constructor(id: string, type: RelationshipType, target: string, targetMode?: TargetModeType) {
+    public constructor(
+        id: string,
+        type: RelationshipType,
+        target: string,
+        targetMode?: (typeof TargetModeType)[keyof typeof TargetModeType],
+    ) {
         super("Relationship");
 
         this.root.push(

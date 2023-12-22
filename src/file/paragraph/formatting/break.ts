@@ -2,14 +2,14 @@
 import { Attributes, XmlComponent } from "@file/xml-components";
 import { Run } from "../run";
 
-enum BreakType {
-    COLUMN = "column",
-    PAGE = "page",
+const BreakType = {
+    COLUMN: "column",
+    PAGE: "page",
     // textWrapping breaks are the default and already exposed via the "Run" class
-}
+} as const;
 
 class Break extends XmlComponent {
-    public constructor(type: BreakType) {
+    public constructor(type: (typeof BreakType)[keyof typeof BreakType]) {
         super("w:br");
         this.root.push(
             new Attributes({

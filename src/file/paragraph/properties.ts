@@ -18,7 +18,7 @@ import { OutlineLevel } from "./links";
 import { IRunOptions, RunProperties } from ".";
 
 export interface ILevelParagraphStylePropertiesOptions {
-    readonly alignment?: AlignmentType;
+    readonly alignment?: (typeof AlignmentType)[keyof typeof AlignmentType];
     readonly thematicBreak?: boolean;
     readonly contextualSpacing?: boolean;
     readonly rightTabStop?: number;
@@ -47,7 +47,7 @@ export interface IParagraphStylePropertiesOptions extends ILevelParagraphStylePr
 
 export interface IParagraphPropertiesOptions extends IParagraphStylePropertiesOptions {
     readonly border?: IBordersOptions;
-    readonly heading?: HeadingLevel;
+    readonly heading?: (typeof HeadingLevel)[keyof typeof HeadingLevel];
     readonly bidirectional?: boolean;
     readonly pageBreakBefore?: boolean;
     readonly tabStops?: readonly TabStopDefinition[];

@@ -10,7 +10,7 @@ import { Table } from "./table";
 
 export interface IDocumentFooter {
     readonly footer: FooterWrapper;
-    readonly type: HeaderFooterReferenceType;
+    readonly type: (typeof HeaderFooterReferenceType)[keyof typeof HeaderFooterReferenceType];
 }
 
 export class FooterWrapper implements IViewWrapper {

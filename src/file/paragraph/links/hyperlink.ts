@@ -5,10 +5,10 @@ import { uniqueId } from "@util/convenience-functions";
 import { ParagraphChild } from "../paragraph";
 import { HyperlinkAttributes, IHyperlinkAttributesProperties } from "./hyperlink-attributes";
 
-export enum HyperlinkType {
-    INTERNAL = "INTERNAL",
-    EXTERNAL = "EXTERNAL",
-}
+export const HyperlinkType = {
+    INTERNAL: "INTERNAL",
+    EXTERNAL: "EXTERNAL",
+} as const;
 
 export class ConcreteHyperlink extends XmlComponent {
     public readonly linkId: string;
@@ -39,7 +39,12 @@ export class InternalHyperlink extends ConcreteHyperlink {
 }
 
 export class ExternalHyperlink extends XmlComponent {
-    public constructor(public readonly options: { readonly children: readonly ParagraphChild[]; readonly link: string }) {
+    public constructor(
+        public readonly options: {
+            readonly children: readonly ParagraphChild[];
+            readonly link: string;
+        },
+    ) {
         super("w:externalHyperlink");
     }
 }

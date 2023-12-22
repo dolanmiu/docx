@@ -9,11 +9,14 @@ import { decimalNumber, PositiveUniversalMeasure, twipsMeasureValue } from "@uti
 //   <xsd:enumeration value="continuous"/>
 // </xsd:restriction>
 // </xsd:simpleType>
-export enum LineNumberRestartFormat {
-    NEW_PAGE = "newPage",
-    NEW_SECTION = "newSection",
-    CONTINUOUS = "continuous",
-}
+
+/* eslint-disable @typescript-eslint/naming-convention */
+export const LineNumberRestartFormat = {
+    NEW_PAGE: "newPage",
+    NEW_SECTION: "newSection",
+    CONTINUOUS: "continuous",
+} as const;
+/* eslint-enable */
 
 // <xsd:complexType name="CT_LineNumber">
 //     <xsd:attribute name="countBy" type="ST_DecimalNumber" use="optional"/>
@@ -25,7 +28,7 @@ export enum LineNumberRestartFormat {
 export interface ILineNumberAttributes {
     readonly countBy?: number;
     readonly start?: number;
-    readonly restart?: LineNumberRestartFormat;
+    readonly restart?: (typeof LineNumberRestartFormat)[keyof typeof LineNumberRestartFormat];
     readonly distance?: number | PositiveUniversalMeasure;
 }
 
@@ -36,13 +39,16 @@ export class LineNumberType extends XmlComponent {
             new NextAttributeComponent<{
                 readonly countBy?: number;
                 readonly start?: number;
-                readonly restart?: LineNumberRestartFormat;
+                readonly restart?: (typeof LineNumberRestartFormat)[keyof typeof LineNumberRestartFormat];
                 readonly distance?: number | PositiveUniversalMeasure;
             }>({
                 countBy: { key: "w:countBy", value: countBy === undefined ? undefined : decimalNumber(countBy) },
                 start: { key: "w:start", value: start === undefined ? undefined : decimalNumber(start) },
                 restart: { key: "w:restart", value: restart },
-                distance: { key: "w:distance", value: distance === undefined ? undefined : twipsMeasureValue(distance) },
+                distance: {
+                    key: "w:distance",
+                    value: distance === undefined ? undefined : twipsMeasureValue(distance),
+                },
             }),
         );
     }

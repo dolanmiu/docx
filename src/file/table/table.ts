@@ -27,10 +27,10 @@ export interface ITableOptions {
     readonly margins?: ITableCellMarginOptions;
     readonly indent?: ITableWidthProperties;
     readonly float?: ITableFloatOptions;
-    readonly layout?: TableLayoutType;
+    readonly layout?: (typeof TableLayoutType)[keyof typeof TableLayoutType];
     readonly style?: string;
     readonly borders?: ITableBordersOptions;
-    readonly alignment?: AlignmentType;
+    readonly alignment?: (typeof AlignmentType)[keyof typeof AlignmentType];
     readonly visuallyRightToLeft?: boolean;
 }
 

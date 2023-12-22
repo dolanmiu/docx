@@ -1,15 +1,15 @@
-export enum HorizontalPositionAlign {
-    CENTER = "center",
-    INSIDE = "inside",
-    LEFT = "left",
-    OUTSIDE = "outside",
-    RIGHT = "right",
-}
+export const HorizontalPositionAlign = {
+    CENTER: "center",
+    INSIDE: "inside",
+    LEFT: "left",
+    OUTSIDE: "outside",
+    RIGHT: "right",
+} as const;
 
-export enum VerticalPositionAlign {
-    BOTTOM = "bottom",
-    CENTER = "center",
-    INSIDE = "inside",
-    OUTSIDE = "outside",
-    TOP = "top",
-}
+export const VerticalPositionAlign = {
+    BOTTOM: "bottom",
+    CENTER: "center",
+    INSIDE: "inside",
+    OUTSIDE: "outside",
+    TOP: "top",
+} as const;

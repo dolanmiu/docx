@@ -1,28 +1,28 @@
 import { NextAttributeComponent, StringEnumValueElement, XmlComponent } from "@file/xml-components";
 import { PositiveUniversalMeasure, signedTwipsMeasureValue, twipsMeasureValue, UniversalMeasure } from "@util/values";
 
-export enum TableAnchorType {
-    MARGIN = "margin",
-    PAGE = "page",
-    TEXT = "text",
-}
+export const TableAnchorType = {
+    MARGIN: "margin",
+    PAGE: "page",
+    TEXT: "text",
+} as const;
 
-export enum RelativeHorizontalPosition {
-    CENTER = "center",
-    INSIDE = "inside",
-    LEFT = "left",
-    OUTSIDE = "outside",
-    RIGHT = "right",
-}
+export const RelativeHorizontalPosition = {
+    CENTER: "center",
+    INSIDE: "inside",
+    LEFT: "left",
+    OUTSIDE: "outside",
+    RIGHT: "right",
+} as const;
 
-export enum RelativeVerticalPosition {
-    CENTER = "center",
-    INSIDE = "inside",
-    BOTTOM = "bottom",
-    OUTSIDE = "outside",
-    INLINE = "inline",
-    TOP = "top",
-}
+export const RelativeVerticalPosition = {
+    CENTER: "center",
+    INSIDE: "inside",
+    BOTTOM: "bottom",
+    OUTSIDE: "outside",
+    INLINE: "inline",
+    TOP: "top",
+} as const;
 
 // <xsd:simpleType name="ST_TblOverlap">
 //     <xsd:restriction base="xsd:string">
@@ -30,10 +30,10 @@ export enum RelativeVerticalPosition {
 //         <xsd:enumeration value="overlap"/>
 //     </xsd:restriction>
 // </xsd:simpleType>
-export enum OverlapType {
-    NEVER = "never",
-    OVERLAP = "overlap",
-}
+export const OverlapType = {
+    NEVER: "never",
+    OVERLAP: "overlap",
+} as const;
 
 export type ITableFloatOptions = {
     /* cSpell:disable */
@@ -46,7 +46,7 @@ export type ITableFloatOptions = {
      * If omitted, the value is assumed to be page.
      */
     /* cSpell:enable */
-    readonly horizontalAnchor?: TableAnchorType;
+    readonly horizontalAnchor?: (typeof TableAnchorType)[keyof typeof TableAnchorType];
 
     /**
      * Specifies an absolute horizontal position for the table, relative to the horizontalAnchor.
@@ -67,7 +67,7 @@ export type ITableFloatOptions = {
      * outside - the table should be outside of the anchor
      * right - the table should be right aligned with respect to the anchor
      */
-    readonly relativeHorizontalPosition?: RelativeHorizontalPosition;
+    readonly relativeHorizontalPosition?: (typeof RelativeHorizontalPosition)[keyof typeof RelativeHorizontalPosition];
 
     /**
      * Specifies the vertical anchor or the base object from which the vertical positioning
@@ -77,7 +77,7 @@ export type ITableFloatOptions = {
      * text - relative to the horizontal edge of the text margin for the column in which the anchor paragraph is located
      * If omitted, the value is assumed to be page.
      */
-    readonly verticalAnchor?: TableAnchorType;
+    readonly verticalAnchor?: (typeof TableAnchorType)[keyof typeof TableAnchorType];
 
     /**
      * Specifies an absolute vertical position for the table, relative to the verticalAnchor anchor.
@@ -98,7 +98,7 @@ export type ITableFloatOptions = {
      * inline - the table should be vertically aligned in line with the surrounding text (so as to not allow any text wrapping around it)
      * top - the table should be vertically aligned to the top edge of the anchor
      */
-    readonly relativeVerticalPosition?: RelativeVerticalPosition;
+    readonly relativeVerticalPosition?: (typeof RelativeVerticalPosition)[keyof typeof RelativeVerticalPosition];
 
     /**
      * Specifies the minimum distance to be maintained between the table and the top of text in the paragraph
@@ -123,7 +123,7 @@ export type ITableFloatOptions = {
      * to the right of the table. The value is in twentieths of a point. If omitted, the value is assumed to be zero.
      */
     readonly rightFromText?: number | PositiveUniversalMeasure;
-    readonly overlap?: OverlapType;
+    readonly overlap?: (typeof OverlapType)[keyof typeof OverlapType];
 };
 
 // <xsd:complexType name="CT_TblPPr">
@@ -156,12 +156,18 @@ export class TableFloatProperties extends XmlComponent {
         super("w:tblpPr");
         this.root.push(
             new NextAttributeComponent<Omit<ITableFloatOptions, "overlap">>({
-                leftFromText: { key: "w:leftFromText", value: leftFromText === undefined ? undefined : twipsMeasureValue(leftFromText) },
+                leftFromText: {
+                    key: "w:leftFromText",
+                    value: leftFromText === undefined ? undefined : twipsMeasureValue(leftFromText),
+                },
                 rightFromText: {
                     key: "w:rightFromText",
                     value: rightFromText === undefined ? undefined : twipsMeasureValue(rightFromText),
                 },
-                topFromText: { key: "w:topFromText", value: topFromText === undefined ? undefined : twipsMeasureValue(topFromText) },
+                topFromText: {
+                    key: "w:topFromText",
+                    value: topFromText === undefined ? undefined : twipsMeasureValue(topFromText),
+                },
                 bottomFromText: {
                     key: "w:bottomFromText",
                     value: bottomFromText === undefined ? undefined : twipsMeasureValue(bottomFromText),
@@ -197,7 +203,7 @@ export class TableFloatProperties extends XmlComponent {
             // <xsd:complexType name="CT_TblOverlap">
             //     <xsd:attribute name="val" type="ST_TblOverlap" use="required"/>
             // </xsd:complexType>
-            this.root.push(new StringEnumValueElement<OverlapType>("w:tblOverlap", overlap));
+            this.root.push(new StringEnumValueElement<(typeof OverlapType)[keyof typeof OverlapType]>("w:tblOverlap", overlap));
         }
     }
 }

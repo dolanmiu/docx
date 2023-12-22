@@ -4,37 +4,39 @@ import { HorizontalPositionAlign, VerticalPositionAlign } from "@file/shared/ali
 
 import { ITextWrapping } from "../text-wrap";
 
-export enum HorizontalPositionRelativeFrom {
-    CHARACTER = "character",
-    COLUMN = "column",
-    INSIDE_MARGIN = "insideMargin",
-    LEFT_MARGIN = "leftMargin",
-    MARGIN = "margin",
-    OUTSIDE_MARGIN = "outsideMargin",
-    PAGE = "page",
-    RIGHT_MARGIN = "rightMargin",
-}
+/* eslint-disable @typescript-eslint/naming-convention */
+export const HorizontalPositionRelativeFrom = {
+    CHARACTER: "character",
+    COLUMN: "column",
+    INSIDE_MARGIN: "insideMargin",
+    LEFT_MARGIN: "leftMargin",
+    MARGIN: "margin",
+    OUTSIDE_MARGIN: "outsideMargin",
+    PAGE: "page",
+    RIGHT_MARGIN: "rightMargin",
+} as const;
 
-export enum VerticalPositionRelativeFrom {
-    BOTTOM_MARGIN = "bottomMargin",
-    INSIDE_MARGIN = "insideMargin",
-    LINE = "line",
-    MARGIN = "margin",
-    OUTSIDE_MARGIN = "outsideMargin",
-    PAGE = "page",
-    PARAGRAPH = "paragraph",
-    TOP_MARGIN = "topMargin",
-}
+export const VerticalPositionRelativeFrom = {
+    BOTTOM_MARGIN: "bottomMargin",
+    INSIDE_MARGIN: "insideMargin",
+    LINE: "line",
+    MARGIN: "margin",
+    OUTSIDE_MARGIN: "outsideMargin",
+    PAGE: "page",
+    PARAGRAPH: "paragraph",
+    TOP_MARGIN: "topMargin",
+} as const;
 
+/* eslint-enable */
 export interface IHorizontalPositionOptions {
-    readonly relative?: HorizontalPositionRelativeFrom;
-    readonly align?: HorizontalPositionAlign;
+    readonly relative?: (typeof HorizontalPositionRelativeFrom)[keyof typeof HorizontalPositionRelativeFrom];
+    readonly align?: (typeof HorizontalPositionAlign)[keyof typeof HorizontalPositionAlign];
     readonly offset?: number;
 }
 
 export interface IVerticalPositionOptions {
-    readonly relative?: VerticalPositionRelativeFrom;
-    readonly align?: VerticalPositionAlign;
+    readonly relative?: (typeof VerticalPositionRelativeFrom)[keyof typeof VerticalPositionRelativeFrom];
+    readonly align?: (typeof VerticalPositionAlign)[keyof typeof VerticalPositionAlign];
     readonly offset?: number;
 }
 

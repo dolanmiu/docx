@@ -12,18 +12,22 @@ import { decimalNumber } from "@util/values";
 //   <xsd:enumeration value="enDash"/>
 // </xsd:restriction>
 // </xsd:simpleType>
-export enum PageNumberSeparator {
-    HYPHEN = "hyphen",
-    PERIOD = "period",
-    COLON = "colon",
-    EM_DASH = "emDash",
-    EN_DASH = "endash",
-}
+
+/* eslint-disable @typescript-eslint/naming-convention */
+export const PageNumberSeparator = {
+    HYPHEN: "hyphen",
+    PERIOD: "period",
+    COLON: "colon",
+    EM_DASH: "emDash",
+    EN_DASH: "endash",
+} as const;
+
+/* eslint-enable */
 
 export interface IPageNumberTypeAttributes {
     readonly start?: number;
-    readonly formatType?: NumberFormat;
-    readonly separator?: PageNumberSeparator;
+    readonly formatType?: (typeof NumberFormat)[keyof typeof NumberFormat];
+    readonly separator?: (typeof PageNumberSeparator)[keyof typeof PageNumberSeparator];
 }
 
 // <xsd:complexType name="CT_PageNumber">
@@ -40,6 +44,7 @@ export class PageNumberTypeAttributes extends XmlAttributeComponent<IPageNumberT
         separator: "w:chapSep",
     };
 }
+
 export class PageNumberType extends XmlComponent {
     public constructor({ start, formatType, separator }: IPageNumberTypeAttributes) {
         super("w:pgNumType");
