@@ -35,14 +35,5 @@
             "@shared": ["./shared/index.ts"]
         }
     },
-    "ts-node": {
-        "esm": true,
-        "compilerOptions": {
-            "module": "ESNext",
-            "moduleResolution": "node",
-            "allowSyntheticDefaultImports": true,
-            "esModuleInterop": true
-        }
-    },
     "include": ["src"]
 }

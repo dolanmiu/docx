@@ -55,7 +55,7 @@ if (files.length === 0) {
     const filePath = path.join(dir, files[0]);
 
     console.log(`Running demo ${demoNumber}: ${files[0]}`);
-    const { stdout } = await $`ts-node --project demo/tsconfig.json ${filePath}`;
+    const { stdout } = await $`tsx ${filePath}`;
     console.log(stdout);
     console.log("Successfully created document!");
 }
