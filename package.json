@@ -30,7 +30,7 @@
         "style.fix": "npm run style -- --write",
         "cspell": "cspell \"{src,demo,docs,scripts}/**/*.{ts,scss,html,md}\" && cspell \"./*.*\"",
         "serve.docs": "cd docs && docsify serve",
-        "extract": "ts-node scripts/extract-document.ts",
+        "extract": "tsx scripts/extract-document.ts",
         "ts-node": "tsx"
     },
     "pre-commit": [
