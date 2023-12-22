@@ -31,7 +31,7 @@
         "cspell": "cspell \"{src,demo,docs,scripts}/**/*.{ts,scss,html,md}\" && cspell \"./*.*\"",
         "serve.docs": "cd docs && docsify serve",
         "extract": "tsx scripts/extract-document.ts",
-        "ts-node": "tsx"
+        "run-ts": "tsx"
     },
     "pre-commit": [
         "style",
@@ -90,7 +90,6 @@
         "jsdom": "^22.1.0",
         "pre-commit": "^1.2.2",
         "prettier": "^3.0.0",
-        "ts-node": "^10.2.1",
         "tsconfig-paths": "^4.0.0",
         "tsx": "^4.7.0",
         "typedoc": "^0.24.8",

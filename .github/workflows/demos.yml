@@ -38,7 +38,7 @@ jobs:
                   name: build
                   path: build
             - name: Run Demo
-              run: npm run ts-node -- ./demo/1-basic.ts
+              run: npm run run-ts -- ./demo/1-basic.ts
             - name: Extract Word Document
               run: npm run extract
             - name: Validate XML
@@ -47,7 +47,7 @@ jobs:
                   xml-file: build/extracted-doc/word/document.xml
                   xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
             - name: Run Demo
-              run: npm run ts-node -- ./demo/2-declaritive-styles.ts
+              run: npm run run-ts -- ./demo/2-declaritive-styles.ts
             - name: Extract Word Document
               run: npm run extract
             - name: Validate XML
@@ -56,7 +56,7 @@ jobs:
                   xml-file: build/extracted-doc/word/document.xml
                   xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
             - name: Run Demo
-              run: npm run ts-node -- ./demo/3-numbering-and-bullet-points.ts
+              run: npm run run-ts -- ./demo/3-numbering-and-bullet-points.ts
             - name: Extract Word Document
               run: npm run extract
             - name: Validate XML
@@ -65,7 +65,7 @@ jobs:
                   xml-file: build/extracted-doc/word/document.xml
                   xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
             - name: Run Demo
-              run: npm run ts-node -- ./demo/4-basic-table.ts
+              run: npm run run-ts -- ./demo/4-basic-table.ts
             - name: Extract Word Document
               run: npm run extract
             - name: Validate XML
@@ -74,7 +74,7 @@ jobs:
                   xml-file: build/extracted-doc/word/document.xml
                   xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
             - name: Run Demo
-              run: npm run ts-node -- ./demo/5-images.ts
+              run: npm run run-ts -- ./demo/5-images.ts
             - name: Extract Word Document
               run: npm run extract
             - name: Validate XML
@@ -83,7 +83,7 @@ jobs:
                   xml-file: build/extracted-doc/word/document.xml
                   xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
             - name: Run Demo
-              run: npm run ts-node -- ./demo/6-page-borders.ts
+              run: npm run run-ts -- ./demo/6-page-borders.ts
             - name: Extract Word Document
               run: npm run extract
             - name: Validate XML
@@ -92,7 +92,7 @@ jobs:
                   xml-file: build/extracted-doc/word/document.xml
                   xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
             - name: Run Demo
-              run: npm run ts-node -- ./demo/7-landscape.ts
+              run: npm run run-ts -- ./demo/7-landscape.ts
             - name: Extract Word Document
               run: npm run extract
             - name: Validate XML
@@ -101,7 +101,7 @@ jobs:
                   xml-file: build/extracted-doc/word/document.xml
                   xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
             - name: Run Demo
-              run: npm run ts-node -- ./demo/8-header-footer.ts
+              run: npm run run-ts -- ./demo/8-header-footer.ts
             - name: Extract Word Document
               run: npm run extract
             - name: Validate XML
@@ -110,7 +110,7 @@ jobs:
                   xml-file: build/extracted-doc/word/document.xml
                   xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
             - name: Run Demo
-              run: npm run ts-node -- ./demo/9-images-in-header-and-footer.ts
+              run: npm run run-ts -- ./demo/9-images-in-header-and-footer.ts
             - name: Extract Word Document
               run: npm run extract
             - name: Validate XML
@@ -119,7 +119,7 @@ jobs:
                   xml-file: build/extracted-doc/word/document.xml
                   xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
             - name: Run Demo
-              run: npm run ts-node -- ./demo/10-my-cv.ts
+              run: npm run run-ts -- ./demo/10-my-cv.ts
             - name: Extract Word Document
               run: npm run extract
             - name: Validate XML
@@ -128,7 +128,7 @@ jobs:
                   xml-file: build/extracted-doc/word/document.xml
                   xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
             - name: Run Demo
-              run: npm run ts-node -- ./demo/11-declaritive-styles-2.ts
+              run: npm run run-ts -- ./demo/11-declaritive-styles-2.ts
             - name: Extract Word Document
               run: npm run extract
             - name: Validate XML
@@ -137,7 +137,7 @@ jobs:
                   xml-file: build/extracted-doc/word/document.xml
                   xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
             - name: Run Demo
-              run: npm run ts-node -- ./demo/12-scaling-images.ts
+              run: npm run run-ts -- ./demo/12-scaling-images.ts
             - name: Extract Word Document
               run: npm run extract
             - name: Validate XML
@@ -146,7 +146,7 @@ jobs:
                   xml-file: build/extracted-doc/word/document.xml
                   xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
             - name: Run Demo
-              run: npm run ts-node -- ./demo/13-xml-styles.ts
+              run: npm run run-ts -- ./demo/13-xml-styles.ts
             - name: Extract Word Document
               run: npm run extract
             - name: Validate XML
@@ -155,7 +155,7 @@ jobs:
                   xml-file: build/extracted-doc/word/document.xml
                   xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
             - name: Run Demo
-              run: npm run ts-node -- ./demo/14-page-numbers.ts
+              run: npm run run-ts -- ./demo/14-page-numbers.ts
             - name: Extract Word Document
               run: npm run extract
             - name: Validate XML
@@ -164,7 +164,7 @@ jobs:
                   xml-file: build/extracted-doc/word/document.xml
                   xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
             - name: Run Demo
-              run: npm run ts-node -- ./demo/15-page-break-before.ts
+              run: npm run run-ts -- ./demo/15-page-break-before.ts
             - name: Extract Word Document
               run: npm run extract
             - name: Validate XML
@@ -173,7 +173,7 @@ jobs:
                   xml-file: build/extracted-doc/word/document.xml
                   xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
             - name: Run Demo
-              run: npm run ts-node -- ./demo/16-multiple-sections.ts
+              run: npm run run-ts -- ./demo/16-multiple-sections.ts
             - name: Extract Word Document
               run: npm run extract
             - name: Validate XML
@@ -182,7 +182,7 @@ jobs:
                   xml-file: build/extracted-doc/word/document.xml
                   xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
             - name: Run Demo
-              run: npm run ts-node -- ./demo/17-footnotes.ts
+              run: npm run run-ts -- ./demo/17-footnotes.ts
             - name: Extract Word Document
               run: npm run extract
             # element r: Schemas validity error : Element '{http://schemas.openxmlformats.org/wordprocessingml/2006/main}r': This element is not expected.
@@ -192,7 +192,7 @@ jobs:
             #     xml-file: build/extracted-doc/word/document.xml
             #     xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
             - name: Run Demo
-              run: npm run ts-node -- ./demo/18-image-from-buffer.ts
+              run: npm run run-ts -- ./demo/18-image-from-buffer.ts
             - name: Extract Word Document
               run: npm run extract
             - name: Validate XML
@@ -201,7 +201,7 @@ jobs:
                   xml-file: build/extracted-doc/word/document.xml
                   xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
             - name: Run Demo
-              run: npm run ts-node -- ./demo/19-export-to-base64.ts
+              run: npm run run-ts -- ./demo/19-export-to-base64.ts
             # Base 64 No longer works, abruptly. Node issue?
             # - name: Extract Word Document
             #   run: npm run extract
@@ -211,7 +211,7 @@ jobs:
             #       xml-file: build/extracted-doc/word/document.xml
             #       xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
             - name: Run Demo
-              run: npm run ts-node -- ./demo/20-table-cell-borders.ts
+              run: npm run run-ts -- ./demo/20-table-cell-borders.ts
             - name: Extract Word Document
               run: npm run extract
             - name: Validate XML
@@ -220,7 +220,7 @@ jobs:
                   xml-file: build/extracted-doc/word/document.xml
                   xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
             - name: Run Demo
-              run: npm run ts-node -- ./demo/21-bookmarks.ts
+              run: npm run run-ts -- ./demo/21-bookmarks.ts
             - name: Extract Word Document
               run: npm run extract
             # Bad ID - need numeric ID
@@ -230,7 +230,7 @@ jobs:
             #     xml-file: build/extracted-doc/word/document.xml
             #     xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
             - name: Run Demo
-              run: npm run ts-node -- ./demo/22-right-to-left-text.ts
+              run: npm run run-ts -- ./demo/22-right-to-left-text.ts
             - name: Extract Word Document
               run: npm run extract
             - name: Validate XML
@@ -239,7 +239,7 @@ jobs:
                   xml-file: build/extracted-doc/word/document.xml
                   xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
             - name: Run Demo
-              run: npm run ts-node -- ./demo/23-base64-images.ts
+              run: npm run run-ts -- ./demo/23-base64-images.ts
             - name: Extract Word Document
               run: npm run extract
             - name: Validate XML
@@ -248,7 +248,7 @@ jobs:
                   xml-file: build/extracted-doc/word/document.xml
                   xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
             - name: Run Demo
-              run: npm run ts-node -- ./demo/24-images-to-table-cell.ts
+              run: npm run run-ts -- ./demo/24-images-to-table-cell.ts
             - name: Extract Word Document
               run: npm run extract
             - name: Validate XML
@@ -257,7 +257,7 @@ jobs:
                   xml-file: build/extracted-doc/word/document.xml
                   xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
             - name: Run Demo
-              run: npm run ts-node -- ./demo/25-table-xml-styles.ts
+              run: npm run run-ts -- ./demo/25-table-xml-styles.ts
             - name: Extract Word Document
               run: npm run extract
             - name: Validate XML
@@ -266,7 +266,7 @@ jobs:
                   xml-file: build/extracted-doc/word/document.xml
                   xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
             - name: Run Demo
-              run: npm run ts-node -- ./demo/26-paragraph-borders.ts
+              run: npm run run-ts -- ./demo/26-paragraph-borders.ts
             - name: Extract Word Document
               run: npm run extract
             - name: Validate XML
@@ -275,7 +275,7 @@ jobs:
                   xml-file: build/extracted-doc/word/document.xml
                   xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
             - name: Run Demo
-              run: npm run ts-node -- ./demo/27-declaritive-styles-3.ts
+              run: npm run run-ts -- ./demo/27-declaritive-styles-3.ts
             - name: Extract Word Document
               run: npm run extract
             - name: Validate XML
@@ -284,7 +284,7 @@ jobs:
                   xml-file: build/extracted-doc/word/document.xml
                   xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
             - name: Run Demo
-              run: npm run ts-node -- ./demo/28-table-of-contents.ts
+              run: npm run run-ts -- ./demo/28-table-of-contents.ts
             - name: Extract Word Document
               run: npm run extract
             - name: Validate XML
@@ -293,7 +293,7 @@ jobs:
                   xml-file: build/extracted-doc/word/document.xml
                   xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
             - name: Run Demo
-              run: npm run ts-node -- ./demo/29-numbered-lists.ts
+              run: npm run run-ts -- ./demo/29-numbered-lists.ts
             - name: Extract Word Document
               run: npm run extract
             - name: Validate XML
@@ -302,7 +302,7 @@ jobs:
                   xml-file: build/extracted-doc/word/document.xml
                   xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
             - name: Run Demo
-              run: npm run ts-node -- ./demo/31-tables.ts
+              run: npm run run-ts -- ./demo/31-tables.ts
             - name: Extract Word Document
               run: npm run extract
             - name: Validate XML
@@ -311,7 +311,7 @@ jobs:
                   xml-file: build/extracted-doc/word/document.xml
                   xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
             - name: Run Demo
-              run: npm run ts-node -- ./demo/32-merge-and-shade-table-cells.ts
+              run: npm run run-ts -- ./demo/32-merge-and-shade-table-cells.ts
             - name: Extract Word Document
               run: npm run extract
             - name: Validate XML
@@ -320,7 +320,7 @@ jobs:
                   xml-file: build/extracted-doc/word/document.xml
                   xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
             - name: Run Demo
-              run: npm run ts-node -- ./demo/33-sequential-captions.ts
+              run: npm run run-ts -- ./demo/33-sequential-captions.ts
             - name: Extract Word Document
               run: npm run extract
             - name: Validate XML
@@ -329,7 +329,7 @@ jobs:
                   xml-file: build/extracted-doc/word/document.xml
                   xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
             - name: Run Demo
-              run: npm run ts-node -- ./demo/34-floating-tables.ts
+              run: npm run run-ts -- ./demo/34-floating-tables.ts
             - name: Extract Word Document
               run: npm run extract
             # element tblpPr: Schemas validity error : Element '{http://schemas.openxmlformats.org/wordprocessingml/2006/main}tblpPr', attribute 'overlap': The attribute 'overlap' is not allowed.
@@ -340,7 +340,7 @@ jobs:
             #     xml-file: build/extracted-doc/word/document.xml
             #     xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
             - name: Run Demo
-              run: npm run ts-node -- ./demo/35-hyperlinks.ts
+              run: npm run run-ts -- ./demo/35-hyperlinks.ts
             - name: Extract Word Document
               run: npm run extract
             - name: Validate XML
@@ -349,7 +349,7 @@ jobs:
                   xml-file: build/extracted-doc/word/document.xml
                   xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
             - name: Run Demo
-              run: npm run ts-node -- ./demo/36-image-to-table-cell.ts
+              run: npm run run-ts -- ./demo/36-image-to-table-cell.ts
             - name: Extract Word Document
               run: npm run extract
             - name: Validate XML
@@ -358,7 +358,7 @@ jobs:
                   xml-file: build/extracted-doc/word/document.xml
                   xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
             - name: Run Demo
-              run: npm run ts-node -- ./demo/37-images-to-header-and-footer.ts
+              run: npm run run-ts -- ./demo/37-images-to-header-and-footer.ts
             - name: Extract Word Document
               run: npm run extract
             - name: Validate XML
@@ -367,7 +367,7 @@ jobs:
                   xml-file: build/extracted-doc/word/document.xml
                   xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
             - name: Run Demo
-              run: npm run ts-node -- ./demo/38-text-wrapping.ts
+              run: npm run run-ts -- ./demo/38-text-wrapping.ts
             - name: Extract Word Document
               run: npm run extract
             - name: Validate XML
@@ -376,7 +376,7 @@ jobs:
                   xml-file: build/extracted-doc/word/document.xml
                   xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
             - name: Run Demo
-              run: npm run ts-node -- ./demo/39-page-numbers.ts
+              run: npm run run-ts -- ./demo/39-page-numbers.ts
             - name: Extract Word Document
               run: npm run extract
             - name: Validate XML
@@ -385,7 +385,7 @@ jobs:
                   xml-file: build/extracted-doc/word/document.xml
                   xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
             - name: Run Demo
-              run: npm run ts-node -- ./demo/40-line-numbers.ts
+              run: npm run run-ts -- ./demo/40-line-numbers.ts
             - name: Extract Word Document
               run: npm run extract
             - name: Validate XML
@@ -394,7 +394,7 @@ jobs:
                   xml-file: build/extracted-doc/word/document.xml
                   xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
             - name: Run Demo
-              run: npm run ts-node -- ./demo/41-merge-table-cells-2.ts
+              run: npm run run-ts -- ./demo/41-merge-table-cells-2.ts
             - name: Extract Word Document
               run: npm run extract
             - name: Validate XML
@@ -403,7 +403,7 @@ jobs:
                   xml-file: build/extracted-doc/word/document.xml
                   xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
             - name: Run Demo
-              run: npm run ts-node -- ./demo/42-restart-page-numbers.ts
+              run: npm run run-ts -- ./demo/42-restart-page-numbers.ts
             - name: Extract Word Document
               run: npm run extract
             - name: Validate XML
@@ -412,7 +412,7 @@ jobs:
                   xml-file: build/extracted-doc/word/document.xml
                   xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
             - name: Run Demo
-              run: npm run ts-node -- ./demo/43-images-to-table-cell-2.ts
+              run: npm run run-ts -- ./demo/43-images-to-table-cell-2.ts
             - name: Extract Word Document
               run: npm run extract
             - name: Validate XML
@@ -421,7 +421,7 @@ jobs:
                   xml-file: build/extracted-doc/word/document.xml
                   xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
             - name: Run Demo
-              run: npm run ts-node -- ./demo/44-multiple-columns.ts
+              run: npm run run-ts -- ./demo/44-multiple-columns.ts
             - name: Extract Word Document
               run: npm run extract
             - name: Validate XML
@@ -430,7 +430,7 @@ jobs:
                   xml-file: build/extracted-doc/word/document.xml
                   xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
             - name: Run Demo
-              run: npm run ts-node -- ./demo/45-highlighting-text.ts
+              run: npm run run-ts -- ./demo/45-highlighting-text.ts
             - name: Extract Word Document
               run: npm run extract
             - name: Validate XML
@@ -439,7 +439,7 @@ jobs:
                   xml-file: build/extracted-doc/word/document.xml
                   xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
             - name: Run Demo
-              run: npm run ts-node -- ./demo/46-shading-text.ts
+              run: npm run run-ts -- ./demo/46-shading-text.ts
             - name: Extract Word Document
               run: npm run extract
             - name: Validate XML
@@ -448,7 +448,7 @@ jobs:
                   xml-file: build/extracted-doc/word/document.xml
                   xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
             - name: Run Demo
-              run: npm run ts-node -- ./demo/47-number-of-total-pages-section.ts
+              run: npm run run-ts -- ./demo/47-number-of-total-pages-section.ts
             - name: Extract Word Document
               run: npm run extract
             - name: Validate XML
@@ -457,7 +457,7 @@ jobs:
                   xml-file: build/extracted-doc/word/document.xml
                   xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
             - name: Run Demo
-              run: npm run ts-node -- ./demo/48-vertical-align.ts
+              run: npm run run-ts -- ./demo/48-vertical-align.ts
             - name: Extract Word Document
               run: npm run extract
             - name: Validate XML
@@ -466,7 +466,7 @@ jobs:
                   xml-file: build/extracted-doc/word/document.xml
                   xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
             - name: Run Demo
-              run: npm run ts-node -- ./demo/49-table-borders.ts
+              run: npm run run-ts -- ./demo/49-table-borders.ts
             - name: Extract Word Document
               run: npm run extract
             - name: Validate XML
@@ -475,7 +475,7 @@ jobs:
                   xml-file: build/extracted-doc/word/document.xml
                   xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
             - name: Run Demo
-              run: npm run ts-node -- ./demo/50-readme-demo.ts
+              run: npm run run-ts -- ./demo/50-readme-demo.ts
             - name: Extract Word Document
               run: npm run extract
             - name: Validate XML
@@ -484,7 +484,7 @@ jobs:
                   xml-file: build/extracted-doc/word/document.xml
                   xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
             - name: Run Demo
-              run: npm run ts-node -- ./demo/51-character-styles.ts
+              run: npm run run-ts -- ./demo/51-character-styles.ts
             - name: Extract Word Document
               run: npm run extract
             - name: Validate XML
@@ -493,7 +493,7 @@ jobs:
                   xml-file: build/extracted-doc/word/document.xml
                   xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
             - name: Run Demo
-              run: npm run ts-node -- ./demo/52-japanese.ts
+              run: npm run run-ts -- ./demo/52-japanese.ts
             - name: Extract Word Document
               run: npm run extract
             - name: Validate XML
@@ -502,7 +502,7 @@ jobs:
                   xml-file: build/extracted-doc/word/document.xml
                   xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
             - name: Run Demo
-              run: npm run ts-node -- ./demo/53-chinese.ts
+              run: npm run run-ts -- ./demo/53-chinese.ts
             - name: Extract Word Document
               run: npm run extract
             - name: Validate XML
@@ -511,7 +511,7 @@ jobs:
                   xml-file: build/extracted-doc/word/document.xml
                   xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
             - name: Run Demo
-              run: npm run ts-node -- ./demo/54-custom-properties.ts
+              run: npm run run-ts -- ./demo/54-custom-properties.ts
             - name: Extract Word Document
               run: npm run extract
             - name: Validate XML
@@ -520,7 +520,7 @@ jobs:
                   xml-file: build/extracted-doc/word/document.xml
                   xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
             - name: Run Demo
-              run: npm run ts-node -- ./demo/55-math.ts
+              run: npm run run-ts -- ./demo/55-math.ts
             - name: Extract Word Document
               run: npm run extract
             #: element subHide: Schemas validity error : Element '{http://schemas.openxmlformats.org/officeDocument/2006/math}subHide': This element is not expected. Expected is ( {http://schemas.openxmlformats.org/officeDocument/2006/math}ctrlPr ).
@@ -533,7 +533,7 @@ jobs:
             #     xml-file: build/extracted-doc/word/document.xml
             #     xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
             - name: Run Demo
-              run: npm run ts-node -- ./demo/56-background-color.ts
+              run: npm run run-ts -- ./demo/56-background-color.ts
             - name: Extract Word Document
               run: npm run extract
             - name: Validate XML
@@ -542,7 +542,7 @@ jobs:
                   xml-file: build/extracted-doc/word/document.xml
                   xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
             - name: Run Demo
-              run: npm run ts-node -- ./demo/57-add-parent-numbered-lists.ts
+              run: npm run run-ts -- ./demo/57-add-parent-numbered-lists.ts
             - name: Extract Word Document
               run: npm run extract
             - name: Validate XML
@@ -551,7 +551,7 @@ jobs:
                   xml-file: build/extracted-doc/word/document.xml
                   xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
             - name: Run Demo
-              run: npm run ts-node -- ./demo/58-section-types.ts
+              run: npm run run-ts -- ./demo/58-section-types.ts
             - name: Extract Word Document
               run: npm run extract
             - name: Validate XML
@@ -560,7 +560,7 @@ jobs:
                   xml-file: build/extracted-doc/word/document.xml
                   xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
             - name: Run Demo
-              run: npm run ts-node -- ./demo/59-header-footer-margins.ts
+              run: npm run run-ts -- ./demo/59-header-footer-margins.ts
             - name: Extract Word Document
               run: npm run extract
             - name: Validate XML
@@ -569,7 +569,7 @@ jobs:
                   xml-file: build/extracted-doc/word/document.xml
                   xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
             - name: Run Demo
-              run: npm run ts-node -- ./demo/60-track-revisions.ts
+              run: npm run run-ts -- ./demo/60-track-revisions.ts
             - name: Extract Word Document
               run: npm run extract
             # element r: Schemas validity error : Element '{http://schemas.openxmlformats.org/wordprocessingml/2006/main}r': This element is not expected.
@@ -579,7 +579,7 @@ jobs:
             #     xml-file: build/extracted-doc/word/document.xml
             #     xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
             - name: Run Demo
-              run: npm run ts-node -- ./demo/61-text-frame.ts
+              run: npm run run-ts -- ./demo/61-text-frame.ts
             - name: Extract Word Document
               run: npm run extract
             # element left: Schemas validity error : Element '{http://schemas.openxmlformats.org/wordprocessingml/2006/main}left': This element is not expected. Expected is one of ( {http://schemas.openxmlformats.org/wordprocessingml/2006/main}right, {http://schemas.openxmlformats.org/wordprocessingml/2006/main}between, {http://schemas.openxmlformats.org/wordprocessingml/2006/main}bar ).
@@ -589,7 +589,7 @@ jobs:
             #     xml-file: build/extracted-doc/word/document.xml
             #     xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
             - name: Run Demo
-              run: npm run ts-node -- ./demo/62-paragraph-spacing.ts
+              run: npm run run-ts -- ./demo/62-paragraph-spacing.ts
             - name: Extract Word Document
               run: npm run extract
             - name: Validate XML
@@ -598,7 +598,7 @@ jobs:
                   xml-file: build/extracted-doc/word/document.xml
                   xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
             - name: Run Demo
-              run: npm run ts-node -- ./demo/63-odd-even-header-footer.ts
+              run: npm run run-ts -- ./demo/63-odd-even-header-footer.ts
             - name: Extract Word Document
               run: npm run extract
             - name: Validate XML
@@ -607,7 +607,7 @@ jobs:
                   xml-file: build/extracted-doc/word/document.xml
                   xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
             - name: Run Demo
-              run: npm run ts-node -- ./demo/64-complex-numbering-text.ts
+              run: npm run run-ts -- ./demo/64-complex-numbering-text.ts
             - name: Extract Word Document
               run: npm run extract
             - name: Validate XML
@@ -616,7 +616,7 @@ jobs:
                   xml-file: build/extracted-doc/word/document.xml
                   xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
             - name: Run Demo
-              run: npm run ts-node -- ./demo/65-page-sizes.ts
+              run: npm run run-ts -- ./demo/65-page-sizes.ts
             - name: Extract Word Document
               run: npm run extract
             - name: Validate XML
@@ -625,7 +625,7 @@ jobs:
                   xml-file: build/extracted-doc/word/document.xml
                   xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
             - name: Run Demo
-              run: npm run ts-node -- ./demo/66-fields.ts
+              run: npm run run-ts -- ./demo/66-fields.ts
             - name: Extract Word Document
               run: npm run extract
             # element bookmarkStart: Schemas validity error : Element '{http://schemas.openxmlformats.org/wordprocessingml/2006/main}bookmarkStart', attribute '{http://schemas.openxmlformats.org/wordprocessingml/2006/main}id': '-irrswq-ln94j4fdgdjxs' is not a valid value of the atomic type '{http://schemas.openxmlformats.org/wordprocessingml/2006/main}ST_DecimalNumber'.
@@ -636,7 +636,7 @@ jobs:
             #     xml-file: build/extracted-doc/word/document.xml
             #     xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
             - name: Run Demo
-              run: npm run ts-node -- ./demo/67-column-break.ts
+              run: npm run run-ts -- ./demo/67-column-break.ts
             - name: Extract Word Document
               run: npm run extract
             - name: Validate XML
@@ -645,7 +645,7 @@ jobs:
                   xml-file: build/extracted-doc/word/document.xml
                   xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
             - name: Run Demo
-              run: npm run ts-node -- ./demo/68-numbering-instances-and-starting-number.ts
+              run: npm run run-ts -- ./demo/68-numbering-instances-and-starting-number.ts
             - name: Extract Word Document
               run: npm run extract
             - name: Validate XML
@@ -654,7 +654,7 @@ jobs:
                   xml-file: build/extracted-doc/word/document.xml
                   xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
             - name: Run Demo
-              run: npm run ts-node -- ./demo/69-different-width-columns.ts
+              run: npm run run-ts -- ./demo/69-different-width-columns.ts
             - name: Extract Word Document
               run: npm run extract
             - name: Validate XML
@@ -663,7 +663,7 @@ jobs:
                   xml-file: build/extracted-doc/word/document.xml
                   xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
             - name: Run Demo
-              run: npm run ts-node -- ./demo/70-line-numbers-suppression.ts
+              run: npm run run-ts -- ./demo/70-line-numbers-suppression.ts
             - name: Extract Word Document
               run: npm run extract
             - name: Validate XML
@@ -672,7 +672,7 @@ jobs:
                   xml-file: build/extracted-doc/word/document.xml
                   xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
             - name: Run Demo
-              run: npm run ts-node -- ./demo/71-page-borders-2.ts
+              run: npm run run-ts -- ./demo/71-page-borders-2.ts
             - name: Extract Word Document
               run: npm run extract
             - name: Validate XML
@@ -681,7 +681,7 @@ jobs:
                   xml-file: build/extracted-doc/word/document.xml
                   xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
             - name: Run Demo
-              run: npm run ts-node -- ./demo/72-word-wrap.ts
+              run: npm run run-ts -- ./demo/72-word-wrap.ts
             - name: Extract Word Document
               run: npm run extract
             - name: Validate XML
@@ -690,7 +690,7 @@ jobs:
                   xml-file: build/extracted-doc/word/document.xml
                   xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
             - name: Run Demo
-              run: npm run ts-node -- ./demo/73-comments.ts
+              run: npm run run-ts -- ./demo/73-comments.ts
             - name: Extract Word Document
               run: npm run extract
             - name: Validate XML
@@ -699,7 +699,7 @@ jobs:
                   xml-file: build/extracted-doc/word/document.xml
                   xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
             - name: Run Demo
-              run: npm run ts-node -- ./demo/73-comments.ts
+              run: npm run run-ts -- ./demo/73-comments.ts
             - name: Extract Word Document
               run: npm run extract
             - name: Validate XML
@@ -708,7 +708,7 @@ jobs:
                   xml-file: build/extracted-doc/word/document.xml
                   xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
             # - name: Run Demo
-            #   run: npm run ts-node -- ./demo/75-tab-stops.ts
+            #   run: npm run run-ts -- ./demo/75-tab-stops.ts
             # - name: Extract Word Document
             #   run: npm run extract
             # - name: Validate XML
@@ -717,7 +717,7 @@ jobs:
             #       xml-file: build/extracted-doc/word/document.xml
             #       xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
             - name: Run Demo
-              run: npm run ts-node -- ./demo/76-compatibility.ts
+              run: npm run run-ts -- ./demo/76-compatibility.ts
             - name: Extract Word Document
               run: npm run extract
             - name: Validate XML
@@ -726,7 +726,7 @@ jobs:
                   xml-file: build/extracted-doc/word/document.xml
                   xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
             - name: Run Demo
-              run: npm run ts-node -- ./demo/77-side-by-side-tables.ts
+              run: npm run run-ts -- ./demo/77-side-by-side-tables.ts
             - name: Extract Word Document
               run: npm run extract
             - name: Validate XML
@@ -735,7 +735,7 @@ jobs:
                   xml-file: build/extracted-doc/word/document.xml
                   xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
             - name: Run Demo
-              run: npm run ts-node -- ./demo/78-thai-distributed.ts
+              run: npm run run-ts -- ./demo/78-thai-distributed.ts
             - name: Extract Word Document
               run: npm run extract
             - name: Validate XML
@@ -744,7 +744,7 @@ jobs:
                   xml-file: build/extracted-doc/word/document.xml
                   xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
             - name: Run Demo
-              run: npm run ts-node -- ./demo/79-table-from-data-source.ts
+              run: npm run run-ts -- ./demo/79-table-from-data-source.ts
             - name: Extract Word Document
               run: npm run extract
             - name: Validate XML
@@ -753,7 +753,7 @@ jobs:
                   xml-file: build/extracted-doc/word/document.xml
                   xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
             - name: Run Demo
-              run: npm run ts-node -- ./demo/80-thai-distributed.ts
+              run: npm run run-ts -- ./demo/80-thai-distributed.ts
             - name: Extract Word Document
               run: npm run extract
             - name: Validate XML
@@ -762,7 +762,7 @@ jobs:
                   xml-file: build/extracted-doc/word/document.xml
                   xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
             - name: Run Demo
-              run: npm run ts-node -- ./demo/81-continuous-header.ts
+              run: npm run run-ts -- ./demo/81-continuous-header.ts
             - name: Extract Word Document
               run: npm run extract
             - name: Validate XML
@@ -771,7 +771,7 @@ jobs:
                   xml-file: build/extracted-doc/word/document.xml
                   xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
             - name: Run Demo
-              run: npm run ts-node -- ./demo/82-new-headers-new-section.ts
+              run: npm run run-ts -- ./demo/82-new-headers-new-section.ts
             - name: Extract Word Document
               run: npm run extract
             - name: Validate XML
@@ -780,7 +780,7 @@ jobs:
                   xml-file: build/extracted-doc/word/document.xml
                   xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
             - name: Run Demo
-              run: npm run ts-node -- ./demo/83-setting-languages.ts
+              run: npm run run-ts -- ./demo/83-setting-languages.ts
             - name: Extract Word Document
               run: npm run extract
             - name: Validate XML
@@ -789,7 +789,7 @@ jobs:
                   xml-file: build/extracted-doc/word/document.xml
                   xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
             - name: Run Demo
-              run: npm run ts-node -- ./demo/84-positional-tabs.ts
+              run: npm run run-ts -- ./demo/84-positional-tabs.ts
             - name: Extract Word Document
               run: npm run extract
             - name: Validate XML
