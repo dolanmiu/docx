@@ -112,6 +112,23 @@ describe("Settings", () => {
             });
         });
 
+        it("should add defaultTabStop setting with version", () => {
+            const settings = new Settings({
+                defaultTabStop: 100,
+            });
+
+            const tree = new Formatter().format(settings);
+            expect(Object.keys(tree)).has.length(1);
+            expect(tree["w:settings"]).to.be.an("array");
+            expect(tree["w:settings"]).to.deep.include({
+                "w:defaultTabStop": {
+                    _attr: {
+                        "w:val": 100,
+                    },
+                },
+            });
+        });
+
         // TODO: Remove when deprecating compatibilityModeVersion
         it("should add compatibility setting with legacy version", () => {
             const settings = new Settings({

@@ -18,6 +18,7 @@ const receiptTabStops = [
 const twoTabStops = [{ type: TabStopType.RIGHT, position: TabStopPosition.MAX }];
 
 const doc = new Document({
+    defaultTabStop: 0,
     sections: [
         {
             properties: {},

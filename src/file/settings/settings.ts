@@ -1,4 +1,4 @@
-import { OnOffElement, XmlAttributeComponent, XmlComponent } from "@file/xml-components";
+import { NumberValueElement, OnOffElement, XmlAttributeComponent, XmlComponent } from "@file/xml-components";
 
 import { Compatibility, ICompatibilityOptions } from "./compatibility";
 
@@ -152,6 +152,7 @@ export interface ISettingsOptions {
     readonly trackRevisions?: boolean;
     readonly updateFields?: boolean;
     readonly compatibility?: ICompatibilityOptions;
+    readonly defaultTabStop?: number;
 }
 
 export class Settings extends XmlComponent {
@@ -196,6 +197,11 @@ export class Settings extends XmlComponent {
 
         if (options.updateFields !== undefined) {
             this.root.push(new OnOffElement("w:updateFields", options.updateFields));
+        }
+
+        // https://c-rex.net/samples/ooxml/e1/Part4/OOXML_P4_DOCX_defaultTabStop_topic_ID0EIXSX.html
+        if (options.defaultTabStop !== undefined) {
+            this.root.push(new NumberValueElement("w:defaultTabStop", options.defaultTabStop));
         }
 
         this.root.push(
