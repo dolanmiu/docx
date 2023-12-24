@@ -11,13 +11,14 @@ const receiptTabStops = [
     // (end position of 1st) + (end position of current)
     // columnWidth + columnWidth = columnWidth * 2
 
-    { type: TabStopType.RIGHT, position: columnWidth * 2 },
-    { type: TabStopType.RIGHT, position: columnWidth * 3 },
-    { type: TabStopType.RIGHT, position: TabStopPosition.MAX },
+    { type: TabStopType.RIGHT, position: 0 },
+    { type: TabStopType.RIGHT, position: 0 },
+    { type: TabStopType.RIGHT, position: 0 },
 ];
 const twoTabStops = [{ type: TabStopType.RIGHT, position: TabStopPosition.MAX }];
 
 const doc = new Document({
+    defaultTabStop: 0,
     sections: [
         {
             properties: {},

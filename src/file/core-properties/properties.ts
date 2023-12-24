@@ -39,6 +39,7 @@ export interface IPropertiesOptions {
     readonly compatibility?: ICompatibilityOptions;
     readonly customProperties?: readonly ICustomPropertyOptions[];
     readonly evenAndOddHeaderAndFooters?: boolean;
+    readonly defaultTabStop?: number;
 }
 
 // <xs:element name="coreProperties" type="CT_CoreProperties"/>

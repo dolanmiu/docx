@@ -77,6 +77,7 @@ export class File {
             evenAndOddHeaders: options.evenAndOddHeaderAndFooters ? true : false,
             trackRevisions: options.features?.trackRevisions,
             updateFields: options.features?.updateFields,
+            defaultTabStop: options.defaultTabStop,
         });
 
         this.media = new Media();
