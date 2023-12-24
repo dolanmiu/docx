@@ -2,6 +2,7 @@ import { IMediaData, IMediaDataTransformation } from "@file/media";
 import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
 
 import { GraphicData } from "./graphic-data";
+import { OutlineOptions } from "./graphic-data/pic/shape-properties/outline/outline";
 
 class GraphicAttributes extends XmlAttributeComponent<{
     readonly a: string;
@@ -14,7 +15,15 @@ class GraphicAttributes extends XmlAttributeComponent<{
 export class Graphic extends XmlComponent {
     private readonly data: GraphicData;
 
-    public constructor(mediaData: IMediaData, transform: IMediaDataTransformation) {
+    public constructor({
+        mediaData,
+        transform,
+        outline,
+    }: {
+        readonly mediaData: IMediaData;
+        readonly transform: IMediaDataTransformation;
+        readonly outline?: OutlineOptions;
+    }) {
         super("a:graphic");
         this.root.push(
             new GraphicAttributes({
@@ -22,7 +31,7 @@ export class Graphic extends XmlComponent {
             }),
         );
 
-        this.data = new GraphicData(mediaData, transform);
+        this.data = new GraphicData({ mediaData, transform, outline });
 
         this.root.push(this.data);
     }

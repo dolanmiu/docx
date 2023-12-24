@@ -5,6 +5,7 @@ import { Anchor } from "./anchor";
 import { DocPropertiesOptions } from "./doc-properties/doc-properties";
 import { IFloating } from "./floating";
 import { Inline } from "./inline";
+import { OutlineOptions } from "./inline/graphic/graphic-data/pic/shape-properties/outline/outline";
 
 export interface IDistance {
     readonly distT?: number;
@@ -16,6 +17,7 @@ export interface IDistance {
 export interface IDrawingOptions {
     readonly floating?: IFloating;
     readonly docProperties?: DocPropertiesOptions;
+    readonly outline?: OutlineOptions;
 }
 
 // <xsd:complexType name="CT_Drawing">
@@ -34,10 +36,11 @@ export class Drawing extends XmlComponent {
                 mediaData: imageData,
                 transform: imageData.transformation,
                 docProperties: drawingOptions.docProperties,
+                outline: drawingOptions.outline,
             });
             this.root.push(inline);
         } else {
-            this.root.push(new Anchor(imageData, imageData.transformation, drawingOptions));
+            this.root.push(new Anchor({ mediaData: imageData, transform: imageData.transformation, drawingOptions }));
         }
     }
 }

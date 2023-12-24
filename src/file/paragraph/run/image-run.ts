@@ -2,6 +2,7 @@ import { uniqueId } from "@util/convenience-functions";
 
 import { IContext, IXmlableObject } from "@file/xml-components";
 import { DocPropertiesOptions } from "@file/drawing/doc-properties/doc-properties";
+import { OutlineOptions } from "@file/drawing/inline/graphic/graphic-data/pic/shape-properties/outline/outline";
 
 import { Drawing, IFloating } from "../../drawing";
 import { IMediaTransformation } from "../../media";
@@ -13,6 +14,7 @@ export interface IImageOptions {
     readonly transformation: IMediaTransformation;
     readonly floating?: IFloating;
     readonly altText?: DocPropertiesOptions;
+    readonly outline?: OutlineOptions;
 }
 
 export class ImageRun extends Run {
@@ -39,7 +41,11 @@ export class ImageRun extends Run {
                 rotation: options.transformation.rotation ? options.transformation.rotation * 60000 : undefined,
             },
         };
-        const drawing = new Drawing(this.imageData, { floating: options.floating, docProperties: options.altText });
+        const drawing = new Drawing(this.imageData, {
+            floating: options.floating,
+            docProperties: options.altText,
+            outline: options.outline,
+        });
 
         this.root.push(drawing);
     }

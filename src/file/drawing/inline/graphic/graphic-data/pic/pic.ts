@@ -6,9 +6,18 @@ import { BlipFill } from "./blip/blip-fill";
 import { NonVisualPicProperties } from "./non-visual-pic-properties/non-visual-pic-properties";
 import { PicAttributes } from "./pic-attributes";
 import { ShapeProperties } from "./shape-properties/shape-properties";
+import { OutlineOptions } from "./shape-properties/outline/outline";
 
 export class Pic extends XmlComponent {
-    public constructor(mediaData: IMediaData, transform: IMediaDataTransformation) {
+    public constructor({
+        mediaData,
+        transform,
+        outline,
+    }: {
+        readonly mediaData: IMediaData;
+        readonly transform: IMediaDataTransformation;
+        readonly outline?: OutlineOptions;
+    }) {
         super("pic:pic");
 
         this.root.push(
@@ -19,6 +28,6 @@ export class Pic extends XmlComponent {
 
         this.root.push(new NonVisualPicProperties());
         this.root.push(new BlipFill(mediaData));
-        this.root.push(new ShapeProperties(transform));
+        this.root.push(new ShapeProperties({ transform, outline }));
     }
 }
