@@ -5,8 +5,10 @@ runs:
     using: composite
     steps:
         - name: Extract Word Document
+          shell: bash
           run: npm run extract
         - name: Validate XML
+          shell: bash
           uses: ChristophWurst/xmllint-action@v1
           with:
               xml-file: build/extracted-doc/word/document.xml

@@ -5,8 +5,10 @@ runs:
     using: composite
     steps:
         - name: Install Dependencies
+          shell: bash
           run: npm ci --force
         - name: Download Artifact
+          shell: bash
           uses: actions/download-artifact@master
           with:
               name: build
