@@ -1,0 +1,12 @@
+name: Install dependencies and build ⚙️
+description: Install dependencies and build
+
+runs:
+    using: composite
+    steps:
+        - name: Install Dependencies
+          shell: bash
+          run: npm ci --force
+        - name: Build
+          shell: bash
+          run: npm run build
