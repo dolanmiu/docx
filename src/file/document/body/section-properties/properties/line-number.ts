@@ -1,5 +1,5 @@
 // http://officeopenxml.com/WPsectionLineNumbering.php
-import { NextAttributeComponent, XmlComponent } from "@file/xml-components";
+import { BuilderElement, XmlComponent } from "@file/xml-components";
 import { decimalNumber, PositiveUniversalMeasure, twipsMeasureValue } from "@util/values";
 
 // <xsd:simpleType name="ST_LineNumberRestart">
@@ -25,31 +25,23 @@ export const LineNumberRestartFormat = {
 //     <xsd:attribute name="restart" type="ST_LineNumberRestart" use="optional" default="newPage"/>
 // </xsd:complexType>
 
-export interface ILineNumberAttributes {
+export type ILineNumberAttributes = {
     readonly countBy?: number;
     readonly start?: number;
     readonly restart?: (typeof LineNumberRestartFormat)[keyof typeof LineNumberRestartFormat];
     readonly distance?: number | PositiveUniversalMeasure;
-}
+};
 
-export class LineNumberType extends XmlComponent {
-    public constructor({ countBy, start, restart, distance }: ILineNumberAttributes) {
-        super("w:lnNumType");
-        this.root.push(
-            new NextAttributeComponent<{
-                readonly countBy?: number;
-                readonly start?: number;
-                readonly restart?: (typeof LineNumberRestartFormat)[keyof typeof LineNumberRestartFormat];
-                readonly distance?: number | PositiveUniversalMeasure;
-            }>({
-                countBy: { key: "w:countBy", value: countBy === undefined ? undefined : decimalNumber(countBy) },
-                start: { key: "w:start", value: start === undefined ? undefined : decimalNumber(start) },
-                restart: { key: "w:restart", value: restart },
-                distance: {
-                    key: "w:distance",
-                    value: distance === undefined ? undefined : twipsMeasureValue(distance),
-                },
-            }),
-        );
-    }
-}
+export const createLineNumberType = ({ countBy, start, restart, distance }: ILineNumberAttributes): XmlComponent =>
+    new BuilderElement<ILineNumberAttributes>({
+        name: "w:lnNumType",
+        attributes: {
+            countBy: { key: "w:countBy", value: countBy === undefined ? undefined : decimalNumber(countBy) },
+            start: { key: "w:start", value: start === undefined ? undefined : decimalNumber(start) },
+            restart: { key: "w:restart", value: restart },
+            distance: {
+                key: "w:distance",
+                value: distance === undefined ? undefined : twipsMeasureValue(distance),
+            },
+        },
+    });
