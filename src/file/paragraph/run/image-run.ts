@@ -65,6 +65,8 @@ export class ImageRun extends Run {
                     .map((c) => c.charCodeAt(0)),
             );
         } else {
+            /* c8 ignore next 4 */
+            // Not possible to test this branch in NodeJS
             // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
             const b = require("buf" + "fer");
             return new b.Buffer(dataURI, "base64");

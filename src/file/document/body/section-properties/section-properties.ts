@@ -9,7 +9,7 @@ import { OnOffElement, XmlComponent } from "@file/xml-components";
 import { HeaderFooterReference, HeaderFooterReferenceType, HeaderFooterType } from "./properties/header-footer-reference";
 import { Columns, IColumnsAttributes } from "./properties/columns";
 import { DocumentGrid, IDocGridAttributesProperties } from "./properties/doc-grid";
-import { ILineNumberAttributes, LineNumberType } from "./properties/line-number";
+import { ILineNumberAttributes, createLineNumberType } from "./properties/line-number";
 import { IPageBordersOptions, PageBorders } from "./properties/page-borders";
 import { IPageMarginAttributes, PageMargin } from "./properties/page-margin";
 import { IPageNumberTypeAttributes, PageNumberType } from "./properties/page-number";
@@ -137,7 +137,7 @@ export class SectionProperties extends XmlComponent {
         }
 
         if (lineNumbers) {
-            this.root.push(new LineNumberType(lineNumbers));
+            this.root.push(createLineNumberType(lineNumbers));
         }
 
         this.root.push(new PageNumberType(pageNumbers));

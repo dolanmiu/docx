@@ -2,7 +2,7 @@ import { SpaceType } from "@file/shared";
 import { XmlComponent } from "@file/xml-components";
 
 import { TextAttributes } from "../run/text-attributes";
-import { IPageReferenceOptions } from "./pageref-properties";
+import { IPageReferenceOptions } from "./pageref";
 
 export class PageReferenceFieldInstruction extends XmlComponent {
     public constructor(bookmarkId: string, options: IPageReferenceOptions = {}) {

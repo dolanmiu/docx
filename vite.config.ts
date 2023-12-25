@@ -61,17 +61,18 @@ export default defineConfig({
             provider: "v8",
             reporter: ["text", "json", "html"],
             thresholds: {
-                statements: 99.93,
-                branches: 98.85,
+                statements: 99.96,
+                branches: 98.98,
                 functions: 100,
-                lines: 99.93,
+                lines: 99.96,
             },
             exclude: [
                 ...configDefaults.exclude,
                 '**/build/**',
                 '**/demo/**',
                 '**/docs/**',
-                '**/scripts/**'
+                '**/scripts/**',
+                '**/src/**/index.ts',
             ],
         },
         include: [
