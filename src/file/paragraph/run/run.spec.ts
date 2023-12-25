@@ -432,6 +432,23 @@ describe("Run", () => {
         });
     });
 
+    describe("#section", () => {
+        it("should set the run to the RTL mode", () => {
+            const run = new Run({
+                children: [PageNumber.CURRENT_SECTION],
+            });
+            const tree = new Formatter().format(run);
+            expect(tree).to.deep.equal({
+                "w:r": [
+                    { "w:fldChar": { _attr: { "w:fldCharType": "begin" } } },
+                    { "w:instrText": [{ _attr: { "xml:space": "preserve" } }, "SECTION"] },
+                    { "w:fldChar": { _attr: { "w:fldCharType": "separate" } } },
+                    { "w:fldChar": { _attr: { "w:fldCharType": "end" } } },
+                ],
+            });
+        });
+    });
+
     describe("#style", () => {
         it("should set the style to the given styleId", () => {
             const run = new Run({
