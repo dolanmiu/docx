@@ -26,3 +26,11 @@ export class NumberOfPagesSection extends XmlComponent {
         this.root.push("SECTIONPAGES");
     }
 }
+
+export class CurrentPageInSection extends XmlComponent {
+    public constructor() {
+        super("w:instrText");
+        this.root.push(new TextAttributes({ space: SpaceType.PRESERVE }));
+        this.root.push("SECTION");
+    }
+}

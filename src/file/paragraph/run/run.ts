@@ -6,7 +6,7 @@ import { FieldInstruction } from "@file/table-of-contents/field-instruction";
 
 import { Break } from "./break";
 import { Begin, End, Separate } from "./field";
-import { NumberOfPages, NumberOfPagesSection, Page } from "./page-number";
+import { NumberOfPages, NumberOfPagesSection, Page, CurrentPageInSection } from "./page-number";
 import { IRunPropertiesOptions, RunProperties } from "./properties";
 import { Text } from "./run-components/text";
 import {
@@ -103,6 +103,7 @@ export const PageNumber = {
     CURRENT: "CURRENT",
     TOTAL_PAGES: "TOTAL_PAGES",
     TOTAL_PAGES_IN_SECTION: "TOTAL_PAGES_IN_SECTION",
+    CURRENT_PAGE_IN_SECTION: "SECTION",
 } as const;
 
 /* eslint-enable */
@@ -140,6 +141,12 @@ export class Run extends XmlComponent {
                         case PageNumber.TOTAL_PAGES_IN_SECTION:
                             this.root.push(new Begin());
                             this.root.push(new NumberOfPagesSection());
+                            this.root.push(new Separate());
+                            this.root.push(new End());
+                            break;
+                        case PageNumber.CURRENT_PAGE_IN_SECTION:
+                            this.root.push(new Begin());
+                            this.root.push(new CurrentPageInSection());
                             this.root.push(new Separate());
                             this.root.push(new End());
                             break;
