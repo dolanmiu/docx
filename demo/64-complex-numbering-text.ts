@@ -107,5 +107,5 @@ const doc = new Document({
 
 // Used to export the file into a .docx file
 Packer.toBuffer(doc).then((buffer) => {
-    fs.writeFileSync("6-numbering.docx", buffer);
+    fs.writeFileSync("My Document.docx", buffer);
 });
