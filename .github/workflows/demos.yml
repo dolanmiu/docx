@@ -690,7 +690,7 @@ jobs:
         steps:
             - uses: actions/checkout@master
             - uses: "./.github/actions/install-and-download-build"
-            - run: npm run run-ts -- ./demo/74-comments.ts
+            - run: npm run run-ts -- ./demo/74-nodejs-stream.ts
             # - uses: "./.github/actions/validate-docx"
     demo_75:
         name: Run Demo 75 and validate
