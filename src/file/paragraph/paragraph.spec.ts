@@ -890,10 +890,7 @@ describe("Paragraph", () => {
         it("should set frame attribute", () => {
             const paragraph = new Paragraph({
                 frame: {
-                    position: {
-                        x: 1000,
-                        y: 3000,
-                    },
+                    type: "alignment",
                     width: 4000,
                     height: 1000,
                     anchor: {
@@ -918,9 +915,7 @@ describe("Paragraph", () => {
                                         "w:hAnchor": "margin",
                                         "w:vAnchor": "margin",
                                         "w:w": 4000,
-                                        "w:x": 1000,
                                         "w:xAlign": "center",
-                                        "w:y": 3000,
                                         "w:yAlign": "top",
                                     },
                                 },

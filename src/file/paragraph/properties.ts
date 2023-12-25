@@ -13,7 +13,7 @@ import { HeadingLevel, Style } from "./formatting/style";
 import { TabStop, TabStopDefinition, TabStopType } from "./formatting/tab-stop";
 import { NumberProperties } from "./formatting/unordered-list";
 import { WordWrap } from "./formatting/word-wrap";
-import { FrameProperties, IFrameOptions } from "./frame/frame-properties";
+import { createFrameProperties, IFrameOptions } from "./frame/frame-properties";
 import { OutlineLevel } from "./links";
 import { IRunOptions, RunProperties } from ".";
 
@@ -116,7 +116,7 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
         }
 
         if (options.frame) {
-            this.push(new FrameProperties(options.frame));
+            this.push(createFrameProperties(options.frame));
         }
 
         if (options.widowControl !== undefined) {
