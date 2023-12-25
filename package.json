@@ -92,7 +92,7 @@
         "prettier": "^3.0.0",
         "tsconfig-paths": "^4.0.0",
         "tsx": "^4.7.0",
-        "typedoc": "^0.24.8",
+        "typedoc": "^0.25.4",
         "typescript": "5.3.3",
         "unzipper": "^0.10.11",
         "vite": "^5.0.10",
