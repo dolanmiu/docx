@@ -14,10 +14,7 @@ jobs:
         steps:
             - name: Checkout Repo
               uses: actions/checkout@master
-            - name: Install Dependencies
-              run: npm ci --force
-            - name: Build
-              run: npm run build
+            - uses: "./.github/actions/install-and-build"
             - name: Archive Production Artifact
               uses: actions/upload-artifact@master
               with:
