@@ -12,8 +12,7 @@ jobs:
         name: Build
         runs-on: ubuntu-latest
         steps:
-            - name: Checkout Repo
-              uses: actions/checkout@master
+            - uses: actions/checkout@master
             - name: Install Dependencies
               run: npm ci --force
             - name: Build
@@ -23,26 +22,13 @@ jobs:
               with:
                   name: build
                   path: build
-    demos:
-        name: Run Demos and Validate
-        needs: [build]
-        runs-on: ubuntu-latest
-        steps:
-            - name: Checkout Repo
-              uses: actions/checkout@master
-            - name: Install Dependencies
-              run: npm ci --force
-            - name: Download Artifact
-              uses: actions/download-artifact@master
-              with:
-                  name: build
-                  path: build
     demo_1:
         name: Run Demo 1 and validate
         needs: [build]
         runs-on: ubuntu-latest
         steps:
-            - uses: "./.github/actions/checkout-and-download-build"
+            - uses: actions/checkout@master
+            - uses: "./.github/actions/install-and-download-build"
             - run: npm run run-ts -- ./demo/1-basic.ts
             - uses: "./.github/actions/validate-docx"
     demo_2:
@@ -50,7 +36,8 @@ jobs:
         needs: [build]
         runs-on: ubuntu-latest
         steps:
-            - uses: "./.github/actions/checkout-and-download-build"
+            - uses: actions/checkout@master
+            - uses: "./.github/actions/install-and-download-build"
             - run: npm run run-ts -- ./demo/2-declaritive-styles.ts
             - uses: "./.github/actions/validate-docx"
     demo_3:
@@ -58,7 +45,8 @@ jobs:
         needs: [build]
         runs-on: ubuntu-latest
         steps:
-            - uses: "./.github/actions/checkout-and-download-build"
+            - uses: actions/checkout@master
+            - uses: "./.github/actions/install-and-download-build"
             - run: npm run run-ts -- ./demo/3-numbering-and-bullet-points.ts
             - uses: "./.github/actions/validate-docx"
     demo_4:
@@ -66,7 +54,8 @@ jobs:
         needs: [build]
         runs-on: ubuntu-latest
         steps:
-            - uses: "./.github/actions/checkout-and-download-build"
+            - uses: actions/checkout@master
+            - uses: "./.github/actions/install-and-download-build"
             - run: npm run run-ts -- ./demo/4-basic-table.ts
             - uses: "./.github/actions/validate-docx"
     demo_5:
@@ -74,7 +63,8 @@ jobs:
         needs: [build]
         runs-on: ubuntu-latest
         steps:
-            - uses: "./.github/actions/checkout-and-download-build"
+            - uses: actions/checkout@master
+            - uses: "./.github/actions/install-and-download-build"
             - run: npm run run-ts -- ./demo/5-images.ts
             - uses: "./.github/actions/validate-docx"
     demo_6:
@@ -82,7 +72,8 @@ jobs:
         needs: [build]
         runs-on: ubuntu-latest
         steps:
-            - uses: "./.github/actions/checkout-and-download-build"
+            - uses: actions/checkout@master
+            - uses: "./.github/actions/install-and-download-build"
             - run: npm run run-ts -- ./demo/6-page-borders.ts
             - uses: "./.github/actions/validate-docx"
     demo_7:
@@ -90,7 +81,8 @@ jobs:
         needs: [build]
         runs-on: ubuntu-latest
         steps:
-            - uses: "./.github/actions/checkout-and-download-build"
+            - uses: actions/checkout@master
+            - uses: "./.github/actions/install-and-download-build"
             - run: npm run run-ts -- ./demo/7-landscape.ts
             - uses: "./.github/actions/validate-docx"
     demo_8:
@@ -98,7 +90,8 @@ jobs:
         needs: [build]
         runs-on: ubuntu-latest
         steps:
-            - uses: "./.github/actions/checkout-and-download-build"
+            - uses: actions/checkout@master
+            - uses: "./.github/actions/install-and-download-build"
             - run: npm run run-ts -- ./demo/8-header-footer.ts
             - uses: "./.github/actions/validate-docx"
     demo_9:
@@ -106,7 +99,8 @@ jobs:
         needs: [build]
         runs-on: ubuntu-latest
         steps:
-            - uses: "./.github/actions/checkout-and-download-build"
+            - uses: actions/checkout@master
+            - uses: "./.github/actions/install-and-download-build"
             - run: npm run run-ts -- ./demo/9-images-in-header-and-footer.ts
             - uses: "./.github/actions/validate-docx"
     demo_10:
@@ -114,7 +108,8 @@ jobs:
         needs: [build]
         runs-on: ubuntu-latest
         steps:
-            - uses: "./.github/actions/checkout-and-download-build"
+            - uses: actions/checkout@master
+            - uses: "./.github/actions/install-and-download-build"
             - run: npm run run-ts -- ./demo/10-my-cv.ts
             - uses: "./.github/actions/validate-docx"
     demo_11:
@@ -122,7 +117,8 @@ jobs:
         needs: [build]
         runs-on: ubuntu-latest
         steps:
-            - uses: "./.github/actions/checkout-and-download-build"
+            - uses: actions/checkout@master
+            - uses: "./.github/actions/install-and-download-build"
             - run: npm run run-ts -- ./demo/11-declaritive-styles-2.ts
             - uses: "./.github/actions/validate-docx"
     demo_12:
@@ -130,7 +126,8 @@ jobs:
         needs: [build]
         runs-on: ubuntu-latest
         steps:
-            - uses: "./.github/actions/checkout-and-download-build"
+            - uses: actions/checkout@master
+            - uses: "./.github/actions/install-and-download-build"
             - run: npm run run-ts -- ./demo/12-scaling-images.ts
             - uses: "./.github/actions/validate-docx"
     demo_13:
@@ -138,7 +135,8 @@ jobs:
         needs: [build]
         runs-on: ubuntu-latest
         steps:
-            - uses: "./.github/actions/checkout-and-download-build"
+            - uses: actions/checkout@master
+            - uses: "./.github/actions/install-and-download-build"
             - run: npm run run-ts -- ./demo/13-xml-styles.ts
             - uses: "./.github/actions/validate-docx"
     demo_14:
@@ -146,7 +144,8 @@ jobs:
         needs: [build]
         runs-on: ubuntu-latest
         steps:
-            - uses: "./.github/actions/checkout-and-download-build"
+            - uses: actions/checkout@master
+            - uses: "./.github/actions/install-and-download-build"
             - run: npm run run-ts -- ./demo/14-page-numbers.ts
             - uses: "./.github/actions/validate-docx"
     demo_15:
@@ -154,7 +153,8 @@ jobs:
         needs: [build]
         runs-on: ubuntu-latest
         steps:
-            - uses: "./.github/actions/checkout-and-download-build"
+            - uses: actions/checkout@master
+            - uses: "./.github/actions/install-and-download-build"
             - run: npm run run-ts -- ./demo/15-page-break-before.ts
             - uses: "./.github/actions/validate-docx"
     demo_16:
@@ -162,7 +162,8 @@ jobs:
         needs: [build]
         runs-on: ubuntu-latest
         steps:
-            - uses: "./.github/actions/checkout-and-download-build"
+            - uses: actions/checkout@master
+            - uses: "./.github/actions/install-and-download-build"
             - run: npm run run-ts -- ./demo/16-multiple-sections.ts
             - uses: "./.github/actions/validate-docx"
     demo_17:
@@ -170,7 +171,8 @@ jobs:
         needs: [build]
         runs-on: ubuntu-latest
         steps:
-            - uses: "./.github/actions/checkout-and-download-build"
+            - uses: actions/checkout@master
+            - uses: "./.github/actions/install-and-download-build"
             - run: npm run run-ts -- ./demo/17-footnotes.ts
             # element r: Schemas validity error : Element '{http://schemas.openxmlformats.org/wordprocessingml/2006/main}r': This element is not expected.
             # - uses: "./.github/actions/validate-docx"
@@ -179,7 +181,8 @@ jobs:
         needs: [build]
         runs-on: ubuntu-latest
         steps:
-            - uses: "./.github/actions/checkout-and-download-build"
+            - uses: actions/checkout@master
+            - uses: "./.github/actions/install-and-download-build"
             - run: npm run run-ts -- ./demo/18-image-from-buffer.ts
             - uses: "./.github/actions/validate-docx"
     demo_19:
@@ -187,7 +190,8 @@ jobs:
         needs: [build]
         runs-on: ubuntu-latest
         steps:
-            - uses: "./.github/actions/checkout-and-download-build"
+            - uses: actions/checkout@master
+            - uses: "./.github/actions/install-and-download-build"
             - run: npm run run-ts -- ./demo/19-export-to-base64.ts
             # Base 64 No longer works, abruptly. Node issue?
             # - uses: "./.github/actions/validate-docx"
@@ -196,7 +200,8 @@ jobs:
         needs: [build]
         runs-on: ubuntu-latest
         steps:
-            - uses: "./.github/actions/checkout-and-download-build"
+            - uses: actions/checkout@master
+            - uses: "./.github/actions/install-and-download-build"
             - run: npm run run-ts -- ./demo/20-table-cell-borders.ts
             - uses: "./.github/actions/validate-docx"
     demo_21:
@@ -204,7 +209,8 @@ jobs:
         needs: [build]
         runs-on: ubuntu-latest
         steps:
-            - uses: "./.github/actions/checkout-and-download-build"
+            - uses: actions/checkout@master
+            - uses: "./.github/actions/install-and-download-build"
             - run: npm run run-ts -- ./demo/21-bookmarks.ts
             # Bad ID - need numeric ID
             # - uses: "./.github/actions/validate-docx"
@@ -213,7 +219,8 @@ jobs:
         needs: [build]
         runs-on: ubuntu-latest
         steps:
-            - uses: "./.github/actions/checkout-and-download-build"
+            - uses: actions/checkout@master
+            - uses: "./.github/actions/install-and-download-build"
             - run: npm run run-ts -- ./demo/22-right-to-left-text.ts
             - uses: "./.github/actions/validate-docx"
     demo_23:
@@ -221,7 +228,8 @@ jobs:
         needs: [build]
         runs-on: ubuntu-latest
         steps:
-            - uses: "./.github/actions/checkout-and-download-build"
+            - uses: actions/checkout@master
+            - uses: "./.github/actions/install-and-download-build"
             - run: npm run run-ts -- ./demo/23-base64-images.ts
             - uses: "./.github/actions/validate-docx"
     demo_24:
@@ -229,7 +237,8 @@ jobs:
         needs: [build]
         runs-on: ubuntu-latest
         steps:
-            - uses: "./.github/actions/checkout-and-download-build"
+            - uses: actions/checkout@master
+            - uses: "./.github/actions/install-and-download-build"
             - run: npm run run-ts -- ./demo/24-images-to-table-cell.ts
             - uses: "./.github/actions/validate-docx"
     demo_25:
@@ -237,7 +246,8 @@ jobs:
         needs: [build]
         runs-on: ubuntu-latest
         steps:
-            - uses: "./.github/actions/checkout-and-download-build"
+            - uses: actions/checkout@master
+            - uses: "./.github/actions/install-and-download-build"
             - run: npm run run-ts -- ./demo/25-table-xml-styles.ts
             - uses: "./.github/actions/validate-docx"
     demo_26:
@@ -245,7 +255,8 @@ jobs:
         needs: [build]
         runs-on: ubuntu-latest
         steps:
-            - uses: "./.github/actions/checkout-and-download-build"
+            - uses: actions/checkout@master
+            - uses: "./.github/actions/install-and-download-build"
             - run: npm run run-ts -- ./demo/26-paragraph-borders.ts
             - uses: "./.github/actions/validate-docx"
     demo_27:
@@ -253,7 +264,8 @@ jobs:
         needs: [build]
         runs-on: ubuntu-latest
         steps:
-            - uses: "./.github/actions/checkout-and-download-build"
+            - uses: actions/checkout@master
+            - uses: "./.github/actions/install-and-download-build"
             - run: npm run run-ts -- ./demo/27-declaritive-styles-3.ts
             - uses: "./.github/actions/validate-docx"
     demo_28:
@@ -261,7 +273,8 @@ jobs:
         needs: [build]
         runs-on: ubuntu-latest
         steps:
-            - uses: "./.github/actions/checkout-and-download-build"
+            - uses: actions/checkout@master
+            - uses: "./.github/actions/install-and-download-build"
             - run: npm run run-ts -- ./demo/28-table-of-contents.ts
             - uses: "./.github/actions/validate-docx"
     demo_29:
@@ -269,7 +282,8 @@ jobs:
         needs: [build]
         runs-on: ubuntu-latest
         steps:
-            - uses: "./.github/actions/checkout-and-download-build"
+            - uses: actions/checkout@master
+            - uses: "./.github/actions/install-and-download-build"
             - run: npm run run-ts -- ./demo/29-numbered-lists.ts
             - uses: "./.github/actions/validate-docx"
     demo_31:
@@ -277,7 +291,8 @@ jobs:
         needs: [build]
         runs-on: ubuntu-latest
         steps:
-            - uses: "./.github/actions/checkout-and-download-build"
+            - uses: actions/checkout@master
+            - uses: "./.github/actions/install-and-download-build"
             - run: npm run run-ts -- ./demo/31-tables.ts
             - uses: "./.github/actions/validate-docx"
     demo_32:
@@ -285,7 +300,8 @@ jobs:
         needs: [build]
         runs-on: ubuntu-latest
         steps:
-            - uses: "./.github/actions/checkout-and-download-build"
+            - uses: actions/checkout@master
+            - uses: "./.github/actions/install-and-download-build"
             - run: npm run run-ts -- ./demo/32-merge-and-shade-table-cells.ts
             - uses: "./.github/actions/validate-docx"
     demo_33:
@@ -293,7 +309,8 @@ jobs:
         needs: [build]
         runs-on: ubuntu-latest
         steps:
-            - uses: "./.github/actions/checkout-and-download-build"
+            - uses: actions/checkout@master
+            - uses: "./.github/actions/install-and-download-build"
             - run: npm run run-ts -- ./demo/33-sequential-captions.ts
             - uses: "./.github/actions/validate-docx"
     demo_34:
@@ -301,7 +318,8 @@ jobs:
         needs: [build]
         runs-on: ubuntu-latest
         steps:
-            - uses: "./.github/actions/checkout-and-download-build"
+            - uses: actions/checkout@master
+            - uses: "./.github/actions/install-and-download-build"
             - run: npm run run-ts -- ./demo/34-floating-tables.ts
             # element tblpPr: Schemas validity error : Element '{http://schemas.openxmlformats.org/wordprocessingml/2006/main}tblpPr', attribute 'overlap': The attribute 'overlap' is not allowed.
             # element tblpPr: Schemas validity error : Element '{http://schemas.openxmlformats.org/wordprocessingml/2006/main}tblpPr': Element content is not allowed, because the content type is empty.
@@ -311,7 +329,8 @@ jobs:
         needs: [build]
         runs-on: ubuntu-latest
         steps:
-            - uses: "./.github/actions/checkout-and-download-build"
+            - uses: actions/checkout@master
+            - uses: "./.github/actions/install-and-download-build"
             - run: npm run run-ts -- ./demo/35-hyperlinks.ts
             - uses: "./.github/actions/validate-docx"
     demo_36:
@@ -319,7 +338,8 @@ jobs:
         needs: [build]
         runs-on: ubuntu-latest
         steps:
-            - uses: "./.github/actions/checkout-and-download-build"
+            - uses: actions/checkout@master
+            - uses: "./.github/actions/install-and-download-build"
             - run: npm run run-ts -- ./demo/36-image-to-table-cell.ts
             - uses: "./.github/actions/validate-docx"
     demo_37:
@@ -327,7 +347,8 @@ jobs:
         needs: [build]
         runs-on: ubuntu-latest
         steps:
-            - uses: "./.github/actions/checkout-and-download-build"
+            - uses: actions/checkout@master
+            - uses: "./.github/actions/install-and-download-build"
             - run: npm run run-ts -- ./demo/37-images-to-header-and-footer.ts
             - uses: "./.github/actions/validate-docx"
     demo_38:
@@ -335,7 +356,8 @@ jobs:
         needs: [build]
         runs-on: ubuntu-latest
         steps:
-            - uses: "./.github/actions/checkout-and-download-build"
+            - uses: actions/checkout@master
+            - uses: "./.github/actions/install-and-download-build"
             - run: npm run run-ts -- ./demo/38-text-wrapping.ts
             - uses: "./.github/actions/validate-docx"
     demo_39:
@@ -343,7 +365,8 @@ jobs:
         needs: [build]
         runs-on: ubuntu-latest
         steps:
-            - uses: "./.github/actions/checkout-and-download-build"
+            - uses: actions/checkout@master
+            - uses: "./.github/actions/install-and-download-build"
             - run: npm run run-ts -- ./demo/39-page-numbers.ts
             - uses: "./.github/actions/validate-docx"
     demo_40:
@@ -351,7 +374,8 @@ jobs:
         needs: [build]
         runs-on: ubuntu-latest
         steps:
-            - uses: "./.github/actions/checkout-and-download-build"
+            - uses: actions/checkout@master
+            - uses: "./.github/actions/install-and-download-build"
             - run: npm run run-ts -- ./demo/40-line-numbers.ts
             - uses: "./.github/actions/validate-docx"
     demo_41:
@@ -359,7 +383,8 @@ jobs:
         needs: [build]
         runs-on: ubuntu-latest
         steps:
-            - uses: "./.github/actions/checkout-and-download-build"
+            - uses: actions/checkout@master
+            - uses: "./.github/actions/install-and-download-build"
             - run: npm run run-ts -- ./demo/41-merge-table-cells-2.ts
             - uses: "./.github/actions/validate-docx"
     demo_42:
@@ -367,7 +392,8 @@ jobs:
         needs: [build]
         runs-on: ubuntu-latest
         steps:
-            - uses: "./.github/actions/checkout-and-download-build"
+            - uses: actions/checkout@master
+            - uses: "./.github/actions/install-and-download-build"
             - run: npm run run-ts -- ./demo/42-restart-page-numbers.ts
             - uses: "./.github/actions/validate-docx"
     demo_43:
@@ -375,7 +401,8 @@ jobs:
         needs: [build]
         runs-on: ubuntu-latest
         steps:
-            - uses: "./.github/actions/checkout-and-download-build"
+            - uses: actions/checkout@master
+            - uses: "./.github/actions/install-and-download-build"
             - run: npm run run-ts -- ./demo/43-images-to-table-cell-2.ts
             - uses: "./.github/actions/validate-docx"
     demo_44:
@@ -383,7 +410,8 @@ jobs:
         needs: [build]
         runs-on: ubuntu-latest
         steps:
-            - uses: "./.github/actions/checkout-and-download-build"
+            - uses: actions/checkout@master
+            - uses: "./.github/actions/install-and-download-build"
             - run: npm run run-ts -- ./demo/44-multiple-columns.ts
             - uses: "./.github/actions/validate-docx"
     demo_45:
@@ -391,7 +419,8 @@ jobs:
         needs: [build]
         runs-on: ubuntu-latest
         steps:
-            - uses: "./.github/actions/checkout-and-download-build"
+            - uses: actions/checkout@master
+            - uses: "./.github/actions/install-and-download-build"
             - run: npm run run-ts -- ./demo/45-highlighting-text.ts
             - uses: "./.github/actions/validate-docx"
     demo_46:
@@ -399,7 +428,8 @@ jobs:
         needs: [build]
         runs-on: ubuntu-latest
         steps:
-            - uses: "./.github/actions/checkout-and-download-build"
+            - uses: actions/checkout@master
+            - uses: "./.github/actions/install-and-download-build"
             - run: npm run run-ts -- ./demo/46-shading-text.ts
             - uses: "./.github/actions/validate-docx"
     demo_47:
@@ -407,7 +437,8 @@ jobs:
         needs: [build]
         runs-on: ubuntu-latest
         steps:
-            - uses: "./.github/actions/checkout-and-download-build"
+            - uses: actions/checkout@master
+            - uses: "./.github/actions/install-and-download-build"
             - run: npm run run-ts -- ./demo/47-number-of-total-pages-section.ts
             - uses: "./.github/actions/validate-docx"
     demo_48:
@@ -415,7 +446,8 @@ jobs:
         needs: [build]
         runs-on: ubuntu-latest
         steps:
-            - uses: "./.github/actions/checkout-and-download-build"
+            - uses: actions/checkout@master
+            - uses: "./.github/actions/install-and-download-build"
             - run: npm run run-ts -- ./demo/48-vertical-align.ts
             - uses: "./.github/actions/validate-docx"
     demo_49:
@@ -423,7 +455,8 @@ jobs:
         needs: [build]
         runs-on: ubuntu-latest
         steps:
-            - uses: "./.github/actions/checkout-and-download-build"
+            - uses: actions/checkout@master
+            - uses: "./.github/actions/install-and-download-build"
             - run: npm run run-ts -- ./demo/49-table-borders.ts
             - uses: "./.github/actions/validate-docx"
     demo_50:
@@ -431,7 +464,8 @@ jobs:
         needs: [build]
         runs-on: ubuntu-latest
         steps:
-            - uses: "./.github/actions/checkout-and-download-build"
+            - uses: actions/checkout@master
+            - uses: "./.github/actions/install-and-download-build"
             - run: npm run run-ts -- ./demo/50-readme-demo.ts
             - uses: "./.github/actions/validate-docx"
     demo_51:
@@ -439,7 +473,8 @@ jobs:
         needs: [build]
         runs-on: ubuntu-latest
         steps:
-            - uses: "./.github/actions/checkout-and-download-build"
+            - uses: actions/checkout@master
+            - uses: "./.github/actions/install-and-download-build"
             - run: npm run run-ts -- ./demo/51-character-styles.ts
             - uses: "./.github/actions/validate-docx"
     demo_52:
@@ -447,7 +482,8 @@ jobs:
         needs: [build]
         runs-on: ubuntu-latest
         steps:
-            - uses: "./.github/actions/checkout-and-download-build"
+            - uses: actions/checkout@master
+            - uses: "./.github/actions/install-and-download-build"
             - run: npm run run-ts -- ./demo/52-japanese.ts
             - uses: "./.github/actions/validate-docx"
     demo_53:
@@ -455,7 +491,8 @@ jobs:
         needs: [build]
         runs-on: ubuntu-latest
         steps:
-            - uses: "./.github/actions/checkout-and-download-build"
+            - uses: actions/checkout@master
+            - uses: "./.github/actions/install-and-download-build"
             - run: npm run run-ts -- ./demo/53-chinese.ts
             - uses: "./.github/actions/validate-docx"
     demo_54:
@@ -463,7 +500,8 @@ jobs:
         needs: [build]
         runs-on: ubuntu-latest
         steps:
-            - uses: "./.github/actions/checkout-and-download-build"
+            - uses: actions/checkout@master
+            - uses: "./.github/actions/install-and-download-build"
             - run: npm run run-ts -- ./demo/54-custom-properties.ts
             - uses: "./.github/actions/validate-docx"
     demo_55:
@@ -471,7 +509,8 @@ jobs:
         needs: [build]
         runs-on: ubuntu-latest
         steps:
-            - uses: "./.github/actions/checkout-and-download-build"
+            - uses: actions/checkout@master
+            - uses: "./.github/actions/install-and-download-build"
             - run: npm run run-ts -- ./demo/55-math.ts
             #: element subHide: Schemas validity error : Element '{http://schemas.openxmlformats.org/officeDocument/2006/math}subHide': This element is not expected. Expected is ( {http://schemas.openxmlformats.org/officeDocument/2006/math}ctrlPr ).
             #: element e: Schemas validity error : Element '{http://schemas.openxmlformats.org/officeDocument/2006/math}e': This element is not expected. Expected is ( {http://schemas.openxmlformats.org/officeDocument/2006/math}sub ).
@@ -483,7 +522,8 @@ jobs:
         needs: [build]
         runs-on: ubuntu-latest
         steps:
-            - uses: "./.github/actions/checkout-and-download-build"
+            - uses: actions/checkout@master
+            - uses: "./.github/actions/install-and-download-build"
             - run: npm run run-ts -- ./demo/56-background-color.ts
             - uses: "./.github/actions/validate-docx"
     demo_57:
@@ -491,7 +531,8 @@ jobs:
         needs: [build]
         runs-on: ubuntu-latest
         steps:
-            - uses: "./.github/actions/checkout-and-download-build"
+            - uses: actions/checkout@master
+            - uses: "./.github/actions/install-and-download-build"
             - run: npm run run-ts -- ./demo/57-add-parent-numbered-lists.ts
             - uses: "./.github/actions/validate-docx"
     demo_58:
@@ -499,7 +540,8 @@ jobs:
         needs: [build]
         runs-on: ubuntu-latest
         steps:
-            - uses: "./.github/actions/checkout-and-download-build"
+            - uses: actions/checkout@master
+            - uses: "./.github/actions/install-and-download-build"
             - run: npm run run-ts -- ./demo/58-section-types.ts
             - uses: "./.github/actions/validate-docx"
     demo_59:
@@ -507,7 +549,8 @@ jobs:
         needs: [build]
         runs-on: ubuntu-latest
         steps:
-            - uses: "./.github/actions/checkout-and-download-build"
+            - uses: actions/checkout@master
+            - uses: "./.github/actions/install-and-download-build"
             - run: npm run run-ts -- ./demo/59-header-footer-margins.ts
             - uses: "./.github/actions/validate-docx"
     demo_60:
@@ -515,7 +558,8 @@ jobs:
         needs: [build]
         runs-on: ubuntu-latest
         steps:
-            - uses: "./.github/actions/checkout-and-download-build"
+            - uses: actions/checkout@master
+            - uses: "./.github/actions/install-and-download-build"
             - run: npm run run-ts -- ./demo/60-track-revisions.ts
             # element r: Schemas validity error : Element '{http://schemas.openxmlformats.org/wordprocessingml/2006/main}r': This element is not expected.
             # - uses: "./.github/actions/validate-docx"
@@ -524,7 +568,8 @@ jobs:
         needs: [build]
         runs-on: ubuntu-latest
         steps:
-            - uses: "./.github/actions/checkout-and-download-build"
+            - uses: actions/checkout@master
+            - uses: "./.github/actions/install-and-download-build"
             - run: npm run run-ts -- ./demo/61-text-frame.ts
             # element left: Schemas validity error : Element '{http://schemas.openxmlformats.org/wordprocessingml/2006/main}left': This element is not expected. Expected is one of ( {http://schemas.openxmlformats.org/wordprocessingml/2006/main}right, {http://schemas.openxmlformats.org/wordprocessingml/2006/main}between, {http://schemas.openxmlformats.org/wordprocessingml/2006/main}bar ).
             # - uses: "./.github/actions/validate-docx"
@@ -533,7 +578,8 @@ jobs:
         needs: [build]
         runs-on: ubuntu-latest
         steps:
-            - uses: "./.github/actions/checkout-and-download-build"
+            - uses: actions/checkout@master
+            - uses: "./.github/actions/install-and-download-build"
             - run: npm run run-ts -- ./demo/62-paragraph-spacing.ts
             - uses: "./.github/actions/validate-docx"
     demo_63:
@@ -541,7 +587,8 @@ jobs:
         needs: [build]
         runs-on: ubuntu-latest
         steps:
-            - uses: "./.github/actions/checkout-and-download-build"
+            - uses: actions/checkout@master
+            - uses: "./.github/actions/install-and-download-build"
             - run: npm run run-ts -- ./demo/63-odd-even-header-footer.ts
             - uses: "./.github/actions/validate-docx"
     demo_64:
@@ -549,7 +596,8 @@ jobs:
         needs: [build]
         runs-on: ubuntu-latest
         steps:
-            - uses: "./.github/actions/checkout-and-download-build"
+            - uses: actions/checkout@master
+            - uses: "./.github/actions/install-and-download-build"
             - run: npm run run-ts -- ./demo/64-complex-numbering-text.ts
             - uses: "./.github/actions/validate-docx"
     demo_65:
@@ -557,7 +605,8 @@ jobs:
         needs: [build]
         runs-on: ubuntu-latest
         steps:
-            - uses: "./.github/actions/checkout-and-download-build"
+            - uses: actions/checkout@master
+            - uses: "./.github/actions/install-and-download-build"
             - run: npm run run-ts -- ./demo/65-page-sizes.ts
             - uses: "./.github/actions/validate-docx"
     demo_66:
@@ -565,7 +614,8 @@ jobs:
         needs: [build]
         runs-on: ubuntu-latest
         steps:
-            - uses: "./.github/actions/checkout-and-download-build"
+            - uses: actions/checkout@master
+            - uses: "./.github/actions/install-and-download-build"
             - run: npm run run-ts -- ./demo/66-fields.ts
             # element bookmarkStart: Schemas validity error : Element '{http://schemas.openxmlformats.org/wordprocessingml/2006/main}bookmarkStart', attribute '{http://schemas.openxmlformats.org/wordprocessingml/2006/main}id': '-irrswq-ln94j4fdgdjxs' is not a valid value of the atomic type '{http://schemas.openxmlformats.org/wordprocessingml/2006/main}ST_DecimalNumber'.
             # element bookmarkEnd: Schemas validity error : Element '{http://schemas.openxmlformats.org/wordprocessingml/2006/main}bookmarkEnd', attribute '{http://schemas.openxmlformats.org/wordprocessingml/2006/main}id': '-irrswq-ln94j4fdgdjxs' is not a valid value of the atomic type '{http://schemas.openxmlformats.org/wordprocessingml/2006/main}ST_DecimalNumber'.
@@ -575,7 +625,8 @@ jobs:
         needs: [build]
         runs-on: ubuntu-latest
         steps:
-            - uses: "./.github/actions/checkout-and-download-build"
+            - uses: actions/checkout@master
+            - uses: "./.github/actions/install-and-download-build"
             - run: npm run run-ts -- ./demo/67-column-break.ts
             - uses: "./.github/actions/validate-docx"
     demo_68:
@@ -583,7 +634,8 @@ jobs:
         needs: [build]
         runs-on: ubuntu-latest
         steps:
-            - uses: "./.github/actions/checkout-and-download-build"
+            - uses: actions/checkout@master
+            - uses: "./.github/actions/install-and-download-build"
             - run: npm run run-ts -- ./demo/68-numbering-instances-and-starting-number.ts
             - uses: "./.github/actions/validate-docx"
     demo_69:
@@ -591,7 +643,8 @@ jobs:
         needs: [build]
         runs-on: ubuntu-latest
         steps:
-            - uses: "./.github/actions/checkout-and-download-build"
+            - uses: actions/checkout@master
+            - uses: "./.github/actions/install-and-download-build"
             - run: npm run run-ts -- ./demo/69-different-width-columns.ts
             - uses: "./.github/actions/validate-docx"
     demo_70:
@@ -599,7 +652,8 @@ jobs:
         needs: [build]
         runs-on: ubuntu-latest
         steps:
-            - uses: "./.github/actions/checkout-and-download-build"
+            - uses: actions/checkout@master
+            - uses: "./.github/actions/install-and-download-build"
             - run: npm run run-ts -- ./demo/70-line-numbers-suppression.ts
             - uses: "./.github/actions/validate-docx"
     demo_71:
@@ -607,7 +661,8 @@ jobs:
         needs: [build]
         runs-on: ubuntu-latest
         steps:
-            - uses: "./.github/actions/checkout-and-download-build"
+            - uses: actions/checkout@master
+            - uses: "./.github/actions/install-and-download-build"
             - run: npm run run-ts -- ./demo/71-page-borders-2.ts
             - uses: "./.github/actions/validate-docx"
     demo_72:
@@ -615,7 +670,8 @@ jobs:
         needs: [build]
         runs-on: ubuntu-latest
         steps:
-            - uses: "./.github/actions/checkout-and-download-build"
+            - uses: actions/checkout@master
+            - uses: "./.github/actions/install-and-download-build"
             - run: npm run run-ts -- ./demo/72-word-wrap.ts
             - uses: "./.github/actions/validate-docx"
     demo_73:
@@ -623,7 +679,8 @@ jobs:
         needs: [build]
         runs-on: ubuntu-latest
         steps:
-            - uses: "./.github/actions/checkout-and-download-build"
+            - uses: actions/checkout@master
+            - uses: "./.github/actions/install-and-download-build"
             - run: npm run run-ts -- ./demo/73-comments.ts
             - uses: "./.github/actions/validate-docx"
     demo_74:
@@ -631,7 +688,8 @@ jobs:
         needs: [build]
         runs-on: ubuntu-latest
         steps:
-            - uses: "./.github/actions/checkout-and-download-build"
+            - uses: actions/checkout@master
+            - uses: "./.github/actions/install-and-download-build"
             - run: npm run run-ts -- ./demo/74-comments.ts
             # - uses: "./.github/actions/validate-docx"
     demo_75:
@@ -639,7 +697,8 @@ jobs:
         needs: [build]
         runs-on: ubuntu-latest
         steps:
-            - uses: "./.github/actions/checkout-and-download-build"
+            - uses: actions/checkout@master
+            - uses: "./.github/actions/install-and-download-build"
             #   run: npm run run-ts -- ./demo/75-tab-stops.ts
             # - uses: "./.github/actions/validate-docx"
     demo_76:
@@ -647,7 +706,8 @@ jobs:
         needs: [build]
         runs-on: ubuntu-latest
         steps:
-            - uses: "./.github/actions/checkout-and-download-build"
+            - uses: actions/checkout@master
+            - uses: "./.github/actions/install-and-download-build"
             - run: npm run run-ts -- ./demo/76-compatibility.ts
             - uses: "./.github/actions/validate-docx"
     demo_77:
@@ -655,7 +715,8 @@ jobs:
         needs: [build]
         runs-on: ubuntu-latest
         steps:
-            - uses: "./.github/actions/checkout-and-download-build"
+            - uses: actions/checkout@master
+            - uses: "./.github/actions/install-and-download-build"
             - run: npm run run-ts -- ./demo/77-side-by-side-tables.ts
             - uses: "./.github/actions/validate-docx"
     demo_78:
@@ -663,7 +724,8 @@ jobs:
         needs: [build]
         runs-on: ubuntu-latest
         steps:
-            - uses: "./.github/actions/checkout-and-download-build"
+            - uses: actions/checkout@master
+            - uses: "./.github/actions/install-and-download-build"
             - run: npm run run-ts -- ./demo/78-thai-distributed.ts
             - uses: "./.github/actions/validate-docx"
     demo_79:
@@ -671,7 +733,8 @@ jobs:
         needs: [build]
         runs-on: ubuntu-latest
         steps:
-            - uses: "./.github/actions/checkout-and-download-build"
+            - uses: actions/checkout@master
+            - uses: "./.github/actions/install-and-download-build"
             - run: npm run run-ts -- ./demo/79-table-from-data-source.ts
             - uses: "./.github/actions/validate-docx"
     demo_80:
@@ -679,7 +742,8 @@ jobs:
         needs: [build]
         runs-on: ubuntu-latest
         steps:
-            - uses: "./.github/actions/checkout-and-download-build"
+            - uses: actions/checkout@master
+            - uses: "./.github/actions/install-and-download-build"
             - run: npm run run-ts -- ./demo/80-thai-distributed.ts
             - uses: "./.github/actions/validate-docx"
     demo_81:
@@ -687,7 +751,8 @@ jobs:
         needs: [build]
         runs-on: ubuntu-latest
         steps:
-            - uses: "./.github/actions/checkout-and-download-build"
+            - uses: actions/checkout@master
+            - uses: "./.github/actions/install-and-download-build"
             - run: npm run run-ts -- ./demo/81-continuous-header.ts
             - uses: "./.github/actions/validate-docx"
     demo_82:
@@ -695,7 +760,8 @@ jobs:
         needs: [build]
         runs-on: ubuntu-latest
         steps:
-            - uses: "./.github/actions/checkout-and-download-build"
+            - uses: actions/checkout@master
+            - uses: "./.github/actions/install-and-download-build"
             - run: npm run run-ts -- ./demo/82-new-headers-new-section.ts
             - uses: "./.github/actions/validate-docx"
     demo_83:
@@ -703,7 +769,8 @@ jobs:
         needs: [build]
         runs-on: ubuntu-latest
         steps:
-            - uses: "./.github/actions/checkout-and-download-build"
+            - uses: actions/checkout@master
+            - uses: "./.github/actions/install-and-download-build"
             - run: npm run run-ts -- ./demo/83-setting-languages.ts
             - uses: "./.github/actions/validate-docx"
     demo_84:
@@ -711,6 +778,7 @@ jobs:
         needs: [build]
         runs-on: ubuntu-latest
         steps:
-            - uses: "./.github/actions/checkout-and-download-build"
+            - uses: actions/checkout@master
+            - uses: "./.github/actions/install-and-download-build"
             - run: npm run run-ts -- ./demo/84-positional-tabs.ts
             - uses: "./.github/actions/validate-docx"

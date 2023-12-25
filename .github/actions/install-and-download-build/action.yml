@@ -1,11 +1,9 @@
-name: Checkout and download build ⚙️
-description: Checkout the project and download the build artifacts from a previous step.
+name: Install dependencies and download build ⚙️
+description: Install dependencies and download build
 
 runs:
   using: composite
   steps:
-    - name: Checkout Repo
-        uses: actions/checkout@master
     - name: Install Dependencies
         run: npm ci --force
     - name: Download Artifact
