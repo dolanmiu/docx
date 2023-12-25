@@ -20,6 +20,7 @@
 //     </xsd:restriction>
 // </xsd:simpleType>
 
+// cspell:ignore folHlink, phClr, hlink
 export const SchemeColor = {
     BG1: "bg1",
     TX1: "tx1",
