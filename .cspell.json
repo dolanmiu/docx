@@ -54,7 +54,8 @@
         "\\.to\\.include\\.members\\(\\[[^\\]]+]\\)",
         "/new [a-zA-Z]+\\({[^£]+}\\)/g",
         "/<element name=\"[a-z]+\"/gi",
-        "/<attribute name=\"[a-z]+\"/gi"
+        "/<attribute name=\"[a-z]+\"/gi",
+        "/key: \".+\"/"
     ],
     "ignorePaths": ["package.json", "docs/api", "*.docx", "build"],
     "allowCompoundWords": true,
