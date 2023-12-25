@@ -1,5 +1,5 @@
-name: Install dependencies and download build ⚙️
-description: Install dependencies and download build
+name: Install dependencies and build ⚙️
+description: Install dependencies and build
 
 runs:
     using: composite
@@ -7,8 +7,6 @@ runs:
         - name: Install Dependencies
           shell: bash
           run: npm ci --force
-        - name: Download Artifact
-          uses: actions/download-artifact@master
-          with:
-              name: build
-              path: build
+        - name: Build
+          shell: bash
+          run: npm run build
