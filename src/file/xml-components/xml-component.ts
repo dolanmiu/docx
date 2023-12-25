@@ -42,6 +42,9 @@ export abstract class XmlComponent extends BaseXmlComponent {
         };
     }
 
+    /**
+     * @deprecated Do not use this method. It is only used internally by the library. It will be removed in a future version.
+     */
     public addChildElement(child: XmlComponent | string): XmlComponent {
         this.root.push(child);
 
