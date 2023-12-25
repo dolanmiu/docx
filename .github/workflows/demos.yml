@@ -37,763 +37,680 @@ jobs:
               with:
                   name: build
                   path: build
-            - name: Run Demo
-              run: npm run run-ts -- ./demo/1-basic.ts
-            - name: Extract Word Document
-              run: npm run extract
-            - name: Validate XML
-              uses: ChristophWurst/xmllint-action@v1
-              with:
-                  xml-file: build/extracted-doc/word/document.xml
-                  xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
-            - name: Run Demo
-              run: npm run run-ts -- ./demo/2-declaritive-styles.ts
-            - name: Extract Word Document
-              run: npm run extract
-            - name: Validate XML
-              uses: ChristophWurst/xmllint-action@v1
-              with:
-                  xml-file: build/extracted-doc/word/document.xml
-                  xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
-            - name: Run Demo
-              run: npm run run-ts -- ./demo/3-numbering-and-bullet-points.ts
-            - name: Extract Word Document
-              run: npm run extract
-            - name: Validate XML
-              uses: ChristophWurst/xmllint-action@v1
-              with:
-                  xml-file: build/extracted-doc/word/document.xml
-                  xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
-            - name: Run Demo
-              run: npm run run-ts -- ./demo/4-basic-table.ts
-            - name: Extract Word Document
-              run: npm run extract
-            - name: Validate XML
-              uses: ChristophWurst/xmllint-action@v1
-              with:
-                  xml-file: build/extracted-doc/word/document.xml
-                  xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
-            - name: Run Demo
-              run: npm run run-ts -- ./demo/5-images.ts
-            - name: Extract Word Document
-              run: npm run extract
-            - name: Validate XML
-              uses: ChristophWurst/xmllint-action@v1
-              with:
-                  xml-file: build/extracted-doc/word/document.xml
-                  xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
-            - name: Run Demo
-              run: npm run run-ts -- ./demo/6-page-borders.ts
-            - name: Extract Word Document
-              run: npm run extract
-            - name: Validate XML
-              uses: ChristophWurst/xmllint-action@v1
-              with:
-                  xml-file: build/extracted-doc/word/document.xml
-                  xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
-            - name: Run Demo
-              run: npm run run-ts -- ./demo/7-landscape.ts
-            - name: Extract Word Document
-              run: npm run extract
-            - name: Validate XML
-              uses: ChristophWurst/xmllint-action@v1
-              with:
-                  xml-file: build/extracted-doc/word/document.xml
-                  xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
-            - name: Run Demo
-              run: npm run run-ts -- ./demo/8-header-footer.ts
-            - name: Extract Word Document
-              run: npm run extract
-            - name: Validate XML
-              uses: ChristophWurst/xmllint-action@v1
-              with:
-                  xml-file: build/extracted-doc/word/document.xml
-                  xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
-            - name: Run Demo
-              run: npm run run-ts -- ./demo/9-images-in-header-and-footer.ts
-            - name: Extract Word Document
-              run: npm run extract
-            - name: Validate XML
-              uses: ChristophWurst/xmllint-action@v1
-              with:
-                  xml-file: build/extracted-doc/word/document.xml
-                  xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
-            - name: Run Demo
-              run: npm run run-ts -- ./demo/10-my-cv.ts
-            - name: Extract Word Document
-              run: npm run extract
-            - name: Validate XML
-              uses: ChristophWurst/xmllint-action@v1
-              with:
-                  xml-file: build/extracted-doc/word/document.xml
-                  xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
-            - name: Run Demo
-              run: npm run run-ts -- ./demo/11-declaritive-styles-2.ts
-            - name: Extract Word Document
-              run: npm run extract
-            - name: Validate XML
-              uses: ChristophWurst/xmllint-action@v1
-              with:
-                  xml-file: build/extracted-doc/word/document.xml
-                  xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
-            - name: Run Demo
-              run: npm run run-ts -- ./demo/12-scaling-images.ts
-            - name: Extract Word Document
-              run: npm run extract
-            - name: Validate XML
-              uses: ChristophWurst/xmllint-action@v1
-              with:
-                  xml-file: build/extracted-doc/word/document.xml
-                  xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
-            - name: Run Demo
-              run: npm run run-ts -- ./demo/13-xml-styles.ts
-            - name: Extract Word Document
-              run: npm run extract
-            - name: Validate XML
-              uses: ChristophWurst/xmllint-action@v1
-              with:
-                  xml-file: build/extracted-doc/word/document.xml
-                  xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
-            - name: Run Demo
-              run: npm run run-ts -- ./demo/14-page-numbers.ts
-            - name: Extract Word Document
-              run: npm run extract
-            - name: Validate XML
-              uses: ChristophWurst/xmllint-action@v1
-              with:
-                  xml-file: build/extracted-doc/word/document.xml
-                  xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
-            - name: Run Demo
-              run: npm run run-ts -- ./demo/15-page-break-before.ts
-            - name: Extract Word Document
-              run: npm run extract
-            - name: Validate XML
-              uses: ChristophWurst/xmllint-action@v1
-              with:
-                  xml-file: build/extracted-doc/word/document.xml
-                  xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
-            - name: Run Demo
-              run: npm run run-ts -- ./demo/16-multiple-sections.ts
-            - name: Extract Word Document
-              run: npm run extract
-            - name: Validate XML
-              uses: ChristophWurst/xmllint-action@v1
-              with:
-                  xml-file: build/extracted-doc/word/document.xml
-                  xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
-            - name: Run Demo
-              run: npm run run-ts -- ./demo/17-footnotes.ts
-            - name: Extract Word Document
-              run: npm run extract
+    demo_1:
+        name: Run Demo 1 and validate
+        needs: [build]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: "./.github/workflows/composite/checkout-and-download-build"
+            - run: npm run run-ts -- ./demo/1-basic.ts
+            - uses: "./github/workflows/composite/validate-docx"
+    demo_2:
+        name: Run Demo 2 and validate
+        needs: [build]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: "./.github/workflows/composite/checkout-and-download-build"
+            - run: npm run run-ts -- ./demo/2-declaritive-styles.ts
+            - uses: "./github/workflows/composite/validate-docx"
+    demo_3:
+        name: Run Demo 3 and validate
+        needs: [build]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: "./.github/workflows/composite/checkout-and-download-build"
+            - run: npm run run-ts -- ./demo/3-numbering-and-bullet-points.ts
+            - uses: "./github/workflows/composite/validate-docx"
+    demo_4:
+        name: Run Demo 4 and validate
+        needs: [build]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: "./.github/workflows/composite/checkout-and-download-build"
+            - run: npm run run-ts -- ./demo/4-basic-table.ts
+            - uses: "./github/workflows/composite/validate-docx"
+    demo_5:
+        name: Run Demo 5 and validate
+        needs: [build]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: "./.github/workflows/composite/checkout-and-download-build"
+            - run: npm run run-ts -- ./demo/5-images.ts
+            - uses: "./github/workflows/composite/validate-docx"
+    demo_6:
+        name: Run Demo 6 and validate
+        needs: [build]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: "./.github/workflows/composite/checkout-and-download-build"
+            - run: npm run run-ts -- ./demo/6-page-borders.ts
+            - uses: "./github/workflows/composite/validate-docx"
+    demo_7:
+        name: Run Demo 7 and validate
+        needs: [build]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: "./.github/workflows/composite/checkout-and-download-build"
+            - run: npm run run-ts -- ./demo/7-landscape.ts
+            - uses: "./github/workflows/composite/validate-docx"
+    demo_8:
+        name: Run Demo 8 and validate
+        needs: [build]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: "./.github/workflows/composite/checkout-and-download-build"
+            - run: npm run run-ts -- ./demo/8-header-footer.ts
+            - uses: "./github/workflows/composite/validate-docx"
+    demo_9:
+        name: Run Demo 9 and validate
+        needs: [build]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: "./.github/workflows/composite/checkout-and-download-build"
+            - run: npm run run-ts -- ./demo/9-images-in-header-and-footer.ts
+            - uses: "./github/workflows/composite/validate-docx"
+    demo_10:
+        name: Run Demo 10 and validate
+        needs: [build]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: "./.github/workflows/composite/checkout-and-download-build"
+            - run: npm run run-ts -- ./demo/10-my-cv.ts
+            - uses: "./github/workflows/composite/validate-docx"
+    demo_11:
+        name: Run Demo 11 and validate
+        needs: [build]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: "./.github/workflows/composite/checkout-and-download-build"
+            - run: npm run run-ts -- ./demo/11-declaritive-styles-2.ts
+            - uses: "./github/workflows/composite/validate-docx"
+    demo_12:
+        name: Run Demo 12 and validate
+        needs: [build]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: "./.github/workflows/composite/checkout-and-download-build"
+            - run: npm run run-ts -- ./demo/12-scaling-images.ts
+            - uses: "./github/workflows/composite/validate-docx"
+    demo_13:
+        name: Run Demo 13 and validate
+        needs: [build]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: "./.github/workflows/composite/checkout-and-download-build"
+            - run: npm run run-ts -- ./demo/13-xml-styles.ts
+            - uses: "./github/workflows/composite/validate-docx"
+    demo_14:
+        name: Run Demo 14 and validate
+        needs: [build]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: "./.github/workflows/composite/checkout-and-download-build"
+            - run: npm run run-ts -- ./demo/14-page-numbers.ts
+            - uses: "./github/workflows/composite/validate-docx"
+    demo_15:
+        name: Run Demo 15 and validate
+        needs: [build]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: "./.github/workflows/composite/checkout-and-download-build"
+            - run: npm run run-ts -- ./demo/15-page-break-before.ts
+            - uses: "./github/workflows/composite/validate-docx"
+    demo_16:
+        name: Run Demo 16 and validate
+        needs: [build]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: "./.github/workflows/composite/checkout-and-download-build"
+            - run: npm run run-ts -- ./demo/16-multiple-sections.ts
+            - uses: "./github/workflows/composite/validate-docx"
+    demo_17:
+        name: Run Demo 17 and validate
+        needs: [build]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: "./.github/workflows/composite/checkout-and-download-build"
+            - run: npm run run-ts -- ./demo/17-footnotes.ts
             # element r: Schemas validity error : Element '{http://schemas.openxmlformats.org/wordprocessingml/2006/main}r': This element is not expected.
-            # - name: Validate XML
-            #   uses: ChristophWurst/xmllint-action@v1
-            #   with:
-            #     xml-file: build/extracted-doc/word/document.xml
-            #     xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
-            - name: Run Demo
-              run: npm run run-ts -- ./demo/18-image-from-buffer.ts
-            - name: Extract Word Document
-              run: npm run extract
-            - name: Validate XML
-              uses: ChristophWurst/xmllint-action@v1
-              with:
-                  xml-file: build/extracted-doc/word/document.xml
-                  xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
-            - name: Run Demo
-              run: npm run run-ts -- ./demo/19-export-to-base64.ts
+            # - uses: "./github/workflows/composite/validate-docx"
+    demo_18:
+        name: Run Demo 18 and validate
+        needs: [build]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: "./.github/workflows/composite/checkout-and-download-build"
+            - run: npm run run-ts -- ./demo/18-image-from-buffer.ts
+            - uses: "./github/workflows/composite/validate-docx"
+    demo_19:
+        name: Run Demo 19 and validate
+        needs: [build]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: "./.github/workflows/composite/checkout-and-download-build"
+            - run: npm run run-ts -- ./demo/19-export-to-base64.ts
             # Base 64 No longer works, abruptly. Node issue?
-            # - name: Extract Word Document
-            #   run: npm run extract
-            # - name: Validate XML
-            #   uses: ChristophWurst/xmllint-action@v1
-            #   with:
-            #       xml-file: build/extracted-doc/word/document.xml
-            #       xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
-            - name: Run Demo
-              run: npm run run-ts -- ./demo/20-table-cell-borders.ts
-            - name: Extract Word Document
-              run: npm run extract
-            - name: Validate XML
-              uses: ChristophWurst/xmllint-action@v1
-              with:
-                  xml-file: build/extracted-doc/word/document.xml
-                  xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
-            - name: Run Demo
-              run: npm run run-ts -- ./demo/21-bookmarks.ts
-            - name: Extract Word Document
-              run: npm run extract
+            # - uses: "./github/workflows/composite/validate-docx"
+    demo_20:
+        name: Run Demo 20 and validate
+        needs: [build]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: "./.github/workflows/composite/checkout-and-download-build"
+            - run: npm run run-ts -- ./demo/20-table-cell-borders.ts
+            - uses: "./github/workflows/composite/validate-docx"
+    demo_21:
+        name: Run Demo 21 and validate
+        needs: [build]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: "./.github/workflows/composite/checkout-and-download-build"
+            - run: npm run run-ts -- ./demo/21-bookmarks.ts
             # Bad ID - need numeric ID
-            # - name: Validate XML
-            #   uses: ChristophWurst/xmllint-action@v1
-            #   with:
-            #     xml-file: build/extracted-doc/word/document.xml
-            #     xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
-            - name: Run Demo
-              run: npm run run-ts -- ./demo/22-right-to-left-text.ts
-            - name: Extract Word Document
-              run: npm run extract
-            - name: Validate XML
-              uses: ChristophWurst/xmllint-action@v1
-              with:
-                  xml-file: build/extracted-doc/word/document.xml
-                  xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
-            - name: Run Demo
-              run: npm run run-ts -- ./demo/23-base64-images.ts
-            - name: Extract Word Document
-              run: npm run extract
-            - name: Validate XML
-              uses: ChristophWurst/xmllint-action@v1
-              with:
-                  xml-file: build/extracted-doc/word/document.xml
-                  xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
-            - name: Run Demo
-              run: npm run run-ts -- ./demo/24-images-to-table-cell.ts
-            - name: Extract Word Document
-              run: npm run extract
-            - name: Validate XML
-              uses: ChristophWurst/xmllint-action@v1
-              with:
-                  xml-file: build/extracted-doc/word/document.xml
-                  xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
-            - name: Run Demo
-              run: npm run run-ts -- ./demo/25-table-xml-styles.ts
-            - name: Extract Word Document
-              run: npm run extract
-            - name: Validate XML
-              uses: ChristophWurst/xmllint-action@v1
-              with:
-                  xml-file: build/extracted-doc/word/document.xml
-                  xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
-            - name: Run Demo
-              run: npm run run-ts -- ./demo/26-paragraph-borders.ts
-            - name: Extract Word Document
-              run: npm run extract
-            - name: Validate XML
-              uses: ChristophWurst/xmllint-action@v1
-              with:
-                  xml-file: build/extracted-doc/word/document.xml
-                  xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
-            - name: Run Demo
-              run: npm run run-ts -- ./demo/27-declaritive-styles-3.ts
-            - name: Extract Word Document
-              run: npm run extract
-            - name: Validate XML
-              uses: ChristophWurst/xmllint-action@v1
-              with:
-                  xml-file: build/extracted-doc/word/document.xml
-                  xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
-            - name: Run Demo
-              run: npm run run-ts -- ./demo/28-table-of-contents.ts
-            - name: Extract Word Document
-              run: npm run extract
-            - name: Validate XML
-              uses: ChristophWurst/xmllint-action@v1
-              with:
-                  xml-file: build/extracted-doc/word/document.xml
-                  xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
-            - name: Run Demo
-              run: npm run run-ts -- ./demo/29-numbered-lists.ts
-            - name: Extract Word Document
-              run: npm run extract
-            - name: Validate XML
-              uses: ChristophWurst/xmllint-action@v1
-              with:
-                  xml-file: build/extracted-doc/word/document.xml
-                  xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
-            - name: Run Demo
-              run: npm run run-ts -- ./demo/31-tables.ts
-            - name: Extract Word Document
-              run: npm run extract
-            - name: Validate XML
-              uses: ChristophWurst/xmllint-action@v1
-              with:
-                  xml-file: build/extracted-doc/word/document.xml
-                  xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
-            - name: Run Demo
-              run: npm run run-ts -- ./demo/32-merge-and-shade-table-cells.ts
-            - name: Extract Word Document
-              run: npm run extract
-            - name: Validate XML
-              uses: ChristophWurst/xmllint-action@v1
-              with:
-                  xml-file: build/extracted-doc/word/document.xml
-                  xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
-            - name: Run Demo
-              run: npm run run-ts -- ./demo/33-sequential-captions.ts
-            - name: Extract Word Document
-              run: npm run extract
-            - name: Validate XML
-              uses: ChristophWurst/xmllint-action@v1
-              with:
-                  xml-file: build/extracted-doc/word/document.xml
-                  xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
-            - name: Run Demo
-              run: npm run run-ts -- ./demo/34-floating-tables.ts
-            - name: Extract Word Document
-              run: npm run extract
+            # - uses: "./github/workflows/composite/validate-docx"
+    demo_22:
+        name: Run Demo 22 and validate
+        needs: [build]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: "./.github/workflows/composite/checkout-and-download-build"
+            - run: npm run run-ts -- ./demo/22-right-to-left-text.ts
+            - uses: "./github/workflows/composite/validate-docx"
+    demo_23:
+        name: Run Demo 23 and validate
+        needs: [build]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: "./.github/workflows/composite/checkout-and-download-build"
+            - run: npm run run-ts -- ./demo/23-base64-images.ts
+            - uses: "./github/workflows/composite/validate-docx"
+    demo_24:
+        name: Run Demo 24 and validate
+        needs: [build]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: "./.github/workflows/composite/checkout-and-download-build"
+            - run: npm run run-ts -- ./demo/24-images-to-table-cell.ts
+            - uses: "./github/workflows/composite/validate-docx"
+    demo_25:
+        name: Run Demo 25 and validate
+        needs: [build]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: "./.github/workflows/composite/checkout-and-download-build"
+            - run: npm run run-ts -- ./demo/25-table-xml-styles.ts
+            - uses: "./github/workflows/composite/validate-docx"
+    demo_26:
+        name: Run Demo 26 and validate
+        needs: [build]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: "./.github/workflows/composite/checkout-and-download-build"
+            - run: npm run run-ts -- ./demo/26-paragraph-borders.ts
+            - uses: "./github/workflows/composite/validate-docx"
+    demo_27:
+        name: Run Demo 27 and validate
+        needs: [build]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: "./.github/workflows/composite/checkout-and-download-build"
+            - run: npm run run-ts -- ./demo/27-declaritive-styles-3.ts
+            - uses: "./github/workflows/composite/validate-docx"
+    demo_28:
+        name: Run Demo 28 and validate
+        needs: [build]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: "./.github/workflows/composite/checkout-and-download-build"
+            - run: npm run run-ts -- ./demo/28-table-of-contents.ts
+            - uses: "./github/workflows/composite/validate-docx"
+    demo_29:
+        name: Run Demo 29 and validate
+        needs: [build]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: "./.github/workflows/composite/checkout-and-download-build"
+            - run: npm run run-ts -- ./demo/29-numbered-lists.ts
+            - uses: "./github/workflows/composite/validate-docx"
+    demo_31:
+        name: Run Demo 31 and validate
+        needs: [build]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: "./.github/workflows/composite/checkout-and-download-build"
+            - run: npm run run-ts -- ./demo/31-tables.ts
+            - uses: "./github/workflows/composite/validate-docx"
+    demo_32:
+        name: Run Demo 32 and validate
+        needs: [build]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: "./.github/workflows/composite/checkout-and-download-build"
+            - run: npm run run-ts -- ./demo/32-merge-and-shade-table-cells.ts
+            - uses: "./github/workflows/composite/validate-docx"
+    demo_33:
+        name: Run Demo 33 and validate
+        needs: [build]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: "./.github/workflows/composite/checkout-and-download-build"
+            - run: npm run run-ts -- ./demo/33-sequential-captions.ts
+            - uses: "./github/workflows/composite/validate-docx"
+    demo_34:
+        name: Run Demo 34 and validate
+        needs: [build]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: "./.github/workflows/composite/checkout-and-download-build"
+            - run: npm run run-ts -- ./demo/34-floating-tables.ts
             # element tblpPr: Schemas validity error : Element '{http://schemas.openxmlformats.org/wordprocessingml/2006/main}tblpPr', attribute 'overlap': The attribute 'overlap' is not allowed.
             # element tblpPr: Schemas validity error : Element '{http://schemas.openxmlformats.org/wordprocessingml/2006/main}tblpPr': Element content is not allowed, because the content type is empty.
-            # - name: Validate XML
-            #   uses: ChristophWurst/xmllint-action@v1
-            #   with:
-            #     xml-file: build/extracted-doc/word/document.xml
-            #     xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
-            - name: Run Demo
-              run: npm run run-ts -- ./demo/35-hyperlinks.ts
-            - name: Extract Word Document
-              run: npm run extract
-            - name: Validate XML
-              uses: ChristophWurst/xmllint-action@v1
-              with:
-                  xml-file: build/extracted-doc/word/document.xml
-                  xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
-            - name: Run Demo
-              run: npm run run-ts -- ./demo/36-image-to-table-cell.ts
-            - name: Extract Word Document
-              run: npm run extract
-            - name: Validate XML
-              uses: ChristophWurst/xmllint-action@v1
-              with:
-                  xml-file: build/extracted-doc/word/document.xml
-                  xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
-            - name: Run Demo
-              run: npm run run-ts -- ./demo/37-images-to-header-and-footer.ts
-            - name: Extract Word Document
-              run: npm run extract
-            - name: Validate XML
-              uses: ChristophWurst/xmllint-action@v1
-              with:
-                  xml-file: build/extracted-doc/word/document.xml
-                  xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
-            - name: Run Demo
-              run: npm run run-ts -- ./demo/38-text-wrapping.ts
-            - name: Extract Word Document
-              run: npm run extract
-            - name: Validate XML
-              uses: ChristophWurst/xmllint-action@v1
-              with:
-                  xml-file: build/extracted-doc/word/document.xml
-                  xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
-            - name: Run Demo
-              run: npm run run-ts -- ./demo/39-page-numbers.ts
-            - name: Extract Word Document
-              run: npm run extract
-            - name: Validate XML
-              uses: ChristophWurst/xmllint-action@v1
-              with:
-                  xml-file: build/extracted-doc/word/document.xml
-                  xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
-            - name: Run Demo
-              run: npm run run-ts -- ./demo/40-line-numbers.ts
-            - name: Extract Word Document
-              run: npm run extract
-            - name: Validate XML
-              uses: ChristophWurst/xmllint-action@v1
-              with:
-                  xml-file: build/extracted-doc/word/document.xml
-                  xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
-            - name: Run Demo
-              run: npm run run-ts -- ./demo/41-merge-table-cells-2.ts
-            - name: Extract Word Document
-              run: npm run extract
-            - name: Validate XML
-              uses: ChristophWurst/xmllint-action@v1
-              with:
-                  xml-file: build/extracted-doc/word/document.xml
-                  xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
-            - name: Run Demo
-              run: npm run run-ts -- ./demo/42-restart-page-numbers.ts
-            - name: Extract Word Document
-              run: npm run extract
-            - name: Validate XML
-              uses: ChristophWurst/xmllint-action@v1
-              with:
-                  xml-file: build/extracted-doc/word/document.xml
-                  xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
-            - name: Run Demo
-              run: npm run run-ts -- ./demo/43-images-to-table-cell-2.ts
-            - name: Extract Word Document
-              run: npm run extract
-            - name: Validate XML
-              uses: ChristophWurst/xmllint-action@v1
-              with:
-                  xml-file: build/extracted-doc/word/document.xml
-                  xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
-            - name: Run Demo
-              run: npm run run-ts -- ./demo/44-multiple-columns.ts
-            - name: Extract Word Document
-              run: npm run extract
-            - name: Validate XML
-              uses: ChristophWurst/xmllint-action@v1
-              with:
-                  xml-file: build/extracted-doc/word/document.xml
-                  xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
-            - name: Run Demo
-              run: npm run run-ts -- ./demo/45-highlighting-text.ts
-            - name: Extract Word Document
-              run: npm run extract
-            - name: Validate XML
-              uses: ChristophWurst/xmllint-action@v1
-              with:
-                  xml-file: build/extracted-doc/word/document.xml
-                  xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
-            - name: Run Demo
-              run: npm run run-ts -- ./demo/46-shading-text.ts
-            - name: Extract Word Document
-              run: npm run extract
-            - name: Validate XML
-              uses: ChristophWurst/xmllint-action@v1
-              with:
-                  xml-file: build/extracted-doc/word/document.xml
-                  xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
-            - name: Run Demo
-              run: npm run run-ts -- ./demo/47-number-of-total-pages-section.ts
-            - name: Extract Word Document
-              run: npm run extract
-            - name: Validate XML
-              uses: ChristophWurst/xmllint-action@v1
-              with:
-                  xml-file: build/extracted-doc/word/document.xml
-                  xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
-            - name: Run Demo
-              run: npm run run-ts -- ./demo/48-vertical-align.ts
-            - name: Extract Word Document
-              run: npm run extract
-            - name: Validate XML
-              uses: ChristophWurst/xmllint-action@v1
-              with:
-                  xml-file: build/extracted-doc/word/document.xml
-                  xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
-            - name: Run Demo
-              run: npm run run-ts -- ./demo/49-table-borders.ts
-            - name: Extract Word Document
-              run: npm run extract
-            - name: Validate XML
-              uses: ChristophWurst/xmllint-action@v1
-              with:
-                  xml-file: build/extracted-doc/word/document.xml
-                  xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
-            - name: Run Demo
-              run: npm run run-ts -- ./demo/50-readme-demo.ts
-            - name: Extract Word Document
-              run: npm run extract
-            - name: Validate XML
-              uses: ChristophWurst/xmllint-action@v1
-              with:
-                  xml-file: build/extracted-doc/word/document.xml
-                  xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
-            - name: Run Demo
-              run: npm run run-ts -- ./demo/51-character-styles.ts
-            - name: Extract Word Document
-              run: npm run extract
-            - name: Validate XML
-              uses: ChristophWurst/xmllint-action@v1
-              with:
-                  xml-file: build/extracted-doc/word/document.xml
-                  xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
-            - name: Run Demo
-              run: npm run run-ts -- ./demo/52-japanese.ts
-            - name: Extract Word Document
-              run: npm run extract
-            - name: Validate XML
-              uses: ChristophWurst/xmllint-action@v1
-              with:
-                  xml-file: build/extracted-doc/word/document.xml
-                  xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
-            - name: Run Demo
-              run: npm run run-ts -- ./demo/53-chinese.ts
-            - name: Extract Word Document
-              run: npm run extract
-            - name: Validate XML
-              uses: ChristophWurst/xmllint-action@v1
-              with:
-                  xml-file: build/extracted-doc/word/document.xml
-                  xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
-            - name: Run Demo
-              run: npm run run-ts -- ./demo/54-custom-properties.ts
-            - name: Extract Word Document
-              run: npm run extract
-            - name: Validate XML
-              uses: ChristophWurst/xmllint-action@v1
-              with:
-                  xml-file: build/extracted-doc/word/document.xml
-                  xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
-            - name: Run Demo
-              run: npm run run-ts -- ./demo/55-math.ts
-            - name: Extract Word Document
-              run: npm run extract
+            # - uses: "./github/workflows/composite/validate-docx"
+    demo_35:
+        name: Run Demo 35 and validate
+        needs: [build]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: "./.github/workflows/composite/checkout-and-download-build"
+            - run: npm run run-ts -- ./demo/35-hyperlinks.ts
+            - uses: "./github/workflows/composite/validate-docx"
+    demo_36:
+        name: Run Demo 36 and validate
+        needs: [build]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: "./.github/workflows/composite/checkout-and-download-build"
+            - run: npm run run-ts -- ./demo/36-image-to-table-cell.ts
+            - uses: "./github/workflows/composite/validate-docx"
+    demo_37:
+        name: Run Demo 37 and validate
+        needs: [build]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: "./.github/workflows/composite/checkout-and-download-build"
+            - run: npm run run-ts -- ./demo/37-images-to-header-and-footer.ts
+            - uses: "./github/workflows/composite/validate-docx"
+    demo_38:
+        name: Run Demo 38 and validate
+        needs: [build]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: "./.github/workflows/composite/checkout-and-download-build"
+            - run: npm run run-ts -- ./demo/38-text-wrapping.ts
+            - uses: "./github/workflows/composite/validate-docx"
+    demo_39:
+        name: Run Demo 39 and validate
+        needs: [build]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: "./.github/workflows/composite/checkout-and-download-build"
+            - run: npm run run-ts -- ./demo/39-page-numbers.ts
+            - uses: "./github/workflows/composite/validate-docx"
+    demo_40:
+        name: Run Demo 40 and validate
+        needs: [build]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: "./.github/workflows/composite/checkout-and-download-build"
+            - run: npm run run-ts -- ./demo/40-line-numbers.ts
+            - uses: "./github/workflows/composite/validate-docx"
+    demo_41:
+        name: Run Demo 41 and validate
+        needs: [build]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: "./.github/workflows/composite/checkout-and-download-build"
+            - run: npm run run-ts -- ./demo/41-merge-table-cells-2.ts
+            - uses: "./github/workflows/composite/validate-docx"
+    demo_42:
+        name: Run Demo 42 and validate
+        needs: [build]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: "./.github/workflows/composite/checkout-and-download-build"
+            - run: npm run run-ts -- ./demo/42-restart-page-numbers.ts
+            - uses: "./github/workflows/composite/validate-docx"
+    demo_43:
+        name: Run Demo 43 and validate
+        needs: [build]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: "./.github/workflows/composite/checkout-and-download-build"
+            - run: npm run run-ts -- ./demo/43-images-to-table-cell-2.ts
+            - uses: "./github/workflows/composite/validate-docx"
+    demo_44:
+        name: Run Demo 44 and validate
+        needs: [build]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: "./.github/workflows/composite/checkout-and-download-build"
+            - run: npm run run-ts -- ./demo/44-multiple-columns.ts
+            - uses: "./github/workflows/composite/validate-docx"
+    demo_45:
+        name: Run Demo 45 and validate
+        needs: [build]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: "./.github/workflows/composite/checkout-and-download-build"
+            - run: npm run run-ts -- ./demo/45-highlighting-text.ts
+            - uses: "./github/workflows/composite/validate-docx"
+    demo_46:
+        name: Run Demo 46 and validate
+        needs: [build]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: "./.github/workflows/composite/checkout-and-download-build"
+            - run: npm run run-ts -- ./demo/46-shading-text.ts
+            - uses: "./github/workflows/composite/validate-docx"
+    demo_47:
+        name: Run Demo 47 and validate
+        needs: [build]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: "./.github/workflows/composite/checkout-and-download-build"
+            - run: npm run run-ts -- ./demo/47-number-of-total-pages-section.ts
+            - uses: "./github/workflows/composite/validate-docx"
+    demo_48:
+        name: Run Demo 48 and validate
+        needs: [build]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: "./.github/workflows/composite/checkout-and-download-build"
+            - run: npm run run-ts -- ./demo/48-vertical-align.ts
+            - uses: "./github/workflows/composite/validate-docx"
+    demo_49:
+        name: Run Demo 49 and validate
+        needs: [build]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: "./.github/workflows/composite/checkout-and-download-build"
+            - run: npm run run-ts -- ./demo/49-table-borders.ts
+            - uses: "./github/workflows/composite/validate-docx"
+    demo_50:
+        name: Run Demo 50 and validate
+        needs: [build]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: "./.github/workflows/composite/checkout-and-download-build"
+            - run: npm run run-ts -- ./demo/50-readme-demo.ts
+            - uses: "./github/workflows/composite/validate-docx"
+    demo_51:
+        name: Run Demo 51 and validate
+        needs: [build]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: "./.github/workflows/composite/checkout-and-download-build"
+            - run: npm run run-ts -- ./demo/51-character-styles.ts
+            - uses: "./github/workflows/composite/validate-docx"
+    demo_52:
+        name: Run Demo 52 and validate
+        needs: [build]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: "./.github/workflows/composite/checkout-and-download-build"
+            - run: npm run run-ts -- ./demo/52-japanese.ts
+            - uses: "./github/workflows/composite/validate-docx"
+    demo_53:
+        name: Run Demo 53 and validate
+        needs: [build]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: "./.github/workflows/composite/checkout-and-download-build"
+            - run: npm run run-ts -- ./demo/53-chinese.ts
+            - uses: "./github/workflows/composite/validate-docx"
+    demo_54:
+        name: Run Demo 54 and validate
+        needs: [build]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: "./.github/workflows/composite/checkout-and-download-build"
+            - run: npm run run-ts -- ./demo/54-custom-properties.ts
+            - uses: "./github/workflows/composite/validate-docx"
+    demo_55:
+        name: Run Demo 55 and validate
+        needs: [build]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: "./.github/workflows/composite/checkout-and-download-build"
+            - run: npm run run-ts -- ./demo/55-math.ts
             #: element subHide: Schemas validity error : Element '{http://schemas.openxmlformats.org/officeDocument/2006/math}subHide': This element is not expected. Expected is ( {http://schemas.openxmlformats.org/officeDocument/2006/math}ctrlPr ).
             #: element e: Schemas validity error : Element '{http://schemas.openxmlformats.org/officeDocument/2006/math}e': This element is not expected. Expected is ( {http://schemas.openxmlformats.org/officeDocument/2006/math}sub ).
             #: element e: Schemas validity error : Element '{http://schemas.openxmlformats.org/officeDocument/2006/math}e': This element is not expected. Expected is ( {http://schemas.openxmlformats.org/officeDocument/2006/math}sup ).
             #: element e: Schemas validity error : Element '{http://schemas.openxmlformats.org/officeDocument/2006/math}e': This element is not expected. Expected is ( {http://schemas.openxmlformats.org/officeDocument/2006/math}sub ).
-            # - name: Validate XML
-            #   uses: ChristophWurst/xmllint-action@v1
-            #   with:
-            #     xml-file: build/extracted-doc/word/document.xml
-            #     xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
-            - name: Run Demo
-              run: npm run run-ts -- ./demo/56-background-color.ts
-            - name: Extract Word Document
-              run: npm run extract
-            - name: Validate XML
-              uses: ChristophWurst/xmllint-action@v1
-              with:
-                  xml-file: build/extracted-doc/word/document.xml
-                  xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
-            - name: Run Demo
-              run: npm run run-ts -- ./demo/57-add-parent-numbered-lists.ts
-            - name: Extract Word Document
-              run: npm run extract
-            - name: Validate XML
-              uses: ChristophWurst/xmllint-action@v1
-              with:
-                  xml-file: build/extracted-doc/word/document.xml
-                  xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
-            - name: Run Demo
-              run: npm run run-ts -- ./demo/58-section-types.ts
-            - name: Extract Word Document
-              run: npm run extract
-            - name: Validate XML
-              uses: ChristophWurst/xmllint-action@v1
-              with:
-                  xml-file: build/extracted-doc/word/document.xml
-                  xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
-            - name: Run Demo
-              run: npm run run-ts -- ./demo/59-header-footer-margins.ts
-            - name: Extract Word Document
-              run: npm run extract
-            - name: Validate XML
-              uses: ChristophWurst/xmllint-action@v1
-              with:
-                  xml-file: build/extracted-doc/word/document.xml
-                  xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
-            - name: Run Demo
-              run: npm run run-ts -- ./demo/60-track-revisions.ts
-            - name: Extract Word Document
-              run: npm run extract
+            # - uses: "./github/workflows/composite/validate-docx"
+    demo_56:
+        name: Run Demo 56 and validate
+        needs: [build]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: "./.github/workflows/composite/checkout-and-download-build"
+            - run: npm run run-ts -- ./demo/56-background-color.ts
+            - uses: "./github/workflows/composite/validate-docx"
+    demo_57:
+        name: Run Demo 57 and validate
+        needs: [build]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: "./.github/workflows/composite/checkout-and-download-build"
+            - run: npm run run-ts -- ./demo/57-add-parent-numbered-lists.ts
+            - uses: "./github/workflows/composite/validate-docx"
+    demo_58:
+        name: Run Demo 58 and validate
+        needs: [build]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: "./.github/workflows/composite/checkout-and-download-build"
+            - run: npm run run-ts -- ./demo/58-section-types.ts
+            - uses: "./github/workflows/composite/validate-docx"
+    demo_59:
+        name: Run Demo 59 and validate
+        needs: [build]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: "./.github/workflows/composite/checkout-and-download-build"
+            - run: npm run run-ts -- ./demo/59-header-footer-margins.ts
+            - uses: "./github/workflows/composite/validate-docx"
+    demo_60:
+        name: Run Demo 60 and validate
+        needs: [build]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: "./.github/workflows/composite/checkout-and-download-build"
+            - run: npm run run-ts -- ./demo/60-track-revisions.ts
             # element r: Schemas validity error : Element '{http://schemas.openxmlformats.org/wordprocessingml/2006/main}r': This element is not expected.
-            # - name: Validate XML
-            #   uses: ChristophWurst/xmllint-action@v1
-            #   with:
-            #     xml-file: build/extracted-doc/word/document.xml
-            #     xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
-            - name: Run Demo
-              run: npm run run-ts -- ./demo/61-text-frame.ts
-            - name: Extract Word Document
-              run: npm run extract
+            # - uses: "./github/workflows/composite/validate-docx"
+    demo_61:
+        name: Run Demo 61 and validate
+        needs: [build]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: "./.github/workflows/composite/checkout-and-download-build"
+            - run: npm run run-ts -- ./demo/61-text-frame.ts
             # element left: Schemas validity error : Element '{http://schemas.openxmlformats.org/wordprocessingml/2006/main}left': This element is not expected. Expected is one of ( {http://schemas.openxmlformats.org/wordprocessingml/2006/main}right, {http://schemas.openxmlformats.org/wordprocessingml/2006/main}between, {http://schemas.openxmlformats.org/wordprocessingml/2006/main}bar ).
-            # - name: Validate XML
-            #   uses: ChristophWurst/xmllint-action@v1
-            #   with:
-            #     xml-file: build/extracted-doc/word/document.xml
-            #     xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
-            - name: Run Demo
-              run: npm run run-ts -- ./demo/62-paragraph-spacing.ts
-            - name: Extract Word Document
-              run: npm run extract
-            - name: Validate XML
-              uses: ChristophWurst/xmllint-action@v1
-              with:
-                  xml-file: build/extracted-doc/word/document.xml
-                  xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
-            - name: Run Demo
-              run: npm run run-ts -- ./demo/63-odd-even-header-footer.ts
-            - name: Extract Word Document
-              run: npm run extract
-            - name: Validate XML
-              uses: ChristophWurst/xmllint-action@v1
-              with:
-                  xml-file: build/extracted-doc/word/document.xml
-                  xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
-            - name: Run Demo
-              run: npm run run-ts -- ./demo/64-complex-numbering-text.ts
-            - name: Extract Word Document
-              run: npm run extract
-            - name: Validate XML
-              uses: ChristophWurst/xmllint-action@v1
-              with:
-                  xml-file: build/extracted-doc/word/document.xml
-                  xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
-            - name: Run Demo
-              run: npm run run-ts -- ./demo/65-page-sizes.ts
-            - name: Extract Word Document
-              run: npm run extract
-            - name: Validate XML
-              uses: ChristophWurst/xmllint-action@v1
-              with:
-                  xml-file: build/extracted-doc/word/document.xml
-                  xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
-            - name: Run Demo
-              run: npm run run-ts -- ./demo/66-fields.ts
-            - name: Extract Word Document
-              run: npm run extract
+            # - uses: "./github/workflows/composite/validate-docx"
+    demo_62:
+        name: Run Demo 62 and validate
+        needs: [build]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: "./.github/workflows/composite/checkout-and-download-build"
+            - run: npm run run-ts -- ./demo/62-paragraph-spacing.ts
+            - uses: "./github/workflows/composite/validate-docx"
+    demo_63:
+        name: Run Demo 63 and validate
+        needs: [build]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: "./.github/workflows/composite/checkout-and-download-build"
+            - run: npm run run-ts -- ./demo/63-odd-even-header-footer.ts
+            - uses: "./github/workflows/composite/validate-docx"
+    demo_64:
+        name: Run Demo 64 and validate
+        needs: [build]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: "./.github/workflows/composite/checkout-and-download-build"
+            - run: npm run run-ts -- ./demo/64-complex-numbering-text.ts
+            - uses: "./github/workflows/composite/validate-docx"
+    demo_65:
+        name: Run Demo 65 and validate
+        needs: [build]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: "./.github/workflows/composite/checkout-and-download-build"
+            - run: npm run run-ts -- ./demo/65-page-sizes.ts
+            - uses: "./github/workflows/composite/validate-docx"
+    demo_66:
+        name: Run Demo 66 and validate
+        needs: [build]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: "./.github/workflows/composite/checkout-and-download-build"
+            - run: npm run run-ts -- ./demo/66-fields.ts
             # element bookmarkStart: Schemas validity error : Element '{http://schemas.openxmlformats.org/wordprocessingml/2006/main}bookmarkStart', attribute '{http://schemas.openxmlformats.org/wordprocessingml/2006/main}id': '-irrswq-ln94j4fdgdjxs' is not a valid value of the atomic type '{http://schemas.openxmlformats.org/wordprocessingml/2006/main}ST_DecimalNumber'.
             # element bookmarkEnd: Schemas validity error : Element '{http://schemas.openxmlformats.org/wordprocessingml/2006/main}bookmarkEnd', attribute '{http://schemas.openxmlformats.org/wordprocessingml/2006/main}id': '-irrswq-ln94j4fdgdjxs' is not a valid value of the atomic type '{http://schemas.openxmlformats.org/wordprocessingml/2006/main}ST_DecimalNumber'.
-            # - name: Validate XML
-            #   uses: ChristophWurst/xmllint-action@v1
-            #   with:
-            #     xml-file: build/extracted-doc/word/document.xml
-            #     xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
-            - name: Run Demo
-              run: npm run run-ts -- ./demo/67-column-break.ts
-            - name: Extract Word Document
-              run: npm run extract
-            - name: Validate XML
-              uses: ChristophWurst/xmllint-action@v1
-              with:
-                  xml-file: build/extracted-doc/word/document.xml
-                  xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
-            - name: Run Demo
-              run: npm run run-ts -- ./demo/68-numbering-instances-and-starting-number.ts
-            - name: Extract Word Document
-              run: npm run extract
-            - name: Validate XML
-              uses: ChristophWurst/xmllint-action@v1
-              with:
-                  xml-file: build/extracted-doc/word/document.xml
-                  xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
-            - name: Run Demo
-              run: npm run run-ts -- ./demo/69-different-width-columns.ts
-            - name: Extract Word Document
-              run: npm run extract
-            - name: Validate XML
-              uses: ChristophWurst/xmllint-action@v1
-              with:
-                  xml-file: build/extracted-doc/word/document.xml
-                  xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
-            - name: Run Demo
-              run: npm run run-ts -- ./demo/70-line-numbers-suppression.ts
-            - name: Extract Word Document
-              run: npm run extract
-            - name: Validate XML
-              uses: ChristophWurst/xmllint-action@v1
-              with:
-                  xml-file: build/extracted-doc/word/document.xml
-                  xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
-            - name: Run Demo
-              run: npm run run-ts -- ./demo/71-page-borders-2.ts
-            - name: Extract Word Document
-              run: npm run extract
-            - name: Validate XML
-              uses: ChristophWurst/xmllint-action@v1
-              with:
-                  xml-file: build/extracted-doc/word/document.xml
-                  xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
-            - name: Run Demo
-              run: npm run run-ts -- ./demo/72-word-wrap.ts
-            - name: Extract Word Document
-              run: npm run extract
-            - name: Validate XML
-              uses: ChristophWurst/xmllint-action@v1
-              with:
-                  xml-file: build/extracted-doc/word/document.xml
-                  xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
-            - name: Run Demo
-              run: npm run run-ts -- ./demo/73-comments.ts
-            - name: Extract Word Document
-              run: npm run extract
-            - name: Validate XML
-              uses: ChristophWurst/xmllint-action@v1
-              with:
-                  xml-file: build/extracted-doc/word/document.xml
-                  xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
-            - name: Run Demo
-              run: npm run run-ts -- ./demo/73-comments.ts
-            - name: Extract Word Document
-              run: npm run extract
-            - name: Validate XML
-              uses: ChristophWurst/xmllint-action@v1
-              with:
-                  xml-file: build/extracted-doc/word/document.xml
-                  xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
-            # - name: Run Demo
+            # - uses: "./github/workflows/composite/validate-docx"
+    demo_67:
+        name: Run Demo 67 and validate
+        needs: [build]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: "./.github/workflows/composite/checkout-and-download-build"
+            - run: npm run run-ts -- ./demo/67-column-break.ts
+            - uses: "./github/workflows/composite/validate-docx"
+    demo_68:
+        name: Run Demo 68 and validate
+        needs: [build]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: "./.github/workflows/composite/checkout-and-download-build"
+            - run: npm run run-ts -- ./demo/68-numbering-instances-and-starting-number.ts
+            - uses: "./github/workflows/composite/validate-docx"
+    demo_69:
+        name: Run Demo 69 and validate
+        needs: [build]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: "./.github/workflows/composite/checkout-and-download-build"
+            - run: npm run run-ts -- ./demo/69-different-width-columns.ts
+            - uses: "./github/workflows/composite/validate-docx"
+    demo_70:
+        name: Run Demo 70 and validate
+        needs: [build]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: "./.github/workflows/composite/checkout-and-download-build"
+            - run: npm run run-ts -- ./demo/70-line-numbers-suppression.ts
+            - uses: "./github/workflows/composite/validate-docx"
+    demo_71:
+        name: Run Demo 71 and validate
+        needs: [build]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: "./.github/workflows/composite/checkout-and-download-build"
+            - run: npm run run-ts -- ./demo/71-page-borders-2.ts
+            - uses: "./github/workflows/composite/validate-docx"
+    demo_72:
+        name: Run Demo 72 and validate
+        needs: [build]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: "./.github/workflows/composite/checkout-and-download-build"
+            - run: npm run run-ts -- ./demo/72-word-wrap.ts
+            - uses: "./github/workflows/composite/validate-docx"
+    demo_73:
+        name: Run Demo 73 and validate
+        needs: [build]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: "./.github/workflows/composite/checkout-and-download-build"
+            - run: npm run run-ts -- ./demo/73-comments.ts
+            - uses: "./github/workflows/composite/validate-docx"
+    demo_74:
+        name: Run Demo 74 and validate
+        needs: [build]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: "./.github/workflows/composite/checkout-and-download-build"
+            - run: npm run run-ts -- ./demo/74-comments.ts
+            # - uses: "./github/workflows/composite/validate-docx"
+    demo_75:
+        name: Run Demo 75 and validate
+        needs: [build]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: "./.github/workflows/composite/checkout-and-download-build"
             #   run: npm run run-ts -- ./demo/75-tab-stops.ts
-            # - name: Extract Word Document
-            #   run: npm run extract
-            # - name: Validate XML
-            #   uses: ChristophWurst/xmllint-action@v1
-            #   with:
-            #       xml-file: build/extracted-doc/word/document.xml
-            #       xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
-            - name: Run Demo
-              run: npm run run-ts -- ./demo/76-compatibility.ts
-            - name: Extract Word Document
-              run: npm run extract
-            - name: Validate XML
-              uses: ChristophWurst/xmllint-action@v1
-              with:
-                  xml-file: build/extracted-doc/word/document.xml
-                  xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
-            - name: Run Demo
-              run: npm run run-ts -- ./demo/77-side-by-side-tables.ts
-            - name: Extract Word Document
-              run: npm run extract
-            - name: Validate XML
-              uses: ChristophWurst/xmllint-action@v1
-              with:
-                  xml-file: build/extracted-doc/word/document.xml
-                  xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
-            - name: Run Demo
-              run: npm run run-ts -- ./demo/78-thai-distributed.ts
-            - name: Extract Word Document
-              run: npm run extract
-            - name: Validate XML
-              uses: ChristophWurst/xmllint-action@v1
-              with:
-                  xml-file: build/extracted-doc/word/document.xml
-                  xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
-            - name: Run Demo
-              run: npm run run-ts -- ./demo/79-table-from-data-source.ts
-            - name: Extract Word Document
-              run: npm run extract
-            - name: Validate XML
-              uses: ChristophWurst/xmllint-action@v1
-              with:
-                  xml-file: build/extracted-doc/word/document.xml
-                  xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
-            - name: Run Demo
-              run: npm run run-ts -- ./demo/80-thai-distributed.ts
-            - name: Extract Word Document
-              run: npm run extract
-            - name: Validate XML
-              uses: ChristophWurst/xmllint-action@v1
-              with:
-                  xml-file: build/extracted-doc/word/document.xml
-                  xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
-            - name: Run Demo
-              run: npm run run-ts -- ./demo/81-continuous-header.ts
-            - name: Extract Word Document
-              run: npm run extract
-            - name: Validate XML
-              uses: ChristophWurst/xmllint-action@v1
-              with:
-                  xml-file: build/extracted-doc/word/document.xml
-                  xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
-            - name: Run Demo
-              run: npm run run-ts -- ./demo/82-new-headers-new-section.ts
-            - name: Extract Word Document
-              run: npm run extract
-            - name: Validate XML
-              uses: ChristophWurst/xmllint-action@v1
-              with:
-                  xml-file: build/extracted-doc/word/document.xml
-                  xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
-            - name: Run Demo
-              run: npm run run-ts -- ./demo/83-setting-languages.ts
-            - name: Extract Word Document
-              run: npm run extract
-            - name: Validate XML
-              uses: ChristophWurst/xmllint-action@v1
-              with:
-                  xml-file: build/extracted-doc/word/document.xml
-                  xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
-            - name: Run Demo
-              run: npm run run-ts -- ./demo/84-positional-tabs.ts
-            - name: Extract Word Document
-              run: npm run extract
-            - name: Validate XML
-              uses: ChristophWurst/xmllint-action@v1
-              with:
-                  xml-file: build/extracted-doc/word/document.xml
-                  xml-schema-file: ooxml-schemas/microsoft/wml-2010.xsd
+            # - uses: "./github/workflows/composite/validate-docx"
+    demo_76:
+        name: Run Demo 76 and validate
+        needs: [build]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: "./.github/workflows/composite/checkout-and-download-build"
+            - run: npm run run-ts -- ./demo/76-compatibility.ts
+            - uses: "./github/workflows/composite/validate-docx"
+    demo_77:
+        name: Run Demo 77 and validate
+        needs: [build]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: "./.github/workflows/composite/checkout-and-download-build"
+            - run: npm run run-ts -- ./demo/77-side-by-side-tables.ts
+            - uses: "./github/workflows/composite/validate-docx"
+    demo_78:
+        name: Run Demo 78 and validate
+        needs: [build]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: "./.github/workflows/composite/checkout-and-download-build"
+            - run: npm run run-ts -- ./demo/78-thai-distributed.ts
+            - uses: "./github/workflows/composite/validate-docx"
+    demo_79:
+        name: Run Demo 79 and validate
+        needs: [build]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: "./.github/workflows/composite/checkout-and-download-build"
+            - run: npm run run-ts -- ./demo/79-table-from-data-source.ts
+            - uses: "./github/workflows/composite/validate-docx"
+    demo_80:
+        name: Run Demo 80 and validate
+        needs: [build]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: "./.github/workflows/composite/checkout-and-download-build"
+            - run: npm run run-ts -- ./demo/80-thai-distributed.ts
+            - uses: "./github/workflows/composite/validate-docx"
+    demo_81:
+        name: Run Demo 81 and validate
+        needs: [build]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: "./.github/workflows/composite/checkout-and-download-build"
+            - run: npm run run-ts -- ./demo/81-continuous-header.ts
+            - uses: "./github/workflows/composite/validate-docx"
+    demo_82:
+        name: Run Demo 82 and validate
+        needs: [build]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: "./.github/workflows/composite/checkout-and-download-build"
+            - run: npm run run-ts -- ./demo/82-new-headers-new-section.ts
+            - uses: "./github/workflows/composite/validate-docx"
+    demo_83:
+        name: Run Demo 83 and validate
+        needs: [build]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: "./.github/workflows/composite/checkout-and-download-build"
+            - run: npm run run-ts -- ./demo/83-setting-languages.ts
+            - uses: "./github/workflows/composite/validate-docx"
+    demo_84:
+        name: Run Demo 84 and validate
+        needs: [build]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: "./.github/workflows/composite/checkout-and-download-build"
+            - run: npm run run-ts -- ./demo/84-positional-tabs.ts
+            - uses: "./github/workflows/composite/validate-docx"
