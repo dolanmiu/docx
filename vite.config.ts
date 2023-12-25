@@ -1,4 +1,4 @@
-import { defineConfig } from "vitest/config";
+import { configDefaults, defineConfig } from "vitest/config";
 import { resolve } from "path";
 import tsconfigPaths from "vite-tsconfig-paths";
 import dts from "vite-plugin-dts";
@@ -60,10 +60,30 @@ export default defineConfig({
         coverage: {
             provider: "v8",
             reporter: ["text", "json", "html"],
-            statements: 99.93,
-            branches: 98.85,
-            functions: 100,
-            lines: 99.93,
+            thresholds: {
+                statements: 99.93,
+                branches: 98.85,
+                functions: 100,
+                lines: 99.93,
+            },
+            exclude: [
+                ...configDefaults.exclude,
+                '**/build/**',
+                '**/demo/**',
+                '**/docs/**',
+                '**/scripts/**'
+            ],
         },
+        include: [
+            '**/src/**/*.spec.ts',
+            '**/packages/**/*.spec.ts'
+        ],
+        exclude: [
+            ...configDefaults.exclude,
+            '**/build/**',
+            '**/demo/**',
+            '**/docs/**',
+            '**/scripts/**'
+          ],
     },
 });
