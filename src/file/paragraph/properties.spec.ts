@@ -159,6 +159,21 @@ describe("ParagraphProperties", () => {
             });
         });
 
+        it("should create with the overflowPunct property", () => {
+            const properties = new ParagraphProperties({
+                overflowPunctuation: true,
+            });
+            const tree = new Formatter().format(properties);
+
+            expect(tree).to.deep.equal({
+                "w:pPr": [
+                    {
+                        "w:overflowPunct": {},
+                    },
+                ],
+            });
+        });
+
         it("should create with the run property", () => {
             const properties = new ParagraphProperties({
                 run: {
