@@ -63,7 +63,7 @@ const doc = new Document({
                             outline: {
                                 type: "solidFill",
                                 color: "0000FF",
-                                width: convertMillimetersToTwip(6)
+                                width: convertMillimetersToTwip(6),
                             },
                         }),
                     ],
