@@ -75,7 +75,7 @@
         "@typescript-eslint/parser": "^6.9.1",
         "@vitest/coverage-v8": "^1.1.0",
         "@vitest/ui": "^1.1.0",
-        "cspell": "^7.3.8",
+        "cspell": "^8.2.3",
         "docsify-cli": "^4.3.0",
         "eslint": "^8.23.0",
         "eslint-plugin-functional": "^6.0.0",
