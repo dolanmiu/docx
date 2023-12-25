@@ -6,7 +6,7 @@ import { FieldInstruction } from "@file/table-of-contents/field-instruction";
 
 import { Break } from "./break";
 import { Begin, End, Separate } from "./field";
-import { NumberOfPages, NumberOfPagesSection, Page, CurrentPageInSection } from "./page-number";
+import { NumberOfPages, NumberOfPagesSection, Page, CurrentSection } from "./page-number";
 import { IRunPropertiesOptions, RunProperties } from "./properties";
 import { Text } from "./run-components/text";
 import {
@@ -146,7 +146,7 @@ export class Run extends XmlComponent {
                             break;
                         case PageNumber.CURRENT_SECTION:
                             this.root.push(new Begin());
-                            this.root.push(new CurrentPageInSection());
+                            this.root.push(new CurrentSection());
                             this.root.push(new Separate());
                             this.root.push(new End());
                             break;

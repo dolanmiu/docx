@@ -27,7 +27,7 @@ export class NumberOfPagesSection extends XmlComponent {
     }
 }
 
-export class CurrentPageInSection extends XmlComponent {
+export class CurrentSection extends XmlComponent {
     public constructor() {
         super("w:instrText");
         this.root.push(new TextAttributes({ space: SpaceType.PRESERVE }));
