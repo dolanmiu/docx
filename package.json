@@ -20,21 +20,21 @@
     "scripts": {
         "build": "tsc && vite build",
         "test": "vitest --ui --coverage",
-        "test.ci": "vitest run --coverage",
+        "test:ci": "vitest run --coverage",
         "prepublishOnly": "npm run build --omit=dev",
         "lint": "eslint --ext .ts src",
         "predemo": "npm run build",
         "demo": "tsx ./demo/index.ts",
         "typedoc": "typedoc src/index.ts --tsconfig tsconfig.typedoc.json",
-        "style": "prettier -l \"{src,scripts,demo}/**/*.{ts,html}\"",
-        "style.fix": "npm run style -- --write",
+        "prettier": "prettier -l \"{src,scripts,demo}/**/*.{ts,html}\"",
+        "prettier:fix": "npm run prettier -- --write",
         "cspell": "cspell \"{src,demo,docs,scripts}/**/*.{ts,scss,html,md}\" && cspell \"./*.*\"",
         "serve.docs": "cd docs && docsify serve",
         "extract": "tsx scripts/extract-document.ts",
         "run-ts": "tsx"
     },
     "pre-commit": [
-        "style",
+        "prettier",
         "lint"
     ],
     "repository": {
@@ -89,7 +89,7 @@
         "inquirer": "^9.2.7",
         "jsdom": "^23.0.1",
         "pre-commit": "^1.2.2",
-        "prettier": "^3.0.0",
+        "prettier": "^3.1.1",
         "tsconfig-paths": "^4.0.0",
         "tsx": "^4.7.0",
         "typedoc": "^0.25.4",
