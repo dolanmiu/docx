@@ -60,6 +60,7 @@ export interface IParagraphPropertiesOptions extends IParagraphStylePropertiesOp
     readonly frame?: IFrameOptions;
     readonly suppressLineNumbers?: boolean;
     readonly wordWrap?: boolean;
+    readonly overflowPunctuation?: boolean;
     readonly scale?: number;
     /**
      * This element specifies whether inter-character spacing shall automatically be adjusted between regions of numbers and regions of East Asian text in the current paragraph. These regions shall be determined by the Unicode character values of the text content within the paragraph.
@@ -150,6 +151,10 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
 
         if (options.wordWrap) {
             this.push(new WordWrap());
+        }
+
+        if (options.overflowPunctuation) {
+            this.push(new OnOffElement("w:overflowPunct", options.overflowPunctuation));
         }
 
         /**
