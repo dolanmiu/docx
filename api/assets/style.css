@@ -11,6 +11,7 @@
     --light-color-text-aside: #6e6e6e;
     --light-color-link: #1f70c2;
 
+    --light-color-ts-keyword: #056bd6;
     --light-color-ts-project: #b111c9;
     --light-color-ts-module: var(--light-color-ts-project);
     --light-color-ts-namespace: var(--light-color-ts-project);
@@ -32,7 +33,6 @@
     --light-color-ts-accessor: var(--light-color-ts-property);
     --light-color-ts-get-signature: var(--light-color-ts-accessor);
     --light-color-ts-set-signature: var(--light-color-ts-accessor);
-    /* object literal not included as it is not used and will be removed in 0.25 */
     --light-color-ts-type-alias: #d51270;
     /* reference not included as links will be colored with the kind that it points to */
 
@@ -51,6 +51,7 @@
     --dark-color-text-aside: #dddddd;
     --dark-color-link: #00aff4;
 
+    --dark-color-ts-keyword: #3399ff;
     --dark-color-ts-project: #e358ff;
     --dark-color-ts-module: var(--dark-color-ts-project);
     --dark-color-ts-namespace: var(--dark-color-ts-project);
@@ -72,7 +73,6 @@
     --dark-color-ts-accessor: var(--dark-color-ts-property);
     --dark-color-ts-get-signature: var(--dark-color-ts-accessor);
     --dark-color-ts-set-signature: var(--dark-color-ts-accessor);
-    /* object literal not included as it is not used and will be removed in 0.25 */
     --dark-color-ts-type-alias: #ff6492;
     /* reference not included as links will be colored with the kind that it points to */
 
@@ -93,6 +93,7 @@
         --color-text-aside: var(--light-color-text-aside);
         --color-link: var(--light-color-link);
 
+        --color-ts-keyword: var(--light-color-ts-keyword);
         --color-ts-module: var(--light-color-ts-module);
         --color-ts-namespace: var(--light-color-ts-namespace);
         --color-ts-enum: var(--light-color-ts-enum);
@@ -134,6 +135,7 @@
         --color-text-aside: var(--dark-color-text-aside);
         --color-link: var(--dark-color-link);
 
+        --color-ts-keyword: var(--dark-color-ts-keyword);
         --color-ts-module: var(--dark-color-ts-module);
         --color-ts-namespace: var(--dark-color-ts-namespace);
         --color-ts-enum: var(--dark-color-ts-enum);
@@ -182,6 +184,7 @@ body {
     --color-text-aside: var(--light-color-text-aside);
     --color-link: var(--light-color-link);
 
+    --color-ts-keyword: var(--light-color-ts-keyword);
     --color-ts-module: var(--light-color-ts-module);
     --color-ts-namespace: var(--light-color-ts-namespace);
     --color-ts-enum: var(--light-color-ts-enum);
@@ -221,6 +224,7 @@ body {
     --color-text-aside: var(--dark-color-text-aside);
     --color-link: var(--dark-color-link);
 
+    --color-ts-keyword: var(--dark-color-ts-keyword);
     --color-ts-module: var(--dark-color-ts-module);
     --color-ts-namespace: var(--dark-color-ts-namespace);
     --color-ts-enum: var(--dark-color-ts-enum);
@@ -468,13 +472,12 @@ blockquote {
     padding: 0 0 0 20px;
     margin: 0;
 }
-.tsd-typography h4,
 .tsd-typography .tsd-index-panel h3,
 .tsd-index-panel .tsd-typography h3,
+.tsd-typography h4,
 .tsd-typography h5,
 .tsd-typography h6 {
     font-size: 1em;
-    margin: 0;
 }
 .tsd-typography h5,
 .tsd-typography h6 {
@@ -484,6 +487,19 @@ blockquote {
 .tsd-typography ul,
 .tsd-typography ol {
     margin: 1em 0;
+}
+.tsd-typography table {
+    border-collapse: collapse;
+    border: none;
+}
+.tsd-typography td,
+.tsd-typography th {
+    padding: 6px 13px;
+    border: 1px solid var(--color-accent);
+}
+.tsd-typography thead,
+.tsd-typography tr:nth-child(even) {
+    background-color: var(--color-background-secondary);
 }
 
 .tsd-breadcrumb {
@@ -900,8 +916,9 @@ a.tsd-index-link {
     box-shadow: 0 0 4px rgba(0, 0, 0, 0.25);
 }
 #tsd-search .results li {
-    padding: 0 10px;
     background-color: var(--color-background);
+    line-height: initial;
+    padding: 4px;
 }
 #tsd-search .results li:nth-child(even) {
     background-color: var(--color-background-secondary);
@@ -909,12 +926,15 @@ a.tsd-index-link {
 #tsd-search .results li.state {
     display: none;
 }
-#tsd-search .results li.current,
-#tsd-search .results li:hover {
+#tsd-search .results li.current:not(.no-results),
+#tsd-search .results li:hover:not(.no-results) {
     background-color: var(--color-accent);
 }
 #tsd-search .results a {
-    display: block;
+    display: flex;
+    align-items: center;
+    padding: 0.25rem;
+    box-sizing: border-box;
 }
 #tsd-search .results a:before {
     top: 10px;
@@ -968,6 +988,11 @@ a.tsd-index-link {
     font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
     font-size: 14px;
     overflow-x: auto;
+}
+
+.tsd-signature-keyword {
+    color: var(--color-ts-keyword);
+    font-weight: normal;
 }
 
 .tsd-signature-symbol {
@@ -1070,7 +1095,9 @@ ul.tsd-type-parameter-list h5 {
     overflow: hidden;
     opacity: 0.8;
     height: 40px;
-    transition: opacity 0.1s, background-color 0.2s;
+    transition:
+        opacity 0.1s,
+        background-color 0.2s;
     vertical-align: bottom;
     cursor: pointer;
 }
@@ -1122,7 +1149,7 @@ img {
 }
 
 .deprecated {
-    text-decoration: line-through;
+    text-decoration: line-through !important;
 }
 
 .warning {
