@@ -435,7 +435,7 @@ describe("Run", () => {
     describe("#section", () => {
         it("should set the run to the RTL mode", () => {
             const run = new Run({
-                children: [PageNumber.CURRENT_PAGE_IN_SECTION],
+                children: [PageNumber.CURRENT_SECTION],
             });
             const tree = new Formatter().format(run);
             expect(tree).to.deep.equal({

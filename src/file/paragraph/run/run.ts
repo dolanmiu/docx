@@ -103,7 +103,7 @@ export const PageNumber = {
     CURRENT: "CURRENT",
     TOTAL_PAGES: "TOTAL_PAGES",
     TOTAL_PAGES_IN_SECTION: "TOTAL_PAGES_IN_SECTION",
-    CURRENT_PAGE_IN_SECTION: "SECTION",
+    CURRENT_SECTION: "SECTION",
 } as const;
 
 /* eslint-enable */
@@ -144,7 +144,7 @@ export class Run extends XmlComponent {
                             this.root.push(new Separate());
                             this.root.push(new End());
                             break;
-                        case PageNumber.CURRENT_PAGE_IN_SECTION:
+                        case PageNumber.CURRENT_SECTION:
                             this.root.push(new Begin());
                             this.root.push(new CurrentPageInSection());
                             this.root.push(new Separate());
