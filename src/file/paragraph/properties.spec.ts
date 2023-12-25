@@ -159,7 +159,7 @@ describe("ParagraphProperties", () => {
             });
         });
 
-        it("should create with the wordWrap property", () => {
+        it("should create with the overflowPunct property", () => {
             const properties = new ParagraphProperties({
                 overflowPunctuation: true,
             });
@@ -168,11 +168,7 @@ describe("ParagraphProperties", () => {
             expect(tree).to.deep.equal({
                 "w:pPr": [
                     {
-                        "w:overflowPunct": {
-                            _attr: {
-                                "w:val": 0,
-                            },
-                        },
+                        "w:overflowPunct": {},
                     },
                 ],
             });
