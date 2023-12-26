@@ -4,15 +4,15 @@ import { XmlComponent } from "@file/xml-components";
 import { Anchor } from "./anchor";
 import { DocPropertiesOptions } from "./doc-properties/doc-properties";
 import { IFloating } from "./floating";
-import { Inline } from "./inline";
+import { createInline } from "./inline";
 import { OutlineOptions } from "./inline/graphic/graphic-data/pic/shape-properties/outline/outline";
 
-export interface IDistance {
+export type IDistance = {
     readonly distT?: number;
     readonly distB?: number;
     readonly distL?: number;
     readonly distR?: number;
-}
+};
 
 export interface IDrawingOptions {
     readonly floating?: IFloating;
@@ -32,13 +32,14 @@ export class Drawing extends XmlComponent {
         super("w:drawing");
 
         if (!drawingOptions.floating) {
-            const inline = new Inline({
-                mediaData: imageData,
-                transform: imageData.transformation,
-                docProperties: drawingOptions.docProperties,
-                outline: drawingOptions.outline,
-            });
-            this.root.push(inline);
+            this.root.push(
+                createInline({
+                    mediaData: imageData,
+                    transform: imageData.transformation,
+                    docProperties: drawingOptions.docProperties,
+                    outline: drawingOptions.outline,
+                }),
+            );
         } else {
             this.root.push(new Anchor({ mediaData: imageData, transform: imageData.transformation, drawingOptions }));
         }

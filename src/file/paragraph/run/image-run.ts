@@ -2,8 +2,8 @@ import { uniqueId } from "@util/convenience-functions";
 
 import { IContext, IXmlableObject } from "@file/xml-components";
 import { DocPropertiesOptions } from "@file/drawing/doc-properties/doc-properties";
-import { OutlineOptions } from "@file/drawing/inline/graphic/graphic-data/pic/shape-properties/outline/outline";
 
+import { OutlineOptions } from "../../drawing/inline/graphic/graphic-data/pic/shape-properties/outline/outline";
 import { Drawing, IFloating } from "../../drawing";
 import { IMediaTransformation } from "../../media";
 import { IMediaData } from "../../media/data";

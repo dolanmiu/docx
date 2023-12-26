@@ -44,6 +44,7 @@ const doc = new Document({
                             },
                             outline: {
                                 type: "solidFill",
+                                solidFillType: "rgb",
                                 color: "FF0000",
                             },
                         }),
@@ -62,6 +63,7 @@ const doc = new Document({
                             },
                             outline: {
                                 type: "solidFill",
+                                solidFillType: "rgb",
                                 color: "0000FF",
                                 width: convertMillimetersToTwip(6),
                             },

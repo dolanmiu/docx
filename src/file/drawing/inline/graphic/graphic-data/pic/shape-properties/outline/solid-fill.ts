@@ -1,29 +1,22 @@
-import { BuilderElement, XmlComponent } from "index";
-import { SchemeColor } from "./scheme-color";
+import { BuilderElement, XmlComponent } from "@file/xml-components";
 
-type SolidRgbColorOptions = {
+import { createSchemeColor, SchemeColor } from "./scheme-color";
+import { createSolidRgbColor } from "./rgb-color";
+
+export type RgbColorOptions = {
+    readonly type: "rgb";
     readonly value: string;
 };
 
-// <xsd:complexType name="CT_SRgbColor">
-//     <xsd:sequence>
-//         <xsd:group ref="EG_ColorTransform" minOccurs="0" maxOccurs="unbounded"/>
-//     </xsd:sequence>
-//     <xsd:attribute name="val" type="s:ST_HexColorRGB" use="required"/>
-// </xsd:complexType>
-const createSolidRgbColor = (options: SolidRgbColorOptions): XmlComponent =>
-    new BuilderElement<SolidRgbColorOptions>({
-        name: "a:srgbClr",
-        attributes: {
-            value: {
-                key: "val",
-                value: options.value,
-            },
-        },
-    });
+export type SchemeColorOptions = {
+    readonly type: "scheme";
+    readonly value: (typeof SchemeColor)[keyof typeof SchemeColor];
+};
 
-export const createSolidFill = (options: { readonly rgbColor: string; readonly schemeColor?: typeof SchemeColor }): XmlComponent =>
+export type SolidFillOptions = RgbColorOptions | SchemeColorOptions;
+
+export const createSolidFill = (options: SolidFillOptions): XmlComponent =>
     new BuilderElement({
         name: "a:solidFill",
-        children: [createSolidRgbColor({ value: options.rgbColor })],
+        children: [options.type === "rgb" ? createSolidRgbColor(options) : createSchemeColor(options)],
     });

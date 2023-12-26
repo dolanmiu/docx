@@ -1,3 +1,9 @@
+import { BuilderElement, XmlComponent } from "@file/xml-components";
+
+type SchemeColorOptions = {
+    readonly value: (typeof SchemeColor)[keyof typeof SchemeColor];
+};
+
 // <xsd:simpleType name="ST_SchemeColorVal">
 //     <xsd:restriction base="xsd:string">
 //         <xsd:enumeration value="bg1"/>
@@ -40,3 +46,20 @@ export const SchemeColor = {
     LT2: "lt2",
     PHCLR: "phClr",
 } as const;
+
+// <xsd:complexType name="CT_SchemeColor">
+//     <xsd:sequence>
+//         <xsd:group ref="EG_ColorTransform" minOccurs="0" maxOccurs="unbounded"/>
+//     </xsd:sequence>
+//     <xsd:attribute name="val" type="ST_SchemeColorVal" use="required"/>
+// </xsd:complexType>
+export const createSchemeColor = (options: SchemeColorOptions): XmlComponent =>
+    new BuilderElement<SchemeColorOptions>({
+        name: "a:schemeClr",
+        attributes: {
+            value: {
+                key: "val",
+                value: options.value,
+            },
+        },
+    });

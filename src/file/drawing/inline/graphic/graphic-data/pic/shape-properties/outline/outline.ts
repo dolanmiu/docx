@@ -2,6 +2,7 @@
 import { BuilderElement, XmlComponent } from "@file/xml-components";
 import { createNoFill } from "./no-fill";
 import { createSolidFill } from "./solid-fill";
+import { SchemeColor } from "./scheme-color";
 
 // <xsd:complexType name="CT_TextOutlineEffect">
 //     <xsd:sequence>
@@ -67,10 +68,19 @@ type OutlineNoFill = {
     readonly type: "noFill";
 };
 
-type OutlineSolidFill = {
+type OutlineRgbSolidFill = {
     readonly type: "solidFill";
-    readonly color: string;
+    readonly solidFillType: "rgb";
+    readonly value: string;
 };
+
+type OutlineSchemeSolidFill = {
+    readonly type: "solidFill";
+    readonly solidFillType: "scheme";
+    readonly value: (typeof SchemeColor)[keyof typeof SchemeColor];
+};
+
+type OutlineSolidFill = OutlineRgbSolidFill | OutlineSchemeSolidFill;
 
 // <xsd:group name="EG_FillProperties">
 //     <xsd:choice>
@@ -104,5 +114,17 @@ export const createOutline = (options: OutlineOptions): XmlComponent =>
                 value: options.align,
             },
         },
-        children: [options.type === "noFill" ? createNoFill() : createSolidFill({ rgbColor: options.color })],
+        children: [
+            options.type === "noFill"
+                ? createNoFill()
+                : options.solidFillType === "rgb"
+                  ? createSolidFill({
+                        type: "rgb",
+                        value: options.value,
+                    })
+                  : createSolidFill({
+                        type: "scheme",
+                        value: options.value,
+                    }),
+        ],
     });
