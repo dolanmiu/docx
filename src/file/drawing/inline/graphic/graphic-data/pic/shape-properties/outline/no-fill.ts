@@ -1,7 +1,3 @@
-import { XmlComponent } from "@file/xml-components";
+import { BuilderElement, XmlComponent } from "@file/xml-components";
 
-export class NoFill extends XmlComponent {
-    public constructor() {
-        super("a:noFill");
-    }
-}
+export const createNoFill = (): XmlComponent => new BuilderElement({ name: "a:noFill" });

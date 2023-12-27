@@ -2,15 +2,15 @@
 import { IMediaDataTransformation } from "@file/media";
 import { XmlComponent } from "@file/xml-components";
 import { Form } from "./form";
-// import { NoFill } from "./no-fill";
-// import { Outline } from "./outline/outline";
+import { OutlineOptions, createOutline } from "./outline/outline";
 import { PresetGeometry } from "./preset-geometry/preset-geometry";
 import { ShapePropertiesAttributes } from "./shape-properties-attributes";
+import { createNoFill } from "./outline/no-fill";
 
 export class ShapeProperties extends XmlComponent {
     private readonly form: Form;
 
-    public constructor(transform: IMediaDataTransformation) {
+    public constructor({ outline, transform }: { readonly outline?: OutlineOptions; readonly transform: IMediaDataTransformation }) {
         super("pic:spPr");
 
         this.root.push(
@@ -23,7 +23,10 @@ export class ShapeProperties extends XmlComponent {
 
         this.root.push(this.form);
         this.root.push(new PresetGeometry());
-        // this.root.push(new NoFill());
-        // this.root.push(new Outline());
+
+        if (outline) {
+            this.root.push(createNoFill());
+            this.root.push(createOutline(outline));
+        }
     }
 }

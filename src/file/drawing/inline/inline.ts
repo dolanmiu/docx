@@ -1,18 +1,19 @@
 // http://officeopenxml.com/drwPicInline.php
 import { IMediaData, IMediaDataTransformation } from "@file/media";
-import { XmlComponent } from "@file/xml-components";
+import { BuilderElement, XmlComponent } from "@file/xml-components";
 import { DocProperties, DocPropertiesOptions } from "./../doc-properties/doc-properties";
-import { EffectExtent } from "./../effect-extent/effect-extent";
+import { createEffectExtent } from "./../effect-extent/effect-extent";
 import { Extent } from "./../extent/extent";
 import { GraphicFrameProperties } from "./../graphic-frame/graphic-frame-properties";
 import { Graphic } from "./../inline/graphic";
-import { InlineAttributes } from "./inline-attributes";
+import { OutlineOptions } from "./graphic/graphic-data/pic/shape-properties/outline/outline";
 
-interface InlineOptions {
+type InlineOptions = {
     readonly mediaData: IMediaData;
     readonly transform: IMediaDataTransformation;
     readonly docProperties?: DocPropertiesOptions;
-}
+    readonly outline?: OutlineOptions;
+};
 
 // <xsd:complexType name="CT_Inline">
 //     <xsd:sequence>
@@ -28,29 +29,41 @@ interface InlineOptions {
 //     <xsd:attribute name="distL" type="ST_WrapDistance" use="optional"/>
 //     <xsd:attribute name="distR" type="ST_WrapDistance" use="optional"/>
 // </xsd:complexType>
-export class Inline extends XmlComponent {
-    private readonly extent: Extent;
-    private readonly graphic: Graphic;
-
-    public constructor({ mediaData, transform, docProperties }: InlineOptions) {
-        super("wp:inline");
-
-        this.root.push(
-            new InlineAttributes({
-                distT: 0,
-                distB: 0,
-                distL: 0,
-                distR: 0,
-            }),
-        );
-
-        this.extent = new Extent(transform.emus.x, transform.emus.y);
-        this.graphic = new Graphic(mediaData, transform);
-
-        this.root.push(this.extent);
-        this.root.push(new EffectExtent());
-        this.root.push(new DocProperties(docProperties));
-        this.root.push(new GraphicFrameProperties());
-        this.root.push(this.graphic);
-    }
-}
+export const createInline = ({ mediaData, transform, docProperties, outline }: InlineOptions): XmlComponent =>
+    new BuilderElement({
+        name: "wp:inline",
+        attributes: {
+            distanceTop: {
+                key: "distT",
+                value: 0,
+            },
+            distanceBottom: {
+                key: "distB",
+                value: 0,
+            },
+            distanceLeft: {
+                key: "distL",
+                value: 0,
+            },
+            distanceRight: {
+                key: "distR",
+                value: 0,
+            },
+        },
+        children: [
+            new Extent(transform.emus.x, transform.emus.y),
+            createEffectExtent(
+                outline
+                    ? {
+                          top: (outline.width ?? 9525) * 2,
+                          right: (outline.width ?? 9525) * 2,
+                          bottom: (outline.width ?? 9525) * 2,
+                          left: (outline.width ?? 9525) * 2,
+                      }
+                    : { top: 0, right: 0, bottom: 0, left: 0 },
+            ),
+            new DocProperties(docProperties),
+            new GraphicFrameProperties(),
+            new Graphic({ mediaData, transform, outline }),
+        ],
+    });

@@ -2,6 +2,7 @@
 
 import * as fs from "fs";
 import {
+    convertMillimetersToTwip,
     Document,
     HorizontalPositionAlign,
     HorizontalPositionRelativeFrom,
@@ -41,6 +42,11 @@ const doc = new Document({
                                 width: 100,
                                 height: 100,
                             },
+                            outline: {
+                                type: "solidFill",
+                                solidFillType: "rgb",
+                                value: "FF0000",
+                            },
                         }),
                     ],
                 }),
@@ -54,6 +60,12 @@ const doc = new Document({
                                 flip: {
                                     vertical: true,
                                 },
+                            },
+                            outline: {
+                                type: "solidFill",
+                                solidFillType: "rgb",
+                                value: "0000FF",
+                                width: convertMillimetersToTwip(600),
                             },
                         }),
                     ],
