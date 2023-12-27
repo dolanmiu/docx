@@ -14,10 +14,12 @@ export class FontWrapper implements IViewWrapper {
         this.relationships = new Relationships();
 
         for (let i = 0; i < options.length; i++) {
+            // Remove the 'ttf' extension from the font name
+            const [name] = options[i].name.split(".");
             this.relationships.createRelationship(
                 i,
                 "http://schemas.openxmlformats.org/officeDocument/2006/relationships/font",
-                `fonts/${options[i].name}.odttf`,
+                `fonts/${name}.odttf`,
             );
         }
     }

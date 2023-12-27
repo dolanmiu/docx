@@ -67,7 +67,8 @@ export class Compiler {
         }
 
         for (const { data: buffer, name } of file.FontTable.options) {
-            zip.file(`word/fonts/${name}`, obfuscate(buffer, name));
+            const [nameWithoutExtension] = name.split(".");
+            zip.file(`word/fonts/${nameWithoutExtension}.odttf`, obfuscate(buffer, name));
         }
 
         return zip;
