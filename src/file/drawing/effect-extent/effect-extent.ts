@@ -1,17 +1,31 @@
-import { XmlComponent } from "@file/xml-components";
-import { EffectExtentAttributes } from "./effect-extent-attributes";
+import { BuilderElement, XmlComponent } from "@file/xml-components";
 
-export class EffectExtent extends XmlComponent {
-    public constructor() {
-        super("wp:effectExtent");
+export type EffectExtentAttributes = {
+    readonly top: number;
+    readonly right: number;
+    readonly bottom: number;
+    readonly left: number;
+};
 
-        this.root.push(
-            new EffectExtentAttributes({
-                b: 0,
-                l: 0,
-                r: 0,
-                t: 0,
-            }),
-        );
-    }
-}
+export const createEffectExtent = ({ top, right, bottom, left }: EffectExtentAttributes): XmlComponent =>
+    new BuilderElement<EffectExtentAttributes>({
+        name: "wp:effectExtent",
+        attributes: {
+            top: {
+                key: "t",
+                value: top,
+            },
+            right: {
+                key: "r",
+                value: right,
+            },
+            bottom: {
+                key: "b",
+                value: bottom,
+            },
+            left: {
+                key: "l",
+                value: left,
+            },
+        },
+    });

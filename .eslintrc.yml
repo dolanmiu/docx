@@ -92,6 +92,7 @@ rules:
           format:
               - camelCase
               - PascalCase
+              - UPPER_CASE  # for constants
           filter:
               regex: (^[a-z]+:.+)|_attr|[0-9]
               match: false

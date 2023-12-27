@@ -9,10 +9,10 @@ import { TextWrappingType } from "../text-wrap";
 import { Anchor } from "./anchor";
 
 const createAnchor = (drawingOptions: IDrawingOptions): Anchor =>
-    new Anchor(
-        {
+    new Anchor({
+        mediaData: {
             fileName: "test.png",
-            stream: new Buffer(""),
+            stream: Buffer.from(""),
             transformation: {
                 pixels: {
                     x: 0,
@@ -24,7 +24,7 @@ const createAnchor = (drawingOptions: IDrawingOptions): Anchor =>
                 },
             },
         },
-        {
+        transform: {
             pixels: {
                 x: 100,
                 y: 100,
@@ -35,7 +35,7 @@ const createAnchor = (drawingOptions: IDrawingOptions): Anchor =>
             },
         },
         drawingOptions,
-    );
+    });
 
 describe("Anchor", () => {
     let anchor: Anchor;

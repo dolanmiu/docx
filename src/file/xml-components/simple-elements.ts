@@ -93,6 +93,8 @@ export class BuilderElement<T extends AttributeData> extends XmlComponent {
             this.root.push(new NextAttributeComponent(options.attributes));
         }
 
-        // TODO: Children
+        for (const child of options.children ?? []) {
+            this.root.push(child);
+        }
     }
 }

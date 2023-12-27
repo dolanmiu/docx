@@ -1,10 +1,10 @@
 import { XmlComponent } from "@file/xml-components";
 
-import { IRunOptions, RunProperties } from "../../index";
 import { Break } from "../../paragraph/run/break";
 import { Begin, End, Separate } from "../../paragraph/run/field";
-import { PageNumber } from "../../paragraph/run/run";
+import { IRunOptions, PageNumber } from "../../paragraph/run/run";
 import { ChangeAttributes, IChangedAttributesProperties } from "../track-revision";
+import { RunProperties } from "../../paragraph/run/properties";
 import { DeletedNumberOfPages, DeletedNumberOfPagesSection, DeletedPage } from "./deleted-page-number";
 import { DeletedText } from "./deleted-text";
 
