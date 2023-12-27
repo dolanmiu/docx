@@ -1,7 +1,7 @@
 // Example of how you would create a table and add data to it
 
 import * as fs from "fs";
-import { Document, HeadingLevel, Packer, Paragraph, Table, TableCell, TableRow, VerticalAlign, TextDirection } from "docx";
+import { BorderStyle, Document, HeadingLevel, Packer, Paragraph, Table, TableCell, TableRow, VerticalAlign, TextDirection } from "docx";
 
 const doc = new Document({
     sections: [
@@ -62,6 +62,173 @@ const doc = new Document({
                                         }),
                                     ],
                                     verticalAlign: VerticalAlign.CENTER,
+                                }),
+                            ],
+                        }),
+                    ],
+                }),
+                new Paragraph("Table with borders"),
+                new Table({
+                    rows: [
+                        new TableRow({
+                            children: [
+                                new TableCell({
+                                    borders: {
+                                        top: {
+                                            style: BorderStyle.DASH_SMALL_GAP,
+                                            size: 1,
+                                            color: "000000",
+                                        },
+                                        bottom: {
+                                            style: BorderStyle.DASH_SMALL_GAP,
+                                            size: 1,
+                                            color: "000000",
+                                        },
+                                        left: {
+                                            style: BorderStyle.DASH_SMALL_GAP,
+                                            size: 1,
+                                            color: "000000",
+                                        },
+                                        right: {
+                                            style: BorderStyle.DASH_SMALL_GAP,
+                                            size: 1,
+                                            color: "000000",
+                                        },
+                                    },
+                                    children: [new Paragraph("Dash small gap border")],
+                                }),
+                                new TableCell({
+                                    borders: {
+                                        top: {
+                                            style: BorderStyle.DASH_SMALL_GAP,
+                                            size: 1,
+                                            color: "000000",
+                                        },
+                                        bottom: {
+                                            style: BorderStyle.DASH_SMALL_GAP,
+                                            size: 1,
+                                            color: "000000",
+                                        },
+                                        left: {
+                                            style: BorderStyle.DASH_SMALL_GAP,
+                                            size: 1,
+                                            color: "000000",
+                                        },
+                                        right: {
+                                            style: BorderStyle.DASH_SMALL_GAP,
+                                            size: 1,
+                                            color: "000000",
+                                        },
+                                    },
+                                    children: [new Paragraph("Dash small gap border")],
+                                }),
+                            ],
+                        }),
+                        new TableRow({
+                            children: [
+                                new TableCell({
+                                    borders: {
+                                        top: {
+                                            style: BorderStyle.DOUBLE,
+                                            size: 1,
+                                            color: "ff0000",
+                                        },
+                                        bottom: {
+                                            style: BorderStyle.DOUBLE,
+                                            size: 1,
+                                            color: "ff0000",
+                                        },
+                                        left: {
+                                            style: BorderStyle.DOUBLE,
+                                            size: 1,
+                                            color: "ff0000",
+                                        },
+                                        right: {
+                                            style: BorderStyle.DOUBLE,
+                                            size: 1,
+                                            color: "ff0000",
+                                        },
+                                    },
+                                    children: [new Paragraph("Double border")],
+                                }),
+                                new TableCell({
+                                    borders: {
+                                        top: {
+                                            style: BorderStyle.DOUBLE,
+                                            size: 1,
+                                            color: "ff0000",
+                                        },
+                                        bottom: {
+                                            style: BorderStyle.DOUBLE,
+                                            size: 1,
+                                            color: "ff0000",
+                                        },
+                                        left: {
+                                            style: BorderStyle.DOUBLE,
+                                            size: 1,
+                                            color: "ff0000",
+                                        },
+                                        right: {
+                                            style: BorderStyle.DOUBLE,
+                                            size: 1,
+                                            color: "ff0000",
+                                        },
+                                    },
+                                    children: [new Paragraph("Double border")],
+                                }),
+                            ],
+                        }),
+                        new TableRow({
+                            children: [
+                                new TableCell({
+                                    borders: {
+                                        top: {
+                                            style: BorderStyle.NONE,
+                                            size: 0,
+                                            color: "ffffff",
+                                        },
+                                        bottom: {
+                                            style: BorderStyle.NONE,
+                                            size: 0,
+                                            color: "ffffff",
+                                        },
+                                        left: {
+                                            style: BorderStyle.NONE,
+                                            size: 0,
+                                            color: "ffffff",
+                                        },
+                                        right: {
+                                            style: BorderStyle.NONE,
+                                            size: 0,
+                                            color: "ffffff",
+                                        },
+                                    },
+                                    children: [new Paragraph("Should have no border")],
+                                }),
+                                new TableCell({
+                                    borders: {
+                                        top: {
+                                            style: BorderStyle.NONE,
+                                            size: 0,
+                                            color: "ffffff",
+                                        },
+                                        bottom: {
+                                            style: BorderStyle.NONE,
+                                            size: 0,
+                                            color: "ffffff",
+                                        },
+                                        left: {
+                                            style: BorderStyle.NONE,
+                                            size: 0,
+                                            color: "ffffff",
+                                        },
+                                        right: {
+                                            style: BorderStyle.NONE,
+                                            size: 0,
+                                            color: "ffffff",
+                                        },
+                                    },
+                                    children: [new Paragraph("Should have no border")],
                                 }),
                             ],
                         }),
