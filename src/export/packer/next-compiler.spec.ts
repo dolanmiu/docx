@@ -133,8 +133,6 @@ describe("Compiler", () => {
         });
 
         it("should work with media datas", () => {
-            // This test is required because before, there was a case where Document was formatted twice, which was inefficient
-            // This also caused issues such as running prepForXml multiple times as format() was ran multiple times.
             const file = new File({
                 sections: [
                     {
@@ -181,6 +179,15 @@ describe("Compiler", () => {
                     },
                 },
             ]);
+
+            compiler.compile(file);
+        });
+
+        it("should work with fonts", () => {
+            const file = new File({
+                sections: [],
+                fonts: [{ name: "Pacifico", data: Buffer.from("") }],
+            });
 
             compiler.compile(file);
         });
