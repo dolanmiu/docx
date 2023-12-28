@@ -2,10 +2,10 @@ const obfuscatedStartOffset = 0;
 const obfuscatedEndOffset = 32;
 const guidSize = 32;
 
-export const obfuscate = (buf: Buffer, fontFilename: string): Buffer => {
-    const guid = fontFilename.replace(/-/g, "").replace(/\..+$/, "");
+export const obfuscate = (buf: Buffer, fontKey: string): Buffer => {
+    const guid = fontKey.replace(/-/g, "");
     if (guid.length !== guidSize) {
-        throw new Error(`Error: Cannot extract GUID from font filename: ${fontFilename}`);
+        throw new Error(`Error: Cannot extract GUID from font filename: ${fontKey}`);
     }
 
     const hexStrings = guid.replace(/(..)/g, "$1 ").trim().split(" ");

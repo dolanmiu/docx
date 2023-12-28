@@ -1,6 +1,6 @@
 import { ICommentsOptions } from "@file/paragraph/run/comment-run";
 import { ICompatibilityOptions } from "@file/settings/compatibility";
-import { IFontOptions } from "@file/fonts/font";
+import { FontOptions } from "@file/fonts/font-table";
 import { StringContainer, XmlComponent } from "@file/xml-components";
 import { dateTimeValue } from "@util/values";
 
@@ -41,7 +41,7 @@ export interface IPropertiesOptions {
     readonly customProperties?: readonly ICustomPropertyOptions[];
     readonly evenAndOddHeaderAndFooters?: boolean;
     readonly defaultTabStop?: number;
-    readonly fonts?: readonly IFontOptions[];
+    readonly fonts?: readonly FontOptions[];
 }
 
 // <xs:element name="coreProperties" type="CT_CoreProperties"/>

@@ -11,6 +11,9 @@ const doc = new Document({
             properties: {},
             children: [
                 new Paragraph({
+                    run: {
+                        font: "Pacifico",
+                    },
                     children: [
                         new TextRun("Hello World"),
                         new TextRun({
@@ -27,7 +30,7 @@ const doc = new Document({
             ],
         },
     ],
-    fonts: [{ name: "4964cd56-5244-408a-adb3-058730e14d5a.ttf", data: font }],
+    fonts: [{ name: "Pacifico", data: font }],
 });
 
 Packer.toBuffer(doc).then((buffer) => {

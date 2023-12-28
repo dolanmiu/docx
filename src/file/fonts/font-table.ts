@@ -1,6 +1,7 @@
 import { BuilderElement, XmlComponent } from "@file/xml-components";
 
-import { createFont, IFontOptions } from "./font";
+import { createRegularFont } from "./create-regular-font";
+import { FontOptionsWithKey } from "./font-wrapper";
 
 // <xsd:complexType name="CT_FontsList">
 //     <xsd:sequence>
@@ -8,7 +9,12 @@ import { createFont, IFontOptions } from "./font";
 //     </xsd:sequence>
 // </xsd:complexType>
 
-export const createFontTable = (fonts: readonly IFontOptions[]): XmlComponent =>
+export type FontOptions = {
+    readonly name: string;
+    readonly data: Buffer;
+};
+
+export const createFontTable = (fonts: readonly FontOptionsWithKey[]): XmlComponent =>
     // https://c-rex.net/projects/samples/ooxml/e1/Part4/OOXML_P4_DOCX_Font_topic_ID0ERNCU.html
     // http://www.datypic.com/sc/ooxml/e-w_fonts.html
     new BuilderElement({
@@ -26,5 +32,5 @@ export const createFontTable = (fonts: readonly IFontOptions[]): XmlComponent =>
             w16se: { key: "xmlns:w16se", value: "http://schemas.microsoft.com/office/word/2015/wordml/symex" },
             Ignorable: { key: "mc:Ignorable", value: "w14 w15 w16se w16cid w16 w16cex w16sdtdh" },
         },
-        children: fonts.map((font) => createFont(font)),
+        children: fonts.map((font, i) => createRegularFont(font.name, i + 1, font.fontKey)),
     });

@@ -66,9 +66,9 @@ export class Compiler {
             zip.file(`word/media/${fileName}`, stream);
         }
 
-        for (const { data: buffer, name } of file.FontTable.options) {
+        for (const { data: buffer, name, fontKey } of file.FontTable.fontOptionsWithKey) {
             const [nameWithoutExtension] = name.split(".");
-            zip.file(`word/fonts/${nameWithoutExtension}.odttf`, obfuscate(buffer, name));
+            zip.file(`word/fonts/${nameWithoutExtension}.odttf`, obfuscate(buffer, fontKey));
         }
 
         return zip;

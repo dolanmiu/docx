@@ -42,7 +42,7 @@ export interface IFontRelationshipOptions {
     readonly subsetted?: boolean;
 }
 
-export interface IFontOptions {
+export type FontOptions = {
     readonly name: string;
     readonly altName?: string;
     readonly panose1?: string;
@@ -62,15 +62,14 @@ export interface IFontOptions {
     readonly embedBold?: IFontRelationshipOptions;
     readonly embedItalic?: IFontRelationshipOptions;
     readonly embedBoldItalic?: IFontRelationshipOptions;
-    readonly data: Buffer;
-}
+};
 
 const createFontRelationship = ({ id, fontKey, subsetted }: IFontRelationshipOptions): XmlComponent =>
     new BuilderElement({
         name: "w:embedRegular",
         attributes: {
             id: { key: "r:id", value: id },
-            ...(fontKey ? { fontKey: { key: "w:fontKey", value: fontKey } } : {}),
+            ...(fontKey ? { fontKey: { key: "w:fontKey", value: `{${fontKey}}` } } : {}),
         },
         children: [...(subsetted ? [new OnOffElement("w:subsetted", subsetted)] : [])],
     });
@@ -88,7 +87,7 @@ export const createFont = ({
     embedBold,
     embedItalic,
     embedBoldItalic,
-}: IFontOptions): XmlComponent =>
+}: FontOptions): XmlComponent =>
     // http://www.datypic.com/sc/ooxml/e-w_font-1.html
     new BuilderElement({
         name: "w:font",
