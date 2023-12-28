@@ -20,10 +20,12 @@ const doc = new Document({
                             text: "Foo Bar",
                             bold: true,
                             size: 40,
+                            font: "Pacifico",
                         }),
                         new TextRun({
                             children: [new Tab(), "Github is the best"],
                             bold: true,
+                            font: "Pacifico",
                         }),
                     ],
                 }),
