@@ -13,7 +13,7 @@ const doc = new Document({
                     font: "Pacifico",
                 },
             },
-        }
+        },
     },
     sections: [
         {
@@ -36,7 +36,7 @@ const doc = new Document({
             ],
         },
     ],
-    fonts: [{ name: "Pacifico", data: font }],
+    fonts: [{ name: "Pacifico", data: font, characterSet: "00" }],
 });
 
 Packer.toBuffer(doc).then((buffer) => {

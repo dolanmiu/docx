@@ -17,7 +17,7 @@ import { Styles } from "./styles";
 import { ExternalStylesFactory } from "./styles/external-styles-factory";
 import { DefaultStylesFactory } from "./styles/factory";
 import { FileChild } from "./file-child";
-import { FontWrapper } from "./fonts";
+import { FontWrapper } from "./fonts/font-wrapper";
 
 export interface ISectionOptions {
     readonly headers?: {

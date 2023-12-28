@@ -1,7 +1,7 @@
 // Simple example to add text to a document
 
 import * as fs from "fs";
-import { Document, Packer, Paragraph, Tab, TextRun } from "docx";
+import { CharacterSet, Document, Packer, Paragraph, Tab, TextRun } from "docx";
 
 const font = fs.readFileSync("./demo/assets/Pacifico.ttf");
 
@@ -32,7 +32,7 @@ const doc = new Document({
             ],
         },
     ],
-    fonts: [{ name: "Pacifico", data: font }],
+    fonts: [{ name: "Pacifico", data: font, characterSet: CharacterSet.ANSI }],
 });
 
 Packer.toBuffer(doc).then((buffer) => {

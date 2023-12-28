@@ -1,8 +1,18 @@
 import { XmlComponent } from "@file/xml-components";
 
-import { createFont } from "./font";
+import { CharacterSet, createFont } from "./font";
 
-export const createRegularFont = (name: string, index: number, fontKey: string): XmlComponent =>
+export const createRegularFont = ({
+    name,
+    index,
+    fontKey,
+    characterSet,
+}: {
+    readonly name: string;
+    readonly index: number;
+    readonly fontKey: string;
+    readonly characterSet?: (typeof CharacterSet)[keyof typeof CharacterSet];
+}): XmlComponent =>
     createFont({
         name,
         sig: {
@@ -13,7 +23,7 @@ export const createRegularFont = (name: string, index: number, fontKey: string):
             csb0: "000001FF",
             csb1: "00000000",
         },
-        charset: "00",
+        charset: characterSet,
         family: "auto",
         pitch: "variable",
         embedRegular: {

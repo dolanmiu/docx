@@ -2,6 +2,7 @@ import { BuilderElement, XmlComponent } from "@file/xml-components";
 
 import { createRegularFont } from "./create-regular-font";
 import { FontOptionsWithKey } from "./font-wrapper";
+import { CharacterSet } from "./font";
 
 // <xsd:complexType name="CT_FontsList">
 //     <xsd:sequence>
@@ -12,6 +13,7 @@ import { FontOptionsWithKey } from "./font-wrapper";
 export type FontOptions = {
     readonly name: string;
     readonly data: Buffer;
+    readonly characterSet?: (typeof CharacterSet)[keyof typeof CharacterSet];
 };
 
 export const createFontTable = (fonts: readonly FontOptionsWithKey[]): XmlComponent =>
@@ -32,5 +34,11 @@ export const createFontTable = (fonts: readonly FontOptionsWithKey[]): XmlCompon
             w16se: { key: "xmlns:w16se", value: "http://schemas.microsoft.com/office/word/2015/wordml/symex" },
             Ignorable: { key: "mc:Ignorable", value: "w14 w15 w16se w16cid w16 w16cex w16sdtdh" },
         },
-        children: fonts.map((font, i) => createRegularFont(font.name, i + 1, font.fontKey)),
+        children: fonts.map((font, i) =>
+            createRegularFont({
+                name: font.name,
+                index: i + 1,
+                fontKey: font.fontKey,
+            }),
+        ),
     });

@@ -42,11 +42,33 @@ export interface IFontRelationshipOptions {
     readonly subsetted?: boolean;
 }
 
+export const CharacterSet = {
+    ANSI: "00",
+    DEFAULT: "01",
+    SYMBOL: "02",
+    MAC: "4D",
+    JIS: "80",
+    HANGUL: "81",
+    JOHAB: "82",
+    GB_2312: "86",
+    CHINESEBIG5: "88",
+    GREEK: "A1",
+    TURKISH: "A2",
+    VIETNAMESE: "A3",
+    HEBREW: "B1",
+    ARABIC: "B2",
+    BALTIC: "BA",
+    RUSSIAN: "CC",
+    THAI: "DE",
+    EASTEUROPE: "EE",
+    OEM: "FF",
+} as const;
+
 export type FontOptions = {
     readonly name: string;
     readonly altName?: string;
     readonly panose1?: string;
-    readonly charset?: string;
+    readonly charset?: (typeof CharacterSet)[keyof typeof CharacterSet];
     readonly family?: string;
     readonly notTrueType?: boolean;
     readonly pitch?: string;
