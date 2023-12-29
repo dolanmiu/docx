@@ -2,11 +2,11 @@ import { describe, expect, it } from "vitest";
 
 import { Formatter } from "@export/formatter";
 
-import { NumberOfPages, NumberOfPagesSection, Page } from "./page-number";
+import { CurrentSection, NumberOfPages, NumberOfPagesSection, Page } from "./page-number";
 
 describe("Page", () => {
     describe("#constructor()", () => {
-        it("uses the font name for both ascii and hAnsi", () => {
+        it("should work", () => {
             const tree = new Formatter().format(new Page());
             expect(tree).to.deep.equal({ "w:instrText": [{ _attr: { "xml:space": "preserve" } }, "PAGE"] });
         });
@@ -15,7 +15,7 @@ describe("Page", () => {
 
 describe("NumberOfPages", () => {
     describe("#constructor()", () => {
-        it("uses the font name for both ascii and hAnsi", () => {
+        it("should work", () => {
             const tree = new Formatter().format(new NumberOfPages());
             expect(tree).to.deep.equal({ "w:instrText": [{ _attr: { "xml:space": "preserve" } }, "NUMPAGES"] });
         });
@@ -24,9 +24,18 @@ describe("NumberOfPages", () => {
 
 describe("NumberOfPagesSection", () => {
     describe("#constructor()", () => {
-        it("uses the font name for both ascii and hAnsi", () => {
+        it("should work", () => {
             const tree = new Formatter().format(new NumberOfPagesSection());
             expect(tree).to.deep.equal({ "w:instrText": [{ _attr: { "xml:space": "preserve" } }, "SECTIONPAGES"] });
+        });
+    });
+});
+
+describe("CurrentSection", () => {
+    describe("#constructor()", () => {
+        it("should work", () => {
+            const tree = new Formatter().format(new CurrentSection());
+            expect(tree).to.deep.equal({ "w:instrText": [{ _attr: { "xml:space": "preserve" } }, "SECTION"] });
         });
     });
 });
