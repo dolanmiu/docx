@@ -1,7 +1,7 @@
 // http://officeopenxml.com/WPparagraph-textFrames.php
 import { HorizontalPositionAlign, VerticalPositionAlign } from "@file/shared/alignment";
 import { HeightRule } from "@file/table";
-import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
+import { BuilderElement, XmlComponent } from "@file/xml-components";
 
 export const DropCapType = {
     NONE: "none",
@@ -44,6 +44,7 @@ interface IBaseFrameOptions {
 }
 
 export interface IXYFrameOptions extends IBaseFrameOptions {
+    readonly type: "absolute";
     readonly position: {
         readonly x: number;
         readonly y: number;
@@ -51,6 +52,7 @@ export interface IXYFrameOptions extends IBaseFrameOptions {
 }
 
 export interface IAlignmentFrameOptions extends IBaseFrameOptions {
+    readonly type: "alignment";
     readonly alignment: {
         readonly x: (typeof HorizontalPositionAlign)[keyof typeof HorizontalPositionAlign];
         readonly y: (typeof VerticalPositionAlign)[keyof typeof VerticalPositionAlign];
@@ -61,7 +63,24 @@ export interface IAlignmentFrameOptions extends IBaseFrameOptions {
 // https://stackoverflow.com/q/46370222/3481582
 export type IFrameOptions = IXYFrameOptions | IAlignmentFrameOptions;
 
-export class FramePropertiesAttributes extends XmlAttributeComponent<{
+// <xsd:complexType name="CT_FramePr">
+//     <xsd:attribute name="dropCap" type="ST_DropCap" use="optional"/>
+//     <xsd:attribute name="lines" type="ST_DecimalNumber" use="optional"/>
+//     <xsd:attribute name="w" type="s:ST_TwipsMeasure" use="optional"/>
+//     <xsd:attribute name="h" type="s:ST_TwipsMeasure" use="optional"/>
+//     <xsd:attribute name="vSpace" type="s:ST_TwipsMeasure" use="optional"/>
+//     <xsd:attribute name="hSpace" type="s:ST_TwipsMeasure" use="optional"/>
+//     <xsd:attribute name="wrap" type="ST_Wrap" use="optional"/>
+//     <xsd:attribute name="hAnchor" type="ST_HAnchor" use="optional"/>
+//     <xsd:attribute name="vAnchor" type="ST_VAnchor" use="optional"/>
+//     <xsd:attribute name="x" type="ST_SignedTwipsMeasure" use="optional"/>
+//     <xsd:attribute name="xAlign" type="s:ST_XAlign" use="optional"/>
+//     <xsd:attribute name="y" type="ST_SignedTwipsMeasure" use="optional"/>
+//     <xsd:attribute name="yAlign" type="s:ST_YAlign" use="optional"/>
+//     <xsd:attribute name="hRule" type="ST_HeightRule" use="optional"/>
+//     <xsd:attribute name="anchorLock" type="s:ST_OnOff" use="optional"/>
+// </xsd:complexType>
+type FramePropertiesAttributes = {
     readonly anchorLock?: boolean;
     readonly dropCap?: (typeof DropCapType)[keyof typeof DropCapType];
     readonly width: number;
@@ -77,47 +96,71 @@ export class FramePropertiesAttributes extends XmlAttributeComponent<{
     readonly rule?: (typeof HeightRule)[keyof typeof HeightRule];
     readonly alignmentX?: (typeof HorizontalPositionAlign)[keyof typeof HorizontalPositionAlign];
     readonly alignmentY?: (typeof VerticalPositionAlign)[keyof typeof VerticalPositionAlign];
-}> {
-    protected readonly xmlKeys = {
-        anchorLock: "w:anchorLock",
-        dropCap: "w:dropCap",
-        width: "w:w",
-        height: "w:h",
-        x: "w:x",
-        y: "w:y",
-        anchorHorizontal: "w:hAnchor",
-        anchorVertical: "w:vAnchor",
-        spaceHorizontal: "w:hSpace",
-        spaceVertical: "w:vSpace",
-        rule: "w:hRule",
-        alignmentX: "w:xAlign",
-        alignmentY: "w:yAlign",
-        lines: "w:lines",
-        wrap: "w:wrap",
-    };
-}
+};
 
-export class FrameProperties extends XmlComponent {
-    public constructor(options: IFrameOptions) {
-        super("w:framePr");
-        this.root.push(
-            new FramePropertiesAttributes({
-                anchorLock: options.anchorLock,
-                dropCap: options.dropCap,
-                width: options.width,
-                height: options.height,
-                x: (options as IXYFrameOptions).position ? (options as IXYFrameOptions).position.x : undefined,
-                y: (options as IXYFrameOptions).position ? (options as IXYFrameOptions).position.y : undefined,
-                anchorHorizontal: options.anchor.horizontal,
-                anchorVertical: options.anchor.vertical,
-                spaceHorizontal: options.space?.horizontal,
-                spaceVertical: options.space?.vertical,
-                rule: options.rule,
-                alignmentX: (options as IAlignmentFrameOptions).alignment ? (options as IAlignmentFrameOptions).alignment.x : undefined,
-                alignmentY: (options as IAlignmentFrameOptions).alignment ? (options as IAlignmentFrameOptions).alignment.y : undefined,
-                lines: options.lines,
-                wrap: options.wrap,
-            }),
-        );
-    }
-}
+export const createFrameProperties = (options: IFrameOptions): XmlComponent =>
+    new BuilderElement<FramePropertiesAttributes>({
+        name: "w:framePr",
+        attributes: {
+            anchorLock: {
+                key: "w:anchorLock",
+                value: options.anchorLock,
+            },
+            dropCap: {
+                key: "w:dropCap",
+                value: options.dropCap,
+            },
+            width: {
+                key: "w:w",
+                value: options.width,
+            },
+            height: {
+                key: "w:h",
+                value: options.height,
+            },
+            x: {
+                key: "w:x",
+                value: (options as IXYFrameOptions).position ? (options as IXYFrameOptions).position.x : undefined,
+            },
+            y: {
+                key: "w:y",
+                value: (options as IXYFrameOptions).position ? (options as IXYFrameOptions).position.y : undefined,
+            },
+            anchorHorizontal: {
+                key: "w:hAnchor",
+                value: options.anchor.horizontal,
+            },
+            anchorVertical: {
+                key: "w:vAnchor",
+                value: options.anchor.vertical,
+            },
+            spaceHorizontal: {
+                key: "w:hSpace",
+                value: options.space?.horizontal,
+            },
+            spaceVertical: {
+                key: "w:vSpace",
+                value: options.space?.vertical,
+            },
+            rule: {
+                key: "w:hRule",
+                value: options.rule,
+            },
+            alignmentX: {
+                key: "w:xAlign",
+                value: (options as IAlignmentFrameOptions).alignment ? (options as IAlignmentFrameOptions).alignment.x : undefined,
+            },
+            alignmentY: {
+                key: "w:yAlign",
+                value: (options as IAlignmentFrameOptions).alignment ? (options as IAlignmentFrameOptions).alignment.y : undefined,
+            },
+            lines: {
+                key: "w:lines",
+                value: options.lines,
+            },
+            wrap: {
+                key: "w:wrap",
+                value: options.wrap,
+            },
+        },
+    });
