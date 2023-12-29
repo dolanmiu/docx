@@ -26,6 +26,7 @@ export default defineConfig({
     },
     build: {
         minify: false,
+        target: "es2015",
         lib: {
             entry: [resolve(__dirname, "src/index.ts")],
             name: "docx",
