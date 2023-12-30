@@ -1,6 +1,16 @@
 import { describe, expect, it } from "vitest";
 
-import { convertInchesToTwip, convertMillimetersToTwip, uniqueId, uniqueNumericIdCreator } from "./convenience-functions";
+import {
+    abstractNumUniqueNumericIdGen,
+    bookmarkUniqueNumericIdGen,
+    concreteNumUniqueNumericIdGen,
+    convertInchesToTwip,
+    convertMillimetersToTwip,
+    docPropertiesUniqueNumericIdGen,
+    uniqueId,
+    uniqueNumericIdCreator,
+    uniqueUuid,
+} from "./convenience-functions";
 
 describe("Utility", () => {
     describe("#convertMillimetersToTwip", () => {
@@ -24,9 +34,47 @@ describe("Utility", () => {
         });
     });
 
+    describe("#abstractNumUniqueNumericIdGen", () => {
+        it("should generate a unique incrementing ID", () => {
+            const uniqueNumericId = abstractNumUniqueNumericIdGen();
+            expect(uniqueNumericId()).to.equal(1);
+            expect(uniqueNumericId()).to.equal(2);
+        });
+    });
+
+    describe("#concreteNumUniqueNumericIdGen", () => {
+        it("should generate a unique incrementing ID", () => {
+            const uniqueNumericId = concreteNumUniqueNumericIdGen();
+            expect(uniqueNumericId()).to.equal(2);
+            expect(uniqueNumericId()).to.equal(3);
+        });
+    });
+
+    describe("#docPropertiesUniqueNumericIdGen", () => {
+        it("should generate a unique incrementing ID", () => {
+            const uniqueNumericId = docPropertiesUniqueNumericIdGen();
+            expect(uniqueNumericId()).to.equal(1);
+            expect(uniqueNumericId()).to.equal(2);
+        });
+    });
+
+    describe("#bookmarkUniqueNumericIdGen", () => {
+        it("should generate a unique incrementing ID", () => {
+            const uniqueNumericId = bookmarkUniqueNumericIdGen();
+            expect(uniqueNumericId()).to.equal(1);
+            expect(uniqueNumericId()).to.equal(2);
+        });
+    });
+
     describe("#uniqueId", () => {
         it("should generate a unique pseudorandom ID", () => {
             expect(uniqueId()).to.not.be.empty;
+        });
+    });
+
+    describe("#uniqueUuid", () => {
+        it("should generate a unique pseudorandom ID", () => {
+            expect(uniqueUuid()).to.not.be.empty;
         });
     });
 });

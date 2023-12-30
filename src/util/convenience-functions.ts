@@ -1,4 +1,4 @@
-import { nanoid } from "nanoid/non-secure";
+import { nanoid, customAlphabet } from "nanoid/non-secure";
 
 // Twip - twentieths of a point
 export const convertMillimetersToTwip = (millimeters: number): number => Math.floor((millimeters / 25.4) * 72 * 20);
@@ -23,3 +23,7 @@ export const docPropertiesUniqueNumericIdGen = (): UniqueNumericIdCreator => uni
 export const bookmarkUniqueNumericIdGen = (): UniqueNumericIdCreator => uniqueNumericIdCreator();
 
 export const uniqueId = (): string => nanoid().toLowerCase();
+
+const generateUuidPart = (count: number): string => customAlphabet("1234567890abcdef", count)();
+export const uniqueUuid = (): string =>
+    `${generateUuidPart(8)}-${generateUuidPart(4)}-${generateUuidPart(4)}-${generateUuidPart(4)}-${generateUuidPart(12)}`;

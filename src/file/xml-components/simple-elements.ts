@@ -55,6 +55,14 @@ export class StringValueElement extends XmlComponent {
     }
 }
 
+export const createStringElement = (name: string, value: string): XmlComponent =>
+    new BuilderElement({
+        name,
+        attributes: {
+            value: { key: "w:val", value },
+        },
+    });
+
 // This represents various number element types.
 export class NumberValueElement extends XmlComponent {
     public constructor(name: string, val: number) {
@@ -82,19 +90,23 @@ export class StringContainer extends XmlComponent {
 }
 
 export class BuilderElement<T extends AttributeData> extends XmlComponent {
-    public constructor(options: {
+    public constructor({
+        name,
+        attributes,
+        children,
+    }: {
         readonly name: string;
         readonly attributes?: AttributePayload<T>;
         readonly children?: readonly XmlComponent[];
     }) {
-        super(options.name);
+        super(name);
 
-        if (options.attributes) {
-            this.root.push(new NextAttributeComponent(options.attributes));
+        if (attributes) {
+            this.root.push(new NextAttributeComponent(attributes));
         }
 
-        for (const child of options.children ?? []) {
-            this.root.push(child);
+        if (children) {
+            this.root.push(...children);
         }
     }
 }

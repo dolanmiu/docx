@@ -36,7 +36,7 @@ describe("Compiler", () => {
                 const fileNames = Object.keys(zipFile.files).map((f) => zipFile.files[f].name);
 
                 expect(fileNames).is.an.instanceof(Array);
-                expect(fileNames).has.length(17);
+                expect(fileNames).has.length(19);
                 expect(fileNames).to.include("word/document.xml");
                 expect(fileNames).to.include("word/styles.xml");
                 expect(fileNames).to.include("docProps/core.xml");
@@ -47,7 +47,9 @@ describe("Compiler", () => {
                 expect(fileNames).to.include("word/_rels/footnotes.xml.rels");
                 expect(fileNames).to.include("word/settings.xml");
                 expect(fileNames).to.include("word/comments.xml");
+                expect(fileNames).to.include("word/fontTable.xml");
                 expect(fileNames).to.include("word/_rels/document.xml.rels");
+                expect(fileNames).to.include("word/_rels/fontTable.xml.rels");
                 expect(fileNames).to.include("[Content_Types].xml");
                 expect(fileNames).to.include("_rels/.rels");
             },
@@ -94,7 +96,7 @@ describe("Compiler", () => {
                 const fileNames = Object.keys(zipFile.files).map((f) => zipFile.files[f].name);
 
                 expect(fileNames).is.an.instanceof(Array);
-                expect(fileNames).has.length(25);
+                expect(fileNames).has.length(27);
 
                 expect(fileNames).to.include("word/header1.xml");
                 expect(fileNames).to.include("word/_rels/header1.xml.rels");
@@ -127,12 +129,10 @@ describe("Compiler", () => {
             const spy = vi.spyOn(compiler["formatter"], "format");
 
             compiler.compile(file);
-            expect(spy).toBeCalledTimes(13);
+            expect(spy).toBeCalledTimes(15);
         });
 
         it("should work with media datas", () => {
-            // This test is required because before, there was a case where Document was formatted twice, which was inefficient
-            // This also caused issues such as running prepForXml multiple times as format() was ran multiple times.
             const file = new File({
                 sections: [
                     {
@@ -179,6 +179,15 @@ describe("Compiler", () => {
                     },
                 },
             ]);
+
+            compiler.compile(file);
+        });
+
+        it("should work with fonts", () => {
+            const file = new File({
+                sections: [],
+                fonts: [{ name: "Pacifico", data: Buffer.from("") }],
+            });
 
             compiler.compile(file);
         });

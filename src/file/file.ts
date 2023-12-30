@@ -17,6 +17,7 @@ import { Styles } from "./styles";
 import { ExternalStylesFactory } from "./styles/external-styles-factory";
 import { DefaultStylesFactory } from "./styles/factory";
 import { FileChild } from "./file-child";
+import { FontWrapper } from "./fonts/font-wrapper";
 
 export interface ISectionOptions {
     readonly headers?: {
@@ -53,6 +54,7 @@ export class File {
     private readonly appProperties: AppProperties;
     private readonly styles: Styles;
     private readonly comments: Comments;
+    private readonly fontWrapper: FontWrapper;
 
     public constructor(options: IPropertiesOptions) {
         this.coreProperties = new CoreProperties({
@@ -109,6 +111,8 @@ export class File {
                 this.footnotesWrapper.View.createFootNote(parseFloat(key), options.footnotes[key].children);
             }
         }
+
+        this.fontWrapper = new FontWrapper(options.fonts ?? []);
     }
 
     private addSection({ headers = {}, footers = {}, children, properties }: ISectionOptions): void {
@@ -291,5 +295,9 @@ export class File {
 
     public get Comments(): Comments {
         return this.comments;
+    }
+
+    public get FontTable(): FontWrapper {
+        return this.fontWrapper;
     }
 }
