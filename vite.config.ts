@@ -62,10 +62,10 @@ export default defineConfig({
             provider: "v8",
             reporter: ["text", "json", "html"],
             thresholds: {
-                statements: 99.96,
-                branches: 98.98,
+                statements: 99.98,
+                branches: 99.15,
                 functions: 100,
-                lines: 99.96,
+                lines: 99.98,
             },
             exclude: [
                 ...configDefaults.exclude,

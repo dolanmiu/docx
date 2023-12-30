@@ -86,9 +86,9 @@ export type FontOptions = {
     readonly embedBoldItalic?: IFontRelationshipOptions;
 };
 
-const createFontRelationship = ({ id, fontKey, subsetted }: IFontRelationshipOptions): XmlComponent =>
+const createFontRelationship = ({ id, fontKey, subsetted }: IFontRelationshipOptions, name: string): XmlComponent =>
     new BuilderElement({
-        name: "w:embedRegular",
+        name,
         attributes: {
             id: { key: "r:id", value: id },
             ...(fontKey ? { fontKey: { key: "w:fontKey", value: `{${fontKey}}` } } : {}),
@@ -145,12 +145,12 @@ export const createFont = ({
                   ]
                 : []),
             // http://www.datypic.com/sc/ooxml/e-w_embedRegular-1.html
-            ...(embedRegular ? [createFontRelationship(embedRegular)] : []),
+            ...(embedRegular ? [createFontRelationship(embedRegular, "w:embedRegular")] : []),
             // http://www.datypic.com/sc/ooxml/e-w_embedBold-1.html
-            ...(embedBold ? [createFontRelationship(embedBold)] : []),
+            ...(embedBold ? [createFontRelationship(embedBold, "w:embedBold")] : []),
             // http://www.datypic.com/sc/ooxml/e-w_embedItalic-1.html
-            ...(embedItalic ? [createFontRelationship(embedItalic)] : []),
+            ...(embedItalic ? [createFontRelationship(embedItalic, "w:embedItalic")] : []),
             // http://www.datypic.com/sc/ooxml/e-w_embedBoldItalic-1.html
-            ...(embedBoldItalic ? [createFontRelationship(embedBoldItalic)] : []),
+            ...(embedBoldItalic ? [createFontRelationship(embedBoldItalic, "w:embedBoldItalic")] : []),
         ],
     });
