@@ -142,6 +142,28 @@ const MOCK_JSON = {
                         {
                             type: "element",
                             name: "w:p",
+                            elements: [
+                                {
+                                    type: "element",
+                                    name: "w:r",
+                                    elements: [
+                                        {
+                                            type: "element",
+                                            name: "w:rPr",
+                                            elements: [{ type: "element", name: "w:b", attributes: { "w:val": "1" } }],
+                                        },
+                                        {
+                                            type: "element",
+                                            name: "w:t",
+                                            elements: [{ type: "text", text: "What a {{bold}} text!" }],
+                                        },
+                                    ],
+                                },
+                            ],
+                        },
+                        {
+                            type: "element",
+                            name: "w:p",
                             attributes: {
                                 "w14:paraId": "7AD7975D",
                                 "w14:textId": "77777777",
@@ -537,6 +559,45 @@ const MOCK_JSON = {
                         },
                         {
                             type: "element",
+                            name: "w:p",
+                            attributes: {
+                                "w14:paraId": "3BE1A671",
+                                "w14:textId": "74E856C4",
+                                "w:rsidR": "000D38A7",
+                                "w:rsidRDefault": "000D38A7",
+                            },
+                            elements: [
+                                {
+                                    type: "element",
+                                    name: "w:pPr",
+                                    elements: [{ type: "element", name: "w:pStyle", attributes: { "w:val": "Header" } }],
+                                },
+                                {
+                                    type: "element",
+                                    name: "w:r",
+                                    elements: [{ type: "element", name: "w:t", elements: [{ type: "text", text: "This is a {{head" }] }],
+                                },
+                                {
+                                    type: "element",
+                                    name: "w:r",
+                                    attributes: { "w:rsidR": "004A3A99" },
+                                    elements: [{ type: "element", name: "w:t", elements: [{ type: "text", text: "er" }] }],
+                                },
+                                {
+                                    type: "element",
+                                    name: "w:r",
+                                    elements: [
+                                        {
+                                            type: "element",
+                                            name: "w:t",
+                                            elements: [{ type: "text", text: "_adjective}} don’t you think?" }],
+                                        },
+                                    ],
+                                },
+                            ],
+                        },
+                        {
+                            type: "element",
                             name: "w:sectPr",
                             attributes: { "w:rsidR": "007B52ED", "w:rsidSect": "0072043F" },
                             elements: [
@@ -574,7 +635,7 @@ describe("traverser", () => {
             expect(output).to.deep.equal([
                 {
                     index: 1,
-                    path: [0, 0, 0, 8, 2, 0, 1],
+                    pathToParagraph: [0, 0, 0, 9, 2, 0, 1],
                     runs: [
                         {
                             end: 18,
@@ -592,6 +653,77 @@ describe("traverser", () => {
                         },
                     ],
                     text: "{{table_heading_1}}",
+                },
+            ]);
+        });
+
+        it("should find the location of text", () => {
+            const output = findLocationOfText(MOCK_JSON, "{{bold}}");
+
+            expect(output).to.deep.equal([
+                {
+                    text: "What a {{bold}} text!",
+                    runs: [
+                        {
+                            text: "What a {{bold}} text!",
+                            parts: [{ text: "What a {{bold}} text!", index: 1, start: 0, end: 20 }],
+                            index: 0,
+                            start: 0,
+                            end: 20,
+                        },
+                    ],
+                    index: 5,
+                    pathToParagraph: [0, 0, 0, 5],
+                },
+            ]);
+        });
+
+        it("should find the location of text", () => {
+            const output = findLocationOfText(MOCK_JSON, "{{bold}}");
+
+            expect(output).to.deep.equal([
+                {
+                    text: "What a {{bold}} text!",
+                    runs: [
+                        {
+                            text: "What a {{bold}} text!",
+                            parts: [{ text: "What a {{bold}} text!", index: 1, start: 0, end: 20 }],
+                            index: 0,
+                            start: 0,
+                            end: 20,
+                        },
+                    ],
+                    index: 5,
+                    pathToParagraph: [0, 0, 0, 5],
+                },
+            ]);
+        });
+
+        it("should find the location of text", () => {
+            const output = findLocationOfText(MOCK_JSON, "{{header_adjective}}");
+
+            expect(output).to.deep.equal([
+                {
+                    text: "This is a {{header_adjective}} don’t you think?",
+                    runs: [
+                        {
+                            text: "This is a {{head",
+                            parts: [{ text: "This is a {{head", index: 0, start: 0, end: 15 }],
+                            index: 1,
+                            start: 0,
+                            end: 15,
+                        },
+                        { text: "er", parts: [{ text: "er", index: 0, start: 16, end: 17 }], index: 2, start: 16, end: 17 },
+                        {
+                            text: "_adjective}} don’t you think?",
+                            parts: [{ text: "_adjective}} don’t you think?", index: 0, start: 18, end: 46 }],
+                            index: 3,
+                            start: 18,
+                            end: 46,
+                        },
+                    ],
+                    index: 14,
+                    pathToParagraph: [0, 0, 0, 14],
                 },
             ]);
         });

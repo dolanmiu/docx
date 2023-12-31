@@ -6,9 +6,9 @@ import { IContext, XmlComponent } from "@file/xml-components";
 
 import { IPatch, PatchType } from "./from-docx";
 import { toJson } from "./util";
-import { IRenderedParagraphNode } from "./run-renderer";
 import { replaceTokenInParagraphElement } from "./paragraph-token-replacer";
 import { findRunElementIndexWithToken, splitRunElement } from "./paragraph-split-inject";
+import { findLocationOfText } from "./traverser";
 
 const formatter = new Formatter();
 
@@ -18,17 +18,21 @@ export const replacer = ({
     json,
     patch,
     patchText,
-    renderedParagraphs,
     context,
     keepOriginalStyles = true,
 }: {
     readonly json: Element;
     readonly patch: IPatch;
     readonly patchText: string;
-    readonly renderedParagraphs: readonly IRenderedParagraphNode[];
     readonly context: IContext;
     readonly keepOriginalStyles?: boolean;
 }): Element => {
+    const renderedParagraphs = findLocationOfText(json, patchText);
+
+    if (renderedParagraphs.length === 0) {
+        throw new Error(`Could not find text ${patchText}`);
+    }
+
     for (const renderedParagraph of renderedParagraphs) {
         const textJson = patch.children
             // eslint-disable-next-line no-loop-func
