@@ -50,8 +50,7 @@ export const renderParagraphNode = (node: ElementWrapper): IRenderedParagraphNod
 
             return renderedRunNode;
         })
-        .filter((e) => !!e)
-        .map((e) => e as IRenderedRunNode);
+        .filter((e) => !!e);
 
     const text = runs.reduce((acc, curr) => acc + curr.text, "");
 
