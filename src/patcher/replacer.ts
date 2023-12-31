@@ -20,7 +20,7 @@ export const replacer = ({
     patchText,
     renderedParagraphs,
     context,
-    keepOriginalStyles = false,
+    keepOriginalStyles = true,
 }: {
     readonly json: Element;
     readonly patch: IPatch;
