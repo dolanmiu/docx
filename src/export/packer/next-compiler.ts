@@ -62,8 +62,13 @@ export class Compiler {
             }
         }
 
-        for (const { stream, fileName } of file.Media.Array) {
-            zip.file(`word/media/${fileName}`, stream);
+        for (const data of file.Media.Array) {
+            if (data.type !== "svg") {
+                zip.file(`word/media/${data.fileName}`, data.data);
+            } else {
+                zip.file(`word/media/${data.fileName}`, data.data);
+                zip.file(`word/media/${data.fallback.fileName}`, data.fallback.data);
+            }
         }
 
         for (const { data: buffer, name, fontKey } of file.FontTable.fontOptionsWithKey) {

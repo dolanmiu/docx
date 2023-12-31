@@ -19,7 +19,8 @@ describe("Media", () => {
             const media = new Media();
 
             media.addImage("test2.png", {
-                stream: Buffer.from(""),
+                type: "png",
+                data: Buffer.from(""),
                 fileName: "test.png",
                 transformation: {
                     pixels: {

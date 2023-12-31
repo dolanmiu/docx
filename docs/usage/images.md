@@ -6,6 +6,7 @@ To create a `floating` image on top of text:
 
 ```ts
 const image = new ImageRun({
+    type: 'gif',
     data: fs.readFileSync("./demo/images/pizza.gif"),
     transformation: {
         width: 200,
@@ -26,6 +27,7 @@ By default with no arguments, its an `inline` image:
 
 ```ts
 const image = new ImageRun({
+    type: 'gif',
     data: fs.readFileSync("./demo/images/pizza.gif"),
     transformation: {
         width: 100,
@@ -59,6 +61,7 @@ const doc = new Document({
             new Paragraph({
                 children: [
                     new ImageRun({
+                        type: [IMAGE_TYPE],
                         data: [IMAGE_BUFFER],
                         transformation: {
                             width: [IMAGE_SIZE],
@@ -97,6 +100,7 @@ To change the position the image to be on top of the text, simply add the `float
 
 ```ts
 const image = new ImageRun({
+    type: 'png',
     data: buffer,
     transformation: {
         width: 903,
@@ -115,6 +119,7 @@ const image = new ImageRun({
 
 ```ts
 const image = new ImageRun({
+    type: 'png',
     data: buffer,
     transformation: {
         width: 903,
@@ -180,6 +185,7 @@ For example:
 
 ```ts
 const image = new ImageRun({
+    type: 'gif',
     data: fs.readFileSync("./demo/images/pizza.gif"),
     transformation: {
         width: 200,
@@ -228,6 +234,7 @@ For example:
 
 ```ts
 const image = new ImageRun({
+    type: 'gif',
     data: fs.readFileSync("./demo/images/pizza.gif"),
     transformation: {
         width: 200,
@@ -258,6 +265,7 @@ Specifies common non-visual DrawingML properties. A name, title and description 
 
 ```ts
 const image = new ImageRun({
+    type: 'gif',
     data: fs.readFileSync("./demo/images/pizza.gif"),
     altText: {
         title: "This is an ultimate title",

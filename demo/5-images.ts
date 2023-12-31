@@ -21,6 +21,7 @@ const doc = new Document({
                 new Paragraph({
                     children: [
                         new ImageRun({
+                            type: "jpg",
                             data: fs.readFileSync("./demo/images/image1.jpeg"),
                             transformation: {
                                 width: 100,
@@ -37,6 +38,7 @@ const doc = new Document({
                 new Paragraph({
                     children: [
                         new ImageRun({
+                            type: "png",
                             data: fs.readFileSync("./demo/images/dog.png").toString("base64"),
                             transformation: {
                                 width: 100,
@@ -53,6 +55,7 @@ const doc = new Document({
                 new Paragraph({
                     children: [
                         new ImageRun({
+                            type: "jpg",
                             data: fs.readFileSync("./demo/images/cat.jpg"),
                             transformation: {
                                 width: 100,
@@ -73,6 +76,7 @@ const doc = new Document({
                 new Paragraph({
                     children: [
                         new ImageRun({
+                            type: "bmp",
                             data: fs.readFileSync("./demo/images/parrots.bmp"),
                             transformation: {
                                 width: 150,
@@ -88,6 +92,7 @@ const doc = new Document({
                 new Paragraph({
                     children: [
                         new ImageRun({
+                            type: "gif",
                             data: fs.readFileSync("./demo/images/pizza.gif"),
                             transformation: {
                                 width: 200,
@@ -103,6 +108,7 @@ const doc = new Document({
                 new Paragraph({
                     children: [
                         new ImageRun({
+                            type: "gif",
                             data: fs.readFileSync("./demo/images/pizza.gif"),
                             transformation: {
                                 width: 200,
@@ -124,6 +130,7 @@ const doc = new Document({
                 new Paragraph({
                     children: [
                         new ImageRun({
+                            type: "jpg",
                             data: fs.readFileSync("./demo/images/cat.jpg"),
                             transformation: {
                                 width: 200,
@@ -139,6 +146,22 @@ const doc = new Document({
                                     relative: VerticalPositionRelativeFrom.PAGE,
                                     align: VerticalPositionAlign.BOTTOM,
                                 },
+                            },
+                        }),
+                    ],
+                }),
+                new Paragraph({
+                    children: [
+                        new ImageRun({
+                            type: "svg",
+                            data: fs.readFileSync("./demo/images/linux-svg.svg"),
+                            transformation: {
+                                width: 200,
+                                height: 200,
+                            },
+                            fallback: {
+                                type: "png",
+                                data: fs.readFileSync("./demo/images/linux-png.png"),
                             },
                         }),
                     ],

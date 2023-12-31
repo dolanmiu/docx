@@ -84,7 +84,7 @@ export class File {
 
         this.media = new Media();
 
-        if (options.externalStyles) {
+        if (options.externalStyles !== undefined) {
             const stylesFactory = new ExternalStylesFactory();
             this.styles = stylesFactory.newInstance(options.externalStyles);
         } else if (options.styles) {

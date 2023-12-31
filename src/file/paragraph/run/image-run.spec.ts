@@ -19,6 +19,7 @@ describe("ImageRun", () => {
     describe("#constructor()", () => {
         it("should create with Buffer", () => {
             const currentImageRun = new ImageRun({
+                type: "png",
                 data: Buffer.from(""),
                 transformation: {
                     width: 200,
@@ -39,8 +40,7 @@ describe("ImageRun", () => {
             const tree = new Formatter().format(currentImageRun, {
                 file: {
                     Media: {
-                        // eslint-disable-next-line @typescript-eslint/no-empty-function
-                        addImage: () => {},
+                        addImage: vi.fn(),
                     },
                 } as unknown as File,
                 viewWrapper: {} as unknown as IViewWrapper,
@@ -271,6 +271,7 @@ describe("ImageRun", () => {
 
         it("should create with string", () => {
             const currentImageRun = new ImageRun({
+                type: "png",
                 data: "",
                 transformation: {
                     width: 200,
@@ -291,8 +292,7 @@ describe("ImageRun", () => {
             const tree = new Formatter().format(currentImageRun, {
                 file: {
                     Media: {
-                        // eslint-disable-next-line @typescript-eslint/no-empty-function
-                        addImage: () => {},
+                        addImage: vi.fn(),
                     },
                 } as unknown as File,
                 viewWrapper: {} as unknown as IViewWrapper,
@@ -522,10 +522,10 @@ describe("ImageRun", () => {
         });
 
         it("should return UInt8Array if atob is present", () => {
-            // eslint-disable-next-line functional/immutable-data
-            global.atob = () => "atob result";
+            vi.spyOn(global, "atob").mockReturnValue("atob result");
 
             const currentImageRun = new ImageRun({
+                type: "png",
                 data: "",
                 transformation: {
                     width: 200,
@@ -546,8 +546,7 @@ describe("ImageRun", () => {
             const tree = new Formatter().format(currentImageRun, {
                 file: {
                     Media: {
-                        // eslint-disable-next-line @typescript-eslint/no-empty-function
-                        addImage: () => {},
+                        addImage: vi.fn(),
                     },
                 } as unknown as File,
                 viewWrapper: {} as unknown as IViewWrapper,
@@ -775,16 +774,13 @@ describe("ImageRun", () => {
                     },
                 ],
             });
-
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any, functional/immutable-data
-            (global as any).atob = undefined;
         });
 
         it("should use data as is if its not a string", () => {
-            // eslint-disable-next-line functional/immutable-data
-            global.atob = () => "atob result";
+            vi.spyOn(global, "atob").mockReturnValue("atob result");
 
             const currentImageRun = new ImageRun({
+                type: "png",
                 data: "",
                 transformation: {
                     width: 200,
@@ -805,8 +801,7 @@ describe("ImageRun", () => {
             const tree = new Formatter().format(currentImageRun, {
                 file: {
                     Media: {
-                        // eslint-disable-next-line @typescript-eslint/no-empty-function
-                        addImage: () => {},
+                        addImage: vi.fn(),
                     },
                 } as unknown as File,
                 viewWrapper: {} as unknown as IViewWrapper,
@@ -1034,9 +1029,107 @@ describe("ImageRun", () => {
                     },
                 ],
             });
+        });
 
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any, functional/immutable-data
-            (global as any).atob = undefined;
+        it("should strip base64 marker", () => {
+            const spy = vi.spyOn(global, "atob").mockReturnValue("atob result");
+
+            new ImageRun({
+                type: "png",
+                data: ";base64,",
+                transformation: {
+                    width: 200,
+                    height: 200,
+                    rotation: 45,
+                },
+            });
+
+            expect(spy).toBeCalledWith("");
+        });
+
+        it("should work with svgs", () => {
+            const currentImageRun = new ImageRun({
+                type: "svg",
+                data: Buffer.from(""),
+                transformation: {
+                    width: 200,
+                    height: 200,
+                },
+                fallback: {
+                    type: "png",
+                    data: Buffer.from(""),
+                },
+            });
+
+            const tree = new Formatter().format(currentImageRun, {
+                file: {
+                    Media: {
+                        addImage: vi.fn(),
+                    },
+                } as unknown as File,
+                viewWrapper: {} as unknown as IViewWrapper,
+                stack: [],
+            });
+
+            expect(tree).toStrictEqual({
+                "w:r": [
+                    {
+                        "w:drawing": [
+                            {
+                                "wp:inline": expect.arrayContaining([
+                                    {
+                                        "a:graphic": expect.arrayContaining([
+                                            {
+                                                "a:graphicData": expect.arrayContaining([
+                                                    {
+                                                        "pic:pic": expect.arrayContaining([
+                                                            {
+                                                                "pic:blipFill": expect.arrayContaining([
+                                                                    {
+                                                                        "a:blip": [
+                                                                            {
+                                                                                _attr: {
+                                                                                    cstate: "none",
+                                                                                    "r:embed": "rId{test-unique-id.png}",
+                                                                                },
+                                                                            },
+                                                                            {
+                                                                                "a:extLst": [
+                                                                                    {
+                                                                                        "a:ext": [
+                                                                                            {
+                                                                                                _attr: {
+                                                                                                    uri: "{96DAC541-7B7A-43D3-8B79-37D633B846F1}",
+                                                                                                },
+                                                                                            },
+                                                                                            {
+                                                                                                "asvg:svgBlip": {
+                                                                                                    _attr: expect.objectContaining({
+                                                                                                        "r:embed":
+                                                                                                            "rId{test-unique-id.svg}",
+                                                                                                    }),
+                                                                                                },
+                                                                                            },
+                                                                                        ],
+                                                                                    },
+                                                                                ],
+                                                                            },
+                                                                        ],
+                                                                    },
+                                                                ]),
+                                                            },
+                                                        ]),
+                                                    },
+                                                ]),
+                                            },
+                                        ]),
+                                    },
+                                ]),
+                            },
+                        ],
+                    },
+                ],
+            });
         });
     });
 });

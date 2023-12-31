@@ -8,8 +8,9 @@ describe("Inline", () => {
         const tree = new Formatter().format(
             createInline({
                 mediaData: {
+                    type: "png",
                     fileName: "test.png",
-                    stream: Buffer.from(""),
+                    data: Buffer.from(""),
                     transformation: {
                         pixels: {
                             x: 0,

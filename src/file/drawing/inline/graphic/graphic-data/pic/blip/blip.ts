@@ -1,24 +1,24 @@
 import { IMediaData } from "@file/media";
-import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
+import { BuilderElement, XmlComponent } from "@file/xml-components";
+import { createExtentionList } from "./blip-extentions";
 
-class BlipAttributes extends XmlAttributeComponent<{
+type BlipAttributes = {
     readonly embed: string;
     readonly cstate: string;
-}> {
-    protected readonly xmlKeys = {
-        embed: "r:embed",
-        cstate: "cstate",
-    };
-}
+};
 
-export class Blip extends XmlComponent {
-    public constructor(mediaData: IMediaData) {
-        super("a:blip");
-        this.root.push(
-            new BlipAttributes({
-                embed: `rId{${mediaData.fileName}}`,
-                cstate: "none",
-            }),
-        );
-    }
-}
+export const createBlip = (mediaData: IMediaData): XmlComponent =>
+    new BuilderElement<BlipAttributes>({
+        name: "a:blip",
+        attributes: {
+            embed: {
+                key: "r:embed",
+                value: `rId{${mediaData.type === "svg" ? mediaData.fallback.fileName : mediaData.fileName}}`,
+            },
+            cstate: {
+                key: "cstate",
+                value: "none",
+            },
+        },
+        children: mediaData.type === "svg" ? [createExtentionList(mediaData)] : [],
+    });

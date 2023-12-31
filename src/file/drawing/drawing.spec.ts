@@ -11,8 +11,9 @@ const imageBase64Data = `iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAMAAAD04JH5AAACzVBMVEU
 const createDrawing = (drawingOptions?: IDrawingOptions): Drawing =>
     new Drawing(
         {
+            type: "jpg",
             fileName: "test.jpg",
-            stream: Buffer.from(imageBase64Data, "base64"),
+            data: Buffer.from(imageBase64Data, "base64"),
             transformation: {
                 pixels: {
                     x: 100,
