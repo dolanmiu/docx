@@ -98,11 +98,7 @@ const goToElementFromPath = (json: Element, path: readonly number[]): Element =>
     // Which we do not want to double count
     for (let i = 1; i < path.length; i++) {
         const index = path[i];
-        const nextElements = element.elements;
-
-        if (!nextElements) {
-            throw new Error("Could not find element");
-        }
+        const nextElements = element.elements!;
 
         element = nextElements[index];
     }
