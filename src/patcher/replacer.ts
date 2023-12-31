@@ -37,15 +37,15 @@ export const replacer = ({
 
         switch (patch.type) {
             case PatchType.DOCUMENT: {
-                const parentElement = goToParentElementFromPath(json, renderedParagraph.path);
-                const elementIndex = getLastElementIndexFromPath(renderedParagraph.path);
+                const parentElement = goToParentElementFromPath(json, renderedParagraph.pathToParagraph);
+                const elementIndex = getLastElementIndexFromPath(renderedParagraph.pathToParagraph);
                 // eslint-disable-next-line functional/immutable-data, prefer-destructuring
                 parentElement.elements!.splice(elementIndex, 1, ...textJson);
                 break;
             }
             case PatchType.PARAGRAPH:
             default: {
-                const paragraphElement = goToElementFromPath(json, renderedParagraph.path);
+                const paragraphElement = goToElementFromPath(json, renderedParagraph.pathToParagraph);
                 replaceTokenInParagraphElement({
                     paragraphElement,
                     renderedParagraph,

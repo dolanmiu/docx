@@ -124,7 +124,7 @@ describe("replacer", () => {
                             },
                         ],
                         index: 0,
-                        path: [0, 0, 0],
+                        pathToParagraph: [0, 0, 0],
                     },
                 ],
                 context: {
@@ -160,7 +160,7 @@ describe("replacer", () => {
                             },
                         ],
                         index: 0,
-                        path: [0, 0, 1],
+                        pathToParagraph: [0, 0, 1],
                     },
                 ],
                 context: {
@@ -255,7 +255,7 @@ describe("replacer", () => {
                             },
                         ],
                         index: 0,
-                        path: [0, 0, 0],
+                        pathToParagraph: [0, 0, 0],
                     },
                 ],
                 context: {
@@ -301,7 +301,7 @@ describe("replacer", () => {
                                 },
                             ],
                             index: 0,
-                            path: [0, 0, 0],
+                            pathToParagraph: [0, 0, 0],
                         },
                     ],
                     context: {
