@@ -157,6 +157,18 @@ describe("Compiler", () => {
                                             height: 100,
                                         },
                                     }),
+                                    new ImageRun({
+                                        type: "svg",
+                                        data: Buffer.from("", "base64"),
+                                        transformation: {
+                                            width: 100,
+                                            height: 100,
+                                        },
+                                        fallback: {
+                                            type: "png",
+                                            data: Buffer.from("", "base64"),
+                                        },
+                                    }),
                                 ],
                             }),
                         ],
@@ -177,6 +189,36 @@ describe("Compiler", () => {
                         emus: {
                             x: 100,
                             y: 100,
+                        },
+                    },
+                },
+                {
+                    type: "svg",
+                    data: Buffer.from(""),
+                    fileName: "test",
+                    transformation: {
+                        pixels: {
+                            x: 100,
+                            y: 100,
+                        },
+                        emus: {
+                            x: 100,
+                            y: 100,
+                        },
+                    },
+                    fallback: {
+                        type: "png",
+                        data: Buffer.from(""),
+                        fileName: "test",
+                        transformation: {
+                            pixels: {
+                                x: 100,
+                                y: 100,
+                            },
+                            emus: {
+                                x: 100,
+                                y: 100,
+                            },
                         },
                     },
                 },

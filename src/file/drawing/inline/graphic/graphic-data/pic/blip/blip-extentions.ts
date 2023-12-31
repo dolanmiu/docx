@@ -9,7 +9,7 @@ const createSvgBlip = (mediaData: IMediaData): XmlComponent =>
                 key: "xmlns:asvg",
                 value: "http://schemas.microsoft.com/office/drawing/2016/SVG/main",
             },
-            r: {
+            embed: {
                 key: "r:embed",
                 value: `rId{${mediaData.fileName}}`,
             },
