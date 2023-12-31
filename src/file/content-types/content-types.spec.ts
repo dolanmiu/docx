@@ -25,12 +25,13 @@ describe("ContentTypes", () => {
             expect(tree["Types"][3]).to.deep.equal({ Default: { _attr: { ContentType: "image/jpeg", Extension: "jpg" } } });
             expect(tree["Types"][4]).to.deep.equal({ Default: { _attr: { ContentType: "image/bmp", Extension: "bmp" } } });
             expect(tree["Types"][5]).to.deep.equal({ Default: { _attr: { ContentType: "image/gif", Extension: "gif" } } });
-            expect(tree["Types"][6]).to.deep.equal({
+            expect(tree["Types"][6]).to.deep.equal({ Default: { _attr: { ContentType: "image/svg+xml", Extension: "svg" } } });
+            expect(tree["Types"][7]).to.deep.equal({
                 Default: { _attr: { ContentType: "application/vnd.openxmlformats-package.relationships+xml", Extension: "rels" } },
             });
-            expect(tree["Types"][7]).to.deep.equal({ Default: { _attr: { ContentType: "application/xml", Extension: "xml" } } });
+            expect(tree["Types"][8]).to.deep.equal({ Default: { _attr: { ContentType: "application/xml", Extension: "xml" } } });
 
-            expect(tree["Types"][8]).to.deep.equal({
+            expect(tree["Types"][9]).to.deep.equal({
                 Default: {
                     _attr: {
                         ContentType: "application/vnd.openxmlformats-officedocument.obfuscatedFont",
@@ -38,7 +39,7 @@ describe("ContentTypes", () => {
                     },
                 },
             });
-            expect(tree["Types"][9]).to.deep.equal({
+            expect(tree["Types"][10]).to.deep.equal({
                 Override: {
                     _attr: {
                         ContentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml",
@@ -46,7 +47,7 @@ describe("ContentTypes", () => {
                     },
                 },
             });
-            expect(tree["Types"][10]).to.deep.equal({
+            expect(tree["Types"][11]).to.deep.equal({
                 Override: {
                     _attr: {
                         ContentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml",
@@ -54,7 +55,7 @@ describe("ContentTypes", () => {
                     },
                 },
             });
-            expect(tree["Types"][11]).to.deep.equal({
+            expect(tree["Types"][12]).to.deep.equal({
                 Override: {
                     _attr: {
                         ContentType: "application/vnd.openxmlformats-package.core-properties+xml",
@@ -62,7 +63,7 @@ describe("ContentTypes", () => {
                     },
                 },
             });
-            expect(tree["Types"][12]).to.deep.equal({
+            expect(tree["Types"][13]).to.deep.equal({
                 Override: {
                     _attr: {
                         ContentType: "application/vnd.openxmlformats-officedocument.custom-properties+xml",
@@ -70,7 +71,7 @@ describe("ContentTypes", () => {
                     },
                 },
             });
-            expect(tree["Types"][13]).to.deep.equal({
+            expect(tree["Types"][14]).to.deep.equal({
                 Override: {
                     _attr: {
                         ContentType: "application/vnd.openxmlformats-officedocument.extended-properties+xml",
@@ -78,7 +79,7 @@ describe("ContentTypes", () => {
                     },
                 },
             });
-            expect(tree["Types"][14]).to.deep.equal({
+            expect(tree["Types"][15]).to.deep.equal({
                 Override: {
                     _attr: {
                         ContentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml",
@@ -86,7 +87,7 @@ describe("ContentTypes", () => {
                     },
                 },
             });
-            expect(tree["Types"][15]).to.deep.equal({
+            expect(tree["Types"][16]).to.deep.equal({
                 Override: {
                     _attr: {
                         ContentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.footnotes+xml",
@@ -94,7 +95,7 @@ describe("ContentTypes", () => {
                     },
                 },
             });
-            expect(tree["Types"][16]).to.deep.equal({
+            expect(tree["Types"][17]).to.deep.equal({
                 Override: {
                     _attr: {
                         ContentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.settings+xml",
@@ -111,7 +112,7 @@ describe("ContentTypes", () => {
             contentTypes.addFooter(102);
             const tree = new Formatter().format(contentTypes);
 
-            expect(tree["Types"][19]).to.deep.equal({
+            expect(tree["Types"][20]).to.deep.equal({
                 Override: {
                     _attr: {
                         ContentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.footer+xml",
@@ -120,7 +121,7 @@ describe("ContentTypes", () => {
                 },
             });
 
-            expect(tree["Types"][20]).to.deep.equal({
+            expect(tree["Types"][21]).to.deep.equal({
                 Override: {
                     _attr: {
                         ContentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.footer+xml",
@@ -137,7 +138,7 @@ describe("ContentTypes", () => {
             contentTypes.addHeader(202);
             const tree = new Formatter().format(contentTypes);
 
-            expect(tree["Types"][19]).to.deep.equal({
+            expect(tree["Types"][20]).to.deep.equal({
                 Override: {
                     _attr: {
                         ContentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.header+xml",
@@ -146,7 +147,7 @@ describe("ContentTypes", () => {
                 },
             });
 
-            expect(tree["Types"][20]).to.deep.equal({
+            expect(tree["Types"][21]).to.deep.equal({
                 Override: {
                     _attr: {
                         ContentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.header+xml",

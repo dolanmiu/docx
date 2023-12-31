@@ -28,7 +28,7 @@ const createExtention = (mediaData: IMediaData): XmlComponent =>
         children: [createSvgBlip(mediaData)],
     });
 
-export const createBlipExtention = (mediaData: IMediaData): XmlComponent =>
+export const createExtentionList = (mediaData: IMediaData): XmlComponent =>
     new BuilderElement({
         name: "a:extLst",
         children: [createExtention(mediaData)],

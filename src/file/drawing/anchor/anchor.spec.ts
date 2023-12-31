@@ -11,8 +11,9 @@ import { Anchor } from "./anchor";
 const createAnchor = (drawingOptions: IDrawingOptions): Anchor =>
     new Anchor({
         mediaData: {
+            type: "png",
             fileName: "test.png",
-            stream: Buffer.from(""),
+            data: Buffer.from(""),
             transformation: {
                 pixels: {
                     x: 0,

@@ -76,7 +76,7 @@ patchDocument(fs.readFileSync("My Document.docx"), {
                             ],
                             link: "https://www.google.co.uk",
                         }),
-                        new ImageRun({ data: fs.readFileSync("./demo/images/dog.png"), transformation: { width: 100, height: 100 } }),
+                        new ImageRun({ type: 'png', data: fs.readFileSync("./demo/images/dog.png"), transformation: { width: 100, height: 100 } }),
                     ],
                 }),
             ],

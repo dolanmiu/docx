@@ -19,6 +19,7 @@ describe("ImageRun", () => {
     describe("#constructor()", () => {
         it("should create with Buffer", () => {
             const currentImageRun = new ImageRun({
+                type: "png",
                 data: Buffer.from(""),
                 transformation: {
                     width: 200,
@@ -271,6 +272,7 @@ describe("ImageRun", () => {
 
         it("should create with string", () => {
             const currentImageRun = new ImageRun({
+                type: "png",
                 data: "",
                 transformation: {
                     width: 200,
@@ -526,6 +528,7 @@ describe("ImageRun", () => {
             global.atob = () => "atob result";
 
             const currentImageRun = new ImageRun({
+                type: "png",
                 data: "",
                 transformation: {
                     width: 200,
@@ -785,6 +788,7 @@ describe("ImageRun", () => {
             global.atob = () => "atob result";
 
             const currentImageRun = new ImageRun({
+                type: "png",
                 data: "",
                 transformation: {
                     width: 200,

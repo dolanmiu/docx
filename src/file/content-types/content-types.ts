@@ -18,6 +18,7 @@ export class ContentTypes extends XmlComponent {
         this.root.push(new Default("image/jpeg", "jpg"));
         this.root.push(new Default("image/bmp", "bmp"));
         this.root.push(new Default("image/gif", "gif"));
+        this.root.push(new Default("image/svg+xml", "svg"));
         this.root.push(new Default("application/vnd.openxmlformats-package.relationships+xml", "rels"));
         this.root.push(new Default("application/xml", "xml"));
         this.root.push(new Default("application/vnd.openxmlformats-officedocument.obfuscatedFont", "odttf"));

@@ -150,6 +150,7 @@ describe("Compiler", () => {
                             new Paragraph({
                                 children: [
                                     new ImageRun({
+                                        type: "png",
                                         data: Buffer.from("", "base64"),
                                         transformation: {
                                             width: 100,
@@ -165,7 +166,8 @@ describe("Compiler", () => {
 
             vi.spyOn(compiler["imageReplacer"], "getMediaData").mockReturnValue([
                 {
-                    stream: Buffer.from(""),
+                    type: "png",
+                    data: Buffer.from(""),
                     fileName: "test",
                     transformation: {
                         pixels: {

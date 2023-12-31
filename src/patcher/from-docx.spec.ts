@@ -254,6 +254,7 @@ describe("from-docx", () => {
                                             link: "https://www.google.co.uk",
                                         }),
                                         new ImageRun({
+                                            type: "png",
                                             data: Buffer.from(""),
                                             transformation: { width: 100, height: 100 },
                                         }),
@@ -266,6 +267,7 @@ describe("from-docx", () => {
                             type: PatchType.PARAGRAPH,
                             children: [
                                 new ImageRun({
+                                    type: "png",
                                     data: Buffer.from(""),
                                     transformation: { width: 100, height: 100 },
                                 }),
@@ -310,6 +312,7 @@ describe("from-docx", () => {
                             type: PatchType.PARAGRAPH,
                             children: [
                                 new ImageRun({
+                                    type: "png",
                                     data: Buffer.from(""),
                                     transformation: { width: 100, height: 100 },
                                 }),
@@ -354,6 +357,7 @@ describe("from-docx", () => {
                                 type: PatchType.PARAGRAPH,
                                 children: [
                                     new ImageRun({
+                                        type: "png",
                                         data: Buffer.from(""),
                                         transformation: { width: 100, height: 100 },
                                     }),
@@ -391,6 +395,7 @@ describe("from-docx", () => {
                                 type: PatchType.PARAGRAPH,
                                 children: [
                                     new ImageRun({
+                                        type: "png",
                                         data: Buffer.from(""),
                                         transformation: { width: 100, height: 100 },
                                     }),

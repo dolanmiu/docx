@@ -215,7 +215,7 @@ export const patchDocument = async (data: InputDataType, options: PatchDocumentO
         zip.file(key, value);
     }
 
-    for (const { stream, fileName } of file.Media.Array) {
+    for (const { data: stream, fileName } of file.Media.Array) {
         zip.file(`word/media/${fileName}`, stream);
     }
 
