@@ -22,8 +22,11 @@ const patches = getPatches({
     "first-name": "John",
 });
 
-patchDocument(fs.readFileSync("demo/assets/simple-template-3.docx"), {
+patchDocument({
+    outputType: "nodebuffer",
+    data: fs.readFileSync("demo/assets/simple-template-3.docx"),
     patches,
+    keepOriginalStyles: true,
 }).then((doc) => {
     fs.writeFileSync("My Document.docx", doc);
 });

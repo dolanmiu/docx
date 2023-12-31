@@ -16,7 +16,9 @@ import {
     VerticalAlign,
 } from "docx";
 
-patchDocument(fs.readFileSync("demo/assets/simple-template.docx"), {
+patchDocument({
+    outputType: "nodebuffer",
+    data: fs.readFileSync("demo/assets/simple-template.docx"),
     patches: {
         name: {
             type: PatchType.PARAGRAPH,
@@ -56,7 +58,11 @@ patchDocument(fs.readFileSync("demo/assets/simple-template.docx"), {
                             ],
                             link: "https://www.google.co.uk",
                         }),
-                        new ImageRun({ data: fs.readFileSync("./demo/images/dog.png"), transformation: { width: 100, height: 100 } }),
+                        new ImageRun({
+                            type: "png",
+                            data: fs.readFileSync("./demo/images/dog.png"),
+                            transformation: { width: 100, height: 100 },
+                        }),
                     ],
                 }),
             ],
@@ -82,7 +88,13 @@ patchDocument(fs.readFileSync("demo/assets/simple-template.docx"), {
         },
         image_test: {
             type: PatchType.PARAGRAPH,
-            children: [new ImageRun({ data: fs.readFileSync("./demo/images/image1.jpeg"), transformation: { width: 100, height: 100 } })],
+            children: [
+                new ImageRun({
+                    type: "jpg",
+                    data: fs.readFileSync("./demo/images/image1.jpeg"),
+                    transformation: { width: 100, height: 100 },
+                }),
+            ],
         },
         table: {
             type: PatchType.DOCUMENT,

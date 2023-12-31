@@ -12,7 +12,6 @@ import { TargetModeType } from "@file/relationships/relationship/relationship";
 import { uniqueId } from "@util/convenience-functions";
 
 import { replacer } from "./replacer";
-import { findLocationOfText } from "./traverser";
 import { toJson } from "./util";
 import { appendRelationship, getNextRelationshipIndex } from "./relationship-manager";
 import { appendContentType } from "./content-types-manager";
@@ -47,14 +46,37 @@ interface IHyperlinkRelationshipAddition {
 
 export type IPatch = ParagraphPatch | FilePatch;
 
-export interface PatchDocumentOptions {
+// From JSZip
+type OutputByType = {
+    readonly base64: string;
+    // eslint-disable-next-line id-denylist
+    readonly string: string;
+    readonly text: string;
+    readonly binarystring: string;
+    readonly array: readonly number[];
+    readonly uint8array: Uint8Array;
+    readonly arraybuffer: ArrayBuffer;
+    readonly blob: Blob;
+    readonly nodebuffer: Buffer;
+};
+
+export type PatchDocumentOutputType = keyof OutputByType;
+
+export type PatchDocumentOptions<T extends PatchDocumentOutputType = PatchDocumentOutputType> = {
+    readonly outputType: T;
+    readonly data: InputDataType;
     readonly patches: { readonly [key: string]: IPatch };
     readonly keepOriginalStyles?: boolean;
-}
+};
 
 const imageReplacer = new ImageReplacer();
 
-export const patchDocument = async (data: InputDataType, options: PatchDocumentOptions): Promise<Uint8Array> => {
+export const patchDocument = async <T extends PatchDocumentOutputType = PatchDocumentOutputType>({
+    outputType,
+    data,
+    patches,
+    keepOriginalStyles,
+}: PatchDocumentOptions<T>): Promise<OutputByType[T]> => {
     const zipContent = await JSZip.loadAsync(data);
     const contexts = new Map<string, IContext>();
     const file = {
@@ -104,38 +126,48 @@ export const patchDocument = async (data: InputDataType, options: PatchDocumentO
             };
             contexts.set(key, context);
 
-            for (const [patchKey, patchValue] of Object.entries(options.patches)) {
+            for (const [patchKey, patchValue] of Object.entries(patches)) {
                 const patchText = `{{${patchKey}}}`;
-                const renderedParagraphs = findLocationOfText(json, patchText);
                 // TODO: mutates json. Make it immutable
-                replacer(
-                    json,
-                    {
-                        ...patchValue,
-                        children: patchValue.children.map((element) => {
-                            // We need to replace external hyperlinks with concrete hyperlinks
-                            if (element instanceof ExternalHyperlink) {
-                                const concreteHyperlink = new ConcreteHyperlink(element.options.children, uniqueId());
-                                // eslint-disable-next-line functional/immutable-data
-                                hyperlinkRelationshipAdditions.push({
-                                    key,
-                                    hyperlink: {
-                                        id: concreteHyperlink.linkId,
-                                        link: element.options.link,
-                                    },
-                                });
-                                return concreteHyperlink;
-                            } else {
-                                return element;
-                            }
-                        }),
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    } as any,
-                    patchText,
-                    renderedParagraphs,
-                    context,
-                    options.keepOriginalStyles,
-                );
+                // We need to loop through to catch every occurrence of the patch text
+                // It is possible that the patch text is in the same run
+                // This algorithm is limited to one patch per text run
+                // Once it cannot find any more occurrences, it will throw an error, and then we break out of the loop
+                // https://github.com/dolanmiu/docx/issues/2267
+                // eslint-disable-next-line no-constant-condition
+                while (true) {
+                    try {
+                        replacer({
+                            json,
+                            patch: {
+                                ...patchValue,
+                                children: patchValue.children.map((element) => {
+                                    // We need to replace external hyperlinks with concrete hyperlinks
+                                    if (element instanceof ExternalHyperlink) {
+                                        const concreteHyperlink = new ConcreteHyperlink(element.options.children, uniqueId());
+                                        // eslint-disable-next-line functional/immutable-data
+                                        hyperlinkRelationshipAdditions.push({
+                                            key,
+                                            hyperlink: {
+                                                id: concreteHyperlink.linkId,
+                                                link: element.options.link,
+                                            },
+                                        });
+                                        return concreteHyperlink;
+                                    } else {
+                                        return element;
+                                    }
+                                }),
+                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                            } as any,
+                            patchText,
+                            context,
+                            keepOriginalStyles,
+                        });
+                    } catch {
+                        break;
+                    }
+                }
             }
 
             const mediaDatas = imageReplacer.getMediaData(JSON.stringify(json), context.file.Media);
@@ -201,6 +233,7 @@ export const patchDocument = async (data: InputDataType, options: PatchDocumentO
         appendContentType(contentTypesJson, "image/jpeg", "jpg");
         appendContentType(contentTypesJson, "image/bmp", "bmp");
         appendContentType(contentTypesJson, "image/gif", "gif");
+        appendContentType(contentTypesJson, "image/svg+xml", "svg");
     }
 
     const zip = new JSZip();
@@ -220,7 +253,7 @@ export const patchDocument = async (data: InputDataType, options: PatchDocumentO
     }
 
     return zip.generateAsync({
-        type: "uint8array",
+        type: outputType,
         mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         compression: "DEFLATE",
     });

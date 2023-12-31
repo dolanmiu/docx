@@ -27,7 +27,7 @@ describe("paragraph-token-replacer", () => {
                 },
                 renderedParagraph: {
                     index: 0,
-                    path: [0],
+                    pathToParagraph: [0],
                     runs: [
                         {
                             end: 4,
@@ -128,7 +128,7 @@ describe("paragraph-token-replacer", () => {
                         { text: "World", parts: [{ text: "World", index: 0, start: 15, end: 19 }], index: 3, start: 15, end: 19 },
                     ],
                     index: 0,
-                    path: [0, 1, 0, 0],
+                    pathToParagraph: [0, 1, 0, 0],
                 },
                 originalText: "{{name}}",
                 replacementText: "John",

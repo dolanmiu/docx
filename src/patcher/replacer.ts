@@ -6,22 +6,33 @@ import { IContext, XmlComponent } from "@file/xml-components";
 
 import { IPatch, PatchType } from "./from-docx";
 import { toJson } from "./util";
-import { IRenderedParagraphNode } from "./run-renderer";
 import { replaceTokenInParagraphElement } from "./paragraph-token-replacer";
 import { findRunElementIndexWithToken, splitRunElement } from "./paragraph-split-inject";
+import { findLocationOfText } from "./traverser";
 
 const formatter = new Formatter();
 
 const SPLIT_TOKEN = "ɵ";
 
-export const replacer = (
-    json: Element,
-    patch: IPatch,
-    patchText: string,
-    renderedParagraphs: readonly IRenderedParagraphNode[],
-    context: IContext,
-    keepOriginalStyles: boolean = false,
-): Element => {
+export const replacer = ({
+    json,
+    patch,
+    patchText,
+    context,
+    keepOriginalStyles = true,
+}: {
+    readonly json: Element;
+    readonly patch: IPatch;
+    readonly patchText: string;
+    readonly context: IContext;
+    readonly keepOriginalStyles?: boolean;
+}): Element => {
+    const renderedParagraphs = findLocationOfText(json, patchText);
+
+    if (renderedParagraphs.length === 0) {
+        throw new Error(`Could not find text ${patchText}`);
+    }
+
     for (const renderedParagraph of renderedParagraphs) {
         const textJson = patch.children
             // eslint-disable-next-line no-loop-func
@@ -30,15 +41,15 @@ export const replacer = (
 
         switch (patch.type) {
             case PatchType.DOCUMENT: {
-                const parentElement = goToParentElementFromPath(json, renderedParagraph.path);
-                const elementIndex = getLastElementIndexFromPath(renderedParagraph.path);
+                const parentElement = goToParentElementFromPath(json, renderedParagraph.pathToParagraph);
+                const elementIndex = getLastElementIndexFromPath(renderedParagraph.pathToParagraph);
                 // eslint-disable-next-line functional/immutable-data, prefer-destructuring
                 parentElement.elements!.splice(elementIndex, 1, ...textJson);
                 break;
             }
             case PatchType.PARAGRAPH:
             default: {
-                const paragraphElement = goToElementFromPath(json, renderedParagraph.path);
+                const paragraphElement = goToElementFromPath(json, renderedParagraph.pathToParagraph);
                 replaceTokenInParagraphElement({
                     paragraphElement,
                     renderedParagraph,
@@ -87,11 +98,7 @@ const goToElementFromPath = (json: Element, path: readonly number[]): Element =>
     // Which we do not want to double count
     for (let i = 1; i < path.length; i++) {
         const index = path[i];
-        const nextElements = element.elements;
-
-        if (!nextElements) {
-            throw new Error("Could not find element");
-        }
+        const nextElements = element.elements!;
 
         element = nextElements[index];
     }

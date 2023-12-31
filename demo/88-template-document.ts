@@ -24,7 +24,9 @@ const patches = getPatches({
     paragraph_replace: "Lorem ipsum paragraph",
 });
 
-patchDocument(fs.readFileSync("demo/assets/simple-template.docx"), {
+patchDocument({
+    outputType: "nodebuffer",
+    data: fs.readFileSync("demo/assets/simple-template.docx"),
     patches,
 }).then((doc) => {
     fs.writeFileSync("My Document.docx", doc);

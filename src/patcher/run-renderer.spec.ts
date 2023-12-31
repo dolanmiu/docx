@@ -7,7 +7,7 @@ describe("run-renderer", () => {
             const output = renderParagraphNode({ element: { name: "w:p" }, index: 0, parent: undefined });
             expect(output).to.deep.equal({
                 index: -1,
-                path: [],
+                pathToParagraph: [],
                 runs: [],
                 text: "",
             });
@@ -39,7 +39,7 @@ describe("run-renderer", () => {
             });
             expect(output).to.deep.equal({
                 index: 0,
-                path: [0],
+                pathToParagraph: [0],
                 runs: [
                     {
                         end: 4,
@@ -79,7 +79,7 @@ describe("run-renderer", () => {
             });
             expect(output).to.deep.equal({
                 index: 0,
-                path: [0],
+                pathToParagraph: [0],
                 runs: [
                     {
                         end: 0,

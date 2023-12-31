@@ -6,7 +6,7 @@ export interface IRenderedParagraphNode {
     readonly text: string;
     readonly runs: readonly IRenderedRunNode[];
     readonly index: number;
-    readonly path: readonly number[];
+    readonly pathToParagraph: readonly number[];
 }
 
 interface StartAndEnd {
@@ -35,7 +35,7 @@ export const renderParagraphNode = (node: ElementWrapper): IRenderedParagraphNod
             text: "",
             runs: [],
             index: -1,
-            path: [],
+            pathToParagraph: [],
         };
     }
 
@@ -50,8 +50,7 @@ export const renderParagraphNode = (node: ElementWrapper): IRenderedParagraphNod
 
             return renderedRunNode;
         })
-        .filter((e) => !!e)
-        .map((e) => e as IRenderedRunNode);
+        .filter((e) => !!e);
 
     const text = runs.reduce((acc, curr) => acc + curr.text, "");
 
@@ -59,7 +58,7 @@ export const renderParagraphNode = (node: ElementWrapper): IRenderedParagraphNod
         text,
         runs,
         index: node.index,
-        path: buildNodePath(node),
+        pathToParagraph: buildNodePath(node),
     };
 };
 
