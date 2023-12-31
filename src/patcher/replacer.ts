@@ -14,14 +14,21 @@ const formatter = new Formatter();
 
 const SPLIT_TOKEN = "ɵ";
 
-export const replacer = (
-    json: Element,
-    patch: IPatch,
-    patchText: string,
-    renderedParagraphs: readonly IRenderedParagraphNode[],
-    context: IContext,
-    keepOriginalStyles: boolean = false,
-): Element => {
+export const replacer = ({
+    json,
+    patch,
+    patchText,
+    renderedParagraphs,
+    context,
+    keepOriginalStyles = false,
+}: {
+    readonly json: Element;
+    readonly patch: IPatch;
+    readonly patchText: string;
+    readonly renderedParagraphs: readonly IRenderedParagraphNode[];
+    readonly context: IContext;
+    readonly keepOriginalStyles?: boolean;
+}): Element => {
     for (const renderedParagraph of renderedParagraphs) {
         const textJson = patch.children
             // eslint-disable-next-line no-loop-func

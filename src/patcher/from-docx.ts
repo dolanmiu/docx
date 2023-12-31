@@ -47,14 +47,37 @@ interface IHyperlinkRelationshipAddition {
 
 export type IPatch = ParagraphPatch | FilePatch;
 
-export interface PatchDocumentOptions {
+// From JSZip
+type OutputByType = {
+    readonly base64: string;
+    // eslint-disable-next-line id-denylist
+    readonly string: string;
+    readonly text: string;
+    readonly binarystring: string;
+    readonly array: readonly number[];
+    readonly uint8array: Uint8Array;
+    readonly arraybuffer: ArrayBuffer;
+    readonly blob: Blob;
+    readonly nodebuffer: Buffer;
+};
+
+export type PatchDocumentOutputType = keyof OutputByType;
+
+export type PatchDocumentOptions<T extends PatchDocumentOutputType = PatchDocumentOutputType> = {
+    readonly outputType: T;
+    readonly data: InputDataType;
     readonly patches: { readonly [key: string]: IPatch };
     readonly keepOriginalStyles?: boolean;
-}
+};
 
 const imageReplacer = new ImageReplacer();
 
-export const patchDocument = async (data: InputDataType, options: PatchDocumentOptions): Promise<Uint8Array> => {
+export const patchDocument = async <T extends PatchDocumentOutputType = PatchDocumentOutputType>({
+    outputType,
+    data,
+    patches,
+    keepOriginalStyles,
+}: PatchDocumentOptions<T>): Promise<OutputByType[T]> => {
     const zipContent = await JSZip.loadAsync(data);
     const contexts = new Map<string, IContext>();
     const file = {
@@ -104,13 +127,13 @@ export const patchDocument = async (data: InputDataType, options: PatchDocumentO
             };
             contexts.set(key, context);
 
-            for (const [patchKey, patchValue] of Object.entries(options.patches)) {
+            for (const [patchKey, patchValue] of Object.entries(patches)) {
                 const patchText = `{{${patchKey}}}`;
                 const renderedParagraphs = findLocationOfText(json, patchText);
                 // TODO: mutates json. Make it immutable
-                replacer(
+                replacer({
                     json,
-                    {
+                    patch: {
                         ...patchValue,
                         children: patchValue.children.map((element) => {
                             // We need to replace external hyperlinks with concrete hyperlinks
@@ -134,8 +157,8 @@ export const patchDocument = async (data: InputDataType, options: PatchDocumentO
                     patchText,
                     renderedParagraphs,
                     context,
-                    options.keepOriginalStyles,
-                );
+                    keepOriginalStyles,
+                });
             }
 
             const mediaDatas = imageReplacer.getMediaData(JSON.stringify(json), context.file.Media);
@@ -201,6 +224,7 @@ export const patchDocument = async (data: InputDataType, options: PatchDocumentO
         appendContentType(contentTypesJson, "image/jpeg", "jpg");
         appendContentType(contentTypesJson, "image/bmp", "bmp");
         appendContentType(contentTypesJson, "image/gif", "gif");
+        appendContentType(contentTypesJson, "image/svg+xml", "svg");
     }
 
     const zip = new JSZip();
@@ -220,7 +244,7 @@ export const patchDocument = async (data: InputDataType, options: PatchDocumentO
     }
 
     return zip.generateAsync({
-        type: "uint8array",
+        type: outputType,
         mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         compression: "DEFLATE",
     });

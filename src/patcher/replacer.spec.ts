@@ -74,19 +74,19 @@ const MOCK_JSON = {
 describe("replacer", () => {
     describe("replacer", () => {
         it("should return the same object if nothing is added", () => {
-            const output = replacer(
-                {
+            const output = replacer({
+                json: {
                     elements: [],
                 },
-                {
+                patch: {
                     type: PatchType.PARAGRAPH,
                     children: [],
                 },
-                "hello",
-                [],
+                patchText: "hello",
+                renderedParagraphs: [],
                 // eslint-disable-next-line functional/prefer-readonly-type
-                vi.fn<[], IContext>()(),
-            );
+                context: vi.fn<[], IContext>()(),
+            });
 
             expect(output).to.deep.equal({
                 elements: [],
@@ -94,14 +94,16 @@ describe("replacer", () => {
         });
 
         it("should replace paragraph type", () => {
-            const output = replacer(
-                MOCK_JSON,
-                {
+            const output = replacer({
+                json: MOCK_JSON,
+
+                patch: {
                     type: PatchType.PARAGRAPH,
                     children: [new TextRun("Delightful Header")],
                 },
-                "{{header_adjective}}",
-                [
+                patchText: "{{header_adjective}}",
+
+                renderedParagraphs: [
                     {
                         text: "This is a {{header_adjective}} don’t you think?",
                         runs: [
@@ -125,27 +127,27 @@ describe("replacer", () => {
                         path: [0, 0, 0],
                     },
                 ],
-                {
+                context: {
                     file: {} as unknown as File,
                     viewWrapper: {
                         Relationships: {},
                     } as unknown as IViewWrapper,
                     stack: [],
                 },
-            );
+            });
 
             expect(JSON.stringify(output)).to.contain("Delightful Header");
         });
 
         it("should replace paragraph type keeping original styling if keepOriginalStyles is true", () => {
-            const output = replacer(
-                MOCK_JSON,
-                {
+            const output = replacer({
+                json: MOCK_JSON,
+                patch: {
                     type: PatchType.PARAGRAPH,
                     children: [new TextRun("sweet")],
                 },
-                "{{bold}}",
-                [
+                patchText: "{{bold}}",
+                renderedParagraphs: [
                     {
                         text: "What a {{bold}} text!",
                         runs: [
@@ -161,15 +163,15 @@ describe("replacer", () => {
                         path: [0, 0, 1],
                     },
                 ],
-                {
+                context: {
                     file: {} as unknown as File,
                     viewWrapper: {
                         Relationships: {},
                     } as unknown as IViewWrapper,
                     stack: [],
                 },
-                true,
-            );
+                keepOriginalStyles: true,
+            });
 
             expect(JSON.stringify(output)).to.contain("sweet");
             expect(output.elements![0].elements![1].elements).toMatchObject([
@@ -225,14 +227,14 @@ describe("replacer", () => {
         });
 
         it("should replace document type", () => {
-            const output = replacer(
-                MOCK_JSON,
-                {
+            const output = replacer({
+                json: MOCK_JSON,
+                patch: {
                     type: PatchType.DOCUMENT,
                     children: [new Paragraph("Lorem ipsum paragraph")],
                 },
-                "{{header_adjective}}",
-                [
+                patchText: "{{header_adjective}}",
+                renderedParagraphs: [
                     {
                         text: "This is a {{header_adjective}} don’t you think?",
                         runs: [
@@ -256,28 +258,29 @@ describe("replacer", () => {
                         path: [0, 0, 0],
                     },
                 ],
-                {
+                context: {
                     file: {} as unknown as File,
                     viewWrapper: {
                         Relationships: {},
                     } as unknown as IViewWrapper,
                     stack: [],
                 },
-            );
+            });
 
             expect(JSON.stringify(output)).to.contain("Lorem ipsum paragraph");
         });
 
         it("should throw an error if the type is not supported", () => {
             expect(() =>
-                replacer(
-                    {},
-                    {
+                replacer({
+                    json: {},
+                    patch: {
                         type: PatchType.DOCUMENT,
                         children: [new Paragraph("Lorem ipsum paragraph")],
                     },
-                    "{{header_adjective}}",
-                    [
+                    patchText: "{{header_adjective}}",
+
+                    renderedParagraphs: [
                         {
                             text: "This is a {{header_adjective}} don’t you think?",
                             runs: [
@@ -301,14 +304,14 @@ describe("replacer", () => {
                             path: [0, 0, 0],
                         },
                     ],
-                    {
+                    context: {
                         file: {} as unknown as File,
                         viewWrapper: {
                             Relationships: {},
                         } as unknown as IViewWrapper,
                         stack: [],
                     },
-                ),
+                }),
             ).to.throw();
         });
     });

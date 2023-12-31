@@ -218,7 +218,9 @@ describe("from-docx", () => {
             });
 
             it("should patch the document", async () => {
-                const output = await patchDocument(Buffer.from(""), {
+                const output = await patchDocument({
+                    outputType: "uint8array",
+                    data: Buffer.from(""),
                     patches: {
                         name: {
                             type: PatchType.PARAGRAPH,
@@ -279,7 +281,9 @@ describe("from-docx", () => {
             });
 
             it("should patch the document", async () => {
-                const output = await patchDocument(Buffer.from(""), {
+                const output = await patchDocument({
+                    outputType: "uint8array",
+                    data: Buffer.from(""),
                     patches: {},
                 });
                 expect(output).to.not.be.undefined;
@@ -305,7 +309,9 @@ describe("from-docx", () => {
             });
 
             it("should use the relationships file rather than create one", async () => {
-                const output = await patchDocument(Buffer.from(""), {
+                const output = await patchDocument({
+                    outputType: "uint8array",
+                    data: Buffer.from(""),
                     patches: {
                         // eslint-disable-next-line @typescript-eslint/naming-convention
                         image_test: {
@@ -350,7 +356,9 @@ describe("from-docx", () => {
 
             it("should throw an error if the content types is not found", () =>
                 expect(
-                    patchDocument(Buffer.from(""), {
+                    patchDocument({
+                        outputType: "uint8array",
+                        data: Buffer.from(""),
                         patches: {
                             // eslint-disable-next-line @typescript-eslint/naming-convention
                             image_test: {
@@ -388,7 +396,9 @@ describe("from-docx", () => {
 
             it("should throw an error if the content types is not found", () =>
                 expect(
-                    patchDocument(Buffer.from(""), {
+                    patchDocument({
+                        outputType: "uint8array",
+                        data: Buffer.from(""),
                         patches: {
                             // eslint-disable-next-line @typescript-eslint/naming-convention
                             image_test: {
