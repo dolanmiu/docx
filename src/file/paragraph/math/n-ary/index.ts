@@ -6,3 +6,6 @@ export * from "./math-sub-script";
 export * from "./math-sum";
 export * from "./math-integral";
 export * from "./math-super-script";
+export * from "./math-limit";
+export * from "./math-limit-upper";
+export * from "./math-limit-lower";
