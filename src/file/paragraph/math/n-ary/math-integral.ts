@@ -16,7 +16,7 @@ export class MathIntegral extends XmlComponent {
     public constructor(options: IMathIntegralOptions) {
         super("m:nary");
 
-        this.root.push(new MathNAryProperties("", !!options.superScript, !!options.subScript));
+        this.root.push(new MathNAryProperties("", !!options.superScript, !!options.subScript, "subSup"));
 
         if (!!options.subScript) {
             this.root.push(new MathSubScriptElement(options.subScript));

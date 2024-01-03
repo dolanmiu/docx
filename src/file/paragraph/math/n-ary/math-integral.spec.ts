@@ -22,7 +22,7 @@ describe("MathIntegral", () => {
                             {
                                 "m:limLoc": {
                                     _attr: {
-                                        "m:val": "undOvr",
+                                        "m:val": "subSup",
                                     },
                                 },
                             },
@@ -78,7 +78,7 @@ describe("MathIntegral", () => {
                             {
                                 "m:limLoc": {
                                     _attr: {
-                                        "m:val": "undOvr",
+                                        "m:val": "subSup",
                                     },
                                 },
                             },
