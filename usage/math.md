@@ -263,3 +263,23 @@ new MathAngledBrackets({
     ],
 }),
 ```
+
+### Limit
+
+#### Limit Upper
+
+```ts
+new MathLimitUpper({
+    children: [new MathRun("x")],
+    limit: [new MathRun("-")],
+}),
+```
+
+#### Limit Lower
+
+```ts
+new MathLimitLower({
+    children: [new MathRun("lim")],
+    limit: [new MathRun("x→0")],
+}),
+```
