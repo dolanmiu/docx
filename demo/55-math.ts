@@ -21,6 +21,8 @@ import {
     Packer,
     Paragraph,
     TextRun,
+    MathLimitLower,
+    MathLimitUpper,
 } from "docx";
 
 const doc = new Document({
@@ -311,6 +313,23 @@ const doc = new Document({
                                         }),
                                     ],
                                     denominator: [new MathRun("2a")],
+                                }),
+                            ],
+                        }),
+                    ],
+                }),
+                new Paragraph({
+                    children: [
+                        new Math({
+                            children: [
+                                new MathLimitUpper({
+                                    children: [new MathRun("x")],
+                                    limit: [new MathRun("-")],
+                                }),
+                                new MathRun("="),
+                                new MathLimitLower({
+                                    children: [new MathRun("lim")],
+                                    limit: [new MathRun("x→0")],
                                 }),
                             ],
                         }),
