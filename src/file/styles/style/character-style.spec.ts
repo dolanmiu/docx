@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { Formatter } from "@export/formatter";
 import { EmphasisMarkType } from "@file/paragraph/run/emphasis-mark";
 import { UnderlineType } from "@file/paragraph/run/underline";
+import { HighlightColor } from "@file/paragraph/run/properties";
 import { ShadingType } from "@file/shading";
 import { EMPTY_OBJECT } from "@file/xml-components";
 
@@ -728,23 +729,23 @@ describe("CharacterStyle", () => {
 
         const highlightTests = [
             {
-                highlight: "005599",
-                expected: [{ "w:highlight": { _attr: { "w:val": "005599" } } }, { "w:highlightCs": { _attr: { "w:val": "005599" } } }],
+                highlight: HighlightColor.YELLOW,
+                expected: [{ "w:highlight": { _attr: { "w:val": "yellow" } } }, { "w:highlightCs": { _attr: { "w:val": "yellow" } } }],
             },
             {
-                highlight: "005599",
+                highlight: HighlightColor.YELLOW,
                 highlightComplexScript: true,
-                expected: [{ "w:highlight": { _attr: { "w:val": "005599" } } }, { "w:highlightCs": { _attr: { "w:val": "005599" } } }],
+                expected: [{ "w:highlight": { _attr: { "w:val": "yellow" } } }, { "w:highlightCs": { _attr: { "w:val": "yellow" } } }],
             },
             {
-                highlight: "005599",
+                highlight: HighlightColor.YELLOW,
                 highlightComplexScript: false,
-                expected: [{ "w:highlight": { _attr: { "w:val": "005599" } } }],
+                expected: [{ "w:highlight": { _attr: { "w:val": "yellow" } } }],
             },
             {
-                highlight: "005599",
+                highlight: HighlightColor.YELLOW,
                 highlightComplexScript: "550099",
-                expected: [{ "w:highlight": { _attr: { "w:val": "005599" } } }, { "w:highlightCs": { _attr: { "w:val": "550099" } } }],
+                expected: [{ "w:highlight": { _attr: { "w:val": "yellow" } } }, { "w:highlightCs": { _attr: { "w:val": "550099" } } }],
             },
         ];
         highlightTests.forEach(({ highlight, highlightComplexScript, expected }) => {
