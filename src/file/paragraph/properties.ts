@@ -37,12 +37,14 @@ export interface ILevelParagraphStylePropertiesOptions {
 }
 
 export interface IParagraphStylePropertiesOptions extends ILevelParagraphStylePropertiesOptions {
-    readonly numbering?: {
-        readonly reference: string;
-        readonly level: number;
-        readonly instance?: number;
-        readonly custom?: boolean;
-    };
+    readonly numbering?:
+        | {
+              readonly reference: string;
+              readonly level: number;
+              readonly instance?: number;
+              readonly custom?: boolean;
+          }
+        | false;
 }
 
 export interface IParagraphPropertiesOptions extends IParagraphStylePropertiesOptions {
@@ -135,6 +137,8 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
             });
 
             this.push(new NumberProperties(`${options.numbering.reference}-${options.numbering.instance ?? 0}`, options.numbering.level));
+        } else if (options.numbering === false) {
+            this.push(new NumberProperties(0, 0));
         }
 
         if (options.border) {
