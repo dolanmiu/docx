@@ -36,6 +36,33 @@ export const TextEffect = {
     NONE: "none",
 } as const;
 
+/*
+ * http://officeopenxml.com/WPtextShading.php
+ *
+ * Limit the list of supported highlight colors
+ *
+ * */
+
+export const HighlightColor = {
+    BLACK: "black",
+    BLUE: "blue",
+    CYAN: "cyan",
+    DARK_BLUE: "darkBlue",
+    DARK_CYAN: "darkCyan",
+    DARK_GRAY: "darkGray",
+    DARK_GREEN: "darkGreen",
+    DARK_MAGENTA: "darkMagenta",
+    DARK_RED: "darkRed",
+    DARK_YELLOW: "darkYellow",
+    GREEN: "green",
+    LIGHT_GRAY: "lightGray",
+    MAGENTA: "magenta",
+    NONE: "none",
+    RED: "red",
+    WHITE: "white",
+    YELLOW: "yellow",
+} as const;
+
 /* eslint-enable */
 
 export interface IRunStylePropertiesOptions {
@@ -65,7 +92,7 @@ export interface IRunStylePropertiesOptions {
     readonly subScript?: boolean;
     readonly superScript?: boolean;
     readonly font?: string | IFontOptions | IFontAttributesProperties;
-    readonly highlight?: string;
+    readonly highlight?: (typeof HighlightColor)[keyof typeof HighlightColor];
     readonly highlightComplexScript?: boolean | string;
     readonly characterSpacing?: number;
     readonly shading?: IShadingAttributesProperties;

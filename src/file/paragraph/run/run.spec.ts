@@ -7,7 +7,7 @@ import { ShadingType } from "@file/shading";
 import { EmphasisMarkType } from "./emphasis-mark";
 import { PageNumber, Run } from "./run";
 import { UnderlineType } from "./underline";
-import { TextEffect } from "./properties";
+import { HighlightColor, TextEffect } from "./properties";
 describe("Run", () => {
     describe("#noProof()", () => {
         it("turns off spelling and grammar checkers for a run", () => {
@@ -215,18 +215,18 @@ describe("Run", () => {
     describe("#highlight()", () => {
         it("it should add highlight to the properties", () => {
             const run = new Run({
-                highlight: "005599",
+                highlight: HighlightColor.YELLOW,
             });
             const tree = new Formatter().format(run);
             expect(tree).to.deep.equal({
                 "w:r": [
                     {
                         "w:rPr": [
-                            { "w:highlight": { _attr: { "w:val": "005599" } } },
+                            { "w:highlight": { _attr: { "w:val": "yellow" } } },
                             {
                                 "w:highlightCs": {
                                     _attr: {
-                                        "w:val": "005599",
+                                        "w:val": "yellow",
                                     },
                                 },
                             },
