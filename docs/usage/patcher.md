@@ -35,6 +35,9 @@ interface Patch {
 | type     | `PatchType`                       | Required | `DOCUMENT`, `PARAGRAPH`                                                                                                              |
 | children | `FileChild[] or ParagraphChild[]` | Required | The contents to replace with. A `FileChild` is a `Paragraph` or `Table`, whereas a `ParagraphChild` is typical `Paragraph` children. |
 
+
+The patcher also takes in a `keepOriginalStyles` boolean, which will preserve the styles of the patched text when set to true.
+
 ### How to patch existing document
 
 1. Open your existing word document in your favorite Word Processor
