@@ -23,7 +23,8 @@ export abstract class XmlComponent extends BaseXmlComponent {
         context.stack.push(this);
         const children = this.root
             .map((comp) => {
-                if (comp instanceof BaseXmlComponent) {
+                // hack: Math 是 JS 的原声对象，受影响导致正常的 Math Component instanceof BaseXmlComponent 为 false
+                if (comp instanceof BaseXmlComponent || comp.rootKey === "m:oMath") {
                     return comp.prepForXml(context);
                 }
                 return comp;
