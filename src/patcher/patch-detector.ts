@@ -3,7 +3,7 @@ import { toJson } from "./util";
 import { traverse } from "./traverser";
 import { InputDataType } from "./from-docx";
 
-export type PatchDetectorOptions = {
+type PatchDetectorOptions = {
     readonly data: InputDataType;
 };
 
