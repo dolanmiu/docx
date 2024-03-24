@@ -15,7 +15,7 @@ const elementsToWrapper = (wrapper: ElementWrapper): readonly ElementWrapper[] =
         parent: wrapper,
     })) ?? [];
 
-export const findLocationOfText = (node: Element, text: string): readonly IRenderedParagraphNode[] => {
+export const traverse = (node: Element): readonly IRenderedParagraphNode[] => {
     let renderedParagraphs: readonly IRenderedParagraphNode[] = [];
 
     // eslint-disable-next-line functional/prefer-readonly-type
@@ -41,5 +41,8 @@ export const findLocationOfText = (node: Element, text: string): readonly IRende
         }
     }
 
-    return renderedParagraphs.filter((p) => p.text.includes(text));
+    return renderedParagraphs;
 };
+
+export const findLocationOfText = (node: Element, text: string): readonly IRenderedParagraphNode[] =>
+    traverse(node).filter((p) => p.text.includes(text));

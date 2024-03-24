@@ -17,7 +17,7 @@ import { appendRelationship, getNextRelationshipIndex } from "./relationship-man
 import { appendContentType } from "./content-types-manager";
 
 // eslint-disable-next-line functional/prefer-readonly-type
-type InputDataType = Buffer | string | number[] | Uint8Array | ArrayBuffer | Blob | NodeJS.ReadableStream;
+export type InputDataType = Buffer | string | number[] | Uint8Array | ArrayBuffer | Blob | NodeJS.ReadableStream;
 
 export const PatchType = {
     DOCUMENT: "file",
