@@ -13,6 +13,9 @@ export const patchDetector = async ({ data }: PatchDetectorOptions): Promise<rea
     const patches = new Set<string>();
 
     for (const [key, value] of Object.entries(zipContent.files)) {
+        if (!key.endsWith(".xml") && !key.endsWith(".rels")) {
+            continue;
+        }
         if (key.startsWith("word/") && !key.endsWith(".xml.rels")) {
             const json = toJson(await value.async("text"));
             traverse(json).forEach((p) => findPatchKeys(p.text).forEach((patch) => patches.add(patch)));
