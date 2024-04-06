@@ -1,6 +1,7 @@
 export * from "./paragraph";
 export * from "./table";
 export * from "./file";
+export * from "./file-child";
 export * from "./numbering";
 export * from "./media";
 export * from "./drawing";
