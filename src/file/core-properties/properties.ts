@@ -3,6 +3,7 @@ import { ICompatibilityOptions } from "@file/settings/compatibility";
 import { FontOptions } from "@file/fonts/font-table";
 import { StringContainer, XmlComponent } from "@file/xml-components";
 import { dateTimeValue } from "@util/values";
+import { IHyphenationOptions } from "@file/settings";
 
 import { ICustomPropertyOptions } from "../custom-properties";
 import { IDocumentBackgroundOptions } from "../document";
@@ -42,6 +43,7 @@ export interface IPropertiesOptions {
     readonly evenAndOddHeaderAndFooters?: boolean;
     readonly defaultTabStop?: number;
     readonly fonts?: readonly FontOptions[];
+    readonly hyphenation?: IHyphenationOptions;
 }
 
 // <xs:element name="coreProperties" type="CT_CoreProperties"/>

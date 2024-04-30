@@ -129,6 +129,75 @@ describe("Settings", () => {
             });
         });
 
+        it("should add autoHyphenation setting", () => {
+            const options = {
+                hyphenation: {
+                    autoHyphenation: true,
+                }
+            };
+
+            const tree = new Formatter().format(new Settings(options));
+            expect(Object.keys(tree)).has.length(1);
+            expect(tree["w:settings"]).to.be.an("array");
+            expect(tree["w:settings"]).to.deep.include({
+                "w:autoHyphenation": {},
+            });
+        });
+
+
+        it("should add doNotHyphenateCaps setting", () => {
+            const options = {
+                hyphenation: {
+                    doNotHyphenateCaps: true,
+                }
+            };
+
+            const tree = new Formatter().format(new Settings(options));
+            expect(Object.keys(tree)).has.length(1);
+            expect(tree["w:settings"]).to.be.an("array");
+            expect(tree["w:settings"]).to.deep.include({
+                "w:doNotHyphenateCaps": {},
+            });
+        });
+
+        it("should add hyphenationZone setting", () => {
+            const options = {
+                hyphenation: {
+                    hyphenationZone: 200,
+                }
+            };
+
+            const tree = new Formatter().format(new Settings(options));
+            expect(Object.keys(tree)).has.length(1);
+            expect(tree["w:settings"]).to.be.an("array");
+            expect(tree["w:settings"]).to.deep.include({
+                "w:hyphenationZone": {
+                    _attr: {
+                        "w:val": 200,
+                    },
+                },
+            });
+        });
+
+        it("should add consecutiveHyphenLimit setting", () => {
+            const options = {
+                hyphenation: {
+                    consecutiveHyphenLimit: 3,
+                }
+            };
+
+            const tree = new Formatter().format(new Settings(options));
+            expect(Object.keys(tree)).has.length(1);
+            expect(tree["w:settings"]).to.be.an("array");
+            expect(tree["w:settings"]).to.deep.include({
+                "w:consecutiveHyphenLimit": {
+                    _attr: {
+                        "w:val": 3,
+                    },
+                },
+            });
+        });
+
         // TODO: Remove when deprecating compatibilityModeVersion
         it("should add compatibility setting with legacy version", () => {
             const settings = new Settings({
