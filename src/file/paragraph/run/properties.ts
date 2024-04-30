@@ -315,8 +315,6 @@ export class RunProperties extends IgnoreIfEmptyXmlComponent {
         if (options.math) {
             this.push(new OnOffElement("w:oMath", options.math));
         }
-
-
     }
 
     public push(item: XmlComponent): void {
