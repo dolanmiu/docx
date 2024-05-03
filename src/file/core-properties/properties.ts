@@ -4,6 +4,7 @@ import { FontOptions } from "@file/fonts/font-table";
 import { StringContainer, XmlComponent } from "@file/xml-components";
 import { dateTimeValue } from "@util/values";
 import { IHyphenationOptions } from "@file/settings";
+import { IFootnoteProperties } from "@file/settings/footnote-properties";
 
 import { ICustomPropertyOptions } from "../custom-properties";
 import { IDocumentBackgroundOptions } from "../document";
@@ -44,6 +45,7 @@ export interface IPropertiesOptions {
     readonly defaultTabStop?: number;
     readonly fonts?: readonly FontOptions[];
     readonly hyphenation?: IHyphenationOptions;
+    readonly footnoteProperties?: IFootnoteProperties;
 }
 
 // <xs:element name="coreProperties" type="CT_CoreProperties"/>

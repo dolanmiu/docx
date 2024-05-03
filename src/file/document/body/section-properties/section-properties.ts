@@ -5,6 +5,7 @@ import { FooterWrapper } from "@file/footer-wrapper";
 import { HeaderWrapper } from "@file/header-wrapper";
 import { VerticalAlign, VerticalAlignElement } from "@file/vertical-align";
 import { OnOffElement, XmlComponent } from "@file/xml-components";
+import { FootnoteProperties, IFootnoteProperties } from "@file/settings/footnote-properties";
 
 import { HeaderFooterReference, HeaderFooterReferenceType, HeaderFooterType } from "./properties/header-footer-reference";
 import { Columns, IColumnsAttributes } from "./properties/columns";
@@ -39,6 +40,7 @@ export interface ISectionPropertiesOptions {
     readonly verticalAlign?: (typeof VerticalAlign)[keyof typeof VerticalAlign];
     readonly column?: IColumnsAttributes;
     readonly type?: (typeof SectionType)[keyof typeof SectionType];
+    readonly footnoteProperties?: IFootnoteProperties;
 }
 
 // <xsd:complexType name="CT_SectPr">
@@ -119,6 +121,7 @@ export class SectionProperties extends XmlComponent {
         verticalAlign,
         column,
         type,
+        footnoteProperties,
     }: ISectionPropertiesOptions = {}) {
         super("w:sectPr");
 
@@ -156,6 +159,10 @@ export class SectionProperties extends XmlComponent {
 
         if (textDirection) {
             this.root.push(new PageTextDirection(textDirection));
+        }
+
+        if (footnoteProperties) {
+            this.root.push(new FootnoteProperties(footnoteProperties));
         }
 
         this.root.push(new DocumentGrid(linePitch, charSpace, gridType));
