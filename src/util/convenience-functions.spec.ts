@@ -8,6 +8,7 @@ import {
     convertMillimetersToTwip,
     docPropertiesUniqueNumericIdGen,
     uniqueId,
+    hashedId,
     uniqueNumericIdCreator,
     uniqueUuid,
 } from "./convenience-functions";
@@ -69,6 +70,26 @@ describe("Utility", () => {
     describe("#uniqueId", () => {
         it("should generate a unique pseudorandom ID", () => {
             expect(uniqueId()).to.not.be.empty;
+        });
+    });
+
+    describe("#hashedId", () => {
+        it("should generate a hex string", () => {
+            expect(hashedId("")).to.equal("da39a3ee5e6b4b0d3255bfef95601890afd80709");
+        });
+
+        it("should work with string, Uint8Array, Buffer and ArrayBuffer", () => {
+            const stringInput = "DATA";
+            const uint8ArrayInput = new Uint8Array(new TextEncoder().encode(stringInput));
+            const bufferInput = Buffer.from(uint8ArrayInput);
+            const arrayBufferInput = uint8ArrayInput.buffer;
+
+            const expectedHash = "580393f5a94fb469585f5dd2a6859a4aab899f37";
+
+            expect(hashedId(stringInput)).to.equal(expectedHash);
+            expect(hashedId(uint8ArrayInput)).to.equal(expectedHash);
+            expect(hashedId(bufferInput)).to.equal(expectedHash);
+            expect(hashedId(arrayBufferInput)).to.equal(expectedHash);
         });
     });
 

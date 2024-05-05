@@ -55,6 +55,7 @@
     ],
     "dependencies": {
         "@types/node": "^20.3.1",
+        "hash.js": "^1.1.7",
         "jszip": "^3.10.1",
         "nanoid": "^5.0.4",
         "xml": "^1.0.1",
