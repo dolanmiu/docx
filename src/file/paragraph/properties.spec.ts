@@ -65,6 +65,36 @@ describe("ParagraphProperties", () => {
             });
         });
 
+        it("should create with numbering disabled", () => {
+            const properties = new ParagraphProperties({
+                numbering: false,
+            });
+            const tree = new Formatter().format(properties);
+
+            expect(tree).to.deep.equal({
+                "w:pPr": [
+                    {
+                        "w:numPr": [
+                            {
+                                "w:ilvl": {
+                                    _attr: {
+                                        "w:val": 0,
+                                    },
+                                },
+                            },
+                            {
+                                "w:numId": {
+                                    _attr: {
+                                        "w:val": 0,
+                                    },
+                                },
+                            },
+                        ],
+                    },
+                ],
+            });
+        });
+
         it("should create with widowControl", () => {
             const properties = new ParagraphProperties({
                 widowControl: true,

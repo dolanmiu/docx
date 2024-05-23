@@ -130,6 +130,62 @@ new Paragraph({
 }),
 ```
 
+## Disabling numbering inherited from paragraph style
+
+If the numbering is set on a paragraph style, you may wish to disable it for a specific paragraph:
+
+```ts
+const doc = new Document({
+    ...
+    numbering: {
+        config: [
+            {
+                reference: "my-bullet-points",
+                levels: [
+                    {
+                        level: 0,
+                        format: LevelFormat.BULLET,
+                        text: "\u1F60",
+                        alignment: AlignmentType.LEFT,
+                        style: {
+                            paragraph: {
+                                indent: { left: convertInchesToTwip(0.5), hanging: convertInchesToTwip(0.25) },
+                            },
+                        },
+                    },
+                ],
+            },
+        ],
+    },
+    styles: {
+        paragraphStyles: [
+            {
+                id: 'bullet',
+                name: 'Bullet',
+                basedOn: 'Normal',
+                next: 'Normal',
+                run: {},
+                paragraph: {
+                    numbering: {
+                        reference: 'my-bullet-points',
+                        level: 0,
+                    },
+                },
+            },
+        ],
+    },
+    ...
+});
+```
+
+```ts
+new Paragraph({
+    text: "No bullet points!",
+    style: "Bullet",
+    numbering: false,
+}),
+```
+
 ## Full Example
 
 [Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/3-numbering-and-bullet-points.ts ":include")
