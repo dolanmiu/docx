@@ -55,6 +55,7 @@
     ],
     "dependencies": {
         "@types/node": "^20.3.1",
+        "colortranslator": "^1.10.2",
         "jszip": "^3.10.1",
         "nanoid": "^5.0.4",
         "slate": "^0.103.0",

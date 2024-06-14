@@ -1,15 +1,35 @@
 // Simple example to add text to a document
 
 import * as fs from "fs";
-import { Document, Packer, Paragraph, Tab, TextRun } from "docx";
-import { Element } from "slate";
+import { Document, FileChild, HeadingLevel, IParagraphOptions, Packer, Paragraph, ShadingType, Tab, TextRun, UnderlineType } from "docx";
+import { Element as SlateElement, Node as SlateNode } from "slate";
 import { Alignment, ElementKinds } from "./types/node-types";
+import { ColorTranslator } from "colortranslator";
 
 const font = fs.readFileSync("./demo/assets/Pacifico.ttf");
 
-const children: Element[] = [
+const getHeadingLevel = (element: SlateElement) => {
+    switch (element.type) {
+        case ElementKinds.heading_1:
+            return HeadingLevel.HEADING_1;
+        case ElementKinds.heading_2:
+            return HeadingLevel.HEADING_2;
+        case ElementKinds.heading_3:
+            return HeadingLevel.HEADING_3;
+        case ElementKinds.heading_4:
+            return HeadingLevel.HEADING_4;
+        case ElementKinds.heading_5:
+            return HeadingLevel.HEADING_5;
+        case ElementKinds.heading_6:
+            return HeadingLevel.HEADING_6;
+        default:
+            break;
+    }
+};
+
+const children: SlateElement[] = [
     {
-        type: ElementKinds.paragraph,
+        type: ElementKinds.heading_1,
         children: [
             {
                 text: "以下为数据演示: JSON",
@@ -40,6 +60,20 @@ const children: Element[] = [
             {
                 text: "斜体文本",
                 italic: true,
+            },
+            {
+                text: "、",
+            },
+            {
+                text: "删除线",
+                strike: true,
+            },
+            {
+                text: "、",
+            },
+            {
+                text: "下划线",
+                underlined: true,
             },
             {
                 text: "、",
@@ -103,12 +137,66 @@ const children: Element[] = [
     },
 ];
 
+const docxChildren = children
+    .map((element: SlateElement): FileChild | undefined => {
+        const textRuns: TextRun[] = [];
+        const texts = SlateNode.texts(element);
+        for (const [text] of texts) {
+            let color = undefined;
+            let shading = undefined;
+            if (text.color) {
+                const textColorTranslator = new ColorTranslator(text.color);
+                color = textColorTranslator.HEX;
+            }
+            if (text["background-color"]) {
+                const backgroundColorTranslator = new ColorTranslator(text["background-color"]);
+                shading = {
+                    fill: backgroundColorTranslator.HEX,
+                    color: "auto",
+                    type: ShadingType.CLEAR,
+                };
+            }
+            const textRun = new TextRun({
+                text: text.text,
+                bold: text.bold,
+                italics: text.italic,
+                underline: text.underlined ? { type: UnderlineType.SINGLE } : undefined,
+                strike: text.strike,
+                color,
+                shading,
+            });
+            textRuns.push(textRun);
+        }
+        const heading = getHeadingLevel(element);
+        let paragraph: FileChild | undefined = undefined;
+        switch (element.type) {
+            case ElementKinds.paragraph:
+            case ElementKinds.heading_1:
+            case ElementKinds.heading_2:
+            case ElementKinds.heading_3:
+            case ElementKinds.heading_4:
+            case ElementKinds.heading_5:
+            case ElementKinds.heading_6:
+                paragraph = new Paragraph({ heading, children: textRuns });
+                break;
+            default:
+                break;
+        }
+        return paragraph || undefined;
+    })
+    .filter((e) => !!e) as FileChild[];
+console.log(docxChildren);
 const doc = new Document({
     styles: {
         default: {
-            document: {
+            heading1: {
                 run: {
-                    font: "Pacifico",
+                    size: 28,
+                },
+            },
+            heading2: {
+                run: {
+                    size: 24,
                 },
             },
         },
@@ -116,25 +204,9 @@ const doc = new Document({
     sections: [
         {
             properties: {},
-            children: [
-                new Paragraph({
-                    children: [
-                        new TextRun("Hello World"),
-                        new TextRun({
-                            text: "Foo Bar",
-                            bold: true,
-                            size: 40,
-                        }),
-                        new TextRun({
-                            children: [new Tab(), "Github is the best"],
-                            bold: true,
-                        }),
-                    ],
-                }),
-            ],
+            children: docxChildren,
         },
     ],
-    fonts: [{ name: "Pacifico", data: font, characterSet: "00" }],
 });
 
 Packer.toBuffer(doc).then((buffer) => {

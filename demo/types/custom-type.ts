@@ -160,6 +160,7 @@ export type CustomText = {
     text: string;
     underlined?: boolean;
     color?: string;
+    strike?: boolean;
     [`background-color`]?: string;
 };
 
