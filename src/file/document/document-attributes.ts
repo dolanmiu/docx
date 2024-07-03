@@ -24,7 +24,6 @@ export type IDocumentAttributesProperties = {
     readonly dcterms?: string;
     readonly dcmitype?: string;
     readonly xsi?: string;
-    readonly type?: string;
     readonly cx?: string;
     readonly cx1?: string;
     readonly cx2?: string;
@@ -68,7 +67,6 @@ export class DocumentAttributes extends XmlAttributeComponent<IDocumentAttribute
         dcterms: "xmlns:dcterms",
         dcmitype: "xmlns:dcmitype",
         xsi: "xmlns:xsi",
-        type: "xsi:type",
         cx: "xmlns:cx",
         cx1: "xmlns:cx1",
         cx2: "xmlns:cx2",
