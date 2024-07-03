@@ -38,14 +38,7 @@ export type IDefaultStylesOptions = {
 
 export class DefaultStylesFactory {
     public newInstance(options: IDefaultStylesOptions = {}): IStylesOptions {
-        const documentAttributes = new DocumentAttributes({
-            mc: "http://schemas.openxmlformats.org/markup-compatibility/2006",
-            r: "http://schemas.openxmlformats.org/officeDocument/2006/relationships",
-            w: "http://schemas.openxmlformats.org/wordprocessingml/2006/main",
-            w14: "http://schemas.microsoft.com/office/word/2010/wordml",
-            w15: "http://schemas.microsoft.com/office/word/2012/wordml",
-            Ignorable: "w14 w15",
-        });
+        const documentAttributes = new DocumentAttributes(["mc", "r", "w", "w14", "w15"], "w14 w15");
         return {
             initialStyles: documentAttributes,
             importedStyles: [
