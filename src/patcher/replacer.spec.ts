@@ -62,6 +62,10 @@ export const MOCK_JSON = {
                                     name: "w:t",
                                     elements: [{ type: "text", text: "What a {{bold}} text!" }],
                                 },
+                                {
+                                    type: "element",
+                                    name: "w:br",
+                                },
                             ],
                         },
                     ],
@@ -175,6 +179,10 @@ describe("replacer", () => {
                             type: "element",
                             name: "w:t",
                             elements: [{ type: "text", text: " text!" }],
+                        },
+                        {
+                            name: "w:br",
+                            type: "element",
                         },
                     ],
                 },
