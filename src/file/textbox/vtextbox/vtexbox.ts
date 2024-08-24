@@ -7,14 +7,14 @@ export interface IVTextboxOptions {
     readonly children?: readonly ParagraphChild[];
 }
 
-class VtextboxAttributes extends XmlAttributeComponent<{ readonly style?: string }> {
+class VTextboxAttributes extends XmlAttributeComponent<{ readonly style?: string }> {
     protected readonly xmlKeys = { style: "style" };
 }
 
 export class VTextbox extends XmlComponent {
     public constructor({ style, children }: IVTextboxOptions) {
         super("v:textbox");
-        this.root.push(new VtextboxAttributes({ style }));
+        this.root.push(new VTextboxAttributes({ style }));
         const textboxContent = new TextboxContent({ children });
         this.root.push(textboxContent);
     }

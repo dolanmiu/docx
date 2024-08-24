@@ -1,29 +1,32 @@
 import { FileChild } from "@file/file-child";
 import { IParagraphOptions, ParagraphProperties } from "@file/paragraph";
-import { Pict } from "./pict/pict";
-import { Shape } from "./shape/shape";
+import { uniqueId } from "@util/convenience-functions";
+import { PictElement } from "./pict-element/pict-element";
+import { Shape, ShapeStyle } from "./shape/shape";
 
-export type ITextboxOptions = IParagraphOptions;
+export interface ITextboxOptions {
+    readonly options: IParagraphOptions;
+    readonly style?: {
+        readonly shapeStyle?: ShapeStyle;
+    };
+}
 
 export class Textbox extends FileChild {
     private readonly properties: ParagraphProperties;
 
-    public constructor(options: ITextboxOptions) {
+    public constructor({ options, style }: ITextboxOptions) {
         super("w:p");
         this.properties = new ParagraphProperties(options);
         this.root.push(this.properties);
-        if (options.children) {
-            const shape = new Shape({
-                children: options.children,
-                id: "TextBox1",
-                type: "#_x0000_t202",
-                style: "width:100%; height:auto; margin-left:0;",
-            });
-            this.root.push(
-                new Pict({
-                    shape,
-                }),
-            );
-        }
+        const shape = new Shape({
+            children: options.children,
+            id: uniqueId(),
+            style: style?.shapeStyle,
+        });
+        this.root.push(
+            new PictElement({
+                shape,
+            }),
+        );
     }
 }

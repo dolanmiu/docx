@@ -1,4 +1,4 @@
-// Simple example to add check boxes to a document
+// Simple example to add textbox to a document
 import * as fs from "fs";
 import { Document, Packer, Paragraph, Textbox, TextRun } from "docx";
 
@@ -8,11 +8,20 @@ const doc = new Document({
             properties: {},
             children: [
                 new Textbox({
-                    children: [
-                        new Paragraph({
-                            children: [new TextRun("HELLO WORLD!!!")],
-                        }),
-                    ],
+                    options: {
+                        alignment: "center",
+                        children: [
+                            new Paragraph({
+                                children: [new TextRun("Hi i'm a textbox!")],
+                            }),
+                        ],
+                    },
+                    style: {
+                        shapeStyle: {
+                            width: "200pt",
+                            height: "auto",
+                        },
+                    },
                 }),
             ],
         },
