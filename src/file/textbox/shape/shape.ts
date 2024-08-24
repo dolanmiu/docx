@@ -6,7 +6,7 @@ const SHAPE_TYPE = "#_x0000_t202";
 
 export type ShapeStyle = {
     readonly width: string;
-    readonly height: string;
+    readonly height?: string;
     readonly margin?: string;
 };
 

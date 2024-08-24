@@ -17,10 +17,8 @@ const doc = new Document({
                         ],
                     },
                     style: {
-                        shapeStyle: {
-                            width: "200pt",
-                            height: "auto",
-                        },
+                        width: "200pt",
+                        height: "auto",
                     },
                 }),
             ],

@@ -6,9 +6,7 @@ import { Shape, ShapeStyle } from "./shape/shape";
 
 export interface ITextboxOptions {
     readonly options: IParagraphOptions;
-    readonly style?: {
-        readonly shapeStyle?: ShapeStyle;
-    };
+    readonly style?: ShapeStyle;
 }
 
 export class Textbox extends FileChild {
@@ -21,7 +19,7 @@ export class Textbox extends FileChild {
         const shape = new Shape({
             children: options.children,
             id: uniqueId(),
-            style: style?.shapeStyle,
+            style: style,
         });
         this.root.push(
             new PictElement({
