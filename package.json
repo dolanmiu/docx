@@ -54,7 +54,7 @@
         "clippy"
     ],
     "dependencies": {
-        "@types/node": "^20.3.1",
+        "@types/node": "^22.7.5",
         "jszip": "^3.10.1",
         "nanoid": "^5.0.4",
         "xml": "^1.0.1",
