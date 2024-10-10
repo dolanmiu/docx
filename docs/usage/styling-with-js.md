@@ -126,10 +126,10 @@ const doc = new Document({
                 next: "Normal",
                 quickFormat: true,
                 run: {
-                    size: 26
+                    size: 26,
                     bold: true,
                     color: "999999",
-                    {
+                    underline: {
                         type: UnderlineType.DOUBLE,
                         color: "FF0000",
                     },
