@@ -3,6 +3,7 @@ import { resolve } from "path";
 import tsconfigPaths from "vite-tsconfig-paths";
 import dts from "vite-plugin-dts";
 import { nodePolyfills } from "vite-plugin-node-polyfills";
+import visualizer from 'rollup-plugin-visualizer';
 
 export default defineConfig({
     plugins: [
@@ -17,6 +18,7 @@ export default defineConfig({
             },
             protocolImports: true,
         }),
+        visualizer({ filename: './stats.html' })
     ],
     resolve: {
         alias: {
@@ -24,6 +26,8 @@ export default defineConfig({
             "@export/": `${resolve(__dirname, "src/export")}/`,
             "@file/": `${resolve(__dirname, "src/file")}/`,
             "@shared": `${resolve(__dirname, "src/shared")}`,
+            '@components': resolve(__dirname, 'src/components'),
+            '@styles': resolve(__dirname, 'src/styles'),
         },
     },
     build: {
@@ -57,6 +61,26 @@ export default defineConfig({
         commonjsOptions: {
             include: [/node_modules/],
         },
+        rollupOptions: {
+            output: {
+                manualChunks(id) {
+                    if (id.includes('node_modules')) {
+                        return id.toString().split('node_modules/')[1].split('/')[0].toString();
+                    }
+                }
+            }
+        }
+    },
+    optimizeDeps: {
+        include: ['some-big-package', 'another-package'],
+        exclude: ['some-package-you-dont-want']
+    },
+    css: {
+        preprocessorOptions: {
+            scss: {
+                additionalData: `@import "src/styles/variables.scss";`
+            }
+        }
     },
     test: {
         environment: "jsdom",
