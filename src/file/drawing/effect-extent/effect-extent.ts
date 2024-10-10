@@ -7,6 +7,12 @@ export type EffectExtentAttributes = {
     readonly left: number;
 };
 
+// <xsd:complexType name="CT_EffectExtent">
+//     <xsd:attribute name="l" type="a:ST_Coordinate" use="required"/>
+//     <xsd:attribute name="t" type="a:ST_Coordinate" use="required"/>
+//     <xsd:attribute name="r" type="a:ST_Coordinate" use="required"/>
+//     <xsd:attribute name="b" type="a:ST_Coordinate" use="required"/>
+// </xsd:complexType>
 export const createEffectExtent = ({ top, right, bottom, left }: EffectExtentAttributes): XmlComponent =>
     new BuilderElement<EffectExtentAttributes>({
         name: "wp:effectExtent",

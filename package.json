@@ -1,6 +1,6 @@
 {
     "name": "docx",
-    "version": "8.6.0",
+    "version": "9.0.0",
     "description": "Easily generate .docx files with JS/TS with a nice declarative API. Works for Node and on the Browser.",
     "type": "module",
     "main": "build/index.umd.js",
@@ -54,7 +54,7 @@
         "clippy"
     ],
     "dependencies": {
-        "@types/node": "^20.3.1",
+        "@types/node": "^22.7.5",
         "jszip": "^3.10.1",
         "nanoid": "^5.0.4",
         "xml": "^1.0.1",
@@ -80,7 +80,7 @@
         "eslint": "^8.23.0",
         "eslint-plugin-functional": "^6.0.0",
         "eslint-plugin-import": "^2.26.0",
-        "eslint-plugin-jsdoc": "^48.0.2",
+        "eslint-plugin-jsdoc": "^50.3.1",
         "eslint-plugin-no-null": "^1.0.2",
         "eslint-plugin-prefer-arrow": "^1.2.3",
         "eslint-plugin-unicorn": "^50.0.1",

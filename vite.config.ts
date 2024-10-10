@@ -7,7 +7,9 @@ import { nodePolyfills } from "vite-plugin-node-polyfills";
 export default defineConfig({
     plugins: [
         tsconfigPaths(),
-        dts(),
+        dts({
+            rollupTypes: true
+        }),
         nodePolyfills({
             exclude: [],
             globals: {
