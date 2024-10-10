@@ -35,7 +35,8 @@ jobs:
               with:
                   fail_ci_if_error: true
                   verbose: true
-                  token: ${{ secrets.CODECOV_TOKEN }}
+              env:
+                  CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
     lint:
         name: Lint
         runs-on: ubuntu-latest
