@@ -95,7 +95,7 @@
         "tsx": "^4.7.0",
         "typedoc": "^0.25.4",
         "typescript": "5.3.3",
-        "unzipper": "^0.10.11",
+        "unzipper": "^0.12.3",
         "vite": "^5.0.10",
         "vite-plugin-dts": "^3.3.1",
         "vite-plugin-node-polyfills": "^0.19.0",
