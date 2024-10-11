@@ -1,21 +1,12 @@
-import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { Formatter } from "@export/formatter";
 import { IViewWrapper } from "@file/document-wrapper";
 import { File } from "@file/file";
-import * as convenienceFunctions from "@util/convenience-functions";
 
 import { ImageRun } from "./image-run";
 
 describe("ImageRun", () => {
-    beforeAll(() => {
-        vi.spyOn(convenienceFunctions, "uniqueId").mockReturnValue("test-unique-id");
-    });
-
-    afterAll(() => {
-        vi.resetAllMocks();
-    });
-
     describe("#constructor()", () => {
         it("should create with Buffer", () => {
             const currentImageRun = new ImageRun({
@@ -193,7 +184,8 @@ describe("ImageRun", () => {
                                                                         "a:blip": {
                                                                             _attr: {
                                                                                 cstate: "none",
-                                                                                "r:embed": "rId{test-unique-id.png}",
+                                                                                "r:embed":
+                                                                                    "rId{da39a3ee5e6b4b0d3255bfef95601890afd80709.png}",
                                                                             },
                                                                         },
                                                                     },
@@ -445,7 +437,8 @@ describe("ImageRun", () => {
                                                                         "a:blip": {
                                                                             _attr: {
                                                                                 cstate: "none",
-                                                                                "r:embed": "rId{test-unique-id.png}",
+                                                                                "r:embed":
+                                                                                    "rId{da39a3ee5e6b4b0d3255bfef95601890afd80709.png}",
                                                                             },
                                                                         },
                                                                     },
@@ -700,7 +693,8 @@ describe("ImageRun", () => {
                                                                         "a:blip": {
                                                                             _attr: {
                                                                                 cstate: "none",
-                                                                                "r:embed": "rId{test-unique-id.png}",
+                                                                                "r:embed":
+                                                                                    "rId{da39a3ee5e6b4b0d3255bfef95601890afd80709.png}",
                                                                             },
                                                                         },
                                                                     },
@@ -955,7 +949,8 @@ describe("ImageRun", () => {
                                                                         "a:blip": {
                                                                             _attr: {
                                                                                 cstate: "none",
-                                                                                "r:embed": "rId{test-unique-id.png}",
+                                                                                "r:embed":
+                                                                                    "rId{da39a3ee5e6b4b0d3255bfef95601890afd80709.png}",
                                                                             },
                                                                         },
                                                                     },
@@ -1090,7 +1085,8 @@ describe("ImageRun", () => {
                                                                             {
                                                                                 _attr: {
                                                                                     cstate: "none",
-                                                                                    "r:embed": "rId{test-unique-id.png}",
+                                                                                    "r:embed":
+                                                                                        "rId{da39a3ee5e6b4b0d3255bfef95601890afd80709.png}",
                                                                                 },
                                                                             },
                                                                             {
@@ -1106,7 +1102,7 @@ describe("ImageRun", () => {
                                                                                                 "asvg:svgBlip": {
                                                                                                     _attr: expect.objectContaining({
                                                                                                         "r:embed":
-                                                                                                            "rId{test-unique-id.svg}",
+                                                                                                            "rId{da39a3ee5e6b4b0d3255bfef95601890afd80709.svg}",
                                                                                                     }),
                                                                                                 },
                                                                                             },
@@ -1130,6 +1126,56 @@ describe("ImageRun", () => {
                     },
                 ],
             });
+        });
+
+        it("using same data twice should use same media key", () => {
+            const imageRunStringData = new ImageRun({
+                type: "png",
+                data: "DATA",
+                transformation: {
+                    width: 100,
+                    height: 100,
+                    rotation: 42,
+                },
+            });
+
+            const imageRunBufferData = new ImageRun({
+                type: "png",
+                data: Buffer.from("DATA"),
+                transformation: {
+                    width: 200,
+                    height: 200,
+                    rotation: 45,
+                },
+            });
+
+            const addImageSpy = vi.fn();
+            const context = {
+                file: {
+                    Media: {
+                        addImage: addImageSpy,
+                    },
+                } as unknown as File,
+                viewWrapper: {} as unknown as IViewWrapper,
+                stack: [],
+            };
+
+            new Formatter().format(imageRunStringData, context);
+            new Formatter().format(imageRunBufferData, context);
+
+            const expectedHash = "580393f5a94fb469585f5dd2a6859a4aab899f37";
+
+            expect(addImageSpy).toHaveBeenCalledTimes(2);
+            expect(addImageSpy).toHaveBeenNthCalledWith(
+                1,
+                `${expectedHash}.png`,
+                expect.objectContaining({ fileName: `${expectedHash}.png` }),
+            );
+            expect(addImageSpy).toHaveBeenNthCalledWith(
+                2,
+                `${expectedHash}.png`,
+                expect.objectContaining({ fileName: `${expectedHash}.png` }),
+            );
         });
     });
 });
