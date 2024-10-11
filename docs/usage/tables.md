@@ -22,7 +22,7 @@ Then add the table in the `section`
 const doc = new Document({
     sections: [{
         children: [table],
-    }];
+    }],
 });
 ```
 
