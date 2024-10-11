@@ -97,7 +97,7 @@
         "typescript": "5.3.3",
         "unzipper": "^0.10.11",
         "vite": "^5.0.10",
-        "vite-plugin-dts": "^3.3.1",
+        "vite-plugin-dts": "^4.2.3",
         "vite-plugin-node-polyfills": "^0.19.0",
         "vite-tsconfig-paths": "^4.2.0",
         "vitest": "^1.1.0"
