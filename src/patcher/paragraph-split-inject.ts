@@ -29,7 +29,7 @@ export const splitRunElement = (runElement: Element, token: string): { readonly 
         runElement.elements
             ?.map((e, i) => {
                 if (e.type === "element" && e.name === "w:t") {
-                    const text = (e.elements?.[0].text as string) ?? "";
+                    const text = (e.elements?.[0]?.text as string) ?? "";
                     const splitText = text.split(token);
                     const newElements = splitText.map((t) => ({
                         ...e,
