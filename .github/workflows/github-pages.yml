@@ -10,7 +10,7 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - name: Checkout Repo
-              uses: actions/checkout@4
+              uses: actions/checkout@v4
             - name: Install Dependencies
               run: npm ci --force
             - name: Build 🔧
@@ -19,7 +19,7 @@ jobs:
                   echo "docx.js.org" > docs/.nojekyll
                   echo "docx.js.org" > docs/CNAME
             - name: Archive Production Artifact
-              uses: actions/upload-artifact@4
+              uses: actions/upload-artifact@v4
               with:
                   name: docs
                   path: docs
@@ -28,16 +28,16 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - name: Checkout Repo 🛎️
-              uses: actions/checkout@4
+              uses: actions/checkout@v4
             - name: Install Dependencies
               run: npm ci --force
             - name: Download Artifact
-              uses: actions/download-artifact@4
+              uses: actions/download-artifact@v4
               with:
                   name: docs
                   path: docs
             - name: Deploy 🚀
-              uses: JamesIves/github-pages-deploy-action@4.1.5
+              uses: JamesIves/github-pages-deploy-action@v4.1.5
               with:
                   branch: gh-pages
                   folder: docs
