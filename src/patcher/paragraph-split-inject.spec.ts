@@ -273,5 +273,65 @@ describe("paragraph-split-inject", () => {
                 },
             });
         });
+
+        it("should create an empty end element if it is at the end", () => {
+            const output = splitRunElement(
+                {
+                    type: "element",
+                    name: "w:r",
+                    elements: [
+                        {
+                            type: "element",
+                            name: "w:rPr",
+                            elements: [
+                                { type: "element", name: "w:rFonts", attributes: { "w:eastAsia": "Times New Roman" } },
+                                { type: "element", name: "w:kern", attributes: { "w:val": "0" } },
+                                { type: "element", name: "w:sz", attributes: { "w:val": "20" } },
+                                {
+                                    type: "element",
+                                    name: "w:lang",
+                                    attributes: { "w:val": "en-US", "w:eastAsia": "en-US", "w:bidi": "ar-SA" },
+                                },
+                            ],
+                        },
+                        { type: "element", name: "w:t", elements: [], attributes: { "xml:space": "preserve" } },
+                        { type: "element", name: "w:br" },
+                        { type: "element", name: "w:t", elements: [{ type: "text", text: "ɵ" }] },
+                    ],
+                },
+                "ɵ",
+            );
+
+            expect(output).to.deep.equal({
+                left: {
+                    type: "element",
+                    name: "w:r",
+                    elements: [
+                        {
+                            type: "element",
+                            name: "w:rPr",
+                            elements: [
+                                { type: "element", name: "w:rFonts", attributes: { "w:eastAsia": "Times New Roman" } },
+                                { type: "element", name: "w:kern", attributes: { "w:val": "0" } },
+                                { type: "element", name: "w:sz", attributes: { "w:val": "20" } },
+                                {
+                                    type: "element",
+                                    name: "w:lang",
+                                    attributes: { "w:val": "en-US", "w:eastAsia": "en-US", "w:bidi": "ar-SA" },
+                                },
+                            ],
+                        },
+                        { type: "element", name: "w:t", elements: [], attributes: { "xml:space": "preserve" } },
+                        { type: "element", name: "w:br" },
+                        { type: "element", name: "w:t", elements: [], attributes: { "xml:space": "preserve" } },
+                    ],
+                },
+                right: {
+                    type: "element",
+                    name: "w:r",
+                    elements: [{ type: "element", name: "w:t", elements: [], attributes: { "xml:space": "preserve" } }],
+                },
+            });
+        });
     });
 });
