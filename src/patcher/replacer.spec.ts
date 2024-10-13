@@ -202,6 +202,7 @@ describe("replacer", () => {
         });
 
         it("should replace", () => {
+            // cspell:disable
             const output = replacer({
                 json: {
                     elements: [
@@ -631,6 +632,7 @@ describe("replacer", () => {
                         },
                     ],
                 },
+                // cspell:enable
                 patch: {
                     type: PatchType.PARAGRAPH,
                     children: [new Paragraph("Lorem ipsum paragraph")],

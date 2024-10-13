@@ -195,6 +195,7 @@ const MOCK_XML = `
 </w:document>
 `;
 
+// cspell:disable
 const MOCK_XML_2 = `
 <w:body>
     <w:tbl>
@@ -333,6 +334,7 @@ const MOCK_XML_2 = `
     </w:tbl>
 </w:body>
 `;
+// cspell:enable
 
 describe("patch-detector", () => {
     describe("patchDetector", () => {
