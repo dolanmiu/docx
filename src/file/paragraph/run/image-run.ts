@@ -1,4 +1,4 @@
-import { uniqueId } from "@util/convenience-functions";
+import { hashedId } from "@util/convenience-functions";
 
 import { IContext, IXmlableObject } from "@file/xml-components";
 import { DocPropertiesOptions } from "@file/drawing/doc-properties/doc-properties";
@@ -76,20 +76,19 @@ const createImageData = (options: IImageOptions, key: string): Pick<IMediaData, 
 });
 
 export class ImageRun extends Run {
-    private readonly key: string;
-    private readonly fallbackKey = `${uniqueId()}.png`;
     private readonly imageData: IMediaData;
 
     public constructor(options: IImageOptions) {
         super({});
 
-        this.key = `${uniqueId()}.${options.type}`;
+        const hash = hashedId(options.data);
+        const key = `${hash}.${options.type}`;
 
         this.imageData =
             options.type === "svg"
                 ? {
                       type: options.type,
-                      ...createImageData(options, this.key),
+                      ...createImageData(options, key),
                       fallback: {
                           type: options.fallback.type,
                           ...createImageData(
@@ -97,13 +96,13 @@ export class ImageRun extends Run {
                                   ...options.fallback,
                                   transformation: options.transformation,
                               },
-                              this.fallbackKey,
+                              `${hashedId(options.fallback.data)}.${options.fallback.type}`,
                           ),
                       },
                   }
                 : {
                       type: options.type,
-                      ...createImageData(options, this.key),
+                      ...createImageData(options, key),
                   };
         const drawing = new Drawing(this.imageData, {
             floating: options.floating,
@@ -115,10 +114,10 @@ export class ImageRun extends Run {
     }
 
     public prepForXml(context: IContext): IXmlableObject | undefined {
-        context.file.Media.addImage(this.key, this.imageData);
+        context.file.Media.addImage(this.imageData.fileName, this.imageData);
 
         if (this.imageData.type === "svg") {
-            context.file.Media.addImage(this.fallbackKey, this.imageData.fallback);
+            context.file.Media.addImage(this.imageData.fallback.fileName, this.imageData.fallback);
         }
 
         return super.prepForXml(context);

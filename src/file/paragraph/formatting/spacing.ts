@@ -24,6 +24,8 @@ class SpacingAttributes extends XmlAttributeComponent<ISpacingProperties> {
         before: "w:before",
         line: "w:line",
         lineRule: "w:lineRule",
+        beforeAutoSpacing: "w:beforeAutospacing",
+        afterAutoSpacing: "w:afterAutoSpacing",
     };
 }
 

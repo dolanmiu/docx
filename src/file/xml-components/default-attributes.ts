@@ -1,12 +1,13 @@
 import { BaseXmlComponent, IContext } from "./base";
 import { IXmlableObject, IXmlAttribute } from "./xmlable-object";
 
-export type AttributeMap<T> = { readonly [P in keyof T]: string };
+type AttributeMap<T> = Record<keyof T, string>;
 
 export type AttributeData = { readonly [key: string]: boolean | number | string };
 export type AttributePayload<T> = { readonly [P in keyof T]: { readonly key: string; readonly value: T[P] } };
 
-export abstract class XmlAttributeComponent<T extends object> extends BaseXmlComponent {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export abstract class XmlAttributeComponent<T extends { readonly [key: string]: any }> extends BaseXmlComponent {
     protected readonly xmlKeys?: AttributeMap<T>;
 
     public constructor(private readonly root: T) {
@@ -16,12 +17,11 @@ export abstract class XmlAttributeComponent<T extends object> extends BaseXmlCom
     public prepForXml(_: IContext): IXmlableObject {
         // eslint-disable-next-line functional/prefer-readonly-type
         const attrs: { [key: string]: string } = {};
-        Object.keys(this.root).forEach((key) => {
+        Object.entries(this.root).forEach(([key, value]) => {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const value = (this.root as any)[key];
             if (value !== undefined) {
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const newKey = (this.xmlKeys && (this.xmlKeys as any)[key]) || key;
+                const newKey = (this.xmlKeys && this.xmlKeys[key]) || key;
                 // eslint-disable-next-line functional/immutable-data
                 attrs[newKey] = value;
             }
