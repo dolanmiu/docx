@@ -200,5 +200,454 @@ describe("replacer", () => {
 
             expect(JSON.stringify(output)).to.contain("Lorem ipsum paragraph");
         });
+
+        it("should replace", () => {
+            // cspell:disable
+            const output = replacer({
+                json: {
+                    elements: [
+                        {
+                            type: "element",
+                            name: "w:hdr",
+                            elements: [
+                                {
+                                    type: "element",
+                                    name: "w:p",
+                                    elements: [
+                                        {
+                                            type: "element",
+                                            name: "w:r",
+                                            elements: [
+                                                { type: "text", text: "\n                        " },
+                                                {
+                                                    type: "element",
+                                                    name: "w:rPr",
+                                                    elements: [
+                                                        { type: "text", text: "\n                            " },
+                                                        {
+                                                            type: "element",
+                                                            name: "w:rFonts",
+                                                            attributes: { "w:eastAsia": "Times New Roman" },
+                                                        },
+                                                        { type: "text", text: "\n                            " },
+                                                        {
+                                                            type: "element",
+                                                            name: "w:kern",
+                                                            attributes: { "w:val": "0" },
+                                                        },
+                                                        { type: "text", text: "\n                            " },
+                                                        {
+                                                            type: "element",
+                                                            name: "w:sz",
+                                                            attributes: { "w:val": "20" },
+                                                        },
+                                                        { type: "text", text: "\n                            " },
+                                                        {
+                                                            type: "element",
+                                                            name: "w:lang",
+                                                            attributes: {
+                                                                "w:val": "en-US",
+                                                                "w:eastAsia": "en-US",
+                                                                "w:bidi": "ar-SA",
+                                                            },
+                                                        },
+                                                        { type: "text", text: "\n                        " },
+                                                    ],
+                                                },
+                                                { type: "text", text: "\n                        " },
+                                                {
+                                                    type: "element",
+                                                    name: "w:t",
+                                                    elements: [{ type: "text", text: "{{" }],
+                                                },
+                                                { type: "text", text: "\n                    " },
+                                            ],
+                                        },
+                                        { type: "text", text: "\n                    " },
+                                        {
+                                            type: "element",
+                                            name: "w:r",
+                                            elements: [
+                                                { type: "text", text: "\n                        " },
+                                                {
+                                                    type: "element",
+                                                    name: "w:rPr",
+                                                    elements: [
+                                                        { type: "text", text: "\n                            " },
+                                                        {
+                                                            type: "element",
+                                                            name: "w:rFonts",
+                                                            attributes: { "w:eastAsia": "Times New Roman" },
+                                                        },
+                                                        { type: "text", text: "\n                            " },
+                                                        {
+                                                            type: "element",
+                                                            name: "w:kern",
+                                                            attributes: { "w:val": "0" },
+                                                        },
+                                                        { type: "text", text: "\n                            " },
+                                                        {
+                                                            type: "element",
+                                                            name: "w:sz",
+                                                            attributes: { "w:val": "20" },
+                                                        },
+                                                        { type: "text", text: "\n          " },
+                                                        {
+                                                            type: "element",
+                                                            name: "w:lang",
+                                                            attributes: {
+                                                                "w:val": "en-US",
+                                                                "w:eastAsia": "en-US",
+                                                                "w:bidi": "ar-SA",
+                                                            },
+                                                        },
+                                                        { type: "text", text: "\n                        " },
+                                                    ],
+                                                },
+                                                { type: "text", text: "\n                        " },
+                                                {
+                                                    type: "element",
+                                                    name: "w:t",
+                                                    elements: [{ type: "text", text: "s" }],
+                                                },
+                                                { type: "text", text: "\n                    " },
+                                            ],
+                                        },
+                                        { type: "text", text: "\n  " },
+                                        {
+                                            type: "element",
+                                            name: "w:r",
+                                            elements: [
+                                                { type: "text", text: "\n                        " },
+                                                {
+                                                    type: "element",
+                                                    name: "w:rPr",
+                                                    elements: [
+                                                        { type: "text", text: "\n    " },
+                                                        {
+                                                            type: "element",
+                                                            name: "w:rFonts",
+                                                            attributes: { "w:eastAsia": "Times New Roman" },
+                                                        },
+                                                        { type: "text", text: "\n                            " },
+                                                        {
+                                                            type: "element",
+                                                            name: "w:kern",
+                                                            attributes: { "w:val": "0" },
+                                                        },
+                                                        { type: "text", text: "\n                            " },
+                                                        {
+                                                            type: "element",
+                                                            name: "w:sz",
+                                                            attributes: { "w:val": "20" },
+                                                        },
+                                                        { type: "text", text: "\n                            " },
+                                                        {
+                                                            type: "element",
+                                                            name: "w:lang",
+                                                            attributes: {
+                                                                "w:val": "en-US",
+                                                                "w:eastAsia": "en-US",
+                                                                "w:bidi": "ar-SA",
+                                                            },
+                                                        },
+                                                        { type: "text", text: "\n                        " },
+                                                    ],
+                                                },
+                                                { type: "text", text: "\n      " },
+                                                {
+                                                    type: "element",
+                                                    name: "w:t",
+                                                    elements: [{ type: "text", text: "chool_" }],
+                                                },
+                                                { type: "text", text: "\n                    " },
+                                            ],
+                                        },
+                                        { type: "text", text: "\n                    " },
+                                        {
+                                            type: "element",
+                                            name: "w:r",
+                                            elements: [
+                                                { type: "text", text: "\n                        " },
+                                                {
+                                                    type: "element",
+                                                    name: "w:rPr",
+                                                    elements: [
+                                                        { type: "text", text: "\n                            " },
+                                                        {
+                                                            type: "element",
+                                                            name: "w:rFonts",
+                                                            attributes: { "w:eastAsia": "Times New Roman" },
+                                                        },
+                                                        { type: "text", text: "\n                            " },
+                                                        {
+                                                            type: "element",
+                                                            name: "w:kern",
+                                                            attributes: { "w:val": "0" },
+                                                        },
+                                                        { type: "text", text: "\n                            " },
+                                                        {
+                                                            type: "element",
+                                                            name: "w:sz",
+                                                            attributes: { "w:val": "20" },
+                                                        },
+                                                        { type: "text", text: "\n                            " },
+                                                        {
+                                                            type: "element",
+                                                            name: "w:lang",
+                                                            attributes: {
+                                                                "w:val": "en-US",
+                                                                "w:eastAsia": "en-US",
+                                                                "w:bidi": "ar-SA",
+                                                            },
+                                                        },
+                                                        { type: "text", text: "\n                        " },
+                                                    ],
+                                                },
+                                                { type: "text", text: "\n                        " },
+                                                {
+                                                    type: "element",
+                                                    name: "w:t",
+                                                    elements: [{ type: "text", text: "n" }],
+                                                },
+                                                { type: "text", text: "\n                    " },
+                                            ],
+                                        },
+                                        { type: "text", text: "\n                    " },
+                                        {
+                                            type: "element",
+                                            name: "w:r",
+                                            elements: [
+                                                { type: "text", text: "\n                        " },
+                                                {
+                                                    type: "element",
+                                                    name: "w:t",
+                                                    elements: [{ type: "text", text: "{{" }],
+                                                },
+                                                { type: "text", text: "\n                    " },
+                                            ],
+                                        },
+                                        { type: "text", text: "\n                    " },
+                                        {
+                                            type: "element",
+                                            name: "w:r",
+                                            elements: [
+                                                { type: "text", text: "\n                        " },
+                                                {
+                                                    type: "element",
+                                                    name: "w:rPr",
+                                                    elements: [
+                                                        { type: "text", text: "\n                            " },
+                                                        {
+                                                            type: "element",
+                                                            name: "w:rFonts",
+                                                            attributes: { "w:eastAsia": "Times New Roman" },
+                                                        },
+                                                        { type: "text", text: "\n                            " },
+                                                        {
+                                                            type: "element",
+                                                            name: "w:kern",
+                                                            attributes: { "w:val": "0" },
+                                                        },
+                                                        { type: "text", text: "\n                            " },
+                                                        {
+                                                            type: "element",
+                                                            name: "w:sz",
+                                                            attributes: { "w:val": "20" },
+                                                        },
+                                                        { type: "text", text: "\n                            " },
+                                                        {
+                                                            type: "element",
+                                                            name: "w:lang",
+                                                            attributes: {
+                                                                "w:val": "en-US",
+                                                                "w:eastAsia": "en-US",
+                                                                "w:bidi": "ar-SA",
+                                                            },
+                                                        },
+                                                        { type: "text", text: "\n                        " },
+                                                    ],
+                                                },
+                                                { type: "text", text: "\n                        " },
+                                                {
+                                                    type: "element",
+                                                    name: "w:t",
+                                                    elements: [{ type: "text", text: "a" }],
+                                                },
+                                                { type: "text", text: "\n                    " },
+                                            ],
+                                        },
+                                        { type: "text", text: "\n                    " },
+                                        {
+                                            type: "element",
+                                            name: "w:r",
+                                            elements: [
+                                                { type: "text", text: "\n                        " },
+                                                {
+                                                    type: "element",
+                                                    name: "w:rPr",
+                                                    elements: [
+                                                        { type: "text", text: "\n                            " },
+                                                        {
+                                                            type: "element",
+                                                            name: "w:rFonts",
+                                                            attributes: { "w:eastAsia": "Times New Roman" },
+                                                        },
+                                                        { type: "text", text: "\n                            " },
+                                                        {
+                                                            type: "element",
+                                                            name: "w:kern",
+                                                            attributes: { "w:val": "0" },
+                                                        },
+                                                        { type: "text", text: "\n            " },
+                                                        {
+                                                            type: "element",
+                                                            name: "w:sz",
+                                                            attributes: { "w:val": "20" },
+                                                        },
+                                                        { type: "text", text: "\n                            " },
+                                                        {
+                                                            type: "element",
+                                                            name: "w:lang",
+                                                            attributes: {
+                                                                "w:val": "en-US",
+                                                                "w:eastAsia": "en-US",
+                                                                "w:bidi": "ar-SA",
+                                                            },
+                                                        },
+                                                        { type: "text", text: "\n                        " },
+                                                    ],
+                                                },
+                                                { type: "text", text: "\n                        " },
+                                                {
+                                                    type: "element",
+                                                    name: "w:t",
+                                                    elements: [{ type: "text", text: "ddr" }],
+                                                },
+                                                { type: "text", text: "\n                    " },
+                                            ],
+                                        },
+                                        { type: "text", text: "\n                    " },
+                                        {
+                                            type: "element",
+                                            name: "w:r",
+                                            elements: [
+                                                { type: "text", text: "\n                        " },
+                                                {
+                                                    type: "element",
+                                                    name: "w:rPr",
+                                                    elements: [
+                                                        { type: "text", text: "\n                            " },
+                                                        {
+                                                            type: "element",
+                                                            name: "w:rFonts",
+                                                            attributes: { "w:eastAsia": "Times New Roman" },
+                                                        },
+                                                        { type: "text", text: "\n                            " },
+                                                        {
+                                                            type: "element",
+                                                            name: "w:kern",
+                                                            attributes: { "w:val": "0" },
+                                                        },
+                                                        { type: "text", text: "\n                            " },
+                                                        {
+                                                            type: "element",
+                                                            name: "w:sz",
+                                                            attributes: { "w:val": "20" },
+                                                        },
+                                                        { type: "text", text: "\n                            " },
+                                                        {
+                                                            type: "element",
+                                                            name: "w:lang",
+                                                            attributes: {
+                                                                "w:val": "en-US",
+                                                                "w:eastAsia": "en-US",
+                                                                "w:bidi": "ar-SA",
+                                                            },
+                                                        },
+                                                        { type: "text", text: "\n                        " },
+                                                    ],
+                                                },
+                                                { type: "text", text: "\n                        " },
+                                                {
+                                                    type: "element",
+                                                    name: "w:t",
+                                                    elements: [{ type: "text", text: "ess" }],
+                                                },
+                                                { type: "text", text: "\n                    " },
+                                            ],
+                                        },
+                                        { type: "text", text: "\n                    " },
+                                        {
+                                            type: "element",
+                                            name: "w:r",
+                                            elements: [
+                                                { type: "text", text: "\n      " },
+                                                {
+                                                    type: "element",
+                                                    name: "w:rPr",
+                                                    elements: [
+                                                        { type: "text", text: "\n                            " },
+                                                        {
+                                                            type: "element",
+                                                            name: "w:rFonts",
+                                                            attributes: { "w:eastAsia": "Times New Roman" },
+                                                        },
+                                                        { type: "text", text: "\n                            " },
+                                                        {
+                                                            type: "element",
+                                                            name: "w:kern",
+                                                            attributes: { "w:val": "0" },
+                                                        },
+                                                        { type: "text", text: "\n                            " },
+                                                        {
+                                                            type: "element",
+                                                            name: "w:sz",
+                                                            attributes: { "w:val": "20" },
+                                                        },
+                                                        { type: "text", text: "\n                            " },
+                                                        {
+                                                            type: "element",
+                                                            name: "w:lang",
+                                                            attributes: {
+                                                                "w:val": "en-US",
+                                                                "w:eastAsia": "en-US",
+                                                                "w:bidi": "ar-SA",
+                                                            },
+                                                        },
+                                                        { type: "text", text: "\n                        " },
+                                                    ],
+                                                },
+                                                { type: "text", text: "\n                        " },
+                                                {
+                                                    type: "element",
+                                                    name: "w:t",
+                                                    elements: [{ type: "text", text: "}}" }],
+                                                },
+                                            ],
+                                        },
+                                    ],
+                                },
+                            ],
+                        },
+                    ],
+                },
+                // cspell:enable
+                patch: {
+                    type: PatchType.PARAGRAPH,
+                    children: [new Paragraph("Lorem ipsum paragraph")],
+                },
+                patchText: "{{address}}",
+                context: {
+                    file: {} as unknown as File,
+                    viewWrapper: {
+                        Relationships: {},
+                    } as unknown as IViewWrapper,
+                    stack: [],
+                },
+            });
+
+            expect(JSON.stringify(output)).to.contain("Lorem ipsum paragraph");
+        });
     });
 });
