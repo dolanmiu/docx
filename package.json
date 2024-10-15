@@ -72,7 +72,7 @@
         "@types/prompt": "^1.1.1",
         "@types/unzipper": "^0.10.4",
         "@types/xml": "^1.0.8",
-        "@typescript-eslint/eslint-plugin": "^7.0.0",
+        "@typescript-eslint/eslint-plugin": "^8.8.1",
         "@typescript-eslint/parser": "^8.8.1",
         "@vitest/coverage-v8": "^1.1.0",
         "@vitest/ui": "^2.1.2",
