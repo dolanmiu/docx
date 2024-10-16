@@ -80,6 +80,12 @@ export class File {
             trackRevisions: options.features?.trackRevisions,
             updateFields: options.features?.updateFields,
             defaultTabStop: options.defaultTabStop,
+            hyphenation: {
+                autoHyphenation: options.hyphenation?.autoHyphenation,
+                hyphenationZone: options.hyphenation?.hyphenationZone,
+                consecutiveHyphenLimit: options.hyphenation?.consecutiveHyphenLimit,
+                doNotHyphenateCaps: options.hyphenation?.doNotHyphenateCaps,
+            }
         });
 
         this.media = new Media();
