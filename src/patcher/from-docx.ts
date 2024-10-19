@@ -1,6 +1,7 @@
 import JSZip from "jszip";
 import { Element, js2xml } from "xml-js";
 
+import { DocumentAttributeNamespaces } from "@file/document";
 import { ConcreteHyperlink, ExternalHyperlink, ParagraphChild } from "@file/paragraph";
 import { FileChild } from "@file/file-child";
 import { IMediaData, Media } from "@file/media";
@@ -100,6 +101,24 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
         }
 
         const json = toJson(await value.async("text"));
+
+        if (key === "word/document.xml") {
+            const document = json.elements?.find((i) => i.name === "w:document");
+            if (document) {
+                // We could check all namespaces from Document, but we'll instead
+                // check only those that may be used by our element types.
+
+                // eslint-disable-next-line functional/immutable-data
+                document.attributes = document.attributes ?? {};
+                for (const ns of ["mc", "wp", "r", "w15", "m"] as const) {
+                    // eslint-disable-next-line functional/immutable-data
+                    document.attributes[`xmlns:${ns}`] = DocumentAttributeNamespaces[ns];
+                }
+                // eslint-disable-next-line functional/immutable-data
+                document.attributes["mc:Ignorable"] = `${document.attributes["mc:Ignorable"] || ""} w15`.trim();
+            }
+        }
+
         if (key.startsWith("word/") && !key.endsWith(".xml.rels")) {
             const context: IContext = {
                 file,
