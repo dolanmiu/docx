@@ -27,7 +27,6 @@ export const traverse = (node: Element): readonly IRenderedParagraphNode[] => {
         }),
     ];
 
-    // eslint-disable-next-line functional/immutable-data
     let currentNode: ElementWrapper | undefined;
     while (queue.length > 0) {
         // eslint-disable-next-line functional/immutable-data

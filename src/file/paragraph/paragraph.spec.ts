@@ -33,7 +33,7 @@ describe("Paragraph", () => {
 
             try {
                 JSON.parse(stringifiedJson);
-            } catch (e) {
+            } catch {
                 assert.isTrue(false);
             }
             assert.isTrue(true);

@@ -134,7 +134,6 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
                 // This algorithm is limited to one patch per text run
                 // Once it cannot find any more occurrences, it will throw an error, and then we break out of the loop
                 // https://github.com/dolanmiu/docx/issues/2267
-                // eslint-disable-next-line no-constant-condition
                 while (true) {
                     try {
                         replacer({

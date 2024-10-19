@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-/* tslint:disable:no-unused-expression */
 import { describe, expect, it } from "vitest";
 
 import { Formatter } from "@export/formatter";
