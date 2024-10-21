@@ -7,20 +7,20 @@
 // </xsd:complexType>
 // <xsd:element name="checkbox" type="CT_SdtCheckbox"/>
 
-import { XmlComponent } from "@file/xml-components";
 import { CheckBoxSymbolElement } from "@file/checkbox/checkbox-symbol";
+import { XmlComponent } from "@file/xml-components";
 
-export interface ICheckboxSymbolProperties {
+export type ICheckboxSymbolProperties = {
     readonly value?: string;
     readonly font?: string;
-}
+};
 
-export interface ICheckboxSymbolOptions {
+export type ICheckboxSymbolOptions = {
     readonly alias?: string;
     readonly checked?: boolean;
     readonly checkedState?: ICheckboxSymbolProperties;
     readonly uncheckedState?: ICheckboxSymbolProperties;
-}
+};
 
 export class CheckBoxUtil extends XmlComponent {
     private readonly DEFAULT_UNCHECKED_SYMBOL: string = "2610";

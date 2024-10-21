@@ -1,20 +1,20 @@
 import JSZip from "jszip";
 import { Element, js2xml } from "xml-js";
 
-import { ConcreteHyperlink, ExternalHyperlink, ParagraphChild } from "@file/paragraph";
-import { FileChild } from "@file/file-child";
-import { IMediaData, Media } from "@file/media";
+import { ImageReplacer } from "@export/packer/image-replacer";
 import { IViewWrapper } from "@file/document-wrapper";
 import { File } from "@file/file";
-import { IContext } from "@file/xml-components";
-import { ImageReplacer } from "@export/packer/image-replacer";
+import { FileChild } from "@file/file-child";
+import { IMediaData, Media } from "@file/media";
+import { ConcreteHyperlink, ExternalHyperlink, ParagraphChild } from "@file/paragraph";
 import { TargetModeType } from "@file/relationships/relationship/relationship";
+import { IContext } from "@file/xml-components";
 import { uniqueId } from "@util/convenience-functions";
 
+import { appendContentType } from "./content-types-manager";
+import { appendRelationship, getNextRelationshipIndex } from "./relationship-manager";
 import { replacer } from "./replacer";
 import { toJson } from "./util";
-import { appendRelationship, getNextRelationshipIndex } from "./relationship-manager";
-import { appendContentType } from "./content-types-manager";
 
 // eslint-disable-next-line functional/prefer-readonly-type
 export type InputDataType = Buffer | string | number[] | Uint8Array | ArrayBuffer | Blob | NodeJS.ReadableStream;
@@ -34,15 +34,15 @@ type FilePatch = {
     readonly children: readonly FileChild[];
 };
 
-interface IImageRelationshipAddition {
+type IImageRelationshipAddition = {
     readonly key: string;
     readonly mediaDatas: readonly IMediaData[];
-}
+};
 
-interface IHyperlinkRelationshipAddition {
+type IHyperlinkRelationshipAddition = {
     readonly key: string;
     readonly hyperlink: { readonly id: string; readonly link: string };
-}
+};
 
 export type IPatch = ParagraphPatch | FilePatch;
 
@@ -65,7 +65,7 @@ export type PatchDocumentOutputType = keyof OutputByType;
 export type PatchDocumentOptions<T extends PatchDocumentOutputType = PatchDocumentOutputType> = {
     readonly outputType: T;
     readonly data: InputDataType;
-    readonly patches: { readonly [key: string]: IPatch };
+    readonly patches: Readonly<Record<string, IPatch>>;
     readonly keepOriginalStyles?: boolean;
 };
 

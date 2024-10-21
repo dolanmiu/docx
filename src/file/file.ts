@@ -2,8 +2,10 @@ import { AppProperties } from "./app-properties/app-properties";
 import { ContentTypes } from "./content-types/content-types";
 import { CoreProperties, IPropertiesOptions } from "./core-properties";
 import { CustomProperties } from "./custom-properties";
-import { DocumentWrapper } from "./document-wrapper";
 import { HeaderFooterReferenceType, ISectionPropertiesOptions } from "./document/body/section-properties";
+import { DocumentWrapper } from "./document-wrapper";
+import { FileChild } from "./file-child";
+import { FontWrapper } from "./fonts/font-wrapper";
 import { FooterWrapper, IDocumentFooter } from "./footer-wrapper";
 import { FootnotesWrapper } from "./footnotes-wrapper";
 import { Footer, Header } from "./header";
@@ -16,10 +18,8 @@ import { Settings } from "./settings";
 import { Styles } from "./styles";
 import { ExternalStylesFactory } from "./styles/external-styles-factory";
 import { DefaultStylesFactory } from "./styles/factory";
-import { FileChild } from "./file-child";
-import { FontWrapper } from "./fonts/font-wrapper";
 
-export interface ISectionOptions {
+export type ISectionOptions = {
     readonly headers?: {
         readonly default?: Header;
         readonly first?: Header;
@@ -32,7 +32,7 @@ export interface ISectionOptions {
     };
     readonly properties?: ISectionPropertiesOptions;
     readonly children: readonly FileChild[];
-}
+};
 
 export class File {
     // eslint-disable-next-line functional/prefer-readonly-type

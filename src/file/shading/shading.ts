@@ -20,11 +20,11 @@
 import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
 import { hexColorValue } from "@util/values";
 
-export interface IShadingAttributesProperties {
+export type IShadingAttributesProperties = {
     readonly fill?: string;
     readonly color?: string;
     readonly type?: (typeof ShadingType)[keyof typeof ShadingType];
-}
+};
 
 class ShadingAttributes extends XmlAttributeComponent<IShadingAttributesProperties> {
     protected readonly xmlKeys = {
@@ -47,7 +47,6 @@ export class Shading extends XmlComponent {
     }
 }
 
-/* eslint-disable @typescript-eslint/naming-convention */
 export const ShadingType = {
     CLEAR: "clear",
     DIAGONAL_CROSS: "diagCross",
@@ -87,4 +86,3 @@ export const ShadingType = {
     THIN_VERTICAL_STRIPE: "thinVertStripe",
     VERTICAL_STRIPE: "vertStripe",
 } as const;
-/* eslint-enable */

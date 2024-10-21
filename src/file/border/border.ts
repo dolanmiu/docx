@@ -22,7 +22,7 @@
 import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
 import { eighthPointMeasureValue, hexColorValue, pointMeasureValue } from "@util/values";
 
-export interface IBorderOptions {
+export type IBorderOptions = {
     readonly style: (typeof BorderStyle)[keyof typeof BorderStyle];
     /** Border color, in hex (eg 'FF00AA') */
     readonly color?: string;
@@ -30,7 +30,7 @@ export interface IBorderOptions {
     readonly size?: number;
     /** Spacing offset. Values are specified in pt */
     readonly space?: number;
-}
+};
 
 export class BorderElement extends XmlComponent {
     public constructor(elementName: string, { color, size, space, style }: IBorderOptions) {
@@ -55,7 +55,6 @@ class BordersAttributes extends XmlAttributeComponent<IBorderOptions> {
     };
 }
 
-/* eslint-disable @typescript-eslint/naming-convention */
 export const BorderStyle = {
     SINGLE: "single",
     DASH_DOT_STROKED: "dashDotStroked",
@@ -85,4 +84,3 @@ export const BorderStyle = {
     TRIPLE: "triple",
     WAVE: "wave",
 } as const;
-/* eslint-enable */

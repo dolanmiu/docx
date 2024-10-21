@@ -1,28 +1,24 @@
 import eslint from "@eslint/js";
 import type { Linter } from "eslint";
-import _import from "eslint-plugin-import";
-import noNull from "eslint-plugin-no-null";
+import importPlugin from "eslint-plugin-import";
 import unicorn from "eslint-plugin-unicorn";
 import jsdoc from "eslint-plugin-jsdoc";
 import preferArrow from "eslint-plugin-prefer-arrow";
 import functional from "eslint-plugin-functional";
-import { fixupPluginRules } from "@eslint/compat";
 import globals from "globals";
-import tsEslint from 'typescript-eslint';
-
+import tsEslint from "typescript-eslint";
 
 const config: Linter.Config<Linter.RulesRecord>[] = [
     {
         ignores: ["**/vite.config.ts", "**/build/**", "**/coverage/**", "**/*.js", "eslint.config.ts", "**/demo/**", "**/scripts/**"],
     },
     eslint.configs.recommended,
+    importPlugin.flatConfigs.recommended,
     ...tsEslint.configs.recommended,
     ...tsEslint.configs.stylistic,
     {
         files: ["**/src/**/*.ts"],
         plugins: {
-            import: fixupPluginRules(_import),
-            "no-null": noNull,
             unicorn,
             jsdoc,
             "prefer-arrow": preferArrow,
@@ -33,6 +29,13 @@ const config: Linter.Config<Linter.RulesRecord>[] = [
             parserOptions: {
                 projectService: true,
                 tsconfigRootDir: import.meta.dirname,
+            },
+        },
+
+        settings: {
+            "import/resolver": {
+                typescript: true,
+                node: true,
             },
         },
 
@@ -217,7 +220,30 @@ const config: Linter.Config<Linter.RulesRecord>[] = [
             "import/no-default-export": "error",
             "import/no-extraneous-dependencies": "off",
             "import/no-internal-modules": "off",
-            "import/order": "error",
+            "sort-imports": [
+                "error",
+                {
+                    allowSeparatedGroups: true,
+                    ignoreDeclarationSort: true,
+                },
+            ],
+            "import/order": [
+                "error",
+                {
+                    groups: [["external", "builtin"], "internal", ["sibling", "parent", "index"]],
+                    "newlines-between": "always",
+                    pathGroups: [
+                        { pattern: "@file/**/*", group: "internal" },
+                        { pattern: "@file/**", group: "internal" },
+                        { pattern: "@export/**", group: "internal" },
+                    ],
+                    pathGroupsExcludedImportTypes: ["internal"],
+                    alphabetize: {
+                        order: "asc",
+                        caseInsensitive: true,
+                    },
+                },
+            ],
             indent: "off",
             "jsdoc/check-alignment": "error",
             "jsdoc/check-indentation": "off",
@@ -240,7 +266,6 @@ const config: Linter.Config<Linter.RulesRecord>[] = [
             "no-multiple-empty-lines": "error",
             "no-new-func": "error",
             "no-new-wrappers": "error",
-            "no-null/no-null": "error",
             "no-param-reassign": "error",
             "no-redeclare": "error",
             "no-return-await": "error",
@@ -308,8 +333,6 @@ const config: Linter.Config<Linter.RulesRecord>[] = [
     {
         files: ["**/*.spec.ts"],
         plugins: {
-            import: fixupPluginRules(_import),
-            "no-null": noNull,
             unicorn,
             jsdoc,
             "prefer-arrow": preferArrow,

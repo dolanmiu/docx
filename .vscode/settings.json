@@ -5,5 +5,6 @@
     "editor.formatOnSave": false,
     "prettier.tabWidth": 4,
     "prettier.arrowParens": "always",
-    "prettier.bracketSpacing": true
+    "prettier.bracketSpacing": true,
+    "eslint.useFlatConfig": true
 }

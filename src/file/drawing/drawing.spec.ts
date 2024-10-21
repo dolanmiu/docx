@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { IContext } from "@file/xml-components";
 import { Formatter } from "@export/formatter";
+import { IContext } from "@file/xml-components";
 
 import { ConcreteHyperlink, TextRun } from "../";
 import { Drawing, IDrawingOptions } from "./drawing";
@@ -80,7 +80,6 @@ describe("Drawing", () => {
                                     {
                                         "a:graphicFrameLocks": {
                                             _attr: {
-                                                // tslint:disable-next-line:object-literal-key-quotes
                                                 noChangeAspect: 1,
                                                 "xmlns:a": "http://schemas.openxmlformats.org/drawingml/2006/main",
                                             },
@@ -139,7 +138,6 @@ describe("Drawing", () => {
                                                             {
                                                                 "a:blip": {
                                                                     _attr: {
-                                                                        // tslint:disable-next-line:object-literal-key-quotes
                                                                         cstate: "none",
                                                                         "r:embed": "rId{test.jpg}",
                                                                     },
@@ -311,7 +309,6 @@ describe("Drawing", () => {
                                     {
                                         "a:graphicFrameLocks": {
                                             _attr: {
-                                                // tslint:disable-next-line:object-literal-key-quotes
                                                 noChangeAspect: 1,
                                                 "xmlns:a": "http://schemas.openxmlformats.org/drawingml/2006/main",
                                             },
@@ -370,7 +367,6 @@ describe("Drawing", () => {
                                                             {
                                                                 "a:blip": {
                                                                     _attr: {
-                                                                        // tslint:disable-next-line:object-literal-key-quotes
                                                                         cstate: "none",
                                                                         "r:embed": "rId{test.jpg}",
                                                                     },
@@ -554,7 +550,6 @@ describe("Drawing", () => {
                                     {
                                         "a:graphicFrameLocks": {
                                             _attr: {
-                                                // tslint:disable-next-line:object-literal-key-quotes
                                                 noChangeAspect: 1,
                                                 "xmlns:a": "http://schemas.openxmlformats.org/drawingml/2006/main",
                                             },
@@ -622,7 +617,6 @@ describe("Drawing", () => {
                                                             {
                                                                 "a:blip": {
                                                                     _attr: {
-                                                                        // tslint:disable-next-line:object-literal-key-quotes
                                                                         cstate: "none",
                                                                         "r:embed": "rId{test.jpg}",
                                                                     },

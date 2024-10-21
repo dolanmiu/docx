@@ -202,7 +202,7 @@ export const LevelSuffix = {
     TAB: "tab",
 } as const;
 
-export interface ILevelsOptions {
+export type ILevelsOptions = {
     readonly level: number;
     readonly format?: (typeof LevelFormat)[keyof typeof LevelFormat];
     readonly text?: string;
@@ -214,7 +214,7 @@ export interface ILevelsOptions {
         readonly run?: IRunStylePropertiesOptions;
         readonly paragraph?: ILevelParagraphStylePropertiesOptions;
     };
-}
+};
 
 // <xsd:complexType name="CT_LevelSuffix">
 //     <xsd:attribute name="val" type="ST_LevelSuffix" use="required"/>

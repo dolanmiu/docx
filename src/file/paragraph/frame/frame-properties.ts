@@ -19,13 +19,13 @@ export const FrameWrap = {
     AROUND: "around",
     AUTO: "auto",
     NONE: "none",
-    // eslint-disable-next-line @typescript-eslint/naming-convention
+
     NOT_BESIDE: "notBeside",
     THROUGH: "through",
     TIGHT: "tight",
 } as const;
 
-interface IBaseFrameOptions {
+type IBaseFrameOptions = {
     readonly anchorLock?: boolean;
     readonly dropCap?: (typeof DropCapType)[keyof typeof DropCapType];
     readonly width: number;
@@ -41,23 +41,23 @@ interface IBaseFrameOptions {
         readonly vertical: number;
     };
     readonly rule?: (typeof HeightRule)[keyof typeof HeightRule];
-}
+};
 
-export interface IXYFrameOptions extends IBaseFrameOptions {
+export type IXYFrameOptions = {
     readonly type: "absolute";
     readonly position: {
         readonly x: number;
         readonly y: number;
     };
-}
+} & IBaseFrameOptions;
 
-export interface IAlignmentFrameOptions extends IBaseFrameOptions {
+export type IAlignmentFrameOptions = {
     readonly type: "alignment";
     readonly alignment: {
         readonly x: (typeof HorizontalPositionAlign)[keyof typeof HorizontalPositionAlign];
         readonly y: (typeof VerticalPositionAlign)[keyof typeof VerticalPositionAlign];
     };
-}
+} & IBaseFrameOptions;
 
 // Be wary of Typescript's Open types:
 // https://stackoverflow.com/q/46370222/3481582

@@ -17,14 +17,14 @@ import { decimalNumber } from "@util/values";
 // </xsd:sequence>
 // </xsd:complexType>
 
-export interface ITableCellBorders {
+export type ITableCellBorders = {
     readonly top?: IBorderOptions;
     readonly start?: IBorderOptions;
     readonly left?: IBorderOptions;
     readonly bottom?: IBorderOptions;
     readonly end?: IBorderOptions;
     readonly right?: IBorderOptions;
-}
+};
 
 export class TableCellBorders extends IgnoreIfEmptyXmlComponent {
     public constructor(options: ITableCellBorders) {
@@ -113,11 +113,8 @@ export class VerticalMerge extends XmlComponent {
 }
 
 export const TextDirection = {
-    // eslint-disable-next-line @typescript-eslint/naming-convention
     BOTTOM_TO_TOP_LEFT_TO_RIGHT: "btLr",
-    // eslint-disable-next-line @typescript-eslint/naming-convention
     LEFT_TO_RIGHT_TOP_TO_BOTTOM: "lrTb",
-    // eslint-disable-next-line @typescript-eslint/naming-convention
     TOP_TO_BOTTOM_RIGHT_TO_LEFT: "tbRl",
 } as const;
 

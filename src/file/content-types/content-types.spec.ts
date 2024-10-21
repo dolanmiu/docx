@@ -1,5 +1,3 @@
-// tslint:disable:no-string-literal
-
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { Formatter } from "@export/formatter";

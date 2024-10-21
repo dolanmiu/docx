@@ -1,5 +1,6 @@
 // http://www.datypic.com/sc/ooxml/e-w_fldSimple-1.html
 import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
+
 import { TextRun } from "./text-run";
 
 class FldSimpleAttrs extends XmlAttributeComponent<{ readonly instr: string }> {

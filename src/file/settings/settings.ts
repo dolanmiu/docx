@@ -146,14 +146,14 @@ export class SettingsAttributes extends XmlAttributeComponent<{
 // </xsd:sequence>
 // </xsd:complexType>
 
-export interface ISettingsOptions {
+export type ISettingsOptions = {
     readonly compatibilityModeVersion?: number;
     readonly evenAndOddHeaders?: boolean;
     readonly trackRevisions?: boolean;
     readonly updateFields?: boolean;
     readonly compatibility?: ICompatibilityOptions;
     readonly defaultTabStop?: number;
-}
+};
 
 export class Settings extends XmlComponent {
     public constructor(options: ISettingsOptions) {

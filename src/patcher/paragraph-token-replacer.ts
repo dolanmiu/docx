@@ -1,7 +1,7 @@
 import { Element } from "xml-js";
 
-import { createTextElementContents, patchSpaceAttribute } from "./util";
 import { IRenderedParagraphNode } from "./run-renderer";
+import { createTextElementContents, patchSpaceAttribute } from "./util";
 
 const ReplaceMode = {
     START: 0,

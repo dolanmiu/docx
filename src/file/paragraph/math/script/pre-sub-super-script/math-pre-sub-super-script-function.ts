@@ -1,15 +1,15 @@
 // http://www.datypic.com/sc/ooxml/e-m_sPre-1.html
 import { XmlComponent } from "@file/xml-components";
 
+import { MathPreSubSuperScriptProperties } from "./math-pre-sub-super-script-function-properties";
 import { MathComponent } from "../../math-component";
 import { MathBase, MathSubScriptElement, MathSuperScriptElement } from "../../n-ary";
-import { MathPreSubSuperScriptProperties } from "./math-pre-sub-super-script-function-properties";
 
-export interface IMathPreSubSuperScriptOptions {
+export type IMathPreSubSuperScriptOptions = {
     readonly children: readonly MathComponent[];
     readonly subScript: readonly MathComponent[];
     readonly superScript: readonly MathComponent[];
-}
+};
 
 export class MathPreSubSuperScript extends XmlComponent {
     public constructor(options: IMathPreSubSuperScriptOptions) {

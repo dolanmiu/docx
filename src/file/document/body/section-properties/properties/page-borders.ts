@@ -10,13 +10,11 @@ import { IgnoreIfEmptyXmlComponent, XmlAttributeComponent } from "@file/xml-comp
 // </xsd:restriction>
 // </xsd:simpleType>
 
-/* eslint-disable @typescript-eslint/naming-convention */
 export const PageBorderDisplay = {
     ALL_PAGES: "allPages",
     FIRST_PAGE: "firstPage",
     NOT_FIRST_PAGE: "notFirstPage",
 } as const;
-/* eslint-enable */
 
 // <xsd:simpleType name="ST_PageBorderOffset">
 // <xsd:restriction base="xsd:string">
@@ -40,19 +38,19 @@ export const PageBorderZOrder = {
     FRONT: "front",
 } as const;
 
-export interface IPageBorderAttributes {
+export type IPageBorderAttributes = {
     readonly display?: (typeof PageBorderDisplay)[keyof typeof PageBorderDisplay];
     readonly offsetFrom?: (typeof PageBorderOffsetFrom)[keyof typeof PageBorderOffsetFrom];
     readonly zOrder?: (typeof PageBorderZOrder)[keyof typeof PageBorderZOrder];
-}
+};
 
-export interface IPageBordersOptions {
+export type IPageBordersOptions = {
     readonly pageBorders?: IPageBorderAttributes;
     readonly pageBorderTop?: IBorderOptions;
     readonly pageBorderRight?: IBorderOptions;
     readonly pageBorderBottom?: IBorderOptions;
     readonly pageBorderLeft?: IBorderOptions;
-}
+};
 
 class PageBordersAttributes extends XmlAttributeComponent<IPageBorderAttributes> {
     protected readonly xmlKeys = {

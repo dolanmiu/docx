@@ -11,7 +11,6 @@ import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
 // </xsd:restriction>
 // </xsd:simpleType>
 
-/* eslint-disable @typescript-eslint/naming-convention */
 export const SectionType = {
     NEXT_PAGE: "nextPage",
     NEXT_COLUMN: "nextColumn",
@@ -19,7 +18,6 @@ export const SectionType = {
     EVEN_PAGE: "evenPage",
     ODD_PAGE: "oddPage",
 } as const;
-/* eslint-enable */
 
 // <xsd:complexType name="CT_SectType">
 //     <xsd:attribute name="val" type="ST_SectionMark"/>

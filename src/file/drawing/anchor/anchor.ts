@@ -1,6 +1,7 @@
 // http://officeopenxml.com/drwPicFloating.php
 import { IMediaData, IMediaDataTransformation } from "@file/media";
 import { XmlComponent } from "@file/xml-components";
+
 import { IDrawingOptions } from "../drawing";
 import { HorizontalPosition, IFloating, SimplePos, VerticalPosition } from "../floating";
 import { Graphic } from "../inline/graphic";

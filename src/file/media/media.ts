@@ -1,6 +1,6 @@
 import { IMediaData } from "./data";
 
-export interface IMediaTransformation {
+export type IMediaTransformation = {
     readonly width: number;
     readonly height: number;
     readonly flip?: {
@@ -8,7 +8,7 @@ export interface IMediaTransformation {
         readonly horizontal?: boolean;
     };
     readonly rotation?: number;
-}
+};
 
 export class Media {
     // eslint-disable-next-line functional/prefer-readonly-type

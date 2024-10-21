@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 
 import { Formatter } from "@export/formatter";
+
 import { DocumentWrapper } from "../document-wrapper";
 import { File } from "../file";
-
 import { ParagraphProperties } from "./properties";
 
 describe("ParagraphProperties", () => {
@@ -23,13 +23,11 @@ describe("ParagraphProperties", () => {
                 },
             });
             const tree = new Formatter().format(properties, {
-                // tslint:disable-next-line: no-object-literal-type-assertion
                 file: {
                     Numbering: {
                         createConcreteNumberingInstance: (_: string, __: number) => undefined,
                     },
                 } as File,
-                // tslint:disable-next-line: no-object-literal-type-assertion
                 viewWrapper: new DocumentWrapper({ background: {} }),
                 stack: [],
             });

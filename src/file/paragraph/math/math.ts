@@ -3,9 +3,9 @@ import { XmlComponent } from "@file/xml-components";
 
 import { MathComponent } from "./math-component";
 
-export interface IMathOptions {
+export type IMathOptions = {
     readonly children: readonly MathComponent[];
-}
+};
 
 export class Math extends XmlComponent {
     public constructor(options: IMathOptions) {

@@ -139,7 +139,6 @@ describe("Packer", () => {
         it("should create a standard docx file", async () => {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             vi.spyOn((Packer as any).compiler, "compile").mockReturnValue({
-                // tslint:disable-next-line: no-empty
                 generateAsync: () => vi.fn(),
             });
             const str = await Packer.toBlob(file);
@@ -167,7 +166,6 @@ describe("Packer", () => {
         it("should create a standard docx file", async () => {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             vi.spyOn((Packer as any).compiler, "compile").mockReturnValue({
-                // tslint:disable-next-line: no-empty
                 generateAsync: () => Promise.resolve(vi.fn()),
             });
             const stream = Packer.toStream(file);

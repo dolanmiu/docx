@@ -1,4 +1,4 @@
-import { BuilderElement, createStringElement, OnOffElement, XmlComponent } from "@file/xml-components";
+import { BuilderElement, OnOffElement, XmlComponent, createStringElement } from "@file/xml-components";
 
 // <xsd:complexType name="CT_Font">
 //     <xsd:sequence>
@@ -27,7 +27,7 @@ import { BuilderElement, createStringElement, OnOffElement, XmlComponent } from 
 // </xsd:complexType>
 
 // http://www.datypic.com/sc/ooxml/e-w_embedRegular-1.html
-export interface IFontRelationshipOptions {
+export type IFontRelationshipOptions = {
     /**
      * 	Relationship to Part
      */
@@ -40,7 +40,7 @@ export interface IFontRelationshipOptions {
      * 	Embedded Font Is Subsetted
      */
     readonly subsetted?: boolean;
-}
+};
 
 export const CharacterSet = {
     ANSI: "00",

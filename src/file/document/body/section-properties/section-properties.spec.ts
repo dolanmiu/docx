@@ -15,7 +15,7 @@ import { LineNumberRestartFormat } from "./properties/line-number";
 import { PageBorderOffsetFrom } from "./properties/page-borders";
 import { PageTextDirectionType } from "./properties/page-text-direction";
 import { SectionType } from "./properties/section-type";
-import { sectionMarginDefaults, sectionPageSizeDefaults, SectionProperties } from "./section-properties";
+import { SectionProperties, sectionMarginDefaults, sectionPageSizeDefaults } from "./section-properties";
 
 const DEFAULT_MARGINS = {
     "w:bottom": sectionMarginDefaults.BOTTOM,

@@ -1,12 +1,9 @@
 import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
 
-/* eslint-disable @typescript-eslint/naming-convention */
 export const PageTextDirectionType = {
     LEFT_TO_RIGHT_TOP_TO_BOTTOM: "lrTb",
     TOP_TO_BOTTOM_RIGHT_TO_LEFT: "tbRl",
 } as const;
-
-/* eslint-enable */
 
 class PageTextDirectionAttributes extends XmlAttributeComponent<{
     readonly val: (typeof PageTextDirectionType)[keyof typeof PageTextDirectionType];

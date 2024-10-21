@@ -7,11 +7,11 @@ import { MathNAryProperties } from "./math-n-ary-properties";
 import { MathSubScriptElement } from "./math-sub-script";
 import { MathSuperScriptElement } from "./math-super-script";
 
-export interface IMathSumOptions {
+export type IMathSumOptions = {
     readonly children: readonly MathComponent[];
     readonly subScript?: readonly MathComponent[];
     readonly superScript?: readonly MathComponent[];
-}
+};
 
 export class MathSum extends XmlComponent {
     public constructor(options: IMathSumOptions) {

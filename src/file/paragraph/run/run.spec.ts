@@ -5,9 +5,10 @@ import { BorderStyle } from "@file/border";
 import { ShadingType } from "@file/shading";
 
 import { EmphasisMarkType } from "./emphasis-mark";
+import { HighlightColor, TextEffect } from "./properties";
 import { PageNumber, Run } from "./run";
 import { UnderlineType } from "./underline";
-import { HighlightColor, TextEffect } from "./properties";
+
 describe("Run", () => {
     describe("#noProof()", () => {
         it("turns off spelling and grammar checkers for a run", () => {

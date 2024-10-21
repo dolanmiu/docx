@@ -11,10 +11,10 @@ import { TextAttributes } from "../text-attributes";
 //     </xsd:simpleContent>
 // </xsd:complexType>
 
-interface ITextOptions {
+type ITextOptions = {
     readonly space?: (typeof SpaceType)[keyof typeof SpaceType];
     readonly text?: string;
-}
+};
 
 export class Text extends XmlComponent {
     public constructor(options: string | ITextOptions) {

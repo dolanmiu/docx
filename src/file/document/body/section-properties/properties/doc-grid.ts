@@ -17,7 +17,6 @@ import { decimalNumber } from "@util/values";
 //     <xsd:attribute name="charSpace" type="ST_DecimalNumber"/>
 // </xsd:complexType>
 
-/* eslint-disable @typescript-eslint/naming-convention */
 export const DocumentGridType = {
     DEFAULT: "default",
     LINES: "lines",
@@ -25,12 +24,11 @@ export const DocumentGridType = {
     SNAP_TO_CHARS: "snapToChars",
 } as const;
 
-/* eslint-enable */
-export interface IDocGridAttributesProperties {
+export type IDocGridAttributesProperties = {
     readonly type?: (typeof DocumentGridType)[keyof typeof DocumentGridType];
     readonly linePitch?: number;
     readonly charSpace?: number;
-}
+};
 
 export class DocGridAttributes extends XmlAttributeComponent<IDocGridAttributesProperties> {
     protected readonly xmlKeys = {

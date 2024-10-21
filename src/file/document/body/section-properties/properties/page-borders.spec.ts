@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { Formatter } from "@export/formatter";
 import { BorderStyle } from "@file/border";
 
-import { PageBorderDisplay, PageBorders, PageBorderZOrder } from "./page-borders";
+import { PageBorderDisplay, PageBorderZOrder, PageBorders } from "./page-borders";
 
 describe("PageBorders", () => {
     describe("#constructor()", () => {

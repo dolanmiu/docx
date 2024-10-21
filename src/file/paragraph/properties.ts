@@ -1,7 +1,9 @@
 // http://officeopenxml.com/WPparagraphProperties.php
 // https://c-rex.net/projects/samples/ooxml/e1/Part4/OOXML_P4_DOCX_suppressLineNumbers_topic_ID0ECJAO.html
-/* eslint-disable functional/immutable-data */
-import { IContext, IgnoreIfEmptyXmlComponent, IXmlableObject, OnOffElement, XmlComponent } from "@file/xml-components";
+
+import { IContext, IXmlableObject, IgnoreIfEmptyXmlComponent, OnOffElement, XmlComponent } from "@file/xml-components";
+
+import { IRunOptions, RunProperties } from ".";
 import { DocumentWrapper } from "../document-wrapper";
 import { IShadingAttributesProperties, Shading } from "../shading";
 import { Alignment, AlignmentType } from "./formatting/alignment";
@@ -13,11 +15,10 @@ import { HeadingLevel, Style } from "./formatting/style";
 import { TabStop, TabStopDefinition, TabStopType } from "./formatting/tab-stop";
 import { NumberProperties } from "./formatting/unordered-list";
 import { WordWrap } from "./formatting/word-wrap";
-import { createFrameProperties, IFrameOptions } from "./frame/frame-properties";
+import { IFrameOptions, createFrameProperties } from "./frame/frame-properties";
 import { OutlineLevel } from "./links";
-import { IRunOptions, RunProperties } from ".";
 
-export interface ILevelParagraphStylePropertiesOptions {
+export type ILevelParagraphStylePropertiesOptions = {
     readonly alignment?: (typeof AlignmentType)[keyof typeof AlignmentType];
     readonly thematicBreak?: boolean;
     readonly contextualSpacing?: boolean;
@@ -34,9 +35,9 @@ export interface ILevelParagraphStylePropertiesOptions {
      */
     readonly keepLines?: boolean;
     readonly outlineLevel?: number;
-}
+};
 
-export interface IParagraphStylePropertiesOptions extends ILevelParagraphStylePropertiesOptions {
+export type IParagraphStylePropertiesOptions = {
     readonly numbering?:
         | {
               readonly reference: string;
@@ -45,9 +46,9 @@ export interface IParagraphStylePropertiesOptions extends ILevelParagraphStylePr
               readonly custom?: boolean;
           }
         | false;
-}
+} & ILevelParagraphStylePropertiesOptions;
 
-export interface IParagraphPropertiesOptions extends IParagraphStylePropertiesOptions {
+export type IParagraphPropertiesOptions = {
     readonly border?: IBordersOptions;
     readonly heading?: (typeof HeadingLevel)[keyof typeof HeadingLevel];
     readonly bidirectional?: boolean;
@@ -73,7 +74,7 @@ export interface IParagraphPropertiesOptions extends IParagraphStylePropertiesOp
      * Reference: ECMA-376, 3rd Edition (June, 2011), Fundamentals and Markup Language Reference § 17.3.1.29.
      */
     readonly run?: IRunOptions;
-}
+} & IParagraphStylePropertiesOptions;
 
 export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
     // eslint-disable-next-line functional/prefer-readonly-type

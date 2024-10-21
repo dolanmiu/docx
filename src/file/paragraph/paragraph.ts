@@ -1,12 +1,12 @@
 // http://officeopenxml.com/WPparagraph.php
+import { FileChild } from "@file/file-child";
 import { FootnoteReferenceRun } from "@file/footnotes";
 import { IContext, IXmlableObject } from "@file/xml-components";
 import { uniqueId } from "@util/convenience-functions";
-import { FileChild } from "@file/file-child";
 
+import { CheckBox } from "../checkbox";
 import { TargetModeType } from "../relationships/relationship/relationship";
 import { DeletedTextRun, InsertedTextRun } from "../track-revision";
-import { CheckBox } from "../checkbox";
 import { ColumnBreak, PageBreak } from "./formatting/break";
 import { Bookmark, ConcreteHyperlink, ExternalHyperlink, InternalHyperlink } from "./links";
 import { Math } from "./math";
@@ -37,10 +37,10 @@ export type ParagraphChild =
     | CommentReference
     | CheckBox;
 
-export interface IParagraphOptions extends IParagraphPropertiesOptions {
+export type IParagraphOptions = {
     readonly text?: string;
     readonly children?: readonly ParagraphChild[];
-}
+} & IParagraphPropertiesOptions;
 
 export class Paragraph extends FileChild {
     private readonly properties: ParagraphProperties;

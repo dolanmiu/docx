@@ -1,5 +1,5 @@
 // https://www.ecma-international.org/wp-content/uploads/ECMA-376-1_5th_edition_december_2016.zip page 297, section 17.3.2.21
-/* eslint-disable functional/immutable-data */
+
 import { BorderElement, IBorderOptions } from "@file/border";
 import { IShadingAttributesProperties, Shading } from "@file/shading";
 import { ChangeAttributes, IChangedAttributesProperties } from "@file/track-revision/track-revision";
@@ -15,17 +15,16 @@ import { PositiveUniversalMeasure, UniversalMeasure } from "@util/values";
 
 import { EmphasisMark, EmphasisMarkType } from "./emphasis-mark";
 import { CharacterSpacing, Color, Highlight, HighlightComplexScript } from "./formatting";
-import { createLanguageComponent, ILanguageOptions } from "./language";
+import { ILanguageOptions, createLanguageComponent } from "./language";
 import { IFontAttributesProperties, RunFonts } from "./run-fonts";
 import { SubScript, SuperScript } from "./script";
 import { Underline, UnderlineType } from "./underline";
 
-interface IFontOptions {
+type IFontOptions = {
     readonly name: string;
     readonly hint?: string;
-}
+};
 
-/* eslint-disable @typescript-eslint/naming-convention */
 export const TextEffect = {
     BLINK_BACKGROUND: "blinkBackground",
     LIGHTS: "lights",
@@ -63,9 +62,7 @@ export const HighlightColor = {
     YELLOW: "yellow",
 } as const;
 
-/* eslint-enable */
-
-export interface IRunStylePropertiesOptions {
+export type IRunStylePropertiesOptions = {
     readonly noProof?: boolean;
     readonly bold?: boolean;
     readonly boldComplexScript?: boolean;
@@ -106,13 +103,13 @@ export interface IRunStylePropertiesOptions {
     readonly specVanish?: boolean;
     readonly scale?: number;
     readonly math?: boolean;
-}
+};
 
-export interface IRunPropertiesOptions extends IRunStylePropertiesOptions {
+export type IRunPropertiesOptions = {
     readonly style?: string;
-}
+} & IRunStylePropertiesOptions;
 
-export interface IRunPropertiesChangeOptions extends IRunPropertiesOptions, IChangedAttributesProperties {}
+export type IRunPropertiesChangeOptions = {} & IRunPropertiesOptions & IChangedAttributesProperties;
 
 // <xsd:group name="EG_RPrBase">
 //     <xsd:choice>
@@ -157,7 +154,6 @@ export interface IRunPropertiesChangeOptions extends IRunPropertiesOptions, ICha
 //     <xsd:element name="oMath" type="CT_OnOff"/>
 //     </xsd:choice>
 // </xsd:group>
-/* eslint-disable functional/immutable-data */
 
 export class RunProperties extends IgnoreIfEmptyXmlComponent {
     public constructor(options?: IRunPropertiesOptions) {
@@ -325,8 +321,6 @@ export class RunProperties extends IgnoreIfEmptyXmlComponent {
         this.root.push(item);
     }
 }
-
-/* eslint-enable */
 
 export class RunPropertiesChange extends XmlComponent {
     public constructor(options: IRunPropertiesChangeOptions) {

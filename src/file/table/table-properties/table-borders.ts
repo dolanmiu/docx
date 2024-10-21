@@ -2,14 +2,14 @@
 import { BorderElement, BorderStyle, IBorderOptions } from "@file/border";
 import { XmlComponent } from "@file/xml-components";
 
-export interface ITableBordersOptions {
+export type ITableBordersOptions = {
     readonly top?: IBorderOptions;
     readonly bottom?: IBorderOptions;
     readonly left?: IBorderOptions;
     readonly right?: IBorderOptions;
     readonly insideHorizontal?: IBorderOptions;
     readonly insideVertical?: IBorderOptions;
-}
+};
 
 const NONE_BORDER = {
     style: BorderStyle.NONE,

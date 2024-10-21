@@ -1,8 +1,8 @@
 import { BuilderElement, XmlComponent } from "@file/xml-components";
 
 import { createRegularFont } from "./create-regular-font";
-import { FontOptionsWithKey } from "./font-wrapper";
 import { CharacterSet } from "./font";
+import { FontOptionsWithKey } from "./font-wrapper";
 
 // <xsd:complexType name="CT_FontsList">
 //     <xsd:sequence>

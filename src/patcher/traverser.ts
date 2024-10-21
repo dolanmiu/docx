@@ -2,11 +2,11 @@ import { Element } from "xml-js";
 
 import { IRenderedParagraphNode, renderParagraphNode } from "./run-renderer";
 
-export interface ElementWrapper {
+export type ElementWrapper = {
     readonly element: Element;
     readonly index: number;
     readonly parent: ElementWrapper | undefined;
-}
+};
 
 const elementsToWrapper = (wrapper: ElementWrapper): readonly ElementWrapper[] =>
     wrapper.element.elements?.map((e, i) => ({

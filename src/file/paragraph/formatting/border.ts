@@ -2,12 +2,12 @@
 import { BorderElement, BorderStyle, IBorderOptions } from "@file/border";
 import { IgnoreIfEmptyXmlComponent, XmlComponent } from "@file/xml-components";
 
-export interface IBordersOptions {
+export type IBordersOptions = {
     readonly top?: IBorderOptions;
     readonly bottom?: IBorderOptions;
     readonly left?: IBorderOptions;
     readonly right?: IBorderOptions;
-}
+};
 
 export class Border extends IgnoreIfEmptyXmlComponent {
     public constructor(options: IBordersOptions) {

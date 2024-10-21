@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import { Formatter } from "@export/formatter";
 import { AlignmentType, EmphasisMarkType, TabStopPosition } from "@file/paragraph";
-import { UnderlineType } from "@file/paragraph/run/underline";
 import { HighlightColor } from "@file/paragraph/run";
+import { UnderlineType } from "@file/paragraph/run/underline";
 import { ShadingType } from "@file/shading";
 import { EMPTY_OBJECT } from "@file/xml-components";
 

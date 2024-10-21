@@ -1,7 +1,8 @@
 import { SymbolRun } from "@file/paragraph/run/symbol-run";
-import { StructuredDocumentTagProperties } from "@file/table-of-contents/sdt-properties";
 import { StructuredDocumentTagContent } from "@file/table-of-contents/sdt-content";
+import { StructuredDocumentTagProperties } from "@file/table-of-contents/sdt-properties";
 import { XmlComponent } from "@file/xml-components";
+
 import { CheckBoxUtil, ICheckboxSymbolOptions } from "./checkbox-util";
 
 export class CheckBox extends XmlComponent {

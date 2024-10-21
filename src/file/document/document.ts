@@ -1,5 +1,6 @@
 // http://officeopenxml.com/WPdocument.php
 import { XmlComponent } from "@file/xml-components";
+
 import { ConcreteHyperlink, Paragraph } from "../paragraph";
 import { Table } from "../table";
 import { TableOfContents } from "../table-of-contents";
@@ -7,9 +8,9 @@ import { Body } from "./body";
 import { DocumentAttributes } from "./document-attributes";
 import { DocumentBackground, IDocumentBackgroundOptions } from "./document-background";
 
-export interface IDocumentOptions {
+export type IDocumentOptions = {
     readonly background?: IDocumentBackgroundOptions;
-}
+};
 
 // <xsd:element name="document" type="CT_Document"/>
 //
@@ -80,7 +81,6 @@ export class Document extends XmlComponent {
     }
 
     public add(item: Paragraph | Table | TableOfContents | ConcreteHyperlink): Document {
-        // eslint-disable-next-line functional/immutable-data
         this.body.push(item);
         return this;
     }

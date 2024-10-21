@@ -1,12 +1,12 @@
 import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
 
-export interface IFontAttributesProperties {
+export type IFontAttributesProperties = {
     readonly ascii?: string;
     readonly cs?: string;
     readonly eastAsia?: string;
     readonly hAnsi?: string;
     readonly hint?: string;
-}
+};
 
 class RunFontAttributes extends XmlAttributeComponent<IFontAttributesProperties> {
     protected readonly xmlKeys = {

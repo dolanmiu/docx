@@ -1,9 +1,9 @@
 import { Paragraph } from "./paragraph";
 import { Table } from "./table";
 
-export interface IHeaderOptions {
+export type IHeaderOptions = {
     readonly children: readonly (Paragraph | Table)[];
-}
+};
 
 export class Header {
     public readonly options: IHeaderOptions;

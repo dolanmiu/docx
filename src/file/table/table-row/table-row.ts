@@ -1,10 +1,11 @@
 import { XmlComponent } from "@file/xml-components";
+
 import { TableCell } from "../table-cell";
 import { ITableRowPropertiesOptions, TableRowProperties } from "./table-row-properties";
 
-export interface ITableRowOptions extends ITableRowPropertiesOptions {
+export type ITableRowOptions = {
     readonly children: readonly TableCell[];
-}
+} & ITableRowPropertiesOptions;
 
 export class TableRow extends XmlComponent {
     public constructor(private readonly options: ITableRowOptions) {

@@ -7,8 +7,8 @@ import {
     convertInchesToTwip,
     convertMillimetersToTwip,
     docPropertiesUniqueNumericIdGen,
-    uniqueId,
     hashedId,
+    uniqueId,
     uniqueNumericIdCreator,
     uniqueUuid,
 } from "./convenience-functions";
