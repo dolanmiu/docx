@@ -5,9 +5,9 @@ import { IContext, IXmlableObject, XmlComponent } from "@file/xml-components";
 import { Table } from "../table";
 import { ITableCellPropertiesOptions, TableCellProperties } from "./table-cell-properties";
 
-export interface ITableCellOptions extends ITableCellPropertiesOptions {
+export type ITableCellOptions = {
     readonly children: readonly (Paragraph | Table)[];
-}
+} & ITableCellPropertiesOptions;
 
 export class TableCell extends XmlComponent {
     public constructor(public readonly options: ITableCellOptions) {

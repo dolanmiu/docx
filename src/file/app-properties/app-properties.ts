@@ -1,4 +1,5 @@
 import { XmlComponent } from "@file/xml-components";
+
 import { AppPropertiesAttributes } from "./app-properties-attributes";
 
 export class AppProperties extends XmlComponent {

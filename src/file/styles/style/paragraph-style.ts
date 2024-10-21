@@ -1,15 +1,16 @@
 import { IParagraphStylePropertiesOptions, IRunStylePropertiesOptions, ParagraphProperties } from "@file/paragraph";
 import { RunProperties } from "@file/paragraph/run/properties";
+
 import { IStyleOptions, Style } from "./style";
 
-export interface IBaseParagraphStyleOptions extends IStyleOptions {
+export type IBaseParagraphStyleOptions = {
     readonly paragraph?: IParagraphStylePropertiesOptions;
     readonly run?: IRunStylePropertiesOptions;
-}
+} & IStyleOptions;
 
-export interface IParagraphStyleOptions extends IBaseParagraphStyleOptions {
+export type IParagraphStyleOptions = {
     readonly id: string;
-}
+} & IBaseParagraphStyleOptions;
 
 export class StyleForParagraph extends Style {
     private readonly paragraphProperties: ParagraphProperties;

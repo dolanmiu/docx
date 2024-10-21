@@ -6,15 +6,15 @@ import { FootnoteRefRun } from "./run/footnote-ref-run";
 
 export const FootnoteType = {
     SEPERATOR: "separator",
-    // eslint-disable-next-line @typescript-eslint/naming-convention
+
     CONTINUATION_SEPERATOR: "continuationSeparator",
 } as const;
 
-export interface IFootnoteOptions {
+export type IFootnoteOptions = {
     readonly id: number;
     readonly type?: (typeof FootnoteType)[keyof typeof FootnoteType];
     readonly children: readonly Paragraph[];
-}
+};
 
 export class Footnote extends XmlComponent {
     public constructor(options: IFootnoteOptions) {

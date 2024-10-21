@@ -1,5 +1,5 @@
-import { nanoid, customAlphabet } from "nanoid/non-secure";
 import hash from "hash.js";
+import { customAlphabet, nanoid } from "nanoid/non-secure";
 
 // Twip - twentieths of a point
 export const convertMillimetersToTwip = (millimeters: number): number => Math.floor((millimeters / 25.4) * 72 * 20);

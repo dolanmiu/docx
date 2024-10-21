@@ -1,5 +1,5 @@
 import { NextAttributeComponent, StringEnumValueElement, XmlComponent } from "@file/xml-components";
-import { PositiveUniversalMeasure, signedTwipsMeasureValue, twipsMeasureValue, UniversalMeasure } from "@util/values";
+import { PositiveUniversalMeasure, UniversalMeasure, signedTwipsMeasureValue, twipsMeasureValue } from "@util/values";
 
 export const TableAnchorType = {
     MARGIN: "margin",

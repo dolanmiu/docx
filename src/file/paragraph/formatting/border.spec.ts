@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { Formatter } from "@export/formatter";
-
 import { BorderStyle } from "@file/border";
+
 import { Border, ThematicBreak } from "./border";
 
 describe("Border", () => {

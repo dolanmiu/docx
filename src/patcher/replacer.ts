@@ -1,14 +1,14 @@
-import { Element } from "xml-js";
 import xml from "xml";
+import { Element } from "xml-js";
 
 import { Formatter } from "@export/formatter";
 import { IContext, XmlComponent } from "@file/xml-components";
 
 import { IPatch, PatchType } from "./from-docx";
-import { toJson } from "./util";
-import { replaceTokenInParagraphElement } from "./paragraph-token-replacer";
 import { findRunElementIndexWithToken, splitRunElement } from "./paragraph-split-inject";
+import { replaceTokenInParagraphElement } from "./paragraph-token-replacer";
 import { findLocationOfText } from "./traverser";
+import { toJson } from "./util";
 
 const formatter = new Formatter();
 
@@ -34,16 +34,13 @@ export const replacer = ({
     }
 
     for (const renderedParagraph of renderedParagraphs) {
-        const textJson = patch.children
-            // eslint-disable-next-line no-loop-func
-            .map((c) => toJson(xml(formatter.format(c as XmlComponent, context))))
-            .map((c) => c.elements![0]);
+        const textJson = patch.children.map((c) => toJson(xml(formatter.format(c as XmlComponent, context)))).map((c) => c.elements![0]);
 
         switch (patch.type) {
             case PatchType.DOCUMENT: {
                 const parentElement = goToParentElementFromPath(json, renderedParagraph.pathToParagraph);
                 const elementIndex = getLastElementIndexFromPath(renderedParagraph.pathToParagraph);
-                // eslint-disable-next-line functional/immutable-data, prefer-destructuring
+                // eslint-disable-next-line functional/immutable-data
                 parentElement.elements!.splice(elementIndex, 1, ...textJson);
                 break;
             }
@@ -67,7 +64,7 @@ export const replacer = ({
 
                 if (keepOriginalStyles) {
                     const runElementNonTextualElements = runElementToBeReplaced.elements!.filter(
-                        (e) => e.type === "element" && e.name !== "w:t" && e.name !== "w:br",
+                        (e) => e.type === "element" && e.name !== "w:t" && e.name !== "w:br" && e.name !== "w:tab",
                     );
 
                     newRunElements = textJson.map((e) => ({

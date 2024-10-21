@@ -1,10 +1,10 @@
 import { IRunOptions, Run } from "./run";
 import { Symbol } from "./run-components/symbol";
 
-export interface ISymbolRunOptions extends IRunOptions {
+export type ISymbolRunOptions = {
     readonly char: string;
     readonly symbolfont?: string;
-}
+} & IRunOptions;
 
 export class SymbolRun extends Run {
     public constructor(options: ISymbolRunOptions | string) {

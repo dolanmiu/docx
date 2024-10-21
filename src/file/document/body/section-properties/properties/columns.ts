@@ -1,5 +1,5 @@
 import { NextAttributeComponent, XmlComponent } from "@file/xml-components";
-import { decimalNumber, PositiveUniversalMeasure, twipsMeasureValue } from "@util/values";
+import { PositiveUniversalMeasure, decimalNumber, twipsMeasureValue } from "@util/values";
 
 import { Column } from "./column";
 

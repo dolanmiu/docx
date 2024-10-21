@@ -1,4 +1,5 @@
 import { Stream } from "stream";
+
 import { File } from "@file/file";
 
 import { Compiler } from "./next-compiler";
@@ -10,7 +11,7 @@ export const PrettifyType = {
     NONE: "",
     WITH_2_BLANKS: "  ",
     WITH_4_BLANKS: "    ",
-    // eslint-disable-next-line @typescript-eslint/naming-convention
+
     WITH_TAB: "\t",
 } as const;
 

@@ -3,8 +3,8 @@ import { describe, expect, it } from "vitest";
 import { Formatter } from "@export/formatter";
 
 import { AlignmentType, EmphasisMarkType, TabStopPosition } from "../paragraph";
-import { UnderlineType } from "../paragraph/run/underline";
 import { HighlightColor } from "../paragraph/run/properties";
+import { UnderlineType } from "../paragraph/run/underline";
 import { ShadingType } from "../shading";
 import { AbstractNumbering } from "./abstract-numbering";
 import { LevelFormat, LevelSuffix } from "./level";

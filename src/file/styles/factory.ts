@@ -1,6 +1,3 @@
-import { DocumentAttributes } from "../document/document-attributes";
-import { IStylesOptions } from "./styles";
-
 import { DocumentDefaults, IDocumentDefaultsOptions } from "./defaults";
 import {
     FootnoteReferenceStyle,
@@ -19,8 +16,10 @@ import {
     StrongStyle,
     TitleStyle,
 } from "./style";
+import { IStylesOptions } from "./styles";
+import { DocumentAttributes } from "../document/document-attributes";
 
-export interface IDefaultStylesOptions {
+export type IDefaultStylesOptions = {
     readonly document?: IDocumentDefaultsOptions;
     readonly title?: IBaseParagraphStyleOptions;
     readonly heading1?: IBaseParagraphStyleOptions;
@@ -35,7 +34,7 @@ export interface IDefaultStylesOptions {
     readonly footnoteReference?: IBaseCharacterStyleOptions;
     readonly footnoteText?: IBaseParagraphStyleOptions;
     readonly footnoteTextChar?: IBaseCharacterStyleOptions;
-}
+};
 
 export class DefaultStylesFactory {
     public newInstance(options: IDefaultStylesOptions = {}): IStylesOptions {

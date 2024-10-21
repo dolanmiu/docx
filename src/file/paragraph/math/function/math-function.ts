@@ -6,10 +6,10 @@ import { MathBase } from "../n-ary";
 import { MathFunctionName } from "./math-function-name";
 import { MathFunctionProperties } from "./math-function-properties";
 
-export interface IMathFunctionOptions {
+export type IMathFunctionOptions = {
     readonly children: readonly MathComponent[];
     readonly name: readonly MathComponent[];
-}
+};
 
 export class MathFunction extends XmlComponent {
     public constructor(options: IMathFunctionOptions) {

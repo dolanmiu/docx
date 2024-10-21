@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import { Formatter } from "@export/formatter";
 
-import { MathRun } from "../../math-run";
 import { MathSubSuperScript } from "./math-sub-super-script-function";
+import { MathRun } from "../../math-run";
 
 describe("MathSubScript", () => {
     describe("#constructor()", () => {

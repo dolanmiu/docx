@@ -1,14 +1,9 @@
 // http://officeopenxml.com/WPtext.php
-import { XmlComponent } from "@file/xml-components";
-
 import { FootnoteReferenceRun } from "@file/footnotes/footnote/run/reference-run";
 import { FieldInstruction } from "@file/table-of-contents/field-instruction";
+import { XmlComponent } from "@file/xml-components";
 
 import { Break } from "./break";
-import { Begin, End, Separate } from "./field";
-import { NumberOfPages, NumberOfPagesSection, Page, CurrentSection } from "./page-number";
-import { IRunPropertiesOptions, RunProperties } from "./properties";
-import { Text } from "./run-components/text";
 import {
     AnnotationReference,
     CarriageReturn,
@@ -28,9 +23,13 @@ import {
     YearLong,
     YearShort,
 } from "./empty-children";
+import { Begin, End, Separate } from "./field";
+import { CurrentSection, NumberOfPages, NumberOfPagesSection, Page } from "./page-number";
 import { PositionalTab } from "./positional-tab";
+import { IRunPropertiesOptions, RunProperties } from "./properties";
+import { Text } from "./run-components/text";
 
-export interface IRunOptions extends IRunPropertiesOptions {
+export type IRunOptions = {
     // <xsd:choice>
     //     <xsd:element name="br" type="CT_Br" />
     //     <xsd:element name="t" type="CT_Text" />
@@ -96,17 +95,14 @@ export interface IRunOptions extends IRunPropertiesOptions {
     )[];
     readonly break?: number;
     readonly text?: string;
-}
+} & IRunPropertiesOptions;
 
-/* eslint-disable @typescript-eslint/naming-convention */
 export const PageNumber = {
     CURRENT: "CURRENT",
     TOTAL_PAGES: "TOTAL_PAGES",
     TOTAL_PAGES_IN_SECTION: "TOTAL_PAGES_IN_SECTION",
     CURRENT_SECTION: "SECTION",
 } as const;
-
-/* eslint-enable */
 
 export class Run extends XmlComponent {
     protected readonly properties: RunProperties;

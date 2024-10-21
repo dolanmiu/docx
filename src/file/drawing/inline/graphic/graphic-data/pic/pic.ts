@@ -5,8 +5,8 @@ import { XmlComponent } from "@file/xml-components";
 import { BlipFill } from "./blip/blip-fill";
 import { NonVisualPicProperties } from "./non-visual-pic-properties/non-visual-pic-properties";
 import { PicAttributes } from "./pic-attributes";
-import { ShapeProperties } from "./shape-properties/shape-properties";
 import { OutlineOptions } from "./shape-properties/outline/outline";
+import { ShapeProperties } from "./shape-properties/shape-properties";
 
 export class Pic extends XmlComponent {
     public constructor({

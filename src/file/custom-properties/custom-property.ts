@@ -1,10 +1,11 @@
 import { XmlComponent } from "@file/xml-components";
+
 import { CustomPropertyAttributes } from "./custom-property-attributes";
 
-export interface ICustomPropertyOptions {
+export type ICustomPropertyOptions = {
     readonly name: string;
     readonly value: string;
-}
+};
 
 export class CustomProperty extends XmlComponent {
     public constructor(id: number, properties: ICustomPropertyOptions) {

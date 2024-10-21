@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import { Formatter } from "@export/formatter";
-import { WidthType } from "../table-width";
 
+import { WidthType } from "../table-width";
 import { TableCellMargin, TableCellMarginElementType } from "./table-cell-margin";
 
 describe("TableCellMargin", () => {

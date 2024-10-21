@@ -20,7 +20,6 @@ import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
 //     </xsd:restriction>
 // </xsd:simpleType>
 
-/* eslint-disable @typescript-eslint/naming-convention */
 export const AlignmentType = {
     /** Align Start */
     START: "start",
@@ -49,8 +48,6 @@ export const AlignmentType = {
     /** Justified */
     JUSTIFIED: "both",
 } as const;
-
-/* eslint-enable */
 
 export class AlignmentAttributes extends XmlAttributeComponent<{
     readonly val: (typeof AlignmentType)[keyof typeof AlignmentType];

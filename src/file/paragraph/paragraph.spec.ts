@@ -1,11 +1,10 @@
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from "vitest";
 
-import * as convenienceFunctions from "@util/convenience-functions";
-
-import { HorizontalPositionAlign, VerticalPositionAlign } from "@file/shared";
 import { Formatter } from "@export/formatter";
 import { BorderStyle } from "@file/border";
+import { HorizontalPositionAlign, VerticalPositionAlign } from "@file/shared";
 import { EMPTY_OBJECT } from "@file/xml-components";
+import * as convenienceFunctions from "@util/convenience-functions";
 
 import { IViewWrapper } from "../document-wrapper";
 import { File } from "../file";
@@ -33,7 +32,7 @@ describe("Paragraph", () => {
 
             try {
                 JSON.parse(stringifiedJson);
-            } catch (e) {
+            } catch {
                 assert.isTrue(false);
             }
             assert.isTrue(true);

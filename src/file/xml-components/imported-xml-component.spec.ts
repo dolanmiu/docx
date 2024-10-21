@@ -3,8 +3,8 @@ import { Element, xml2js } from "xml-js";
 
 import { EMPTY_OBJECT } from "@file/xml-components";
 
-import { convertToXmlComponent, ImportedRootElementAttributes, ImportedXmlComponent } from "./imported-xml-component";
 import { IContext } from "./base";
+import { ImportedRootElementAttributes, ImportedXmlComponent, convertToXmlComponent } from "./imported-xml-component";
 
 const xmlString = `
         <w:p w:one="value 1" w:two="value 2">
@@ -55,13 +55,12 @@ describe("ImportedXmlComponent", () => {
             otherAttr: "2",
         };
         importedXmlComponent = new ImportedXmlComponent("w:test", attributes);
-        // eslint-disable-next-line functional/immutable-data
+
         importedXmlComponent.push(new ImportedXmlComponent("w:child"));
     });
 
     describe("#prepForXml()", () => {
         it("should transform for xml", () => {
-            // tslint:disable-next-line: no-object-literal-type-assertion
             const converted = importedXmlComponent.prepForXml({ stack: [] } as unknown as IContext);
             expect(JSON.parse(JSON.stringify(converted))).to.deep.equal({
                 "w:test": [
@@ -108,7 +107,6 @@ describe("ImportedRootElementAttributes", () => {
 
     describe("#prepForXml()", () => {
         it("should work", () => {
-            // tslint:disable-next-line: no-object-literal-type-assertion
             const converted = attributes.prepForXml({} as IContext);
             expect(converted).to.deep.equal({
                 _attr: {},

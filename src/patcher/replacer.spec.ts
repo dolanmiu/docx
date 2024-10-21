@@ -1,11 +1,11 @@
+import { describe, expect, it, vi } from "vitest";
+
 import { IViewWrapper } from "@file/document-wrapper";
 import { File } from "@file/file";
 import { Paragraph, TextRun } from "@file/paragraph";
 import { IContext } from "@file/xml-components";
-import { describe, expect, it, vi } from "vitest";
 
 import { PatchType } from "./from-docx";
-
 import { replacer } from "./replacer";
 
 export const MOCK_JSON = {

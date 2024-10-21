@@ -1,15 +1,15 @@
 // http://officeopenxml.com/WPindentation.php
 import { NextAttributeComponent, XmlComponent } from "@file/xml-components";
-import { PositiveUniversalMeasure, signedTwipsMeasureValue, twipsMeasureValue, UniversalMeasure } from "@util/values";
+import { PositiveUniversalMeasure, UniversalMeasure, signedTwipsMeasureValue, twipsMeasureValue } from "@util/values";
 
-export interface IIndentAttributesProperties {
+export type IIndentAttributesProperties = {
     readonly start?: number | UniversalMeasure;
     readonly end?: number | UniversalMeasure;
     readonly left?: number | UniversalMeasure;
     readonly right?: number | UniversalMeasure;
     readonly hanging?: number | PositiveUniversalMeasure;
     readonly firstLine?: number | PositiveUniversalMeasure;
-}
+};
 
 // <xsd:complexType name="CT_PPrBase">
 // <xsd:sequence>

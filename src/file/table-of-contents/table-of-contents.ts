@@ -1,9 +1,10 @@
 // http://officeopenxml.com/WPtableOfContents.php
 // http://www.datypic.com/sc/ooxml/e-w_sdt-1.html
+import { FileChild } from "@file/file-child";
 import { Paragraph } from "@file/paragraph";
 import { Run } from "@file/paragraph/run";
 import { Begin, End, Separate } from "@file/paragraph/run/field";
-import { FileChild } from "@file/file-child";
+
 import { FieldInstruction } from "./field-instruction";
 import { StructuredDocumentTagContent } from "./sdt-content";
 import { StructuredDocumentTagProperties } from "./sdt-properties";

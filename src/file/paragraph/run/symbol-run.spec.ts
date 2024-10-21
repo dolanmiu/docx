@@ -3,8 +3,8 @@ import { describe, expect, it } from "vitest";
 import { Formatter } from "@export/formatter";
 
 import { EmphasisMarkType } from "./emphasis-mark";
-import { UnderlineType } from "./underline";
 import { SymbolRun } from "./symbol-run";
+import { UnderlineType } from "./underline";
 
 describe("SymbolRun", () => {
     let run: SymbolRun;

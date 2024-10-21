@@ -2,17 +2,17 @@ import { Element } from "xml-js";
 
 import { ElementWrapper } from "./traverser";
 
-export interface IRenderedParagraphNode {
+export type IRenderedParagraphNode = {
     readonly text: string;
     readonly runs: readonly IRenderedRunNode[];
     readonly index: number;
     readonly pathToParagraph: readonly number[];
-}
+};
 
-interface StartAndEnd {
+type StartAndEnd = {
     readonly start: number;
     readonly end: number;
-}
+};
 
 type IParts = {
     readonly text: string;

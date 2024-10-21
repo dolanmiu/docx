@@ -45,7 +45,7 @@ describe("Properties", () => {
             expect(tree["cp:coreProperties"]).to.be.an.instanceof(Array);
 
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const key = (obj: { readonly [key: string]: any }) => Object.keys(obj)[0];
+            const key = (obj: Readonly<Record<string, any>>) => Object.keys(obj)[0];
             expect(tree["cp:coreProperties"].map(key)).to.include.members([
                 "_attr",
                 "cp:keywords",

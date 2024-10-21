@@ -1,4 +1,4 @@
-export interface IMediaDataTransformation {
+export type IMediaDataTransformation = {
     readonly pixels: {
         readonly x: number;
         readonly y: number;
@@ -12,7 +12,7 @@ export interface IMediaDataTransformation {
         readonly horizontal?: boolean;
     };
     readonly rotation?: number;
-}
+};
 
 type CoreMediaData = {
     readonly fileName: string;

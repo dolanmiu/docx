@@ -8,10 +8,10 @@ import { Paragraph } from "./paragraph";
 import { Relationships } from "./relationships";
 import { Table } from "./table";
 
-export interface IDocumentFooter {
+export type IDocumentFooter = {
     readonly footer: FooterWrapper;
     readonly type: (typeof HeaderFooterReferenceType)[keyof typeof HeaderFooterReferenceType];
-}
+};
 
 export class FooterWrapper implements IViewWrapper {
     private readonly footer: Footer;

@@ -1,6 +1,7 @@
 import { Element } from "xml-js";
 
 import { RelationshipType, TargetModeType } from "@file/relationships/relationship/relationship";
+
 import { getFirstLevelElements } from "./util";
 
 const getIdFromRelationshipId = (relationshipId: string): number => {

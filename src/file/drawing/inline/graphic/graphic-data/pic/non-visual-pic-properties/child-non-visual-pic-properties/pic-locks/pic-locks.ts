@@ -1,4 +1,5 @@
 import { XmlComponent } from "@file/xml-components";
+
 import { PicLocksAttributes } from "./pic-locks-attributes";
 
 export class PicLocks extends XmlComponent {

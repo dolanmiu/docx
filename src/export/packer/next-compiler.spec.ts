@@ -125,7 +125,6 @@ describe("Compiler", () => {
                 ],
             });
 
-            // tslint:disable-next-line: no-string-literal
             const spy = vi.spyOn(compiler["formatter"], "format");
 
             compiler.compile(file);

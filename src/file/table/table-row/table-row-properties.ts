@@ -32,14 +32,14 @@ import { PositiveUniversalMeasure } from "@util/values";
 
 import { HeightRule, TableRowHeight } from "./table-row-height";
 
-export interface ITableRowPropertiesOptions {
+export type ITableRowPropertiesOptions = {
     readonly cantSplit?: boolean;
     readonly tableHeader?: boolean;
     readonly height?: {
         readonly value: number | PositiveUniversalMeasure;
         readonly rule: (typeof HeightRule)[keyof typeof HeightRule];
     };
-}
+};
 
 export class TableRowProperties extends IgnoreIfEmptyXmlComponent {
     public constructor(options: ITableRowPropertiesOptions) {

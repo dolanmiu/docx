@@ -1,16 +1,17 @@
 import { IDefaultStylesOptions } from "@file/styles/factory";
 import { BaseXmlComponent, ImportedXmlComponent, XmlComponent } from "@file/xml-components";
+
 import { StyleForCharacter, StyleForParagraph } from "./style";
 import { ICharacterStyleOptions } from "./style/character-style";
 import { IParagraphStyleOptions } from "./style/paragraph-style";
 
-export interface IStylesOptions {
+export type IStylesOptions = {
     readonly default?: IDefaultStylesOptions;
     readonly initialStyles?: BaseXmlComponent;
     readonly paragraphStyles?: readonly IParagraphStyleOptions[];
     readonly characterStyles?: readonly ICharacterStyleOptions[];
     readonly importedStyles?: readonly (XmlComponent | StyleForParagraph | StyleForCharacter | ImportedXmlComponent)[];
-}
+};
 
 // <xsd:complexType name="CT_Styles">
 // <xsd:sequence>
