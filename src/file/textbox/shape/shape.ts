@@ -1,7 +1,7 @@
 import { ParagraphChild } from "@file/paragraph";
-import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
+import { BuilderElement, XmlComponent } from "@file/xml-components";
 
-import { VTextbox } from "../vml-textbox/vml-texbox";
+import { createVmlTextbox } from "../vml-textbox/vml-texbox";
 
 const SHAPE_TYPE = "#_x0000_t202";
 
@@ -11,43 +11,46 @@ export type ShapeStyle = {
     readonly margin?: string;
 };
 
-export type IShapeOptions = {
+const formatShapeStyle = (style?: ShapeStyle): string | undefined =>
+    style
+        ? Object.entries(style)
+              .map((entry: readonly string[]) => {
+                  const [key, value] = entry;
+                  return `${key}:${value}`;
+              })
+              .join(";")
+        : undefined;
+
+export const createShape = ({
+    id,
+    children,
+    type = SHAPE_TYPE,
+    style,
+}: {
     readonly id: string;
     readonly children?: readonly ParagraphChild[];
     readonly type?: string;
     readonly style?: ShapeStyle;
-};
-
-class ShapeAttributes extends XmlAttributeComponent<{
-    readonly id: string;
-    readonly type?: string;
-    readonly style?: string;
-}> {
-    protected readonly xmlKeys = { id: "id", type: "type", style: "style" };
-}
-
-export class Shape extends XmlComponent {
-    public constructor({ id, children, type = SHAPE_TYPE, style }: IShapeOptions) {
-        super("v:shape");
-        this.root.push(
-            new ShapeAttributes({
-                id,
-                type,
-                style: this.formatShapeStyle(style),
-            }),
-        );
-        const vTextbox = new VTextbox({ style: "mso-fit-shape-to-text:t;", children });
-        this.root.push(vTextbox);
-    }
-
-    private formatShapeStyle(style?: ShapeStyle): string | undefined {
-        return style
-            ? Object.entries(style)
-                  .map((entry: readonly string[]) => {
-                      const [key, value] = entry;
-                      return `${key}:${value}`;
-                  })
-                  .join(";")
-            : undefined;
-    }
-}
+}): XmlComponent =>
+    new BuilderElement<{
+        readonly id: string;
+        readonly type?: string;
+        readonly style?: string;
+    }>({
+        name: "v:shape",
+        attributes: {
+            id: {
+                key: "id",
+                value: id,
+            },
+            type: {
+                key: "type",
+                value: type,
+            },
+            style: {
+                key: "style",
+                value: formatShapeStyle(style),
+            },
+        },
+        children: [createVmlTextbox({ style: "mso-fit-shape-to-text:t;", children })],
+    });

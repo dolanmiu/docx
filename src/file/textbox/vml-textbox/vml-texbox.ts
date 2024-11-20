@@ -1,22 +1,21 @@
 import { ParagraphChild } from "@file/paragraph";
-import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
+import { BuilderElement, XmlComponent } from "@file/xml-components";
 
-import { TextboxContent } from "../texbox-content/textbox-content";
+import { createTextboxContent } from "../texbox-content/textbox-content";
 
 export type IVTextboxOptions = {
     readonly style?: string;
     readonly children?: readonly ParagraphChild[];
 };
 
-class VTextboxAttributes extends XmlAttributeComponent<{ readonly style?: string }> {
-    protected readonly xmlKeys = { style: "style" };
-}
-
-export class VTextbox extends XmlComponent {
-    public constructor({ style, children }: IVTextboxOptions) {
-        super("v:textbox");
-        this.root.push(new VTextboxAttributes({ style }));
-        const textboxContent = new TextboxContent({ children });
-        this.root.push(textboxContent);
-    }
-}
+export const createVmlTextbox = ({ style, children }: IVTextboxOptions): XmlComponent =>
+    new BuilderElement<{ readonly style?: string }>({
+        name: "v:textbox",
+        attributes: {
+            style: {
+                key: "style",
+                value: style,
+            },
+        },
+        children: [createTextboxContent({ children })],
+    });

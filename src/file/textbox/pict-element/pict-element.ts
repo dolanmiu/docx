@@ -1,14 +1,11 @@
-import { XmlComponent } from "@file/xml-components";
-
-import { Shape } from "../shape/shape";
+import { BuilderElement, XmlComponent } from "@file/xml-components";
 
 export type IPictElement = {
-    readonly shape: Shape;
+    readonly shape: XmlComponent;
 };
 
-export class PictElement extends XmlComponent {
-    public constructor({ shape }: IPictElement) {
-        super("w:pict");
-        this.root.push(shape);
-    }
-}
+export const createPictElement = ({ shape }: IPictElement): XmlComponent =>
+    new BuilderElement<{ readonly style?: string }>({
+        name: "w:pict",
+        children: [shape],
+    });
