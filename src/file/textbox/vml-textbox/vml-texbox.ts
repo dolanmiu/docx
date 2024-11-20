@@ -1,11 +1,12 @@
 import { ParagraphChild } from "@file/paragraph";
 import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
+
 import { TextboxContent } from "../texbox-content/textbox-content";
 
-export interface IVTextboxOptions {
+export type IVTextboxOptions = {
     readonly style?: string;
     readonly children?: readonly ParagraphChild[];
-}
+};
 
 class VTextboxAttributes extends XmlAttributeComponent<{ readonly style?: string }> {
     protected readonly xmlKeys = { style: "style" };

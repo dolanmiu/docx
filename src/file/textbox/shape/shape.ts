@@ -1,6 +1,7 @@
 import { ParagraphChild } from "@file/paragraph";
 import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
-import { VTextbox } from "../vtextbox/vtexbox";
+
+import { VTextbox } from "../vml-textbox/vml-texbox";
 
 const SHAPE_TYPE = "#_x0000_t202";
 
@@ -10,12 +11,12 @@ export type ShapeStyle = {
     readonly margin?: string;
 };
 
-export interface IShapeOptions {
+export type IShapeOptions = {
     readonly id: string;
     readonly children?: readonly ParagraphChild[];
     readonly type?: string;
     readonly style?: ShapeStyle;
-}
+};
 
 class ShapeAttributes extends XmlAttributeComponent<{
     readonly id: string;

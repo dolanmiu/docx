@@ -1,9 +1,9 @@
 import { ParagraphChild } from "@file/paragraph";
 import { XmlComponent } from "@file/xml-components";
 
-export interface ITextboxContentAttributes {
+export type ITextboxContentAttributes = {
     readonly children?: readonly ParagraphChild[];
-}
+};
 
 export class TextboxContent extends XmlComponent {
     public constructor({ children }: ITextboxContentAttributes) {
