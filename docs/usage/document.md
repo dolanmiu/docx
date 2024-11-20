@@ -22,19 +22,30 @@ const doc = new docx.Document({
 
 ### Full list of options:
 
--   creator
--   description
--   title
--   subject
--   keywords
--   lastModifiedBy
--   revision
--   externalStyles
--   styles
--   numbering
--   footnotes
--   hyperlinks
--   background
+| Property                   | Type                                                     | Notes    |
+| -------------------------- | -------------------------------------------------------- | -------- |
+| sections                   | `ISectionOptions[]`                                      | Optional |
+| title                      | `string`                                                 | Optional |
+| subject                    | `string`                                                 | Optional |
+| creator                    | `string`                                                 | Optional |
+| keywords                   | `string`                                                 | Optional |
+| description                | `string`                                                 | Optional |
+| lastModifiedBy             | `string`                                                 | Optional |
+| revision                   | `number`                                                 | Optional |
+| externalStyles             | `string`                                                 | Optional |
+| styles                     | `IStylesOptions`                                         | Optional |
+| numbering                  | `INumberingOptions`                                      | Optional |
+| comments                   | `ICommentsOptions`                                       | Optional |
+| footnotes                  | `Record<string, { children: Paragraph[] }>`              | Optional |
+| background                 | `IDocumentBackgroundOptions`                             | Optional |
+| features                   | `{ trackRevisions?: boolean;  updateFields?: boolean; }` | Optional |
+| compatabilityModeVersion   | `number`                                                 | Optional |
+| compatibility              | `ICompatibilityOptions`                                  | Optional |
+| customProperties           | ` ICustomPropertyOptions`[]                              | Optional |
+| evenAndOddHeaderAndFooters | `boolean`                                                | Optional |
+| defaultTabStop             | `number`                                                 | Optional |
+| fonts                      | ` FontOptions[]`                                         | Optional |
+| hyphenation                | `IHyphenationOptions`                                    | Optional |
 
 ### Change background color of Document
 

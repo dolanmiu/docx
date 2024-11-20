@@ -85,7 +85,7 @@ export class File {
                 hyphenationZone: options.hyphenation?.hyphenationZone,
                 consecutiveHyphenLimit: options.hyphenation?.consecutiveHyphenLimit,
                 doNotHyphenateCaps: options.hyphenation?.doNotHyphenateCaps,
-            }
+            },
         });
 
         this.media = new Media();

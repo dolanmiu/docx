@@ -156,7 +156,7 @@ export type ISettingsOptions = {
     readonly hyphenation?: IHyphenationOptions;
 };
 
-export interface IHyphenationOptions {
+export type IHyphenationOptions = {
     /** Specifies whether the application automatically hyphenates words as they are typed in the document. */
     readonly autoHyphenation?: boolean;
     /** Specifies the minimum number of characters at the beginning of a word before a hyphen can be inserted. */
@@ -165,7 +165,7 @@ export interface IHyphenationOptions {
     readonly consecutiveHyphenLimit?: number;
     /** Specifies whether to hyphenate words in all capital letters. */
     readonly doNotHyphenateCaps?: boolean;
-}
+};
 
 export class Settings extends XmlComponent {
     public constructor(options: ISettingsOptions) {

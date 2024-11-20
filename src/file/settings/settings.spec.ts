@@ -133,7 +133,7 @@ describe("Settings", () => {
             const options = {
                 hyphenation: {
                     autoHyphenation: true,
-                }
+                },
             };
 
             const tree = new Formatter().format(new Settings(options));
@@ -144,12 +144,11 @@ describe("Settings", () => {
             });
         });
 
-
         it("should add doNotHyphenateCaps setting", () => {
             const options = {
                 hyphenation: {
                     doNotHyphenateCaps: true,
-                }
+                },
             };
 
             const tree = new Formatter().format(new Settings(options));
@@ -164,7 +163,7 @@ describe("Settings", () => {
             const options = {
                 hyphenation: {
                     hyphenationZone: 200,
-                }
+                },
             };
 
             const tree = new Formatter().format(new Settings(options));
@@ -183,7 +182,7 @@ describe("Settings", () => {
             const options = {
                 hyphenation: {
                     consecutiveHyphenLimit: 3,
-                }
+                },
             };
 
             const tree = new Formatter().format(new Settings(options));
