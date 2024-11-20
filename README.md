@@ -88,6 +88,7 @@ Read the contribution guidelines [here](https://docx.js.org/#/contribution-guide
 [<img src="https://i.imgur.com/PXo25um.png" alt="drawing" height="50"/>](https://www.circadianrisk.com/)
 [<img src="https://i.imgur.com/AKGhtlh.png" alt="drawing"/>](https://lexense.com/)
 [<img src="https://i.imgur.com/9tqJaHw.png" alt="drawing" height="50"/>](https://novelpad.co/)
+[<img src="https://i.imgur.com/5bLKFeP.png" alt="drawing" height="50"/>](https://proton.me/)
 
 ...and many more!
 

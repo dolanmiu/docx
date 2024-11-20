@@ -1,13 +1,13 @@
-import { IgnoreIfEmptyXmlComponent } from "@file/xml-components";
 import { TableWidthElement, WidthType } from "@file/table";
+import { IgnoreIfEmptyXmlComponent } from "@file/xml-components";
 
-export interface ITableCellMarginOptions {
+export type ITableCellMarginOptions = {
     readonly marginUnitType?: (typeof WidthType)[keyof typeof WidthType];
     readonly top?: number;
     readonly bottom?: number;
     readonly left?: number;
     readonly right?: number;
-}
+};
 
 // Technically two different types, but they're identical
 //
@@ -35,7 +35,6 @@ export interface ITableCellMarginOptions {
 
 export const TableCellMarginElementType = {
     TABLE: "w:tblCellMar",
-    // eslint-disable-next-line @typescript-eslint/naming-convention
     TABLE_CELL: "w:tcMar",
 } as const;
 

@@ -1,4 +1,3 @@
-// tslint:disable:object-literal-key-quotes
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import * as convenienceFunctions from "@util/convenience-functions";

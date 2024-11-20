@@ -1,4 +1,5 @@
 import { Element } from "xml-js";
+
 import { createTextElementContents, patchSpaceAttribute } from "./util";
 
 export const findRunElementIndexWithToken = (paragraphElement: Element, token: string): number => {

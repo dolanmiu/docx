@@ -66,7 +66,6 @@
 // </xsd:restriction>
 // </xsd:simpleType>
 
-/* eslint-disable @typescript-eslint/naming-convention*/
 export const NumberFormat = {
     DECIMAL: "decimal",
     UPPER_ROMAN: "upperRoman",
@@ -132,4 +131,3 @@ export const NumberFormat = {
     DOLLAR_TEXT: "dollarText",
     //   <xsd:enumeration value="custom"/>
 } as const;
-/* eslint-enable */

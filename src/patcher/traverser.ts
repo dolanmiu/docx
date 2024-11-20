@@ -2,11 +2,11 @@ import { Element } from "xml-js";
 
 import { IRenderedParagraphNode, renderParagraphNode } from "./run-renderer";
 
-export interface ElementWrapper {
+export type ElementWrapper = {
     readonly element: Element;
     readonly index: number;
     readonly parent: ElementWrapper | undefined;
-}
+};
 
 const elementsToWrapper = (wrapper: ElementWrapper): readonly ElementWrapper[] =>
     wrapper.element.elements?.map((e, i) => ({
@@ -27,7 +27,6 @@ export const traverse = (node: Element): readonly IRenderedParagraphNode[] => {
         }),
     ];
 
-    // eslint-disable-next-line functional/immutable-data
     let currentNode: ElementWrapper | undefined;
     while (queue.length > 0) {
         // eslint-disable-next-line functional/immutable-data

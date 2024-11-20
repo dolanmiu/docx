@@ -1,17 +1,17 @@
 import { FileChild } from "@file/file-child";
 import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
 
-export interface ICommentOptions {
+export type ICommentOptions = {
     readonly id: number;
     readonly children: readonly FileChild[];
     readonly initials?: string;
     readonly author?: string;
     readonly date?: Date;
-}
+};
 
-export interface ICommentsOptions {
+export type ICommentsOptions = {
     readonly children: readonly ICommentOptions[];
-}
+};
 
 class CommentAttributes extends XmlAttributeComponent<{
     readonly id: number;

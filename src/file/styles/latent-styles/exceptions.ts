@@ -1,12 +1,12 @@
 import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
 
-export interface ILatentStyleExceptionAttributesProperties {
+export type ILatentStyleExceptionAttributesProperties = {
     readonly name?: string;
     readonly uiPriority?: string;
     readonly qFormat?: string;
     readonly semiHidden?: string;
     readonly unhideWhenUsed?: string;
-}
+};
 
 export class LatentStyleExceptionAttributes extends XmlAttributeComponent<ILatentStyleExceptionAttributesProperties> {
     protected readonly xmlKeys = {

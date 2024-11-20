@@ -2,12 +2,12 @@ import { IViewWrapper } from "../document-wrapper";
 import { File } from "../file";
 import { IXmlableObject } from "./xmlable-object";
 
-export interface IContext {
+export type IContext = {
     readonly file: File;
     readonly viewWrapper: IViewWrapper;
     // eslint-disable-next-line functional/prefer-readonly-type
     readonly stack: IXmlableObject[];
-}
+};
 
 export abstract class BaseXmlComponent {
     protected readonly rootKey: string;

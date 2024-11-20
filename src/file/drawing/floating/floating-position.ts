@@ -4,7 +4,6 @@ import { HorizontalPositionAlign, VerticalPositionAlign } from "@file/shared/ali
 
 import { ITextWrapping } from "../text-wrap";
 
-/* eslint-disable @typescript-eslint/naming-convention */
 export const HorizontalPositionRelativeFrom = {
     CHARACTER: "character",
     COLUMN: "column",
@@ -27,27 +26,26 @@ export const VerticalPositionRelativeFrom = {
     TOP_MARGIN: "topMargin",
 } as const;
 
-/* eslint-enable */
-export interface IHorizontalPositionOptions {
+export type IHorizontalPositionOptions = {
     readonly relative?: (typeof HorizontalPositionRelativeFrom)[keyof typeof HorizontalPositionRelativeFrom];
     readonly align?: (typeof HorizontalPositionAlign)[keyof typeof HorizontalPositionAlign];
     readonly offset?: number;
-}
+};
 
-export interface IVerticalPositionOptions {
+export type IVerticalPositionOptions = {
     readonly relative?: (typeof VerticalPositionRelativeFrom)[keyof typeof VerticalPositionRelativeFrom];
     readonly align?: (typeof VerticalPositionAlign)[keyof typeof VerticalPositionAlign];
     readonly offset?: number;
-}
+};
 
-export interface IMargins {
+export type IMargins = {
     readonly left?: number;
     readonly bottom?: number;
     readonly top?: number;
     readonly right?: number;
-}
+};
 
-export interface IFloating {
+export type IFloating = {
     readonly horizontalPosition: IHorizontalPositionOptions;
     readonly verticalPosition: IVerticalPositionOptions;
     readonly allowOverlap?: boolean;
@@ -57,4 +55,4 @@ export interface IFloating {
     readonly margins?: IMargins;
     readonly wrap?: ITextWrapping;
     readonly zIndex?: number;
-}
+};

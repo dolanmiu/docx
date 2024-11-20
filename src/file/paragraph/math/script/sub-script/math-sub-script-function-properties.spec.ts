@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { Formatter } from "@export/formatter";
+
 import { MathSubScriptProperties } from "./math-sub-script-function-properties";
 
 describe("MathSubScriptProperties", () => {

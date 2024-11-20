@@ -4,17 +4,17 @@ import { AlignmentType } from "@file/paragraph";
 import { IContext, IXmlableObject, XmlComponent } from "@file/xml-components";
 import { abstractNumUniqueNumericIdGen, concreteNumUniqueNumericIdGen, convertInchesToTwip } from "@util/convenience-functions";
 
-import { DocumentAttributes } from "../document/document-attributes";
 import { AbstractNumbering } from "./abstract-numbering";
 import { ILevelsOptions, LevelFormat } from "./level";
 import { ConcreteNumbering } from "./num";
+import { DocumentAttributes } from "../document/document-attributes";
 
-export interface INumberingOptions {
+export type INumberingOptions = {
     readonly config: readonly {
         readonly levels: readonly ILevelsOptions[];
         readonly reference: string;
     }[];
-}
+};
 
 // <xsd:element name="numbering" type="CT_Numbering"/>
 //

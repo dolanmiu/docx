@@ -1,14 +1,13 @@
 // http://officeopenxml.com/WPsection.php
-// tslint:disable: no-unnecessary-initializer
 
 import { FooterWrapper } from "@file/footer-wrapper";
 import { HeaderWrapper } from "@file/header-wrapper";
 import { VerticalAlign, VerticalAlignElement } from "@file/vertical-align";
 import { OnOffElement, XmlComponent } from "@file/xml-components";
 
-import { HeaderFooterReference, HeaderFooterReferenceType, HeaderFooterType } from "./properties/header-footer-reference";
 import { Columns, IColumnsAttributes } from "./properties/columns";
 import { DocumentGrid, IDocGridAttributesProperties } from "./properties/doc-grid";
+import { HeaderFooterReference, HeaderFooterReferenceType, HeaderFooterType } from "./properties/header-footer-reference";
 import { ILineNumberAttributes, createLineNumberType } from "./properties/line-number";
 import { IPageBordersOptions, PageBorders } from "./properties/page-borders";
 import { IPageMarginAttributes, PageMargin } from "./properties/page-margin";
@@ -17,13 +16,13 @@ import { IPageSizeAttributes, PageOrientation, PageSize } from "./properties/pag
 import { PageTextDirection, PageTextDirectionType } from "./properties/page-text-direction";
 import { SectionType, Type } from "./properties/section-type";
 
-export interface IHeaderFooterGroup<T> {
+export type IHeaderFooterGroup<T> = {
     readonly default?: T;
     readonly first?: T;
     readonly even?: T;
-}
+};
 
-export interface ISectionPropertiesOptions {
+export type ISectionPropertiesOptions = {
     readonly page?: {
         readonly size?: IPageSizeAttributes;
         readonly margin?: IPageMarginAttributes;
@@ -39,7 +38,7 @@ export interface ISectionPropertiesOptions {
     readonly verticalAlign?: (typeof VerticalAlign)[keyof typeof VerticalAlign];
     readonly column?: IColumnsAttributes;
     readonly type?: (typeof SectionType)[keyof typeof SectionType];
-}
+};
 
 // <xsd:complexType name="CT_SectPr">
 //     <xsd:sequence>

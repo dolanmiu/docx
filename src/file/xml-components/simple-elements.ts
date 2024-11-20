@@ -1,6 +1,5 @@
 import { AttributeData, AttributePayload, Attributes, NextAttributeComponent, XmlComponent } from "@file/xml-components";
-
-import { hpsMeasureValue, PositiveUniversalMeasure } from "@util/values";
+import { PositiveUniversalMeasure, hpsMeasureValue } from "@util/values";
 
 // This represents element type CT_OnOff, which indicate a boolean value.
 //

@@ -5,11 +5,11 @@ import { BuilderElement, XmlComponent } from "@file/xml-components";
 //   <xsd:attribute name="eastAsia" type="s:ST_Lang" use="optional"/>
 //   <xsd:attribute name="bidi" type="s:ST_Lang" use="optional"/>
 // </xsd:complexType>
-export interface ILanguageOptions {
+export type ILanguageOptions = {
     readonly value?: string;
     readonly eastAsia?: string;
     readonly bidirectional?: string;
-}
+};
 
 export const createLanguageComponent = (options: ILanguageOptions): XmlComponent =>
     new BuilderElement<{

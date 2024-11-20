@@ -1,5 +1,6 @@
 // http://officeopenxml.com/drwSp-size.php
 import { XmlComponent } from "@file/xml-components";
+
 import { OffsetAttributes } from "./off-attributes";
 
 export class Offset extends XmlComponent {

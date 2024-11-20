@@ -14,11 +14,11 @@ export type IDistance = {
     readonly distR?: number;
 };
 
-export interface IDrawingOptions {
+export type IDrawingOptions = {
     readonly floating?: IFloating;
     readonly docProperties?: DocPropertiesOptions;
     readonly outline?: OutlineOptions;
-}
+};
 
 // <xsd:complexType name="CT_Drawing">
 // <xsd:choice minOccurs="1" maxOccurs="unbounded">

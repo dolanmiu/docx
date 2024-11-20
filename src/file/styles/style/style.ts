@@ -1,4 +1,5 @@
 import { OnOffElement, StringValueElement, XmlAttributeComponent, XmlComponent } from "@file/xml-components";
+
 import { Name, UiPriority } from "./components";
 
 // <xsd:complexType name="CT_Style">
@@ -32,14 +33,14 @@ import { Name, UiPriority } from "./components";
 //     <xsd:attribute name="customStyle" type="s:ST_OnOff" use="optional"/>
 // </xsd:complexType>
 
-export interface IStyleAttributes {
+export type IStyleAttributes = {
     readonly type?: string;
     readonly styleId?: string;
     readonly default?: boolean;
     readonly customStyle?: string;
-}
+};
 
-export interface IStyleOptions {
+export type IStyleOptions = {
     readonly name?: string;
     /**
      * Specifies the style upon which the current style is based-that is, the style from which the current style inherits. It is the mechanism for implementing style inheritance.
@@ -55,7 +56,7 @@ export interface IStyleOptions {
     readonly semiHidden?: boolean;
     readonly unhideWhenUsed?: boolean;
     readonly quickFormat?: boolean;
-}
+};
 
 class StyleAttributes extends XmlAttributeComponent<IStyleAttributes> {
     protected readonly xmlKeys = {

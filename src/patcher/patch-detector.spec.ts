@@ -1,5 +1,6 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import JSZip from "jszip";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
 import { patchDetector } from "./patch-detector";
 
 const MOCK_XML = `

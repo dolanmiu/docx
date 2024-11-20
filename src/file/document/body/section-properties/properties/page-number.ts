@@ -13,7 +13,6 @@ import { decimalNumber } from "@util/values";
 // </xsd:restriction>
 // </xsd:simpleType>
 
-/* eslint-disable @typescript-eslint/naming-convention */
 export const PageNumberSeparator = {
     HYPHEN: "hyphen",
     PERIOD: "period",
@@ -22,13 +21,11 @@ export const PageNumberSeparator = {
     EN_DASH: "endash",
 } as const;
 
-/* eslint-enable */
-
-export interface IPageNumberTypeAttributes {
+export type IPageNumberTypeAttributes = {
     readonly start?: number;
     readonly formatType?: (typeof NumberFormat)[keyof typeof NumberFormat];
     readonly separator?: (typeof PageNumberSeparator)[keyof typeof PageNumberSeparator];
-}
+};
 
 // <xsd:complexType name="CT_PageNumber">
 //     <xsd:attribute name="fmt" type="ST_NumberFormat" use="optional" default="decimal"/>

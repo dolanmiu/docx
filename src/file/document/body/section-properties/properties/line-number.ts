@@ -1,6 +1,6 @@
 // http://officeopenxml.com/WPsectionLineNumbering.php
 import { BuilderElement, XmlComponent } from "@file/xml-components";
-import { decimalNumber, PositiveUniversalMeasure, twipsMeasureValue } from "@util/values";
+import { PositiveUniversalMeasure, decimalNumber, twipsMeasureValue } from "@util/values";
 
 // <xsd:simpleType name="ST_LineNumberRestart">
 // <xsd:restriction base="xsd:string">
@@ -10,13 +10,11 @@ import { decimalNumber, PositiveUniversalMeasure, twipsMeasureValue } from "@uti
 // </xsd:restriction>
 // </xsd:simpleType>
 
-/* eslint-disable @typescript-eslint/naming-convention */
 export const LineNumberRestartFormat = {
     NEW_PAGE: "newPage",
     NEW_SECTION: "newSection",
     CONTINUOUS: "continuous",
 } as const;
-/* eslint-enable */
 
 // <xsd:complexType name="CT_LineNumber">
 //     <xsd:attribute name="countBy" type="ST_DecimalNumber" use="optional"/>

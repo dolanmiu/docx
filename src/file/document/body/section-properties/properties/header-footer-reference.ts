@@ -32,10 +32,10 @@ export const HeaderFooterReferenceType = {
 //   <xsd:attribute ref="r:id" use="required"/>
 // </xsd:complexType>
 
-export interface IHeaderFooterOptions {
+export type IHeaderFooterOptions = {
     readonly type?: (typeof HeaderFooterReferenceType)[keyof typeof HeaderFooterReferenceType];
     readonly id?: number;
-}
+};
 
 class FooterReferenceAttributes extends XmlAttributeComponent<{
     readonly type: (typeof HeaderFooterReferenceType)[keyof typeof HeaderFooterReferenceType];

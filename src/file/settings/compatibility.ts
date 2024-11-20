@@ -1,5 +1,6 @@
 // http://www.datypic.com/sc/ooxml/e-w_compat-1.html
 import { OnOffElement, XmlComponent } from "@file/xml-components";
+
 import { CompatibilitySetting } from "./compatibility-setting/compatibility-setting";
 
 // <xsd:complexType name="CT_Compat">
@@ -74,7 +75,7 @@ import { CompatibilitySetting } from "./compatibility-setting/compatibility-sett
 // </xsd:sequence>
 // </xsd:complexType>
 
-export interface ICompatibilityOptions {
+export type ICompatibilityOptions = {
     readonly version?: number;
     /** Use Simplified Rules For Table Border Conflicts */
     readonly useSingleBorderforContiguousCells?: boolean;
@@ -206,7 +207,7 @@ export interface ICompatibilityOptions {
     readonly useAnsiKerningPairs?: boolean;
     /** Use Cached Paragraph Information for Column Balancing */
     readonly cachedColumnBalance?: boolean;
-}
+};
 
 export class Compatibility extends XmlComponent {
     public constructor(options: ICompatibilityOptions) {
