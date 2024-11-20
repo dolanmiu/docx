@@ -1,4 +1,5 @@
-import { nanoid, customAlphabet } from "nanoid/non-secure";
+import hash from "hash.js";
+import { customAlphabet, nanoid } from "nanoid/non-secure";
 
 // Twip - twentieths of a point
 export const convertMillimetersToTwip = (millimeters: number): number => Math.floor((millimeters / 25.4) * 72 * 20);
@@ -23,6 +24,12 @@ export const docPropertiesUniqueNumericIdGen = (): UniqueNumericIdCreator => uni
 export const bookmarkUniqueNumericIdGen = (): UniqueNumericIdCreator => uniqueNumericIdCreator();
 
 export const uniqueId = (): string => nanoid().toLowerCase();
+
+export const hashedId = (data: Buffer | string | Uint8Array | ArrayBuffer): string =>
+    hash
+        .sha1()
+        .update(data instanceof ArrayBuffer ? new Uint8Array(data) : data)
+        .digest("hex");
 
 const generateUuidPart = (count: number): string => customAlphabet("1234567890abcdef", count)();
 export const uniqueUuid = (): string =>

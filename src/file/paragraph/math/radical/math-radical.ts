@@ -6,10 +6,10 @@ import { MathBase } from "../n-ary";
 import { MathDegree } from "./math-degree";
 import { MathRadicalProperties } from "./math-radical-properties";
 
-export interface IMathRadicalOptions {
+export type IMathRadicalOptions = {
     readonly children: readonly MathComponent[];
     readonly degree?: readonly MathComponent[];
-}
+};
 
 export class MathRadical extends XmlComponent {
     public constructor(options: IMathRadicalOptions) {

@@ -4,10 +4,10 @@ import { MathComponent } from "../math-component";
 import { MathDenominator } from "./math-denominator";
 import { MathNumerator } from "./math-numerator";
 
-export interface IMathFractionOptions {
+export type IMathFractionOptions = {
     readonly numerator: readonly MathComponent[];
     readonly denominator: readonly MathComponent[];
-}
+};
 
 export class MathFraction extends XmlComponent {
     public constructor(options: IMathFractionOptions) {

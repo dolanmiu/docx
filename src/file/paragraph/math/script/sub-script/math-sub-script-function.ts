@@ -1,14 +1,14 @@
 // http://www.datypic.com/sc/ooxml/e-m_sSub-1.html
 import { XmlComponent } from "@file/xml-components";
 
+import { MathSubScriptProperties } from "./math-sub-script-function-properties";
 import { MathComponent } from "../../math-component";
 import { MathBase, MathSubScriptElement } from "../../n-ary";
-import { MathSubScriptProperties } from "./math-sub-script-function-properties";
 
-export interface IMathSubScriptOptions {
+export type IMathSubScriptOptions = {
     readonly children: readonly MathComponent[];
     readonly subScript: readonly MathComponent[];
-}
+};
 
 export class MathSubScript extends XmlComponent {
     public constructor(options: IMathSubScriptOptions) {

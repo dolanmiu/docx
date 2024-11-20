@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { Formatter } from "@export/formatter";
+
 import { SectionType, Type } from "./section-type";
 
 describe("Type", () => {

@@ -9,12 +9,12 @@ import { ImageReplacer } from "./image-replacer";
 import { NumberingReplacer } from "./numbering-replacer";
 import { PrettifyType } from "./packer";
 
-interface IXmlifyedFile {
+type IXmlifyedFile = {
     readonly data: string;
     readonly path: string;
-}
+};
 
-interface IXmlifyedFileMapping {
+type IXmlifyedFileMapping = {
     readonly Document: IXmlifyedFile;
     readonly Styles: IXmlifyedFile;
     readonly Properties: IXmlifyedFile;
@@ -34,7 +34,7 @@ interface IXmlifyedFileMapping {
     readonly Comments?: IXmlifyedFile;
     readonly FontTable?: IXmlifyedFile;
     readonly FontTableRelationships?: IXmlifyedFile;
-}
+};
 
 export class Compiler {
     private readonly formatter: Formatter;
@@ -108,6 +108,12 @@ export class Compiler {
                             `media/${mediaData.fileName}`,
                         );
                     });
+
+                    file.Document.Relationships.createRelationship(
+                        file.Document.Relationships.RelationshipCount + 1,
+                        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/fontTable",
+                        "fontTable.xml",
+                    );
 
                     return xml(
                         this.formatter.format(file.Document.Relationships, {

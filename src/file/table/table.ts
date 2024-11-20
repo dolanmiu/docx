@@ -20,7 +20,7 @@ import { ITableWidthProperties } from "./table-width";
     table will make it look reasonable, as the layout
     algorithm will expand columns to fit its content
  */
-export interface ITableOptions {
+export type ITableOptions = {
     readonly rows: readonly TableRow[];
     readonly width?: ITableWidthProperties;
     readonly columnWidths?: readonly number[];
@@ -32,7 +32,7 @@ export interface ITableOptions {
     readonly borders?: ITableBordersOptions;
     readonly alignment?: (typeof AlignmentType)[keyof typeof AlignmentType];
     readonly visuallyRightToLeft?: boolean;
-}
+};
 
 export class Table extends FileChild {
     public constructor({

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { Formatter } from "@export/formatter";
+
 import { HeaderFooterReference, HeaderFooterReferenceType, HeaderFooterType } from "./header-footer-reference";
 
 describe("HeaderFooterReference", () => {

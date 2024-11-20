@@ -21,7 +21,6 @@ export const convertToXmlComponent = (element: XmlElement): ImportedXmlComponent
             for (const childElm of childElements) {
                 const child = convertToXmlComponent(childElm);
                 if (child !== undefined) {
-                    // eslint-disable-next-line functional/immutable-data
                     xmlComponent.push(child);
                 }
             }
@@ -62,7 +61,6 @@ export class ImportedXmlComponent extends XmlComponent {
     public constructor(rootKey: string, _attr?: any) {
         super(rootKey);
         if (_attr) {
-            // eslint-disable-next-line functional/immutable-data
             this.root.push(new ImportedXmlComponentAttributes(_attr));
         }
     }

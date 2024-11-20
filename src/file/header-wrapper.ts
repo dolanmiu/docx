@@ -8,10 +8,10 @@ import { Paragraph } from "./paragraph";
 import { Relationships } from "./relationships";
 import { Table } from "./table";
 
-export interface IDocumentHeader {
+export type IDocumentHeader = {
     readonly header: HeaderWrapper;
     readonly type: (typeof HeaderFooterReferenceType)[keyof typeof HeaderFooterReferenceType];
-}
+};
 
 export class HeaderWrapper implements IViewWrapper {
     private readonly header: Header;

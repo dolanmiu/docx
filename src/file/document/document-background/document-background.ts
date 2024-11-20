@@ -39,12 +39,12 @@ export class DocumentBackgroundAttributes extends XmlAttributeComponent<{
     };
 }
 
-export interface IDocumentBackgroundOptions {
+export type IDocumentBackgroundOptions = {
     readonly color?: string;
     readonly themeColor?: string;
     readonly themeShade?: string;
     readonly themeTint?: string;
-}
+};
 
 // <xsd:complexType name="CT_Background">
 //     <xsd:sequence>

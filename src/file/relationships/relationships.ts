@@ -1,4 +1,5 @@
 import { XmlComponent } from "@file/xml-components";
+
 import { RelationshipsAttributes } from "./attributes";
 import { Relationship, RelationshipType, TargetModeType } from "./relationship/relationship";
 

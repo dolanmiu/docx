@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import { Formatter } from "@export/formatter";
 import { EmphasisMarkType } from "@file/paragraph/run/emphasis-mark";
-import { UnderlineType } from "@file/paragraph/run/underline";
 import { HighlightColor } from "@file/paragraph/run/properties";
+import { UnderlineType } from "@file/paragraph/run/underline";
 import { ShadingType } from "@file/shading";
 import { EMPTY_OBJECT } from "@file/xml-components";
 

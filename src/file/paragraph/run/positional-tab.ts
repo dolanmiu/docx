@@ -38,15 +38,14 @@ export const PositionalTabLeader = {
     DOT: "dot",
     HYPHEN: "hyphen",
     UNDERSCORE: "underscore",
-    // eslint-disable-next-line @typescript-eslint/naming-convention
     MIDDLE_DOT: "middleDot",
 } as const;
 
-export interface PositionalTabOptions {
+export type PositionalTabOptions = {
     readonly alignment: (typeof PositionalTabAlignment)[keyof typeof PositionalTabAlignment];
     readonly relativeTo: (typeof PositionalTabRelativeTo)[keyof typeof PositionalTabRelativeTo];
     readonly leader: (typeof PositionalTabLeader)[keyof typeof PositionalTabLeader];
-}
+};
 
 // <xsd:complexType name="CT_PTab">
 //     <xsd:attribute name="alignment" type="ST_PTabAlignment" use="required" />

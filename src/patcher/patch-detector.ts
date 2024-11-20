@@ -1,7 +1,8 @@
 import JSZip from "jszip";
-import { toJson } from "./util";
-import { traverse } from "./traverser";
+
 import { InputDataType } from "./from-docx";
+import { traverse } from "./traverser";
+import { toJson } from "./util";
 
 type PatchDetectorOptions = {
     readonly data: InputDataType;

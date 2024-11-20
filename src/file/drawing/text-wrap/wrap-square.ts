@@ -5,9 +5,9 @@ import { IDistance } from "../drawing";
 import { IMargins } from "../floating";
 import { ITextWrapping, TextWrappingSide } from "./text-wrapping";
 
-interface IWrapSquareAttributes extends IDistance {
+type IWrapSquareAttributes = {
     readonly wrapText?: (typeof TextWrappingSide)[keyof typeof TextWrappingSide];
-}
+} & IDistance;
 
 class WrapSquareAttributes extends XmlAttributeComponent<IWrapSquareAttributes> {
     protected readonly xmlKeys = {

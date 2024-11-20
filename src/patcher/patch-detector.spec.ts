@@ -1,5 +1,6 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import JSZip from "jszip";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
 import { patchDetector } from "./patch-detector";
 
 const MOCK_XML = `
@@ -195,6 +196,147 @@ const MOCK_XML = `
 </w:document>
 `;
 
+// cspell:disable
+const MOCK_XML_2 = `
+<w:body>
+    <w:tbl>
+        <w:tblPr>
+            <w:tblStyle w:val="TableGrid" />
+            <w:tblW w:w="9350" w:type="dxa" />
+            <w:jc w:val="left" />
+            <w:tblInd w:w="0" w:type="dxa" />
+            <w:tblLayout w:type="fixed" />
+            <w:tblCellMar>
+                <w:top w:w="0" w:type="dxa" />
+                <w:left w:w="108" w:type="dxa" />
+                <w:bottom w:w="0" w:type="dxa" />
+                <w:right w:w="108" w:type="dxa" />
+            </w:tblCellMar>
+            <w:tblLook w:firstRow="1" w:noVBand="1" w:lastRow="0" w:firstColumn="1"
+                w:lastColumn="0" w:noHBand="0" w:val="04a0" />
+        </w:tblPr>
+        <w:tblGrid>
+            <w:gridCol w:w="3119" />
+            <w:gridCol w:w="3141" />
+            <w:gridCol w:w="3090" />
+        </w:tblGrid>
+        <w:tr>
+            <w:trPr></w:trPr>
+            <w:tc>
+                <w:tcPr>
+                    <w:tcW w:w="3119" w:type="dxa" />
+                    <w:tcBorders>
+                        <w:right w:val="nil" />
+                    </w:tcBorders>
+                    <w:shd w:color="auto" w:fill="D9D9D9" w:themeFill="background1"
+                        w:themeFillShade="d9" w:val="clear" />
+                </w:tcPr>
+                <w:p>
+                    <w:pPr>
+                        <w:pStyle w:val="NormalSpaceAboveandBelow" />
+                        <w:widowControl />
+                        <w:spacing w:before="120" w:after="120" />
+                        <w:jc w:val="left" />
+                        <w:rPr>
+                            <w:rFonts w:eastAsia="Times New Roman" />
+                            <w:kern w:val="0" />
+                            <w:sz w:val="20" />
+                            <w:lang w:val="en-US" w:eastAsia="en-US" w:bidi="ar-SA" />
+                        </w:rPr>
+                    </w:pPr>
+                    <w:r>
+                        <w:rPr>
+                            <w:rFonts w:eastAsia="Times New Roman" />
+                            <w:kern w:val="0" />
+                            <w:sz w:val="20" />
+                            <w:lang w:val="en-US" w:eastAsia="en-US" w:bidi="ar-SA" />
+                        </w:rPr>
+                        <w:t>{{</w:t>
+                    </w:r>
+                    <w:r>
+                        <w:rPr>
+                            <w:rFonts w:eastAsia="Times New Roman" />
+                            <w:kern w:val="0" />
+                            <w:sz w:val="20" />
+                            <w:lang w:val="en-US" w:eastAsia="en-US" w:bidi="ar-SA" />
+                        </w:rPr>
+                        <w:t>s</w:t>
+                    </w:r>
+                    <w:r>
+                        <w:rPr>
+                            <w:rFonts w:eastAsia="Times New Roman" />
+                            <w:kern w:val="0" />
+                            <w:sz w:val="20" />
+                            <w:lang w:val="en-US" w:eastAsia="en-US" w:bidi="ar-SA" />
+                        </w:rPr>
+                        <w:t>chool_</w:t>
+                    </w:r>
+                    <w:r>
+                        <w:rPr>
+                            <w:rFonts w:eastAsia="Times New Roman" />
+                            <w:kern w:val="0" />
+                            <w:sz w:val="20" />
+                            <w:lang w:val="en-US" w:eastAsia="en-US" w:bidi="ar-SA" />
+                        </w:rPr>
+                        <w:t>n</w:t>
+                    </w:r>
+                    <w:r>
+                        <w:rPr>
+                            <w:rFonts w:eastAsia="Times New Roman" />
+                            <w:kern w:val="0" />
+                            <w:sz w:val="20" />
+                            <w:lang w:val="en-US" w:eastAsia="en-US" w:bidi="ar-SA" />
+                        </w:rPr>
+                        <w:t>ame}}</w:t>
+                        <w:br />
+                        <w:t>{{</w:t>
+                    </w:r>
+                    <w:r>
+                        <w:rPr>
+                            <w:rFonts w:eastAsia="Times New Roman" />
+                            <w:kern w:val="0" />
+                            <w:sz w:val="20" />
+                            <w:lang w:val="en-US" w:eastAsia="en-US" w:bidi="ar-SA" />
+                        </w:rPr>
+                        <w:t>a</w:t>
+                    </w:r>
+                    <w:r>
+                        <w:rPr>
+                            <w:rFonts w:eastAsia="Times New Roman" />
+                            <w:kern w:val="0" />
+                            <w:sz w:val="20" />
+                            <w:lang w:val="en-US" w:eastAsia="en-US" w:bidi="ar-SA" />
+                        </w:rPr>
+                        <w:t>ddr</w:t>
+                    </w:r>
+                    <w:r>
+                        <w:rPr>
+                            <w:rFonts w:eastAsia="Times New Roman" />
+                            <w:kern w:val="0" />
+                            <w:sz w:val="20" />
+                            <w:lang w:val="en-US" w:eastAsia="en-US" w:bidi="ar-SA" />
+                        </w:rPr>
+                        <w:t>ess</w:t>
+                    </w:r>
+                    <w:r>
+                        <w:rPr>
+                            <w:rFonts w:eastAsia="Times New Roman" />
+                            <w:kern w:val="0" />
+                            <w:sz w:val="20" />
+                            <w:lang w:val="en-US" w:eastAsia="en-US" w:bidi="ar-SA" />
+                        </w:rPr>
+                        <w:t>}}</w:t>
+                        <w:br />
+                        <w:t>{{</w:t>
+                    </w:r>
+                </w:p>
+            </w:tc>
+        </w:tr>
+    </w:tbl>
+</w:body>
+`;
+// cspell:enable
+
 describe("patch-detector", () => {
     describe("patchDetector", () => {
         describe("document.xml and [Content_Types].xml", () => {
@@ -219,6 +361,33 @@ describe("patch-detector", () => {
                     data: Buffer.from(""),
                 });
                 expect(output).toMatchObject(["name", "paragraph_replace", "table", "image_test", "table_heading_1", "item_1"]);
+            });
+        });
+    });
+
+    describe("patchDetector", () => {
+        describe("document.xml and [Content_Types].xml", () => {
+            beforeEach(() => {
+                vi.spyOn(JSZip, "loadAsync").mockReturnValue(
+                    new Promise<JSZip>((resolve) => {
+                        const zip = new JSZip();
+
+                        zip.file("word/document.xml", MOCK_XML_2);
+                        zip.file("[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`);
+                        resolve(zip);
+                    }),
+                );
+            });
+
+            afterEach(() => {
+                vi.restoreAllMocks();
+            });
+
+            it("should patch the document", async () => {
+                const output = await patchDetector({
+                    data: Buffer.from(""),
+                });
+                expect(output).toMatchObject(["school_name", "address"]);
             });
         });
     });

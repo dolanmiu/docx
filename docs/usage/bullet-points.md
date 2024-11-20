@@ -22,7 +22,7 @@ const doc = new Document({
                 }
             })
         ],
-    }];
+    }]
 });
 ```
 

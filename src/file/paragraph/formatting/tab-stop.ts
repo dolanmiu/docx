@@ -1,11 +1,11 @@
 // http://officeopenxml.com/WPtab.php
 import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
 
-export interface TabStopDefinition {
+export type TabStopDefinition = {
     readonly type: (typeof TabStopType)[keyof typeof TabStopType];
     readonly position: number | (typeof TabStopPosition)[keyof typeof TabStopPosition];
     readonly leader?: (typeof LeaderType)[keyof typeof LeaderType];
-}
+};
 
 export class TabStop extends XmlComponent {
     public constructor(tabDefinitions: readonly TabStopDefinition[]) {
@@ -32,7 +32,7 @@ export const TabStopType = {
 export const LeaderType = {
     DOT: "dot",
     HYPHEN: "hyphen",
-    // eslint-disable-next-line @typescript-eslint/naming-convention
+
     MIDDLE_DOT: "middleDot",
     NONE: "none",
     UNDERSCORE: "underscore",

@@ -13,10 +13,10 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - name: Checkout Repo
-              uses: actions/checkout@master
+              uses: actions/checkout@v4
             - uses: "./.github/actions/install-and-build"
             - name: Archive Production Artifact
-              uses: actions/upload-artifact@master
+              uses: actions/upload-artifact@v4
               with:
                   name: build
                   path: build
@@ -25,22 +25,24 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - name: Checkout Repo
-              uses: actions/checkout@master
+              uses: actions/checkout@v4
             - name: Install Dependencies
               run: npm ci --force
             - name: Test
               run: npm run test:ci
             - name: Codecov
-              uses: codecov/codecov-action@v3
+              uses: codecov/codecov-action@v4
               with:
                   fail_ci_if_error: true
                   verbose: true
+              env:
+                  CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
     lint:
         name: Lint
         runs-on: ubuntu-latest
         steps:
             - name: Checkout Repo
-              uses: actions/checkout@master
+              uses: actions/checkout@v4
             - name: Install Dependencies
               run: npm ci --force
             - name: Lint
@@ -50,7 +52,7 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - name: Checkout Repo
-              uses: actions/checkout@master
+              uses: actions/checkout@v4
             - name: Install Dependencies
               run: npm ci --force
             - name: Prettier
@@ -60,7 +62,7 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - name: Checkout Repo
-              uses: actions/checkout@master
+              uses: actions/checkout@v4
             - name: Install Dependencies
               run: npm ci --force
             - name: Prettier

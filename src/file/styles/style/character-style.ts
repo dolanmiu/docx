@@ -2,13 +2,13 @@ import { IRunStylePropertiesOptions, RunProperties } from "@file/paragraph/run/p
 
 import { IStyleOptions, Style } from "./style";
 
-export interface IBaseCharacterStyleOptions extends IStyleOptions {
+export type IBaseCharacterStyleOptions = {
     readonly run?: IRunStylePropertiesOptions;
-}
+} & IStyleOptions;
 
-export interface ICharacterStyleOptions extends IBaseCharacterStyleOptions {
+export type ICharacterStyleOptions = {
     readonly id: string;
-}
+} & IBaseCharacterStyleOptions;
 
 export class StyleForCharacter extends Style {
     private readonly runProperties: RunProperties;
