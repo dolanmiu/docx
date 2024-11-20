@@ -109,6 +109,12 @@ export class Compiler {
                         );
                     });
 
+                    file.Document.Relationships.createRelationship(
+                        file.Document.Relationships.RelationshipCount + 1,
+                        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/fontTable",
+                        "fontTable.xml",
+                    );
+
                     return xml(
                         this.formatter.format(file.Document.Relationships, {
                             viewWrapper: file.Document,
