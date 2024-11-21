@@ -21,6 +21,16 @@ export type PositiveUniversalMeasure = `${number}${"mm" | "cm" | "in" | "pt" | "
 // </xsd:simpleType>
 export type Percentage = `${"-" | ""}${number}%`;
 
+// <xsd:simpleType name="ST_PositivePercentage">
+//     <xsd:restriction base="ST_Percentage">
+//         <xsd:pattern value="[0-9]+(\.[0-9]+)?%"/>
+//     </xsd:restriction>
+// </xsd:simpleType>
+export type PositivePercentage = `${number}%`;
+
+// Only applies to VmlTextbox so far
+export type RelativeMeasure = `${"-" | ""}${number}${"em" | "ex"}`;
+
 // <xsd:simpleType name="ST_DecimalNumber">
 //     <xsd:restriction base="xsd:integer"/>
 // </xsd:simpleType>

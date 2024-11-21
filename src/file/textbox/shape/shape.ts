@@ -1,20 +1,23 @@
 import { ParagraphChild } from "@file/paragraph";
 import { BuilderElement, XmlComponent } from "@file/xml-components";
+import { Percentage, RelativeMeasure, UniversalMeasure } from "@util/values";
 
 import { createVmlTextbox } from "../vml-textbox/vml-texbox";
 
 const SHAPE_TYPE = "#_x0000_t202";
 
+type LengthUnit = "auto" | number | Percentage | UniversalMeasure | RelativeMeasure;
+
 export type ShapeStyle = {
-    readonly width: string;
-    readonly height?: string;
-    readonly margin?: string;
+    readonly width: LengthUnit;
+    readonly height?: LengthUnit;
+    readonly margin?: LengthUnit;
 };
 
 const formatShapeStyle = (style?: ShapeStyle): string | undefined =>
     style
         ? Object.entries(style)
-              .map((entry: readonly string[]) => {
+              .map((entry) => {
                   const [key, value] = entry;
                   return `${key}:${value}`;
               })
