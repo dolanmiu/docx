@@ -479,4 +479,41 @@ describe("File", () => {
             expect(doc.Styles).to.not.be.undefined;
         });
     });
+
+    describe("#features", () => {
+        it("should work with updateFields", () => {
+            const doc = new File({
+                sections: [],
+                features: {
+                    updateFields: true,
+                },
+            });
+
+            expect(doc.Styles).to.not.be.undefined;
+        });
+
+        it("should work with trackRevisions", () => {
+            const doc = new File({
+                sections: [],
+                features: {
+                    trackRevisions: true,
+                },
+            });
+
+            expect(doc.Styles).to.not.be.undefined;
+        });
+    });
+
+    describe("#hyphenation", () => {
+        it("should work with autoHyphenation", () => {
+            const doc = new File({
+                sections: [],
+                hyphenation: {
+                    autoHyphenation: true,
+                },
+            });
+
+            expect(doc.Styles).to.not.be.undefined;
+        });
+    });
 });
