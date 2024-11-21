@@ -1,5 +1,6 @@
 import { FontOptions } from "@file/fonts/font-table";
 import { ICommentsOptions } from "@file/paragraph/run/comment-run";
+import { IHyphenationOptions } from "@file/settings";
 import { ICompatibilityOptions } from "@file/settings/compatibility";
 import { StringContainer, XmlComponent } from "@file/xml-components";
 import { dateTimeValue } from "@util/values";
@@ -44,6 +45,7 @@ export type IPropertiesOptions = {
     readonly evenAndOddHeaderAndFooters?: boolean;
     readonly defaultTabStop?: number;
     readonly fonts?: readonly FontOptions[];
+    readonly hyphenation?: IHyphenationOptions;
 };
 
 // <xs:element name="coreProperties" type="CT_CoreProperties"/>
