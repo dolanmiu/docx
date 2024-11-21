@@ -1,8 +1,8 @@
-import { configDefaults, defineConfig } from "vitest/config";
 import { resolve } from "path";
-import tsconfigPaths from "vite-tsconfig-paths";
 import dts from "vite-plugin-dts";
 import { nodePolyfills } from "vite-plugin-node-polyfills";
+import tsconfigPaths from "vite-tsconfig-paths";
+import { configDefaults, defineConfig } from "vitest/config";
 
 export default defineConfig({
     plugins: [
@@ -65,7 +65,7 @@ export default defineConfig({
             reporter: ["text", "json", "html"],
             thresholds: {
                 statements: 100,
-                branches: 99.35,
+                branches: 99.68,
                 functions: 100,
                 lines: 100,
             },

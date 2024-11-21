@@ -153,6 +153,18 @@ export type ISettingsOptions = {
     readonly updateFields?: boolean;
     readonly compatibility?: ICompatibilityOptions;
     readonly defaultTabStop?: number;
+    readonly hyphenation?: IHyphenationOptions;
+};
+
+export type IHyphenationOptions = {
+    /** Specifies whether the application automatically hyphenates words as they are typed in the document. */
+    readonly autoHyphenation?: boolean;
+    /** Specifies the minimum number of characters at the beginning of a word before a hyphen can be inserted. */
+    readonly hyphenationZone?: number;
+    /** Specifies the maximum number of consecutive lines that can end with a hyphenated word. */
+    readonly consecutiveHyphenLimit?: number;
+    /** Specifies whether to hyphenate words in all capital letters. */
+    readonly doNotHyphenateCaps?: boolean;
 };
 
 export class Settings extends XmlComponent {
@@ -202,6 +214,26 @@ export class Settings extends XmlComponent {
         // https://c-rex.net/samples/ooxml/e1/Part4/OOXML_P4_DOCX_defaultTabStop_topic_ID0EIXSX.html
         if (options.defaultTabStop !== undefined) {
             this.root.push(new NumberValueElement("w:defaultTabStop", options.defaultTabStop));
+        }
+
+        // https://c-rex.net/samples/ooxml/e1/Part4/OOXML_P4_DOCX_autoHyphenation_topic_ID0EFUMX.html
+        if (options.hyphenation?.autoHyphenation !== undefined) {
+            this.root.push(new OnOffElement("w:autoHyphenation", options.hyphenation.autoHyphenation));
+        }
+
+        // https://c-rex.net/samples/ooxml/e1/Part4/OOXML_P4_DOCX_hyphenationZone_topic_ID0ERI3X.html
+        if (options.hyphenation?.hyphenationZone !== undefined) {
+            this.root.push(new NumberValueElement("w:hyphenationZone", options.hyphenation.hyphenationZone));
+        }
+
+        // https://c-rex.net/samples/ooxml/e1/Part4/OOXML_P4_DOCX_consecutiveHyphenLim_topic_ID0EQ6RX.html
+        if (options.hyphenation?.consecutiveHyphenLimit !== undefined) {
+            this.root.push(new NumberValueElement("w:consecutiveHyphenLimit", options.hyphenation.consecutiveHyphenLimit));
+        }
+
+        // https://c-rex.net/samples/ooxml/e1/Part4/OOXML_P4_DOCX_doNotHyphenateCaps_topic_ID0EW4XX.html
+        if (options.hyphenation?.doNotHyphenateCaps !== undefined) {
+            this.root.push(new OnOffElement("w:doNotHyphenateCaps", options.hyphenation.doNotHyphenateCaps));
         }
 
         this.root.push(
