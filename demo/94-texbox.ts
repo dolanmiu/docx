@@ -1,6 +1,6 @@
 // Simple example to add textbox to a document
-import * as fs from "fs";
 import { Document, Packer, Paragraph, Textbox, TextRun } from "docx";
+import * as fs from "fs";
 
 const doc = new Document({
     sections: [
@@ -8,14 +8,12 @@ const doc = new Document({
             properties: {},
             children: [
                 new Textbox({
-                    options: {
-                        alignment: "center",
-                        children: [
-                            new Paragraph({
-                                children: [new TextRun("Hi i'm a textbox!")],
-                            }),
-                        ],
-                    },
+                    alignment: "center",
+                    children: [
+                        new Paragraph({
+                            children: [new TextRun("Hi i'm a textbox!")],
+                        }),
+                    ],
                     style: {
                         width: "200pt",
                         height: "auto",

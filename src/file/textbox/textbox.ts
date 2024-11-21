@@ -5,26 +5,22 @@ import { uniqueId } from "@util/convenience-functions";
 import { createPictElement } from "./pict-element/pict-element";
 import { ShapeStyle, createShape } from "./shape/shape";
 
-export type ITextboxOptions = {
-    readonly options: IParagraphOptions;
+type ITextboxOptions = Omit<IParagraphOptions, "style"> & {
     readonly style?: ShapeStyle;
 };
 
 export class Textbox extends FileChild {
-    private readonly properties: ParagraphProperties;
-
-    public constructor({ options, style }: ITextboxOptions) {
+    public constructor({ style, children, ...rest }: ITextboxOptions) {
         super("w:p");
-        this.properties = new ParagraphProperties(options);
-        this.root.push(this.properties);
-        const shape = createShape({
-            children: options.children,
-            id: uniqueId(),
-            style: style,
-        });
+        this.root.push(new ParagraphProperties(rest));
+
         this.root.push(
             createPictElement({
-                shape,
+                shape: createShape({
+                    children: children,
+                    id: uniqueId(),
+                    style: style,
+                }),
             }),
         );
     }

@@ -6,7 +6,7 @@ import { Paragraph } from "@file/paragraph";
 import { createVmlTextbox } from "./vml-texbox";
 
 describe("VmlTextbox", () => {
-    it("should create with default effect extent", () => {
+    it("should work", () => {
         const tree = new Formatter().format(
             createVmlTextbox({
                 style: "test-style",

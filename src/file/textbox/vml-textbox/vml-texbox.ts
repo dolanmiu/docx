@@ -1,3 +1,4 @@
+// Documentation: http://webapp.docx4java.org/OnlineDemo/ecma376/VML/textbox.html
 import { ParagraphChild } from "@file/paragraph";
 import { BuilderElement, XmlComponent } from "@file/xml-components";
 
