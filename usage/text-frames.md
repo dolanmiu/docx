@@ -1,6 +1,6 @@
 # Text Frames
 
-Also known as `Text Boxes`
+> Similar to `Text Boxes`!
 
 !> Text Frames requires an understanding of [Paragraphs](usage/paragraph.md).
 
