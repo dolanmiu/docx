@@ -76,6 +76,7 @@ export default defineConfig({
                 '**/docs/**',
                 '**/scripts/**',
                 '**/src/**/index.ts',
+                '**/src/**/types.ts',
             ],
         },
         include: [
