@@ -14,6 +14,11 @@ const formatter = new Formatter();
 
 const SPLIT_TOKEN = "ɵ";
 
+type IReplacerResult = {
+    readonly element: Element;
+    readonly didFindOccurrence: boolean;
+};
+
 export const replacer = ({
     json,
     patch,
@@ -26,11 +31,11 @@ export const replacer = ({
     readonly patchText: string;
     readonly context: IContext;
     readonly keepOriginalStyles?: boolean;
-}): Element => {
+}): IReplacerResult => {
     const renderedParagraphs = findLocationOfText(json, patchText);
 
     if (renderedParagraphs.length === 0) {
-        throw new Error(`Could not find text ${patchText}`);
+        return { element: json, didFindOccurrence: false };
     }
 
     for (const renderedParagraph of renderedParagraphs) {
@@ -85,7 +90,7 @@ export const replacer = ({
         }
     }
 
-    return json;
+    return { element: json, didFindOccurrence: true };
 };
 
 const goToElementFromPath = (json: Element, path: readonly number[]): Element => {

@@ -132,38 +132,37 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
                 // We need to loop through to catch every occurrence of the patch text
                 // It is possible that the patch text is in the same run
                 // This algorithm is limited to one patch per text run
-                // Once it cannot find any more occurrences, it will throw an error, and then we break out of the loop
+                // We break out of the loop once it cannot find any more occurrences
                 // https://github.com/dolanmiu/docx/issues/2267
                 while (true) {
-                    try {
-                        replacer({
-                            json,
-                            patch: {
-                                ...patchValue,
-                                children: patchValue.children.map((element) => {
-                                    // We need to replace external hyperlinks with concrete hyperlinks
-                                    if (element instanceof ExternalHyperlink) {
-                                        const concreteHyperlink = new ConcreteHyperlink(element.options.children, uniqueId());
-                                        // eslint-disable-next-line functional/immutable-data
-                                        hyperlinkRelationshipAdditions.push({
-                                            key,
-                                            hyperlink: {
-                                                id: concreteHyperlink.linkId,
-                                                link: element.options.link,
-                                            },
-                                        });
-                                        return concreteHyperlink;
-                                    } else {
-                                        return element;
-                                    }
-                                }),
-                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                            } as any,
-                            patchText,
-                            context,
-                            keepOriginalStyles,
-                        });
-                    } catch {
+                    const { didFindOccurrence } = replacer({
+                        json,
+                        patch: {
+                            ...patchValue,
+                            children: patchValue.children.map((element) => {
+                                // We need to replace external hyperlinks with concrete hyperlinks
+                                if (element instanceof ExternalHyperlink) {
+                                    const concreteHyperlink = new ConcreteHyperlink(element.options.children, uniqueId());
+                                    // eslint-disable-next-line functional/immutable-data
+                                    hyperlinkRelationshipAdditions.push({
+                                        key,
+                                        hyperlink: {
+                                            id: concreteHyperlink.linkId,
+                                            link: element.options.link,
+                                        },
+                                    });
+                                    return concreteHyperlink;
+                                } else {
+                                    return element;
+                                }
+                            }),
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        } as any,
+                        patchText,
+                        context,
+                        keepOriginalStyles,
+                    });
+                    if (!didFindOccurrence) {
                         break;
                     }
                 }

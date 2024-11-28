@@ -78,24 +78,23 @@ export const MOCK_JSON = {
 describe("replacer", () => {
     describe("replacer", () => {
         it("should throw an error if nothing is added", () => {
-            expect(() =>
-                replacer({
-                    json: {
-                        elements: [],
-                    },
-                    patch: {
-                        type: PatchType.PARAGRAPH,
-                        children: [],
-                    },
-                    patchText: "hello",
-                    // eslint-disable-next-line functional/prefer-readonly-type
-                    context: vi.fn<[], IContext>()(),
-                }),
-            ).toThrow();
+            const { didFindOccurrence } = replacer({
+                json: {
+                    elements: [],
+                },
+                patch: {
+                    type: PatchType.PARAGRAPH,
+                    children: [],
+                },
+                patchText: "hello",
+                // eslint-disable-next-line functional/prefer-readonly-type
+                context: vi.fn<[], IContext>()(),
+            });
+            expect(didFindOccurrence).toBe(false);
         });
 
         it("should replace paragraph type", () => {
-            const output = replacer({
+            const { element, didFindOccurrence } = replacer({
                 json: JSON.parse(JSON.stringify(MOCK_JSON)),
                 patch: {
                     type: PatchType.PARAGRAPH,
@@ -111,11 +110,12 @@ describe("replacer", () => {
                 },
             });
 
-            expect(JSON.stringify(output)).to.contain("Delightful Header");
+            expect(JSON.stringify(element)).to.contain("Delightful Header");
+            expect(didFindOccurrence).toBe(true);
         });
 
         it("should replace paragraph type keeping original styling if keepOriginalStyles is true", () => {
-            const output = replacer({
+            const { element, didFindOccurrence } = replacer({
                 json: JSON.parse(JSON.stringify(MOCK_JSON)),
                 patch: {
                     type: PatchType.PARAGRAPH,
@@ -132,8 +132,8 @@ describe("replacer", () => {
                 keepOriginalStyles: true,
             });
 
-            expect(JSON.stringify(output)).to.contain("sweet");
-            expect(output.elements![0].elements![1].elements).toMatchObject([
+            expect(JSON.stringify(element)).to.contain("sweet");
+            expect(element.elements![0].elements![1].elements).toMatchObject([
                 {
                     type: "element",
                     name: "w:r",
@@ -187,10 +187,11 @@ describe("replacer", () => {
                     ],
                 },
             ]);
+            expect(didFindOccurrence).toBe(true);
         });
 
         it("should replace document type", () => {
-            const output = replacer({
+            const { element, didFindOccurrence } = replacer({
                 json: JSON.parse(JSON.stringify(MOCK_JSON)),
                 patch: {
                     type: PatchType.DOCUMENT,
@@ -206,12 +207,13 @@ describe("replacer", () => {
                 },
             });
 
-            expect(JSON.stringify(output)).to.contain("Lorem ipsum paragraph");
+            expect(JSON.stringify(element)).to.contain("Lorem ipsum paragraph");
+            expect(didFindOccurrence).toBe(true);
         });
 
         it("should replace", () => {
             // cspell:disable
-            const output = replacer({
+            const { element, didFindOccurrence } = replacer({
                 json: {
                     elements: [
                         {
@@ -655,7 +657,8 @@ describe("replacer", () => {
                 },
             });
 
-            expect(JSON.stringify(output)).to.contain("Lorem ipsum paragraph");
+            expect(JSON.stringify(element)).to.contain("Lorem ipsum paragraph");
+            expect(didFindOccurrence).toBe(true);
         });
     });
 });
