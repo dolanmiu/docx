@@ -22,7 +22,7 @@ describe("createShape", () => {
                 { _attr: { id: "test-id", type: "#_x0000_t202", style: "width:10pt" } },
                 {
                     "v:textbox": [
-                        { _attr: { style: "mso-fit-shape-to-text:t;" } },
+                        { _attr: { insetmode: "auto", style: "mso-fit-shape-to-text:t;" } },
                         {
                             "w:txbxContent": [
                                 { "w:p": [{ "w:r": [{ "w:t": [{ _attr: { "xml:space": "preserve" } }, "test-content"] }] }] },
@@ -46,7 +46,7 @@ describe("createShape", () => {
                 { _attr: { id: "test-id", type: "#_x0000_t202" } },
                 {
                     "v:textbox": [
-                        { _attr: { style: "mso-fit-shape-to-text:t;" } },
+                        { _attr: { insetmode: "auto", style: "mso-fit-shape-to-text:t;" } },
                         {
                             "w:txbxContent": {},
                         },

@@ -19,6 +19,20 @@ const doc = new Document({
                         height: "auto",
                     },
                 }),
+                new Textbox({
+                    alignment: "center",
+                    children: [
+                        new Paragraph({
+                            children: [new TextRun("Hi i'm a textbox with a hidden box!")],
+                        }),
+                    ],
+                    style: {
+                        width: "300pt",
+                        height: 400,
+                        visibility: "hidden",
+                        zIndex: "auto",
+                    },
+                }),
             ],
         },
     ],

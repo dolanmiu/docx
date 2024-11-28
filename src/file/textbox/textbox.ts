@@ -3,10 +3,10 @@ import { IParagraphOptions, ParagraphProperties } from "@file/paragraph";
 import { uniqueId } from "@util/convenience-functions";
 
 import { createPictElement } from "./pict-element/pict-element";
-import { ShapeStyle, createShape } from "./shape/shape";
+import { VmlShapeStyle, createShape } from "./shape/shape";
 
 type ITextboxOptions = Omit<IParagraphOptions, "style"> & {
-    readonly style?: ShapeStyle;
+    readonly style?: VmlShapeStyle;
 };
 
 export class Textbox extends FileChild {
