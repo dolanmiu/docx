@@ -74,7 +74,7 @@ export const replacer = ({
 
                     newRunElements = textJson.map((e) => ({
                         ...e,
-                        elements: [...runElementNonTextualElements, ...e.elements!],
+                        elements: [...runElementNonTextualElements, ...(e.elements ?? [])],
                     }));
 
                     patchedRightElement = {
