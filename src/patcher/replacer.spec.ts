@@ -77,7 +77,7 @@ export const MOCK_JSON = {
 
 describe("replacer", () => {
     describe("replacer", () => {
-        it("should throw an error if nothing is added", () => {
+        it("should return { didFindOccurrence: false } if nothing is added", () => {
             const { didFindOccurrence } = replacer({
                 json: {
                     elements: [],
