@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { IViewWrapper } from "@file/document-wrapper";
 import { File } from "@file/file";
-import { Paragraph, Run, TextRun } from "@file/paragraph";
+import { Paragraph, TextRun } from "@file/paragraph";
 import { IContext } from "@file/xml-components";
 
 import { PatchType } from "./from-docx";
@@ -689,28 +689,6 @@ describe("replacer", () => {
                                                             name: "w:rFonts",
                                                             attributes: { "w:eastAsia": "Times New Roman" },
                                                         },
-                                                        { type: "text", text: "\n                            " },
-                                                        {
-                                                            type: "element",
-                                                            name: "w:kern",
-                                                            attributes: { "w:val": "0" },
-                                                        },
-                                                        { type: "text", text: "\n                            " },
-                                                        {
-                                                            type: "element",
-                                                            name: "w:sz",
-                                                            attributes: { "w:val": "20" },
-                                                        },
-                                                        { type: "text", text: "\n                            " },
-                                                        {
-                                                            type: "element",
-                                                            name: "w:lang",
-                                                            attributes: {
-                                                                "w:val": "en-US",
-                                                                "w:eastAsia": "en-US",
-                                                                "w:bidi": "ar-SA",
-                                                            },
-                                                        },
                                                         { type: "text", text: "\n                        " },
                                                     ],
                                                 },
@@ -732,7 +710,7 @@ describe("replacer", () => {
                 // cspell:enable
                 patch: {
                     type: PatchType.PARAGRAPH,
-                    children: [new Paragraph({ children: [new Run({})] })],
+                    children: [new TextRun({})],
                 },
                 patchText: "{{empty}}",
                 context: {
