@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { IViewWrapper } from "@file/document-wrapper";
 import { File } from "@file/file";
-import { Paragraph, TextRun } from "@file/paragraph";
+import { Paragraph, Run, TextRun } from "@file/paragraph";
 import { IContext } from "@file/xml-components";
 
 import { PatchType } from "./from-docx";
@@ -658,6 +658,94 @@ describe("replacer", () => {
             });
 
             expect(JSON.stringify(element)).to.contain("Lorem ipsum paragraph");
+            expect(didFindOccurrence).toBe(true);
+        });
+
+        it("should handle empty runs in patches", () => {
+            // cspell:disable
+            const { element, didFindOccurrence } = replacer({
+                json: {
+                    elements: [
+                        {
+                            type: "element",
+                            name: "w:hdr",
+                            elements: [
+                                {
+                                    type: "element",
+                                    name: "w:p",
+                                    elements: [
+                                        {
+                                            type: "element",
+                                            name: "w:r",
+                                            elements: [
+                                                { type: "text", text: "\n                        " },
+                                                {
+                                                    type: "element",
+                                                    name: "w:rPr",
+                                                    elements: [
+                                                        { type: "text", text: "\n                            " },
+                                                        {
+                                                            type: "element",
+                                                            name: "w:rFonts",
+                                                            attributes: { "w:eastAsia": "Times New Roman" },
+                                                        },
+                                                        { type: "text", text: "\n                            " },
+                                                        {
+                                                            type: "element",
+                                                            name: "w:kern",
+                                                            attributes: { "w:val": "0" },
+                                                        },
+                                                        { type: "text", text: "\n                            " },
+                                                        {
+                                                            type: "element",
+                                                            name: "w:sz",
+                                                            attributes: { "w:val": "20" },
+                                                        },
+                                                        { type: "text", text: "\n                            " },
+                                                        {
+                                                            type: "element",
+                                                            name: "w:lang",
+                                                            attributes: {
+                                                                "w:val": "en-US",
+                                                                "w:eastAsia": "en-US",
+                                                                "w:bidi": "ar-SA",
+                                                            },
+                                                        },
+                                                        { type: "text", text: "\n                        " },
+                                                    ],
+                                                },
+                                                { type: "text", text: "\n                        " },
+                                                {
+                                                    type: "element",
+                                                    name: "w:t",
+                                                    elements: [{ type: "text", text: "{{empty}}" }],
+                                                },
+                                                { type: "text", text: "\n                    " },
+                                            ],
+                                        },
+                                    ],
+                                },
+                            ],
+                        },
+                    ],
+                },
+                // cspell:enable
+                patch: {
+                    type: PatchType.PARAGRAPH,
+                    children: [new Paragraph({ children: [new Run({})] })],
+                },
+                patchText: "{{empty}}",
+                context: {
+                    file: {} as unknown as File,
+                    viewWrapper: {
+                        Relationships: {},
+                    } as unknown as IViewWrapper,
+                    stack: [],
+                },
+                keepOriginalStyles: true,
+            });
+
+            expect(JSON.stringify(element)).not.to.contain("{{empty}}");
             expect(didFindOccurrence).toBe(true);
         });
     });
