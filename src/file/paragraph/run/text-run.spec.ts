@@ -16,6 +16,14 @@ describe("TextRun", () => {
                 "w:r": [{ "w:t": [{ _attr: { "xml:space": "preserve" } }, "test"] }],
             });
         });
+
+        it("should add empty text into run", () => {
+            run = new TextRun({ text: "" });
+            const f = new Formatter().format(run);
+            expect(f).to.deep.equal({
+                "w:r": [{ "w:t": [{ _attr: { "xml:space": "preserve" } }, ""] }],
+            });
+        });
     });
 
     describe("#referenceFootnote()", () => {
