@@ -77,7 +77,7 @@ export const MOCK_JSON = {
 
 describe("replacer", () => {
     describe("replacer", () => {
-        it("should throw an error if nothing is added", () => {
+        it("should return { didFindOccurrence: false } if nothing is added", () => {
             const { didFindOccurrence } = replacer({
                 json: {
                     elements: [],
@@ -658,6 +658,72 @@ describe("replacer", () => {
             });
 
             expect(JSON.stringify(element)).to.contain("Lorem ipsum paragraph");
+            expect(didFindOccurrence).toBe(true);
+        });
+
+        it("should handle empty runs in patches", () => {
+            // cspell:disable
+            const { element, didFindOccurrence } = replacer({
+                json: {
+                    elements: [
+                        {
+                            type: "element",
+                            name: "w:hdr",
+                            elements: [
+                                {
+                                    type: "element",
+                                    name: "w:p",
+                                    elements: [
+                                        {
+                                            type: "element",
+                                            name: "w:r",
+                                            elements: [
+                                                { type: "text", text: "\n                        " },
+                                                {
+                                                    type: "element",
+                                                    name: "w:rPr",
+                                                    elements: [
+                                                        { type: "text", text: "\n                            " },
+                                                        {
+                                                            type: "element",
+                                                            name: "w:rFonts",
+                                                            attributes: { "w:eastAsia": "Times New Roman" },
+                                                        },
+                                                        { type: "text", text: "\n                        " },
+                                                    ],
+                                                },
+                                                { type: "text", text: "\n                        " },
+                                                {
+                                                    type: "element",
+                                                    name: "w:t",
+                                                    elements: [{ type: "text", text: "{{empty}}" }],
+                                                },
+                                                { type: "text", text: "\n                    " },
+                                            ],
+                                        },
+                                    ],
+                                },
+                            ],
+                        },
+                    ],
+                },
+                // cspell:enable
+                patch: {
+                    type: PatchType.PARAGRAPH,
+                    children: [new TextRun({})],
+                },
+                patchText: "{{empty}}",
+                context: {
+                    file: {} as unknown as File,
+                    viewWrapper: {
+                        Relationships: {},
+                    } as unknown as IViewWrapper,
+                    stack: [],
+                },
+                keepOriginalStyles: true,
+            });
+
+            expect(JSON.stringify(element)).not.to.contain("{{empty}}");
             expect(didFindOccurrence).toBe(true);
         });
     });

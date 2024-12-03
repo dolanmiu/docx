@@ -155,7 +155,7 @@ export class Run extends XmlComponent {
 
                 this.root.push(child);
             }
-        } else if (options.text) {
+        } else if (options.text !== undefined) {
             this.root.push(new Text(options.text));
         }
     }
