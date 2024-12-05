@@ -8,10 +8,14 @@
     "types": "./build/index.d.ts",
     "exports": {
         ".": {
-            "require": "./build/index.cjs",
-            "types": "./build/index.d.ts",
-            "import": "./build/index.mjs",
-            "default": "./build/index.mjs"
+            "import": {
+                "types": "./build/index.d.ts",
+                "default": "./build/index.mjs"
+            },
+            "require": {
+                "types": "./build/index.d.ts",
+                "default": "./build/index.cjs"
+            }
         }
     },
     "files": [
