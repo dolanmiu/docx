@@ -68,7 +68,6 @@
     },
     "homepage": "https://docx.js.org",
     "devDependencies": {
-        "@eslint/compat": "^1.2.1",
         "@types/eslint__js": "^8.42.3",
         "@types/inquirer": "^9.0.3",
         "@types/prompt": "^1.1.1",
