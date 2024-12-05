@@ -3,7 +3,6 @@ import { describe, expect, it, vi } from "vitest";
 import { IViewWrapper } from "@file/document-wrapper";
 import { File } from "@file/file";
 import { Paragraph, TextRun } from "@file/paragraph";
-import { IContext } from "@file/xml-components";
 
 import { PatchType } from "./from-docx";
 import { replacer } from "./replacer";
@@ -87,8 +86,7 @@ describe("replacer", () => {
                     children: [],
                 },
                 patchText: "hello",
-                // eslint-disable-next-line functional/prefer-readonly-type
-                context: vi.fn<[], IContext>()(),
+                context: vi.fn()(),
             });
             expect(didFindOccurrence).toBe(false);
         });
