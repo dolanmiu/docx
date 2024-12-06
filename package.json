@@ -3,19 +3,23 @@
     "version": "9.1.0",
     "description": "Easily generate .docx files with JS/TS with a nice declarative API. Works for Node and on the Browser.",
     "type": "module",
-    "main": "build/index.umd.js",
-    "module": "./build/index.mjs",
-    "types": "./build/index.d.ts",
+    "main": "dist/index.umd.cjs",
+    "module": "./dist/index.mjs",
+    "types": "./dist/index.d.ts",
     "exports": {
         ".": {
-            "require": "./build/index.cjs",
-            "types": "./build/index.d.ts",
-            "import": "./build/index.mjs",
-            "default": "./build/index.mjs"
+            "import": {
+                "types": "./dist/index.d.ts",
+                "default": "./dist/index.mjs"
+            },
+            "require": {
+                "types": "./dist/index.d.cts",
+                "default": "./dist/index.cjs"
+            }
         }
     },
     "files": [
-        "build"
+        "dist"
     ],
     "scripts": {
         "build": "tsc && vite build",
