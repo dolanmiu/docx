@@ -10,7 +10,7 @@ import tsEslint from "typescript-eslint";
 
 const config: Linter.Config<Linter.RulesRecord>[] = [
     {
-        ignores: ["**/vite.config.ts", "**/build/**", "**/coverage/**", "**/*.js", "eslint.config.ts", "**/demo/**", "**/scripts/**"],
+        ignores: ["**/vite.config.ts", "**/dist/**", "**/coverage/**", "**/*.js", "eslint.config.ts", "**/demo/**", "**/scripts/**"],
     },
     eslint.configs.recommended,
     importPlugin.flatConfigs.recommended,

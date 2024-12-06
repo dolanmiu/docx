@@ -3,12 +3,18 @@ import dts from "vite-plugin-dts";
 import { nodePolyfills } from "vite-plugin-node-polyfills";
 import tsconfigPaths from "vite-tsconfig-paths";
 import { configDefaults, defineConfig } from "vitest/config";
+import { copyFileSync } from "node:fs";
 
 export default defineConfig({
     plugins: [
         tsconfigPaths(),
         dts({
-            rollupTypes: true
+            rollupTypes: true,
+            afterBuild: () => {
+                // https://github.com/dolanmiu/docx/pull/2883
+                // To pass publint - `npx publint@latest`
+                copyFileSync("dist/index.d.ts", "dist/index.d.cts");
+            },
         }),
         nodePolyfills({
             exclude: [],
@@ -34,7 +40,7 @@ export default defineConfig({
             name: "docx",
             fileName: (d) => {
                 if (d === "umd") {
-                    return "index.umd.js";
+                    return "index.umd.cjs";
                 }
 
                 if (d === "cjs") {
@@ -53,7 +59,7 @@ export default defineConfig({
             },
             formats: ["iife", "es", "cjs", "umd"],
         },
-        outDir: resolve(__dirname, "build"),
+        outDir: resolve(__dirname, "dist"),
         commonjsOptions: {
             include: [/node_modules/],
         },
@@ -71,25 +77,16 @@ export default defineConfig({
             },
             exclude: [
                 ...configDefaults.exclude,
-                '**/build/**',
-                '**/demo/**',
-                '**/docs/**',
-                '**/scripts/**',
-                '**/src/**/index.ts',
-                '**/src/**/types.ts',
-                '**/*.spec.ts',
+                "**/dist/**",
+                "**/demo/**",
+                "**/docs/**",
+                "**/scripts/**",
+                "**/src/**/index.ts",
+                "**/src/**/types.ts",
+                "**/*.spec.ts",
             ],
         },
-        include: [
-            '**/src/**/*.spec.ts',
-            '**/packages/**/*.spec.ts'
-        ],
-        exclude: [
-            ...configDefaults.exclude,
-            '**/build/**',
-            '**/demo/**',
-            '**/docs/**',
-            '**/scripts/**'
-          ],
+        include: ["**/src/**/*.spec.ts", "**/packages/**/*.spec.ts"],
+        exclude: [...configDefaults.exclude, "**/build/**", "**/demo/**", "**/docs/**", "**/scripts/**"],
     },
 });
