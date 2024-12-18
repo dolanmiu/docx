@@ -8,11 +8,14 @@
     // words - list of words to be always considered correct
     "words": [
         "Abjad",
+        "aink",
         "aiueo",
         "ATLEAST",
         "chosung",
         "clippy",
         "datas",
+        "dcmitype",
+        "dcterms",
         "docsify",
         "dolan",
         "execa",
@@ -32,6 +35,7 @@
         "panose",
         "rels",
         "rsid",
+        "sdtdh",
         "twip",
         "twips",
         "Xmlable",
