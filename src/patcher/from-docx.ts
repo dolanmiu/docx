@@ -3,11 +3,11 @@ import { Element, js2xml } from "xml-js";
 
 import { ImageReplacer } from "@export/packer/image-replacer";
 import { DocumentAttributeNamespaces } from "@file/document";
-import { ConcreteHyperlink, ExternalHyperlink, ParagraphChild } from "@file/paragraph";
-import { FileChild } from "@file/file-child";
-import { IMediaData, Media } from "@file/media";
 import { IViewWrapper } from "@file/document-wrapper";
 import { File } from "@file/file";
+import { FileChild } from "@file/file-child";
+import { IMediaData, Media } from "@file/media";
+import { ConcreteHyperlink, ExternalHyperlink, ParagraphChild } from "@file/paragraph";
 import { TargetModeType } from "@file/relationships/relationship/relationship";
 import { IContext } from "@file/xml-components";
 import { uniqueId } from "@util/convenience-functions";

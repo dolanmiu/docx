@@ -1,4 +1,4 @@
-import { XmlAttributeComponent } from "@file/xml-components";
+import { AttributeMap, XmlAttributeComponent } from "@file/xml-components";
 
 /* cSpell:disable */
 export const DocumentAttributeNamespaces = {
@@ -52,7 +52,7 @@ export class DocumentAttributes extends XmlAttributeComponent<IDocumentAttribute
     protected readonly xmlKeys = {
         Ignorable: "mc:Ignorable",
         ...Object.fromEntries(Object.keys(DocumentAttributeNamespaces).map((key) => [key, `xmlns:${key}`])),
-    };
+    } as AttributeMap<IDocumentAttributesProperties>;
 
     public constructor(ns: readonly DocumentAttributeNamespace[], Ignorable?: string) {
         super({ Ignorable, ...Object.fromEntries(ns.map((n) => [n, DocumentAttributeNamespaces[n]])) });
