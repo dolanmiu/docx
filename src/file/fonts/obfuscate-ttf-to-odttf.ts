@@ -2,7 +2,7 @@ const obfuscatedStartOffset = 0;
 const obfuscatedEndOffset = 32;
 const guidSize = 32;
 
-export const obfuscate = (buf: Buffer, fontKey: string): Buffer => {
+export const obfuscate = (buf: Uint8Array, fontKey: string): Uint8Array => {
     const guid = fontKey.replace(/-/g, "");
     if (guid.length !== guidSize) {
         throw new Error(`Error: Cannot extract GUID from font filename: ${fontKey}`);
@@ -17,6 +17,9 @@ export const obfuscate = (buf: Buffer, fontKey: string): Buffer => {
     // eslint-disable-next-line no-bitwise
     const obfuscatedBytes = bytesToObfuscate.map((byte, i) => byte ^ hexNumbers[i % hexNumbers.length]);
 
-    const out = Buffer.concat([buf.slice(0, obfuscatedStartOffset), obfuscatedBytes, buf.slice(obfuscatedEndOffset)]);
+    const out = new Uint8Array(obfuscatedStartOffset + obfuscatedBytes.length + Math.max(0, buf.length - obfuscatedEndOffset));
+    out.set(buf.slice(0, obfuscatedStartOffset));
+    out.set(obfuscatedBytes, obfuscatedStartOffset);
+    out.set(buf.slice(obfuscatedEndOffset), obfuscatedStartOffset + obfuscatedBytes.length);
     return out;
 };
