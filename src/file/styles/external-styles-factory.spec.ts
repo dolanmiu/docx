@@ -144,6 +144,10 @@ describe("External styles factory", () => {
             expect(() => new ExternalStylesFactory().newInstance(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><foo/>`)).to.throw(
                 "can not find styles element",
             );
+
+            expect(() => new ExternalStylesFactory().newInstance(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`)).to.throw(
+                "can not find styles element",
+            );
         });
 
         it("should parse styles elements", () => {
