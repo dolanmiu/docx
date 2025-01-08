@@ -13,11 +13,11 @@ describe("MathBar", () => {
             expect(tree).to.deep.equal({
                 "m:bar": [
                     {
-                        "m:barPr": [
-                            {
-                                "m:pos": ["top"],
+                        "m:barPr": {
+                            _attr:{
+                                "m:pos": "top",
                             },
-                        ],
+                        },
                     },
                     {
                         "m:e": [

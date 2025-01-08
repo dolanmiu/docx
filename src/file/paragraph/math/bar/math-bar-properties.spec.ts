@@ -22,11 +22,11 @@ describe("MathBarProperties", () => {
 
             const tree = new Formatter().format(mathBarProperties);
             expect(tree).to.deep.equal({
-                "m:barPr": [
-                    {
-                        "m:pos": ["bot"],
+                "m:barPr": {
+                    _attr:{
+                        "m:pos": "bot",
                     },
-                ],
+            },
             });
         })
     });
