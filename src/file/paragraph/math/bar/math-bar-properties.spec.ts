@@ -9,25 +9,32 @@ describe("MathBarProperties", () => {
             const mathBarProperties = new MathBarProperties("top");
 
             const tree = new Formatter().format(mathBarProperties);
+            console.log(tree);
+
             expect(tree).to.deep.equal({
-                "m:barPr": [
-                    {
-                        "m:pos": ["top"],
-                    },
-                ],
-            });
+                "m:barPr": [{
+                    "m:pos":{
+                        _attr: {
+                            "w:val": "top",
+                        },
+                    }
+                }],
+            },);
         });
         it("should create a MathBarProperties with bottom key", () => {
             const mathBarProperties = new MathBarProperties("bot");
 
             const tree = new Formatter().format(mathBarProperties);
+            console.log(tree);
             expect(tree).to.deep.equal({
-                "m:barPr": {
-                    _attr:{
-                        "m:pos": "bot",
-                    },
-            },
-            });
+                "m:barPr": [{
+                    "m:pos":{
+                        _attr: {
+                            "w:val": "bot",
+                        },
+                    }
+                }],
+            },);
         })
     });
 })
