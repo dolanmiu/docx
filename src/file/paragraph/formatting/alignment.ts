@@ -46,7 +46,7 @@ export const AlignmentType = {
     /** Align Right */
     RIGHT: "right",
     /** Justified */
-    JUSTIFIED: "both",
+    JUSTIFIED: "justified",
 } as const;
 
 export class AlignmentAttributes extends XmlAttributeComponent<{
