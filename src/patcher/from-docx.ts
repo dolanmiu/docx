@@ -19,7 +19,7 @@ import { replacer } from "./replacer";
 import { toJson } from "./util";
 
 // eslint-disable-next-line functional/prefer-readonly-type
-export type InputDataType = Buffer | string | number[] | Uint8Array | ArrayBuffer | Blob | NodeJS.ReadableStream;
+export type InputDataType = Buffer | string | number[] | Uint8Array | ArrayBuffer | Blob | NodeJS.ReadableStream | JSZip;
 
 export const PatchType = {
     DOCUMENT: "file",
@@ -70,7 +70,7 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
     keepOriginalStyles,
     placeholderDelimiters = { start: "{{", end: "}}" } as const,
 }: PatchDocumentOptions<T>): Promise<OutputByType[T]> => {
-    const zipContent = await JSZip.loadAsync(data);
+    const zipContent = data instanceof JSZip ? data : await JSZip.loadAsync(data);
     const contexts = new Map<string, IContext>();
     const file = {
         Media: new Media(),
