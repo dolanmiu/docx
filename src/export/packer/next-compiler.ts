@@ -9,7 +9,7 @@ import { ImageReplacer } from "./image-replacer";
 import { NumberingReplacer } from "./numbering-replacer";
 import { PrettifyType } from "./packer";
 
-type IXmlifyedFile = {
+export type IXmlifyedFile = {
     readonly data: string;
     readonly path: string;
 };
@@ -47,7 +47,11 @@ export class Compiler {
         this.numberingReplacer = new NumberingReplacer();
     }
 
-    public compile(file: File, prettifyXml?: (typeof PrettifyType)[keyof typeof PrettifyType]): JSZip {
+    public compile(
+        file: File,
+        prettifyXml?: (typeof PrettifyType)[keyof typeof PrettifyType],
+        overrides: readonly IXmlifyedFile[] = [],
+    ): JSZip {
         const zip = new JSZip();
         const xmlifiedFileMapping = this.xmlifyFile(file, prettifyXml);
         const map = new Map<string, IXmlifyedFile | readonly IXmlifyedFile[]>(Object.entries(xmlifiedFileMapping));
@@ -60,6 +64,10 @@ export class Compiler {
             } else {
                 zip.file((obj as IXmlifyedFile).path, (obj as IXmlifyedFile).data);
             }
+        }
+
+        for (const subFile of overrides) {
+            zip.file(subFile.path, subFile.data);
         }
 
         for (const data of file.Media.Array) {

@@ -2,7 +2,7 @@ import { Stream } from "stream";
 
 import { File } from "@file/file";
 
-import { Compiler } from "./next-compiler";
+import { Compiler, IXmlifyedFile } from "./next-compiler";
 
 /**
  * Use blanks to prettify
@@ -21,8 +21,12 @@ const convertPrettifyType = (
     prettify === true ? PrettifyType.WITH_2_BLANKS : prettify === false ? undefined : prettify;
 
 export class Packer {
-    public static async toString(file: File, prettify?: boolean | (typeof PrettifyType)[keyof typeof PrettifyType]): Promise<string> {
-        const zip = this.compiler.compile(file, convertPrettifyType(prettify));
+    public static async toString(
+        file: File,
+        prettify?: boolean | (typeof PrettifyType)[keyof typeof PrettifyType],
+        overrides: readonly IXmlifyedFile[] = [],
+    ): Promise<string> {
+        const zip = this.compiler.compile(file, convertPrettifyType(prettify), overrides);
         const zipData = await zip.generateAsync({
             type: "string",
             mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -32,8 +36,12 @@ export class Packer {
         return zipData;
     }
 
-    public static async toBuffer(file: File, prettify?: boolean | (typeof PrettifyType)[keyof typeof PrettifyType]): Promise<Buffer> {
-        const zip = this.compiler.compile(file, convertPrettifyType(prettify));
+    public static async toBuffer(
+        file: File,
+        prettify?: boolean | (typeof PrettifyType)[keyof typeof PrettifyType],
+        overrides: readonly IXmlifyedFile[] = [],
+    ): Promise<Buffer> {
+        const zip = this.compiler.compile(file, convertPrettifyType(prettify), overrides);
         const zipData = await zip.generateAsync({
             type: "nodebuffer",
             mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -43,8 +51,12 @@ export class Packer {
         return zipData;
     }
 
-    public static async toBase64String(file: File, prettify?: boolean | (typeof PrettifyType)[keyof typeof PrettifyType]): Promise<string> {
-        const zip = this.compiler.compile(file, convertPrettifyType(prettify));
+    public static async toBase64String(
+        file: File,
+        prettify?: boolean | (typeof PrettifyType)[keyof typeof PrettifyType],
+        overrides: readonly IXmlifyedFile[] = [],
+    ): Promise<string> {
+        const zip = this.compiler.compile(file, convertPrettifyType(prettify), overrides);
         const zipData = await zip.generateAsync({
             type: "base64",
             mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -54,8 +66,12 @@ export class Packer {
         return zipData;
     }
 
-    public static async toBlob(file: File, prettify?: boolean | (typeof PrettifyType)[keyof typeof PrettifyType]): Promise<Blob> {
-        const zip = this.compiler.compile(file, convertPrettifyType(prettify));
+    public static async toBlob(
+        file: File,
+        prettify?: boolean | (typeof PrettifyType)[keyof typeof PrettifyType],
+        overrides: readonly IXmlifyedFile[] = [],
+    ): Promise<Blob> {
+        const zip = this.compiler.compile(file, convertPrettifyType(prettify), overrides);
         const zipData = await zip.generateAsync({
             type: "blob",
             mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -65,9 +81,13 @@ export class Packer {
         return zipData;
     }
 
-    public static toStream(file: File, prettify?: boolean | (typeof PrettifyType)[keyof typeof PrettifyType]): Stream {
+    public static toStream(
+        file: File,
+        prettify?: boolean | (typeof PrettifyType)[keyof typeof PrettifyType],
+        overrides: readonly IXmlifyedFile[] = [],
+    ): Stream {
         const stream = new Stream();
-        const zip = this.compiler.compile(file, convertPrettifyType(prettify));
+        const zip = this.compiler.compile(file, convertPrettifyType(prettify), overrides);
 
         zip.generateAsync({
             type: "nodebuffer",
