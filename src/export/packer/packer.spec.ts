@@ -46,7 +46,7 @@ describe("Packer", () => {
 
             await Packer.toString(file, true);
 
-            expect(spy).toBeCalledWith(expect.anything(), PrettifyType.WITH_2_BLANKS);
+            expect(spy).toBeCalledWith(expect.anything(), PrettifyType.WITH_2_BLANKS, expect.anything());
         });
 
         it("should use a prettify value", async () => {
@@ -55,7 +55,7 @@ describe("Packer", () => {
 
             await Packer.toString(file, PrettifyType.WITH_4_BLANKS);
 
-            expect(spy).toBeCalledWith(expect.anything(), PrettifyType.WITH_4_BLANKS);
+            expect(spy).toBeCalledWith(expect.anything(), PrettifyType.WITH_4_BLANKS, expect.anything());
         });
 
         it("should use an undefined prettify value", async () => {
@@ -64,7 +64,32 @@ describe("Packer", () => {
 
             await Packer.toString(file, false);
 
-            expect(spy).toBeCalledWith(expect.anything(), undefined);
+            expect(spy).toBeCalledWith(expect.anything(), undefined, expect.anything());
+        });
+    });
+
+    describe("overrides", () => {
+        afterEach(() => {
+            vi.restoreAllMocks();
+        });
+
+        it("should use an overrides value", async () => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const spy = vi.spyOn((Packer as any).compiler, "compile");
+            const overrides = [{ path: "word/comments.xml", data: "comments" }];
+
+            await Packer.toString(file, true, overrides);
+
+            expect(spy).toBeCalledWith(expect.anything(), expect.anything(), overrides);
+        });
+
+        it("should use a default overrides value", async () => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const spy = vi.spyOn((Packer as any).compiler, "compile");
+
+            await Packer.toString(file);
+
+            expect(spy).toBeCalledWith(expect.anything(), undefined, []);
         });
     });
 

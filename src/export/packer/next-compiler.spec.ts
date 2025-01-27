@@ -112,6 +112,41 @@ describe("Compiler", () => {
             },
         );
 
+        it(
+            "should pack subfile overrides",
+            async () => {
+                const file = new File({
+                    sections: [],
+                    comments: {
+                        children: [],
+                    },
+                });
+                const subfileData1 = "comments";
+                const subfileData2 = "commentsExtended";
+                const overrides = [
+                    { path: "word/comments.xml", data: subfileData1 },
+                    { path: "word/commentsExtended.xml", data: subfileData2 },
+                ];
+                const zipFile = compiler.compile(file, "", overrides);
+                const fileNames = Object.keys(zipFile.files).map((f) => zipFile.files[f].name);
+
+                expect(fileNames).is.an.instanceof(Array);
+                expect(fileNames).has.length(20);
+
+                expect(fileNames).to.include("word/comments.xml");
+                expect(fileNames).to.include("word/commentsExtended.xml");
+
+                const commentsText = await zipFile.file("word/comments.xml")?.async("text");
+                const commentsExtendedText = await zipFile.file("word/commentsExtended.xml")?.async("text");
+
+                expect(commentsText).toBe(subfileData1);
+                expect(commentsExtendedText).toBe(subfileData2);
+            },
+            {
+                timeout: 99999999,
+            },
+        );
+
         it("should call the format method X times equalling X files to be formatted", () => {
             // This test is required because before, there was a case where Document was formatted twice, which was inefficient
             // This also caused issues such as running prepForXml multiple times as format() was ran multiple times.
