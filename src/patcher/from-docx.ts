@@ -78,7 +78,8 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
     data,
     patches,
     keepOriginalStyles,
-    brackets = { '{{': '}}' },
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    brackets = { "{{": "}}" },
 }: PatchDocumentOptions<T>): Promise<OutputByType[T]> => {
     const zipContent = data instanceof JSZip ? data : await JSZip.loadAsync(data);
     const contexts = new Map<string, IContext>();
@@ -147,7 +148,7 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
             };
             contexts.set(key, context);
 
-            const [[openBracket, closeBracket]] = Object.entries(brackets)
+            const [[openBracket, closeBracket]] = Object.entries(brackets);
             for (const [patchKey, patchValue] of Object.entries(patches)) {
                 const patchText = `${openBracket}${patchKey}${closeBracket}`;
                 // TODO: mutates json. Make it immutable
