@@ -275,7 +275,16 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
 };
 
 const toXml = (jsonObj: Element): string => {
-    const output = js2xml(jsonObj);
+    const output = js2xml(jsonObj, {
+        attributeValueFn(str) {
+            return String(str)
+                .replace(/&(?!amp;|lt;|gt;|quot;|apos;)/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&apos;");
+        }
+    });
     return output;
 };
 
