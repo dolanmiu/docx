@@ -62,6 +62,8 @@ export type PatchDocumentOptions<T extends PatchDocumentOutputType = PatchDocume
 };
 
 const imageReplacer = new ImageReplacer();
+const UTF16LE = Buffer.from([0xff, 0xfe]);
+const UTF16BE = Buffer.from([0xfe, 0xff]);
 
 export const patchDocument = async <T extends PatchDocumentOutputType = PatchDocumentOutputType>({
     outputType,
@@ -87,8 +89,15 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
     const binaryContentMap = new Map<string, Uint8Array>();
 
     for (const [key, value] of Object.entries(zipContent.files)) {
+        const binaryValue = await value.async("uint8array");
+        const startBytes = binaryValue.slice(0, 2);
+        if (UTF16LE.equals(startBytes) || UTF16BE.equals(startBytes)) {
+            binaryContentMap.set(key, binaryValue);
+            continue;
+        }
+
         if (!key.endsWith(".xml") && !key.endsWith(".rels")) {
-            binaryContentMap.set(key, await value.async("uint8array"));
+            binaryContentMap.set(key, binaryValue);
             continue;
         }
 
@@ -283,7 +292,7 @@ const toXml = (jsonObj: Element): string => {
                 .replace(/>/g, "&gt;")
                 .replace(/"/g, "&quot;")
                 .replace(/'/g, "&apos;");
-        }
+        },
     });
     return output;
 };
