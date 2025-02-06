@@ -38,6 +38,8 @@ export type ILevelParagraphStylePropertiesOptions = {
 };
 
 export type IParagraphStylePropertiesOptions = {
+    readonly border?: IBordersOptions;
+    readonly shading?: IShadingAttributesProperties;
     readonly numbering?:
         | {
               readonly reference: string;
@@ -49,7 +51,6 @@ export type IParagraphStylePropertiesOptions = {
 } & ILevelParagraphStylePropertiesOptions;
 
 export type IParagraphPropertiesOptions = {
-    readonly border?: IBordersOptions;
     readonly heading?: (typeof HeadingLevel)[keyof typeof HeadingLevel];
     readonly bidirectional?: boolean;
     readonly pageBreakBefore?: boolean;
@@ -58,7 +59,6 @@ export type IParagraphPropertiesOptions = {
     readonly bullet?: {
         readonly level: number;
     };
-    readonly shading?: IShadingAttributesProperties;
     readonly widowControl?: boolean;
     readonly frame?: IFrameOptions;
     readonly suppressLineNumbers?: boolean;
