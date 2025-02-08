@@ -59,6 +59,7 @@ export type PatchDocumentOptions<T extends PatchDocumentOutputType = PatchDocume
         readonly start: string;
         readonly end: string;
     }>;
+    readonly recursive?: boolean;
 };
 
 const imageReplacer = new ImageReplacer();
@@ -71,6 +72,10 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
     patches,
     keepOriginalStyles,
     placeholderDelimiters = { start: "{{", end: "}}" } as const,
+    /**
+     * Search for occurrences over patched document
+     */
+    recursive = true,
 }: PatchDocumentOptions<T>): Promise<OutputByType[T]> => {
     const zipContent = data instanceof JSZip ? data : await JSZip.loadAsync(data);
     const contexts = new Map<string, IContext>();
@@ -188,7 +193,8 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
                         context,
                         keepOriginalStyles,
                     });
-                    if (!didFindOccurrence) {
+                    // What the reason doing that? Once document is patched - it search over patched json again, that takes too long if patched document has big and deep structure.
+                    if (!recursive || !didFindOccurrence) {
                         break;
                     }
                 }
