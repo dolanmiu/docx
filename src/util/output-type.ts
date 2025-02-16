@@ -1,3 +1,5 @@
+/* v8 ignore start */
+// Simply type definitions. Can ignore testing and coverage
 // From JSZip
 export type OutputByType = {
     readonly base64: string;
@@ -13,3 +15,4 @@ export type OutputByType = {
 };
 
 export type OutputType = keyof OutputByType;
+/* v8 ignore stop */
