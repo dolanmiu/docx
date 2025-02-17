@@ -2,7 +2,7 @@
 
 > Packers are the way in which `docx` turns your code into `.docx` format. It is completely decoupled from the `docx.Document`.
 
-Packers works in both a node and browser environment (Angular etc). Now, the packer returns a `Buffer`, `Blob`, `string`, `base64 string`, or `Stream`. It is up to you to take that and persist it with node's `fs`, send it down as a downloadable file, or anything else you wish. As of `version 4+`, this library will not have options to export to PDF.
+Packers works in both a node and browser environment (Angular etc). Now, the packer returns a `Buffer`, `Blob`, `string`, `base64 string`, `ArrayBuffer`, or `Stream`. It is up to you to take that and persist it with node's `fs`, send it down as a downloadable file, or anything else you wish. As of `version 4+`, this library will not have options to export to PDF.
 
 ### Export as Buffer
 
@@ -41,6 +41,16 @@ Packer.toBlob(doc).then((blob) => {
 });
 ```
 
+### Export as ArrayBuffer
+
+This may be useful when working in a Node.js worker.
+
+```ts
+Packer.toArrayBuffer(doc).then((arrayBuffer) => {
+    port.postMessage(arrayBuffer, [arrayBuffer]);
+});
+```
+
 ### Export as a Stream
 
 ```ts
@@ -60,6 +70,16 @@ The second is an array of subfile overrides (`{path: string, data: string}[]`). 
 ```ts
 const overrides = [{ path: "word/commentsExtended.xml", data: "string_data" }];
 Packer.toString(doc, true, overrides).then((string) => {
+    console.log(string);
+});
+```
+
+### Export to arbitrary formats
+
+You can also use the lower-level `Packer.pack` method to export to any specified type.
+
+```ts
+Packer.pack(doc, 'string').then((string) => {
     console.log(string);
 });
 ```
