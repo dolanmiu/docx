@@ -1,7 +1,7 @@
 import { BaseXmlComponent, IContext } from "./base";
 import { IXmlAttribute, IXmlableObject } from "./xmlable-object";
 
-type AttributeMap<T> = Record<keyof T, string>;
+export type AttributeMap<T> = Record<keyof T, string>;
 
 export type AttributeData = Record<string, boolean | number | string>;
 export type AttributePayload<T> = { readonly [P in keyof T]: { readonly key: string; readonly value: T[P] } };
