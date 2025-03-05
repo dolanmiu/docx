@@ -11,6 +11,7 @@ import { ConcreteHyperlink, ExternalHyperlink, ParagraphChild } from "@file/para
 import { TargetModeType } from "@file/relationships/relationship/relationship";
 import { IContext } from "@file/xml-components";
 import { uniqueId } from "@util/convenience-functions";
+import { OutputByType, OutputType } from "@util/output-type";
 
 import { appendContentType } from "./content-types-manager";
 import { appendRelationship, getNextRelationshipIndex } from "./relationship-manager";
@@ -47,21 +48,7 @@ type IHyperlinkRelationshipAddition = {
 
 export type IPatch = ParagraphPatch | FilePatch;
 
-// From JSZip
-type OutputByType = {
-    readonly base64: string;
-    // eslint-disable-next-line id-denylist
-    readonly string: string;
-    readonly text: string;
-    readonly binarystring: string;
-    readonly array: readonly number[];
-    readonly uint8array: Uint8Array;
-    readonly arraybuffer: ArrayBuffer;
-    readonly blob: Blob;
-    readonly nodebuffer: Buffer;
-};
-
-export type PatchDocumentOutputType = keyof OutputByType;
+export type PatchDocumentOutputType = OutputType;
 
 export type PatchDocumentOptions<T extends PatchDocumentOutputType = PatchDocumentOutputType> = {
     readonly outputType: T;

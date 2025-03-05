@@ -1,8 +1,9 @@
 import { Stream } from "stream";
 
 import { File } from "@file/file";
+import { OutputByType, OutputType } from "@util/output-type";
 
-import { Compiler } from "./next-compiler";
+import { Compiler, IXmlifyedFile } from "./next-compiler";
 
 /**
  * Use blanks to prettify
@@ -21,53 +22,68 @@ const convertPrettifyType = (
     prettify === true ? PrettifyType.WITH_2_BLANKS : prettify === false ? undefined : prettify;
 
 export class Packer {
-    public static async toString(file: File, prettify?: boolean | (typeof PrettifyType)[keyof typeof PrettifyType]): Promise<string> {
-        const zip = this.compiler.compile(file, convertPrettifyType(prettify));
-        const zipData = await zip.generateAsync({
-            type: "string",
+    // eslint-disable-next-line require-await
+    public static async pack<T extends OutputType>(
+        file: File,
+        type: T,
+        prettify?: boolean | (typeof PrettifyType)[keyof typeof PrettifyType],
+        overrides: readonly IXmlifyedFile[] = [],
+    ): Promise<OutputByType[T]> {
+        const zip = this.compiler.compile(file, convertPrettifyType(prettify), overrides);
+        return zip.generateAsync({
+            type,
             mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
             compression: "DEFLATE",
         });
-
-        return zipData;
     }
 
-    public static async toBuffer(file: File, prettify?: boolean | (typeof PrettifyType)[keyof typeof PrettifyType]): Promise<Buffer> {
-        const zip = this.compiler.compile(file, convertPrettifyType(prettify));
-        const zipData = await zip.generateAsync({
-            type: "nodebuffer",
-            mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-            compression: "DEFLATE",
-        });
-
-        return zipData;
+    public static toString(
+        file: File,
+        prettify?: boolean | (typeof PrettifyType)[keyof typeof PrettifyType],
+        overrides: readonly IXmlifyedFile[] = [],
+    ): Promise<string> {
+        return Packer.pack(file, "string", prettify, overrides);
     }
 
-    public static async toBase64String(file: File, prettify?: boolean | (typeof PrettifyType)[keyof typeof PrettifyType]): Promise<string> {
-        const zip = this.compiler.compile(file, convertPrettifyType(prettify));
-        const zipData = await zip.generateAsync({
-            type: "base64",
-            mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-            compression: "DEFLATE",
-        });
-
-        return zipData;
+    public static toBuffer(
+        file: File,
+        prettify?: boolean | (typeof PrettifyType)[keyof typeof PrettifyType],
+        overrides: readonly IXmlifyedFile[] = [],
+    ): Promise<Buffer> {
+        return Packer.pack(file, "nodebuffer", prettify, overrides);
     }
 
-    public static async toBlob(file: File, prettify?: boolean | (typeof PrettifyType)[keyof typeof PrettifyType]): Promise<Blob> {
-        const zip = this.compiler.compile(file, convertPrettifyType(prettify));
-        const zipData = await zip.generateAsync({
-            type: "blob",
-            mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-            compression: "DEFLATE",
-        });
-
-        return zipData;
+    public static toBase64String(
+        file: File,
+        prettify?: boolean | (typeof PrettifyType)[keyof typeof PrettifyType],
+        overrides: readonly IXmlifyedFile[] = [],
+    ): Promise<string> {
+        return Packer.pack(file, "base64", prettify, overrides);
     }
 
-    public static toStream(file: File, prettify?: boolean | (typeof PrettifyType)[keyof typeof PrettifyType]): Stream {
+    public static toBlob(
+        file: File,
+        prettify?: boolean | (typeof PrettifyType)[keyof typeof PrettifyType],
+        overrides: readonly IXmlifyedFile[] = [],
+    ): Promise<Blob> {
+        return Packer.pack(file, "blob", prettify, overrides);
+    }
+
+    public static toArrayBuffer(
+        file: File,
+        prettify?: boolean | (typeof PrettifyType)[keyof typeof PrettifyType],
+        overrides: readonly IXmlifyedFile[] = [],
+    ): Promise<ArrayBuffer> {
+        return Packer.pack(file, "arraybuffer", prettify, overrides);
+    }
+
+    public static toStream(
+        file: File,
+        prettify?: boolean | (typeof PrettifyType)[keyof typeof PrettifyType],
+        overrides: readonly IXmlifyedFile[] = [],
+    ): Stream {
         const stream = new Stream();
-        const zip = this.compiler.compile(file, convertPrettifyType(prettify));
+        const zip = this.compiler.compile(file, convertPrettifyType(prettify), overrides);
 
         zip.generateAsync({
             type: "nodebuffer",
