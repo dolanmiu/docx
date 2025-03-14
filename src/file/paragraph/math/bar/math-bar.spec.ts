@@ -10,18 +10,19 @@ describe("MathBar", () => {
         it("should create a MathBar with correct root key", () => {
             const mathBar = new MathBar({ type: "top", children: [new MathRun("text")] });
             const tree = new Formatter().format(mathBar);
-            console.log("tree",JSON.stringify(tree));
 
             expect(tree).to.deep.equal({
                 "m:bar": [
                     {
-                        "m:barPr": [{
-                            "m:pos":{
-                                _attr: {
-                                    "w:val": "top",
+                        "m:barPr": [
+                            {
+                                "m:pos": {
+                                    _attr: {
+                                        "w:val": "top",
+                                    },
                                 },
-                            }
-                        }],
+                            },
+                        ],
                     },
                     {
                         "m:e": [
