@@ -5,4 +5,3 @@ export * from "./file";
 export * from "./export";
 export * from "./util";
 export * from "./patcher";
-export * from "./util/output-type";
