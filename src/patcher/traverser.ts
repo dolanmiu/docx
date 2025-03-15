@@ -34,10 +34,9 @@ export const traverse = (node: Element): readonly IRenderedParagraphNode[] => {
 
         if (currentNode.element.name === "w:p") {
             renderedParagraphs = [...renderedParagraphs, renderParagraphNode(currentNode)];
-        } else {
-            // eslint-disable-next-line functional/immutable-data
-            queue.push(...elementsToWrapper(currentNode));
         }
+        // eslint-disable-next-line functional/immutable-data
+        queue.push(...elementsToWrapper(currentNode));
     }
 
     return renderedParagraphs;
