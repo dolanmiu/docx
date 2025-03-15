@@ -2,7 +2,7 @@
 import { XmlComponent } from "@file/xml-components";
 
 import { MathPreSubSuperScriptProperties } from "./math-pre-sub-super-script-function-properties";
-import { MathComponent } from "../../math-component";
+import type { MathComponent } from "../../math-component";
 import { MathBase, MathSubScriptElement, MathSuperScriptElement } from "../../n-ary";
 
 export type IMathPreSubSuperScriptOptions = {
