@@ -19,7 +19,7 @@ import { Styles } from "./styles";
 import { ExternalStylesFactory } from "./styles/external-styles-factory";
 import { DefaultStylesFactory } from "./styles/factory";
 
- type ISectionOptions = {
+export type ISectionOptions = {
     readonly headers?: {
         readonly default?: Header;
         readonly first?: Header;
@@ -34,7 +34,7 @@ import { DefaultStylesFactory } from "./styles/factory";
     readonly children: readonly FileChild[];
 };
 
- class File {
+export class File {
     // eslint-disable-next-line functional/prefer-readonly-type
     private currentRelationshipId: number = 1;
 
@@ -306,13 +306,4 @@ import { DefaultStylesFactory } from "./styles/factory";
     public get FontTable(): FontWrapper {
         return this.fontWrapper;
     }
-}
-
-export {
-    File,
-}
-
-export type {
-    ISectionOptions,
-    IPropertiesOptions
 }
