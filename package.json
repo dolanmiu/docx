@@ -1,6 +1,6 @@
 {
-    "name": "dnh/docx",
-    "version": "1.0.1",
+    "name": "dnh_docx",
+    "version": "1.1.0",
     "description": "Easily generate .docx files with JS/TS with a nice declarative API. Works for Node and on the Browser.",
     "type": "module",
     "main": "dist/index.umd.cjs",
