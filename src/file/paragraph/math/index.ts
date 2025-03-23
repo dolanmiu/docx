@@ -7,3 +7,4 @@ export * from "./math-component";
 export * from "./radical";
 export * from "./function";
 export * from "./brackets";
+export * from "./bar";

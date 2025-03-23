@@ -1,3 +1,4 @@
+import { MathBar } from "./bar";
 import { MathAngledBrackets, MathCurlyBrackets, MathRoundBrackets, MathSquareBrackets } from "./brackets";
 import { MathFraction } from "./fraction";
 import { MathFunction } from "./function";
@@ -19,7 +20,8 @@ export type MathComponent =
     | MathRoundBrackets
     | MathCurlyBrackets
     | MathAngledBrackets
-    | MathSquareBrackets;
+    | MathSquareBrackets
+    | MathBar;
 
 // Needed because of: https://github.com/s-panferov/awesome-typescript-loader/issues/432
 /**
