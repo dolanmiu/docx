@@ -6,6 +6,6 @@ import { MathBarPos } from "./math-bar-pos";
 export class MathBarProperties extends XmlComponent {
     public constructor(type: string) {
         super("m:barPr");
-        this.root.push(new MathBarPos({ val: type }));
+        this.root.push(new MathBarPos({ mVal: type }));
     }
 }
