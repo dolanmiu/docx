@@ -14,6 +14,7 @@
 [![Known Vulnerabilities][snky-image]][snky-url]
 [![PRs Welcome][pr-image]][pr-url]
 [![codecov][codecov-image]][codecov-url]
+[![Docx.js Editor][docxjs-editor-image]][docxjs-editor-url]
 
 <p align="center">
     <img src="https://i.imgur.com/QeL1HuU.png" alt="drawing"/>
@@ -63,6 +64,10 @@ More [here](https://github.com/dolanmiu/docx/tree/master/demo)
 # How to use & Documentation
 
 Please refer to the [documentation at https://docx.js.org/](https://docx.js.org/) for details on how to use this library, examples and much more!
+
+# Playground
+
+Experience `docx` in action through [Docx.js Editor][docxjs-editor-url], an interactive playground where you can code and preview the results in real-time.
 
 # Examples
 
@@ -115,3 +120,5 @@ Made with 💖
 [patreon-url]: https://www.patreon.com/dolanmiu
 [browserstack-image]: https://user-images.githubusercontent.com/2917613/54233552-128e9d00-4505-11e9-88fb-025a4e04007c.png
 [browserstack-url]: https://www.browserstack.com
+[docxjs-editor-image]: https://img.shields.io/badge/Docx.js%20Editor-2b579a.svg?style=flat&amp;logo=javascript&amp;logoColor=white
+[docxjs-editor-url]: https://docxjs-editor.vercel.app/

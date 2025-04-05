@@ -46,7 +46,7 @@ describe("Packer", () => {
 
             await Packer.toString(file, true);
 
-            expect(spy).toBeCalledWith(expect.anything(), PrettifyType.WITH_2_BLANKS);
+            expect(spy).toBeCalledWith(expect.anything(), PrettifyType.WITH_2_BLANKS, expect.anything());
         });
 
         it("should use a prettify value", async () => {
@@ -55,7 +55,7 @@ describe("Packer", () => {
 
             await Packer.toString(file, PrettifyType.WITH_4_BLANKS);
 
-            expect(spy).toBeCalledWith(expect.anything(), PrettifyType.WITH_4_BLANKS);
+            expect(spy).toBeCalledWith(expect.anything(), PrettifyType.WITH_4_BLANKS, expect.anything());
         });
 
         it("should use an undefined prettify value", async () => {
@@ -64,7 +64,32 @@ describe("Packer", () => {
 
             await Packer.toString(file, false);
 
-            expect(spy).toBeCalledWith(expect.anything(), undefined);
+            expect(spy).toBeCalledWith(expect.anything(), undefined, expect.anything());
+        });
+    });
+
+    describe("overrides", () => {
+        afterEach(() => {
+            vi.restoreAllMocks();
+        });
+
+        it("should use an overrides value", async () => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const spy = vi.spyOn((Packer as any).compiler, "compile");
+            const overrides = [{ path: "word/comments.xml", data: "comments" }];
+
+            await Packer.toString(file, true, overrides);
+
+            expect(spy).toBeCalledWith(expect.anything(), expect.anything(), overrides);
+        });
+
+        it("should use a default overrides value", async () => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const spy = vi.spyOn((Packer as any).compiler, "compile");
+
+            await Packer.toString(file);
+
+            expect(spy).toBeCalledWith(expect.anything(), undefined, []);
         });
     });
 
@@ -153,6 +178,33 @@ describe("Packer", () => {
             });
 
             return Packer.toBlob(file).catch((error) => {
+                assert.isDefined(error);
+            });
+        });
+
+        afterEach(() => {
+            vi.resetAllMocks();
+        });
+    });
+
+    describe("#toArrayBuffer()", () => {
+        it("should create a standard docx file", async () => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            vi.spyOn((Packer as any).compiler, "compile").mockReturnValue({
+                generateAsync: () => vi.fn(),
+            });
+            const str = await Packer.toArrayBuffer(file);
+
+            assert.isDefined(str);
+        });
+
+        it("should handle exception if it throws any", () => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            vi.spyOn((Packer as any).compiler, "compile").mockImplementation(() => {
+                throw new Error();
+            });
+
+            return Packer.toArrayBuffer(file).catch((error) => {
                 assert.isDefined(error);
             });
         });
