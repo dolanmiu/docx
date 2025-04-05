@@ -10,7 +10,8 @@ import { BuilderElement, XmlComponent } from "@file/xml-components";
  * - http://officeopenxml.com/drwPicFloating-position.php
  */
 export const createPositionOffset = (offsetValue: number): XmlComponent =>
-    new BuilderElement<{}>({
+    new BuilderElement({
         name: "wp:posOffset",
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         children: [offsetValue.toString() as any],
     });

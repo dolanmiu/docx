@@ -22,7 +22,7 @@ import { GraphicFrameLocks } from "./graphic-frame-locks/graphic-frame-locks";
  * ```
  */
 export const createGraphicFrameProperties = (): XmlComponent =>
-    new BuilderElement<{}>({
+    new BuilderElement({
         name: "wp:cNvGraphicFramePr",
         children: [new GraphicFrameLocks()],
     });

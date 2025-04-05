@@ -1,4 +1,4 @@
-import { BuilderElement } from "@file/xml-components";
+import { BuilderElement, XmlComponent } from "@file/xml-components";
 
 type ExtentAttributes = {
     /**
@@ -50,7 +50,7 @@ type ExtentAttributes = {
  * </complexType>
  * ```
  */
-export const createExtent = ({ x, y }: ExtentAttributes) =>
+export const createExtent = ({ x, y }: ExtentAttributes): XmlComponent =>
     new BuilderElement<{
         readonly x?: number;
         readonly y?: number;

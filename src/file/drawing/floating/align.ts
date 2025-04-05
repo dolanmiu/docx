@@ -16,7 +16,8 @@ export const createAlign = (
         | (typeof HorizontalPositionAlign)[keyof typeof HorizontalPositionAlign]
         | (typeof VerticalPositionAlign)[keyof typeof VerticalPositionAlign],
 ): XmlComponent =>
-    new BuilderElement<{}>({
+    new BuilderElement({
         name: "wp:align",
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         children: [value as any],
     });

@@ -1,5 +1,5 @@
 // http://officeopenxml.com/drwPicFloating-position.php
-import { BuilderElement } from "@file/xml-components";
+import { BuilderElement, XmlComponent } from "@file/xml-components";
 
 import { createAlign } from "./align";
 import { HorizontalPositionRelativeFrom, IHorizontalPositionOptions } from "./floating-position";
@@ -10,7 +10,7 @@ import { createPositionOffset } from "./position-offset";
  *
  * Reference: https://www.datypic.com/sc/ooxml/e-wp_positionH-1.html
  */
-export const createHorizontalPosition = ({ relative, align, offset }: IHorizontalPositionOptions) =>
+export const createHorizontalPosition = ({ relative, align, offset }: IHorizontalPositionOptions): XmlComponent =>
     new BuilderElement<{
         /** Horizontal Position Relative Base */
         readonly relativeFrom: (typeof HorizontalPositionRelativeFrom)[keyof typeof HorizontalPositionRelativeFrom];

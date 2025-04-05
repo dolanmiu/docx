@@ -1,5 +1,5 @@
 // http://officeopenxml.com/drwPicFloating-position.php
-import { BuilderElement } from "@file/xml-components";
+import { BuilderElement, XmlComponent } from "@file/xml-components";
 
 import { createAlign } from "./align";
 import { IVerticalPositionOptions, VerticalPositionRelativeFrom } from "./floating-position";
@@ -12,7 +12,7 @@ import { createPositionOffset } from "./position-offset";
  *
  * Reference: https://www.datypic.com/sc/ooxml/e-wp_positionV-1.html
  */
-export const createVerticalPosition = ({ relative, align, offset }: IVerticalPositionOptions) =>
+export const createVerticalPosition = ({ relative, align, offset }: IVerticalPositionOptions): XmlComponent =>
     new BuilderElement<{
         /** Vertical Position Relative Base */
         readonly relativeFrom: (typeof VerticalPositionRelativeFrom)[keyof typeof VerticalPositionRelativeFrom];
