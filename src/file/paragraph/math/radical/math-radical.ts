@@ -2,7 +2,7 @@
 import { XmlComponent } from "@file/xml-components";
 
 import { MathComponent } from "../math-component";
-import { MathBase } from "../n-ary";
+import { createMathBase } from "../n-ary";
 import { MathDegree } from "./math-degree";
 import { MathRadicalProperties } from "./math-radical-properties";
 
@@ -17,6 +17,6 @@ export class MathRadical extends XmlComponent {
 
         this.root.push(new MathRadicalProperties(!!options.degree));
         this.root.push(new MathDegree(options.degree));
-        this.root.push(new MathBase(options.children));
+        this.root.push(createMathBase({ children: options.children }));
     }
 }

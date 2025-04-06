@@ -2,12 +2,12 @@ import { describe, expect, it } from "vitest";
 
 import { Formatter } from "@export/formatter";
 
-import { MathLimitLocation } from "./math-limit-location";
+import { createMathLimitLocation } from "./math-limit-location";
 
-describe("MathLimitLocation", () => {
+describe("createMathLimitLocation", () => {
     describe("#constructor()", () => {
         it("should create a MathLimitLocation with correct root key", () => {
-            const mathLimitLocation = new MathLimitLocation();
+            const mathLimitLocation = createMathLimitLocation({});
 
             const tree = new Formatter().format(mathLimitLocation);
             expect(tree).to.deep.equal({

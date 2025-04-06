@@ -2,12 +2,12 @@ import { describe, expect, it } from "vitest";
 
 import { Formatter } from "@export/formatter";
 
-import { MathEndingCharacter } from "./math-ending-char";
+import { createMathEndingCharacter } from "./math-ending-char";
 
-describe("MathEndingCharacter", () => {
+describe("createMathEndingCharacter", () => {
     describe("#constructor()", () => {
         it("should create a MathEndingCharacter with correct root key", () => {
-            const mathEndingCharacter = new MathEndingCharacter("]");
+            const mathEndingCharacter = createMathEndingCharacter({ character: "]" });
 
             const tree = new Formatter().format(mathEndingCharacter);
             expect(tree).to.deep.equal({

@@ -1,8 +1,7 @@
 // http://www.datypic.com/sc/ooxml/e-m_sSubPr-1.html
-import { XmlComponent } from "@file/xml-components";
+import { BuilderElement, XmlComponent } from "@file/xml-components";
 
-export class MathSubScriptProperties extends XmlComponent {
-    public constructor() {
-        super("m:sSubPr");
-    }
-}
+export const createMathSubScriptProperties = (): XmlComponent =>
+    new BuilderElement({
+        name: "m:sSubPr",
+    });

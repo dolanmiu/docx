@@ -90,22 +90,19 @@ const formatShapeStyle = (style?: VmlShapeStyle): string | undefined =>
               .join(";")
         : undefined;
 
-export const createShape = ({
-    id,
-    children,
-    type = SHAPE_TYPE,
-    style,
-}: {
+type ShapeOptions = {
     readonly id: string;
     readonly children?: readonly ParagraphChild[];
     readonly type?: string;
     readonly style?: VmlShapeStyle;
-}): XmlComponent =>
-    new BuilderElement<{
-        readonly id: string;
-        readonly type?: string;
-        readonly style?: string;
-    }>({
+};
+
+export const createShape = ({ id, children, type = SHAPE_TYPE, style }: ShapeOptions): XmlComponent =>
+    new BuilderElement<
+        Pick<ShapeOptions, "id" | "type"> & {
+            readonly style?: string;
+        }
+    >({
         name: "v:shape",
         attributes: {
             id: {

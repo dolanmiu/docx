@@ -1,14 +1,12 @@
 // http://www.datypic.com/sc/ooxml/e-m_endChr-1.html
-import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
+import { BuilderElement, XmlComponent } from "@file/xml-components";
 
-class MathEndingCharacterAttributes extends XmlAttributeComponent<{ readonly character: string }> {
-    protected readonly xmlKeys = { character: "m:val" };
-}
+type MathEndingCharacterOptions = { readonly character: string };
 
-export class MathEndingCharacter extends XmlComponent {
-    public constructor(character: string) {
-        super("m:endChr");
-
-        this.root.push(new MathEndingCharacterAttributes({ character }));
-    }
-}
+export const createMathEndingCharacter = ({ character }: MathEndingCharacterOptions): XmlComponent =>
+    new BuilderElement<MathEndingCharacterOptions>({
+        name: "m:endChr",
+        attributes: {
+            character: { key: "m:val", value: character },
+        },
+    });

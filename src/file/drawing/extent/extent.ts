@@ -51,10 +51,7 @@ type ExtentAttributes = {
  * ```
  */
 export const createExtent = ({ x, y }: ExtentAttributes): XmlComponent =>
-    new BuilderElement<{
-        readonly x?: number;
-        readonly y?: number;
-    }>({
+    new BuilderElement<ExtentAttributes>({
         name: "wp:extent",
         attributes: {
             x: { key: "cx", value: x },

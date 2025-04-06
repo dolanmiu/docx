@@ -2,12 +2,12 @@ import { describe, expect, it } from "vitest";
 
 import { Formatter } from "@export/formatter";
 
-import { MathSuperScriptHide } from "./math-super-script-hide";
+import { createMathSuperScriptHide } from "./math-super-script-hide";
 
-describe("MathSuperScriptHide", () => {
+describe("createMathSuperScriptHide", () => {
     describe("#constructor()", () => {
         it("should create a MathSuperScriptHide with correct root key", () => {
-            const mathSuperScriptHide = new MathSuperScriptHide();
+            const mathSuperScriptHide = createMathSuperScriptHide();
 
             const tree = new Formatter().format(mathSuperScriptHide);
             expect(tree).to.deep.equal({
