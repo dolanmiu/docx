@@ -1,5 +1,7 @@
 import { FileChild } from "@file/file-child";
+import { Relationships } from "@file/relationships";
 import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
+
 
 export type ICommentOptions = {
     readonly id: number;
@@ -136,6 +138,8 @@ export class Comment extends XmlComponent {
     }
 }
 export class Comments extends XmlComponent {
+   private readonly relationships: Relationships;
+
     public constructor({ children }: ICommentsOptions) {
         super("w:comments");
 
@@ -178,5 +182,12 @@ export class Comments extends XmlComponent {
         for (const child of children) {
             this.root.push(new Comment(child));
         }
+
+         this.relationships = new Relationships();
+    }
+
+
+    public get Relationships(): Relationships {
+        return this.relationships;
     }
 }
