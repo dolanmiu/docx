@@ -23,7 +23,7 @@ const doc = new Document({
 
                             new ImageRun({
                                 type: "jpg",
-                                data: fs.readFileSync("./images/cat.jpg"),
+                                data: fs.readFileSync("./demo/images/cat.jpg"),
                                 transformation: {
                                     width: 100,
                                     height: 100,
