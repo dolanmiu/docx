@@ -372,6 +372,17 @@ describe("from-docx", () => {
                     }),
                 ).rejects.toThrow();
             });
+
+            it("throws error with whitespace-only delimiters", async () => {
+                await expect(() =>
+                    patchDocument({
+                        outputType: "uint8array",
+                        data: Buffer.from(""),
+                        patches: {},
+                        placeholderDelimiters: { start: " ", end: " " },
+                    }),
+                ).rejects.toThrowError();
+            });
         });
 
         describe("document.xml and [Content_Types].xml with relationships", () => {

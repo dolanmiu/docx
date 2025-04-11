@@ -137,7 +137,7 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
             };
             contexts.set(key, context);
 
-            if (!placeholderDelimiters?.start || !placeholderDelimiters?.end) {
+            if (!placeholderDelimiters?.start.trim() || !placeholderDelimiters?.end.trim()) {
                 throw new Error("Both start and end delimiters must be non-empty strings.");
             }
 
