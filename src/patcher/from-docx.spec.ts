@@ -288,6 +288,90 @@ describe("from-docx", () => {
                 });
                 expect(output).to.not.be.undefined;
             });
+
+            it("should patch the document", async () => {
+                const output = await patchDocument({
+                    outputType: "uint8array",
+                    data: Buffer.from(""),
+                    placeholderDelimiters: { start: "{{", end: "}}" },
+                    patches: {
+                        name: {
+                            type: PatchType.PARAGRAPH,
+                            children: [new TextRun("Sir. "), new TextRun("John Doe"), new TextRun("(The Conqueror)")],
+                        },
+                        item_1: {
+                            type: PatchType.PARAGRAPH,
+                            children: [
+                                new TextRun("#657"),
+                                new ExternalHyperlink({
+                                    children: [
+                                        new TextRun({
+                                            text: "BBC News Link",
+                                        }),
+                                    ],
+                                    link: "https://www.bbc.co.uk/news",
+                                }),
+                            ],
+                        },
+                        // eslint-disable-next-line @typescript-eslint/naming-convention
+                        paragraph_replace: {
+                            type: PatchType.DOCUMENT,
+                            children: [
+                                new Paragraph({
+                                    children: [
+                                        new TextRun("This is a "),
+                                        new ExternalHyperlink({
+                                            children: [
+                                                new TextRun({
+                                                    text: "Google Link",
+                                                }),
+                                            ],
+                                            link: "https://www.google.co.uk",
+                                        }),
+                                        new ImageRun({
+                                            type: "png",
+                                            data: Buffer.from(""),
+                                            transformation: { width: 100, height: 100 },
+                                        }),
+                                    ],
+                                }),
+                            ],
+                        },
+                        // eslint-disable-next-line @typescript-eslint/naming-convention
+                        image_test: {
+                            type: PatchType.PARAGRAPH,
+                            children: [
+                                new ImageRun({
+                                    type: "png",
+                                    data: Buffer.from(""),
+                                    transformation: { width: 100, height: 100 },
+                                }),
+                            ],
+                        },
+                    },
+                });
+                expect(output).to.not.be.undefined;
+            });
+
+            it("should patch the document", async () => {
+                const output = await patchDocument({
+                    outputType: "uint8array",
+                    data: Buffer.from(""),
+                    patches: {},
+                });
+                expect(output).to.not.be.undefined;
+            });
+
+            it("throws error with empty delimiters", async () => {
+                await expect(() =>
+                    patchDocument({
+                        outputType: "uint8array",
+                        data: Buffer.from(""),
+                        patches: {},
+                        placeholderDelimiters: { start: "", end: "" },
+                    }),
+                ).rejects.toThrow();
+            });
         });
 
         describe("document.xml and [Content_Types].xml with relationships", () => {

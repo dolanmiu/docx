@@ -55,6 +55,10 @@ export type PatchDocumentOptions<T extends PatchDocumentOutputType = PatchDocume
     readonly data: InputDataType;
     readonly patches: Readonly<Record<string, IPatch>>;
     readonly keepOriginalStyles?: boolean;
+    readonly placeholderDelimiters?: Readonly<{
+        readonly start: string;
+        readonly end: string;
+    }>;
 };
 
 const imageReplacer = new ImageReplacer();
@@ -64,6 +68,7 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
     data,
     patches,
     keepOriginalStyles,
+    placeholderDelimiters = { start: "{{", end: "}}" } as const,
 }: PatchDocumentOptions<T>): Promise<OutputByType[T]> => {
     const zipContent = await JSZip.loadAsync(data);
     const contexts = new Map<string, IContext>();
@@ -132,8 +137,14 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
             };
             contexts.set(key, context);
 
+            if (!placeholderDelimiters?.start || !placeholderDelimiters?.end) {
+                throw new Error("Both start and end delimiters must be non-empty strings.");
+            }
+
+            const { start, end } = placeholderDelimiters;
+
             for (const [patchKey, patchValue] of Object.entries(patches)) {
-                const patchText = `{{${patchKey}}}`;
+                const patchText = `${start}${patchKey}${end}`;
                 // TODO: mutates json. Make it immutable
                 // We need to loop through to catch every occurrence of the patch text
                 // It is possible that the patch text is in the same run
