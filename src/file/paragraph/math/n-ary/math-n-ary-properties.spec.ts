@@ -2,12 +2,16 @@ import { describe, expect, it } from "vitest";
 
 import { Formatter } from "@export/formatter";
 
-import { MathNAryProperties } from "./math-n-ary-properties";
+import { createMathNAryProperties } from "./math-n-ary-properties";
 
-describe("MathNAryProperties", () => {
+describe("createMathNAryProperties", () => {
     describe("#constructor()", () => {
         it("should create a MathNAryProperties with correct root key", () => {
-            const mathNAryProperties = new MathNAryProperties("∑", true, true);
+            const mathNAryProperties = createMathNAryProperties({
+                accent: "∑",
+                hasSuperScript: true,
+                hasSubScript: true,
+            });
 
             const tree = new Formatter().format(mathNAryProperties);
             expect(tree).to.deep.equal({
@@ -31,7 +35,11 @@ describe("MathNAryProperties", () => {
         });
 
         it("should add super-script hide attributes", () => {
-            const mathNAryProperties = new MathNAryProperties("∑", false, true);
+            const mathNAryProperties = createMathNAryProperties({
+                accent: "∑",
+                hasSuperScript: false,
+                hasSubScript: true,
+            });
 
             const tree = new Formatter().format(mathNAryProperties);
             expect(tree).to.deep.equal({
@@ -62,7 +70,11 @@ describe("MathNAryProperties", () => {
         });
 
         it("should add sub-script hide attributes", () => {
-            const mathNAryProperties = new MathNAryProperties("∑", true, false);
+            const mathNAryProperties = createMathNAryProperties({
+                accent: "∑",
+                hasSuperScript: true,
+                hasSubScript: false,
+            });
 
             const tree = new Formatter().format(mathNAryProperties);
             expect(tree).to.deep.equal({
@@ -93,7 +105,11 @@ describe("MathNAryProperties", () => {
         });
 
         it("should add both super-script and sub-script hide attributes", () => {
-            const mathNAryProperties = new MathNAryProperties("∑", false, false);
+            const mathNAryProperties = createMathNAryProperties({
+                accent: "∑",
+                hasSuperScript: false,
+                hasSubScript: false,
+            });
 
             const tree = new Formatter().format(mathNAryProperties);
             expect(tree).to.deep.equal({

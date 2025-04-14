@@ -88,7 +88,8 @@ export class StringContainer extends XmlComponent {
     }
 }
 
-export class BuilderElement<T extends AttributeData> extends XmlComponent {
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export class BuilderElement<T extends AttributeData = {}> extends XmlComponent {
     public constructor({
         name,
         attributes,

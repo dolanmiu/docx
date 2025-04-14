@@ -1,14 +1,14 @@
 // http://www.datypic.com/sc/ooxml/e-m_sup-3.html
-import { XmlComponent } from "@file/xml-components";
+import { BuilderElement, XmlComponent } from "@file/xml-components";
 
 import { MathComponent } from "../math-component";
 
-export class MathSuperScriptElement extends XmlComponent {
-    public constructor(children: readonly MathComponent[]) {
-        super("m:sup");
+type MathSuperScriptElementOptions = {
+    readonly children: readonly MathComponent[];
+};
 
-        for (const child of children) {
-            this.root.push(child);
-        }
-    }
-}
+export const createMathSuperScriptElement = ({ children }: MathSuperScriptElementOptions): XmlComponent =>
+    new BuilderElement({
+        name: "m:sup",
+        children,
+    });

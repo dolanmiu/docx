@@ -1,14 +1,12 @@
 // http://www.datypic.com/sc/ooxml/e-m_begChr-1.html
-import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
+import { BuilderElement, XmlComponent } from "@file/xml-components";
 
-class MathBeginningCharacterAttributes extends XmlAttributeComponent<{ readonly character: string }> {
-    protected readonly xmlKeys = { character: "m:val" };
-}
+type MathBeginningCharacterOptions = { readonly character: string };
 
-export class MathBeginningCharacter extends XmlComponent {
-    public constructor(character: string) {
-        super("m:begChr");
-
-        this.root.push(new MathBeginningCharacterAttributes({ character }));
-    }
-}
+export const createMathBeginningCharacter = ({ character }: MathBeginningCharacterOptions): XmlComponent =>
+    new BuilderElement<MathBeginningCharacterOptions>({
+        name: "m:begChr",
+        attributes: {
+            character: { key: "m:val", value: character },
+        },
+    });

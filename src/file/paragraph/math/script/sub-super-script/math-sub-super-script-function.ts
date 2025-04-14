@@ -1,9 +1,9 @@
 // http://www.datypic.com/sc/ooxml/e-m_sSubSup-1.html
 import { XmlComponent } from "@file/xml-components";
 
-import { MathSubSuperScriptProperties } from "./math-sub-super-script-function-properties";
+import { createMathSubSuperScriptProperties } from "./math-sub-super-script-function-properties";
 import { MathComponent } from "../../math-component";
-import { MathBase, MathSubScriptElement, MathSuperScriptElement } from "../../n-ary";
+import { createMathBase, createMathSubScriptElement, createMathSuperScriptElement } from "../../n-ary";
 
 export type IMathSubSuperScriptOptions = {
     readonly children: readonly MathComponent[];
@@ -15,9 +15,9 @@ export class MathSubSuperScript extends XmlComponent {
     public constructor(options: IMathSubSuperScriptOptions) {
         super("m:sSubSup");
 
-        this.root.push(new MathSubSuperScriptProperties());
-        this.root.push(new MathBase(options.children));
-        this.root.push(new MathSubScriptElement(options.subScript));
-        this.root.push(new MathSuperScriptElement(options.superScript));
+        this.root.push(createMathSubSuperScriptProperties());
+        this.root.push(createMathBase({ children: options.children }));
+        this.root.push(createMathSubScriptElement({ children: options.subScript }));
+        this.root.push(createMathSuperScriptElement({ children: options.superScript }));
     }
 }

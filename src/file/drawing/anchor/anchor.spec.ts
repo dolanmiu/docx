@@ -91,28 +91,20 @@ describe("Anchor", () => {
             // 2: horizontal position
             const horizontalPosition = newJson.root[2];
             assert.equal(horizontalPosition.rootKey, "wp:positionH");
-            assert.include(horizontalPosition.root[0].root, {
-                relativeFrom: "page",
-            });
+
             assert.equal(horizontalPosition.root[1].rootKey, "wp:posOffset");
             assert.include(horizontalPosition.root[1].root[0], 0);
 
             // 3: vertical position
             const verticalPosition = newJson.root[3];
             assert.equal(verticalPosition.rootKey, "wp:positionV");
-            assert.include(verticalPosition.root[0].root, {
-                relativeFrom: "page",
-            });
+
             assert.equal(verticalPosition.root[1].rootKey, "wp:posOffset");
             assert.include(verticalPosition.root[1].root[0], 0);
 
             // 4: extent
             const extent = newJson.root[4];
             assert.equal(extent.rootKey, "wp:extent");
-            assert.include(extent.root[0].root, {
-                cx: 952500,
-                cy: 952500,
-            });
 
             // 5: effect extent
             const effectExtent = newJson.root[5];

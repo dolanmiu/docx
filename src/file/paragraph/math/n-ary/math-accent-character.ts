@@ -1,14 +1,12 @@
 // http://www.datypic.com/sc/ooxml/e-m_chr-1.html
-import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
+import { BuilderElement, XmlComponent } from "@file/xml-components";
 
-class MathAccentCharacterAttributes extends XmlAttributeComponent<{ readonly accent: string }> {
-    protected readonly xmlKeys = { accent: "m:val" };
-}
+type MathAccentCharacterOptions = { readonly accent: string };
 
-export class MathAccentCharacter extends XmlComponent {
-    public constructor(accent: string) {
-        super("m:chr");
-
-        this.root.push(new MathAccentCharacterAttributes({ accent }));
-    }
-}
+export const createMathAccentCharacter = ({ accent }: MathAccentCharacterOptions): XmlComponent =>
+    new BuilderElement<MathAccentCharacterOptions>({
+        name: "m:chr",
+        attributes: {
+            accent: { key: "m:val", value: accent },
+        },
+    });

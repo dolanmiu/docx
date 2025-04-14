@@ -2,12 +2,12 @@ import { describe, expect, it } from "vitest";
 
 import { Formatter } from "@export/formatter";
 
-import { MathBracketProperties } from "./math-bracket-properties";
+import { createMathBracketProperties } from "./math-bracket-properties";
 
-describe("MathBracketProperties", () => {
+describe("createMathBracketProperties", () => {
     describe("#constructor()", () => {
         it("should create a MathBracketProperties with correct root key", () => {
-            const mathBracketProperties = new MathBracketProperties();
+            const mathBracketProperties = createMathBracketProperties({});
 
             const tree = new Formatter().format(mathBracketProperties);
             expect(tree).to.deep.equal({
@@ -16,9 +16,11 @@ describe("MathBracketProperties", () => {
         });
 
         it("should create a MathBracketProperties with correct root key and add brackets", () => {
-            const mathBracketProperties = new MathBracketProperties({
-                beginningCharacter: "[",
-                endingCharacter: "]",
+            const mathBracketProperties = createMathBracketProperties({
+                characters: {
+                    beginningCharacter: "[",
+                    endingCharacter: "]",
+                },
             });
 
             const tree = new Formatter().format(mathBracketProperties);
