@@ -36,7 +36,7 @@ describe("Compiler", () => {
                 const fileNames = Object.keys(zipFile.files).map((f) => zipFile.files[f].name);
 
                 expect(fileNames).is.an.instanceof(Array);
-                expect(fileNames).has.length(19);
+                expect(fileNames).has.length(20);
                 expect(fileNames).to.include("word/document.xml");
                 expect(fileNames).to.include("word/styles.xml");
                 expect(fileNames).to.include("docProps/core.xml");
@@ -96,7 +96,7 @@ describe("Compiler", () => {
                 const fileNames = Object.keys(zipFile.files).map((f) => zipFile.files[f].name);
 
                 expect(fileNames).is.an.instanceof(Array);
-                expect(fileNames).has.length(27);
+                expect(fileNames).has.length(28);
 
                 expect(fileNames).to.include("word/header1.xml");
                 expect(fileNames).to.include("word/_rels/header1.xml.rels");
@@ -131,7 +131,7 @@ describe("Compiler", () => {
                 const fileNames = Object.keys(zipFile.files).map((f) => zipFile.files[f].name);
 
                 expect(fileNames).is.an.instanceof(Array);
-                expect(fileNames).has.length(20);
+                expect(fileNames).has.length(21);
 
                 expect(fileNames).to.include("word/comments.xml");
                 expect(fileNames).to.include("word/commentsExtended.xml");
@@ -163,7 +163,7 @@ describe("Compiler", () => {
             const spy = vi.spyOn(compiler["formatter"], "format");
 
             compiler.compile(file);
-            expect(spy).toBeCalledTimes(15);
+            expect(spy).toBeCalledTimes(16);
         });
 
         it("should work with media datas", () => {
