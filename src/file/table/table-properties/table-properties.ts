@@ -30,6 +30,7 @@ import { ITableBordersOptions, TableBorders } from "./table-borders";
 import { ITableCellMarginOptions, TableCellMargin, TableCellMarginElementType } from "./table-cell-margin";
 import { ITableFloatOptions, TableFloatProperties } from "./table-float-properties";
 import { TableLayout, TableLayoutType } from "./table-layout";
+import { ITableCellSpacingProperties, TableCellSpacingElement } from "../table-cell-spacing";
 
 export type ITablePropertiesOptions = {
     readonly width?: ITableWidthProperties;
@@ -42,6 +43,7 @@ export type ITablePropertiesOptions = {
     readonly alignment?: (typeof AlignmentType)[keyof typeof AlignmentType];
     readonly cellMargin?: ITableCellMarginOptions;
     readonly visuallyRightToLeft?: boolean;
+    readonly cellSpacing?: ITableCellSpacingProperties;
 };
 
 export class TableProperties extends IgnoreIfEmptyXmlComponent {
@@ -86,6 +88,10 @@ export class TableProperties extends IgnoreIfEmptyXmlComponent {
 
         if (options.cellMargin) {
             this.root.push(new TableCellMargin(TableCellMarginElementType.TABLE, options.cellMargin));
+        }
+
+        if (options.cellSpacing) {
+            this.root.push(new TableCellSpacingElement(options.cellSpacing));
         }
     }
 }
