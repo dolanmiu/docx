@@ -4,6 +4,7 @@ import { Formatter } from "@export/formatter";
 import { HeightRule } from "@file/table/table-row/table-row-height";
 
 import { TableRowProperties } from "./table-row-properties";
+import { CellSpacingType } from "../table-cell-spacing";
 
 describe("TableRowProperties", () => {
     describe("#constructor", () => {
@@ -59,6 +60,19 @@ describe("TableRowProperties", () => {
             });
             const tree = new Formatter().format(rowProperties);
             expect(tree).to.deep.equal({ "w:trPr": [{ "w:trHeight": { _attr: { "w:val": 100, "w:hRule": "atLeast" } } }] });
+        });
+
+        it("should add a table cell spacing property", () => {
+            const rowProperties = new TableRowProperties({
+                cellSpacing: {
+                    value: 1234,
+                    type: CellSpacingType.DXA,
+                },
+            });
+            const tree = new Formatter().format(rowProperties);
+            expect(tree).to.deep.equal({
+                "w:trPr": [{ "w:tblCellSpacing": { _attr: { "w:type": "dxa", "w:w": 1234 } } }],
+            });
         });
     });
 });
