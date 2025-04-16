@@ -110,12 +110,11 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
 
         if (key === "word/document.xml") {
             const document = json.elements?.find((i) => i.name === "w:document");
-            if (document) {
+            if (document && document.attributes) {
                 // We could check all namespaces from Document, but we'll instead
                 // check only those that may be used by our element types.
 
                 // eslint-disable-next-line functional/immutable-data
-                document.attributes = document.attributes ?? {};
                 for (const ns of ["mc", "wp", "r", "w15", "m"] as const) {
                     // eslint-disable-next-line functional/immutable-data
                     document.attributes[`xmlns:${ns}`] = DocumentAttributeNamespaces[ns];
