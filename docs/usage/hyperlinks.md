@@ -16,12 +16,10 @@ const chapter1 = new Paragraph({
     children: [
         new Bookmark({
             id: "anchorForChapter1",
-            children: [
-                new TextRun("Chapter 1"),
-            ],
+            children: [new TextRun("Chapter 1")],
         }),
     ],
-})
+});
 ```
 
 Then you can create an hyperlink pointing to that bookmark with an `InternalHyperLink`:
@@ -35,19 +33,31 @@ const link = new InternalHyperlink({
         }),
     ],
     anchor: "anchorForChapter1",
-})
+});
 ```
+
+### Page reference
 
 You can also get the page number of the bookmark by creating a page reference to it:
 
 ```ts
 const paragraph = new Paragraph({
-    children: [
-        new TextRun("Chapter 1 can be seen on page "),
-        new PageReference("anchorForChapter1"),
-    ],
+    children: [new TextRun("Chapter 1 can be seen on page "), new PageReference("anchorForChapter1")],
 });
 ```
+
+### Numbered item reference
+
+You can also create cross references for numbered items with `NumberedItemReference`.
+
+```ts
+const paragraph = new Paragraph({
+    children: [new TextRun("See Paragraph "), new NumberedItemReference("anchorForParagraph1", "1.1")],
+});
+```
+
+> [!NOTE]
+> The `NumberedItemReference` currently needs a cached value (in this case `1.1`)
 
 ## External
 
@@ -68,7 +78,6 @@ const paragraph = new Paragraph({
     ],
 });
 ```
-
 
 ## Styling hyperlinks
 
