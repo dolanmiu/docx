@@ -107,12 +107,12 @@ export class Compiler {
         );
 
         const commentRelationshipCount = file.Comments.Relationships.RelationshipCount + 1;
-        const commentXmlData=xml(
+        const commentXmlData = xml(
             this.formatter.format(file.Comments, {
-                viewWrapper:{
+                viewWrapper: {
                     View: file.Comments,
                     Relationships: file.Comments.Relationships,
-                } ,
+                },
                 file,
                 stack: [],
             }),
@@ -123,12 +123,10 @@ export class Compiler {
                     encoding: "UTF-8",
                 },
             },
-        )
-
+        );
 
         const documentMediaDatas = this.imageReplacer.getMediaData(documentXmlData, file.Media);
-         const commentMediaDatas = this.imageReplacer.getMediaData(commentXmlData, file.Media);
-        // const documentMediaDatas = file.Media.Array;
+        const commentMediaDatas = this.imageReplacer.getMediaData(commentXmlData, file.Media);
 
         return {
             Relationships: {
@@ -146,7 +144,6 @@ export class Compiler {
                         "http://schemas.openxmlformats.org/officeDocument/2006/relationships/fontTable",
                         "fontTable.xml",
                     );
-
 
                     return xml(
                         this.formatter.format(file.Document.Relationships, {
@@ -493,10 +490,10 @@ export class Compiler {
                     });
                     return xml(
                         this.formatter.format(file.Comments.Relationships, {
-                            viewWrapper:{
+                            viewWrapper: {
                                 View: file.Comments,
                                 Relationships: file.Comments.Relationships,
-                            } ,
+                            },
                             file,
                             stack: [],
                         }),
