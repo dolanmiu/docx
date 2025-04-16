@@ -4,6 +4,7 @@ import { FileChild } from "@file/file-child";
 import { AlignmentType } from "../paragraph";
 import { TableGrid } from "./grid";
 import { TableCell, VerticalMergeType } from "./table-cell";
+import { ITableCellSpacingProperties } from "./table-cell-spacing";
 import { ITableBordersOptions, ITableFloatOptions, TableProperties } from "./table-properties";
 import { ITableCellMarginOptions } from "./table-properties/table-cell-margin";
 import { TableLayoutType } from "./table-properties/table-layout";
@@ -32,6 +33,7 @@ export type ITableOptions = {
     readonly borders?: ITableBordersOptions;
     readonly alignment?: (typeof AlignmentType)[keyof typeof AlignmentType];
     readonly visuallyRightToLeft?: boolean;
+    readonly cellSpacing?: ITableCellSpacingProperties;
 };
 
 export class Table extends FileChild {
@@ -48,6 +50,7 @@ export class Table extends FileChild {
         borders,
         alignment,
         visuallyRightToLeft,
+        cellSpacing,
     }: ITableOptions) {
         super("w:tbl");
 
@@ -62,6 +65,7 @@ export class Table extends FileChild {
                 alignment,
                 cellMargin: margins,
                 visuallyRightToLeft,
+                cellSpacing,
             }),
         );
 
