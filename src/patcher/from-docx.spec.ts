@@ -202,15 +202,11 @@ describe("from-docx", () => {
     describe("patchDocument", () => {
         describe("document.xml and [Content_Types].xml", () => {
             beforeEach(() => {
-                vi.spyOn(JSZip, "loadAsync").mockReturnValue(
-                    new Promise<JSZip>((resolve) => {
-                        const zip = new JSZip();
+                const zip = new JSZip();
 
-                        zip.file("word/document.xml", MOCK_XML);
-                        zip.file("[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`);
-                        resolve(zip);
-                    }),
-                );
+                zip.file("word/document.xml", MOCK_XML);
+                zip.file("[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`);
+                vi.spyOn(JSZip, "loadAsync").mockResolvedValue(zip);
             });
 
             afterEach(() => {
@@ -284,6 +280,32 @@ describe("from-docx", () => {
                 const output = await patchDocument({
                     outputType: "uint8array",
                     data: Buffer.from(""),
+                    patches: {},
+                });
+                expect(output).to.not.be.undefined;
+            });
+
+            it("should work with the raw JSZip type", async () => {
+                const zip = new JSZip();
+
+                zip.file("word/document.xml", MOCK_XML);
+                zip.file("[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`);
+                const output = await patchDocument({
+                    outputType: "uint8array",
+                    data: zip,
+                    patches: {},
+                });
+                expect(output).to.not.be.undefined;
+            });
+
+            it("should skiup UTF-16 types", async () => {
+                const zip = new JSZip();
+
+                zip.file("word/document.xml", MOCK_XML);
+                zip.file("[Content_Types].xml", Buffer.from([0xff, 0xfe]));
+                const output = await patchDocument({
+                    outputType: "uint8array",
+                    data: zip,
                     patches: {},
                 });
                 expect(output).to.not.be.undefined;
