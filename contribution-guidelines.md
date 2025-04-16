@@ -127,7 +127,7 @@ Using `type` aliases in TypeScript offers several advantages over `interfaces`:
 
 Detailed discussion: https://stackoverflow.com/questions/37233735/typescript-interfaces-vs-types
 
-**Do:**
+**Do not:**
 
 ```ts
 interface IRelationshipFileInfo {
@@ -136,7 +136,7 @@ interface IRelationshipFileInfo {
 }
 ```
 
-**Do not:**
+**Do:**
 
 ```ts
 type RelationshipFileInfo = { id: number; target: string };
