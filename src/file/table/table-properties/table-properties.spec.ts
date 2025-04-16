@@ -7,6 +7,7 @@ import { ShadingType } from "@file/shading";
 import { WidthType } from "../table-width";
 import { TableLayoutType } from "./table-layout";
 import { TableProperties } from "./table-properties";
+import { CellSpacingType } from "../table-cell-spacing";
 
 describe("TableProperties", () => {
     describe("#constructor", () => {
@@ -89,6 +90,19 @@ describe("TableProperties", () => {
             const tree = new Formatter().format(tp);
             expect(tree).to.deep.equal({
                 "w:tblPr": [{ "w:tblLayout": { _attr: { "w:type": "fixed" } } }],
+            });
+        });
+
+        it("should add a table cell spacing property", () => {
+            const tp = new TableProperties({
+                cellSpacing: {
+                    value: 1234,
+                    type: CellSpacingType.DXA,
+                },
+            });
+            const tree = new Formatter().format(tp);
+            expect(tree).to.deep.equal({
+                "w:tblPr": [{ "w:tblCellSpacing": { _attr: { "w:type": "dxa", "w:w": 1234 } } }],
             });
         });
     });
