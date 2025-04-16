@@ -32,6 +32,7 @@ type IXmlifyedFileMapping = {
     readonly FootNotesRelationships: IXmlifyedFile;
     readonly Settings: IXmlifyedFile;
     readonly Comments?: IXmlifyedFile;
+    readonly CommentsRelationships?: IXmlifyedFile;
     readonly FontTable?: IXmlifyedFile;
     readonly FontTableRelationships?: IXmlifyedFile;
 };
@@ -104,7 +105,28 @@ export class Compiler {
                 },
             },
         );
+
+        const commentRelationshipCount = file.Comments.Relationships.RelationshipCount + 1;
+        const commentXmlData = xml(
+            this.formatter.format(file.Comments, {
+                viewWrapper: {
+                    View: file.Comments,
+                    Relationships: file.Comments.Relationships,
+                },
+                file,
+                stack: [],
+            }),
+            {
+                indent: prettify,
+                declaration: {
+                    standalone: "yes",
+                    encoding: "UTF-8",
+                },
+            },
+        );
+
         const documentMediaDatas = this.imageReplacer.getMediaData(documentXmlData, file.Media);
+        const commentMediaDatas = this.imageReplacer.getMediaData(commentXmlData, file.Media);
 
         return {
             Relationships: {
@@ -450,21 +472,40 @@ export class Compiler {
                 path: "word/settings.xml",
             },
             Comments: {
-                data: xml(
-                    this.formatter.format(file.Comments, {
-                        viewWrapper: file.Document,
-                        file,
-                        stack: [],
-                    }),
-                    {
-                        indent: prettify,
-                        declaration: {
-                            standalone: "yes",
-                            encoding: "UTF-8",
-                        },
-                    },
-                ),
+                data: (() => {
+                    const xmlData = this.imageReplacer.replace(commentXmlData, commentMediaDatas, commentRelationshipCount);
+                    const referenedXmlData = this.numberingReplacer.replace(xmlData, file.Numbering.ConcreteNumbering);
+                    return referenedXmlData;
+                })(),
                 path: "word/comments.xml",
+            },
+            CommentsRelationships: {
+                data: (() => {
+                    commentMediaDatas.forEach((mediaData, i) => {
+                        file.Comments.Relationships.createRelationship(
+                            commentRelationshipCount + i,
+                            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
+                            `media/${mediaData.fileName}`,
+                        );
+                    });
+                    return xml(
+                        this.formatter.format(file.Comments.Relationships, {
+                            viewWrapper: {
+                                View: file.Comments,
+                                Relationships: file.Comments.Relationships,
+                            },
+                            file,
+                            stack: [],
+                        }),
+                        {
+                            indent: prettify,
+                            declaration: {
+                                encoding: "UTF-8",
+                            },
+                        },
+                    );
+                })(),
+                path: "word/_rels/comments.xml.rels",
             },
             FontTable: {
                 data: xml(

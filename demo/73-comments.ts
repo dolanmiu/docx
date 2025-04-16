@@ -1,7 +1,7 @@
 // Simple example to add comments to a document
 
 import * as fs from "fs";
-import { Document, Packer, Paragraph, TextRun, CommentRangeStart, CommentRangeEnd, CommentReference } from "docx";
+import { Document, Packer, Paragraph, TextRun, CommentRangeStart, CommentRangeEnd, CommentReference, ImageRun } from "docx";
 
 const doc = new Document({
     comments: {
@@ -20,6 +20,14 @@ const doc = new Document({
                     }),
                     new Paragraph({
                         children: [
+                            new ImageRun({
+                                type: "jpg",
+                                data: fs.readFileSync("./demo/images/cat.jpg"),
+                                transformation: {
+                                    width: 100,
+                                    height: 100,
+                                },
+                            }),
                             new TextRun({
                                 text: "comment text content",
                             }),
