@@ -17,7 +17,7 @@ export enum NumberedItemReferenceFormat {
     FULL_CONTEXT = "full_context",
 }
 
-export interface INumberedItemReferenceOptions {
+export type INumberedItemReferenceOptions = {
     /**
      * \h option - Creates a hyperlink to the bookmarked paragraph.
      * @default true
@@ -28,7 +28,16 @@ export interface INumberedItemReferenceOptions {
      * @default NumberedItemReferenceFormat.FULL_CONTEXT
      */
     readonly referenceFormat?: NumberedItemReferenceFormat;
-}
+};
+
+type Switch = "\\h" | "\\r" | "\\n" | "\\w";
+
+const SWITCH_MAP: Record<NumberedItemReferenceFormat, Switch | undefined> = {
+    [NumberedItemReferenceFormat.RELATIVE]: "\\r",
+    [NumberedItemReferenceFormat.NO_CONTEXT]: "\\n",
+    [NumberedItemReferenceFormat.FULL_CONTEXT]: "\\w",
+    [NumberedItemReferenceFormat.NONE]: undefined,
+};
 
 /**
  * Creates a field/cross reference to a numbered item in the document.
@@ -46,26 +55,7 @@ export class NumberedItemReference extends SimpleField {
         const { hyperlink = true, referenceFormat = NumberedItemReferenceFormat.FULL_CONTEXT } = options;
         const baseInstruction = `REF ${bookmarkId}`;
 
-        const switches = [];
-
-        if (hyperlink) {
-            switches.push("\\h");
-        }
-
-        switch (referenceFormat) {
-            case NumberedItemReferenceFormat.RELATIVE:
-                switches.push("\\r");
-                break;
-            case NumberedItemReferenceFormat.NO_CONTEXT:
-                switches.push("\\n");
-                break;
-            case NumberedItemReferenceFormat.FULL_CONTEXT:
-                switches.push("\\w");
-                break;
-            case NumberedItemReferenceFormat.NONE:
-                // No switch needed
-                break;
-        }
+        const switches: readonly Switch[] = [...(hyperlink ? (["\\h"] as const) : []), ...[SWITCH_MAP[referenceFormat]].filter((a) => !!a)];
 
         const instruction = `${baseInstruction} ${switches.join(" ")}`;
 
