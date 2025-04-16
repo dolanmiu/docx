@@ -31,6 +31,7 @@ import { IgnoreIfEmptyXmlComponent, OnOffElement } from "@file/xml-components";
 import { PositiveUniversalMeasure } from "@util/values";
 
 import { HeightRule, TableRowHeight } from "./table-row-height";
+import { ITableCellSpacingProperties, TableCellSpacingElement } from "../table-cell-spacing";
 
 export type ITableRowPropertiesOptions = {
     readonly cantSplit?: boolean;
@@ -39,6 +40,7 @@ export type ITableRowPropertiesOptions = {
         readonly value: number | PositiveUniversalMeasure;
         readonly rule: (typeof HeightRule)[keyof typeof HeightRule];
     };
+    readonly cellSpacing?: ITableCellSpacingProperties;
 };
 
 export class TableRowProperties extends IgnoreIfEmptyXmlComponent {
@@ -55,6 +57,10 @@ export class TableRowProperties extends IgnoreIfEmptyXmlComponent {
 
         if (options.height) {
             this.root.push(new TableRowHeight(options.height.value, options.height.rule));
+        }
+
+        if (options.cellSpacing) {
+            this.root.push(new TableCellSpacingElement(options.cellSpacing));
         }
     }
 }
