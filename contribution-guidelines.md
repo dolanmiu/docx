@@ -1,24 +1,25 @@
 # Contribution Guidelines
 
--   Include documentation reference(s) at the top of each file as a comment. For example:
+- Include documentation reference(s) at the top of each file as a comment. For example:
 
     ```ts
     // http://officeopenxml.com/WPdocument.php
     ```
 
     <!-- cSpell:ignore datypic -->
+
     It can be a link to `officeopenxml.com` or `datypic.com` etc.
     It could also be a reference to the official ECMA-376 standard: https://www.ecma-international.org/publications-and-standards/standards/ecma-376/
 
--   Include a portion of the schema as a comment for cross reference. For example:
+- Include a portion of the schema as a comment for cross reference. For example:
 
     ```ts
     // <xsd:element name="tbl" type="CT_Tbl" minOccurs="0" maxOccurs="1"/>
     ```
 
--   Follow Prettier standards, and consider using the [Prettier VSCode](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode) plugin.
+- Follow Prettier standards, and consider using the [Prettier VSCode](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode) plugin.
 
--   Follow the `ESLint` rules
+- Follow the `ESLint` rules
 
 ## Always think about the user
 
@@ -37,6 +38,7 @@ Please write good commit messages when making a commit: https://chris.beams.io/p
 **Do not:**
 
 <!-- cspell:disable -->
+
 ```
 c // What?
 rtl // Adding acronyms without explaining anything else is not helpful
@@ -44,6 +46,7 @@ works! // Glad its working, but the message is not helpful
 demo updated // Getting better, but capitalize the first letter
 Unesesary coment removed // Make sure to use correct spelling
 ```
+
 <!-- cspell:enable -->
 
 **Do**
@@ -104,22 +107,25 @@ private get _level: string;
 private get level: string;
 ```
 
-## Interfaces over type alias
+## Types over interfaces
 
-Do not use `type`, but rather use `Interfaces`. `type` cannot be extended, and a class cannot implement it.
+Using `type` aliases in TypeScript offers several advantages over `interfaces`:
 
-> "In general, use what you want ( type alias / interface ) just be consistent"
-> "always use interface for public API's definition when authoring a library or 3rd party ambient type definitions"
->
-> -   https://medium.com/@martin_hotell/interface-vs-type-alias-in-typescript-2-7-2a8f1777af4c
+- **Flexibility with Complex Types**: `type` supports defining unions, intersections, and other complex type constructs that `interfaces` cannot handle. For example:
 
-`Interface` is generally preferred over `type`: https://stackoverflow.com/questions/37233735/typescript-interfaces-vs-types
+  ```typescript
+  type StringOrNumber = string | number;
+  type Combined = TypeA & TypeB;
+  ```
 
-**Do not:**
+- **Support for Primitive Types**: `type` can alias primitive types (e.g., `type ID = string`), while `interfaces` are limited to object shapes.
+- **Tuple and Array Types**: `type` allows defining tuples and specific array types easily (e.g., `type Point = [number, number]`), which `interfaces` cannot represent.
+- **Utility Types Compatibility**: `type` works seamlessly with TypeScript's utility types (e.g., `Partial<T>`, `Pick<T, K>`), enabling more expressive type transformations.
+- **Functional Programming**: `type` is ideal for functional programming patterns, such as defining function signatures or mapped types, due to its versatility.
+- **No Declaration Merging**: Unlike `interfaces`, type does not support declaration merging, which can prevent accidental type extensions and ensure predictable type definitions.
+- **Consistent Pattern**: This project uses `type` for all type definitions, so using `type` for all type definitions maintains consistency and readability across the codebase.
 
-```ts
-type RelationshipFileInfo = { id: number; target: string };
-```
+Detailed discussion: https://stackoverflow.com/questions/37233735/typescript-interfaces-vs-types
 
 **Do:**
 
@@ -128,6 +134,12 @@ interface IRelationshipFileInfo {
     id: number;
     target: string;
 }
+```
+
+**Do not:**
+
+```ts
+type RelationshipFileInfo = { id: number; target: string };
 ```
 
 ## String enums vs type
