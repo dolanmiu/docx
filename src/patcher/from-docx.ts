@@ -114,7 +114,6 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
                 // We could check all namespaces from Document, but we'll instead
                 // check only those that may be used by our element types.
 
-                // eslint-disable-next-line functional/immutable-data
                 for (const ns of ["mc", "wp", "r", "w15", "m"] as const) {
                     // eslint-disable-next-line functional/immutable-data
                     document.attributes[`xmlns:${ns}`] = DocumentAttributeNamespaces[ns];
