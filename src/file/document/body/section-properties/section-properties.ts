@@ -6,13 +6,13 @@ import { VerticalAlign, VerticalAlignElement } from "@file/vertical-align";
 import { OnOffElement, XmlComponent } from "@file/xml-components";
 
 import { Columns, IColumnsAttributes } from "./properties/columns";
-import { DocumentGrid, IDocGridAttributesProperties } from "./properties/doc-grid";
+import { IDocGridAttributesProperties, createDocumentGrid } from "./properties/doc-grid";
 import { HeaderFooterReference, HeaderFooterReferenceType, HeaderFooterType } from "./properties/header-footer-reference";
 import { ILineNumberAttributes, createLineNumberType } from "./properties/line-number";
 import { IPageBordersOptions, PageBorders } from "./properties/page-borders";
 import { IPageMarginAttributes, PageMargin } from "./properties/page-margin";
 import { IPageNumberTypeAttributes, PageNumberType } from "./properties/page-number";
-import { IPageSizeAttributes, PageOrientation, PageSize } from "./properties/page-size";
+import { IPageSizeAttributes, PageOrientation, createPageSize } from "./properties/page-size";
 import { PageTextDirection, PageTextDirectionType } from "./properties/page-text-direction";
 import { SectionType, Type } from "./properties/section-type";
 
@@ -24,13 +24,13 @@ export type IHeaderFooterGroup<T> = {
 
 export type ISectionPropertiesOptions = {
     readonly page?: {
-        readonly size?: IPageSizeAttributes;
+        readonly size?: Partial<IPageSizeAttributes>;
         readonly margin?: IPageMarginAttributes;
         readonly pageNumbers?: IPageNumberTypeAttributes;
         readonly borders?: IPageBordersOptions;
         readonly textDirection?: (typeof PageTextDirectionType)[keyof typeof PageTextDirectionType];
     };
-    readonly grid?: IDocGridAttributesProperties;
+    readonly grid?: Partial<IDocGridAttributesProperties>;
     readonly headerWrapperGroup?: IHeaderFooterGroup<HeaderWrapper>;
     readonly footerWrapperGroup?: IHeaderFooterGroup<FooterWrapper>;
     readonly lineNumbers?: ILineNumberAttributes;
@@ -128,7 +128,7 @@ export class SectionProperties extends XmlComponent {
             this.root.push(new Type(type));
         }
 
-        this.root.push(new PageSize(width, height, orientation));
+        this.root.push(createPageSize({ width, height, orientation }));
         this.root.push(new PageMargin(top, right, bottom, left, header, footer, gutter));
 
         if (borders) {
@@ -157,7 +157,7 @@ export class SectionProperties extends XmlComponent {
             this.root.push(new PageTextDirection(textDirection));
         }
 
-        this.root.push(new DocumentGrid(linePitch, charSpace, gridType));
+        this.root.push(createDocumentGrid({ linePitch, charSpace, type: gridType }));
     }
 
     private addHeaderFooterGroup(

@@ -1,9 +1,9 @@
 // http://www.datypic.com/sc/ooxml/e-m_sPre-1.html
-import { XmlComponent } from "@file/xml-components";
+import { BuilderElement } from "@file/xml-components";
 
-import { MathPreSubSuperScriptProperties } from "./math-pre-sub-super-script-function-properties";
+import { createMathPreSubSuperScriptProperties } from "./math-pre-sub-super-script-function-properties";
 import type { MathComponent } from "../../math-component";
-import { MathBase, MathSubScriptElement, MathSuperScriptElement } from "../../n-ary";
+import { createMathBase, createMathSubScriptElement, createMathSuperScriptElement } from "../../n-ary";
 
 export type IMathPreSubSuperScriptOptions = {
     readonly children: readonly MathComponent[];
@@ -11,13 +11,16 @@ export type IMathPreSubSuperScriptOptions = {
     readonly superScript: readonly MathComponent[];
 };
 
-export class MathPreSubSuperScript extends XmlComponent {
-    public constructor(options: IMathPreSubSuperScriptOptions) {
-        super("m:sPre");
-
-        this.root.push(new MathPreSubSuperScriptProperties());
-        this.root.push(new MathBase(options.children));
-        this.root.push(new MathSubScriptElement(options.subScript));
-        this.root.push(new MathSuperScriptElement(options.superScript));
+export class MathPreSubSuperScript extends BuilderElement {
+    public constructor({ children, subScript, superScript }: IMathPreSubSuperScriptOptions) {
+        super({
+            name: "m:sPre",
+            children: [
+                createMathPreSubSuperScriptProperties(),
+                createMathBase({ children: children }),
+                createMathSubScriptElement({ children: subScript }),
+                createMathSuperScriptElement({ children: superScript }),
+            ],
+        });
     }
 }

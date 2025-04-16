@@ -2,11 +2,12 @@ import { describe, expect, it } from "vitest";
 
 import { Formatter } from "@export/formatter";
 
-import { MathBarProperties } from "./math-bar-properties";
+import { createMathBarProperties } from "./math-bar-properties";
+
 describe("MathBarProperties", () => {
     describe("#constructor()", () => {
         it("should create a MathBarProperties with top key", () => {
-            const mathBarProperties = new MathBarProperties("top");
+            const mathBarProperties = createMathBarProperties({ type: "top" });
 
             const tree = new Formatter().format(mathBarProperties);
 
@@ -23,7 +24,7 @@ describe("MathBarProperties", () => {
             });
         });
         it("should create a MathBarProperties with bottom key", () => {
-            const mathBarProperties = new MathBarProperties("bot");
+            const mathBarProperties = createMathBarProperties({ type: "bot" });
 
             const tree = new Formatter().format(mathBarProperties);
 

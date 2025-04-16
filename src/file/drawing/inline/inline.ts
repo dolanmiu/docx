@@ -4,8 +4,8 @@ import { BuilderElement, XmlComponent } from "@file/xml-components";
 
 import { DocProperties, DocPropertiesOptions } from "./../doc-properties/doc-properties";
 import { createEffectExtent } from "./../effect-extent/effect-extent";
-import { Extent } from "./../extent/extent";
-import { GraphicFrameProperties } from "./../graphic-frame/graphic-frame-properties";
+import { createExtent } from "./../extent/extent";
+import { createGraphicFrameProperties } from "./../graphic-frame/graphic-frame-properties";
 import { Graphic } from "./../inline/graphic";
 import { OutlineOptions } from "./graphic/graphic-data/pic/shape-properties/outline/outline";
 
@@ -52,7 +52,7 @@ export const createInline = ({ mediaData, transform, docProperties, outline }: I
             },
         },
         children: [
-            new Extent(transform.emus.x, transform.emus.y),
+            createExtent({ x: transform.emus.x, y: transform.emus.y }),
             createEffectExtent(
                 outline
                     ? {
@@ -64,7 +64,7 @@ export const createInline = ({ mediaData, transform, docProperties, outline }: I
                     : { top: 0, right: 0, bottom: 0, left: 0 },
             ),
             new DocProperties(docProperties),
-            new GraphicFrameProperties(),
+            createGraphicFrameProperties(),
             new Graphic({ mediaData, transform, outline }),
         ],
     });

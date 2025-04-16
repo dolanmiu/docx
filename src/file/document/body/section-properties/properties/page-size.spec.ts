@@ -2,12 +2,12 @@ import { describe, expect, it } from "vitest";
 
 import { Formatter } from "@export/formatter";
 
-import { PageOrientation, PageSize } from "./page-size";
+import { PageOrientation, createPageSize } from "./page-size";
 
 describe("PageSize", () => {
     describe("#constructor()", () => {
         it("should create page size with portrait", () => {
-            const properties = new PageSize(100, 200, PageOrientation.PORTRAIT);
+            const properties = createPageSize({ width: 100, height: 200, orientation: PageOrientation.PORTRAIT });
             const tree = new Formatter().format(properties);
 
             expect(Object.keys(tree)).to.deep.equal(["w:pgSz"]);
@@ -15,7 +15,7 @@ describe("PageSize", () => {
         });
 
         it("should create page size with horizontal and invert the lengths", () => {
-            const properties = new PageSize(100, 200, PageOrientation.LANDSCAPE);
+            const properties = createPageSize({ width: 100, height: 200, orientation: PageOrientation.LANDSCAPE });
             const tree = new Formatter().format(properties);
 
             expect(Object.keys(tree)).to.deep.equal(["w:pgSz"]);

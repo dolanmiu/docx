@@ -4,13 +4,13 @@ import { Formatter } from "@export/formatter";
 import { VerticalPositionAlign } from "@file/shared/alignment";
 
 import { VerticalPositionRelativeFrom } from "./floating-position";
-import { VerticalPosition } from "./vertical-position";
+import { createVerticalPosition } from "./vertical-position";
 
 describe("VerticalPosition", () => {
     describe("#constructor()", () => {
         it("should create a element with position align", () => {
             const tree = new Formatter().format(
-                new VerticalPosition({
+                createVerticalPosition({
                     relative: VerticalPositionRelativeFrom.MARGIN,
                     align: VerticalPositionAlign.INSIDE,
                 }),
@@ -31,7 +31,7 @@ describe("VerticalPosition", () => {
 
         it("should create a element with offset", () => {
             const tree = new Formatter().format(
-                new VerticalPosition({
+                createVerticalPosition({
                     relative: VerticalPositionRelativeFrom.MARGIN,
                     offset: 40,
                 }),
@@ -51,7 +51,7 @@ describe("VerticalPosition", () => {
         });
 
         it("should require one of align or offset", () => {
-            expect(() => new VerticalPosition({})).to.throw();
+            expect(() => createVerticalPosition({})).to.throw();
         });
     });
 });

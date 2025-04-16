@@ -3,13 +3,13 @@ import { IMediaData, IMediaDataTransformation } from "@file/media";
 import { XmlComponent } from "@file/xml-components";
 
 import { IDrawingOptions } from "../drawing";
-import { HorizontalPosition, IFloating, SimplePos, VerticalPosition } from "../floating";
+import { IFloating, createHorizontalPosition, createSimplePos, createVerticalPosition } from "../floating";
 import { Graphic } from "../inline/graphic";
 import { TextWrappingType, WrapNone, WrapSquare, WrapTight, WrapTopAndBottom } from "../text-wrap";
 import { DocProperties } from "./../doc-properties/doc-properties";
 import { createEffectExtent } from "./../effect-extent/effect-extent";
-import { Extent } from "./../extent/extent";
-import { GraphicFrameProperties } from "./../graphic-frame/graphic-frame-properties";
+import { createExtent } from "./../extent/extent";
+import { createGraphicFrameProperties } from "./../graphic-frame/graphic-frame-properties";
 import { AnchorAttributes } from "./anchor-attributes";
 
 // <xsd:complexType name="CT_Anchor">
@@ -74,10 +74,10 @@ export class Anchor extends XmlComponent {
             }),
         );
 
-        this.root.push(new SimplePos());
-        this.root.push(new HorizontalPosition(floating.horizontalPosition));
-        this.root.push(new VerticalPosition(floating.verticalPosition));
-        this.root.push(new Extent(transform.emus.x, transform.emus.y));
+        this.root.push(createSimplePos());
+        this.root.push(createHorizontalPosition(floating.horizontalPosition));
+        this.root.push(createVerticalPosition(floating.verticalPosition));
+        this.root.push(createExtent({ x: transform.emus.x, y: transform.emus.y }));
         this.root.push(createEffectExtent({ top: 0, right: 0, bottom: 0, left: 0 }));
 
         if (drawingOptions.floating !== undefined && drawingOptions.floating.wrap !== undefined) {
@@ -100,7 +100,7 @@ export class Anchor extends XmlComponent {
         }
 
         this.root.push(new DocProperties(drawingOptions.docProperties));
-        this.root.push(new GraphicFrameProperties());
+        this.root.push(createGraphicFrameProperties());
         this.root.push(new Graphic({ mediaData, transform, outline: drawingOptions.outline }));
     }
 }

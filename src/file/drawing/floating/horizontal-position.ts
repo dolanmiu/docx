@@ -1,34 +1,33 @@
 // http://officeopenxml.com/drwPicFloating-position.php
-import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
+import { BuilderElement, XmlComponent } from "@file/xml-components";
 
-import { Align } from "./align";
+import { createAlign } from "./align";
 import { HorizontalPositionRelativeFrom, IHorizontalPositionOptions } from "./floating-position";
-import { PositionOffset } from "./position-offset";
+import { createPositionOffset } from "./position-offset";
 
-class HorizontalPositionAttributes extends XmlAttributeComponent<{
-    readonly relativeFrom: (typeof HorizontalPositionRelativeFrom)[keyof typeof HorizontalPositionRelativeFrom];
-}> {
-    protected readonly xmlKeys = {
-        relativeFrom: "relativeFrom",
-    };
-}
-
-export class HorizontalPosition extends XmlComponent {
-    public constructor(horizontalPosition: IHorizontalPositionOptions) {
-        super("wp:positionH");
-
-        this.root.push(
-            new HorizontalPositionAttributes({
-                relativeFrom: horizontalPosition.relative || HorizontalPositionRelativeFrom.PAGE,
-            }),
-        );
-
-        if (horizontalPosition.align) {
-            this.root.push(new Align(horizontalPosition.align));
-        } else if (horizontalPosition.offset !== undefined) {
-            this.root.push(new PositionOffset(horizontalPosition.offset));
-        } else {
-            throw new Error("There is no configuration provided for floating position (Align or offset)");
-        }
-    }
-}
+/**
+ * Horizontal Positioning
+ *
+ * Reference: https://www.datypic.com/sc/ooxml/e-wp_positionH-1.html
+ */
+export const createHorizontalPosition = ({ relative, align, offset }: IHorizontalPositionOptions): XmlComponent =>
+    new BuilderElement<{
+        /** Horizontal Position Relative Base */
+        readonly relativeFrom: (typeof HorizontalPositionRelativeFrom)[keyof typeof HorizontalPositionRelativeFrom];
+    }>({
+        name: "wp:positionH",
+        attributes: {
+            relativeFrom: { key: "relativeFrom", value: relative ?? HorizontalPositionRelativeFrom.PAGE },
+        },
+        children: [
+            (() => {
+                if (align) {
+                    return createAlign(align);
+                } else if (offset !== undefined) {
+                    return createPositionOffset(offset);
+                } else {
+                    throw new Error("There is no configuration provided for floating position (Align or offset)");
+                }
+            })(),
+        ],
+    });

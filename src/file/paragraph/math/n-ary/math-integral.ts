@@ -1,10 +1,10 @@
 import { XmlComponent } from "@file/xml-components";
 
 import { MathComponent } from "../math-component";
-import { MathBase } from "./math-base";
-import { MathNAryProperties } from "./math-n-ary-properties";
-import { MathSubScriptElement } from "./math-sub-script";
-import { MathSuperScriptElement } from "./math-super-script";
+import { createMathBase } from "./math-base";
+import { createMathNAryProperties } from "./math-n-ary-properties";
+import { createMathSubScriptElement } from "./math-sub-script";
+import { createMathSuperScriptElement } from "./math-super-script";
 
 export type IMathIntegralOptions = {
     readonly children: readonly MathComponent[];
@@ -16,16 +16,23 @@ export class MathIntegral extends XmlComponent {
     public constructor(options: IMathIntegralOptions) {
         super("m:nary");
 
-        this.root.push(new MathNAryProperties("", !!options.superScript, !!options.subScript, "subSup"));
+        this.root.push(
+            createMathNAryProperties({
+                accent: "",
+                hasSuperScript: !!options.superScript,
+                hasSubScript: !!options.subScript,
+                limitLocationVal: "subSup",
+            }),
+        );
 
         if (!!options.subScript) {
-            this.root.push(new MathSubScriptElement(options.subScript));
+            this.root.push(createMathSubScriptElement({ children: options.subScript }));
         }
 
         if (!!options.superScript) {
-            this.root.push(new MathSuperScriptElement(options.superScript));
+            this.root.push(createMathSuperScriptElement({ children: options.superScript }));
         }
 
-        this.root.push(new MathBase(options.children));
+        this.root.push(createMathBase({ children: options.children }));
     }
 }

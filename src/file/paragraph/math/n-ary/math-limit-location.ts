@@ -1,14 +1,12 @@
 // http://www.datypic.com/sc/ooxml/e-m_limLoc-1.html
-import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
+import { BuilderElement, XmlComponent } from "@file/xml-components";
 
-class MathLimitLocationAttributes extends XmlAttributeComponent<{ readonly value: string }> {
-    protected readonly xmlKeys = { value: "m:val" };
-}
+type MathLimitLocationOptions = { readonly value?: string };
 
-export class MathLimitLocation extends XmlComponent {
-    public constructor(value?: string) {
-        super("m:limLoc");
-
-        this.root.push(new MathLimitLocationAttributes({ value: value || "undOvr" }));
-    }
-}
+export const createMathLimitLocation = ({ value }: MathLimitLocationOptions): XmlComponent =>
+    new BuilderElement<Required<MathLimitLocationOptions>>({
+        name: "m:limLoc",
+        attributes: {
+            value: { key: "m:val", value: value || "undOvr" },
+        },
+    });

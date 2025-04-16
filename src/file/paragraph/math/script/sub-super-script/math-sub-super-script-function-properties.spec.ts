@@ -2,12 +2,12 @@ import { describe, expect, it } from "vitest";
 
 import { Formatter } from "@export/formatter";
 
-import { MathSubSuperScriptProperties } from "./math-sub-super-script-function-properties";
+import { createMathSubSuperScriptProperties } from "./math-sub-super-script-function-properties";
 
-describe("MathSubSuperScriptProperties", () => {
+describe("createMathSuperScriptProperties", () => {
     describe("#constructor()", () => {
         it("should create a MathSubSuperScriptProperties with correct root key", () => {
-            const mathSubSuperScriptProperties = new MathSubSuperScriptProperties();
+            const mathSubSuperScriptProperties = createMathSubSuperScriptProperties();
 
             const tree = new Formatter().format(mathSubSuperScriptProperties);
             expect(tree).to.deep.equal({
