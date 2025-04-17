@@ -63,8 +63,20 @@ export type PatchDocumentOptions<T extends PatchDocumentOutputType = PatchDocume
 };
 
 const imageReplacer = new ImageReplacer();
-const UTF16LE = Buffer.from([0xff, 0xfe]);
-const UTF16BE = Buffer.from([0xfe, 0xff]);
+const UTF16LE = new Uint8Array([0xff, 0xfe]);
+const UTF16BE = new Uint8Array([0xfe, 0xff]);
+
+const compareByteArrays = (a: Uint8Array, b: Uint8Array): boolean => {
+    if (a.length !== b.length) {
+        return false;
+    }
+    for (let i = 0; i < a.length; i++) {
+        if (a[i] !== b[i]) {
+            return false;
+        }
+    }
+    return true;
+};
 
 export const patchDocument = async <T extends PatchDocumentOutputType = PatchDocumentOutputType>({
     outputType,
@@ -96,7 +108,7 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
     for (const [key, value] of Object.entries(zipContent.files)) {
         const binaryValue = await value.async("uint8array");
         const startBytes = binaryValue.slice(0, 2);
-        if (UTF16LE.equals(startBytes) || UTF16BE.equals(startBytes)) {
+        if (compareByteArrays(startBytes, UTF16LE) || compareByteArrays(startBytes, UTF16BE)) {
             binaryContentMap.set(key, binaryValue);
             continue;
         }
