@@ -64,7 +64,7 @@ export type PatchDocumentOptions<T extends PatchDocumentOutputType = PatchDocume
 
 const imageReplacer = new ImageReplacer();
 const UTF16LE = new Uint8Array([0xff, 0xfe]);
-const UTF16BE = new Uint8Array([0xff, 0xff]);
+const UTF16BE = new Uint8Array([0xfe, 0xff]);
 
 const compareByteArrays = (a: Uint8Array, b: Uint8Array): boolean => {
     if (a.length !== b.length) {
