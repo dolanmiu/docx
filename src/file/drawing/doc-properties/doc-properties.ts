@@ -19,8 +19,8 @@ import { createHyperlinkClick } from "./doc-properties-children";
 
 export type DocPropertiesOptions = {
     readonly name: string;
-    readonly description: string;
-    readonly title: string;
+    readonly description?: string;
+    readonly title?: string;
 };
 
 export class DocProperties extends XmlComponent {
@@ -29,26 +29,32 @@ export class DocProperties extends XmlComponent {
     public constructor({ name, description, title }: DocPropertiesOptions = { name: "", description: "", title: "" }) {
         super("wp:docPr");
 
-        this.root.push(
-            new NextAttributeComponent({
-                id: {
-                    key: "id",
-                    value: this.docPropertiesUniqueNumericId(),
-                },
-                name: {
-                    key: "name",
-                    value: name,
-                },
-                description: {
-                    key: "descr",
-                    value: description,
-                },
-                title: {
-                    key: "title",
-                    value: title,
-                },
-            }),
-        );
+        const attributes: Record<string, { readonly key: string; readonly value: string | number }> = {
+            id: {
+                key: "id",
+                value: this.docPropertiesUniqueNumericId(),
+            },
+            name: {
+                key: "name",
+                value: name,
+            },
+        };
+
+        if (description !== null && description !== undefined) {
+            attributes.description = {
+                key: "descr",
+                value: description,
+            };
+        }
+
+        if (title !== null && title !== undefined) {
+            attributes.title = {
+                key: "title",
+                value: title,
+            };
+        }
+
+        this.root.push(new NextAttributeComponent(attributes));
     }
 
     public prepForXml(context: IContext): IXmlableObject | undefined {
@@ -59,7 +65,6 @@ export class DocProperties extends XmlComponent {
             }
 
             this.root.push(createHyperlinkClick(element.linkId, true));
-
             break;
         }
 
