@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { Formatter } from "@export/formatter";
 import { BorderStyle } from "@file/border";
-import { VerticalAlign } from "@file/vertical-align";
+import { VerticalAlignTable } from "@file/vertical-align";
 
 import { WidthType } from "../table-width";
 import { VerticalMergeType } from "./table-cell-components";
@@ -32,7 +32,7 @@ describe("TableCellProperties", () => {
         });
 
         it("sets vertical align", () => {
-            const properties = new TableCellProperties({ verticalAlign: VerticalAlign.BOTTOM });
+            const properties = new TableCellProperties({ verticalAlign: VerticalAlignTable.BOTTOM });
             const tree = new Formatter().format(properties);
             expect(tree).to.deep.equal({ "w:tcPr": [{ "w:vAlign": { _attr: { "w:val": "bottom" } } }] });
         });

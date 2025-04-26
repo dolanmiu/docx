@@ -2,7 +2,7 @@
 
 import { FooterWrapper } from "@file/footer-wrapper";
 import { HeaderWrapper } from "@file/header-wrapper";
-import { VerticalAlign, VerticalAlignElement } from "@file/vertical-align";
+import { SectionVerticalAlign, VerticalAlignElement } from "@file/vertical-align";
 import { OnOffElement, XmlComponent } from "@file/xml-components";
 
 import { Columns, IColumnsAttributes } from "./properties/columns";
@@ -35,7 +35,7 @@ export type ISectionPropertiesOptions = {
     readonly footerWrapperGroup?: IHeaderFooterGroup<FooterWrapper>;
     readonly lineNumbers?: ILineNumberAttributes;
     readonly titlePage?: boolean;
-    readonly verticalAlign?: (typeof VerticalAlign)[keyof typeof VerticalAlign];
+    readonly verticalAlign?: SectionVerticalAlign;
     readonly column?: IColumnsAttributes;
     readonly type?: (typeof SectionType)[keyof typeof SectionType];
 };

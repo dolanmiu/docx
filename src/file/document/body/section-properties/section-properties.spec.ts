@@ -6,7 +6,7 @@ import { FooterWrapper } from "@file/footer-wrapper";
 import { HeaderWrapper } from "@file/header-wrapper";
 import { Media } from "@file/media";
 import { NumberFormat } from "@file/shared/number-format";
-import { VerticalAlign } from "@file/vertical-align";
+import { VerticalAlignSection } from "@file/vertical-align";
 import { convertInchesToTwip } from "@util/convenience-functions";
 
 import { PageOrientation } from "./properties";
@@ -75,7 +75,7 @@ describe("SectionProperties", () => {
                     even: new FooterWrapper(media, 200),
                 },
                 titlePage: true,
-                verticalAlign: VerticalAlign.TOP,
+                verticalAlign: VerticalAlignSection.TOP,
             });
 
             const tree = new Formatter().format(properties);

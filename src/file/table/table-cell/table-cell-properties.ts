@@ -1,4 +1,4 @@
-import { VerticalAlign, VerticalAlignElement } from "@file/vertical-align";
+import { TableVerticalAlign, VerticalAlignElement } from "@file/vertical-align";
 import { IgnoreIfEmptyXmlComponent } from "@file/xml-components";
 
 import { IShadingAttributesProperties, Shading } from "../../shading";
@@ -17,7 +17,7 @@ import {
 export type ITableCellPropertiesOptions = {
     readonly shading?: IShadingAttributesProperties;
     readonly margins?: ITableCellMarginOptions;
-    readonly verticalAlign?: (typeof VerticalAlign)[keyof typeof VerticalAlign];
+    readonly verticalAlign?: TableVerticalAlign;
     readonly textDirection?: (typeof TextDirection)[keyof typeof TextDirection];
     readonly verticalMerge?: (typeof VerticalMergeType)[keyof typeof VerticalMergeType];
     readonly width?: ITableWidthProperties;
