@@ -12,7 +12,7 @@ import {
     TableCell,
     TableRow,
     TextDirection,
-    VerticalAlign,
+    VerticalAlignTable,
 } from "docx";
 
 const table = new Table({
@@ -102,11 +102,11 @@ const noBorderTable = new Table({
             children: [
                 new TableCell({
                     children: [new Paragraph({}), new Paragraph({})],
-                    verticalAlign: VerticalAlign.CENTER,
+                    verticalAlign: VerticalAlignTable.CENTER,
                 }),
                 new TableCell({
                     children: [new Paragraph({}), new Paragraph({})],
-                    verticalAlign: VerticalAlign.CENTER,
+                    verticalAlign: VerticalAlignTable.CENTER,
                 }),
                 new TableCell({
                     children: [new Paragraph({ text: "bottom to top" }), new Paragraph({})],
@@ -134,7 +134,7 @@ const noBorderTable = new Table({
                             text: "This text should be in the middle of the cell",
                         }),
                     ],
-                    verticalAlign: VerticalAlign.CENTER,
+                    verticalAlign: VerticalAlignTable.CENTER,
                 }),
                 new TableCell({
                     children: [
@@ -142,7 +142,7 @@ const noBorderTable = new Table({
                             text: "Text above should be vertical from bottom to top",
                         }),
                     ],
-                    verticalAlign: VerticalAlign.CENTER,
+                    verticalAlign: VerticalAlignTable.CENTER,
                 }),
                 new TableCell({
                     children: [
@@ -150,7 +150,7 @@ const noBorderTable = new Table({
                             text: "Text above should be vertical from top to bottom",
                         }),
                     ],
-                    verticalAlign: VerticalAlign.CENTER,
+                    verticalAlign: VerticalAlignTable.CENTER,
                 }),
             ],
         }),

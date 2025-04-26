@@ -1,13 +1,13 @@
 // Example of making content of section vertically aligned
 
 import * as fs from "fs";
-import { Document, Packer, Paragraph, VerticalAlign, TextRun, Tab } from "docx";
+import { Document, Packer, Paragraph, VerticalAlignSection, TextRun, Tab } from "docx";
 
 const doc = new Document({
     sections: [
         {
             properties: {
-                verticalAlign: VerticalAlign.CENTER,
+                verticalAlign: VerticalAlignSection.CENTER,
             },
             children: [
                 new Paragraph({

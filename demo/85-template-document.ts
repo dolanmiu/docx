@@ -13,7 +13,7 @@ import {
     TableRow,
     TextDirection,
     TextRun,
-    VerticalAlign,
+    VerticalAlignTable,
 } from "docx";
 
 patchDocument({
@@ -105,11 +105,11 @@ patchDocument({
                             children: [
                                 new TableCell({
                                     children: [new Paragraph({}), new Paragraph({})],
-                                    verticalAlign: VerticalAlign.CENTER,
+                                    verticalAlign: VerticalAlignTable.CENTER,
                                 }),
                                 new TableCell({
                                     children: [new Paragraph({}), new Paragraph({})],
-                                    verticalAlign: VerticalAlign.CENTER,
+                                    verticalAlign: VerticalAlignTable.CENTER,
                                 }),
                                 new TableCell({
                                     children: [new Paragraph({ text: "bottom to top" }), new Paragraph({})],
@@ -137,7 +137,7 @@ patchDocument({
                                             text: "This text should be in the middle of the cell",
                                         }),
                                     ],
-                                    verticalAlign: VerticalAlign.CENTER,
+                                    verticalAlign: VerticalAlignTable.CENTER,
                                 }),
                                 new TableCell({
                                     children: [
@@ -145,7 +145,7 @@ patchDocument({
                                             text: "Text above should be vertical from bottom to top",
                                         }),
                                     ],
-                                    verticalAlign: VerticalAlign.CENTER,
+                                    verticalAlign: VerticalAlignTable.CENTER,
                                 }),
                                 new TableCell({
                                     children: [
@@ -153,7 +153,7 @@ patchDocument({
                                             text: "Text above should be vertical from top to bottom",
                                         }),
                                     ],
-                                    verticalAlign: VerticalAlign.CENTER,
+                                    verticalAlign: VerticalAlignTable.CENTER,
                                 }),
                             ],
                         }),

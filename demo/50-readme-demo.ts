@@ -1,7 +1,7 @@
 // The demo on the README.md
 
 import * as fs from "fs";
-import { Document, HeadingLevel, ImageRun, Packer, Paragraph, Table, TableCell, TableRow, VerticalAlign } from "docx";
+import { Document, HeadingLevel, ImageRun, Packer, Paragraph, Table, TableCell, TableRow, VerticalAlignTable } from "docx";
 
 const table = new Table({
     rows: [
@@ -13,6 +13,7 @@ const table = new Table({
                             children: [
                                 new ImageRun({
                                     data: fs.readFileSync("./demo/images/image1.jpeg"),
+                                    type: "jpg",
                                     transformation: {
                                         width: 100,
                                         height: 100,
@@ -21,7 +22,7 @@ const table = new Table({
                             ],
                         }),
                     ],
-                    verticalAlign: VerticalAlign.CENTER,
+                    verticalAlign: VerticalAlignTable.CENTER,
                 }),
                 new TableCell({
                     children: [
@@ -30,7 +31,7 @@ const table = new Table({
                             heading: HeadingLevel.HEADING_1,
                         }),
                     ],
-                    verticalAlign: VerticalAlign.CENTER,
+                    verticalAlign: VerticalAlignTable.CENTER,
                 }),
             ],
         }),
@@ -50,6 +51,7 @@ const table = new Table({
                             children: [
                                 new ImageRun({
                                     data: fs.readFileSync("./demo/images/image1.jpeg"),
+                                    type: "jpg",
                                     transformation: {
                                         width: 100,
                                         height: 100,
@@ -77,6 +79,7 @@ const doc = new Document({
                     children: [
                         new ImageRun({
                             data: fs.readFileSync("./demo/images/pizza.gif"),
+                            type: "gif",
                             transformation: {
                                 width: 100,
                                 height: 100,
