@@ -1,7 +1,7 @@
 // Example of how you would create a table and add data to it
 
 import * as fs from "fs";
-import { Document, HeadingLevel, Packer, Paragraph, Table, TableCell, TableRow, VerticalAlign, TextDirection } from "docx";
+import { Document, HeadingLevel, Packer, Paragraph, Table, TableCell, TableRow, VerticalAlignTable, TextDirection } from "docx";
 
 const doc = new Document({
     sections: [
@@ -13,11 +13,11 @@ const doc = new Document({
                             children: [
                                 new TableCell({
                                     children: [new Paragraph({}), new Paragraph({})],
-                                    verticalAlign: VerticalAlign.CENTER,
+                                    verticalAlign: VerticalAlignTable.CENTER,
                                 }),
                                 new TableCell({
                                     children: [new Paragraph({}), new Paragraph({})],
-                                    verticalAlign: VerticalAlign.CENTER,
+                                    verticalAlign: VerticalAlignTable.CENTER,
                                 }),
                                 new TableCell({
                                     children: [new Paragraph({ text: "bottom to top" }), new Paragraph({})],
@@ -45,7 +45,7 @@ const doc = new Document({
                                             text: "This text should be in the middle of the cell",
                                         }),
                                     ],
-                                    verticalAlign: VerticalAlign.CENTER,
+                                    verticalAlign: VerticalAlignTable.CENTER,
                                 }),
                                 new TableCell({
                                     children: [
@@ -53,7 +53,7 @@ const doc = new Document({
                                             text: "Text above should be vertical from bottom to top",
                                         }),
                                     ],
-                                    verticalAlign: VerticalAlign.CENTER,
+                                    verticalAlign: VerticalAlignTable.CENTER,
                                 }),
                                 new TableCell({
                                     children: [
@@ -61,7 +61,7 @@ const doc = new Document({
                                             text: "Text above should be vertical from top to bottom",
                                         }),
                                     ],
-                                    verticalAlign: VerticalAlign.CENTER,
+                                    verticalAlign: VerticalAlignTable.CENTER,
                                 }),
                             ],
                         }),

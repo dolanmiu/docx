@@ -159,7 +159,7 @@ const tableRow = new TableRow({
 | children      | `Array<Paragraph or Table>`         | Required. You can nest tables by adding a table into a cell |
 | shading       | `IShadingAttributesProperties`      | Optional                                                    |
 | margins       | `ITableCellMarginOptions`           | Optional                                                    |
-| verticalAlign | `VerticalAlign`                     | Optional                                                    |
+| verticalAlign | `VerticalAlignTable`                | Optional                                                    |
 | columnSpan    | `number`                            | Optional                                                    |
 | rowSpan       | `number`                            | Optional                                                    |
 | borders       | `BorderOptions`                     | Optional                                                    |
@@ -266,7 +266,7 @@ Sets the vertical alignment of the contents of the cell
 ```ts
 const cell = new TableCell({
     ...,
-    verticalAlign: VerticalAlign,
+    verticalAlign: VerticalAlignTable,
 });
 ```
 
@@ -282,7 +282,7 @@ For example, to center align a cell:
 
 ```ts
 const cell = new TableCell({
-    verticalAlign: VerticalAlign.CENTER,
+    verticalAlign: VerticalAlignTable.CENTER,
 });
 ```
 

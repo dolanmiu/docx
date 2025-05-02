@@ -9,7 +9,7 @@ import {
     Table,
     TableCell,
     TableRow,
-    VerticalAlign,
+    VerticalAlignTable,
     TextDirection,
     TextRun,
     WidthType,
@@ -101,17 +101,17 @@ const generateRows = (prices: StockPrice[]): TableRow[] =>
                 children: [
                     new TableCell({
                         children: [new Paragraph(date.toString())],
-                        verticalAlign: VerticalAlign.CENTER,
+                        verticalAlign: VerticalAlignTable.CENTER,
                         textDirection: TextDirection.LEFT_TO_RIGHT_TOP_TO_BOTTOM,
                     }),
                     new TableCell({
                         children: [new Paragraph(ticker)],
-                        verticalAlign: VerticalAlign.CENTER,
+                        verticalAlign: VerticalAlignTable.CENTER,
                         textDirection: TextDirection.LEFT_TO_RIGHT_TOP_TO_BOTTOM,
                     }),
                     new TableCell({
                         children: [new Paragraph(price.toString())],
-                        verticalAlign: VerticalAlign.CENTER,
+                        verticalAlign: VerticalAlignTable.CENTER,
                         textDirection: TextDirection.TOP_TO_BOTTOM_RIGHT_TO_LEFT,
                     }),
                 ],
@@ -143,7 +143,7 @@ const doc = new Document({
                                             ],
                                         }),
                                     ],
-                                    verticalAlign: VerticalAlign.CENTER,
+                                    verticalAlign: VerticalAlignTable.CENTER,
                                     textDirection: TextDirection.LEFT_TO_RIGHT_TOP_TO_BOTTOM,
                                 }),
                                 new TableCell({
@@ -159,7 +159,7 @@ const doc = new Document({
                                             ],
                                         }),
                                     ],
-                                    verticalAlign: VerticalAlign.CENTER,
+                                    verticalAlign: VerticalAlignTable.CENTER,
                                     textDirection: TextDirection.LEFT_TO_RIGHT_TOP_TO_BOTTOM,
                                 }),
                                 new TableCell({
@@ -175,7 +175,7 @@ const doc = new Document({
                                             ],
                                         }),
                                     ],
-                                    verticalAlign: VerticalAlign.CENTER,
+                                    verticalAlign: VerticalAlignTable.CENTER,
                                     textDirection: TextDirection.TOP_TO_BOTTOM_RIGHT_TO_LEFT,
                                 }),
                             ],

@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { Formatter } from "@export/formatter";
 import { BorderStyle } from "@file/border";
 import { ShadingType } from "@file/shading";
-import { VerticalAlign } from "@file/vertical-align";
+import { VerticalAlignTable } from "@file/vertical-align";
 
 import { WidthType } from "../table-width";
 import { TableCell } from "./table-cell";
@@ -286,7 +286,7 @@ describe("TableCell", () => {
         it("should create with vertical align", () => {
             const cell = new TableCell({
                 children: [],
-                verticalAlign: VerticalAlign.CENTER,
+                verticalAlign: VerticalAlignTable.CENTER,
             });
 
             const tree = new Formatter().format(cell);
