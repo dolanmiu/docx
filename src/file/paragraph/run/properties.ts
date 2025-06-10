@@ -162,12 +162,25 @@ export class RunProperties extends IgnoreIfEmptyXmlComponent {
         if (!options) {
             return;
         }
-        if (options.noProof !== undefined) {
-            this.push(new OnOffElement("w:noProof", options.noProof));
+
+        if (options.style) {
+            this.push(new StringValueElement("w:rStyle", options.style));
         }
+
+        if (options.font) {
+            if (typeof options.font === "string") {
+                this.push(new RunFonts(options.font));
+            } else if ("name" in options.font) {
+                this.push(new RunFonts(options.font.name, options.font.hint));
+            } else {
+                this.push(new RunFonts(options.font));
+            }
+        }
+
         if (options.bold !== undefined) {
             this.push(new OnOffElement("w:b", options.bold));
         }
+
         if ((options.boldComplexScript === undefined && options.bold !== undefined) || options.boldComplexScript) {
             this.push(new OnOffElement("w:bCs", options.boldComplexScript ?? options.bold));
         }
@@ -180,20 +193,53 @@ export class RunProperties extends IgnoreIfEmptyXmlComponent {
             this.push(new OnOffElement("w:iCs", options.italicsComplexScript ?? options.italics));
         }
 
-        if (options.underline) {
-            this.push(new Underline(options.underline.type, options.underline.color));
+        // These two are mutually exclusive
+        if (options.smallCaps !== undefined) {
+            this.push(new OnOffElement("w:smallCaps", options.smallCaps));
+        } else if (options.allCaps !== undefined) {
+            this.push(new OnOffElement("w:caps", options.allCaps));
         }
 
-        if (options.effect) {
-            this.push(new StringValueElement("w:effect", options.effect));
+        if (options.strike !== undefined) {
+            this.push(new OnOffElement("w:strike", options.strike));
         }
 
-        if (options.emphasisMark) {
-            this.push(new EmphasisMark(options.emphasisMark.type));
+        if (options.doubleStrike !== undefined) {
+            this.push(new OnOffElement("w:dstrike", options.doubleStrike));
+        }
+
+        if (options.emboss !== undefined) {
+            this.push(new OnOffElement("w:emboss", options.emboss));
+        }
+
+        if (options.imprint !== undefined) {
+            this.push(new OnOffElement("w:imprint", options.imprint));
+        }
+
+        if (options.noProof !== undefined) {
+            this.push(new OnOffElement("w:noProof", options.noProof));
+        }
+
+        if (options.snapToGrid !== undefined) {
+            this.push(new OnOffElement("w:snapToGrid", options.snapToGrid));
+        }
+
+        if (options.vanish) {
+            // https://c-rex.net/projects/samples/ooxml/e1/Part4/OOXML_P4_DOCX_vanish_topic_ID0E6W3O.html
+            // http://www.datypic.com/sc/ooxml/e-w_vanish-1.html
+            this.push(new OnOffElement("w:vanish", options.vanish));
         }
 
         if (options.color) {
             this.push(new Color(options.color));
+        }
+
+        if (options.characterSpacing) {
+            this.push(new CharacterSpacing(options.characterSpacing));
+        }
+
+        if (options.scale !== undefined) {
+            this.push(new NumberValueElement("w:w", options.scale));
         }
 
         if (options.kern) {
@@ -213,47 +259,6 @@ export class RunProperties extends IgnoreIfEmptyXmlComponent {
             this.push(new HpsMeasureElement("w:szCs", szCs));
         }
 
-        if (options.rightToLeft !== undefined) {
-            this.push(new OnOffElement("w:rtl", options.rightToLeft));
-        }
-
-        // These two are mutually exclusive
-        if (options.smallCaps !== undefined) {
-            this.push(new OnOffElement("w:smallCaps", options.smallCaps));
-        } else if (options.allCaps !== undefined) {
-            this.push(new OnOffElement("w:caps", options.allCaps));
-        }
-
-        if (options.strike !== undefined) {
-            this.push(new OnOffElement("w:strike", options.strike));
-        }
-
-        if (options.doubleStrike !== undefined) {
-            this.push(new OnOffElement("w:dstrike", options.doubleStrike));
-        }
-
-        if (options.subScript) {
-            this.push(new SubScript());
-        }
-
-        if (options.superScript) {
-            this.push(new SuperScript());
-        }
-
-        if (options.style) {
-            this.push(new StringValueElement("w:rStyle", options.style));
-        }
-
-        if (options.font) {
-            if (typeof options.font === "string") {
-                this.push(new RunFonts(options.font));
-            } else if ("name" in options.font) {
-                this.push(new RunFonts(options.font.name, options.font.hint));
-            } else {
-                this.push(new RunFonts(options.font));
-            }
-        }
-
         if (options.highlight) {
             this.push(new Highlight(options.highlight));
         }
@@ -265,38 +270,40 @@ export class RunProperties extends IgnoreIfEmptyXmlComponent {
             this.push(new HighlightComplexScript(highlightCs));
         }
 
-        if (options.characterSpacing) {
-            this.push(new CharacterSpacing(options.characterSpacing));
+        if (options.underline) {
+            this.push(new Underline(options.underline.type, options.underline.color));
         }
 
-        if (options.emboss !== undefined) {
-            this.push(new OnOffElement("w:emboss", options.emboss));
-        }
-
-        if (options.imprint !== undefined) {
-            this.push(new OnOffElement("w:imprint", options.imprint));
-        }
-
-        if (options.shading) {
-            this.push(new Shading(options.shading));
-        }
-
-        if (options.revision) {
-            this.push(new RunPropertiesChange(options.revision));
+        if (options.effect) {
+            this.push(new StringValueElement("w:effect", options.effect));
         }
 
         if (options.border) {
             this.push(new BorderElement("w:bdr", options.border));
         }
 
-        if (options.snapToGrid !== undefined) {
-            this.push(new OnOffElement("w:snapToGrid", options.snapToGrid));
+        if (options.shading) {
+            this.push(new Shading(options.shading));
         }
 
-        if (options.vanish) {
-            // https://c-rex.net/projects/samples/ooxml/e1/Part4/OOXML_P4_DOCX_vanish_topic_ID0E6W3O.html
-            // http://www.datypic.com/sc/ooxml/e-w_vanish-1.html
-            this.push(new OnOffElement("w:vanish", options.vanish));
+        if (options.subScript) {
+            this.push(new SubScript());
+        }
+
+        if (options.superScript) {
+            this.push(new SuperScript());
+        }
+
+        if (options.rightToLeft !== undefined) {
+            this.push(new OnOffElement("w:rtl", options.rightToLeft));
+        }
+
+        if (options.emphasisMark) {
+            this.push(new EmphasisMark(options.emphasisMark.type));
+        }
+
+        if (options.language) {
+            this.push(createLanguageComponent(options.language));
         }
 
         if (options.specVanish) {
@@ -304,16 +311,12 @@ export class RunProperties extends IgnoreIfEmptyXmlComponent {
             this.push(new OnOffElement("w:specVanish", options.vanish));
         }
 
-        if (options.scale !== undefined) {
-            this.push(new NumberValueElement("w:w", options.scale));
-        }
-
-        if (options.language) {
-            this.push(createLanguageComponent(options.language));
-        }
-
         if (options.math) {
             this.push(new OnOffElement("w:oMath", options.math));
+        }
+
+        if (options.revision) {
+            this.push(new RunPropertiesChange(options.revision));
         }
     }
 
