@@ -47,6 +47,7 @@ const doc = new Document({
                 run: {
                     size: "11pt",
                     font: "Calibri",
+                    name: "run"
                 },
                 paragraph: {
                     alignment: AlignmentType.RIGHT,
