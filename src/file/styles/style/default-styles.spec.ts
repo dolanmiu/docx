@@ -305,7 +305,6 @@ describe("Default Styles", () => {
                 },
                 {
                     "w:rPr": [
-                        { "w:u": { _attr: { "w:val": "single" } } },
                         {
                             "w:color": {
                                 _attr: {
@@ -313,6 +312,7 @@ describe("Default Styles", () => {
                                 },
                             },
                         },
+                        { "w:u": { _attr: { "w:val": "single" } } },
                     ],
                 },
             ],
@@ -346,7 +346,6 @@ describe("Default Styles", () => {
                 },
                 {
                     "w:rPr": [
-                        { "w:u": { _attr: { "w:color": "0000FF", "w:val": "single" } } },
                         {
                             "w:color": {
                                 _attr: {
@@ -354,6 +353,7 @@ describe("Default Styles", () => {
                                 },
                             },
                         },
+                        { "w:u": { _attr: { "w:color": "0000FF", "w:val": "single" } } },
                     ],
                 },
             ],
