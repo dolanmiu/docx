@@ -1,14 +1,5 @@
-/**
- * Anchor drawing module for WordprocessingML documents.
- *
- * This module provides floating/anchored drawing positioning where the
- * drawing can be positioned relative to the page, column, paragraph, etc.
- *
- * Reference: http://officeopenxml.com/drwPicFloating.php
- *
- * @module
- */
-import { IMediaData, IMediaDataTransformation } from "@file/media";
+// http://officeopenxml.com/drwPicFloating.php
+import { IExtendedMediaData, IMediaDataTransformation } from "@file/media";
 import { XmlComponent } from "@file/xml-components";
 
 import { IDrawingOptions } from "../drawing";
@@ -88,7 +79,7 @@ export class Anchor extends XmlComponent {
         transform,
         drawingOptions,
     }: {
-        readonly mediaData: IMediaData;
+        readonly mediaData: IExtendedMediaData;
         readonly transform: IMediaDataTransformation;
         readonly drawingOptions: IDrawingOptions;
     }) {
@@ -146,6 +137,6 @@ export class Anchor extends XmlComponent {
 
         this.root.push(new DocProperties(drawingOptions.docProperties));
         this.root.push(createGraphicFrameProperties());
-        this.root.push(new Graphic({ mediaData, transform, outline: drawingOptions.outline }));
+        this.root.push(new Graphic({ mediaData, transform, outline: drawingOptions.outline, solidFill: drawingOptions.solidFill }));
     }
 }

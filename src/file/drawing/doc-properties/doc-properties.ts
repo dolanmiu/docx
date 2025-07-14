@@ -38,6 +38,7 @@ export type DocPropertiesOptions = {
     readonly description?: string;
     /** Title of the drawing element */
     readonly title?: string;
+    readonly id?: string;
 };
 
 /**
@@ -66,13 +67,13 @@ export type DocPropertiesOptions = {
 export class DocProperties extends XmlComponent {
     private readonly docPropertiesUniqueNumericId = docPropertiesUniqueNumericIdGen();
 
-    public constructor({ name, description, title }: DocPropertiesOptions = { name: "", description: "", title: "" }) {
+    public constructor({ name, description, title, id }: DocPropertiesOptions = { name: "", description: "", title: "" }) {
         super("wp:docPr");
 
         const attributes: Record<string, { readonly key: string; readonly value: string | number }> = {
             id: {
                 key: "id",
-                value: this.docPropertiesUniqueNumericId(),
+                value: id ?? this.docPropertiesUniqueNumericId(),
             },
             name: {
                 key: "name",

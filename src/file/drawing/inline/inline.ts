@@ -1,14 +1,5 @@
-/**
- * Inline drawing module for WordprocessingML documents.
- *
- * This module provides inline drawing positioning where the drawing
- * is positioned within the text flow as a character.
- *
- * Reference: http://officeopenxml.com/drwPicInline.php
- *
- * @module
- */
-import { IMediaData, IMediaDataTransformation } from "@file/media";
+// http://officeopenxml.com/drwPicInline.php
+import { IExtendedMediaData, IMediaDataTransformation } from "@file/media";
 import { BuilderElement, XmlComponent } from "@file/xml-components";
 
 import { DocProperties, DocPropertiesOptions } from "./../doc-properties/doc-properties";
@@ -17,44 +8,34 @@ import { createExtent } from "./../extent/extent";
 import { createGraphicFrameProperties } from "./../graphic-frame/graphic-frame-properties";
 import { Graphic } from "./../inline/graphic";
 import { OutlineOptions } from "./graphic/graphic-data/pic/shape-properties/outline/outline";
+import { SolidFillOptions } from "./graphic/graphic-data/pic/shape-properties/outline/solid-fill";
 
 /**
  * Options for creating an inline drawing element.
  */
 type InlineOptions = {
-    readonly mediaData: IMediaData;
+    readonly mediaData: IExtendedMediaData;
     readonly transform: IMediaDataTransformation;
     readonly docProperties?: DocPropertiesOptions;
     readonly outline?: OutlineOptions;
+    readonly solidFill?: SolidFillOptions;
 };
 
-/**
- * Creates an inline drawing element.
- *
- * Inline drawings are positioned within the text flow as if they were
- * characters. They move with the text and do not float independently.
- *
- * Reference: http://officeopenxml.com/drwPicInline.php
- *
- * ## XSD Schema
- * ```xml
- * <xsd:complexType name="CT_Inline">
- *   <xsd:sequence>
- *     <xsd:element name="extent" type="a:CT_PositiveSize2D"/>
- *     <xsd:element name="effectExtent" type="CT_EffectExtent" minOccurs="0"/>
- *     <xsd:element name="docPr" type="a:CT_NonVisualDrawingProps" minOccurs="1" maxOccurs="1"/>
- *     <xsd:element name="cNvGraphicFramePr" type="a:CT_NonVisualGraphicFrameProperties"
- *       minOccurs="0" maxOccurs="1"/>
- *     <xsd:element ref="a:graphic" minOccurs="1" maxOccurs="1"/>
- *   </xsd:sequence>
- *   <xsd:attribute name="distT" type="ST_WrapDistance" use="optional"/>
- *   <xsd:attribute name="distB" type="ST_WrapDistance" use="optional"/>
- *   <xsd:attribute name="distL" type="ST_WrapDistance" use="optional"/>
- *   <xsd:attribute name="distR" type="ST_WrapDistance" use="optional"/>
- * </xsd:complexType>
- * ```
- */
-export const createInline = ({ mediaData, transform, docProperties, outline }: InlineOptions): XmlComponent =>
+// <xsd:complexType name="CT_Inline">
+//     <xsd:sequence>
+//         <xsd:element name="extent" type="a:CT_PositiveSize2D"/>
+//         <xsd:element name="effectExtent" type="CT_EffectExtent" minOccurs="0"/>
+//         <xsd:element name="docPr" type="a:CT_NonVisualDrawingProps" minOccurs="1" maxOccurs="1"/>
+//         <xsd:element name="cNvGraphicFramePr" type="a:CT_NonVisualGraphicFrameProperties"
+//             minOccurs="0" maxOccurs="1"/>
+//         <xsd:element ref="a:graphic" minOccurs="1" maxOccurs="1"/>
+//     </xsd:sequence>
+//     <xsd:attribute name="distT" type="ST_WrapDistance" use="optional"/>
+//     <xsd:attribute name="distB" type="ST_WrapDistance" use="optional"/>
+//     <xsd:attribute name="distL" type="ST_WrapDistance" use="optional"/>
+//     <xsd:attribute name="distR" type="ST_WrapDistance" use="optional"/>
+// </xsd:complexType>
+export const createInline = ({ mediaData, transform, docProperties, outline, solidFill }: InlineOptions): XmlComponent =>
     new BuilderElement({
         name: "wp:inline",
         attributes: {
@@ -89,6 +70,6 @@ export const createInline = ({ mediaData, transform, docProperties, outline }: I
             ),
             new DocProperties(docProperties),
             createGraphicFrameProperties(),
-            new Graphic({ mediaData, transform, outline }),
+            new Graphic({ mediaData, transform, outline, solidFill }),
         ],
     });

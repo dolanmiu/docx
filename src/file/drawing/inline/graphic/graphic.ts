@@ -1,16 +1,9 @@
-/**
- * Graphic module for DrawingML elements.
- *
- * This module provides the graphic element that contains
- * pictures and other visual content.
- *
- * @module
- */
-import { IMediaData, IMediaDataTransformation } from "@file/media";
+import { IExtendedMediaData, IMediaDataTransformation } from "@file/media";
 import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
 
 import { GraphicData } from "./graphic-data";
 import { OutlineOptions } from "./graphic-data/pic/shape-properties/outline/outline";
+import { SolidFillOptions } from "./graphic-data/pic/shape-properties/outline/solid-fill";
 
 /**
  * Attributes for the graphic element.
@@ -57,10 +50,12 @@ export class Graphic extends XmlComponent {
         mediaData,
         transform,
         outline,
+        solidFill,
     }: {
-        readonly mediaData: IMediaData;
+        readonly mediaData: IExtendedMediaData;
         readonly transform: IMediaDataTransformation;
         readonly outline?: OutlineOptions;
+        readonly solidFill?: SolidFillOptions;
     }) {
         super("a:graphic");
         this.root.push(
@@ -69,7 +64,7 @@ export class Graphic extends XmlComponent {
             }),
         );
 
-        this.data = new GraphicData({ mediaData, transform, outline });
+        this.data = new GraphicData({ mediaData, transform, outline, solidFill });
 
         this.root.push(this.data);
     }

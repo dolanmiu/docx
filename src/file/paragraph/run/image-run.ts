@@ -13,6 +13,7 @@ import { hashedId } from "@util/convenience-functions";
 
 import { Drawing, IFloating } from "../../drawing";
 import { OutlineOptions } from "../../drawing/inline/graphic/graphic-data/pic/shape-properties/outline/outline";
+import { SolidFillOptions } from "../../drawing/inline/graphic/graphic-data/pic/shape-properties/outline/solid-fill";
 import { IMediaTransformation } from "../../media";
 import { IMediaData } from "../../media/data";
 import { Run } from "../run";
@@ -25,6 +26,7 @@ type CoreImageOptions = {
     readonly floating?: IFloating;
     readonly altText?: DocPropertiesOptions;
     readonly outline?: OutlineOptions;
+    readonly solidFill?: SolidFillOptions;
 };
 
 type RegularImageOptions = {
