@@ -1,3 +1,5 @@
+import { WpsShapeCoreOptions } from "@file/drawing/inline/graphic/graphic-data/wps";
+
 export type IMediaDataTransformation = {
     readonly pixels: {
         readonly x: number;
@@ -31,6 +33,14 @@ type SvgMediaData = {
      */
     readonly fallback: RegularMediaData & CoreMediaData;
 };
+
+export type WpsMediaData = {
+    readonly type: "wps";
+    readonly transformation: IMediaDataTransformation;
+    readonly data: WpsShapeCoreOptions;
+};
+
+export type IExtendedMediaData = IMediaData | WpsMediaData;
 
 export type IMediaData = (RegularMediaData | SvgMediaData) & CoreMediaData;
 
