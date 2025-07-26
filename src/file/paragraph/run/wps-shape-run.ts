@@ -7,6 +7,8 @@ import { SolidFillOptions } from "../../drawing/inline/graphic/graphic-data/pic/
 import { IMediaDataTransformation, IMediaTransformation, WpsMediaData } from "../../media";
 import { Run } from "../run";
 
+export * from "@file/drawing/inline/graphic/graphic-data/wps/body-properties";
+
 type CoreShapeOptions = {
     readonly transformation: IMediaTransformation;
     readonly floating?: IFloating;
