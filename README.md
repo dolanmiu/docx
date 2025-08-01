@@ -122,3 +122,14 @@ Made with 💖
 [browserstack-url]: https://www.browserstack.com
 [docxjs-editor-image]: https://img.shields.io/badge/Docx.js%20Editor-2b579a.svg?style=flat&amp;logo=javascript&amp;logoColor=white
 [docxjs-editor-url]: https://docxjs-editor.vercel.app/
+
+
+This PR is related to the OpenHarmony adaptation work of `docx` (tracked in #xxx, where xxx is the issue number created above).
+
+The main changes in our adaptation repo (https://gitcode.com/openharmony-sig/ohos_docx) include:
+- Dependency adjustments for OpenHarmony's ohpm.
+- Runtime compatibility fixes.
+
+This PR doesn't require immediate merging, but serves as a record of the adaptation work to facilitate future communication.
+
+Thanks!
