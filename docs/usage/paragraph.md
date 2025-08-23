@@ -305,7 +305,7 @@ Example: https://github.com/dolanmiu/docx/blob/master/demo/15-page-break-before.
 
 ## Page break control
 
-Paragraphs have `keepLines` and `keepNext` properties that allow restricting page breaks within and between paragraphs. See [this Microsoft article](https://support.office.com/en-us/article/Keep-lines-and-paragraphs-together-d72af534-926f-4c4b-830a-abfc2daa3bfa) for more details.
+Paragraphs have `keepLines` and `keepNext` properties that allow restricting page breaks within and between paragraphs. See [this Microsoft article](https://support.microsoft.com/en-us/office/keep-text-together-in-word-af94e5b8-3a5a-4cb0-9c53-dea56b43d96d) for more details.
 
 ```ts
 const paragraph = new Paragraph({
