@@ -1,6 +1,7 @@
 // http://officeopenxml.com/WPdocument.php
 import { XmlComponent } from "@file/xml-components";
 
+import { BlockContentControl } from "../content-control";
 import { ConcreteHyperlink, Paragraph } from "../paragraph";
 import { Table } from "../table";
 import { TableOfContents } from "../table-of-contents";
@@ -82,7 +83,7 @@ export class Document extends XmlComponent {
         this.root.push(this.body);
     }
 
-    public add(item: Paragraph | Table | TableOfContents | ConcreteHyperlink): Document {
+    public add(item: Paragraph | Table | TableOfContents | ConcreteHyperlink | BlockContentControl): Document {
         this.body.push(item);
         return this;
     }

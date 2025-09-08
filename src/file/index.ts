@@ -1,5 +1,6 @@
 export * from "./paragraph";
 export * from "./table";
+export * from "./content-control";
 export * from "./file";
 export * from "./file-child";
 export * from "./numbering";

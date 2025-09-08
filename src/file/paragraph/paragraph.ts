@@ -5,6 +5,13 @@ import { IContext, IXmlableObject } from "@file/xml-components";
 import { uniqueId } from "@util/convenience-functions";
 
 import { CheckBox } from "../checkbox";
+import {
+    CheckboxContentControl,
+    DatePickerContentControl,
+    DropdownContentControl,
+    InlineRichTextContentControl,
+    RunContentControl,
+} from "../content-control";
 import { TargetModeType } from "../relationships/relationship/relationship";
 import { DeletedTextRun, InsertedTextRun } from "../track-revision";
 import { ColumnBreak, PageBreak } from "./formatting/break";
@@ -35,7 +42,12 @@ export type ParagraphChild =
     | CommentRangeStart
     | CommentRangeEnd
     | CommentReference
-    | CheckBox;
+    | CheckBox
+    | RunContentControl
+    | InlineRichTextContentControl
+    | DropdownContentControl
+    | DatePickerContentControl
+    | CheckboxContentControl;
 
 export type IParagraphOptions = {
     readonly text?: string;

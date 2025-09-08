@@ -96,7 +96,7 @@ export type ILineNumberAttributes = {
     /**
      * Specifies the distance between the text margin and the edge of any line numbers appearing in that section.
      *
-     * ```.xml
+     * ```xml
      * <w:lnNumType ... w:distance="720"/>
      * ```
      *

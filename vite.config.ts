@@ -83,6 +83,8 @@ export default defineConfig({
                 "**/scripts/**",
                 "**/src/**/index.ts",
                 "**/src/**/types.ts",
+                "**/src/**/properties.ts",
+                "**/src/util/output-type.ts",
                 "**/*.spec.ts",
             ],
         },
