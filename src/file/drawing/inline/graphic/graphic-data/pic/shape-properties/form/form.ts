@@ -69,6 +69,7 @@ export class FormAttributes extends XmlAttributeComponent<{
  */
 export class Form extends XmlComponent {
     private readonly extents: Extents;
+    private readonly offset: Offset;
 
     public constructor(options: IMediaDataTransformation) {
         super("a:xfrm");
@@ -81,9 +82,10 @@ export class Form extends XmlComponent {
             }),
         );
 
+        this.offset = new Offset(options.offset?.emus?.x, options.offset?.emus?.y);
         this.extents = new Extents(options.emus.x, options.emus.y);
 
-        this.root.push(new Offset());
+        this.root.push(this.offset);
         this.root.push(this.extents);
     }
 }

@@ -65,7 +65,7 @@ const convertDataURIToBinary = (dataURI: string): Uint8Array => {
     );
 };
 
-const standardizeData = (data: string | Buffer | Uint8Array | ArrayBuffer): Buffer | Uint8Array | ArrayBuffer =>
+export const standardizeData = (data: string | Buffer | Uint8Array | ArrayBuffer): Buffer | Uint8Array | ArrayBuffer =>
     typeof data === "string" ? convertDataURIToBinary(data) : data;
 
 const createImageData = (options: IImageOptions, key: string): Pick<IMediaData, "data" | "fileName" | "transformation"> => ({

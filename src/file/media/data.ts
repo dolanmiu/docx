@@ -1,7 +1,18 @@
+import { OutlineOptions } from "@file/drawing/inline/graphic/graphic-data/pic/shape-properties/outline/outline";
+import { SolidFillOptions } from "@file/drawing/inline/graphic/graphic-data/pic/shape-properties/outline/solid-fill";
 import { WpsShapeCoreOptions } from "@file/drawing/inline/graphic/graphic-data/wps";
 
 export type IMediaDataTransformation = {
-    /** Display dimensions in pixels */
+    readonly offset?: {
+        readonly pixels: {
+            readonly x: number;
+            readonly y: number;
+        };
+        readonly emus?: {
+            readonly x: number;
+            readonly y: number;
+        }
+    };
     readonly pixels: {
         /** Width in pixels */
         readonly x: number;
@@ -65,7 +76,20 @@ export type WpsMediaData = {
     readonly data: WpsShapeCoreOptions;
 };
 
-export type IExtendedMediaData = IMediaData | WpsMediaData;
+export type WpgCommonMediaData = {
+    readonly outline?: OutlineOptions;
+    readonly solidFill?: SolidFillOptions;
+};
+
+export type IGroupChildMediaData = (WpsMediaData | IMediaData) & WpgCommonMediaData
+
+export type WpgMediaData = {
+    readonly type: "wpg";
+    readonly transformation: IMediaDataTransformation;
+    readonly children: readonly IGroupChildMediaData[];
+};
+
+export type IExtendedMediaData = IMediaData | WpsMediaData | WpgMediaData;
 
 export type IMediaData = (RegularMediaData | SvgMediaData) & CoreMediaData;
 
