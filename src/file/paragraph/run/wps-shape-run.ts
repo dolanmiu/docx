@@ -19,7 +19,17 @@ type CoreShapeOptions = {
 
 export type IWpsShapeOptions = WpsShapeCoreOptions & { readonly type: "wps" } & CoreShapeOptions;
 
-const createTransformation = (options: IMediaTransformation): IMediaDataTransformation => ({
+export const createTransformation = (options: IMediaTransformation): IMediaDataTransformation => ({
+    offset: {
+        pixels: {
+            x: Math.round(options.offset?.left ?? 0),
+            y: Math.round(options.offset?.top ?? 0),
+        },
+        emus: {
+            x: Math.round((options.offset?.left ?? 0) * 9525),
+            y: Math.round((options.offset?.top ?? 0) * 9525),
+        },
+    },
     pixels: {
         x: Math.round(options.width),
         y: Math.round(options.height),

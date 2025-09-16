@@ -4,6 +4,7 @@ export * from "./text-run";
 export * from "./symbol-run";
 export * from "./image-run";
 export * from "./wps-shape-run";
+export * from "./wpg-group-run";
 export * from "./run-fonts";
 export * from "./sequential-identifier";
 export * from "./underline";
