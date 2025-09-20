@@ -163,6 +163,62 @@ export class FootnoteTextChar extends StyleForCharacter {
     }
 }
 
+export class EndnoteText extends StyleForParagraph {
+    public constructor(options: IBaseParagraphStyleOptions) {
+        super({
+            id: "EndnoteText",
+            name: "endnote text",
+            link: "EndnoteTextChar",
+            basedOn: "Normal",
+            uiPriority: 99,
+            semiHidden: true,
+            unhideWhenUsed: true,
+            paragraph: {
+                spacing: {
+                    after: 0,
+                    line: 240,
+                    lineRule: LineRuleType.AUTO,
+                },
+            },
+            run: {
+                size: 20,
+            },
+            ...options,
+        });
+    }
+}
+
+export class EndnoteReferenceStyle extends StyleForCharacter {
+    public constructor(options: IBaseCharacterStyleOptions) {
+        super({
+            id: "EndnoteReference",
+            name: "endnote reference",
+            basedOn: "DefaultParagraphFont",
+            semiHidden: true,
+            run: {
+                superScript: true,
+            },
+            ...options,
+        });
+    }
+}
+
+export class EndnoteTextChar extends StyleForCharacter {
+    public constructor(options: IBaseCharacterStyleOptions) {
+        super({
+            id: "EndnoteTextChar",
+            name: "Endnote Text Char",
+            basedOn: "DefaultParagraphFont",
+            link: "EndnoteText",
+            semiHidden: true,
+            run: {
+                size: 20,
+            },
+            ...options,
+        });
+    }
+}
+
 export class HyperlinkStyle extends StyleForCharacter {
     public constructor(options: IBaseCharacterStyleOptions) {
         super({
