@@ -8,6 +8,7 @@
  * @module
  */
 import { Document, IDocumentOptions } from "./document";
+import { Endnotes } from "./endnotes";
 import { Footer } from "./footer/footer";
 import { FootNotes } from "./footnotes";
 import { Header } from "./header/header";
@@ -24,7 +25,7 @@ import { XmlComponent } from "./xml-components";
  * @property Relationships - The relationships associated with this view
  */
 export type IViewWrapper = {
-    readonly View: Document | Footer | Header | FootNotes | XmlComponent;
+    readonly View: Document | Footer | Header | FootNotes | Endnotes | XmlComponent;
     readonly Relationships: Relationships;
 };
 

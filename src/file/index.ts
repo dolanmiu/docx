@@ -26,6 +26,7 @@ export * from "./header-wrapper";
 export * from "./footer-wrapper";
 export * from "./header";
 export * from "./footnotes";
+export * from "./endnotes";
 export * from "./track-revision";
 export * from "./shared";
 export * from "./border";
