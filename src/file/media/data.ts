@@ -11,7 +11,7 @@ export type IMediaDataTransformation = {
         readonly emus?: {
             readonly x: number;
             readonly y: number;
-        }
+        };
     };
     readonly pixels: {
         readonly x: number;
@@ -57,7 +57,7 @@ export type WpgCommonMediaData = {
     readonly solidFill?: SolidFillOptions;
 };
 
-export type IGroupChildMediaData = (WpsMediaData | IMediaData) & WpgCommonMediaData
+export type IGroupChildMediaData = (WpsMediaData | IMediaData) & WpgCommonMediaData;
 
 export type WpgMediaData = {
     readonly type: "wpg";

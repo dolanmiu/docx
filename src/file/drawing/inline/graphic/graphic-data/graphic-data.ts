@@ -38,15 +38,20 @@ export class GraphicData extends XmlComponent {
                     uri: "http://schemas.microsoft.com/office/word/2010/wordprocessingGroup",
                 }),
             );
-            const md = mediaData as WpgMediaData
-            const children = md.children.map(child => {
+            const md = mediaData as WpgMediaData;
+            const children = md.children.map((child) => {
                 // eslint-disable-next-line unicorn/prefer-ternary
                 if (child.type === "wps") {
-                    return new WpsShape({ ...child.data, transformation: child.transformation, outline: child.outline, solidFill: child.solidFill });
+                    return new WpsShape({
+                        ...child.data,
+                        transformation: child.transformation,
+                        outline: child.outline,
+                        solidFill: child.solidFill,
+                    });
                 } else {
                     return new Pic({ mediaData: child, transform: child.transformation, outline: child.outline });
                 }
-            })
+            });
             // const wps = new WpsShape({ ...mediaData.data, transformation: transform, outline, solidFill });
             const wpg = new WpgGroup({ children, transformation: transform });
             this.root.push(wpg);
@@ -56,7 +61,7 @@ export class GraphicData extends XmlComponent {
                     uri: "http://schemas.openxmlformats.org/drawingml/2006/picture",
                 }),
             );
-            const md = mediaData as IMediaData
+            const md = mediaData as IMediaData;
             const pic = new Pic({ mediaData: md, transform, outline });
             this.root.push(pic);
         }

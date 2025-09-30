@@ -1,6 +1,6 @@
 {
-    "name": "docx",
-    "version": "9.5.1",
+    "name": "@feecompass/docx",
+    "version": "9.6.0",
     "description": "Easily generate .docx files with JS/TS with a nice declarative API. Works for Node and on the Browser.",
     "type": "module",
     "main": "dist/index.umd.cjs",
@@ -43,7 +43,7 @@
     ],
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/dolanmiu/docx.git"
+        "url": "https://github.com/feecompass/docx.git"
     },
     "keywords": [
         "docx",

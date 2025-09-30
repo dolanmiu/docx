@@ -20,11 +20,7 @@ export type WpgGroupOptions = WpgGroupCoreOptions & {
 export class GroupProperties extends XmlComponent {
     private readonly form: Form;
 
-    public constructor({
-        transform,
-    }: {
-        readonly transform: IMediaDataTransformation;
-    }) {
+    public constructor({ transform }: { readonly transform: IMediaDataTransformation }) {
         super(`wpg:grpSpPr`);
 
         this.form = new Form(transform);
@@ -34,10 +30,9 @@ export class GroupProperties extends XmlComponent {
 
 export class NonVisualGroupProperties extends XmlComponent {
     public constructor() {
-        super('wpg:cNvGrpSpPr');
+        super("wpg:cNvGrpSpPr");
     }
 }
-
 
 export class WpgGroup extends XmlComponent {
     public constructor(options: WpgGroupOptions) {
