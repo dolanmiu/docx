@@ -1,9 +1,8 @@
-import { DocPropertiesOptions } from '@file/drawing/doc-properties/doc-properties';
+import { DocPropertiesOptions } from "@file/drawing/doc-properties/doc-properties";
 import { IContext, IXmlableObject } from "@file/xml-components";
 
-
 import { Run } from ".";
-import { createTransformation } from './wps-shape-run';
+import { createTransformation } from "./wps-shape-run";
 import { Drawing, IFloating } from "../../drawing";
 import { IGroupChildMediaData, IMediaData, IMediaTransformation, WpgMediaData } from "../../media";
 
@@ -35,20 +34,19 @@ export class WpgGroupRun extends Run {
             docProperties: options.altText,
         });
 
-        this.mediaDatas = options.children.filter(child => child.type !== "wps").map(child => child as IMediaData)
+        this.mediaDatas = options.children.filter((child) => child.type !== "wps").map((child) => child as IMediaData);
 
         this.root.push(drawing);
     }
 
     public prepForXml(context: IContext): IXmlableObject | undefined {
-        this.mediaDatas.forEach(child => {
+        this.mediaDatas.forEach((child) => {
+            context.file.Media.addImage(child.fileName, child);
 
-        context.file.Media.addImage(child.fileName, child);
-
-        if (child.type === "svg") {
-            context.file.Media.addImage(child.fallback.fileName, child.fallback);
-        }
-    })
+            if (child.type === "svg") {
+                context.file.Media.addImage(child.fallback.fileName, child.fallback);
+            }
+        });
         return super.prepForXml(context);
     }
 }
