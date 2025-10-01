@@ -202,7 +202,7 @@ export class Numbering extends XmlComponent {
             reference,
             instance,
             overrideLevels: [
-                firstLevelStartNumber && Number.isInteger(firstLevelStartNumber)
+                typeof firstLevelStartNumber === "number" && Number.isInteger(firstLevelStartNumber)
                     ? {
                           num: 0,
                           start: firstLevelStartNumber,
