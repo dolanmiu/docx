@@ -235,26 +235,6 @@ const doc = new Document({
                 }),
 
                 new Paragraph({
-                    text: "Restart numbering",
-                    heading: HeadingLevel.HEADING_2,
-                }),
-
-                new Paragraph({
-                    text: "First list item",
-                    numbering: { reference: "my-crazy-numberingg", level: 0, instance: 1 },
-                }),
-
-                new Paragraph({
-                    text: "Second list item",
-                    numbering: { reference: "my-crazy-numberingg", level: 0, instance: 1 },
-                }),
-
-                new Paragraph({
-                    text: "New list, starts again at 1",
-                    numbering: { reference: "my-crazy-numberingg", level: 0, instance: 2 },
-                }),
-
-                new Paragraph({
                     text: "Custom Bullet points",
                     heading: HeadingLevel.HEADING_1,
                 }),
