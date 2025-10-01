@@ -241,17 +241,17 @@ const doc = new Document({
 
                 new Paragraph({
                     text: "First list item",
-                    numbering: { reference: "my-numbering", level: 0, instance: 1 },
+                    numbering: { reference: "my-crazy-numberingg", level: 0, instance: 1 },
                 }),
 
                 new Paragraph({
                     text: "Second list item",
-                    numbering: { reference: "my-numbering", level: 0, instance: 1 },
+                    numbering: { reference: "my-crazy-numberingg", level: 0, instance: 1 },
                 }),
 
                 new Paragraph({
                     text: "New list, starts again at 1",
-                    numbering: { reference: "my-numbering", level: 0, instance: 2 },
+                    numbering: { reference: "my-crazy-numberingg", level: 0, instance: 2 },
                 }),
 
                 new Paragraph({
