@@ -2,6 +2,13 @@ import { Element } from "xml-js";
 
 import { createTextElementContents, patchSpaceAttribute } from "./util";
 
+export class TokenNotFoundError extends Error {
+    public constructor(token: string) {
+        super(`Token ${token} not found`);
+        this.name = "TokenNotFoundError";
+    }
+}
+
 export const findRunElementIndexWithToken = (paragraphElement: Element, token: string): number => {
     for (let i = 0; i < (paragraphElement.elements ?? []).length; i++) {
         const element = paragraphElement.elements![i];
@@ -20,7 +27,7 @@ export const findRunElementIndexWithToken = (paragraphElement: Element, token: s
         }
     }
 
-    throw new Error("Token not found");
+    throw new TokenNotFoundError(token);
 };
 
 export const splitRunElement = (runElement: Element, token: string): { readonly left: Element; readonly right: Element } => {
