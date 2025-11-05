@@ -1,4 +1,4 @@
-import { SimpleField } from "../run";
+import { SimpleField } from "../run/simple-field";
 
 // https://learn.microsoft.com/en-us/openspecs/office_standards/ms-oi29500/7088a8ce-e784-49d4-94b8-cba6ef8fce78
 export enum NumberedItemReferenceFormat {
