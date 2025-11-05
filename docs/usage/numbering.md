@@ -87,6 +87,37 @@ new Paragraph({
 }),
 ```
 
+### Numbering options
+
+Along with `reference` and `level`, the `numbering` object supports an optional `instance` property:
+
+| Property  | Type     | Notes                                                                                                                                                                                |
+| --------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| reference | `string` | The numbering style reference, must match a defined config                                                                                                                           |
+| level     | `number` | The list level (0 = top-level, 1 = sub-list, etc.)                                                                                                                                   |
+| instance  | `number` | *(Optional)* Identifies the instance of the list. Lists with the same `instance` (or none) continue numbering across paragraphs. A new `instance` value restarts numbering from `1`. |
+
+Example:
+
+```ts
+new Paragraph({
+    text: "First list item",
+    numbering: { reference: "my-numbering", level: 0, instance: 1 },
+});
+
+new Paragraph({
+    text: "Second list item",
+    numbering: { reference: "my-numbering", level: 0, instance: 1 },
+});
+
+new Paragraph({
+    text: "New list, starts again at 1",
+    numbering: { reference: "my-numbering", level: 0, instance: 2 },
+});
+```
+
+
+
 ## Un-ordered lists / Bullet points
 
 Add a `numbering` section to the `Document` to numbering style, define your levels. Use `LevelFormat.BULLET` for the `format` in `levels`:
