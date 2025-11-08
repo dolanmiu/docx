@@ -4,13 +4,13 @@ import { XmlComponent } from "@file/xml-components";
 import { OffsetAttributes } from "./off-attributes";
 
 export class Offset extends XmlComponent {
-    public constructor() {
+    public constructor(x: number | undefined, y: number | undefined) {
         super("a:off");
 
         this.root.push(
             new OffsetAttributes({
-                x: 0,
-                y: 0,
+                x: x ?? 0,
+                y: y ?? 0,
             }),
         );
     }
