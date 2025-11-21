@@ -4,6 +4,7 @@ import { CoreProperties, IPropertiesOptions } from "./core-properties";
 import { CustomProperties } from "./custom-properties";
 import { HeaderFooterReferenceType, ISectionPropertiesOptions } from "./document/body/section-properties";
 import { DocumentWrapper } from "./document-wrapper";
+import { EndnotesWrapper } from "./endnotes-wrapper";
 import { FileChild } from "./file-child";
 import { FontWrapper } from "./fonts/font-wrapper";
 import { FooterWrapper, IDocumentFooter } from "./footer-wrapper";
@@ -48,6 +49,7 @@ export class File {
     private readonly media: Media;
     private readonly fileRelationships: Relationships;
     private readonly footnotesWrapper: FootnotesWrapper;
+    private readonly endnotesWrapper: EndnotesWrapper;
     private readonly settings: Settings;
     private readonly contentTypes: ContentTypes;
     private readonly customProperties: CustomProperties;
@@ -71,6 +73,7 @@ export class File {
         this.customProperties = new CustomProperties(options.customProperties ?? []);
         this.appProperties = new AppProperties();
         this.footnotesWrapper = new FootnotesWrapper();
+        this.endnotesWrapper = new EndnotesWrapper();
         this.contentTypes = new ContentTypes();
         this.documentWrapper = new DocumentWrapper({ background: options.background });
         this.settings = new Settings({
@@ -115,6 +118,13 @@ export class File {
             // eslint-disable-next-line guard-for-in
             for (const key in options.footnotes) {
                 this.footnotesWrapper.View.createFootNote(parseFloat(key), options.footnotes[key].children);
+            }
+        }
+
+        if (options.endnotes) {
+            // eslint-disable-next-line guard-for-in
+            for (const key in options.endnotes) {
+                this.endnotesWrapper.View.createEndnote(parseFloat(key), options.endnotes[key].children);
             }
         }
 
@@ -236,6 +246,12 @@ export class File {
         this.documentWrapper.Relationships.createRelationship(
             // eslint-disable-next-line functional/immutable-data
             this.currentRelationshipId++,
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/endnotes",
+            "endnotes.xml",
+        );
+        this.documentWrapper.Relationships.createRelationship(
+            // eslint-disable-next-line functional/immutable-data
+            this.currentRelationshipId++,
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/settings",
             "settings.xml",
         );
@@ -293,6 +309,10 @@ export class File {
 
     public get FootNotes(): FootnotesWrapper {
         return this.footnotesWrapper;
+    }
+
+    public get Endnotes(): EndnotesWrapper {
+        return this.endnotesWrapper;
     }
 
     public get Settings(): Settings {
