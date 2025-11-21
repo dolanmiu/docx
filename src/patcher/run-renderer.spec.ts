@@ -93,5 +93,62 @@ describe("run-renderer", () => {
                 text: "",
             });
         });
+
+        it("should handle w:t element with undefined text (branch coverage)", () => {
+            const output = renderParagraphNode({
+                element: {
+                    name: "w:p",
+                    elements: [
+                        {
+                            name: "w:r",
+                            elements: [
+                                {
+                                    name: "w:t",
+                                    elements: [
+                                        {
+                                            type: "text",
+                                            text: undefined, // Undefined text
+                                        },
+                                    ],
+                                },
+                            ],
+                        },
+                    ],
+                },
+                index: 0,
+                parent: undefined,
+            });
+            expect(output.runs[0].text).to.equal("");
+            expect(output.runs[0].parts[0].text).to.equal("");
+        });
+
+        it("should handle w:t element with null text (branch coverage)", () => {
+            const output = renderParagraphNode({
+                element: {
+                    name: "w:p",
+                    elements: [
+                        {
+                            name: "w:r",
+                            elements: [
+                                {
+                                    name: "w:t",
+                                    elements: [
+                                        {
+                                            type: "text",
+                                            // @ts-expect-error Testing null text
+                                            text: null,
+                                        },
+                                    ],
+                                },
+                            ],
+                        },
+                    ],
+                },
+                index: 0,
+                parent: undefined,
+            });
+            expect(output.runs[0].text).to.equal("");
+            expect(output.runs[0].parts[0].text).to.equal("");
+        });
     });
 });

@@ -391,4 +391,18 @@ describe("patch-detector", () => {
             });
         });
     });
+
+    describe("patchDetector with JSZip instance", () => {
+        it("should handle JSZip instance directly (branch coverage)", async () => {
+            const zip = new JSZip();
+            zip.file("word/document.xml", MOCK_XML);
+            zip.file("[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`);
+
+            const output = await patchDetector({
+                data: zip, // Pass JSZip instance directly
+            });
+
+            expect(output).toMatchObject(["name", "paragraph_replace", "table", "image_test", "table_heading_1", "item_1"]);
+        });
+    });
 });

@@ -30,6 +30,7 @@
     -   [Comments](usage/comments.md)
     -   [Footnotes](usage/footnotes.md)
     -   [Fields](usage/fields.md)
+    -   [Content Controls](usage/content-controls.md)
     -   Styling
         -   [Styling with JS](usage/styling-with-js.md)
         -   [Styling with XML](usage/styling-with-xml.md)

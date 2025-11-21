@@ -453,6 +453,61 @@ describe("from-docx", () => {
                 });
                 expect(output).to.not.be.undefined;
             });
+
+            it("should create new relationship file when not found (branch coverage)", async () => {
+                const zip = new JSZip();
+                zip.file("word/document.xml", MOCK_XML);
+                zip.file("[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`);
+                // Note: No word/_rels/document.xml.rels file exists
+
+                vi.spyOn(JSZip, "loadAsync").mockResolvedValue(zip);
+
+                const output = await patchDocument({
+                    outputType: "uint8array",
+                    data: Buffer.from(""),
+                    patches: {
+                        // eslint-disable-next-line @typescript-eslint/naming-convention
+                        image_test: {
+                            type: PatchType.PARAGRAPH,
+                            children: [
+                                new ImageRun({
+                                    type: "png",
+                                    data: Buffer.from(""),
+                                    transformation: { width: 100, height: 100 },
+                                }),
+                            ],
+                        },
+                    },
+                });
+                expect(output).to.not.be.undefined;
+            });
+
+            it("should create new relationship file for hyperlinks when not found", async () => {
+                const zip = new JSZip();
+                zip.file("word/document.xml", MOCK_XML);
+                zip.file("[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`);
+                // Note: No word/_rels/document.xml.rels file exists - will be created for hyperlink
+
+                vi.spyOn(JSZip, "loadAsync").mockResolvedValue(zip);
+
+                const output = await patchDocument({
+                    outputType: "uint8array",
+                    data: Buffer.from(""),
+                    patches: {
+                        name: {
+                            type: PatchType.PARAGRAPH,
+                            children: [
+                                new TextRun("Link: "),
+                                new ExternalHyperlink({
+                                    children: [new TextRun("Click here")],
+                                    link: "https://www.example.com",
+                                }),
+                            ],
+                        },
+                    },
+                });
+                expect(output).to.not.be.undefined;
+            });
         });
 
         describe("document.xml", () => {

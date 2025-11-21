@@ -9,6 +9,7 @@
         "theme": "default",
         "excludePrivate": true,
         "excludeProtected": true,
-        "excludeExternals": false
+        "excludeExternals": false,
+        "highlightLanguages": ["xml", "typescript", "bash"]
     }
 }

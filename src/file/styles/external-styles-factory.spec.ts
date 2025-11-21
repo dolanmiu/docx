@@ -150,6 +150,19 @@ describe("External styles factory", () => {
             );
         });
 
+        it("should handle styles element with no child elements (branch coverage)", () => {
+            const stylesWithNoElements = `
+            <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+            <w:styles xmlns:mc="first" xmlns:r="second">
+            </w:styles>`;
+
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const importedStyle = new ExternalStylesFactory().newInstance(stylesWithNoElements) as any;
+
+            expect(importedStyle.rootKey).to.equal("w:styles");
+            expect(importedStyle.root.length).to.equal(1); // Only root attributes
+        });
+
         it("should parse styles elements", () => {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const importedStyle = new ExternalStylesFactory().newInstance(externalStyles) as any;
