@@ -6,6 +6,7 @@ import { Paragraph, TextRun } from "@file/paragraph";
 
 import { PatchType } from "./from-docx";
 import { replacer } from "./replacer";
+import { traverse } from "./traverser";
 
 export const MOCK_JSON = {
     elements: [
@@ -723,6 +724,72 @@ describe("replacer", () => {
 
             expect(JSON.stringify(element)).not.to.contain("{{empty}}");
             expect(didFindOccurrence).toBe(true);
+        });
+
+        it("should handle multiple replacements in a single run with multiple text elements", () => {
+            // Minimal reproduction of bug where:
+            // 1. A w:r (run) contains multiple w:t (text) elements
+            // 2. First replacement splits the run, creating additional w:t elements
+            // 3. Second replacement must correctly:
+            //    - Find the token in the remaining w:t elements (not get confused by earlier parts)
+            //    - Split at the correct position in the flattened element array
+            const json = {
+                elements: [
+                    {
+                        type: "element",
+                        name: "w:p",
+                        elements: [
+                            {
+                                type: "element",
+                                name: "w:r",
+                                elements: [
+                                    {
+                                        type: "element",
+                                        name: "w:t",
+                                        elements: [{ type: "text", text: "A{{token1}}B" }],
+                                    },
+                                    { type: "element", name: "w:tab" },
+                                    {
+                                        type: "element",
+                                        name: "w:t",
+                                        elements: [{ type: "text", text: "C{{token2}}D" }],
+                                    },
+                                ],
+                            },
+                        ],
+                    },
+                ],
+            };
+
+            // First replacement
+            replacer({
+                json,
+                patch: { type: PatchType.PARAGRAPH, children: [new TextRun("X")] },
+                patchText: "{{token1}}",
+                context: {
+                    file: {} as unknown as File,
+                    viewWrapper: { Relationships: {} } as unknown as IViewWrapper,
+                    stack: [],
+                },
+            });
+
+            // Second replacement - this is where the bug occurred
+            const { didFindOccurrence } = replacer({
+                json,
+                patch: { type: PatchType.PARAGRAPH, children: [new TextRun("Y")] },
+                patchText: "{{token2}}",
+                context: {
+                    file: {} as unknown as File,
+                    viewWrapper: { Relationships: {} } as unknown as IViewWrapper,
+                    stack: [],
+                },
+            });
+
+            expect(didFindOccurrence).toBe(true);
+
+            // Verify the rendered text is correct
+            const paragraphs = traverse(json);
+            expect(paragraphs[0].text).to.equal("AXBCYD");
         });
     });
 });

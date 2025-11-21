@@ -24,11 +24,16 @@ export const findRunElementIndexWithToken = (paragraphElement: Element, token: s
 };
 
 export const splitRunElement = (runElement: Element, token: string): { readonly left: Element; readonly right: Element } => {
-    let splitIndex = 0;
+    let splitIndex = -1;
 
     const splitElements =
         runElement.elements
             ?.map((e, i) => {
+                // Only take the first split we see, don't mutate the rest
+                if (splitIndex !== -1) {
+                    return e;
+                }
+
                 if (e.type === "element" && e.name === "w:t") {
                     const text = (e.elements?.[0]?.text as string) ?? "";
                     const splitText = text.split(token);
@@ -37,7 +42,12 @@ export const splitRunElement = (runElement: Element, token: string): { readonly 
                         ...patchSpaceAttribute(e),
                         elements: createTextElementContents(t),
                     }));
-                    splitIndex = i;
+
+                    // Only set splitIndex if this element actually contains the token
+                    if (splitText.length > 1) {
+                        splitIndex = i;
+                    }
+
                     return newElements;
                 } else {
                     return e;
