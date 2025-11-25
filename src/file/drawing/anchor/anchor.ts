@@ -1,5 +1,5 @@
 // http://officeopenxml.com/drwPicFloating.php
-import { IMediaData, IMediaDataTransformation } from "@file/media";
+import { IExtendedMediaData, IMediaDataTransformation } from "@file/media";
 import { XmlComponent } from "@file/xml-components";
 
 import { IDrawingOptions } from "../drawing";
@@ -43,7 +43,7 @@ export class Anchor extends XmlComponent {
         transform,
         drawingOptions,
     }: {
-        readonly mediaData: IMediaData;
+        readonly mediaData: IExtendedMediaData;
         readonly transform: IMediaDataTransformation;
         readonly drawingOptions: IDrawingOptions;
     }) {
@@ -101,6 +101,6 @@ export class Anchor extends XmlComponent {
 
         this.root.push(new DocProperties(drawingOptions.docProperties));
         this.root.push(createGraphicFrameProperties());
-        this.root.push(new Graphic({ mediaData, transform, outline: drawingOptions.outline }));
+        this.root.push(new Graphic({ mediaData, transform, outline: drawingOptions.outline, solidFill: drawingOptions.solidFill }));
     }
 }
