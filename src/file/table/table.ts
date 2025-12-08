@@ -8,6 +8,7 @@ import { ITableCellSpacingProperties } from "./table-cell-spacing";
 import { ITableBordersOptions, ITableFloatOptions, TableProperties } from "./table-properties";
 import { ITableCellMarginOptions } from "./table-properties/table-cell-margin";
 import { TableLayoutType } from "./table-properties/table-layout";
+import { ITableLookOptions } from "./table-properties/table-look";
 import { TableRow } from "./table-row";
 import { ITableWidthProperties } from "./table-width";
 
@@ -33,6 +34,7 @@ export type ITableOptions = {
     readonly borders?: ITableBordersOptions;
     readonly alignment?: (typeof AlignmentType)[keyof typeof AlignmentType];
     readonly visuallyRightToLeft?: boolean;
+    readonly tableLook?: ITableLookOptions;
     readonly cellSpacing?: ITableCellSpacingProperties;
 };
 
@@ -50,6 +52,7 @@ export class Table extends FileChild {
         borders,
         alignment,
         visuallyRightToLeft,
+        tableLook,
         cellSpacing,
     }: ITableOptions) {
         super("w:tbl");
@@ -65,6 +68,7 @@ export class Table extends FileChild {
                 alignment,
                 cellMargin: margins,
                 visuallyRightToLeft,
+                tableLook,
                 cellSpacing,
             }),
         );

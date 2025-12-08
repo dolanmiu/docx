@@ -344,6 +344,37 @@ const table = new Table({
 });
 ```
 
+### Table Look (Conditional Formatting)
+
+Control which conditional formatting from a table style is applied. Table styles can define special formatting for the first row, first column, etc. Use `tableLook` to toggle these formatting options.
+
+```ts
+const table = new Table({
+    style: "GridTable5Dark-Accent3",
+    tableLook: {
+        firstRow: true,      // Apply first row formatting
+        lastRow: false,      // Don't apply last row formatting
+        firstColumn: true,   // Apply first column formatting
+        lastColumn: false,   // Don't apply last column formatting
+        noHBand: false,      // Apply horizontal banding (row stripes)
+        noVBand: true,       // Don't apply vertical banding (column stripes)
+    },
+});
+```
+
+**Note**: When `tableLook` is not specified at all, Word applies row and column banding by default, but does not apply first/last row/column formatting.
+
+#### Options
+
+| Property     | Type      | Description                                  |
+| ------------ | --------- | -------------------------------------------- |
+| firstRow     | `boolean` | Apply special formatting to first row        |
+| lastRow      | `boolean` | Apply special formatting to last row         |
+| firstColumn  | `boolean` | Apply special formatting to first column     |
+| lastColumn   | `boolean` | Apply special formatting to last column      |
+| noHBand      | `boolean` | Disable horizontal banding (row stripes)     |
+| noVBand      | `boolean` | Disable vertical banding (column stripes)    |
+
 ## Examples
 
 [Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/4-basic-table.ts ':include')
