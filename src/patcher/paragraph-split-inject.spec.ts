@@ -228,8 +228,15 @@ describe("paragraph-split-inject", () => {
                 "*",
             );
 
+            // When the token is not found in the text, splitIndex remains -1
+            // so left gets nothing and right gets all elements
             expect(output).to.deep.equal({
                 left: {
+                    elements: [],
+                    name: "w:r",
+                    type: "element",
+                },
+                right: {
                     elements: [
                         {
                             attributes: {
@@ -240,11 +247,6 @@ describe("paragraph-split-inject", () => {
                             type: "element",
                         },
                     ],
-                    name: "w:r",
-                    type: "element",
-                },
-                right: {
-                    elements: [],
                     name: "w:r",
                     type: "element",
                 },
