@@ -30,11 +30,35 @@ const doc = new File({
     sections: [
         {
             children: [
-                new TableOfContents("Summary", {
-                    hyperlink: true,
-                    headingStyleRange: "1-5",
-                    stylesWithLevels: [new StyleLevel("MySpectacularStyle", 1)],
-                }),
+                new TableOfContents(
+                    "Summary",
+                    {
+                        hyperlink: true,
+                        headingStyleRange: "1-5",
+                        stylesWithLevels: [new StyleLevel("MySpectacularStyle", 1)],
+                    },
+                    [
+                        {
+                            title: "Header #1",
+                            level: 1,
+                            page: 1,
+                        },
+                        {
+                            title: "Header #2",
+                            level: 1,
+                            page: 2,
+                        },
+                        {
+                            title: "Header #2.1",
+                            level: 2,
+                        },
+                        {
+                            title: "My Spectacular Style #1",
+                            level: 1,
+                            page: 3,
+                        },
+                    ],
+                ),
                 new Paragraph({
                     text: "Header #1",
                     heading: HeadingLevel.HEADING_1,
