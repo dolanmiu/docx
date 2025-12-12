@@ -39,6 +39,410 @@ describe("Table of Contents", () => {
             const tree = new Formatter().format(toc);
             expect(tree).to.be.deep.equal(COMPLETE_TOC);
         });
+
+        describe("cached content", () => {
+            it("should construct a TOC with cached content", () => {
+                const cachedContent = [
+                    { title: "Introduction", level: 1, page: 1 },
+                    { title: "Getting Started", level: 2, page: 3 },
+                    { title: "Advanced Topics", level: 2, page: 10 },
+                ];
+
+                const toc = new TableOfContents("Table of Contents", undefined, cachedContent);
+                const tree = new Formatter().format(toc);
+
+                const expectedParagraphs = [
+                    {
+                        "w:p": [
+                            {
+                                "w:pPr": [
+                                    {
+                                        "w:pStyle": {
+                                            _attr: {
+                                                "w:val": "TOC1",
+                                            },
+                                        },
+                                    },
+                                    {
+                                        "w:tabs": [
+                                            {
+                                                "w:tab": {
+                                                    _attr: {
+                                                        "w:val": "clear",
+                                                        "w:pos": 9026,
+                                                    },
+                                                },
+                                            },
+                                            {
+                                                "w:tab": {
+                                                    _attr: {
+                                                        "w:val": "right",
+                                                        "w:pos": 9025,
+                                                        "w:leader": "dot",
+                                                    },
+                                                },
+                                            },
+                                        ],
+                                    },
+                                ],
+                            },
+                            {
+                                "w:r": [
+                                    {
+                                        "w:fldChar": {
+                                            _attr: {
+                                                "w:fldCharType": "begin",
+                                                "w:dirty": true,
+                                            },
+                                        },
+                                    },
+                                    {
+                                        "w:instrText": [
+                                            {
+                                                _attr: {
+                                                    "xml:space": "preserve",
+                                                },
+                                            },
+                                            "TOC",
+                                        ],
+                                    },
+                                    {
+                                        "w:fldChar": {
+                                            _attr: {
+                                                "w:fldCharType": "separate",
+                                            },
+                                        },
+                                    },
+                                ],
+                            },
+                            {
+                                "w:r": [
+                                    {
+                                        "w:t": [
+                                            {
+                                                _attr: {
+                                                    "xml:space": "default",
+                                                },
+                                            },
+                                            "Introduction",
+                                        ],
+                                    },
+                                    {
+                                        "w:tab": {},
+                                    },
+                                    {
+                                        "w:t": [
+                                            {
+                                                _attr: {
+                                                    "xml:space": "default",
+                                                },
+                                            },
+                                            "1",
+                                        ],
+                                    },
+                                ],
+                            },
+                        ],
+                    },
+                    {
+                        "w:p": [
+                            {
+                                "w:pPr": [
+                                    {
+                                        "w:pStyle": {
+                                            _attr: {
+                                                "w:val": "TOC2",
+                                            },
+                                        },
+                                    },
+                                    {
+                                        "w:tabs": [
+                                            {
+                                                "w:tab": {
+                                                    _attr: {
+                                                        "w:val": "clear",
+                                                        "w:pos": 8306,
+                                                    },
+                                                },
+                                            },
+                                            {
+                                                "w:tab": {
+                                                    _attr: {
+                                                        "w:val": "right",
+                                                        "w:pos": 9025,
+                                                        "w:leader": "dot",
+                                                    },
+                                                },
+                                            },
+                                        ],
+                                    },
+                                ],
+                            },
+                            {
+                                "w:r": [
+                                    {
+                                        "w:t": [
+                                            {
+                                                _attr: {
+                                                    "xml:space": "default",
+                                                },
+                                            },
+                                            "Getting Started",
+                                        ],
+                                    },
+                                    {
+                                        "w:tab": {},
+                                    },
+                                    {
+                                        "w:t": [
+                                            {
+                                                _attr: {
+                                                    "xml:space": "default",
+                                                },
+                                            },
+                                            "3",
+                                        ],
+                                    },
+                                ],
+                            },
+                        ],
+                    },
+                    {
+                        "w:p": [
+                            {
+                                "w:pPr": [
+                                    {
+                                        "w:pStyle": {
+                                            _attr: {
+                                                "w:val": "TOC2",
+                                            },
+                                        },
+                                    },
+                                    {
+                                        "w:tabs": [
+                                            {
+                                                "w:tab": {
+                                                    _attr: {
+                                                        "w:val": "clear",
+                                                        "w:pos": 8306,
+                                                    },
+                                                },
+                                            },
+                                            {
+                                                "w:tab": {
+                                                    _attr: {
+                                                        "w:val": "right",
+                                                        "w:pos": 9025,
+                                                        "w:leader": "dot",
+                                                    },
+                                                },
+                                            },
+                                        ],
+                                    },
+                                ],
+                            },
+                            {
+                                "w:r": [
+                                    {
+                                        "w:t": [
+                                            {
+                                                _attr: {
+                                                    "xml:space": "default",
+                                                },
+                                            },
+                                            "Advanced Topics",
+                                        ],
+                                    },
+                                    {
+                                        "w:tab": {},
+                                    },
+                                    {
+                                        "w:t": [
+                                            {
+                                                _attr: {
+                                                    "xml:space": "default",
+                                                },
+                                            },
+                                            "10",
+                                        ],
+                                    },
+                                ],
+                            },
+                            {
+                                "w:r": [
+                                    {
+                                        "w:fldChar": {
+                                            _attr: {
+                                                "w:fldCharType": "end",
+                                            },
+                                        },
+                                    },
+                                ],
+                            },
+                        ],
+                    },
+                ];
+
+                const expectedTree = {
+                    "w:sdt": [
+                        {
+                            "w:sdtPr": [
+                                {
+                                    "w:alias": {
+                                        _attr: {
+                                            "w:val": "Table of Contents",
+                                        },
+                                    },
+                                },
+                            ],
+                        },
+                        {
+                            "w:sdtContent": expectedParagraphs,
+                        },
+                    ],
+                };
+                expect(tree).to.be.deep.equal(expectedTree);
+            });
+
+            it("should fill in an end paragraph if only one cached entry is provided", () => {
+                const cachedContent = [{ title: "Only Entry", level: 1, page: 1 }];
+                const toc = new TableOfContents("Table of Contents", undefined, cachedContent);
+                const tree = new Formatter().format(toc);
+
+                const expectedParagraphs = [
+                    // cached entry paragraph
+                    {
+                        "w:p": [
+                            {
+                                "w:pPr": [
+                                    {
+                                        "w:pStyle": {
+                                            _attr: {
+                                                "w:val": "TOC1",
+                                            },
+                                        },
+                                    },
+                                    {
+                                        "w:tabs": [
+                                            {
+                                                "w:tab": {
+                                                    _attr: {
+                                                        "w:val": "clear",
+                                                        "w:pos": 9026,
+                                                    },
+                                                },
+                                            },
+                                            {
+                                                "w:tab": {
+                                                    _attr: {
+                                                        "w:val": "right",
+                                                        "w:pos": 9025,
+                                                        "w:leader": "dot",
+                                                    },
+                                                },
+                                            },
+                                        ],
+                                    },
+                                ],
+                            },
+                            {
+                                "w:r": [
+                                    {
+                                        "w:fldChar": {
+                                            _attr: {
+                                                "w:fldCharType": "begin",
+                                                "w:dirty": true,
+                                            },
+                                        },
+                                    },
+                                    {
+                                        "w:instrText": [
+                                            {
+                                                _attr: {
+                                                    "xml:space": "preserve",
+                                                },
+                                            },
+                                            "TOC",
+                                        ],
+                                    },
+                                    {
+                                        "w:fldChar": {
+                                            _attr: {
+                                                "w:fldCharType": "separate",
+                                            },
+                                        },
+                                    },
+                                ],
+                            },
+                            {
+                                "w:r": [
+                                    {
+                                        "w:t": [
+                                            {
+                                                _attr: {
+                                                    "xml:space": "default",
+                                                },
+                                            },
+                                            "Only Entry",
+                                        ],
+                                    },
+                                    {
+                                        "w:tab": {},
+                                    },
+                                    {
+                                        "w:t": [
+                                            {
+                                                _attr: {
+                                                    "xml:space": "default",
+                                                },
+                                            },
+                                            "1",
+                                        ],
+                                    },
+                                ],
+                            },
+                        ],
+                    },
+
+                    // End paragraph
+                    {
+                        "w:p": [
+                            {
+                                "w:r": [
+                                    {
+                                        "w:fldChar": {
+                                            _attr: {
+                                                "w:fldCharType": "end",
+                                            },
+                                        },
+                                    },
+                                ],
+                            },
+                        ],
+                    },
+                ];
+
+                const expectedTree = {
+                    "w:sdt": [
+                        {
+                            "w:sdtPr": [
+                                {
+                                    "w:alias": {
+                                        _attr: {
+                                            "w:val": "Table of Contents",
+                                        },
+                                    },
+                                },
+                            ],
+                        },
+                        {
+                            "w:sdtContent": expectedParagraphs,
+                        },
+                    ],
+                };
+                expect(tree).to.be.deep.equal(expectedTree);
+            });
+        });
     });
 });
 
