@@ -32,7 +32,6 @@ type SvgMediaOptions = {
 export type IImageOptions = (RegularImageOptions | SvgMediaOptions) & CoreImageOptions;
 
 const convertDataURIToBinary = (dataURI: string): Uint8Array => {
-    if (typeof atob === "function") {
         // https://gist.github.com/borismus/1032746
         // https://github.com/mafintosh/base64-to-uint8array
         const BASE64_MARKER = ";base64,";
@@ -45,13 +44,6 @@ const convertDataURIToBinary = (dataURI: string): Uint8Array => {
                 .split("")
                 .map((c) => c.charCodeAt(0)),
         );
-        /* c8 ignore next 6 */
-    } else {
-        // Not possible to test this branch in NodeJS
-        // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
-        const b = require("buf" + "fer");
-        return new b.Buffer(dataURI, "base64");
-    }
 };
 
 const standardizeData = (data: string | Buffer | Uint8Array | ArrayBuffer): Buffer | Uint8Array | ArrayBuffer =>
