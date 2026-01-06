@@ -194,3 +194,5 @@ jobs:
             - uses: "./.github/actions/validate-docx"
             - run: npm run run-ts -- ./demo/84-positional-tabs.ts
             - uses: "./.github/actions/validate-docx"
+            - run: npm run run-ts -- ./demo/97-table-look.ts
+            - uses: "./.github/actions/validate-docx"

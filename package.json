@@ -1,6 +1,6 @@
 {
     "name": "@ddloop/docx",
-    "version": "0.9.0",
+    "version": "0.9.1",
     "description": "Easily generate .docx files with JS/TS with a nice declarative API. Works for Node and on the Browser.",
     "type": "module",
     "main": "dist/index.umd.cjs",

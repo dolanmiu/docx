@@ -1,5 +1,5 @@
 // Example of using tableLook to control conditional table formatting
-import { Document, Packer, Paragraph, Table, TableCell, TableRow, TextRun, WidthType } from "docx";
+import { Document, Packer, Paragraph, Table, TableCell, TableRow, TextRun, WidthType } from "@ddloop/docx";
 import * as fs from "fs";
 
 const styles = fs.readFileSync("./demo/assets/custom-styles.xml", "utf-8");
