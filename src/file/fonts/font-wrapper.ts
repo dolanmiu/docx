@@ -17,13 +17,13 @@ export class FontWrapper implements IViewWrapper {
         this.fontTable = createFontTable(this.fontOptionsWithKey);
         this.relationships = new Relationships();
 
-        for (let i = 0; i < options.length; i++) {
+        options.forEach((option, i) => {
             this.relationships.createRelationship(
                 i + 1,
                 "http://schemas.openxmlformats.org/officeDocument/2006/relationships/font",
-                `fonts/${options[i].name}.odttf`,
+                `fonts/${option.name}.odttf`,
             );
-        }
+        });
     }
 
     public get View(): XmlComponent {

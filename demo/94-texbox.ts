@@ -1,5 +1,5 @@
 // Simple example to add textbox to a document
-import { Document, Packer, Paragraph, Textbox, TextRun } from "docx";
+import { Document, Packer, Paragraph, Textbox, TextRun } from "@ddloop/docx";
 import * as fs from "fs";
 
 const doc = new Document({

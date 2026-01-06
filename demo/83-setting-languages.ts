@@ -1,7 +1,7 @@
 // Simple example to add text to a document
 
 import * as fs from "fs";
-import { Document, Packer, Paragraph } from "docx";
+import { Document, Packer, Paragraph } from "@ddloop/docx";
 
 const doc = new Document({
     styles: {

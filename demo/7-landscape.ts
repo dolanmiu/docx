@@ -1,7 +1,7 @@
 // Example of how to set the document to landscape
 
 import * as fs from "fs";
-import { Document, Packer, PageOrientation, Paragraph } from "docx";
+import { Document, Packer, PageOrientation, Paragraph } from "@ddloop/docx";
 
 const doc = new Document({
     sections: [

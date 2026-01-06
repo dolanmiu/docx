@@ -1,7 +1,7 @@
 // This demo shows right to left for special languages
 
 import * as fs from "fs";
-import { Document, Packer, Paragraph, Table, TableCell, TableRow, TextRun } from "docx";
+import { Document, Packer, Paragraph, Table, TableCell, TableRow, TextRun } from "@ddloop/docx";
 
 const doc = new Document({
     sections: [

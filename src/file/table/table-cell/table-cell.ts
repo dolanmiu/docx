@@ -22,7 +22,7 @@ export class TableCell extends XmlComponent {
 
     public prepForXml(context: IContext): IXmlableObject | undefined {
         // Cells must end with a paragraph
-        if (!(this.root[this.root.length - 1] instanceof Paragraph)) {
+        if (!(this.root.at(-1) instanceof Paragraph)) {
             this.root.push(new Paragraph({}));
         }
         return super.prepForXml(context);

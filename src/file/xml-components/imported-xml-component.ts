@@ -17,7 +17,7 @@ export const convertToXmlComponent = (element: XmlElement): ImportedXmlComponent
             // eslint-disable-next-line no-case-declarations
             const xmlComponent = new ImportedXmlComponent(element.name as string, element.attributes);
             // eslint-disable-next-line no-case-declarations
-            const childElements = element.elements || [];
+            const childElements = element.elements ?? [];
             for (const childElm of childElements) {
                 const child = convertToXmlComponent(childElm);
                 if (child !== undefined) {

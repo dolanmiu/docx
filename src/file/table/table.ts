@@ -95,7 +95,7 @@ export class Table extends FileChild {
                     });
                     rows[rowIndex + 1].addCellToColumnIndex(continueCell, columnIndex);
                 }
-                columnIndex += cell.options.columnSpan || 1;
+                columnIndex += cell.options.columnSpan ?? 1;
             });
         });
     }

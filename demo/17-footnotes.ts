@@ -1,7 +1,7 @@
 // Footnotes
 
 import * as fs from "fs";
-import { Document, FootnoteReferenceRun, Packer, Paragraph, TextRun } from "docx";
+import { Document, FootnoteReferenceRun, Packer, Paragraph, TextRun } from "@ddloop/docx";
 
 const doc = new Document({
     footnotes: {

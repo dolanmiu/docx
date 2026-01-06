@@ -95,11 +95,11 @@ export class DefaultStylesFactory {
                     },
                     ...options.strong,
                 }),
-                new ListParagraph(options.listParagraph || {}),
-                new HyperlinkStyle(options.hyperlink || {}),
-                new FootnoteReferenceStyle(options.footnoteReference || {}),
-                new FootnoteText(options.footnoteText || {}),
-                new FootnoteTextChar(options.footnoteTextChar || {}),
+                new ListParagraph(options.listParagraph ?? {}),
+                new HyperlinkStyle(options.hyperlink ?? {}),
+                new FootnoteReferenceStyle(options.footnoteReference ?? {}),
+                new FootnoteText(options.footnoteText ?? {}),
+                new FootnoteTextChar(options.footnoteTextChar ?? {}),
             ],
         };
     }

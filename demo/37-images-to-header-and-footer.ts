@@ -1,7 +1,7 @@
 // Add images to header and footer
 
 import * as fs from "fs";
-import { Document, Header, ImageRun, Packer, Paragraph } from "docx";
+import { Document, Header, ImageRun, Packer, Paragraph } from "@ddloop/docx";
 
 const doc = new Document({
     sections: [

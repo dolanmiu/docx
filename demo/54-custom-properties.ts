@@ -4,7 +4,7 @@
 // and subject) cover typical use cases, but sometimes custom properties are required.
 
 import * as fs from "fs";
-import { Document, Packer } from "docx";
+import { Document, Packer } from "@ddloop/docx";
 
 const doc = new Document(
     // Standard properties

@@ -1,7 +1,18 @@
 // This demo shows how to create bookmarks then link to them with internal hyperlinks
 
 import * as fs from "fs";
-import { Bookmark, Document, Footer, HeadingLevel, InternalHyperlink, Packer, PageBreak, Paragraph, TextRun, PageReference } from "docx";
+import {
+    Bookmark,
+    Document,
+    Footer,
+    HeadingLevel,
+    InternalHyperlink,
+    Packer,
+    PageBreak,
+    Paragraph,
+    TextRun,
+    PageReference,
+} from "@ddloop/docx";
 
 const LOREM_IPSUM =
     /* cspell:disable-next-line */

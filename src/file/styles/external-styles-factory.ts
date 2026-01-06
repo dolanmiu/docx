@@ -32,7 +32,7 @@ export class ExternalStylesFactory {
         const xmlObj = xml2js(xmlData, { compact: false }) as XMLElement;
 
         let stylesXmlElement: XMLElement | undefined;
-        for (const xmlElm of xmlObj.elements || []) {
+        for (const xmlElm of xmlObj.elements ?? []) {
             if (xmlElm.name === "w:styles") {
                 stylesXmlElement = xmlElm;
             }
@@ -41,7 +41,7 @@ export class ExternalStylesFactory {
             throw new Error("can not find styles element");
         }
 
-        const stylesElements = stylesXmlElement.elements || [];
+        const stylesElements = stylesXmlElement.elements ?? [];
 
         const importedStyle = new Styles({
             initialStyles: new ImportedRootElementAttributes(stylesXmlElement.attributes),

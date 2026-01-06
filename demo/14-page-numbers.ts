@@ -1,7 +1,7 @@
 // Page numbers
 
 import * as fs from "fs";
-import { AlignmentType, Document, Footer, Header, Packer, PageBreak, PageNumber, Paragraph, TextRun } from "docx";
+import { AlignmentType, Document, Footer, Header, Packer, PageBreak, PageNumber, Paragraph, TextRun } from "@ddloop/docx";
 
 const doc = new Document({
     sections: [

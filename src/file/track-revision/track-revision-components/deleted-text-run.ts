@@ -68,9 +68,7 @@ class DeletedTextRunWrapper extends XmlComponent {
         }
 
         if (options.break) {
-            for (let i = 0; i < options.break; i++) {
-                this.root.splice(1, 0, new Break());
-            }
+            this.root.splice(1, 0, ...Array.from({ length: options.break }, () => new Break()));
         }
     }
 }

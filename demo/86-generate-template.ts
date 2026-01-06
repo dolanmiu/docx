@@ -1,7 +1,7 @@
 // Generate a template document
 
 import * as fs from "fs";
-import { Document, Packer, Paragraph, TextRun } from "docx";
+import { Document, Packer, Paragraph, TextRun } from "@ddloop/docx";
 
 const doc = new Document({
     sections: [

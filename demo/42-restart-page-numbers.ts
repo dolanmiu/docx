@@ -1,7 +1,7 @@
 // Page numbers - Start from 0 on a new section
 
 import * as fs from "fs";
-import { AlignmentType, Document, Header, Packer, PageBreak, PageNumber, PageNumberSeparator, Paragraph, TextRun } from "docx";
+import { AlignmentType, Document, Header, Packer, PageBreak, PageNumber, PageNumberSeparator, Paragraph, TextRun } from "@ddloop/docx";
 
 const doc = new Document({
     sections: [

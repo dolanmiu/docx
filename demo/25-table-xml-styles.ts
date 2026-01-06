@@ -1,7 +1,7 @@
 // Example of how you would create a table and add data to it
 
 import * as fs from "fs";
-import { Document, Packer, Paragraph, Table, TableCell, TableRow, WidthType } from "docx";
+import { Document, Packer, Paragraph, Table, TableCell, TableRow, WidthType } from "@ddloop/docx";
 
 const styles = fs.readFileSync("./demo/assets/custom-styles.xml", "utf-8");
 

@@ -23,7 +23,7 @@ import {
     TextRun,
     MathLimitLower,
     MathLimitUpper,
-} from "docx";
+} from "@ddloop/docx";
 
 const doc = new Document({
     sections: [

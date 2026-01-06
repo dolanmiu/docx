@@ -1,7 +1,7 @@
 // Highlighting text
 
 import * as fs from "fs";
-import { AlignmentType, Document, Header, Packer, Paragraph, TextRun } from "docx";
+import { AlignmentType, Document, Header, Packer, Paragraph, TextRun } from "@ddloop/docx";
 
 const doc = new Document({
     sections: [

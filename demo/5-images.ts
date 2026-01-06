@@ -11,7 +11,7 @@ import {
     Paragraph,
     VerticalPositionAlign,
     VerticalPositionRelativeFrom,
-} from "docx";
+} from "@ddloop/docx";
 
 const doc = new Document({
     sections: [

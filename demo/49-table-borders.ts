@@ -13,7 +13,7 @@ import {
     TableRow,
     TextDirection,
     VerticalAlignTable,
-} from "docx";
+} from "@ddloop/docx";
 
 const table = new Table({
     rows: [

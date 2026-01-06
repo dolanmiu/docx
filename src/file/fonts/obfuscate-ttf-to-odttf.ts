@@ -1,3 +1,15 @@
+/**
+ * ODTTF (Obfuscated Document TTF) font obfuscation for OOXML embedding.
+ *
+ * Office Open XML uses a simple XOR-based obfuscation when embedding fonts
+ * to discourage casual extraction. This is NOT encryption—just obfuscation.
+ *
+ * Algorithm
+ * 1. Extract 16-byte key from GUID (remove hyphens, parse hex pairs, reverse)
+ * 2. XOR the first 32 bytes of the font with the key (cycling through 16 bytes)
+ * 3. Leave remaining bytes unchanged
+ */
+
 const obfuscatedStartOffset = 0;
 const obfuscatedEndOffset = 32;
 const guidSize = 32;

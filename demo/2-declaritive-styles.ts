@@ -1,7 +1,17 @@
 // Example on how to customize the look at feel using Styles
 
 import * as fs from "fs";
-import { AlignmentType, convertInchesToTwip, Document, HeadingLevel, LevelFormat, Packer, Paragraph, TextRun, UnderlineType } from "docx";
+import {
+    AlignmentType,
+    convertInchesToTwip,
+    Document,
+    HeadingLevel,
+    LevelFormat,
+    Packer,
+    Paragraph,
+    TextRun,
+    UnderlineType,
+} from "@ddloop/docx";
 
 const doc = new Document({
     creator: "Clippy",

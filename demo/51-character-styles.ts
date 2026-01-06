@@ -1,7 +1,7 @@
 // Custom character styles using JavaScript configuration
 
 import * as fs from "fs";
-import { Document, Packer, Paragraph, TextRun } from "docx";
+import { Document, Packer, Paragraph, TextRun } from "@ddloop/docx";
 
 const doc = new Document({
     styles: {

@@ -55,8 +55,6 @@ export class NumberedItemReference extends SimpleField {
         const { hyperlink = true, referenceFormat = NumberedItemReferenceFormat.FULL_CONTEXT } = options;
         const baseInstruction = `REF ${bookmarkId}`;
 
-        // TODO: Requires TypeScript 5.5 update for it to understand `filter`
-        // @ts-expect-error TS2322
         const switches: readonly Switch[] = [...(hyperlink ? (["\\h"] as const) : []), ...[SWITCH_MAP[referenceFormat]].filter((a) => !!a)];
 
         const instruction = `${baseInstruction} ${switches.join(" ")}`;

@@ -1027,6 +1027,12 @@ describe("ImageRun", () => {
         });
 
         it("should strip base64 marker", () => {
+            // Mock Buffer as undefined to test browser/Cloudflare path
+            const originalBuffer = global.Buffer;
+            // @ts-expect-error - Mocking Buffer as undefined
+            // eslint-disable-next-line functional/immutable-data
+            global.Buffer = undefined;
+
             const spy = vi.spyOn(global, "atob").mockReturnValue("atob result");
 
             new ImageRun({
@@ -1040,6 +1046,10 @@ describe("ImageRun", () => {
             });
 
             expect(spy).toBeCalledWith("");
+
+            // Restore Buffer
+            // eslint-disable-next-line functional/immutable-data
+            global.Buffer = originalBuffer;
         });
 
         it("should work with svgs", () => {

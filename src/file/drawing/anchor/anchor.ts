@@ -61,10 +61,10 @@ export class Anchor extends XmlComponent {
 
         this.root.push(
             new AnchorAttributes({
-                distT: floating.margins ? floating.margins.top || 0 : 0,
-                distB: floating.margins ? floating.margins.bottom || 0 : 0,
-                distL: floating.margins ? floating.margins.left || 0 : 0,
-                distR: floating.margins ? floating.margins.right || 0 : 0,
+                distT: floating.margins?.top ?? 0,
+                distB: floating.margins?.bottom ?? 0,
+                distL: floating.margins?.left ?? 0,
+                distR: floating.margins?.right ?? 0,
                 simplePos: "0", // note: word doesn't fully support - so we use 0
                 allowOverlap: floating.allowOverlap === true ? "1" : "0",
                 behindDoc: floating.behindDocument === true ? "1" : "0",

@@ -1,7 +1,7 @@
 // Sections with multiple columns
 
 import * as fs from "fs";
-import { Document, Packer, Paragraph } from "docx";
+import { Document, Packer, Paragraph } from "@ddloop/docx";
 
 const doc = new Document({
     sections: [

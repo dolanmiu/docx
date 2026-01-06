@@ -1,7 +1,7 @@
 // Section with 2 columns including a column break
 
 import * as fs from "fs";
-import { Document, Packer, Paragraph, ColumnBreak, TextRun } from "docx";
+import { Document, Packer, Paragraph, ColumnBreak, TextRun } from "@ddloop/docx";
 
 const doc = new Document({
     sections: [

@@ -108,7 +108,6 @@ const goToElementFromPath = (json: Element, path: readonly number[]): Element =>
     return element;
 };
 
-const goToParentElementFromPath = (json: Element, path: readonly number[]): Element =>
-    goToElementFromPath(json, path.slice(0, path.length - 1));
+const goToParentElementFromPath = (json: Element, path: readonly number[]): Element => goToElementFromPath(json, path.slice(0, -1));
 
-const getLastElementIndexFromPath = (path: readonly number[]): number => path[path.length - 1];
+const getLastElementIndexFromPath = (path: readonly number[]): number => path.at(-1)!;

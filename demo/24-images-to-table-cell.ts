@@ -1,7 +1,7 @@
 // Add image to table cell
 
 import * as fs from "fs";
-import { Document, ImageRun, Packer, Paragraph, Table, TableCell, TableRow } from "docx";
+import { Document, ImageRun, Packer, Paragraph, Table, TableCell, TableRow } from "@ddloop/docx";
 
 const doc = new Document({
     sections: [

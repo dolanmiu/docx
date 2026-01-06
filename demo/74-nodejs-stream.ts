@@ -1,7 +1,7 @@
 // Exporting the document as a stream
 
 import * as fs from "fs";
-import { Document, Packer, Paragraph, Tab, TextRun } from "docx";
+import { Document, Packer, Paragraph, Tab, TextRun } from "@ddloop/docx";
 
 const doc = new Document({
     sections: [

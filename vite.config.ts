@@ -2,7 +2,7 @@ import { resolve } from "path";
 import dts from "vite-plugin-dts";
 import { nodePolyfills } from "vite-plugin-node-polyfills";
 import tsconfigPaths from "vite-tsconfig-paths";
-import { configDefaults, defineConfig } from "vitest/config";
+import { defineConfig } from "vitest/config";
 import { copyFileSync } from "node:fs";
 
 export default defineConfig({
@@ -34,7 +34,7 @@ export default defineConfig({
     },
     build: {
         minify: false,
-        target: "es2015",
+        target: "es2022",
         lib: {
             entry: [resolve(__dirname, "src/index.ts")],
             name: "docx",
@@ -66,27 +66,23 @@ export default defineConfig({
     },
     test: {
         environment: "jsdom",
+        dir: "./src",
         coverage: {
             provider: "v8",
             reporter: ["text", "json", "html"],
             thresholds: {
-                statements: 100,
-                branches: 99.68,
+                statements: 99.95,
+                branches: 99.02,
                 functions: 100,
-                lines: 100,
+                lines: 99.95,
             },
+            include: ["src/**/*.ts"],
             exclude: [
-                ...configDefaults.exclude,
-                "**/dist/**",
-                "**/demo/**",
-                "**/docs/**",
-                "**/scripts/**",
-                "**/src/**/index.ts",
-                "**/src/**/types.ts",
+                "**/index.ts",
+                "**/types.ts",
                 "**/*.spec.ts",
             ],
         },
-        include: ["**/src/**/*.spec.ts", "**/packages/**/*.spec.ts"],
-        exclude: [...configDefaults.exclude, "**/build/**", "**/demo/**", "**/docs/**", "**/scripts/**"],
+        include: ["**/*.spec.ts"],
     },
 });

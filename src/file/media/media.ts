@@ -19,6 +19,7 @@ export class Media {
     }
 
     public addImage(key: string, mediaData: IMediaData): void {
+        // eslint-disable-next-line functional/immutable-data
         this.map.set(key, mediaData);
     }
 

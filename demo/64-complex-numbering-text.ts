@@ -1,7 +1,7 @@
 // Numbered lists - With complex number text
 
 import * as fs from "fs";
-import { Document, Packer, Paragraph, LevelFormat } from "docx";
+import { Document, Packer, Paragraph, LevelFormat } from "@ddloop/docx";
 
 const doc = new Document({
     numbering: {

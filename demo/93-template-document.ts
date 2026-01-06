@@ -1,7 +1,7 @@
 // Patch a document with patches
 
 import * as fs from "fs";
-import { patchDocument, PatchType, TextRun } from "docx";
+import { patchDocument, PatchType, TextRun } from "@ddloop/docx";
 
 patchDocument({
     outputType: "nodebuffer",

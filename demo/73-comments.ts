@@ -1,7 +1,7 @@
 // Simple example to add comments to a document
 
 import * as fs from "fs";
-import { Document, Packer, Paragraph, TextRun, CommentRangeStart, CommentRangeEnd, CommentReference, ImageRun } from "docx";
+import { Document, Packer, Paragraph, TextRun, CommentRangeStart, CommentRangeEnd, CommentReference, ImageRun } from "@ddloop/docx";
 
 const doc = new Document({
     comments: {

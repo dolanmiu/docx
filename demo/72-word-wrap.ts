@@ -1,7 +1,7 @@
 // Example on how to preserve word wrap text. Works with all languages.
 
 import * as fs from "fs";
-import { Document, Packer, Paragraph, TextRun } from "docx";
+import { Document, Packer, Paragraph, TextRun } from "@ddloop/docx";
 
 const doc = new Document({
     sections: [

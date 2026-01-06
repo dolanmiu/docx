@@ -1,7 +1,7 @@
 // Move + offset header and footer
 
 import * as fs from "fs";
-import { Document, Footer, Header, Packer, PageBreak, Paragraph, TextRun } from "docx";
+import { Document, Footer, Header, Packer, PageBreak, Paragraph, TextRun } from "@ddloop/docx";
 
 const doc = new Document({
     evenAndOddHeaderAndFooters: true,

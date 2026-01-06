@@ -1,7 +1,7 @@
 // Add custom borders to table cell
 
 import * as fs from "fs";
-import { BorderStyle, Document, Packer, Paragraph, Table, TableCell, TableRow } from "docx";
+import { BorderStyle, Document, Packer, Paragraph, Table, TableCell, TableRow } from "@ddloop/docx";
 
 const doc = new Document({
     sections: [

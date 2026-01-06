@@ -1,7 +1,7 @@
 // Scaling images
 
 import * as fs from "fs";
-import { Document, ImageRun, Packer, Paragraph } from "docx";
+import { Document, ImageRun, Packer, Paragraph } from "@ddloop/docx";
 
 const doc = new Document({
     sections: [

@@ -113,9 +113,7 @@ export class Run extends XmlComponent {
         this.root.push(this.properties);
 
         if (options.break) {
-            for (let i = 0; i < options.break; i++) {
-                this.root.push(new Break());
-            }
+            this.root.push(...Array.from({ length: options.break }, () => new Break()));
         }
 
         if (options.children) {

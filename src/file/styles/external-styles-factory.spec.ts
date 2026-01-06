@@ -150,6 +150,15 @@ describe("External styles factory", () => {
             );
         });
 
+        it("should handle styles element with no child elements", () => {
+            const emptyStyles = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"></w:styles>`;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const importedStyle = new ExternalStylesFactory().newInstance(emptyStyles) as any;
+
+            // Should have initialStyles attribute but no other children
+            expect(importedStyle.root.length).to.equal(1);
+        });
+
         it("should parse styles elements", () => {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const importedStyle = new ExternalStylesFactory().newInstance(externalStyles) as any;

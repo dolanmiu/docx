@@ -1,7 +1,7 @@
 // Simple example to add text to a document
 
 import * as fs from "fs";
-import { Document, Packer, Paragraph, Tab, TextRun } from "docx";
+import { Document, Packer, Paragraph, Tab, TextRun } from "@ddloop/docx";
 
 const font = fs.readFileSync("./demo/assets/Pacifico.ttf");
 

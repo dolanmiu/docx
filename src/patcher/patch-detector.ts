@@ -19,6 +19,7 @@ export const patchDetector = async ({ data }: PatchDetectorOptions): Promise<rea
         }
         if (key.startsWith("word/") && !key.endsWith(".xml.rels")) {
             const json = toJson(await value.async("text"));
+            // eslint-disable-next-line functional/immutable-data
             traverse(json).forEach((p) => findPatchKeys(p.text).forEach((patch) => patches.add(patch)));
         }
     }

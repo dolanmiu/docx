@@ -14,7 +14,7 @@ import {
     TableLayoutType,
     TableRow,
     WidthType,
-} from "docx";
+} from "@ddloop/docx";
 
 const table = new Table({
     rows: [

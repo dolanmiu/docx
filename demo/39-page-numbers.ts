@@ -1,7 +1,7 @@
 // Example how to display page numbers
 
 import * as fs from "fs";
-import { AlignmentType, Document, Footer, Header, Packer, PageBreak, PageNumber, NumberFormat, Paragraph, TextRun } from "docx";
+import { AlignmentType, Document, Footer, Header, Packer, PageBreak, PageNumber, NumberFormat, Paragraph, TextRun } from "@ddloop/docx";
 
 const doc = new Document({
     sections: [

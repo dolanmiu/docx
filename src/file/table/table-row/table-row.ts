@@ -44,7 +44,7 @@ export class TableRow extends XmlComponent {
         // Offset because properties is also in root.
         for (let rootIdx = 1; rootIdx < rootIndex; rootIdx++) {
             const cell = this.root[rootIdx] as TableCell;
-            colIdx += cell.options.columnSpan || 1;
+            colIdx += cell.options.columnSpan ?? 1;
         }
         return colIdx;
     }
@@ -69,7 +69,7 @@ export class TableRow extends XmlComponent {
             }
             const cell = this.root[rootIdx] as TableCell;
             rootIdx += 1;
-            colIdx += (cell && cell.options.columnSpan) || 1;
+            colIdx += cell?.options.columnSpan ?? 1;
         }
         return rootIdx - 1;
     }

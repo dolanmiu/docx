@@ -3,24 +3,26 @@ import { Element } from "xml-js";
 import { createTextElementContents, patchSpaceAttribute } from "./util";
 
 export const findRunElementIndexWithToken = (paragraphElement: Element, token: string): number => {
-    for (let i = 0; i < (paragraphElement.elements ?? []).length; i++) {
-        const element = paragraphElement.elements![i];
+    const index = (paragraphElement.elements ?? []).findIndex((element) => {
         if (element.type === "element" && element.name === "w:r") {
             const textElement = (element.elements ?? []).filter((e) => e.type === "element" && e.name === "w:t");
 
-            for (const text of textElement) {
+            return textElement.some((text) => {
                 if (!text.elements?.[0]) {
-                    continue;
+                    return false;
                 }
 
-                if ((text.elements[0].text as string)?.includes(token)) {
-                    return i;
-                }
-            }
+                return (text.elements[0].text as string)?.includes(token);
+            });
         }
+        return false;
+    });
+
+    if (index === -1) {
+        throw new Error("Token not found");
     }
 
-    throw new Error("Token not found");
+    return index;
 };
 
 export const splitRunElement = (runElement: Element, token: string): { readonly left: Element; readonly right: Element } => {

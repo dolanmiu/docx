@@ -14,7 +14,7 @@ import {
     TextDirection,
     TextRun,
     VerticalAlignTable,
-} from "docx";
+} from "@ddloop/docx";
 
 patchDocument({
     outputType: "nodebuffer",

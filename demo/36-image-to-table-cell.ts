@@ -1,7 +1,7 @@
 // Add image to table cell in a header and body
 
 import * as fs from "fs";
-import { Document, Header, ImageRun, Packer, Paragraph, Table, TableCell, TableRow } from "docx";
+import { Document, Header, ImageRun, Packer, Paragraph, Table, TableCell, TableRow } from "@ddloop/docx";
 
 const table = new Table({
     rows: [

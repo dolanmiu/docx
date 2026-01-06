@@ -26,14 +26,12 @@ export class Footnote extends XmlComponent {
             }),
         );
 
-        for (let i = 0; i < options.children.length; i++) {
-            const child = options.children[i];
-
+        options.children.forEach((child, i) => {
             if (i === 0) {
                 child.addRunToFront(new FootnoteRefRun());
             }
 
             this.root.push(child);
-        }
+        });
     }
 }

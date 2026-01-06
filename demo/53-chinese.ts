@@ -6,7 +6,7 @@
 // Note that if the OS have not install `KaiTi` font, this demo doesn't work.
 
 import * as fs from "fs";
-import { Document, HeadingLevel, Packer, Paragraph, TextRun } from "docx";
+import { Document, HeadingLevel, Packer, Paragraph, TextRun } from "@ddloop/docx";
 
 const doc = new Document({
     styles: {

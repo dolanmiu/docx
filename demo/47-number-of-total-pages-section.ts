@@ -1,7 +1,7 @@
 // Multiple sections with total number of pages in each section
 
 import * as fs from "fs";
-import { AlignmentType, Document, Footer, Header, Packer, PageBreak, PageNumber, NumberFormat, Paragraph, TextRun } from "docx";
+import { AlignmentType, Document, Footer, Header, Packer, PageBreak, PageNumber, NumberFormat, Paragraph, TextRun } from "@ddloop/docx";
 
 const header = new Header({
     children: [

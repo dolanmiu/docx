@@ -1,7 +1,7 @@
 // Patch a document with patches
 
 import * as fs from "fs";
-import { IPatch, patchDocument, PatchType, TextRun } from "docx";
+import { IPatch, patchDocument, PatchType, TextRun } from "@ddloop/docx";
 
 export const font = "Trebuchet MS";
 export const getPatches = (fields: { [key: string]: string }) => {

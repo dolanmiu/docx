@@ -1,7 +1,7 @@
 // Example of using headers and footers in a new section
 
 import * as fs from "fs";
-import { Document, Footer, Header, Packer, Paragraph, TextRun } from "docx";
+import { Document, Footer, Header, Packer, Paragraph, TextRun } from "@ddloop/docx";
 
 const doc = new Document({
     creator: "Creator",

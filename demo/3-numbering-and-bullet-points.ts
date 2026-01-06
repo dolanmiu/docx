@@ -1,7 +1,7 @@
 // Numbering and bullet points example
 
 import * as fs from "fs";
-import { AlignmentType, convertInchesToTwip, Document, Footer, Header, HeadingLevel, LevelFormat, Packer, Paragraph } from "docx";
+import { AlignmentType, convertInchesToTwip, Document, Footer, Header, HeadingLevel, LevelFormat, Packer, Paragraph } from "@ddloop/docx";
 
 const doc = new Document({
     numbering: {

@@ -1,5 +1,4 @@
 import eslint from "@eslint/js";
-import type { Linter } from "eslint";
 import importPlugin from "eslint-plugin-import";
 import unicorn from "eslint-plugin-unicorn";
 import jsdoc from "eslint-plugin-jsdoc";
@@ -8,7 +7,7 @@ import functional from "eslint-plugin-functional";
 import globals from "globals";
 import tsEslint from "typescript-eslint";
 
-const config: Linter.Config<Linter.RulesRecord>[] = [
+const config = tsEslint.config(
     {
         ignores: ["**/vite.config.ts", "**/dist/**", "**/coverage/**", "**/*.js", "eslint.config.ts", "**/demo/**", "**/scripts/**"],
     },
@@ -349,7 +348,6 @@ const config: Linter.Config<Linter.RulesRecord>[] = [
             parserOptions: {
                 projectService: true,
                 tsconfigRootDir: import.meta.dirname,
-                project: ["tsconfig.json"],
             },
         },
         rules: {
@@ -365,6 +363,6 @@ const config: Linter.Config<Linter.RulesRecord>[] = [
             ],
         },
     },
-];
+);
 
 export default config;

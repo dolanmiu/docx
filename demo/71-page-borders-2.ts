@@ -1,6 +1,6 @@
 // Example demonstrating page borders with style, colors and size
 
-import { BorderStyle, Document, Packer, PageBorderDisplay, PageBorderOffsetFrom, PageBorderZOrder, Paragraph, TextRun } from "docx";
+import { BorderStyle, Document, Packer, PageBorderDisplay, PageBorderOffsetFrom, PageBorderZOrder, Paragraph, TextRun } from "@ddloop/docx";
 import * as fs from "fs";
 
 const doc = new Document({

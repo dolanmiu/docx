@@ -7,6 +7,6 @@ export const createMathLimitLocation = ({ value }: MathLimitLocationOptions): Xm
     new BuilderElement<Required<MathLimitLocationOptions>>({
         name: "m:limLoc",
         attributes: {
-            value: { key: "m:val", value: value || "undOvr" },
+            value: { key: "m:val", value: value ?? "undOvr" },
         },
     });

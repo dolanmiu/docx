@@ -1,7 +1,7 @@
 // Shading text
 
 import * as fs from "fs";
-import { AlignmentType, Document, Header, Packer, Paragraph, ShadingType, TextRun } from "docx";
+import { AlignmentType, Document, Header, Packer, Paragraph, ShadingType, TextRun } from "@ddloop/docx";
 
 const doc = new Document({
     sections: [

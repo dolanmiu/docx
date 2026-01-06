@@ -1,7 +1,7 @@
 // Multiple sections and headers
 
 import * as fs from "fs";
-import { Document, Footer, Header, Packer, PageNumber, NumberFormat, PageOrientation, Paragraph, TextRun } from "docx";
+import { Document, Footer, Header, Packer, PageNumber, NumberFormat, PageOrientation, Paragraph, TextRun } from "@ddloop/docx";
 
 const doc = new Document({
     sections: [

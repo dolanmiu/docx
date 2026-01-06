@@ -1,8 +1,8 @@
 // Example of how to "wrap" text around an image
 
 import * as fs from "fs";
-// import { Document, Packer, Paragraph } from "docx";
-import { Document, ImageRun, Packer, Paragraph, TextWrappingSide, TextWrappingType } from "docx";
+// import { Document, Packer, Paragraph } from "@ddloop/docx";
+import { Document, ImageRun, Packer, Paragraph, TextWrappingSide, TextWrappingType } from "@ddloop/docx";
 
 const doc = new Document({
     sections: [

@@ -13,7 +13,7 @@ import {
     TextDirection,
     TextRun,
     WidthType,
-} from "docx";
+} from "@ddloop/docx";
 
 interface StockPrice {
     readonly date: Date;

@@ -1,7 +1,7 @@
 // Export to base64 string - Useful in a browser environment.
 
 import * as fs from "fs";
-import { Document, Packer, Paragraph, Tab, TextRun } from "docx";
+import { Document, Packer, Paragraph, Tab, TextRun } from "@ddloop/docx";
 
 const doc = new Document({
     sections: [

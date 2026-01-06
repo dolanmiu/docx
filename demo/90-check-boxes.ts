@@ -1,6 +1,6 @@
 // Simple example to add check boxes to a document
 import * as fs from "fs";
-import { Document, Packer, Paragraph, TextRun, CheckBox } from "docx";
+import { Document, Packer, Paragraph, TextRun, CheckBox } from "@ddloop/docx";
 
 const doc = new Document({
     sections: [

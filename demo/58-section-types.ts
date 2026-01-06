@@ -1,7 +1,7 @@
 // Usage of different Section Types
 
 import * as fs from "fs";
-import { Document, Packer, Paragraph, TextRun, SectionType } from "docx";
+import { Document, Packer, Paragraph, TextRun, SectionType } from "@ddloop/docx";
 
 const doc = new Document({
     sections: [

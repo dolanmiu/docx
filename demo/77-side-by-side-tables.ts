@@ -1,7 +1,7 @@
 // Exporting the document as a stream
 
 import * as fs from "fs";
-import { Document, Packer, Paragraph, Table, TableBorders, TableCell, TableRow, WidthType } from "docx";
+import { Document, Packer, Paragraph, Table, TableBorders, TableCell, TableRow, WidthType } from "@ddloop/docx";
 
 const table1 = new Table({
     columnWidths: [3505, 5505],

@@ -1,7 +1,7 @@
 // Numbered lists - Add parent number in sub number
 
 import * as fs from "fs";
-import { AlignmentType, convertInchesToTwip, Document, HeadingLevel, LevelFormat, Packer, Paragraph } from "docx";
+import { AlignmentType, convertInchesToTwip, Document, HeadingLevel, LevelFormat, Packer, Paragraph } from "@ddloop/docx";
 
 const doc = new Document({
     numbering: {

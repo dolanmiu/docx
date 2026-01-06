@@ -1,7 +1,7 @@
 // Example of making content of section vertically aligned
 
 import * as fs from "fs";
-import { Document, Packer, Paragraph, VerticalAlignSection, TextRun, Tab } from "docx";
+import { Document, Packer, Paragraph, VerticalAlignSection, TextRun, Tab } from "@ddloop/docx";
 
 const doc = new Document({
     sections: [

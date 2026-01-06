@@ -1,7 +1,7 @@
 // Japanese text - Need to use a Japanese font
 
 import * as fs from "fs";
-import { Document, HeadingLevel, Packer, Paragraph } from "docx";
+import { Document, HeadingLevel, Packer, Paragraph } from "@ddloop/docx";
 
 const doc = new Document({
     styles: {
