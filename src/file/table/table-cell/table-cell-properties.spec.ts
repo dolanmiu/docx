@@ -109,5 +109,21 @@ describe("TableCellProperties", () => {
                 ],
             });
         });
+
+        it("sets cellIns to track cell insertion", () => {
+            const cellProperties = new TableCellProperties({ insertion: { id: 1, author: "Firstname Lastname", date: "123" } });
+            const tree = new Formatter().format(cellProperties);
+            expect(tree).to.deep.equal({
+                "w:tcPr": [{ "w:cellIns": { _attr: { "w:id": 1, "w:author": "Firstname Lastname", "w:date": "123" } } }],
+            });
+        });
+
+        it("sets cellDel to track cell deletion", () => {
+            const cellProperties = new TableCellProperties({ deletion: { id: 1, author: "Firstname Lastname", date: "123" } });
+            const tree = new Formatter().format(cellProperties);
+            expect(tree).to.deep.equal({
+                "w:tcPr": [{ "w:cellDel": { _attr: { "w:id": 1, "w:author": "Firstname Lastname", "w:date": "123" } } }],
+            });
+        });
     });
 });

@@ -1,3 +1,5 @@
+import { DeletedTableCell, InsertedTableCell } from "@file/track-revision";
+import { IChangedAttributesProperties } from "@file/track-revision/track-revision";
 import { TableVerticalAlign, VerticalAlignElement } from "@file/vertical-align";
 import { IgnoreIfEmptyXmlComponent } from "@file/xml-components";
 
@@ -24,6 +26,8 @@ export type ITableCellPropertiesOptions = {
     readonly columnSpan?: number;
     readonly rowSpan?: number;
     readonly borders?: ITableCellBorders;
+    readonly insertion?: IChangedAttributesProperties;
+    readonly deletion?: IChangedAttributesProperties;
 };
 
 export class TableCellProperties extends IgnoreIfEmptyXmlComponent {
@@ -63,6 +67,14 @@ export class TableCellProperties extends IgnoreIfEmptyXmlComponent {
 
         if (options.verticalAlign) {
             this.root.push(new VerticalAlignElement(options.verticalAlign));
+        }
+
+        if (options.insertion) {
+            this.root.push(new InsertedTableCell(options.insertion));
+        }
+
+        if (options.deletion) {
+            this.root.push(new DeletedTableCell(options.deletion));
         }
     }
 }
