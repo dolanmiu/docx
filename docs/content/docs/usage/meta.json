@@ -1,0 +1,25 @@
+{
+  "title": "Usage",
+  "pages": [
+    "document",
+    "sections",
+    "paragraph",
+    "text",
+    "images",
+    "text-box",
+    "headers-and-footers",
+    "bullet-points",
+    "hyperlinks",
+    "numbering",
+    "tables",
+    "tabs",
+    "table-of-contents",
+    "page-numbers",
+    "change-tracking",
+    "math",
+    "comments",
+    "footnotes",
+    "fields",
+    "styling"
+  ]
+}

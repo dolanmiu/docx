@@ -9,7 +9,7 @@ import tsEslint from "typescript-eslint";
 
 const config = tsEslint.config(
     {
-        ignores: ["**/vite.config.ts", "**/dist/**", "**/coverage/**", "**/*.js", "eslint.config.ts", "**/demo/**", "**/scripts/**"],
+        ignores: ["**/vite.config.ts", "**/dist/**", "**/coverage/**", "**/*.js", "eslint.config.ts", "**/demo/**", "**/scripts/**", "**/docs/**"],
     },
     eslint.configs.recommended,
     importPlugin.flatConfigs.recommended,

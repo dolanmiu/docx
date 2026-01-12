@@ -18,8 +18,11 @@
         "dcmitype",
         "dcterms",
         "docsify",
+        "fumadocs",
+        "fuma",
         "dolan",
         "execa",
+        "customise",
         "falsey",
         "horz",
         "iife",
@@ -63,7 +66,7 @@
         "/<attribute name=\"[a-z]+\"/gi",
         "/key: \".+\"/"
     ],
-    "ignorePaths": ["package.json", "docs/api", "*.docx", "build"],
+    "ignorePaths": ["package.json", "docs/api", "*.docx", "build","*node_modules*"],
     "allowCompoundWords": true,
     // flagWords - list of words to be always considered incorrect
     // This is useful for offensive words and common spelling errors.

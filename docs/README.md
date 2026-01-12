@@ -1,67 +1,47 @@
-# Welcome
+# fuma-docs
 
-## Installation
+This is a Next.js application generated with
+[Create Fumadocs](https://github.com/fuma-nama/fumadocs).
 
-```terminal
-npm install --save docx
+It is a Next.js app with [Static Export](https://nextjs.org/docs/app/guides/static-exports) configured.
+
+Run development server:
+
+```bash
+npm run dev
+# or
+pnpm dev
+# or
+yarn dev
 ```
 
-Then you can `require` or `import` as usual:
+Open http://localhost:3000 with your browser to see the result.
 
-```ts
-const docx = require("docx");
-```
+## Explore
 
-```ts
-import * as docx from "docx";
-// or
-import { ... } from "docx";
-```
+In the project, you can see:
 
-## Basic Usage
+- `lib/source.ts`: Code for content source adapter, [`loader()`](https://fumadocs.dev/docs/headless/source-api) provides the interface to access your content.
+- `lib/layout.shared.tsx`: Shared options for layouts, optional but preferred to keep.
 
-```ts
-import * as fs from "fs";
-import { Document, Packer, Paragraph, TextRun } from "docx";
+| Route                     | Description                                            |
+| ------------------------- | ------------------------------------------------------ |
+| `app/(home)`              | The route group for your landing page and other pages. |
+| `app/docs`                | The documentation layout and pages.                    |
+| `app/api/search/route.ts` | The Route Handler for search.                          |
 
-// Documents contain sections, you can have multiple sections per document, go here to learn more about sections
-// This simple example will only contain one section
-const doc = new Document({
-    sections: [
-        {
-            properties: {},
-            children: [
-                new Paragraph({
-                    children: [
-                        new TextRun("Hello World"),
-                        new TextRun({
-                            text: "Foo Bar",
-                            bold: true,
-                        }),
-                        new TextRun({
-                            text: "\tGithub is the best",
-                            bold: true,
-                        }),
-                    ],
-                }),
-            ],
-        },
-    ],
-});
+### Fumadocs MDX
 
-// Used to export the file into a .docx file
-Packer.toBuffer(doc).then((buffer) => {
-    fs.writeFileSync("My Document.docx", buffer);
-});
+A `source.config.ts` config file has been included, you can customise different options like frontmatter schema.
 
-// Done! A file called 'My Document.docx' will be in your file system.
-```
+Read the [Introduction](https://fumadocs.dev/docs/mdx) for further details.
 
-<p align="center">
-<!-- cspell:disable-next-line -->
-    <img alt="clippy the assistant" src="./clippy.png">
-</p>
+## Learn More
 
----
+To learn more about Next.js and Fumadocs, take a look at the following
+resources:
 
-Made with 💖
+- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js
+  features and API.
+- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- [Fumadocs](https://fumadocs.dev) - learn about Fumadocs

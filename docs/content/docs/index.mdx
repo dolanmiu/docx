@@ -1,0 +1,67 @@
+---
+title: Get Started
+description: Getting started with docx
+---
+
+## Installation
+
+```npm
+npm install @ddloop/docx
+```
+
+Then you can `import` as usual:
+
+
+```ts
+import * as docx from "@ddloop/docx";
+// or
+import { ... } from "@ddloop/docx";
+```
+
+## Basic Usage
+
+```ts
+import * as fs from "fs";
+import { Document, Packer, Paragraph, TextRun } from "@ddloop/docx";
+
+// Documents contain sections, you can have multiple sections per document, go here to learn more about sections
+// This simple example will only contain one section
+const doc = new Document({
+    sections: [
+        {
+            properties: {},
+            children: [
+                new Paragraph({
+                    children: [
+                        new TextRun("Hello World"),
+                        new TextRun({
+                            text: "Foo Bar",
+                            bold: true,
+                        }),
+                        new TextRun({
+                            text: "\tGithub is the best",
+                            bold: true,
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
+});
+
+// Used to export the file into a .docx file
+Packer.toBuffer(doc).then((buffer) => {
+    fs.writeFileSync("My Document.docx", buffer);
+});
+
+// Done! A file called 'My Document.docx' will be in your file system.
+```
+
+
+![clippy the assistant](clippy.png)
+
+
+
+## A Fork
+
+This is a fork of the excellent docxjs library by [dolanmiu](https://github.com/dolanmiu)
