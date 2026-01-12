@@ -23,6 +23,22 @@ describe("TableRowProperties", () => {
             expect(tree).to.deep.equal({ "w:trPr": [{ "w:cantSplit": {} }] });
         });
 
+        it("sets ins to track row insertion", () => {
+            const rowProperties = new TableRowProperties({ insertion: { id: 1, author: "Firstname Lastname", date: "123" } });
+            const tree = new Formatter().format(rowProperties);
+            expect(tree).to.deep.equal({
+                "w:trPr": [{ "w:ins": { _attr: { "w:id": 1, "w:author": "Firstname Lastname", "w:date": "123" } } }],
+            });
+        });
+
+        it("sets del to track row deletion", () => {
+            const rowProperties = new TableRowProperties({ deletion: { id: 1, author: "Firstname Lastname", date: "123" } });
+            const tree = new Formatter().format(rowProperties);
+            expect(tree).to.deep.equal({
+                "w:trPr": [{ "w:del": { _attr: { "w:id": 1, "w:author": "Firstname Lastname", "w:date": "123" } } }],
+            });
+        });
+
         it("sets row as table header (repeat row on each page of table)", () => {
             const rowProperties = new TableRowProperties({ tableHeader: true });
             const tree = new Formatter().format(rowProperties);

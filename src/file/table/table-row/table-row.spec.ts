@@ -80,6 +80,64 @@ describe("TableRow", () => {
             });
         });
 
+        it("should create with inserted revision", () => {
+            const tableRow = new TableRow({
+                children: [],
+                insertion: {
+                    id: 1,
+                    author: "Firstname Lastname",
+                    date: "123",
+                },
+            });
+            const tree = new Formatter().format(tableRow);
+            expect(tree).to.deep.equal({
+                "w:tr": [
+                    {
+                        "w:trPr": [
+                            {
+                                "w:ins": {
+                                    _attr: {
+                                        "w:author": "Firstname Lastname",
+                                        "w:date": "123",
+                                        "w:id": 1,
+                                    },
+                                },
+                            },
+                        ],
+                    },
+                ],
+            });
+        });
+
+        it("should create with deleted revision", () => {
+            const tableRow = new TableRow({
+                children: [],
+                deletion: {
+                    id: 1,
+                    author: "Firstname Lastname",
+                    date: "123",
+                },
+            });
+            const tree = new Formatter().format(tableRow);
+            expect(tree).to.deep.equal({
+                "w:tr": [
+                    {
+                        "w:trPr": [
+                            {
+                                "w:del": {
+                                    _attr: {
+                                        "w:author": "Firstname Lastname",
+                                        "w:date": "123",
+                                        "w:id": 1,
+                                    },
+                                },
+                            },
+                        ],
+                    },
+                ],
+            });
+        });
+
         it("should set row height", () => {
             const tableRow = new TableRow({
                 children: [],

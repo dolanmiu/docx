@@ -27,6 +27,8 @@
 //         </xsd:extension>
 //     </xsd:complexContent>
 // </xsd:complexType>
+import { DeletedTableRow, InsertedTableRow } from "@file/track-revision";
+import { IChangedAttributesProperties } from "@file/track-revision/track-revision";
 import { IgnoreIfEmptyXmlComponent, OnOffElement } from "@file/xml-components";
 import { PositiveUniversalMeasure } from "@util/values";
 
@@ -41,6 +43,8 @@ export type ITableRowPropertiesOptions = {
         readonly rule: (typeof HeightRule)[keyof typeof HeightRule];
     };
     readonly cellSpacing?: ITableCellSpacingProperties;
+    readonly insertion?: IChangedAttributesProperties;
+    readonly deletion?: IChangedAttributesProperties;
 };
 
 export class TableRowProperties extends IgnoreIfEmptyXmlComponent {
@@ -61,6 +65,14 @@ export class TableRowProperties extends IgnoreIfEmptyXmlComponent {
 
         if (options.cellSpacing) {
             this.root.push(new TableCellSpacingElement(options.cellSpacing));
+        }
+
+        if (options.insertion) {
+            this.root.push(new InsertedTableRow(options.insertion));
+        }
+
+        if (options.deletion) {
+            this.root.push(new DeletedTableRow(options.deletion));
         }
     }
 }
