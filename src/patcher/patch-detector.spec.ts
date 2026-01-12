@@ -337,6 +337,42 @@ const MOCK_XML_2 = `
 `;
 // cspell:enable
 
+// Test the findPatchKeys regex logic directly
+// eslint-disable-next-line functional/prefer-readonly-type
+const testFindPatchKeys = (text: string, delimiters: { start: string; end: string }): readonly string[] => {
+    const { start, end } = delimiters;
+    const escapedStart = start.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const escapedEnd = end.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const pattern = new RegExp(`(?<=${escapedStart}).+?(?=${escapedEnd})`, "gs");
+    return text.match(pattern) ?? [];
+};
+
+describe("findPatchKeys regex", () => {
+    it("should find tokens with default delimiters", () => {
+        const text = "Hello {{name}}, welcome to {{company}}!";
+        const result = testFindPatchKeys(text, { start: "{{", end: "}}" });
+        expect(result).toEqual(["name", "company"]);
+    });
+
+    it("should find tokens with custom delimiters", () => {
+        const text = "Hello <<name>>, welcome to <<company>>!";
+        const result = testFindPatchKeys(text, { start: "<<", end: ">>" });
+        expect(result).toEqual(["name", "company"]);
+    });
+
+    it("should handle special regex characters in delimiters", () => {
+        const text = "Hello [name], welcome to [company]!";
+        const result = testFindPatchKeys(text, { start: "[", end: "]" });
+        expect(result).toEqual(["name", "company"]);
+    });
+
+    it("should find multiple tokens", () => {
+        const text = "{{first}} {{second}} {{third}}";
+        const result = testFindPatchKeys(text, { start: "{{", end: "}}" });
+        expect(result).toEqual(["first", "second", "third"]);
+    });
+});
+
 describe("patch-detector", () => {
     describe("patchDetector", () => {
         describe("document.xml and [Content_Types].xml", () => {
@@ -389,6 +425,57 @@ describe("patch-detector", () => {
                 });
                 expect(output).toMatchObject(["school_name", "address"]);
             });
+        });
+    });
+
+    describe("patchDetector with custom delimiters", () => {
+        const MOCK_XML_CUSTOM = `
+<w:body>
+    <w:p>
+        <w:r>
+            <w:t>Hello &lt;&lt;name&gt;&gt;, welcome to &lt;&lt;company&gt;&gt;!</w:t>
+        </w:r>
+    </w:p>
+    <w:p>
+        <w:r>
+            <w:t>&lt;&lt;greeting&gt;&gt;</w:t>
+        </w:r>
+    </w:p>
+</w:body>
+        `;
+
+        beforeEach(() => {
+            vi.spyOn(JSZip, "loadAsync").mockReturnValue(
+                new Promise<JSZip>((resolve) => {
+                    const zip = new JSZip();
+
+                    zip.file("word/document.xml", MOCK_XML_CUSTOM);
+                    zip.file("[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`);
+                    resolve(zip);
+                }),
+            );
+        });
+
+        afterEach(() => {
+            vi.restoreAllMocks();
+        });
+
+        it("should detect placeholders with custom delimiters", async () => {
+            const output = await patchDetector({
+                data: Buffer.from(""),
+                placeholderDelimiters: {
+                    start: "<<",
+                    end: ">>",
+                },
+            });
+            expect(output).toMatchObject(["name", "company", "greeting"]);
+        });
+
+        it("should not detect placeholders when using default delimiters on custom delimiter document", async () => {
+            const output = await patchDetector({
+                data: Buffer.from(""),
+            });
+            expect(output).toMatchObject([]);
         });
     });
 });
