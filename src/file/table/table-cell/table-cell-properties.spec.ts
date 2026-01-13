@@ -125,5 +125,34 @@ describe("TableCellProperties", () => {
                 "w:tcPr": [{ "w:cellDel": { _attr: { "w:id": 1, "w:author": "Firstname Lastname", "w:date": "123" } } }],
             });
         });
+
+        it("should add a revision property", () => {
+            const cellProperties = new TableCellProperties({
+                revision: {
+                    id: 1,
+                    author: "Firstname Lastname",
+                    date: "123",
+                },
+            });
+            const tree = new Formatter().format(cellProperties);
+            expect(tree).to.deep.equal({
+                "w:tcPr": [
+                    {
+                        "w:tcPrChange": [
+                            {
+                                _attr: {
+                                    "w:author": "Firstname Lastname",
+                                    "w:date": "123",
+                                    "w:id": 1,
+                                },
+                            },
+                            {
+                                "w:tcPr": {},
+                            },
+                        ],
+                    },
+                ],
+            });
+        });
     });
 });
