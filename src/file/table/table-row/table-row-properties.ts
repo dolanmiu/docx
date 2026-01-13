@@ -27,15 +27,24 @@
 //         </xsd:extension>
 //     </xsd:complexContent>
 // </xsd:complexType>
+// <xsd:complexType name="CT_TrPrChange">
+//     <xsd:complexContent>
+//         <xsd:extension base="CT_TrackChange">
+//             <xsd:sequence>
+//                 <xsd:element name="trPr" type="CT_TrPrBase" minOccurs="1"/>
+//             </xsd:sequence>
+//         </xsd:extension>
+//     </xsd:complexContent>
+// </xsd:complexType>
 import { DeletedTableRow, InsertedTableRow } from "@file/track-revision";
-import { IChangedAttributesProperties } from "@file/track-revision/track-revision";
-import { IgnoreIfEmptyXmlComponent, OnOffElement } from "@file/xml-components";
+import { ChangeAttributes, IChangedAttributesProperties } from "@file/track-revision/track-revision";
+import { IgnoreIfEmptyXmlComponent, OnOffElement, XmlComponent } from "@file/xml-components";
 import { PositiveUniversalMeasure } from "@util/values";
 
 import { HeightRule, TableRowHeight } from "./table-row-height";
 import { ITableCellSpacingProperties, TableCellSpacingElement } from "../table-cell-spacing";
 
-export type ITableRowPropertiesOptions = {
+export type ITableRowPropertiesOptionsBase = {
     readonly cantSplit?: boolean;
     readonly tableHeader?: boolean;
     readonly height?: {
@@ -43,9 +52,15 @@ export type ITableRowPropertiesOptions = {
         readonly rule: (typeof HeightRule)[keyof typeof HeightRule];
     };
     readonly cellSpacing?: ITableCellSpacingProperties;
+};
+
+export type ITableRowPropertiesOptions = ITableRowPropertiesOptionsBase & {
     readonly insertion?: IChangedAttributesProperties;
     readonly deletion?: IChangedAttributesProperties;
+    readonly revision?: ITableRowPropertiesChangeOptions;
 };
+
+export type ITableRowPropertiesChangeOptions = ITableRowPropertiesOptionsBase & IChangedAttributesProperties;
 
 export class TableRowProperties extends IgnoreIfEmptyXmlComponent {
     public constructor(options: ITableRowPropertiesOptions) {
@@ -74,5 +89,23 @@ export class TableRowProperties extends IgnoreIfEmptyXmlComponent {
         if (options.deletion) {
             this.root.push(new DeletedTableRow(options.deletion));
         }
+
+        if (options.revision) {
+            this.root.push(new TableRowPropertiesChange(options.revision));
+        }
+    }
+}
+
+export class TableRowPropertiesChange extends XmlComponent {
+    public constructor(options: ITableRowPropertiesChangeOptions) {
+        super("w:trPrChange");
+        this.root.push(
+            new ChangeAttributes({
+                id: options.id,
+                author: options.author,
+                date: options.date,
+            }),
+        );
+        this.root.push(new TableRowProperties(options));
     }
 }

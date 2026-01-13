@@ -90,5 +90,34 @@ describe("TableRowProperties", () => {
                 "w:trPr": [{ "w:tblCellSpacing": { _attr: { "w:type": "dxa", "w:w": 1234 } } }],
             });
         });
+
+        it("should add a revision property", () => {
+            const rowProperties = new TableRowProperties({
+                revision: {
+                    id: 1,
+                    author: "Firstname Lastname",
+                    date: "123",
+                },
+            });
+            const tree = new Formatter().format(rowProperties);
+            expect(tree).to.deep.equal({
+                "w:trPr": [
+                    {
+                        "w:trPrChange": [
+                            {
+                                _attr: {
+                                    "w:author": "Firstname Lastname",
+                                    "w:date": "123",
+                                    "w:id": 1,
+                                },
+                            },
+                            {
+                                "w:trPr": {},
+                            },
+                        ],
+                    },
+                ],
+            });
+        });
     });
 });

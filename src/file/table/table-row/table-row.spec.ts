@@ -7,6 +7,7 @@ import { EMPTY_OBJECT } from "@file/xml-components";
 
 import { TableCell } from "../table-cell";
 import { TableRow } from "./table-row";
+import { CellSpacingType } from "../table-cell-spacing";
 
 describe("TableRow", () => {
     describe("#constructor", () => {
@@ -131,6 +132,113 @@ describe("TableRow", () => {
                                         "w:id": 1,
                                     },
                                 },
+                            },
+                        ],
+                    },
+                ],
+            });
+        });
+
+        it("should create with properties revision", () => {
+            const run = new TableRow({
+                children: [],
+                cantSplit: false,
+                tableHeader: false,
+                height: {
+                    value: 200,
+                    rule: HeightRule.EXACT,
+                },
+                cellSpacing: {
+                    value: 100,
+                    type: CellSpacingType.DXA,
+                },
+                revision: {
+                    id: 1,
+                    author: "Firstname Lastname",
+                    date: "123",
+                    cantSplit: true,
+                    tableHeader: true,
+                    height: {
+                        value: 100,
+                        rule: HeightRule.EXACT,
+                    },
+                    cellSpacing: {
+                        value: 60,
+                        type: CellSpacingType.DXA,
+                    },
+                },
+            });
+            const tree = new Formatter().format(run);
+            expect(tree).to.deep.equal({
+                "w:tr": [
+                    {
+                        "w:trPr": [
+                            {
+                                "w:cantSplit": {
+                                    _attr: {
+                                        "w:val": false,
+                                    },
+                                },
+                            },
+                            {
+                                "w:tblHeader": {
+                                    _attr: {
+                                        "w:val": false,
+                                    },
+                                },
+                            },
+                            {
+                                "w:trHeight": {
+                                    _attr: {
+                                        "w:hRule": "exact",
+                                        "w:val": 200,
+                                    },
+                                },
+                            },
+                            {
+                                "w:tblCellSpacing": {
+                                    _attr: {
+                                        "w:type": "dxa",
+                                        "w:w": 100,
+                                    },
+                                },
+                            },
+                            {
+                                "w:trPrChange": [
+                                    {
+                                        _attr: {
+                                            "w:author": "Firstname Lastname",
+                                            "w:date": "123",
+                                            "w:id": 1,
+                                        },
+                                    },
+                                    {
+                                        "w:trPr": [
+                                            {
+                                                "w:cantSplit": {},
+                                            },
+                                            {
+                                                "w:tblHeader": {},
+                                            },
+                                            {
+                                                "w:trHeight": {
+                                                    _attr: {
+                                                        "w:hRule": "exact",
+                                                        "w:val": 100,
+                                                    },
+                                                },
+                                            },
+                                            {
+                                                "w:tblCellSpacing": {
+                                                    _attr: {
+                                                        "w:type": "dxa",
+                                                        "w:w": 60,
+                                                    },
+                                                },
+                                            },
+                                        ],
+                                    },
+                                ],
                             },
                         ],
                     },
