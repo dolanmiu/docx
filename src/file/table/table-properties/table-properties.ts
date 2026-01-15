@@ -21,7 +21,17 @@
 //         <xsd:element name="tblDescription" type="CT_String" minOccurs="0" maxOccurs="1"/>
 //     </xsd:sequence>
 // </xsd:complexType>
-import { IgnoreIfEmptyXmlComponent, OnOffElement, StringValueElement } from "@file/xml-components";
+// <xsd:complexType name="CT_TblPrChange">
+//     <xsd:complexContent>
+//         <xsd:extension base="CT_TrackChange">
+//             <xsd:sequence>
+//                 <xsd:element name="tblPr" type="CT_TblPrBase"/>
+//             </xsd:sequence>
+//         </xsd:extension>
+//     </xsd:complexContent>
+// </xsd:complexType>
+import { ChangeAttributes, IChangedAttributesProperties } from "@file/track-revision/track-revision";
+import { IgnoreIfEmptyXmlComponent, OnOffElement, StringValueElement, XmlComponent } from "@file/xml-components";
 
 import { Alignment, AlignmentType } from "../../paragraph";
 import { IShadingAttributesProperties, Shading } from "../../shading";
@@ -32,7 +42,7 @@ import { ITableFloatOptions, TableFloatProperties } from "./table-float-properti
 import { TableLayout, TableLayoutType } from "./table-layout";
 import { ITableCellSpacingProperties, TableCellSpacingElement } from "../table-cell-spacing";
 
-export type ITablePropertiesOptions = {
+export type ITablePropertiesOptionsBase = {
     readonly width?: ITableWidthProperties;
     readonly indent?: ITableWidthProperties;
     readonly layout?: (typeof TableLayoutType)[keyof typeof TableLayoutType];
@@ -45,6 +55,12 @@ export type ITablePropertiesOptions = {
     readonly visuallyRightToLeft?: boolean;
     readonly cellSpacing?: ITableCellSpacingProperties;
 };
+
+export type ITablePropertiesChangeOptions = ITablePropertiesOptions & IChangedAttributesProperties;
+
+export type ITablePropertiesOptions = {
+    readonly revision?: ITablePropertiesChangeOptions;
+} & ITablePropertiesOptionsBase;
 
 export class TableProperties extends IgnoreIfEmptyXmlComponent {
     public constructor(options: ITablePropertiesOptions) {
@@ -93,5 +109,23 @@ export class TableProperties extends IgnoreIfEmptyXmlComponent {
         if (options.cellSpacing) {
             this.root.push(new TableCellSpacingElement(options.cellSpacing));
         }
+
+        if (options.revision) {
+            this.root.push(new TablePropertiesChange(options.revision));
+        }
+    }
+}
+
+class TablePropertiesChange extends XmlComponent {
+    public constructor(options: ITablePropertiesChangeOptions) {
+        super("w:tblPrChange");
+        this.root.push(
+            new ChangeAttributes({
+                id: options.id,
+                author: options.author,
+                date: options.date,
+            }),
+        );
+        this.root.push(new TableProperties(options));
     }
 }

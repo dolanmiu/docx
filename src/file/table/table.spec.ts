@@ -325,6 +325,57 @@ describe("Table", () => {
                 ],
             });
         });
+
+        it("creates a table with properties revision", () => {
+            const run = new Table({
+                rows: [
+                    new TableRow({
+                        children: [
+                            new TableCell({
+                                children: [new Paragraph("hello")],
+                            }),
+                        ],
+                    }),
+                ],
+                alignment: AlignmentType.CENTER,
+                revision: {
+                    id: 1,
+                    author: "Firstname Lastname",
+                    date: "123",
+                    alignment: AlignmentType.RIGHT,
+                },
+            });
+            const tree = new Formatter().format(run);
+            expect(tree["w:tbl"][0]).to.deep.equal({
+                "w:tblPr": [
+                    WIDTHS,
+                    { "w:jc": { _attr: { "w:val": "center" } } },
+                    BORDERS,
+                    {
+                        "w:tblPrChange": [
+                            {
+                                _attr: {
+                                    "w:author": "Firstname Lastname",
+                                    "w:date": "123",
+                                    "w:id": 1,
+                                },
+                            },
+                            {
+                                "w:tblPr": [
+                                    {
+                                        "w:jc": {
+                                            _attr: {
+                                                "w:val": "right",
+                                            },
+                                        },
+                                    },
+                                ],
+                            },
+                        ],
+                    },
+                ],
+            });
+        });
     });
 
     describe("Cell", () => {
