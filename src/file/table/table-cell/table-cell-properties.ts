@@ -49,7 +49,7 @@
 //         </xsd:extension>
 //     </xsd:complexContent>
 // </xsd:complexType>
-import { DeletedTableCell, InsertedTableCell } from "@file/track-revision";
+import { CellMerge, DeletedTableCell, ICellMergeAttributes, InsertedTableCell } from "@file/track-revision";
 import { ChangeAttributes, IChangedAttributesProperties } from "@file/track-revision/track-revision";
 import { TableVerticalAlign, VerticalAlignElement } from "@file/vertical-align";
 import { IgnoreIfEmptyXmlComponent, XmlComponent } from "@file/xml-components";
@@ -79,6 +79,7 @@ export type ITableCellPropertiesOptionsBase = {
     readonly borders?: ITableCellBorders;
     readonly insertion?: IChangedAttributesProperties;
     readonly deletion?: IChangedAttributesProperties;
+    readonly cellMerge?: ICellMergeAttributes;
 };
 
 export type ITableCellPropertiesOptions = {
@@ -136,6 +137,10 @@ export class TableCellProperties extends IgnoreIfEmptyXmlComponent {
 
         if (options.revision) {
             this.root.push(new TableCellPropertiesChange(options.revision));
+        }
+
+        if (options.cellMerge) {
+            this.root.push(new CellMerge(options.cellMerge));
         }
     }
 }

@@ -2,7 +2,7 @@
 import { FileChild } from "@file/file-child";
 
 import { AlignmentType } from "../paragraph";
-import { TableGrid } from "./grid";
+import { ITableGridChangeOptions, TableGrid } from "./grid";
 import { TableCell, VerticalMergeType } from "./table-cell";
 import { ITableCellSpacingProperties } from "./table-cell-spacing";
 import { ITableBordersOptions, ITableFloatOptions, ITablePropertiesChangeOptions, TableProperties } from "./table-properties";
@@ -25,6 +25,7 @@ export type ITableOptions = {
     readonly rows: readonly TableRow[];
     readonly width?: ITableWidthProperties;
     readonly columnWidths?: readonly number[];
+    readonly columnWidthsRevision?: ITableGridChangeOptions;
     readonly margins?: ITableCellMarginOptions;
     readonly indent?: ITableWidthProperties;
     readonly float?: ITableFloatOptions;
@@ -43,6 +44,7 @@ export class Table extends FileChild {
         width,
         // eslint-disable-next-line functional/immutable-data
         columnWidths = Array<number>(Math.max(...rows.map((row) => row.CellCount))).fill(100),
+        columnWidthsRevision,
         margins,
         indent,
         float,
@@ -72,7 +74,7 @@ export class Table extends FileChild {
             }),
         );
 
-        this.root.push(new TableGrid(columnWidths));
+        this.root.push(new TableGrid(columnWidths, columnWidthsRevision));
 
         for (const row of rows) {
             this.root.push(row);

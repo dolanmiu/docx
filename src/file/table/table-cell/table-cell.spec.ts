@@ -711,6 +711,40 @@ describe("TableCell", () => {
             });
         });
 
+        it("should create with cell merge revision", () => {
+            const tableCell = new TableCell({
+                children: [],
+                cellMerge: {
+                    id: 1,
+                    author: "Firstname Lastname",
+                    date: "123",
+                    verticalMerge: "cont",
+                },
+            });
+            const tree = new Formatter().format(tableCell);
+            expect(tree).to.deep.equal({
+                "w:tc": [
+                    {
+                        "w:tcPr": [
+                            {
+                                "w:cellMerge": {
+                                    _attr: {
+                                        "w:author": "Firstname Lastname",
+                                        "w:date": "123",
+                                        "w:id": 1,
+                                        "w:vMerge": "cont",
+                                    },
+                                },
+                            },
+                        ],
+                    },
+                    {
+                        "w:p": {},
+                    },
+                ],
+            });
+        });
+
         it("should create with properties revision", () => {
             const run = new TableCell({
                 children: [],

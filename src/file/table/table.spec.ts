@@ -376,6 +376,52 @@ describe("Table", () => {
                 ],
             });
         });
+
+        it("creates a table with grid revision", () => {
+            const run = new Table({
+                rows: [
+                    new TableRow({
+                        children: [
+                            new TableCell({
+                                children: [new Paragraph("hello")],
+                            }),
+                            new TableCell({
+                                children: [new Paragraph("hello")],
+                            }),
+                            new TableCell({
+                                children: [new Paragraph("hello")],
+                            }),
+                        ],
+                    }),
+                ],
+                alignment: AlignmentType.CENTER,
+                columnWidths: [1234, 321, 123],
+                columnWidthsRevision: { id: 1, columnWidths: [1234, 123, 321] },
+            });
+            const tree = new Formatter().format(run);
+            const tableGrid = tree["w:tbl"].find((x: any) => x["w:tblGrid"]);
+            expect(tableGrid).to.deep.equal({
+                "w:tblGrid": [
+                    { "w:gridCol": { _attr: { "w:w": 1234 } } },
+                    { "w:gridCol": { _attr: { "w:w": 321 } } },
+                    { "w:gridCol": { _attr: { "w:w": 123 } } },
+                    {
+                        "w:tblGridChange": [
+                            {
+                                _attr: { "w:id": 1 },
+                            },
+                            {
+                                "w:tblGrid": [
+                                    { "w:gridCol": { _attr: { "w:w": 1234 } } },
+                                    { "w:gridCol": { _attr: { "w:w": 123 } } },
+                                    { "w:gridCol": { _attr: { "w:w": 321 } } },
+                                ],
+                            },
+                        ],
+                    },
+                ],
+            });
+        });
     });
 
     describe("Cell", () => {

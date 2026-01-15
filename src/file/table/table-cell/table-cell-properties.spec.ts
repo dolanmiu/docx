@@ -126,6 +126,18 @@ describe("TableCellProperties", () => {
             });
         });
 
+        it("sets cellMerge to track vertical merge revision", () => {
+            const cellProperties = new TableCellProperties({
+                cellMerge: { id: 1, author: "Firstname Lastname", date: "123", verticalMerge: "rest" },
+            });
+            const tree = new Formatter().format(cellProperties);
+            expect(tree).to.deep.equal({
+                "w:tcPr": [
+                    { "w:cellMerge": { _attr: { "w:id": 1, "w:author": "Firstname Lastname", "w:date": "123", "w:vMerge": "rest" } } },
+                ],
+            });
+        });
+
         it("should add a revision property", () => {
             const cellProperties = new TableCellProperties({
                 revision: {
