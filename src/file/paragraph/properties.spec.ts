@@ -4,6 +4,7 @@ import { Formatter } from "@export/formatter";
 
 import { DocumentWrapper } from "../document-wrapper";
 import { File } from "../file";
+import { AlignmentType } from "./formatting";
 import { ParagraphProperties } from "./properties";
 
 describe("ParagraphProperties", () => {
@@ -227,6 +228,52 @@ describe("ParagraphProperties", () => {
                                         "w:val": "10pt",
                                     },
                                 },
+                            },
+                        ],
+                    },
+                ],
+            });
+        });
+
+        it("should create with revision", () => {
+            const properties = new ParagraphProperties({
+                alignment: AlignmentType.CENTER,
+                revision: {
+                    id: 1,
+                    author: "Firstname Lastname",
+                    date: "123",
+                    alignment: AlignmentType.LEFT,
+                },
+            });
+            const tree = new Formatter().format(properties);
+            expect(tree).to.deep.equal({
+                "w:pPr": [
+                    {
+                        "w:jc": {
+                            _attr: {
+                                "w:val": "center",
+                            },
+                        },
+                    },
+                    {
+                        "w:pPrChange": [
+                            {
+                                _attr: {
+                                    "w:author": "Firstname Lastname",
+                                    "w:date": "123",
+                                    "w:id": 1,
+                                },
+                            },
+                            {
+                                "w:pPr": [
+                                    {
+                                        "w:jc": {
+                                            _attr: {
+                                                "w:val": "left",
+                                            },
+                                        },
+                                    },
+                                ],
                             },
                         ],
                     },
