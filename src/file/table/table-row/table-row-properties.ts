@@ -58,13 +58,14 @@ export type ITableRowPropertiesOptions = ITableRowPropertiesOptionsBase & {
     readonly insertion?: IChangedAttributesProperties;
     readonly deletion?: IChangedAttributesProperties;
     readonly revision?: ITableRowPropertiesChangeOptions;
+    readonly includeIfEmpty?: boolean;
 };
 
 export type ITableRowPropertiesChangeOptions = ITableRowPropertiesOptionsBase & IChangedAttributesProperties;
 
 export class TableRowProperties extends IgnoreIfEmptyXmlComponent {
     public constructor(options: ITableRowPropertiesOptions) {
-        super("w:trPr");
+        super("w:trPr", options.includeIfEmpty);
 
         if (options.cantSplit !== undefined) {
             this.root.push(new OnOffElement("w:cantSplit", options.cantSplit));
@@ -106,6 +107,7 @@ export class TableRowPropertiesChange extends XmlComponent {
                 date: options.date,
             }),
         );
-        this.root.push(new TableRowProperties(options));
+        // trPr is required (minOccurs="1") even if empty
+        this.root.push(new TableRowProperties({ ...options, includeIfEmpty: true }));
     }
 }

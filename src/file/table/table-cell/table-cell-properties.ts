@@ -84,13 +84,14 @@ export type ITableCellPropertiesOptionsBase = {
 
 export type ITableCellPropertiesOptions = {
     readonly revision?: ITableCellPropertiesChangeOptions;
+    readonly includeIfEmpty?: boolean;
 } & ITableCellPropertiesOptionsBase;
 
-export type ITableCellPropertiesChangeOptions = {} & ITableCellPropertiesOptionsBase & IChangedAttributesProperties;
+export type ITableCellPropertiesChangeOptions = ITableCellPropertiesOptionsBase & IChangedAttributesProperties;
 
 export class TableCellProperties extends IgnoreIfEmptyXmlComponent {
     public constructor(options: ITableCellPropertiesOptions) {
-        super("w:tcPr");
+        super("w:tcPr", options.includeIfEmpty);
 
         if (options.width) {
             this.root.push(new TableWidthElement("w:tcW", options.width));
@@ -155,6 +156,7 @@ export class TableCellPropertiesChange extends XmlComponent {
                 date: options.date,
             }),
         );
-        this.root.push(new TableCellProperties(options));
+        // tcPr is required (minOccurs="1") even if empty
+        this.root.push(new TableCellProperties({ ...options, includeIfEmpty: true }));
     }
 }

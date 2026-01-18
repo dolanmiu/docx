@@ -60,11 +60,12 @@ export type ITablePropertiesChangeOptions = ITablePropertiesOptions & IChangedAt
 
 export type ITablePropertiesOptions = {
     readonly revision?: ITablePropertiesChangeOptions;
+    readonly includeIfEmpty?: boolean;
 } & ITablePropertiesOptionsBase;
 
 export class TableProperties extends IgnoreIfEmptyXmlComponent {
     public constructor(options: ITablePropertiesOptions) {
-        super("w:tblPr");
+        super("w:tblPr", options.includeIfEmpty);
 
         if (options.style) {
             this.root.push(new StringValueElement("w:tblStyle", options.style));
@@ -126,6 +127,7 @@ class TablePropertiesChange extends XmlComponent {
                 date: options.date,
             }),
         );
-        this.root.push(new TableProperties(options));
+        // tblPr is required even if empty (minOccurs="0" is missing)
+        this.root.push(new TableProperties({ ...options, includeIfEmpty: true }));
     }
 }

@@ -80,6 +80,7 @@ export type IParagraphPropertiesChangeOptions = IChangedAttributesProperties & I
 
 export type IParagraphPropertiesOptions = {
     readonly revision?: IParagraphPropertiesChangeOptions;
+    readonly includeIfEmpty?: boolean;
 } & IParagraphPropertiesOptionsBase;
 
 export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
@@ -87,7 +88,7 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
     private readonly numberingReferences: { readonly reference: string; readonly instance: number }[] = [];
 
     public constructor(options?: IParagraphPropertiesOptions) {
-        super("w:pPr");
+        super("w:pPr", options?.includeIfEmpty);
 
         if (!options) {
             return this;
@@ -251,6 +252,7 @@ export class ParagraphPropertiesChange extends XmlComponent {
                 date: options.date,
             }),
         );
-        this.root.push(new ParagraphProperties(options));
+        // pPr is required (minOccurs="1") even if empty
+        this.root.push(new ParagraphProperties({ ...options, includeIfEmpty: true }));
     }
 }
