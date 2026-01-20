@@ -5,6 +5,7 @@ import { IContext, IXmlableObject, IgnoreIfEmptyXmlComponent, OnOffElement, XmlC
 
 import { IRunOptions, RunProperties } from ".";
 import { DocumentWrapper } from "../document-wrapper";
+import { FootnotesWrapper } from "../footnotes-wrapper";
 import { IShadingAttributesProperties, Shading } from "../shading";
 import { Alignment, AlignmentType } from "./formatting/alignment";
 import { Border, IBordersOptions, ThematicBreak } from "./formatting/border";
@@ -221,7 +222,7 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
     }
 
     public prepForXml(context: IContext): IXmlableObject | undefined {
-        if (context.viewWrapper instanceof DocumentWrapper) {
+        if (context.viewWrapper instanceof DocumentWrapper || context.viewWrapper instanceof FootnotesWrapper) {
             for (const reference of this.numberingReferences) {
                 context.file.Numbering.createConcreteNumberingInstance(reference.reference, reference.instance);
             }
