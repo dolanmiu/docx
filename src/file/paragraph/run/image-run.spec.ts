@@ -184,8 +184,7 @@ describe("ImageRun", () => {
                                                                         "a:blip": {
                                                                             _attr: {
                                                                                 cstate: "none",
-                                                                                "r:embed":
-                                                                                    "rId{da39a3ee5e6b4b0d3255bfef95601890afd80709.png}",
+                                                                                "r:embed": "rId{811c9dc5-0.png}",
                                                                             },
                                                                         },
                                                                     },
@@ -437,8 +436,7 @@ describe("ImageRun", () => {
                                                                         "a:blip": {
                                                                             _attr: {
                                                                                 cstate: "none",
-                                                                                "r:embed":
-                                                                                    "rId{da39a3ee5e6b4b0d3255bfef95601890afd80709.png}",
+                                                                                "r:embed": "rId{811c9dc5-0.png}",
                                                                             },
                                                                         },
                                                                     },
@@ -693,8 +691,7 @@ describe("ImageRun", () => {
                                                                         "a:blip": {
                                                                             _attr: {
                                                                                 cstate: "none",
-                                                                                "r:embed":
-                                                                                    "rId{da39a3ee5e6b4b0d3255bfef95601890afd80709.png}",
+                                                                                "r:embed": "rId{811c9dc5-0.png}",
                                                                             },
                                                                         },
                                                                     },
@@ -949,8 +946,7 @@ describe("ImageRun", () => {
                                                                         "a:blip": {
                                                                             _attr: {
                                                                                 cstate: "none",
-                                                                                "r:embed":
-                                                                                    "rId{da39a3ee5e6b4b0d3255bfef95601890afd80709.png}",
+                                                                                "r:embed": "rId{811c9dc5-0.png}",
                                                                             },
                                                                         },
                                                                     },
@@ -1095,8 +1091,7 @@ describe("ImageRun", () => {
                                                                             {
                                                                                 _attr: {
                                                                                     cstate: "none",
-                                                                                    "r:embed":
-                                                                                        "rId{da39a3ee5e6b4b0d3255bfef95601890afd80709.png}",
+                                                                                    "r:embed": "rId{811c9dc5-0.png}",
                                                                                 },
                                                                             },
                                                                             {
@@ -1111,8 +1106,7 @@ describe("ImageRun", () => {
                                                                                             {
                                                                                                 "asvg:svgBlip": {
                                                                                                     _attr: expect.objectContaining({
-                                                                                                        "r:embed":
-                                                                                                            "rId{da39a3ee5e6b4b0d3255bfef95601890afd80709.svg}",
+                                                                                                        "r:embed": "rId{811c9dc5-0.svg}",
                                                                                                     }),
                                                                                                 },
                                                                                             },
@@ -1173,7 +1167,7 @@ describe("ImageRun", () => {
             new Formatter().format(imageRunStringData, context);
             new Formatter().format(imageRunBufferData, context);
 
-            const expectedHash = "580393f5a94fb469585f5dd2a6859a4aab899f37";
+            const expectedHash = "c407fae5-4";
 
             expect(addImageSpy).toHaveBeenCalledTimes(2);
             expect(addImageSpy).toHaveBeenNthCalledWith(

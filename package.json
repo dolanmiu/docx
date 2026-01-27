@@ -58,9 +58,7 @@
         "clippy"
     ],
     "dependencies": {
-        "hash.js": "^1.1.7",
         "jszip": "^3.10.1",
-        "nanoid": "^5.1.6",
         "xml": "^1.0.1",
         "xml-js": "^1.6.11"
     },

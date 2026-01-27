@@ -1,6 +1,3 @@
-import hash from "hash.js";
-import { customAlphabet, nanoid } from "nanoid/non-secure";
-
 // Twip - twentieths of a point
 export const convertMillimetersToTwip = (millimeters: number): number => Math.floor((millimeters / 25.4) * 72 * 20);
 
@@ -23,14 +20,23 @@ export const docPropertiesUniqueNumericIdGen = (): UniqueNumericIdCreator => uni
 
 export const bookmarkUniqueNumericIdGen = (): UniqueNumericIdCreator => uniqueNumericIdCreator();
 
-export const uniqueId = (): string => nanoid().toLowerCase();
+export const uniqueId = (): string => crypto.randomUUID();
 
-export const hashedId = (data: Buffer | string | Uint8Array | ArrayBuffer): string =>
-    hash
-        .sha1()
-        .update(data instanceof ArrayBuffer ? new Uint8Array(data) : data)
-        .digest("hex");
+// FNV-1a 32-bit hash + byte length suffix for internal deduplication.
+// Appending the length means a collision requires both the same hash AND the same size,
+// sufficiently low collision risk for internal, non-adversarial deduplication.
+export const hashedId = (data: Buffer | string | Uint8Array | ArrayBuffer): string => {
+    const bytes = typeof data === "string" ? new TextEncoder().encode(data) : data instanceof ArrayBuffer ? new Uint8Array(data) : data;
 
-const generateUuidPart = (count: number): string => customAlphabet("1234567890abcdef", count)();
-export const uniqueUuid = (): string =>
-    `${generateUuidPart(8)}-${generateUuidPart(4)}-${generateUuidPart(4)}-${generateUuidPart(4)}-${generateUuidPart(12)}`;
+    /* eslint-disable @typescript-eslint/prefer-for-of, no-bitwise -- performance hash function */
+    let h = 0x811c9dc5;
+    for (let i = 0; i < bytes.length; i++) {
+        h ^= bytes[i];
+        h = Math.imul(h, 0x01000193);
+    }
+
+    return `${(h >>> 0).toString(16).padStart(8, "0")}-${bytes.length}`;
+    /* eslint-enable @typescript-eslint/prefer-for-of, no-bitwise */
+};
+
+export const uniqueUuid = (): string => crypto.randomUUID();

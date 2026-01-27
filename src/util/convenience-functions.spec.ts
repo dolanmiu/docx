@@ -74,8 +74,12 @@ describe("Utility", () => {
     });
 
     describe("#hashedId", () => {
-        it("should generate a hex string", () => {
-            expect(hashedId("")).to.equal("da39a3ee5e6b4b0d3255bfef95601890afd80709");
+        it("should generate a deterministic hex string", () => {
+            expect(hashedId("")).to.equal("811c9dc5-0");
+        });
+
+        it("should produce different hashes for different inputs", () => {
+            expect(hashedId("A")).to.not.equal(hashedId("B"));
         });
 
         it("should work with string, Uint8Array, Buffer and ArrayBuffer", () => {
@@ -84,7 +88,7 @@ describe("Utility", () => {
             const bufferInput = Buffer.from(uint8ArrayInput);
             const arrayBufferInput = uint8ArrayInput.buffer;
 
-            const expectedHash = "580393f5a94fb469585f5dd2a6859a4aab899f37";
+            const expectedHash = "c407fae5-4";
 
             expect(hashedId(stringInput)).to.equal(expectedHash);
             expect(hashedId(uint8ArrayInput)).to.equal(expectedHash);
