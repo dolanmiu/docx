@@ -9,34 +9,47 @@ import { FieldInstruction } from "./field-instruction";
 import { StructuredDocumentTagContent } from "./sdt-content";
 import { StructuredDocumentTagProperties } from "./sdt-properties";
 import { ITableOfContentsOptions } from "./table-of-contents-properties";
+import { XmlComponent } from "@file/xml-components";
 
 export class TableOfContents extends FileChild {
-    public constructor(alias: string = "Table of Contents", properties?: ITableOfContentsOptions) {
-        super("w:sdt");
-        this.root.push(new StructuredDocumentTagProperties(alias));
-
-        const content = new StructuredDocumentTagContent();
-
-        const beginParagraph = new Paragraph({
-            children: [
-                new Run({
-                    children: [new Begin(true), new FieldInstruction(properties), new Separate()],
-                }),
-            ],
-        });
-
-        content.addChildElement(beginParagraph);
-
-        const endParagraph = new Paragraph({
-            children: [
-                new Run({
-                    children: [new End()],
-                }),
-            ],
-        });
-
-        content.addChildElement(endParagraph);
-
-        this.root.push(content);
+    public constructor(
+      alias: string = 'Table of Contents',
+      properties?: ITableOfContentsOptions,
+      contentChildren?: (XmlComponent | string)[],
+      beginDirty: boolean = true
+    ) {
+      super('w:sdt');
+      this.root.push(new StructuredDocumentTagProperties(alias));
+  
+      const content = new StructuredDocumentTagContent();
+  
+      const beginParagraph = new Paragraph({
+        children: [
+          new Run({
+            children: [new Begin(beginDirty), new FieldInstruction(properties), new Separate()],
+          }),
+        ],
+      });
+  
+      content.addChildElement(beginParagraph);
+  
+      if (contentChildren && Array.isArray(contentChildren)) {
+        for (const child of contentChildren) {
+          content.addChildElement(child);
+        }
+      }
+  
+      const endParagraph = new Paragraph({
+        children: [
+          new Run({
+            children: [new End()],
+          }),
+        ],
+      });
+  
+      content.addChildElement(endParagraph);
+  
+      this.root.push(content);
     }
-}
+  }
+ 
