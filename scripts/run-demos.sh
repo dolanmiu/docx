@@ -62,6 +62,14 @@ contains() {
   return 1
 }
 
+# Clean up generated files on exit (including Ctrl+C) so local runs
+# don't leave artifacts in the working tree.
+cleanup() {
+  rm -f "My Document.docx"
+  rm -rf build/extracted-doc
+}
+trap cleanup EXIT
+
 # ---------------------------------------------------------------------------
 # Config
 # ---------------------------------------------------------------------------
@@ -79,7 +87,8 @@ FAILURES=()
 # Main loop — discover and run every numbered demo
 # ---------------------------------------------------------------------------
 
-for demo_file in demo/[0-9]*.ts; do
+# Sort numerically so demo 5 runs before 40 (glob sorts lexicographically).
+for demo_file in $(printf '%s\n' demo/[0-9]*.ts | sort -V); do
   filename=$(basename "$demo_file" .ts)
   num=$(echo "$filename" | grep -oE '^[0-9]+')
 
