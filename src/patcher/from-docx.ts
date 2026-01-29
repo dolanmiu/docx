@@ -18,6 +18,23 @@ import { appendRelationship, getNextRelationshipIndex } from "./relationship-man
 import { replacer } from "./replacer";
 import { toJson } from "./util";
 
+/**
+ * Pre-encode a string to UTF-8 bytes before passing to JSZip.
+ *
+ * This works around a bug in JSZip where string chunking can split UTF-16
+ * surrogate pairs, causing CESU-8 encoding instead of valid UTF-8 for
+ * characters above U+FFFF (like emoji and some icon fonts).
+ *
+ * See: https://github.com/Stuk/jszip/pull/963
+ */
+const encodeUtf8 = (str: string): Uint8Array => {
+    if (typeof TextEncoder !== "undefined") {
+        return new TextEncoder().encode(str);
+    }
+    // Fallback for environments without TextEncoder (should be rare)
+    return Buffer.from(str, "utf-8");
+};
+
 // eslint-disable-next-line functional/prefer-readonly-type
 export type InputDataType = Buffer | string | number[] | Uint8Array | ArrayBuffer | Blob | NodeJS.ReadableStream | JSZip;
 
@@ -281,7 +298,7 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
     for (const [key, value] of map) {
         const output = toXml(value);
 
-        zip.file(key, output);
+        zip.file(key, encodeUtf8(output));
     }
 
     for (const [key, value] of binaryContentMap) {
