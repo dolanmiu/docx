@@ -3,28 +3,12 @@ import xml from "xml";
 
 import { File } from "@file/file";
 import { obfuscate } from "@file/fonts/obfuscate-ttf-to-odttf";
+import { encodeUtf8 } from "@util/convenience-functions";
 
 import { Formatter } from "../formatter";
 import { ImageReplacer } from "./image-replacer";
 import { NumberingReplacer } from "./numbering-replacer";
 import { PrettifyType } from "./packer";
-
-/**
- * Pre-encode a string to UTF-8 bytes before passing to JSZip.
- *
- * This works around a bug in JSZip where string chunking can split UTF-16
- * surrogate pairs, causing CESU-8 encoding instead of valid UTF-8 for
- * characters above U+FFFF (like emoji and some icon fonts).
- *
- * See: https://github.com/Stuk/jszip/pull/963
- */
-const encodeUtf8 = (str: string): Uint8Array => {
-    if (typeof TextEncoder !== "undefined") {
-        return new TextEncoder().encode(str);
-    }
-    // Fallback for environments without TextEncoder (should be rare)
-    return Buffer.from(str, "utf-8");
-};
 
 export type IXmlifyedFile = {
     readonly data: string;

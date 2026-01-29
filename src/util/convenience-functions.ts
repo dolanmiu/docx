@@ -34,3 +34,21 @@ export const hashedId = (data: Buffer | string | Uint8Array | ArrayBuffer): stri
 const generateUuidPart = (count: number): string => customAlphabet("1234567890abcdef", count)();
 export const uniqueUuid = (): string =>
     `${generateUuidPart(8)}-${generateUuidPart(4)}-${generateUuidPart(4)}-${generateUuidPart(4)}-${generateUuidPart(12)}`;
+
+/**
+ * Encode a string to UTF-8 bytes.
+ *
+ * This is used to pre-encode XML content before passing to JSZip,
+ * which avoids a bug where JSZip's string chunking can split UTF-16
+ * surrogate pairs for characters above U+FFFF (like emoji).
+ *
+ * @see https://github.com/Stuk/jszip/pull/963
+ */
+export const encodeUtf8 = (str: string): Uint8Array => {
+    if (typeof TextEncoder !== "undefined") {
+        return new TextEncoder().encode(str);
+    }
+    // Fallback for environments without TextEncoder (e.g., older Node.js)
+    // Buffer.from handles surrogates correctly
+    return new Uint8Array(Buffer.from(str, "utf-8"));
+};
