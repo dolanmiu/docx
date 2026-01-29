@@ -14,9 +14,14 @@ import { ITableOfContentsOptions } from "./table-of-contents-properties";
 export class TableOfContents extends FileChild {
     public constructor(
         alias: string = "Table of Contents",
-        properties?: ITableOfContentsOptions,
-        contentChildren?: readonly (XmlComponent | string)[],
-        beginDirty: boolean = true,
+        {
+            contentChildren,
+            beginDirty,
+            ...properties
+        }: ITableOfContentsOptions & {
+            readonly contentChildren?: readonly (XmlComponent | string)[];
+            readonly beginDirty?: boolean;
+        } = { contentChildren: [], beginDirty: true },
     ) {
         super("w:sdt");
         this.root.push(new StructuredDocumentTagProperties(alias));
@@ -33,7 +38,7 @@ export class TableOfContents extends FileChild {
 
         content.addChildElement(beginParagraph);
 
-        if (contentChildren && Array.isArray(contentChildren)) {
+        if (contentChildren) {
             for (const child of contentChildren) {
                 content.addChildElement(child);
             }
