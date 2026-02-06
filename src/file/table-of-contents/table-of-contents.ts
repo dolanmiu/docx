@@ -15,13 +15,13 @@ export class TableOfContents extends FileChild {
     public constructor(
         alias: string = "Table of Contents",
         {
-            contentChildren,
-            beginDirty,
+            contentChildren = [],
+            beginDirty = true,
             ...properties
         }: ITableOfContentsOptions & {
             readonly contentChildren?: readonly (XmlComponent | string)[];
             readonly beginDirty?: boolean;
-        } = { contentChildren: [], beginDirty: true },
+        } = {},
     ) {
         super("w:sdt");
         this.root.push(new StructuredDocumentTagProperties(alias));
@@ -38,10 +38,8 @@ export class TableOfContents extends FileChild {
 
         content.addChildElement(beginParagraph);
 
-        if (contentChildren) {
-            for (const child of contentChildren) {
-                content.addChildElement(child);
-            }
+        for (const child of contentChildren) {
+            content.addChildElement(child);
         }
 
         const endParagraph = new Paragraph({
