@@ -208,7 +208,7 @@ const table = new Table({
 
 ### Inserted Table Rows
 
-To mark a table row as inserted, use the `insertion` property in the `TableRow` options.
+To mark a table row as inserted, use the `insertion` property in the `TableRow` options. In addition, the text content within the row must also be marked as inserted using the paragraph `run.insertion` property (or by using `InsertedTextRun`). Both are required for Microsoft Word to display the insertion correctly.
 
 ```ts
 import { TableRow, TableCell, Paragraph } from "docx";
@@ -216,7 +216,18 @@ import { TableRow, TableCell, Paragraph } from "docx";
 const row = new TableRow({
     children: [
         new TableCell({
-            children: [new Paragraph("New row content")],
+            children: [
+                new Paragraph({
+                    children: [new TextRun("Inserted row")],
+                    run: {
+                        insertion: {
+                            id: 1,
+                            author: "Firstname Lastname",
+                            date: "2020-10-06T09:00:00Z",
+                        },
+                    },
+                })
+            ],
         }),
     ],
     insertion: {
@@ -229,7 +240,7 @@ const row = new TableRow({
 
 ### Deleted Table Rows
 
-To mark a table row as deleted, use the `deletion` property in the `TableRow` options.
+To mark a table row as deleted, use the `deletion` property in the `TableRow` options. In addition, the text content within the row must also be marked as deleted using the paragraph `run.deletion` property (or by using `DeletedTextRun`). Both are required for Microsoft Word to display the deletion correctly.
 
 ```ts
 import { TableRow, TableCell, Paragraph } from "docx";
@@ -237,7 +248,18 @@ import { TableRow, TableCell, Paragraph } from "docx";
 const row = new TableRow({
     children: [
         new TableCell({
-            children: [new Paragraph("Row to be deleted")],
+            children: [
+                new Paragraph({
+                    children: [new TextRun("Deleted row")],
+                    run: {
+                        deletion: {
+                            id: 2,
+                            author: "Firstname Lastname",
+                            date: "2020-10-06T09:00:00Z",
+                        },
+                    },
+                })
+            ],
         }),
     ],
     deletion: {
@@ -283,13 +305,22 @@ const row = new TableRow({
 
 ### Inserted Table Cells
 
-To mark a table cell as inserted, use the `insertion` property in the `TableCell` options.
+To mark a table cell as inserted, use the `insertion` property in the `TableCell` options. As with table rows, the text content within the cell must also be marked as inserted using the paragraph `run.insertion` property (or by using `InsertedTextRun`). Both are required for Microsoft Word to display the insertion correctly.
 
 ```ts
 import { TableCell, Paragraph } from "docx";
 
 const cell = new TableCell({
-    children: [new Paragraph("New cell content")],
+    children: [new Paragraph({
+        children: [new TextRun("Inserted cell")],
+        run: {
+            insertion: {
+                id: 4,
+                author: "Firstname Lastname",
+                date: "2020-10-06T09:00:00Z",
+            },
+        },
+    })],
     insertion: {
         id: 4,
         author: "Firstname Lastname",
@@ -300,13 +331,22 @@ const cell = new TableCell({
 
 ### Deleted Table Cells
 
-To mark a table cell as deleted, use the `deletion` property in the `TableCell` options.
+To mark a table cell as deleted, use the `deletion` property in the `TableCell` options. As with table rows, the text content within the cell must also be marked as deleted using the paragraph `run.deletion` property (or by using `DeletedTextRun`). Both are required for Microsoft Word to display the deletion correctly.
 
 ```ts
 import { TableCell, Paragraph } from "docx";
 
 const cell = new TableCell({
-    children: [new Paragraph("Cell to be deleted")],
+    children: [new Paragraph({
+        children: [new TextRun("Deleted cell")],
+        run: {
+            deletion: {
+                id: 5,
+                author: "Firstname Lastname",
+                date: "2020-10-06T09:00:00Z",
+            },
+        },
+    })],
     deletion: {
         id: 5,
         author: "Firstname Lastname",

@@ -3,7 +3,7 @@
 import { ChangeAttributes, IChangedAttributesProperties } from "@file/track-revision/track-revision";
 import { IContext, IXmlableObject, IgnoreIfEmptyXmlComponent, OnOffElement, XmlComponent } from "@file/xml-components";
 
-import { IRunOptions, RunProperties } from ".";
+import { IParagraphRunOptions, ParagraphRunProperties } from ".";
 import { DocumentWrapper } from "../document-wrapper";
 import { IShadingAttributesProperties, Shading } from "../shading";
 import { Alignment, AlignmentType } from "./formatting/alignment";
@@ -73,7 +73,7 @@ export type IParagraphPropertiesOptionsBase = {
     /**
      * Reference: ECMA-376, 3rd Edition (June, 2011), Fundamentals and Markup Language Reference § 17.3.1.29.
      */
-    readonly run?: IRunOptions;
+    readonly run?: IParagraphRunOptions;
 } & IParagraphStylePropertiesOptions;
 
 export type IParagraphPropertiesChangeOptions = IChangedAttributesProperties & IParagraphPropertiesOptionsBase;
@@ -219,7 +219,7 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
         }
 
         if (options.run) {
-            this.push(new RunProperties(options.run));
+            this.push(new ParagraphRunProperties(options.run));
         }
 
         if (options.revision) {

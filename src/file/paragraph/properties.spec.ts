@@ -235,6 +235,60 @@ describe("ParagraphProperties", () => {
             });
         });
 
+        it("should create with the run property insertion", () => {
+            const properties = new ParagraphProperties({
+                run: {
+                    insertion: { id: 1, author: "Firstname Lastname", date: "123" },
+                },
+            });
+            const tree = new Formatter().format(properties);
+
+            expect(tree).to.deep.equal({
+                "w:pPr": [
+                    {
+                        "w:rPr": [
+                            {
+                                "w:ins": {
+                                    _attr: {
+                                        "w:author": "Firstname Lastname",
+                                        "w:date": "123",
+                                        "w:id": 1,
+                                    },
+                                },
+                            },
+                        ],
+                    },
+                ],
+            });
+        });
+
+        it("should create with the run property deletion", () => {
+            const properties = new ParagraphProperties({
+                run: {
+                    deletion: { id: 1, author: "Firstname Lastname", date: "123" },
+                },
+            });
+            const tree = new Formatter().format(properties);
+
+            expect(tree).to.deep.equal({
+                "w:pPr": [
+                    {
+                        "w:rPr": [
+                            {
+                                "w:del": {
+                                    _attr: {
+                                        "w:author": "Firstname Lastname",
+                                        "w:date": "123",
+                                        "w:id": 1,
+                                    },
+                                },
+                            },
+                        ],
+                    },
+                ],
+            });
+        });
+
         it("should create with revision", () => {
             const properties = new ParagraphProperties({
                 alignment: AlignmentType.CENTER,
