@@ -53,8 +53,19 @@ export abstract class XmlComponent extends BaseXmlComponent {
 }
 
 export abstract class IgnoreIfEmptyXmlComponent extends XmlComponent {
+    private readonly includeIfEmpty: boolean | undefined;
+
+    public constructor(rootKey: string, includeIfEmpty?: boolean) {
+        super(rootKey);
+        this.includeIfEmpty = includeIfEmpty;
+    }
+
     public prepForXml(context: IContext): IXmlableObject | undefined {
         const result = super.prepForXml(context);
+
+        if (this.includeIfEmpty) {
+            return result;
+        }
         // Ignore the object if its falsey or is an empty object (would produce
         // an empty XML element if allowed to be included in the output).
         if (result && (typeof result[this.rootKey] !== "object" || Object.keys(result[this.rootKey]).length)) {

@@ -27,13 +27,24 @@
 //         </xsd:extension>
 //     </xsd:complexContent>
 // </xsd:complexType>
-import { IgnoreIfEmptyXmlComponent, OnOffElement } from "@file/xml-components";
+// <xsd:complexType name="CT_TrPrChange">
+//     <xsd:complexContent>
+//         <xsd:extension base="CT_TrackChange">
+//             <xsd:sequence>
+//                 <xsd:element name="trPr" type="CT_TrPrBase" minOccurs="1"/>
+//             </xsd:sequence>
+//         </xsd:extension>
+//     </xsd:complexContent>
+// </xsd:complexType>
+import { DeletedTableRow, InsertedTableRow } from "@file/track-revision";
+import { ChangeAttributes, IChangedAttributesProperties } from "@file/track-revision/track-revision";
+import { IgnoreIfEmptyXmlComponent, OnOffElement, XmlComponent } from "@file/xml-components";
 import { PositiveUniversalMeasure } from "@util/values";
 
 import { HeightRule, TableRowHeight } from "./table-row-height";
 import { ITableCellSpacingProperties, TableCellSpacingElement } from "../table-cell-spacing";
 
-export type ITableRowPropertiesOptions = {
+export type ITableRowPropertiesOptionsBase = {
     readonly cantSplit?: boolean;
     readonly tableHeader?: boolean;
     readonly height?: {
@@ -43,9 +54,18 @@ export type ITableRowPropertiesOptions = {
     readonly cellSpacing?: ITableCellSpacingProperties;
 };
 
+export type ITableRowPropertiesOptions = ITableRowPropertiesOptionsBase & {
+    readonly insertion?: IChangedAttributesProperties;
+    readonly deletion?: IChangedAttributesProperties;
+    readonly revision?: ITableRowPropertiesChangeOptions;
+    readonly includeIfEmpty?: boolean;
+};
+
+export type ITableRowPropertiesChangeOptions = ITableRowPropertiesOptionsBase & IChangedAttributesProperties;
+
 export class TableRowProperties extends IgnoreIfEmptyXmlComponent {
     public constructor(options: ITableRowPropertiesOptions) {
-        super("w:trPr");
+        super("w:trPr", options.includeIfEmpty);
 
         if (options.cantSplit !== undefined) {
             this.root.push(new OnOffElement("w:cantSplit", options.cantSplit));
@@ -62,5 +82,32 @@ export class TableRowProperties extends IgnoreIfEmptyXmlComponent {
         if (options.cellSpacing) {
             this.root.push(new TableCellSpacingElement(options.cellSpacing));
         }
+
+        if (options.insertion) {
+            this.root.push(new InsertedTableRow(options.insertion));
+        }
+
+        if (options.deletion) {
+            this.root.push(new DeletedTableRow(options.deletion));
+        }
+
+        if (options.revision) {
+            this.root.push(new TableRowPropertiesChange(options.revision));
+        }
+    }
+}
+
+export class TableRowPropertiesChange extends XmlComponent {
+    public constructor(options: ITableRowPropertiesChangeOptions) {
+        super("w:trPrChange");
+        this.root.push(
+            new ChangeAttributes({
+                id: options.id,
+                author: options.author,
+                date: options.date,
+            }),
+        );
+        // trPr is required (minOccurs="1") even if empty
+        this.root.push(new TableRowProperties({ ...options, includeIfEmpty: true }));
     }
 }

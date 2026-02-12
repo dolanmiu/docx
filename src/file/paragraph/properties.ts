@@ -1,9 +1,9 @@
 // http://officeopenxml.com/WPparagraphProperties.php
 // https://c-rex.net/projects/samples/ooxml/e1/Part4/OOXML_P4_DOCX_suppressLineNumbers_topic_ID0ECJAO.html
-
+import { ChangeAttributes, IChangedAttributesProperties } from "@file/track-revision/track-revision";
 import { IContext, IXmlableObject, IgnoreIfEmptyXmlComponent, OnOffElement, XmlComponent } from "@file/xml-components";
 
-import { IRunOptions, RunProperties } from ".";
+import { IParagraphRunOptions, ParagraphRunProperties } from ".";
 import { DocumentWrapper } from "../document-wrapper";
 import { IShadingAttributesProperties, Shading } from "../shading";
 import { Alignment, AlignmentType } from "./formatting/alignment";
@@ -50,7 +50,7 @@ export type IParagraphStylePropertiesOptions = {
         | false;
 } & ILevelParagraphStylePropertiesOptions;
 
-export type IParagraphPropertiesOptions = {
+export type IParagraphPropertiesOptionsBase = {
     readonly heading?: (typeof HeadingLevel)[keyof typeof HeadingLevel];
     readonly bidirectional?: boolean;
     readonly pageBreakBefore?: boolean;
@@ -73,15 +73,22 @@ export type IParagraphPropertiesOptions = {
     /**
      * Reference: ECMA-376, 3rd Edition (June, 2011), Fundamentals and Markup Language Reference § 17.3.1.29.
      */
-    readonly run?: IRunOptions;
+    readonly run?: IParagraphRunOptions;
 } & IParagraphStylePropertiesOptions;
+
+export type IParagraphPropertiesChangeOptions = IChangedAttributesProperties & IParagraphPropertiesOptionsBase;
+
+export type IParagraphPropertiesOptions = {
+    readonly revision?: IParagraphPropertiesChangeOptions;
+    readonly includeIfEmpty?: boolean;
+} & IParagraphPropertiesOptionsBase;
 
 export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
     // eslint-disable-next-line functional/prefer-readonly-type
     private readonly numberingReferences: { readonly reference: string; readonly instance: number }[] = [];
 
     public constructor(options?: IParagraphPropertiesOptions) {
-        super("w:pPr");
+        super("w:pPr", options?.includeIfEmpty);
 
         if (!options) {
             return this;
@@ -212,7 +219,11 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
         }
 
         if (options.run) {
-            this.push(new RunProperties(options.run));
+            this.push(new ParagraphRunProperties(options.run));
+        }
+
+        if (options.revision) {
+            this.push(new ParagraphPropertiesChange(options.revision));
         }
     }
 
@@ -228,5 +239,20 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
         }
 
         return super.prepForXml(context);
+    }
+}
+
+export class ParagraphPropertiesChange extends XmlComponent {
+    public constructor(options: IParagraphPropertiesChangeOptions) {
+        super("w:pPrChange");
+        this.root.push(
+            new ChangeAttributes({
+                id: options.id,
+                author: options.author,
+                date: options.date,
+            }),
+        );
+        // pPr is required (minOccurs="1") even if empty
+        this.root.push(new ParagraphProperties({ ...options, includeIfEmpty: true }));
     }
 }

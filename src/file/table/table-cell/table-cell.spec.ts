@@ -646,5 +646,173 @@ describe("TableCell", () => {
                 });
             });
         });
+
+        it("should create with inserted revision", () => {
+            const tableCell = new TableCell({
+                children: [],
+                insertion: {
+                    id: 1,
+                    author: "Firstname Lastname",
+                    date: "123",
+                },
+            });
+            const tree = new Formatter().format(tableCell);
+            expect(tree).to.deep.equal({
+                "w:tc": [
+                    {
+                        "w:tcPr": [
+                            {
+                                "w:cellIns": {
+                                    _attr: {
+                                        "w:author": "Firstname Lastname",
+                                        "w:date": "123",
+                                        "w:id": 1,
+                                    },
+                                },
+                            },
+                        ],
+                    },
+                    {
+                        "w:p": {},
+                    },
+                ],
+            });
+        });
+
+        it("should create with deleted revision", () => {
+            const tableCell = new TableCell({
+                children: [],
+                deletion: {
+                    id: 1,
+                    author: "Firstname Lastname",
+                    date: "123",
+                },
+            });
+            const tree = new Formatter().format(tableCell);
+            expect(tree).to.deep.equal({
+                "w:tc": [
+                    {
+                        "w:tcPr": [
+                            {
+                                "w:cellDel": {
+                                    _attr: {
+                                        "w:author": "Firstname Lastname",
+                                        "w:date": "123",
+                                        "w:id": 1,
+                                    },
+                                },
+                            },
+                        ],
+                    },
+                    {
+                        "w:p": {},
+                    },
+                ],
+            });
+        });
+
+        it("should create with cell merge revision", () => {
+            const tableCell = new TableCell({
+                children: [],
+                cellMerge: {
+                    id: 1,
+                    author: "Firstname Lastname",
+                    date: "123",
+                    verticalMerge: "cont",
+                },
+            });
+            const tree = new Formatter().format(tableCell);
+            expect(tree).to.deep.equal({
+                "w:tc": [
+                    {
+                        "w:tcPr": [
+                            {
+                                "w:cellMerge": {
+                                    _attr: {
+                                        "w:author": "Firstname Lastname",
+                                        "w:date": "123",
+                                        "w:id": 1,
+                                        "w:vMerge": "cont",
+                                    },
+                                },
+                            },
+                        ],
+                    },
+                    {
+                        "w:p": {},
+                    },
+                ],
+            });
+        });
+
+        it("should create with properties revision", () => {
+            const run = new TableCell({
+                children: [],
+                verticalAlign: VerticalAlignTable.CENTER,
+                textDirection: TextDirection.BOTTOM_TO_TOP_LEFT_TO_RIGHT,
+                revision: {
+                    id: 1,
+                    author: "Firstname Lastname",
+                    date: "123",
+                    verticalAlign: VerticalAlignTable.TOP,
+                    textDirection: TextDirection.LEFT_TO_RIGHT_TOP_TO_BOTTOM,
+                },
+            });
+            const tree = new Formatter().format(run);
+            expect(tree).to.deep.equal({
+                "w:tc": [
+                    {
+                        "w:tcPr": [
+                            {
+                                "w:textDirection": {
+                                    _attr: {
+                                        "w:val": "btLr",
+                                    },
+                                },
+                            },
+                            {
+                                "w:vAlign": {
+                                    _attr: {
+                                        "w:val": "center",
+                                    },
+                                },
+                            },
+                            {
+                                "w:tcPrChange": [
+                                    {
+                                        _attr: {
+                                            "w:author": "Firstname Lastname",
+                                            "w:date": "123",
+                                            "w:id": 1,
+                                        },
+                                    },
+                                    {
+                                        "w:tcPr": [
+                                            {
+                                                "w:textDirection": {
+                                                    _attr: {
+                                                        "w:val": "lrTb",
+                                                    },
+                                                },
+                                            },
+                                            {
+                                                "w:vAlign": {
+                                                    _attr: {
+                                                        "w:val": "top",
+                                                    },
+                                                },
+                                            },
+                                        ],
+                                    },
+                                ],
+                            },
+                        ],
+                    },
+                    {
+                        "w:p": {},
+                    },
+                ],
+            });
+        });
     });
 });

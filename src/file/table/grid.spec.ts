@@ -36,5 +36,33 @@ describe("TableGrid", () => {
                 ],
             });
         });
+
+        it("creates with revision", () => {
+            const grid = new TableGrid([1234, 321, 123], { id: 1, columnWidths: [1234, 123, 321] });
+            const tree = new Formatter().format(grid);
+            expect(tree).to.deep.equal({
+                "w:tblGrid": [
+                    { "w:gridCol": { _attr: { "w:w": 1234 } } },
+                    { "w:gridCol": { _attr: { "w:w": 321 } } },
+                    { "w:gridCol": { _attr: { "w:w": 123 } } },
+                    {
+                        "w:tblGridChange": [
+                            {
+                                _attr: {
+                                    "w:id": 1,
+                                },
+                            },
+                            {
+                                "w:tblGrid": [
+                                    { "w:gridCol": { _attr: { "w:w": 1234 } } },
+                                    { "w:gridCol": { _attr: { "w:w": 123 } } },
+                                    { "w:gridCol": { _attr: { "w:w": 321 } } },
+                                ],
+                            },
+                        ],
+                    },
+                ],
+            });
+        });
     });
 });

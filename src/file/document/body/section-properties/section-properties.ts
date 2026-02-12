@@ -2,6 +2,7 @@
 
 import { FooterWrapper } from "@file/footer-wrapper";
 import { HeaderWrapper } from "@file/header-wrapper";
+import { ChangeAttributes, IChangedAttributesProperties } from "@file/track-revision/track-revision";
 import { SectionVerticalAlign, VerticalAlignElement } from "@file/vertical-align";
 import { OnOffElement, XmlComponent } from "@file/xml-components";
 
@@ -22,7 +23,7 @@ export type IHeaderFooterGroup<T> = {
     readonly even?: T;
 };
 
-export type ISectionPropertiesOptions = {
+export type ISectionPropertiesOptionsBase = {
     readonly page?: {
         readonly size?: Partial<IPageSizeAttributes>;
         readonly margin?: IPageMarginAttributes;
@@ -39,6 +40,12 @@ export type ISectionPropertiesOptions = {
     readonly column?: IColumnsAttributes;
     readonly type?: (typeof SectionType)[keyof typeof SectionType];
 };
+
+export type ISectionPropertiesChangeOptions = IChangedAttributesProperties & ISectionPropertiesOptionsBase;
+
+export type ISectionPropertiesOptions = {
+    readonly revision?: ISectionPropertiesChangeOptions;
+} & ISectionPropertiesOptionsBase;
 
 // <xsd:complexType name="CT_SectPr">
 //     <xsd:sequence>
@@ -118,6 +125,7 @@ export class SectionProperties extends XmlComponent {
         verticalAlign,
         column,
         type,
+        revision,
     }: ISectionPropertiesOptions = {}) {
         super("w:sectPr");
 
@@ -157,6 +165,10 @@ export class SectionProperties extends XmlComponent {
             this.root.push(new PageTextDirection(textDirection));
         }
 
+        if (revision) {
+            this.root.push(new SectionPropertiesChange(revision));
+        }
+
         this.root.push(createDocumentGrid({ linePitch, charSpace, type: gridType }));
     }
 
@@ -190,5 +202,19 @@ export class SectionProperties extends XmlComponent {
                 }),
             );
         }
+    }
+}
+
+export class SectionPropertiesChange extends XmlComponent {
+    public constructor(options: ISectionPropertiesChangeOptions) {
+        super("w:sectPrChange");
+        this.root.push(
+            new ChangeAttributes({
+                id: options.id,
+                author: options.author,
+                date: options.date,
+            }),
+        );
+        this.root.push(new SectionProperties(options));
     }
 }
