@@ -7,7 +7,7 @@
  *
  * @module
  */
-import { BorderElement, BorderStyle, IBorderOptions } from "@file/border";
+import { BorderStyle, IBorderOptions, createBorderElement } from "@file/border";
 import { IgnoreIfEmptyXmlComponent, XmlComponent } from "@file/xml-components";
 
 /**
@@ -71,23 +71,23 @@ export class Border extends IgnoreIfEmptyXmlComponent {
         super("w:pBdr");
 
         if (options.top) {
-            this.root.push(new BorderElement("w:top", options.top));
+            this.root.push(createBorderElement("w:top", options.top));
         }
 
         if (options.bottom) {
-            this.root.push(new BorderElement("w:bottom", options.bottom));
+            this.root.push(createBorderElement("w:bottom", options.bottom));
         }
 
         if (options.left) {
-            this.root.push(new BorderElement("w:left", options.left));
+            this.root.push(createBorderElement("w:left", options.left));
         }
 
         if (options.right) {
-            this.root.push(new BorderElement("w:right", options.right));
+            this.root.push(createBorderElement("w:right", options.right));
         }
 
         if (options.between) {
-            this.root.push(new BorderElement("w:between", options.between));
+            this.root.push(createBorderElement("w:between", options.between));
         }
     }
 }
@@ -119,7 +119,7 @@ export class Border extends IgnoreIfEmptyXmlComponent {
 export class ThematicBreak extends XmlComponent {
     public constructor() {
         super("w:pBdr");
-        const bottom = new BorderElement("w:bottom", {
+        const bottom = createBorderElement("w:bottom", {
             color: "auto",
             space: 1,
             style: BorderStyle.SINGLE,

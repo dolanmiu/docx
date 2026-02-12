@@ -8,7 +8,7 @@
  *
  * @module
  */
-import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
+import { BuilderElement, XmlComponent } from "@file/xml-components";
 
 /**
  * Line spacing rule types.
@@ -53,19 +53,8 @@ export type ISpacingProperties = {
     readonly afterAutoSpacing?: boolean;
 };
 
-class SpacingAttributes extends XmlAttributeComponent<ISpacingProperties> {
-    protected readonly xmlKeys = {
-        after: "w:after",
-        before: "w:before",
-        line: "w:line",
-        lineRule: "w:lineRule",
-        beforeAutoSpacing: "w:beforeAutospacing",
-        afterAutoSpacing: "w:afterAutospacing",
-    };
-}
-
 /**
- * Represents paragraph spacing in a WordprocessingML document.
+ * Creates paragraph spacing element for a WordprocessingML document.
  *
  * The spacing element specifies the spacing between lines and paragraphs.
  *
@@ -98,9 +87,15 @@ class SpacingAttributes extends XmlAttributeComponent<ISpacingProperties> {
  * });
  * ```
  */
-export class Spacing extends XmlComponent {
-    public constructor(options: ISpacingProperties) {
-        super("w:spacing");
-        this.root.push(new SpacingAttributes(options));
-    }
-}
+export const createSpacing = ({ after, before, line, lineRule, beforeAutoSpacing, afterAutoSpacing }: ISpacingProperties): XmlComponent =>
+    new BuilderElement<ISpacingProperties>({
+        name: "w:spacing",
+        attributes: {
+            after: { key: "w:after", value: after },
+            before: { key: "w:before", value: before },
+            line: { key: "w:line", value: line },
+            lineRule: { key: "w:lineRule", value: lineRule },
+            beforeAutoSpacing: { key: "w:beforeAutospacing", value: beforeAutoSpacing },
+            afterAutoSpacing: { key: "w:afterAutospacing", value: afterAutoSpacing },
+        },
+    });

@@ -948,7 +948,8 @@ describe("Paragraph", () => {
             });
             const viewWrapperMock = {
                 Relationships: {
-                    createRelationship: () => ({}),
+                    // eslint-disable-next-line @typescript-eslint/no-empty-function
+                    addRelationship: () => {},
                 },
             } as unknown as IViewWrapper;
 

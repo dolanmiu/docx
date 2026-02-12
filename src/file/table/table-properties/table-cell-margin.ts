@@ -7,7 +7,7 @@
  *
  * @module
  */
-import { TableWidthElement, WidthType } from "@file/table";
+import { WidthType, createTableWidthElement } from "@file/table";
 import { IgnoreIfEmptyXmlComponent } from "@file/xml-components";
 
 /**
@@ -78,19 +78,19 @@ export class TableCellMargin extends IgnoreIfEmptyXmlComponent {
         super(type);
 
         if (top !== undefined) {
-            this.root.push(new TableWidthElement("w:top", { type: marginUnitType, size: top }));
+            this.root.push(createTableWidthElement("w:top", { type: marginUnitType, size: top }));
         }
 
         if (left !== undefined) {
-            this.root.push(new TableWidthElement("w:left", { type: marginUnitType, size: left }));
+            this.root.push(createTableWidthElement("w:left", { type: marginUnitType, size: left }));
         }
 
         if (bottom !== undefined) {
-            this.root.push(new TableWidthElement("w:bottom", { type: marginUnitType, size: bottom }));
+            this.root.push(createTableWidthElement("w:bottom", { type: marginUnitType, size: bottom }));
         }
 
         if (right !== undefined) {
-            this.root.push(new TableWidthElement("w:right", { type: marginUnitType, size: right }));
+            this.root.push(createTableWidthElement("w:right", { type: marginUnitType, size: right }));
         }
     }
 }

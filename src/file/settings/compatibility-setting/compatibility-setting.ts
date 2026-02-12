@@ -8,7 +8,7 @@
  *
  * @module
  */
-import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
+import { BuilderElement, XmlComponent } from "@file/xml-components";
 
 // Currently, this is hard-coded for Microsoft word compatSettings.
 // Theoretically, we could add compatSettings for other programs, but
@@ -20,28 +20,14 @@ import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
 //     <xsd:attribute name="val" type="s:ST_String"/>
 // </xsd:complexType>
 
-/**
- * Attributes for the compatibility setting element.
- *
- * Defines the name, URI, and value for a compatibility setting.
- * For Microsoft Word, this is typically used to set the compatibility mode version.
- *
- * @internal
- */
-export class CompatibilitySettingAttributes extends XmlAttributeComponent<{
+type ICompatibilitySettingAttributes = {
     readonly version: number;
     readonly name: string;
     readonly uri: string;
-}> {
-    protected readonly xmlKeys = {
-        version: "w:val",
-        name: "w:name",
-        uri: "w:uri",
-    };
-}
+};
 
 /**
- * Represents a single compatibility setting in a WordprocessingML document.
+ * Creates a compatibility setting for a WordprocessingML document.
  *
  * Currently hard-coded to set Microsoft Word compatibility mode version.
  * This controls which Word version's formatting and layout behavior the document emulates.
@@ -66,22 +52,18 @@ export class CompatibilitySettingAttributes extends XmlAttributeComponent<{
  * @example
  * ```typescript
  * // Set compatibility mode to Word 2013+
- * new CompatibilitySetting(15);
+ * createCompatibilitySetting(15);
  *
  * // Set compatibility mode to Word 2010
- * new CompatibilitySetting(14);
+ * createCompatibilitySetting(14);
  * ```
  */
-export class CompatibilitySetting extends XmlComponent {
-    public constructor(version: number) {
-        super("w:compatSetting");
-
-        this.root.push(
-            new CompatibilitySettingAttributes({
-                version,
-                uri: "http://schemas.microsoft.com/office/word",
-                name: "compatibilityMode",
-            }),
-        );
-    }
-}
+export const createCompatibilitySetting = (version: number): XmlComponent =>
+    new BuilderElement<ICompatibilitySettingAttributes>({
+        name: "w:compatSetting",
+        attributes: {
+            version: { key: "w:val", value: version },
+            name: { key: "w:name", value: "compatibilityMode" },
+            uri: { key: "w:uri", value: "http://schemas.microsoft.com/office/word" },
+        },
+    });

@@ -5,7 +5,7 @@
  *
  * @module
  */
-import { Attributes, XmlComponent } from "@file/xml-components";
+import { BuilderElement, XmlComponent } from "@file/xml-components";
 
 /**
  * Built-in heading level styles.
@@ -30,7 +30,7 @@ export const HeadingLevel = {
 } as const;
 
 /**
- * Represents a paragraph style reference in a WordprocessingML document.
+ * Creates a paragraph style reference for a WordprocessingML document.
  *
  * The pStyle element specifies the paragraph style to apply to the paragraph.
  *
@@ -58,13 +58,10 @@ export const HeadingLevel = {
  * });
  * ```
  */
-export class Style extends XmlComponent {
-    public constructor(styleId: string) {
-        super("w:pStyle");
-        this.root.push(
-            new Attributes({
-                val: styleId,
-            }),
-        );
-    }
-}
+export const createParagraphStyle = (styleId: string): XmlComponent =>
+    new BuilderElement<{ readonly val: string }>({
+        name: "w:pStyle",
+        attributes: {
+            val: { key: "w:val", value: styleId },
+        },
+    });

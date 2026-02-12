@@ -2,14 +2,12 @@ import { describe, expect, it } from "vitest";
 
 import { Formatter } from "@export/formatter";
 
-import { Style } from "./style";
+import { createParagraphStyle } from "./style";
 
 describe("ParagraphStyle", () => {
-    let style: Style;
-
-    describe("#constructor()", () => {
+    describe("#createParagraphStyle()", () => {
         it("should create a style with given value", () => {
-            style = new Style("test");
+            const style = createParagraphStyle("test");
             const tree = new Formatter().format(style);
             expect(tree).to.deep.equal({
                 "w:pStyle": {
@@ -21,7 +19,7 @@ describe("ParagraphStyle", () => {
         });
 
         it("should create a style with blank val", () => {
-            style = new Style("");
+            const style = createParagraphStyle("");
             const tree = new Formatter().format(style);
             expect(tree).to.deep.equal({
                 "w:pStyle": {

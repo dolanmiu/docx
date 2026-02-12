@@ -241,7 +241,7 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
                 file,
                 viewWrapper: {
                     Relationships: {
-                        createRelationship: (
+                        addRelationship: (
                             linkId: string,
                             _: string,
                             target: string,

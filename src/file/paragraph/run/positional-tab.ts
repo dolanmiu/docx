@@ -8,7 +8,7 @@
  *
  * @module
  */
-import { NextAttributeComponent, XmlComponent } from "@file/xml-components";
+import { BuilderElement, XmlComponent } from "@file/xml-components";
 
 /**
  * Positional tab alignment types.
@@ -105,7 +105,7 @@ export type PositionalTabOptions = {
 };
 
 /**
- * Represents a positional tab in a WordprocessingML document.
+ * Creates a positional tab element for a WordprocessingML document.
  *
  * A positional tab is an absolute position tab stop that is typically used
  * in bidirectional text scenarios. Unlike normal tabs, positional tabs specify
@@ -125,36 +125,19 @@ export type PositionalTabOptions = {
  * @example
  * ```typescript
  * // Create a centered positional tab
- * new PositionalTab({
+ * createPositionalTab({
  *   alignment: PositionalTabAlignment.CENTER,
  *   relativeTo: PositionalTabRelativeTo.MARGIN,
  *   leader: PositionalTabLeader.DOT,
  * });
  * ```
  */
-export class PositionalTab extends XmlComponent {
-    public constructor(options: PositionalTabOptions) {
-        super("w:ptab");
-
-        this.root.push(
-            new NextAttributeComponent<{
-                readonly alignment: (typeof PositionalTabAlignment)[keyof typeof PositionalTabAlignment];
-                readonly relativeTo: (typeof PositionalTabRelativeTo)[keyof typeof PositionalTabRelativeTo];
-                readonly leader: (typeof PositionalTabLeader)[keyof typeof PositionalTabLeader];
-            }>({
-                alignment: {
-                    key: "w:alignment",
-                    value: options.alignment,
-                },
-                relativeTo: {
-                    key: "w:relativeTo",
-                    value: options.relativeTo,
-                },
-                leader: {
-                    key: "w:leader",
-                    value: options.leader,
-                },
-            }),
-        );
-    }
-}
+export const createPositionalTab = (options: PositionalTabOptions): XmlComponent =>
+    new BuilderElement<PositionalTabOptions>({
+        name: "w:ptab",
+        attributes: {
+            alignment: { key: "w:alignment", value: options.alignment },
+            relativeTo: { key: "w:relativeTo", value: options.relativeTo },
+            leader: { key: "w:leader", value: options.leader },
+        },
+    });

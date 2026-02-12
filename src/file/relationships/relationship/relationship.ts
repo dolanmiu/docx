@@ -1,6 +1,4 @@
-import { XmlComponent } from "@file/xml-components";
-
-import { RelationshipAttributes } from "./relationship-attributes";
+import { BuilderElement, XmlComponent } from "@file/xml-components";
 
 /**
  * Supported relationship type URIs.
@@ -38,8 +36,15 @@ export const TargetModeType = {
     EXTERNAL: "External",
 } as const;
 
+type IRelationshipAttributes = {
+    readonly id: string;
+    readonly type: RelationshipType;
+    readonly target: string;
+    readonly targetMode?: (typeof TargetModeType)[keyof typeof TargetModeType];
+};
+
 /**
- * Represents a single relationship between parts in an OPC package.
+ * Creates a single relationship between parts in an OPC package.
  *
  * A relationship defines a typed connection from a source part to a target part,
  * identified by a unique ID within the relationships collection.
@@ -47,28 +52,25 @@ export const TargetModeType = {
  * @example
  * ```typescript
  * // Internal relationship to an image
- * new Relationship("rId1", "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image", "media/image1.png");
+ * createRelationship("rId1", "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image", "media/image1.png");
  *
  * // External relationship to a hyperlink
- * new Relationship("rId2", "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink", "https://example.com", TargetModeType.EXTERNAL);
+ * createRelationship("rId2", "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink", "https://example.com", TargetModeType.EXTERNAL);
  * ```
  */
-export class Relationship extends XmlComponent {
-    public constructor(
-        id: string,
-        type: RelationshipType,
-        target: string,
-        targetMode?: (typeof TargetModeType)[keyof typeof TargetModeType],
-    ) {
-        super("Relationship");
 
-        this.root.push(
-            new RelationshipAttributes({
-                id,
-                type,
-                target,
-                targetMode,
-            }),
-        );
-    }
-}
+export const createRelationship = (
+    id: string,
+    type: RelationshipType,
+    target: string,
+    targetMode?: (typeof TargetModeType)[keyof typeof TargetModeType],
+): XmlComponent =>
+    new BuilderElement<IRelationshipAttributes>({
+        name: "Relationship",
+        attributes: {
+            id: { key: "Id", value: id },
+            type: { key: "Type", value: type },
+            target: { key: "Target", value: target },
+            targetMode: { key: "TargetMode", value: targetMode },
+        },
+    });

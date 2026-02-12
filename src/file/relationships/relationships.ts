@@ -11,7 +11,7 @@
 import { XmlComponent } from "@file/xml-components";
 
 import { RelationshipsAttributes } from "./attributes";
-import { Relationship, RelationshipType, TargetModeType } from "./relationship/relationship";
+import { RelationshipType, TargetModeType, createRelationship } from "./relationship/relationship";
 
 /**
  * Represents a collection of relationships in an OPC package.
@@ -48,18 +48,14 @@ export class Relationships extends XmlComponent {
      * @param type - Relationship type URI (e.g., image, header, hyperlink)
      * @param target - Path to the target part
      * @param targetMode - Optional mode indicating if target is external
-     * @returns The created Relationship instance
      */
-    public createRelationship(
+    public addRelationship(
         id: number | string,
         type: RelationshipType,
         target: string,
         targetMode?: (typeof TargetModeType)[keyof typeof TargetModeType],
-    ): Relationship {
-        const relationship = new Relationship(`rId${id}`, type, target, targetMode);
-        this.root.push(relationship);
-
-        return relationship;
+    ): void {
+        this.root.push(createRelationship(`rId${id}`, type, target, targetMode));
     }
 
     /**

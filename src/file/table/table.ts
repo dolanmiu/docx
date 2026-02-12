@@ -8,7 +8,7 @@
 import { FileChild } from "@file/file-child";
 
 import { AlignmentType } from "../paragraph";
-import { TableGrid } from "./grid";
+import { createTableGrid } from "./grid";
 import { TableCell, VerticalMergeType } from "./table-cell";
 import { ITableCellSpacingProperties } from "./table-cell-spacing";
 import { ITableBordersOptions, ITableFloatOptions, TableProperties } from "./table-properties";
@@ -117,7 +117,7 @@ export class Table extends FileChild {
             }),
         );
 
-        this.root.push(new TableGrid(columnWidths));
+        this.root.push(createTableGrid(columnWidths));
 
         for (const row of rows) {
             this.root.push(row);
