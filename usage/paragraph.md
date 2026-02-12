@@ -64,7 +64,7 @@ This is the list of options for a paragraph. A detailed explanation is below:
 | ------------------------------ | ------------------------------------------------------------------------------------------------------------------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [text](#text)                  | `string`                                                                                                            | Optional   |                                                                                                                                                             |
 | [heading](#heading)            | `HeadingLevel`                                                                                                      | Optional   | `HEADING_1`, `HEADING_2`, `HEADING_3`, `HEADING_4`, `HEADING_5`, `HEADING_6`, `TITLE`                                                                       |
-| [border](#border)              | `IBorderOptions`                                                                                                    | Optional   | `top`, `bottom`, `left`, `right`. Each of these are of type IBorderPropertyOptions. Click here for Example                                                  |
+| [border](#border)              | `IBorderOptions`                                                                                                    | Optional   | `top`, `bottom`, `left`, `right`, `between`. Each of these are of type IBorderPropertyOptions. Click here for Example                                                  |
 | [spacing](#spacing)            | `ISpacingProperties`                                                                                                | Optional   | See below for ISpacingProperties                                                                                                                            |
 | [outlineLevel](#outline-level) | `number`                                                                                                            | Optional   |                                                                                                                                                             |
 | alignment                      | `AlignmentType`                                                                                                     | Optional   | `START`, `CENTER`, `END`, `BOTH`, `MEDIUM_KASHIDA`, `DISTRIBUTE`, `NUM_TAB`, `HIGH_KASHIDA`, `LOW_KASHIDA`, `THAI_DISTRIBUTE`, `LEFT`, `RIGHT`, `JUSTIFIED` |
@@ -115,7 +115,7 @@ Add borders to a `Paragraph`. Good for making the `Paragraph` stand out. Border 
 
 #### IBorderPropertyOptions
 
-`top`, `bottom`, `left`, `right` of the border
+`top`, `bottom`, `left`, `right`, `between` of the border
 
 | Property | Type     | Notes    |
 | -------- | -------- | -------- |
@@ -305,7 +305,7 @@ Example: https://github.com/dolanmiu/docx/blob/master/demo/15-page-break-before.
 
 ## Page break control
 
-Paragraphs have `keepLines` and `keepNext` properties that allow restricting page breaks within and between paragraphs. See [this Microsoft article](https://support.office.com/en-us/article/Keep-lines-and-paragraphs-together-d72af534-926f-4c4b-830a-abfc2daa3bfa) for more details.
+Paragraphs have `keepLines` and `keepNext` properties that allow restricting page breaks within and between paragraphs. See [this Microsoft article](https://support.microsoft.com/en-us/office/keep-text-together-in-word-af94e5b8-3a5a-4cb0-9c53-dea56b43d96d) for more details.
 
 ```ts
 const paragraph = new Paragraph({
