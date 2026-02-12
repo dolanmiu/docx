@@ -7,6 +7,7 @@ export type IBordersOptions = {
     readonly bottom?: IBorderOptions;
     readonly left?: IBorderOptions;
     readonly right?: IBorderOptions;
+    readonly between?: IBorderOptions;
 };
 
 export class Border extends IgnoreIfEmptyXmlComponent {
@@ -27,6 +28,10 @@ export class Border extends IgnoreIfEmptyXmlComponent {
 
         if (options.right) {
             this.root.push(new BorderElement("w:right", options.right));
+        }
+
+        if (options.between) {
+            this.root.push(new BorderElement("w:between", options.between));
         }
     }
 }
