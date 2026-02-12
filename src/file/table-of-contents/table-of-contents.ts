@@ -3,7 +3,7 @@
 import { FileChild } from "@file/file-child";
 import { Paragraph } from "@file/paragraph";
 import { Run } from "@file/paragraph/run";
-import { Begin, End, Separate } from "@file/paragraph/run/field";
+import { createBegin, createEnd, createSeparate } from "@file/paragraph/run/field";
 
 import { FieldInstruction } from "./field-instruction";
 import { StructuredDocumentTagContent } from "./sdt-content";
@@ -20,7 +20,7 @@ export class TableOfContents extends FileChild {
         const beginParagraph = new Paragraph({
             children: [
                 new Run({
-                    children: [new Begin(true), new FieldInstruction(properties), new Separate()],
+                    children: [createBegin(true), new FieldInstruction(properties), createSeparate()],
                 }),
             ],
         });
@@ -30,7 +30,7 @@ export class TableOfContents extends FileChild {
         const endParagraph = new Paragraph({
             children: [
                 new Run({
-                    children: [new End()],
+                    children: [createEnd()],
                 }),
             ],
         });

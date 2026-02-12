@@ -17,7 +17,7 @@
 //     <xsd:attribute name="themeFillTint" type="ST_UcharHexNumber" use="optional"/>
 //     <xsd:attribute name="themeFillShade" type="ST_UcharHexNumber" use="optional"/>
 // </xsd:complexType>
-import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
+import { BuilderElement, XmlComponent } from "@file/xml-components";
 import { hexColorValue } from "@util/values";
 
 export type IShadingAttributesProperties = {
@@ -26,26 +26,15 @@ export type IShadingAttributesProperties = {
     readonly type?: (typeof ShadingType)[keyof typeof ShadingType];
 };
 
-class ShadingAttributes extends XmlAttributeComponent<IShadingAttributesProperties> {
-    protected readonly xmlKeys = {
-        fill: "w:fill",
-        color: "w:color",
-        type: "w:val",
-    };
-}
-
-export class Shading extends XmlComponent {
-    public constructor({ fill, color, type }: IShadingAttributesProperties) {
-        super("w:shd");
-        this.root.push(
-            new ShadingAttributes({
-                fill: fill === undefined ? undefined : hexColorValue(fill),
-                color: color === undefined ? undefined : hexColorValue(color),
-                type,
-            }),
-        );
-    }
-}
+export const createShading = ({ fill, color, type }: IShadingAttributesProperties): XmlComponent =>
+    new BuilderElement<IShadingAttributesProperties>({
+        name: "w:shd",
+        attributes: {
+            fill: { key: "w:fill", value: fill === undefined ? undefined : hexColorValue(fill) },
+            color: { key: "w:color", value: color === undefined ? undefined : hexColorValue(color) },
+            type: { key: "w:val", value: type },
+        },
+    });
 
 export const ShadingType = {
     CLEAR: "clear",

@@ -1,4 +1,4 @@
-import { NextAttributeComponent, StringEnumValueElement, XmlComponent } from "@file/xml-components";
+import { BuilderElement, XmlComponent } from "@file/xml-components";
 import { PositiveUniversalMeasure, UniversalMeasure, signedTwipsMeasureValue, twipsMeasureValue } from "@util/values";
 
 export const TableAnchorType = {
@@ -139,71 +139,70 @@ export type ITableFloatOptions = {
 //     <xsd:attribute name="tblpY" type="ST_SignedTwipsMeasure"/>
 // </xsd:complexType>
 
-export class TableFloatProperties extends XmlComponent {
-    public constructor({
-        horizontalAnchor,
-        verticalAnchor,
-        absoluteHorizontalPosition,
-        relativeHorizontalPosition,
-        absoluteVerticalPosition,
-        relativeVerticalPosition,
-        bottomFromText,
-        topFromText,
-        leftFromText,
-        rightFromText,
-        overlap,
-    }: ITableFloatOptions) {
-        super("w:tblpPr");
-        this.root.push(
-            new NextAttributeComponent<Omit<ITableFloatOptions, "overlap">>({
-                leftFromText: {
-                    key: "w:leftFromText",
-                    value: leftFromText === undefined ? undefined : twipsMeasureValue(leftFromText),
-                },
-                rightFromText: {
-                    key: "w:rightFromText",
-                    value: rightFromText === undefined ? undefined : twipsMeasureValue(rightFromText),
-                },
-                topFromText: {
-                    key: "w:topFromText",
-                    value: topFromText === undefined ? undefined : twipsMeasureValue(topFromText),
-                },
-                bottomFromText: {
-                    key: "w:bottomFromText",
-                    value: bottomFromText === undefined ? undefined : twipsMeasureValue(bottomFromText),
-                },
-                absoluteHorizontalPosition: {
-                    key: "w:tblpX",
-                    value: absoluteHorizontalPosition === undefined ? undefined : signedTwipsMeasureValue(absoluteHorizontalPosition),
-                },
-                absoluteVerticalPosition: {
-                    key: "w:tblpY",
-                    value: absoluteVerticalPosition === undefined ? undefined : signedTwipsMeasureValue(absoluteVerticalPosition),
-                },
-                horizontalAnchor: {
-                    key: "w:horzAnchor",
-                    value: horizontalAnchor === undefined ? undefined : horizontalAnchor,
-                },
-                relativeHorizontalPosition: {
-                    key: "w:tblpXSpec",
-                    value: relativeHorizontalPosition,
-                },
-                relativeVerticalPosition: {
-                    key: "w:tblpYSpec",
-                    value: relativeVerticalPosition,
-                },
-                verticalAnchor: {
-                    key: "w:vertAnchor",
-                    value: verticalAnchor,
-                },
-            }),
-        );
+const createOverlapElement = (overlap: (typeof OverlapType)[keyof typeof OverlapType]): XmlComponent =>
+    new BuilderElement<{ readonly val: (typeof OverlapType)[keyof typeof OverlapType] }>({
+        name: "w:tblOverlap",
+        attributes: {
+            val: { key: "w:val", value: overlap },
+        },
+    });
 
-        if (overlap) {
-            // <xsd:complexType name="CT_TblOverlap">
-            //     <xsd:attribute name="val" type="ST_TblOverlap" use="required"/>
-            // </xsd:complexType>
-            this.root.push(new StringEnumValueElement<(typeof OverlapType)[keyof typeof OverlapType]>("w:tblOverlap", overlap));
-        }
-    }
-}
+export const createTableFloatProperties = ({
+    horizontalAnchor,
+    verticalAnchor,
+    absoluteHorizontalPosition,
+    relativeHorizontalPosition,
+    absoluteVerticalPosition,
+    relativeVerticalPosition,
+    bottomFromText,
+    topFromText,
+    leftFromText,
+    rightFromText,
+    overlap,
+}: ITableFloatOptions): XmlComponent =>
+    new BuilderElement<Omit<ITableFloatOptions, "overlap">>({
+        name: "w:tblpPr",
+        attributes: {
+            leftFromText: {
+                key: "w:leftFromText",
+                value: leftFromText === undefined ? undefined : twipsMeasureValue(leftFromText),
+            },
+            rightFromText: {
+                key: "w:rightFromText",
+                value: rightFromText === undefined ? undefined : twipsMeasureValue(rightFromText),
+            },
+            topFromText: {
+                key: "w:topFromText",
+                value: topFromText === undefined ? undefined : twipsMeasureValue(topFromText),
+            },
+            bottomFromText: {
+                key: "w:bottomFromText",
+                value: bottomFromText === undefined ? undefined : twipsMeasureValue(bottomFromText),
+            },
+            absoluteHorizontalPosition: {
+                key: "w:tblpX",
+                value: absoluteHorizontalPosition === undefined ? undefined : signedTwipsMeasureValue(absoluteHorizontalPosition),
+            },
+            absoluteVerticalPosition: {
+                key: "w:tblpY",
+                value: absoluteVerticalPosition === undefined ? undefined : signedTwipsMeasureValue(absoluteVerticalPosition),
+            },
+            horizontalAnchor: {
+                key: "w:horzAnchor",
+                value: horizontalAnchor,
+            },
+            relativeHorizontalPosition: {
+                key: "w:tblpXSpec",
+                value: relativeHorizontalPosition,
+            },
+            relativeVerticalPosition: {
+                key: "w:tblpYSpec",
+                value: relativeVerticalPosition,
+            },
+            verticalAnchor: {
+                key: "w:vertAnchor",
+                value: verticalAnchor,
+            },
+        },
+        children: overlap ? [createOverlapElement(overlap)] : undefined,
+    });

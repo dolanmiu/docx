@@ -1,7 +1,7 @@
-import { NextAttributeComponent, XmlComponent } from "@file/xml-components";
+import { BuilderElement, XmlComponent } from "@file/xml-components";
 import { PositiveUniversalMeasure, decimalNumber, twipsMeasureValue } from "@util/values";
 
-import { Column } from "./column";
+import { IColumnAttributes, createColumn } from "./column";
 
 // <xsd:complexType name="CT_Columns">
 //     <xsd:sequence minOccurs="0">
@@ -17,23 +17,17 @@ export type IColumnsAttributes = {
     readonly count?: number;
     readonly separate?: boolean;
     readonly equalWidth?: boolean;
-    readonly children?: readonly Column[];
+    readonly children?: readonly IColumnAttributes[];
 };
 
-export class Columns extends XmlComponent {
-    public constructor({ space, count, separate, equalWidth, children }: IColumnsAttributes) {
-        super("w:cols");
-        this.root.push(
-            new NextAttributeComponent<Omit<IColumnsAttributes, "children">>({
-                space: { key: "w:space", value: space === undefined ? undefined : twipsMeasureValue(space) },
-                count: { key: "w:num", value: count === undefined ? undefined : decimalNumber(count) },
-                separate: { key: "w:sep", value: separate },
-                equalWidth: { key: "w:equalWidth", value: equalWidth },
-            }),
-        );
-
-        if (!equalWidth && children) {
-            children.forEach((column) => this.addChildElement(column));
-        }
-    }
-}
+export const createColumns = ({ space, count, separate, equalWidth, children }: IColumnsAttributes): XmlComponent =>
+    new BuilderElement<Omit<IColumnsAttributes, "children">>({
+        name: "w:cols",
+        attributes: {
+            space: { key: "w:space", value: space === undefined ? undefined : twipsMeasureValue(space) },
+            count: { key: "w:num", value: count === undefined ? undefined : decimalNumber(count) },
+            separate: { key: "w:sep", value: separate },
+            equalWidth: { key: "w:equalWidth", value: equalWidth },
+        },
+        children: !equalWidth && children ? children.map((column) => createColumn(column)) : undefined,
+    });

@@ -1,4 +1,4 @@
-import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
+import { BuilderElement, XmlComponent } from "@file/xml-components";
 import { PositiveUniversalMeasure, twipsMeasureValue } from "@util/values";
 
 // <xsd:complexType name="CT_Height">
@@ -22,22 +22,17 @@ export const HeightRule = {
     EXACT: "exact",
 } as const;
 
-export class TableRowHeightAttributes extends XmlAttributeComponent<{
-    readonly value: number | string;
-    readonly rule: (typeof HeightRule)[keyof typeof HeightRule];
-}> {
-    protected readonly xmlKeys = { value: "w:val", rule: "w:hRule" };
-}
-
-export class TableRowHeight extends XmlComponent {
-    public constructor(value: number | PositiveUniversalMeasure, rule: (typeof HeightRule)[keyof typeof HeightRule]) {
-        super("w:trHeight");
-
-        this.root.push(
-            new TableRowHeightAttributes({
-                value: twipsMeasureValue(value),
-                rule: rule,
-            }),
-        );
-    }
-}
+export const createTableRowHeight = (
+    value: number | PositiveUniversalMeasure,
+    rule: (typeof HeightRule)[keyof typeof HeightRule],
+): XmlComponent =>
+    new BuilderElement<{
+        readonly value: number | string;
+        readonly rule: (typeof HeightRule)[keyof typeof HeightRule];
+    }>({
+        name: "w:trHeight",
+        attributes: {
+            value: { key: "w:val", value: twipsMeasureValue(value) },
+            rule: { key: "w:hRule", value: rule },
+        },
+    });

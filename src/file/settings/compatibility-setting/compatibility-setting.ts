@@ -1,4 +1,4 @@
-import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
+import { BuilderElement, XmlComponent } from "@file/xml-components";
 
 // Currently, this is hard-coded for Microsoft word compatSettings.
 // Theoretically, we could add compatSettings for other programs, but
@@ -10,30 +10,20 @@ import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
 //     <xsd:attribute name="val" type="s:ST_String"/>
 // </xsd:complexType>
 
-export class CompatibilitySettingAttributes extends XmlAttributeComponent<{
+type ICompatibilitySettingAttributes = {
     readonly version: number;
     readonly name: string;
     readonly uri: string;
-}> {
-    protected readonly xmlKeys = {
-        version: "w:val",
-        name: "w:name",
-        uri: "w:uri",
-    };
-}
+};
 
 // https://docs.microsoft.com/en-us/openspecs/office_standards/ms-docx/90138c4d-eb18-4edc-aa6c-dfb799cb1d0d
 
-export class CompatibilitySetting extends XmlComponent {
-    public constructor(version: number) {
-        super("w:compatSetting");
-
-        this.root.push(
-            new CompatibilitySettingAttributes({
-                version,
-                uri: "http://schemas.microsoft.com/office/word",
-                name: "compatibilityMode",
-            }),
-        );
-    }
-}
+export const createCompatibilitySetting = (version: number): XmlComponent =>
+    new BuilderElement<ICompatibilitySettingAttributes>({
+        name: "w:compatSetting",
+        attributes: {
+            version: { key: "w:val", value: version },
+            name: { key: "w:name", value: "compatibilityMode" },
+            uri: { key: "w:uri", value: "http://schemas.microsoft.com/office/word" },
+        },
+    });

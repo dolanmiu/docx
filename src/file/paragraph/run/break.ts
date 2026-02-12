@@ -1,5 +1,5 @@
 // http://officeopenxml.com/WPtextSpecialContent-break.php
-import { XmlComponent } from "@file/xml-components";
+import { BuilderElement, XmlComponent } from "@file/xml-components";
 
 // <xsd:group name="EG_RunInnerContent">
 //   ...
@@ -25,8 +25,7 @@ import { XmlComponent } from "@file/xml-components";
 //   <xsd:enumeration value="all"/>
 // </xsd:restriction>
 // </xsd:simpleType>
-export class Break extends XmlComponent {
-    public constructor() {
-        super("w:br");
-    }
-}
+export const createBreak = (): XmlComponent =>
+    new BuilderElement({
+        name: "w:br",
+    });

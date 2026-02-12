@@ -1,4 +1,4 @@
-import { Attributes, XmlComponent } from "@file/xml-components";
+import { BuilderElement, XmlComponent } from "@file/xml-components";
 import { hexColorValue } from "@util/values";
 
 export const UnderlineType = {
@@ -22,14 +22,19 @@ export const UnderlineType = {
     NONE: "none",
 } as const;
 
-export class Underline extends XmlComponent {
-    public constructor(underlineType: (typeof UnderlineType)[keyof typeof UnderlineType] = UnderlineType.SINGLE, color?: string) {
-        super("w:u");
-        this.root.push(
-            new Attributes({
-                val: underlineType,
-                color: color === undefined ? undefined : hexColorValue(color),
-            }),
-        );
-    }
-}
+type IUnderlineAttributes = {
+    readonly val: (typeof UnderlineType)[keyof typeof UnderlineType];
+    readonly color?: string;
+};
+
+export const createUnderline = (
+    underlineType: (typeof UnderlineType)[keyof typeof UnderlineType] = UnderlineType.SINGLE,
+    color?: string,
+): XmlComponent =>
+    new BuilderElement<IUnderlineAttributes>({
+        name: "w:u",
+        attributes: {
+            val: { key: "w:val", value: underlineType },
+            color: { key: "w:color", value: color === undefined ? undefined : hexColorValue(color) },
+        },
+    });

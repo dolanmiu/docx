@@ -1,5 +1,5 @@
 // http://officeopenxml.com/WPtableCellSpacing.php
-import { NextAttributeComponent, XmlComponent } from "@file/xml-components";
+import { BuilderElement, XmlComponent } from "@file/xml-components";
 import { Percentage, UniversalMeasure, measurementOrPercentValue } from "@util/values";
 
 // <xsd:simpleType name="ST_TblCellSpacing">
@@ -25,15 +25,11 @@ export type ITableCellSpacingProperties = {
     readonly type?: (typeof CellSpacingType)[keyof typeof CellSpacingType];
 };
 
-export class TableCellSpacingElement extends XmlComponent {
-    public constructor({ type = CellSpacingType.DXA, value }: ITableCellSpacingProperties) {
-        super("w:tblCellSpacing");
-
-        this.root.push(
-            new NextAttributeComponent<ITableCellSpacingProperties>({
-                type: { key: "w:type", value: type },
-                value: { key: "w:w", value: measurementOrPercentValue(value) },
-            }),
-        );
-    }
-}
+export const createTableCellSpacing = ({ type = CellSpacingType.DXA, value }: ITableCellSpacingProperties): XmlComponent =>
+    new BuilderElement<ITableCellSpacingProperties>({
+        name: "w:tblCellSpacing",
+        attributes: {
+            type: { key: "w:type", value: type },
+            value: { key: "w:w", value: measurementOrPercentValue(value) },
+        },
+    });

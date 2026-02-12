@@ -1,16 +1,15 @@
-import { XmlComponent } from "@file/xml-components";
+import { BuilderElement, XmlComponent } from "@file/xml-components";
 
-import { DefaultAttributes } from "./default-attributes";
+type IDefaultAttributes = {
+    readonly contentType: string;
+    readonly extension?: string;
+};
 
-export class Default extends XmlComponent {
-    public constructor(contentType: string, extension?: string) {
-        super("Default");
-
-        this.root.push(
-            new DefaultAttributes({
-                contentType: contentType,
-                extension: extension,
-            }),
-        );
-    }
-}
+export const createDefault = (contentType: string, extension?: string): XmlComponent =>
+    new BuilderElement<IDefaultAttributes>({
+        name: "Default",
+        attributes: {
+            contentType: { key: "ContentType", value: contentType },
+            extension: { key: "Extension", value: extension },
+        },
+    });

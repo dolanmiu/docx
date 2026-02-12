@@ -1,7 +1,7 @@
 // http://officeopenxml.com/WPalignment.php
 // http://officeopenxml.com/WPtableAlignment.php
 // http://www.datypic.com/sc/ooxml/t-w_ST_Jc.html
-import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
+import { BuilderElement, XmlComponent } from "@file/xml-components";
 
 // <xsd:simpleType name="ST_Jc">
 //     <xsd:restriction base="xsd:string">
@@ -49,15 +49,10 @@ export const AlignmentType = {
     JUSTIFIED: "both",
 } as const;
 
-export class AlignmentAttributes extends XmlAttributeComponent<{
-    readonly val: (typeof AlignmentType)[keyof typeof AlignmentType];
-}> {
-    protected readonly xmlKeys = { val: "w:val" };
-}
-
-export class Alignment extends XmlComponent {
-    public constructor(type: (typeof AlignmentType)[keyof typeof AlignmentType]) {
-        super("w:jc");
-        this.root.push(new AlignmentAttributes({ val: type }));
-    }
-}
+export const createAlignment = (type: (typeof AlignmentType)[keyof typeof AlignmentType]): XmlComponent =>
+    new BuilderElement<{ readonly val: (typeof AlignmentType)[keyof typeof AlignmentType] }>({
+        name: "w:jc",
+        attributes: {
+            val: { key: "w:val", value: type },
+        },
+    });

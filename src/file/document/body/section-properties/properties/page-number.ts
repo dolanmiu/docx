@@ -1,6 +1,6 @@
 // http://officeopenxml.com/WPSectionPgNumType.php
 import { NumberFormat } from "@file/shared/number-format";
-import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
+import { BuilderElement, XmlComponent } from "@file/xml-components";
 import { decimalNumber } from "@util/values";
 
 // <xsd:simpleType name="ST_ChapterSep">
@@ -34,23 +34,12 @@ export type IPageNumberTypeAttributes = {
 //     <xsd:attribute name="chapSep" type="ST_ChapterSep" use="optional" default="hyphen"/>
 // </xsd:complexType>
 
-export class PageNumberTypeAttributes extends XmlAttributeComponent<IPageNumberTypeAttributes> {
-    protected readonly xmlKeys = {
-        start: "w:start",
-        formatType: "w:fmt",
-        separator: "w:chapSep",
-    };
-}
-
-export class PageNumberType extends XmlComponent {
-    public constructor({ start, formatType, separator }: IPageNumberTypeAttributes) {
-        super("w:pgNumType");
-        this.root.push(
-            new PageNumberTypeAttributes({
-                start: start === undefined ? undefined : decimalNumber(start),
-                formatType,
-                separator,
-            }),
-        );
-    }
-}
+export const createPageNumberType = ({ start, formatType, separator }: IPageNumberTypeAttributes): XmlComponent =>
+    new BuilderElement<IPageNumberTypeAttributes>({
+        name: "w:pgNumType",
+        attributes: {
+            start: { key: "w:start", value: start === undefined ? undefined : decimalNumber(start) },
+            formatType: { key: "w:fmt", value: formatType },
+            separator: { key: "w:chapSep", value: separator },
+        },
+    });

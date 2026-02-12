@@ -1,7 +1,7 @@
 // http://www.datypic.com/sc/ooxml/e-w_compat-1.html
 import { OnOffElement, XmlComponent } from "@file/xml-components";
 
-import { CompatibilitySetting } from "./compatibility-setting/compatibility-setting";
+import { createCompatibilitySetting } from "./compatibility-setting/compatibility-setting";
 
 // <xsd:complexType name="CT_Compat">
 // <xsd:sequence>
@@ -214,7 +214,7 @@ export class Compatibility extends XmlComponent {
         super("w:compat");
 
         if (options.version) {
-            this.root.push(new CompatibilitySetting(options.version));
+            this.root.push(createCompatibilitySetting(options.version));
         }
 
         if (options.useSingleBorderforContiguousCells) {
