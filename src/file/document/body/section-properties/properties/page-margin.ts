@@ -1,4 +1,4 @@
-import { NextAttributeComponent, XmlComponent } from "@file/xml-components";
+import { BuilderElement, XmlComponent } from "@file/xml-components";
 import { PositiveUniversalMeasure, UniversalMeasure, signedTwipsMeasureValue, twipsMeasureValue } from "@util/values";
 
 // <xsd:complexType name="CT_PageMar">
@@ -20,27 +20,24 @@ export type IPageMarginAttributes = {
     readonly gutter?: number | PositiveUniversalMeasure;
 };
 
-export class PageMargin extends XmlComponent {
-    public constructor(
-        top: number | UniversalMeasure,
-        right: number | PositiveUniversalMeasure,
-        bottom: number | UniversalMeasure,
-        left: number | PositiveUniversalMeasure,
-        header: number | PositiveUniversalMeasure,
-        footer: number | PositiveUniversalMeasure,
-        gutter: number | PositiveUniversalMeasure,
-    ) {
-        super("w:pgMar");
-        this.root.push(
-            new NextAttributeComponent<IPageMarginAttributes>({
-                top: { key: "w:top", value: signedTwipsMeasureValue(top) },
-                right: { key: "w:right", value: twipsMeasureValue(right) },
-                bottom: { key: "w:bottom", value: signedTwipsMeasureValue(bottom) },
-                left: { key: "w:left", value: twipsMeasureValue(left) },
-                header: { key: "w:header", value: twipsMeasureValue(header) },
-                footer: { key: "w:footer", value: twipsMeasureValue(footer) },
-                gutter: { key: "w:gutter", value: twipsMeasureValue(gutter) },
-            }),
-        );
-    }
-}
+export const createPageMargin = (
+    top: number | UniversalMeasure,
+    right: number | PositiveUniversalMeasure,
+    bottom: number | UniversalMeasure,
+    left: number | PositiveUniversalMeasure,
+    header: number | PositiveUniversalMeasure,
+    footer: number | PositiveUniversalMeasure,
+    gutter: number | PositiveUniversalMeasure,
+): XmlComponent =>
+    new BuilderElement<IPageMarginAttributes>({
+        name: "w:pgMar",
+        attributes: {
+            top: { key: "w:top", value: signedTwipsMeasureValue(top) },
+            right: { key: "w:right", value: twipsMeasureValue(right) },
+            bottom: { key: "w:bottom", value: signedTwipsMeasureValue(bottom) },
+            left: { key: "w:left", value: twipsMeasureValue(left) },
+            header: { key: "w:header", value: twipsMeasureValue(header) },
+            footer: { key: "w:footer", value: twipsMeasureValue(footer) },
+            gutter: { key: "w:gutter", value: twipsMeasureValue(gutter) },
+        },
+    });

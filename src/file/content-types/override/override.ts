@@ -1,16 +1,15 @@
-import { XmlComponent } from "@file/xml-components";
+import { BuilderElement, XmlComponent } from "@file/xml-components";
 
-import { OverrideAttributes } from "./override-attributes";
+type IOverrideAttributes = {
+    readonly contentType: string;
+    readonly partName?: string;
+};
 
-export class Override extends XmlComponent {
-    public constructor(contentType: string, partName?: string) {
-        super("Override");
-
-        this.root.push(
-            new OverrideAttributes({
-                contentType: contentType,
-                partName: partName,
-            }),
-        );
-    }
-}
+export const createOverride = (contentType: string, partName?: string): XmlComponent =>
+    new BuilderElement<IOverrideAttributes>({
+        name: "Override",
+        attributes: {
+            contentType: { key: "ContentType", value: contentType },
+            partName: { key: "PartName", value: partName },
+        },
+    });

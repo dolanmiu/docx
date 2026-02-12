@@ -1,4 +1,4 @@
-import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
+import { BuilderElement, XmlComponent } from "@file/xml-components";
 
 const FieldCharacterType = {
     BEGIN: "begin",
@@ -6,30 +6,22 @@ const FieldCharacterType = {
     SEPARATE: "separate",
 } as const;
 
-class FidCharAttrs extends XmlAttributeComponent<{
+type IFieldCharAttributes = {
     readonly type: (typeof FieldCharacterType)[keyof typeof FieldCharacterType];
     readonly dirty?: boolean;
-}> {
-    protected readonly xmlKeys = { type: "w:fldCharType", dirty: "w:dirty" };
-}
+};
 
-export class Begin extends XmlComponent {
-    public constructor(dirty?: boolean) {
-        super("w:fldChar");
-        this.root.push(new FidCharAttrs({ type: FieldCharacterType.BEGIN, dirty }));
-    }
-}
+const createFieldChar = (type: (typeof FieldCharacterType)[keyof typeof FieldCharacterType], dirty?: boolean): XmlComponent =>
+    new BuilderElement<IFieldCharAttributes>({
+        name: "w:fldChar",
+        attributes: {
+            type: { key: "w:fldCharType", value: type },
+            dirty: { key: "w:dirty", value: dirty },
+        },
+    });
 
-export class Separate extends XmlComponent {
-    public constructor(dirty?: boolean) {
-        super("w:fldChar");
-        this.root.push(new FidCharAttrs({ type: FieldCharacterType.SEPARATE, dirty }));
-    }
-}
+export const createBegin = (dirty?: boolean): XmlComponent => createFieldChar(FieldCharacterType.BEGIN, dirty);
 
-export class End extends XmlComponent {
-    public constructor(dirty?: boolean) {
-        super("w:fldChar");
-        this.root.push(new FidCharAttrs({ type: FieldCharacterType.END, dirty }));
-    }
-}
+export const createSeparate = (dirty?: boolean): XmlComponent => createFieldChar(FieldCharacterType.SEPARATE, dirty);
+
+export const createEnd = (dirty?: boolean): XmlComponent => createFieldChar(FieldCharacterType.END, dirty);

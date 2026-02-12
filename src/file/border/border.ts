@@ -19,7 +19,7 @@
 //     <xsd:attribute name="shadow" type="s:ST_OnOff" use="optional"/>
 //     <xsd:attribute name="frame" type="s:ST_OnOff" use="optional"/>
 // </xsd:complexType>
-import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
+import { BuilderElement, XmlComponent } from "@file/xml-components";
 import { eighthPointMeasureValue, hexColorValue, pointMeasureValue } from "@util/values";
 
 export type IBorderOptions = {
@@ -32,28 +32,16 @@ export type IBorderOptions = {
     readonly space?: number;
 };
 
-export class BorderElement extends XmlComponent {
-    public constructor(elementName: string, { color, size, space, style }: IBorderOptions) {
-        super(elementName);
-        this.root.push(
-            new BordersAttributes({
-                style,
-                color: color === undefined ? undefined : hexColorValue(color),
-                size: size === undefined ? undefined : eighthPointMeasureValue(size),
-                space: space === undefined ? undefined : pointMeasureValue(space),
-            }),
-        );
-    }
-}
-
-class BordersAttributes extends XmlAttributeComponent<IBorderOptions> {
-    protected readonly xmlKeys = {
-        style: "w:val",
-        color: "w:color",
-        size: "w:sz",
-        space: "w:space",
-    };
-}
+export const createBorderElement = (elementName: string, { color, size, space, style }: IBorderOptions): XmlComponent =>
+    new BuilderElement<IBorderOptions>({
+        name: elementName,
+        attributes: {
+            style: { key: "w:val", value: style },
+            color: { key: "w:color", value: color === undefined ? undefined : hexColorValue(color) },
+            size: { key: "w:sz", value: size === undefined ? undefined : eighthPointMeasureValue(size) },
+            space: { key: "w:space", value: space === undefined ? undefined : pointMeasureValue(space) },
+        },
+    });
 
 /**
  * Table borders are defined with the <w:tblBorders> element. Child elements of this element specify the kinds of `border`:

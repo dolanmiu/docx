@@ -1,5 +1,5 @@
 // http://officeopenxml.com/WPtableWidth.php
-import { NextAttributeComponent, XmlComponent } from "@file/xml-components";
+import { BuilderElement, XmlComponent } from "@file/xml-components";
 import { Percentage, UniversalMeasure, measurementOrPercentValue } from "@util/values";
 
 // <xsd:simpleType name="ST_TblWidth">
@@ -31,20 +31,17 @@ export type ITableWidthProperties = {
     readonly type?: (typeof WidthType)[keyof typeof WidthType];
 };
 
-export class TableWidthElement extends XmlComponent {
-    public constructor(name: string, { type = WidthType.AUTO, size }: ITableWidthProperties) {
-        super(name);
-        // super("w:tblW");
-        let tableWidthValue = size;
-        if (type === WidthType.PERCENTAGE && typeof size === "number") {
-            tableWidthValue = `${size}%`;
-        }
-
-        this.root.push(
-            new NextAttributeComponent<ITableWidthProperties>({
-                type: { key: "w:type", value: type },
-                size: { key: "w:w", value: measurementOrPercentValue(tableWidthValue) },
-            }),
-        );
+export const createTableWidthElement = (name: string, { type = WidthType.AUTO, size }: ITableWidthProperties): XmlComponent => {
+    let tableWidthValue = size;
+    if (type === WidthType.PERCENTAGE && typeof size === "number") {
+        tableWidthValue = `${size}%`;
     }
-}
+
+    return new BuilderElement<ITableWidthProperties>({
+        name,
+        attributes: {
+            type: { key: "w:type", value: type },
+            size: { key: "w:w", value: measurementOrPercentValue(tableWidthValue) },
+        },
+    });
+};

@@ -1,4 +1,4 @@
-import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
+import { BuilderElement, XmlComponent } from "@file/xml-components";
 
 export type IFontAttributesProperties = {
     readonly ascii?: string;
@@ -8,37 +8,30 @@ export type IFontAttributesProperties = {
     readonly hint?: string;
 };
 
-class RunFontAttributes extends XmlAttributeComponent<IFontAttributesProperties> {
-    protected readonly xmlKeys = {
-        ascii: "w:ascii",
-        cs: "w:cs",
-        eastAsia: "w:eastAsia",
-        hAnsi: "w:hAnsi",
-        hint: "w:hint",
-    };
-}
-
-export class RunFonts extends XmlComponent {
-    public constructor(name: string, hint?: string);
-    public constructor(attrs: string | IFontAttributesProperties);
-    public constructor(nameOrAttrs: string | IFontAttributesProperties, hint?: string) {
-        super("w:rFonts");
-        if (typeof nameOrAttrs === "string") {
-            // use public constructor(name: string, hint?: string);
-            const name = nameOrAttrs;
-            this.root.push(
-                new RunFontAttributes({
-                    ascii: name,
-                    cs: name,
-                    eastAsia: name,
-                    hAnsi: name,
-                    hint: hint,
-                }),
-            );
-        } else {
-            // use public constructor(attrs: IRunFontAttributesProperties);
-            const attrs = nameOrAttrs;
-            this.root.push(new RunFontAttributes(attrs));
-        }
+export const createRunFonts = (nameOrAttrs: string | IFontAttributesProperties, hint?: string): XmlComponent => {
+    if (typeof nameOrAttrs === "string") {
+        const name = nameOrAttrs;
+        return new BuilderElement<IFontAttributesProperties>({
+            name: "w:rFonts",
+            attributes: {
+                ascii: { key: "w:ascii", value: name },
+                cs: { key: "w:cs", value: name },
+                eastAsia: { key: "w:eastAsia", value: name },
+                hAnsi: { key: "w:hAnsi", value: name },
+                hint: { key: "w:hint", value: hint },
+            },
+        });
     }
-}
+
+    const attrs = nameOrAttrs;
+    return new BuilderElement<IFontAttributesProperties>({
+        name: "w:rFonts",
+        attributes: {
+            ascii: { key: "w:ascii", value: attrs.ascii },
+            cs: { key: "w:cs", value: attrs.cs },
+            eastAsia: { key: "w:eastAsia", value: attrs.eastAsia },
+            hAnsi: { key: "w:hAnsi", value: attrs.hAnsi },
+            hint: { key: "w:hint", value: attrs.hint },
+        },
+    });
+};

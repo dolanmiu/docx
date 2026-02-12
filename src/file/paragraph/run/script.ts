@@ -1,24 +1,17 @@
-import { Attributes, XmlComponent } from "@file/xml-components";
+import { BuilderElement, XmlComponent } from "@file/xml-components";
 
-export abstract class VerticalAlign extends XmlComponent {
-    public constructor(type: string) {
-        super("w:vertAlign");
-        this.root.push(
-            new Attributes({
-                val: type,
-            }),
-        );
-    }
-}
+type IVerticalAlignAttributes = {
+    readonly val: string;
+};
 
-export class SuperScript extends VerticalAlign {
-    public constructor() {
-        super("superscript");
-    }
-}
+const createVerticalAlignRun = (type: string): XmlComponent =>
+    new BuilderElement<IVerticalAlignAttributes>({
+        name: "w:vertAlign",
+        attributes: {
+            val: { key: "w:val", value: type },
+        },
+    });
 
-export class SubScript extends VerticalAlign {
-    public constructor() {
-        super("subscript");
-    }
-}
+export const createSuperScript = (): XmlComponent => createVerticalAlignRun("superscript");
+
+export const createSubScript = (): XmlComponent => createVerticalAlignRun("subscript");

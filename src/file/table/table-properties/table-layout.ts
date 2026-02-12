@@ -1,4 +1,4 @@
-import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
+import { BuilderElement, XmlComponent } from "@file/xml-components";
 
 // <xsd:simpleType name="ST_TblLayoutType">
 //     <xsd:restriction base="xsd:string">
@@ -11,18 +11,13 @@ export const TableLayoutType = {
     FIXED: "fixed",
 } as const;
 
-class TableLayoutAttributes extends XmlAttributeComponent<{
-    readonly type: (typeof TableLayoutType)[keyof typeof TableLayoutType];
-}> {
-    protected readonly xmlKeys = { type: "w:type" };
-}
-
 // <xsd:complexType name="CT_TblLayoutType">
 //     <xsd:attribute name="type" type="ST_TblLayoutType"/>
 // </xsd:complexType>
-export class TableLayout extends XmlComponent {
-    public constructor(type: (typeof TableLayoutType)[keyof typeof TableLayoutType]) {
-        super("w:tblLayout");
-        this.root.push(new TableLayoutAttributes({ type }));
-    }
-}
+export const createTableLayout = (type: (typeof TableLayoutType)[keyof typeof TableLayoutType]): XmlComponent =>
+    new BuilderElement<{ readonly type: (typeof TableLayoutType)[keyof typeof TableLayoutType] }>({
+        name: "w:tblLayout",
+        attributes: {
+            type: { key: "w:type", value: type },
+        },
+    });

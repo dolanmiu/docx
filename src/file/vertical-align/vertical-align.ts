@@ -1,4 +1,4 @@
-import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
+import { BuilderElement, XmlComponent } from "@file/xml-components";
 
 // <xsd:complexType name="CT_VerticalJc">
 //     <xsd:attribute name="val" type="ST_VerticalJc" use="required"/>
@@ -43,17 +43,10 @@ export type TableVerticalAlign = (typeof VerticalAlignTable)[keyof typeof Vertic
 
 export type SectionVerticalAlign = (typeof VerticalAlignSection)[keyof typeof VerticalAlignSection];
 
-export class VerticalAlignAttributes extends XmlAttributeComponent<{
-    readonly verticalAlign?: (typeof VerticalAlign)[keyof typeof VerticalAlign];
-}> {
-    protected readonly xmlKeys = {
-        verticalAlign: "w:val",
-    };
-}
-
-export class VerticalAlignElement extends XmlComponent {
-    public constructor(value: (typeof VerticalAlign)[keyof typeof VerticalAlign]) {
-        super("w:vAlign");
-        this.root.push(new VerticalAlignAttributes({ verticalAlign: value }));
-    }
-}
+export const createVerticalAlign = (value: (typeof VerticalAlign)[keyof typeof VerticalAlign]): XmlComponent =>
+    new BuilderElement<{ readonly verticalAlign: (typeof VerticalAlign)[keyof typeof VerticalAlign] }>({
+        name: "w:vAlign",
+        attributes: {
+            verticalAlign: { key: "w:val", value },
+        },
+    });

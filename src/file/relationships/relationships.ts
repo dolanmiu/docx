@@ -1,7 +1,7 @@
 import { XmlComponent } from "@file/xml-components";
 
 import { RelationshipsAttributes } from "./attributes";
-import { Relationship, RelationshipType, TargetModeType } from "./relationship/relationship";
+import { RelationshipType, TargetModeType, createRelationship } from "./relationship/relationship";
 
 export class Relationships extends XmlComponent {
     public constructor() {
@@ -13,16 +13,13 @@ export class Relationships extends XmlComponent {
         );
     }
 
-    public createRelationship(
+    public addRelationship(
         id: number | string,
         type: RelationshipType,
         target: string,
         targetMode?: (typeof TargetModeType)[keyof typeof TargetModeType],
-    ): Relationship {
-        const relationship = new Relationship(`rId${id}`, type, target, targetMode);
-        this.root.push(relationship);
-
-        return relationship;
+    ): void {
+        this.root.push(createRelationship(`rId${id}`, type, target, targetMode));
     }
 
     public get RelationshipCount(): number {

@@ -1,4 +1,4 @@
-import { Attributes, XmlComponent } from "@file/xml-components";
+import { BuilderElement, XmlComponent } from "@file/xml-components";
 
 export const HeadingLevel = {
     HEADING_1: "Heading1",
@@ -10,13 +10,10 @@ export const HeadingLevel = {
     TITLE: "Title",
 } as const;
 
-export class Style extends XmlComponent {
-    public constructor(styleId: string) {
-        super("w:pStyle");
-        this.root.push(
-            new Attributes({
-                val: styleId,
-            }),
-        );
-    }
-}
+export const createParagraphStyle = (styleId: string): XmlComponent =>
+    new BuilderElement<{ readonly val: string }>({
+        name: "w:pStyle",
+        attributes: {
+            val: { key: "w:val", value: styleId },
+        },
+    });

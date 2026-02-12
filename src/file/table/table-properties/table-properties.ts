@@ -23,14 +23,14 @@
 // </xsd:complexType>
 import { IgnoreIfEmptyXmlComponent, OnOffElement, StringValueElement } from "@file/xml-components";
 
-import { Alignment, AlignmentType } from "../../paragraph";
-import { IShadingAttributesProperties, Shading } from "../../shading";
-import { ITableWidthProperties, TableWidthElement } from "../table-width";
-import { ITableBordersOptions, TableBorders } from "./table-borders";
+import { AlignmentType, createAlignment } from "../../paragraph";
+import { IShadingAttributesProperties, createShading } from "../../shading";
+import { ITableWidthProperties, createTableWidthElement } from "../table-width";
+import { ITableBordersOptions, createTableBorders } from "./table-borders";
 import { ITableCellMarginOptions, TableCellMargin, TableCellMarginElementType } from "./table-cell-margin";
-import { ITableFloatOptions, TableFloatProperties } from "./table-float-properties";
-import { TableLayout, TableLayoutType } from "./table-layout";
-import { ITableCellSpacingProperties, TableCellSpacingElement } from "../table-cell-spacing";
+import { ITableFloatOptions, createTableFloatProperties } from "./table-float-properties";
+import { TableLayoutType, createTableLayout } from "./table-layout";
+import { ITableCellSpacingProperties, createTableCellSpacing } from "../table-cell-spacing";
 
 export type ITablePropertiesOptions = {
     readonly width?: ITableWidthProperties;
@@ -55,7 +55,7 @@ export class TableProperties extends IgnoreIfEmptyXmlComponent {
         }
 
         if (options.float) {
-            this.root.push(new TableFloatProperties(options.float));
+            this.root.push(createTableFloatProperties(options.float));
         }
 
         if (options.visuallyRightToLeft !== undefined) {
@@ -63,27 +63,27 @@ export class TableProperties extends IgnoreIfEmptyXmlComponent {
         }
 
         if (options.width) {
-            this.root.push(new TableWidthElement("w:tblW", options.width));
+            this.root.push(createTableWidthElement("w:tblW", options.width));
         }
 
         if (options.alignment) {
-            this.root.push(new Alignment(options.alignment));
+            this.root.push(createAlignment(options.alignment));
         }
 
         if (options.indent) {
-            this.root.push(new TableWidthElement("w:tblInd", options.indent));
+            this.root.push(createTableWidthElement("w:tblInd", options.indent));
         }
 
         if (options.borders) {
-            this.root.push(new TableBorders(options.borders));
+            this.root.push(createTableBorders(options.borders));
         }
 
         if (options.shading) {
-            this.root.push(new Shading(options.shading));
+            this.root.push(createShading(options.shading));
         }
 
         if (options.layout) {
-            this.root.push(new TableLayout(options.layout));
+            this.root.push(createTableLayout(options.layout));
         }
 
         if (options.cellMargin) {
@@ -91,7 +91,7 @@ export class TableProperties extends IgnoreIfEmptyXmlComponent {
         }
 
         if (options.cellSpacing) {
-            this.root.push(new TableCellSpacingElement(options.cellSpacing));
+            this.root.push(createTableCellSpacing(options.cellSpacing));
         }
     }
 }

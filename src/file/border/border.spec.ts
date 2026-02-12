@@ -3,12 +3,12 @@ import { describe, expect, it } from "vitest";
 import { Formatter } from "@export/formatter";
 import { BorderStyle } from "@file/border";
 
-import { BorderElement } from "./border";
+import { createBorderElement } from "./border";
 
 describe("BorderElement", () => {
-    describe("#constructor", () => {
+    describe("#createBorderElement", () => {
         it("should create a simple border element", () => {
-            const border = new BorderElement("w:top", {
+            const border = createBorderElement("w:top", {
                 style: BorderStyle.SINGLE,
             });
             const tree = new Formatter().format(border);
@@ -21,7 +21,7 @@ describe("BorderElement", () => {
             });
         });
         it("should create a simple border element with a size", () => {
-            const border = new BorderElement("w:top", {
+            const border = createBorderElement("w:top", {
                 style: BorderStyle.SINGLE,
                 size: 22,
             });
@@ -36,7 +36,7 @@ describe("BorderElement", () => {
             });
         });
         it("should create a simple border element with space", () => {
-            const border = new BorderElement("w:top", {
+            const border = createBorderElement("w:top", {
                 style: BorderStyle.SINGLE,
                 space: 22,
             });

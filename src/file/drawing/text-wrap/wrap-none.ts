@@ -1,8 +1,7 @@
 // http://officeopenxml.com/drwPicFloating-textWrap.php
-import { XmlComponent } from "@file/xml-components";
+import { BuilderElement, XmlComponent } from "@file/xml-components";
 
-export class WrapNone extends XmlComponent {
-    public constructor() {
-        super("wp:wrapNone");
-    }
-}
+export const createWrapNone = (): XmlComponent =>
+    new BuilderElement({
+        name: "wp:wrapNone",
+    });

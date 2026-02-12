@@ -51,12 +51,6 @@ export class ImportedXmlComponent extends XmlComponent {
         const xmlObj = xml2js(importedContent, { compact: false }) as XmlElement;
         return convertToXmlComponent(xmlObj) as ImportedXmlComponent;
     }
-    /**
-     * Converts the xml string to a XmlComponent tree.
-     *
-     * @param importedContent xml content of the imported component
-     */
-
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     public constructor(rootKey: string, _attr?: any) {
         super(rootKey);

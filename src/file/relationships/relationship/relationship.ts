@@ -1,6 +1,4 @@
-import { XmlComponent } from "@file/xml-components";
-
-import { RelationshipAttributes } from "./relationship-attributes";
+import { BuilderElement, XmlComponent } from "@file/xml-components";
 
 export type RelationshipType =
     | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image"
@@ -25,22 +23,25 @@ export const TargetModeType = {
     EXTERNAL: "External",
 } as const;
 
-export class Relationship extends XmlComponent {
-    public constructor(
-        id: string,
-        type: RelationshipType,
-        target: string,
-        targetMode?: (typeof TargetModeType)[keyof typeof TargetModeType],
-    ) {
-        super("Relationship");
+type IRelationshipAttributes = {
+    readonly id: string;
+    readonly type: RelationshipType;
+    readonly target: string;
+    readonly targetMode?: (typeof TargetModeType)[keyof typeof TargetModeType];
+};
 
-        this.root.push(
-            new RelationshipAttributes({
-                id,
-                type,
-                target,
-                targetMode,
-            }),
-        );
-    }
-}
+export const createRelationship = (
+    id: string,
+    type: RelationshipType,
+    target: string,
+    targetMode?: (typeof TargetModeType)[keyof typeof TargetModeType],
+): XmlComponent =>
+    new BuilderElement<IRelationshipAttributes>({
+        name: "Relationship",
+        attributes: {
+            id: { key: "Id", value: id },
+            type: { key: "Type", value: type },
+            target: { key: "Target", value: target },
+            targetMode: { key: "TargetMode", value: targetMode },
+        },
+    });

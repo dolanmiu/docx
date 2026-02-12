@@ -1,5 +1,5 @@
 // http://officeopenxml.com/WPsection.php
-import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
+import { BuilderElement, XmlComponent } from "@file/xml-components";
 
 // <xsd:simpleType name="ST_SectionMark">
 // <xsd:restriction base="xsd:string">
@@ -19,20 +19,17 @@ export const SectionType = {
     ODD_PAGE: "oddPage",
 } as const;
 
+type ISectionTypeAttributes = {
+    readonly val: (typeof SectionType)[keyof typeof SectionType];
+};
+
 // <xsd:complexType name="CT_SectType">
 //     <xsd:attribute name="val" type="ST_SectionMark"/>
 // </xsd:complexType>
-export class SectionTypeAttributes extends XmlAttributeComponent<{
-    readonly val: (typeof SectionType)[keyof typeof SectionType];
-}> {
-    protected readonly xmlKeys = {
-        val: "w:val",
-    };
-}
-
-export class Type extends XmlComponent {
-    public constructor(value: (typeof SectionType)[keyof typeof SectionType]) {
-        super("w:type");
-        this.root.push(new SectionTypeAttributes({ val: value }));
-    }
-}
+export const createSectionType = (value: (typeof SectionType)[keyof typeof SectionType]): XmlComponent =>
+    new BuilderElement<ISectionTypeAttributes>({
+        name: "w:type",
+        attributes: {
+            val: { key: "w:val", value: value },
+        },
+    });

@@ -9,27 +9,22 @@
 //     </xsd:sequence>
 // </xsd:complexType>
 
-import { NextAttributeComponent, XmlComponent } from "@file/xml-components";
+import { BuilderElement, XmlComponent } from "@file/xml-components";
 import { PositiveUniversalMeasure, twipsMeasureValue } from "@util/values";
 
-export class TableGrid extends XmlComponent {
-    public constructor(widths: readonly number[] | readonly PositiveUniversalMeasure[]) {
-        super("w:tblGrid");
-        for (const width of widths) {
-            this.root.push(new GridCol(width));
-        }
-    }
-}
+export const createGridCol = (width?: number | PositiveUniversalMeasure): XmlComponent =>
+    new BuilderElement<{ readonly width?: number | PositiveUniversalMeasure }>({
+        name: "w:gridCol",
+        attributes:
+            width !== undefined
+                ? {
+                      width: { key: "w:w", value: twipsMeasureValue(width) },
+                  }
+                : undefined,
+    });
 
-export class GridCol extends XmlComponent {
-    public constructor(width?: number | PositiveUniversalMeasure) {
-        super("w:gridCol");
-        if (width !== undefined) {
-            this.root.push(
-                new NextAttributeComponent<{ readonly width: number | PositiveUniversalMeasure }>({
-                    width: { key: "w:w", value: twipsMeasureValue(width) },
-                }),
-            );
-        }
-    }
-}
+export const createTableGrid = (widths: readonly number[] | readonly PositiveUniversalMeasure[]): XmlComponent =>
+    new BuilderElement({
+        name: "w:tblGrid",
+        children: widths.map((width) => createGridCol(width)),
+    });

@@ -1,4 +1,4 @@
-import { NextAttributeComponent, XmlComponent } from "@file/xml-components";
+import { BuilderElement, XmlComponent } from "@file/xml-components";
 
 // <xsd:simpleType name="ST_PTabAlignment">
 //     <xsd:restriction base="xsd:string">
@@ -52,29 +52,12 @@ export type PositionalTabOptions = {
 //     <xsd:attribute name="relativeTo" type="ST_PTabRelativeTo" use="required" />
 //     <xsd:attribute name="leader" type="ST_PTabLeader" use="required" />
 // </xsd:complexType>
-export class PositionalTab extends XmlComponent {
-    public constructor(options: PositionalTabOptions) {
-        super("w:ptab");
-
-        this.root.push(
-            new NextAttributeComponent<{
-                readonly alignment: (typeof PositionalTabAlignment)[keyof typeof PositionalTabAlignment];
-                readonly relativeTo: (typeof PositionalTabRelativeTo)[keyof typeof PositionalTabRelativeTo];
-                readonly leader: (typeof PositionalTabLeader)[keyof typeof PositionalTabLeader];
-            }>({
-                alignment: {
-                    key: "w:alignment",
-                    value: options.alignment,
-                },
-                relativeTo: {
-                    key: "w:relativeTo",
-                    value: options.relativeTo,
-                },
-                leader: {
-                    key: "w:leader",
-                    value: options.leader,
-                },
-            }),
-        );
-    }
-}
+export const createPositionalTab = (options: PositionalTabOptions): XmlComponent =>
+    new BuilderElement<PositionalTabOptions>({
+        name: "w:ptab",
+        attributes: {
+            alignment: { key: "w:alignment", value: options.alignment },
+            relativeTo: { key: "w:relativeTo", value: options.relativeTo },
+            leader: { key: "w:leader", value: options.leader },
+        },
+    });

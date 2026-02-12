@@ -1,28 +1,21 @@
-import { Attributes, XmlComponent } from "@file/xml-components";
+import { BuilderElement, XmlComponent } from "@file/xml-components";
 
 export const EmphasisMarkType = {
     DOT: "dot",
 } as const;
 
-export abstract class BaseEmphasisMark extends XmlComponent {
-    protected constructor(emphasisMarkType: (typeof EmphasisMarkType)[keyof typeof EmphasisMarkType]) {
-        super("w:em");
-        this.root.push(
-            new Attributes({
-                val: emphasisMarkType,
-            }),
-        );
-    }
-}
+type IEmphasisMarkAttributes = {
+    readonly val: (typeof EmphasisMarkType)[keyof typeof EmphasisMarkType];
+};
 
-export class EmphasisMark extends BaseEmphasisMark {
-    public constructor(emphasisMarkType: (typeof EmphasisMarkType)[keyof typeof EmphasisMarkType] = EmphasisMarkType.DOT) {
-        super(emphasisMarkType);
-    }
-}
+export const createEmphasisMark = (
+    emphasisMarkType: (typeof EmphasisMarkType)[keyof typeof EmphasisMarkType] = EmphasisMarkType.DOT,
+): XmlComponent =>
+    new BuilderElement<IEmphasisMarkAttributes>({
+        name: "w:em",
+        attributes: {
+            val: { key: "w:val", value: emphasisMarkType },
+        },
+    });
 
-export class DotEmphasisMark extends BaseEmphasisMark {
-    public constructor() {
-        super(EmphasisMarkType.DOT);
-    }
-}
+export const createDotEmphasisMark = (): XmlComponent => createEmphasisMark(EmphasisMarkType.DOT);
