@@ -7,7 +7,7 @@
  *
  * @module
  */
-import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
+import { BuilderElement, XmlComponent } from "@file/xml-components";
 
 /**
  * Definition for a single tab stop.
@@ -26,44 +26,6 @@ export type TabStopDefinition = {
     /** Optional leader character to fill space before the tab */
     readonly leader?: (typeof LeaderType)[keyof typeof LeaderType];
 };
-
-/**
- * Represents a collection of tab stops in a WordprocessingML document.
- *
- * Tab stops define the positions where text will align when a tab character is used.
- *
- * Reference: http://officeopenxml.com/WPtab.php
- *
- * ## XSD Schema
- * ```xml
- * <xsd:complexType name="CT_Tabs">
- *   <xsd:sequence>
- *     <xsd:element name="tab" type="CT_TabStop" minOccurs="0" maxOccurs="unbounded"/>
- *   </xsd:sequence>
- * </xsd:complexType>
- * ```
- *
- * @example
- * ```typescript
- * new Paragraph({
- *   tabStops: [
- *     { type: TabStopType.LEFT, position: 2000 },
- *     { type: TabStopType.CENTER, position: 4000 },
- *     { type: TabStopType.RIGHT, position: TabStopPosition.MAX, leader: LeaderType.DOT },
- *   ],
- *   children: [new TextRun("Text\twith\ttabs")],
- * });
- * ```
- */
-export class TabStop extends XmlComponent {
-    public constructor(tabDefinitions: readonly TabStopDefinition[]) {
-        super("w:tabs");
-
-        for (const tabDefinition of tabDefinitions) {
-            this.root.push(new TabStopItem(tabDefinition));
-        }
-    }
-}
 
 /**
  * Tab stop alignment types.
@@ -118,19 +80,7 @@ export const TabStopPosition = {
 } as const;
 
 /**
- * Attributes for a tab stop element.
- * @internal
- */
-export class TabAttributes extends XmlAttributeComponent<{
-    readonly val: (typeof TabStopType)[keyof typeof TabStopType];
-    readonly pos: string | number;
-    readonly leader?: (typeof LeaderType)[keyof typeof LeaderType];
-}> {
-    protected readonly xmlKeys = { val: "w:val", pos: "w:pos", leader: "w:leader" };
-}
-
-/**
- * Represents a single tab stop item in a WordprocessingML document.
+ * Creates a single tab stop item element.
  *
  * Reference: http://officeopenxml.com/WPtab.php
  *
@@ -142,18 +92,51 @@ export class TabAttributes extends XmlAttributeComponent<{
  *   <xsd:attribute name="pos" type="ST_SignedTwipsMeasure" use="required"/>
  * </xsd:complexType>
  * ```
- *
- * @internal
  */
-export class TabStopItem extends XmlComponent {
-    public constructor({ type, position, leader }: TabStopDefinition) {
-        super("w:tab");
-        this.root.push(
-            new TabAttributes({
-                val: type,
-                pos: position,
-                leader: leader,
-            }),
-        );
-    }
-}
+export const createTabStopItem = ({ type, position, leader }: TabStopDefinition): XmlComponent =>
+    new BuilderElement<{
+        readonly val: (typeof TabStopType)[keyof typeof TabStopType];
+        readonly pos: string | number;
+        readonly leader?: (typeof LeaderType)[keyof typeof LeaderType];
+    }>({
+        name: "w:tab",
+        attributes: {
+            val: { key: "w:val", value: type },
+            pos: { key: "w:pos", value: position },
+            leader: { key: "w:leader", value: leader },
+        },
+    });
+
+/**
+ * Creates a collection of tab stops for a WordprocessingML document.
+ *
+ * Tab stops define the positions where text will align when a tab character is used.
+ *
+ * Reference: http://officeopenxml.com/WPtab.php
+ *
+ * ## XSD Schema
+ * ```xml
+ * <xsd:complexType name="CT_Tabs">
+ *   <xsd:sequence>
+ *     <xsd:element name="tab" type="CT_TabStop" minOccurs="0" maxOccurs="unbounded"/>
+ *   </xsd:sequence>
+ * </xsd:complexType>
+ * ```
+ *
+ * @example
+ * ```typescript
+ * new Paragraph({
+ *   tabStops: [
+ *     { type: TabStopType.LEFT, position: 2000 },
+ *     { type: TabStopType.CENTER, position: 4000 },
+ *     { type: TabStopType.RIGHT, position: TabStopPosition.MAX, leader: LeaderType.DOT },
+ *   ],
+ *   children: [new TextRun("Text\twith\ttabs")],
+ * });
+ * ```
+ */
+export const createTabStop = (tabDefinitions: readonly TabStopDefinition[]): XmlComponent =>
+    new BuilderElement({
+        name: "w:tabs",
+        children: tabDefinitions.map((tabDefinition) => createTabStopItem(tabDefinition)),
+    });

@@ -8,7 +8,7 @@
  *
  * @module
  */
-import { BorderElement, IBorderOptions } from "@file/border";
+import { IBorderOptions, createBorderElement } from "@file/border";
 import { IgnoreIfEmptyXmlComponent, XmlAttributeComponent, XmlComponent } from "@file/xml-components";
 import { decimalNumber } from "@util/values";
 
@@ -74,22 +74,22 @@ export class TableCellBorders extends IgnoreIfEmptyXmlComponent {
         super("w:tcBorders");
 
         if (options.top) {
-            this.root.push(new BorderElement("w:top", options.top));
+            this.root.push(createBorderElement("w:top", options.top));
         }
         if (options.start) {
-            this.root.push(new BorderElement("w:start", options.start));
+            this.root.push(createBorderElement("w:start", options.start));
         }
         if (options.left) {
-            this.root.push(new BorderElement("w:left", options.left));
+            this.root.push(createBorderElement("w:left", options.left));
         }
         if (options.bottom) {
-            this.root.push(new BorderElement("w:bottom", options.bottom));
+            this.root.push(createBorderElement("w:bottom", options.bottom));
         }
         if (options.end) {
-            this.root.push(new BorderElement("w:end", options.end));
+            this.root.push(createBorderElement("w:end", options.end));
         }
         if (options.right) {
-            this.root.push(new BorderElement("w:right", options.right));
+            this.root.push(createBorderElement("w:right", options.right));
         }
     }
 }

@@ -11,7 +11,7 @@
 import { FileChild } from "@file/file-child";
 import { InternalHyperlink, Paragraph, TabStopDefinition } from "@file/paragraph";
 import { Run, Tab } from "@file/paragraph/run";
-import { Begin, End, Separate } from "@file/paragraph/run/field";
+import { createBegin, createEnd, createSeparate } from "@file/paragraph/run/field";
 import { Text } from "@file/paragraph/run/run-components/text";
 import { XmlComponent } from "@file/xml-components";
 
@@ -80,13 +80,13 @@ export class TableOfContents extends FileChild {
 
         const beginParagraphMandatoryChildren = [
             new Run({
-                children: [new Begin(beginDirty), new FieldInstruction(properties), new Separate()],
+                children: [createBegin(beginDirty), new FieldInstruction(properties), createSeparate()],
             }),
         ];
 
         const endParagraphMandatoryChildren = [
             new Run({
-                children: [new End()],
+                children: [createEnd()],
             }),
         ];
 

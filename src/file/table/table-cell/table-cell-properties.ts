@@ -10,12 +10,12 @@
  */
 import { CellMerge, DeletedTableCell, ICellMergeAttributes, InsertedTableCell } from "@file/track-revision";
 import { ChangeAttributes, IChangedAttributesProperties } from "@file/track-revision/track-revision";
-import { TableVerticalAlign, VerticalAlignElement } from "@file/vertical-align";
+import { TableVerticalAlign, createVerticalAlign } from "@file/vertical-align";
 import { IgnoreIfEmptyXmlComponent, XmlComponent } from "@file/xml-components";
 
-import { IShadingAttributesProperties, Shading } from "../../shading";
+import { IShadingAttributesProperties, createShading } from "../../shading";
 import { ITableCellMarginOptions, TableCellMargin, TableCellMarginElementType } from "../table-properties/table-cell-margin";
-import { ITableWidthProperties, TableWidthElement } from "../table-width";
+import { ITableWidthProperties, createTableWidthElement } from "../table-width";
 import {
     GridSpan,
     ITableCellBorders,
@@ -146,7 +146,7 @@ export class TableCellProperties extends IgnoreIfEmptyXmlComponent {
         super("w:tcPr", options.includeIfEmpty);
 
         if (options.width) {
-            this.root.push(new TableWidthElement("w:tcW", options.width));
+            this.root.push(createTableWidthElement("w:tcW", options.width));
         }
 
         if (options.columnSpan) {
@@ -165,7 +165,7 @@ export class TableCellProperties extends IgnoreIfEmptyXmlComponent {
         }
 
         if (options.shading) {
-            this.root.push(new Shading(options.shading));
+            this.root.push(createShading(options.shading));
         }
 
         if (options.margins) {
@@ -177,7 +177,7 @@ export class TableCellProperties extends IgnoreIfEmptyXmlComponent {
         }
 
         if (options.verticalAlign) {
-            this.root.push(new VerticalAlignElement(options.verticalAlign));
+            this.root.push(createVerticalAlign(options.verticalAlign));
         }
 
         if (options.insertion) {

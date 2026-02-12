@@ -6,13 +6,6 @@
  *
  * Reference: http://officeopenxml.com/WPtextFormatting.php
  *
- * @module
- */
-import { Attributes, XmlComponent } from "@file/xml-components";
-
-/**
- * Abstract base class for vertical text alignment.
- *
  * ## XSD Schema
  * ```xml
  * <xsd:complexType name="CT_VerticalAlignRun">
@@ -27,55 +20,38 @@ import { Attributes, XmlComponent } from "@file/xml-components";
  * </xsd:simpleType>
  * ```
  *
- * @internal
+ * @module
  */
-export abstract class VerticalAlign extends XmlComponent {
-    public constructor(type: string) {
-        super("w:vertAlign");
-        this.root.push(
-            new Attributes({
-                val: type,
-            }),
-        );
-    }
-}
+import { BuilderElement, XmlComponent } from "@file/xml-components";
+
+type IVerticalAlignAttributes = {
+    readonly val: string;
+};
 
 /**
- * Represents superscript text formatting.
+ * Creates a vertical alignment run element.
+ * @internal
+ */
+const createVerticalAlignRun = (type: string): XmlComponent =>
+    new BuilderElement<IVerticalAlignAttributes>({
+        name: "w:vertAlign",
+        attributes: {
+            val: { key: "w:val", value: type },
+        },
+    });
+
+/**
+ * Creates superscript text formatting.
  *
  * Raises text above the baseline, commonly used for exponents
  * and ordinal indicators.
- *
- * @example
- * ```typescript
- * // In run properties for superscript text
- * new SuperScript();
- * ```
- *
- * @internal
  */
-export class SuperScript extends VerticalAlign {
-    public constructor() {
-        super("superscript");
-    }
-}
+export const createSuperScript = (): XmlComponent => createVerticalAlignRun("superscript");
 
 /**
- * Represents subscript text formatting.
+ * Creates subscript text formatting.
  *
  * Lowers text below the baseline, commonly used for chemical
  * formulas and footnote references.
- *
- * @example
- * ```typescript
- * // In run properties for subscript text
- * new SubScript();
- * ```
- *
- * @internal
  */
-export class SubScript extends VerticalAlign {
-    public constructor() {
-        super("subscript");
-    }
-}
+export const createSubScript = (): XmlComponent => createVerticalAlignRun("subscript");

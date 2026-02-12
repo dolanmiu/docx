@@ -9,8 +9,8 @@
  *
  * @module
  */
-import { BorderElement, IBorderOptions } from "@file/border";
-import { IShadingAttributesProperties, Shading } from "@file/shading";
+import { IBorderOptions, createBorderElement } from "@file/border";
+import { IShadingAttributesProperties, createShading } from "@file/shading";
 import { ChangeAttributes, IChangedAttributesProperties } from "@file/track-revision/track-revision";
 import { DeletionTrackChange } from "@file/track-revision/track-revision-components/deletion-track-change";
 import { InsertionTrackChange } from "@file/track-revision/track-revision-components/insertion-track-change";
@@ -24,12 +24,12 @@ import {
 } from "@file/xml-components";
 import { PositiveUniversalMeasure, UniversalMeasure } from "@util/values";
 
-import { EmphasisMark, EmphasisMarkType } from "./emphasis-mark";
+import { EmphasisMarkType, createEmphasisMark } from "./emphasis-mark";
 import { CharacterSpacing, Color, Highlight, HighlightComplexScript } from "./formatting";
 import { ILanguageOptions, createLanguageComponent } from "./language";
-import { IFontAttributesProperties, RunFonts } from "./run-fonts";
-import { SubScript, SuperScript } from "./script";
-import { Underline, UnderlineType } from "./underline";
+import { IFontAttributesProperties, createRunFonts } from "./run-fonts";
+import { createSubScript, createSuperScript } from "./script";
+import { UnderlineType, createUnderline } from "./underline";
 
 type IFontOptions = {
     readonly name: string;
@@ -254,11 +254,11 @@ export class RunProperties extends IgnoreIfEmptyXmlComponent {
 
         if (options.font) {
             if (typeof options.font === "string") {
-                this.push(new RunFonts(options.font));
+                this.push(createRunFonts(options.font));
             } else if ("name" in options.font) {
-                this.push(new RunFonts(options.font.name, options.font.hint));
+                this.push(createRunFonts(options.font.name, options.font.hint));
             } else {
-                this.push(new RunFonts(options.font));
+                this.push(createRunFonts(options.font));
             }
         }
 
@@ -356,7 +356,7 @@ export class RunProperties extends IgnoreIfEmptyXmlComponent {
         }
 
         if (options.underline) {
-            this.push(new Underline(options.underline.type, options.underline.color));
+            this.push(createUnderline(options.underline.type, options.underline.color));
         }
 
         if (options.effect) {
@@ -364,19 +364,19 @@ export class RunProperties extends IgnoreIfEmptyXmlComponent {
         }
 
         if (options.border) {
-            this.push(new BorderElement("w:bdr", options.border));
+            this.push(createBorderElement("w:bdr", options.border));
         }
 
         if (options.shading) {
-            this.push(new Shading(options.shading));
+            this.push(createShading(options.shading));
         }
 
         if (options.subScript) {
-            this.push(new SubScript());
+            this.push(createSubScript());
         }
 
         if (options.superScript) {
-            this.push(new SuperScript());
+            this.push(createSuperScript());
         }
 
         if (options.rightToLeft !== undefined) {
@@ -384,7 +384,7 @@ export class RunProperties extends IgnoreIfEmptyXmlComponent {
         }
 
         if (options.emphasisMark) {
-            this.push(new EmphasisMark(options.emphasisMark.type));
+            this.push(createEmphasisMark(options.emphasisMark.type));
         }
 
         if (options.language) {

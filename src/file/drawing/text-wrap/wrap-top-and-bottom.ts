@@ -8,26 +8,17 @@
  *
  * @module
  */
-import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
+import { BuilderElement, XmlComponent } from "@file/xml-components";
 
 import { IMargins } from "../floating";
 
-/**
- * Attributes for the WrapTopAndBottom element.
- * @internal
- */
-class WrapTopAndBottomAttributes extends XmlAttributeComponent<{
+type IWrapTopAndBottomAttributes = {
     readonly distT?: number;
     readonly distB?: number;
-}> {
-    protected readonly xmlKeys = {
-        distT: "distT",
-        distB: "distB",
-    };
-}
+};
 
 /**
- * Represents top-and-bottom text wrapping for a floating drawing.
+ * Creates top-and-bottom text wrapping for a floating drawing.
  *
  * WrapTopAndBottom causes text to appear above and below the drawing
  * without wrapping beside it, creating a line break effect.
@@ -45,20 +36,16 @@ class WrapTopAndBottomAttributes extends XmlAttributeComponent<{
  * </xsd:complexType>
  * ```
  */
-export class WrapTopAndBottom extends XmlComponent {
-    public constructor(
-        margins: IMargins = {
-            top: 0,
-            bottom: 0,
+export const createWrapTopAndBottom = (
+    margins: IMargins = {
+        top: 0,
+        bottom: 0,
+    },
+): XmlComponent =>
+    new BuilderElement<IWrapTopAndBottomAttributes>({
+        name: "wp:wrapTopAndBottom",
+        attributes: {
+            distT: { key: "distT", value: margins.top },
+            distB: { key: "distB", value: margins.bottom },
         },
-    ) {
-        super("wp:wrapTopAndBottom");
-
-        this.root.push(
-            new WrapTopAndBottomAttributes({
-                distT: margins.top,
-                distB: margins.bottom,
-            }),
-        );
-    }
-}
+    });

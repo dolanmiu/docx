@@ -5,7 +5,7 @@ import { XmlComponent } from "@file/xml-components";
 import { IDrawingOptions } from "../drawing";
 import { IFloating, createHorizontalPosition, createSimplePos, createVerticalPosition } from "../floating";
 import { Graphic } from "../inline/graphic";
-import { TextWrappingType, WrapNone, WrapSquare, WrapTight, WrapTopAndBottom } from "../text-wrap";
+import { TextWrappingType, createWrapNone, createWrapSquare, createWrapTight, createWrapTopAndBottom } from "../text-wrap";
 import { DocProperties } from "./../doc-properties/doc-properties";
 import { createEffectExtent } from "./../effect-extent/effect-extent";
 import { createExtent } from "./../extent/extent";
@@ -119,20 +119,20 @@ export class Anchor extends XmlComponent {
         if (drawingOptions.floating !== undefined && drawingOptions.floating.wrap !== undefined) {
             switch (drawingOptions.floating.wrap.type) {
                 case TextWrappingType.SQUARE:
-                    this.root.push(new WrapSquare(drawingOptions.floating.wrap, drawingOptions.floating.margins));
+                    this.root.push(createWrapSquare(drawingOptions.floating.wrap, drawingOptions.floating.margins));
                     break;
                 case TextWrappingType.TIGHT:
-                    this.root.push(new WrapTight(drawingOptions.floating.margins));
+                    this.root.push(createWrapTight(drawingOptions.floating.margins));
                     break;
                 case TextWrappingType.TOP_AND_BOTTOM:
-                    this.root.push(new WrapTopAndBottom(drawingOptions.floating.margins));
+                    this.root.push(createWrapTopAndBottom(drawingOptions.floating.margins));
                     break;
                 case TextWrappingType.NONE:
                 default:
-                    this.root.push(new WrapNone());
+                    this.root.push(createWrapNone());
             }
         } else {
-            this.root.push(new WrapNone());
+            this.root.push(createWrapNone());
         }
 
         this.root.push(new DocProperties(drawingOptions.docProperties));

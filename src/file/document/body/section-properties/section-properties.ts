@@ -44,19 +44,19 @@
 import { FooterWrapper } from "@file/footer-wrapper";
 import { HeaderWrapper } from "@file/header-wrapper";
 import { ChangeAttributes, IChangedAttributesProperties } from "@file/track-revision/track-revision";
-import { SectionVerticalAlign, VerticalAlignElement } from "@file/vertical-align";
+import { SectionVerticalAlign, createVerticalAlign } from "@file/vertical-align";
 import { OnOffElement, XmlComponent } from "@file/xml-components";
 
-import { Columns, IColumnsAttributes } from "./properties/columns";
+import { IColumnsAttributes, createColumns } from "./properties/columns";
 import { IDocGridAttributesProperties, createDocumentGrid } from "./properties/doc-grid";
-import { HeaderFooterReference, HeaderFooterReferenceType, HeaderFooterType } from "./properties/header-footer-reference";
+import { HeaderFooterReferenceType, HeaderFooterType, createHeaderFooterReference } from "./properties/header-footer-reference";
 import { ILineNumberAttributes, createLineNumberType } from "./properties/line-number";
 import { IPageBordersOptions, PageBorders } from "./properties/page-borders";
-import { IPageMarginAttributes, PageMargin } from "./properties/page-margin";
-import { IPageNumberTypeAttributes, PageNumberType } from "./properties/page-number";
+import { IPageMarginAttributes, createPageMargin } from "./properties/page-margin";
+import { IPageNumberTypeAttributes, createPageNumberType } from "./properties/page-number";
 import { IPageSizeAttributes, PageOrientation, createPageSize } from "./properties/page-size";
 import { PageTextDirection, PageTextDirectionType } from "./properties/page-text-direction";
-import { SectionType, Type } from "./properties/section-type";
+import { SectionType, createSectionType } from "./properties/section-type";
 
 /**
  * Header/footer group for specifying different headers/footers
@@ -266,11 +266,11 @@ export class SectionProperties extends XmlComponent {
         this.addHeaderFooterGroup(HeaderFooterType.FOOTER, footerWrapperGroup);
 
         if (type) {
-            this.root.push(new Type(type));
+            this.root.push(createSectionType(type));
         }
 
         this.root.push(createPageSize({ width, height, orientation }));
-        this.root.push(new PageMargin(top, right, bottom, left, header, footer, gutter));
+        this.root.push(createPageMargin(top, right, bottom, left, header, footer, gutter));
 
         if (borders) {
             this.root.push(new PageBorders(borders));
@@ -280,14 +280,14 @@ export class SectionProperties extends XmlComponent {
             this.root.push(createLineNumberType(lineNumbers));
         }
 
-        this.root.push(new PageNumberType(pageNumbers));
+        this.root.push(createPageNumberType(pageNumbers));
 
         if (column) {
-            this.root.push(new Columns(column));
+            this.root.push(createColumns(column));
         }
 
         if (verticalAlign) {
-            this.root.push(new VerticalAlignElement(verticalAlign));
+            this.root.push(createVerticalAlign(verticalAlign));
         }
 
         if (titlePage !== undefined) {
@@ -311,7 +311,7 @@ export class SectionProperties extends XmlComponent {
     ): void {
         if (group.default) {
             this.root.push(
-                new HeaderFooterReference(type, {
+                createHeaderFooterReference(type, {
                     type: HeaderFooterReferenceType.DEFAULT,
                     id: group.default.View.ReferenceId,
                 }),
@@ -320,7 +320,7 @@ export class SectionProperties extends XmlComponent {
 
         if (group.first) {
             this.root.push(
-                new HeaderFooterReference(type, {
+                createHeaderFooterReference(type, {
                     type: HeaderFooterReferenceType.FIRST,
                     id: group.first.View.ReferenceId,
                 }),
@@ -329,7 +329,7 @@ export class SectionProperties extends XmlComponent {
 
         if (group.even) {
             this.root.push(
-                new HeaderFooterReference(type, {
+                createHeaderFooterReference(type, {
                     type: HeaderFooterReferenceType.EVEN,
                     id: group.even.View.ReferenceId,
                 }),

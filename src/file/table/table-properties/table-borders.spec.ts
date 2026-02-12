@@ -3,13 +3,13 @@ import { describe, expect, it } from "vitest";
 import { Formatter } from "@export/formatter";
 import { BorderStyle } from "@file/border";
 
-import { TableBorders } from "./table-borders";
+import { TABLE_BORDERS_NONE, createTableBorders } from "./table-borders";
 
 describe("TableBorders", () => {
     describe("#constructor", () => {
         describe("default borders", () => {
             it("should add a table cell top border using default width type", () => {
-                const tableBorders = new TableBorders({});
+                const tableBorders = createTableBorders({});
                 const tree = new Formatter().format(tableBorders);
 
                 expect(tree).to.deep.equal({
@@ -75,7 +75,7 @@ describe("TableBorders", () => {
 
         describe("top border", () => {
             it("should add a table cell top border", () => {
-                const tableBorders = new TableBorders({
+                const tableBorders = createTableBorders({
                     top: {
                         style: BorderStyle.DOUBLE,
                         size: 1,
@@ -147,7 +147,7 @@ describe("TableBorders", () => {
 
         describe("left border", () => {
             it("should add a table cell left border", () => {
-                const tableBorders = new TableBorders({
+                const tableBorders = createTableBorders({
                     left: {
                         style: BorderStyle.DOUBLE,
                         size: 1,
@@ -219,7 +219,7 @@ describe("TableBorders", () => {
 
         describe("bottom border", () => {
             it("should add a table cell bottom border", () => {
-                const tableBorders = new TableBorders({
+                const tableBorders = createTableBorders({
                     bottom: {
                         style: BorderStyle.DOUBLE,
                         size: 1,
@@ -291,7 +291,7 @@ describe("TableBorders", () => {
 
         describe("right border", () => {
             it("should add a table cell right border", () => {
-                const tableBorders = new TableBorders({
+                const tableBorders = createTableBorders({
                     right: {
                         style: BorderStyle.DOUBLE,
                         size: 1,
@@ -363,7 +363,7 @@ describe("TableBorders", () => {
 
         describe("inside horizontal border", () => {
             it("should add a table cell inside horizontal border", () => {
-                const tableBorders = new TableBorders({
+                const tableBorders = createTableBorders({
                     insideHorizontal: {
                         style: BorderStyle.DOUBLE,
                         size: 1,
@@ -435,7 +435,7 @@ describe("TableBorders", () => {
 
         describe("inside vertical border", () => {
             it("should add a table cell inside horizontal border", () => {
-                const tableBorders = new TableBorders({
+                const tableBorders = createTableBorders({
                     insideVertical: {
                         style: BorderStyle.DOUBLE,
                         size: 1,
@@ -505,9 +505,9 @@ describe("TableBorders", () => {
             });
         });
 
-        describe("TableBorders.NONE convenience object", () => {
+        describe("TABLE_BORDERS_NONE convenience object", () => {
             it("should add no borders", () => {
-                const tableBorders = new TableBorders(TableBorders.NONE);
+                const tableBorders = createTableBorders(TABLE_BORDERS_NONE);
                 const tree = new Formatter().format(tableBorders);
 
                 expect(tree).to.deep.equal({

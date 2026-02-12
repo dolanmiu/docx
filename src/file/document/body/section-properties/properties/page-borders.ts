@@ -7,7 +7,7 @@
  *
  * @module
  */
-import { BorderElement, IBorderOptions } from "@file/border";
+import { IBorderOptions, createBorderElement } from "@file/border";
 import { IgnoreIfEmptyXmlComponent, XmlAttributeComponent } from "@file/xml-components";
 
 /**
@@ -177,16 +177,16 @@ export class PageBorders extends IgnoreIfEmptyXmlComponent {
         }
 
         if (options.pageBorderTop) {
-            this.root.push(new BorderElement("w:top", options.pageBorderTop));
+            this.root.push(createBorderElement("w:top", options.pageBorderTop));
         }
         if (options.pageBorderLeft) {
-            this.root.push(new BorderElement("w:left", options.pageBorderLeft));
+            this.root.push(createBorderElement("w:left", options.pageBorderLeft));
         }
         if (options.pageBorderBottom) {
-            this.root.push(new BorderElement("w:bottom", options.pageBorderBottom));
+            this.root.push(createBorderElement("w:bottom", options.pageBorderBottom));
         }
         if (options.pageBorderRight) {
-            this.root.push(new BorderElement("w:right", options.pageBorderRight));
+            this.root.push(createBorderElement("w:right", options.pageBorderRight));
         }
     }
 }

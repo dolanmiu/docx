@@ -21,7 +21,7 @@
  *
  * @module
  */
-import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
+import { BuilderElement, XmlComponent } from "@file/xml-components";
 
 /**
  * Enumeration for table-cell vertical alignment. Only `top`, `center`, `bottom`
@@ -54,25 +54,19 @@ export type TableVerticalAlign = (typeof VerticalAlignTable)[keyof typeof Vertic
 export type SectionVerticalAlign = (typeof VerticalAlignSection)[keyof typeof VerticalAlignSection];
 
 /**
- * Attributes for the vertical alignment element.
- * @internal
- */
-export class VerticalAlignAttributes extends XmlAttributeComponent<{
-    readonly verticalAlign?: (typeof VerticalAlign)[keyof typeof VerticalAlign];
-}> {
-    protected readonly xmlKeys = {
-        verticalAlign: "w:val",
-    };
-}
-
-/**
- * Represents a vertical alignment element in a WordprocessingML document.
+ * Creates a vertical alignment element in a WordprocessingML document.
  *
  * Used in table cells and sections to control vertical text positioning.
+ *
+ * @example
+ * ```typescript
+ * createVerticalAlign(VerticalAlignTable.CENTER);
+ * ```
  */
-export class VerticalAlignElement extends XmlComponent {
-    public constructor(value: (typeof VerticalAlign)[keyof typeof VerticalAlign]) {
-        super("w:vAlign");
-        this.root.push(new VerticalAlignAttributes({ verticalAlign: value }));
-    }
-}
+export const createVerticalAlign = (value: (typeof VerticalAlign)[keyof typeof VerticalAlign]): XmlComponent =>
+    new BuilderElement<{ readonly verticalAlign: (typeof VerticalAlign)[keyof typeof VerticalAlign] }>({
+        name: "w:vAlign",
+        attributes: {
+            verticalAlign: { key: "w:val", value },
+        },
+    });

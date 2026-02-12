@@ -15,18 +15,18 @@ import { IContext, IXmlableObject, IgnoreIfEmptyXmlComponent, OnOffElement, XmlC
 
 import { IParagraphRunOptions, ParagraphRunProperties } from ".";
 import { FontWrapper } from "../fonts/font-wrapper";
-import { IShadingAttributesProperties, Shading } from "../shading";
-import { Alignment, AlignmentType } from "./formatting/alignment";
+import { IShadingAttributesProperties, createShading } from "../shading";
+import { AlignmentType, createAlignment } from "./formatting/alignment";
 import { Border, IBordersOptions, ThematicBreak } from "./formatting/border";
 import { PageBreakBefore } from "./formatting/break";
-import { IIndentAttributesProperties, Indent } from "./formatting/indent";
-import { ISpacingProperties, Spacing } from "./formatting/spacing";
-import { HeadingLevel, Style } from "./formatting/style";
-import { TabStop, TabStopDefinition, TabStopType } from "./formatting/tab-stop";
+import { IIndentAttributesProperties, createIndent } from "./formatting/indent";
+import { ISpacingProperties, createSpacing } from "./formatting/spacing";
+import { HeadingLevel, createParagraphStyle } from "./formatting/style";
+import { TabStopDefinition, TabStopType, createTabStop } from "./formatting/tab-stop";
 import { NumberProperties } from "./formatting/unordered-list";
-import { WordWrap } from "./formatting/word-wrap";
+import { createWordWrap } from "./formatting/word-wrap";
 import { IFrameOptions, createFrameProperties } from "./frame/frame-properties";
-import { OutlineLevel } from "./links";
+import { createOutlineLevel } from "./links";
 
 /**
  * Paragraph style properties for numbering levels.
@@ -257,23 +257,23 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
         }
 
         if (options.heading) {
-            this.push(new Style(options.heading));
+            this.push(createParagraphStyle(options.heading));
         }
 
         if (options.bullet) {
-            this.push(new Style("ListParagraph"));
+            this.push(createParagraphStyle("ListParagraph"));
         }
 
         if (options.numbering) {
             if (!options.style && !options.heading) {
                 if (!options.numbering.custom) {
-                    this.push(new Style("ListParagraph"));
+                    this.push(createParagraphStyle("ListParagraph"));
                 }
             }
         }
 
         if (options.style) {
-            this.push(new Style(options.style));
+            this.push(createParagraphStyle(options.style));
         }
 
         if (options.keepNext !== undefined) {
@@ -320,11 +320,11 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
         }
 
         if (options.shading) {
-            this.push(new Shading(options.shading));
+            this.push(createShading(options.shading));
         }
 
         if (options.wordWrap) {
-            this.push(new WordWrap());
+            this.push(createWordWrap());
         }
 
         if (options.overflowPunctuation) {
@@ -342,7 +342,7 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
         ];
 
         if (tabDefinitions.length > 0) {
-            this.push(new TabStop(tabDefinitions));
+            this.push(createTabStop(tabDefinitions));
         }
         /**
          *  FIX - END
@@ -353,11 +353,11 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
         }
 
         if (options.spacing) {
-            this.push(new Spacing(options.spacing));
+            this.push(createSpacing(options.spacing));
         }
 
         if (options.indent) {
-            this.push(new Indent(options.indent));
+            this.push(createIndent(options.indent));
         }
 
         if (options.contextualSpacing !== undefined) {
@@ -365,11 +365,11 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
         }
 
         if (options.alignment) {
-            this.push(new Alignment(options.alignment));
+            this.push(createAlignment(options.alignment));
         }
 
         if (options.outlineLevel !== undefined) {
-            this.push(new OutlineLevel(options.outlineLevel));
+            this.push(createOutlineLevel(options.outlineLevel));
         }
 
         if (options.suppressLineNumbers !== undefined) {

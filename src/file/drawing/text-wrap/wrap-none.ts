@@ -8,18 +8,17 @@
  *
  * @module
  */
-import { XmlComponent } from "@file/xml-components";
+import { BuilderElement, XmlComponent } from "@file/xml-components";
 
 /**
- * Represents no text wrapping for a floating drawing.
+ * Creates no text wrapping for a floating drawing.
  *
  * WrapNone causes text to flow behind or in front of the drawing
  * without wrapping around it.
  *
  * Reference: http://officeopenxml.com/drwPicFloating-textWrap.php
  */
-export class WrapNone extends XmlComponent {
-    public constructor() {
-        super("wp:wrapNone");
-    }
-}
+export const createWrapNone = (): XmlComponent =>
+    new BuilderElement({
+        name: "wp:wrapNone",
+    });

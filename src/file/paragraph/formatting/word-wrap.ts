@@ -9,25 +9,18 @@
  *
  * @module
  */
-import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
+import { BuilderElement, XmlComponent } from "@file/xml-components";
 
 /**
- * Attributes for the word wrap element.
- * @internal
- */
-export class WordWrapAttributes extends XmlAttributeComponent<{ readonly val: 0 }> {
-    protected readonly xmlKeys = { val: "w:val" };
-}
-
-/**
- * Represents word wrap settings in a WordprocessingML document.
+ * Creates word wrap settings element for a WordprocessingML document.
  *
  * The wordWrap element specifies whether word wrap should be disabled
  * for the paragraph.
  */
-export class WordWrap extends XmlComponent {
-    public constructor() {
-        super("w:wordWrap");
-        this.root.push(new WordWrapAttributes({ val: 0 }));
-    }
-}
+export const createWordWrap = (): XmlComponent =>
+    new BuilderElement<{ readonly val: 0 }>({
+        name: "w:wordWrap",
+        attributes: {
+            val: { key: "w:val", value: 0 },
+        },
+    });

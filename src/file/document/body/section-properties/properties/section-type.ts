@@ -7,7 +7,7 @@
  *
  * @module
  */
-import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
+import { BuilderElement, XmlComponent } from "@file/xml-components";
 
 /**
  * Specifies the type of section break.
@@ -40,16 +40,12 @@ export const SectionType = {
     ODD_PAGE: "oddPage",
 } as const;
 
-export class SectionTypeAttributes extends XmlAttributeComponent<{
+type ISectionTypeAttributes = {
     readonly val: (typeof SectionType)[keyof typeof SectionType];
-}> {
-    protected readonly xmlKeys = {
-        val: "w:val",
-    };
-}
+};
 
 /**
- * Represents section type (type) for a document section.
+ * Creates section type (type) for a document section.
  *
  * This element specifies the type of section break, which determines
  * where the new section begins relative to the previous section.
@@ -66,15 +62,16 @@ export class SectionTypeAttributes extends XmlAttributeComponent<{
  * @example
  * ```typescript
  * // Create a continuous section (no page break)
- * new Type(SectionType.CONTINUOUS);
+ * createSectionType(SectionType.CONTINUOUS);
  *
  * // Create a section that starts on next odd page
- * new Type(SectionType.ODD_PAGE);
+ * createSectionType(SectionType.ODD_PAGE);
  * ```
  */
-export class Type extends XmlComponent {
-    public constructor(value: (typeof SectionType)[keyof typeof SectionType]) {
-        super("w:type");
-        this.root.push(new SectionTypeAttributes({ val: value }));
-    }
-}
+export const createSectionType = (value: (typeof SectionType)[keyof typeof SectionType]): XmlComponent =>
+    new BuilderElement<ISectionTypeAttributes>({
+        name: "w:type",
+        attributes: {
+            val: { key: "w:val", value: value },
+        },
+    });

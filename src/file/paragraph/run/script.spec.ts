@@ -1,51 +1,25 @@
-import { assert, beforeEach, describe, it } from "vitest";
+import { describe, expect, it } from "vitest";
 
-import { Utility } from "tests/utility";
+import { Formatter } from "@export/formatter";
 
-import { SubScript, SuperScript } from "./script";
+import { createSubScript, createSuperScript } from "./script";
 
-describe("SubScript", () => {
-    let subScript: SubScript;
-
-    beforeEach(() => {
-        subScript = new SubScript();
-    });
-
-    describe("#constructor()", () => {
-        it("should create a Sub Script with correct attributes", () => {
-            const newJson = Utility.jsonify(subScript);
-            const attributes = {
-                val: "subscript",
-            };
-            assert.equal(JSON.stringify(newJson.root[0].root), JSON.stringify(attributes));
-        });
-
-        it("should create a Sub Script with correct root key", () => {
-            const newJson = Utility.jsonify(subScript);
-            assert.equal(newJson.rootKey, "w:vertAlign");
+describe("createSubScript", () => {
+    it("should create a SubScript element with correct attributes", () => {
+        const subScript = createSubScript();
+        const tree = new Formatter().format(subScript);
+        expect(tree).to.deep.equal({
+            "w:vertAlign": { _attr: { "w:val": "subscript" } },
         });
     });
 });
 
-describe("SuperScript", () => {
-    let superScript: SuperScript;
-
-    beforeEach(() => {
-        superScript = new SuperScript();
-    });
-
-    describe("#constructor()", () => {
-        it("should create a Super Script with correct attributes", () => {
-            const newJson = Utility.jsonify(superScript);
-            const attributes = {
-                val: "superscript",
-            };
-            assert.equal(JSON.stringify(newJson.root[0].root), JSON.stringify(attributes));
-        });
-
-        it("should create a Super Script with correct root key", () => {
-            const newJson = Utility.jsonify(superScript);
-            assert.equal(newJson.rootKey, "w:vertAlign");
+describe("createSuperScript", () => {
+    it("should create a SuperScript element with correct attributes", () => {
+        const superScript = createSuperScript();
+        const tree = new Formatter().format(superScript);
+        expect(tree).to.deep.equal({
+            "w:vertAlign": { _attr: { "w:val": "superscript" } },
         });
     });
 });

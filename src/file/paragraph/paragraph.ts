@@ -138,7 +138,7 @@ export class Paragraph extends FileChild {
             if (element instanceof ExternalHyperlink) {
                 const index = this.root.indexOf(element);
                 const concreteHyperlink = new ConcreteHyperlink(element.options.children, uniqueId());
-                context.viewWrapper.Relationships.createRelationship(
+                context.viewWrapper.Relationships.addRelationship(
                     concreteHyperlink.linkId,
                     "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink",
                     element.options.link,

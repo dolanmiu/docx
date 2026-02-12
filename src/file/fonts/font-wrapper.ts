@@ -43,7 +43,7 @@ export class FontWrapper implements IViewWrapper {
         this.relationships = new Relationships();
 
         for (let i = 0; i < options.length; i++) {
-            this.relationships.createRelationship(
+            this.relationships.addRelationship(
                 i + 1,
                 "http://schemas.openxmlformats.org/officeDocument/2006/relationships/font",
                 `fonts/${options[i].name}.odttf`,

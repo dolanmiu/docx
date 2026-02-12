@@ -7,7 +7,7 @@
  *
  * @module
  */
-import { NextAttributeComponent, XmlComponent } from "@file/xml-components";
+import { BuilderElement, XmlComponent } from "@file/xml-components";
 import { PositiveUniversalMeasure, UniversalMeasure, signedTwipsMeasureValue, twipsMeasureValue } from "@util/values";
 
 /**
@@ -41,7 +41,7 @@ export type IPageMarginAttributes = {
 };
 
 /**
- * Represents page margins (pgMar) for a document section.
+ * Creates page margins (pgMar) for a document section.
  *
  * This element specifies the page margins for all pages in a section,
  * including top, bottom, left, right, header, footer, and gutter margins.
@@ -64,30 +64,27 @@ export type IPageMarginAttributes = {
  * @example
  * ```typescript
  * // Create page margins with 1 inch margins (1440 twips = 1 inch)
- * new PageMargin(1440, 1440, 1440, 1440, 720, 720, 0);
+ * createPageMargin(1440, 1440, 1440, 1440, 720, 720, 0);
  * ```
  */
-export class PageMargin extends XmlComponent {
-    public constructor(
-        top: number | UniversalMeasure,
-        right: number | PositiveUniversalMeasure,
-        bottom: number | UniversalMeasure,
-        left: number | PositiveUniversalMeasure,
-        header: number | PositiveUniversalMeasure,
-        footer: number | PositiveUniversalMeasure,
-        gutter: number | PositiveUniversalMeasure,
-    ) {
-        super("w:pgMar");
-        this.root.push(
-            new NextAttributeComponent<IPageMarginAttributes>({
-                top: { key: "w:top", value: signedTwipsMeasureValue(top) },
-                right: { key: "w:right", value: twipsMeasureValue(right) },
-                bottom: { key: "w:bottom", value: signedTwipsMeasureValue(bottom) },
-                left: { key: "w:left", value: twipsMeasureValue(left) },
-                header: { key: "w:header", value: twipsMeasureValue(header) },
-                footer: { key: "w:footer", value: twipsMeasureValue(footer) },
-                gutter: { key: "w:gutter", value: twipsMeasureValue(gutter) },
-            }),
-        );
-    }
-}
+export const createPageMargin = (
+    top: number | UniversalMeasure,
+    right: number | PositiveUniversalMeasure,
+    bottom: number | UniversalMeasure,
+    left: number | PositiveUniversalMeasure,
+    header: number | PositiveUniversalMeasure,
+    footer: number | PositiveUniversalMeasure,
+    gutter: number | PositiveUniversalMeasure,
+): XmlComponent =>
+    new BuilderElement<IPageMarginAttributes>({
+        name: "w:pgMar",
+        attributes: {
+            top: { key: "w:top", value: signedTwipsMeasureValue(top) },
+            right: { key: "w:right", value: twipsMeasureValue(right) },
+            bottom: { key: "w:bottom", value: signedTwipsMeasureValue(bottom) },
+            left: { key: "w:left", value: twipsMeasureValue(left) },
+            header: { key: "w:header", value: twipsMeasureValue(header) },
+            footer: { key: "w:footer", value: twipsMeasureValue(footer) },
+            gutter: { key: "w:gutter", value: twipsMeasureValue(gutter) },
+        },
+    });
