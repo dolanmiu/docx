@@ -122,8 +122,17 @@ export class File {
         this.media = new Media();
 
         if (options.externalStyles !== undefined) {
-            const stylesFactory = new ExternalStylesFactory();
-            this.styles = stylesFactory.newInstance(options.externalStyles);
+            const externalFactory = new ExternalStylesFactory();
+            const externalStyles = externalFactory.newInstance(options.externalStyles);
+            const defaultFactory = new DefaultStylesFactory();
+            const defaultStyles = defaultFactory.newInstance(options.styles.default);
+            this.styles = new Styles({
+                ...defaultStyles,
+                importedStyles: [
+                    ...(defaultStyles.importedStyles ?? []),
+                    ...(externalStyles.importedStyles ?? []),
+                ],
+            });
         } else if (options.styles) {
             const stylesFactory = new DefaultStylesFactory();
             const defaultStyles = stylesFactory.newInstance(options.styles.default);
