@@ -29,6 +29,10 @@ export const FootnoteType = {
 /**
  * Options for creating a Footnote.
  *
+ * @property id - Unique numeric identifier for this footnote
+ * @property type - Type of footnote (separator, continuationSeparator, or normal)
+ * @property children - Array of paragraphs that make up the footnote content
+ *
  * @see {@link Footnote}
  */
 export type IFootnoteOptions = {
@@ -57,6 +61,21 @@ export type IFootnoteOptions = {
  *   <xsd:attribute name="type" type="ST_FtnEdn"/>
  *   <xsd:attribute name="id" type="ST_DecimalNumber" use="required"/>
  * </xsd:complexType>
+ * ```
+ *
+ * @example
+ * ```typescript
+ * // Create a footnote with content
+ * const footnote = new Footnote({
+ *   id: 1,
+ *   children: [
+ *     new Paragraph({
+ *       children: [
+ *         new TextRun("This is the footnote content."),
+ *       ],
+ *     }),
+ *   ],
+ * });
  * ```
  */
 export class Footnote extends XmlComponent {

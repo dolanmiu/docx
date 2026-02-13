@@ -79,7 +79,7 @@ Packer.toString(doc, true, overrides).then((string) => {
 You can also use the lower-level `Packer.pack` method to export to any specified type.
 
 ```ts
-Packer.pack(doc, 'string').then((string) => {
+Packer.pack(doc, "string").then((string) => {
     console.log(string);
 });
 ```

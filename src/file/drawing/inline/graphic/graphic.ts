@@ -29,6 +29,26 @@ class GraphicAttributes extends XmlAttributeComponent<{
  *
  * Graphic is the container for graphical content such as
  * pictures, shapes, and charts within a drawing.
+ *
+ * Reference: http://officeopenxml.com/drwPic.php
+ *
+ * ## XSD Schema
+ * ```xml
+ * <xsd:complexType name="CT_GraphicalObject">
+ *   <xsd:sequence>
+ *     <xsd:element name="graphicData" type="CT_GraphicalObjectData"/>
+ *   </xsd:sequence>
+ * </xsd:complexType>
+ * ```
+ *
+ * @example
+ * ```typescript
+ * const graphic = new Graphic({
+ *   mediaData: imageData,
+ *   transform: transformation,
+ *   outline: { color: "FF0000", width: 9525 }
+ * });
+ * ```
  */
 export class Graphic extends XmlComponent {
     private readonly data: GraphicData;

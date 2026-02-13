@@ -1,8 +1,42 @@
+/**
+ * Custom Properties module for WordprocessingML documents.
+ *
+ * Provides support for managing custom document properties collection.
+ *
+ * Reference: ISO-IEC29500-4_2016 shared-documentPropertiesCustom.xsd
+ *
+ * @module
+ */
 import { IContext, IXmlableObject, XmlComponent } from "@file/xml-components";
 
 import { CustomPropertiesAttributes } from "./custom-properties-attributes";
 import { CustomProperty, ICustomPropertyOptions } from "./custom-property";
 
+/**
+ * Represents the collection of custom document properties.
+ *
+ * Custom properties allow storing arbitrary metadata as name-value pairs.
+ * Each property is assigned a unique ID starting from 2 (per Office specification).
+ *
+ * Reference: ISO-IEC29500-4_2016 shared-documentPropertiesCustom.xsd
+ *
+ * ## XSD Schema
+ * ```xml
+ * <xsd:complexType name="CT_CustomProperties">
+ *   <xsd:sequence>
+ *     <xsd:element name="property" type="CT_Property" minOccurs="0" maxOccurs="unbounded"/>
+ *   </xsd:sequence>
+ * </xsd:complexType>
+ * ```
+ *
+ * @example
+ * ```typescript
+ * const customProps = new CustomProperties([
+ *   { name: "Department", value: "Engineering" },
+ *   { name: "Project", value: "Alpha" }
+ * ]);
+ * ```
+ */
 export class CustomProperties extends XmlComponent {
     // eslint-disable-next-line functional/prefer-readonly-type
     private nextId: number;

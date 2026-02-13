@@ -33,6 +33,30 @@ export const HeadingLevel = {
  * Represents a paragraph style reference in a WordprocessingML document.
  *
  * The pStyle element specifies the paragraph style to apply to the paragraph.
+ *
+ * Reference: http://officeopenxml.com/WPstyle.php
+ *
+ * ## XSD Schema
+ * ```xml
+ * <xsd:complexType name="CT_String">
+ *   <xsd:attribute name="val" type="s:ST_String" use="required"/>
+ * </xsd:complexType>
+ * ```
+ *
+ * @example
+ * ```typescript
+ * // Using a built-in heading style
+ * new Paragraph({
+ *   style: HeadingLevel.HEADING_1,
+ *   children: [new TextRun("Chapter 1")],
+ * });
+ *
+ * // Using a custom style
+ * new Paragraph({
+ *   style: "MyCustomStyle",
+ *   children: [new TextRun("Styled text")],
+ * });
+ * ```
  */
 export class Style extends XmlComponent {
     public constructor(styleId: string) {

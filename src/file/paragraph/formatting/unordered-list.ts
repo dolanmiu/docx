@@ -14,6 +14,39 @@ import { Attributes, XmlComponent } from "@file/xml-components";
  * for the paragraph, enabling numbered and bulleted lists.
  *
  * Reference: http://officeopenxml.com/WPnumbering.php
+ *
+ * ## XSD Schema
+ * ```xml
+ * <xsd:complexType name="CT_NumPr">
+ *   <xsd:sequence>
+ *     <xsd:element name="ilvl" type="CT_DecimalNumber" minOccurs="0"/>
+ *     <xsd:element name="numId" type="CT_DecimalNumber" minOccurs="0"/>
+ *     <xsd:element name="numberingChange" type="CT_TrackChangeNumbering" minOccurs="0"/>
+ *     <xsd:element name="ins" type="CT_TrackChange" minOccurs="0"/>
+ *   </xsd:sequence>
+ * </xsd:complexType>
+ * ```
+ *
+ * @example
+ * ```typescript
+ * // Create a bulleted list item at level 0
+ * new Paragraph({
+ *   numbering: {
+ *     reference: "my-bullet-list",
+ *     level: 0,
+ *   },
+ *   children: [new TextRun("First item")],
+ * });
+ *
+ * // Create a numbered list item at level 1
+ * new Paragraph({
+ *   numbering: {
+ *     reference: "my-numbered-list",
+ *     level: 1,
+ *   },
+ *   children: [new TextRun("Nested item")],
+ * });
+ * ```
  */
 export class NumberProperties extends XmlComponent {
     public constructor(numberId: number | string, indentLevel: number) {
@@ -23,6 +56,13 @@ export class NumberProperties extends XmlComponent {
     }
 }
 
+/**
+ * Represents the indentation level (ilvl) for a numbered or bulleted list.
+ *
+ * The ilvl element specifies the list level (0-9) for the paragraph.
+ *
+ * @internal
+ */
 class IndentLevel extends XmlComponent {
     public constructor(level: number) {
         super("w:ilvl");
@@ -41,6 +81,13 @@ class IndentLevel extends XmlComponent {
     }
 }
 
+/**
+ * Represents the numbering definition ID (numId) for a numbered or bulleted list.
+ *
+ * The numId element specifies which numbering definition to use for the paragraph.
+ *
+ * @internal
+ */
 class NumberId extends XmlComponent {
     public constructor(id: number | string) {
         super("w:numId");

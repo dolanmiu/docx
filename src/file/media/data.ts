@@ -1,37 +1,73 @@
+/**
+ * Transformation information for media display.
+ *
+ * Contains size and orientation data for rendering an image in the document.
+ */
 export type IMediaDataTransformation = {
+    /** Display dimensions in pixels */
     readonly pixels: {
+        /** Width in pixels */
         readonly x: number;
+        /** Height in pixels */
         readonly y: number;
     };
+    /** Display dimensions in EMUs (English Metric Units) */
     readonly emus: {
+        /** Width in EMUs (1 inch = 914400 EMUs) */
         readonly x: number;
+        /** Height in EMUs (1 inch = 914400 EMUs) */
         readonly y: number;
     };
+    /** Optional flip transformations */
     readonly flip?: {
+        /** Whether to flip the image vertically */
         readonly vertical?: boolean;
+        /** Whether to flip the image horizontally */
         readonly horizontal?: boolean;
     };
+    /** Optional rotation angle in degrees */
     readonly rotation?: number;
 };
 
+/**
+ * Core properties shared by all media data types.
+ */
 type CoreMediaData = {
+    /** File name for the media in the package */
     readonly fileName: string;
+    /** Transformation settings for display */
     readonly transformation: IMediaDataTransformation;
+    /** Raw image data as Buffer, Uint8Array, or ArrayBuffer */
     readonly data: Buffer | Uint8Array | ArrayBuffer;
 };
 
+/**
+ * Regular raster image formats.
+ */
 type RegularMediaData = {
+    /** Image format type */
     readonly type: "jpg" | "png" | "gif" | "bmp";
 };
 
+/**
+ * SVG image format with fallback support.
+ */
 type SvgMediaData = {
+    /** SVG image type */
     readonly type: "svg";
     /**
-     * Required in case the Word processor does not support SVG.
+     * Fallback image for Word processors that do not support SVG.
+     * This ensures the document displays correctly in all viewers.
      */
     readonly fallback: RegularMediaData & CoreMediaData;
 };
 
+/**
+ * Complete media data for an embedded image.
+ *
+ * Supports both regular raster formats (jpg, png, gif, bmp) and SVG
+ * with automatic fallback handling.
+ */
 export type IMediaData = (RegularMediaData | SvgMediaData) & CoreMediaData;
 
 // Needed because of: https://github.com/s-panferov/awesome-typescript-loader/issues/432

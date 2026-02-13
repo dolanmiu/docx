@@ -21,6 +21,13 @@ import { Override } from "./override/override";
  * MIME content types, enabling applications to process each part correctly.
  *
  * Reference: http://officeopenxml.com/anatomyofOOXML.php
+ *
+ * @example
+ * ```typescript
+ * const contentTypes = new ContentTypes();
+ * contentTypes.addHeader(1); // Add header1.xml
+ * contentTypes.addFooter(1); // Add footer1.xml
+ * ```
  */
 export class ContentTypes extends XmlComponent {
     public constructor() {
@@ -57,12 +64,22 @@ export class ContentTypes extends XmlComponent {
         this.root.push(new Override("application/vnd.openxmlformats-officedocument.wordprocessingml.fontTable+xml", "/word/fontTable.xml"));
     }
 
+    /**
+     * Registers a footer part in the content types.
+     *
+     * @param index - Footer index number (e.g., 1 for footer1.xml)
+     */
     public addFooter(index: number): void {
         this.root.push(
             new Override("application/vnd.openxmlformats-officedocument.wordprocessingml.footer+xml", `/word/footer${index}.xml`),
         );
     }
 
+    /**
+     * Registers a header part in the content types.
+     *
+     * @param index - Header index number (e.g., 1 for header1.xml)
+     */
     public addHeader(index: number): void {
         this.root.push(
             new Override("application/vnd.openxmlformats-officedocument.wordprocessingml.header+xml", `/word/header${index}.xml`),

@@ -1,3 +1,8 @@
+/**
+ * Paragraph formatting module exports.
+ *
+ * @module
+ */
 export * from "./alignment";
 export * from "./border";
 export * from "./indent";

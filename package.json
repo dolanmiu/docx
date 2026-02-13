@@ -30,7 +30,7 @@
         "predemo": "npm run build",
         "demo": "tsx ./demo/index.ts",
         "typedoc": "typedoc src/index.ts --tsconfig tsconfig.typedoc.json",
-        "prettier": "prettier -l \"{src,scripts,demo}/**/*.{ts,html}\"",
+        "prettier": "prettier -l \"{src,scripts,demo,docs}/**/*.{ts,html,md}\"",
         "prettier:fix": "npm run prettier -- --write",
         "cspell": "cspell \"{src,demo,docs,scripts}/**/*.{ts,scss,html,md}\" && cspell \"./*.*\"",
         "serve.docs": "cd docs && docsify serve",
