@@ -92,7 +92,7 @@
         "eslint-plugin-prefer-arrow": "^1.2.3",
         "eslint-plugin-unicorn": "^59.0.0",
         "execa": "^9.4.0",
-        "glob": "^11.0.0",
+        "glob": "^13.0.3",
         "inquirer": "^13.2.2",
         "jiti": "^2.3.3",
         "jsdom": "^26.0.0",
