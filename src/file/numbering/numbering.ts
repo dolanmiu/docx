@@ -1,5 +1,14 @@
-// http://officeopenxml.com/WPnumbering.php
-// https://stackoverflow.com/questions/58622437/purpose-of-abstractnum-and-numberinginstance
+/**
+ * Numbering module for WordprocessingML documents.
+ *
+ * Numbering provides support for numbered and bulleted lists.
+ *
+ * Reference: http://officeopenxml.com/WPnumbering.php
+ *
+ * @see https://stackoverflow.com/questions/58622437/purpose-of-abstractnum-and-numberinginstance
+ *
+ * @module
+ */
 import { AlignmentType } from "@file/paragraph";
 import { IContext, IXmlableObject, XmlComponent } from "@file/xml-components";
 import { abstractNumUniqueNumericIdGen, concreteNumUniqueNumericIdGen, convertInchesToTwip } from "@util/convenience-functions";
@@ -9,6 +18,11 @@ import { ILevelsOptions, LevelFormat } from "./level";
 import { ConcreteNumbering } from "./num";
 import { DocumentAttributes } from "../document/document-attributes";
 
+/**
+ * Options for configuring numbering definitions.
+ *
+ * @see {@link Numbering}
+ */
 export type INumberingOptions = {
     readonly config: readonly {
         readonly levels: readonly ILevelsOptions[];
@@ -16,16 +30,28 @@ export type INumberingOptions = {
     }[];
 };
 
-// <xsd:element name="numbering" type="CT_Numbering"/>
-//
-//     <xsd:complexType name="CT_Numbering">
-//         <xsd:sequence>
-//             <xsd:element name="numPicBullet" type="CT_NumPicBullet" minOccurs="0" maxOccurs="unbounded"/>
-//             <xsd:element name="abstractNum" type="CT_AbstractNum" minOccurs="0" maxOccurs="unbounded"/>
-//             <xsd:element name="num" type="CT_Num" minOccurs="0" maxOccurs="unbounded"/>
-//             <xsd:element name="numIdMacAtCleanup" type="CT_DecimalNumber" minOccurs="0"/>
-//         </xsd:sequence>
-//     </xsd:complexType>
+/**
+ * Represents the numbering definitions in a WordprocessingML document.
+ *
+ * The numbering element contains abstract numbering definitions and their
+ * concrete instances, which are referenced by paragraphs to create lists.
+ *
+ * Reference: http://officeopenxml.com/WPnumbering.php
+ *
+ * ## XSD Schema
+ * ```xml
+ * <xsd:element name="numbering" type="CT_Numbering"/>
+ *
+ * <xsd:complexType name="CT_Numbering">
+ *   <xsd:sequence>
+ *     <xsd:element name="numPicBullet" type="CT_NumPicBullet" minOccurs="0" maxOccurs="unbounded"/>
+ *     <xsd:element name="abstractNum" type="CT_AbstractNum" minOccurs="0" maxOccurs="unbounded"/>
+ *     <xsd:element name="num" type="CT_Num" minOccurs="0" maxOccurs="unbounded"/>
+ *     <xsd:element name="numIdMacAtCleanup" type="CT_DecimalNumber" minOccurs="0"/>
+ *   </xsd:sequence>
+ * </xsd:complexType>
+ * ```
+ */
 export class Numbering extends XmlComponent {
     private readonly abstractNumberingMap = new Map<string, AbstractNumbering>();
     private readonly concreteNumberingMap = new Map<string, ConcreteNumbering>();

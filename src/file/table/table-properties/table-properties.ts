@@ -1,26 +1,38 @@
-// http://officeopenxml.com/WPtableProperties.php
-//
-// <xsd:complexType name="CT_TblPrBase">
-//     <xsd:sequence>
-//         <xsd:element name="tblStyle" type="CT_String" minOccurs="0"/>
-//         <xsd:element name="tblpPr" type="CT_TblPPr" minOccurs="0" maxOccurs="1"/>
-//         <xsd:element name="tblOverlap" type="CT_TblOverlap" minOccurs="0" maxOccurs="1"/>
-//         <xsd:element name="bidiVisual" type="CT_OnOff" minOccurs="0" maxOccurs="1"/>
-//         <xsd:element name="tblStyleRowBandSize" type="CT_DecimalNumber" minOccurs="0" maxOccurs="1"/>
-//         <xsd:element name="tblStyleColBandSize" type="CT_DecimalNumber" minOccurs="0" maxOccurs="1"/>
-//         <xsd:element name="tblW" type="CT_TblWidth" minOccurs="0" maxOccurs="1"/>
-//         <xsd:element name="jc" type="CT_JcTable" minOccurs="0" maxOccurs="1"/>
-//         <xsd:element name="tblCellSpacing" type="CT_TblWidth" minOccurs="0" maxOccurs="1"/>
-//         <xsd:element name="tblInd" type="CT_TblWidth" minOccurs="0" maxOccurs="1"/>
-//         <xsd:element name="tblBorders" type="CT_TblBorders" minOccurs="0" maxOccurs="1"/>
-//         <xsd:element name="shd" type="CT_Shd" minOccurs="0" maxOccurs="1"/>
-//         <xsd:element name="tblLayout" type="CT_TblLayoutType" minOccurs="0" maxOccurs="1"/>
-//         <xsd:element name="tblCellMar" type="CT_TblCellMar" minOccurs="0" maxOccurs="1"/>
-//         <xsd:element name="tblLook" type="CT_TblLook" minOccurs="0" maxOccurs="1"/>
-//         <xsd:element name="tblCaption" type="CT_String" minOccurs="0" maxOccurs="1"/>
-//         <xsd:element name="tblDescription" type="CT_String" minOccurs="0" maxOccurs="1"/>
-//     </xsd:sequence>
-// </xsd:complexType>
+/**
+ * Table properties module for WordprocessingML documents.
+ *
+ * This module provides table-level properties including width, borders,
+ * layout, alignment, and margins.
+ *
+ * Reference: http://officeopenxml.com/WPtableProperties.php
+ *
+ * ## XSD Schema
+ * ```xml
+ * <xsd:complexType name="CT_TblPrBase">
+ *   <xsd:sequence>
+ *     <xsd:element name="tblStyle" type="CT_String" minOccurs="0"/>
+ *     <xsd:element name="tblpPr" type="CT_TblPPr" minOccurs="0" maxOccurs="1"/>
+ *     <xsd:element name="tblOverlap" type="CT_TblOverlap" minOccurs="0" maxOccurs="1"/>
+ *     <xsd:element name="bidiVisual" type="CT_OnOff" minOccurs="0" maxOccurs="1"/>
+ *     <xsd:element name="tblStyleRowBandSize" type="CT_DecimalNumber" minOccurs="0" maxOccurs="1"/>
+ *     <xsd:element name="tblStyleColBandSize" type="CT_DecimalNumber" minOccurs="0" maxOccurs="1"/>
+ *     <xsd:element name="tblW" type="CT_TblWidth" minOccurs="0" maxOccurs="1"/>
+ *     <xsd:element name="jc" type="CT_JcTable" minOccurs="0" maxOccurs="1"/>
+ *     <xsd:element name="tblCellSpacing" type="CT_TblWidth" minOccurs="0" maxOccurs="1"/>
+ *     <xsd:element name="tblInd" type="CT_TblWidth" minOccurs="0" maxOccurs="1"/>
+ *     <xsd:element name="tblBorders" type="CT_TblBorders" minOccurs="0" maxOccurs="1"/>
+ *     <xsd:element name="shd" type="CT_Shd" minOccurs="0" maxOccurs="1"/>
+ *     <xsd:element name="tblLayout" type="CT_TblLayoutType" minOccurs="0" maxOccurs="1"/>
+ *     <xsd:element name="tblCellMar" type="CT_TblCellMar" minOccurs="0" maxOccurs="1"/>
+ *     <xsd:element name="tblLook" type="CT_TblLook" minOccurs="0" maxOccurs="1"/>
+ *     <xsd:element name="tblCaption" type="CT_String" minOccurs="0" maxOccurs="1"/>
+ *     <xsd:element name="tblDescription" type="CT_String" minOccurs="0" maxOccurs="1"/>
+ *   </xsd:sequence>
+ * </xsd:complexType>
+ * ```
+ *
+ * @module
+ */
 import { IgnoreIfEmptyXmlComponent, OnOffElement, StringValueElement } from "@file/xml-components";
 
 import { Alignment, AlignmentType } from "../../paragraph";
@@ -32,6 +44,11 @@ import { ITableFloatOptions, TableFloatProperties } from "./table-float-properti
 import { TableLayout, TableLayoutType } from "./table-layout";
 import { ITableCellSpacingProperties, TableCellSpacingElement } from "../table-cell-spacing";
 
+/**
+ * Options for configuring table properties.
+ *
+ * @see {@link TableProperties}
+ */
 export type ITablePropertiesOptions = {
     readonly width?: ITableWidthProperties;
     readonly indent?: ITableWidthProperties;
@@ -46,6 +63,14 @@ export type ITablePropertiesOptions = {
     readonly cellSpacing?: ITableCellSpacingProperties;
 };
 
+/**
+ * Represents table properties (tblPr) in a WordprocessingML document.
+ *
+ * The tblPr element specifies the properties for a table including width,
+ * alignment, borders, margins, and layout.
+ *
+ * Reference: http://officeopenxml.com/WPtableProperties.php
+ */
 export class TableProperties extends IgnoreIfEmptyXmlComponent {
     public constructor(options: ITablePropertiesOptions) {
         super("w:tblPr");

@@ -1,5 +1,13 @@
-// http://officeopenxml.com/WPsection.php
-
+/**
+ * Section properties module for WordprocessingML documents.
+ *
+ * Section properties define page layout including page size, margins,
+ * headers/footers, columns, and page numbering.
+ *
+ * Reference: http://officeopenxml.com/WPsection.php
+ *
+ * @module
+ */
 import { FooterWrapper } from "@file/footer-wrapper";
 import { HeaderWrapper } from "@file/header-wrapper";
 import { SectionVerticalAlign, VerticalAlignElement } from "@file/vertical-align";
@@ -16,12 +24,21 @@ import { IPageSizeAttributes, PageOrientation, createPageSize } from "./properti
 import { PageTextDirection, PageTextDirectionType } from "./properties/page-text-direction";
 import { SectionType, Type } from "./properties/section-type";
 
+/**
+ * Header/footer group for specifying different headers/footers
+ * for default, first, and even pages.
+ */
 export type IHeaderFooterGroup<T> = {
     readonly default?: T;
     readonly first?: T;
     readonly even?: T;
 };
 
+/**
+ * Options for configuring section properties.
+ *
+ * @see {@link SectionProperties}
+ */
 export type ISectionPropertiesOptions = {
     readonly page?: {
         readonly size?: Partial<IPageSizeAttributes>;
@@ -40,39 +57,9 @@ export type ISectionPropertiesOptions = {
     readonly type?: (typeof SectionType)[keyof typeof SectionType];
 };
 
-// <xsd:complexType name="CT_SectPr">
-//     <xsd:sequence>
-//         <xsd:group ref="EG_HdrFtrReferences" minOccurs="0" maxOccurs="6"/>
-//         <xsd:group ref="EG_SectPrContents" minOccurs="0"/>
-//         <xsd:element name="sectPrChange" type="CT_SectPrChange" minOccurs="0"/>
-//     </xsd:sequence>
-//     <xsd:attributeGroup ref="AG_SectPrAttributes"/>
-// </xsd:complexType>
-
-// <xsd:group name="EG_SectPrContents">
-// <xsd:sequence>
-//   <xsd:element name="footnotePr" type="CT_FtnProps" minOccurs="0"/>
-//   <xsd:element name="endnotePr" type="CT_EdnProps" minOccurs="0"/>
-//   <xsd:element name="type" type="CT_SectType" minOccurs="0"/>
-//   <xsd:element name="pgSz" type="CT_PageSz" minOccurs="0"/>
-//   <xsd:element name="pgMar" type="CT_PageMar" minOccurs="0"/>
-//   <xsd:element name="paperSrc" type="CT_PaperSource" minOccurs="0"/>
-//   <xsd:element name="pgBorders" type="CT_PageBorders" minOccurs="0"/>
-//   <xsd:element name="lnNumType" type="CT_LineNumber" minOccurs="0"/>
-//   <xsd:element name="pgNumType" type="CT_PageNumber" minOccurs="0"/>
-//   <xsd:element name="cols" type="CT_Columns" minOccurs="0"/>
-//   <xsd:element name="formProt" type="CT_OnOff" minOccurs="0"/>
-//   <xsd:element name="vAlign" type="CT_VerticalJc" minOccurs="0"/>
-//   <xsd:element name="noEndnote" type="CT_OnOff" minOccurs="0"/>
-//   <xsd:element name="titlePg" type="CT_OnOff" minOccurs="0"/>
-//   <xsd:element name="textDirection" type="CT_TextDirection" minOccurs="0"/>
-//   <xsd:element name="bidi" type="CT_OnOff" minOccurs="0"/>
-//   <xsd:element name="rtlGutter" type="CT_OnOff" minOccurs="0"/>
-//   <xsd:element name="docGrid" type="CT_DocGrid" minOccurs="0"/>
-//   <xsd:element name="printerSettings" type="CT_Rel" minOccurs="0"/>
-// </xsd:sequence>
-// </xsd:group>
-
+/**
+ * Default margin values for sections (in twips).
+ */
 export const sectionMarginDefaults = {
     TOP: 1440,
     RIGHT: 1440,
@@ -83,12 +70,35 @@ export const sectionMarginDefaults = {
     GUTTER: 0,
 };
 
+/**
+ * Default page size values (in twips, A4 portrait).
+ */
 export const sectionPageSizeDefaults = {
     WIDTH: 11906,
     HEIGHT: 16838,
     ORIENTATION: PageOrientation.PORTRAIT,
 };
 
+/**
+ * Represents section properties (sectPr) in a WordprocessingML document.
+ *
+ * Section properties define the page layout for a section of the document,
+ * including page size, margins, headers/footers, columns, and page numbering.
+ *
+ * Reference: http://officeopenxml.com/WPsection.php
+ *
+ * ## XSD Schema
+ * ```xml
+ * <xsd:complexType name="CT_SectPr">
+ *   <xsd:sequence>
+ *     <xsd:group ref="EG_HdrFtrReferences" minOccurs="0" maxOccurs="6"/>
+ *     <xsd:group ref="EG_SectPrContents" minOccurs="0"/>
+ *     <xsd:element name="sectPrChange" type="CT_SectPrChange" minOccurs="0"/>
+ *   </xsd:sequence>
+ *   <xsd:attributeGroup ref="AG_SectPrAttributes"/>
+ * </xsd:complexType>
+ * ```
+ */
 export class SectionProperties extends XmlComponent {
     public constructor({
         page: {

@@ -1,4 +1,10 @@
-// http://officeopenxml.com/WPdocument.php
+/**
+ * Document module for WordprocessingML documents.
+ *
+ * Reference: http://officeopenxml.com/WPdocument.php
+ *
+ * @module
+ */
 import { XmlComponent } from "@file/xml-components";
 
 import { ConcreteHyperlink, Paragraph } from "../paragraph";
@@ -8,29 +14,47 @@ import { Body } from "./body";
 import { DocumentAttributes } from "./document-attributes";
 import { DocumentBackground, IDocumentBackgroundOptions } from "./document-background";
 
+/**
+ * Options for creating a Document element.
+ *
+ * @see {@link Document}
+ */
 export type IDocumentOptions = {
+    /** Optional background settings for the document */
     readonly background?: IDocumentBackgroundOptions;
 };
 
-// <xsd:element name="document" type="CT_Document"/>
-//
-// <xsd:complexType name="CT_Document">
-//     <xsd:complexContent>
-//         <xsd:extension base="CT_DocumentBase">
-//             <xsd:sequence>
-//                 <xsd:element name="body" type="CT_Body" minOccurs="0" maxOccurs="1"/>
-//             </xsd:sequence>
-//             <xsd:attribute name="conformance" type="s:ST_ConformanceClass"/>
-//             <xsd:attribute ref="mc:Ignorable" use="optional" />
-//         </xsd:extension>
-//     </xsd:complexContent>
-// </xsd:complexType>
-//
-// <xsd:complexType name="CT_DocumentBase">
-//     <xsd:sequence>
-//         <xsd:element name="background" type="CT_Background" minOccurs="0"/>
-//     </xsd:sequence>
-// </xsd:complexType>
+/**
+ * Represents the main document element in a WordprocessingML document.
+ *
+ * The document element is the root element of the main document part. It contains
+ * the body element which holds all the content of the document.
+ *
+ * Reference: http://officeopenxml.com/WPdocument.php
+ *
+ * ## XSD Schema
+ * ```xml
+ * <xsd:element name="document" type="CT_Document"/>
+ *
+ * <xsd:complexType name="CT_Document">
+ *   <xsd:complexContent>
+ *     <xsd:extension base="CT_DocumentBase">
+ *       <xsd:sequence>
+ *         <xsd:element name="body" type="CT_Body" minOccurs="0" maxOccurs="1"/>
+ *       </xsd:sequence>
+ *       <xsd:attribute name="conformance" type="s:ST_ConformanceClass"/>
+ *       <xsd:attribute ref="mc:Ignorable" use="optional" />
+ *     </xsd:extension>
+ *   </xsd:complexContent>
+ * </xsd:complexType>
+ *
+ * <xsd:complexType name="CT_DocumentBase">
+ *   <xsd:sequence>
+ *     <xsd:element name="background" type="CT_Background" minOccurs="0"/>
+ *   </xsd:sequence>
+ * </xsd:complexType>
+ * ```
+ */
 export class Document extends XmlComponent {
     private readonly body: Body;
 
