@@ -106,7 +106,7 @@
         "unzipper": "^0.12.3",
         "vite": "^6.0.1",
         "vite-plugin-dts": "^4.2.4",
-        "vite-plugin-node-polyfills": "^0.23.0",
+        "vite-plugin-node-polyfills": "^0.25.0",
         "vite-tsconfig-paths": "^5.0.1",
         "vitest": "^3.0.8"
     },
