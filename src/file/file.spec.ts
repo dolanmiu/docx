@@ -478,6 +478,30 @@ describe("File", () => {
 
             expect(doc.Styles).to.not.be.undefined;
         });
+
+        it("should merge external styles with default styles when both are provided", () => {
+            const doc = new File({
+                sections: [],
+                externalStyles: `
+                    <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+                    <w:styles xmlns:mc="first" xmlns:r="second">
+                        <w:style w:type="paragraph" w:styleId="Heading1">
+                            <w:name w:val="heading 1"/>
+                        </w:style>
+                    </w:styles>`,
+                styles: {
+                    default: {
+                        heading1: {
+                            run: {
+                                size: 28,
+                            },
+                        },
+                    },
+                },
+            });
+
+            expect(doc.Styles).to.not.be.undefined;
+        });
     });
 
     describe("#features", () => {

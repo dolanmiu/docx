@@ -2,7 +2,7 @@ import { Element as XMLElement, xml2js } from "xml-js";
 
 import { ImportedRootElementAttributes, ImportedXmlComponent, convertToXmlComponent } from "@file/xml-components";
 
-import { Styles } from "./";
+import { IStylesOptions } from "./styles";
 
 export class ExternalStylesFactory {
     /**
@@ -28,7 +28,7 @@ export class ExternalStylesFactory {
      *
      * @param externalStyles context from styles.xml
      */
-    public newInstance(xmlData: string): Styles {
+    public newInstance(xmlData: string): IStylesOptions {
         const xmlObj = xml2js(xmlData, { compact: false }) as XMLElement;
 
         let stylesXmlElement: XMLElement | undefined;
@@ -43,11 +43,9 @@ export class ExternalStylesFactory {
 
         const stylesElements = stylesXmlElement.elements || [];
 
-        const importedStyle = new Styles({
+        return {
             initialStyles: new ImportedRootElementAttributes(stylesXmlElement.attributes),
             importedStyles: stylesElements.map((childElm) => convertToXmlComponent(childElm) as ImportedXmlComponent),
-        });
-
-        return importedStyle;
+        };
     }
 }
