@@ -151,6 +151,17 @@ describe("External styles factory", () => {
             );
         });
 
+        it("should handle w:styles with no child elements", () => {
+            const emptyStyles = `
+            <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+            <w:styles xmlns:mc="first" xmlns:r="second">
+            </w:styles>`;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const importedStyle = new ExternalStylesFactory().newInstance(emptyStyles) as any;
+
+            expect(importedStyle.importedStyles).to.deep.equal([]);
+        });
+
         it("should parse styles elements", () => {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const importedStyle = new ExternalStylesFactory().newInstance(externalStyles) as any;

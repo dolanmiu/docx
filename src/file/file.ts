@@ -128,7 +128,7 @@ export class File {
             const externalStyles = externalFactory.newInstance(options.externalStyles);
             this.styles = new Styles({
                 ...externalStyles,
-                importedStyles: [...(defaultStyles.importedStyles ?? []), ...(externalStyles.importedStyles ?? [])],
+                importedStyles: [...defaultStyles.importedStyles!, ...externalStyles.importedStyles!],
             });
         } else if (options.styles) {
             const stylesFactory = new DefaultStylesFactory();
