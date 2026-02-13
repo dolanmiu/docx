@@ -107,7 +107,7 @@
         "vite": "^7.3.1",
         "vite-plugin-dts": "^4.2.4",
         "vite-plugin-node-polyfills": "^0.25.0",
-        "vite-tsconfig-paths": "^5.0.1",
+        "vite-tsconfig-paths": "^6.1.1",
         "vitest": "^3.0.8"
     },
     "engines": {
