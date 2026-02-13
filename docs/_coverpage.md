@@ -1,4 +1,4 @@
-<img src="https://i.imgur.com/37uBGhO.gif" alt="drawing" style="width:200px;"/>
+<img src="images/logo-animate.svg" alt="docx logo" style="width:200px;"/>
 
 > Easily generate and modify .docx files with JS/TS. Works for Node and on the Browser. :100:
 

@@ -1,5 +1,20 @@
+/**
+ * Numbering properties module for WordprocessingML documents.
+ *
+ * This module provides numbering and list properties for paragraphs.
+ *
+ * @module
+ */
 import { Attributes, XmlComponent } from "@file/xml-components";
 
+/**
+ * Represents numbering properties for a paragraph.
+ *
+ * The numPr element specifies the numbering definition instance and level
+ * for the paragraph, enabling numbered and bulleted lists.
+ *
+ * Reference: http://officeopenxml.com/WPnumbering.php
+ */
 export class NumberProperties extends XmlComponent {
     public constructor(numberId: number | string, indentLevel: number) {
         super("w:numPr");

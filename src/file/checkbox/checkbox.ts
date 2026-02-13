@@ -1,3 +1,11 @@
+/**
+ * CheckBox module for WordprocessingML documents.
+ *
+ * This module provides interactive checkbox controls using
+ * structured document tags (content controls).
+ *
+ * @module
+ */
 import { SymbolRun } from "@file/paragraph/run/symbol-run";
 import { StructuredDocumentTagContent } from "@file/table-of-contents/sdt-content";
 import { StructuredDocumentTagProperties } from "@file/table-of-contents/sdt-properties";
@@ -5,6 +13,20 @@ import { XmlComponent } from "@file/xml-components";
 
 import { CheckBoxUtil, ICheckboxSymbolOptions } from "./checkbox-util";
 
+/**
+ * Represents an interactive checkbox in a WordprocessingML document.
+ *
+ * CheckBox creates a content control with checkbox functionality,
+ * displaying a checked or unchecked symbol based on its state.
+ *
+ * @example
+ * ```typescript
+ * new CheckBox({
+ *   checked: true,
+ *   alias: "Accept Terms",
+ * });
+ * ```
+ */
 export class CheckBox extends XmlComponent {
     // default values per Microsoft
     private readonly DEFAULT_UNCHECKED_SYMBOL: string = "2610";

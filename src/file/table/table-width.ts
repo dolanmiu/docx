@@ -1,16 +1,30 @@
-// http://officeopenxml.com/WPtableWidth.php
+/**
+ * Table width module for WordprocessingML documents.
+ *
+ * This module provides width specifications for tables and cells.
+ *
+ * Reference: http://officeopenxml.com/WPtableWidth.php
+ *
+ * @module
+ */
 import { NextAttributeComponent, XmlComponent } from "@file/xml-components";
 import { Percentage, UniversalMeasure, measurementOrPercentValue } from "@util/values";
 
-// <xsd:simpleType name="ST_TblWidth">
-//   <xsd:restriction base="xsd:string">
-//     <xsd:enumeration value="nil"/>
-//     <xsd:enumeration value="pct"/>
-//     <xsd:enumeration value="dxa"/>
-//     <xsd:enumeration value="auto"/>
-//   </xsd:restriction>
-// </xsd:simpleType>
-
+/**
+ * Width type values for tables and cells.
+ *
+ * ## XSD Schema
+ * ```xml
+ * <xsd:simpleType name="ST_TblWidth">
+ *   <xsd:restriction base="xsd:string">
+ *     <xsd:enumeration value="nil"/>
+ *     <xsd:enumeration value="pct"/>
+ *     <xsd:enumeration value="dxa"/>
+ *     <xsd:enumeration value="auto"/>
+ *   </xsd:restriction>
+ * </xsd:simpleType>
+ * ```
+ */
 export const WidthType = {
     /** Auto. */
     AUTO: "auto",
@@ -22,15 +36,29 @@ export const WidthType = {
     PERCENTAGE: "pct",
 } as const;
 
-// <xsd:complexType name="CT_TblWidth">
-//     <xsd:attribute name="w" type="ST_MeasurementOrPercent"/>
-//     <xsd:attribute name="type" type="ST_TblWidth"/>
-// </xsd:complexType>
+/**
+ * Properties for specifying table or cell width.
+ *
+ * ## XSD Schema
+ * ```xml
+ * <xsd:complexType name="CT_TblWidth">
+ *   <xsd:attribute name="w" type="ST_MeasurementOrPercent"/>
+ *   <xsd:attribute name="type" type="ST_TblWidth"/>
+ * </xsd:complexType>
+ * ```
+ */
 export type ITableWidthProperties = {
     readonly size: number | Percentage | UniversalMeasure;
     readonly type?: (typeof WidthType)[keyof typeof WidthType];
 };
 
+/**
+ * Represents a table width element in a WordprocessingML document.
+ *
+ * Used for specifying widths of tables, cells, margins, and indentation.
+ *
+ * Reference: http://officeopenxml.com/WPtableWidth.php
+ */
 export class TableWidthElement extends XmlComponent {
     public constructor(name: string, { type = WidthType.AUTO, size }: ITableWidthProperties) {
         super(name);

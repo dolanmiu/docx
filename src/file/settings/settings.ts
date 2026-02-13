@@ -1,7 +1,21 @@
+/**
+ * Settings module for WordprocessingML documents.
+ *
+ * This module provides document-level settings including compatibility,
+ * track changes, headers/footers, and hyphenation options.
+ *
+ * Reference: http://officeopenxml.com/WPsettings.php
+ *
+ * @module
+ */
 import { NumberValueElement, OnOffElement, XmlAttributeComponent, XmlComponent } from "@file/xml-components";
 
 import { Compatibility, ICompatibilityOptions } from "./compatibility";
 
+/**
+ * Attributes for the settings element with XML namespace declarations.
+ * @internal
+ */
 export class SettingsAttributes extends XmlAttributeComponent<{
     readonly wpc?: string;
     readonly mc?: string;
@@ -146,16 +160,33 @@ export class SettingsAttributes extends XmlAttributeComponent<{
 // </xsd:sequence>
 // </xsd:complexType>
 
+/**
+ * Options for configuring document settings.
+ *
+ * @see {@link Settings}
+ */
 export type ISettingsOptions = {
+    /** @deprecated Use compatibility.version instead */
     readonly compatibilityModeVersion?: number;
+    /** Enable different headers/footers for even and odd pages */
     readonly evenAndOddHeaders?: boolean;
+    /** Enable track changes (revision marking) */
     readonly trackRevisions?: boolean;
+    /** Update fields when document is opened */
     readonly updateFields?: boolean;
+    /** Compatibility settings for older Word versions */
     readonly compatibility?: ICompatibilityOptions;
+    /** Default distance between tab stops in twips */
     readonly defaultTabStop?: number;
+    /** Hyphenation settings */
     readonly hyphenation?: IHyphenationOptions;
 };
 
+/**
+ * Options for automatic hyphenation settings.
+ *
+ * @see {@link Settings}
+ */
 export type IHyphenationOptions = {
     /** Specifies whether the application automatically hyphenates words as they are typed in the document. */
     readonly autoHyphenation?: boolean;
@@ -167,6 +198,14 @@ export type IHyphenationOptions = {
     readonly doNotHyphenateCaps?: boolean;
 };
 
+/**
+ * Represents document settings in a WordprocessingML document.
+ *
+ * Settings contain document-wide configuration options such as
+ * compatibility mode, track changes, hyphenation, and more.
+ *
+ * Reference: http://officeopenxml.com/WPsettings.php
+ */
 export class Settings extends XmlComponent {
     public constructor(options: ISettingsOptions) {
         super("w:settings");

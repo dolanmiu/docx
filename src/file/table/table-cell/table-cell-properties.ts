@@ -1,3 +1,13 @@
+/**
+ * Table cell properties module for WordprocessingML documents.
+ *
+ * This module provides cell-level properties including width, borders,
+ * shading, margins, and merge settings.
+ *
+ * Reference: http://officeopenxml.com/WPtableCellProperties.php
+ *
+ * @module
+ */
 import { TableVerticalAlign, VerticalAlignElement } from "@file/vertical-align";
 import { IgnoreIfEmptyXmlComponent } from "@file/xml-components";
 
@@ -14,6 +24,11 @@ import {
     VerticalMergeType,
 } from "./table-cell-components";
 
+/**
+ * Options for configuring table cell properties.
+ *
+ * @see {@link TableCellProperties}
+ */
 export type ITableCellPropertiesOptions = {
     readonly shading?: IShadingAttributesProperties;
     readonly margins?: ITableCellMarginOptions;
@@ -26,6 +41,14 @@ export type ITableCellPropertiesOptions = {
     readonly borders?: ITableCellBorders;
 };
 
+/**
+ * Represents table cell properties (tcPr) in a WordprocessingML document.
+ *
+ * The tcPr element specifies properties for a table cell including width,
+ * borders, shading, margins, text direction, and merge settings.
+ *
+ * Reference: http://officeopenxml.com/WPtableCellProperties.php
+ */
 export class TableCellProperties extends IgnoreIfEmptyXmlComponent {
     public constructor(options: ITableCellPropertiesOptions) {
         super("w:tcPr");

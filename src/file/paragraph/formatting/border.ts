@@ -1,7 +1,20 @@
-// http://officeopenxml.com/WPborders.php
+/**
+ * Paragraph border module for WordprocessingML documents.
+ *
+ * This module provides border options for paragraphs.
+ *
+ * Reference: http://officeopenxml.com/WPborders.php
+ *
+ * @module
+ */
 import { BorderElement, BorderStyle, IBorderOptions } from "@file/border";
 import { IgnoreIfEmptyXmlComponent, XmlComponent } from "@file/xml-components";
 
+/**
+ * Options for configuring paragraph borders.
+ *
+ * Borders can be applied to top, bottom, left, right, and between paragraphs.
+ */
 export type IBordersOptions = {
     readonly top?: IBorderOptions;
     readonly bottom?: IBorderOptions;
@@ -10,6 +23,13 @@ export type IBordersOptions = {
     readonly between?: IBorderOptions;
 };
 
+/**
+ * Represents paragraph borders in a WordprocessingML document.
+ *
+ * The pBdr element specifies borders that surround the paragraph.
+ *
+ * Reference: http://officeopenxml.com/WPborders.php
+ */
 export class Border extends IgnoreIfEmptyXmlComponent {
     public constructor(options: IBordersOptions) {
         super("w:pBdr");
@@ -36,6 +56,11 @@ export class Border extends IgnoreIfEmptyXmlComponent {
     }
 }
 
+/**
+ * Represents a thematic break (horizontal rule) in a WordprocessingML document.
+ *
+ * Creates a horizontal line across the paragraph using a bottom border.
+ */
 export class ThematicBreak extends XmlComponent {
     public constructor() {
         super("w:pBdr");

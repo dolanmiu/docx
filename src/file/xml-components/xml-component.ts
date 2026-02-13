@@ -1,8 +1,27 @@
+/**
+ * XML Component module for docx library.
+ *
+ * This module provides the base XmlComponent class that all
+ * WordprocessingML elements extend from.
+ *
+ * @module
+ */
 import { BaseXmlComponent, IContext } from "./base";
 import { IXmlableObject } from "./xmlable-object";
 
+/**
+ * Empty object singleton used for empty XML elements.
+ * @internal
+ */
 export const EMPTY_OBJECT = Object.seal({});
 
+/**
+ * Base class for all XML components in WordprocessingML documents.
+ *
+ * XmlComponent provides the infrastructure for building XML trees
+ * that are serialized into the document.xml and other parts of
+ * the DOCX package.
+ */
 export abstract class XmlComponent extends BaseXmlComponent {
     // eslint-disable-next-line functional/prefer-readonly-type, @typescript-eslint/no-explicit-any
     protected root: (BaseXmlComponent | string | any)[];
@@ -52,6 +71,12 @@ export abstract class XmlComponent extends BaseXmlComponent {
     }
 }
 
+/**
+ * XML component that is excluded from output if empty.
+ *
+ * IgnoreIfEmptyXmlComponent is useful for optional elements that
+ * should only appear in the XML if they contain children.
+ */
 export abstract class IgnoreIfEmptyXmlComponent extends XmlComponent {
     public prepForXml(context: IContext): IXmlableObject | undefined {
         const result = super.prepForXml(context);

@@ -1,10 +1,35 @@
-// http://officeopenxml.com/WPbookmark.php
+/**
+ * Bookmark module for WordprocessingML documents.
+ *
+ * Bookmarks are used to identify a location or selection of text within a document.
+ * They can be used as targets for hyperlinks.
+ *
+ * Reference: http://officeopenxml.com/WPbookmark.php
+ *
+ * @module
+ */
 import { XmlComponent } from "@file/xml-components";
 import { bookmarkUniqueNumericIdGen } from "@util/convenience-functions";
 
 import { ParagraphChild } from "../paragraph";
 import { BookmarkEndAttributes, BookmarkStartAttributes } from "./bookmark-attributes";
 
+/**
+ * Represents a bookmark in a WordprocessingML document.
+ *
+ * A bookmark identifies a location or range of content that can be referenced
+ * elsewhere, such as from a hyperlink or table of contents.
+ *
+ * Reference: http://officeopenxml.com/WPbookmark.php
+ *
+ * @example
+ * ```typescript
+ * new Bookmark({
+ *   id: "section1",
+ *   children: [new TextRun("Section 1 Heading")],
+ * });
+ * ```
+ */
 export class Bookmark {
     private readonly bookmarkUniqueNumericId = bookmarkUniqueNumericIdGen();
 
@@ -21,38 +46,22 @@ export class Bookmark {
     }
 }
 
-// <xsd:element name="bookmarkStart" type="CT_Bookmark"/>
-// <xsd:element name="bookmarkEnd" type="CT_MarkupRange"/>
-
-// <xsd:complexType name="CT_Bookmark">
-//   <xsd:complexContent>
-//     <xsd:extension base="CT_BookmarkRange">
-//     <xsd:attribute name="name" type="s:ST_String" use="required"/>
-//     </xsd:extension>
-//   </xsd:complexContent>
-// </xsd:complexType>
-
-// <xsd:complexType name="CT_BookmarkRange">
-//   <xsd:complexContent>
-//     <xsd:extension base="CT_MarkupRange">
-//       <xsd:attribute name="colFirst" type="ST_DecimalNumber" use="optional"/>
-//       <xsd:attribute name="colLast" type="ST_DecimalNumber" use="optional"/>
-//     </xsd:extension>
-//   </xsd:complexContent>
-// </xsd:complexType>
-
-// <xsd:complexType name="CT_MarkupRange">
-//   <xsd:complexContent>
-//     <xsd:extension base="CT_Markup">
-//       <xsd:attribute name="displacedByCustomXml" type="ST_DisplacedByCustomXml" use="optional"/>
-//     </xsd:extension>
-//   </xsd:complexContent>
-// </xsd:complexType>
-
-// <xsd:complexType name="CT_Markup">
-//   <xsd:attribute name="id" type="ST_DecimalNumber" use="required"/>
-// </xsd:complexType>
-
+/**
+ * Represents the start of a bookmark range.
+ *
+ * ## XSD Schema
+ * ```xml
+ * <xsd:element name="bookmarkStart" type="CT_Bookmark"/>
+ *
+ * <xsd:complexType name="CT_Bookmark">
+ *   <xsd:complexContent>
+ *     <xsd:extension base="CT_BookmarkRange">
+ *       <xsd:attribute name="name" type="s:ST_String" use="required"/>
+ *     </xsd:extension>
+ *   </xsd:complexContent>
+ * </xsd:complexType>
+ * ```
+ */
 export class BookmarkStart extends XmlComponent {
     public constructor(id: string, linkId: number) {
         super("w:bookmarkStart");
@@ -65,6 +74,14 @@ export class BookmarkStart extends XmlComponent {
     }
 }
 
+/**
+ * Represents the end of a bookmark range.
+ *
+ * ## XSD Schema
+ * ```xml
+ * <xsd:element name="bookmarkEnd" type="CT_MarkupRange"/>
+ * ```
+ */
 export class BookmarkEnd extends XmlComponent {
     public constructor(linkId: number) {
         super("w:bookmarkEnd");
