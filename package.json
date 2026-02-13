@@ -90,7 +90,7 @@
         "eslint-plugin-jsdoc": "^61.1.11",
         "eslint-plugin-no-null": "^1.0.2",
         "eslint-plugin-prefer-arrow": "^1.2.3",
-        "eslint-plugin-unicorn": "^59.0.0",
+        "eslint-plugin-unicorn": "^63.0.0",
         "execa": "^9.4.0",
         "glob": "^13.0.3",
         "inquirer": "^13.2.2",
