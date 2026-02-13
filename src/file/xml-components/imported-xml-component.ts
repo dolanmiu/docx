@@ -52,11 +52,11 @@ export class ImportedXmlComponent extends XmlComponent {
         return convertToXmlComponent(xmlObj) as ImportedXmlComponent;
     }
     /**
-     * Converts the xml string to a XmlComponent tree.
+     * Creates an ImportedXmlComponent.
      *
-     * @param importedContent xml content of the imported component
+     * @param rootKey the root element name
+     * @param _attr optional attributes for the root element
      */
-
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     public constructor(rootKey: string, _attr?: any) {
         super(rootKey);

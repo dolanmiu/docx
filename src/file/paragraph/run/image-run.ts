@@ -32,26 +32,18 @@ type SvgMediaOptions = {
 export type IImageOptions = (RegularImageOptions | SvgMediaOptions) & CoreImageOptions;
 
 const convertDataURIToBinary = (dataURI: string): Uint8Array => {
-    if (typeof atob === "function") {
-        // https://gist.github.com/borismus/1032746
-        // https://github.com/mafintosh/base64-to-uint8array
-        const BASE64_MARKER = ";base64,";
-        const base64Index = dataURI.indexOf(BASE64_MARKER);
+    // https://gist.github.com/borismus/1032746
+    // https://github.com/mafintosh/base64-to-uint8array
+    const BASE64_MARKER = ";base64,";
+    const base64Index = dataURI.indexOf(BASE64_MARKER);
 
-        const base64IndexWithOffset = base64Index === -1 ? 0 : base64Index + BASE64_MARKER.length;
+    const base64IndexWithOffset = base64Index === -1 ? 0 : base64Index + BASE64_MARKER.length;
 
-        return new Uint8Array(
-            atob(dataURI.substring(base64IndexWithOffset))
-                .split("")
-                .map((c) => c.charCodeAt(0)),
-        );
-        /* c8 ignore next 6 */
-    } else {
-        // Not possible to test this branch in NodeJS
-        // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
-        const b = require("buf" + "fer");
-        return new b.Buffer(dataURI, "base64");
-    }
+    return new Uint8Array(
+        atob(dataURI.substring(base64IndexWithOffset))
+            .split("")
+            .map((c) => c.charCodeAt(0)),
+    );
 };
 
 const standardizeData = (data: string | Buffer | Uint8Array | ArrayBuffer): Buffer | Uint8Array | ArrayBuffer =>
