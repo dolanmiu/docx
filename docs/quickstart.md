@@ -79,10 +79,11 @@ new Paragraph({
 ### Bullet Points
 
 ```ts
-new Paragraph({
-    text: "First item",
-    bullet: { level: 0 },
-}),
+[
+    new Paragraph({
+        text: "First item",
+        bullet: { level: 0 },
+    }),
     new Paragraph({
         text: "Second item",
         bullet: { level: 0 },
@@ -90,7 +91,8 @@ new Paragraph({
     new Paragraph({
         text: "Nested item",
         bullet: { level: 1 },
-    });
+    }),
+];
 ```
 
 See the [Bullet Points guide](usage/bullet-points.md) for more options.
