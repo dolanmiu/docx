@@ -18,7 +18,7 @@ import { IMediaData, Media } from "@file/media";
 import { ConcreteHyperlink, ExternalHyperlink, ParagraphChild } from "@file/paragraph";
 import { TargetModeType } from "@file/relationships/relationship/relationship";
 import { IContext } from "@file/xml-components";
-import { uniqueId } from "@util/convenience-functions";
+import { encodeUtf8, uniqueId } from "@util/convenience-functions";
 import { OutputByType, OutputType } from "@util/output-type";
 
 import { appendContentType } from "./content-types-manager";
@@ -382,7 +382,7 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
     for (const [key, value] of map) {
         const output = toXml(value);
 
-        zip.file(key, output);
+        zip.file(key, encodeUtf8(output));
     }
 
     for (const [key, value] of binaryContentMap) {

@@ -8,6 +8,7 @@ import xml from "xml";
 
 import { File } from "@file/file";
 import { obfuscate } from "@file/fonts/obfuscate-ttf-to-odttf";
+import { encodeUtf8 } from "@util/convenience-functions";
 
 import { Formatter } from "../formatter";
 import { ImageReplacer } from "./image-replacer";
@@ -130,15 +131,15 @@ export class Compiler {
         for (const [, obj] of map) {
             if (Array.isArray(obj)) {
                 for (const subFile of obj as readonly IXmlifyedFile[]) {
-                    zip.file(subFile.path, subFile.data);
+                    zip.file(subFile.path, encodeUtf8(subFile.data));
                 }
             } else {
-                zip.file((obj as IXmlifyedFile).path, (obj as IXmlifyedFile).data);
+                zip.file((obj as IXmlifyedFile).path, encodeUtf8((obj as IXmlifyedFile).data));
             }
         }
 
         for (const subFile of overrides) {
-            zip.file(subFile.path, subFile.data);
+            zip.file(subFile.path, encodeUtf8(subFile.data));
         }
 
         for (const data of file.Media.Array) {
