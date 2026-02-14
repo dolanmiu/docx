@@ -12,6 +12,7 @@ import { FileChild } from "@file/file-child";
 import { Paragraph } from "@file/paragraph";
 import { Run } from "@file/paragraph/run";
 import { Begin, End, Separate } from "@file/paragraph/run/field";
+import { XmlComponent } from "@file/xml-components";
 
 import { FieldInstruction } from "./field-instruction";
 import { StructuredDocumentTagContent } from "./sdt-content";
@@ -46,7 +47,17 @@ import { ITableOfContentsOptions } from "./table-of-contents-properties";
  * ```
  */
 export class TableOfContents extends FileChild {
-    public constructor(alias: string = "Table of Contents", properties?: ITableOfContentsOptions) {
+    public constructor(
+        alias: string = "Table of Contents",
+        {
+            contentChildren = [],
+            beginDirty = true,
+            ...properties
+        }: ITableOfContentsOptions & {
+            readonly contentChildren?: readonly (XmlComponent | string)[];
+            readonly beginDirty?: boolean;
+        } = {},
+    ) {
         super("w:sdt");
         this.root.push(new StructuredDocumentTagProperties(alias));
 
@@ -55,12 +66,16 @@ export class TableOfContents extends FileChild {
         const beginParagraph = new Paragraph({
             children: [
                 new Run({
-                    children: [new Begin(true), new FieldInstruction(properties), new Separate()],
+                    children: [new Begin(beginDirty), new FieldInstruction(properties), new Separate()],
                 }),
             ],
         });
 
         content.addChildElement(beginParagraph);
+
+        for (const child of contentChildren) {
+            content.addChildElement(child);
+        }
 
         const endParagraph = new Paragraph({
             children: [
