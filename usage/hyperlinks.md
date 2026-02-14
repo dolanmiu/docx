@@ -79,6 +79,10 @@ const paragraph = new Paragraph({
 });
 ```
 
+## Related Topics
+
+- **[Bookmarks](usage/bookmarks.md)** - For detailed coverage of bookmarks, internal hyperlinks, and page references
+
 ## Styling hyperlinks
 
 It is possible to set the style of the text of both internal and external hyperlinks. This can be done applying run formatting on any of the `TextRun` children of the hyperlink. Use the `style: "Hyperlink"` property to show the default link styles, which can be combined with any other style.
