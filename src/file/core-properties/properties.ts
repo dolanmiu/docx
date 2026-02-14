@@ -1,3 +1,12 @@
+/**
+ * Core Properties module for WordprocessingML documents.
+ *
+ * Provides support for document metadata based on Dublin Core properties.
+ *
+ * Reference: ISO-IEC29500-4_2016 shared-documentPropertiesCore.xsd
+ *
+ * @module
+ */
 import { FontOptions } from "@file/fonts/font-table";
 import { ICommentsOptions } from "@file/paragraph/run/comment-run";
 import { IHyphenationOptions } from "@file/settings";
@@ -13,6 +22,32 @@ import { INumberingOptions } from "../numbering";
 import { Paragraph } from "../paragraph";
 import { IStylesOptions } from "../styles";
 
+/**
+ * Options for configuring document properties.
+ *
+ * @property sections - Document section configurations
+ * @property title - Document title
+ * @property subject - Document subject
+ * @property creator - Document creator/author
+ * @property keywords - Document keywords for searchability
+ * @property description - Document description
+ * @property lastModifiedBy - User who last modified the document
+ * @property revision - Revision number
+ * @property externalStyles - External stylesheet reference
+ * @property styles - Document styles configuration
+ * @property numbering - Numbering configuration
+ * @property comments - Document comments configuration
+ * @property footnotes - Document footnotes
+ * @property background - Document background settings
+ * @property features - Document features like track changes
+ * @property compatabilityModeVersion - Compatibility mode version
+ * @property compatibility - Compatibility settings
+ * @property customProperties - Custom document properties
+ * @property evenAndOddHeaderAndFooters - Enable different headers/footers for even/odd pages
+ * @property defaultTabStop - Default tab stop width
+ * @property fonts - Font configurations
+ * @property hyphenation - Hyphenation settings
+ */
 export type IPropertiesOptions = {
     readonly sections: readonly ISectionOptions[];
     readonly title?: string;
@@ -48,30 +83,50 @@ export type IPropertiesOptions = {
     readonly hyphenation?: IHyphenationOptions;
 };
 
-// <xs:element name="coreProperties" type="CT_CoreProperties"/>
-
-/* cSpell:disable */
-// <xs:complexType name="CT_CoreProperties">
-//   <xs:all>
-//     <xs:element name="category" minOccurs="0" maxOccurs="1" type="xs:string"/>
-//     <xs:element name="contentStatus" minOccurs="0" maxOccurs="1" type="xs:string"/>
-//     <xs:element ref="dcterms:created" minOccurs="0" maxOccurs="1"/>
-//     <xs:element ref="dc:creator" minOccurs="0" maxOccurs="1"/>
-//     <xs:element ref="dc:description" minOccurs="0" maxOccurs="1"/>
-//     <xs:element ref="dc:identifier" minOccurs="0" maxOccurs="1"/>
-//     <xs:element name="keywords" minOccurs="0" maxOccurs="1" type="CT_Keywords"/>
-//     <xs:element ref="dc:language" minOccurs="0" maxOccurs="1"/>
-//     <xs:element name="lastModifiedBy" minOccurs="0" maxOccurs="1" type="xs:string"/>
-//     <xs:element name="lastPrinted" minOccurs="0" maxOccurs="1" type="xs:dateTime"/>
-//     <xs:element ref="dcterms:modified" minOccurs="0" maxOccurs="1"/>
-//     <xs:element name="revision" minOccurs="0" maxOccurs="1" type="xs:string"/>
-//     <xs:element ref="dc:subject" minOccurs="0" maxOccurs="1"/>
-//     <xs:element ref="dc:title" minOccurs="0" maxOccurs="1"/>
-//     <xs:element name="version" minOccurs="0" maxOccurs="1" type="xs:string"/>
-//   </xs:all>
-// </xs:complexType>
-/* cSpell:enable */
-
+/**
+ * Represents the core properties of a WordprocessingML document.
+ *
+ * Core properties contain document metadata based on Dublin Core elements,
+ * including title, subject, creator, keywords, description, and modification tracking.
+ *
+ * Reference: ISO-IEC29500-4_2016 shared-documentPropertiesCore.xsd
+ *
+ * ## XSD Schema
+ * ```xml
+ * <xs:complexType name="CT_CoreProperties">
+ *   <xs:all>
+ *     <xs:element name="category" minOccurs="0" maxOccurs="1" type="xs:string"/>
+ *     <xs:element name="contentStatus" minOccurs="0" maxOccurs="1" type="xs:string"/>
+ *     <xs:element ref="dcterms:created" minOccurs="0" maxOccurs="1"/>
+ *     <xs:element ref="dc:creator" minOccurs="0" maxOccurs="1"/>
+ *     <xs:element ref="dc:description" minOccurs="0" maxOccurs="1"/>
+ *     <xs:element ref="dc:identifier" minOccurs="0" maxOccurs="1"/>
+ *     <xs:element name="keywords" minOccurs="0" maxOccurs="1" type="CT_Keywords"/>
+ *     <xs:element ref="dc:language" minOccurs="0" maxOccurs="1"/>
+ *     <xs:element name="lastModifiedBy" minOccurs="0" maxOccurs="1" type="xs:string"/>
+ *     <xs:element name="lastPrinted" minOccurs="0" maxOccurs="1" type="xs:dateTime"/>
+ *     <xs:element ref="dcterms:modified" minOccurs="0" maxOccurs="1"/>
+ *     <xs:element name="revision" minOccurs="0" maxOccurs="1" type="xs:string"/>
+ *     <xs:element ref="dc:subject" minOccurs="0" maxOccurs="1"/>
+ *     <xs:element ref="dc:title" minOccurs="0" maxOccurs="1"/>
+ *     <xs:element name="version" minOccurs="0" maxOccurs="1" type="xs:string"/>
+ *   </xs:all>
+ * </xs:complexType>
+ * ```
+ *
+ * @example
+ * ```typescript
+ * const coreProps = new CoreProperties({
+ *   title: "My Document",
+ *   subject: "Sample Document",
+ *   creator: "John Doe",
+ *   keywords: "docx, example",
+ *   description: "A sample document",
+ *   lastModifiedBy: "Jane Doe",
+ *   revision: 1
+ * });
+ * ```
+ */
 export class CoreProperties extends XmlComponent {
     public constructor(options: Omit<IPropertiesOptions, "sections">) {
         super("cp:coreProperties");
@@ -102,10 +157,18 @@ export class CoreProperties extends XmlComponent {
     }
 }
 
+/**
+ * Attributes for timestamp elements in core properties.
+ * Specifies the W3C DateTime Format type for timestamps.
+ */
 class TimestampElementProperties extends XmlAttributeComponent<{ readonly type: string }> {
     protected readonly xmlKeys = { type: "xsi:type" };
 }
 
+/**
+ * Represents a timestamp element (created or modified date).
+ * Uses W3C DateTime Format (dcterms:W3CDTF) for dates.
+ */
 class TimestampElement extends XmlComponent {
     public constructor(name: string) {
         super(name);

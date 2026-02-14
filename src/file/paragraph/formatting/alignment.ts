@@ -84,6 +84,26 @@ export class AlignmentAttributes extends XmlAttributeComponent<{
  * The jc element specifies the horizontal alignment of all text in the paragraph.
  *
  * Reference: http://officeopenxml.com/WPalignment.php
+ *
+ * ## XSD Schema
+ * ```xml
+ * <xsd:complexType name="CT_Jc">
+ *   <xsd:attribute name="val" type="ST_Jc" use="required"/>
+ * </xsd:complexType>
+ * ```
+ *
+ * @example
+ * ```typescript
+ * new Paragraph({
+ *   alignment: AlignmentType.CENTER,
+ *   children: [new TextRun("Centered text")],
+ * });
+ *
+ * new Paragraph({
+ *   alignment: AlignmentType.JUSTIFIED,
+ *   children: [new TextRun("Justified text spreads evenly across the line")],
+ * });
+ * ```
  */
 export class Alignment extends XmlComponent {
     public constructor(type: (typeof AlignmentType)[keyof typeof AlignmentType]) {

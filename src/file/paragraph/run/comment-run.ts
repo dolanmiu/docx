@@ -1,19 +1,53 @@
+/**
+ * Comment module for WordprocessingML documents.
+ *
+ * This module provides support for comments (annotations) in documents. Comments
+ * consist of comment ranges (start/end markers), comment references, and the
+ * actual comment content.
+ *
+ * Reference: http://officeopenxml.com/WPrun.php
+ *
+ * @module
+ */
 import { FileChild } from "@file/file-child";
 import { Relationships } from "@file/relationships";
 import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
 
+/**
+ * Options for creating a single comment.
+ *
+ * @property id - Unique identifier for the comment
+ * @property children - Content of the comment (typically paragraphs)
+ * @property initials - Initials of the comment author
+ * @property author - Name of the comment author
+ * @property date - Date and time the comment was created
+ */
 export type ICommentOptions = {
+    /** Unique identifier for the comment */
     readonly id: number;
+    /** Content of the comment (typically paragraphs) */
     readonly children: readonly FileChild[];
+    /** Initials of the comment author */
     readonly initials?: string;
+    /** Name of the comment author */
     readonly author?: string;
+    /** Date and time the comment was created */
     readonly date?: Date;
 };
 
+/**
+ * Options for creating a comments container.
+ *
+ * @property children - Array of comment definitions
+ */
 export type ICommentsOptions = {
+    /** Array of comment definitions */
     readonly children: readonly ICommentOptions[];
 };
 
+/**
+ * @internal
+ */
 class CommentAttributes extends XmlAttributeComponent<{
     readonly id: number;
     readonly initials?: string;
@@ -23,9 +57,16 @@ class CommentAttributes extends XmlAttributeComponent<{
     protected readonly xmlKeys = { id: "w:id", initials: "w:initials", author: "w:author", date: "w:date" };
 }
 
+/**
+ * @internal
+ */
 class CommentRangeAttributes extends XmlAttributeComponent<{ readonly id: number }> {
     protected readonly xmlKeys = { id: "w:id" };
 }
+
+/**
+ * @internal
+ */
 class RootCommentsAttributes extends XmlAttributeComponent<{
     readonly "xmlns:cx"?: string;
     readonly "xmlns:cx1"?: string;
@@ -94,6 +135,26 @@ class RootCommentsAttributes extends XmlAttributeComponent<{
     };
 }
 
+/**
+ * Represents the start of a comment range in a WordprocessingML document.
+ *
+ * Marks the beginning of a region of text that is associated with a comment.
+ * Must be paired with a CommentRangeEnd with the same ID.
+ *
+ * Reference: http://officeopenxml.com/WPrun.php
+ *
+ * ## XSD Schema
+ * ```xml
+ * <xsd:complexType name="CT_MarkupRange">
+ *   <xsd:attribute name="id" type="ST_DecimalNumber" use="required"/>
+ * </xsd:complexType>
+ * ```
+ *
+ * @example
+ * ```typescript
+ * new CommentRangeStart(0);
+ * ```
+ */
 export class CommentRangeStart extends XmlComponent {
     public constructor(id: number) {
         super("w:commentRangeStart");
@@ -102,6 +163,26 @@ export class CommentRangeStart extends XmlComponent {
     }
 }
 
+/**
+ * Represents the end of a comment range in a WordprocessingML document.
+ *
+ * Marks the end of a region of text that is associated with a comment.
+ * Must be paired with a CommentRangeStart with the same ID.
+ *
+ * Reference: http://officeopenxml.com/WPrun.php
+ *
+ * ## XSD Schema
+ * ```xml
+ * <xsd:complexType name="CT_MarkupRange">
+ *   <xsd:attribute name="id" type="ST_DecimalNumber" use="required"/>
+ * </xsd:complexType>
+ * ```
+ *
+ * @example
+ * ```typescript
+ * new CommentRangeEnd(0);
+ * ```
+ */
 export class CommentRangeEnd extends XmlComponent {
     public constructor(id: number) {
         super("w:commentRangeEnd");
@@ -110,6 +191,26 @@ export class CommentRangeEnd extends XmlComponent {
     }
 }
 
+/**
+ * Represents a reference to a comment in a WordprocessingML document.
+ *
+ * This element is placed within a run to create a link to a comment.
+ * It should be placed after the CommentRangeEnd element.
+ *
+ * Reference: http://officeopenxml.com/WPrun.php
+ *
+ * ## XSD Schema
+ * ```xml
+ * <xsd:complexType name="CT_Markup">
+ *   <xsd:attribute name="id" type="ST_DecimalNumber" use="required"/>
+ * </xsd:complexType>
+ * ```
+ *
+ * @example
+ * ```typescript
+ * new CommentReference(0);
+ * ```
+ */
 export class CommentReference extends XmlComponent {
     public constructor(id: number) {
         super("w:commentReference");
@@ -118,6 +219,37 @@ export class CommentReference extends XmlComponent {
     }
 }
 
+/**
+ * Represents a single comment in a WordprocessingML document.
+ *
+ * Contains the actual content of a comment, including author information
+ * and the comment text (typically paragraphs).
+ *
+ * Reference: http://officeopenxml.com/WPrun.php
+ *
+ * ## XSD Schema
+ * ```xml
+ * <xsd:complexType name="CT_Comment">
+ *   <xsd:sequence>
+ *     <xsd:group ref="EG_BlockLevelElts" minOccurs="0" maxOccurs="unbounded"/>
+ *   </xsd:sequence>
+ *   <xsd:attribute name="initials" type="s:ST_String"/>
+ *   <xsd:attribute name="author" type="s:ST_String"/>
+ *   <xsd:attribute name="date" type="s:ST_DateTime"/>
+ *   <xsd:attribute name="id" type="ST_DecimalNumber" use="required"/>
+ * </xsd:complexType>
+ * ```
+ *
+ * @example
+ * ```typescript
+ * new Comment({
+ *   id: 0,
+ *   author: "John Doe",
+ *   initials: "JD",
+ *   children: [new Paragraph("This is a comment")],
+ * });
+ * ```
+ */
 export class Comment extends XmlComponent {
     public constructor({ id, initials, author, date = new Date(), children }: ICommentOptions) {
         super("w:comment");
@@ -136,6 +268,43 @@ export class Comment extends XmlComponent {
         }
     }
 }
+
+/**
+ * Represents the comments container in a WordprocessingML document.
+ *
+ * This is the root element for the comments.xml file that stores all
+ * comment definitions in the document.
+ *
+ * Reference: http://officeopenxml.com/WPrun.php
+ *
+ * ## XSD Schema
+ * ```xml
+ * <xsd:element name="comments" type="CT_Comments"/>
+ * <xsd:complexType name="CT_Comments">
+ *   <xsd:sequence>
+ *     <xsd:element name="comment" type="CT_Comment" minOccurs="0" maxOccurs="unbounded"/>
+ *   </xsd:sequence>
+ * </xsd:complexType>
+ * ```
+ *
+ * @example
+ * ```typescript
+ * new Comments({
+ *   children: [
+ *     {
+ *       id: 0,
+ *       author: "John Doe",
+ *       children: [new Paragraph("First comment")],
+ *     },
+ *     {
+ *       id: 1,
+ *       author: "Jane Smith",
+ *       children: [new Paragraph("Second comment")],
+ *     },
+ *   ],
+ * });
+ * ```
+ */
 export class Comments extends XmlComponent {
     private readonly relationships: Relationships;
 

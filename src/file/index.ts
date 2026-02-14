@@ -1,3 +1,15 @@
+/**
+ * File components module for WordprocessingML documents.
+ *
+ * This module exports all the building blocks needed to create DOCX documents,
+ * including paragraphs, tables, styles, numbering, headers/footers, and more.
+ *
+ * The main `File` class (exported as `Document` from the root) coordinates all
+ * these components to produce a complete OOXML document.
+ *
+ * @module
+ */
+
 export * from "./paragraph";
 export * from "./table";
 export * from "./file";

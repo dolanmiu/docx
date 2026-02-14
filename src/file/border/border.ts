@@ -1,27 +1,44 @@
-// Note that the border type is identical in all places,
-// regardless of where it's used like paragraph/table/etc.
-// PageBorders are a superset, but we're not using any of those extras.
-//
-// http://officeopenxml.com/WPborders.php
-// http://officeopenxml.com/WPtableBorders.php
-// http://officeopenxml.com/WPtableCellProperties-Borders.php
-// http://officeopenxml.com/WPsectionBorders.php
-//
-// This describes the CT_Border type.
-// <xsd:complexType name="CT_Border">
-//     <xsd:attribute name="val" type="ST_Border" use="required"/>
-//     <xsd:attribute name="color" type="ST_HexColor" use="optional" default="auto"/>
-//     <xsd:attribute name="themeColor" type="ST_ThemeColor" use="optional"/>
-//     <xsd:attribute name="themeTint" type="ST_UcharHexNumber" use="optional"/>
-//     <xsd:attribute name="themeShade" type="ST_UcharHexNumber" use="optional"/>
-//     <xsd:attribute name="sz" type="ST_EighthPointMeasure" use="optional"/>
-//     <xsd:attribute name="space" type="ST_PointMeasure" use="optional" default="0"/>
-//     <xsd:attribute name="shadow" type="s:ST_OnOff" use="optional"/>
-//     <xsd:attribute name="frame" type="s:ST_OnOff" use="optional"/>
-// </xsd:complexType>
+/**
+ * Border module for WordprocessingML documents.
+ *
+ * Borders are used in multiple contexts (paragraphs, tables, table cells, sections)
+ * and share the same CT_Border type definition. This module provides the BorderElement
+ * class and BorderStyle constants used throughout the document structure.
+ *
+ * Reference: http://officeopenxml.com/WPborders.php
+ *
+ * @see http://officeopenxml.com/WPtableBorders.php
+ * @see http://officeopenxml.com/WPtableCellProperties-Borders.php
+ * @see http://officeopenxml.com/WPsectionBorders.php
+ *
+ * ## XSD Schema
+ * ```xml
+ * <xsd:complexType name="CT_Border">
+ *   <xsd:attribute name="val" type="ST_Border" use="required"/>
+ *   <xsd:attribute name="color" type="ST_HexColor" use="optional" default="auto"/>
+ *   <xsd:attribute name="themeColor" type="ST_ThemeColor" use="optional"/>
+ *   <xsd:attribute name="themeTint" type="ST_UcharHexNumber" use="optional"/>
+ *   <xsd:attribute name="themeShade" type="ST_UcharHexNumber" use="optional"/>
+ *   <xsd:attribute name="sz" type="ST_EighthPointMeasure" use="optional"/>
+ *   <xsd:attribute name="space" type="ST_PointMeasure" use="optional" default="0"/>
+ *   <xsd:attribute name="shadow" type="s:ST_OnOff" use="optional"/>
+ *   <xsd:attribute name="frame" type="s:ST_OnOff" use="optional"/>
+ * </xsd:complexType>
+ * ```
+ *
+ * @module
+ */
 import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
 import { eighthPointMeasureValue, hexColorValue, pointMeasureValue } from "@util/values";
 
+/**
+ * Options for configuring a border element.
+ *
+ * @property style - The border style (single, dashed, dotted, etc.)
+ * @property color - Border color in hex format (e.g., "FF00AA" for purple)
+ * @property size - Border thickness in eighths of a point (1/8 pt)
+ * @property space - Spacing offset from the content in points
+ */
 export type IBorderOptions = {
     readonly style: (typeof BorderStyle)[keyof typeof BorderStyle];
     /** Border color, in hex (eg 'FF00AA') */
@@ -32,6 +49,24 @@ export type IBorderOptions = {
     readonly space?: number;
 };
 
+/**
+ * Represents a border element in a WordprocessingML document.
+ *
+ * BorderElement is used to create border specifications for paragraphs,
+ * tables, table cells, and sections. The element name is specified
+ * during construction to create different border types (top, bottom, left, right, etc.).
+ *
+ * @example
+ * ```typescript
+ * // Create a top border
+ * new BorderElement("w:top", {
+ *   style: BorderStyle.SINGLE,
+ *   color: "FF0000",
+ *   size: 24,
+ *   space: 1,
+ * });
+ * ```
+ */
 export class BorderElement extends XmlComponent {
     public constructor(elementName: string, { color, size, space, style }: IBorderOptions) {
         super(elementName);

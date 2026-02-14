@@ -1,71 +1,46 @@
-// <xsd:simpleType name="ST_NumberFormat">
-// <xsd:restriction base="xsd:string">
-//   <xsd:enumeration value="decimal"/>
-//   <xsd:enumeration value="upperRoman"/>
-//   <xsd:enumeration value="lowerRoman"/>
-//   <xsd:enumeration value="upperLetter"/>
-//   <xsd:enumeration value="lowerLetter"/>
-//   <xsd:enumeration value="ordinal"/>
-//   <xsd:enumeration value="cardinalText"/>
-//   <xsd:enumeration value="ordinalText"/>
-//   <xsd:enumeration value="hex"/>
-//   <xsd:enumeration value="chicago"/>
-//   <xsd:enumeration value="ideographDigital"/>
-//   <xsd:enumeration value="japaneseCounting"/>
-//   <xsd:enumeration value="aiueo"/>
-//   <xsd:enumeration value="iroha"/>
-//   <xsd:enumeration value="decimalFullWidth"/>
-//   <xsd:enumeration value="decimalHalfWidth"/>
-//   <xsd:enumeration value="japaneseLegal"/>
-//   <xsd:enumeration value="japaneseDigitalTenThousand"/>
-//   <xsd:enumeration value="decimalEnclosedCircle"/>
-//   <xsd:enumeration value="decimalFullWidth2"/>
-//   <xsd:enumeration value="aiueoFullWidth"/>
-//   <xsd:enumeration value="irohaFullWidth"/>
-//   <xsd:enumeration value="decimalZero"/>
-//   <xsd:enumeration value="bullet"/>
-//   <xsd:enumeration value="ganada"/>
-//   <xsd:enumeration value="chosung"/>
-//   <xsd:enumeration value="decimalEnclosedFullstop"/>
-//   <xsd:enumeration value="decimalEnclosedParen"/>
-//   <xsd:enumeration value="decimalEnclosedCircleChinese"/>
-//   <xsd:enumeration value="ideographEnclosedCircle"/>
-//   <xsd:enumeration value="ideographTraditional"/>
-//   <xsd:enumeration value="ideographZodiac"/>
-//   <xsd:enumeration value="ideographZodiacTraditional"/>
-//   <xsd:enumeration value="taiwaneseCounting"/>
-//   <xsd:enumeration value="ideographLegalTraditional"/>
-//   <xsd:enumeration value="taiwaneseCountingThousand"/>
-//   <xsd:enumeration value="taiwaneseDigital"/>
-//   <xsd:enumeration value="chineseCounting"/>
-//   <xsd:enumeration value="chineseLegalSimplified"/>
-//   <xsd:enumeration value="chineseCountingThousand"/>
-//   <xsd:enumeration value="koreanDigital"/>
-//   <xsd:enumeration value="koreanCounting"/>
-//   <xsd:enumeration value="koreanLegal"/>
-//   <xsd:enumeration value="koreanDigital2"/>
-//   <xsd:enumeration value="vietnameseCounting"/>
-//   <xsd:enumeration value="russianLower"/>
-//   <xsd:enumeration value="russianUpper"/>
-//   <xsd:enumeration value="none"/>
-//   <xsd:enumeration value="numberInDash"/>
-//   <xsd:enumeration value="hebrew1"/>
-//   <xsd:enumeration value="hebrew2"/>
-//   <xsd:enumeration value="arabicAlpha"/>
-//   <xsd:enumeration value="arabicAbjad"/>
-//   <xsd:enumeration value="hindiVowels"/>
-//   <xsd:enumeration value="hindiConsonants"/>
-//   <xsd:enumeration value="hindiNumbers"/>
-//   <xsd:enumeration value="hindiCounting"/>
-//   <xsd:enumeration value="thaiLetters"/>
-//   <xsd:enumeration value="thaiNumbers"/>
-//   <xsd:enumeration value="thaiCounting"/>
-//   <xsd:enumeration value="bahtText"/>
-//   <xsd:enumeration value="dollarText"/>
-//   <xsd:enumeration value="custom"/>
-// </xsd:restriction>
-// </xsd:simpleType>
+/**
+ * Number format module for WordprocessingML documents.
+ *
+ * This module provides number format constants for page numbers,
+ * list numbering, and other numbered elements.
+ *
+ * Reference: http://officeopenxml.com/WPnumbering-numFmt.php
+ *
+ * @module
+ */
 
+/**
+ * Number format types for page numbers and list numbering.
+ *
+ * Provides international number formats including decimal, Roman numerals,
+ * alphabetic, and various Asian numbering systems.
+ *
+ * ## XSD Schema
+ * ```xml
+ * <xsd:simpleType name="ST_NumberFormat">
+ *   <xsd:restriction base="xsd:string">
+ *     <xsd:enumeration value="decimal"/>
+ *     <xsd:enumeration value="upperRoman"/>
+ *     <xsd:enumeration value="lowerRoman"/>
+ *     <xsd:enumeration value="upperLetter"/>
+ *     <xsd:enumeration value="lowerLetter"/>
+ *     <!-- ... many more formats ... -->
+ *   </xsd:restriction>
+ * </xsd:simpleType>
+ * ```
+ *
+ * @example
+ * ```typescript
+ * // Arabic numerals (1, 2, 3)
+ * NumberFormat.DECIMAL;
+ *
+ * // Roman numerals (I, II, III)
+ * NumberFormat.UPPER_ROMAN;
+ *
+ * // Letters (a, b, c)
+ * NumberFormat.LOWER_LETTER;
+ * ```
+ */
 export const NumberFormat = {
     DECIMAL: "decimal",
     UPPER_ROMAN: "upperRoman",

@@ -9,7 +9,7 @@ const paragraph = new Paragraph({
     children: [
         new TextRun("This is a simple demo "),
         new TextRun({
-            text: "on how to "
+            text: "on how to ",
         }),
         new InsertedTextRun({
             text: "mark a text as an insertion ",
@@ -22,7 +22,7 @@ const paragraph = new Paragraph({
             id: 1,
             author: "Firstname Lastname",
             date: "2020-10-06T09:00:00Z",
-        })
+        }),
     ],
 });
 ```
@@ -43,7 +43,7 @@ const paragraph = new Paragraph({
             id: 0,
             author: "Firstname Lastname",
             date: "2020-10-06T09:00:00Z",
-        })
+        }),
     ],
 });
 ```
@@ -71,6 +71,6 @@ new TextRun({
         author: "Firstname Lastname",
         date: "2020-10-06T09:05:00Z",
         bold: false,
-    }
-}).break()
-````
+    },
+}).break();
+```

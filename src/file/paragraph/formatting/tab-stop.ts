@@ -12,11 +12,18 @@ import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
 /**
  * Definition for a single tab stop.
  *
+ * @property type - The type of tab stop alignment
+ * @property position - The position of the tab stop in twips
+ * @property leader - Optional leader character to fill space before the tab
+ *
  * @see {@link TabStop}
  */
 export type TabStopDefinition = {
+    /** The type of tab stop alignment */
     readonly type: (typeof TabStopType)[keyof typeof TabStopType];
+    /** The position of the tab stop in twips */
     readonly position: number | (typeof TabStopPosition)[keyof typeof TabStopPosition];
+    /** Optional leader character to fill space before the tab */
     readonly leader?: (typeof LeaderType)[keyof typeof LeaderType];
 };
 
@@ -26,6 +33,27 @@ export type TabStopDefinition = {
  * Tab stops define the positions where text will align when a tab character is used.
  *
  * Reference: http://officeopenxml.com/WPtab.php
+ *
+ * ## XSD Schema
+ * ```xml
+ * <xsd:complexType name="CT_Tabs">
+ *   <xsd:sequence>
+ *     <xsd:element name="tab" type="CT_TabStop" minOccurs="0" maxOccurs="unbounded"/>
+ *   </xsd:sequence>
+ * </xsd:complexType>
+ * ```
+ *
+ * @example
+ * ```typescript
+ * new Paragraph({
+ *   tabStops: [
+ *     { type: TabStopType.LEFT, position: 2000 },
+ *     { type: TabStopType.CENTER, position: 4000 },
+ *     { type: TabStopType.RIGHT, position: TabStopPosition.MAX, leader: LeaderType.DOT },
+ *   ],
+ *   children: [new TextRun("Text\twith\ttabs")],
+ * });
+ * ```
  */
 export class TabStop extends XmlComponent {
     public constructor(tabDefinitions: readonly TabStopDefinition[]) {
@@ -105,6 +133,17 @@ export class TabAttributes extends XmlAttributeComponent<{
  * Represents a single tab stop item in a WordprocessingML document.
  *
  * Reference: http://officeopenxml.com/WPtab.php
+ *
+ * ## XSD Schema
+ * ```xml
+ * <xsd:complexType name="CT_TabStop">
+ *   <xsd:attribute name="val" type="ST_TabJc" use="required"/>
+ *   <xsd:attribute name="leader" type="ST_TabTlc" use="optional"/>
+ *   <xsd:attribute name="pos" type="ST_SignedTwipsMeasure" use="required"/>
+ * </xsd:complexType>
+ * ```
+ *
+ * @internal
  */
 export class TabStopItem extends XmlComponent {
     public constructor({ type, position, leader }: TabStopDefinition) {

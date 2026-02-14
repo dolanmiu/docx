@@ -1,3 +1,8 @@
+/**
+ * Compiler module for converting File objects into OOXML ZIP archives.
+ *
+ * @module
+ */
 import JSZip from "jszip";
 import xml from "xml";
 
@@ -9,45 +14,110 @@ import { ImageReplacer } from "./image-replacer";
 import { NumberingReplacer } from "./numbering-replacer";
 import { PrettifyType } from "./packer";
 
+/**
+ * Represents a serialized XML file with its path in the OOXML package.
+ *
+ * @property data - The XML content as a string
+ * @property path - The file path within the ZIP archive (e.g., "word/document.xml")
+ */
 export type IXmlifyedFile = {
     readonly data: string;
     readonly path: string;
 };
 
+/**
+ * Complete mapping of all XML files in an OOXML document package.
+ *
+ * This type represents the full structure of a .docx file, including the main
+ * document, styles, relationships, headers, footers, and metadata files.
+ */
 type IXmlifyedFileMapping = {
+    /** Main document content (word/document.xml) */
     readonly Document: IXmlifyedFile;
+    /** Style definitions (word/styles.xml) */
     readonly Styles: IXmlifyedFile;
+    /** Core document properties (docProps/core.xml) */
     readonly Properties: IXmlifyedFile;
+    /** Numbering definitions (word/numbering.xml) */
     readonly Numbering: IXmlifyedFile;
+    /** Document relationships (word/_rels/document.xml.rels) */
     readonly Relationships: IXmlifyedFile;
+    /** Package-level relationships (_rels/.rels) */
     readonly FileRelationships: IXmlifyedFile;
+    /** Header content files */
     readonly Headers: readonly IXmlifyedFile[];
+    /** Footer content files */
     readonly Footers: readonly IXmlifyedFile[];
+    /** Header relationship files */
     readonly HeaderRelationships: readonly IXmlifyedFile[];
+    /** Footer relationship files */
     readonly FooterRelationships: readonly IXmlifyedFile[];
+    /** Content types mapping ([Content_Types].xml) */
     readonly ContentTypes: IXmlifyedFile;
+    /** Custom document properties (docProps/custom.xml) */
     readonly CustomProperties: IXmlifyedFile;
+    /** Application properties (docProps/app.xml) */
     readonly AppProperties: IXmlifyedFile;
+    /** Footnotes content (word/footnotes.xml) */
     readonly FootNotes: IXmlifyedFile;
+    /** Footnotes relationships (word/_rels/footnotes.xml.rels) */
     readonly FootNotesRelationships: IXmlifyedFile;
+    /** Document settings (word/settings.xml) */
     readonly Settings: IXmlifyedFile;
+    /** Comments content (word/comments.xml) */
     readonly Comments?: IXmlifyedFile;
+    /** Comments relationships (word/_rels/comments.xml.rels) */
     readonly CommentsRelationships?: IXmlifyedFile;
+    /** Font table (word/fontTable.xml) */
     readonly FontTable?: IXmlifyedFile;
+    /** Font table relationships (word/_rels/fontTable.xml.rels) */
     readonly FontTableRelationships?: IXmlifyedFile;
 };
 
+/**
+ * Compiles File objects into OOXML-compliant ZIP archives.
+ *
+ * The Compiler is responsible for converting the internal document representation
+ * into the complete set of XML files required for a .docx document, managing
+ * relationships, images, fonts, and all other document components.
+ *
+ * @example
+ * ```typescript
+ * const compiler = new Compiler();
+ * const zip = compiler.compile(file, PrettifyType.WITH_2_BLANKS);
+ * ```
+ */
 export class Compiler {
     private readonly formatter: Formatter;
     private readonly imageReplacer: ImageReplacer;
     private readonly numberingReplacer: NumberingReplacer;
 
+    /**
+     * Creates a new Compiler instance.
+     *
+     * Initializes the formatter and replacer utilities used during compilation.
+     */
     public constructor() {
         this.formatter = new Formatter();
         this.imageReplacer = new ImageReplacer();
         this.numberingReplacer = new NumberingReplacer();
     }
 
+    /**
+     * Compiles a File object into a JSZip archive containing the complete OOXML package.
+     *
+     * This method orchestrates the entire compilation process:
+     * - Converts all document components to XML
+     * - Manages image and numbering placeholder replacements
+     * - Creates relationship files
+     * - Packages fonts and media files
+     * - Assembles everything into a ZIP archive
+     *
+     * @param file - The document to compile
+     * @param prettifyXml - Optional XML formatting style
+     * @param overrides - Optional custom XML file overrides
+     * @returns A JSZip instance containing the complete .docx package
+     */
     public compile(
         file: File,
         prettifyXml?: (typeof PrettifyType)[keyof typeof PrettifyType],

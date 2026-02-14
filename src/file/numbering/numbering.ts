@@ -21,11 +21,16 @@ import { DocumentAttributes } from "../document/document-attributes";
 /**
  * Options for configuring numbering definitions.
  *
+ * @property config - Array of numbering configurations
+ *
  * @see {@link Numbering}
  */
 export type INumberingOptions = {
+    /** Array of numbering configurations, each with levels and a reference name. */
     readonly config: readonly {
+        /** Array of level definitions for this numbering configuration. */
         readonly levels: readonly ILevelsOptions[];
+        /** Unique reference name for this numbering configuration. */
         readonly reference: string;
     }[];
 };
@@ -35,6 +40,8 @@ export type INumberingOptions = {
  *
  * The numbering element contains abstract numbering definitions and their
  * concrete instances, which are referenced by paragraphs to create lists.
+ * Each numbering configuration includes a default bullet list and any
+ * custom numbering schemes defined by the user.
  *
  * Reference: http://officeopenxml.com/WPnumbering.php
  *
@@ -51,6 +58,43 @@ export type INumberingOptions = {
  *   </xsd:sequence>
  * </xsd:complexType>
  * ```
+ *
+ * @example
+ * ```typescript
+ * // Create numbering with custom decimal list
+ * const numbering = new Numbering({
+ *   config: [
+ *     {
+ *       reference: "my-decimal-list",
+ *       levels: [
+ *         {
+ *           level: 0,
+ *           format: LevelFormat.DECIMAL,
+ *           text: "%1.",
+ *           alignment: AlignmentType.LEFT,
+ *           start: 1,
+ *           style: {
+ *             paragraph: {
+ *               indent: { left: 720, hanging: 360 },
+ *             },
+ *           },
+ *         },
+ *         {
+ *           level: 1,
+ *           format: LevelFormat.LOWER_LETTER,
+ *           text: "%2)",
+ *           alignment: AlignmentType.LEFT,
+ *           style: {
+ *             paragraph: {
+ *               indent: { left: 1440, hanging: 360 },
+ *             },
+ *           },
+ *         },
+ *       ],
+ *     },
+ *   ],
+ * });
+ * ```
  */
 export class Numbering extends XmlComponent {
     private readonly abstractNumberingMap = new Map<string, AbstractNumbering>();
@@ -60,6 +104,14 @@ export class Numbering extends XmlComponent {
     private readonly abstractNumUniqueNumericId = abstractNumUniqueNumericIdGen();
     private readonly concreteNumUniqueNumericId = concreteNumUniqueNumericIdGen();
 
+    /**
+     * Creates a new numbering definition collection.
+     *
+     * Initializes the numbering with a default bullet list configuration and
+     * any custom numbering configurations provided in the options.
+     *
+     * @param options - Configuration options for numbering definitions
+     */
     public constructor(options: INumberingOptions) {
         super("w:numbering");
         this.root.push(
@@ -195,6 +247,14 @@ export class Numbering extends XmlComponent {
         }
     }
 
+    /**
+     * Prepares the numbering definitions for XML serialization.
+     *
+     * Adds all abstract and concrete numbering definitions to the XML tree.
+     *
+     * @param context - The XML context
+     * @returns The prepared XML object
+     */
     public prepForXml(context: IContext): IXmlableObject | undefined {
         for (const numbering of this.abstractNumberingMap.values()) {
             this.root.push(numbering);
@@ -206,6 +266,16 @@ export class Numbering extends XmlComponent {
         return super.prepForXml(context);
     }
 
+    /**
+     * Creates a concrete numbering instance from an abstract numbering definition.
+     *
+     * This method creates a new concrete numbering instance that references an
+     * abstract numbering definition. It's used internally when paragraphs reference
+     * numbering configurations.
+     *
+     * @param reference - The reference name of the abstract numbering definition
+     * @param instance - The instance number for this concrete numbering
+     */
     public createConcreteNumberingInstance(reference: string, instance: number): void {
         const abstractNumbering = this.abstractNumberingMap.get(reference);
 
@@ -243,9 +313,20 @@ export class Numbering extends XmlComponent {
         this.concreteNumberingMap.set(fullReference, new ConcreteNumbering(concreteNumberingSettings));
     }
 
+    /**
+     * Gets all concrete numbering instances.
+     *
+     * @returns An array of all concrete numbering instances
+     */
     public get ConcreteNumbering(): readonly ConcreteNumbering[] {
         return Array.from(this.concreteNumberingMap.values());
     }
+
+    /**
+     * Gets all reference configurations.
+     *
+     * @returns An array of all numbering reference configurations
+     */
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     public get ReferenceConfig(): readonly Record<string, any>[] {
         return Array.from(this.referenceConfigMap.values());

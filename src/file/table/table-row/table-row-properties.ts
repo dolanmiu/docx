@@ -50,12 +50,18 @@ import { ITableCellSpacingProperties, TableCellSpacingElement } from "../table-c
  * @see {@link TableRowProperties}
  */
 export type ITableRowPropertiesOptions = {
+    /** Whether the row can be split across pages (cantSplit) */
     readonly cantSplit?: boolean;
+    /** Whether the row should be repeated as a header row on each page (tblHeader) */
     readonly tableHeader?: boolean;
+    /** Row height configuration (trHeight) */
     readonly height?: {
+        /** Height value in twips or as a PositiveUniversalMeasure */
         readonly value: number | PositiveUniversalMeasure;
+        /** Height rule determining how the height value is applied */
         readonly rule: (typeof HeightRule)[keyof typeof HeightRule];
     };
+    /** Spacing between cells in the row (tblCellSpacing) */
     readonly cellSpacing?: ITableCellSpacingProperties;
 };
 
@@ -66,6 +72,18 @@ export type ITableRowPropertiesOptions = {
  * whether it can split across pages, and whether it's a header row.
  *
  * Reference: http://officeopenxml.com/WPtableRowProperties.php
+ *
+ * @example
+ * ```typescript
+ * new TableRowProperties({
+ *   cantSplit: true,
+ *   tableHeader: true,
+ *   height: {
+ *     value: 1000,
+ *     rule: HeightRule.EXACT,
+ *   },
+ * });
+ * ```
  */
 export class TableRowProperties extends IgnoreIfEmptyXmlComponent {
     public constructor(options: ITableRowPropertiesOptions) {

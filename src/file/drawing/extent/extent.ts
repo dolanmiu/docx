@@ -1,5 +1,18 @@
+/**
+ * Extent (size) for DrawingML objects.
+ *
+ * This module provides support for defining the size of DrawingML objects
+ * in inline drawings.
+ *
+ * Reference: https://c-rex.net/samples/ooxml/e1/Part4/OOXML_P4_DOCX_extent_topic_ID0EQB4OB.html
+ *
+ * @module
+ */
 import { BuilderElement, XmlComponent } from "@file/xml-components";
 
+/**
+ * Attributes for extent.
+ */
 type ExtentAttributes = {
     /**
      * ## Extent Length
@@ -37,17 +50,28 @@ type ExtentAttributes = {
 };
 
 /**
- * This element specifies the extents of the parent `DrawingML` object within the document (i.e. its final height and width).
+ * Creates an extent element for inline drawings.
+ *
+ * This element specifies the extents of the parent DrawingML object within
+ * the document (i.e. its final height and width).
  *
  * Reference: https://c-rex.net/samples/ooxml/e1/Part4/OOXML_P4_DOCX_extent_topic_ID0EQB4OB.html
  *
  * ## XSD Schema
- *
  * ```xml
- * <complexType name="CT_PositiveSize2D">
- *   <attribute name="cx" type="ST_PositiveCoordinate" use="required"/>
- *   <attribute name="cy" type="ST_PositiveCoordinate" use="required"/>
- * </complexType>
+ * <xsd:complexType name="CT_PositiveSize2D">
+ *   <xsd:attribute name="cx" type="ST_PositiveCoordinate" use="required"/>
+ *   <xsd:attribute name="cy" type="ST_PositiveCoordinate" use="required"/>
+ * </xsd:complexType>
+ * ```
+ *
+ * @example
+ * ```typescript
+ * // Create a 1-inch by 1-inch extent
+ * const extent = createExtent({
+ *   x: 914400,
+ *   y: 914400
+ * });
  * ```
  */
 export const createExtent = ({ x, y }: ExtentAttributes): XmlComponent =>

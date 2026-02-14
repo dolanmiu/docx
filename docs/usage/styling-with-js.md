@@ -21,27 +21,27 @@ const name = new TextRun({
 
 ### Run formatting
 
--   `bold`, `italics`, `smallCaps`, `allCaps`, `strike`, `doubleStrike`, `subScript`, `superScript`: Set the formatting property to true
--   `underline({type="single", color=null})`: Set the underline style and color
--   `emphasisMark({type="dot"})`: Set the emphasis mark style
--   `color(color)`: Set the text color, using 6 hex characters for RRGGBB (no leading `#`)
--   `size(halfPts)`: Set the font size, measured in half-points
--   `font(name)` or `font({ascii, cs, eastAsia, hAnsi, hint})`: Set the run's font
--   `style(name)`: Apply a named run style
--   `characterSpacing(value)`: Set the character spacing adjustment (in TWIPs)
+- `bold`, `italics`, `smallCaps`, `allCaps`, `strike`, `doubleStrike`, `subScript`, `superScript`: Set the formatting property to true
+- `underline({type="single", color=null})`: Set the underline style and color
+- `emphasisMark({type="dot"})`: Set the emphasis mark style
+- `color(color)`: Set the text color, using 6 hex characters for RRGGBB (no leading `#`)
+- `size(halfPts)`: Set the font size, measured in half-points
+- `font(name)` or `font({ascii, cs, eastAsia, hAnsi, hint})`: Set the run's font
+- `style(name)`: Apply a named run style
+- `characterSpacing(value)`: Set the character spacing adjustment (in TWIPs)
 
 ### Paragraph formatting
 
--   `heading1`, `heading2`, `heading3`, `heading4`, `heading5`, `title`: apply the appropriate style to the paragraph
--   `left`, `center`, `right`, `justified`: set the paragraph's alignment
--   `thematicBreak`, `pageBreak`: Insert a thick rule or a page break beneath the paragraph
--   `leftTabStop(position)`: Add a left tab stop (measured in TWIPs from the left)
--   `maxRightTabStop`: Add a right tab stop at the far right
--   `bullet`: Use the default bullet style
--   `setNumbering(numbering, indentLevel)`: Use a custom numbering format for the paragraph
--   `style(name)`: Apply a named paragraph style
--   `indent(start, hanging=0)`: Set the paragraph's indent level (in TWIPs)
--   `spacing({before=0, after=0, line=0})`: Set the line and before/after on the paragraph. Before/after is measured in TWIPs, line is measured in 240ths of a line
+- `heading1`, `heading2`, `heading3`, `heading4`, `heading5`, `title`: apply the appropriate style to the paragraph
+- `left`, `center`, `right`, `justified`: set the paragraph's alignment
+- `thematicBreak`, `pageBreak`: Insert a thick rule or a page break beneath the paragraph
+- `leftTabStop(position)`: Add a left tab stop (measured in TWIPs from the left)
+- `maxRightTabStop`: Add a right tab stop at the far right
+- `bullet`: Use the default bullet style
+- `setNumbering(numbering, indentLevel)`: Use a custom numbering format for the paragraph
+- `style(name)`: Apply a named paragraph style
+- `indent(start, hanging=0)`: Set the paragraph's indent level (in TWIPs)
+- `spacing({before=0, after=0, line=0})`: Set the line and before/after on the paragraph. Before/after is measured in TWIPs, line is measured in 240ths of a line
 
 Paragraph styles have all the run formatting methods, except `style()`, and `left()`, `center()`, `right()`, `justified()`, `thematicBreak()`, `leftTabStop(position)`, `maxRightTabStop()`, `indent(start, hanging=0)`, and `spacing({before=0, after=0, line=0})` methods.
 
@@ -49,10 +49,10 @@ Paragraph styles have all the run formatting methods, except `style()`, and `lef
 
 There are 4 items in `docx` that can be styled:
 
--   Characters: Attributes that can change within a paragraph. e.g., bold, italics, etc.
--   Paragraphs: Attributes like indent, text alignment, line spacing, etc.
--   Tables: Border styles, table formats, etc.
--   List items: These are the numbers and bullets that are automatically inserted
+- Characters: Attributes that can change within a paragraph. e.g., bold, italics, etc.
+- Paragraphs: Attributes like indent, text alignment, line spacing, etc.
+- Tables: Border styles, table formats, etc.
+- List items: These are the numbers and bullets that are automatically inserted
 
 There are a few different ways of styling this content in `docx`, which somewhat resemble the HTML/CSS approach. In order of greatest to lowest priority:
 
@@ -137,12 +137,12 @@ const doc = new Document({
                 paragraph: {
                     spacing: {
                         before: 240,
-                        after: 120
+                        after: 120,
                     },
                 },
             },
-        ]
-    }
+        ],
+    },
 });
 ```
 
@@ -180,22 +180,22 @@ To determine the value of a styling property, you must first identify whether it
 
 The following properties are treated in a special manner; they're called toggle properties:
 
--   Bold
--   All caps
--   Small caps
--   Italics
--   Single strike-through
--   Hidden
--   Imprint
--   Emboss
--   Character outline
--   Character shadow
+- Bold
+- All caps
+- Small caps
+- Italics
+- Single strike-through
+- Hidden
+- Imprint
+- Emboss
+- Character outline
+- Character shadow
 
 For these properties, the rules state the following conflict resolution in case the property is specified at multiple points for the same item:
 
--   Direct formatting trumps all if specified (either true or false)
--   Otherwise, if the property is true in document defaults, the property is set to true
--   Otherwise, the property's value is an XOR of its effective table, paragraph, and character values. (So specifying bold `true` on a table style and a paragraph style would result in non-bold text if a paragraph inside the table had that style)
+- Direct formatting trumps all if specified (either true or false)
+- Otherwise, if the property is true in document defaults, the property is set to true
+- Otherwise, the property's value is an XOR of its effective table, paragraph, and character values. (So specifying bold `true` on a table style and a paragraph style would result in non-bold text if a paragraph inside the table had that style)
 
 ## Examples
 
@@ -203,6 +203,6 @@ For these properties, the rules state the following conflict resolution in case 
 
 Importing Images from file system path
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/2-declaritive-styles.ts ':include')
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/2-declaritive-styles.ts ":include")
 
 _Source: https://github.com/dolanmiu/docx/blob/master/demo/2-declaritive-styles.ts_

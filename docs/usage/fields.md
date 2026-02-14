@@ -8,16 +8,16 @@ There are very complicated fields like the table of contents, but in many cases 
 
 Word uses field codes to identify what the result of the field should be. You can find these field codes by adding a field in a document (`Insert -> Quick Parts -> Field...`) and clicking the 'Field codes'-button. Some examples include:
 
-Field type  | Example         | Description
------------ | --------------- | ---------------------------------------------------------
-= (Formula) | `=2*21`         | Calculates the result of a formula. You can also use bookmarks as variables, see below.
-Author      | `AUTHOR`        | Includes the author mentioned in the document properties.
-CreateDate  | `CREATEDATE`    | Date the document was created.
-Date        | `DATE`          | Today's date.
-FileName    | `FILENAME \p`   | The name of the document. Add `\p` for the complete path.
-Info        | `INFO NumWords` | Data from the document properties, e.g. the number of words in the document.
-NumPages    | `NUMPAGES`      | Number of pages in the document.
-UserName    | `USERNAME`      | Your user name from the Office personalization settings.
+| Field type  | Example         | Description                                                                             |
+| ----------- | --------------- | --------------------------------------------------------------------------------------- |
+| = (Formula) | `=2*21`         | Calculates the result of a formula. You can also use bookmarks as variables, see below. |
+| Author      | `AUTHOR`        | Includes the author mentioned in the document properties.                               |
+| CreateDate  | `CREATEDATE`    | Date the document was created.                                                          |
+| Date        | `DATE`          | Today's date.                                                                           |
+| FileName    | `FILENAME \p`   | The name of the document. Add `\p` for the complete path.                               |
+| Info        | `INFO NumWords` | Data from the document properties, e.g. the number of words in the document.            |
+| NumPages    | `NUMPAGES`      | Number of pages in the document.                                                        |
+| UserName    | `USERNAME`      | Your user name from the Office personalization settings.                                |
 
 Fields can be added as a child of a paragraph:
 
@@ -43,9 +43,9 @@ One type of field is the formula that can be used to do some basic calculations.
 const paragraph = new Paragraph({
     children: [
         new TextRun("Value one is: "),
-        new Bookmark({ id: "One", children: [new TextRun("451")]}),
+        new Bookmark({ id: "One", children: [new TextRun("451")] }),
         new TextRun(". The second value is: "),
-        new Bookmark({ id: "Two", children: [new TextRun("886")]}),
+        new Bookmark({ id: "Two", children: [new TextRun("886")] }),
         new TextRun(". The sum of these values is: "),
         new SimpleField("=One+Two"),
     ],
