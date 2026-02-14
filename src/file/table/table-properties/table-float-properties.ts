@@ -157,7 +157,7 @@ export type ITableFloatOptions = {
 /**
  * Represents floating table properties in a WordprocessingML document.
  *
- * The tblpPr element specifies the positioning of a floating table,
+ * This element specifies the positioning of a floating table,
  * including anchor points, offsets, and text wrapping behavior.
  *
  * Reference: http://officeopenxml.com/WPtableFloating.php

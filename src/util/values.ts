@@ -426,6 +426,7 @@ export const eighthPointMeasureValue = unsignedDecimalNumber;
  */
 export const pointMeasureValue = unsignedDecimalNumber;
 
+// cspell:words CCYY
 /**
  * Converts a JavaScript Date object to an ISO 8601 date-time string.
  *

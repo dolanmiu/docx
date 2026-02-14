@@ -57,7 +57,7 @@ export class CustomProperty extends XmlComponent {
         super("property");
         this.root.push(
             new CustomPropertyAttributes({
-                fmtid: "{D5CDD505-2E9C-101B-9397-08002B2CF9AE}",
+                formatId: "{D5CDD505-2E9C-101B-9397-08002B2CF9AE}",
                 pid: id.toString(),
                 name: properties.name,
             }),
@@ -68,7 +68,7 @@ export class CustomProperty extends XmlComponent {
 
 /**
  * Represents the value of a custom property.
- * Uses the variant type lpwstr (long pointer to wide string) for string values.
+ * Uses the variant type "long pointer to wide string" for string values.
  */
 export class CustomPropertyValue extends XmlComponent {
     public constructor(value: string) {

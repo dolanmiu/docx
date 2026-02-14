@@ -134,11 +134,6 @@ export const bookmarkUniqueNumericIdGen = (): UniqueNumericIdCreator => uniqueNu
  * within a document.
  *
  * @returns A unique lowercase string ID
- *
- * @example
- * ```typescript
- * const id = uniqueId(); // Returns something like "v1stdx2g3y4z5abc"
- * ```
  */
 export const uniqueId = (): string => nanoid().toLowerCase();
 

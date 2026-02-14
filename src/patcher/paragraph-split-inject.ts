@@ -53,6 +53,8 @@ export const findRunElementIndexWithToken = (paragraphElement: Element, token: s
     throw new TokenNotFoundError(token);
 };
 
+// cspell:words Helloɵworld
+
 /**
  * Splits a run element at a token position into left and right parts.
  *
