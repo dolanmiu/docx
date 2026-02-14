@@ -84,6 +84,8 @@ export class FootnoteReferenceElement extends EmptyElement {
     }
 }
 
+// TODO: There is a naming inconsistency between the Footnote elements and the Endnote elements.
+//       Not worrying about it for now to avoid breaking changes.
 export class EndnoteReference extends EmptyElement {
     public constructor() {
         super("w:endnoteRef");

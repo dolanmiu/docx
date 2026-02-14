@@ -1,4 +1,5 @@
 import { Document, IDocumentOptions } from "./document";
+import { Endnotes } from "./endnotes";
 import { Footer } from "./footer/footer";
 import { FootNotes } from "./footnotes";
 import { Header } from "./header/header";
@@ -6,7 +7,7 @@ import { Relationships } from "./relationships";
 import { XmlComponent } from "./xml-components";
 
 export type IViewWrapper = {
-    readonly View: Document | Footer | Header | FootNotes | XmlComponent;
+    readonly View: Document | Footer | Header | FootNotes | Endnotes | XmlComponent;
     readonly Relationships: Relationships;
 };
 

@@ -30,6 +30,8 @@ type IXmlifyedFileMapping = {
     readonly AppProperties: IXmlifyedFile;
     readonly FootNotes: IXmlifyedFile;
     readonly FootNotesRelationships: IXmlifyedFile;
+    readonly Endnotes: IXmlifyedFile;
+    readonly EndnotesRelationships: IXmlifyedFile;
     readonly Settings: IXmlifyedFile;
     readonly Comments?: IXmlifyedFile;
     readonly CommentsRelationships?: IXmlifyedFile;
@@ -453,6 +455,38 @@ export class Compiler {
                     },
                 ),
                 path: "word/_rels/footnotes.xml.rels",
+            },
+            Endnotes: {
+                data: xml(
+                    this.formatter.format(file.Endnotes.View, {
+                        viewWrapper: file.Endnotes,
+                        file,
+                        stack: [],
+                    }),
+                    {
+                        indent: prettify,
+                        declaration: {
+                            encoding: "UTF-8",
+                        },
+                    },
+                ),
+                path: "word/endnotes.xml",
+            },
+            EndnotesRelationships: {
+                data: xml(
+                    this.formatter.format(file.Endnotes.Relationships, {
+                        viewWrapper: file.Endnotes,
+                        file,
+                        stack: [],
+                    }),
+                    {
+                        indent: prettify,
+                        declaration: {
+                            encoding: "UTF-8",
+                        },
+                    },
+                ),
+                path: "word/_rels/endnotes.xml.rels",
             },
             Settings: {
                 data: xml(

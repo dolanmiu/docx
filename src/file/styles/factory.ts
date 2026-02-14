@@ -1,5 +1,8 @@
 import { DocumentDefaults, IDocumentDefaultsOptions } from "./defaults";
 import {
+    EndnoteReferenceStyle,
+    EndnoteText,
+    EndnoteTextChar,
     FootnoteReferenceStyle,
     FootnoteText,
     FootnoteTextChar,
@@ -34,6 +37,9 @@ export type IDefaultStylesOptions = {
     readonly footnoteReference?: IBaseCharacterStyleOptions;
     readonly footnoteText?: IBaseParagraphStyleOptions;
     readonly footnoteTextChar?: IBaseCharacterStyleOptions;
+    readonly endnoteReference?: IBaseCharacterStyleOptions;
+    readonly endnoteText?: IBaseParagraphStyleOptions;
+    readonly endnoteTextChar?: IBaseCharacterStyleOptions;
 };
 
 export class DefaultStylesFactory {
@@ -100,6 +106,9 @@ export class DefaultStylesFactory {
                 new FootnoteReferenceStyle(options.footnoteReference || {}),
                 new FootnoteText(options.footnoteText || {}),
                 new FootnoteTextChar(options.footnoteTextChar || {}),
+                new EndnoteReferenceStyle(options.endnoteReference || {}),
+                new EndnoteText(options.endnoteText || {}),
+                new EndnoteTextChar(options.endnoteTextChar || {}),
             ],
         };
     }

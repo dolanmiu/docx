@@ -34,6 +34,14 @@ export type IPropertiesOptions = {
             }
         >
     >;
+    readonly endnotes?: Readonly<
+        Record<
+            string,
+            {
+                readonly children: readonly Paragraph[];
+            }
+        >
+    >;
     readonly background?: IDocumentBackgroundOptions;
     readonly features?: {
         readonly trackRevisions?: boolean;
