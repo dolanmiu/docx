@@ -1,10 +1,26 @@
-// http://officeopenxml.com/WPfooters.php
+/**
+ * Footer module for WordprocessingML documents.
+ *
+ * Footers are repeated at the bottom of each page in a section.
+ *
+ * Reference: http://officeopenxml.com/WPfooters.php
+ *
+ * @module
+ */
 import { InitializableXmlComponent, XmlComponent } from "@file/xml-components";
 
 import { Paragraph } from "../paragraph";
 import { Table } from "../table";
 import { FooterAttributes } from "./footer-attributes";
 
+/**
+ * Represents a footer in a WordprocessingML document.
+ *
+ * A footer is the portion of the document that appears at the bottom of each page.
+ * Footers can contain paragraphs, tables, and other content.
+ *
+ * Reference: http://officeopenxml.com/WPfooters.php
+ */
 export class Footer extends InitializableXmlComponent {
     private readonly refId: number;
 

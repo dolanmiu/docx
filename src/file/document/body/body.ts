@@ -3,6 +3,24 @@ import { IContext, IXmlableObject, XmlComponent } from "@file/xml-components";
 
 import { ISectionPropertiesOptions, SectionProperties } from "./section-properties/section-properties";
 
+/**
+ * Represents the document body in a WordprocessingML document.
+ *
+ * The body element is the container for all block-level content in the document.
+ * This includes paragraphs, tables, and section properties that define page layout.
+ *
+ * Reference: http://officeopenxml.com/WPdocument.php
+ *
+ * ## XSD Schema
+ * ```xml
+ * <xsd:complexType name="CT_Body">
+ *   <xsd:sequence>
+ *     <xsd:group ref="EG_BlockLevelElts" minOccurs="0" maxOccurs="unbounded"/>
+ *     <xsd:element name="sectPr" minOccurs="0" maxOccurs="1" type="CT_SectPr"/>
+ *   </xsd:sequence>
+ * </xsd:complexType>
+ * ```
+ */
 export class Body extends XmlComponent {
     // eslint-disable-next-line functional/prefer-readonly-type
     private readonly sections: SectionProperties[] = [];

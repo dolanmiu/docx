@@ -1,10 +1,26 @@
-// http://officeopenxml.com/WPheaders.php
+/**
+ * Header module for WordprocessingML documents.
+ *
+ * Headers are repeated at the top of each page in a section.
+ *
+ * Reference: http://officeopenxml.com/WPheaders.php
+ *
+ * @module
+ */
 import { InitializableXmlComponent, XmlComponent } from "@file/xml-components";
 
 import { Paragraph } from "../paragraph";
 import { Table } from "../table";
 import { HeaderAttributes } from "./header-attributes";
 
+/**
+ * Represents a header in a WordprocessingML document.
+ *
+ * A header is the portion of the document that appears at the top of each page.
+ * Headers can contain paragraphs, tables, and other content.
+ *
+ * Reference: http://officeopenxml.com/WPheaders.php
+ */
 export class Header extends InitializableXmlComponent {
     private readonly refId: number;
 

@@ -1,9 +1,21 @@
+/**
+ * Graphic module for DrawingML elements.
+ *
+ * This module provides the graphic element that contains
+ * pictures and other visual content.
+ *
+ * @module
+ */
 import { IMediaData, IMediaDataTransformation } from "@file/media";
 import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
 
 import { GraphicData } from "./graphic-data";
 import { OutlineOptions } from "./graphic-data/pic/shape-properties/outline/outline";
 
+/**
+ * Attributes for the graphic element.
+ * @internal
+ */
 class GraphicAttributes extends XmlAttributeComponent<{
     readonly a: string;
 }> {
@@ -12,6 +24,12 @@ class GraphicAttributes extends XmlAttributeComponent<{
     };
 }
 
+/**
+ * Represents a graphic element in DrawingML.
+ *
+ * Graphic is the container for graphical content such as
+ * pictures, shapes, and charts within a drawing.
+ */
 export class Graphic extends XmlComponent {
     private readonly data: GraphicData;
 

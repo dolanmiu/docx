@@ -1,6 +1,15 @@
-// http://officeopenxml.com/WPparagraphProperties.php
-// https://c-rex.net/projects/samples/ooxml/e1/Part4/OOXML_P4_DOCX_suppressLineNumbers_topic_ID0ECJAO.html
-
+/**
+ * Paragraph properties module for WordprocessingML documents.
+ *
+ * This module provides the paragraph properties (pPr) element which specifies
+ * the formatting applied to a paragraph.
+ *
+ * Reference: http://officeopenxml.com/WPparagraphProperties.php
+ *
+ * @see https://c-rex.net/projects/samples/ooxml/e1/Part4/OOXML_P4_DOCX_suppressLineNumbers_topic_ID0ECJAO.html
+ *
+ * @module
+ */
 import { IContext, IXmlableObject, IgnoreIfEmptyXmlComponent, OnOffElement, XmlComponent } from "@file/xml-components";
 
 import { IRunOptions, RunProperties } from ".";
@@ -18,6 +27,11 @@ import { WordWrap } from "./formatting/word-wrap";
 import { IFrameOptions, createFrameProperties } from "./frame/frame-properties";
 import { OutlineLevel } from "./links";
 
+/**
+ * Paragraph style properties for numbering levels.
+ *
+ * These properties are used when defining paragraph styles within numbering level definitions.
+ */
 export type ILevelParagraphStylePropertiesOptions = {
     readonly alignment?: (typeof AlignmentType)[keyof typeof AlignmentType];
     readonly thematicBreak?: boolean;
@@ -37,6 +51,12 @@ export type ILevelParagraphStylePropertiesOptions = {
     readonly outlineLevel?: number;
 };
 
+/**
+ * Paragraph style properties options.
+ *
+ * These properties are used when defining paragraph styles and include
+ * border, shading, and numbering options in addition to level properties.
+ */
 export type IParagraphStylePropertiesOptions = {
     readonly border?: IBordersOptions;
     readonly shading?: IShadingAttributesProperties;
@@ -50,6 +70,14 @@ export type IParagraphStylePropertiesOptions = {
         | false;
 } & ILevelParagraphStylePropertiesOptions;
 
+/**
+ * Options for configuring paragraph properties.
+ *
+ * These options control all aspects of paragraph formatting including
+ * alignment, spacing, indentation, borders, numbering, and more.
+ *
+ * Reference: http://officeopenxml.com/WPparagraphProperties.php
+ */
 export type IParagraphPropertiesOptions = {
     readonly heading?: (typeof HeadingLevel)[keyof typeof HeadingLevel];
     readonly bidirectional?: boolean;
@@ -76,6 +104,29 @@ export type IParagraphPropertiesOptions = {
     readonly run?: IRunOptions;
 } & IParagraphStylePropertiesOptions;
 
+/**
+ * Represents paragraph properties (pPr) in a WordprocessingML document.
+ *
+ * The paragraph properties element specifies all formatting applied to a paragraph,
+ * including alignment, spacing, indentation, borders, numbering, and style references.
+ *
+ * Reference: http://officeopenxml.com/WPparagraphProperties.php
+ *
+ * ## XSD Schema
+ * ```xml
+ * <xsd:complexType name="CT_PPr">
+ *   <xsd:complexContent>
+ *     <xsd:extension base="CT_PPrBase">
+ *       <xsd:sequence>
+ *         <xsd:element name="rPr" type="CT_ParaRPr" minOccurs="0"/>
+ *         <xsd:element name="sectPr" type="CT_SectPr" minOccurs="0"/>
+ *         <xsd:element name="pPrChange" type="CT_PPrChange" minOccurs="0"/>
+ *       </xsd:sequence>
+ *     </xsd:extension>
+ *   </xsd:complexContent>
+ * </xsd:complexType>
+ * ```
+ */
 export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
     // eslint-disable-next-line functional/prefer-readonly-type
     private readonly numberingReferences: { readonly reference: string; readonly instance: number }[] = [];

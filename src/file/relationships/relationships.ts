@@ -1,8 +1,26 @@
+/**
+ * Relationships module for Open Packaging Conventions.
+ *
+ * This module provides support for managing relationships between
+ * parts in an OPC package (DOCX file).
+ *
+ * Reference: http://officeopenxml.com/anatomyofOOXML.php
+ *
+ * @module
+ */
 import { XmlComponent } from "@file/xml-components";
 
 import { RelationshipsAttributes } from "./attributes";
 import { Relationship, RelationshipType, TargetModeType } from "./relationship/relationship";
 
+/**
+ * Represents a collection of relationships in an OPC package.
+ *
+ * Relationships define connections between package parts, such as
+ * linking the main document to its headers, footers, images, etc.
+ *
+ * Reference: http://officeopenxml.com/anatomyofOOXML.php
+ */
 export class Relationships extends XmlComponent {
     public constructor() {
         super("Relationships");

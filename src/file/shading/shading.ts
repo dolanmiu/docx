@@ -1,25 +1,41 @@
-// Note that the shading type is identical in all places,
-// regardless of where it's used like paragraph/table/etc.
-//
-// http://officeopenxml.com/WPshading.php
-// http://officeopenxml.com/WPtableShading.php
-// http://officeopenxml.com/WPtableCellProperties-Shading.php
-//
-// This describes the CT_Shd type.
-// <xsd:complexType name="CT_Shd">
-//     <xsd:attribute name="val" type="ST_Shd" use="required"/>
-//     <xsd:attribute name="color" type="ST_HexColor" use="optional"/>
-//     <xsd:attribute name="themeColor" type="ST_ThemeColor" use="optional"/>
-//     <xsd:attribute name="themeTint" type="ST_UcharHexNumber" use="optional"/>
-//     <xsd:attribute name="themeShade" type="ST_UcharHexNumber" use="optional"/>
-//     <xsd:attribute name="fill" type="ST_HexColor" use="optional"/>
-//     <xsd:attribute name="themeFill" type="ST_ThemeColor" use="optional"/>
-//     <xsd:attribute name="themeFillTint" type="ST_UcharHexNumber" use="optional"/>
-//     <xsd:attribute name="themeFillShade" type="ST_UcharHexNumber" use="optional"/>
-// </xsd:complexType>
+/**
+ * Shading module for WordprocessingML documents.
+ *
+ * Shading is used to apply background colors and patterns to paragraphs,
+ * table cells, and text runs. The shading type is identical in all places.
+ *
+ * Reference: http://officeopenxml.com/WPshading.php
+ *
+ * @see http://officeopenxml.com/WPtableShading.php
+ * @see http://officeopenxml.com/WPtableCellProperties-Shading.php
+ *
+ * ## XSD Schema
+ * ```xml
+ * <xsd:complexType name="CT_Shd">
+ *   <xsd:attribute name="val" type="ST_Shd" use="required"/>
+ *   <xsd:attribute name="color" type="ST_HexColor" use="optional"/>
+ *   <xsd:attribute name="themeColor" type="ST_ThemeColor" use="optional"/>
+ *   <xsd:attribute name="themeTint" type="ST_UcharHexNumber" use="optional"/>
+ *   <xsd:attribute name="themeShade" type="ST_UcharHexNumber" use="optional"/>
+ *   <xsd:attribute name="fill" type="ST_HexColor" use="optional"/>
+ *   <xsd:attribute name="themeFill" type="ST_ThemeColor" use="optional"/>
+ *   <xsd:attribute name="themeFillTint" type="ST_UcharHexNumber" use="optional"/>
+ *   <xsd:attribute name="themeFillShade" type="ST_UcharHexNumber" use="optional"/>
+ * </xsd:complexType>
+ * ```
+ *
+ * @module
+ */
 import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
 import { hexColorValue } from "@util/values";
 
+/**
+ * Properties for configuring shading.
+ *
+ * @property fill - Background fill color in hex format (e.g., "FF0000" for red)
+ * @property color - Pattern color in hex format
+ * @property type - Shading pattern type
+ */
 export type IShadingAttributesProperties = {
     readonly fill?: string;
     readonly color?: string;
@@ -34,6 +50,14 @@ class ShadingAttributes extends XmlAttributeComponent<IShadingAttributesProperti
     };
 }
 
+/**
+ * Represents shading in a WordprocessingML document.
+ *
+ * The shd element specifies the shading applied to the paragraph,
+ * table cell, or text run.
+ *
+ * Reference: http://officeopenxml.com/WPshading.php
+ */
 export class Shading extends XmlComponent {
     public constructor({ fill, color, type }: IShadingAttributesProperties) {
         super("w:shd");
@@ -47,7 +71,32 @@ export class Shading extends XmlComponent {
     }
 }
 
+/**
+ * Shading pattern types.
+ *
+ * Specifies the pattern used for shading. The pattern combines the fill
+ * color and the pattern color.
+ *
+ * ## XSD Schema
+ * ```xml
+ * <xsd:simpleType name="ST_Shd">
+ *   <xsd:restriction base="xsd:string">
+ *     <xsd:enumeration value="nil"/>
+ *     <xsd:enumeration value="clear"/>
+ *     <xsd:enumeration value="solid"/>
+ *     <xsd:enumeration value="horzStripe"/>
+ *     <xsd:enumeration value="vertStripe"/>
+ *     <xsd:enumeration value="reverseDiagStripe"/>
+ *     <xsd:enumeration value="diagStripe"/>
+ *     <xsd:enumeration value="horzCross"/>
+ *     <xsd:enumeration value="diagCross"/>
+ *     <!-- ... percent values ... -->
+ *   </xsd:restriction>
+ * </xsd:simpleType>
+ * ```
+ */
 export const ShadingType = {
+    /** Clear shading - no pattern, fill color only */
     CLEAR: "clear",
     DIAGONAL_CROSS: "diagCross",
     DIAGONAL_STRIPE: "diagStripe",

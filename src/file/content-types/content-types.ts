@@ -1,9 +1,27 @@
+/**
+ * Content Types module for Open Packaging Conventions.
+ *
+ * This module provides the [Content_Types].xml part which defines
+ * the content types for all parts in the DOCX package.
+ *
+ * Reference: http://officeopenxml.com/anatomyofOOXML.php
+ *
+ * @module
+ */
 import { XmlComponent } from "@file/xml-components";
 
 import { ContentTypeAttributes } from "./content-types-attributes";
 import { Default } from "./default/default";
 import { Override } from "./override/override";
 
+/**
+ * Represents the Content Types part of an OPC package.
+ *
+ * ContentTypes maps file extensions and specific paths to their
+ * MIME content types, enabling applications to process each part correctly.
+ *
+ * Reference: http://officeopenxml.com/anatomyofOOXML.php
+ */
 export class ContentTypes extends XmlComponent {
     public constructor() {
         super("Types");

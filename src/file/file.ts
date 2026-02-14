@@ -1,3 +1,11 @@
+/**
+ * File module for WordprocessingML documents.
+ *
+ * The File class is the main entry point for creating DOCX documents.
+ * It manages all document parts including content, styles, numbering, and media.
+ *
+ * @module
+ */
 import { AppProperties } from "./app-properties/app-properties";
 import { ContentTypes } from "./content-types/content-types";
 import { CoreProperties, IPropertiesOptions } from "./core-properties";
@@ -19,6 +27,11 @@ import { Styles } from "./styles";
 import { ExternalStylesFactory } from "./styles/external-styles-factory";
 import { DefaultStylesFactory } from "./styles/factory";
 
+/**
+ * Options for a document section.
+ *
+ * Each section can have its own headers, footers, and page properties.
+ */
 export type ISectionOptions = {
     readonly headers?: {
         readonly default?: Header;
@@ -34,6 +47,24 @@ export type ISectionOptions = {
     readonly children: readonly FileChild[];
 };
 
+/**
+ * Represents a Word document file.
+ *
+ * The File class is the main entry point for creating DOCX documents.
+ * It manages all document components including content, styles, numbering,
+ * headers/footers, and media.
+ *
+ * @example
+ * ```typescript
+ * const doc = new Document({
+ *   sections: [{
+ *     children: [
+ *       new Paragraph("Hello World"),
+ *     ],
+ *   }],
+ * });
+ * ```
+ */
 export class File {
     // eslint-disable-next-line functional/prefer-readonly-type
     private currentRelationshipId: number = 1;
@@ -91,8 +122,14 @@ export class File {
         this.media = new Media();
 
         if (options.externalStyles !== undefined) {
-            const stylesFactory = new ExternalStylesFactory();
-            this.styles = stylesFactory.newInstance(options.externalStyles);
+            const defaultFactory = new DefaultStylesFactory();
+            const defaultStyles = defaultFactory.newInstance(options.styles?.default);
+            const externalFactory = new ExternalStylesFactory();
+            const externalStyles = externalFactory.newInstance(options.externalStyles);
+            this.styles = new Styles({
+                ...externalStyles,
+                importedStyles: [...defaultStyles.importedStyles!, ...externalStyles.importedStyles!],
+            });
         } else if (options.styles) {
             const stylesFactory = new DefaultStylesFactory();
             const defaultStyles = stylesFactory.newInstance(options.styles.default);
