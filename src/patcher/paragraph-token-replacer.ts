@@ -63,7 +63,7 @@ export const replaceTokenInParagraphElement = ({
         for (const { text, index, start, end } of run.parts) {
             switch (replaceMode) {
                 case ReplaceMode.START:
-                    if (startIndex >= start) {
+                    if (startIndex >= start && startIndex <= end) {
                         const offsetStartIndex = startIndex - start;
                         const offsetEndIndex = Math.min(endIndex, end) - start;
                         const partToReplace = run.text.substring(offsetStartIndex, offsetEndIndex + 1);
