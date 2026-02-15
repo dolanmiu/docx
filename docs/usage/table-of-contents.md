@@ -101,6 +101,27 @@ const doc = new Document({
 });
 ```
 
+## Additional Options
+
+These options control the TOC structure rather than field switches:
+
+| Option          | Type                         | Default | Description                                                                                                           |
+| --------------- | ---------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------- |
+| contentChildren | `(XmlComponent \| string)[]` | `[]`    | Additional content to include inside the TOC between the field begin and end markers. Useful for placeholder entries. |
+| beginDirty      | `boolean`                    | `true`  | When `true`, marks the field as needing update, prompting Word to regenerate the TOC on open.                         |
+
+### Example with contentChildren
+
+You can provide placeholder content that will be displayed until the TOC is updated:
+
+```ts
+new TableOfContents("Summary", {
+    hyperlink: true,
+    headingStyleRange: "1-5",
+    contentChildren: [new Paragraph({ text: "Chapter 1..........1" }), new Paragraph({ text: "Chapter 2..........5" })],
+});
+```
+
 ## Examples
 
 [Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/28-table-of-contents.ts ":include")
