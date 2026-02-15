@@ -60,6 +60,27 @@ Here is the list of all options that you can use to generate your tables of cont
 | preserveNewLineInEntries        | boolean      | `\x`             | Preserves newline characters within table entries.                                                                                                                                                                                                                                                                                                                                                               |
 | hideTabAndPageNumbersInWebView  | boolean      | `\z`             | Hides tab leader and page numbers in web page view (§17.18.102).                                                                                                                                                                                                                                                                                                                                                 |
 
+## Additional Options
+
+These options control the TOC structure rather than field switches:
+
+| Option          | Type                         | Default | Description                                                                                                           |
+| --------------- | ---------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------- |
+| contentChildren | `(XmlComponent \| string)[]` | `[]`    | Additional content to include inside the TOC between the field begin and end markers. Useful for placeholder entries. |
+| beginDirty      | `boolean`                    | `true`  | When `true`, marks the field as needing update, prompting Word to regenerate the TOC on open.                         |
+
+### Example with contentChildren
+
+You can provide placeholder content that will be displayed until the TOC is updated:
+
+```ts
+new TableOfContents("Summary", {
+    hyperlink: true,
+    headingStyleRange: "1-5",
+    contentChildren: [new Paragraph({ text: "Chapter 1..........1" }), new Paragraph({ text: "Chapter 2..........5" })],
+});
+```
+
 ## Examples
 
 [Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/28-table-of-contents.ts ":include")
