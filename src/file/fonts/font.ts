@@ -30,6 +30,8 @@ export type IFontRelationshipOptions = {
 /**
  * Character set constants for font definitions.
  * Maps character set names to their hexadecimal identifiers.
+ *
+ * @publicApi
  */
 export const CharacterSet = {
     ANSI: "00",

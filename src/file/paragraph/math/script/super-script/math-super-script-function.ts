@@ -32,6 +32,8 @@ export type IMathSuperScriptOptions = {
  *
  * Reference: http://www.datypic.com/sc/ooxml/e-m_sSup-1.html
  *
+ * @publicApi
+ *
  * ## XSD Schema
  * ```xml
  * <xsd:complexType name="CT_SSup">

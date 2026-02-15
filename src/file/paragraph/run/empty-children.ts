@@ -201,6 +201,8 @@ export class CarriageReturn extends EmptyElement {
  * Represents a tab character.
  *
  * Inserts a tab stop, advancing to the next tab position in the paragraph.
+ *
+ * @publicApi
  */
 export class Tab extends EmptyElement {
     public constructor() {

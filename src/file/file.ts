@@ -80,6 +80,8 @@ export type ISectionOptions = {
  * This class handles the assembly of all OOXML parts required for a valid .docx file,
  * including relationships, content types, and document properties.
  *
+ * @publicApi
+ *
  * @example
  * ```typescript
  * // Simple document with one section

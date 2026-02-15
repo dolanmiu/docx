@@ -20,6 +20,8 @@
  * // Default whitespace handling
  * SpaceType.DEFAULT;
  * ```
+ *
+ * @publicApi
  */
 export const SpaceType = {
     DEFAULT: "default",

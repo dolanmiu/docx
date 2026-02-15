@@ -34,6 +34,8 @@ export type IMathFunctionOptions = {
  *
  * Reference: http://www.datypic.com/sc/ooxml/e-m_func-1.html
  *
+ * @publicApi
+ *
  * ## XSD Schema
  * ```xml
  * <xsd:complexType name="CT_Func">

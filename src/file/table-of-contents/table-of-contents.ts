@@ -35,6 +35,8 @@ type ToCEntry = {
  *
  * Reference: http://officeopenxml.com/WPtableOfContents.php
  *
+ * @publicApi
+ *
  * ## XSD Schema
  * ```xml
  * <xsd:complexType name="CT_SdtBlock">

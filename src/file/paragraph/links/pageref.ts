@@ -39,6 +39,8 @@ export type IPageReferenceOptions = {
  * The PAGEREF field displays the page number of the page containing
  * the specified bookmark, useful for cross-references like "see page 5".
  *
+ * @publicApi
+ *
  * @example
  * ```typescript
  * // Simple page reference

@@ -34,6 +34,8 @@ import { ITextWrapping } from "../text-wrap";
  *   </xsd:restriction>
  * </xsd:simpleType>
  * ```
+ *
+ * @publicApi
  */
 export const HorizontalPositionRelativeFrom = {
     /**
@@ -108,6 +110,8 @@ export const HorizontalPositionRelativeFrom = {
  *   </xsd:restriction>
  * </xsd:simpleType>
  * ```
+ *
+ * @publicApi
  */
 export const VerticalPositionRelativeFrom = {
     /**

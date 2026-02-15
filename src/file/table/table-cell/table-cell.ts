@@ -30,6 +30,8 @@ export type ITableCellOptions = {
  *
  * Reference: http://officeopenxml.com/WPtableCell.php
  *
+ * @publicApi
+ *
  * ## XSD Schema
  * ```xml
  * <xsd:complexType name="CT_Tc">

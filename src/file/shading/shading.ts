@@ -83,6 +83,8 @@ export const createShading = ({ fill, color, type }: IShadingAttributesPropertie
  *   </xsd:restriction>
  * </xsd:simpleType>
  * ```
+ *
+ * @publicApi
  */
 export const ShadingType = {
     /** Clear shading - no pattern, fill color only */

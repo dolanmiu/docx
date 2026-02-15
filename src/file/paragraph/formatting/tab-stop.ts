@@ -31,6 +31,8 @@ export type TabStopDefinition = {
  * Tab stop alignment types.
  *
  * Specifies the type of tab stop and how text aligns to it.
+ *
+ * @publicApi
  */
 export const TabStopType = {
     /** Left-aligned tab stop */
@@ -57,6 +59,8 @@ export const TabStopType = {
  * Tab stop leader character types.
  *
  * Specifies the character used to fill the space before the tab stop.
+ *
+ * @publicApi
  */
 export const LeaderType = {
     /** Dot leader (....) */
@@ -73,6 +77,8 @@ export const LeaderType = {
 
 /**
  * Predefined tab stop positions.
+ *
+ * @publicApi
  */
 export const TabStopPosition = {
     /** Maximum tab stop position (right margin) */

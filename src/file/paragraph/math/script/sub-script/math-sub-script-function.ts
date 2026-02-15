@@ -32,6 +32,8 @@ export type IMathSubScriptOptions = {
  *
  * Reference: http://www.datypic.com/sc/ooxml/e-m_sSub-1.html
  *
+ * @publicApi
+ *
  * ## XSD Schema
  * ```xml
  * <xsd:complexType name="CT_SSub">

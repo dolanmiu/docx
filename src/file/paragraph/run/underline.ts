@@ -42,6 +42,8 @@ import { hexColorValue } from "@util/values";
  *   </xsd:restriction>
  * </xsd:simpleType>
  * ```
+ *
+ * @publicApi
  */
 export const UnderlineType = {
     /** Single underline */

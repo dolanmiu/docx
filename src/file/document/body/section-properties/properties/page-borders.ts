@@ -23,6 +23,8 @@ import { IgnoreIfEmptyXmlComponent, XmlAttributeComponent } from "@file/xml-comp
  *   </xsd:restriction>
  * </xsd:simpleType>
  * ```
+ *
+ * @publicApi
  */
 export const PageBorderDisplay = {
     /** Display border on all pages */
@@ -45,6 +47,8 @@ export const PageBorderDisplay = {
  *   </xsd:restriction>
  * </xsd:simpleType>
  * ```
+ *
+ * @publicApi
  */
 export const PageBorderOffsetFrom = {
     /** Position border relative to page edge */
@@ -65,6 +69,8 @@ export const PageBorderOffsetFrom = {
  *   </xsd:restriction>
  * </xsd:simpleType>
  * ```
+ *
+ * @publicApi
  */
 export const PageBorderZOrder = {
     /** Display border behind page contents */

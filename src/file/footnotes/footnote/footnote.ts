@@ -18,6 +18,8 @@ import { FootnoteRefRun } from "./run/footnote-ref-run";
  * Enumeration of footnote types.
  *
  * Reference: http://officeopenxml.com/WPfootnotes.php
+ *
+ * @publicApi
  */
 export const FootnoteType = {
     /** Separator line between body text and footnotes */

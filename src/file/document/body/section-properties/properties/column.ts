@@ -15,7 +15,7 @@
  *
  * @module
  */
-import { BuilderElement, XmlComponent } from "@file/xml-components";
+import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
 import { PositiveUniversalMeasure, twipsMeasureValue } from "@util/values";
 
 /**
@@ -31,28 +31,44 @@ export type IColumnAttributes = {
     readonly space?: number | PositiveUniversalMeasure;
 };
 
+class ColumnAttributes extends XmlAttributeComponent<{
+    readonly width?: number | PositiveUniversalMeasure;
+    readonly space?: number | PositiveUniversalMeasure;
+}> {
+    protected readonly xmlKeys = {
+        width: "w:w",
+        space: "w:space",
+    };
+}
+
 /**
- * Creates a column definition (col) for a multi-column section layout.
+ * Represents a column definition (col) for a multi-column section layout.
  *
  * This element defines the width and spacing for an individual column when
  * using unequal column widths in a section.
  *
  * Reference: http://officeopenxml.com/WPsectionPr.php
  *
+ * @publicApi
+ *
  * @example
  * ```typescript
  * // Create a column with specific width and spacing
- * createColumn({
+ * new Column({
  *   width: 3000,
  *   space: 720
  * });
  * ```
  */
-export const createColumn = ({ width, space }: IColumnAttributes): XmlComponent =>
-    new BuilderElement<IColumnAttributes>({
-        name: "w:col",
-        attributes: {
-            width: { key: "w:w", value: twipsMeasureValue(width) },
-            space: { key: "w:space", value: space === undefined ? undefined : twipsMeasureValue(space) },
-        },
-    });
+export class Column extends XmlComponent {
+    public constructor(options: IColumnAttributes) {
+        super("w:col");
+
+        this.root.push(
+            new ColumnAttributes({
+                width: twipsMeasureValue(options.width),
+                space: options.space === undefined ? undefined : twipsMeasureValue(options.space),
+            }),
+        );
+    }
+}

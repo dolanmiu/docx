@@ -45,6 +45,8 @@ class Break extends XmlComponent {
  *
  * Reference: http://officeopenxml.com/WPtextSpecialContent-break.php
  *
+ * @publicApi
+ *
  * ## XSD Schema
  * ```xml
  * <xsd:complexType name="CT_Br">
@@ -73,6 +75,8 @@ export class PageBreak extends Run {
  * A column break forces text to continue at the beginning of the next column.
  *
  * Reference: http://officeopenxml.com/WPtextSpecialContent-break.php
+ *
+ * @publicApi
  *
  * ## XSD Schema
  * ```xml

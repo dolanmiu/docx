@@ -34,6 +34,8 @@ import { IRunStylePropertiesOptions, RunProperties } from "../paragraph/run/prop
  * // Use bullet points
  * format: LevelFormat.BULLET
  * ```
+ *
+ * @publicApi
  */
 /* eslint-disable @typescript-eslint/naming-convention */
 export const LevelFormat = {
@@ -245,6 +247,8 @@ class LevelJc extends XmlComponent {
  * // No separator after the numbering
  * suffix: LevelSuffix.NOTHING
  * ```
+ *
+ * @publicApi
  */
 export const LevelSuffix = {
     /** No separator after the numbering. */

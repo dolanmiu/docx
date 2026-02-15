@@ -39,6 +39,8 @@ export type InputDataType = Buffer | string | number[] | Uint8Array | ArrayBuffe
  * Patch type enumeration.
  *
  * Determines how the replacement content should be inserted into the document.
+ *
+ * @publicApi
  */
 export const PatchType = {
     /** Replace entire file-level elements (e.g., whole paragraphs) */
@@ -178,6 +180,8 @@ const compareByteArrays = (a: Uint8Array, b: Uint8Array): boolean => {
  *   placeholderDelimiters: { start: "<<", end: ">>" },
  * });
  * ```
+ *
+ * @publicApi
  */
 export const patchDocument = async <T extends PatchDocumentOutputType = PatchDocumentOutputType>({
     outputType,

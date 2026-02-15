@@ -16,6 +16,8 @@ import { PositiveUniversalMeasure, twipsMeasureValue } from "@util/values";
  *   </xsd:restriction>
  * </xsd:simpleType>
  * ```
+ *
+ * @publicApi
  */
 export const PageOrientation = {
     /**

@@ -20,6 +20,8 @@ import { createMathBracketProperties } from "./math-bracket-properties";
  *
  * Reference: http://www.datypic.com/sc/ooxml/e-m_d-1.html
  *
+ * @publicApi
+ *
  * @example
  * ```typescript
  * new MathCurlyBrackets({ children: [new MathRun("x + y")] });

@@ -36,6 +36,8 @@ type ITextboxOptions = Omit<IParagraphOptions, "style"> & {
  * The textbox is implemented as a paragraph containing a picture element (w:pict) with
  * a VML shape (v:shape) that contains a VML textbox (v:textbox) with the actual content.
  *
+ * @publicApi
+ *
  * ## XSD Schema
  * The Textbox combines multiple OOXML elements:
  * - w:p (paragraph container)

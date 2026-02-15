@@ -30,6 +30,8 @@ export type IMathOptions = {
  *
  * Reference: http://www.datypic.com/sc/ooxml/e-m_oMath-1.html
  *
+ * @publicApi
+ *
  * ## XSD Schema
  * ```xml
  * <xsd:complexType name="CT_OMath">

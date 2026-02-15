@@ -119,6 +119,8 @@ export const createBorderElement = (elementName: string, { color, size, space, s
  *     </xsd:restriction>
  * </xsd:simpleType>
  * ```
+ *
+ * @publicApi
  */
 export const BorderStyle = {
     /** a single line */

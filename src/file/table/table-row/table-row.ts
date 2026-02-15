@@ -28,6 +28,8 @@ export type ITableRowOptions = {
  *
  * Reference: http://officeopenxml.com/WPtableRow.php
  *
+ * @publicApi
+ *
  * ## XSD Schema
  * ```xml
  * <xsd:complexType name="CT_Row">

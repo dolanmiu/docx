@@ -25,6 +25,8 @@ export type ISymbolRunOptions = {
  *
  * SymbolRun is used to insert special characters from symbol fonts.
  *
+ * @publicApi
+ *
  * @example
  * ```typescript
  * new SymbolRun({

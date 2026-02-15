@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { Formatter } from "@export/formatter";
 
+import { Column } from "./column";
 import { createColumns } from "./columns";
 
 describe("createColumns", () => {
@@ -20,7 +21,7 @@ describe("createColumns", () => {
     });
 
     it("should ignore individual column attributes if equalWidth is true", () => {
-        const unequalColumns = [{ width: 1000, space: 400 }, { width: 2000 }];
+        const unequalColumns = [new Column({ width: 1000, space: 400 }), new Column({ width: 2000 })];
         const columns = createColumns({ count: 3, space: 720, equalWidth: true, children: unequalColumns });
         const tree = new Formatter().format(columns);
 
@@ -28,7 +29,7 @@ describe("createColumns", () => {
     });
 
     it("should have column children if equalWidth is false and individual columns are provided", () => {
-        const unequalColumns = [{ width: 1000, space: 400 }, { width: 2000 }];
+        const unequalColumns = [new Column({ width: 1000, space: 400 }), new Column({ width: 2000 })];
         const columns = createColumns({ count: 3, space: 720, equalWidth: false, children: unequalColumns });
         const tree = new Formatter().format(columns);
 

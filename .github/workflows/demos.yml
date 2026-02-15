@@ -17,7 +17,7 @@ jobs:
             - name: Run Demos
               run: npm run run-ts -- ./demo/1-basic.ts
             - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/2-declaritive-styles.ts
+            - run: npm run run-ts -- ./demo/2-declarative-styles.ts
             - uses: "./.github/actions/validate-docx"
             - run: npm run run-ts -- ./demo/3-numbering-and-bullet-points.ts
             - uses: "./.github/actions/validate-docx"
@@ -35,7 +35,7 @@ jobs:
             - uses: "./.github/actions/validate-docx"
             - run: npm run run-ts -- ./demo/10-my-cv.ts
             - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/11-declaritive-styles-2.ts
+            - run: npm run run-ts -- ./demo/11-declarative-styles-2.ts
             - uses: "./.github/actions/validate-docx"
             - run: npm run run-ts -- ./demo/12-scaling-images.ts
             - uses: "./.github/actions/validate-docx"
@@ -70,7 +70,7 @@ jobs:
             - uses: "./.github/actions/validate-docx"
             - run: npm run run-ts -- ./demo/26-paragraph-borders.ts
             - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/27-declaritive-styles-3.ts
+            - run: npm run run-ts -- ./demo/27-declarative-styles-3.ts
             - uses: "./.github/actions/validate-docx"
             - run: npm run run-ts -- ./demo/28-table-of-contents.ts
             - uses: "./.github/actions/validate-docx"

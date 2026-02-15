@@ -38,6 +38,8 @@ import { BuilderElement, XmlComponent } from "@file/xml-components";
  *   </xsd:restriction>
  * </xsd:simpleType>
  * ```
+ *
+ * @publicApi
  */
 export const AlignmentType = {
     /** Align Start */

@@ -25,6 +25,8 @@ import { PositiveUniversalMeasure, twipsMeasureValue } from "@util/values";
  *   </xsd:restriction>
  * </xsd:simpleType>
  * ```
+ *
+ * @publicApi
  */
 export const HeightRule = {
     /** Height is determined based on the content, so value is ignored. */
