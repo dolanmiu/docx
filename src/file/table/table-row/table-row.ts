@@ -1,3 +1,10 @@
+/**
+ * Table row module for WordprocessingML documents.
+ *
+ * Reference: http://officeopenxml.com/WPtableRow.php
+ *
+ * @module
+ */
 import { XmlComponent } from "@file/xml-components";
 
 import { TableCell } from "../table-cell";

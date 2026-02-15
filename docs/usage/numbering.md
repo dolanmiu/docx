@@ -95,7 +95,7 @@ Along with `reference` and `level`, the `numbering` object supports an optional 
 | --------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | reference | `string` | The numbering style reference, must match a defined config                                                                                                                           |
 | level     | `number` | The list level (0 = top-level, 1 = sub-list, etc.)                                                                                                                                   |
-| instance  | `number` | *(Optional)* Identifies the instance of the list. Lists with the same `instance` (or none) continue numbering across paragraphs. A new `instance` value restarts numbering from `1`. |
+| instance  | `number` | _(Optional)_ Identifies the instance of the list. Lists with the same `instance` (or none) continue numbering across paragraphs. A new `instance` value restarts numbering from `1`. |
 
 Example:
 
@@ -115,8 +115,6 @@ new Paragraph({
     numbering: { reference: "my-numbering", level: 0, instance: 2 },
 });
 ```
-
-
 
 ## Un-ordered lists / Bullet points
 

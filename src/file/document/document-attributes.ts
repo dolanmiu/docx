@@ -1,5 +1,21 @@
+/**
+ * Document attributes module for WordprocessingML documents.
+ *
+ * This module defines the XML namespace declarations used in OOXML documents.
+ * These namespaces are required for proper document parsing and generation.
+ *
+ * Reference: http://officeopenxml.com/anatomyofOOXML.php
+ *
+ * @module
+ */
 import { AttributeMap, XmlAttributeComponent } from "@file/xml-components";
 
+/**
+ * XML namespace URIs used in WordprocessingML documents.
+ *
+ * These namespaces define the various XML schemas that can be referenced
+ * in a document, including WordprocessingML, DrawingML, VML, and others.
+ */
 /* cSpell:disable */
 export const DocumentAttributeNamespaces = {
     wpc: "http://schemas.microsoft.com/office/word/2010/wordprocessingCanvas",
@@ -42,12 +58,35 @@ export const DocumentAttributeNamespaces = {
 };
 /* cSpell:enable */
 
+/**
+ * Type representing valid namespace keys.
+ */
 export type DocumentAttributeNamespace = keyof typeof DocumentAttributeNamespaces;
 
+/**
+ * Properties for document namespace attributes.
+ *
+ * Allows specifying which namespaces to include and optional Ignorable attribute
+ * for compatibility with older processors.
+ */
 export type IDocumentAttributesProperties = Partial<Record<DocumentAttributeNamespace, string>> & {
     readonly Ignorable?: string;
 };
 
+/**
+ * Represents XML namespace attributes for a WordprocessingML document.
+ *
+ * This class generates the xmlns declarations required at the root element
+ * of document.xml and other document parts.
+ *
+ * @example
+ * ```typescript
+ * new DocumentAttributes(['w', 'r', 'wp'], 'w14 w15');
+ * // Generates: xmlns:w="..." xmlns:r="..." xmlns:wp="..." mc:Ignorable="w14 w15"
+ * ```
+ *
+ * @internal
+ */
 export class DocumentAttributes extends XmlAttributeComponent<IDocumentAttributesProperties> {
     protected readonly xmlKeys = {
         Ignorable: "mc:Ignorable",

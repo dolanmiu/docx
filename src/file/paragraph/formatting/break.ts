@@ -45,6 +45,14 @@ class Break extends XmlComponent {
  *
  * Reference: http://officeopenxml.com/WPtextSpecialContent-break.php
  *
+ * ## XSD Schema
+ * ```xml
+ * <xsd:complexType name="CT_Br">
+ *   <xsd:attribute name="type" type="ST_BrType" use="optional"/>
+ *   <xsd:attribute name="clear" type="ST_BrClear" use="optional"/>
+ * </xsd:complexType>
+ * ```
+ *
  * @example
  * ```typescript
  * new Paragraph({
@@ -66,6 +74,14 @@ export class PageBreak extends Run {
  *
  * Reference: http://officeopenxml.com/WPtextSpecialContent-break.php
  *
+ * ## XSD Schema
+ * ```xml
+ * <xsd:complexType name="CT_Br">
+ *   <xsd:attribute name="type" type="ST_BrType" use="optional"/>
+ *   <xsd:attribute name="clear" type="ST_BrClear" use="optional"/>
+ * </xsd:complexType>
+ * ```
+ *
  * @example
  * ```typescript
  * new Paragraph({
@@ -81,7 +97,26 @@ export class ColumnBreak extends Run {
 }
 
 /**
- * Add page break before the paragraph if there is no one added before.
+ * Represents a page break before setting for paragraph properties.
+ *
+ * When applied to a paragraph, ensures the paragraph begins on a new page.
+ *
+ * Reference: http://officeopenxml.com/WPparagraphProperties.php
+ *
+ * ## XSD Schema
+ * ```xml
+ * <xsd:complexType name="CT_OnOff">
+ *   <xsd:attribute name="val" type="s:ST_OnOff" use="optional"/>
+ * </xsd:complexType>
+ * ```
+ *
+ * @example
+ * ```typescript
+ * new Paragraph({
+ *   pageBreakBefore: true,
+ *   children: [new TextRun("This text starts on a new page")],
+ * });
+ * ```
  */
 export class PageBreakBefore extends XmlComponent {
     public constructor() {

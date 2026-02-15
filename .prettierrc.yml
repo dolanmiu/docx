@@ -3,3 +3,4 @@ printWidth: 140
 tabWidth: 4
 arrowParens: always
 bracketSpacing: true
+proseWrap: preserve

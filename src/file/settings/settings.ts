@@ -14,6 +14,11 @@ import { Compatibility, ICompatibilityOptions } from "./compatibility";
 
 /**
  * Attributes for the settings element with XML namespace declarations.
+ *
+ * Defines the XML namespaces required for the settings.xml document part.
+ * These namespaces enable compatibility features, markup compatibility,
+ * and various Office-specific extensions.
+ *
  * @internal
  */
 export class SettingsAttributes extends XmlAttributeComponent<{
@@ -205,6 +210,44 @@ export type IHyphenationOptions = {
  * compatibility mode, track changes, hyphenation, and more.
  *
  * Reference: http://officeopenxml.com/WPsettings.php
+ *
+ * ## XSD Schema
+ * ```xml
+ * <xsd:complexType name="CT_Settings">
+ *   <xsd:sequence>
+ *     <xsd:element name="trackRevisions" type="CT_OnOff" minOccurs="0"/>
+ *     <xsd:element name="evenAndOddHeaders" type="CT_OnOff" minOccurs="0"/>
+ *     <xsd:element name="defaultTabStop" type="CT_TwipsMeasure" minOccurs="0"/>
+ *     <xsd:element name="autoHyphenation" type="CT_OnOff" minOccurs="0"/>
+ *     <xsd:element name="consecutiveHyphenLimit" type="CT_DecimalNumber" minOccurs="0"/>
+ *     <xsd:element name="hyphenationZone" type="CT_TwipsMeasure" minOccurs="0"/>
+ *     <xsd:element name="doNotHyphenateCaps" type="CT_OnOff" minOccurs="0"/>
+ *     <xsd:element name="updateFields" type="CT_OnOff" minOccurs="0"/>
+ *     <xsd:element name="compat" type="CT_Compat" minOccurs="0"/>
+ *     <!-- Additional elements omitted for brevity -->
+ *   </xsd:sequence>
+ * </xsd:complexType>
+ * ```
+ *
+ * @example
+ * ```typescript
+ * // Basic settings with track changes enabled
+ * new Settings({
+ *   trackRevisions: true,
+ *   evenAndOddHeaders: true,
+ * });
+ *
+ * // Settings with compatibility mode and hyphenation
+ * new Settings({
+ *   compatibility: {
+ *     version: 15, // Word 2013+
+ *   },
+ *   hyphenation: {
+ *     autoHyphenation: true,
+ *     consecutiveHyphenLimit: 2,
+ *   },
+ * });
+ * ```
  */
 export class Settings extends XmlComponent {
     public constructor(options: ISettingsOptions) {

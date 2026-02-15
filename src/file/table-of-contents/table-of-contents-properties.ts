@@ -1,5 +1,24 @@
+/**
+ * Table of Contents Properties module.
+ *
+ * This module defines configuration options for table of contents generation,
+ * including field switches and style mappings.
+ *
+ * Reference: http://officeopenxml.com/WPtableOfContents.php
+ *
+ * @module
+ */
+
+/**
+ * Represents a style-to-level mapping for table of contents entries.
+ *
+ * StyleLevel associates a paragraph style name with a TOC level, allowing
+ * custom styles to be included in the table of contents at specific levels.
+ */
 export class StyleLevel {
+    /** The name of the paragraph style. */
     public readonly styleName: string;
+    /** The TOC level (1-9) to assign to this style. */
     public readonly level: number;
 
     public constructor(styleName: string, level: number) {
@@ -9,12 +28,14 @@ export class StyleLevel {
 }
 
 /**
- * Options according to this docs:
- * https://www.ecma-international.org/publications/standards/Ecma-376.htm
- * Part 1 - Page 1251
+ * Options for configuring a Table of Contents.
  *
- * Short Guide:
- * http://officeopenxml.com/WPtableOfContents.php
+ * These options control which content is included in the TOC and how it is formatted.
+ * Options correspond to field switches in the TOC field code.
+ *
+ * Reference:
+ * - https://www.ecma-international.org/publications/standards/Ecma-376.htm (Part 1, Page 1251)
+ * - http://officeopenxml.com/WPtableOfContents.php
  */
 export type ITableOfContentsOptions = {
     /**

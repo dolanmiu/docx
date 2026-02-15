@@ -17,6 +17,8 @@ import { DocumentBackground, IDocumentBackgroundOptions } from "./document-backg
 /**
  * Options for creating a Document element.
  *
+ * @property background - Optional background settings for the document
+ *
  * @see {@link Document}
  */
 export type IDocumentOptions = {
@@ -53,6 +55,23 @@ export type IDocumentOptions = {
  *     <xsd:element name="background" type="CT_Background" minOccurs="0"/>
  *   </xsd:sequence>
  * </xsd:complexType>
+ * ```
+ *
+ * @example
+ * ```typescript
+ * // Create a document with default options
+ * const doc = new Document({});
+ *
+ * // Create a document with background
+ * const doc = new Document({
+ *   background: {
+ *     color: "FF0000",
+ *   },
+ * });
+ *
+ * // Add content to the document
+ * doc.add(new Paragraph("Hello World"));
+ * doc.add(new Table({ rows: [...] }));
  * ```
  */
 export class Document extends XmlComponent {
@@ -106,11 +125,22 @@ export class Document extends XmlComponent {
         this.root.push(this.body);
     }
 
+    /**
+     * Adds a block-level element to the document body.
+     *
+     * @param item - The element to add (paragraph, table, table of contents, or hyperlink)
+     * @returns The Document instance for method chaining
+     */
     public add(item: Paragraph | Table | TableOfContents | ConcreteHyperlink): Document {
         this.body.push(item);
         return this;
     }
 
+    /**
+     * Gets the document body element.
+     *
+     * @returns The Body instance containing all document content
+     */
     public get Body(): Body {
         return this.body;
     }

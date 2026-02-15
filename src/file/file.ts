@@ -31,36 +31,111 @@ import { DefaultStylesFactory } from "./styles/factory";
  * Options for a document section.
  *
  * Each section can have its own headers, footers, and page properties.
+ *
+ * @property headers - Optional header definitions for the section
+ * @property headers.default - Default header for all pages (when first/even not specified)
+ * @property headers.first - Header for the first page of the section
+ * @property headers.even - Header for even-numbered pages
+ * @property footers - Optional footer definitions for the section
+ * @property footers.default - Default footer for all pages (when first/even not specified)
+ * @property footers.first - Footer for the first page of the section
+ * @property footers.even - Footer for even-numbered pages
+ * @property properties - Section properties such as page size, margins, and orientation
+ * @property children - Array of content elements (paragraphs, tables, etc.) for this section
  */
 export type ISectionOptions = {
+    /** Optional header definitions for the section. */
     readonly headers?: {
+        /** Default header for all pages (when first/even not specified). */
         readonly default?: Header;
+        /** Header for the first page of the section. */
         readonly first?: Header;
+        /** Header for even-numbered pages. */
         readonly even?: Header;
     };
+    /** Optional footer definitions for the section. */
     readonly footers?: {
+        /** Default footer for all pages (when first/even not specified). */
         readonly default?: Footer;
+        /** Footer for the first page of the section. */
         readonly first?: Footer;
+        /** Footer for even-numbered pages. */
         readonly even?: Footer;
     };
+    /** Section properties such as page size, margins, and orientation. */
     readonly properties?: ISectionPropertiesOptions;
+    /** Array of content elements (paragraphs, tables, etc.) for this section. */
     readonly children: readonly FileChild[];
 };
 
 /**
  * Represents a Word document file.
  *
- * The File class is the main entry point for creating DOCX documents.
- * It manages all document components including content, styles, numbering,
- * headers/footers, and media.
+ * The File class (exported as `Document`) is the main entry point for creating DOCX documents.
+ * It manages all document components including content, styles, numbering, headers/footers,
+ * and media. Documents are organized into sections, each of which can have its own page
+ * settings, headers, and footers.
+ *
+ * This class handles the assembly of all OOXML parts required for a valid .docx file,
+ * including relationships, content types, and document properties.
  *
  * @example
  * ```typescript
+ * // Simple document with one section
  * const doc = new Document({
  *   sections: [{
  *     children: [
  *       new Paragraph("Hello World"),
  *     ],
+ *   }],
+ * });
+ *
+ * // Document with multiple sections and headers/footers
+ * const doc = new Document({
+ *   creator: "John Doe",
+ *   sections: [
+ *     {
+ *       headers: {
+ *         default: new Header({
+ *           children: [new Paragraph("Header Text")],
+ *         }),
+ *       },
+ *       children: [
+ *         new Paragraph("Section 1 content"),
+ *       ],
+ *     },
+ *     {
+ *       children: [
+ *         new Paragraph("Section 2 content"),
+ *       ],
+ *     },
+ *   ],
+ * });
+ *
+ * // Document with custom styles and numbering
+ * const doc = new Document({
+ *   styles: {
+ *     paragraphStyles: [
+ *       {
+ *         id: "MyHeading",
+ *         name: "My Heading",
+ *         basedOn: "Heading1",
+ *         run: { bold: true, color: "FF0000" },
+ *       },
+ *     ],
+ *   },
+ *   numbering: {
+ *     config: [
+ *       {
+ *         reference: "my-numbering",
+ *         levels: [
+ *           { level: 0, format: "decimal", text: "%1.", alignment: "left" },
+ *         ],
+ *       },
+ *     ],
+ *   },
+ *   sections: [{
+ *     children: [new Paragraph("Content")],
  *   }],
  * });
  * ```

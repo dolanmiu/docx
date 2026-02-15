@@ -27,55 +27,116 @@ import { SectionType, Type } from "./properties/section-type";
 /**
  * Header/footer group for specifying different headers/footers
  * for default, first, and even pages.
+ *
+ * @property default - Header/footer for default pages (odd pages when even headers are used)
+ * @property first - Header/footer for first page (requires titlePage setting)
+ * @property even - Header/footer for even pages (requires evenAndOddHeaders setting)
  */
 export type IHeaderFooterGroup<T> = {
+    /** Header/footer for default pages (odd pages when even headers are used) */
     readonly default?: T;
+    /** Header/footer for first page (requires titlePage setting) */
     readonly first?: T;
+    /** Header/footer for even pages (requires evenAndOddHeaders setting) */
     readonly even?: T;
 };
 
 /**
  * Options for configuring section properties.
  *
+ * This type defines all possible configuration options for a document section,
+ * including page layout, margins, headers/footers, and numbering.
+ *
+ * @property page - Page-level settings (size, margins, borders, numbering, text direction)
+ * @property grid - Document grid settings for East Asian typography
+ * @property headerWrapperGroup - Header definitions for default, first, and even pages
+ * @property footerWrapperGroup - Footer definitions for default, first, and even pages
+ * @property lineNumbers - Line numbering settings
+ * @property titlePage - Whether first page has different header/footer
+ * @property verticalAlign - Vertical alignment of text on page
+ * @property column - Column layout settings
+ * @property type - Section break type (next page, continuous, etc.)
+ *
  * @see {@link SectionProperties}
  */
 export type ISectionPropertiesOptions = {
+    /** Page-level settings including size, margins, borders, and text direction */
     readonly page?: {
+        /** Page size and orientation */
         readonly size?: Partial<IPageSizeAttributes>;
+        /** Page margins (top, bottom, left, right, header, footer, gutter) */
         readonly margin?: IPageMarginAttributes;
+        /** Page numbering format and starting value */
         readonly pageNumbers?: IPageNumberTypeAttributes;
+        /** Page border settings */
         readonly borders?: IPageBordersOptions;
+        /** Text flow direction (horizontal or vertical) */
         readonly textDirection?: (typeof PageTextDirectionType)[keyof typeof PageTextDirectionType];
     };
+    /** Document grid settings for precise East Asian character layout */
     readonly grid?: Partial<IDocGridAttributesProperties>;
+    /** Header definitions for default, first, and even pages */
     readonly headerWrapperGroup?: IHeaderFooterGroup<HeaderWrapper>;
+    /** Footer definitions for default, first, and even pages */
     readonly footerWrapperGroup?: IHeaderFooterGroup<FooterWrapper>;
+    /** Line numbering settings for the section */
     readonly lineNumbers?: ILineNumberAttributes;
+    /** Whether first page has different header/footer */
     readonly titlePage?: boolean;
+    /** Vertical alignment of text on page (top, center, bottom, justified) */
     readonly verticalAlign?: SectionVerticalAlign;
+    /** Column layout settings (count, spacing, equal width) */
     readonly column?: IColumnsAttributes;
+    /** Section break type (next page, continuous, even page, odd page) */
     readonly type?: (typeof SectionType)[keyof typeof SectionType];
 };
 
 /**
  * Default margin values for sections (in twips).
+ *
+ * Standard margins are 1 inch (1440 twips) on all sides.
+ * Header/footer margins are 0.5 inches (708 twips) from page edge.
+ *
+ * @property TOP - Top margin: 1440 twips (1 inch)
+ * @property RIGHT - Right margin: 1440 twips (1 inch)
+ * @property BOTTOM - Bottom margin: 1440 twips (1 inch)
+ * @property LEFT - Left margin: 1440 twips (1 inch)
+ * @property HEADER - Header margin: 708 twips (0.5 inches)
+ * @property FOOTER - Footer margin: 708 twips (0.5 inches)
+ * @property GUTTER - Gutter margin: 0 twips
  */
 export const sectionMarginDefaults = {
+    /** Top margin: 1440 twips (1 inch) */
     TOP: 1440,
+    /** Right margin: 1440 twips (1 inch) */
     RIGHT: 1440,
+    /** Bottom margin: 1440 twips (1 inch) */
     BOTTOM: 1440,
+    /** Left margin: 1440 twips (1 inch) */
     LEFT: 1440,
+    /** Header margin from top: 708 twips (0.5 inches) */
     HEADER: 708,
+    /** Footer margin from bottom: 708 twips (0.5 inches) */
     FOOTER: 708,
+    /** Gutter margin for binding: 0 twips */
     GUTTER: 0,
 };
 
 /**
  * Default page size values (in twips, A4 portrait).
+ *
+ * A4 size is 210mm x 297mm (8.27" x 11.69").
+ *
+ * @property WIDTH - Page width: 11906 twips (8.27 inches, 210mm)
+ * @property HEIGHT - Page height: 16838 twips (11.69 inches, 297mm)
+ * @property ORIENTATION - Page orientation: portrait
  */
 export const sectionPageSizeDefaults = {
+    /** Page width: 11906 twips (8.27 inches, 210mm) */
     WIDTH: 11906,
+    /** Page height: 16838 twips (11.69 inches, 297mm) */
     HEIGHT: 16838,
+    /** Page orientation: portrait */
     ORIENTATION: PageOrientation.PORTRAIT,
 };
 
@@ -84,6 +145,7 @@ export const sectionPageSizeDefaults = {
  *
  * Section properties define the page layout for a section of the document,
  * including page size, margins, headers/footers, columns, and page numbering.
+ * A document can contain multiple sections with different properties.
  *
  * Reference: http://officeopenxml.com/WPsection.php
  *
@@ -97,6 +159,34 @@ export const sectionPageSizeDefaults = {
  *   </xsd:sequence>
  *   <xsd:attributeGroup ref="AG_SectPrAttributes"/>
  * </xsd:complexType>
+ * ```
+ *
+ * @example
+ * ```typescript
+ * // Create section with custom page size and margins
+ * new SectionProperties({
+ *   page: {
+ *     size: {
+ *       width: 12240,
+ *       height: 15840,
+ *       orientation: PageOrientation.PORTRAIT
+ *     },
+ *     margin: {
+ *       top: 1440,
+ *       right: 1440,
+ *       bottom: 1440,
+ *       left: 1440
+ *     },
+ *     pageNumbers: {
+ *       start: 1,
+ *       formatType: NumberFormat.DECIMAL
+ *     }
+ *   },
+ *   column: {
+ *     count: 2,
+ *     space: 720
+ *   }
+ * });
  * ```
  */
 export class SectionProperties extends XmlComponent {
