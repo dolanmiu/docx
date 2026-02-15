@@ -25,6 +25,8 @@ type MathAngledBracketsOptions = { readonly children: readonly MathComponent[] }
  *
  * Reference: http://www.datypic.com/sc/ooxml/e-m_d-1.html
  *
+ * @publicApi
+ *
  * @example
  * ```typescript
  * new MathAngledBrackets({ children: [new MathRun("x, y")] });

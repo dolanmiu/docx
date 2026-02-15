@@ -26,7 +26,7 @@
         "test": "vitest --ui --coverage",
         "test:ci": "vitest run --coverage",
         "prepublishOnly": "npm run build --omit=dev",
-        "lint": "eslint --flag unstable_ts_config --config eslint.config.ts",
+        "lint": "eslint --config eslint.config.ts",
         "predemo": "npm run build",
         "demo": "tsx ./demo/index.ts",
         "typedoc": "typedoc src/index.ts --tsconfig tsconfig.typedoc.json",

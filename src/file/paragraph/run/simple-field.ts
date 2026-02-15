@@ -29,6 +29,8 @@ class FldSimpleAttrs extends XmlAttributeComponent<{ readonly instr: string }> {
  *
  * Reference: http://www.datypic.com/sc/ooxml/e-w_fldSimple-1.html
  *
+ * @publicApi
+ *
  * ## XSD Schema
  * ```xml
  * <xsd:complexType name="CT_SimpleField">

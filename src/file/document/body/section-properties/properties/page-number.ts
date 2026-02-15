@@ -26,6 +26,8 @@ import { decimalNumber } from "@util/values";
  *   </xsd:restriction>
  * </xsd:simpleType>
  * ```
+ *
+ * @publicApi
  */
 export const PageNumberSeparator = {
     /** Hyphen separator (-) */

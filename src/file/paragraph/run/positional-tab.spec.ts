@@ -2,12 +2,12 @@ import { describe, expect, it } from "vitest";
 
 import { Formatter } from "@export/formatter";
 
-import { PositionalTabAlignment, PositionalTabLeader, PositionalTabRelativeTo, createPositionalTab } from "./positional-tab";
+import { PositionalTab, PositionalTabAlignment, PositionalTabLeader, PositionalTabRelativeTo } from "./positional-tab";
 
-describe("createPositionalTab", () => {
+describe("PositionalTab", () => {
     it("should create a PositionalTab with correct root key", () => {
         const tree = new Formatter().format(
-            createPositionalTab({
+            new PositionalTab({
                 alignment: PositionalTabAlignment.CENTER,
                 relativeTo: PositionalTabRelativeTo.MARGIN,
                 leader: PositionalTabLeader.DOT,

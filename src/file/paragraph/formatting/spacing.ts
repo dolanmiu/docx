@@ -14,6 +14,8 @@ import { BuilderElement, XmlComponent } from "@file/xml-components";
  * Line spacing rule types.
  *
  * Specifies how the line height is calculated.
+ *
+ * @publicApi
  */
 export const LineRuleType = {
     /** Line spacing is at least the specified value */

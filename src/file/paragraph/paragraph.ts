@@ -69,6 +69,8 @@ export type IParagraphOptions = {
  *
  * Reference: http://officeopenxml.com/WPparagraph.php
  *
+ * @publicApi
+ *
  * ## XSD Schema
  * ```xml
  * <xsd:complexType name="CT_P">

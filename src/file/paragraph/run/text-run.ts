@@ -9,6 +9,8 @@ import { IRunOptions, Run } from "./run";
  *
  * Reference: http://officeopenxml.com/WPtext.php
  *
+ * @publicApi
+ *
  * @example
  * ```typescript
  * // Simple text

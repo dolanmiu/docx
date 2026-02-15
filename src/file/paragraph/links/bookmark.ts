@@ -36,6 +36,8 @@ export type IBookmarkOptions = {
  *
  * Reference: http://officeopenxml.com/WPbookmark.php
  *
+ * @publicApi
+ *
  * ## XSD Schema
  * ```xml
  * <xsd:element name="bookmarkStart" type="CT_Bookmark"/>

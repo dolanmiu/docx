@@ -11,6 +11,8 @@ import { BuilderElement, XmlComponent } from "@file/xml-components";
  * Built-in heading level styles.
  *
  * These are the standard heading styles available in Word documents.
+ *
+ * @publicApi
  */
 export const HeadingLevel = {
     /** Heading 1 style */

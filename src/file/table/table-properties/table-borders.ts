@@ -8,7 +8,7 @@
  * @module
  */
 import { BorderStyle, IBorderOptions, createBorderElement } from "@file/border";
-import { BuilderElement, XmlComponent } from "@file/xml-components";
+import { XmlComponent } from "@file/xml-components";
 
 /**
  * Options for configuring table borders.
@@ -38,44 +38,43 @@ const DEFAULT_BORDER: IBorderOptions = {
 };
 
 /**
- * Preset for no borders on the table.
- */
-export const TABLE_BORDERS_NONE: ITableBordersOptions = {
-    top: NONE_BORDER,
-    bottom: NONE_BORDER,
-    left: NONE_BORDER,
-    right: NONE_BORDER,
-    insideHorizontal: NONE_BORDER,
-    insideVertical: NONE_BORDER,
-};
-
-/**
- * Creates table borders in a WordprocessingML document.
+ * Represents table borders in a WordprocessingML document.
  *
  * The tblBorders element specifies the borders for all cells in the table.
  *
  * Reference: http://officeopenxml.com/WPtableBorders.php
  *
+ * @publicApi
+ *
  * @example
  * ```typescript
- * createTableBorders({
+ * new TableBorders({
  *   top: { style: BorderStyle.SINGLE, size: 6, color: "000000" },
  *   bottom: { style: BorderStyle.SINGLE, size: 6, color: "000000" },
  * });
  *
  * // To remove all borders
- * createTableBorders(TABLE_BORDERS_NONE);
+ * new TableBorders(TableBorders.NONE);
  * ```
  */
-export const createTableBorders = (options: ITableBordersOptions): XmlComponent =>
-    new BuilderElement({
-        name: "w:tblBorders",
-        children: [
-            createBorderElement("w:top", options.top ?? DEFAULT_BORDER),
-            createBorderElement("w:left", options.left ?? DEFAULT_BORDER),
-            createBorderElement("w:bottom", options.bottom ?? DEFAULT_BORDER),
-            createBorderElement("w:right", options.right ?? DEFAULT_BORDER),
-            createBorderElement("w:insideH", options.insideHorizontal ?? DEFAULT_BORDER),
-            createBorderElement("w:insideV", options.insideVertical ?? DEFAULT_BORDER),
-        ],
-    });
+export class TableBorders extends XmlComponent {
+    public static readonly NONE: ITableBordersOptions = {
+        top: NONE_BORDER,
+        bottom: NONE_BORDER,
+        left: NONE_BORDER,
+        right: NONE_BORDER,
+        insideHorizontal: NONE_BORDER,
+        insideVertical: NONE_BORDER,
+    };
+
+    public constructor(options: ITableBordersOptions) {
+        super("w:tblBorders");
+
+        this.root.push(createBorderElement("w:top", options.top ?? DEFAULT_BORDER));
+        this.root.push(createBorderElement("w:left", options.left ?? DEFAULT_BORDER));
+        this.root.push(createBorderElement("w:bottom", options.bottom ?? DEFAULT_BORDER));
+        this.root.push(createBorderElement("w:right", options.right ?? DEFAULT_BORDER));
+        this.root.push(createBorderElement("w:insideH", options.insideHorizontal ?? DEFAULT_BORDER));
+        this.root.push(createBorderElement("w:insideV", options.insideVertical ?? DEFAULT_BORDER));
+    }
+}

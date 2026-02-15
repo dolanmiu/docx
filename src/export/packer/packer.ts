@@ -15,6 +15,8 @@ import { Compiler, IXmlifyedFile } from "./next-compiler";
  *
  * Controls the indentation style used when formatting the generated XML.
  * Prettified output is more human-readable but results in larger file sizes.
+ *
+ * @publicApi
  */
 export const PrettifyType = {
     /** No prettification (smallest file size) */
@@ -38,6 +40,8 @@ const convertPrettifyType = (
  * The Packer class provides static methods to convert a File object into different
  * output formats such as Buffer, Blob, string, or stream. It handles the compilation
  * of the document structure into OOXML format and compression into a .docx ZIP archive.
+ *
+ * @publicApi
  *
  * @example
  * ```typescript

@@ -32,6 +32,8 @@ export type IMathFractionOptions = {
  *
  * Reference: http://www.datypic.com/sc/ooxml/e-m_f-1.html
  *
+ * @publicApi
+ *
  * ## XSD Schema
  * ```xml
  * <xsd:complexType name="CT_F">

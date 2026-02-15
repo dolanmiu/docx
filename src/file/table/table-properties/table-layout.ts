@@ -21,6 +21,8 @@ import { BuilderElement, XmlComponent } from "@file/xml-components";
  *   </xsd:restriction>
  * </xsd:simpleType>
  * ```
+ *
+ * @publicApi
  */
 export const TableLayoutType = {
     /** Auto-fit layout - column widths are adjusted based on content */

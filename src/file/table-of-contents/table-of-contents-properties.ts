@@ -14,6 +14,8 @@
  *
  * StyleLevel associates a paragraph style name with a TOC level, allowing
  * custom styles to be included in the table of contents at specific levels.
+ *
+ * @publicApi
  */
 export class StyleLevel {
     /** The name of the paragraph style. */

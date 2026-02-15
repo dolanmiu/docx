@@ -21,6 +21,8 @@ import { CheckBoxUtil, ICheckboxSymbolOptions } from "./checkbox-util";
  * is implemented using structured document tags (w:sdt) with checkbox-specific
  * properties.
  *
+ * @publicApi
+ *
  * ## XSD Schema
  * ```xml
  * <xsd:complexType name="CT_SdtCheckbox">

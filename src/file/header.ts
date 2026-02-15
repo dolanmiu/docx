@@ -28,6 +28,8 @@ export type IHeaderOptions = {
  * Headers appear at the top of each page in a section and can contain
  * paragraphs, tables, images, and other content.
  *
+ * @publicApi
+ *
  * @example
  * ```typescript
  * const header = new Header({
@@ -50,6 +52,8 @@ export class Header {
  *
  * Footers appear at the bottom of each page in a section and can contain
  * paragraphs, tables, images, and other content.
+ *
+ * @publicApi
  *
  * @example
  * ```typescript

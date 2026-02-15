@@ -10,7 +10,7 @@
 import { BuilderElement, XmlComponent } from "@file/xml-components";
 import { PositiveUniversalMeasure, decimalNumber, twipsMeasureValue } from "@util/values";
 
-import { IColumnAttributes, createColumn } from "./column";
+import { Column } from "./column";
 
 /**
  * Options for configuring column layout in a section.
@@ -31,7 +31,7 @@ export type IColumnsAttributes = {
     /** Whether all columns have equal width */
     readonly equalWidth?: boolean;
     /** Individual column definitions (used when equalWidth is false, max: 45) */
-    readonly children?: readonly IColumnAttributes[];
+    readonly children?: readonly Column[];
 };
 
 /**
@@ -84,5 +84,5 @@ export const createColumns = ({ space, count, separate, equalWidth, children }: 
             separate: { key: "w:sep", value: separate },
             equalWidth: { key: "w:equalWidth", value: equalWidth },
         },
-        children: !equalWidth && children ? children.map((column) => createColumn(column)) : undefined,
+        children: !equalWidth && children ? children : undefined,
     });

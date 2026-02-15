@@ -38,7 +38,7 @@ import { IgnoreIfEmptyXmlComponent, OnOffElement, StringValueElement } from "@fi
 import { AlignmentType, createAlignment } from "../../paragraph";
 import { IShadingAttributesProperties, createShading } from "../../shading";
 import { ITableWidthProperties, createTableWidthElement } from "../table-width";
-import { ITableBordersOptions, createTableBorders } from "./table-borders";
+import { ITableBordersOptions, TableBorders } from "./table-borders";
 import { ITableCellMarginOptions, TableCellMargin, TableCellMarginElementType } from "./table-cell-margin";
 import { ITableFloatOptions, createTableFloatProperties } from "./table-float-properties";
 import { TableLayoutType, createTableLayout } from "./table-layout";
@@ -102,7 +102,7 @@ export class TableProperties extends IgnoreIfEmptyXmlComponent {
         }
 
         if (options.borders) {
-            this.root.push(createTableBorders(options.borders));
+            this.root.push(new TableBorders(options.borders));
         }
 
         if (options.shading) {

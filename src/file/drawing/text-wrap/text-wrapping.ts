@@ -13,6 +13,8 @@ import { IDistance } from "../drawing";
  * Enumeration of text wrapping types for floating drawings.
  *
  * Reference: http://officeopenxml.com/drwPicFloating-textWrap.php
+ *
+ * @publicApi
  */
 export const TextWrappingType = {
     NONE: 0,
@@ -27,6 +29,8 @@ export const TextWrappingType = {
  * Specifies on which side(s) text can wrap around the drawing.
  *
  * Reference: http://officeopenxml.com/drwPicFloating-textWrap.php
+ *
+ * @publicApi
  */
 export const TextWrappingSide = {
     /** Text wraps on both sides of the drawing */

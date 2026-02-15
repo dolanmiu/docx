@@ -56,6 +56,8 @@ type IFontOptions = {
  *   </xsd:restriction>
  * </xsd:simpleType>
  * ```
+ *
+ * @publicApi
  */
 export const TextEffect = {
     /** Blinking background animation */

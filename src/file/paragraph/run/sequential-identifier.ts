@@ -22,6 +22,8 @@ import { SequentialIdentifierInstruction } from "./sequential-identifier-instruc
  *
  * Reference: http://officeopenxml.com/WPrun.php
  *
+ * @publicApi
+ *
  * ## XSD Schema
  * ```xml
  * <xsd:complexType name="CT_R">

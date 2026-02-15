@@ -24,6 +24,8 @@ import { Percentage, UniversalMeasure, measurementOrPercentValue } from "@util/v
  *   </xsd:restriction>
  * </xsd:simpleType>
  * ```
+ *
+ * @publicApi
  */
 export const WidthType = {
     /** Auto. */

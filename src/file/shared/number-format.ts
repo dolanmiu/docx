@@ -40,6 +40,8 @@
  * // Letters (a, b, c)
  * NumberFormat.LOWER_LETTER;
  * ```
+ *
+ * @publicApi
  */
 export const NumberFormat = {
     DECIMAL: "decimal",

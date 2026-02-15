@@ -17,6 +17,8 @@ import { PositiveUniversalMeasure, decimalNumber, twipsMeasureValue } from "@uti
  *   </xsd:restriction>
  * </xsd:simpleType>
  * ```
+ *
+ * @publicApi
  */
 export const LineNumberRestartFormat = {
     /**

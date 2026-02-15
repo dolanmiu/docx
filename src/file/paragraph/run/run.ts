@@ -115,6 +115,8 @@ export type IRunOptions = {
  * These values are used to insert dynamic page number fields into a document.
  *
  * Reference: http://officeopenxml.com/WPfields.php
+ *
+ * @publicApi
  */
 export const PageNumber = {
     /** Inserts the current page number */

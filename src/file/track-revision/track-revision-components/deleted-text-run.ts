@@ -36,6 +36,8 @@ type IDeletedRunOptions = IRunOptions & IChangedAttributesProperties;
  *
  * Reference: http://officeopenxml.com/WPtrackChanges.php
  *
+ * @publicApi
+ *
  * ## XSD Schema
  * ```xml
  * <xsd:element name="del" type="CT_RunTrackChange" minOccurs="0"/>

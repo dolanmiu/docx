@@ -30,6 +30,8 @@ type IInsertedRunOptions = IChangedAttributesProperties & IRunOptions;
  *
  * Reference: http://officeopenxml.com/WPtrackChanges.php
  *
+ * @publicApi
+ *
  * ## XSD Schema
  * ```xml
  * <xsd:element name="ins" type="CT_RunTrackChange" minOccurs="0"/>

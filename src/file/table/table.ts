@@ -56,6 +56,8 @@ export type ITableOptions = {
  *
  * Reference: http://officeopenxml.com/WPtable.php
  *
+ * @publicApi
+ *
  * ## XSD Schema
  * ```xml
  * <xsd:complexType name="CT_Tbl">

@@ -28,6 +28,8 @@ import { BuilderElement, XmlComponent } from "@file/xml-components";
  *   </xsd:restriction>
  * </xsd:simpleType>
  * ```
+ *
+ * @publicApi
  */
 export const EmphasisMarkType = {
     /** Dot emphasis mark */

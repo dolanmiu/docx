@@ -36,6 +36,8 @@ export type IMathPreSubSuperScriptOptions = {
  *
  * Reference: http://www.datypic.com/sc/ooxml/e-m_sPre-1.html
  *
+ * @publicApi
+ *
  * ## XSD Schema
  * ```xml
  * <xsd:complexType name="CT_SPre">

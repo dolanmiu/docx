@@ -23,3 +23,9 @@ TypeScript library for generating .docx files. Declarative API, works in Node.js
 - Verify XML output structure matches OOXML spec
 - Test option combinations and edge cases
 - Descriptive test names explaining behavior
+
+## Running Demos
+
+```bash
+npm run run-ts -- ./demo/<demo-file>.ts
+```
