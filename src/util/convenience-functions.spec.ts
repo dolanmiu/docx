@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 
+// cspell:words CESU
+
 import {
     abstractNumUniqueNumericIdGen,
     bookmarkUniqueNumericIdGen,

@@ -187,13 +187,11 @@ export const uniqueUuid = (): string =>
  * which avoids a bug where JSZip's string chunking can split UTF-16
  * surrogate pairs for characters above U+FFFF (like emoji).
  *
+ * The copy via `new Uint8Array()` ensures the returned array uses the
+ * current module's Uint8Array constructor, avoiding cross-realm issues
+ * in test environments (jsdom) where TextEncoder returns a different
+ * realm's Uint8Array that fails JSZip's instanceof checks.
+ *
  * @see https://github.com/Stuk/jszip/pull/963
  */
-export const encodeUtf8 = (str: string): Uint8Array => {
-    if (typeof TextEncoder !== "undefined") {
-        return new TextEncoder().encode(str);
-    }
-    // Fallback for environments without TextEncoder (e.g., older Node.js)
-    // Buffer.from handles surrogates correctly
-    return new Uint8Array(Buffer.from(str, "utf-8"));
-};
+export const encodeUtf8 = (str: string): Uint8Array => new Uint8Array(new TextEncoder().encode(str));
