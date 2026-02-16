@@ -1,9 +1,18 @@
+/**
+ * File module for WordprocessingML documents.
+ *
+ * The File class is the main entry point for creating DOCX documents.
+ * It manages all document parts including content, styles, numbering, and media.
+ *
+ * @module
+ */
 import { AppProperties } from "./app-properties/app-properties";
 import { ContentTypes } from "./content-types/content-types";
 import { CoreProperties, IPropertiesOptions } from "./core-properties";
 import { CustomProperties } from "./custom-properties";
 import { HeaderFooterReferenceType, ISectionPropertiesOptions } from "./document/body/section-properties";
 import { DocumentWrapper } from "./document-wrapper";
+import { EndnotesWrapper } from "./endnotes-wrapper";
 import { FileChild } from "./file-child";
 import { FontWrapper } from "./fonts/font-wrapper";
 import { FooterWrapper, IDocumentFooter } from "./footer-wrapper";
@@ -19,21 +28,119 @@ import { Styles } from "./styles";
 import { ExternalStylesFactory } from "./styles/external-styles-factory";
 import { DefaultStylesFactory } from "./styles/factory";
 
+/**
+ * Options for a document section.
+ *
+ * Each section can have its own headers, footers, and page properties.
+ *
+ * @property headers - Optional header definitions for the section
+ * @property headers.default - Default header for all pages (when first/even not specified)
+ * @property headers.first - Header for the first page of the section
+ * @property headers.even - Header for even-numbered pages
+ * @property footers - Optional footer definitions for the section
+ * @property footers.default - Default footer for all pages (when first/even not specified)
+ * @property footers.first - Footer for the first page of the section
+ * @property footers.even - Footer for even-numbered pages
+ * @property properties - Section properties such as page size, margins, and orientation
+ * @property children - Array of content elements (paragraphs, tables, etc.) for this section
+ */
 export type ISectionOptions = {
+    /** Optional header definitions for the section. */
     readonly headers?: {
+        /** Default header for all pages (when first/even not specified). */
         readonly default?: Header;
+        /** Header for the first page of the section. */
         readonly first?: Header;
+        /** Header for even-numbered pages. */
         readonly even?: Header;
     };
+    /** Optional footer definitions for the section. */
     readonly footers?: {
+        /** Default footer for all pages (when first/even not specified). */
         readonly default?: Footer;
+        /** Footer for the first page of the section. */
         readonly first?: Footer;
+        /** Footer for even-numbered pages. */
         readonly even?: Footer;
     };
+    /** Section properties such as page size, margins, and orientation. */
     readonly properties?: ISectionPropertiesOptions;
+    /** Array of content elements (paragraphs, tables, etc.) for this section. */
     readonly children: readonly FileChild[];
 };
 
+/**
+ * Represents a Word document file.
+ *
+ * The File class (exported as `Document`) is the main entry point for creating DOCX documents.
+ * It manages all document components including content, styles, numbering, headers/footers,
+ * and media. Documents are organized into sections, each of which can have its own page
+ * settings, headers, and footers.
+ *
+ * This class handles the assembly of all OOXML parts required for a valid .docx file,
+ * including relationships, content types, and document properties.
+ *
+ * @example
+ * ```typescript
+ * // Simple document with one section
+ * const doc = new Document({
+ *   sections: [{
+ *     children: [
+ *       new Paragraph("Hello World"),
+ *     ],
+ *   }],
+ * });
+ *
+ * // Document with multiple sections and headers/footers
+ * const doc = new Document({
+ *   creator: "John Doe",
+ *   sections: [
+ *     {
+ *       headers: {
+ *         default: new Header({
+ *           children: [new Paragraph("Header Text")],
+ *         }),
+ *       },
+ *       children: [
+ *         new Paragraph("Section 1 content"),
+ *       ],
+ *     },
+ *     {
+ *       children: [
+ *         new Paragraph("Section 2 content"),
+ *       ],
+ *     },
+ *   ],
+ * });
+ *
+ * // Document with custom styles and numbering
+ * const doc = new Document({
+ *   styles: {
+ *     paragraphStyles: [
+ *       {
+ *         id: "MyHeading",
+ *         name: "My Heading",
+ *         basedOn: "Heading1",
+ *         run: { bold: true, color: "FF0000" },
+ *       },
+ *     ],
+ *   },
+ *   numbering: {
+ *     config: [
+ *       {
+ *         reference: "my-numbering",
+ *         levels: [
+ *           { level: 0, format: "decimal", text: "%1.", alignment: "left" },
+ *         ],
+ *       },
+ *     ],
+ *   },
+ *   sections: [{
+ *     children: [new Paragraph("Content")],
+ *   }],
+ * });
+ * ```
+ */
 export class File {
     // eslint-disable-next-line functional/prefer-readonly-type
     private currentRelationshipId: number = 1;
@@ -48,6 +155,7 @@ export class File {
     private readonly media: Media;
     private readonly fileRelationships: Relationships;
     private readonly footnotesWrapper: FootnotesWrapper;
+    private readonly endnotesWrapper: EndnotesWrapper;
     private readonly settings: Settings;
     private readonly contentTypes: ContentTypes;
     private readonly customProperties: CustomProperties;
@@ -71,6 +179,7 @@ export class File {
         this.customProperties = new CustomProperties(options.customProperties ?? []);
         this.appProperties = new AppProperties();
         this.footnotesWrapper = new FootnotesWrapper();
+        this.endnotesWrapper = new EndnotesWrapper();
         this.contentTypes = new ContentTypes();
         this.documentWrapper = new DocumentWrapper({ background: options.background });
         this.settings = new Settings({
@@ -91,8 +200,14 @@ export class File {
         this.media = new Media();
 
         if (options.externalStyles !== undefined) {
-            const stylesFactory = new ExternalStylesFactory();
-            this.styles = stylesFactory.newInstance(options.externalStyles);
+            const defaultFactory = new DefaultStylesFactory();
+            const defaultStyles = defaultFactory.newInstance(options.styles?.default);
+            const externalFactory = new ExternalStylesFactory();
+            const externalStyles = externalFactory.newInstance(options.externalStyles);
+            this.styles = new Styles({
+                ...externalStyles,
+                importedStyles: [...defaultStyles.importedStyles!, ...externalStyles.importedStyles!],
+            });
         } else if (options.styles) {
             const stylesFactory = new DefaultStylesFactory();
             const defaultStyles = stylesFactory.newInstance(options.styles.default);
@@ -115,6 +230,13 @@ export class File {
             // eslint-disable-next-line guard-for-in
             for (const key in options.footnotes) {
                 this.footnotesWrapper.View.createFootNote(parseFloat(key), options.footnotes[key].children);
+            }
+        }
+
+        if (options.endnotes) {
+            // eslint-disable-next-line guard-for-in
+            for (const key in options.endnotes) {
+                this.endnotesWrapper.View.createEndnote(parseFloat(key), options.endnotes[key].children);
             }
         }
 
@@ -236,6 +358,12 @@ export class File {
         this.documentWrapper.Relationships.createRelationship(
             // eslint-disable-next-line functional/immutable-data
             this.currentRelationshipId++,
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/endnotes",
+            "endnotes.xml",
+        );
+        this.documentWrapper.Relationships.createRelationship(
+            // eslint-disable-next-line functional/immutable-data
+            this.currentRelationshipId++,
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/settings",
             "settings.xml",
         );
@@ -293,6 +421,10 @@ export class File {
 
     public get FootNotes(): FootnotesWrapper {
         return this.footnotesWrapper;
+    }
+
+    public get Endnotes(): EndnotesWrapper {
+        return this.endnotesWrapper;
     }
 
     public get Settings(): Settings {

@@ -1,3 +1,13 @@
+/**
+ * Footnotes module for WordprocessingML documents.
+ *
+ * This module manages the collection of footnotes in a document, including
+ * separator and continuation separator footnotes that appear by default.
+ *
+ * Reference: http://officeopenxml.com/WPfootnotes.php
+ *
+ * @module
+ */
 import { XmlComponent } from "@file/xml-components";
 
 import { LineRuleType, Paragraph } from "../paragraph";
@@ -6,6 +16,48 @@ import { ContinuationSeperatorRun } from "./footnote/run/continuation-seperator-
 import { SeperatorRun } from "./footnote/run/seperator-run";
 import { FootnotesAttributes } from "./footnotes-attributes";
 
+/**
+ * Represents the footnotes collection in a WordprocessingML document.
+ *
+ * FootNotes manages all footnotes in a document and automatically creates
+ * the required separator and continuation separator footnotes. These special
+ * footnotes define the line that separates body text from footnotes and the
+ * line used when footnotes continue across pages.
+ *
+ * Reference: http://officeopenxml.com/WPfootnotes.php
+ *
+ * ## XSD Schema
+ * ```xml
+ * <xsd:complexType name="CT_Footnotes">
+ *   <xsd:sequence maxOccurs="unbounded">
+ *     <xsd:element name="footnote" type="CT_FtnEdn" minOccurs="0"/>
+ *   </xsd:sequence>
+ * </xsd:complexType>
+ * ```
+ *
+ * @example
+ * ```typescript
+ * // FootNotes is typically managed internally by the Document class
+ * // Users create footnotes through the Document API
+ * const doc = new Document({
+ *   sections: [{
+ *     children: [
+ *       new Paragraph({
+ *         children: [
+ *           new TextRun("Text with footnote"),
+ *           new FootnoteReferenceRun(1),
+ *         ],
+ *       }),
+ *     ],
+ *     footnotes: {
+ *       1: {
+ *         children: [new Paragraph("Footnote content")],
+ *       },
+ *     },
+ *   }],
+ * });
+ * ```
+ */
 export class FootNotes extends XmlComponent {
     public constructor() {
         super("w:footnotes");
@@ -67,6 +119,12 @@ export class FootNotes extends XmlComponent {
         this.root.push(spacing);
     }
 
+    /**
+     * Creates and adds a new footnote to the collection.
+     *
+     * @param id - Unique numeric identifier for the footnote
+     * @param paragraph - Array of paragraphs that make up the footnote content
+     */
     public createFootNote(id: number, paragraph: readonly Paragraph[]): void {
         const footnote = new Footnote({
             id: id,

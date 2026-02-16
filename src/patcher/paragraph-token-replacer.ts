@@ -1,14 +1,48 @@
+/**
+ * Paragraph token replacer for substituting text within paragraph runs.
+ *
+ * @module
+ */
 import { Element } from "xml-js";
 
 import { IRenderedParagraphNode } from "./run-renderer";
 import { createTextElementContents, patchSpaceAttribute } from "./util";
 
+/**
+ * Replacement modes for multi-run text replacement.
+ */
 const ReplaceMode = {
+    /** Looking for the start of the replacement text */
     START: 0,
+    /** Processing runs in the middle of the replacement text */
     MIDDLE: 1,
+    /** Reached the end of the replacement text */
     END: 2,
 } as const;
 
+/**
+ * Replaces a token with replacement text within a paragraph's run elements.
+ *
+ * Handles the complex case where placeholder text may span multiple runs
+ * (text fragments) within a paragraph. Processes each run to replace the
+ * appropriate portion of the token, handling start, middle, and end sections.
+ *
+ * @param paragraphElement - The paragraph XML element to modify
+ * @param renderedParagraph - Pre-rendered paragraph structure with text positions
+ * @param originalText - The token text to replace (e.g., "{{name}}")
+ * @param replacementText - The text to replace it with (often a split token)
+ * @returns The modified paragraph element
+ *
+ * @example
+ * ```typescript
+ * replaceTokenInParagraphElement({
+ *   paragraphElement,
+ *   renderedParagraph,
+ *   originalText: "{{placeholder}}",
+ *   replacementText: "ɵ",
+ * });
+ * ```
+ */
 export const replaceTokenInParagraphElement = ({
     paragraphElement,
     renderedParagraph,

@@ -4,9 +4,9 @@
 
 ## Intro
 
--   `Tables` contain a list of `Rows`
--   `Rows` contain a list of `TableCells`
--   `TableCells` contain a list of `Paragraphs` and/or `Tables`. You can add `Tables` as tables can be nested inside each other
+- `Tables` contain a list of `Rows`
+- `Rows` contain a list of `TableCells`
+- `TableCells` contain a list of `Paragraphs` and/or `Tables`. You can add `Tables` as tables can be nested inside each other
 
 Create a simple table like so:
 
@@ -20,9 +20,11 @@ Then add the table in the `section`
 
 ```ts
 const doc = new Document({
-    sections: [{
-        children: [table],
-    }],
+    sections: [
+        {
+            children: [table],
+        },
+    ],
 });
 ```
 
@@ -99,12 +101,12 @@ const table = new Table({
 
 Here is a list of options you can add to the `table row`:
 
-| Property    | Type                                   | Notes    |
-| ----------- | -------------------------------------- | -------- |
-| children    | `Array<TableCell>`                     | Required |
-| cantSplit   | `boolean`                              | Optional |
-| tableHeader | `boolean`                              | Optional |
-| height      | `{ value: number, rule: HeightRule }`  | Optional |
+| Property    | Type                                  | Notes    |
+| ----------- | ------------------------------------- | -------- |
+| children    | `Array<TableCell>`                    | Required |
+| cantSplit   | `boolean`                             | Optional |
+| tableHeader | `boolean`                             | Optional |
+| height      | `{ value: number, rule: HeightRule }` | Optional |
 
 ### Repeat row
 
@@ -154,16 +156,16 @@ const tableRow = new TableRow({
 
 ### Options
 
-| Property      | Type                                | Notes                                                       |
-| ------------- | ----------------------------------- | ----------------------------------------------------------- |
-| children      | `Array<Paragraph or Table>`         | Required. You can nest tables by adding a table into a cell |
-| shading       | `IShadingAttributesProperties`      | Optional                                                    |
-| margins       | `ITableCellMarginOptions`           | Optional                                                    |
-| verticalAlign | `VerticalAlignTable`                | Optional                                                    |
-| columnSpan    | `number`                            | Optional                                                    |
-| rowSpan       | `number`                            | Optional                                                    |
-| borders       | `BorderOptions`                     | Optional                                                    |
-| width         | `{ size: number type: WidthType }`  | Optional                                                    |
+| Property      | Type                               | Notes                                                       |
+| ------------- | ---------------------------------- | ----------------------------------------------------------- |
+| children      | `Array<Paragraph or Table>`        | Required. You can nest tables by adding a table into a cell |
+| shading       | `IShadingAttributesProperties`     | Optional                                                    |
+| margins       | `ITableCellMarginOptions`          | Optional                                                    |
+| verticalAlign | `VerticalAlignTable`               | Optional                                                    |
+| columnSpan    | `number`                           | Optional                                                    |
+| rowSpan       | `number`                           | Optional                                                    |
+| borders       | `BorderOptions`                    | Optional                                                    |
+| width         | `{ size: number type: WidthType }` | Optional                                                    |
 
 #### Border Options
 
@@ -377,7 +379,7 @@ const table = new Table({
 
 ## Examples
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/4-basic-table.ts ':include')
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/4-basic-table.ts ":include")
 
 _Source: https://github.com/dolanmiu/docx/blob/master/demo/4-basic-table.ts_
 
@@ -385,7 +387,7 @@ _Source: https://github.com/dolanmiu/docx/blob/master/demo/4-basic-table.ts_
 
 Example showing how to add colorful borders to tables
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/20-table-cell-borders.ts ':include')
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/20-table-cell-borders.ts ":include")
 
 _Source: https://github.com/dolanmiu/docx/blob/master/demo/20-table-cell-borders.ts_
 
@@ -393,11 +395,11 @@ _Source: https://github.com/dolanmiu/docx/blob/master/demo/20-table-cell-borders
 
 Example showing how to add images to tables
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/24-images-to-table-cell.ts ':include')
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/24-images-to-table-cell.ts ":include")
 
 _Source: https://github.com/dolanmiu/docx/blob/master/demo/24-images-to-table-cell.ts_
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/36-image-to-table-cell.ts ':include')
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/36-image-to-table-cell.ts ":include")
 
 _Source: https://github.com/dolanmiu/docx/blob/master/demo/36-image-to-table-cell.ts_
 
@@ -405,7 +407,7 @@ _Source: https://github.com/dolanmiu/docx/blob/master/demo/36-image-to-table-cel
 
 Example showing how align text in a table cell
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/31-tables.ts ':include')
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/31-tables.ts ":include")
 
 _Source: https://github.com/dolanmiu/docx/blob/master/demo/31-tables.ts_
 
@@ -413,11 +415,11 @@ _Source: https://github.com/dolanmiu/docx/blob/master/demo/31-tables.ts_
 
 Example showing merging of columns and rows and shading
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/32-merge-and-shade-table-cells.ts ':include')
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/32-merge-and-shade-table-cells.ts ":include")
 
 _Source: https://github.com/dolanmiu/docx/blob/master/demo/32-merge-and-shade-table-cells.ts_
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/41-merge-table-cells-2.ts ':include')
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/41-merge-table-cells-2.ts ":include")
 
 _Source: https://github.com/dolanmiu/docx/blob/master/demo/41-merge-table-cells-2.ts_
 
@@ -425,12 +427,12 @@ _Source: https://github.com/dolanmiu/docx/blob/master/demo/41-merge-table-cells-
 
 Example showing merging of columns and rows
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/43-images-to-table-cell-2.ts ':include')
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/43-images-to-table-cell-2.ts ":include")
 
 _Source: https://github.com/dolanmiu/docx/blob/master/demo/43-images-to-table-cell-2.ts_
 
 ### Floating tables
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/34-floating-tables.ts ':include')
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/34-floating-tables.ts ":include")
 
 _Source: https://github.com/dolanmiu/docx/blob/master/demo/34-floating-tables.ts_

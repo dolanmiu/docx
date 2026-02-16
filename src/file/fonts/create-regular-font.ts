@@ -1,7 +1,41 @@
+/**
+ * Create Regular Font module for WordprocessingML documents.
+ *
+ * Provides a helper to create regular (non-bold, non-italic) embedded fonts
+ * with default font signature settings.
+ *
+ * Reference: http://www.datypic.com/sc/ooxml/e-w_font-1.html
+ *
+ * @module
+ */
 import { XmlComponent } from "@file/xml-components";
 
 import { CharacterSet, createFont } from "./font";
 
+/**
+ * Creates a regular embedded font with default settings.
+ *
+ * This helper function creates a font definition with standard font signature
+ * values that work for most common fonts. The signature specifies Unicode
+ * and code page ranges supported by the font.
+ *
+ * @param options - Font creation options
+ * @param options.name - Font name
+ * @param options.index - Font relationship index
+ * @param options.fontKey - Unique font key (GUID) for obfuscation
+ * @param options.characterSet - Optional character set identifier
+ *
+ * @returns XmlComponent representing the font definition
+ *
+ * @example
+ * ```typescript
+ * const font = createRegularFont({
+ *   name: "Arial",
+ *   index: 1,
+ *   fontKey: "12345678-1234-1234-1234-123456789012"
+ * });
+ * ```
+ */
 export const createRegularFont = ({
     name,
     index,

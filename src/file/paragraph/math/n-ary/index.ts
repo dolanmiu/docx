@@ -1,3 +1,8 @@
+/**
+ * Math n-ary module exports.
+ *
+ * @module
+ */
 export * from "./math-accent-character";
 export * from "./math-base";
 export * from "./math-limit-location";

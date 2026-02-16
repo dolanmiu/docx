@@ -1,13 +1,39 @@
-// http://officeopenxml.com/drwPicFloating-position.php
-// http://officeopenxml.com/drwPicFloating.php
+/**
+ * Floating position module for DrawingML elements.
+ *
+ * This module provides positioning options for floating/anchored drawings,
+ * including horizontal and vertical relative positioning.
+ *
+ * Reference: http://officeopenxml.com/drwPicFloating-position.php
+ *
+ * @module
+ */
 import { HorizontalPositionAlign, VerticalPositionAlign } from "@file/shared/alignment";
 
 import { ITextWrapping } from "../text-wrap";
 
 /**
- * Horizontal Relative Positioning
+ * Horizontal Relative Positioning.
+ *
+ * Specifies the horizontal base from which the drawing position is calculated.
  *
  * Reference: https://www.datypic.com/sc/ooxml/t-wp_ST_RelFromH.html
+ *
+ * ## XSD Schema
+ * ```xml
+ * <xsd:simpleType name="ST_RelFromH">
+ *   <xsd:restriction base="xsd:token">
+ *     <xsd:enumeration value="margin"/>
+ *     <xsd:enumeration value="page"/>
+ *     <xsd:enumeration value="column"/>
+ *     <xsd:enumeration value="character"/>
+ *     <xsd:enumeration value="leftMargin"/>
+ *     <xsd:enumeration value="rightMargin"/>
+ *     <xsd:enumeration value="insideMargin"/>
+ *     <xsd:enumeration value="outsideMargin"/>
+ *   </xsd:restriction>
+ * </xsd:simpleType>
+ * ```
  */
 export const HorizontalPositionRelativeFrom = {
     /**
@@ -61,9 +87,27 @@ export const HorizontalPositionRelativeFrom = {
 } as const;
 
 /**
- * Vertical Relative Positioning
+ * Vertical Relative Positioning.
+ *
+ * Specifies the vertical base from which the drawing position is calculated.
  *
  * Reference: https://www.datypic.com/sc/ooxml/t-wp_ST_RelFromV.html
+ *
+ * ## XSD Schema
+ * ```xml
+ * <xsd:simpleType name="ST_RelFromV">
+ *   <xsd:restriction base="xsd:token">
+ *     <xsd:enumeration value="margin"/>
+ *     <xsd:enumeration value="page"/>
+ *     <xsd:enumeration value="paragraph"/>
+ *     <xsd:enumeration value="line"/>
+ *     <xsd:enumeration value="topMargin"/>
+ *     <xsd:enumeration value="bottomMargin"/>
+ *     <xsd:enumeration value="insideMargin"/>
+ *     <xsd:enumeration value="outsideMargin"/>
+ *   </xsd:restriction>
+ * </xsd:simpleType>
+ * ```
  */
 export const VerticalPositionRelativeFrom = {
     /**
@@ -116,18 +160,33 @@ export const VerticalPositionRelativeFrom = {
     TOP_MARGIN: "topMargin",
 } as const;
 
+/**
+ * Options for horizontal positioning of a floating drawing.
+ */
 export type IHorizontalPositionOptions = {
+    /** The base from which horizontal position is calculated */
     readonly relative?: (typeof HorizontalPositionRelativeFrom)[keyof typeof HorizontalPositionRelativeFrom];
+    /** Alignment relative to the horizontal base */
     readonly align?: (typeof HorizontalPositionAlign)[keyof typeof HorizontalPositionAlign];
+    /** Offset in EMUs from the horizontal base */
     readonly offset?: number;
 };
 
+/**
+ * Options for vertical positioning of a floating drawing.
+ */
 export type IVerticalPositionOptions = {
+    /** The base from which vertical position is calculated */
     readonly relative?: (typeof VerticalPositionRelativeFrom)[keyof typeof VerticalPositionRelativeFrom];
+    /** Alignment relative to the vertical base */
     readonly align?: (typeof VerticalPositionAlign)[keyof typeof VerticalPositionAlign];
+    /** Offset in EMUs from the vertical base */
     readonly offset?: number;
 };
 
+/**
+ * Margin distances around a floating drawing in EMUs.
+ */
 export type IMargins = {
     readonly left?: number;
     readonly bottom?: number;
@@ -135,6 +194,11 @@ export type IMargins = {
     readonly right?: number;
 };
 
+/**
+ * Configuration options for a floating/anchored drawing.
+ *
+ * @see {@link Anchor}
+ */
 export type IFloating = {
     readonly horizontalPosition: IHorizontalPositionOptions;
     readonly verticalPosition: IVerticalPositionOptions;
