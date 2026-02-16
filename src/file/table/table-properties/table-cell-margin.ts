@@ -94,27 +94,17 @@ const buildMarginChildren = ({
     left,
     bottom,
     right,
-}: ITableCellMarginOptions): readonly XmlComponent[] => {
-    const children: readonly XmlComponent[] = [];
-
-    if (top !== undefined) {
-        children.push(createTableWidthElement("w:top", { type: marginUnitType, size: top }));
-    }
-
-    if (left !== undefined) {
-        children.push(createTableWidthElement("w:left", { type: marginUnitType, size: left }));
-    }
-
-    if (bottom !== undefined) {
-        children.push(createTableWidthElement("w:bottom", { type: marginUnitType, size: bottom }));
-    }
-
-    if (right !== undefined) {
-        children.push(createTableWidthElement("w:right", { type: marginUnitType, size: right }));
-    }
-
-    return children;
-};
+}: ITableCellMarginOptions): readonly XmlComponent[] =>
+    (
+        [
+            { name: "w:top", size: top },
+            { name: "w:left", size: left },
+            { name: "w:bottom", size: bottom },
+            { name: "w:right", size: right },
+        ] as const
+    )
+        .filter((entry): entry is { readonly name: typeof entry.name; readonly size: number } => entry.size !== undefined)
+        .map(({ name, size }) => createTableWidthElement(name, { type: marginUnitType, size }));
 
 /**
  * Creates a table-level cell margin element (tblCellMar).
