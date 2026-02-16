@@ -1,7 +1,21 @@
-// http://officeopenxml.com/WPtableBorders.php
+/**
+ * Table borders module for WordprocessingML documents.
+ *
+ * This module provides border options for tables.
+ *
+ * Reference: http://officeopenxml.com/WPtableBorders.php
+ *
+ * @module
+ */
 import { BorderElement, BorderStyle, IBorderOptions } from "@file/border";
 import { XmlComponent } from "@file/xml-components";
 
+/**
+ * Options for configuring table borders.
+ *
+ * Borders can be applied to the outside edges (top, bottom, left, right)
+ * and inside lines (insideHorizontal, insideVertical) of the table.
+ */
 export type ITableBordersOptions = {
     readonly top?: IBorderOptions;
     readonly bottom?: IBorderOptions;
@@ -23,6 +37,13 @@ const DEFAULT_BORDER = {
     color: "auto",
 };
 
+/**
+ * Represents table borders in a WordprocessingML document.
+ *
+ * The tblBorders element specifies the borders for all cells in the table.
+ *
+ * Reference: http://officeopenxml.com/WPtableBorders.php
+ */
 export class TableBorders extends XmlComponent {
     public static readonly NONE = {
         top: NONE_BORDER,

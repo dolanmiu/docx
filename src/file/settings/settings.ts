@@ -1,7 +1,26 @@
+/**
+ * Settings module for WordprocessingML documents.
+ *
+ * This module provides document-level settings including compatibility,
+ * track changes, headers/footers, and hyphenation options.
+ *
+ * Reference: http://officeopenxml.com/WPsettings.php
+ *
+ * @module
+ */
 import { NumberValueElement, OnOffElement, XmlAttributeComponent, XmlComponent } from "@file/xml-components";
 
 import { Compatibility, ICompatibilityOptions } from "./compatibility";
 
+/**
+ * Attributes for the settings element with XML namespace declarations.
+ *
+ * Defines the XML namespaces required for the settings.xml document part.
+ * These namespaces enable compatibility features, markup compatibility,
+ * and various Office-specific extensions.
+ *
+ * @internal
+ */
 export class SettingsAttributes extends XmlAttributeComponent<{
     readonly wpc?: string;
     readonly mc?: string;
@@ -146,16 +165,33 @@ export class SettingsAttributes extends XmlAttributeComponent<{
 // </xsd:sequence>
 // </xsd:complexType>
 
+/**
+ * Options for configuring document settings.
+ *
+ * @see {@link Settings}
+ */
 export type ISettingsOptions = {
+    /** @deprecated Use compatibility.version instead */
     readonly compatibilityModeVersion?: number;
+    /** Enable different headers/footers for even and odd pages */
     readonly evenAndOddHeaders?: boolean;
+    /** Enable track changes (revision marking) */
     readonly trackRevisions?: boolean;
+    /** Update fields when document is opened */
     readonly updateFields?: boolean;
+    /** Compatibility settings for older Word versions */
     readonly compatibility?: ICompatibilityOptions;
+    /** Default distance between tab stops in twips */
     readonly defaultTabStop?: number;
+    /** Hyphenation settings */
     readonly hyphenation?: IHyphenationOptions;
 };
 
+/**
+ * Options for automatic hyphenation settings.
+ *
+ * @see {@link Settings}
+ */
 export type IHyphenationOptions = {
     /** Specifies whether the application automatically hyphenates words as they are typed in the document. */
     readonly autoHyphenation?: boolean;
@@ -167,6 +203,52 @@ export type IHyphenationOptions = {
     readonly doNotHyphenateCaps?: boolean;
 };
 
+/**
+ * Represents document settings in a WordprocessingML document.
+ *
+ * Settings contain document-wide configuration options such as
+ * compatibility mode, track changes, hyphenation, and more.
+ *
+ * Reference: http://officeopenxml.com/WPsettings.php
+ *
+ * ## XSD Schema
+ * ```xml
+ * <xsd:complexType name="CT_Settings">
+ *   <xsd:sequence>
+ *     <xsd:element name="trackRevisions" type="CT_OnOff" minOccurs="0"/>
+ *     <xsd:element name="evenAndOddHeaders" type="CT_OnOff" minOccurs="0"/>
+ *     <xsd:element name="defaultTabStop" type="CT_TwipsMeasure" minOccurs="0"/>
+ *     <xsd:element name="autoHyphenation" type="CT_OnOff" minOccurs="0"/>
+ *     <xsd:element name="consecutiveHyphenLimit" type="CT_DecimalNumber" minOccurs="0"/>
+ *     <xsd:element name="hyphenationZone" type="CT_TwipsMeasure" minOccurs="0"/>
+ *     <xsd:element name="doNotHyphenateCaps" type="CT_OnOff" minOccurs="0"/>
+ *     <xsd:element name="updateFields" type="CT_OnOff" minOccurs="0"/>
+ *     <xsd:element name="compat" type="CT_Compat" minOccurs="0"/>
+ *     <!-- Additional elements omitted for brevity -->
+ *   </xsd:sequence>
+ * </xsd:complexType>
+ * ```
+ *
+ * @example
+ * ```typescript
+ * // Basic settings with track changes enabled
+ * new Settings({
+ *   trackRevisions: true,
+ *   evenAndOddHeaders: true,
+ * });
+ *
+ * // Settings with compatibility mode and hyphenation
+ * new Settings({
+ *   compatibility: {
+ *     version: 15, // Word 2013+
+ *   },
+ *   hyphenation: {
+ *     autoHyphenation: true,
+ *     consecutiveHyphenLimit: 2,
+ *   },
+ * });
+ * ```
+ */
 export class Settings extends XmlComponent {
     public constructor(options: ISettingsOptions) {
         super("w:settings");

@@ -1,4 +1,13 @@
-// http://officeopenxml.com/drwPicFloating-textWrap.php
+/**
+ * Wrap Square module for DrawingML text wrapping.
+ *
+ * This module provides square text wrapping for floating drawings
+ * where text wraps around a rectangular bounding box.
+ *
+ * Reference: http://officeopenxml.com/drwPicFloating-textWrap.php
+ *
+ * @module
+ */
 import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
 
 import { IDistance } from "../drawing";
@@ -9,6 +18,10 @@ type IWrapSquareAttributes = {
     readonly wrapText?: (typeof TextWrappingSide)[keyof typeof TextWrappingSide];
 } & IDistance;
 
+/**
+ * Attributes for the WrapSquare element.
+ * @internal
+ */
 class WrapSquareAttributes extends XmlAttributeComponent<IWrapSquareAttributes> {
     protected readonly xmlKeys = {
         distT: "distT",
@@ -19,6 +32,28 @@ class WrapSquareAttributes extends XmlAttributeComponent<IWrapSquareAttributes> 
     };
 }
 
+/**
+ * Represents square text wrapping for a floating drawing.
+ *
+ * WrapSquare causes text to wrap around the rectangular bounding box
+ * of the drawing on the specified side(s).
+ *
+ * Reference: http://officeopenxml.com/drwPicFloating-textWrap.php
+ *
+ * ## XSD Schema
+ * ```xml
+ * <xsd:complexType name="CT_WrapSquare">
+ *   <xsd:sequence>
+ *     <xsd:element name="effectExtent" type="CT_EffectExtent" minOccurs="0"/>
+ *   </xsd:sequence>
+ *   <xsd:attribute name="wrapText" type="ST_WrapText" use="required"/>
+ *   <xsd:attribute name="distT" type="ST_WrapDistance"/>
+ *   <xsd:attribute name="distB" type="ST_WrapDistance"/>
+ *   <xsd:attribute name="distL" type="ST_WrapDistance"/>
+ *   <xsd:attribute name="distR" type="ST_WrapDistance"/>
+ * </xsd:complexType>
+ * ```
+ */
 export class WrapSquare extends XmlComponent {
     public constructor(
         textWrapping: ITextWrapping,

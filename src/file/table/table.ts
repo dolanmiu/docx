@@ -1,4 +1,10 @@
-// http://officeopenxml.com/WPtableGrid.php
+/**
+ * Table module for WordprocessingML documents.
+ *
+ * Reference: http://officeopenxml.com/WPtableGrid.php
+ *
+ * @module
+ */
 import { FileChild } from "@file/file-child";
 
 import { AlignmentType } from "../paragraph";
@@ -8,18 +14,23 @@ import { ITableCellSpacingProperties } from "./table-cell-spacing";
 import { ITableBordersOptions, ITableFloatOptions, ITablePropertiesChangeOptions, TableProperties } from "./table-properties";
 import { ITableCellMarginOptions } from "./table-properties/table-cell-margin";
 import { TableLayoutType } from "./table-properties/table-layout";
+import { ITableLookOptions } from "./table-properties/table-look";
 import { TableRow } from "./table-row";
 import { ITableWidthProperties } from "./table-width";
 
-/*
-    0-width columns don't get rendered correctly, so we need
-    to give them some value. A reasonable default would be
-    ~6in / numCols, but if we do that it becomes very hard
-    to resize the table using setWidth, unless the layout
-    algorithm is set to 'fixed'. Instead, the approach here
-    means even in 'auto' layout, setting a width on the
-    table will make it look reasonable, as the layout
-    algorithm will expand columns to fit its content
+/**
+ * Options for creating a Table element.
+ *
+ * Note: 0-width columns don't get rendered correctly, so we need
+ * to give them some value. A reasonable default would be
+ * ~6in / numCols, but if we do that it becomes very hard
+ * to resize the table using setWidth, unless the layout
+ * algorithm is set to 'fixed'. Instead, the approach here
+ * means even in 'auto' layout, setting a width on the
+ * table will make it look reasonable, as the layout
+ * algorithm will expand columns to fit its content.
+ *
+ * @see {@link Table}
  */
 export type ITableOptions = {
     readonly rows: readonly TableRow[];
@@ -34,10 +45,45 @@ export type ITableOptions = {
     readonly borders?: ITableBordersOptions;
     readonly alignment?: (typeof AlignmentType)[keyof typeof AlignmentType];
     readonly visuallyRightToLeft?: boolean;
+    readonly tableLook?: ITableLookOptions;
     readonly cellSpacing?: ITableCellSpacingProperties;
     readonly revision?: ITablePropertiesChangeOptions;
 };
 
+/**
+ * Represents a table in a WordprocessingML document.
+ *
+ * A table is a set of paragraphs (and other block-level content) arranged in rows and columns.
+ * Tables are used to organize content into a grid structure.
+ *
+ * Reference: http://officeopenxml.com/WPtable.php
+ *
+ * ## XSD Schema
+ * ```xml
+ * <xsd:complexType name="CT_Tbl">
+ *   <xsd:sequence>
+ *     <xsd:group ref="EG_RangeMarkupElements" minOccurs="0" maxOccurs="unbounded"/>
+ *     <xsd:element name="tblPr" type="CT_TblPr"/>
+ *     <xsd:element name="tblGrid" type="CT_TblGrid"/>
+ *     <xsd:group ref="EG_ContentRowContent" minOccurs="0" maxOccurs="unbounded"/>
+ *   </xsd:sequence>
+ * </xsd:complexType>
+ * ```
+ *
+ * @example
+ * ```typescript
+ * new Table({
+ *   rows: [
+ *     new TableRow({
+ *       children: [
+ *         new TableCell({ children: [new Paragraph("Cell 1")] }),
+ *         new TableCell({ children: [new Paragraph("Cell 2")] }),
+ *       ],
+ *     }),
+ *   ],
+ * });
+ * ```
+ */
 export class Table extends FileChild {
     public constructor({
         rows,
@@ -53,6 +99,7 @@ export class Table extends FileChild {
         borders,
         alignment,
         visuallyRightToLeft,
+        tableLook,
         cellSpacing,
         revision,
     }: ITableOptions) {
@@ -69,6 +116,7 @@ export class Table extends FileChild {
                 alignment,
                 cellMargin: margins,
                 visuallyRightToLeft,
+                tableLook,
                 cellSpacing,
                 revision,
             }),

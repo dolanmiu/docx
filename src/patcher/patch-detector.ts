@@ -1,14 +1,48 @@
+/**
+ * Patch detector for discovering placeholders in document templates.
+ *
+ * @module
+ */
 import JSZip from "jszip";
 
 import { InputDataType } from "./from-docx";
 import { traverse } from "./traverser";
 import { toJson } from "./util";
 
+/**
+ * Options for patch detection.
+ *
+ * @property data - The document template to scan for placeholders
+ */
 type PatchDetectorOptions = {
     readonly data: InputDataType;
 };
 
-/** Detects which patches are needed/present in a template */
+/**
+ * Detects all placeholders present in a document template.
+ *
+ * Scans through all XML content in a .docx file to find placeholder text
+ * enclosed in delimiters (default: {{placeholder}}). This is useful for
+ * discovering what patches a template expects before performing replacement.
+ *
+ * @param options - Patch detector configuration
+ * @returns Array of placeholder keys found in the document
+ *
+ * @example
+ * ```typescript
+ * const placeholders = await patchDetector({ data: templateBuffer });
+ * // Returns: ["name", "date", "address"] if template contains {{name}}, {{date}}, {{address}}
+ *
+ * // Use detected placeholders to create patches
+ * const patches = {};
+ * placeholders.forEach(key => {
+ *   patches[key] = {
+ *     type: PatchType.PARAGRAPH,
+ *     children: [new TextRun(getUserData(key))],
+ *   };
+ * });
+ * ```
+ */
 export const patchDetector = async ({ data }: PatchDetectorOptions): Promise<readonly string[]> => {
     const zipContent = data instanceof JSZip ? data : await JSZip.loadAsync(data);
     const patches = new Set<string>();
@@ -25,6 +59,12 @@ export const patchDetector = async ({ data }: PatchDetectorOptions): Promise<rea
     return Array.from(patches);
 };
 
+/**
+ * Extracts placeholder keys from text using regex pattern.
+ *
+ * @param text - Text to search for placeholders
+ * @returns Array of placeholder keys (without delimiters)
+ */
 const findPatchKeys = (text: string): readonly string[] => {
     const pattern = /(?<=\{\{).+?(?=\}\})/gs;
     return text.match(pattern) ?? [];

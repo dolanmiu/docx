@@ -228,4 +228,60 @@ describe("TableProperties", () => {
             });
         });
     });
+
+    describe("#tableLook", () => {
+        it("adds table look with first row and first column enabled", () => {
+            const tp = new TableProperties({
+                tableLook: {
+                    firstRow: true,
+                    firstColumn: true,
+                    noVBand: true,
+                },
+            });
+            const tree = new Formatter().format(tp);
+            expect(tree).to.deep.equal({
+                "w:tblPr": [
+                    {
+                        "w:tblLook": {
+                            _attr: {
+                                "w:firstRow": true,
+                                "w:firstColumn": true,
+                                "w:noVBand": true,
+                            },
+                        },
+                    },
+                ],
+            });
+        });
+
+        it("adds table look with all attributes", () => {
+            const tp = new TableProperties({
+                tableLook: {
+                    firstRow: true,
+                    lastRow: false,
+                    firstColumn: true,
+                    lastColumn: false,
+                    noHBand: false,
+                    noVBand: true,
+                },
+            });
+            const tree = new Formatter().format(tp);
+            expect(tree).to.deep.equal({
+                "w:tblPr": [
+                    {
+                        "w:tblLook": {
+                            _attr: {
+                                "w:firstRow": true,
+                                "w:lastRow": false,
+                                "w:firstColumn": true,
+                                "w:lastColumn": false,
+                                "w:noHBand": false,
+                                "w:noVBand": true,
+                            },
+                        },
+                    },
+                ],
+            });
+        });
+    });
 });

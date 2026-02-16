@@ -1,4 +1,13 @@
-// http://officeopenxml.com/WPtext.php
+/**
+ * Run module for WordprocessingML documents.
+ *
+ * A run is a region of text with a common set of properties. It is the primary
+ * unit of inline content in a paragraph.
+ *
+ * Reference: http://officeopenxml.com/WPtext.php
+ *
+ * @module
+ */
 import { FootnoteReferenceRun } from "@file/footnotes/footnote/run/reference-run";
 import { FieldInstruction } from "@file/table-of-contents/field-instruction";
 import { XmlComponent } from "@file/xml-components";
@@ -97,17 +106,69 @@ type IRunOptionsBase = {
     readonly text?: string;
 };
 
+/**
+ * Options for creating a Run element.
+ *
+ * The run element specifies a region of text with a common set of properties.
+ * The children property can contain various inline content elements.
+ *
+ * @see {@link Run}
+ */
 export type IRunOptions = IRunOptionsBase & IRunPropertiesOptions;
 
 export type IParagraphRunOptions = IRunOptionsBase & IParagraphRunPropertiesOptions;
 
+/**
+ * Constants for page number field types.
+ *
+ * These values are used to insert dynamic page number fields into a document.
+ *
+ * Reference: http://officeopenxml.com/WPfields.php
+ */
 export const PageNumber = {
+    /** Inserts the current page number */
     CURRENT: "CURRENT",
+    /** Inserts the total number of pages in the document */
     TOTAL_PAGES: "TOTAL_PAGES",
+    /** Inserts the total number of pages in the current section */
     TOTAL_PAGES_IN_SECTION: "TOTAL_PAGES_IN_SECTION",
+    /** Inserts the current section number */
     CURRENT_SECTION: "SECTION",
 } as const;
 
+/**
+ * Represents a run of text with uniform formatting in a WordprocessingML document.
+ *
+ * A run is the lowest level unit of text in a paragraph. All content within a run
+ * shares the same formatting properties (bold, italic, font, size, etc.).
+ *
+ * Reference: http://officeopenxml.com/WPtext.php
+ *
+ * ## XSD Schema
+ * ```xml
+ * <xsd:complexType name="CT_R">
+ *   <xsd:sequence>
+ *     <xsd:group ref="EG_RPr" minOccurs="0"/>
+ *     <xsd:group ref="EG_RunInnerContent" minOccurs="0" maxOccurs="unbounded"/>
+ *   </xsd:sequence>
+ *   <xsd:attribute name="rsidRPr" type="ST_LongHexNumber"/>
+ *   <xsd:attribute name="rsidDel" type="ST_LongHexNumber"/>
+ *   <xsd:attribute name="rsidR" type="ST_LongHexNumber"/>
+ * </xsd:complexType>
+ * ```
+ *
+ * @example
+ * ```typescript
+ * // Simple run with text
+ * new Run({ text: "Hello World" });
+ *
+ * // Bold and italic run
+ * new Run({ text: "Formatted", bold: true, italics: true });
+ *
+ * // Run with page number
+ * new Run({ children: [PageNumber.CURRENT] });
+ * ```
+ */
 export class Run extends XmlComponent {
     protected readonly properties: RunProperties;
 

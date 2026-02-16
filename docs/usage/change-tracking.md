@@ -9,7 +9,7 @@ const paragraph = new Paragraph({
     children: [
         new TextRun("This is a simple demo "),
         new TextRun({
-            text: "on how to "
+            text: "on how to ",
         }),
         new InsertedTextRun({
             text: "mark a text as an insertion ",
@@ -22,7 +22,7 @@ const paragraph = new Paragraph({
             id: 1,
             author: "Firstname Lastname",
             date: "2020-10-06T09:00:00Z",
-        })
+        }),
     ],
 });
 ```
@@ -43,7 +43,7 @@ const paragraph = new Paragraph({
             id: 0,
             author: "Firstname Lastname",
             date: "2020-10-06T09:00:00Z",
-        })
+        }),
     ],
 });
 ```
@@ -71,8 +71,8 @@ new TextRun({
         author: "Firstname Lastname",
         date: "2020-10-06T09:05:00Z",
         bold: false,
-    }
-}).break()
+    },
+}).break();
 ```
 
 ## Paragraph Properties Revisions
@@ -226,7 +226,7 @@ const row = new TableRow({
                             date: "2020-10-06T09:00:00Z",
                         },
                     },
-                })
+                }),
             ],
         }),
     ],
@@ -258,7 +258,7 @@ const row = new TableRow({
                             date: "2020-10-06T09:00:00Z",
                         },
                     },
-                })
+                }),
             ],
         }),
     ],
@@ -311,16 +311,18 @@ To mark a table cell as inserted, use the `insertion` property in the `TableCell
 import { TableCell, Paragraph } from "docx";
 
 const cell = new TableCell({
-    children: [new Paragraph({
-        children: [new TextRun("Inserted cell")],
-        run: {
-            insertion: {
-                id: 4,
-                author: "Firstname Lastname",
-                date: "2020-10-06T09:00:00Z",
+    children: [
+        new Paragraph({
+            children: [new TextRun("Inserted cell")],
+            run: {
+                insertion: {
+                    id: 4,
+                    author: "Firstname Lastname",
+                    date: "2020-10-06T09:00:00Z",
+                },
             },
-        },
-    })],
+        }),
+    ],
     insertion: {
         id: 4,
         author: "Firstname Lastname",
@@ -337,16 +339,18 @@ To mark a table cell as deleted, use the `deletion` property in the `TableCell` 
 import { TableCell, Paragraph } from "docx";
 
 const cell = new TableCell({
-    children: [new Paragraph({
-        children: [new TextRun("Deleted cell")],
-        run: {
-            deletion: {
-                id: 5,
-                author: "Firstname Lastname",
-                date: "2020-10-06T09:00:00Z",
+    children: [
+        new Paragraph({
+            children: [new TextRun("Deleted cell")],
+            run: {
+                deletion: {
+                    id: 5,
+                    author: "Firstname Lastname",
+                    date: "2020-10-06T09:00:00Z",
+                },
             },
-        },
-    })],
+        }),
+    ],
     deletion: {
         id: 5,
         author: "Firstname Lastname",

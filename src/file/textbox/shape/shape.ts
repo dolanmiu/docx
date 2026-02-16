@@ -1,5 +1,14 @@
-// https://c-rex.net/samples/ooxml/e1/Part3/OOXML_P3_Primer_OfficeArt_topic_ID0ELU5O.html
-// http://webapp.docx4java.org/OnlineDemo/ecma376/VML/shape.html
+/**
+ * VML shape module for WordprocessingML documents.
+ *
+ * Provides functionality for creating VML shape elements with customizable styling and positioning.
+ *
+ * References:
+ * - https://c-rex.net/samples/ooxml/e1/Part3/OOXML_P3_Primer_OfficeArt_topic_ID0ELU5O.html
+ * - http://webapp.docx4java.org/OnlineDemo/ecma376/VML/shape.html
+ *
+ * @module
+ */
 import { ParagraphChild } from "@file/paragraph";
 import { BuilderElement, XmlComponent } from "@file/xml-components";
 
@@ -8,6 +17,10 @@ import { createVmlTextbox } from "../vml-textbox/vml-texbox";
 
 const SHAPE_TYPE = "#_x0000_t202";
 
+/**
+ * Maps VmlShapeStyle property names to their corresponding CSS-style property names.
+ * Used internally for converting TypeScript-friendly property names to VML style attributes.
+ */
 const styleToKeyMap: Record<keyof VmlShapeStyle, string> = {
     flip: "flip",
     height: "height",
@@ -34,6 +47,13 @@ const styleToKeyMap: Record<keyof VmlShapeStyle, string> = {
     zIndex: "z-index",
 };
 
+/**
+ * Styling options for VML shapes.
+ *
+ * This type defines all available CSS-like styling properties for positioning, sizing,
+ * and configuring VML shapes in WordprocessingML documents. These properties control
+ * the shape's appearance, layout, and interaction with surrounding text.
+ */
 export type VmlShapeStyle = {
     /** Specifies that the orientation of a shape is flipped. Default is no value. */
     readonly flip?: "x" | "y" | "xy" | "yx";
@@ -83,6 +103,13 @@ export type VmlShapeStyle = {
     readonly zIndex?: "auto" | number;
 };
 
+/**
+ * Formats VmlShapeStyle object into a CSS-style string for VML shape attributes.
+ *
+ * @param style - The VmlShapeStyle object to format
+ * @returns A CSS-style string (e.g., "width:100pt;height:50pt;") or undefined if no style provided
+ * @internal
+ */
 const formatShapeStyle = (style?: VmlShapeStyle): string | undefined =>
     style
         ? Object.entries(style)
@@ -90,13 +117,69 @@ const formatShapeStyle = (style?: VmlShapeStyle): string | undefined =>
               .join(";")
         : undefined;
 
+/**
+ * Options for creating a VML shape.
+ *
+ * @property id - Unique identifier for the shape
+ * @property children - Array of paragraph children to include in the shape's textbox
+ * @property type - VML shape type identifier (default: "#_x0000_t202" for text rectangle)
+ * @property style - Styling properties for the shape
+ */
 type ShapeOptions = {
+    /** Unique identifier for the shape */
     readonly id: string;
+    /** Array of paragraph children to include in the shape's textbox */
     readonly children?: readonly ParagraphChild[];
+    /** VML shape type identifier (default: "#_x0000_t202" for text rectangle) */
     readonly type?: string;
+    /** Styling properties for the shape */
     readonly style?: VmlShapeStyle;
 };
 
+/**
+ * Creates a VML shape element with textbox content.
+ *
+ * The VML shape element (v:shape) represents a vector graphics shape in WordprocessingML documents.
+ * This function creates shapes configured for text display (textbox shapes), which are commonly
+ * used for creating floating text boxes with custom positioning and styling.
+ *
+ * ## XSD Schema
+ * ```xml
+ * <xsd:complexType name="CT_Shape">
+ *   <xsd:choice maxOccurs="unbounded">
+ *     <xsd:group ref="EG_ShapeElements"/>
+ *     <xsd:element ref="o:ink"/>
+ *     <xsd:element ref="pvml:iscomment"/>
+ *     <xsd:element ref="o:equationxml"/>
+ *   </xsd:choice>
+ *   <xsd:attributeGroup ref="AG_AllCoreAttributes"/>
+ *   <xsd:attributeGroup ref="AG_AllShapeAttributes"/>
+ *   <xsd:attributeGroup ref="AG_Type"/>
+ *   <xsd:attributeGroup ref="AG_Adj"/>
+ *   <xsd:attributeGroup ref="AG_Path"/>
+ *   <xsd:attribute ref="o:gfxdata"/>
+ *   <xsd:attribute name="equationxml" type="xsd:string" use="optional"/>
+ * </xsd:complexType>
+ * ```
+ *
+ * @param options - Configuration options for the shape
+ * @returns An XmlComponent representing the v:shape element
+ *
+ * @example
+ * ```typescript
+ * const shape = createShape({
+ *   id: "textbox1",
+ *   children: [new TextRun("Hello World")],
+ *   style: {
+ *     width: "3in",
+ *     height: "1in",
+ *     position: "absolute",
+ *     left: "1in",
+ *     top: "1in"
+ *   }
+ * });
+ * ```
+ */
 export const createShape = ({ id, children, type = SHAPE_TYPE, style }: ShapeOptions): XmlComponent =>
     new BuilderElement<
         Pick<ShapeOptions, "id" | "type"> & {

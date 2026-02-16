@@ -96,6 +96,14 @@ describe("ContentTypes", () => {
             expect(tree["Types"][17]).to.deep.equal({
                 Override: {
                     _attr: {
+                        ContentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.endnotes+xml",
+                        PartName: "/word/endnotes.xml",
+                    },
+                },
+            });
+            expect(tree["Types"][18]).to.deep.equal({
+                Override: {
+                    _attr: {
                         ContentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.settings+xml",
                         PartName: "/word/settings.xml",
                     },
@@ -110,7 +118,7 @@ describe("ContentTypes", () => {
             contentTypes.addFooter(102);
             const tree = new Formatter().format(contentTypes);
 
-            expect(tree["Types"][20]).to.deep.equal({
+            expect(tree["Types"][21]).to.deep.equal({
                 Override: {
                     _attr: {
                         ContentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.footer+xml",
@@ -119,7 +127,7 @@ describe("ContentTypes", () => {
                 },
             });
 
-            expect(tree["Types"][21]).to.deep.equal({
+            expect(tree["Types"][22]).to.deep.equal({
                 Override: {
                     _attr: {
                         ContentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.footer+xml",
@@ -136,7 +144,7 @@ describe("ContentTypes", () => {
             contentTypes.addHeader(202);
             const tree = new Formatter().format(contentTypes);
 
-            expect(tree["Types"][20]).to.deep.equal({
+            expect(tree["Types"][21]).to.deep.equal({
                 Override: {
                     _attr: {
                         ContentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.header+xml",
@@ -145,7 +153,7 @@ describe("ContentTypes", () => {
                 },
             });
 
-            expect(tree["Types"][21]).to.deep.equal({
+            expect(tree["Types"][22]).to.deep.equal({
                 Override: {
                     _attr: {
                         ContentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.header+xml",
