@@ -55,6 +55,101 @@ Insert `FootnoteReferenceRun` in paragraphs to create reference markers:
 - Automatically styled as superscript
 - References the corresponding footnote content
 
+## Images in Footnotes
+
+Footnotes can contain images using `ImageRun`:
+
+```ts
+import { Document, FootnoteReferenceRun, ImageRun, Packer, Paragraph, TextRun } from "docx";
+import * as fs from "fs";
+
+const doc = new Document({
+    footnotes: {
+        1: {
+            children: [
+                new Paragraph({
+                    children: [
+                        new ImageRun({
+                            type: "jpg",
+                            data: fs.readFileSync("./image.jpg"),
+                            transformation: {
+                                width: 100,
+                                height: 100,
+                            },
+                        }),
+                        new TextRun("Caption for the image"),
+                    ],
+                }),
+            ],
+        },
+    },
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [new TextRun("See the image"), new FootnoteReferenceRun(1)],
+                }),
+            ],
+        },
+    ],
+});
+```
+
+## Numbered Lists in Footnotes
+
+Footnotes support numbered and bulleted lists:
+
+```ts
+import { AlignmentType, convertInchesToTwip, Document, FootnoteReferenceRun, LevelFormat, Packer, Paragraph, TextRun } from "docx";
+
+const doc = new Document({
+    numbering: {
+        config: [
+            {
+                reference: "footnote-numbering",
+                levels: [
+                    {
+                        level: 0,
+                        format: LevelFormat.DECIMAL,
+                        text: "%1.",
+                        alignment: AlignmentType.START,
+                        style: {
+                            paragraph: {
+                                indent: { left: convertInchesToTwip(0.5), hanging: convertInchesToTwip(0.18) },
+                            },
+                        },
+                    },
+                ],
+            },
+        ],
+    },
+    footnotes: {
+        1: {
+            children: [
+                new Paragraph("This footnote contains a list:"),
+                new Paragraph({
+                    text: "First item",
+                    numbering: { reference: "footnote-numbering", level: 0 },
+                }),
+                new Paragraph({
+                    text: "Second item",
+                    numbering: { reference: "footnote-numbering", level: 0 },
+                }),
+            ],
+        },
+    },
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [new TextRun("See the list"), new FootnoteReferenceRun(1)],
+                }),
+            ],
+        },
+    ],
+});
+```
+
 ## Options
 
 | Property  | Type                                        | Notes    | Description                                    |
