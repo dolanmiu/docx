@@ -354,12 +354,12 @@ Control which conditional formatting from a table style is applied. Table styles
 const table = new Table({
     style: "GridTable5Dark-Accent3",
     tableLook: {
-        firstRow: true,      // Apply first row formatting
-        lastRow: false,      // Don't apply last row formatting
-        firstColumn: true,   // Apply first column formatting
-        lastColumn: false,   // Don't apply last column formatting
-        noHBand: false,      // Apply horizontal banding (row stripes)
-        noVBand: true,       // Don't apply vertical banding (column stripes)
+        firstRow: true, // Apply first row formatting
+        lastRow: false, // Don't apply last row formatting
+        firstColumn: true, // Apply first column formatting
+        lastColumn: false, // Don't apply last column formatting
+        noHBand: false, // Apply horizontal banding (row stripes)
+        noVBand: true, // Don't apply vertical banding (column stripes)
     },
 });
 ```
@@ -368,14 +368,20 @@ const table = new Table({
 
 #### Options
 
-| Property     | Type      | Description                                  |
-| ------------ | --------- | -------------------------------------------- |
-| firstRow     | `boolean` | Apply special formatting to first row        |
-| lastRow      | `boolean` | Apply special formatting to last row         |
-| firstColumn  | `boolean` | Apply special formatting to first column     |
-| lastColumn   | `boolean` | Apply special formatting to last column      |
-| noHBand      | `boolean` | Disable horizontal banding (row stripes)     |
-| noVBand      | `boolean` | Disable vertical banding (column stripes)    |
+| Property    | Type      | Description                               |
+| ----------- | --------- | ----------------------------------------- |
+| firstRow    | `boolean` | Apply special formatting to first row     |
+| lastRow     | `boolean` | Apply special formatting to last row      |
+| firstColumn | `boolean` | Apply special formatting to first column  |
+| lastColumn  | `boolean` | Apply special formatting to last column   |
+| noHBand     | `boolean` | Disable horizontal banding (row stripes)  |
+| noVBand     | `boolean` | Disable vertical banding (column stripes) |
+
+#### Example
+
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/97-table-look.ts ":include")
+
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/97-table-look.ts_
 
 ## Examples
 
