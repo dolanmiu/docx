@@ -221,6 +221,95 @@ describe("paragraph-token-replacer", () => {
             });
         });
 
+        it("should skip part when partToReplace is empty", () => {
+            const output = replaceTokenInParagraphElement({
+                paragraphElement: {
+                    name: "w:p",
+                    elements: [
+                        {
+                            name: "w:r",
+                            elements: [
+                                {
+                                    name: "w:t",
+                                    elements: [{ type: "text", text: "" }],
+                                },
+                            ],
+                        },
+                        {
+                            name: "w:r",
+                            elements: [
+                                {
+                                    name: "w:t",
+                                    elements: [{ type: "text", text: "hello" }],
+                                },
+                            ],
+                        },
+                    ],
+                },
+                renderedParagraph: {
+                    index: 0,
+                    pathToParagraph: [0],
+                    runs: [
+                        {
+                            end: 0,
+                            index: 0,
+                            parts: [
+                                {
+                                    end: 0,
+                                    index: 0,
+                                    start: 0,
+                                    text: "",
+                                },
+                            ],
+                            start: 0,
+                            text: "",
+                        },
+                        {
+                            end: 5,
+                            index: 1,
+                            parts: [
+                                {
+                                    end: 5,
+                                    index: 0,
+                                    start: 0,
+                                    text: "hello",
+                                },
+                            ],
+                            start: 0,
+                            text: "hello",
+                        },
+                    ],
+                    text: "hello",
+                },
+                originalText: "hello",
+                replacementText: "world",
+            });
+
+            expect(output).to.deep.equal({
+                elements: [
+                    {
+                        elements: [
+                            {
+                                elements: [{ text: "", type: "text" }],
+                                name: "w:t",
+                            },
+                        ],
+                        name: "w:r",
+                    },
+                    {
+                        elements: [
+                            {
+                                elements: [{ text: "world", type: "text" }],
+                                name: "w:t",
+                            },
+                        ],
+                        name: "w:r",
+                    },
+                ],
+                name: "w:p",
+            });
+        });
+
         // Try to fill rest of test coverage
         // it("should replace token in paragraph", () => {
         //     const output = replaceTokenInParagraphElement({
