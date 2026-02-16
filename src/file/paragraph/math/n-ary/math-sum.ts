@@ -36,6 +36,8 @@ export type IMathSumOptions = {
  *
  * Reference: http://www.datypic.com/sc/ooxml/e-m_nary-1.html
  *
+ * @publicApi
+ *
  * ## XSD Schema
  * ```xml
  * <xsd:complexType name="CT_Nary">

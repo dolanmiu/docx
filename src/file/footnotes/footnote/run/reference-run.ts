@@ -62,6 +62,8 @@ export class FootnoteReference extends XmlComponent {
  *
  * Reference: http://officeopenxml.com/WPfootnotes.php
  *
+ * @publicApi
+ *
  * @example
  * ```typescript
  * // Add a footnote reference in a paragraph

@@ -91,6 +91,8 @@ const createImageData = (options: IImageOptions, key: string): Pick<IMediaData, 
  *
  * Reference: http://officeopenxml.com/drwPicInline.php
  *
+ * @publicApi
+ *
  * @example
  * ```typescript
  * new ImageRun({

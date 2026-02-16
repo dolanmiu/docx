@@ -143,6 +143,8 @@ class RootCommentsAttributes extends XmlAttributeComponent<{
  *
  * Reference: http://officeopenxml.com/WPrun.php
  *
+ * @publicApi
+ *
  * ## XSD Schema
  * ```xml
  * <xsd:complexType name="CT_MarkupRange">
@@ -170,6 +172,8 @@ export class CommentRangeStart extends XmlComponent {
  * Must be paired with a CommentRangeStart with the same ID.
  *
  * Reference: http://officeopenxml.com/WPrun.php
+ *
+ * @publicApi
  *
  * ## XSD Schema
  * ```xml
@@ -199,6 +203,8 @@ export class CommentRangeEnd extends XmlComponent {
  *
  * Reference: http://officeopenxml.com/WPrun.php
  *
+ * @publicApi
+ *
  * ## XSD Schema
  * ```xml
  * <xsd:complexType name="CT_Markup">
@@ -226,6 +232,8 @@ export class CommentReference extends XmlComponent {
  * and the comment text (typically paragraphs).
  *
  * Reference: http://officeopenxml.com/WPrun.php
+ *
+ * @publicApi
  *
  * ## XSD Schema
  * ```xml

@@ -74,3 +74,9 @@ new TextRun({
     },
 }).break();
 ```
+
+## Demo
+
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/60-track-revisions.ts ":include")
+
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/60-track-revisions.ts_

@@ -80,6 +80,8 @@ export type ISectionOptions = {
  * This class handles the assembly of all OOXML parts required for a valid .docx file,
  * including relationships, content types, and document properties.
  *
+ * @publicApi
+ *
  * @example
  * ```typescript
  * // Simple document with one section
@@ -293,7 +295,7 @@ export class File {
     ): void {
         // eslint-disable-next-line functional/immutable-data
         this.headers.push({ header, type });
-        this.documentWrapper.Relationships.createRelationship(
+        this.documentWrapper.Relationships.addRelationship(
             header.View.ReferenceId,
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/header",
             `header${this.headers.length}.xml`,
@@ -307,7 +309,7 @@ export class File {
     ): void {
         // eslint-disable-next-line functional/immutable-data
         this.footers.push({ footer, type });
-        this.documentWrapper.Relationships.createRelationship(
+        this.documentWrapper.Relationships.addRelationship(
             footer.View.ReferenceId,
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer",
             `footer${this.footers.length}.xml`,
@@ -316,58 +318,58 @@ export class File {
     }
 
     private addDefaultRelationships(): void {
-        this.fileRelationships.createRelationship(
+        this.fileRelationships.addRelationship(
             1,
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument",
             "word/document.xml",
         );
-        this.fileRelationships.createRelationship(
+        this.fileRelationships.addRelationship(
             2,
             "http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties",
             "docProps/core.xml",
         );
-        this.fileRelationships.createRelationship(
+        this.fileRelationships.addRelationship(
             3,
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties",
             "docProps/app.xml",
         );
-        this.fileRelationships.createRelationship(
+        this.fileRelationships.addRelationship(
             4,
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/custom-properties",
             "docProps/custom.xml",
         );
 
-        this.documentWrapper.Relationships.createRelationship(
+        this.documentWrapper.Relationships.addRelationship(
             // eslint-disable-next-line functional/immutable-data
             this.currentRelationshipId++,
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles",
             "styles.xml",
         );
-        this.documentWrapper.Relationships.createRelationship(
+        this.documentWrapper.Relationships.addRelationship(
             // eslint-disable-next-line functional/immutable-data
             this.currentRelationshipId++,
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering",
             "numbering.xml",
         );
-        this.documentWrapper.Relationships.createRelationship(
+        this.documentWrapper.Relationships.addRelationship(
             // eslint-disable-next-line functional/immutable-data
             this.currentRelationshipId++,
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/footnotes",
             "footnotes.xml",
         );
-        this.documentWrapper.Relationships.createRelationship(
+        this.documentWrapper.Relationships.addRelationship(
             // eslint-disable-next-line functional/immutable-data
             this.currentRelationshipId++,
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/endnotes",
             "endnotes.xml",
         );
-        this.documentWrapper.Relationships.createRelationship(
+        this.documentWrapper.Relationships.addRelationship(
             // eslint-disable-next-line functional/immutable-data
             this.currentRelationshipId++,
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/settings",
             "settings.xml",
         );
-        this.documentWrapper.Relationships.createRelationship(
+        this.documentWrapper.Relationships.addRelationship(
             // eslint-disable-next-line functional/immutable-data
             this.currentRelationshipId++,
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments",

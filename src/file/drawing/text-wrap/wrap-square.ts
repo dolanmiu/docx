@@ -8,7 +8,7 @@
  *
  * @module
  */
-import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
+import { BuilderElement, XmlComponent } from "@file/xml-components";
 
 import { IDistance } from "../drawing";
 import { IMargins } from "../floating";
@@ -19,21 +19,7 @@ type IWrapSquareAttributes = {
 } & IDistance;
 
 /**
- * Attributes for the WrapSquare element.
- * @internal
- */
-class WrapSquareAttributes extends XmlAttributeComponent<IWrapSquareAttributes> {
-    protected readonly xmlKeys = {
-        distT: "distT",
-        distB: "distB",
-        distL: "distL",
-        distR: "distR",
-        wrapText: "wrapText",
-    };
-}
-
-/**
- * Represents square text wrapping for a floating drawing.
+ * Creates square text wrapping for a floating drawing.
  *
  * WrapSquare causes text to wrap around the rectangular bounding box
  * of the drawing on the specified side(s).
@@ -54,26 +40,22 @@ class WrapSquareAttributes extends XmlAttributeComponent<IWrapSquareAttributes> 
  * </xsd:complexType>
  * ```
  */
-export class WrapSquare extends XmlComponent {
-    public constructor(
-        textWrapping: ITextWrapping,
-        margins: IMargins = {
-            top: 0,
-            bottom: 0,
-            left: 0,
-            right: 0,
+export const createWrapSquare = (
+    textWrapping: ITextWrapping,
+    margins: IMargins = {
+        top: 0,
+        bottom: 0,
+        left: 0,
+        right: 0,
+    },
+): XmlComponent =>
+    new BuilderElement<IWrapSquareAttributes>({
+        name: "wp:wrapSquare",
+        attributes: {
+            wrapText: { key: "wrapText", value: textWrapping.side || TextWrappingSide.BOTH_SIDES },
+            distT: { key: "distT", value: margins.top },
+            distB: { key: "distB", value: margins.bottom },
+            distL: { key: "distL", value: margins.left },
+            distR: { key: "distR", value: margins.right },
         },
-    ) {
-        super("wp:wrapSquare");
-
-        this.root.push(
-            new WrapSquareAttributes({
-                wrapText: textWrapping.side || TextWrappingSide.BOTH_SIDES,
-                distT: margins.top,
-                distB: margins.bottom,
-                distL: margins.left,
-                distR: margins.right,
-            }),
-        );
-    }
-}
+    });

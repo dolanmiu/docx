@@ -9,7 +9,7 @@
  * @module
  */
 import { Run } from "@file/paragraph/run";
-import { Begin, End, Separate } from "@file/paragraph/run/field";
+import { createBegin, createEnd, createSeparate } from "@file/paragraph/run/field";
 
 import { SequentialIdentifierInstruction } from "./sequential-identifier-instruction";
 
@@ -21,6 +21,8 @@ import { SequentialIdentifierInstruction } from "./sequential-identifier-instruc
  * for figures, tables, equations, etc.
  *
  * Reference: http://officeopenxml.com/WPrun.php
+ *
+ * @publicApi
  *
  * ## XSD Schema
  * ```xml
@@ -46,9 +48,9 @@ import { SequentialIdentifierInstruction } from "./sequential-identifier-instruc
 export class SequentialIdentifier extends Run {
     public constructor(identifier: string) {
         super({});
-        this.root.push(new Begin(true));
+        this.root.push(createBegin(true));
         this.root.push(new SequentialIdentifierInstruction(identifier));
-        this.root.push(new Separate());
-        this.root.push(new End());
+        this.root.push(createSeparate());
+        this.root.push(createEnd());
     }
 }

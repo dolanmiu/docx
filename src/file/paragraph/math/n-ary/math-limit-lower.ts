@@ -33,6 +33,8 @@ export type IMathLimitLowerOptions = {
  *
  * Reference: http://www.datypic.com/sc/ooxml/e-m_limLow-1.html
  *
+ * @publicApi
+ *
  * ## XSD Schema
  * ```xml
  * <xsd:complexType name="CT_LimLow">

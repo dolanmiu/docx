@@ -8,10 +8,10 @@
  *
  * @module
  */
-import { Attributes, XmlComponent } from "@file/xml-components";
+import { BuilderElement, XmlComponent } from "@file/xml-components";
 
 /**
- * Represents an outline level for a paragraph.
+ * Creates an outline level element for a paragraph.
  *
  * The outline level determines the paragraph's position in the document
  * outline and affects table of contents generation. Level 0 corresponds
@@ -27,20 +27,16 @@ import { Attributes, XmlComponent } from "@file/xml-components";
  * @example
  * ```typescript
  * // Set outline level to 0 (Heading 1)
- * new OutlineLevel(0);
+ * createOutlineLevel(0);
  *
  * // Set outline level to 2 (Heading 3)
- * new OutlineLevel(2);
+ * createOutlineLevel(2);
  * ```
  */
-export class OutlineLevel extends XmlComponent {
-    public constructor(public readonly level: number) {
-        super("w:outlineLvl");
-
-        this.root.push(
-            new Attributes({
-                val: level,
-            }),
-        );
-    }
-}
+export const createOutlineLevel = (level: number): XmlComponent =>
+    new BuilderElement<{ readonly val: number }>({
+        name: "w:outlineLvl",
+        attributes: {
+            val: { key: "w:val", value: level },
+        },
+    });

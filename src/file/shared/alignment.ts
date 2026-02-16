@@ -11,6 +11,8 @@
  * Horizontal alignment options for floating drawings.
  *
  * Reference: https://www.datypic.com/sc/ooxml/t-wp_ST_AlignH.html
+ *
+ * @publicApi
  */
 export const HorizontalPositionAlign = {
     /** Center horizontally */
@@ -29,6 +31,8 @@ export const HorizontalPositionAlign = {
  * Vertical alignment options for floating drawings.
  *
  * Reference: https://www.datypic.com/sc/ooxml/t-wp_ST_AlignV.html
+ *
+ * @publicApi
  */
 export const VerticalPositionAlign = {
     /** Align to bottom */

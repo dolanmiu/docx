@@ -34,6 +34,8 @@ export type IMathRadicalOptions = {
  *
  * Reference: http://www.datypic.com/sc/ooxml/e-m_rad-1.html
  *
+ * @publicApi
+ *
  * ## XSD Schema
  * ```xml
  * <xsd:complexType name="CT_Rad">

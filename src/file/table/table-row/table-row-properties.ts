@@ -41,8 +41,8 @@
 import { IgnoreIfEmptyXmlComponent, OnOffElement } from "@file/xml-components";
 import { PositiveUniversalMeasure } from "@util/values";
 
-import { HeightRule, TableRowHeight } from "./table-row-height";
-import { ITableCellSpacingProperties, TableCellSpacingElement } from "../table-cell-spacing";
+import { HeightRule, createTableRowHeight } from "./table-row-height";
+import { ITableCellSpacingProperties, createTableCellSpacing } from "../table-cell-spacing";
 
 /**
  * Options for configuring table row properties.
@@ -98,11 +98,11 @@ export class TableRowProperties extends IgnoreIfEmptyXmlComponent {
         }
 
         if (options.height) {
-            this.root.push(new TableRowHeight(options.height.value, options.height.rule));
+            this.root.push(createTableRowHeight(options.height.value, options.height.rule));
         }
 
         if (options.cellSpacing) {
-            this.root.push(new TableCellSpacingElement(options.cellSpacing));
+            this.root.push(createTableCellSpacing(options.cellSpacing));
         }
     }
 }

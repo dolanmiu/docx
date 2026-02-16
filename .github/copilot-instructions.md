@@ -30,3 +30,9 @@ Uses **Vitest**. Tests are co-located with source files as `*.spec.ts`.
 - Test the XML output structure, not just that code runs
 - Cover edge cases and option combinations
 - Use descriptive test names that explain expected behavior
+
+## Running Demos
+
+```bash
+npm run run-ts -- ./demo/<demo-file>.ts
+```

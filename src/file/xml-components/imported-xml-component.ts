@@ -101,6 +101,7 @@ export class ImportedXmlComponent extends XmlComponent {
         const xmlObj = xml2js(importedContent, { compact: false }) as XmlElement;
         return convertToXmlComponent(xmlObj) as ImportedXmlComponent;
     }
+
     /**
      * Creates an ImportedXmlComponent.
      *
