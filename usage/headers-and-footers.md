@@ -160,6 +160,56 @@ new Footer({
 });
 ```
 
+## Numbered Lists in Headers/Footers
+
+Headers and footers can contain numbered or bulleted lists:
+
+```ts
+import { AlignmentType, convertInchesToTwip, Document, Footer, LevelFormat, Packer, Paragraph } from "docx";
+
+const doc = new Document({
+    numbering: {
+        config: [
+            {
+                reference: "footer-numbering",
+                levels: [
+                    {
+                        level: 0,
+                        format: LevelFormat.DECIMAL,
+                        text: "%1.",
+                        alignment: AlignmentType.START,
+                        style: {
+                            paragraph: {
+                                indent: { left: convertInchesToTwip(0.5), hanging: convertInchesToTwip(0.18) },
+                            },
+                        },
+                    },
+                ],
+            },
+        ],
+    },
+    sections: [
+        {
+            footers: {
+                default: new Footer({
+                    children: [
+                        new Paragraph({
+                            text: "First item",
+                            numbering: { reference: "footer-numbering", level: 0 },
+                        }),
+                        new Paragraph({
+                            text: "Second item",
+                            numbering: { reference: "footer-numbering", level: 0 },
+                        }),
+                    ],
+                }),
+            },
+            children: [new Paragraph("Document content")],
+        },
+    ],
+});
+```
+
 ## Images in Headers/Footers
 
 Add logos or images:
