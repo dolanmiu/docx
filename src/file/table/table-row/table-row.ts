@@ -1,12 +1,58 @@
+/**
+ * Table row module for WordprocessingML documents.
+ *
+ * Reference: http://officeopenxml.com/WPtableRow.php
+ *
+ * @module
+ */
 import { XmlComponent } from "@file/xml-components";
 
 import { TableCell } from "../table-cell";
 import { ITableRowPropertiesOptions, TableRowProperties } from "./table-row-properties";
 
+/**
+ * Options for creating a TableRow element.
+ *
+ * @see {@link TableRow}
+ */
 export type ITableRowOptions = {
+    /** Array of TableCell elements that make up the row */
     readonly children: readonly TableCell[];
 } & ITableRowPropertiesOptions;
 
+/**
+ * Represents a table row in a WordprocessingML document.
+ *
+ * A table row is a single row of cells within a table. Each row contains
+ * one or more table cells that hold the actual content.
+ *
+ * Reference: http://officeopenxml.com/WPtableRow.php
+ *
+ * ## XSD Schema
+ * ```xml
+ * <xsd:complexType name="CT_Row">
+ *   <xsd:sequence>
+ *     <xsd:element name="tblPrEx" type="CT_TblPrEx" minOccurs="0" maxOccurs="1"/>
+ *     <xsd:element name="trPr" type="CT_TrPr" minOccurs="0" maxOccurs="1"/>
+ *     <xsd:group ref="EG_ContentCellContent" minOccurs="0" maxOccurs="unbounded"/>
+ *   </xsd:sequence>
+ *   <xsd:attribute name="rsidRPr" type="ST_LongHexNumber"/>
+ *   <xsd:attribute name="rsidR" type="ST_LongHexNumber"/>
+ *   <xsd:attribute name="rsidDel" type="ST_LongHexNumber"/>
+ *   <xsd:attribute name="rsidTr" type="ST_LongHexNumber"/>
+ * </xsd:complexType>
+ * ```
+ *
+ * @example
+ * ```typescript
+ * new TableRow({
+ *   children: [
+ *     new TableCell({ children: [new Paragraph("Cell 1")] }),
+ *     new TableCell({ children: [new Paragraph("Cell 2")] }),
+ *   ],
+ * });
+ * ```
+ */
 export class TableRow extends XmlComponent {
     public constructor(private readonly options: ITableRowOptions) {
         super("w:tr");

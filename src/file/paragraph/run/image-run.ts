@@ -1,3 +1,12 @@
+/**
+ * ImageRun module for WordprocessingML documents.
+ *
+ * This module provides support for inserting images into documents.
+ *
+ * Reference: http://officeopenxml.com/drwPicInline.php
+ *
+ * @module
+ */
 import { DocPropertiesOptions } from "@file/drawing/doc-properties/doc-properties";
 import { IContext, IXmlableObject } from "@file/xml-components";
 import { hashedId } from "@util/convenience-functions";
@@ -8,6 +17,9 @@ import { IMediaTransformation } from "../../media";
 import { IMediaData } from "../../media/data";
 import { Run } from "../run";
 
+/**
+ * Core options for image configuration.
+ */
 type CoreImageOptions = {
     readonly transformation: IMediaTransformation;
     readonly floating?: IFloating;
@@ -29,6 +41,11 @@ type SvgMediaOptions = {
     readonly fallback: RegularImageOptions;
 };
 
+/**
+ * Options for creating an ImageRun.
+ *
+ * @see {@link ImageRun}
+ */
 export type IImageOptions = (RegularImageOptions | SvgMediaOptions) & CoreImageOptions;
 
 const convertDataURIToBinary = (dataURI: string): Uint8Array => {
@@ -66,6 +83,26 @@ const createImageData = (options: IImageOptions, key: string): Pick<IMediaData, 
     },
 });
 
+/**
+ * Represents an image in a WordprocessingML document.
+ *
+ * ImageRun embeds an image within a run, supporting various formats
+ * including JPG, PNG, GIF, BMP, and SVG.
+ *
+ * Reference: http://officeopenxml.com/drwPicInline.php
+ *
+ * @example
+ * ```typescript
+ * new ImageRun({
+ *   data: fs.readFileSync("./image.png"),
+ *   transformation: {
+ *     width: 100,
+ *     height: 100,
+ *   },
+ *   type: "png",
+ * });
+ * ```
+ */
 export class ImageRun extends Run {
     private readonly imageData: IMediaData;
 

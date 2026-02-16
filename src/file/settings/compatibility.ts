@@ -1,4 +1,13 @@
-// http://www.datypic.com/sc/ooxml/e-w_compat-1.html
+/**
+ * Compatibility module for WordprocessingML documents.
+ *
+ * This module provides compatibility settings that control how Word
+ * handles documents created in older versions or other word processors.
+ *
+ * Reference: http://www.datypic.com/sc/ooxml/e-w_compat-1.html
+ *
+ * @module
+ */
 import { OnOffElement, XmlComponent } from "@file/xml-components";
 
 import { CompatibilitySetting } from "./compatibility-setting/compatibility-setting";
@@ -75,7 +84,16 @@ import { CompatibilitySetting } from "./compatibility-setting/compatibility-sett
 // </xsd:sequence>
 // </xsd:complexType>
 
+/**
+ * Options for configuring document compatibility settings.
+ *
+ * These settings control how Word processes and displays documents to match
+ * behavior from older Word versions or other word processors like WordPerfect.
+ *
+ * @see {@link Compatibility}
+ */
 export type ICompatibilityOptions = {
+    /** Word compatibility mode version (e.g., 15 for Word 2013+) */
     readonly version?: number;
     /** Use Simplified Rules For Table Border Conflicts */
     readonly useSingleBorderforContiguousCells?: boolean;
@@ -209,6 +227,45 @@ export type ICompatibilityOptions = {
     readonly cachedColumnBalance?: boolean;
 };
 
+/**
+ * Represents compatibility settings in a WordprocessingML document.
+ *
+ * Compatibility settings control document rendering and layout behavior
+ * to match older Word versions or other word processors. This ensures
+ * documents maintain consistent appearance across different applications.
+ *
+ * Reference: http://www.datypic.com/sc/ooxml/e-w_compat-1.html
+ *
+ * ## XSD Schema
+ * ```xml
+ * <xsd:complexType name="CT_Compat">
+ *   <xsd:sequence>
+ *     <xsd:element name="useSingleBorderforContiguousCells" type="CT_OnOff" minOccurs="0"/>
+ *     <xsd:element name="wpJustification" type="CT_OnOff" minOccurs="0"/>
+ *     <xsd:element name="noTabHangInd" type="CT_OnOff" minOccurs="0"/>
+ *     <xsd:element name="noLeading" type="CT_OnOff" minOccurs="0"/>
+ *     <xsd:element name="usePrinterMetrics" type="CT_OnOff" minOccurs="0"/>
+ *     <xsd:element name="compatSetting" type="CT_CompatSetting" minOccurs="0" maxOccurs="unbounded"/>
+ *     <!-- Additional compatibility elements omitted for brevity -->
+ *   </xsd:sequence>
+ * </xsd:complexType>
+ * ```
+ *
+ * @example
+ * ```typescript
+ * // Set compatibility mode to Word 2013+
+ * new Compatibility({
+ *   version: 15,
+ * });
+ *
+ * // Enable specific compatibility options
+ * new Compatibility({
+ *   version: 15,
+ *   usePrinterMetrics: true,
+ *   doNotSnapToGridInCell: true,
+ * });
+ * ```
+ */
 export class Compatibility extends XmlComponent {
     public constructor(options: ICompatibilityOptions) {
         super("w:compat");

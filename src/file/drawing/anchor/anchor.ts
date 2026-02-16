@@ -1,4 +1,13 @@
-// http://officeopenxml.com/drwPicFloating.php
+/**
+ * Anchor drawing module for WordprocessingML documents.
+ *
+ * This module provides floating/anchored drawing positioning where the
+ * drawing can be positioned relative to the page, column, paragraph, etc.
+ *
+ * Reference: http://officeopenxml.com/drwPicFloating.php
+ *
+ * @module
+ */
 import { IMediaData, IMediaDataTransformation } from "@file/media";
 import { XmlComponent } from "@file/xml-components";
 
@@ -37,6 +46,42 @@ import { AnchorAttributes } from "./anchor-attributes";
 //     <xsd:attribute name="hidden" type="xsd:boolean" use="optional"/>
 //     <xsd:attribute name="allowOverlap" type="xsd:boolean" use="required"/>
 // </xsd:complexType>
+/**
+ * Represents an anchored/floating drawing in a WordprocessingML document.
+ *
+ * Anchored drawings can be positioned relative to the page, margin, column,
+ * paragraph, character, or line. They support text wrapping options.
+ *
+ * Reference: http://officeopenxml.com/drwPicFloating.php
+ *
+ * ## XSD Schema
+ * ```xml
+ * <xsd:complexType name="CT_Anchor">
+ *   <xsd:sequence>
+ *     <xsd:element name="simplePos" type="a:CT_Point2D"/>
+ *     <xsd:element name="positionH" type="CT_PosH"/>
+ *     <xsd:element name="positionV" type="CT_PosV"/>
+ *     <xsd:element name="extent" type="a:CT_PositiveSize2D"/>
+ *     <xsd:element name="effectExtent" type="CT_EffectExtent" minOccurs="0"/>
+ *     <xsd:group ref="EG_WrapType"/>
+ *     <xsd:element name="docPr" type="a:CT_NonVisualDrawingProps"/>
+ *     <xsd:element name="cNvGraphicFramePr" type="a:CT_NonVisualGraphicFrameProperties" minOccurs="0"/>
+ *     <xsd:element ref="a:graphic"/>
+ *   </xsd:sequence>
+ *   <xsd:attribute name="distT" type="ST_WrapDistance"/>
+ *   <xsd:attribute name="distB" type="ST_WrapDistance"/>
+ *   <xsd:attribute name="distL" type="ST_WrapDistance"/>
+ *   <xsd:attribute name="distR" type="ST_WrapDistance"/>
+ *   <xsd:attribute name="simplePos" type="xsd:boolean"/>
+ *   <xsd:attribute name="relativeHeight" type="xsd:unsignedInt" use="required"/>
+ *   <xsd:attribute name="behindDoc" type="xsd:boolean" use="required"/>
+ *   <xsd:attribute name="locked" type="xsd:boolean" use="required"/>
+ *   <xsd:attribute name="layoutInCell" type="xsd:boolean" use="required"/>
+ *   <xsd:attribute name="hidden" type="xsd:boolean"/>
+ *   <xsd:attribute name="allowOverlap" type="xsd:boolean" use="required"/>
+ * </xsd:complexType>
+ * ```
+ */
 export class Anchor extends XmlComponent {
     public constructor({
         mediaData,
