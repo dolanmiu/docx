@@ -41,6 +41,7 @@
     - [Math](usage/math.md)
     - [Comments](usage/comments.md)
     - [Footnotes](usage/footnotes.md)
+    - [Endnotes](usage/endnotes.md)
     - [Fields](usage/fields.md)
     - [Fonts](usage/fonts.md)
     - Styling
