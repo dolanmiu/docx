@@ -24,7 +24,7 @@ import { RelationshipType, TargetModeType, createRelationship } from "./relation
  * @example
  * ```typescript
  * const relationships = new Relationships();
- * relationships.createRelationship(
+ * relationships.addRelationship(
  *   1,
  *   "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
  *   "media/image1.png"

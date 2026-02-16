@@ -14,7 +14,7 @@ import { TableVerticalAlign, createVerticalAlign } from "@file/vertical-align";
 import { IgnoreIfEmptyXmlComponent, XmlComponent } from "@file/xml-components";
 
 import { IShadingAttributesProperties, createShading } from "../../shading";
-import { ITableCellMarginOptions, TableCellMargin, TableCellMarginElementType } from "../table-properties/table-cell-margin";
+import { ITableCellMarginOptions, createCellMargin } from "../table-properties/table-cell-margin";
 import { ITableWidthProperties, createTableWidthElement } from "../table-width";
 import {
     GridSpan,
@@ -169,7 +169,10 @@ export class TableCellProperties extends IgnoreIfEmptyXmlComponent {
         }
 
         if (options.margins) {
-            this.root.push(new TableCellMargin(TableCellMarginElementType.TABLE_CELL, options.margins));
+            const cellMargin = createCellMargin(options.margins);
+            if (cellMargin) {
+                this.root.push(cellMargin);
+            }
         }
 
         if (options.textDirection) {
