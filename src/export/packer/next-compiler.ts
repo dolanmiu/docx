@@ -200,8 +200,25 @@ export class Compiler {
             },
         );
 
+        const footnoteRelationshipCount = file.FootNotes.Relationships.RelationshipCount + 1;
+        const footnoteXmlData = xml(
+            this.formatter.format(file.FootNotes.View, {
+                viewWrapper: file.FootNotes,
+                file,
+                stack: [],
+            }),
+            {
+                indent: prettify,
+                declaration: {
+                    standalone: "yes",
+                    encoding: "UTF-8",
+                },
+            },
+        );
+
         const documentMediaDatas = this.imageReplacer.getMediaData(documentXmlData, file.Media);
         const commentMediaDatas = this.imageReplacer.getMediaData(commentXmlData, file.Media);
+        const footnoteMediaDatas = this.imageReplacer.getMediaData(footnoteXmlData, file.Media);
 
         return {
             Relationships: {
@@ -498,35 +515,36 @@ export class Compiler {
                 path: "docProps/app.xml",
             },
             FootNotes: {
-                data: xml(
-                    this.formatter.format(file.FootNotes.View, {
-                        viewWrapper: file.FootNotes,
-                        file,
-                        stack: [],
-                    }),
-                    {
-                        indent: prettify,
-                        declaration: {
-                            encoding: "UTF-8",
-                        },
-                    },
-                ),
+                data: (() => {
+                    const xmlData = this.imageReplacer.replace(footnoteXmlData, footnoteMediaDatas, footnoteRelationshipCount);
+                    const referenedXmlData = this.numberingReplacer.replace(xmlData, file.Numbering.ConcreteNumbering);
+                    return referenedXmlData;
+                })(),
                 path: "word/footnotes.xml",
             },
             FootNotesRelationships: {
-                data: xml(
-                    this.formatter.format(file.FootNotes.Relationships, {
-                        viewWrapper: file.FootNotes,
-                        file,
-                        stack: [],
-                    }),
-                    {
-                        indent: prettify,
-                        declaration: {
-                            encoding: "UTF-8",
+                data: (() => {
+                    footnoteMediaDatas.forEach((mediaData, i) => {
+                        file.FootNotes.Relationships.createRelationship(
+                            footnoteRelationshipCount + i,
+                            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
+                            `media/${mediaData.fileName}`,
+                        );
+                    });
+                    return xml(
+                        this.formatter.format(file.FootNotes.Relationships, {
+                            viewWrapper: file.FootNotes,
+                            file,
+                            stack: [],
+                        }),
+                        {
+                            indent: prettify,
+                            declaration: {
+                                encoding: "UTF-8",
+                            },
                         },
-                    },
-                ),
+                    );
+                })(),
                 path: "word/_rels/footnotes.xml.rels",
             },
             Endnotes: {
