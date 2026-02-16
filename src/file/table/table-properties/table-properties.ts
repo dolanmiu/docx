@@ -43,6 +43,7 @@ import { ITableCellMarginOptions, TableCellMargin, TableCellMarginElementType } 
 import { ITableFloatOptions, TableFloatProperties } from "./table-float-properties";
 import { TableLayout, TableLayoutType } from "./table-layout";
 import { ITableCellSpacingProperties, TableCellSpacingElement } from "../table-cell-spacing";
+import { ITableLookOptions, TableLook } from "./table-look";
 
 /**
  * Options for configuring table properties.
@@ -60,6 +61,7 @@ export type ITablePropertiesOptions = {
     readonly alignment?: (typeof AlignmentType)[keyof typeof AlignmentType];
     readonly cellMargin?: ITableCellMarginOptions;
     readonly visuallyRightToLeft?: boolean;
+    readonly tableLook?: ITableLookOptions;
     readonly cellSpacing?: ITableCellSpacingProperties;
 };
 
@@ -113,6 +115,10 @@ export class TableProperties extends IgnoreIfEmptyXmlComponent {
 
         if (options.cellMargin) {
             this.root.push(new TableCellMargin(TableCellMarginElementType.TABLE, options.cellMargin));
+        }
+
+        if (options.tableLook) {
+            this.root.push(new TableLook(options.tableLook));
         }
 
         if (options.cellSpacing) {
