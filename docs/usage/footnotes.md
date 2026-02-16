@@ -1,12 +1,16 @@
 # Footnotes
 
-!> Footnotes requires an understanding of [Sections](usage/sections.md).
+!> Footnotes require an understanding of [Sections](usage/sections.md).
 
-Use footnotes and endnotes to explain, comment on, or provide references to something in a document. Usually, footnotes appear at the bottom of the page.
+Footnotes allow you to add references that appear at the bottom of each page. They are useful for explanations, comments, or citations without interrupting the flow of the main text.
+
+?> For references that appear at the end of the document, see [Endnotes](usage/endnotes.md).
 
 ## Example
 
 ```ts
+import { Document, FootnoteReferenceRun, Paragraph, TextRun } from "docx";
+
 const doc = new Document({
     footnotes: {
         1: { children: [new Paragraph("Foo"), new Paragraph("Bar")] },
@@ -35,8 +39,24 @@ const doc = new Document({
 
 ## Usage
 
-Footnotes requires an entry into the `footnotes` array in the `Document` constructor, and a `FootnoteReferenceRun` in the `Paragraph` constructor.
+### Document Configuration
 
-`footnotes` is an object of number to `Footnote` objects. The number is the reference number, and the `Footnote` object is the content of the footnote. The `Footnote` object has a `children` property, which is an array of `Paragraph` objects.
+Add footnotes to the `footnotes` property in the `Document` constructor:
 
-`FootnoteReferenceRun` is a `Run` object, which are added to `Paragraph`s. It takes a number as a parameter, which is the reference number of the footnote.
+- Keys are reference numbers (as strings)
+- Values are objects with `children` array of `Paragraph` objects
+- Footnotes can contain multiple paragraphs
+
+### FootnoteReferenceRun
+
+Insert `FootnoteReferenceRun` in paragraphs to create reference markers:
+
+- Takes a single `id` parameter matching the footnote key
+- Automatically styled as superscript
+- References the corresponding footnote content
+
+## Options
+
+| Property  | Type                                        | Notes    | Description                                    |
+| --------- | ------------------------------------------- | -------- | ---------------------------------------------- |
+| footnotes | `Record<string, { children: Paragraph[] }>` | Optional | Footnote definitions keyed by reference number |

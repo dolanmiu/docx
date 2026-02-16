@@ -355,6 +355,25 @@ describe("File", () => {
         });
     });
 
+    describe("#createEndnote", () => {
+        it("should create endnote", () => {
+            const wrapper = new File({
+                endnotes: {
+                    1: {
+                        children: [new Paragraph("hello endnote")],
+                    },
+                },
+                sections: [],
+            });
+
+            const tree = new Formatter().format(wrapper.Endnotes.View);
+
+            expect(tree["w:endnotes"]).to.be.an("array");
+            // Should have attributes, two default endnotes (separator and continuation separator), plus one created endnote
+            expect(tree["w:endnotes"].length).to.equal(4);
+        });
+    });
+
     it("should create default run and paragraph property document defaults", () => {
         const doc = new File({
             styles: {

@@ -264,6 +264,77 @@ export class FootnoteTextChar extends StyleForCharacter {
 }
 
 /**
+ * Represents the Endnote Text paragraph style.
+ *
+ * Used for the text content of endnotes with smaller font size and tighter spacing.
+ */
+export class EndnoteText extends StyleForParagraph {
+    public constructor(options: IBaseParagraphStyleOptions) {
+        super({
+            id: "EndnoteText",
+            name: "endnote text",
+            link: "EndnoteTextChar",
+            basedOn: "Normal",
+            uiPriority: 99,
+            semiHidden: true,
+            unhideWhenUsed: true,
+            paragraph: {
+                spacing: {
+                    after: 0,
+                    line: 240,
+                    lineRule: LineRuleType.AUTO,
+                },
+            },
+            run: {
+                size: 20,
+            },
+            ...options,
+        });
+    }
+}
+
+/**
+ * Represents the Endnote Reference character style.
+ *
+ * Used for endnote reference numbers in the main text, displayed as superscript.
+ */
+export class EndnoteReferenceStyle extends StyleForCharacter {
+    public constructor(options: IBaseCharacterStyleOptions) {
+        super({
+            id: "EndnoteReference",
+            name: "endnote reference",
+            basedOn: "DefaultParagraphFont",
+            semiHidden: true,
+            run: {
+                superScript: true,
+            },
+            ...options,
+        });
+    }
+}
+
+/**
+ * Represents the Endnote Text Char character style.
+ *
+ * Character style linked to EndnoteText paragraph style for consistent formatting.
+ */
+export class EndnoteTextChar extends StyleForCharacter {
+    public constructor(options: IBaseCharacterStyleOptions) {
+        super({
+            id: "EndnoteTextChar",
+            name: "Endnote Text Char",
+            basedOn: "DefaultParagraphFont",
+            link: "EndnoteText",
+            semiHidden: true,
+            run: {
+                size: 20,
+            },
+            ...options,
+        });
+    }
+}
+
+/**
  * Represents the Hyperlink character style.
  *
  * Used for hyperlinks with blue color and single underline formatting.
