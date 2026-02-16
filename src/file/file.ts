@@ -363,7 +363,7 @@ export class File {
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/endnotes",
             "endnotes.xml",
         );
-        this.documentWrapper.Relationships.createRelationship(
+        this.documentWrapper.Relationships.addRelationship(
             // eslint-disable-next-line functional/immutable-data
             this.currentRelationshipId++,
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/settings",

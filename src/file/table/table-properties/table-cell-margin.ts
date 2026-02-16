@@ -2,47 +2,7 @@
  * Table cell margin module for WordprocessingML documents.
  *
  * This module provides cell margin settings for tables and individual cells.
- *
- * Reference: http://officeopenxml.com/WPtableCellProperties-Margins.php
- *
- * @module
- */
-import { WidthType, createTableWidthElement } from "@file/table";
-import { IgnoreIfEmptyXmlComponent } from "@file/xml-components";
-
-/**
- * Options for configuring table cell margins.
- *
- * @see {@link TableCellMargin}
- */
-export type ITableCellMarginOptions = {
-    /** The unit type for margin values (defaults to DXA/twips) */
-    readonly marginUnitType?: (typeof WidthType)[keyof typeof WidthType];
-    /** Top margin in specified units */
-    readonly top?: number;
-    /** Bottom margin in specified units */
-    readonly bottom?: number;
-    /** Left margin in specified units */
-    readonly left?: number;
-    /** Right margin in specified units */
-    readonly right?: number;
-};
-
-/**
- * Element type for table cell margins.
- *
- * Used to differentiate between table-level and cell-level margin elements.
- */
-export const TableCellMarginElementType = {
-    TABLE: "w:tblCellMar",
-    TABLE_CELL: "w:tcMar",
-} as const;
-
-/**
- * Represents table cell margins in a WordprocessingML document.
- *
- * The tblCellMar (table level) or tcMar (cell level) element specifies
- * the default cell margins for a table or individual cell.
+ * Margins define the padding between cell content and cell borders.
  *
  * Reference: http://officeopenxml.com/WPtableCellProperties-Margins.php
  *
@@ -60,37 +20,175 @@ export const TableCellMarginElementType = {
  * </xsd:complexType>
  * ```
  *
+ * @module
+ */
+import { WidthType, createTableWidthElement } from "@file/table";
+import { BuilderElement, XmlComponent } from "@file/xml-components";
+
+/**
+ * Options for configuring table cell margins.
+ *
+ * All margin values are specified in the units defined by `marginUnitType`.
+ * If `marginUnitType` is not specified, values are in DXA (twentieths of a point).
+ *
  * @example
  * ```typescript
- * new TableCellMargin(TableCellMarginElementType.TABLE, {
+ * // Set uniform margins of 100 twips on all sides
+ * const margins: ITableCellMarginOptions = {
  *   top: 100,
  *   bottom: 100,
  *   left: 100,
  *   right: 100,
+ * };
+ *
+ * // Set margins using percentage-based width
+ * const percentMargins: ITableCellMarginOptions = {
+ *   marginUnitType: WidthType.PERCENTAGE,
+ *   left: 5,
+ *   right: 5,
+ * };
+ * ```
+ */
+export type ITableCellMarginOptions = {
+    /**
+     * The unit type for margin values.
+     * Defaults to DXA (twentieths of a point) if not specified.
+     *
+     * @default WidthType.DXA
+     */
+    readonly marginUnitType?: (typeof WidthType)[keyof typeof WidthType];
+
+    /**
+     * Top margin (padding above cell content).
+     * Value is in units specified by `marginUnitType`.
+     */
+    readonly top?: number;
+
+    /**
+     * Bottom margin (padding below cell content).
+     * Value is in units specified by `marginUnitType`.
+     */
+    readonly bottom?: number;
+
+    /**
+     * Left margin (padding to the left of cell content).
+     * Value is in units specified by `marginUnitType`.
+     */
+    readonly left?: number;
+
+    /**
+     * Right margin (padding to the right of cell content).
+     * Value is in units specified by `marginUnitType`.
+     */
+    readonly right?: number;
+};
+
+/**
+ * Builds an array of margin child elements based on the provided options.
+ *
+ * @internal
+ */
+const buildMarginChildren = ({
+    marginUnitType = WidthType.DXA,
+    top,
+    left,
+    bottom,
+    right,
+}: ITableCellMarginOptions): readonly XmlComponent[] => {
+    const children: readonly XmlComponent[] = [];
+
+    if (top !== undefined) {
+        children.push(createTableWidthElement("w:top", { type: marginUnitType, size: top }));
+    }
+
+    if (left !== undefined) {
+        children.push(createTableWidthElement("w:left", { type: marginUnitType, size: left }));
+    }
+
+    if (bottom !== undefined) {
+        children.push(createTableWidthElement("w:bottom", { type: marginUnitType, size: bottom }));
+    }
+
+    if (right !== undefined) {
+        children.push(createTableWidthElement("w:right", { type: marginUnitType, size: right }));
+    }
+
+    return children;
+};
+
+/**
+ * Creates a table-level cell margin element (tblCellMar).
+ *
+ * The tblCellMar element specifies the default cell margins for all cells
+ * in the table. Individual cells can override these defaults using
+ * cell-level margins (tcMar).
+ *
+ * Reference: http://officeopenxml.com/WPtableCellProperties-Margins.php
+ *
+ * @param options - The margin options
+ * @returns An XmlComponent representing the tblCellMar element, or undefined if no margins specified
+ *
+ * @example
+ * ```typescript
+ * // Table with 100 twip margins on all sides
+ * new Table({
+ *   rows: [...],
+ *   margins: {
+ *     top: 100,
+ *     bottom: 100,
+ *     left: 100,
+ *     right: 100,
+ *   },
  * });
  * ```
  */
-export class TableCellMargin extends IgnoreIfEmptyXmlComponent {
-    public constructor(
-        type: (typeof TableCellMarginElementType)[keyof typeof TableCellMarginElementType],
-        { marginUnitType = WidthType.DXA, top, left, bottom, right }: ITableCellMarginOptions,
-    ) {
-        super(type);
+export const createTableCellMargin = (options: ITableCellMarginOptions): XmlComponent | undefined => {
+    const children = buildMarginChildren(options);
 
-        if (top !== undefined) {
-            this.root.push(createTableWidthElement("w:top", { type: marginUnitType, size: top }));
-        }
-
-        if (left !== undefined) {
-            this.root.push(createTableWidthElement("w:left", { type: marginUnitType, size: left }));
-        }
-
-        if (bottom !== undefined) {
-            this.root.push(createTableWidthElement("w:bottom", { type: marginUnitType, size: bottom }));
-        }
-
-        if (right !== undefined) {
-            this.root.push(createTableWidthElement("w:right", { type: marginUnitType, size: right }));
-        }
+    if (children.length === 0) {
+        return undefined;
     }
-}
+
+    return new BuilderElement({
+        name: "w:tblCellMar",
+        children,
+    });
+};
+
+/**
+ * Creates a cell-level margin element (tcMar).
+ *
+ * The tcMar element specifies the margins for a specific table cell,
+ * overriding any table-level default margins (tblCellMar).
+ *
+ * Reference: http://officeopenxml.com/WPtableCellProperties-Margins.php
+ *
+ * @param options - The margin options
+ * @returns An XmlComponent representing the tcMar element, or undefined if no margins specified
+ *
+ * @example
+ * ```typescript
+ * // Cell with custom margins
+ * new TableCell({
+ *   children: [...],
+ *   margins: {
+ *     top: 50,
+ *     bottom: 50,
+ *     left: 100,
+ *     right: 100,
+ *   },
+ * });
+ * ```
+ */
+export const createCellMargin = (options: ITableCellMarginOptions): XmlComponent | undefined => {
+    const children = buildMarginChildren(options);
+
+    if (children.length === 0) {
+        return undefined;
+    }
+
+    return new BuilderElement({
+        name: "w:tcMar",
+        children,
+    });
+};

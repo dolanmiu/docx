@@ -39,11 +39,11 @@ import { AlignmentType, createAlignment } from "../../paragraph";
 import { IShadingAttributesProperties, createShading } from "../../shading";
 import { ITableWidthProperties, createTableWidthElement } from "../table-width";
 import { ITableBordersOptions, TableBorders } from "./table-borders";
-import { ITableCellMarginOptions, TableCellMargin, TableCellMarginElementType } from "./table-cell-margin";
+import { ITableCellMarginOptions, createTableCellMargin } from "./table-cell-margin";
 import { ITableFloatOptions, createTableFloatProperties } from "./table-float-properties";
 import { TableLayoutType, createTableLayout } from "./table-layout";
 import { ITableCellSpacingProperties, createTableCellSpacing } from "../table-cell-spacing";
-import { ITableLookOptions, TableLook } from "./table-look";
+import { ITableLookOptions, createTableLook } from "./table-look";
 
 /**
  * Options for configuring table properties.
@@ -114,11 +114,14 @@ export class TableProperties extends IgnoreIfEmptyXmlComponent {
         }
 
         if (options.cellMargin) {
-            this.root.push(new TableCellMargin(TableCellMarginElementType.TABLE, options.cellMargin));
+            const cellMargin = createTableCellMargin(options.cellMargin);
+            if (cellMargin) {
+                this.root.push(cellMargin);
+            }
         }
 
         if (options.tableLook) {
-            this.root.push(new TableLook(options.tableLook));
+            this.root.push(createTableLook(options.tableLook));
         }
 
         if (options.cellSpacing) {

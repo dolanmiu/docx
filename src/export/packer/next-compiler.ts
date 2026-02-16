@@ -525,7 +525,7 @@ export class Compiler {
             FootNotesRelationships: {
                 data: (() => {
                     footnoteMediaDatas.forEach((mediaData, i) => {
-                        file.FootNotes.Relationships.createRelationship(
+                        file.FootNotes.Relationships.addRelationship(
                             footnoteRelationshipCount + i,
                             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
                             `media/${mediaData.fileName}`,
