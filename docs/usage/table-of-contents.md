@@ -31,9 +31,9 @@ const doc = new Document({
                     heading: HeadingLevel.HEADING_1,
                     pageBreakBefore: true,
                 }),
-            ]
-        }
-    ]
+            ],
+        },
+    ],
 });
 ```
 
@@ -62,6 +62,6 @@ Here is the list of all options that you can use to generate your tables of cont
 
 ## Examples
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/28-table-of-contents.ts ':include')
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/28-table-of-contents.ts ":include")
 
 _Source: https://github.com/dolanmiu/docx/blob/master/demo/28-table-of-contents.ts_

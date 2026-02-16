@@ -1,10 +1,46 @@
-// http://officeopenxml.com/WPfieldInstructions.php
+/**
+ * Field Instruction module for Table of Contents.
+ *
+ * This module handles the generation of TOC field instruction text
+ * that controls how the table of contents is built.
+ *
+ * Reference: http://officeopenxml.com/WPfieldInstructions.php
+ *
+ * @module
+ */
 import { TextAttributes } from "@file/paragraph/run/text-attributes";
 import { SpaceType } from "@file/shared";
 import { XmlComponent } from "@file/xml-components";
 
 import { ITableOfContentsOptions } from "./table-of-contents-properties";
 
+/**
+ * Represents a field instruction for a Table of Contents.
+ *
+ * The FieldInstruction class generates the TOC field code string that Word uses
+ * to determine how to build the table of contents, including which headings to include,
+ * formatting options, and other TOC-specific settings.
+ *
+ * Reference: http://officeopenxml.com/WPfieldInstructions.php
+ *
+ * ## XSD Schema
+ * ```xml
+ * <xsd:element name="instrText" type="CT_Text"/>
+ * ```
+ *
+ * @example
+ * ```typescript
+ * // Basic TOC field instruction
+ * new FieldInstruction({ headingStyleRange: "1-3" });
+ *
+ * // TOC with hyperlinks and custom styles
+ * new FieldInstruction({
+ *   hyperlink: true,
+ *   headingStyleRange: "1-3",
+ *   stylesWithLevels: [new StyleLevel("CustomStyle", 2)],
+ * });
+ * ```
+ */
 export class FieldInstruction extends XmlComponent {
     private readonly properties: ITableOfContentsOptions;
 

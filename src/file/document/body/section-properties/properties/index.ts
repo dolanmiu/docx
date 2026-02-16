@@ -1,3 +1,8 @@
+/**
+ * Section properties components module exports.
+ *
+ * @module
+ */
 export * from "./column";
 export * from "./columns";
 export * from "./doc-grid";
