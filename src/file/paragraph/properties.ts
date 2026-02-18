@@ -10,9 +10,10 @@
  *
  * @module
  */
+import { ChangeAttributes, IChangedAttributesProperties } from "@file/track-revision/track-revision";
 import { IContext, IXmlableObject, IgnoreIfEmptyXmlComponent, OnOffElement, XmlComponent } from "@file/xml-components";
 
-import { IRunOptions, RunProperties } from ".";
+import { IParagraphRunOptions, ParagraphRunProperties } from ".";
 import { FontWrapper } from "../fonts/font-wrapper";
 import { IShadingAttributesProperties, Shading } from "../shading";
 import { Alignment, AlignmentType } from "./formatting/alignment";
@@ -85,15 +86,7 @@ export type IParagraphStylePropertiesOptions = {
         | false;
 } & ILevelParagraphStylePropertiesOptions;
 
-/**
- * Options for configuring paragraph properties.
- *
- * These options control all aspects of paragraph formatting including
- * alignment, spacing, indentation, borders, numbering, and more.
- *
- * Reference: http://officeopenxml.com/WPparagraphProperties.php
- */
-export type IParagraphPropertiesOptions = {
+export type IParagraphPropertiesOptionsBase = {
     /** Heading level (Heading1, Heading2, etc.) - applies predefined heading style */
     readonly heading?: (typeof HeadingLevel)[keyof typeof HeadingLevel];
     /** Whether to render text right-to-left for bidirectional languages */
@@ -130,8 +123,23 @@ export type IParagraphPropertiesOptions = {
      * Run properties to apply to all runs in the paragraph.
      * Reference: ECMA-376, 3rd Edition (June, 2011), Fundamentals and Markup Language Reference § 17.3.1.29.
      */
-    readonly run?: IRunOptions;
+    readonly run?: IParagraphRunOptions;
 } & IParagraphStylePropertiesOptions;
+
+export type IParagraphPropertiesChangeOptions = IChangedAttributesProperties & IParagraphPropertiesOptionsBase;
+
+/**
+ * Options for configuring paragraph properties.
+ *
+ * These options control all aspects of paragraph formatting including
+ * alignment, spacing, indentation, borders, numbering, and more.
+ *
+ * Reference: http://officeopenxml.com/WPparagraphProperties.php
+ */
+export type IParagraphPropertiesOptions = {
+    readonly revision?: IParagraphPropertiesChangeOptions;
+    readonly includeIfEmpty?: boolean;
+} & IParagraphPropertiesOptionsBase;
 
 /**
  * Represents paragraph properties (pPr) in a WordprocessingML document.
@@ -242,7 +250,7 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
     private readonly numberingReferences: { readonly reference: string; readonly instance: number }[] = [];
 
     public constructor(options?: IParagraphPropertiesOptions) {
-        super("w:pPr");
+        super("w:pPr", options?.includeIfEmpty);
 
         if (!options) {
             return this;
@@ -373,7 +381,11 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
         }
 
         if (options.run) {
-            this.push(new RunProperties(options.run));
+            this.push(new ParagraphRunProperties(options.run));
+        }
+
+        if (options.revision) {
+            this.push(new ParagraphPropertiesChange(options.revision));
         }
     }
 
@@ -403,5 +415,20 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
         }
 
         return super.prepForXml(context);
+    }
+}
+
+export class ParagraphPropertiesChange extends XmlComponent {
+    public constructor(options: IParagraphPropertiesChangeOptions) {
+        super("w:pPrChange");
+        this.root.push(
+            new ChangeAttributes({
+                id: options.id,
+                author: options.author,
+                date: options.date,
+            }),
+        );
+        // pPr is required (minOccurs="1") even if empty
+        this.root.push(new ParagraphProperties({ ...options, includeIfEmpty: true }));
     }
 }

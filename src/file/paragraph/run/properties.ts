@@ -12,6 +12,8 @@
 import { BorderElement, IBorderOptions } from "@file/border";
 import { IShadingAttributesProperties, Shading } from "@file/shading";
 import { ChangeAttributes, IChangedAttributesProperties } from "@file/track-revision/track-revision";
+import { DeletionTrackChange } from "@file/track-revision/track-revision-components/deletion-track-change";
+import { InsertionTrackChange } from "@file/track-revision/track-revision-components/insertion-track-change";
 import {
     HpsMeasureElement,
     IgnoreIfEmptyXmlComponent,
@@ -211,49 +213,10 @@ export type IRunPropertiesOptions = {
  */
 export type IRunPropertiesChangeOptions = {} & IRunPropertiesOptions & IChangedAttributesProperties;
 
-// <xsd:group name="EG_RPrBase">
-//     <xsd:choice>
-//     <xsd:element name="rStyle" type="CT_String"/>
-//     <xsd:element name="rFonts" type="CT_Fonts"/>
-//     <xsd:element name="b" type="CT_OnOff"/>
-//     <xsd:element name="bCs" type="CT_OnOff"/>
-//     <xsd:element name="i" type="CT_OnOff"/>
-//     <xsd:element name="iCs" type="CT_OnOff"/>
-//     <xsd:element name="caps" type="CT_OnOff"/>
-//     <xsd:element name="smallCaps" type="CT_OnOff"/>
-//     <xsd:element name="strike" type="CT_OnOff"/>
-//     <xsd:element name="dstrike" type="CT_OnOff"/>
-//     <xsd:element name="outline" type="CT_OnOff"/>
-//     <xsd:element name="shadow" type="CT_OnOff"/>
-//     <xsd:element name="emboss" type="CT_OnOff"/>
-//     <xsd:element name="imprint" type="CT_OnOff"/>
-//     <xsd:element name="noProof" type="CT_OnOff"/>
-//     <xsd:element name="snapToGrid" type="CT_OnOff"/>
-//     <xsd:element name="vanish" type="CT_OnOff"/>
-//     <xsd:element name="webHidden" type="CT_OnOff"/>
-//     <xsd:element name="color" type="CT_Color"/>
-//     <xsd:element name="spacing" type="CT_SignedTwipsMeasure"/>
-//     <xsd:element name="w" type="CT_TextScale"/>
-//     <xsd:element name="kern" type="CT_HpsMeasure"/>
-//     <xsd:element name="position" type="CT_SignedHpsMeasure"/>
-//     <xsd:element name="sz" type="CT_HpsMeasure"/>
-//     <xsd:element name="szCs" type="CT_HpsMeasure"/>
-//     <xsd:element name="highlight" type="CT_Highlight"/>
-//     <xsd:element name="u" type="CT_Underline"/>
-//     <xsd:element name="effect" type="CT_TextEffect"/>
-//     <xsd:element name="bdr" type="CT_Border"/>
-//     <xsd:element name="shd" type="CT_Shd"/>
-//     <xsd:element name="fitText" type="CT_FitText"/>
-//     <xsd:element name="vertAlign" type="CT_VerticalAlignRun"/>
-//     <xsd:element name="rtl" type="CT_OnOff"/>
-//     <xsd:element name="cs" type="CT_OnOff"/>
-//     <xsd:element name="em" type="CT_Em"/>
-//     <xsd:element name="lang" type="CT_Language"/>
-//     <xsd:element name="eastAsianLayout" type="CT_EastAsianLayout"/>
-//     <xsd:element name="specVanish" type="CT_OnOff"/>
-//     <xsd:element name="oMath" type="CT_OnOff"/>
-//     </xsd:choice>
-// </xsd:group>
+export type IParagraphRunPropertiesOptions = {
+    readonly insertion?: IChangedAttributesProperties;
+    readonly deletion?: IChangedAttributesProperties;
+} & IRunPropertiesOptions;
 
 /**
  * Represents run properties (rPr) in a WordprocessingML document.
@@ -444,6 +407,20 @@ export class RunProperties extends IgnoreIfEmptyXmlComponent {
 
     public push(item: XmlComponent): void {
         this.root.push(item);
+    }
+}
+
+export class ParagraphRunProperties extends RunProperties {
+    public constructor(options?: IParagraphRunPropertiesOptions) {
+        super(options);
+
+        if (options?.insertion) {
+            this.push(new InsertionTrackChange(options.insertion));
+        }
+
+        if (options?.deletion) {
+            this.push(new DeletionTrackChange(options.deletion));
+        }
     }
 }
 

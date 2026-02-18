@@ -989,4 +989,72 @@ describe("Paragraph", () => {
             });
         });
     });
+
+    describe("#revision", () => {
+        it("should create paragraph with revision properties", () => {
+            const paragraph = new Paragraph({
+                heading: HeadingLevel.HEADING_1,
+                alignment: AlignmentType.RIGHT,
+                revision: {
+                    id: 1,
+                    author: "Firstname Lastename",
+                    date: "123",
+                    heading: HeadingLevel.HEADING_2,
+                    alignment: AlignmentType.LEFT,
+                },
+            });
+            const tree = new Formatter().format(paragraph);
+            expect(tree).to.deep.equal({
+                "w:p": [
+                    {
+                        "w:pPr": [
+                            {
+                                "w:pStyle": {
+                                    _attr: {
+                                        "w:val": "Heading1",
+                                    },
+                                },
+                            },
+                            {
+                                "w:jc": {
+                                    _attr: {
+                                        "w:val": "right",
+                                    },
+                                },
+                            },
+                            {
+                                "w:pPrChange": [
+                                    {
+                                        _attr: {
+                                            "w:author": "Firstname Lastename",
+                                            "w:date": "123",
+                                            "w:id": 1,
+                                        },
+                                    },
+                                    {
+                                        "w:pPr": [
+                                            {
+                                                "w:pStyle": {
+                                                    _attr: {
+                                                        "w:val": "Heading2",
+                                                    },
+                                                },
+                                            },
+                                            {
+                                                "w:jc": {
+                                                    _attr: {
+                                                        "w:val": "left",
+                                                    },
+                                                },
+                                            },
+                                        ],
+                                    },
+                                ],
+                            },
+                        ],
+                    },
+                ],
+            });
+        });
+    });
 });

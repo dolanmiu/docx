@@ -35,18 +35,10 @@ import {
 import { Begin, End, Separate } from "./field";
 import { CurrentSection, NumberOfPages, NumberOfPagesSection, Page } from "./page-number";
 import { PositionalTab } from "./positional-tab";
-import { IRunPropertiesOptions, RunProperties } from "./properties";
+import { IParagraphRunPropertiesOptions, IRunPropertiesOptions, RunProperties } from "./properties";
 import { Text } from "./run-components/text";
 
-/**
- * Options for creating a Run element.
- *
- * The run element specifies a region of text with a common set of properties.
- * The children property can contain various inline content elements.
- *
- * @see {@link Run}
- */
-export type IRunOptions = {
+type IRunOptionsBase = {
     // <xsd:choice>
     //     <xsd:element name="br" type="CT_Br" />
     //     <xsd:element name="t" type="CT_Text" />
@@ -112,7 +104,19 @@ export type IRunOptions = {
     )[];
     readonly break?: number;
     readonly text?: string;
-} & IRunPropertiesOptions;
+};
+
+/**
+ * Options for creating a Run element.
+ *
+ * The run element specifies a region of text with a common set of properties.
+ * The children property can contain various inline content elements.
+ *
+ * @see {@link Run}
+ */
+export type IRunOptions = IRunOptionsBase & IRunPropertiesOptions;
+
+export type IParagraphRunOptions = IRunOptionsBase & IParagraphRunPropertiesOptions;
 
 /**
  * Constants for page number field types.

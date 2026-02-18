@@ -1,3 +1,36 @@
+// <xsd:complexType name="CT_SectPr">
+//     <xsd:sequence>
+//         <xsd:group ref="EG_HdrFtrReferences" minOccurs="0" maxOccurs="6"/>
+//         <xsd:group ref="EG_SectPrContents" minOccurs="0"/>
+//         <xsd:element name="sectPrChange" type="CT_SectPrChange" minOccurs="0"/>
+//     </xsd:sequence>
+//     <xsd:attributeGroup ref="AG_SectPrAttributes"/>
+// </xsd:complexType>
+
+// <xsd:group name="EG_SectPrContents">
+// <xsd:sequence>
+//   <xsd:element name="footnotePr" type="CT_FtnProps" minOccurs="0"/>
+//   <xsd:element name="endnotePr" type="CT_EdnProps" minOccurs="0"/>
+//   <xsd:element name="type" type="CT_SectType" minOccurs="0"/>
+//   <xsd:element name="pgSz" type="CT_PageSz" minOccurs="0"/>
+//   <xsd:element name="pgMar" type="CT_PageMar" minOccurs="0"/>
+//   <xsd:element name="paperSrc" type="CT_PaperSource" minOccurs="0"/>
+//   <xsd:element name="pgBorders" type="CT_PageBorders" minOccurs="0"/>
+//   <xsd:element name="lnNumType" type="CT_LineNumber" minOccurs="0"/>
+//   <xsd:element name="pgNumType" type="CT_PageNumber" minOccurs="0"/>
+//   <xsd:element name="cols" type="CT_Columns" minOccurs="0"/>
+//   <xsd:element name="formProt" type="CT_OnOff" minOccurs="0"/>
+//   <xsd:element name="vAlign" type="CT_VerticalJc" minOccurs="0"/>
+//   <xsd:element name="noEndnote" type="CT_OnOff" minOccurs="0"/>
+//   <xsd:element name="titlePg" type="CT_OnOff" minOccurs="0"/>
+//   <xsd:element name="textDirection" type="CT_TextDirection" minOccurs="0"/>
+//   <xsd:element name="bidi" type="CT_OnOff" minOccurs="0"/>
+//   <xsd:element name="rtlGutter" type="CT_OnOff" minOccurs="0"/>
+//   <xsd:element name="docGrid" type="CT_DocGrid" minOccurs="0"/>
+//   <xsd:element name="printerSettings" type="CT_Rel" minOccurs="0"/>
+// </xsd:sequence>
+// </xsd:group>
+
 /**
  * Section properties module for WordprocessingML documents.
  *
@@ -10,6 +43,7 @@
  */
 import { FooterWrapper } from "@file/footer-wrapper";
 import { HeaderWrapper } from "@file/header-wrapper";
+import { ChangeAttributes, IChangedAttributesProperties } from "@file/track-revision/track-revision";
 import { SectionVerticalAlign, VerticalAlignElement } from "@file/vertical-align";
 import { OnOffElement, XmlComponent } from "@file/xml-components";
 
@@ -41,25 +75,7 @@ export type IHeaderFooterGroup<T> = {
     readonly even?: T;
 };
 
-/**
- * Options for configuring section properties.
- *
- * This type defines all possible configuration options for a document section,
- * including page layout, margins, headers/footers, and numbering.
- *
- * @property page - Page-level settings (size, margins, borders, numbering, text direction)
- * @property grid - Document grid settings for East Asian typography
- * @property headerWrapperGroup - Header definitions for default, first, and even pages
- * @property footerWrapperGroup - Footer definitions for default, first, and even pages
- * @property lineNumbers - Line numbering settings
- * @property titlePage - Whether first page has different header/footer
- * @property verticalAlign - Vertical alignment of text on page
- * @property column - Column layout settings
- * @property type - Section break type (next page, continuous, etc.)
- *
- * @see {@link SectionProperties}
- */
-export type ISectionPropertiesOptions = {
+export type ISectionPropertiesOptionsBase = {
     /** Page-level settings including size, margins, borders, and text direction */
     readonly page?: {
         /** Page size and orientation */
@@ -90,6 +106,30 @@ export type ISectionPropertiesOptions = {
     /** Section break type (next page, continuous, even page, odd page) */
     readonly type?: (typeof SectionType)[keyof typeof SectionType];
 };
+
+export type ISectionPropertiesChangeOptions = IChangedAttributesProperties & ISectionPropertiesOptionsBase;
+
+/**
+ * Options for configuring section properties.
+ *
+ * This type defines all possible configuration options for a document section,
+ * including page layout, margins, headers/footers, and numbering.
+ *
+ * @property page - Page-level settings (size, margins, borders, numbering, text direction)
+ * @property grid - Document grid settings for East Asian typography
+ * @property headerWrapperGroup - Header definitions for default, first, and even pages
+ * @property footerWrapperGroup - Footer definitions for default, first, and even pages
+ * @property lineNumbers - Line numbering settings
+ * @property titlePage - Whether first page has different header/footer
+ * @property verticalAlign - Vertical alignment of text on page
+ * @property column - Column layout settings
+ * @property type - Section break type (next page, continuous, etc.)
+ *
+ * @see {@link SectionProperties}
+ */
+export type ISectionPropertiesOptions = {
+    readonly revision?: ISectionPropertiesChangeOptions;
+} & ISectionPropertiesOptionsBase;
 
 /**
  * Default margin values for sections (in twips).
@@ -218,6 +258,7 @@ export class SectionProperties extends XmlComponent {
         verticalAlign,
         column,
         type,
+        revision,
     }: ISectionPropertiesOptions = {}) {
         super("w:sectPr");
 
@@ -257,6 +298,10 @@ export class SectionProperties extends XmlComponent {
             this.root.push(new PageTextDirection(textDirection));
         }
 
+        if (revision) {
+            this.root.push(new SectionPropertiesChange(revision));
+        }
+
         this.root.push(createDocumentGrid({ linePitch, charSpace, type: gridType }));
     }
 
@@ -290,5 +335,19 @@ export class SectionProperties extends XmlComponent {
                 }),
             );
         }
+    }
+}
+
+export class SectionPropertiesChange extends XmlComponent {
+    public constructor(options: ISectionPropertiesChangeOptions) {
+        super("w:sectPrChange");
+        this.root.push(
+            new ChangeAttributes({
+                id: options.id,
+                author: options.author,
+                date: options.date,
+            }),
+        );
+        this.root.push(new SectionProperties(options));
     }
 }
