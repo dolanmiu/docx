@@ -72,14 +72,11 @@ const doc = new Document({
     sections: [
         {
             children: [
-                new TableOfContents(
-                    "Summary",
-                    {
-                        hyperlink: true,
-                        headingStyleRange: "1-5",
-                    },
+                new TableOfContents("Summary", {
+                    hyperlink: true,
+                    headingStyleRange: "1-5",
                     // Cached entries
-                    [
+                    cachedContent: [
                         {
                             text: "Header #1",
                             level: 1,
@@ -87,7 +84,7 @@ const doc = new Document({
                             href: "anchorForHeader1",
                         },
                     ],
-                ),
+                }),
                 new Paragraph({
                     text: "Header #1",
                     heading: HeadingLevel.HEADING_1,

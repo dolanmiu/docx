@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { Formatter } from "@export/formatter";
+import { Paragraph } from "@file/paragraph";
 
 import { TableOfContents } from "./table-of-contents";
 import { StyleLevel } from "./table-of-contents-properties";
@@ -40,6 +41,15 @@ describe("Table of Contents", () => {
             expect(tree).to.be.deep.equal(COMPLETE_TOC);
         });
 
+        it("should construct a TOC with contentChildren", () => {
+            const childParagraph = new Paragraph("Child content");
+            const toc = new TableOfContents("My TOC", {
+                contentChildren: [childParagraph],
+            });
+            const tree = new Formatter().format(toc);
+            expect(tree).to.be.deep.equal(TOC_WITH_CHILDREN);
+        });
+
         describe("cached content", () => {
             it("should construct a TOC with cached content", () => {
                 const cachedContent = [
@@ -48,7 +58,7 @@ describe("Table of Contents", () => {
                     { title: "Advanced Topics", level: 2, page: 10 },
                 ];
 
-                const toc = new TableOfContents("Table of Contents", undefined, cachedContent);
+                const toc = new TableOfContents("Table of Contents", { cachedContent });
                 const tree = new Formatter().format(toc);
 
                 const expectedParagraphs = [
@@ -306,7 +316,7 @@ describe("Table of Contents", () => {
 
             it("should fill in an end paragraph if only one cached entry is provided", () => {
                 const cachedContent = [{ title: "Only Entry", level: 1, page: 1 }];
-                const toc = new TableOfContents("Table of Contents", undefined, cachedContent);
+                const toc = new TableOfContents("Table of Contents", { cachedContent });
                 const tree = new Formatter().format(toc);
 
                 const expectedParagraphs = [
@@ -557,6 +567,92 @@ const COMPLETE_TOC = {
                                             "w:fldCharType": "separate",
                                         },
                                     },
+                                },
+                            ],
+                        },
+                    ],
+                },
+                {
+                    "w:p": [
+                        {
+                            "w:r": [
+                                {
+                                    "w:fldChar": {
+                                        _attr: {
+                                            "w:fldCharType": "end",
+                                        },
+                                    },
+                                },
+                            ],
+                        },
+                    ],
+                },
+            ],
+        },
+    ],
+};
+
+const TOC_WITH_CHILDREN = {
+    "w:sdt": [
+        {
+            "w:sdtPr": [
+                {
+                    "w:alias": {
+                        _attr: {
+                            "w:val": "My TOC",
+                        },
+                    },
+                },
+            ],
+        },
+        {
+            "w:sdtContent": [
+                {
+                    "w:p": [
+                        {
+                            "w:r": [
+                                {
+                                    "w:fldChar": {
+                                        _attr: {
+                                            "w:fldCharType": "begin",
+                                            "w:dirty": true,
+                                        },
+                                    },
+                                },
+                                {
+                                    "w:instrText": [
+                                        {
+                                            _attr: {
+                                                "xml:space": "preserve",
+                                            },
+                                        },
+                                        "TOC",
+                                    ],
+                                },
+                                {
+                                    "w:fldChar": {
+                                        _attr: {
+                                            "w:fldCharType": "separate",
+                                        },
+                                    },
+                                },
+                            ],
+                        },
+                    ],
+                },
+                {
+                    "w:p": [
+                        {
+                            "w:r": [
+                                {
+                                    "w:t": [
+                                        {
+                                            _attr: {
+                                                "xml:space": "preserve",
+                                            },
+                                        },
+                                        "Child content",
+                                    ],
                                 },
                             ],
                         },

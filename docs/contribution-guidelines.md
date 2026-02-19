@@ -6,9 +6,7 @@
     // http://officeopenxml.com/WPdocument.php
     ```
 
-    <!-- cSpell:ignore datypic -->
-
-    It can be a link to `officeopenxml.com` or `datypic.com` etc.
+    It can be a link to `officeopenxml.com` etc.
     It could also be a reference to the official ECMA-376 standard: https://www.ecma-international.org/publications-and-standards/standards/ecma-376/
 
 - Include a portion of the schema as a comment for cross reference. For example:
@@ -113,10 +111,10 @@ Using `type` aliases in TypeScript offers several advantages over `interfaces`:
 
 - **Flexibility with Complex Types**: `type` supports defining unions, intersections, and other complex type constructs that `interfaces` cannot handle. For example:
 
-  ```typescript
-  type StringOrNumber = string | number;
-  type Combined = TypeA & TypeB;
-  ```
+    ```typescript
+    type StringOrNumber = string | number;
+    type Combined = TypeA & TypeB;
+    ```
 
 - **Support for Primitive Types**: `type` can alias primitive types (e.g., `type ID = string`), while `interfaces` are limited to object shapes.
 - **Tuple and Array Types**: `type` allows defining tuples and specific array types easily (e.g., `type Point = [number, number]`), which `interfaces` cannot represent.

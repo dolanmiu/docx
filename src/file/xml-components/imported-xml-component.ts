@@ -1,3 +1,12 @@
+/**
+ * Imported XML Component module for handling external XML content.
+ *
+ * This module provides functionality to import existing XML content and convert it
+ * into XmlComponent trees. This is useful for incorporating XML from external sources
+ * or templates into generated documents.
+ *
+ * @module
+ */
 import { Element as XmlElement, xml2js } from "xml-js";
 
 import { IXmlableObject, XmlAttributeComponent, XmlComponent } from "@file/xml-components";
@@ -5,11 +14,21 @@ import { IXmlableObject, XmlAttributeComponent, XmlComponent } from "@file/xml-c
 import { IContext } from "./base";
 
 /**
- * Converts the given xml element (in json format) into XmlComponent.
+ * Converts an xml-js Element into an XmlComponent tree.
  *
- * @param element the xml element in json presentation
+ * This function recursively processes XML elements in JSON format (from xml-js)
+ * and creates a tree of ImportedXmlComponent objects that match the structure
+ * of the original XML.
+ *
+ * @param element - The XML element in JSON representation from xml-js
+ * @returns An ImportedXmlComponent tree, text string, or undefined
+ *
+ * @example
+ * ```typescript
+ * const xmlElement = xml2js('<w:p><w:r><w:t>Hello</w:t></w:r></w:p>');
+ * const component = convertToXmlComponent(xmlElement);
+ * ```
  */
-
 export const convertToXmlComponent = (element: XmlElement): ImportedXmlComponent | string | undefined => {
     switch (element.type) {
         case undefined:
@@ -33,30 +52,61 @@ export const convertToXmlComponent = (element: XmlElement): ImportedXmlComponent
     }
 };
 
+/**
+ * Internal attribute component for imported XML elements.
+ * @internal
+ */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 class ImportedXmlComponentAttributes extends XmlAttributeComponent<any> {
     // noop
 }
 
 /**
- * Represents imported xml component from xml file.
+ * XML component representing imported XML content.
+ *
+ * ImportedXmlComponent allows you to parse XML strings and incorporate them
+ * into the document structure. This is particularly useful when working with
+ * templates or when you need to include pre-existing XML fragments.
+ *
+ * @example
+ * ```typescript
+ * // Parse XML string into component tree
+ * const component = ImportedXmlComponent.fromXmlString(
+ *   '<w:p><w:r><w:t>Hello World</w:t></w:r></w:p>'
+ * );
+ *
+ * // Manually create an imported component
+ * const element = new ImportedXmlComponent("w:customElement", { "w:val": "value" });
+ * element.push(new ImportedXmlComponent("w:child"));
+ * ```
  */
 export class ImportedXmlComponent extends XmlComponent {
     /**
-     * Converts the xml string to a XmlComponent tree.
+     * Parses an XML string and converts it to an ImportedXmlComponent tree.
      *
-     * @param importedContent xml content of the imported component
+     * This static method is the primary way to import external XML content.
+     * It uses xml-js to parse the XML string into a JSON representation,
+     * then converts that into a tree of XmlComponent objects.
+     *
+     * @param importedContent - The XML content as a string
+     * @returns An ImportedXmlComponent representing the parsed XML
+     *
+     * @example
+     * ```typescript
+     * const xml = '<w:p><w:r><w:t>Hello</w:t></w:r></w:p>';
+     * const component = ImportedXmlComponent.fromXmlString(xml);
+     * ```
      */
     public static fromXmlString(importedContent: string): ImportedXmlComponent {
         const xmlObj = xml2js(importedContent, { compact: false }) as XmlElement;
         return convertToXmlComponent(xmlObj) as ImportedXmlComponent;
     }
     /**
-     * Converts the xml string to a XmlComponent tree.
+     * Creates an ImportedXmlComponent.
      *
-     * @param importedContent xml content of the imported component
+     * @param rootKey - The XML element name
+     * @param _attr - Optional attributes for the root element
      */
-
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     public constructor(rootKey: string, _attr?: any) {
         super(rootKey);
@@ -65,20 +115,47 @@ export class ImportedXmlComponent extends XmlComponent {
         }
     }
 
+    /**
+     * Adds a child component or text to this element.
+     *
+     * @param xmlComponent - The child component or text string to add
+     */
     public push(xmlComponent: XmlComponent | string): void {
         this.root.push(xmlComponent);
     }
 }
 
 /**
- * Used for the attributes of root element that is being imported.
+ * Represents attributes for imported root elements.
+ *
+ * This class is used internally to handle attributes on root elements
+ * that are being imported from external XML. It passes through the
+ * attributes without transformation.
+ *
+ * @example
+ * ```typescript
+ * const attrs = new ImportedRootElementAttributes({
+ *   "xmlns:w": "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
+ * });
+ * ```
  */
 export class ImportedRootElementAttributes extends XmlComponent {
+    /**
+     * Creates an ImportedRootElementAttributes component.
+     *
+     * @param _attr - The attributes object to pass through
+     */
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     public constructor(private readonly _attr: any) {
         super("");
     }
 
+    /**
+     * Prepares the attributes for XML serialization.
+     *
+     * @param _ - Context (unused)
+     * @returns Object with _attr key containing the raw attributes
+     */
     public prepForXml(_: IContext): IXmlableObject {
         return {
             _attr: this._attr,

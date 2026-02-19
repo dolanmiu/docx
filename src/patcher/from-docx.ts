@@ -1,3 +1,11 @@
+/**
+ * Document patching module for modifying existing .docx files.
+ *
+ * This module provides functionality to patch existing Word documents by replacing
+ * placeholder text with new content while preserving the original document structure.
+ *
+ * @module
+ */
 import JSZip from "jszip";
 import { Element, js2xml } from "xml-js";
 
@@ -10,7 +18,7 @@ import { IMediaData, Media } from "@file/media";
 import { ConcreteHyperlink, ExternalHyperlink, ParagraphChild } from "@file/paragraph";
 import { TargetModeType } from "@file/relationships/relationship/relationship";
 import { IContext } from "@file/xml-components";
-import { uniqueId } from "@util/convenience-functions";
+import { encodeUtf8, uniqueId } from "@util/convenience-functions";
 import { OutputByType, OutputType } from "@util/output-type";
 
 import { appendContentType } from "./content-types-manager";
@@ -18,47 +26,107 @@ import { appendRelationship, getNextRelationshipIndex } from "./relationship-man
 import { replacer } from "./replacer";
 import { toJson } from "./util";
 
+/**
+ * Supported input data types for document patching.
+ *
+ * The patcher can accept documents in various formats including buffers,
+ * arrays, and streams.
+ */
 // eslint-disable-next-line functional/prefer-readonly-type
 export type InputDataType = Buffer | string | number[] | Uint8Array | ArrayBuffer | Blob | NodeJS.ReadableStream | JSZip;
 
+/**
+ * Patch type enumeration.
+ *
+ * Determines how the replacement content should be inserted into the document.
+ */
 export const PatchType = {
+    /** Replace entire file-level elements (e.g., whole paragraphs) */
     DOCUMENT: "file",
+    /** Replace content within paragraphs (inline replacement) */
     PARAGRAPH: "paragraph",
 } as const;
 
+/**
+ * Patch definition for paragraph-level replacement.
+ *
+ * Replaces placeholder text with inline content (runs, hyperlinks, etc.)
+ * while preserving the surrounding paragraph structure.
+ */
 type ParagraphPatch = {
+    /** Indicates this is a paragraph-level patch */
     readonly type: typeof PatchType.PARAGRAPH;
+    /** Content to insert (runs, hyperlinks, images, etc.) */
     readonly children: readonly ParagraphChild[];
 };
 
+/**
+ * Patch definition for document-level replacement.
+ *
+ * Replaces placeholder text with block-level content (entire paragraphs, tables, etc.).
+ */
 type FilePatch = {
+    /** Indicates this is a document-level patch */
     readonly type: typeof PatchType.DOCUMENT;
+    /** Content to insert (paragraphs, tables, etc.) */
     readonly children: readonly FileChild[];
 };
 
+/**
+ * Internal type for tracking image relationships that need to be added.
+ */
 type IImageRelationshipAddition = {
+    /** XML file path where the image is used */
     readonly key: string;
+    /** Media data for the images */
     readonly mediaDatas: readonly IMediaData[];
 };
 
+/**
+ * Internal type for tracking hyperlink relationships that need to be added.
+ */
 type IHyperlinkRelationshipAddition = {
+    /** XML file path where the hyperlink is used */
     readonly key: string;
+    /** Hyperlink relationship details */
     readonly hyperlink: { readonly id: string; readonly link: string };
 };
 
+/**
+ * Union type representing all patch types.
+ */
 export type IPatch = ParagraphPatch | FilePatch;
 
+/**
+ * Output format types for patched documents.
+ */
 export type PatchDocumentOutputType = OutputType;
 
+/**
+ * Options for patching a document.
+ *
+ * @property outputType - Desired output format (buffer, blob, string, etc.)
+ * @property data - The input document to patch
+ * @property patches - Map of placeholder keys to patch definitions
+ * @property keepOriginalStyles - Whether to preserve original text formatting
+ * @property placeholderDelimiters - Custom delimiter characters for placeholders
+ * @property recursive - Whether to search for multiple occurrences of placeholders
+ */
 export type PatchDocumentOptions<T extends PatchDocumentOutputType = PatchDocumentOutputType> = {
+    /** Output format type */
     readonly outputType: T;
+    /** Input document data */
     readonly data: InputDataType;
+    /** Mapping of placeholder keys to patch content */
     readonly patches: Readonly<Record<string, IPatch>>;
+    /** Preserve original formatting of replaced text (default: true) */
     readonly keepOriginalStyles?: boolean;
+    /** Custom placeholder delimiters (default: {{ and }}) */
     readonly placeholderDelimiters?: Readonly<{
         readonly start: string;
         readonly end: string;
     }>;
+    /** Search for multiple occurrences after patching (default: true) */
     readonly recursive?: boolean;
 };
 
@@ -78,6 +146,39 @@ const compareByteArrays = (a: Uint8Array, b: Uint8Array): boolean => {
     return true;
 };
 
+/**
+ * Patches an existing .docx document by replacing placeholders with new content.
+ *
+ * This function opens an existing Word document, searches for placeholder text
+ * (e.g., {{name}}), and replaces it with the provided content while preserving
+ * the original document structure and optionally the original formatting.
+ *
+ * @param options - Configuration options for patching
+ * @returns A promise resolving to the patched document in the specified output format
+ *
+ * @example
+ * ```typescript
+ * // Patch with paragraph content
+ * const buffer = await patchDocument({
+ *   outputType: "nodebuffer",
+ *   data: templateBuffer,
+ *   patches: {
+ *     name: {
+ *       type: PatchType.PARAGRAPH,
+ *       children: [new TextRun({ text: "John Doe", bold: true })],
+ *     },
+ *   },
+ * });
+ *
+ * // Patch with custom delimiters
+ * const buffer = await patchDocument({
+ *   outputType: "nodebuffer",
+ *   data: templateBuffer,
+ *   patches: { ... },
+ *   placeholderDelimiters: { start: "<<", end: ">>" },
+ * });
+ * ```
+ */
 export const patchDocument = async <T extends PatchDocumentOutputType = PatchDocumentOutputType>({
     outputType,
     data,
@@ -281,7 +382,7 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
     for (const [key, value] of map) {
         const output = toXml(value);
 
-        zip.file(key, output);
+        zip.file(key, encodeUtf8(output));
     }
 
     for (const [key, value] of binaryContentMap) {

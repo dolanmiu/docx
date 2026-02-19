@@ -1,6 +1,46 @@
 import { XmlAttributeComponent } from "@file/xml-components";
 
-export class HeaderAttributes extends XmlAttributeComponent<{
+/**
+ * XML namespace attributes for header elements.
+ *
+ * This interface defines all XML namespace declarations that can be used in header elements,
+ * including WordprocessingML, DrawingML, VML, and various Office-specific namespaces.
+ *
+ * @property wpc - WordprocessingML Canvas namespace (Word 2010+)
+ * @property mc - Markup Compatibility namespace
+ * @property o - Office namespace
+ * @property r - Relationships namespace
+ * @property m - Math namespace
+ * @property v - VML (Vector Markup Language) namespace
+ * @property wp14 - WordprocessingDrawing namespace (Word 2010+)
+ * @property wp - WordprocessingDrawing namespace
+ * @property w10 - Word 2000 namespace
+ * @property w - Main WordprocessingML namespace
+ * @property w14 - WordprocessingML namespace (Word 2010+)
+ * @property w15 - WordprocessingML namespace (Word 2012+)
+ * @property wpg - WordprocessingGroup namespace (Word 2010+)
+ * @property wpi - WordprocessingInk namespace (Word 2010+)
+ * @property wne - WordprocessingML namespace extensions
+ * @property wps - WordprocessingShape namespace (Word 2010+)
+ * @property cp - Core Properties namespace
+ * @property dc - Dublin Core namespace
+ * @property dcterms - Dublin Core Terms namespace
+ * @property dcmitype - Dublin Core DCMI Type namespace
+ * @property xsi - XML Schema Instance namespace
+ * @property type - XSI type attribute
+ * @property cx - ChartEx namespace (Office 2014+)
+ * @property cx1 - ChartEx namespace (September 2015)
+ * @property cx2 - ChartEx namespace (October 2015)
+ * @property cx3 - ChartEx namespace (May 2016)
+ * @property cx4 - ChartEx namespace (May 2016)
+ * @property cx5 - ChartEx namespace (May 2016)
+ * @property cx6 - ChartEx namespace (May 2016)
+ * @property cx7 - ChartEx namespace (May 2016)
+ * @property cx8 - ChartEx namespace (May 2016)
+ * @property w16cid - WordprocessingML CID namespace (Word 2016+)
+ * @property w16se - WordprocessingML SymEx namespace (Word 2015+)
+ */
+export type IHeaderAttributesProperties = {
     readonly wpc?: string;
     readonly mc?: string;
     readonly o?: string;
@@ -34,7 +74,23 @@ export class HeaderAttributes extends XmlAttributeComponent<{
     readonly cx8?: string;
     readonly w16cid: string;
     readonly w16se: string;
-}> {
+};
+
+/**
+ * Component for managing XML namespace attributes on header elements.
+ *
+ * This class handles the serialization of namespace declarations that are required
+ * for proper XML validation and processing of header content in WordprocessingML documents.
+ *
+ * @example
+ * ```typescript
+ * new HeaderAttributes({
+ *   w: "http://schemas.openxmlformats.org/wordprocessingml/2006/main",
+ *   r: "http://schemas.openxmlformats.org/officeDocument/2006/relationships"
+ * });
+ * ```
+ */
+export class HeaderAttributes extends XmlAttributeComponent<IHeaderAttributesProperties> {
     protected readonly xmlKeys = {
         wpc: "xmlns:wpc",
         mc: "xmlns:mc",

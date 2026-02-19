@@ -1,3 +1,8 @@
+/**
+ * Run module exports.
+ *
+ * @module
+ */
 export * from "./run";
 export * from "./properties";
 export * from "./text-run";
