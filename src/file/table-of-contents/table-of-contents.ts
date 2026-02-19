@@ -59,12 +59,17 @@ export class TableOfContents extends FileChild {
         alias: string = "Table of Contents",
         {
             contentChildren = [],
-            cachedContent = [],
+            cachedEntries = [],
             beginDirty = true,
             ...properties
         }: ITableOfContentsOptions & {
             readonly contentChildren?: readonly (XmlComponent | string)[];
-            readonly cachedContent?: readonly ToCEntry[];
+            /**
+             * Use this to provide pre-generated entries for the Table of Contents.
+             *
+             * Note that indentation should come from the paragraph styles defined on the document. By default the styles are TOC1, TOC2, etc. These can be overridden with stylesWithLevels (\t)
+             */
+            readonly cachedEntries?: readonly ToCEntry[];
             readonly beginDirty?: boolean;
         } = {},
     ) {
@@ -85,25 +90,29 @@ export class TableOfContents extends FileChild {
             }),
         ];
 
-        if (cachedContent.length > 0) {
-            const cachedParagraphs = cachedContent.map((entry, i) => {
+        const hasCachedContent = cachedEntries !== undefined && cachedEntries.length > 0;
+
+        if (hasCachedContent) {
+            const { stylesWithLevels } = properties;
+            const cachedParagraphs = cachedEntries.map((entry, i) => {
                 const contentChild = this.buildCachedContentParagraphChild(entry, properties);
+                const style = stylesWithLevels?.find((s) => s.level === entry.level)?.styleName ?? `TOC${entry.level}`;
                 const children =
                     i === 0
                         ? [...beginParagraphMandatoryChildren, contentChild]
-                        : i === cachedContent.length - 1
+                        : i === cachedEntries.length - 1
                           ? [contentChild, ...endParagraphMandatoryChildren]
                           : [contentChild];
 
                 return new Paragraph({
-                    style: `TOC${entry.level}`,
+                    style,
                     tabStops: this.getTabStopsForLevel(entry.level),
                     children,
                 });
             });
 
             let paragraphs = cachedParagraphs;
-            if (cachedContent.length <= 1) {
+            if (cachedEntries.length <= 1) {
                 paragraphs = [
                     ...cachedParagraphs,
                     new Paragraph({
@@ -137,7 +146,7 @@ export class TableOfContents extends FileChild {
     }
 
     private getTabStopsForLevel(level: number, pageWidth: number = 9025): readonly TabStopDefinition[] {
-        const levelSpace = 720;
+        const levelSpace = 240;
         const levelPosition = pageWidth + 1 - (level - 1) * levelSpace; // TODO: should be equal to page width + 1 - level margin
         return [
             {
@@ -154,6 +163,7 @@ export class TableOfContents extends FileChild {
 
     private buildCachedContentRun(entry: ToCEntry, properties?: ITableOfContentsOptions): Run {
         return new Run({
+            // TODO: The IndexLink style might always need to be set regardless of the hyperlink property. This needs to be verified.
             style: properties?.hyperlink && entry.href !== undefined ? "IndexLink" : undefined,
             children: [
                 new Text({

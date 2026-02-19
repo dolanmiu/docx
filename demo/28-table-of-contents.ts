@@ -25,6 +25,17 @@ const doc = new File({
                     color: "990000",
                 },
             },
+            {
+                id: "TOC2",
+                name: "TOC 2",
+                basedOn: "Heading2",
+                quickFormat: true,
+                paragraph: {
+                    indent: {
+                        left: 240,
+                    },
+                },
+            },
         ],
     },
     sections: [
@@ -34,7 +45,7 @@ const doc = new File({
                     hyperlink: true,
                     headingStyleRange: "1-5",
                     stylesWithLevels: [new StyleLevel("MySpectacularStyle", 1)],
-                    cachedContent: [
+                    cachedEntries: [
                         {
                             title: "Header #1",
                             level: 1,

@@ -50,15 +50,15 @@ describe("Table of Contents", () => {
             expect(tree).to.be.deep.equal(TOC_WITH_CHILDREN);
         });
 
-        describe("cached content", () => {
+        describe("cached entries", () => {
             it("should construct a TOC with cached content", () => {
-                const cachedContent = [
+                const cachedEntries = [
                     { title: "Introduction", level: 1, page: 1 },
                     { title: "Getting Started", level: 2, page: 3 },
                     { title: "Advanced Topics", level: 2, page: 10 },
                 ];
 
-                const toc = new TableOfContents("Table of Contents", { cachedContent });
+                const toc = new TableOfContents("Table of Contents", { cachedEntries });
                 const tree = new Formatter().format(toc);
 
                 const expectedParagraphs = [
@@ -171,7 +171,7 @@ describe("Table of Contents", () => {
                                                 "w:tab": {
                                                     _attr: {
                                                         "w:val": "clear",
-                                                        "w:pos": 8306,
+                                                        "w:pos": 8786,
                                                     },
                                                 },
                                             },
@@ -234,7 +234,7 @@ describe("Table of Contents", () => {
                                                 "w:tab": {
                                                     _attr: {
                                                         "w:val": "clear",
-                                                        "w:pos": 8306,
+                                                        "w:pos": 8786,
                                                     },
                                                 },
                                             },
@@ -314,14 +314,37 @@ describe("Table of Contents", () => {
                 expect(tree).to.be.deep.equal(expectedTree);
             });
 
+            it("should apply stylesWithLevels to cached entries based on their level", () => {
+                const cachedEntries = [
+                    { title: "Chapter 1", level: 1, page: 1 },
+                    { title: "Section 1.1", level: 2, page: 2 },
+                ];
+
+                const stylesWithLevels = [new StyleLevel("MyStyle", 1)];
+
+                const toc = new TableOfContents("Table of Contents", {
+                    cachedEntries,
+                    stylesWithLevels,
+                });
+                const tree = new Formatter().format(toc);
+
+                // First entry should have style MyStyle (level 1)
+                const firstEntryStyle = tree["w:sdt"][1]["w:sdtContent"][0]["w:p"][0]["w:pPr"][0]["w:pStyle"];
+                expect(firstEntryStyle._attr["w:val"]).to.equal("MyStyle");
+
+                // Second entry should have style TOC2 (level 2, no custom style)
+                const secondEntryStyle = tree["w:sdt"][1]["w:sdtContent"][1]["w:p"][0]["w:pPr"][0]["w:pStyle"];
+                expect(secondEntryStyle._attr["w:val"]).to.equal("TOC2");
+            });
+
             it("should construct a TOC with cached content and hyperlinks", () => {
-                const cachedContent = [
+                const cachedEntries = [
                     { title: "Introduction", level: 1, page: 1, href: "_Toc001" },
                     { title: "Summary", level: 1, page: 5, href: "_Toc002" },
                 ];
 
                 const toc = new TableOfContents("Table of Contents", {
-                    cachedContent,
+                    cachedEntries,
                     hyperlink: true,
                 });
                 const tree = new Formatter().format(toc);
@@ -558,13 +581,13 @@ describe("Table of Contents", () => {
             });
 
             it("should not wrap in hyperlink when entry has no href even with hyperlink option", () => {
-                const cachedContent = [
+                const cachedEntries = [
                     { title: "No Link Entry", level: 1, page: 1 },
                     { title: "Link Entry", level: 2, page: 3, href: "_Toc123" },
                 ];
 
                 const toc = new TableOfContents("Table of Contents", {
-                    cachedContent,
+                    cachedEntries,
                     hyperlink: true,
                 });
                 const tree = new Formatter().format(toc);
@@ -585,9 +608,9 @@ describe("Table of Contents", () => {
             });
 
             it("should render empty string for page number when page is undefined", () => {
-                const cachedContent = [{ title: "No Page", level: 1 }];
+                const cachedEntries = [{ title: "No Page", level: 1 }];
 
-                const toc = new TableOfContents("Table of Contents", { cachedContent });
+                const toc = new TableOfContents("Table of Contents", { cachedEntries });
                 const tree = new Formatter().format(toc);
 
                 const firstParagraph = tree["w:sdt"][1]["w:sdtContent"][0]["w:p"];
@@ -604,10 +627,10 @@ describe("Table of Contents", () => {
             });
 
             it("should construct a TOC with beginDirty set to false", () => {
-                const cachedContent = [{ title: "Entry", level: 1, page: 1 }];
+                const cachedEntries = [{ title: "Entry", level: 1, page: 1 }];
 
                 const toc = new TableOfContents("Table of Contents", {
-                    cachedContent,
+                    cachedEntries,
                     beginDirty: false,
                 });
                 const tree = new Formatter().format(toc);
@@ -624,8 +647,8 @@ describe("Table of Contents", () => {
             });
 
             it("should fill in an end paragraph if only one cached entry is provided", () => {
-                const cachedContent = [{ title: "Only Entry", level: 1, page: 1 }];
-                const toc = new TableOfContents("Table of Contents", { cachedContent });
+                const cachedEntries = [{ title: "Only Entry", level: 1, page: 1 }];
+                const toc = new TableOfContents("Table of Contents", { cachedEntries });
                 const tree = new Formatter().format(toc);
 
                 const expectedParagraphs = [
