@@ -168,7 +168,7 @@ export class TableOfContents extends FileChild {
     }
 
     private buildCachedContentParagraphChild(entry: ToCEntry, properties?: ITableOfContentsOptions): Run | InternalHyperlink {
-        const run = this.buildCachedContentRun(entry);
+        const run = this.buildCachedContentRun(entry, properties);
         if (properties?.hyperlink && entry.href !== undefined) {
             return new InternalHyperlink({
                 anchor: entry.href,
