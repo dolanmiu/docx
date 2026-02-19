@@ -60,6 +60,47 @@ Here is the list of all options that you can use to generate your tables of cont
 | preserveNewLineInEntries        | boolean      | `\x`             | Preserves newline characters within table entries.                                                                                                                                                                                                                                                                                                                                                               |
 | hideTabAndPageNumbersInWebView  | boolean      | `\z`             | Hides tab leader and page numbers in web page view (§17.18.102).                                                                                                                                                                                                                                                                                                                                                 |
 
+## Cached entries
+
+If you already know what might be in the table, you can provide those entries to the constructor as well, and the table of contents will be populated with that data.
+
+```ts
+const doc = new Document({
+    features: {
+        updateFields: true,
+    },
+    sections: [
+        {
+            children: [
+                new TableOfContents("Summary", {
+                    hyperlink: true,
+                    headingStyleRange: "1-5",
+                    // Cached entries
+                    cachedContent: [
+                        {
+                            text: "Header #1",
+                            level: 1,
+                            page: 1,
+                            href: "anchorForHeader1",
+                        },
+                    ],
+                }),
+                new Paragraph({
+                    text: "Header #1",
+                    heading: HeadingLevel.HEADING_1,
+                    pageBreakBefore: true,
+                    children: [
+                        new Bookmark({
+                            id: "anchorForHeader1",
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
+});
+```
+
 ## Examples
 
 [Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/28-table-of-contents.ts ":include")
