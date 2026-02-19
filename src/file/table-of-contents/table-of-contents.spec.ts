@@ -578,7 +578,8 @@ describe("Table of Contents", () => {
                 // Second entry (has href) should be wrapped in a hyperlink
                 const secondParagraph = tree["w:sdt"][1]["w:sdtContent"][1]["w:p"];
                 // Find the hyperlink element (skip pPr)
-                const hyperlinkChild = secondParagraph.find((el) => el["w:hyperlink"] !== undefined);
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const hyperlinkChild = secondParagraph.find((el: any) => el["w:hyperlink"] !== undefined);
                 expect(hyperlinkChild).to.not.be.undefined;
                 expect(hyperlinkChild["w:hyperlink"][0]._attr["w:anchor"]).to.equal("_Toc123");
             });
@@ -591,10 +592,14 @@ describe("Table of Contents", () => {
 
                 const firstParagraph = tree["w:sdt"][1]["w:sdtContent"][0]["w:p"];
                 // Find the run with text content (skip the begin/instrText/separate run)
-                const contentRun = firstParagraph.find((el) => el["w:r"] && el["w:r"].some((child) => child["w:tab"] !== undefined));
+                const contentRun = firstParagraph.find(
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    (el: any) => el["w:r"] && el["w:r"].some((child: any) => child["w:tab"] !== undefined),
+                );
                 expect(contentRun).to.not.be.undefined;
                 // The page number text should be ""
-                const pageText = contentRun["w:r"].find((child) => child["w:t"] && child["w:t"][1] === "");
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const pageText = contentRun["w:r"].find((child: any) => child["w:t"] && child["w:t"][1] === "");
                 expect(pageText).to.not.be.undefined;
             });
 
@@ -610,9 +615,11 @@ describe("Table of Contents", () => {
                 const firstParagraph = tree["w:sdt"][1]["w:sdtContent"][0]["w:p"];
                 // Find the begin fldChar run
                 const beginRun = firstParagraph.find(
-                    (el) => el["w:r"] && el["w:r"].some((child) => child["w:fldChar"]?._attr?.["w:fldCharType"] === "begin"),
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    (el: any) => el["w:r"] && el["w:r"].some((child: any) => child["w:fldChar"]?._attr?.["w:fldCharType"] === "begin"),
                 );
-                const fldChar = beginRun["w:r"].find((child) => child["w:fldChar"]?._attr?.["w:fldCharType"] === "begin");
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const fldChar = beginRun["w:r"].find((child: any) => child["w:fldChar"]?._attr?.["w:fldCharType"] === "begin");
                 expect(fldChar["w:fldChar"]._attr["w:dirty"]).to.equal(false);
             });
 
