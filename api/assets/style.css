@@ -504,15 +504,8 @@
     body {
         background: var(--color-background);
         font-family:
-            -apple-system,
-            BlinkMacSystemFont,
-            "Segoe UI",
-            "Noto Sans",
-            Helvetica,
-            Arial,
-            sans-serif,
-            "Apple Color Emoji",
-            "Segoe UI Emoji";
+            -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans",
+            Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
         font-size: 16px;
         color: var(--color-text);
         margin: 0;
@@ -1602,9 +1595,9 @@
         .container-main {
             grid-template-columns:
                 minmax(0, 1fr) minmax(0, 2.5fr) minmax(
-                0,
-                20rem
-            );
+                    0,
+                    20rem
+                );
             grid-template-areas: "sidebar content toc";
         }
 
