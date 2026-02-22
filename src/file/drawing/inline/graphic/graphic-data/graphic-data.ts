@@ -1,4 +1,4 @@
-import { WpsShape } from "@file/drawing/inline/graphic/graphic-data/wps/wps-shape";
+import { createWpsShape } from "@file/drawing/inline/graphic/graphic-data/wps/wps-shape";
 import { IExtendedMediaData, IMediaData, IMediaDataTransformation, WpgMediaData } from "@file/media";
 import { XmlComponent } from "@file/xml-components";
 
@@ -6,7 +6,7 @@ import { GraphicDataAttributes } from "./graphic-data-attribute";
 import { Pic } from "./pic";
 import { OutlineOptions } from "./pic/shape-properties/outline/outline";
 import { SolidFillOptions } from "./pic/shape-properties/outline/solid-fill";
-import { WpgGroup } from "./wpg/wpg-group";
+import { createWpgGroup } from "./wpg/wpg-group";
 
 /**
  * Represents graphical data within a DrawingML graphic element.
@@ -58,7 +58,7 @@ export class GraphicData extends XmlComponent {
                     uri: "http://schemas.microsoft.com/office/word/2010/wordprocessingShape",
                 }),
             );
-            const wps = new WpsShape({ ...mediaData.data, transformation: transform, outline, solidFill });
+            const wps = createWpsShape({ ...mediaData.data, transformation: transform, outline, solidFill });
             this.root.push(wps);
         } else if (mediaData.type === "wpg") {
             this.root.push(
@@ -70,7 +70,7 @@ export class GraphicData extends XmlComponent {
             const children = md.children.map((child) => {
                 // eslint-disable-next-line unicorn/prefer-ternary
                 if (child.type === "wps") {
-                    return new WpsShape({
+                    return createWpsShape({
                         ...child.data,
                         transformation: child.transformation,
                         outline: child.outline,
@@ -81,7 +81,7 @@ export class GraphicData extends XmlComponent {
                 }
             });
             // const wps = new WpsShape({ ...mediaData.data, transformation: transform, outline, solidFill });
-            const wpg = new WpgGroup({ children, transformation: transform });
+            const wpg = createWpgGroup({ children, transformation: transform });
             this.root.push(wpg);
         } else {
             this.root.push(

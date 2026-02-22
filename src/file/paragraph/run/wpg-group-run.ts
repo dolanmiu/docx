@@ -15,8 +15,14 @@ type CoreGroupOptions = {
     readonly altText?: DocPropertiesOptions;
 };
 
+/**
+ * @publicApi
+ */
 export type IWpgGroupOptions = { readonly type: "wpg" } & CoreGroupOptions;
 
+/**
+ * @publicApi
+ */
 export class WpgGroupRun extends Run {
     private readonly wpgGroupData: WpgMediaData;
     private readonly mediaDatas: readonly IMediaData[];

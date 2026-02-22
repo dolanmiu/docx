@@ -1,11 +1,10 @@
 import { Paragraph } from "@file/paragraph";
-import { XmlComponent } from "@file/xml-components";
+import { BuilderElement, XmlComponent } from "@file/xml-components";
 
-import { TextBoxContent } from "./text-box-content";
+import { createTextBoxContent } from "./text-box-content";
 
-export class WpsTextBox extends XmlComponent {
-    public constructor(children: readonly Paragraph[]) {
-        super("wps:txbx");
-        this.root.push(new TextBoxContent(children));
-    }
-}
+export const createWpsTextBox = (children: readonly Paragraph[]): XmlComponent =>
+    new BuilderElement({
+        name: "wps:txbx",
+        children: [createTextBoxContent(children)],
+    });

@@ -17,6 +17,9 @@ type CoreShapeOptions = {
     readonly solidFill?: SolidFillOptions;
 };
 
+/**
+ * @publicApi
+ */
 export type IWpsShapeOptions = WpsShapeCoreOptions & { readonly type: "wps" } & CoreShapeOptions;
 
 export const createTransformation = (options: IMediaTransformation): IMediaDataTransformation => ({
@@ -42,6 +45,9 @@ export const createTransformation = (options: IMediaTransformation): IMediaDataT
     rotation: options.rotation ? options.rotation * 60000 : undefined,
 });
 
+/**
+ * @publicApi
+ */
 export class WpsShapeRun extends Run {
     private readonly wpsShapeData: WpsMediaData;
 
