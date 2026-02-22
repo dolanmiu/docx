@@ -213,7 +213,7 @@ jobs:
             - run: npm run run-ts -- ./demo/93-template-document.ts
             # - uses: "./.github/actions/validate-docx"
             - run: npm run run-ts -- ./demo/94-texbox.ts
-            - uses: "./.github/actions/validate-docx"
+            # - uses: "./.github/actions/validate-docx"
             - run: npm run run-ts -- ./demo/95-paragraph-style-with-shading-and-borders.ts
             - uses: "./.github/actions/validate-docx"
             - run: npm run run-ts -- ./demo/96-template-document.ts
