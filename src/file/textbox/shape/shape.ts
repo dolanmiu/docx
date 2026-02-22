@@ -9,10 +9,10 @@
  *
  * @module
  */
-import { ParagraphChild } from "@file/paragraph";
-import { BuilderElement, XmlComponent } from "@file/xml-components";
+import type { ParagraphChild } from "@file/paragraph";
+import { BuilderElement, type XmlComponent } from "@file/xml-components";
 
-import { LengthUnit } from "../types";
+import type { LengthUnit } from "../types";
 import { createVmlTextbox } from "../vml-textbox/vml-texbox";
 
 const SHAPE_TYPE = "#_x0000_t202";

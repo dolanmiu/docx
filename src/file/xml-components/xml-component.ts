@@ -7,8 +7,8 @@
  *
  * @module
  */
-import { BaseXmlComponent, IContext } from "./base";
-import { IXmlableObject } from "./xmlable-object";
+import { BaseXmlComponent, type IContext } from "./base";
+import type { IXmlableObject } from "./xmlable-object";
 
 /**
  * Empty object singleton used for empty XML elements.

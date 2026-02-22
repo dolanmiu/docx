@@ -3,9 +3,9 @@
  *
  * @module
  */
-import { Element } from "xml-js";
+import type { Element } from "xml-js";
 
-import { IRenderedParagraphNode, renderParagraphNode } from "./run-renderer";
+import { type IRenderedParagraphNode, renderParagraphNode } from "./run-renderer";
 
 /**
  * Wrapper for XML elements that tracks position in the document tree.

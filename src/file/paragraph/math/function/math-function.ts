@@ -9,7 +9,7 @@
  */
 import { XmlComponent } from "@file/xml-components";
 
-import { MathComponent } from "../math-component";
+import type { MathComponent } from "../math-component";
 import { createMathBase } from "../n-ary";
 import { MathFunctionName } from "./math-function-name";
 import { MathFunctionProperties } from "./math-function-properties";

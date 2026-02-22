@@ -6,8 +6,8 @@ import { HorizontalPositionAlign, VerticalPositionAlign } from "@file/shared";
 import { EMPTY_OBJECT } from "@file/xml-components";
 import * as convenienceFunctions from "@util/convenience-functions";
 
-import { DocumentWrapper, IViewWrapper } from "../document-wrapper";
-import { File } from "../file";
+import { DocumentWrapper, type IViewWrapper } from "../document-wrapper";
+import type { File } from "../file";
 import { ShadingType } from "../shading";
 import { AlignmentType, HeadingLevel, LeaderType, PageBreak, TabStopPosition, TabStopType } from "./formatting";
 import { FrameAnchorType } from "./frame";

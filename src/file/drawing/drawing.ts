@@ -1,12 +1,12 @@
-import { IExtendedMediaData } from "@file/media";
+import type { IExtendedMediaData } from "@file/media";
 import { XmlComponent } from "@file/xml-components";
 
 import { Anchor } from "./anchor";
-import { DocPropertiesOptions } from "./doc-properties/doc-properties";
-import { IFloating } from "./floating";
+import type { DocPropertiesOptions } from "./doc-properties/doc-properties";
+import type { IFloating } from "./floating";
 import { createInline } from "./inline";
-import { OutlineOptions } from "./inline/graphic/graphic-data/pic/shape-properties/outline/outline";
-import { SolidFillOptions } from "./inline/graphic/graphic-data/pic/shape-properties/outline/solid-fill";
+import type { OutlineOptions } from "./inline/graphic/graphic-data/pic/shape-properties/outline/outline";
+import type { SolidFillOptions } from "./inline/graphic/graphic-data/pic/shape-properties/outline/solid-fill";
 
 /**
  * Distance options for drawing elements.

@@ -7,8 +7,8 @@
  *
  * @module
  */
-import { NumberFormat } from "@file/shared/number-format";
-import { BuilderElement, XmlComponent } from "@file/xml-components";
+import type { NumberFormat } from "@file/shared/number-format";
+import { BuilderElement, type XmlComponent } from "@file/xml-components";
 import { decimalNumber } from "@util/values";
 
 /**

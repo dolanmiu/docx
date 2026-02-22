@@ -9,7 +9,7 @@
  */
 import { XmlComponent } from "@file/xml-components";
 
-import { MathComponent } from "../math-component";
+import type { MathComponent } from "../math-component";
 import { MathDenominator } from "./math-denominator";
 import { MathNumerator } from "./math-numerator";
 

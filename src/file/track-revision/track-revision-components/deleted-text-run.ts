@@ -12,8 +12,8 @@ import { DeletedText } from "./deleted-text";
 import { createBreak } from "../../paragraph/run/break";
 import { createBegin, createEnd, createSeparate } from "../../paragraph/run/field";
 import { RunProperties } from "../../paragraph/run/properties";
-import { IRunOptions, PageNumber } from "../../paragraph/run/run";
-import { ChangeAttributes, IChangedAttributesProperties } from "../track-revision";
+import { type IRunOptions, PageNumber } from "../../paragraph/run/run";
+import { ChangeAttributes, type IChangedAttributesProperties } from "../track-revision";
 
 /**
  * Options for creating a deleted text run.

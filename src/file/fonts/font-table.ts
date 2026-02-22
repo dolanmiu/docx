@@ -7,11 +7,11 @@
  *
  * @module
  */
-import { BuilderElement, XmlComponent } from "@file/xml-components";
+import { BuilderElement, type XmlComponent } from "@file/xml-components";
 
 import { createRegularFont } from "./create-regular-font";
-import { CharacterSet } from "./font";
-import { FontOptionsWithKey } from "./font-wrapper";
+import type { CharacterSet } from "./font";
+import type { FontOptionsWithKey } from "./font-wrapper";
 
 // <xsd:complexType name="CT_FontsList">
 //     <xsd:sequence>

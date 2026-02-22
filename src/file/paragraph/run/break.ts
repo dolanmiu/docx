@@ -34,7 +34,7 @@
  *
  * @module
  */
-import { BuilderElement, XmlComponent } from "@file/xml-components";
+import { BuilderElement, type XmlComponent } from "@file/xml-components";
 
 /**
  * Creates a line break element for a WordprocessingML document.

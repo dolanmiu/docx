@@ -7,7 +7,7 @@
  *
  * @module
  */
-import { BuilderElement, XmlComponent } from "@file/xml-components";
+import { BuilderElement, type XmlComponent } from "@file/xml-components";
 
 import { createMathAccentCharacter } from "./math-accent-character";
 import { createMathLimitLocation } from "./math-limit-location";

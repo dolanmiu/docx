@@ -8,7 +8,7 @@
  *
  * @module
  */
-import { BuilderElement, XmlComponent } from "@file/xml-components";
+import { BuilderElement, type XmlComponent } from "@file/xml-components";
 
 /**
  * Creates an outline level element for a paragraph.

@@ -41,22 +41,22 @@
  *
  * @module
  */
-import { FooterWrapper } from "@file/footer-wrapper";
-import { HeaderWrapper } from "@file/header-wrapper";
-import { ChangeAttributes, IChangedAttributesProperties } from "@file/track-revision/track-revision";
-import { SectionVerticalAlign, createVerticalAlign } from "@file/vertical-align";
+import type { FooterWrapper } from "@file/footer-wrapper";
+import type { HeaderWrapper } from "@file/header-wrapper";
+import { ChangeAttributes, type IChangedAttributesProperties } from "@file/track-revision/track-revision";
+import { type SectionVerticalAlign, createVerticalAlign } from "@file/vertical-align";
 import { OnOffElement, XmlComponent } from "@file/xml-components";
 
-import { IColumnsAttributes, createColumns } from "./properties/columns";
-import { IDocGridAttributesProperties, createDocumentGrid } from "./properties/doc-grid";
+import { type IColumnsAttributes, createColumns } from "./properties/columns";
+import { type IDocGridAttributesProperties, createDocumentGrid } from "./properties/doc-grid";
 import { HeaderFooterReferenceType, HeaderFooterType, createHeaderFooterReference } from "./properties/header-footer-reference";
-import { ILineNumberAttributes, createLineNumberType } from "./properties/line-number";
-import { IPageBordersOptions, PageBorders } from "./properties/page-borders";
-import { IPageMarginAttributes, createPageMargin } from "./properties/page-margin";
-import { IPageNumberTypeAttributes, createPageNumberType } from "./properties/page-number";
-import { IPageSizeAttributes, PageOrientation, createPageSize } from "./properties/page-size";
-import { PageTextDirection, PageTextDirectionType } from "./properties/page-text-direction";
-import { SectionType, createSectionType } from "./properties/section-type";
+import { type ILineNumberAttributes, createLineNumberType } from "./properties/line-number";
+import { type IPageBordersOptions, PageBorders } from "./properties/page-borders";
+import { type IPageMarginAttributes, createPageMargin } from "./properties/page-margin";
+import { type IPageNumberTypeAttributes, createPageNumberType } from "./properties/page-number";
+import { type IPageSizeAttributes, PageOrientation, createPageSize } from "./properties/page-size";
+import { PageTextDirection, type PageTextDirectionType } from "./properties/page-text-direction";
+import { type SectionType, createSectionType } from "./properties/section-type";
 
 /**
  * Header/footer group for specifying different headers/footers

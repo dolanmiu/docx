@@ -12,7 +12,7 @@ import { TextAttributes } from "@file/paragraph/run/text-attributes";
 import { SpaceType } from "@file/shared";
 import { XmlComponent } from "@file/xml-components";
 
-import { ITableOfContentsOptions } from "./table-of-contents-properties";
+import type { ITableOfContentsOptions } from "./table-of-contents-properties";
 
 /**
  * Represents a field instruction for a Table of Contents.

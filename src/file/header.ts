@@ -8,8 +8,8 @@
  *
  * @module
  */
-import { Paragraph } from "./paragraph";
-import { Table } from "./table";
+import type { Paragraph } from "./paragraph";
+import type { Table } from "./table";
 
 /**
  * Options for creating a header or footer.

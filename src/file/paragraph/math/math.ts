@@ -10,7 +10,7 @@
  */
 import { XmlComponent } from "@file/xml-components";
 
-import { MathComponent } from "./math-component";
+import type { MathComponent } from "./math-component";
 
 /**
  * Options for creating a Math element.

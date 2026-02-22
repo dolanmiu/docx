@@ -7,8 +7,8 @@
  *
  * @module
  */
-import { BuilderElement, XmlComponent } from "@file/xml-components";
-import { PositiveUniversalMeasure, twipsMeasureValue } from "@util/values";
+import { BuilderElement, type XmlComponent } from "@file/xml-components";
+import { type PositiveUniversalMeasure, twipsMeasureValue } from "@util/values";
 
 /**
  * Height rules for table rows.

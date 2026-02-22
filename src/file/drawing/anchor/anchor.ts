@@ -1,9 +1,9 @@
 // http://officeopenxml.com/drwPicFloating.php
-import { IExtendedMediaData, IMediaDataTransformation } from "@file/media";
+import type { IExtendedMediaData, IMediaDataTransformation } from "@file/media";
 import { XmlComponent } from "@file/xml-components";
 
-import { IDrawingOptions } from "../drawing";
-import { IFloating, createHorizontalPosition, createSimplePos, createVerticalPosition } from "../floating";
+import type { IDrawingOptions } from "../drawing";
+import { type IFloating, createHorizontalPosition, createSimplePos, createVerticalPosition } from "../floating";
 import { Graphic } from "../inline/graphic";
 import { TextWrappingType, createWrapNone, createWrapSquare, createWrapTight, createWrapTopAndBottom } from "../text-wrap";
 import { DocProperties } from "./../doc-properties/doc-properties";

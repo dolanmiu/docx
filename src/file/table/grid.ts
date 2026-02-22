@@ -29,7 +29,7 @@
  * @module
  */
 import { BuilderElement, XmlAttributeComponent, XmlComponent } from "@file/xml-components";
-import { PositiveUniversalMeasure, twipsMeasureValue } from "@util/values";
+import { type PositiveUniversalMeasure, twipsMeasureValue } from "@util/values";
 
 export type ITableGridChangeOptions = {
     readonly id: number;

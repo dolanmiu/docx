@@ -1,5 +1,5 @@
-import { IMediaDataTransformation } from "@file/media";
-import { BuilderElement, XmlComponent } from "@file/xml-components";
+import type { IMediaDataTransformation } from "@file/media";
+import { BuilderElement, type XmlComponent } from "@file/xml-components";
 
 import { Form } from "../pic/shape-properties/form";
 

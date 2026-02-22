@@ -8,9 +8,9 @@
  *
  * @module
  */
-import { HorizontalPositionAlign, VerticalPositionAlign } from "@file/shared/alignment";
+import type { HorizontalPositionAlign, VerticalPositionAlign } from "@file/shared/alignment";
 
-import { ITextWrapping } from "../text-wrap";
+import type { ITextWrapping } from "../text-wrap";
 
 /**
  * Horizontal Relative Positioning.

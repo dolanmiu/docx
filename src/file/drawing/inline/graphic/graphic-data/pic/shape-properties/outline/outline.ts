@@ -8,10 +8,10 @@
  *
  * @module
  */
-import { BuilderElement, XmlComponent } from "@file/xml-components";
+import { BuilderElement, type XmlComponent } from "@file/xml-components";
 
 import { createNoFill } from "./no-fill";
-import { SchemeColor } from "./scheme-color";
+import type { SchemeColor } from "./scheme-color";
 import { createSolidFill } from "./solid-fill";
 
 // <xsd:complexType name="CT_TextOutlineEffect">

@@ -7,7 +7,7 @@
  *
  * @module
  */
-import { BuilderElement, OnOffElement, XmlComponent, createStringElement } from "@file/xml-components";
+import { BuilderElement, OnOffElement, type XmlComponent, createStringElement } from "@file/xml-components";
 
 /**
  * Options for a font relationship (embedded font).

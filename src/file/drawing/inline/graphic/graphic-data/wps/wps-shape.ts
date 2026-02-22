@@ -1,12 +1,12 @@
-import { IMediaDataTransformation } from "@file/media";
-import { Paragraph } from "@file/paragraph";
-import { BuilderElement, XmlComponent } from "@file/xml-components";
+import type { IMediaDataTransformation } from "@file/media";
+import type { Paragraph } from "@file/paragraph";
+import { BuilderElement, type XmlComponent } from "@file/xml-components";
 
-import { IBodyPropertiesOptions, createBodyProperties } from "./body-properties";
-import { INonVisualShapePropertiesOptions, createNonVisualShapeProperties } from "./non-visual-shape-properties";
+import { type IBodyPropertiesOptions, createBodyProperties } from "./body-properties";
+import { type INonVisualShapePropertiesOptions, createNonVisualShapeProperties } from "./non-visual-shape-properties";
 import { createWpsTextBox } from "./wps-text-box";
-import { OutlineOptions } from "../pic/shape-properties/outline/outline";
-import { SolidFillOptions } from "../pic/shape-properties/outline/solid-fill";
+import type { OutlineOptions } from "../pic/shape-properties/outline/outline";
+import type { SolidFillOptions } from "../pic/shape-properties/outline/solid-fill";
 import { ShapeProperties } from "../pic/shape-properties/shape-properties";
 
 export type WpsShapeCoreOptions = {

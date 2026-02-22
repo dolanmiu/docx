@@ -1,5 +1,5 @@
-import { BuilderElement, XmlComponent } from "@file/xml-components";
-import { PositiveUniversalMeasure, twipsMeasureValue } from "@util/values";
+import { BuilderElement, type XmlComponent } from "@file/xml-components";
+import { type PositiveUniversalMeasure, twipsMeasureValue } from "@util/values";
 
 /**
  * This simple type specifies the orientation of all pages in the parent section. This information is used to determine the actual paper size to use when printing the file.

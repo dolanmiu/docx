@@ -3,7 +3,7 @@
  *
  * @module
  */
-import { ConcreteNumbering } from "@file/numbering";
+import type { ConcreteNumbering } from "@file/numbering";
 
 /**
  * Replaces numbering instance placeholders with actual numbering IDs in XML content.

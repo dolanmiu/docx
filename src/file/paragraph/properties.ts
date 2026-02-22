@@ -10,22 +10,22 @@
  *
  * @module
  */
-import { ChangeAttributes, IChangedAttributesProperties } from "@file/track-revision/track-revision";
-import { IContext, IXmlableObject, IgnoreIfEmptyXmlComponent, OnOffElement, XmlComponent } from "@file/xml-components";
+import { ChangeAttributes, type IChangedAttributesProperties } from "@file/track-revision/track-revision";
+import { type IContext, type IXmlableObject, IgnoreIfEmptyXmlComponent, OnOffElement, XmlComponent } from "@file/xml-components";
 
-import { IParagraphRunOptions, ParagraphRunProperties } from ".";
+import { type IParagraphRunOptions, ParagraphRunProperties } from ".";
 import { FontWrapper } from "../fonts/font-wrapper";
-import { IShadingAttributesProperties, createShading } from "../shading";
-import { AlignmentType, createAlignment } from "./formatting/alignment";
-import { Border, IBordersOptions, ThematicBreak } from "./formatting/border";
+import { type IShadingAttributesProperties, createShading } from "../shading";
+import { type AlignmentType, createAlignment } from "./formatting/alignment";
+import { Border, type IBordersOptions, ThematicBreak } from "./formatting/border";
 import { PageBreakBefore } from "./formatting/break";
-import { IIndentAttributesProperties, createIndent } from "./formatting/indent";
-import { ISpacingProperties, createSpacing } from "./formatting/spacing";
-import { HeadingLevel, createParagraphStyle } from "./formatting/style";
-import { TabStopDefinition, TabStopType, createTabStop } from "./formatting/tab-stop";
+import { type IIndentAttributesProperties, createIndent } from "./formatting/indent";
+import { type ISpacingProperties, createSpacing } from "./formatting/spacing";
+import { type HeadingLevel, createParagraphStyle } from "./formatting/style";
+import { type TabStopDefinition, TabStopType, createTabStop } from "./formatting/tab-stop";
 import { NumberProperties } from "./formatting/unordered-list";
 import { createWordWrap } from "./formatting/word-wrap";
-import { IFrameOptions, createFrameProperties } from "./frame/frame-properties";
+import { type IFrameOptions, createFrameProperties } from "./frame/frame-properties";
 import { createOutlineLevel } from "./links";
 
 /**

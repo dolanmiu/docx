@@ -7,7 +7,7 @@
  *
  * @module
  */
-import { IDistance } from "../drawing";
+import type { IDistance } from "../drawing";
 
 /**
  * Enumeration of text wrapping types for floating drawings.

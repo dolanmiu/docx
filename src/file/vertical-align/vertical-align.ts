@@ -21,7 +21,7 @@
  *
  * @module
  */
-import { BuilderElement, XmlComponent } from "@file/xml-components";
+import { BuilderElement, type XmlComponent } from "@file/xml-components";
 
 /**
  * Enumeration for table-cell vertical alignment. Only `top`, `center`, `bottom`

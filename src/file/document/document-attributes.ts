@@ -8,7 +8,7 @@
  *
  * @module
  */
-import { AttributeMap, XmlAttributeComponent } from "@file/xml-components";
+import { type AttributeMap, XmlAttributeComponent } from "@file/xml-components";
 
 /**
  * XML namespace URIs used in WordprocessingML documents.

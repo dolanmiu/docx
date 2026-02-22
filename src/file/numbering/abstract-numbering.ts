@@ -11,7 +11,7 @@
 import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
 import { decimalNumber } from "@util/values";
 
-import { ILevelsOptions, Level } from "./level";
+import { type ILevelsOptions, Level } from "./level";
 import { MultiLevelType } from "./multi-level-type";
 
 /**

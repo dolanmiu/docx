@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 
 import { Formatter } from "@export/formatter";
-import { IViewWrapper } from "@file/document-wrapper";
-import { File } from "@file/file";
+import type { IViewWrapper } from "@file/document-wrapper";
+import type { File } from "@file/file";
 
 import { ImageRun } from "./image-run";
 

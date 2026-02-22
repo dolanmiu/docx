@@ -16,7 +16,7 @@
  * @module
  */
 import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
-import { PositiveUniversalMeasure, twipsMeasureValue } from "@util/values";
+import { type PositiveUniversalMeasure, twipsMeasureValue } from "@util/values";
 
 /**
  * Options for configuring individual column properties.

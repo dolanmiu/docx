@@ -7,10 +7,10 @@
  *
  * @module
  */
-import { BuilderElement, XmlComponent } from "@file/xml-components";
-import { PositiveUniversalMeasure, decimalNumber, twipsMeasureValue } from "@util/values";
+import { BuilderElement, type XmlComponent } from "@file/xml-components";
+import { type PositiveUniversalMeasure, decimalNumber, twipsMeasureValue } from "@util/values";
 
-import { Column } from "./column";
+import type { Column } from "./column";
 
 /**
  * Options for configuring column layout in a section.

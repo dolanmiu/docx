@@ -8,9 +8,9 @@
  *
  * @module
  */
-import { BuilderElement, XmlComponent } from "@file/xml-components";
+import { BuilderElement, type XmlComponent } from "@file/xml-components";
 
-import { MathComponent } from "../math-component";
+import type { MathComponent } from "../math-component";
 
 /**
  * Options for creating a math base element.

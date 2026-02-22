@@ -1,11 +1,11 @@
 import { createWpsShape } from "@file/drawing/inline/graphic/graphic-data/wps/wps-shape";
-import { IExtendedMediaData, IMediaData, IMediaDataTransformation, WpgMediaData } from "@file/media";
+import type { IExtendedMediaData, IMediaData, IMediaDataTransformation, WpgMediaData } from "@file/media";
 import { XmlComponent } from "@file/xml-components";
 
 import { GraphicDataAttributes } from "./graphic-data-attribute";
 import { Pic } from "./pic";
-import { OutlineOptions } from "./pic/shape-properties/outline/outline";
-import { SolidFillOptions } from "./pic/shape-properties/outline/solid-fill";
+import type { OutlineOptions } from "./pic/shape-properties/outline/outline";
+import type { SolidFillOptions } from "./pic/shape-properties/outline/solid-fill";
 import { createWpgGroup } from "./wpg/wpg-group";
 
 /**

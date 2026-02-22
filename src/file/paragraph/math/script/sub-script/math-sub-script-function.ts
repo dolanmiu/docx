@@ -10,7 +10,7 @@
 import { XmlComponent } from "@file/xml-components";
 
 import { createMathSubScriptProperties } from "./math-sub-script-function-properties";
-import { MathComponent } from "../../math-component";
+import type { MathComponent } from "../../math-component";
 import { createMathBase, createMathSubScriptElement } from "../../n-ary";
 
 /**

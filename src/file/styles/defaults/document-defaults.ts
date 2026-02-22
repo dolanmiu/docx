@@ -5,8 +5,8 @@
  *
  * @module
  */
-import { IParagraphStylePropertiesOptions } from "@file/paragraph/properties";
-import { IRunStylePropertiesOptions } from "@file/paragraph/run/properties";
+import type { IParagraphStylePropertiesOptions } from "@file/paragraph/properties";
+import type { IRunStylePropertiesOptions } from "@file/paragraph/run/properties";
 import { XmlComponent } from "@file/xml-components";
 
 import { ParagraphPropertiesDefaults } from "./paragraph-properties";

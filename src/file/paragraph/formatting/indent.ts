@@ -8,8 +8,8 @@
  *
  * @module
  */
-import { BuilderElement, XmlComponent } from "@file/xml-components";
-import { PositiveUniversalMeasure, UniversalMeasure, signedTwipsMeasureValue, twipsMeasureValue } from "@util/values";
+import { BuilderElement, type XmlComponent } from "@file/xml-components";
+import { type PositiveUniversalMeasure, type UniversalMeasure, signedTwipsMeasureValue, twipsMeasureValue } from "@util/values";
 
 /**
  * Properties for configuring paragraph indentation.

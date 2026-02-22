@@ -8,7 +8,7 @@
  *
  * @module
  */
-import { Paragraph } from "@file/paragraph";
+import type { Paragraph } from "@file/paragraph";
 import { XmlComponent } from "@file/xml-components";
 
 import { FootnoteAttributes } from "./footnote-attributes";

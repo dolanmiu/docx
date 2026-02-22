@@ -10,8 +10,8 @@
 import { XmlComponent } from "@file/xml-components";
 import { uniqueId } from "@util/convenience-functions";
 
-import { ParagraphChild } from "../paragraph";
-import { HyperlinkAttributes, IHyperlinkAttributesProperties } from "./hyperlink-attributes";
+import type { ParagraphChild } from "../paragraph";
+import { HyperlinkAttributes, type IHyperlinkAttributesProperties } from "./hyperlink-attributes";
 
 /**
  * Hyperlink type enumeration.

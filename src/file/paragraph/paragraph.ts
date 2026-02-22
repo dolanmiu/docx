@@ -6,19 +6,27 @@
  * @module
  */
 import { FileChild } from "@file/file-child";
-import { FootnoteReferenceRun } from "@file/footnotes";
-import { IContext, IXmlableObject } from "@file/xml-components";
+import type { FootnoteReferenceRun } from "@file/footnotes";
+import type { IContext, IXmlableObject } from "@file/xml-components";
 import { uniqueId } from "@util/convenience-functions";
 
-import { CheckBox } from "../checkbox";
+import type { CheckBox } from "../checkbox";
 import { TargetModeType } from "../relationships/relationship/relationship";
-import { DeletedTextRun, InsertedTextRun } from "../track-revision";
-import { ColumnBreak, PageBreak } from "./formatting/break";
-import { Bookmark, ConcreteHyperlink, ExternalHyperlink, InternalHyperlink } from "./links";
-import { Math } from "./math";
-import { IParagraphPropertiesOptions, ParagraphProperties } from "./properties";
-import { ImageRun, Run, SequentialIdentifier, SimpleField, SimpleMailMergeField, SymbolRun, TextRun } from "./run";
-import { Comment, CommentRangeEnd, CommentRangeStart, CommentReference, Comments } from "./run/comment-run";
+import type { DeletedTextRun, InsertedTextRun } from "../track-revision";
+import type { ColumnBreak, PageBreak } from "./formatting/break";
+import { Bookmark, ConcreteHyperlink, ExternalHyperlink, type InternalHyperlink } from "./links";
+import type { Math } from "./math";
+import { type IParagraphPropertiesOptions, ParagraphProperties } from "./properties";
+import {
+    type ImageRun,
+    type Run,
+    type SequentialIdentifier,
+    type SimpleField,
+    type SimpleMailMergeField,
+    type SymbolRun,
+    TextRun,
+} from "./run";
+import type { Comment, CommentRangeEnd, CommentRangeStart, CommentReference, Comments } from "./run/comment-run";
 
 /**
  * The types of children that can be contained within a Paragraph element.

@@ -10,7 +10,7 @@
  */
 import { createHyperlinkClick } from "@file/drawing/doc-properties/doc-properties-children";
 import { ConcreteHyperlink } from "@file/paragraph";
-import { IContext, IXmlableObject, XmlComponent } from "@file/xml-components";
+import { type IContext, type IXmlableObject, XmlComponent } from "@file/xml-components";
 
 import { NonVisualPropertiesAttributes } from "./non-visual-properties-attributes";
 

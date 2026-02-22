@@ -1,5 +1,5 @@
-import { TextWrappingType } from "@file/drawing/text-wrap";
-import { BuilderElement, XmlComponent } from "@file/xml-components";
+import type { TextWrappingType } from "@file/drawing/text-wrap";
+import { BuilderElement, type XmlComponent } from "@file/xml-components";
 import { OnOffElement } from "@file/xml-components/simple-elements";
 
 /**

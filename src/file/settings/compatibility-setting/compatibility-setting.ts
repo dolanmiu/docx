@@ -8,7 +8,7 @@
  *
  * @module
  */
-import { BuilderElement, XmlComponent } from "@file/xml-components";
+import { BuilderElement, type XmlComponent } from "@file/xml-components";
 
 // Currently, this is hard-coded for Microsoft word compatSettings.
 // Theoretically, we could add compatSettings for other programs, but

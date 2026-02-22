@@ -5,7 +5,7 @@
  */
 import JSZip from "jszip";
 
-import { InputDataType } from "./from-docx";
+import type { InputDataType } from "./from-docx";
 import { traverse } from "./traverser";
 import { toJson } from "./util";
 

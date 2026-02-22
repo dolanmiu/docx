@@ -7,12 +7,12 @@
  */
 import { XmlComponent } from "@file/xml-components";
 
-import { ConcreteHyperlink, Paragraph } from "../paragraph";
-import { Table } from "../table";
-import { TableOfContents } from "../table-of-contents";
+import type { ConcreteHyperlink, Paragraph } from "../paragraph";
+import type { Table } from "../table";
+import type { TableOfContents } from "../table-of-contents";
 import { Body } from "./body";
 import { DocumentAttributes } from "./document-attributes";
-import { DocumentBackground, IDocumentBackgroundOptions } from "./document-background";
+import { DocumentBackground, type IDocumentBackgroundOptions } from "./document-background";
 
 /**
  * Options for creating a Document element.

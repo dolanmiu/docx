@@ -111,6 +111,10 @@ const config: Linter.Config<Linter.RulesRecord>[] = [
             ],
 
             "@typescript-eslint/consistent-type-assertions": "error",
+            "@typescript-eslint/consistent-type-imports": ["error", {
+                prefer: "type-imports",
+                fixStyle: "inline-type-imports",
+            }],
             "@typescript-eslint/dot-notation": "error",
 
             "@typescript-eslint/explicit-function-return-type": [
@@ -218,6 +222,7 @@ const config: Linter.Config<Linter.RulesRecord>[] = [
 
             "id-match": "error",
             "import/no-default-export": "error",
+            "import/no-duplicates": ["error", { "prefer-inline": true }],
             "import/no-extraneous-dependencies": "off",
             "import/no-internal-modules": "off",
             "sort-imports": [
@@ -349,7 +354,6 @@ const config: Linter.Config<Linter.RulesRecord>[] = [
             parserOptions: {
                 projectService: true,
                 tsconfigRootDir: import.meta.dirname,
-                project: ["tsconfig.json"],
             },
         },
         rules: {

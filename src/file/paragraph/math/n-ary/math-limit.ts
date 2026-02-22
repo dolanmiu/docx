@@ -9,7 +9,7 @@
  */
 import { XmlComponent } from "@file/xml-components";
 
-import { MathComponent } from "../math-component";
+import type { MathComponent } from "../math-component";
 
 /**
  * Represents a limit in a math equation.

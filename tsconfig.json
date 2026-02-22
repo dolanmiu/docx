@@ -18,6 +18,7 @@
         "noUnusedLocals": true,
         "noUnusedParameters": true,
         "noFallthroughCasesInSwitch": true,
+        "verbatimModuleSyntax": true,
 
         "strictNullChecks": true,
         "sourceMap": true,

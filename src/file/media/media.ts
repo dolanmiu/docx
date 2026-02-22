@@ -6,7 +6,7 @@
  *
  * @module
  */
-import { IMediaData } from "./data";
+import type { IMediaData } from "./data";
 
 /**
  * Transformation options for media display.

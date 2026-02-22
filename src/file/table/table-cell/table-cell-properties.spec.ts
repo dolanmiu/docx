@@ -110,6 +110,13 @@ describe("TableCellProperties", () => {
             });
         });
 
+        it("should not add margins when all margin values are undefined", () => {
+            const properties = new TableCellProperties({
+                margins: {},
+            });
+            expect(() => new Formatter().format(properties)).to.throw("XMLComponent did not format correctly");
+        });
+
         it("sets cellIns to track cell insertion", () => {
             const cellProperties = new TableCellProperties({ insertion: { id: 1, author: "Firstname Lastname", date: "123" } });
             const tree = new Formatter().format(cellProperties);

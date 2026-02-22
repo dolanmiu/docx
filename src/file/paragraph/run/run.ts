@@ -8,12 +8,12 @@
  *
  * @module
  */
-import { FootnoteReferenceRun } from "@file/footnotes/footnote/run/reference-run";
-import { FieldInstruction } from "@file/table-of-contents/field-instruction";
+import type { FootnoteReferenceRun } from "@file/footnotes/footnote/run/reference-run";
+import type { FieldInstruction } from "@file/table-of-contents/field-instruction";
 import { XmlComponent } from "@file/xml-components";
 
 import { createBreak } from "./break";
-import {
+import type {
     AnnotationReference,
     CarriageReturn,
     ContinuationSeparator,
@@ -34,7 +34,7 @@ import {
 } from "./empty-children";
 import { createBegin, createEnd, createSeparate } from "./field";
 import { CurrentSection, NumberOfPages, NumberOfPagesSection, Page } from "./page-number";
-import { IParagraphRunPropertiesOptions, IRunPropertiesOptions, RunProperties } from "./properties";
+import { type IParagraphRunPropertiesOptions, type IRunPropertiesOptions, RunProperties } from "./properties";
 import { Text } from "./run-components/text";
 
 type IRunOptionsBase = {

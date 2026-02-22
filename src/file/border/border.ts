@@ -28,7 +28,7 @@
  *
  * @module
  */
-import { BuilderElement, XmlComponent } from "@file/xml-components";
+import { BuilderElement, type XmlComponent } from "@file/xml-components";
 import { eighthPointMeasureValue, hexColorValue, pointMeasureValue } from "@util/values";
 
 /**

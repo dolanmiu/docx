@@ -8,9 +8,9 @@
  *
  * @module
  */
-import { BuilderElement, XmlComponent } from "@file/xml-components";
+import { BuilderElement, type XmlComponent } from "@file/xml-components";
 
-import { IMargins } from "../floating";
+import type { IMargins } from "../floating";
 
 type IWrapTopAndBottomAttributes = {
     readonly distT?: number;

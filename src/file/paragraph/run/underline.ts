@@ -7,7 +7,7 @@
  *
  * @module
  */
-import { BuilderElement, XmlComponent } from "@file/xml-components";
+import { BuilderElement, type XmlComponent } from "@file/xml-components";
 import { hexColorValue } from "@util/values";
 
 /**

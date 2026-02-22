@@ -43,18 +43,18 @@
  *
  * @module
  */
-import { ChangeAttributes, IChangedAttributesProperties } from "@file/track-revision/track-revision";
+import { ChangeAttributes, type IChangedAttributesProperties } from "@file/track-revision/track-revision";
 import { IgnoreIfEmptyXmlComponent, OnOffElement, StringValueElement, XmlComponent } from "@file/xml-components";
 
-import { AlignmentType, createAlignment } from "../../paragraph";
-import { IShadingAttributesProperties, createShading } from "../../shading";
-import { ITableWidthProperties, createTableWidthElement } from "../table-width";
-import { ITableBordersOptions, TableBorders } from "./table-borders";
-import { ITableCellMarginOptions, createTableCellMargin } from "./table-cell-margin";
-import { ITableFloatOptions, createTableFloatProperties } from "./table-float-properties";
-import { TableLayoutType, createTableLayout } from "./table-layout";
-import { ITableCellSpacingProperties, createTableCellSpacing } from "../table-cell-spacing";
-import { ITableLookOptions, createTableLook } from "./table-look";
+import { type AlignmentType, createAlignment } from "../../paragraph";
+import { type IShadingAttributesProperties, createShading } from "../../shading";
+import { type ITableWidthProperties, createTableWidthElement } from "../table-width";
+import { type ITableBordersOptions, TableBorders } from "./table-borders";
+import { type ITableCellMarginOptions, createTableCellMargin } from "./table-cell-margin";
+import { type ITableFloatOptions, createTableFloatProperties } from "./table-float-properties";
+import { type TableLayoutType, createTableLayout } from "./table-layout";
+import { type ITableCellSpacingProperties, createTableCellSpacing } from "../table-cell-spacing";
+import { type ITableLookOptions, createTableLook } from "./table-look";
 
 export type ITablePropertiesOptionsBase = {
     readonly width?: ITableWidthProperties;

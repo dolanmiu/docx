@@ -7,12 +7,12 @@
  *
  * @module
  */
-import { IViewWrapper } from "@file/document-wrapper";
+import type { IViewWrapper } from "@file/document-wrapper";
 import { Relationships } from "@file/relationships";
-import { XmlComponent } from "@file/xml-components";
+import type { XmlComponent } from "@file/xml-components";
 import { uniqueUuid } from "@util/convenience-functions";
 
-import { FontOptions, createFontTable } from "./font-table";
+import { type FontOptions, createFontTable } from "./font-table";
 
 /**
  * Font options extended with a unique font key.

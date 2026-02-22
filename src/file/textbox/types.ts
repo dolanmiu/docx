@@ -5,7 +5,7 @@
  *
  * @module
  */
-import { Percentage, RelativeMeasure, UniversalMeasure } from "@util/values";
+import type { Percentage, RelativeMeasure, UniversalMeasure } from "@util/values";
 
 /**
  * Represents a length unit value for VML shape styling.

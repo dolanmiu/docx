@@ -81,6 +81,27 @@ describe("DeletedTextRun", () => {
         });
     });
 
+    describe("#constructor without children or text", () => {
+        it("should create a deleted text run with no text content", () => {
+            const deletedTextRun = new DeletedTextRun({ id: 0, date: "123", author: "Author" });
+            const tree = new Formatter().format(deletedTextRun);
+            expect(tree).to.deep.equal({
+                "w:del": [
+                    {
+                        _attr: {
+                            "w:author": "Author",
+                            "w:date": "123",
+                            "w:id": 0,
+                        },
+                    },
+                    {
+                        "w:r": {},
+                    },
+                ],
+            });
+        });
+    });
+
     describe("#break()", () => {
         it("should add a break", () => {
             const deletedTextRun = new DeletedTextRun({

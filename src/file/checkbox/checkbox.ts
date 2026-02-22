@@ -11,7 +11,7 @@ import { StructuredDocumentTagContent } from "@file/table-of-contents/sdt-conten
 import { StructuredDocumentTagProperties } from "@file/table-of-contents/sdt-properties";
 import { XmlComponent } from "@file/xml-components";
 
-import { CheckBoxUtil, ICheckboxSymbolOptions } from "./checkbox-util";
+import { CheckBoxUtil, type ICheckboxSymbolOptions } from "./checkbox-util";
 
 /**
  * Represents an interactive checkbox in a WordprocessingML document.

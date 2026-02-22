@@ -1,4 +1,4 @@
-import { IParagraphStylePropertiesOptions, ParagraphProperties } from "@file/paragraph/properties";
+import { type IParagraphStylePropertiesOptions, ParagraphProperties } from "@file/paragraph/properties";
 import { XmlComponent } from "@file/xml-components";
 
 /**

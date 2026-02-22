@@ -11,7 +11,7 @@
  */
 // http://officeopenxml.com/drwSp-size.php
 // http://officeopenxml.com/drwSp-rotate.php
-import { IMediaDataTransformation } from "@file/media";
+import type { IMediaDataTransformation } from "@file/media";
 import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
 
 import { Extents } from "./extents/extents";

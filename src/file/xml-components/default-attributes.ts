@@ -6,8 +6,8 @@
  *
  * @module
  */
-import { BaseXmlComponent, IContext } from "./base";
-import { IXmlAttribute, IXmlableObject } from "./xmlable-object";
+import { BaseXmlComponent, type IContext } from "./base";
+import type { IXmlAttribute, IXmlableObject } from "./xmlable-object";
 
 /**
  * Maps TypeScript property names to their XML attribute names.

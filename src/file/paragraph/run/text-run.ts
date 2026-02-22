@@ -1,4 +1,4 @@
-import { IRunOptions, Run } from "./run";
+import { type IRunOptions, Run } from "./run";
 
 /**
  * Represents a text run in a WordprocessingML document.

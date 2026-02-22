@@ -7,19 +7,19 @@
  * @module
  */
 import JSZip from "jszip";
-import { Element, js2xml } from "xml-js";
+import { type Element, js2xml } from "xml-js";
 
 import { ImageReplacer } from "@export/packer/image-replacer";
 import { DocumentAttributeNamespaces } from "@file/document";
-import { IViewWrapper } from "@file/document-wrapper";
-import { File } from "@file/file";
-import { FileChild } from "@file/file-child";
-import { IMediaData, Media } from "@file/media";
-import { ConcreteHyperlink, ExternalHyperlink, ParagraphChild } from "@file/paragraph";
+import type { IViewWrapper } from "@file/document-wrapper";
+import type { File } from "@file/file";
+import type { FileChild } from "@file/file-child";
+import { type IMediaData, Media } from "@file/media";
+import { ConcreteHyperlink, ExternalHyperlink, type ParagraphChild } from "@file/paragraph";
 import { TargetModeType } from "@file/relationships/relationship/relationship";
-import { IContext } from "@file/xml-components";
+import type { IContext } from "@file/xml-components";
 import { encodeUtf8, uniqueId } from "@util/convenience-functions";
-import { OutputByType, OutputType } from "@util/output-type";
+import type { OutputByType, OutputType } from "@util/output-type";
 
 import { appendContentType } from "./content-types-manager";
 import { appendRelationship, getNextRelationshipIndex } from "./relationship-manager";

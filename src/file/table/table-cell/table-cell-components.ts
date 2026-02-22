@@ -8,7 +8,7 @@
  *
  * @module
  */
-import { IBorderOptions, createBorderElement } from "@file/border";
+import { type IBorderOptions, createBorderElement } from "@file/border";
 import { IgnoreIfEmptyXmlComponent, XmlAttributeComponent, XmlComponent } from "@file/xml-components";
 import { decimalNumber } from "@util/values";
 

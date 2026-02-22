@@ -8,8 +8,8 @@
  *
  * @module
  */
-import { IMediaData } from "@file/media";
-import { BuilderElement, XmlComponent } from "@file/xml-components";
+import type { IMediaData } from "@file/media";
+import { BuilderElement, type XmlComponent } from "@file/xml-components";
 
 import { createExtentionList } from "./blip-extentions";
 

@@ -9,7 +9,7 @@
  * @module
  */
 import { Attributes, XmlComponent } from "@file/xml-components";
-import { UniversalMeasure, hexColorValue, signedTwipsMeasureValue } from "@util/values";
+import { type UniversalMeasure, hexColorValue, signedTwipsMeasureValue } from "@util/values";
 
 /**
  * Represents character spacing (tracking) in a run.

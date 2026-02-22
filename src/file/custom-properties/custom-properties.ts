@@ -7,10 +7,10 @@
  *
  * @module
  */
-import { IContext, IXmlableObject, XmlComponent } from "@file/xml-components";
+import { type IContext, type IXmlableObject, XmlComponent } from "@file/xml-components";
 
 import { CustomPropertiesAttributes } from "./custom-properties-attributes";
-import { CustomProperty, ICustomPropertyOptions } from "./custom-property";
+import { CustomProperty, type ICustomPropertyOptions } from "./custom-property";
 
 /**
  * Represents the collection of custom document properties.

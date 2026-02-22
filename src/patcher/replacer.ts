@@ -4,12 +4,12 @@
  * @module
  */
 import xml from "xml";
-import { Element } from "xml-js";
+import type { Element } from "xml-js";
 
 import { Formatter } from "@export/formatter";
-import { IContext, XmlComponent } from "@file/xml-components";
+import type { IContext, XmlComponent } from "@file/xml-components";
 
-import { IPatch, PatchType } from "./from-docx";
+import { type IPatch, PatchType } from "./from-docx";
 import { findRunElementIndexWithToken, splitRunElement } from "./paragraph-split-inject";
 import { replaceTokenInParagraphElement } from "./paragraph-token-replacer";
 import { findLocationOfText } from "./traverser";

@@ -48,12 +48,12 @@
  * @module
  */
 import { DeletedTableRow, InsertedTableRow } from "@file/track-revision";
-import { ChangeAttributes, IChangedAttributesProperties } from "@file/track-revision/track-revision";
+import { ChangeAttributes, type IChangedAttributesProperties } from "@file/track-revision/track-revision";
 import { IgnoreIfEmptyXmlComponent, OnOffElement, XmlComponent } from "@file/xml-components";
-import { PositiveUniversalMeasure } from "@util/values";
+import type { PositiveUniversalMeasure } from "@util/values";
 
-import { HeightRule, createTableRowHeight } from "./table-row-height";
-import { ITableCellSpacingProperties, createTableCellSpacing } from "../table-cell-spacing";
+import { type HeightRule, createTableRowHeight } from "./table-row-height";
+import { type ITableCellSpacingProperties, createTableCellSpacing } from "../table-cell-spacing";
 
 export type ITableRowPropertiesOptionsBase = {
     /** Whether the row can be split across pages (cantSplit) */

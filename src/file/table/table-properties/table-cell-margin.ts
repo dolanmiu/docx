@@ -23,7 +23,7 @@
  * @module
  */
 import { WidthType, createTableWidthElement } from "@file/table";
-import { BuilderElement, XmlComponent } from "@file/xml-components";
+import { BuilderElement, type XmlComponent } from "@file/xml-components";
 
 /**
  * Options for configuring table cell margins.

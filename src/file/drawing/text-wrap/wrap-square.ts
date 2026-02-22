@@ -8,11 +8,11 @@
  *
  * @module
  */
-import { BuilderElement, XmlComponent } from "@file/xml-components";
+import { BuilderElement, type XmlComponent } from "@file/xml-components";
 
-import { IDistance } from "../drawing";
-import { IMargins } from "../floating";
-import { ITextWrapping, TextWrappingSide } from "./text-wrapping";
+import type { IDistance } from "../drawing";
+import type { IMargins } from "../floating";
+import { type ITextWrapping, TextWrappingSide } from "./text-wrapping";
 
 type IWrapSquareAttributes = {
     readonly wrapText?: (typeof TextWrappingSide)[keyof typeof TextWrappingSide];

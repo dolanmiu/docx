@@ -7,13 +7,13 @@
  *
  * @module
  */
-import { Document, IDocumentOptions } from "./document";
-import { Endnotes } from "./endnotes";
-import { Footer } from "./footer/footer";
-import { FootNotes } from "./footnotes";
-import { Header } from "./header/header";
+import { Document, type IDocumentOptions } from "./document";
+import type { Endnotes } from "./endnotes";
+import type { Footer } from "./footer/footer";
+import type { FootNotes } from "./footnotes";
+import type { Header } from "./header/header";
 import { Relationships } from "./relationships";
-import { XmlComponent } from "./xml-components";
+import type { XmlComponent } from "./xml-components";
 
 /**
  * Interface for document view wrappers.

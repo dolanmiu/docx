@@ -6,14 +6,14 @@
 import JSZip from "jszip";
 import xml from "xml";
 
-import { File } from "@file/file";
+import type { File } from "@file/file";
 import { obfuscate } from "@file/fonts/obfuscate-ttf-to-odttf";
 import { encodeUtf8 } from "@util/convenience-functions";
 
 import { Formatter } from "../formatter";
 import { ImageReplacer } from "./image-replacer";
 import { NumberingReplacer } from "./numbering-replacer";
-import { PrettifyType } from "./packer";
+import type { PrettifyType } from "./packer";
 
 /**
  * Represents a serialized XML file with its path in the OOXML package.

@@ -12,8 +12,8 @@ import { Attributes, NumberValueElement, XmlAttributeComponent, XmlComponent } f
 import { decimalNumber } from "@util/values";
 
 import { AlignmentType } from "../paragraph/formatting";
-import { ILevelParagraphStylePropertiesOptions, ParagraphProperties } from "../paragraph/properties";
-import { IRunStylePropertiesOptions, RunProperties } from "../paragraph/run/properties";
+import { type ILevelParagraphStylePropertiesOptions, ParagraphProperties } from "../paragraph/properties";
+import { type IRunStylePropertiesOptions, RunProperties } from "../paragraph/run/properties";
 
 /**
  * Number format types for list levels.

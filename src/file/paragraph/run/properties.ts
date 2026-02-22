@@ -9,9 +9,9 @@
  *
  * @module
  */
-import { IBorderOptions, createBorderElement } from "@file/border";
-import { IShadingAttributesProperties, createShading } from "@file/shading";
-import { ChangeAttributes, IChangedAttributesProperties } from "@file/track-revision/track-revision";
+import { type IBorderOptions, createBorderElement } from "@file/border";
+import { type IShadingAttributesProperties, createShading } from "@file/shading";
+import { ChangeAttributes, type IChangedAttributesProperties } from "@file/track-revision/track-revision";
 import { DeletionTrackChange } from "@file/track-revision/track-revision-components/deletion-track-change";
 import { InsertionTrackChange } from "@file/track-revision/track-revision-components/insertion-track-change";
 import {
@@ -22,14 +22,14 @@ import {
     StringValueElement,
     XmlComponent,
 } from "@file/xml-components";
-import { PositiveUniversalMeasure, UniversalMeasure } from "@util/values";
+import type { PositiveUniversalMeasure, UniversalMeasure } from "@util/values";
 
-import { EmphasisMarkType, createEmphasisMark } from "./emphasis-mark";
+import { type EmphasisMarkType, createEmphasisMark } from "./emphasis-mark";
 import { CharacterSpacing, Color, Highlight, HighlightComplexScript } from "./formatting";
-import { ILanguageOptions, createLanguageComponent } from "./language";
-import { IFontAttributesProperties, createRunFonts } from "./run-fonts";
+import { type ILanguageOptions, createLanguageComponent } from "./language";
+import { type IFontAttributesProperties, createRunFonts } from "./run-fonts";
 import { createSubScript, createSuperScript } from "./script";
-import { UnderlineType, createUnderline } from "./underline";
+import { type UnderlineType, createUnderline } from "./underline";
 
 type IFontOptions = {
     readonly name: string;

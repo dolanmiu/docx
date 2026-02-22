@@ -1,14 +1,14 @@
 // http://officeopenxml.com/drwPicInline.php
-import { IExtendedMediaData, IMediaDataTransformation } from "@file/media";
-import { BuilderElement, XmlComponent } from "@file/xml-components";
+import type { IExtendedMediaData, IMediaDataTransformation } from "@file/media";
+import { BuilderElement, type XmlComponent } from "@file/xml-components";
 
-import { DocProperties, DocPropertiesOptions } from "./../doc-properties/doc-properties";
+import { DocProperties, type DocPropertiesOptions } from "./../doc-properties/doc-properties";
 import { createEffectExtent } from "./../effect-extent/effect-extent";
 import { createExtent } from "./../extent/extent";
 import { createGraphicFrameProperties } from "./../graphic-frame/graphic-frame-properties";
 import { Graphic } from "./../inline/graphic";
-import { OutlineOptions } from "./graphic/graphic-data/pic/shape-properties/outline/outline";
-import { SolidFillOptions } from "./graphic/graphic-data/pic/shape-properties/outline/solid-fill";
+import type { OutlineOptions } from "./graphic/graphic-data/pic/shape-properties/outline/outline";
+import type { SolidFillOptions } from "./graphic/graphic-data/pic/shape-properties/outline/solid-fill";
 
 /**
  * Options for creating an inline drawing element.

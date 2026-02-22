@@ -137,6 +137,13 @@ describe("TableProperties", () => {
     });
 
     describe("#cellMargin", () => {
+        it("should not add cellMargin when all margin values are undefined", () => {
+            const tp = new TableProperties({
+                cellMargin: {},
+            });
+            expect(() => new Formatter().format(tp)).to.throw("XMLComponent did not format correctly");
+        });
+
         it("adds a table cell top margin", () => {
             const tp = new TableProperties({
                 cellMargin: {

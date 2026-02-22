@@ -11,7 +11,7 @@
 import { XmlComponent } from "@file/xml-components";
 
 import { RelationshipsAttributes } from "./attributes";
-import { RelationshipType, TargetModeType, createRelationship } from "./relationship/relationship";
+import { type RelationshipType, type TargetModeType, createRelationship } from "./relationship/relationship";
 
 /**
  * Represents a collection of relationships in an OPC package.

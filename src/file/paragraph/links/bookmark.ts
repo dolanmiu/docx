@@ -11,7 +11,7 @@
 import { XmlComponent } from "@file/xml-components";
 import { bookmarkUniqueNumericIdGen } from "@util/convenience-functions";
 
-import { ParagraphChild } from "../paragraph";
+import type { ParagraphChild } from "../paragraph";
 import { BookmarkEndAttributes, BookmarkStartAttributes } from "./bookmark-attributes";
 
 /**

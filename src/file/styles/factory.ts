@@ -7,7 +7,7 @@
  *
  * @module
  */
-import { DocumentDefaults, IDocumentDefaultsOptions } from "./defaults";
+import { DocumentDefaults, type IDocumentDefaultsOptions } from "./defaults";
 import {
     EndnoteReferenceStyle,
     EndnoteText,
@@ -22,13 +22,13 @@ import {
     Heading5Style,
     Heading6Style,
     HyperlinkStyle,
-    IBaseCharacterStyleOptions,
-    IBaseParagraphStyleOptions,
+    type IBaseCharacterStyleOptions,
+    type IBaseParagraphStyleOptions,
     ListParagraph,
     StrongStyle,
     TitleStyle,
 } from "./style";
-import { IStylesOptions } from "./styles";
+import type { IStylesOptions } from "./styles";
 import { DocumentAttributes } from "../document/document-attributes";
 
 /**

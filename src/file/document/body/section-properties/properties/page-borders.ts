@@ -7,7 +7,7 @@
  *
  * @module
  */
-import { IBorderOptions, createBorderElement } from "@file/border";
+import { type IBorderOptions, createBorderElement } from "@file/border";
 import { IgnoreIfEmptyXmlComponent, XmlAttributeComponent } from "@file/xml-components";
 
 /**

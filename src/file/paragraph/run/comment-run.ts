@@ -9,7 +9,7 @@
  *
  * @module
  */
-import { FileChild } from "@file/file-child";
+import type { FileChild } from "@file/file-child";
 import { Relationships } from "@file/relationships";
 import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
 

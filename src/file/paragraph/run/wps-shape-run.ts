@@ -1,10 +1,10 @@
-import { DocPropertiesOptions } from "@file/drawing/doc-properties/doc-properties";
-import { WpsShapeCoreOptions } from "@file/drawing/inline/graphic/graphic-data/wps";
+import type { DocPropertiesOptions } from "@file/drawing/doc-properties/doc-properties";
+import type { WpsShapeCoreOptions } from "@file/drawing/inline/graphic/graphic-data/wps";
 
-import { Drawing, IFloating } from "../../drawing";
-import { OutlineOptions } from "../../drawing/inline/graphic/graphic-data/pic/shape-properties/outline/outline";
-import { SolidFillOptions } from "../../drawing/inline/graphic/graphic-data/pic/shape-properties/outline/solid-fill";
-import { IMediaDataTransformation, IMediaTransformation, WpsMediaData } from "../../media";
+import { Drawing, type IFloating } from "../../drawing";
+import type { OutlineOptions } from "../../drawing/inline/graphic/graphic-data/pic/shape-properties/outline/outline";
+import type { SolidFillOptions } from "../../drawing/inline/graphic/graphic-data/pic/shape-properties/outline/solid-fill";
+import type { IMediaDataTransformation, IMediaTransformation, WpsMediaData } from "../../media";
 import { Run } from "../run";
 
 export * from "@file/drawing/inline/graphic/graphic-data/wps/body-properties";

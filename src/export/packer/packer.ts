@@ -5,10 +5,10 @@
  */
 import { Stream } from "stream";
 
-import { File } from "@file/file";
-import { OutputByType, OutputType } from "@util/output-type";
+import type { File } from "@file/file";
+import type { OutputByType, OutputType } from "@util/output-type";
 
-import { Compiler, IXmlifyedFile } from "./next-compiler";
+import { Compiler, type IXmlifyedFile } from "./next-compiler";
 
 /**
  * Prettify options for formatting XML output.

@@ -7,11 +7,11 @@
  *
  * @module
  */
-import { Element as XMLElement, xml2js } from "xml-js";
+import { type Element as XMLElement, xml2js } from "xml-js";
 
-import { ImportedRootElementAttributes, ImportedXmlComponent, convertToXmlComponent } from "@file/xml-components";
+import { ImportedRootElementAttributes, type ImportedXmlComponent, convertToXmlComponent } from "@file/xml-components";
 
-import { IStylesOptions } from "./styles";
+import type { IStylesOptions } from "./styles";
 
 /**
  * Factory for creating styles from external XML sources.

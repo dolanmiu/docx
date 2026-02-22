@@ -6,10 +6,10 @@
  *
  * @module
  */
-import { BuilderElement, XmlComponent } from "@file/xml-components";
+import { BuilderElement, type XmlComponent } from "@file/xml-components";
 
 import { createSolidRgbColor } from "./rgb-color";
-import { SchemeColor, createSchemeColor } from "./scheme-color";
+import { type SchemeColor, createSchemeColor } from "./scheme-color";
 
 /**
  * RGB color options for solid fill.

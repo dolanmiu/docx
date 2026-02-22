@@ -8,17 +8,17 @@
  */
 import { AppProperties } from "./app-properties/app-properties";
 import { ContentTypes } from "./content-types/content-types";
-import { CoreProperties, IPropertiesOptions } from "./core-properties";
+import { CoreProperties, type IPropertiesOptions } from "./core-properties";
 import { CustomProperties } from "./custom-properties";
-import { HeaderFooterReferenceType, ISectionPropertiesOptions } from "./document/body/section-properties";
+import { HeaderFooterReferenceType, type ISectionPropertiesOptions } from "./document/body/section-properties";
 import { DocumentWrapper } from "./document-wrapper";
 import { EndnotesWrapper } from "./endnotes-wrapper";
-import { FileChild } from "./file-child";
+import type { FileChild } from "./file-child";
 import { FontWrapper } from "./fonts/font-wrapper";
-import { FooterWrapper, IDocumentFooter } from "./footer-wrapper";
+import { FooterWrapper, type IDocumentFooter } from "./footer-wrapper";
 import { FootnotesWrapper } from "./footnotes-wrapper";
-import { Footer, Header } from "./header";
-import { HeaderWrapper, IDocumentHeader } from "./header-wrapper";
+import type { Footer, Header } from "./header";
+import { HeaderWrapper, type IDocumentHeader } from "./header-wrapper";
 import { Media } from "./media";
 import { Numbering } from "./numbering";
 import { Comments } from "./paragraph/run/comment-run";

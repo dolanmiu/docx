@@ -8,8 +8,8 @@
  *
  * @module
  */
-import { BuilderElement, XmlComponent } from "@file/xml-components";
-import { Percentage, UniversalMeasure, measurementOrPercentValue } from "@util/values";
+import { BuilderElement, type XmlComponent } from "@file/xml-components";
+import { type Percentage, type UniversalMeasure, measurementOrPercentValue } from "@util/values";
 
 /**
  * Cell spacing measurement types.
