@@ -1,13 +1,4 @@
-/**
- * Drawing module for WordprocessingML documents.
- *
- * This module provides support for images and shapes in documents.
- *
- * Reference: http://officeopenxml.com/drwOverview.php
- *
- * @module
- */
-import { IMediaData } from "@file/media";
+import { IExtendedMediaData } from "@file/media";
 import { XmlComponent } from "@file/xml-components";
 
 import { Anchor } from "./anchor";
@@ -15,6 +6,7 @@ import { DocPropertiesOptions } from "./doc-properties/doc-properties";
 import { IFloating } from "./floating";
 import { createInline } from "./inline";
 import { OutlineOptions } from "./inline/graphic/graphic-data/pic/shape-properties/outline/outline";
+import { SolidFillOptions } from "./inline/graphic/graphic-data/pic/shape-properties/outline/solid-fill";
 
 /**
  * Distance options for drawing elements.
@@ -37,6 +29,7 @@ export type IDrawingOptions = {
     readonly floating?: IFloating;
     readonly docProperties?: DocPropertiesOptions;
     readonly outline?: OutlineOptions;
+    readonly solidFill?: SolidFillOptions;
 };
 
 /**
@@ -58,7 +51,7 @@ export type IDrawingOptions = {
  * ```
  */
 export class Drawing extends XmlComponent {
-    public constructor(imageData: IMediaData, drawingOptions: IDrawingOptions = {}) {
+    public constructor(imageData: IExtendedMediaData, drawingOptions: IDrawingOptions = {}) {
         super("w:drawing");
 
         if (!drawingOptions.floating) {
@@ -68,6 +61,7 @@ export class Drawing extends XmlComponent {
                     transform: imageData.transformation,
                     docProperties: drawingOptions.docProperties,
                     outline: drawingOptions.outline,
+                    solidFill: drawingOptions.solidFill,
                 }),
             );
         } else {

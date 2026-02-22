@@ -14,7 +14,10 @@ import { IMediaData } from "./data";
  * Specifies how an image should be transformed when displayed in the document.
  */
 export type IMediaTransformation = {
-    /** Display width in pixels */
+    readonly offset?: {
+        readonly top?: number;
+        readonly left?: number;
+    };
     readonly width: number;
     /** Display height in pixels */
     readonly height: number;
