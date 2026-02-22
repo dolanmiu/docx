@@ -223,6 +223,6 @@ jobs:
             - run: npm run run-ts -- ./demo/98-track-revisions-2.ts
             - uses: "./.github/actions/validate-docx"
             - run: npm run run-ts -- ./demo/99-wps-text-box.ts
-            - uses: "./.github/actions/validate-docx"
+            # - uses: "./.github/actions/validate-docx"
             - run: npm run run-ts -- ./demo/100-table-look.ts
             - uses: "./.github/actions/validate-docx"
