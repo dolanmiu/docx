@@ -62,7 +62,18 @@ Here is the list of all options that you can use to generate your tables of cont
 
 ## Cached entries
 
-If you already know what might be in the table, you can provide those entries to the constructor as well, and the table of contents will be populated with that data.
+By default, a Table of Contents is empty until Word regenerates the field. If you want the TOC to display entries immediately when the document is opened, you can provide pre-populated entries via the `cachedEntries` option. Word will still prompt to update the field, but the cached content is visible before that happens.
+
+Each entry is a `ToCEntry` object with the following properties:
+
+| Property | Type   | Required | Description                                                                      |
+| -------- | ------ | -------- | -------------------------------------------------------------------------------- |
+| `title`  | string | Yes      | The display text of the TOC entry                                                |
+| `level`  | number | Yes      | The heading level (1-based, maps to `TOC1`, `TOC2`, … paragraph styles)          |
+| `page`   | number | No       | The page number to display                                                       |
+| `href`   | string | No       | Bookmark anchor ID for an internal hyperlink (requires `hyperlink: true` on TOC) |
+
+Entry indentation comes from paragraph styles applied to each level. The defaults are `TOC1`, `TOC2`, etc. You can override these with the `stylesWithLevels` (`\t`) option — entries will use the style whose `level` matches the entry's `level`.
 
 ```ts
 const doc = new Document({
@@ -75,13 +86,21 @@ const doc = new Document({
                 new TableOfContents("Summary", {
                     hyperlink: true,
                     headingStyleRange: "1-5",
-                    // Cached entries
-                    cachedContent: [
+                    cachedEntries: [
                         {
-                            text: "Header #1",
+                            title: "Header #1",
                             level: 1,
                             page: 1,
                             href: "anchorForHeader1",
+                        },
+                        {
+                            title: "Header #2",
+                            level: 1,
+                            page: 2,
+                        },
+                        {
+                            title: "Header #2.1",
+                            level: 2,
                         },
                     ],
                 }),
@@ -92,6 +111,7 @@ const doc = new Document({
                     children: [
                         new Bookmark({
                             id: "anchorForHeader1",
+                            children: [],
                         }),
                     ],
                 }),
