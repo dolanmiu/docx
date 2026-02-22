@@ -223,6 +223,7 @@ export class Numbering extends XmlComponent {
             },
         ]);
 
+        // eslint-disable-next-line functional/immutable-data
         this.concreteNumberingMap.set(
             "default-bullet-numbering",
             new ConcreteNumbering({
@@ -239,10 +240,13 @@ export class Numbering extends XmlComponent {
             }),
         );
 
+        // eslint-disable-next-line functional/immutable-data
         this.abstractNumberingMap.set("default-bullet-numbering", abstractNumbering);
 
         for (const con of options.config) {
+            // eslint-disable-next-line functional/immutable-data
             this.abstractNumberingMap.set(con.reference, new AbstractNumbering(this.abstractNumUniqueNumericId(), con.levels));
+            // eslint-disable-next-line functional/immutable-data
             this.referenceConfigMap.set(con.reference, con.levels);
         }
     }
@@ -310,6 +314,7 @@ export class Numbering extends XmlComponent {
             ],
         };
 
+        // eslint-disable-next-line functional/immutable-data
         this.concreteNumberingMap.set(fullReference, new ConcreteNumbering(concreteNumberingSettings));
     }
 

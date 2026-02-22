@@ -69,6 +69,7 @@ export class Media {
      * @param mediaData - Complete image data including file name, transformation, and raw data
      */
     public addImage(key: string, mediaData: IMediaData): void {
+        // eslint-disable-next-line functional/immutable-data
         this.map.set(key, mediaData);
     }
 
