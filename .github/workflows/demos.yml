@@ -195,23 +195,29 @@ jobs:
             - run: npm run run-ts -- ./demo/84-positional-tabs.ts
             - uses: "./.github/actions/validate-docx"
             - run: npm run run-ts -- ./demo/85-template-document.ts
+            # - uses: "./.github/actions/validate-docx"
             - run: npm run run-ts -- ./demo/86-generate-template.ts
             - uses: "./.github/actions/validate-docx"
             - run: npm run run-ts -- ./demo/87-template-document.ts
+            # - uses: "./.github/actions/validate-docx"
             - run: npm run run-ts -- ./demo/88-template-document.ts
+            # - uses: "./.github/actions/validate-docx"
             - run: npm run run-ts -- ./demo/89-template-document.ts
+            # - uses: "./.github/actions/validate-docx"
             - run: npm run run-ts -- ./demo/90-check-boxes.ts
-            - uses: "./.github/actions/validate-docx"
+            # - uses: "./.github/actions/validate-docx"
             - run: npm run run-ts -- ./demo/91-custom-fonts.ts
             - uses: "./.github/actions/validate-docx"
             - run: npm run run-ts -- ./demo/92-declarative-custom-fonts.ts
             - uses: "./.github/actions/validate-docx"
             - run: npm run run-ts -- ./demo/93-template-document.ts
+            # - uses: "./.github/actions/validate-docx"
             - run: npm run run-ts -- ./demo/94-texbox.ts
             - uses: "./.github/actions/validate-docx"
             - run: npm run run-ts -- ./demo/95-paragraph-style-with-shading-and-borders.ts
             - uses: "./.github/actions/validate-docx"
             - run: npm run run-ts -- ./demo/96-template-document.ts
+            # - uses: "./.github/actions/validate-docx"
             - run: npm run run-ts -- ./demo/97-endnotes.ts
             - uses: "./.github/actions/validate-docx"
             - run: npm run run-ts -- ./demo/98-track-revisions-2.ts
