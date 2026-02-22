@@ -57,7 +57,7 @@ There are 4 items in `docx` that can be styled:
 There are a few different ways of styling this content in `docx`, which somewhat resemble the HTML/CSS approach. In order of greatest to lowest priority:
 
 1.  Direct formatting (inline formatting)
-2.  Declaritive Styles (similar to external CSS)
+2.  Declarative Styles (similar to external CSS)
 3.  Document defaults (similar to a `*` rule in CSS)
 
 Unlike CSS, less specific rules don't _necessarily_ override parent rules. The rules are a bit wonky, but if you're interested, see the [advanced formatting section](#Advanced formatting).
@@ -85,7 +85,7 @@ const para = new Paragraph({
 });
 ```
 
-### Declaritive Styles (similar to external CSS)
+### Declarative Styles (similar to external CSS)
 
 `docx` files contain a styles section separate from the main content, much like how HTML includes CSS files. Unlike CSS, `docx` distinguishes between styles meant for tables (which show up in the table formatting toolbar), styles for lists (which show up under bullets and numbering), and styles for runs and paragraphs, which show up as dropdowns offering standard styles, like "Heading 1", "Caption", or any custom styles defined in that document. <!-- TODO: add pictures of the panes -->. `docx` allows you to define these styles using a fluent interface as well.
 
@@ -203,6 +203,6 @@ For these properties, the rules state the following conflict resolution in case 
 
 Importing Images from file system path
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/2-declaritive-styles.ts ":include")
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/2-declarative-styles.ts ":include")
 
-_Source: https://github.com/dolanmiu/docx/blob/master/demo/2-declaritive-styles.ts_
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/2-declarative-styles.ts_

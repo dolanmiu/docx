@@ -83,6 +83,12 @@ const paragraph = new Paragraph({
 
 - **[Bookmarks](usage/bookmarks.md)** - For detailed coverage of bookmarks, internal hyperlinks, and page references
 
+## Demo
+
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/35-hyperlinks.ts ":include")
+
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/35-hyperlinks.ts_
+
 ## Styling hyperlinks
 
 It is possible to set the style of the text of both internal and external hyperlinks. This can be done applying run formatting on any of the `TextRun` children of the hyperlink. Use the `style: "Hyperlink"` property to show the default link styles, which can be combined with any other style.

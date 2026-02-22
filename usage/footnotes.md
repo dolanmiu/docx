@@ -155,3 +155,9 @@ const doc = new Document({
 | Property  | Type                                        | Notes    | Description                                    |
 | --------- | ------------------------------------------- | -------- | ---------------------------------------------- |
 | footnotes | `Record<string, { children: Paragraph[] }>` | Optional | Footnote definitions keyed by reference number |
+
+## Demo
+
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/17-footnotes.ts ":include")
+
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/17-footnotes.ts_
