@@ -26,6 +26,7 @@
     - [Bookmarks](usage/bookmarks.md)
     - [Checkboxes](usage/checkboxes.md)
     - [Text Box](usage/text-box.md)
+    - [WPS Text Box](usage/wps-text-box.md)
 
 - Page Layout
     - [Page Layout](usage/page-layout.md)
