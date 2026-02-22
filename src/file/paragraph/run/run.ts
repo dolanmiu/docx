@@ -8,12 +8,12 @@
  *
  * @module
  */
-import { FootnoteReferenceRun } from "@file/footnotes/footnote/run/reference-run";
-import { FieldInstruction } from "@file/table-of-contents/field-instruction";
+import type { FootnoteReferenceRun } from "@file/footnotes/footnote/run/reference-run";
+import type { FieldInstruction } from "@file/table-of-contents/field-instruction";
 import { XmlComponent } from "@file/xml-components";
 
-import { Break } from "./break";
-import {
+import { createBreak } from "./break";
+import type {
     AnnotationReference,
     CarriageReturn,
     ContinuationSeparator,
@@ -32,10 +32,9 @@ import {
     YearLong,
     YearShort,
 } from "./empty-children";
-import { Begin, End, Separate } from "./field";
+import { createBegin, createEnd, createSeparate } from "./field";
 import { CurrentSection, NumberOfPages, NumberOfPagesSection, Page } from "./page-number";
-import { PositionalTab } from "./positional-tab";
-import { IParagraphRunPropertiesOptions, IRunPropertiesOptions, RunProperties } from "./properties";
+import { type IParagraphRunPropertiesOptions, type IRunPropertiesOptions, RunProperties } from "./properties";
 import { Text } from "./run-components/text";
 
 type IRunOptionsBase = {
@@ -75,13 +74,9 @@ type IRunOptionsBase = {
     //     <xsd:element name="lastRenderedPageBreak" type="CT_Empty" minOccurs="0" maxOccurs="1" />
     // </xsd:choice>
     readonly children?: readonly (
-        | Begin
         | FieldInstruction
-        | Separate
-        | End
         | (typeof PageNumber)[keyof typeof PageNumber]
         | FootnoteReferenceRun
-        | Break
         | AnnotationReference
         | CarriageReturn
         | ContinuationSeparator
@@ -99,7 +94,7 @@ type IRunOptionsBase = {
         | Tab
         | YearLong
         | YearShort
-        | PositionalTab
+        | XmlComponent
         | string
     )[];
     readonly break?: number;
@@ -124,6 +119,8 @@ export type IParagraphRunOptions = IRunOptionsBase & IParagraphRunPropertiesOpti
  * These values are used to insert dynamic page number fields into a document.
  *
  * Reference: http://officeopenxml.com/WPfields.php
+ *
+ * @publicApi
  */
 export const PageNumber = {
     /** Inserts the current page number */
@@ -179,7 +176,7 @@ export class Run extends XmlComponent {
 
         if (options.break) {
             for (let i = 0; i < options.break; i++) {
-                this.root.push(new Break());
+                this.root.push(createBreak());
             }
         }
 
@@ -188,28 +185,28 @@ export class Run extends XmlComponent {
                 if (typeof child === "string") {
                     switch (child) {
                         case PageNumber.CURRENT:
-                            this.root.push(new Begin());
+                            this.root.push(createBegin());
                             this.root.push(new Page());
-                            this.root.push(new Separate());
-                            this.root.push(new End());
+                            this.root.push(createSeparate());
+                            this.root.push(createEnd());
                             break;
                         case PageNumber.TOTAL_PAGES:
-                            this.root.push(new Begin());
+                            this.root.push(createBegin());
                             this.root.push(new NumberOfPages());
-                            this.root.push(new Separate());
-                            this.root.push(new End());
+                            this.root.push(createSeparate());
+                            this.root.push(createEnd());
                             break;
                         case PageNumber.TOTAL_PAGES_IN_SECTION:
-                            this.root.push(new Begin());
+                            this.root.push(createBegin());
                             this.root.push(new NumberOfPagesSection());
-                            this.root.push(new Separate());
-                            this.root.push(new End());
+                            this.root.push(createSeparate());
+                            this.root.push(createEnd());
                             break;
                         case PageNumber.CURRENT_SECTION:
-                            this.root.push(new Begin());
+                            this.root.push(createBegin());
                             this.root.push(new CurrentSection());
-                            this.root.push(new Separate());
-                            this.root.push(new End());
+                            this.root.push(createSeparate());
+                            this.root.push(createEnd());
                             break;
                         default:
                             this.root.push(new Text(child));

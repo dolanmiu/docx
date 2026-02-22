@@ -7,12 +7,12 @@
  *
  * @module
  */
-import { ParagraphChild } from "@file/paragraph";
-import { BuilderElement, XmlComponent } from "@file/xml-components";
-import { InsetMode } from "@util/types";
+import type { ParagraphChild } from "@file/paragraph";
+import { BuilderElement, type XmlComponent } from "@file/xml-components";
+import type { InsetMode } from "@util/types";
 
 import { createTextboxContent } from "../texbox-content/textbox-content";
-import { LengthUnit } from "../types";
+import type { LengthUnit } from "../types";
 
 // type VMLTextboxStyle = {
 //     readonly fontWeight?: "normal" | "lighter" | 100 | 200 | 300 | 400 | "bold" | "bolder" | 500 | 600 | 700 | 800 | 900;

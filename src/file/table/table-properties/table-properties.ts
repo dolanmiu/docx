@@ -43,18 +43,18 @@
  *
  * @module
  */
-import { ChangeAttributes, IChangedAttributesProperties } from "@file/track-revision/track-revision";
+import { ChangeAttributes, type IChangedAttributesProperties } from "@file/track-revision/track-revision";
 import { IgnoreIfEmptyXmlComponent, OnOffElement, StringValueElement, XmlComponent } from "@file/xml-components";
 
-import { Alignment, AlignmentType } from "../../paragraph";
-import { IShadingAttributesProperties, Shading } from "../../shading";
-import { ITableWidthProperties, TableWidthElement } from "../table-width";
-import { ITableBordersOptions, TableBorders } from "./table-borders";
-import { ITableCellMarginOptions, TableCellMargin, TableCellMarginElementType } from "./table-cell-margin";
-import { ITableFloatOptions, TableFloatProperties } from "./table-float-properties";
-import { TableLayout, TableLayoutType } from "./table-layout";
-import { ITableCellSpacingProperties, TableCellSpacingElement } from "../table-cell-spacing";
-import { ITableLookOptions, TableLook } from "./table-look";
+import { type AlignmentType, createAlignment } from "../../paragraph";
+import { type IShadingAttributesProperties, createShading } from "../../shading";
+import { type ITableWidthProperties, createTableWidthElement } from "../table-width";
+import { type ITableBordersOptions, TableBorders } from "./table-borders";
+import { type ITableCellMarginOptions, createTableCellMargin } from "./table-cell-margin";
+import { type ITableFloatOptions, createTableFloatProperties } from "./table-float-properties";
+import { type TableLayoutType, createTableLayout } from "./table-layout";
+import { type ITableCellSpacingProperties, createTableCellSpacing } from "../table-cell-spacing";
+import { type ITableLookOptions, createTableLook } from "./table-look";
 
 export type ITablePropertiesOptionsBase = {
     readonly width?: ITableWidthProperties;
@@ -100,7 +100,7 @@ export class TableProperties extends IgnoreIfEmptyXmlComponent {
         }
 
         if (options.float) {
-            this.root.push(new TableFloatProperties(options.float));
+            this.root.push(createTableFloatProperties(options.float));
         }
 
         if (options.visuallyRightToLeft !== undefined) {
@@ -108,15 +108,15 @@ export class TableProperties extends IgnoreIfEmptyXmlComponent {
         }
 
         if (options.width) {
-            this.root.push(new TableWidthElement("w:tblW", options.width));
+            this.root.push(createTableWidthElement("w:tblW", options.width));
         }
 
         if (options.alignment) {
-            this.root.push(new Alignment(options.alignment));
+            this.root.push(createAlignment(options.alignment));
         }
 
         if (options.indent) {
-            this.root.push(new TableWidthElement("w:tblInd", options.indent));
+            this.root.push(createTableWidthElement("w:tblInd", options.indent));
         }
 
         if (options.borders) {
@@ -124,23 +124,26 @@ export class TableProperties extends IgnoreIfEmptyXmlComponent {
         }
 
         if (options.shading) {
-            this.root.push(new Shading(options.shading));
+            this.root.push(createShading(options.shading));
         }
 
         if (options.layout) {
-            this.root.push(new TableLayout(options.layout));
+            this.root.push(createTableLayout(options.layout));
         }
 
         if (options.cellMargin) {
-            this.root.push(new TableCellMargin(TableCellMarginElementType.TABLE, options.cellMargin));
+            const cellMargin = createTableCellMargin(options.cellMargin);
+            if (cellMargin) {
+                this.root.push(cellMargin);
+            }
         }
 
         if (options.tableLook) {
-            this.root.push(new TableLook(options.tableLook));
+            this.root.push(createTableLook(options.tableLook));
         }
 
         if (options.cellSpacing) {
-            this.root.push(new TableCellSpacingElement(options.cellSpacing));
+            this.root.push(createTableCellSpacing(options.cellSpacing));
         }
 
         if (options.revision) {

@@ -6,9 +6,9 @@
  *
  * @module
  */
-import { IViewWrapper } from "../document-wrapper";
-import { File } from "../file";
-import { IXmlableObject } from "./xmlable-object";
+import type { IViewWrapper } from "../document-wrapper";
+import type { File } from "../file";
+import type { IXmlableObject } from "./xmlable-object";
 
 /**
  * Context object passed through the XML tree during serialization.

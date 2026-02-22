@@ -3,7 +3,7 @@
  *
  * @module
  */
-import { Element } from "xml-js";
+import type { Element } from "xml-js";
 
 import { createTextElementContents, patchSpaceAttribute } from "./util";
 

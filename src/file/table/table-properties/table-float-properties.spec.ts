@@ -7,13 +7,13 @@ import {
     RelativeHorizontalPosition,
     RelativeVerticalPosition,
     TableAnchorType,
-    TableFloatProperties,
+    createTableFloatProperties,
 } from "./table-float-properties";
 
 describe("Table Float Properties", () => {
-    describe("#constructor", () => {
+    describe("#createTableFloatProperties", () => {
         it("should construct a TableFloatProperties with all options", () => {
-            const properties = new TableFloatProperties({
+            const properties = createTableFloatProperties({
                 horizontalAnchor: TableAnchorType.MARGIN,
                 verticalAnchor: TableAnchorType.PAGE,
                 absoluteHorizontalPosition: 10,
@@ -30,7 +30,7 @@ describe("Table Float Properties", () => {
         });
 
         it("should add overlap", () => {
-            const properties = new TableFloatProperties({
+            const properties = createTableFloatProperties({
                 overlap: OverlapType.NEVER,
             });
             const tree = new Formatter().format(properties);

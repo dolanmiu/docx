@@ -8,7 +8,7 @@
  *
  * @module
  */
-import { Paragraph } from "@file/paragraph";
+import type { Paragraph } from "@file/paragraph";
 import { XmlComponent } from "@file/xml-components";
 
 import { FootnoteAttributes } from "./footnote-attributes";
@@ -18,6 +18,8 @@ import { FootnoteRefRun } from "./run/footnote-ref-run";
  * Enumeration of footnote types.
  *
  * Reference: http://officeopenxml.com/WPfootnotes.php
+ *
+ * @publicApi
  */
 export const FootnoteType = {
     /** Separator line between body text and footnotes */

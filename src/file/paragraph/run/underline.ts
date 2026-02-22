@@ -7,7 +7,7 @@
  *
  * @module
  */
-import { Attributes, XmlComponent } from "@file/xml-components";
+import { BuilderElement, type XmlComponent } from "@file/xml-components";
 import { hexColorValue } from "@util/values";
 
 /**
@@ -42,6 +42,8 @@ import { hexColorValue } from "@util/values";
  *   </xsd:restriction>
  * </xsd:simpleType>
  * ```
+ *
+ * @publicApi
  */
 export const UnderlineType = {
     /** Single underline */
@@ -82,10 +84,15 @@ export const UnderlineType = {
     NONE: "none",
 } as const;
 
+type IUnderlineAttributes = {
+    readonly val: (typeof UnderlineType)[keyof typeof UnderlineType];
+    readonly color?: string;
+};
+
 /**
- * Represents underline formatting for a run in a WordprocessingML document.
+ * Creates underline formatting for a run in a WordprocessingML document.
  *
- * The Underline element specifies the style and optional color of underline
+ * The u element specifies the style and optional color of underline
  * formatting applied to text.
  *
  * Reference: http://officeopenxml.com/WPrun.php
@@ -104,23 +111,23 @@ export const UnderlineType = {
  * @example
  * ```typescript
  * // Simple single underline
- * new Underline();
+ * createUnderline();
  *
  * // Double underline
- * new Underline(UnderlineType.DOUBLE);
+ * createUnderline(UnderlineType.DOUBLE);
  *
  * // Red wavy underline
- * new Underline(UnderlineType.WAVE, "FF0000");
+ * createUnderline(UnderlineType.WAVE, "FF0000");
  * ```
  */
-export class Underline extends XmlComponent {
-    public constructor(underlineType: (typeof UnderlineType)[keyof typeof UnderlineType] = UnderlineType.SINGLE, color?: string) {
-        super("w:u");
-        this.root.push(
-            new Attributes({
-                val: underlineType,
-                color: color === undefined ? undefined : hexColorValue(color),
-            }),
-        );
-    }
-}
+export const createUnderline = (
+    underlineType: (typeof UnderlineType)[keyof typeof UnderlineType] = UnderlineType.SINGLE,
+    color?: string,
+): XmlComponent =>
+    new BuilderElement<IUnderlineAttributes>({
+        name: "w:u",
+        attributes: {
+            val: { key: "w:val", value: underlineType },
+            color: { key: "w:color", value: color === undefined ? undefined : hexColorValue(color) },
+        },
+    });

@@ -7,16 +7,21 @@
  */
 import { FileChild } from "@file/file-child";
 
-import { AlignmentType } from "../paragraph";
-import { ITableGridChangeOptions, TableGrid } from "./grid";
+import type { AlignmentType } from "../paragraph";
+import { type ITableGridChangeOptions, TableGrid } from "./grid";
 import { TableCell, VerticalMergeType } from "./table-cell";
-import { ITableCellSpacingProperties } from "./table-cell-spacing";
-import { ITableBordersOptions, ITableFloatOptions, ITablePropertiesChangeOptions, TableProperties } from "./table-properties";
-import { ITableCellMarginOptions } from "./table-properties/table-cell-margin";
-import { TableLayoutType } from "./table-properties/table-layout";
-import { ITableLookOptions } from "./table-properties/table-look";
-import { TableRow } from "./table-row";
-import { ITableWidthProperties } from "./table-width";
+import type { ITableCellSpacingProperties } from "./table-cell-spacing";
+import {
+    type ITableBordersOptions,
+    type ITableFloatOptions,
+    type ITablePropertiesChangeOptions,
+    TableProperties,
+} from "./table-properties";
+import type { ITableCellMarginOptions } from "./table-properties/table-cell-margin";
+import type { TableLayoutType } from "./table-properties/table-layout";
+import type { ITableLookOptions } from "./table-properties/table-look";
+import type { TableRow } from "./table-row";
+import type { ITableWidthProperties } from "./table-width";
 
 /**
  * Options for creating a Table element.
@@ -57,6 +62,8 @@ export type ITableOptions = {
  * Tables are used to organize content into a grid structure.
  *
  * Reference: http://officeopenxml.com/WPtable.php
+ *
+ * @publicApi
  *
  * ## XSD Schema
  * ```xml

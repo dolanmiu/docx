@@ -1,4 +1,4 @@
-import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
+import { BuilderElement, type XmlComponent } from "@file/xml-components";
 
 /**
  * This simple type specifies the possible types of headers and footers which may be specified for a given header or footer reference in a document. This value determines the page(s) on which the current header or footer shall be displayed.
@@ -48,30 +48,24 @@ export type IHeaderFooterOptions = {
     readonly id?: number;
 };
 
-class FooterReferenceAttributes extends XmlAttributeComponent<{
+type IHeaderFooterReferenceAttributes = {
     readonly type: (typeof HeaderFooterReferenceType)[keyof typeof HeaderFooterReferenceType];
     readonly id: string;
-}> {
-    protected readonly xmlKeys = {
-        type: "w:type",
-        id: "r:id",
-    };
-}
+};
 
 export const HeaderFooterType = {
     HEADER: "w:headerReference",
     FOOTER: "w:footerReference",
 } as const;
 
-export class HeaderFooterReference extends XmlComponent {
-    public constructor(type: (typeof HeaderFooterType)[keyof typeof HeaderFooterType], options: IHeaderFooterOptions) {
-        super(type);
-
-        this.root.push(
-            new FooterReferenceAttributes({
-                type: options.type || HeaderFooterReferenceType.DEFAULT,
-                id: `rId${options.id}`,
-            }),
-        );
-    }
-}
+export const createHeaderFooterReference = (
+    type: (typeof HeaderFooterType)[keyof typeof HeaderFooterType],
+    options: IHeaderFooterOptions,
+): XmlComponent =>
+    new BuilderElement<IHeaderFooterReferenceAttributes>({
+        name: type,
+        attributes: {
+            type: { key: "w:type", value: options.type || HeaderFooterReferenceType.DEFAULT },
+            id: { key: "r:id", value: `rId${options.id}` },
+        },
+    });

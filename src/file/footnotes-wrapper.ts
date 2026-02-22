@@ -8,7 +8,7 @@
  *
  * @module
  */
-import { IViewWrapper } from "./document-wrapper";
+import type { IViewWrapper } from "./document-wrapper";
 import { FootNotes } from "./footnotes/footnotes";
 import { Relationships } from "./relationships";
 

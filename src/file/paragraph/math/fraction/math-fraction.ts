@@ -9,7 +9,7 @@
  */
 import { XmlComponent } from "@file/xml-components";
 
-import { MathComponent } from "../math-component";
+import type { MathComponent } from "../math-component";
 import { MathDenominator } from "./math-denominator";
 import { MathNumerator } from "./math-numerator";
 
@@ -31,6 +31,8 @@ export type IMathFractionOptions = {
  * MathFraction displays a numerator over a denominator with a fraction bar.
  *
  * Reference: http://www.datypic.com/sc/ooxml/e-m_f-1.html
+ *
+ * @publicApi
  *
  * ## XSD Schema
  * ```xml

@@ -10,7 +10,7 @@
  */
 import { NumberValueElement, OnOffElement, XmlAttributeComponent, XmlComponent } from "@file/xml-components";
 
-import { Compatibility, ICompatibilityOptions } from "./compatibility";
+import { Compatibility, type ICompatibilityOptions } from "./compatibility";
 
 /**
  * Attributes for the settings element with XML namespace declarations.

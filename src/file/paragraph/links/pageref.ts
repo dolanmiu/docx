@@ -8,7 +8,7 @@
  *
  * @module
  */
-import { Begin, End } from "@file/paragraph/run/field";
+import { createBegin, createEnd } from "@file/paragraph/run/field";
 
 import { Run } from "../run";
 import { PageReferenceFieldInstruction } from "./pageref-field-instruction";
@@ -39,6 +39,8 @@ export type IPageReferenceOptions = {
  * The PAGEREF field displays the page number of the page containing
  * the specified bookmark, useful for cross-references like "see page 5".
  *
+ * @publicApi
+ *
  * @example
  * ```typescript
  * // Simple page reference
@@ -57,7 +59,7 @@ export type IPageReferenceOptions = {
 export class PageReference extends Run {
     public constructor(bookmarkId: string, options: IPageReferenceOptions = {}) {
         super({
-            children: [new Begin(true), new PageReferenceFieldInstruction(bookmarkId, options), new End()],
+            children: [createBegin(true), new PageReferenceFieldInstruction(bookmarkId, options), createEnd()],
         });
     }
 }

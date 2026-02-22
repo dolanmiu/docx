@@ -1,6 +1,6 @@
 import { XmlComponent } from "@file/xml-components";
 
-import { ChangeAttributes, IChangedAttributesProperties } from "../track-revision";
+import { ChangeAttributes, type IChangedAttributesProperties } from "../track-revision";
 
 export class InsertionTrackChange extends XmlComponent {
     public constructor(options: IChangedAttributesProperties) {

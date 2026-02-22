@@ -7,8 +7,8 @@
  *
  * @module
  */
-import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
-import { PositiveUniversalMeasure, twipsMeasureValue } from "@util/values";
+import { BuilderElement, type XmlComponent } from "@file/xml-components";
+import { type PositiveUniversalMeasure, twipsMeasureValue } from "@util/values";
 
 /**
  * Height rules for table rows.
@@ -25,6 +25,8 @@ import { PositiveUniversalMeasure, twipsMeasureValue } from "@util/values";
  *   </xsd:restriction>
  * </xsd:simpleType>
  * ```
+ *
+ * @publicApi
  */
 export const HeightRule = {
     /** Height is determined based on the content, so value is ignored. */
@@ -36,21 +38,7 @@ export const HeightRule = {
 } as const;
 
 /**
- * Attributes for table row height element.
- *
- * Internal component for managing trHeight attributes.
- */
-export class TableRowHeightAttributes extends XmlAttributeComponent<{
-    /** Height value in twips */
-    readonly value: number | string;
-    /** Height rule determining how the height value is applied */
-    readonly rule: (typeof HeightRule)[keyof typeof HeightRule];
-}> {
-    protected readonly xmlKeys = { value: "w:val", rule: "w:hRule" };
-}
-
-/**
- * Represents table row height (trHeight) in a WordprocessingML document.
+ * Creates table row height (trHeight) in a WordprocessingML document.
  *
  * The trHeight element specifies the height of a table row, along with a rule
  * determining how the height should be applied.
@@ -67,18 +55,20 @@ export class TableRowHeightAttributes extends XmlAttributeComponent<{
  *
  * @example
  * ```typescript
- * new TableRowHeight(1000, HeightRule.EXACT);
+ * createTableRowHeight(1000, HeightRule.EXACT);
  * ```
  */
-export class TableRowHeight extends XmlComponent {
-    public constructor(value: number | PositiveUniversalMeasure, rule: (typeof HeightRule)[keyof typeof HeightRule]) {
-        super("w:trHeight");
-
-        this.root.push(
-            new TableRowHeightAttributes({
-                value: twipsMeasureValue(value),
-                rule: rule,
-            }),
-        );
-    }
-}
+export const createTableRowHeight = (
+    value: number | PositiveUniversalMeasure,
+    rule: (typeof HeightRule)[keyof typeof HeightRule],
+): XmlComponent =>
+    new BuilderElement<{
+        readonly value: number | string;
+        readonly rule: (typeof HeightRule)[keyof typeof HeightRule];
+    }>({
+        name: "w:trHeight",
+        attributes: {
+            value: { key: "w:val", value: twipsMeasureValue(value) },
+            rule: { key: "w:hRule", value: rule },
+        },
+    });

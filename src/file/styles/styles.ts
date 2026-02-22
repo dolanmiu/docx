@@ -7,12 +7,12 @@
  *
  * @module
  */
-import { IDefaultStylesOptions } from "@file/styles/factory";
-import { BaseXmlComponent, ImportedXmlComponent, XmlComponent } from "@file/xml-components";
+import type { IDefaultStylesOptions } from "@file/styles/factory";
+import { type BaseXmlComponent, type ImportedXmlComponent, XmlComponent } from "@file/xml-components";
 
 import { StyleForCharacter, StyleForParagraph } from "./style";
-import { ICharacterStyleOptions } from "./style/character-style";
-import { IParagraphStyleOptions } from "./style/paragraph-style";
+import type { ICharacterStyleOptions } from "./style/character-style";
+import type { IParagraphStyleOptions } from "./style/paragraph-style";
 
 /**
  * Options for configuring document styles.

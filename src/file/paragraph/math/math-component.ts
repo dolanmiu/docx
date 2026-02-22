@@ -6,13 +6,13 @@
  *
  * @module
  */
-import { MathAngledBrackets, MathCurlyBrackets, MathRoundBrackets, MathSquareBrackets } from "./brackets";
-import { MathFraction } from "./fraction";
-import { MathFunction } from "./function";
-import { MathRun } from "./math-run";
-import { MathIntegral, MathSum } from "./n-ary";
-import { MathRadical } from "./radical";
-import { MathSubScript, MathSubSuperScript, MathSuperScript } from "./script";
+import type { MathAngledBrackets, MathCurlyBrackets, MathRoundBrackets, MathSquareBrackets } from "./brackets";
+import type { MathFraction } from "./fraction";
+import type { MathFunction } from "./function";
+import type { MathRun } from "./math-run";
+import type { MathIntegral, MathSum } from "./n-ary";
+import type { MathRadical } from "./radical";
+import type { MathSubScript, MathSubSuperScript, MathSuperScript } from "./script";
 
 /**
  * Union type of all valid math components.

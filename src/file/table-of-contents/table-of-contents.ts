@@ -9,16 +9,16 @@
  * @module
  */
 import { FileChild } from "@file/file-child";
-import { InternalHyperlink, Paragraph, TabStopDefinition } from "@file/paragraph";
+import { InternalHyperlink, Paragraph, type TabStopDefinition } from "@file/paragraph";
 import { Run, Tab } from "@file/paragraph/run";
-import { Begin, End, Separate } from "@file/paragraph/run/field";
+import { createBegin, createEnd, createSeparate } from "@file/paragraph/run/field";
 import { Text } from "@file/paragraph/run/run-components/text";
-import { XmlComponent } from "@file/xml-components";
+import type { XmlComponent } from "@file/xml-components";
 
 import { FieldInstruction } from "./field-instruction";
 import { StructuredDocumentTagContent } from "./sdt-content";
 import { StructuredDocumentTagProperties } from "./sdt-properties";
-import { ITableOfContentsOptions } from "./table-of-contents-properties";
+import type { ITableOfContentsOptions } from "./table-of-contents-properties";
 
 type ToCEntry = {
     readonly title: string;
@@ -34,6 +34,8 @@ type ToCEntry = {
  * with page numbers. It uses a TOC field code to generate entries.
  *
  * Reference: http://officeopenxml.com/WPtableOfContents.php
+ *
+ * @publicApi
  *
  * ## XSD Schema
  * ```xml
@@ -80,13 +82,13 @@ export class TableOfContents extends FileChild {
 
         const beginParagraphMandatoryChildren = [
             new Run({
-                children: [new Begin(beginDirty), new FieldInstruction(properties), new Separate()],
+                children: [createBegin(beginDirty), new FieldInstruction(properties), createSeparate()],
             }),
         ];
 
         const endParagraphMandatoryChildren = [
             new Run({
-                children: [new End()],
+                children: [createEnd()],
             }),
         ];
 

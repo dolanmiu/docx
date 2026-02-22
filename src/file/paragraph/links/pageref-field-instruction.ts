@@ -11,7 +11,7 @@
 import { SpaceType } from "@file/shared";
 import { XmlComponent } from "@file/xml-components";
 
-import { IPageReferenceOptions } from "./pageref";
+import type { IPageReferenceOptions } from "./pageref";
 import { TextAttributes } from "../run/text-attributes";
 
 /**

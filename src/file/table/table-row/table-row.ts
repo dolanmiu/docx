@@ -8,7 +8,7 @@
 import { XmlComponent } from "@file/xml-components";
 
 import { TableCell } from "../table-cell";
-import { ITableRowPropertiesOptions, TableRowProperties } from "./table-row-properties";
+import { type ITableRowPropertiesOptions, TableRowProperties } from "./table-row-properties";
 
 /**
  * Options for creating a TableRow element.
@@ -27,6 +27,8 @@ export type ITableRowOptions = {
  * one or more table cells that hold the actual content.
  *
  * Reference: http://officeopenxml.com/WPtableRow.php
+ *
+ * @publicApi
  *
  * ## XSD Schema
  * ```xml

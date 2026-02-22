@@ -1,10 +1,10 @@
-import { DocPropertiesOptions } from "@file/drawing/doc-properties/doc-properties";
-import { IContext, IXmlableObject } from "@file/xml-components";
+import type { DocPropertiesOptions } from "@file/drawing/doc-properties/doc-properties";
+import type { IContext, IXmlableObject } from "@file/xml-components";
 
 import { Run } from ".";
 import { createTransformation } from "./wps-shape-run";
-import { Drawing, IFloating } from "../../drawing";
-import { IGroupChildMediaData, IMediaData, IMediaTransformation, WpgMediaData } from "../../media";
+import { Drawing, type IFloating } from "../../drawing";
+import type { IGroupChildMediaData, IMediaData, IMediaTransformation, WpgMediaData } from "../../media";
 
 export * from "@file/drawing/inline/graphic/graphic-data/wps/body-properties";
 
@@ -15,8 +15,14 @@ type CoreGroupOptions = {
     readonly altText?: DocPropertiesOptions;
 };
 
+/**
+ * @publicApi
+ */
 export type IWpgGroupOptions = { readonly type: "wpg" } & CoreGroupOptions;
 
+/**
+ * @publicApi
+ */
 export class WpgGroupRun extends Run {
     private readonly wpgGroupData: WpgMediaData;
     private readonly mediaDatas: readonly IMediaData[];

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { Formatter } from "@export/formatter";
 
-import { BuilderElement } from "./simple-elements";
+import { BuilderElement, StringEnumValueElement } from "./simple-elements";
 
 describe("BuilderElement", () => {
     describe("#constructor()", () => {
@@ -33,6 +33,24 @@ describe("BuilderElement", () => {
                 test: {
                     _attr: {
                         "w:testAttr": "test",
+                    },
+                },
+            });
+        });
+    });
+});
+
+describe("StringEnumValueElement", () => {
+    describe("#constructor()", () => {
+        it("should create an element with an enum value", () => {
+            type AlignmentType = "left" | "center" | "right";
+            const element = new StringEnumValueElement<AlignmentType>("w:jc", "center");
+
+            const tree = new Formatter().format(element);
+            expect(tree).to.deep.equal({
+                "w:jc": {
+                    _attr: {
+                        "w:val": "center",
                     },
                 },
             });

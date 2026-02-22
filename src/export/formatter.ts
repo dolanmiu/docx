@@ -3,7 +3,7 @@
  *
  * @module
  */
-import { BaseXmlComponent, IContext, IXmlableObject } from "@file/xml-components";
+import type { BaseXmlComponent, IContext, IXmlableObject } from "@file/xml-components";
 
 /**
  * Converts XML components into serializable objects ready for XML generation.

@@ -1,7 +1,10 @@
-import { TextWrappingType } from "@file/drawing/text-wrap";
-import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
+import type { TextWrappingType } from "@file/drawing/text-wrap";
+import { BuilderElement, type XmlComponent } from "@file/xml-components";
 import { OnOffElement } from "@file/xml-components/simple-elements";
 
+/**
+ * @publicApi
+ */
 export enum VerticalAnchor {
     CENTER = "ctr",
     TOP = "t",
@@ -20,41 +23,21 @@ export type IBodyPropertiesOptions = {
     readonly noAutoFit?: boolean;
 };
 
-class BodyPropertiesAttributes extends XmlAttributeComponent<{
-    // readonly wrap?: (typeof TextWrappingType)[keyof typeof TextWrappingType];
-    readonly lIns?: number;
-    readonly rIns?: number;
-    readonly tIns?: number;
-    readonly bIns?: number;
-    readonly anchor?: VerticalAnchor;
-}> {
-    protected readonly xmlKeys = {
-        wrap: "wrap",
-        lIns: "lIns",
-        rIns: "rIns",
-        tIns: "tIns",
-        bIns: "bIns",
-        anchor: "anchor",
-    };
-}
-
-export class BodyProperties extends XmlComponent {
-    public constructor(options: IBodyPropertiesOptions = {}) {
-        super("wps:bodyPr");
-
-        this.root.push(
-            new BodyPropertiesAttributes({
-                // wrap: options.wrap,
-                lIns: options.margins?.left,
-                rIns: options.margins?.right,
-                tIns: options.margins?.top,
-                bIns: options.margins?.bottom,
-                anchor: options.verticalAnchor,
-            }),
-        );
-
-        if (options.noAutoFit) {
-            this.root.push(new OnOffElement("a:noAutofit", options.noAutoFit));
-        }
-    }
-}
+export const createBodyProperties = (options: IBodyPropertiesOptions = {}): XmlComponent =>
+    new BuilderElement<{
+        readonly lIns?: number;
+        readonly rIns?: number;
+        readonly tIns?: number;
+        readonly bIns?: number;
+        readonly anchor?: VerticalAnchor;
+    }>({
+        name: "wps:bodyPr",
+        attributes: {
+            lIns: { key: "lIns", value: options.margins?.left },
+            rIns: { key: "rIns", value: options.margins?.right },
+            tIns: { key: "tIns", value: options.margins?.top },
+            bIns: { key: "bIns", value: options.margins?.bottom },
+            anchor: { key: "anchor", value: options.verticalAnchor },
+        },
+        children: [...(options.noAutoFit ? [new OnOffElement("a:noAutofit", options.noAutoFit)] : [])],
+    });

@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { IViewWrapper } from "@file/document-wrapper";
-import { File } from "@file/file";
+import type { IViewWrapper } from "@file/document-wrapper";
+import type { File } from "@file/file";
 import { Paragraph, TextRun } from "@file/paragraph";
 
 import { PatchType } from "./from-docx";
@@ -111,6 +111,37 @@ describe("replacer", () => {
 
             expect(JSON.stringify(element)).to.contain("Delightful Header");
             expect(didFindOccurrence).toBe(true);
+        });
+
+        it("should replace paragraph type without keeping original styles if keepOriginalStyles is false", () => {
+            const { element, didFindOccurrence } = replacer({
+                json: JSON.parse(JSON.stringify(MOCK_JSON)),
+                patch: {
+                    type: PatchType.PARAGRAPH,
+                    children: [new TextRun("sweet")],
+                },
+                patchText: "{{bold}}",
+                context: {
+                    file: {} as unknown as File,
+                    viewWrapper: {
+                        Relationships: {},
+                    } as unknown as IViewWrapper,
+                    stack: [],
+                },
+                keepOriginalStyles: false,
+            });
+
+            expect(JSON.stringify(element)).to.contain("sweet");
+            expect(didFindOccurrence).toBe(true);
+            // When keepOriginalStyles is false, the replacement runs should NOT
+            // have the original w:rPr elements copied into them
+            const secondParagraph = element.elements![0].elements![1];
+            const replacementRun = secondParagraph.elements!.find((e) =>
+                e.elements?.some((el) => el.elements?.some((t) => t.text === "sweet")),
+            );
+            // The replacement run should not contain rPr from the original
+            const rPrElements = replacementRun?.elements?.filter((e) => e.name === "w:rPr");
+            expect(rPrElements).to.have.length(0);
         });
 
         it("should replace paragraph type keeping original styling if keepOriginalStyles is true", () => {

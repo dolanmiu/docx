@@ -1,4 +1,4 @@
-import { IRunStylePropertiesOptions, RunProperties } from "@file/paragraph/run/properties";
+import { type IRunStylePropertiesOptions, RunProperties } from "@file/paragraph/run/properties";
 import { XmlComponent } from "@file/xml-components";
 
 /**

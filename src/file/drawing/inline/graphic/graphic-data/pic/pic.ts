@@ -9,13 +9,13 @@
  * @module
  */
 // http://officeopenxml.com/drwPic.php
-import { IMediaData, IMediaDataTransformation } from "@file/media";
+import type { IMediaData, IMediaDataTransformation } from "@file/media";
 import { XmlComponent } from "@file/xml-components";
 
 import { BlipFill } from "./blip/blip-fill";
 import { NonVisualPicProperties } from "./non-visual-pic-properties/non-visual-pic-properties";
 import { PicAttributes } from "./pic-attributes";
-import { OutlineOptions } from "./shape-properties/outline/outline";
+import type { OutlineOptions } from "./shape-properties/outline/outline";
 import { ShapeProperties } from "./shape-properties/shape-properties";
 
 /**

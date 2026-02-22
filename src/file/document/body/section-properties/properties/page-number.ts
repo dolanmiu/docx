@@ -7,8 +7,8 @@
  *
  * @module
  */
-import { NumberFormat } from "@file/shared/number-format";
-import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
+import type { NumberFormat } from "@file/shared/number-format";
+import { BuilderElement, type XmlComponent } from "@file/xml-components";
 import { decimalNumber } from "@util/values";
 
 /**
@@ -26,6 +26,8 @@ import { decimalNumber } from "@util/values";
  *   </xsd:restriction>
  * </xsd:simpleType>
  * ```
+ *
+ * @publicApi
  */
 export const PageNumberSeparator = {
     /** Hyphen separator (-) */
@@ -56,16 +58,8 @@ export type IPageNumberTypeAttributes = {
     readonly separator?: (typeof PageNumberSeparator)[keyof typeof PageNumberSeparator];
 };
 
-export class PageNumberTypeAttributes extends XmlAttributeComponent<IPageNumberTypeAttributes> {
-    protected readonly xmlKeys = {
-        start: "w:start",
-        formatType: "w:fmt",
-        separator: "w:chapSep",
-    };
-}
-
 /**
- * Represents page numbering settings (pgNumType) for a document section.
+ * Creates page numbering settings (pgNumType) for a document section.
  *
  * This element specifies the page numbering format and starting value
  * for all pages in a section.
@@ -85,21 +79,18 @@ export class PageNumberTypeAttributes extends XmlAttributeComponent<IPageNumberT
  * @example
  * ```typescript
  * // Start page numbering at 5 with lowercase roman numerals
- * new PageNumberType({
+ * createPageNumberType({
  *   start: 5,
  *   formatType: NumberFormat.LOWER_ROMAN
  * });
  * ```
  */
-export class PageNumberType extends XmlComponent {
-    public constructor({ start, formatType, separator }: IPageNumberTypeAttributes) {
-        super("w:pgNumType");
-        this.root.push(
-            new PageNumberTypeAttributes({
-                start: start === undefined ? undefined : decimalNumber(start),
-                formatType,
-                separator,
-            }),
-        );
-    }
-}
+export const createPageNumberType = ({ start, formatType, separator }: IPageNumberTypeAttributes): XmlComponent =>
+    new BuilderElement<IPageNumberTypeAttributes>({
+        name: "w:pgNumType",
+        attributes: {
+            start: { key: "w:start", value: start === undefined ? undefined : decimalNumber(start) },
+            formatType: { key: "w:fmt", value: formatType },
+            separator: { key: "w:chapSep", value: separator },
+        },
+    });

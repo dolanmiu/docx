@@ -379,9 +379,9 @@ const table = new Table({
 
 #### Example
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/97-table-look.ts ":include")
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/100-table-look.ts ":include")
 
-_Source: https://github.com/dolanmiu/docx/blob/master/demo/97-table-look.ts_
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/100-table-look.ts_
 
 ## Examples
 

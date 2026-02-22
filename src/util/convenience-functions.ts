@@ -23,6 +23,8 @@ import { customAlphabet, nanoid } from "nanoid/non-secure";
  * ```typescript
  * const width = convertMillimetersToTwip(25.4); // Returns 1440 (1 inch)
  * ```
+ *
+ * @publicApi
  */
 export const convertMillimetersToTwip = (millimeters: number): number => Math.floor((millimeters / 25.4) * 72 * 20);
 
@@ -38,6 +40,8 @@ export const convertMillimetersToTwip = (millimeters: number): number => Math.fl
  * ```typescript
  * const width = convertInchesToTwip(1); // Returns 1440
  * ```
+ *
+ * @publicApi
  */
 export const convertInchesToTwip = (inches: number): number => Math.floor(inches * 72 * 20);
 

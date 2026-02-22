@@ -7,18 +7,6 @@
  * Reference: http://officeopenxml.com/WPtextSpecialContent-break.php
  * Reference: http://officeopenxml.com/WPrun.php
  *
- * @module
- */
-import { XmlComponent } from "@file/xml-components";
-
-/**
- * Represents a line break in a WordprocessingML document.
- *
- * The Break element inserts a line break (carriage return/line feed) within a run.
- * This forces text to continue on the next line without starting a new paragraph.
- *
- * Reference: http://officeopenxml.com/WPtextSpecialContent-break.php
- *
  * ## XSD Schema
  * ```xml
  * <xsd:complexType name="CT_Br">
@@ -44,22 +32,33 @@ import { XmlComponent } from "@file/xml-components";
  * </xsd:simpleType>
  * ```
  *
+ * @module
+ */
+import { BuilderElement, type XmlComponent } from "@file/xml-components";
+
+/**
+ * Creates a line break element for a WordprocessingML document.
+ *
+ * The Break element inserts a line break (carriage return/line feed) within a run.
+ * This forces text to continue on the next line without starting a new paragraph.
+ *
+ * Reference: http://officeopenxml.com/WPtextSpecialContent-break.php
+ *
  * @example
  * ```typescript
  * // Add line breaks in a run
  * new Run({
  *   children: [
  *     "First line",
- *     new Break(),
+ *     createBreak(),
  *     "Second line",
- *     new Break(),
+ *     createBreak(),
  *     "Third line",
  *   ],
  * });
  * ```
  */
-export class Break extends XmlComponent {
-    public constructor() {
-        super("w:br");
-    }
-}
+export const createBreak = (): XmlComponent =>
+    new BuilderElement({
+        name: "w:br",
+    });

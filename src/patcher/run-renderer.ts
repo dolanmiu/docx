@@ -3,9 +3,9 @@
  *
  * @module
  */
-import { Element } from "xml-js";
+import type { Element } from "xml-js";
 
-import { ElementWrapper } from "./traverser";
+import type { ElementWrapper } from "./traverser";
 
 /**
  * Rendered representation of a paragraph with its text content and structure.

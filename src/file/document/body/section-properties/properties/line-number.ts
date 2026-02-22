@@ -1,5 +1,5 @@
-import { BuilderElement, XmlComponent } from "@file/xml-components";
-import { PositiveUniversalMeasure, decimalNumber, twipsMeasureValue } from "@util/values";
+import { BuilderElement, type XmlComponent } from "@file/xml-components";
+import { type PositiveUniversalMeasure, decimalNumber, twipsMeasureValue } from "@util/values";
 
 /**
  * This simple type specifies when the line numbering in the parent section shall be reset to its restart value. The line numbering increments for each line (even if the line number itself is not displayed) until it reaches the restart point specified by this element.
@@ -17,6 +17,8 @@ import { PositiveUniversalMeasure, decimalNumber, twipsMeasureValue } from "@uti
  *   </xsd:restriction>
  * </xsd:simpleType>
  * ```
+ *
+ * @publicApi
  */
 export const LineNumberRestartFormat = {
     /**

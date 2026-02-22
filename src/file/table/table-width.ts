@@ -7,8 +7,8 @@
  *
  * @module
  */
-import { NextAttributeComponent, XmlComponent } from "@file/xml-components";
-import { Percentage, UniversalMeasure, measurementOrPercentValue } from "@util/values";
+import { BuilderElement, type XmlComponent } from "@file/xml-components";
+import { type Percentage, type UniversalMeasure, measurementOrPercentValue } from "@util/values";
 
 /**
  * Width type values for tables and cells.
@@ -24,6 +24,8 @@ import { Percentage, UniversalMeasure, measurementOrPercentValue } from "@util/v
  *   </xsd:restriction>
  * </xsd:simpleType>
  * ```
+ *
+ * @publicApi
  */
 export const WidthType = {
     /** Auto. */
@@ -53,26 +55,29 @@ export type ITableWidthProperties = {
 };
 
 /**
- * Represents a table width element in a WordprocessingML document.
+ * Creates a table width element in a WordprocessingML document.
  *
  * Used for specifying widths of tables, cells, margins, and indentation.
  *
  * Reference: http://officeopenxml.com/WPtableWidth.php
+ *
+ * @example
+ * ```typescript
+ * createTableWidthElement("w:tblW", { size: 5000, type: WidthType.DXA });
+ * createTableWidthElement("w:tcW", { size: 50, type: WidthType.PERCENTAGE });
+ * ```
  */
-export class TableWidthElement extends XmlComponent {
-    public constructor(name: string, { type = WidthType.AUTO, size }: ITableWidthProperties) {
-        super(name);
-        // super("w:tblW");
-        let tableWidthValue = size;
-        if (type === WidthType.PERCENTAGE && typeof size === "number") {
-            tableWidthValue = `${size}%`;
-        }
-
-        this.root.push(
-            new NextAttributeComponent<ITableWidthProperties>({
-                type: { key: "w:type", value: type },
-                size: { key: "w:w", value: measurementOrPercentValue(tableWidthValue) },
-            }),
-        );
+export const createTableWidthElement = (name: string, { type = WidthType.AUTO, size }: ITableWidthProperties): XmlComponent => {
+    let tableWidthValue = size;
+    if (type === WidthType.PERCENTAGE && typeof size === "number") {
+        tableWidthValue = `${size}%`;
     }
-}
+
+    return new BuilderElement<ITableWidthProperties>({
+        name,
+        attributes: {
+            type: { key: "w:type", value: type },
+            size: { key: "w:w", value: measurementOrPercentValue(tableWidthValue) },
+        },
+    });
+};

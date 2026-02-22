@@ -28,8 +28,8 @@
  *
  * @module
  */
-import { NextAttributeComponent, XmlAttributeComponent, XmlComponent } from "@file/xml-components";
-import { PositiveUniversalMeasure, twipsMeasureValue } from "@util/values";
+import { BuilderElement, XmlAttributeComponent, XmlComponent } from "@file/xml-components";
+import { type PositiveUniversalMeasure, twipsMeasureValue } from "@util/values";
 
 export type ITableGridChangeOptions = {
     readonly id: number;
@@ -37,7 +37,23 @@ export type ITableGridChangeOptions = {
 };
 
 /**
- * Represents the table grid in a WordprocessingML document.
+ * Creates a single column in the table grid.
+ *
+ * The gridCol element specifies the width of a single column.
+ */
+export const createGridCol = (width?: number | PositiveUniversalMeasure): XmlComponent =>
+    new BuilderElement<{ readonly width?: number | PositiveUniversalMeasure }>({
+        name: "w:gridCol",
+        attributes:
+            width !== undefined
+                ? {
+                      width: { key: "w:w", value: twipsMeasureValue(width) },
+                  }
+                : undefined,
+    });
+
+/**
+ * Creates the table grid for a WordprocessingML document.
  *
  * The tblGrid element defines the number and width of columns in the table.
  *
@@ -47,28 +63,10 @@ export class TableGrid extends XmlComponent {
     public constructor(widths: readonly number[] | readonly PositiveUniversalMeasure[], revision?: ITableGridChangeOptions) {
         super("w:tblGrid");
         for (const width of widths) {
-            this.root.push(new GridCol(width));
+            this.root.push(createGridCol(width));
         }
         if (revision) {
             this.root.push(new TableGridChange(revision));
-        }
-    }
-}
-
-/**
- * Represents a single column in the table grid.
- *
- * The gridCol element specifies the width of a single column.
- */
-export class GridCol extends XmlComponent {
-    public constructor(width?: number | PositiveUniversalMeasure) {
-        super("w:gridCol");
-        if (width !== undefined) {
-            this.root.push(
-                new NextAttributeComponent<{ readonly width: number | PositiveUniversalMeasure }>({
-                    width: { key: "w:w", value: twipsMeasureValue(width) },
-                }),
-            );
         }
     }
 }

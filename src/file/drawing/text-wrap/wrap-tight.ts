@@ -8,26 +8,17 @@
  *
  * @module
  */
-import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
+import { BuilderElement, type XmlComponent } from "@file/xml-components";
 
-import { IMargins } from "../floating";
+import type { IMargins } from "../floating";
 
-/**
- * Attributes for the WrapTight element.
- * @internal
- */
-class WrapTightAttributes extends XmlAttributeComponent<{
+type IWrapTightAttributes = {
     readonly distT?: number;
     readonly distB?: number;
-}> {
-    protected readonly xmlKeys = {
-        distT: "distT",
-        distB: "distB",
-    };
-}
+};
 
 /**
- * Represents tight text wrapping for a floating drawing.
+ * Creates tight text wrapping for a floating drawing.
  *
  * WrapTight causes text to wrap closely around the contours
  * of the drawing rather than its rectangular bounding box.
@@ -46,20 +37,16 @@ class WrapTightAttributes extends XmlAttributeComponent<{
  * </xsd:complexType>
  * ```
  */
-export class WrapTight extends XmlComponent {
-    public constructor(
-        margins: IMargins = {
-            top: 0,
-            bottom: 0,
+export const createWrapTight = (
+    margins: IMargins = {
+        top: 0,
+        bottom: 0,
+    },
+): XmlComponent =>
+    new BuilderElement<IWrapTightAttributes>({
+        name: "wp:wrapTight",
+        attributes: {
+            distT: { key: "distT", value: margins.top },
+            distB: { key: "distB", value: margins.bottom },
         },
-    ) {
-        super("wp:wrapTight");
-
-        this.root.push(
-            new WrapTightAttributes({
-                distT: margins.top,
-                distB: margins.bottom,
-            }),
-        );
-    }
-}
+    });

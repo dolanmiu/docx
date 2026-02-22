@@ -11,7 +11,7 @@
 import { XmlComponent } from "@file/xml-components";
 import { bookmarkUniqueNumericIdGen } from "@util/convenience-functions";
 
-import { ParagraphChild } from "../paragraph";
+import type { ParagraphChild } from "../paragraph";
 import { BookmarkEndAttributes, BookmarkStartAttributes } from "./bookmark-attributes";
 
 /**
@@ -35,6 +35,8 @@ export type IBookmarkOptions = {
  * of a start marker, content, and an end marker.
  *
  * Reference: http://officeopenxml.com/WPbookmark.php
+ *
+ * @publicApi
  *
  * ## XSD Schema
  * ```xml

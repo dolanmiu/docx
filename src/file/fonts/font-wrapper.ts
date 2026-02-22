@@ -7,12 +7,12 @@
  *
  * @module
  */
-import { IViewWrapper } from "@file/document-wrapper";
+import type { IViewWrapper } from "@file/document-wrapper";
 import { Relationships } from "@file/relationships";
-import { XmlComponent } from "@file/xml-components";
+import type { XmlComponent } from "@file/xml-components";
 import { uniqueUuid } from "@util/convenience-functions";
 
-import { FontOptions, createFontTable } from "./font-table";
+import { type FontOptions, createFontTable } from "./font-table";
 
 /**
  * Font options extended with a unique font key.
@@ -43,7 +43,7 @@ export class FontWrapper implements IViewWrapper {
         this.relationships = new Relationships();
 
         for (let i = 0; i < options.length; i++) {
-            this.relationships.createRelationship(
+            this.relationships.addRelationship(
                 i + 1,
                 "http://schemas.openxmlformats.org/officeDocument/2006/relationships/font",
                 `fonts/${options[i].name}.odttf`,

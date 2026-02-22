@@ -9,7 +9,7 @@
  *
  * @module
  */
-import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
+import { BuilderElement, type XmlComponent } from "@file/xml-components";
 
 /**
  * Options for font attributes across different character sets.
@@ -34,22 +34,9 @@ export type IFontAttributesProperties = {
 };
 
 /**
- * @internal
- */
-class RunFontAttributes extends XmlAttributeComponent<IFontAttributesProperties> {
-    protected readonly xmlKeys = {
-        ascii: "w:ascii",
-        cs: "w:cs",
-        eastAsia: "w:eastAsia",
-        hAnsi: "w:hAnsi",
-        hint: "w:hint",
-    };
-}
-
-/**
- * Represents font settings for a run in a WordprocessingML document.
+ * Creates font settings for a run in a WordprocessingML document.
  *
- * The RunFonts element specifies which fonts should be used for different character
+ * The rFonts element specifies which fonts should be used for different character
  * ranges in a run. This allows documents to use different fonts for ASCII, complex
  * script, East Asian, and high ANSI characters.
  *
@@ -73,10 +60,10 @@ class RunFontAttributes extends XmlAttributeComponent<IFontAttributesProperties>
  * @example
  * ```typescript
  * // Use same font for all character sets
- * new RunFonts("Arial");
+ * createRunFonts("Arial");
  *
  * // Specify different fonts for different character sets
- * new RunFonts({
+ * createRunFonts({
  *   ascii: "Arial",
  *   eastAsia: "MS Mincho",
  *   cs: "Arial",
@@ -84,27 +71,30 @@ class RunFontAttributes extends XmlAttributeComponent<IFontAttributesProperties>
  * });
  * ```
  */
-export class RunFonts extends XmlComponent {
-    public constructor(name: string, hint?: string);
-    public constructor(attrs: string | IFontAttributesProperties);
-    public constructor(nameOrAttrs: string | IFontAttributesProperties, hint?: string) {
-        super("w:rFonts");
-        if (typeof nameOrAttrs === "string") {
-            // use public constructor(name: string, hint?: string);
-            const name = nameOrAttrs;
-            this.root.push(
-                new RunFontAttributes({
-                    ascii: name,
-                    cs: name,
-                    eastAsia: name,
-                    hAnsi: name,
-                    hint: hint,
-                }),
-            );
-        } else {
-            // use public constructor(attrs: IRunFontAttributesProperties);
-            const attrs = nameOrAttrs;
-            this.root.push(new RunFontAttributes(attrs));
-        }
+export const createRunFonts = (nameOrAttrs: string | IFontAttributesProperties, hint?: string): XmlComponent => {
+    if (typeof nameOrAttrs === "string") {
+        const name = nameOrAttrs;
+        return new BuilderElement<IFontAttributesProperties>({
+            name: "w:rFonts",
+            attributes: {
+                ascii: { key: "w:ascii", value: name },
+                cs: { key: "w:cs", value: name },
+                eastAsia: { key: "w:eastAsia", value: name },
+                hAnsi: { key: "w:hAnsi", value: name },
+                hint: { key: "w:hint", value: hint },
+            },
+        });
     }
-}
+
+    const attrs = nameOrAttrs;
+    return new BuilderElement<IFontAttributesProperties>({
+        name: "w:rFonts",
+        attributes: {
+            ascii: { key: "w:ascii", value: attrs.ascii },
+            cs: { key: "w:cs", value: attrs.cs },
+            eastAsia: { key: "w:eastAsia", value: attrs.eastAsia },
+            hAnsi: { key: "w:hAnsi", value: attrs.hAnsi },
+            hint: { key: "w:hint", value: attrs.hint },
+        },
+    });
+};

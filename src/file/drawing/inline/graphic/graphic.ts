@@ -1,9 +1,9 @@
-import { IExtendedMediaData, IMediaDataTransformation } from "@file/media";
+import type { IExtendedMediaData, IMediaDataTransformation } from "@file/media";
 import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
 
 import { GraphicData } from "./graphic-data";
-import { OutlineOptions } from "./graphic-data/pic/shape-properties/outline/outline";
-import { SolidFillOptions } from "./graphic-data/pic/shape-properties/outline/solid-fill";
+import type { OutlineOptions } from "./graphic-data/pic/shape-properties/outline/outline";
+import type { SolidFillOptions } from "./graphic-data/pic/shape-properties/outline/solid-fill";
 
 /**
  * Attributes for the graphic element.

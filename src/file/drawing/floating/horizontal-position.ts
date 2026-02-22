@@ -8,10 +8,10 @@
  *
  * @module
  */
-import { BuilderElement, XmlComponent } from "@file/xml-components";
+import { BuilderElement, type XmlComponent } from "@file/xml-components";
 
 import { createAlign } from "./align";
-import { HorizontalPositionRelativeFrom, IHorizontalPositionOptions } from "./floating-position";
+import { HorizontalPositionRelativeFrom, type IHorizontalPositionOptions } from "./floating-position";
 import { createPositionOffset } from "./position-offset";
 
 /**

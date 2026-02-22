@@ -7,20 +7,20 @@
  *
  * @module
  */
-import { FontOptions } from "@file/fonts/font-table";
-import { ICommentsOptions } from "@file/paragraph/run/comment-run";
-import { IHyphenationOptions } from "@file/settings";
-import { ICompatibilityOptions } from "@file/settings/compatibility";
+import type { FontOptions } from "@file/fonts/font-table";
+import type { ICommentsOptions } from "@file/paragraph/run/comment-run";
+import type { IHyphenationOptions } from "@file/settings";
+import type { ICompatibilityOptions } from "@file/settings/compatibility";
 import { StringContainer, XmlAttributeComponent, XmlComponent } from "@file/xml-components";
 import { dateTimeValue } from "@util/values";
 
-import { ICustomPropertyOptions } from "../custom-properties";
-import { IDocumentBackgroundOptions } from "../document";
+import type { ICustomPropertyOptions } from "../custom-properties";
+import type { IDocumentBackgroundOptions } from "../document";
 import { DocumentAttributes } from "../document/document-attributes";
-import { ISectionOptions } from "../file";
-import { INumberingOptions } from "../numbering";
-import { Paragraph } from "../paragraph";
-import { IStylesOptions } from "../styles";
+import type { ISectionOptions } from "../file";
+import type { INumberingOptions } from "../numbering";
+import type { Paragraph } from "../paragraph";
+import type { IStylesOptions } from "../styles";
 
 /**
  * Options for configuring document properties.

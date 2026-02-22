@@ -9,13 +9,13 @@
  * @module
  */
 // http://officeopenxml.com/drwSp-SpPr.php
-import { IMediaDataTransformation } from "@file/media";
+import type { IMediaDataTransformation } from "@file/media";
 import { XmlComponent } from "@file/xml-components";
 
 import { Form } from "./form";
 import { createNoFill } from "./outline/no-fill";
-import { OutlineOptions, createOutline } from "./outline/outline";
-import { SolidFillOptions, createSolidFill } from "./outline/solid-fill";
+import { type OutlineOptions, createOutline } from "./outline/outline";
+import { type SolidFillOptions, createSolidFill } from "./outline/solid-fill";
 import { PresetGeometry } from "./preset-geometry/preset-geometry";
 import { ShapePropertiesAttributes } from "./shape-properties-attributes";
 

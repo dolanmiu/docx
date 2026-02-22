@@ -1,10 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
 
 import { Formatter } from "@export/formatter";
-import { IViewWrapper } from "@file/document-wrapper";
-import { File } from "@file/file";
+import type { IViewWrapper } from "@file/document-wrapper";
+import type { File } from "@file/file";
 import { Paragraph } from "@file/index";
-import { IMediaData } from "@file/media";
+import type { IMediaData } from "@file/media";
 
 import { WpgGroupRun } from "./wpg-group-run";
 

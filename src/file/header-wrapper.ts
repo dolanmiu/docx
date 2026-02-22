@@ -9,15 +9,15 @@
  *
  * @module
  */
-import { XmlComponent } from "@file/xml-components";
+import type { XmlComponent } from "@file/xml-components";
 
-import { HeaderFooterReferenceType } from "./document";
-import { IViewWrapper } from "./document-wrapper";
+import type { HeaderFooterReferenceType } from "./document";
+import type { IViewWrapper } from "./document-wrapper";
 import { Header } from "./header/header";
-import { Media } from "./media";
-import { Paragraph } from "./paragraph";
+import type { Media } from "./media";
+import type { Paragraph } from "./paragraph";
 import { Relationships } from "./relationships";
-import { Table } from "./table";
+import type { Table } from "./table";
 
 /**
  * Configuration for a document header.

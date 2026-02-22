@@ -8,9 +8,9 @@
  *
  * @module
  */
-import { XmlComponent } from "@file/xml-components";
+import type { XmlComponent } from "@file/xml-components";
 
-import { CharacterSet, createFont } from "./font";
+import { type CharacterSet, createFont } from "./font";
 
 /**
  * Creates a regular embedded font with default settings.

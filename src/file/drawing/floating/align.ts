@@ -1,5 +1,5 @@
-import { HorizontalPositionAlign, VerticalPositionAlign } from "@file/shared/alignment";
-import { BuilderElement, XmlComponent } from "@file/xml-components";
+import type { HorizontalPositionAlign, VerticalPositionAlign } from "@file/shared/alignment";
+import { BuilderElement, type XmlComponent } from "@file/xml-components";
 
 /**
  * # Relative Horizontal/Vertical Alignment

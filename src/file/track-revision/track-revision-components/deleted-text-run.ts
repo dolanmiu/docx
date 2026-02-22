@@ -9,11 +9,11 @@ import { XmlComponent } from "@file/xml-components";
 
 import { DeletedNumberOfPages, DeletedNumberOfPagesSection, DeletedPage } from "./deleted-page-number";
 import { DeletedText } from "./deleted-text";
-import { Break } from "../../paragraph/run/break";
-import { Begin, End, Separate } from "../../paragraph/run/field";
+import { createBreak } from "../../paragraph/run/break";
+import { createBegin, createEnd, createSeparate } from "../../paragraph/run/field";
 import { RunProperties } from "../../paragraph/run/properties";
-import { IRunOptions, PageNumber } from "../../paragraph/run/run";
-import { ChangeAttributes, IChangedAttributesProperties } from "../track-revision";
+import { type IRunOptions, PageNumber } from "../../paragraph/run/run";
+import { ChangeAttributes, type IChangedAttributesProperties } from "../track-revision";
 
 /**
  * Options for creating a deleted text run.
@@ -35,6 +35,8 @@ type IDeletedRunOptions = IRunOptions & IChangedAttributesProperties;
  * formatting in applications that support track changes.
  *
  * Reference: http://officeopenxml.com/WPtrackChanges.php
+ *
+ * @publicApi
  *
  * ## XSD Schema
  * ```xml
@@ -108,22 +110,22 @@ class DeletedTextRunWrapper extends XmlComponent {
                 if (typeof child === "string") {
                     switch (child) {
                         case PageNumber.CURRENT:
-                            this.root.push(new Begin());
+                            this.root.push(createBegin());
                             this.root.push(new DeletedPage());
-                            this.root.push(new Separate());
-                            this.root.push(new End());
+                            this.root.push(createSeparate());
+                            this.root.push(createEnd());
                             break;
                         case PageNumber.TOTAL_PAGES:
-                            this.root.push(new Begin());
+                            this.root.push(createBegin());
                             this.root.push(new DeletedNumberOfPages());
-                            this.root.push(new Separate());
-                            this.root.push(new End());
+                            this.root.push(createSeparate());
+                            this.root.push(createEnd());
                             break;
                         case PageNumber.TOTAL_PAGES_IN_SECTION:
-                            this.root.push(new Begin());
+                            this.root.push(createBegin());
                             this.root.push(new DeletedNumberOfPagesSection());
-                            this.root.push(new Separate());
-                            this.root.push(new End());
+                            this.root.push(createSeparate());
+                            this.root.push(createEnd());
                             break;
                         default:
                             this.root.push(new DeletedText(child));
@@ -140,7 +142,7 @@ class DeletedTextRunWrapper extends XmlComponent {
 
         if (options.break) {
             for (let i = 0; i < options.break; i++) {
-                this.root.splice(1, 0, new Break());
+                this.root.splice(1, 0, createBreak());
             }
         }
     }

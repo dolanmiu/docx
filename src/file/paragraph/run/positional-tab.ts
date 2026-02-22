@@ -8,7 +8,7 @@
  *
  * @module
  */
-import { NextAttributeComponent, XmlComponent } from "@file/xml-components";
+import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
 
 /**
  * Positional tab alignment types.
@@ -25,6 +25,8 @@ import { NextAttributeComponent, XmlComponent } from "@file/xml-components";
  *   </xsd:restriction>
  * </xsd:simpleType>
  * ```
+ *
+ * @publicApi
  */
 export const PositionalTabAlignment = {
     /** Left-aligned tab */
@@ -49,6 +51,8 @@ export const PositionalTabAlignment = {
  *   </xsd:restriction>
  * </xsd:simpleType>
  * ```
+ *
+ * @publicApi
  */
 export const PositionalTabRelativeTo = {
     /** Position relative to margin */
@@ -74,6 +78,8 @@ export const PositionalTabRelativeTo = {
  *   </xsd:restriction>
  * </xsd:simpleType>
  * ```
+ *
+ * @publicApi
  */
 export const PositionalTabLeader = {
     /** No leader character */
@@ -104,14 +110,28 @@ export type PositionalTabOptions = {
     readonly leader: (typeof PositionalTabLeader)[keyof typeof PositionalTabLeader];
 };
 
+class PositionalTabAttributes extends XmlAttributeComponent<{
+    readonly alignment: string;
+    readonly relativeTo: string;
+    readonly leader: string;
+}> {
+    protected readonly xmlKeys = {
+        alignment: "w:alignment",
+        relativeTo: "w:relativeTo",
+        leader: "w:leader",
+    };
+}
+
 /**
- * Represents a positional tab in a WordprocessingML document.
+ * Represents a positional tab element for a WordprocessingML document.
  *
  * A positional tab is an absolute position tab stop that is typically used
  * in bidirectional text scenarios. Unlike normal tabs, positional tabs specify
  * an exact alignment and position within the paragraph.
  *
  * Reference: http://officeopenxml.com/WPrun.php
+ *
+ * @publicApi
  *
  * ## XSD Schema
  * ```xml
@@ -137,23 +157,10 @@ export class PositionalTab extends XmlComponent {
         super("w:ptab");
 
         this.root.push(
-            new NextAttributeComponent<{
-                readonly alignment: (typeof PositionalTabAlignment)[keyof typeof PositionalTabAlignment];
-                readonly relativeTo: (typeof PositionalTabRelativeTo)[keyof typeof PositionalTabRelativeTo];
-                readonly leader: (typeof PositionalTabLeader)[keyof typeof PositionalTabLeader];
-            }>({
-                alignment: {
-                    key: "w:alignment",
-                    value: options.alignment,
-                },
-                relativeTo: {
-                    key: "w:relativeTo",
-                    value: options.relativeTo,
-                },
-                leader: {
-                    key: "w:leader",
-                    value: options.leader,
-                },
+            new PositionalTabAttributes({
+                alignment: options.alignment,
+                relativeTo: options.relativeTo,
+                leader: options.leader,
             }),
         );
     }

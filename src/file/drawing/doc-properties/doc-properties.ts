@@ -9,7 +9,7 @@
  * @module
  */
 import { ConcreteHyperlink } from "@file/paragraph";
-import { IContext, IXmlableObject, NextAttributeComponent, XmlComponent } from "@file/xml-components";
+import { type IContext, type IXmlableObject, NextAttributeComponent, XmlComponent } from "@file/xml-components";
 import { docPropertiesUniqueNumericIdGen } from "@util/convenience-functions";
 
 import { createHyperlinkClick } from "./doc-properties-children";

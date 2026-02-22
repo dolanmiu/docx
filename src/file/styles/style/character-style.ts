@@ -7,9 +7,9 @@
  *
  * @module
  */
-import { IRunStylePropertiesOptions, RunProperties } from "@file/paragraph/run/properties";
+import { type IRunStylePropertiesOptions, RunProperties } from "@file/paragraph/run/properties";
 
-import { IStyleOptions, Style } from "./style";
+import { type IStyleOptions, Style } from "./style";
 
 /**
  * Base options for character style configuration.

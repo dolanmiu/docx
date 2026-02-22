@@ -1,33 +1,80 @@
 # Contribution Guidelines
 
-- Include documentation reference(s) at the top of each file as a comment. For example:
+## File Documentation
 
-    ```ts
-    // http://officeopenxml.com/WPdocument.php
-    ```
+Every source file must include structured JSDoc documentation. This ensures discoverability and traceability back to the OOXML specification.
 
-    It can be a link to `officeopenxml.com` etc.
-    It could also be a reference to the official ECMA-376 standard: https://www.ecma-international.org/publications-and-standards/standards/ecma-376/
+### Module-Level JSDoc
 
-- Include a portion of the schema as a comment for cross reference. For example:
+Each file should begin with a module-level JSDoc block containing:
 
-    ```ts
-    // <xsd:element name="tbl" type="CT_Tbl" minOccurs="0" maxOccurs="1"/>
-    ```
+1. A brief description of the module's purpose.
+2. A `Reference:` link to the relevant documentation (e.g., [officeopenxml.com](http://officeopenxml.com), [datypic.com](http://www.datypic.com/sc/ooxml/), or the [ECMA-376 standard](https://www.ecma-international.org/publications-and-standards/standards/ecma-376/)).
+3. The `@module` tag.
 
-- Follow Prettier standards, and consider using the [Prettier VSCode](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode) plugin.
+```ts
+/**
+ * Header module for WordprocessingML documents.
+ *
+ * Headers are repeated at the top of each page in a section.
+ *
+ * Reference: http://officeopenxml.com/WPheaders.php
+ *
+ * @module
+ */
+```
 
-- Follow the `ESLint` rules
+### XSD Schema References
 
-## Always think about the user
+Include the relevant XSD schema fragment in a `## XSD Schema` section within the JSDoc of classes and factory functions. The `ooxml-schemas/` directory in this repository contains the official ISO-IEC29500 OOXML XSD schemas and serves as the **golden source of truth**.
 
-Put yourself in their position, and imagine how they would feel about the feature you wrote.
+Key schemas:
 
-1. Is it easy to use?
-2. Has it been documented well?
-3. Is it intuitive?
-4. Is it declarative?
-5. Is it fun to use?
+| Schema                                              | Purpose                                    |
+| --------------------------------------------------- | ------------------------------------------ |
+| `ooxml-schemas/ISO-IEC29500-4_2016/wml.xsd`         | WordprocessingML (main document structure) |
+| `ooxml-schemas/ISO-IEC29500-4_2016/dml-main.xsd`    | DrawingML (images, shapes)                 |
+| `ooxml-schemas/ISO-IEC29500-4_2016/shared-math.xsd` | Math equations                             |
+| `ooxml-schemas/ISO-IEC29500-4_2016/vml-main.xsd`    | VML (legacy shapes, textboxes)             |
+
+Always cross-reference these schemas when implementing or modifying XML generation:
+
+````ts
+/**
+ * Represents a table in a WordprocessingML document.
+ *
+ * Reference: http://officeopenxml.com/WPtable.php
+ *
+ * @publicApi
+ *
+ * ## XSD Schema
+ * ```xml
+ * <xsd:complexType name="CT_Tbl">
+ *   <xsd:sequence>
+ *     <xsd:group ref="EG_RangeMarkupElements" minOccurs="0" maxOccurs="unbounded"/>
+ *     <xsd:element name="tblPr" type="CT_TblPr"/>
+ *     <xsd:element name="tblGrid" type="CT_TblGrid"/>
+ *     <xsd:group ref="EG_ContentRowContent" minOccurs="0" maxOccurs="unbounded"/>
+ *   </xsd:sequence>
+ * </xsd:complexType>
+ * ```
+ */
+````
+
+### Code Style and Linting
+
+- Follow Prettier formatting standards. Consider using the [Prettier VS Code extension](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode).
+- Follow all `ESLint` rules configured in the project.
+
+## API Design Principles
+
+Every feature should be designed from the consumer's perspective. Before submitting a contribution, verify that your API meets the following criteria:
+
+1. **Ease of use** — Can a developer use this feature with minimal friction?
+2. **Documentation** — Are the options, behavior, and examples clearly documented in JSDoc?
+3. **Intuitiveness** — Does the API behave as a developer would reasonably expect?
+4. **Declarative style** — Does it follow the project's declarative construction pattern?
+5. **Developer experience** — Is it pleasant to read and write?
 
 ## Good Commit Names
 
@@ -57,7 +104,7 @@ Unesesary coment removed // Make sure to use correct spelling
 
 ## Declarative API
 
-Make sure the API is declarative, so no _method calling_ or _mutation_. This is a design decision, consistent with the rest of the project. There are benefits to declarative code over other styles of code, explained here: https://dzone.com/articles/why-declarative-coding-makes-you-a-better-programm
+All APIs must be **declarative** — no method chaining, mutation, or imperative construction patterns. This is a core design principle of the project. See: https://dzone.com/articles/why-declarative-coding-makes-you-a-better-programm
 
 **Do not:**
 
@@ -67,19 +114,52 @@ const text = paragraph.createText();
 text.contents = "Hello World";
 ```
 
-**Do**
+**Do:**
 
 ```ts
 const doc = new Document({
-    sections: [{
-        children: [
-            new Paragraph({
-                children: [new TextRun("Hello World")],
-            }),
-        ],
-    }];
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [new TextRun("Hello World")],
+                }),
+            ],
+        },
+    ],
 });
 ```
+
+### Public API Elements (`@publicApi`)
+
+User-facing elements (e.g., `Document`, `Paragraph`, `Table`, `TextRun`, `Textbox`) use the `new ClassName(options)` pattern and must be annotated with `@publicApi` in their JSDoc. These form the idiomatic surface of the library that end-users interact with:
+
+```ts
+/**
+ * @publicApi
+ */
+export class Textbox extends FileChild {
+    public constructor({ style, children, ...rest }: ITextboxOptions) {
+        // ...
+    }
+}
+```
+
+### Internal Elements (`BuilderElement`)
+
+For internal XML construction — elements that are not part of the public API — use `BuilderElement` or `createXyz()` factory functions. This is less verbose while keeping the declarative style intact:
+
+```ts
+export const createVerticalAlign = (value: VerticalAlignValue): XmlComponent =>
+    new BuilderElement<{ readonly verticalAlign: VerticalAlignValue }>({
+        name: "w:vAlign",
+        attributes: {
+            verticalAlign: { key: "w:val", value },
+        },
+    });
+```
+
+`BuilderElement` provides typed attributes and optional children in a single declarative call, removing the need for boilerplate wrapper classes for simple XML elements.
 
 ## Getters and Setters
 
@@ -219,5 +299,3 @@ describe("ClassName", () => {
     });
 });
 ```
-
-Try not to use the `tests/utility.ts` file as this is being deprecated.

@@ -8,9 +8,9 @@
  *
  * @module
  */
-import { HorizontalPositionAlign, VerticalPositionAlign } from "@file/shared/alignment";
-import { HeightRule } from "@file/table";
-import { BuilderElement, XmlComponent } from "@file/xml-components";
+import type { HorizontalPositionAlign, VerticalPositionAlign } from "@file/shared/alignment";
+import type { HeightRule } from "@file/table";
+import { BuilderElement, type XmlComponent } from "@file/xml-components";
 
 /**
  * Drop cap types for paragraph frames.

@@ -7,7 +7,7 @@
  *
  * @module
  */
-import { BorderElement, BorderStyle, IBorderOptions } from "@file/border";
+import { BorderStyle, type IBorderOptions, createBorderElement } from "@file/border";
 import { XmlComponent } from "@file/xml-components";
 
 /**
@@ -25,13 +25,13 @@ export type ITableBordersOptions = {
     readonly insideVertical?: IBorderOptions;
 };
 
-const NONE_BORDER = {
+const NONE_BORDER: IBorderOptions = {
     style: BorderStyle.NONE,
     size: 0,
     color: "auto",
 };
 
-const DEFAULT_BORDER = {
+const DEFAULT_BORDER: IBorderOptions = {
     style: BorderStyle.SINGLE,
     size: 4,
     color: "auto",
@@ -43,9 +43,22 @@ const DEFAULT_BORDER = {
  * The tblBorders element specifies the borders for all cells in the table.
  *
  * Reference: http://officeopenxml.com/WPtableBorders.php
+ *
+ * @publicApi
+ *
+ * @example
+ * ```typescript
+ * new TableBorders({
+ *   top: { style: BorderStyle.SINGLE, size: 6, color: "000000" },
+ *   bottom: { style: BorderStyle.SINGLE, size: 6, color: "000000" },
+ * });
+ *
+ * // To remove all borders
+ * new TableBorders(TableBorders.NONE);
+ * ```
  */
 export class TableBorders extends XmlComponent {
-    public static readonly NONE = {
+    public static readonly NONE: ITableBordersOptions = {
         top: NONE_BORDER,
         bottom: NONE_BORDER,
         left: NONE_BORDER,
@@ -57,40 +70,11 @@ export class TableBorders extends XmlComponent {
     public constructor(options: ITableBordersOptions) {
         super("w:tblBorders");
 
-        if (options.top) {
-            this.root.push(new BorderElement("w:top", options.top));
-        } else {
-            this.root.push(new BorderElement("w:top", DEFAULT_BORDER));
-        }
-
-        if (options.left) {
-            this.root.push(new BorderElement("w:left", options.left));
-        } else {
-            this.root.push(new BorderElement("w:left", DEFAULT_BORDER));
-        }
-
-        if (options.bottom) {
-            this.root.push(new BorderElement("w:bottom", options.bottom));
-        } else {
-            this.root.push(new BorderElement("w:bottom", DEFAULT_BORDER));
-        }
-
-        if (options.right) {
-            this.root.push(new BorderElement("w:right", options.right));
-        } else {
-            this.root.push(new BorderElement("w:right", DEFAULT_BORDER));
-        }
-
-        if (options.insideHorizontal) {
-            this.root.push(new BorderElement("w:insideH", options.insideHorizontal));
-        } else {
-            this.root.push(new BorderElement("w:insideH", DEFAULT_BORDER));
-        }
-
-        if (options.insideVertical) {
-            this.root.push(new BorderElement("w:insideV", options.insideVertical));
-        } else {
-            this.root.push(new BorderElement("w:insideV", DEFAULT_BORDER));
-        }
+        this.root.push(createBorderElement("w:top", options.top ?? DEFAULT_BORDER));
+        this.root.push(createBorderElement("w:left", options.left ?? DEFAULT_BORDER));
+        this.root.push(createBorderElement("w:bottom", options.bottom ?? DEFAULT_BORDER));
+        this.root.push(createBorderElement("w:right", options.right ?? DEFAULT_BORDER));
+        this.root.push(createBorderElement("w:insideH", options.insideHorizontal ?? DEFAULT_BORDER));
+        this.root.push(createBorderElement("w:insideV", options.insideVertical ?? DEFAULT_BORDER));
     }
 }

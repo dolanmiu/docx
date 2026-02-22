@@ -9,7 +9,7 @@
  */
 import { XmlComponent } from "@file/xml-components";
 
-import { MathComponent } from "../math-component";
+import type { MathComponent } from "../math-component";
 import { createMathBase } from "../n-ary";
 import { MathFunctionName } from "./math-function-name";
 import { MathFunctionProperties } from "./math-function-properties";
@@ -33,6 +33,8 @@ export type IMathFunctionOptions = {
  * such as sin(x), cos(θ), or log(n).
  *
  * Reference: http://www.datypic.com/sc/ooxml/e-m_func-1.html
+ *
+ * @publicApi
  *
  * ## XSD Schema
  * ```xml

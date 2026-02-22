@@ -1,49 +1,31 @@
-import { IMediaDataTransformation } from "@file/media";
-import { XmlComponent } from "@file/xml-components";
+import type { IMediaDataTransformation } from "@file/media";
+import { BuilderElement, type XmlComponent } from "@file/xml-components";
 
-import { Pic } from "../pic";
 import { Form } from "../pic/shape-properties/form";
-import { WpsShape } from "../wps/wps-shape";
 
-export type GroupChild = WpsShape | Pic;
+export type GroupChild = XmlComponent;
 
 export type WpgGroupCoreOptions = {
     readonly children: readonly GroupChild[];
-    // readonly nonVisualProperties?: INonVisualShapePropertiesOptions;
-    // readonly bodyProperties?: IBodyPropertiesOptions;
 };
 
 export type WpgGroupOptions = WpgGroupCoreOptions & {
     readonly transformation: IMediaDataTransformation;
 };
 
-export class GroupProperties extends XmlComponent {
-    private readonly form: Form;
+const createGroupProperties = (transform: IMediaDataTransformation): XmlComponent =>
+    new BuilderElement({
+        name: "wpg:grpSpPr",
+        children: [new Form(transform)],
+    });
 
-    public constructor({ transform }: { readonly transform: IMediaDataTransformation }) {
-        super(`wpg:grpSpPr`);
+const createNonVisualGroupProperties = (): XmlComponent =>
+    new BuilderElement({
+        name: "wpg:cNvGrpSpPr",
+    });
 
-        this.form = new Form(transform);
-        this.root.push(this.form);
-    }
-}
-
-export class NonVisualGroupProperties extends XmlComponent {
-    public constructor() {
-        super("wpg:cNvGrpSpPr");
-    }
-}
-
-export class WpgGroup extends XmlComponent {
-    public constructor(options: WpgGroupOptions) {
-        super("wpg:wgp");
-
-        this.root.push(new NonVisualGroupProperties());
-        this.root.push(
-            new GroupProperties({
-                transform: options.transformation,
-            }),
-        );
-        this.root.push(...options.children);
-    }
-}
+export const createWpgGroup = (options: WpgGroupOptions): XmlComponent =>
+    new BuilderElement({
+        name: "wpg:wgp",
+        children: [createNonVisualGroupProperties(), createGroupProperties(options.transformation), ...options.children],
+    });

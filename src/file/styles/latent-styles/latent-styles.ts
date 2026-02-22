@@ -10,7 +10,7 @@
  */
 import { XmlComponent } from "@file/xml-components";
 
-import { LatentStyleException } from "./exceptions";
+import type { LatentStyleException } from "./exceptions";
 
 /**
  * Represents latent style definitions in a WordprocessingML document.

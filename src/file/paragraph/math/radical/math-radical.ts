@@ -9,7 +9,7 @@
  */
 import { XmlComponent } from "@file/xml-components";
 
-import { MathComponent } from "../math-component";
+import type { MathComponent } from "../math-component";
 import { createMathBase } from "../n-ary";
 import { MathDegree } from "./math-degree";
 import { MathRadicalProperties } from "./math-radical-properties";
@@ -33,6 +33,8 @@ export type IMathRadicalOptions = {
  * n-th roots (cube root, fourth root, etc.).
  *
  * Reference: http://www.datypic.com/sc/ooxml/e-m_rad-1.html
+ *
+ * @publicApi
  *
  * ## XSD Schema
  * ```xml

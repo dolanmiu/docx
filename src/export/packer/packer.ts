@@ -5,16 +5,18 @@
  */
 import { Stream } from "stream";
 
-import { File } from "@file/file";
-import { OutputByType, OutputType } from "@util/output-type";
+import type { File } from "@file/file";
+import type { OutputByType, OutputType } from "@util/output-type";
 
-import { Compiler, IXmlifyedFile } from "./next-compiler";
+import { Compiler, type IXmlifyedFile } from "./next-compiler";
 
 /**
  * Prettify options for formatting XML output.
  *
  * Controls the indentation style used when formatting the generated XML.
  * Prettified output is more human-readable but results in larger file sizes.
+ *
+ * @publicApi
  */
 export const PrettifyType = {
     /** No prettification (smallest file size) */
@@ -38,6 +40,8 @@ const convertPrettifyType = (
  * The Packer class provides static methods to convert a File object into different
  * output formats such as Buffer, Blob, string, or stream. It handles the compilation
  * of the document structure into OOXML format and compression into a .docx ZIP archive.
+ *
+ * @publicApi
  *
  * @example
  * ```typescript

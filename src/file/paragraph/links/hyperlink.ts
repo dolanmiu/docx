@@ -10,13 +10,15 @@
 import { XmlComponent } from "@file/xml-components";
 import { uniqueId } from "@util/convenience-functions";
 
-import { ParagraphChild } from "../paragraph";
-import { HyperlinkAttributes, IHyperlinkAttributesProperties } from "./hyperlink-attributes";
+import type { ParagraphChild } from "../paragraph";
+import { HyperlinkAttributes, type IHyperlinkAttributesProperties } from "./hyperlink-attributes";
 
 /**
  * Hyperlink type enumeration.
  *
  * Defines the types of hyperlinks supported in WordprocessingML documents.
+ *
+ * @publicApi
  */
 export const HyperlinkType = {
     /** Internal hyperlink to a bookmark within the document */
@@ -104,6 +106,8 @@ export class ConcreteHyperlink extends XmlComponent {
  *
  * Reference: http://officeopenxml.com/WPhyperlink.php
  *
+ * @publicApi
+ *
  * ## XSD Schema
  * ```xml
  * <xsd:element name="hyperlink" type="CT_Hyperlink"/>
@@ -144,6 +148,8 @@ export class InternalHyperlink extends ConcreteHyperlink {
  * is converted to a ConcreteHyperlink with the relationship ID.
  *
  * Reference: http://officeopenxml.com/WPhyperlink.php
+ *
+ * @publicApi
  *
  * ## XSD Schema
  * ```xml

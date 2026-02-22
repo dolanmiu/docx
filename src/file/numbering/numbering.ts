@@ -10,11 +10,11 @@
  * @module
  */
 import { AlignmentType } from "@file/paragraph";
-import { IContext, IXmlableObject, XmlComponent } from "@file/xml-components";
+import { type IContext, type IXmlableObject, XmlComponent } from "@file/xml-components";
 import { abstractNumUniqueNumericIdGen, concreteNumUniqueNumericIdGen, convertInchesToTwip } from "@util/convenience-functions";
 
 import { AbstractNumbering } from "./abstract-numbering";
-import { ILevelsOptions, LevelFormat } from "./level";
+import { type ILevelsOptions, LevelFormat } from "./level";
 import { ConcreteNumbering } from "./num";
 import { DocumentAttributes } from "../document/document-attributes";
 

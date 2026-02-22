@@ -9,7 +9,7 @@
  */
 import { XmlComponent } from "@file/xml-components";
 
-import { MathComponent } from "../math-component";
+import type { MathComponent } from "../math-component";
 import { createMathBase } from "../n-ary";
 import { createMathBracketProperties } from "./math-bracket-properties";
 
@@ -24,6 +24,8 @@ type MathAngledBracketsOptions = { readonly children: readonly MathComponent[] }
  * MathAngledBrackets displays content surrounded by angle brackets ⟨ ⟩.
  *
  * Reference: http://www.datypic.com/sc/ooxml/e-m_d-1.html
+ *
+ * @publicApi
  *
  * @example
  * ```typescript

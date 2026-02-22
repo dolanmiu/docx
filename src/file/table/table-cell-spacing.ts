@@ -8,8 +8,8 @@
  *
  * @module
  */
-import { NextAttributeComponent, XmlComponent } from "@file/xml-components";
-import { Percentage, UniversalMeasure, measurementOrPercentValue } from "@util/values";
+import { BuilderElement, type XmlComponent } from "@file/xml-components";
+import { type Percentage, type UniversalMeasure, measurementOrPercentValue } from "@util/values";
 
 /**
  * Cell spacing measurement types.
@@ -34,7 +34,7 @@ export const CellSpacingType = {
 /**
  * Properties for table cell spacing.
  *
- * @see {@link TableCellSpacingElement}
+ * @see {@link createTableCellSpacing}
  */
 export type ITableCellSpacingProperties = {
     /** The spacing value (in twips, percentage, or universal measure) */
@@ -44,7 +44,7 @@ export type ITableCellSpacingProperties = {
 };
 
 /**
- * Represents table cell spacing in a WordprocessingML document.
+ * Creates table cell spacing in a WordprocessingML document.
  *
  * The tblCellSpacing element specifies the spacing between cells in a table.
  *
@@ -60,18 +60,14 @@ export type ITableCellSpacingProperties = {
  *
  * @example
  * ```typescript
- * new TableCellSpacingElement({ value: 100, type: CellSpacingType.DXA });
+ * createTableCellSpacing({ value: 100, type: CellSpacingType.DXA });
  * ```
  */
-export class TableCellSpacingElement extends XmlComponent {
-    public constructor({ type = CellSpacingType.DXA, value }: ITableCellSpacingProperties) {
-        super("w:tblCellSpacing");
-
-        this.root.push(
-            new NextAttributeComponent<ITableCellSpacingProperties>({
-                type: { key: "w:type", value: type },
-                value: { key: "w:w", value: measurementOrPercentValue(value) },
-            }),
-        );
-    }
-}
+export const createTableCellSpacing = ({ type = CellSpacingType.DXA, value }: ITableCellSpacingProperties): XmlComponent =>
+    new BuilderElement<ITableCellSpacingProperties>({
+        name: "w:tblCellSpacing",
+        attributes: {
+            type: { key: "w:type", value: type },
+            value: { key: "w:w", value: measurementOrPercentValue(value) },
+        },
+    });

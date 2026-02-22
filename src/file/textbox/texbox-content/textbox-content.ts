@@ -5,8 +5,8 @@
  *
  * @module
  */
-import { ParagraphChild } from "@file/paragraph";
-import { BuilderElement, XmlComponent } from "@file/xml-components";
+import type { ParagraphChild } from "@file/paragraph";
+import { BuilderElement, type XmlComponent } from "@file/xml-components";
 
 /**
  * Creates a textbox content element containing block-level content.

@@ -10,7 +10,7 @@
 import { XmlComponent } from "@file/xml-components";
 
 import { createMathSubScriptProperties } from "./math-sub-script-function-properties";
-import { MathComponent } from "../../math-component";
+import type { MathComponent } from "../../math-component";
 import { createMathBase, createMathSubScriptElement } from "../../n-ary";
 
 /**
@@ -31,6 +31,8 @@ export type IMathSubScriptOptions = {
  * MathSubScript displays a base with a subscript, like x₁.
  *
  * Reference: http://www.datypic.com/sc/ooxml/e-m_sSub-1.html
+ *
+ * @publicApi
  *
  * ## XSD Schema
  * ```xml

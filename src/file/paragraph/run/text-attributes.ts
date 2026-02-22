@@ -6,7 +6,7 @@
  *
  * @module
  */
-import { SpaceType } from "@file/shared";
+import type { SpaceType } from "@file/shared";
 import { XmlAttributeComponent } from "@file/xml-components";
 
 /**

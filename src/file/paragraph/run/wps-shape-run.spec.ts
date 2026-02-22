@@ -1,8 +1,8 @@
 import { describe, it } from "vitest";
 
 import { Formatter } from "@export/formatter";
-import { IViewWrapper } from "@file/document-wrapper";
-import { File } from "@file/file";
+import type { IViewWrapper } from "@file/document-wrapper";
+import type { File } from "@file/file";
 import { Paragraph } from "@file/index";
 
 import { WpsShapeRun } from "./wps-shape-run";

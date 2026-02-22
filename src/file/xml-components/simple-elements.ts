@@ -7,8 +7,8 @@
  *
  * @module
  */
-import { AttributeData, AttributePayload, Attributes, NextAttributeComponent, XmlComponent } from "@file/xml-components";
-import { PositiveUniversalMeasure, hpsMeasureValue } from "@util/values";
+import { type AttributeData, type AttributePayload, Attributes, NextAttributeComponent, XmlComponent } from "@file/xml-components";
+import { type PositiveUniversalMeasure, hpsMeasureValue } from "@util/values";
 
 /**
  * XML element representing a boolean on/off value (CT_OnOff).

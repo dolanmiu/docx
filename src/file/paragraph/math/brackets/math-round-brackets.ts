@@ -9,7 +9,7 @@
  */
 import { XmlComponent } from "@file/xml-components";
 
-import { MathComponent } from "../math-component";
+import type { MathComponent } from "../math-component";
 import { createMathBase } from "../n-ary";
 import { createMathBracketProperties } from "./math-bracket-properties";
 
@@ -19,6 +19,8 @@ import { createMathBracketProperties } from "./math-bracket-properties";
  * MathRoundBrackets displays content surrounded by parentheses ( ).
  *
  * Reference: http://www.datypic.com/sc/ooxml/e-m_d-1.html
+ *
+ * @publicApi
  *
  * ## XSD Schema
  * ```xml

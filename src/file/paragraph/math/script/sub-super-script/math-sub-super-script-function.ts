@@ -10,7 +10,7 @@
 import { XmlComponent } from "@file/xml-components";
 
 import { createMathSubSuperScriptProperties } from "./math-sub-super-script-function-properties";
-import { MathComponent } from "../../math-component";
+import type { MathComponent } from "../../math-component";
 import { createMathBase, createMathSubScriptElement, createMathSuperScriptElement } from "../../n-ary";
 
 /**
@@ -34,6 +34,8 @@ export type IMathSubSuperScriptOptions = {
  * commonly used for tensor notation or indexed variables with exponents.
  *
  * Reference: http://www.datypic.com/sc/ooxml/e-m_sSubSup-1.html
+ *
+ * @publicApi
  *
  * ## XSD Schema
  * ```xml

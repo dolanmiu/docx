@@ -9,7 +9,7 @@
  */
 import { XmlComponent } from "@file/xml-components";
 
-import { MathComponent } from "../math-component";
+import type { MathComponent } from "../math-component";
 import { createMathBase } from "./math-base";
 import { MathLimit } from "./math-limit";
 
@@ -32,6 +32,8 @@ export type IMathLimitUpperOptions = {
  * commonly used for mathematical notation like lim with conditions above.
  *
  * Reference: http://www.datypic.com/sc/ooxml/e-m_limUpp-1.html
+ *
+ * @publicApi
  *
  * ## XSD Schema
  * ```xml

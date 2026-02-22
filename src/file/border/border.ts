@@ -2,8 +2,8 @@
  * Border module for WordprocessingML documents.
  *
  * Borders are used in multiple contexts (paragraphs, tables, table cells, sections)
- * and share the same CT_Border type definition. This module provides the BorderElement
- * class and BorderStyle constants used throughout the document structure.
+ * and share the same CT_Border type definition. This module provides the createBorderElement
+ * factory function and BorderStyle constants used throughout the document structure.
  *
  * Reference: http://officeopenxml.com/WPborders.php
  *
@@ -28,7 +28,7 @@
  *
  * @module
  */
-import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
+import { BuilderElement, type XmlComponent } from "@file/xml-components";
 import { eighthPointMeasureValue, hexColorValue, pointMeasureValue } from "@util/values";
 
 /**
@@ -50,16 +50,16 @@ export type IBorderOptions = {
 };
 
 /**
- * Represents a border element in a WordprocessingML document.
+ * Creates a border element for a WordprocessingML document.
  *
- * BorderElement is used to create border specifications for paragraphs,
- * tables, table cells, and sections. The element name is specified
- * during construction to create different border types (top, bottom, left, right, etc.).
+ * Used to create border specifications for paragraphs, tables, table cells,
+ * and sections. The element name is specified to create different border
+ * types (top, bottom, left, right, etc.).
  *
  * @example
  * ```typescript
  * // Create a top border
- * new BorderElement("w:top", {
+ * createBorderElement("w:top", {
  *   style: BorderStyle.SINGLE,
  *   color: "FF0000",
  *   size: 24,
@@ -67,28 +67,16 @@ export type IBorderOptions = {
  * });
  * ```
  */
-export class BorderElement extends XmlComponent {
-    public constructor(elementName: string, { color, size, space, style }: IBorderOptions) {
-        super(elementName);
-        this.root.push(
-            new BordersAttributes({
-                style,
-                color: color === undefined ? undefined : hexColorValue(color),
-                size: size === undefined ? undefined : eighthPointMeasureValue(size),
-                space: space === undefined ? undefined : pointMeasureValue(space),
-            }),
-        );
-    }
-}
-
-class BordersAttributes extends XmlAttributeComponent<IBorderOptions> {
-    protected readonly xmlKeys = {
-        style: "w:val",
-        color: "w:color",
-        size: "w:sz",
-        space: "w:space",
-    };
-}
+export const createBorderElement = (elementName: string, { color, size, space, style }: IBorderOptions): XmlComponent =>
+    new BuilderElement<IBorderOptions>({
+        name: elementName,
+        attributes: {
+            style: { key: "w:val", value: style },
+            color: { key: "w:color", value: color === undefined ? undefined : hexColorValue(color) },
+            size: { key: "w:sz", value: size === undefined ? undefined : eighthPointMeasureValue(size) },
+            space: { key: "w:space", value: space === undefined ? undefined : pointMeasureValue(space) },
+        },
+    });
 
 /**
  * Table borders are defined with the <w:tblBorders> element. Child elements of this element specify the kinds of `border`:
@@ -131,6 +119,8 @@ class BordersAttributes extends XmlAttributeComponent<IBorderOptions> {
  *     </xsd:restriction>
  * </xsd:simpleType>
  * ```
+ *
+ * @publicApi
  */
 export const BorderStyle = {
     /** a single line */

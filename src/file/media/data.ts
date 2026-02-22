@@ -1,6 +1,6 @@
-import { OutlineOptions } from "@file/drawing/inline/graphic/graphic-data/pic/shape-properties/outline/outline";
-import { SolidFillOptions } from "@file/drawing/inline/graphic/graphic-data/pic/shape-properties/outline/solid-fill";
-import { WpsShapeCoreOptions } from "@file/drawing/inline/graphic/graphic-data/wps";
+import type { OutlineOptions } from "@file/drawing/inline/graphic/graphic-data/pic/shape-properties/outline/outline";
+import type { SolidFillOptions } from "@file/drawing/inline/graphic/graphic-data/pic/shape-properties/outline/solid-fill";
+import type { WpsShapeCoreOptions } from "@file/drawing/inline/graphic/graphic-data/wps";
 
 export type IMediaDataTransformation = {
     readonly offset?: {

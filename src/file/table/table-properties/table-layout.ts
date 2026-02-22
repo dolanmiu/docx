@@ -5,7 +5,7 @@
  *
  * @module
  */
-import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
+import { BuilderElement, type XmlComponent } from "@file/xml-components";
 
 /**
  * Table layout algorithm types.
@@ -21,6 +21,8 @@ import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
  *   </xsd:restriction>
  * </xsd:simpleType>
  * ```
+ *
+ * @publicApi
  */
 export const TableLayoutType = {
     /** Auto-fit layout - column widths are adjusted based on content */
@@ -29,14 +31,8 @@ export const TableLayoutType = {
     FIXED: "fixed",
 } as const;
 
-class TableLayoutAttributes extends XmlAttributeComponent<{
-    readonly type: (typeof TableLayoutType)[keyof typeof TableLayoutType];
-}> {
-    protected readonly xmlKeys = { type: "w:type" };
-}
-
 /**
- * Represents table layout settings in a WordprocessingML document.
+ * Creates table layout settings in a WordprocessingML document.
  *
  * The tblLayout element specifies the algorithm used to lay out the table.
  *
@@ -46,10 +42,16 @@ class TableLayoutAttributes extends XmlAttributeComponent<{
  *   <xsd:attribute name="type" type="ST_TblLayoutType"/>
  * </xsd:complexType>
  * ```
+ *
+ * @example
+ * ```typescript
+ * createTableLayout(TableLayoutType.FIXED);
+ * ```
  */
-export class TableLayout extends XmlComponent {
-    public constructor(type: (typeof TableLayoutType)[keyof typeof TableLayoutType]) {
-        super("w:tblLayout");
-        this.root.push(new TableLayoutAttributes({ type }));
-    }
-}
+export const createTableLayout = (type: (typeof TableLayoutType)[keyof typeof TableLayoutType]): XmlComponent =>
+    new BuilderElement<{ readonly type: (typeof TableLayoutType)[keyof typeof TableLayoutType] }>({
+        name: "w:tblLayout",
+        attributes: {
+            type: { key: "w:type", value: type },
+        },
+    });

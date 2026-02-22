@@ -7,19 +7,19 @@
  * @module
  */
 import JSZip from "jszip";
-import { Element, js2xml } from "xml-js";
+import { type Element, js2xml } from "xml-js";
 
 import { ImageReplacer } from "@export/packer/image-replacer";
 import { DocumentAttributeNamespaces } from "@file/document";
-import { IViewWrapper } from "@file/document-wrapper";
-import { File } from "@file/file";
-import { FileChild } from "@file/file-child";
-import { IMediaData, Media } from "@file/media";
-import { ConcreteHyperlink, ExternalHyperlink, ParagraphChild } from "@file/paragraph";
+import type { IViewWrapper } from "@file/document-wrapper";
+import type { File } from "@file/file";
+import type { FileChild } from "@file/file-child";
+import { type IMediaData, Media } from "@file/media";
+import { ConcreteHyperlink, ExternalHyperlink, type ParagraphChild } from "@file/paragraph";
 import { TargetModeType } from "@file/relationships/relationship/relationship";
-import { IContext } from "@file/xml-components";
+import type { IContext } from "@file/xml-components";
 import { encodeUtf8, uniqueId } from "@util/convenience-functions";
-import { OutputByType, OutputType } from "@util/output-type";
+import type { OutputByType, OutputType } from "@util/output-type";
 
 import { appendContentType } from "./content-types-manager";
 import { appendRelationship, getNextRelationshipIndex } from "./relationship-manager";
@@ -39,6 +39,8 @@ export type InputDataType = Buffer | string | number[] | Uint8Array | ArrayBuffe
  * Patch type enumeration.
  *
  * Determines how the replacement content should be inserted into the document.
+ *
+ * @publicApi
  */
 export const PatchType = {
     /** Replace entire file-level elements (e.g., whole paragraphs) */
@@ -178,6 +180,8 @@ const compareByteArrays = (a: Uint8Array, b: Uint8Array): boolean => {
  *   placeholderDelimiters: { start: "<<", end: ">>" },
  * });
  * ```
+ *
+ * @publicApi
  */
 export const patchDocument = async <T extends PatchDocumentOutputType = PatchDocumentOutputType>({
     outputType,
@@ -241,7 +245,7 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
                 file,
                 viewWrapper: {
                     Relationships: {
-                        createRelationship: (
+                        addRelationship: (
                             linkId: string,
                             _: string,
                             target: string,

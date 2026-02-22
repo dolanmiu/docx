@@ -7,7 +7,7 @@
  *
  * @module
  */
-import { BuilderElement, OnOffElement, XmlComponent, createStringElement } from "@file/xml-components";
+import { BuilderElement, OnOffElement, type XmlComponent, createStringElement } from "@file/xml-components";
 
 /**
  * Options for a font relationship (embedded font).
@@ -30,6 +30,8 @@ export type IFontRelationshipOptions = {
 /**
  * Character set constants for font definitions.
  * Maps character set names to their hexadecimal identifiers.
+ *
+ * @publicApi
  */
 export const CharacterSet = {
     ANSI: "00",

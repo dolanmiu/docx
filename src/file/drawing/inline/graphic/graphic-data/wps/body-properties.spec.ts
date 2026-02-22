@@ -2,12 +2,12 @@ import { describe, expect, it } from "vitest";
 
 import { Formatter } from "@export/formatter";
 
-import { BodyProperties, VerticalAnchor } from "./body-properties";
+import { VerticalAnchor, createBodyProperties } from "./body-properties";
 
 describe("BodyProperties", () => {
     describe("#constructor()", () => {
         it("should create with default options", () => {
-            const tree = new Formatter().format(new BodyProperties());
+            const tree = new Formatter().format(createBodyProperties());
 
             expect(tree).to.deep.equal({
                 "wps:bodyPr": {
@@ -18,7 +18,7 @@ describe("BodyProperties", () => {
 
         it("should create with margins", () => {
             const tree = new Formatter().format(
-                new BodyProperties({
+                createBodyProperties({
                     margins: {
                         top: 100,
                         bottom: 200,
@@ -42,7 +42,7 @@ describe("BodyProperties", () => {
 
         it("should create with vertical anchor", () => {
             const tree = new Formatter().format(
-                new BodyProperties({
+                createBodyProperties({
                     verticalAnchor: VerticalAnchor.CENTER,
                 }),
             );
@@ -58,7 +58,7 @@ describe("BodyProperties", () => {
 
         it("should create with noAutoFit", () => {
             const tree = new Formatter().format(
-                new BodyProperties({
+                createBodyProperties({
                     noAutoFit: true,
                 }),
             );
@@ -77,7 +77,7 @@ describe("BodyProperties", () => {
 
         it("should create with all options", () => {
             const tree = new Formatter().format(
-                new BodyProperties({
+                createBodyProperties({
                     margins: {
                         top: 10,
                         bottom: 20,

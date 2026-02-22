@@ -9,7 +9,7 @@
  */
 import { XmlComponent } from "@file/xml-components";
 
-import { MathComponent } from "../math-component";
+import type { MathComponent } from "../math-component";
 import { createMathBase } from "./math-base";
 import { createMathNAryProperties } from "./math-n-ary-properties";
 import { createMathSubScriptElement } from "./math-sub-script";
@@ -35,6 +35,8 @@ export type IMathIntegralOptions = {
  * MathIntegral displays the integral symbol with optional bounds.
  *
  * Reference: http://www.datypic.com/sc/ooxml/e-m_nary-1.html
+ *
+ * @publicApi
  *
  * ## XSD Schema
  * ```xml

@@ -71,3 +71,9 @@ const paragraph = new Paragraph({
     children: [new TextRun("Your score was "), new SimpleField("MERGEFIELD Score", "«Score»"), new TextRun(" of 100 points")],
 });
 ```
+
+## Demo
+
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/66-fields.ts ":include")
+
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/66-fields.ts_

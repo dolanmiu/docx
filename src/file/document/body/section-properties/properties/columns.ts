@@ -7,10 +7,10 @@
  *
  * @module
  */
-import { NextAttributeComponent, XmlComponent } from "@file/xml-components";
-import { PositiveUniversalMeasure, decimalNumber, twipsMeasureValue } from "@util/values";
+import { BuilderElement, type XmlComponent } from "@file/xml-components";
+import { type PositiveUniversalMeasure, decimalNumber, twipsMeasureValue } from "@util/values";
 
-import { Column } from "./column";
+import type { Column } from "./column";
 
 /**
  * Options for configuring column layout in a section.
@@ -35,7 +35,7 @@ export type IColumnsAttributes = {
 };
 
 /**
- * Represents column layout settings (cols) for a document section.
+ * Creates column layout settings (cols) for a document section.
  *
  * This element defines the multi-column layout properties for a section,
  * including column count, spacing, and whether columns have equal or custom widths.
@@ -58,7 +58,7 @@ export type IColumnsAttributes = {
  * @example
  * ```typescript
  * // Two equal-width columns with separator
- * new Columns({
+ * createColumns({
  *   count: 2,
  *   space: 720,
  *   separate: true,
@@ -66,29 +66,23 @@ export type IColumnsAttributes = {
  * });
  *
  * // Custom column widths
- * new Columns({
+ * createColumns({
  *   equalWidth: false,
  *   children: [
- *     new Column({ width: 3000, space: 720 }),
- *     new Column({ width: 4000, space: 0 })
+ *     { width: 3000, space: 720 },
+ *     { width: 4000, space: 0 }
  *   ]
  * });
  * ```
  */
-export class Columns extends XmlComponent {
-    public constructor({ space, count, separate, equalWidth, children }: IColumnsAttributes) {
-        super("w:cols");
-        this.root.push(
-            new NextAttributeComponent<Omit<IColumnsAttributes, "children">>({
-                space: { key: "w:space", value: space === undefined ? undefined : twipsMeasureValue(space) },
-                count: { key: "w:num", value: count === undefined ? undefined : decimalNumber(count) },
-                separate: { key: "w:sep", value: separate },
-                equalWidth: { key: "w:equalWidth", value: equalWidth },
-            }),
-        );
-
-        if (!equalWidth && children) {
-            children.forEach((column) => this.addChildElement(column));
-        }
-    }
-}
+export const createColumns = ({ space, count, separate, equalWidth, children }: IColumnsAttributes): XmlComponent =>
+    new BuilderElement<Omit<IColumnsAttributes, "children">>({
+        name: "w:cols",
+        attributes: {
+            space: { key: "w:space", value: space === undefined ? undefined : twipsMeasureValue(space) },
+            count: { key: "w:num", value: count === undefined ? undefined : decimalNumber(count) },
+            separate: { key: "w:sep", value: separate },
+            equalWidth: { key: "w:equalWidth", value: equalWidth },
+        },
+        children: !equalWidth && children ? children : undefined,
+    });

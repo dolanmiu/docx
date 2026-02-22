@@ -10,7 +10,7 @@
  *
  * @module
  */
-import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
+import { BuilderElement, type XmlComponent } from "@file/xml-components";
 
 /**
  * Paragraph justification (alignment) types.
@@ -38,6 +38,8 @@ import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
  *   </xsd:restriction>
  * </xsd:simpleType>
  * ```
+ *
+ * @publicApi
  */
 export const AlignmentType = {
     /** Align Start */
@@ -69,17 +71,7 @@ export const AlignmentType = {
 } as const;
 
 /**
- * Attributes for the alignment (jc) element.
- * @internal
- */
-export class AlignmentAttributes extends XmlAttributeComponent<{
-    readonly val: (typeof AlignmentType)[keyof typeof AlignmentType];
-}> {
-    protected readonly xmlKeys = { val: "w:val" };
-}
-
-/**
- * Represents paragraph alignment (justification) in a WordprocessingML document.
+ * Creates paragraph alignment (justification) element for a WordprocessingML document.
  *
  * The jc element specifies the horizontal alignment of all text in the paragraph.
  *
@@ -98,16 +90,12 @@ export class AlignmentAttributes extends XmlAttributeComponent<{
  *   alignment: AlignmentType.CENTER,
  *   children: [new TextRun("Centered text")],
  * });
- *
- * new Paragraph({
- *   alignment: AlignmentType.JUSTIFIED,
- *   children: [new TextRun("Justified text spreads evenly across the line")],
- * });
  * ```
  */
-export class Alignment extends XmlComponent {
-    public constructor(type: (typeof AlignmentType)[keyof typeof AlignmentType]) {
-        super("w:jc");
-        this.root.push(new AlignmentAttributes({ val: type }));
-    }
-}
+export const createAlignment = (type: (typeof AlignmentType)[keyof typeof AlignmentType]): XmlComponent =>
+    new BuilderElement<{ readonly val: (typeof AlignmentType)[keyof typeof AlignmentType] }>({
+        name: "w:jc",
+        attributes: {
+            val: { key: "w:val", value: type },
+        },
+    });

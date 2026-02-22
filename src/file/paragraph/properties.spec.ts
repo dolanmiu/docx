@@ -3,9 +3,10 @@ import { describe, expect, it } from "vitest";
 import { Formatter } from "@export/formatter";
 
 import { DocumentWrapper } from "../document-wrapper";
-import { File } from "../file";
+import type { File } from "../file";
 import { AlignmentType } from "./formatting";
 import { ParagraphProperties } from "./properties";
+import { FontWrapper } from "../fonts/font-wrapper";
 
 describe("ParagraphProperties", () => {
     describe("#constructor()", () => {
@@ -280,6 +281,51 @@ describe("ParagraphProperties", () => {
                                         "w:author": "Firstname Lastname",
                                         "w:date": "123",
                                         "w:id": 1,
+                                    },
+                                },
+                            },
+                        ],
+                    },
+                ],
+            });
+        });
+
+        it("should skip numbering instance creation when viewWrapper is FontWrapper", () => {
+            const properties = new ParagraphProperties({
+                numbering: {
+                    reference: "test-reference",
+                    level: 0,
+                    instance: 0,
+                },
+            });
+            const tree = new Formatter().format(properties, {
+                file: {} as File,
+                viewWrapper: new FontWrapper([]),
+                stack: [],
+            });
+
+            expect(tree).to.deep.equal({
+                "w:pPr": [
+                    {
+                        "w:pStyle": {
+                            _attr: {
+                                "w:val": "ListParagraph",
+                            },
+                        },
+                    },
+                    {
+                        "w:numPr": [
+                            {
+                                "w:ilvl": {
+                                    _attr: {
+                                        "w:val": 0,
+                                    },
+                                },
+                            },
+                            {
+                                "w:numId": {
+                                    _attr: {
+                                        "w:val": "{test-reference-0}",
                                     },
                                 },
                             },

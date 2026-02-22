@@ -7,7 +7,7 @@
  *
  * @module
  */
-import { BuilderElement, XmlComponent } from "@file/xml-components";
+import { BuilderElement, type XmlComponent } from "@file/xml-components";
 
 import { createMathBeginningCharacter } from "./math-beginning-character";
 import { createMathEndingCharacter } from "./math-ending-char";

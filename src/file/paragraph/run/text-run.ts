@@ -1,4 +1,4 @@
-import { IRunOptions, Run } from "./run";
+import { type IRunOptions, Run } from "./run";
 
 /**
  * Represents a text run in a WordprocessingML document.
@@ -8,6 +8,8 @@ import { IRunOptions, Run } from "./run";
  * add text content to a paragraph.
  *
  * Reference: http://officeopenxml.com/WPtext.php
+ *
+ * @publicApi
  *
  * @example
  * ```typescript

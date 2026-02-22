@@ -7,10 +7,10 @@
  *
  * @module
  */
-import { InitializableXmlComponent, XmlComponent } from "@file/xml-components";
+import { InitializableXmlComponent, type XmlComponent } from "@file/xml-components";
 
-import { Paragraph } from "../paragraph";
-import { Table } from "../table";
+import type { Paragraph } from "../paragraph";
+import type { Table } from "../table";
 import { HeaderAttributes } from "./header-attributes";
 
 /**

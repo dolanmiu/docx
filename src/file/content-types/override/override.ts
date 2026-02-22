@@ -1,9 +1,12 @@
-import { XmlComponent } from "@file/xml-components";
+import { BuilderElement, type XmlComponent } from "@file/xml-components";
 
-import { OverrideAttributes } from "./override-attributes";
+type IOverrideAttributes = {
+    readonly contentType: string;
+    readonly partName?: string;
+};
 
 /**
- * Represents a content type override for a specific part.
+ * Creates a content type override for a specific part.
  *
  * Override elements map specific part paths to MIME content types,
  * taking precedence over default extension mappings. This is used for
@@ -12,27 +15,23 @@ import { OverrideAttributes } from "./override-attributes";
  * @example
  * ```typescript
  * // Override content type for the main document part
- * new Override(
+ * createOverride(
  *   "application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml",
  *   "/word/document.xml"
  * );
  *
  * // Override for a header part
- * new Override(
+ * createOverride(
  *   "application/vnd.openxmlformats-officedocument.wordprocessingml.header+xml",
  *   "/word/header1.xml"
  * );
  * ```
  */
-export class Override extends XmlComponent {
-    public constructor(contentType: string, partName?: string) {
-        super("Override");
-
-        this.root.push(
-            new OverrideAttributes({
-                contentType: contentType,
-                partName: partName,
-            }),
-        );
-    }
-}
+export const createOverride = (contentType: string, partName?: string): XmlComponent =>
+    new BuilderElement<IOverrideAttributes>({
+        name: "Override",
+        attributes: {
+            contentType: { key: "ContentType", value: contentType },
+            partName: { key: "PartName", value: partName },
+        },
+    });

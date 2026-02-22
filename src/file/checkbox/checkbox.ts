@@ -11,7 +11,7 @@ import { StructuredDocumentTagContent } from "@file/table-of-contents/sdt-conten
 import { StructuredDocumentTagProperties } from "@file/table-of-contents/sdt-properties";
 import { XmlComponent } from "@file/xml-components";
 
-import { CheckBoxUtil, ICheckboxSymbolOptions } from "./checkbox-util";
+import { CheckBoxUtil, type ICheckboxSymbolOptions } from "./checkbox-util";
 
 /**
  * Represents an interactive checkbox in a WordprocessingML document.
@@ -20,6 +20,8 @@ import { CheckBoxUtil, ICheckboxSymbolOptions } from "./checkbox-util";
  * displaying a checked or unchecked symbol based on its state. The checkbox
  * is implemented using structured document tags (w:sdt) with checkbox-specific
  * properties.
+ *
+ * @publicApi
  *
  * ## XSD Schema
  * ```xml

@@ -1,4 +1,4 @@
-import { IViewWrapper } from "./document-wrapper";
+import type { IViewWrapper } from "./document-wrapper";
 import { Endnotes } from "./endnotes/endnotes";
 import { Relationships } from "./relationships";
 

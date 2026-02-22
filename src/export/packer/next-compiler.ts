@@ -6,14 +6,14 @@
 import JSZip from "jszip";
 import xml from "xml";
 
-import { File } from "@file/file";
+import type { File } from "@file/file";
 import { obfuscate } from "@file/fonts/obfuscate-ttf-to-odttf";
 import { encodeUtf8 } from "@util/convenience-functions";
 
 import { Formatter } from "../formatter";
 import { ImageReplacer } from "./image-replacer";
 import { NumberingReplacer } from "./numbering-replacer";
-import { PrettifyType } from "./packer";
+import type { PrettifyType } from "./packer";
 
 /**
  * Represents a serialized XML file with its path in the OOXML package.
@@ -224,14 +224,14 @@ export class Compiler {
             Relationships: {
                 data: (() => {
                     documentMediaDatas.forEach((mediaData, i) => {
-                        file.Document.Relationships.createRelationship(
+                        file.Document.Relationships.addRelationship(
                             documentRelationshipCount + i,
                             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
                             `media/${mediaData.fileName}`,
                         );
                     });
 
-                    file.Document.Relationships.createRelationship(
+                    file.Document.Relationships.addRelationship(
                         file.Document.Relationships.RelationshipCount + 1,
                         "http://schemas.openxmlformats.org/officeDocument/2006/relationships/fontTable",
                         "fontTable.xml",
@@ -349,7 +349,7 @@ export class Compiler {
                 const mediaDatas = this.imageReplacer.getMediaData(xmlData, file.Media);
 
                 mediaDatas.forEach((mediaData, i) => {
-                    headerWrapper.Relationships.createRelationship(
+                    headerWrapper.Relationships.addRelationship(
                         i,
                         "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
                         `media/${mediaData.fileName}`,
@@ -390,7 +390,7 @@ export class Compiler {
                 const mediaDatas = this.imageReplacer.getMediaData(xmlData, file.Media);
 
                 mediaDatas.forEach((mediaData, i) => {
-                    footerWrapper.Relationships.createRelationship(
+                    footerWrapper.Relationships.addRelationship(
                         i,
                         "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
                         `media/${mediaData.fileName}`,
@@ -525,7 +525,7 @@ export class Compiler {
             FootNotesRelationships: {
                 data: (() => {
                     footnoteMediaDatas.forEach((mediaData, i) => {
-                        file.FootNotes.Relationships.createRelationship(
+                        file.FootNotes.Relationships.addRelationship(
                             footnoteRelationshipCount + i,
                             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
                             `media/${mediaData.fileName}`,
@@ -607,7 +607,7 @@ export class Compiler {
             CommentsRelationships: {
                 data: (() => {
                     commentMediaDatas.forEach((mediaData, i) => {
-                        file.Comments.Relationships.createRelationship(
+                        file.Comments.Relationships.addRelationship(
                             commentRelationshipCount + i,
                             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
                             `media/${mediaData.fileName}`,

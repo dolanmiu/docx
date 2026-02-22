@@ -1,12 +1,12 @@
-import { IMediaDataTransformation } from "@file/media";
-import { Paragraph } from "@file/paragraph";
-import { XmlComponent } from "@file/xml-components";
+import type { IMediaDataTransformation } from "@file/media";
+import type { Paragraph } from "@file/paragraph";
+import { BuilderElement, type XmlComponent } from "@file/xml-components";
 
-import { BodyProperties, IBodyPropertiesOptions } from "./body-properties";
-import { INonVisualShapePropertiesOptions, NonVisualShapeProperties } from "./non-visual-shape-properties";
-import { WpsTextBox } from "./wps-text-box";
-import { OutlineOptions } from "../pic/shape-properties/outline/outline";
-import { SolidFillOptions } from "../pic/shape-properties/outline/solid-fill";
+import { type IBodyPropertiesOptions, createBodyProperties } from "./body-properties";
+import { type INonVisualShapePropertiesOptions, createNonVisualShapeProperties } from "./non-visual-shape-properties";
+import { createWpsTextBox } from "./wps-text-box";
+import type { OutlineOptions } from "../pic/shape-properties/outline/outline";
+import type { SolidFillOptions } from "../pic/shape-properties/outline/solid-fill";
 import { ShapeProperties } from "../pic/shape-properties/shape-properties";
 
 export type WpsShapeCoreOptions = {
@@ -21,20 +21,18 @@ export type WpsShapeOptions = WpsShapeCoreOptions & {
     readonly solidFill?: SolidFillOptions;
 };
 
-export class WpsShape extends XmlComponent {
-    public constructor(options: WpsShapeOptions) {
-        super("wps:wsp");
-
-        this.root.push(new NonVisualShapeProperties(options.nonVisualProperties));
-        this.root.push(
+export const createWpsShape = (options: WpsShapeOptions): XmlComponent =>
+    new BuilderElement({
+        name: "wps:wsp",
+        children: [
+            createNonVisualShapeProperties(options.nonVisualProperties),
             new ShapeProperties({
                 element: "wps",
                 transform: options.transformation,
                 outline: options.outline,
                 solidFill: options.solidFill,
             }),
-        );
-        this.root.push(new WpsTextBox(options.children));
-        this.root.push(new BodyProperties(options.bodyProperties));
-    }
-}
+            createWpsTextBox(options.children),
+            createBodyProperties(options.bodyProperties),
+        ],
+    });

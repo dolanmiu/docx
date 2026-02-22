@@ -6,9 +6,9 @@
  * @module
  */
 import { Paragraph, ParagraphProperties } from "@file/paragraph";
-import { IContext, IXmlableObject, XmlComponent } from "@file/xml-components";
+import { type IContext, type IXmlableObject, XmlComponent } from "@file/xml-components";
 
-import { ISectionPropertiesOptions, SectionProperties } from "./section-properties/section-properties";
+import { type ISectionPropertiesOptions, SectionProperties } from "./section-properties/section-properties";
 
 /**
  * Represents the document body in a WordprocessingML document.

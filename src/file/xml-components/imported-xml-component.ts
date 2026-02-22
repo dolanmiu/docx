@@ -7,11 +7,11 @@
  *
  * @module
  */
-import { Element as XmlElement, xml2js } from "xml-js";
+import { type Element as XmlElement, xml2js } from "xml-js";
 
-import { IXmlableObject, XmlAttributeComponent, XmlComponent } from "@file/xml-components";
+import { type IXmlableObject, XmlAttributeComponent, XmlComponent } from "@file/xml-components";
 
-import { IContext } from "./base";
+import type { IContext } from "./base";
 
 /**
  * Converts an xml-js Element into an XmlComponent tree.
@@ -101,6 +101,7 @@ export class ImportedXmlComponent extends XmlComponent {
         const xmlObj = xml2js(importedContent, { compact: false }) as XmlElement;
         return convertToXmlComponent(xmlObj) as ImportedXmlComponent;
     }
+
     /**
      * Creates an ImportedXmlComponent.
      *

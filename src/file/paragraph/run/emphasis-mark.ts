@@ -8,7 +8,7 @@
  *
  * @module
  */
-import { Attributes, XmlComponent } from "@file/xml-components";
+import { BuilderElement, type XmlComponent } from "@file/xml-components";
 
 /**
  * Emphasis mark types.
@@ -28,30 +28,20 @@ import { Attributes, XmlComponent } from "@file/xml-components";
  *   </xsd:restriction>
  * </xsd:simpleType>
  * ```
+ *
+ * @publicApi
  */
 export const EmphasisMarkType = {
     /** Dot emphasis mark */
     DOT: "dot",
 } as const;
 
-/**
- * Base class for emphasis mark elements.
- *
- * @internal
- */
-export abstract class BaseEmphasisMark extends XmlComponent {
-    protected constructor(emphasisMarkType: (typeof EmphasisMarkType)[keyof typeof EmphasisMarkType]) {
-        super("w:em");
-        this.root.push(
-            new Attributes({
-                val: emphasisMarkType,
-            }),
-        );
-    }
-}
+type IEmphasisMarkAttributes = {
+    readonly val: (typeof EmphasisMarkType)[keyof typeof EmphasisMarkType];
+};
 
 /**
- * Represents an emphasis mark in a WordprocessingML document.
+ * Creates an emphasis mark element for a WordprocessingML document.
  *
  * Emphasis marks are characters (typically dots or circles) placed above or below
  * text to emphasize it. This is commonly used in East Asian typography.
@@ -68,30 +58,25 @@ export abstract class BaseEmphasisMark extends XmlComponent {
  * @example
  * ```typescript
  * // Apply dot emphasis mark
- * new EmphasisMark(EmphasisMarkType.DOT);
+ * createEmphasisMark(EmphasisMarkType.DOT);
  *
  * // Default to dot
- * new EmphasisMark();
+ * createEmphasisMark();
  * ```
  */
-export class EmphasisMark extends BaseEmphasisMark {
-    public constructor(emphasisMarkType: (typeof EmphasisMarkType)[keyof typeof EmphasisMarkType] = EmphasisMarkType.DOT) {
-        super(emphasisMarkType);
-    }
-}
+export const createEmphasisMark = (
+    emphasisMarkType: (typeof EmphasisMarkType)[keyof typeof EmphasisMarkType] = EmphasisMarkType.DOT,
+): XmlComponent =>
+    new BuilderElement<IEmphasisMarkAttributes>({
+        name: "w:em",
+        attributes: {
+            val: { key: "w:val", value: emphasisMarkType },
+        },
+    });
 
 /**
- * Represents a dot emphasis mark.
+ * Creates a dot emphasis mark.
  *
- * Convenience class for applying a dot emphasis mark to text.
- *
- * @example
- * ```typescript
- * new DotEmphasisMark();
- * ```
+ * Convenience function for applying a dot emphasis mark to text.
  */
-export class DotEmphasisMark extends BaseEmphasisMark {
-    public constructor() {
-        super(EmphasisMarkType.DOT);
-    }
-}
+export const createDotEmphasisMark = (): XmlComponent => createEmphasisMark(EmphasisMarkType.DOT);

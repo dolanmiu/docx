@@ -7,7 +7,7 @@
  *
  * @module
  */
-import { BuilderElement, XmlComponent } from "@file/xml-components";
+import { BuilderElement, type XmlComponent } from "@file/xml-components";
 
 import type { MathComponent } from "../math-component";
 import { createMathBase } from "../n-ary";

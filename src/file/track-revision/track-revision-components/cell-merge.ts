@@ -1,6 +1,6 @@
 import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
 
-import { IChangedAttributesProperties } from "../track-revision";
+import type { IChangedAttributesProperties } from "../track-revision";
 
 /**
  * Vertical merge revision types.

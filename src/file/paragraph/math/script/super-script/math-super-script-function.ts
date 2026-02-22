@@ -10,7 +10,7 @@
 import { XmlComponent } from "@file/xml-components";
 
 import { createMathSuperScriptProperties } from "./math-super-script-function-properties";
-import { MathComponent } from "../../math-component";
+import type { MathComponent } from "../../math-component";
 import { createMathBase, createMathSuperScriptElement } from "../../n-ary";
 
 /**
@@ -31,6 +31,8 @@ export type IMathSuperScriptOptions = {
  * MathSuperScript displays a base with an exponent, like x².
  *
  * Reference: http://www.datypic.com/sc/ooxml/e-m_sSup-1.html
+ *
+ * @publicApi
  *
  * ## XSD Schema
  * ```xml

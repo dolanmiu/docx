@@ -5,7 +5,7 @@
  *
  * @module
  */
-import { IRunOptions, Run } from "./run";
+import { type IRunOptions, Run } from "./run";
 import { Symbol } from "./run-components/symbol";
 
 /**
@@ -24,6 +24,8 @@ export type ISymbolRunOptions = {
  * Represents a symbol character in a WordprocessingML document.
  *
  * SymbolRun is used to insert special characters from symbol fonts.
+ *
+ * @publicApi
  *
  * @example
  * ```typescript

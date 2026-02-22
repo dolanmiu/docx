@@ -8,7 +8,7 @@
  */
 import { XmlAttributeComponent } from "@file/xml-components";
 
-import { IDistance } from "../drawing";
+import type { IDistance } from "../drawing";
 
 /**
  * Attributes for an anchored drawing element.

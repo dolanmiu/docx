@@ -7,15 +7,15 @@
  *
  * @module
  */
-import { DocPropertiesOptions } from "@file/drawing/doc-properties/doc-properties";
-import { IContext, IXmlableObject } from "@file/xml-components";
+import type { DocPropertiesOptions } from "@file/drawing/doc-properties/doc-properties";
+import type { IContext, IXmlableObject } from "@file/xml-components";
 import { hashedId } from "@util/convenience-functions";
 
-import { Drawing, IFloating } from "../../drawing";
-import { OutlineOptions } from "../../drawing/inline/graphic/graphic-data/pic/shape-properties/outline/outline";
-import { SolidFillOptions } from "../../drawing/inline/graphic/graphic-data/pic/shape-properties/outline/solid-fill";
-import { IMediaTransformation } from "../../media";
-import { IMediaData } from "../../media/data";
+import { Drawing, type IFloating } from "../../drawing";
+import type { OutlineOptions } from "../../drawing/inline/graphic/graphic-data/pic/shape-properties/outline/outline";
+import type { SolidFillOptions } from "../../drawing/inline/graphic/graphic-data/pic/shape-properties/outline/solid-fill";
+import type { IMediaTransformation } from "../../media";
+import type { IMediaData } from "../../media/data";
 import { Run } from "../run";
 
 /**
@@ -92,6 +92,8 @@ const createImageData = (options: IImageOptions, key: string): Pick<IMediaData, 
  * including JPG, PNG, GIF, BMP, and SVG.
  *
  * Reference: http://officeopenxml.com/drwPicInline.php
+ *
+ * @publicApi
  *
  * @example
  * ```typescript

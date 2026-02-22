@@ -8,7 +8,7 @@
  *
  * @module
  */
-import { IMediaData } from "@file/media";
+import type { IMediaData } from "@file/media";
 import { XmlComponent } from "@file/xml-components";
 
 import { createBlip } from "./blip";

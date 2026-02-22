@@ -8,8 +8,8 @@
  *
  * @module
  */
-import { Paragraph } from "./paragraph";
-import { Table } from "./table";
+import type { Paragraph } from "./paragraph";
+import type { Table } from "./table";
 
 /**
  * Options for creating a header or footer.
@@ -27,6 +27,8 @@ export type IHeaderOptions = {
  *
  * Headers appear at the top of each page in a section and can contain
  * paragraphs, tables, images, and other content.
+ *
+ * @publicApi
  *
  * @example
  * ```typescript
@@ -50,6 +52,8 @@ export class Header {
  *
  * Footers appear at the bottom of each page in a section and can contain
  * paragraphs, tables, images, and other content.
+ *
+ * @publicApi
  *
  * @example
  * ```typescript

@@ -3,7 +3,7 @@
  *
  * @module
  */
-import { IMediaData, Media } from "@file/media";
+import type { IMediaData, Media } from "@file/media";
 
 /**
  * Replaces image placeholders with relationship IDs in XML content.
