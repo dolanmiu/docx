@@ -83,7 +83,7 @@
         "docsify-cli": "^4.3.0",
         "eslint": "^9.13.0",
         "eslint-import-resolver-typescript": "^4.3.2",
-        "eslint-plugin-functional": "^7.0.2",
+        "eslint-plugin-functional": "^9.0.3",
         "eslint-plugin-import": "^2.26.0",
         "eslint-plugin-jsdoc": "^62.5.5",
         "eslint-plugin-no-null": "^1.0.2",

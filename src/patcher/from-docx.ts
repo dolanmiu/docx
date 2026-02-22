@@ -214,11 +214,13 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
         const binaryValue = await value.async("uint8array");
         const startBytes = binaryValue.slice(0, 2);
         if (compareByteArrays(startBytes, UTF16LE) || compareByteArrays(startBytes, UTF16BE)) {
+            // eslint-disable-next-line functional/immutable-data
             binaryContentMap.set(key, binaryValue);
             continue;
         }
 
         if (!key.endsWith(".xml") && !key.endsWith(".rels")) {
+            // eslint-disable-next-line functional/immutable-data
             binaryContentMap.set(key, binaryValue);
             continue;
         }
@@ -264,6 +266,7 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
                 } as unknown as IViewWrapper,
                 stack: [],
             };
+            // eslint-disable-next-line functional/immutable-data
             contexts.set(key, context);
 
             if (!placeholderDelimiters?.start.trim() || !placeholderDelimiters?.end.trim()) {
@@ -326,6 +329,7 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
             }
         }
 
+        // eslint-disable-next-line functional/immutable-data
         map.set(key, json);
     }
 
@@ -333,10 +337,12 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
         // eslint-disable-next-line functional/immutable-data
         const relationshipKey = `word/_rels/${key.split("/").pop()}.rels`;
         const relationshipsJson = map.get(relationshipKey) ?? createRelationshipFile();
+        // eslint-disable-next-line functional/immutable-data
         map.set(relationshipKey, relationshipsJson);
 
         const index = getNextRelationshipIndex(relationshipsJson);
         const newJson = imageReplacer.replace(JSON.stringify(map.get(key)), mediaDatas, index);
+        // eslint-disable-next-line functional/immutable-data
         map.set(key, JSON.parse(newJson) as Element);
 
         for (let i = 0; i < mediaDatas.length; i++) {
@@ -355,6 +361,7 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
         const relationshipKey = `word/_rels/${key.split("/").pop()}.rels`;
 
         const relationshipsJson = map.get(relationshipKey) ?? createRelationshipFile();
+        // eslint-disable-next-line functional/immutable-data
         map.set(relationshipKey, relationshipsJson);
 
         appendRelationship(
