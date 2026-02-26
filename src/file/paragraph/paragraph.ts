@@ -11,6 +11,7 @@ import { IContext, IXmlableObject } from "@file/xml-components";
 import { uniqueId } from "@util/convenience-functions";
 
 import { CheckBox } from "../checkbox";
+import { CitationField } from "../citation/index";
 import { TargetModeType } from "../relationships/relationship/relationship";
 import { DeletedTextRun, InsertedTextRun } from "../track-revision";
 import { ColumnBreak, PageBreak } from "./formatting/break";
@@ -46,7 +47,8 @@ export type ParagraphChild =
     | CommentRangeStart
     | CommentRangeEnd
     | CommentReference
-    | CheckBox;
+    | CheckBox
+    | CitationField;
 
 /**
  * Options for creating a Paragraph element.

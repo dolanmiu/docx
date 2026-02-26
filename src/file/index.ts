@@ -11,6 +11,7 @@
  */
 
 export * from "./paragraph";
+export * from "./citation";
 export * from "./table";
 export * from "./file";
 export * from "./file-child";
