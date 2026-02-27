@@ -9,7 +9,7 @@ export default defineConfig({
     plugins: [
         tsconfigPaths(),
         dts({
-            rollupTypes: true,
+            rollupTypes: false,
             afterBuild: () => {
                 // https://github.com/dolanmiu/docx/pull/2883
                 // To pass publint - `npx publint@latest`
