@@ -71,6 +71,7 @@ export const createFontTable = (fonts: readonly FontOptionsWithKey[]): XmlCompon
                 name: font.name,
                 index: i + 1,
                 fontKey: font.fontKey,
+                characterSet: font.characterSet,
             }),
         ),
     });
