@@ -202,6 +202,19 @@ const paragraph = new Paragraph({
 });
 ```
 
+## Indentation
+
+Use `indent.firstLine` for twips-based indentation, or `indent.firstLineChars` when you want Word to treat the first-line indent as a character count. `firstLineChars` uses hundredths of a character, so `200` means two characters.
+
+```ts
+const paragraph = new Paragraph({
+    text: "First line indented by two characters",
+    indent: {
+        firstLineChars: 200,
+    },
+});
+```
+
 ## Outline Level
 
 **Example:**

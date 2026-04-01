@@ -9,7 +9,13 @@
  * @module
  */
 import { BuilderElement, type XmlComponent } from "@file/xml-components";
-import { type PositiveUniversalMeasure, type UniversalMeasure, signedTwipsMeasureValue, twipsMeasureValue } from "@util/values";
+import {
+    type PositiveUniversalMeasure,
+    type UniversalMeasure,
+    decimalNumber,
+    signedTwipsMeasureValue,
+    twipsMeasureValue,
+} from "@util/values";
 
 /**
  * Properties for configuring paragraph indentation.
@@ -23,6 +29,7 @@ export type IIndentAttributesProperties = {
     readonly right?: number | UniversalMeasure;
     readonly hanging?: number | PositiveUniversalMeasure;
     readonly firstLine?: number | PositiveUniversalMeasure;
+    readonly firstLineChars?: number;
 };
 
 /**
@@ -50,7 +57,7 @@ export type IIndentAttributesProperties = {
  * </xsd:complexType>
  * ```
  */
-export const createIndent = ({ start, end, left, right, hanging, firstLine }: IIndentAttributesProperties): XmlComponent =>
+export const createIndent = ({ start, end, left, right, hanging, firstLine, firstLineChars }: IIndentAttributesProperties): XmlComponent =>
     new BuilderElement<IIndentAttributesProperties>({
         name: "w:ind",
         attributes: {
@@ -60,5 +67,6 @@ export const createIndent = ({ start, end, left, right, hanging, firstLine }: II
             right: { key: "w:right", value: right === undefined ? undefined : signedTwipsMeasureValue(right) },
             hanging: { key: "w:hanging", value: hanging === undefined ? undefined : twipsMeasureValue(hanging) },
             firstLine: { key: "w:firstLine", value: firstLine === undefined ? undefined : twipsMeasureValue(firstLine) },
+            firstLineChars: { key: "w:firstLineChars", value: firstLineChars === undefined ? undefined : decimalNumber(firstLineChars) },
         },
     });
