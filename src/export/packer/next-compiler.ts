@@ -73,6 +73,8 @@ type IXmlifyedFileMapping = {
     readonly Comments?: IXmlifyedFile;
     /** Comments relationships (word/_rels/comments.xml.rels) */
     readonly CommentsRelationships?: IXmlifyedFile;
+    /** Comments extended for reply threading (word/commentsExtended.xml) */
+    readonly CommentsExtended?: IXmlifyedFile;
     /** Font table (word/fontTable.xml) */
     readonly FontTable?: IXmlifyedFile;
     /** Font table relationships (word/_rels/fontTable.xml.rels) */
@@ -632,6 +634,30 @@ export class Compiler {
                 })(),
                 path: "word/_rels/comments.xml.rels",
             },
+            ...(file.CommentsExtended
+                ? {
+                      CommentsExtended: {
+                          data: xml(
+                              this.formatter.format(file.CommentsExtended, {
+                                  viewWrapper: {
+                                      View: file.CommentsExtended,
+                                      Relationships: file.Comments.Relationships,
+                                  },
+                                  file,
+                                  stack: [],
+                              }),
+                              {
+                                  indent: prettify,
+                                  declaration: {
+                                      standalone: "yes",
+                                      encoding: "UTF-8",
+                                  },
+                              },
+                          ),
+                          path: "word/commentsExtended.xml",
+                      },
+                  }
+                : {}),
             FontTable: {
                 data: xml(
                     this.formatter.format(file.FontTable.View, {
