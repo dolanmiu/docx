@@ -131,6 +131,28 @@ describe("Compiler", () => {
             expect(commentsExtendedText).toBe(subfileData2);
         });
 
+        it("should include commentsExtended.xml when comments have parentId", { timeout: 99999999 }, async () => {
+            const file = new File({
+                sections: [],
+                comments: {
+                    children: [
+                        { id: 0, children: [new Paragraph("parent")] },
+                        { id: 1, children: [new Paragraph("reply")], parentId: 0 },
+                    ],
+                },
+            });
+            const zipFile = compiler.compile(file);
+            const fileNames = Object.keys(zipFile.files).map((f) => zipFile.files[f].name);
+
+            expect(fileNames).to.include("word/commentsExtended.xml");
+
+            const commentsExtendedText = await zipFile.file("word/commentsExtended.xml")?.async("text");
+            expect(commentsExtendedText).to.contain("w15:commentsEx");
+            expect(commentsExtendedText).to.contain("w15:commentEx");
+            expect(commentsExtendedText).to.contain("w15:paraId");
+            expect(commentsExtendedText).to.contain("w15:paraIdParent");
+        });
+
         it("should call the format method X times equalling X files to be formatted", () => {
             // This test is required because before, there was a case where Document was formatted twice, which was inefficient
             // This also caused issues such as running prepForXml multiple times as format() was ran multiple times.

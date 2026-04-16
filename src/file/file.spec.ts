@@ -418,6 +418,31 @@ describe("File", () => {
 
             expect(doc.Comments).to.not.be.undefined;
         });
+
+        it("should create CommentsExtended when comments have parentId", () => {
+            const doc = new File({
+                comments: {
+                    children: [
+                        { id: 0, children: [new Paragraph("parent")] },
+                        { id: 1, children: [new Paragraph("reply")], parentId: 0 },
+                    ],
+                },
+                sections: [],
+            });
+
+            expect(doc.CommentsExtended).to.not.be.undefined;
+        });
+
+        it("should not create CommentsExtended when no parentId", () => {
+            const doc = new File({
+                comments: {
+                    children: [{ id: 0, children: [new Paragraph("comment")] }],
+                },
+                sections: [],
+            });
+
+            expect(doc.CommentsExtended).to.be.undefined;
+        });
     });
 
     describe("#numbering", () => {

@@ -23,7 +23,7 @@ const doc = new Document({
     comments: {
         children: [
             new Comment({
-                id: "0",
+                id: 0,
                 author: "John Smith",
                 date: new Date(),
                 children: [new Paragraph("This needs to be reviewed.")],
@@ -36,10 +36,10 @@ const doc = new Document({
                 new Paragraph({
                     children: [
                         new TextRun("This is normal text. "),
-                        new CommentRangeStart("0"),
+                        new CommentRangeStart(0),
                         new TextRun("This text has a comment."),
-                        new CommentRangeEnd("0"),
-                        new CommentReference("0"),
+                        new CommentRangeEnd(0),
+                        new CommentReference(0),
                     ],
                 }),
             ],
@@ -50,13 +50,15 @@ const doc = new Document({
 
 ## Comment Options
 
-| Property | Type          | Notes    | Description         |
-| -------- | ------------- | -------- | ------------------- |
-| id       | `string`      | Required | Unique identifier   |
-| author   | `string`      | Optional | Comment author name |
-| date     | `Date`        | Optional | Comment timestamp   |
-| initials | `string`      | Optional | Author initials     |
-| children | `Paragraph[]` | Required | Comment content     |
+| Property | Type          | Notes    | Description                                      |
+| -------- | ------------- | -------- | ------------------------------------------------ |
+| id       | `number`      | Required | Unique identifier                                |
+| author   | `string`      | Optional | Comment author name                              |
+| date     | `Date`        | Optional | Comment timestamp                                |
+| initials | `string`      | Optional | Author initials                                  |
+| children | `Paragraph[]` | Required | Comment content                                  |
+| parentId | `number`      | Optional | ID of parent comment for reply threading         |
+| resolved | `boolean`     | Optional | Whether the comment thread is marked as resolved |
 
 ## Point Comment
 
@@ -66,7 +68,7 @@ Add a comment at a specific point (not a range):
 new Paragraph({
     children: [
         new TextRun("Check this point"),
-        new CommentReference("0"), // Comment appears here
+        new CommentReference(0), // Comment appears here
     ],
 });
 ```
@@ -80,13 +82,13 @@ const doc = new Document({
     comments: {
         children: [
             new Comment({
-                id: "0",
+                id: 0,
                 author: "Alice",
                 date: new Date("2024-01-15"),
                 children: [new Paragraph("First comment")],
             }),
             new Comment({
-                id: "1",
+                id: 1,
                 author: "Bob",
                 date: new Date("2024-01-16"),
                 children: [new Paragraph("Second comment")],
@@ -98,15 +100,15 @@ const doc = new Document({
             children: [
                 new Paragraph({
                     children: [
-                        new CommentRangeStart("0"),
+                        new CommentRangeStart(0),
                         new TextRun("Text with first comment."),
-                        new CommentRangeEnd("0"),
-                        new CommentReference("0"),
+                        new CommentRangeEnd(0),
+                        new CommentReference(0),
                         new TextRun(" "),
-                        new CommentRangeStart("1"),
+                        new CommentRangeStart(1),
                         new TextRun("Text with second comment."),
-                        new CommentRangeEnd("1"),
-                        new CommentReference("1"),
+                        new CommentRangeEnd(1),
+                        new CommentReference(1),
                     ],
                 }),
             ],
@@ -117,31 +119,78 @@ const doc = new Document({
 
 ## Reply Threads
 
-Create comment replies using the `parentId` property to build a thread:
+Create comment replies using the `parentId` property to build a thread. Reply comments must also have `CommentRangeStart`, `CommentRangeEnd`, and `CommentReference` wrapping the same text as their parent:
+
+```ts
+const doc = new Document({
+    comments: {
+        children: [
+            {
+                id: 0,
+                author: "Alice",
+                date: new Date("2024-01-15"),
+                children: [new Paragraph("Is this correct?")],
+            },
+            {
+                id: 1,
+                author: "Bob",
+                date: new Date("2024-01-16"),
+                parentId: 0, // This is a reply to comment 0
+                children: [new Paragraph("Yes, I verified it.")],
+            },
+            {
+                id: 2,
+                author: "Alice",
+                date: new Date("2024-01-17"),
+                parentId: 0, // Another reply to comment 0
+                children: [new Paragraph("Thanks for checking!")],
+            },
+        ],
+    },
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new CommentRangeStart(0),
+                        new CommentRangeStart(1),
+                        new CommentRangeStart(2),
+                        new TextRun("Text with a comment thread."),
+                        new CommentRangeEnd(0),
+                        new TextRun({ children: [new CommentReference(0)] }),
+                        new CommentRangeEnd(1),
+                        new TextRun({ children: [new CommentReference(1)] }),
+                        new CommentRangeEnd(2),
+                        new TextRun({ children: [new CommentReference(2)] }),
+                    ],
+                }),
+            ],
+        },
+    ],
+});
+```
+
+## Resolved Comments
+
+Mark a comment thread as resolved using the `resolved` property.
 
 ```ts
 comments: {
     children: [
-        new Comment({
-            id: "0",
-            author: "Alice",
+        {
+            id: 0,
+            author: "Charlie",
             date: new Date("2024-01-15"),
-            children: [new Paragraph("Is this correct?")],
-        }),
-        new Comment({
-            id: "1",
-            author: "Bob",
+            children: [new Paragraph("This timeline needs updating.")],
+        },
+        {
+            id: 1,
+            author: "Diana",
             date: new Date("2024-01-16"),
-            parentId: "0",  // This is a reply to comment "0"
-            children: [new Paragraph("Yes, I verified it.")],
-        }),
-        new Comment({
-            id: "2",
-            author: "Alice",
-            date: new Date("2024-01-17"),
-            parentId: "0",  // Another reply to comment "0"
-            children: [new Paragraph("Thanks for checking!")],
-        }),
+            parentId: 0,
+            resolved: true, // Marks this thread as resolved
+            children: [new Paragraph("Done - updated the dates.")],
+        },
     ],
 }
 ```
@@ -152,7 +201,7 @@ Comments can contain formatted text:
 
 ```ts
 new Comment({
-    id: "0",
+    id: 0,
     author: "Reviewer",
     children: [
         new Paragraph({
@@ -175,13 +224,13 @@ const doc = new Document({
     comments: {
         children: [
             new Comment({
-                id: "suggestion",
+                id: 0,
                 author: "Editor",
                 date: new Date(),
                 children: [new Paragraph("Consider rephrasing this for clarity.")],
             }),
             new Comment({
-                id: "fact-check",
+                id: 1,
                 author: "Fact Checker",
                 date: new Date(),
                 children: [
@@ -202,15 +251,15 @@ const doc = new Document({
                 new Paragraph({
                     children: [
                         new TextRun("Our "),
-                        new CommentRangeStart("suggestion"),
+                        new CommentRangeStart(0),
                         new TextRun("company achieved remarkable growth"),
-                        new CommentRangeEnd("suggestion"),
-                        new CommentReference("suggestion"),
+                        new CommentRangeEnd(0),
+                        new CommentReference(0),
                         new TextRun(" this quarter. "),
-                        new CommentRangeStart("fact-check"),
+                        new CommentRangeStart(1),
                         new TextRun("Revenue increased by 25%"),
-                        new CommentRangeEnd("fact-check"),
-                        new CommentReference("fact-check"),
+                        new CommentRangeEnd(1),
+                        new CommentReference(1),
                         new TextRun(" compared to last year."),
                     ],
                 }),
@@ -226,6 +275,14 @@ Packer.toBuffer(doc).then((buffer) => {
 
 ## Demo
 
+### Basic usage
+
 [Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/73-comments.ts ":include")
 
 _Source: https://github.com/dolanmiu/docx/blob/master/demo/73-comments.ts_
+
+### Comment Replies and Resolved state
+
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/101-comment-replies.ts ":include")
+
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/101-comment-replies.ts_

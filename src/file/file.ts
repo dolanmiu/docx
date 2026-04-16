@@ -22,6 +22,7 @@ import { HeaderWrapper, type IDocumentHeader } from "./header-wrapper";
 import { Media } from "./media";
 import { Numbering } from "./numbering";
 import { Comments } from "./paragraph/run/comment-run";
+import { CommentsExtended } from "./paragraph/run/comments-extended";
 import { Relationships } from "./relationships";
 import { Settings } from "./settings";
 import { Styles } from "./styles";
@@ -164,6 +165,7 @@ export class File {
     private readonly appProperties: AppProperties;
     private readonly styles: Styles;
     private readonly comments: Comments;
+    private readonly commentsExtended?: CommentsExtended;
     private readonly fontWrapper: FontWrapper;
 
     public constructor(options: IPropertiesOptions) {
@@ -177,6 +179,9 @@ export class File {
         this.numbering = new Numbering(options.numbering ? options.numbering : { config: [] });
 
         this.comments = new Comments(options.comments ?? { children: [] });
+        if (this.comments.ThreadData) {
+            this.commentsExtended = new CommentsExtended(this.comments.ThreadData);
+        }
         this.fileRelationships = new Relationships();
         this.customProperties = new CustomProperties(options.customProperties ?? []);
         this.appProperties = new AppProperties();
@@ -375,6 +380,16 @@ export class File {
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments",
             "comments.xml",
         );
+
+        if (this.commentsExtended) {
+            this.documentWrapper.Relationships.addRelationship(
+                // eslint-disable-next-line functional/immutable-data
+                this.currentRelationshipId++,
+                "http://schemas.microsoft.com/office/2011/relationships/commentsExtended",
+                "commentsExtended.xml",
+            );
+            this.contentTypes.addCommentsExtended();
+        }
     }
 
     public get Document(): DocumentWrapper {
@@ -435,6 +450,10 @@ export class File {
 
     public get Comments(): Comments {
         return this.comments;
+    }
+
+    public get CommentsExtended(): CommentsExtended | undefined {
+        return this.commentsExtended;
     }
 
     public get FontTable(): FontWrapper {

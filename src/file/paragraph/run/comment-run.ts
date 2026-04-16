@@ -11,7 +11,7 @@
  */
 import type { FileChild } from "@file/file-child";
 import { Relationships } from "@file/relationships";
-import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
+import { type IContext, type IXmlableObject, XmlAttributeComponent, XmlComponent } from "@file/xml-components";
 
 /**
  * Options for creating a single comment.
@@ -33,6 +33,10 @@ export type ICommentOptions = {
     readonly author?: string;
     /** Date and time the comment was created */
     readonly date?: Date;
+    /** ID of the parent comment for reply threading */
+    readonly parentId?: number;
+    /** Whether the comment thread is marked as resolved */
+    readonly resolved?: boolean;
 };
 
 /**
@@ -259,8 +263,12 @@ export class CommentReference extends XmlComponent {
  * ```
  */
 export class Comment extends XmlComponent {
-    public constructor({ id, initials, author, date = new Date(), children }: ICommentOptions) {
+    private readonly paraId?: string;
+
+    public constructor({ id, initials, author, date = new Date(), children }: ICommentOptions, paraId?: string) {
         super("w:comment");
+
+        this.paraId = paraId;
 
         this.root.push(
             new CommentAttributes({
@@ -274,6 +282,33 @@ export class Comment extends XmlComponent {
         for (const child of children) {
             this.root.push(child);
         }
+    }
+
+    public prepForXml(context: IContext): IXmlableObject | undefined {
+        const result = super.prepForXml(context);
+        if (!result || !this.paraId) {
+            return result;
+        }
+
+        // Inject w14:paraId into the last w:p element
+        const commentChildren = result["w:comment"];
+        if (!Array.isArray(commentChildren)) {
+            return result;
+        }
+
+        for (let i = commentChildren.length - 1; i >= 0; i--) {
+            const child = commentChildren[i];
+            if (child && typeof child === "object" && "w:p" in child) {
+                const pChildren = child["w:p"];
+                if (Array.isArray(pChildren)) {
+                    // eslint-disable-next-line functional/immutable-data
+                    pChildren.unshift({ _attr: { "w14:paraId": this.paraId, "w14:textId": this.paraId } });
+                }
+                break;
+            }
+        }
+
+        return result;
     }
 }
 
@@ -313,8 +348,23 @@ export class Comment extends XmlComponent {
  * });
  * ```
  */
+/**
+ * Thread data for a single comment, used to build commentsExtended.xml.
+ */
+export type ICommentThreadData = {
+    readonly paraId: string;
+    readonly parentParaId?: string;
+    readonly done?: boolean;
+};
+
+/**
+ * Converts a comment ID to a deterministic 8-character uppercase hex paraId.
+ */
+export const commentIdToParaId = (id: number): string => (id + 1).toString(16).toUpperCase().padStart(8, "0");
+
 export class Comments extends XmlComponent {
     private readonly relationships: Relationships;
+    private readonly threadData?: readonly ICommentThreadData[];
 
     public constructor({ children }: ICommentsOptions) {
         super("w:comments");
@@ -355,8 +405,24 @@ export class Comments extends XmlComponent {
             }),
         );
 
-        for (const child of children) {
-            this.root.push(new Comment(child));
+        const hasThreading = children.some((child) => child.parentId !== undefined);
+
+        if (hasThreading) {
+            const idToParaId = new Map<number, string>(children.map((child) => [child.id, commentIdToParaId(child.id)]));
+
+            for (const child of children) {
+                this.root.push(new Comment(child, idToParaId.get(child.id)));
+            }
+
+            this.threadData = children.map((child) => ({
+                paraId: idToParaId.get(child.id)!,
+                parentParaId: child.parentId !== undefined ? idToParaId.get(child.parentId) : undefined,
+                done: child.resolved,
+            }));
+        } else {
+            for (const child of children) {
+                this.root.push(new Comment(child));
+            }
         }
 
         this.relationships = new Relationships();
@@ -364,5 +430,9 @@ export class Comments extends XmlComponent {
 
     public get Relationships(): Relationships {
         return this.relationships;
+    }
+
+    public get ThreadData(): readonly ICommentThreadData[] | undefined {
+        return this.threadData;
     }
 }

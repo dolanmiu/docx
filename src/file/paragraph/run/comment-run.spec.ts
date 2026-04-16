@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Formatter } from "@export/formatter";
 
 import { Paragraph } from "../paragraph";
-import { Comment, CommentRangeEnd, CommentRangeStart, CommentReference, Comments } from "./comment-run";
+import { Comment, CommentRangeEnd, CommentRangeStart, CommentReference, Comments, commentIdToParaId } from "./comment-run";
 
 describe("CommentRangeStart", () => {
     describe("#constructor()", () => {
@@ -83,6 +83,15 @@ describe("Comment", () => {
                         ],
                     },
                 ],
+            });
+        });
+
+        it("should handle paraId gracefully when comment has no paragraph children", () => {
+            const component = new Comment({ id: 0, children: [], date: new Date("1999-01-01T00:00:00.000Z") }, "00000001");
+            const tree = new Formatter().format(component);
+            // Comment with no paragraphs should serialize without crashing, paraId has nowhere to go
+            expect(tree).to.deep.equal({
+                "w:comment": { _attr: { "w:id": 0, "w:date": "1999-01-01T00:00:00.000Z" } },
             });
         });
 
@@ -190,5 +199,68 @@ describe("Comments", () => {
                 ],
             });
         });
+
+        it("should not have ThreadData when no parentId is used", () => {
+            const component = new Comments({
+                children: [{ id: 0, children: [new Paragraph("comment")], date: new Date("1999-01-01T00:00:00.000Z") }],
+            });
+            expect(component.ThreadData).to.be.undefined;
+        });
+
+        it("should produce ThreadData when parentId is used", () => {
+            const component = new Comments({
+                children: [
+                    { id: 0, children: [new Paragraph("parent")], date: new Date("1999-01-01T00:00:00.000Z") },
+                    { id: 1, children: [new Paragraph("reply")], date: new Date("1999-01-01T00:00:00.000Z"), parentId: 0 },
+                ],
+            });
+            expect(component.ThreadData).to.deep.equal([
+                { paraId: "00000001", parentParaId: undefined, done: undefined },
+                { paraId: "00000002", parentParaId: "00000001", done: undefined },
+            ]);
+        });
+
+        it("should map resolved option to done in ThreadData", () => {
+            const component = new Comments({
+                children: [
+                    { id: 0, children: [new Paragraph("parent")], date: new Date("1999-01-01T00:00:00.000Z") },
+                    { id: 1, children: [new Paragraph("reply")], date: new Date("1999-01-01T00:00:00.000Z"), parentId: 0, resolved: true },
+                ],
+            });
+            expect(component.ThreadData![0].done).to.be.undefined;
+            expect(component.ThreadData![1].done).to.equal(true);
+        });
+
+        it("should inject w14:paraId into last paragraph when threading is active", () => {
+            const component = new Comments({
+                children: [
+                    { id: 0, children: [new Paragraph("parent")], date: new Date("1999-01-01T00:00:00.000Z") },
+                    { id: 1, children: [new Paragraph("reply")], date: new Date("1999-01-01T00:00:00.000Z"), parentId: 0 },
+                ],
+            });
+            const tree = new Formatter().format(component);
+            const serialized = JSON.stringify(tree);
+            expect(serialized).to.contain('"w14:paraId":"00000001"');
+            expect(serialized).to.contain('"w14:textId":"00000001"');
+            expect(serialized).to.contain('"w14:paraId":"00000002"');
+            expect(serialized).to.contain('"w14:textId":"00000002"');
+        });
+
+        it("should not inject w14:paraId when no threading", () => {
+            const component = new Comments({
+                children: [{ id: 0, children: [new Paragraph("comment")], date: new Date("1999-01-01T00:00:00.000Z") }],
+            });
+            const tree = new Formatter().format(component);
+            const serialized = JSON.stringify(tree);
+            expect(serialized).to.not.contain("w14:paraId");
+        });
+    });
+});
+
+describe("commentIdToParaId", () => {
+    it("should convert comment id to 8-char uppercase hex", () => {
+        expect(commentIdToParaId(0)).to.equal("00000001");
+        expect(commentIdToParaId(1)).to.equal("00000002");
+        expect(commentIdToParaId(255)).to.equal("00000100");
     });
 });
