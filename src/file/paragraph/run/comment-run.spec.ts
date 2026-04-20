@@ -3,7 +3,15 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Formatter } from "@export/formatter";
 
 import { Paragraph } from "../paragraph";
-import { Comment, CommentRangeEnd, CommentRangeStart, CommentReference, Comments, commentIdToParaId } from "./comment-run";
+import {
+    Comment,
+    CommentRangeEnd,
+    CommentRangeStart,
+    CommentReference,
+    Comments,
+    commentIdToDurableId,
+    commentIdToParaId,
+} from "./comment-run";
 
 describe("CommentRangeStart", () => {
     describe("#constructor()", () => {
@@ -254,6 +262,96 @@ describe("Comments", () => {
             const serialized = JSON.stringify(tree);
             expect(serialized).to.not.contain("w14:paraId");
         });
+
+        it("should not have CommentIdData or CommentExtensibleData when no dateUtc", () => {
+            const component = new Comments({
+                children: [{ id: 0, children: [new Paragraph("comment")], date: new Date("1999-01-01T00:00:00.000Z") }],
+            });
+            expect(component.CommentIdData).to.be.undefined;
+            expect(component.CommentExtensibleData).to.be.undefined;
+        });
+
+        it("should produce CommentIdData and CommentExtensibleData when dateUtc is used", () => {
+            const component = new Comments({
+                children: [
+                    {
+                        id: 0,
+                        children: [new Paragraph("comment")],
+                        date: new Date("1999-01-01T00:00:00.000Z"),
+                        dateUtc: new Date("2026-04-15T14:47:00.000Z"),
+                    },
+                ],
+            });
+            expect(component.CommentIdData).to.deep.equal([{ paraId: "00000001", durableId: "10000001" }]);
+            expect(component.CommentExtensibleData).to.deep.equal([{ durableId: "10000001", dateUtc: "2026-04-15T14:47:00.000Z" }]);
+        });
+
+        it("should inject w14:paraId when only dateUtc is used (no parentId)", () => {
+            const component = new Comments({
+                children: [
+                    {
+                        id: 0,
+                        children: [new Paragraph("comment")],
+                        date: new Date("1999-01-01T00:00:00.000Z"),
+                        dateUtc: new Date("2026-04-15T14:47:00.000Z"),
+                    },
+                ],
+            });
+            const tree = new Formatter().format(component);
+            const serialized = JSON.stringify(tree);
+            expect(serialized).to.contain('"w14:paraId":"00000001"');
+        });
+
+        it("should produce both ThreadData and CommentIdData when threading and dateUtc are combined", () => {
+            const component = new Comments({
+                children: [
+                    {
+                        id: 0,
+                        children: [new Paragraph("parent")],
+                        date: new Date("1999-01-01T00:00:00.000Z"),
+                        dateUtc: new Date("2026-04-15T14:47:00.000Z"),
+                    },
+                    {
+                        id: 1,
+                        children: [new Paragraph("reply")],
+                        date: new Date("1999-01-01T00:00:00.000Z"),
+                        dateUtc: new Date("2026-04-15T15:00:00.000Z"),
+                        parentId: 0,
+                    },
+                ],
+            });
+            expect(component.ThreadData).to.have.length(2);
+            expect(component.CommentIdData).to.deep.equal([
+                { paraId: "00000001", durableId: "10000001" },
+                { paraId: "00000002", durableId: "10000002" },
+            ]);
+            expect(component.CommentExtensibleData).to.deep.equal([
+                { durableId: "10000001", dateUtc: "2026-04-15T14:47:00.000Z" },
+                { durableId: "10000002", dateUtc: "2026-04-15T15:00:00.000Z" },
+            ]);
+        });
+
+        it("should omit dateUtc from CommentExtensibleData entry when a comment lacks dateUtc in a mixed batch", () => {
+            const component = new Comments({
+                children: [
+                    {
+                        id: 0,
+                        children: [new Paragraph("with utc")],
+                        date: new Date("1999-01-01T00:00:00.000Z"),
+                        dateUtc: new Date("2026-04-15T14:47:00.000Z"),
+                    },
+                    {
+                        id: 1,
+                        children: [new Paragraph("without utc")],
+                        date: new Date("1999-01-01T00:00:00.000Z"),
+                    },
+                ],
+            });
+            expect(component.CommentExtensibleData).to.deep.equal([
+                { durableId: "10000001", dateUtc: "2026-04-15T14:47:00.000Z" },
+                { durableId: "10000002", dateUtc: undefined },
+            ]);
+        });
     });
 });
 
@@ -262,5 +360,13 @@ describe("commentIdToParaId", () => {
         expect(commentIdToParaId(0)).to.equal("00000001");
         expect(commentIdToParaId(1)).to.equal("00000002");
         expect(commentIdToParaId(255)).to.equal("00000100");
+    });
+});
+
+describe("commentIdToDurableId", () => {
+    it("should convert comment id to an 8-char uppercase hex offset by 0x10000000", () => {
+        expect(commentIdToDurableId(0)).to.equal("10000001");
+        expect(commentIdToDurableId(1)).to.equal("10000002");
+        expect(commentIdToDurableId(255)).to.equal("10000100");
     });
 });

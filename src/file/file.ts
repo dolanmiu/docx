@@ -23,6 +23,8 @@ import { Media } from "./media";
 import { Numbering } from "./numbering";
 import { Comments } from "./paragraph/run/comment-run";
 import { CommentsExtended } from "./paragraph/run/comments-extended";
+import { CommentsExtensible } from "./paragraph/run/comments-extensible";
+import { CommentsIds } from "./paragraph/run/comments-ids";
 import { Relationships } from "./relationships";
 import { Settings } from "./settings";
 import { Styles } from "./styles";
@@ -166,6 +168,8 @@ export class File {
     private readonly styles: Styles;
     private readonly comments: Comments;
     private readonly commentsExtended?: CommentsExtended;
+    private readonly commentsIds?: CommentsIds;
+    private readonly commentsExtensible?: CommentsExtensible;
     private readonly fontWrapper: FontWrapper;
 
     public constructor(options: IPropertiesOptions) {
@@ -181,6 +185,12 @@ export class File {
         this.comments = new Comments(options.comments ?? { children: [] });
         if (this.comments.ThreadData) {
             this.commentsExtended = new CommentsExtended(this.comments.ThreadData);
+        }
+        if (this.comments.CommentIdData) {
+            this.commentsIds = new CommentsIds(this.comments.CommentIdData);
+        }
+        if (this.comments.CommentExtensibleData) {
+            this.commentsExtensible = new CommentsExtensible(this.comments.CommentExtensibleData);
         }
         this.fileRelationships = new Relationships();
         this.customProperties = new CustomProperties(options.customProperties ?? []);
@@ -390,6 +400,26 @@ export class File {
             );
             this.contentTypes.addCommentsExtended();
         }
+
+        if (this.commentsIds) {
+            this.documentWrapper.Relationships.addRelationship(
+                // eslint-disable-next-line functional/immutable-data
+                this.currentRelationshipId++,
+                "http://schemas.microsoft.com/office/2016/09/relationships/commentsIds",
+                "commentsIds.xml",
+            );
+            this.contentTypes.addCommentsIds();
+        }
+
+        if (this.commentsExtensible) {
+            this.documentWrapper.Relationships.addRelationship(
+                // eslint-disable-next-line functional/immutable-data
+                this.currentRelationshipId++,
+                "http://schemas.microsoft.com/office/2018/08/relationships/commentsExtensible",
+                "commentsExtensible.xml",
+            );
+            this.contentTypes.addCommentsExtensible();
+        }
     }
 
     public get Document(): DocumentWrapper {
@@ -454,6 +484,14 @@ export class File {
 
     public get CommentsExtended(): CommentsExtended | undefined {
         return this.commentsExtended;
+    }
+
+    public get CommentsIds(): CommentsIds | undefined {
+        return this.commentsIds;
+    }
+
+    public get CommentsExtensible(): CommentsExtensible | undefined {
+        return this.commentsExtensible;
     }
 
     public get FontTable(): FontWrapper {

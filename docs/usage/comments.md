@@ -55,6 +55,7 @@ const doc = new Document({
 | id       | `number`      | Required | Unique identifier                                |
 | author   | `string`      | Optional | Comment author name                              |
 | date     | `Date`        | Optional | Comment timestamp                                |
+| dateUtc  | `Date`        | Optional | Comment timestamp with timezone                  |
 | initials | `string`      | Optional | Author initials                                  |
 | children | `Paragraph[]` | Required | Comment content                                  |
 | parentId | `number`      | Optional | ID of parent comment for reply threading         |
@@ -194,6 +195,24 @@ comments: {
     ],
 }
 ```
+
+## UTC Dates
+
+`date` is what Word shows in the comment UI, rendered as-is with no timezone conversion. `dateUtc` is an unambiguous UTC timestamp used by modern Word for collaboration features and is never displayed directly.
+
+You don't have to provide both. For best interop, set `date` to the author's local time and `dateUtc` to the same moment in UTC:
+
+```ts
+{
+    id: 0,
+    author: "Alice",
+    date: new Date("2024-01-15T17:47:00"),          // shown in Word
+    dateUtc: new Date("2024-01-15T14:47:00.000Z"),  // same moment in UTC
+    children: [new Paragraph("First comment")],
+}
+```
+
+`date` alone is fine for simple documents. `dateUtc` alone is unusual — Word still shows a visible timestamp and will fall back to the current time.
 
 ## Rich Text Comments
 

@@ -163,4 +163,52 @@ describe("ContentTypes", () => {
             });
         });
     });
+
+    describe("#addCommentsExtended()", () => {
+        it("should add commentsExtended override", () => {
+            contentTypes.addCommentsExtended();
+            const tree = new Formatter().format(contentTypes);
+
+            expect(tree["Types"][21]).to.deep.equal({
+                Override: {
+                    _attr: {
+                        ContentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.commentsExtended+xml",
+                        PartName: "/word/commentsExtended.xml",
+                    },
+                },
+            });
+        });
+    });
+
+    describe("#addCommentsIds()", () => {
+        it("should add commentsIds override", () => {
+            contentTypes.addCommentsIds();
+            const tree = new Formatter().format(contentTypes);
+
+            expect(tree["Types"][21]).to.deep.equal({
+                Override: {
+                    _attr: {
+                        ContentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.commentsIds+xml",
+                        PartName: "/word/commentsIds.xml",
+                    },
+                },
+            });
+        });
+    });
+
+    describe("#addCommentsExtensible()", () => {
+        it("should add commentsExtensible override", () => {
+            contentTypes.addCommentsExtensible();
+            const tree = new Formatter().format(contentTypes);
+
+            expect(tree["Types"][21]).to.deep.equal({
+                Override: {
+                    _attr: {
+                        ContentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.commentsExtensible+xml",
+                        PartName: "/word/commentsExtensible.xml",
+                    },
+                },
+            });
+        });
+    });
 });

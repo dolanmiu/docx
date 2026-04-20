@@ -84,6 +84,27 @@ export class ContentTypes extends XmlComponent {
     }
 
     /**
+     * Registers the commentsIds part in the content types.
+     */
+    public addCommentsIds(): void {
+        this.root.push(
+            createOverride("application/vnd.openxmlformats-officedocument.wordprocessingml.commentsIds+xml", "/word/commentsIds.xml"),
+        );
+    }
+
+    /**
+     * Registers the commentsExtensible part in the content types.
+     */
+    public addCommentsExtensible(): void {
+        this.root.push(
+            createOverride(
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.commentsExtensible+xml",
+                "/word/commentsExtensible.xml",
+            ),
+        );
+    }
+
+    /**
      * Registers a footer part in the content types.
      *
      * @param index - Footer index number (e.g., 1 for footer1.xml)

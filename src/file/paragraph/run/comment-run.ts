@@ -33,6 +33,8 @@ export type ICommentOptions = {
     readonly author?: string;
     /** Date and time the comment was created */
     readonly date?: Date;
+    /** UTC date and time the comment was created, stored in commentsExtensible.xml */
+    readonly dateUtc?: Date;
     /** ID of the parent comment for reply threading */
     readonly parentId?: number;
     /** Whether the comment thread is marked as resolved */
@@ -358,13 +360,38 @@ export type ICommentThreadData = {
 };
 
 /**
+ * Mapping between a comment's paraId and its durableId, used to build commentsIds.xml.
+ */
+export type ICommentIdData = {
+    readonly paraId: string;
+    readonly durableId: string;
+};
+
+/**
+ * Extended (w16cex) data for a single comment, used to build commentsExtensible.xml.
+ */
+export type ICommentExtensibleData = {
+    readonly durableId: string;
+    readonly dateUtc?: string;
+};
+
+/**
  * Converts a comment ID to a deterministic 8-character uppercase hex paraId.
  */
 export const commentIdToParaId = (id: number): string => (id + 1).toString(16).toUpperCase().padStart(8, "0");
 
+/**
+ * Converts a comment ID to a deterministic 8-character uppercase hex durableId.
+ *
+ * Offset by 0x10000000 to avoid collisions with paraId values.
+ */
+export const commentIdToDurableId = (id: number): string => (id + 0x10000001).toString(16).toUpperCase().padStart(8, "0");
+
 export class Comments extends XmlComponent {
     private readonly relationships: Relationships;
     private readonly threadData?: readonly ICommentThreadData[];
+    private readonly commentIdData?: readonly ICommentIdData[];
+    private readonly commentExtensibleData?: readonly ICommentExtensibleData[];
 
     public constructor({ children }: ICommentsOptions) {
         super("w:comments");
@@ -406,19 +433,37 @@ export class Comments extends XmlComponent {
         );
 
         const hasThreading = children.some((child) => child.parentId !== undefined);
+        const hasDateUtc = children.some((child) => child.dateUtc !== undefined);
+        const needsParaIds = hasThreading || hasDateUtc;
 
-        if (hasThreading) {
+        if (needsParaIds) {
             const idToParaId = new Map<number, string>(children.map((child) => [child.id, commentIdToParaId(child.id)]));
 
             for (const child of children) {
                 this.root.push(new Comment(child, idToParaId.get(child.id)));
             }
 
-            this.threadData = children.map((child) => ({
-                paraId: idToParaId.get(child.id)!,
-                parentParaId: child.parentId !== undefined ? idToParaId.get(child.parentId) : undefined,
-                done: child.resolved,
-            }));
+            if (hasThreading) {
+                this.threadData = children.map((child) => ({
+                    paraId: idToParaId.get(child.id)!,
+                    parentParaId: child.parentId !== undefined ? idToParaId.get(child.parentId) : undefined,
+                    done: child.resolved,
+                }));
+            }
+
+            if (hasDateUtc) {
+                const idToDurableId = new Map<number, string>(children.map((child) => [child.id, commentIdToDurableId(child.id)]));
+
+                this.commentIdData = children.map((child) => ({
+                    paraId: idToParaId.get(child.id)!,
+                    durableId: idToDurableId.get(child.id)!,
+                }));
+
+                this.commentExtensibleData = children.map((child) => ({
+                    durableId: idToDurableId.get(child.id)!,
+                    dateUtc: child.dateUtc?.toISOString(),
+                }));
+            }
         } else {
             for (const child of children) {
                 this.root.push(new Comment(child));
@@ -434,5 +479,13 @@ export class Comments extends XmlComponent {
 
     public get ThreadData(): readonly ICommentThreadData[] | undefined {
         return this.threadData;
+    }
+
+    public get CommentIdData(): readonly ICommentIdData[] | undefined {
+        return this.commentIdData;
+    }
+
+    public get CommentExtensibleData(): readonly ICommentExtensibleData[] | undefined {
+        return this.commentExtensibleData;
     }
 }

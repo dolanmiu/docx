@@ -153,6 +153,38 @@ describe("Compiler", () => {
             expect(commentsExtendedText).to.contain("w15:paraIdParent");
         });
 
+        it("should include commentsIds.xml and commentsExtensible.xml when comments have dateUtc", { timeout: 99999999 }, async () => {
+            const file = new File({
+                sections: [],
+                comments: {
+                    children: [
+                        {
+                            id: 0,
+                            children: [new Paragraph("comment")],
+                            dateUtc: new Date("2026-04-15T14:47:00.000Z"),
+                        },
+                    ],
+                },
+            });
+            const zipFile = compiler.compile(file);
+            const fileNames = Object.keys(zipFile.files).map((f) => zipFile.files[f].name);
+
+            expect(fileNames).to.include("word/commentsIds.xml");
+            expect(fileNames).to.include("word/commentsExtensible.xml");
+
+            const commentsIdsText = await zipFile.file("word/commentsIds.xml")?.async("text");
+            expect(commentsIdsText).to.contain("w16cid:commentsIds");
+            expect(commentsIdsText).to.contain("w16cid:commentId");
+            expect(commentsIdsText).to.contain('w16cid:paraId="00000001"');
+            expect(commentsIdsText).to.contain('w16cid:durableId="10000001"');
+
+            const commentsExtensibleText = await zipFile.file("word/commentsExtensible.xml")?.async("text");
+            expect(commentsExtensibleText).to.contain("w16cex:commentsExtensible");
+            expect(commentsExtensibleText).to.contain("w16cex:commentExtensible");
+            expect(commentsExtensibleText).to.contain('w16cex:durableId="10000001"');
+            expect(commentsExtensibleText).to.contain('w16cex:dateUtc="2026-04-15T14:47:00.000Z"');
+        });
+
         it("should call the format method X times equalling X files to be formatted", () => {
             // This test is required because before, there was a case where Document was formatted twice, which was inefficient
             // This also caused issues such as running prepForXml multiple times as format() was ran multiple times.
