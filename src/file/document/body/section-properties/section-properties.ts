@@ -236,6 +236,7 @@ export class SectionProperties extends XmlComponent {
                 width = sectionPageSizeDefaults.WIDTH,
                 height = sectionPageSizeDefaults.HEIGHT,
                 orientation = sectionPageSizeDefaults.ORIENTATION,
+                code,
             } = {},
             margin: {
                 top = sectionMarginDefaults.TOP,
@@ -269,7 +270,7 @@ export class SectionProperties extends XmlComponent {
             this.root.push(createSectionType(type));
         }
 
-        this.root.push(createPageSize({ width, height, orientation }));
+        this.root.push(createPageSize({ width, height, orientation, code }));
         this.root.push(createPageMargin(top, right, bottom, left, header, footer, gutter));
 
         if (borders) {

@@ -277,6 +277,28 @@ describe("SectionProperties", () => {
             });
         });
 
+        it.each([1, 5, 9])("should create section properties with page size code %i", (code) => {
+            const properties = new SectionProperties({
+                page: {
+                    size: {
+                        code,
+                    },
+                },
+            });
+            const tree = new Formatter().format(properties);
+
+            expect(Object.keys(tree)).to.deep.equal(["w:sectPr"]);
+            const pageSize = tree["w:sectPr"].find((item: any) => item["w:pgSz"] !== undefined);
+            expect(pageSize).to.deep.equal({
+                "w:pgSz": {
+                    _attr: {
+                        ...PAGE_SIZE_DEFAULTS,
+                        "w:code": code,
+                    },
+                },
+            });
+        });
+
         it("should create section properties with revision", () => {
             const properties = new SectionProperties({
                 page: {
