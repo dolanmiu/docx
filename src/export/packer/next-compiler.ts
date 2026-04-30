@@ -155,9 +155,12 @@ export class Compiler {
             }
         }
 
-        for (const { data: buffer, name, fontKey } of file.FontTable.fontOptionsWithKey) {
-            const [nameWithoutExtension] = name.split(".");
-            zip.file(`word/fonts/${nameWithoutExtension}.odttf`, obfuscate(buffer, fontKey));
+        // Sequential filenames (font1.odttf, font2.odttf, …) — must match the
+        // Target paths set in FontWrapper. Word rejects embedded-font paths
+        // containing spaces or non-ASCII when those characters appear in the
+        // package zip entry; see https://github.com/dolanmiu/docx/issues/3019.
+        for (const [i, { data: buffer, fontKey }] of file.FontTable.fontOptionsWithKey.entries()) {
+            zip.file(`word/fonts/font${i + 1}.odttf`, obfuscate(buffer, fontKey));
         }
 
         return zip;

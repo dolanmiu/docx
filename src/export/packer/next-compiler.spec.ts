@@ -253,5 +253,28 @@ describe("Compiler", () => {
 
             compiler.compile(file);
         });
+
+        it("should write embedded fonts to sequential filenames in the zip (no spaces or special chars from family name)", () => {
+            // Regression for https://github.com/dolanmiu/docx/issues/3019 —
+            // fonts whose user-facing family name contains spaces / non-ASCII
+            // used to be written into the package zip with the family name as
+            // the filename (e.g. `EB Garamond.odttf`). Word rejects those
+            // paths and shows a "found unreadable content" recovery prompt on
+            // open. Sequential names side-step that.
+            const file = new File({
+                sections: [],
+                fonts: [
+                    { name: "EB Garamond", data: Buffer.from("") },
+                    { name: "Source Serif 4", data: Buffer.from("") },
+                ],
+            });
+
+            const zip = compiler.compile(file);
+            const fileNames = Object.keys(zip.files);
+            expect(fileNames).to.include("word/fonts/font1.odttf");
+            expect(fileNames).to.include("word/fonts/font2.odttf");
+            expect(fileNames).to.not.include("word/fonts/EB Garamond.odttf");
+            expect(fileNames).to.not.include("word/fonts/Source Serif 4.odttf");
+        });
     });
 });
