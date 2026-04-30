@@ -444,16 +444,10 @@ describe("File", () => {
             expect(doc.CommentsExtended).to.be.undefined;
         });
 
-        it("should create CommentsIds and CommentsExtensible when comments have dateUtc", () => {
+        it("should create CommentsIds and CommentsExtensible whenever comments exist", () => {
             const doc = new File({
                 comments: {
-                    children: [
-                        {
-                            id: 0,
-                            children: [new Paragraph("comment")],
-                            dateUtc: new Date("2026-04-15T14:47:00.000Z"),
-                        },
-                    ],
+                    children: [{ id: 0, children: [new Paragraph("comment")] }],
                 },
                 sections: [],
             });
@@ -462,11 +456,9 @@ describe("File", () => {
             expect(doc.CommentsExtensible).to.not.be.undefined;
         });
 
-        it("should not create CommentsIds or CommentsExtensible when no dateUtc", () => {
+        it("should not create CommentsIds or CommentsExtensible when there are no comments", () => {
             const doc = new File({
-                comments: {
-                    children: [{ id: 0, children: [new Paragraph("comment")] }],
-                },
+                comments: { children: [] },
                 sections: [],
             });
 

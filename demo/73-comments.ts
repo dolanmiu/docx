@@ -10,7 +10,6 @@ const doc = new Document({
                 id: 0,
                 author: "Ray Chen",
                 date: new Date(),
-                dateUtc: new Date(),
                 children: [
                     new Paragraph({
                         children: [
@@ -45,7 +44,6 @@ const doc = new Document({
                 id: 1,
                 author: "Bob Ross",
                 date: new Date(),
-                dateUtc: new Date(),
                 children: [
                     new Paragraph({
                         children: [
@@ -67,7 +65,6 @@ const doc = new Document({
                 id: 2,
                 author: "John Doe",
                 date: new Date(),
-                dateUtc: new Date(),
                 children: [
                     new Paragraph({
                         children: [
@@ -82,7 +79,6 @@ const doc = new Document({
                 id: 3,
                 author: "Beatriz",
                 date: new Date(),
-                dateUtc: new Date(),
                 children: [
                     new Paragraph({
                         children: [

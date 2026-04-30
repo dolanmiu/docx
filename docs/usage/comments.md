@@ -54,8 +54,7 @@ const doc = new Document({
 | -------- | ------------- | -------- | ------------------------------------------------ |
 | id       | `number`      | Required | Unique identifier                                |
 | author   | `string`      | Optional | Comment author name                              |
-| date     | `Date`        | Optional | Comment timestamp                                |
-| dateUtc  | `Date`        | Optional | Comment timestamp with timezone                  |
+| date     | `Date`        | Optional | UTC instant when the comment was created         |
 | initials | `string`      | Optional | Author initials                                  |
 | children | `Paragraph[]` | Required | Comment content                                  |
 | parentId | `number`      | Optional | ID of parent comment for reply threading         |
@@ -196,23 +195,11 @@ comments: {
 }
 ```
 
-## UTC Dates
+## Date semantics
 
-`date` is what Word shows in the comment UI, rendered as-is with no timezone conversion. `dateUtc` is an unambiguous UTC timestamp used by modern Word for collaboration features and is never displayed directly.
+`date` is the UTC instant when the comment was created. The library writes it to both `w:date` (in `comments.xml`) and `w16cex:dateUtc` (in `commentsExtensible.xml`).
 
-You don't have to provide both. For best interop, set `date` to the author's local time and `dateUtc` to the same moment in UTC:
-
-```ts
-{
-    id: 0,
-    author: "Alice",
-    date: new Date("2024-01-15T17:47:00"),          // shown in Word
-    dateUtc: new Date("2024-01-15T14:47:00.000Z"),  // same moment in UTC
-    children: [new Paragraph("First comment")],
-}
-```
-
-`date` alone is fine for simple documents. `dateUtc` alone is unusual — Word still shows a visible timestamp and will fall back to the current time.
+Word's modern comment UI reads `w16cex:dateUtc` and displays the timestamp in the reader's local time zone. Word's older "N hours ago" UI reads `w:date` and (per a long-standing Word quirk) treats it as already in the reader's local time zone, so older clients may show the timestamp shifted by the reader's UTC offset. There is no way for this library to fix that — JS `Date` cannot represent a "this is in time zone X" value, and Word ignores any timezone suffix on `w:date` regardless.
 
 ## Rich Text Comments
 

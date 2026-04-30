@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { Formatter } from "@export/formatter";
+import { FileChild } from "@file/file-child";
 
 import { Paragraph } from "../paragraph";
 import {
@@ -12,6 +13,12 @@ import {
     commentIdToDurableId,
     commentIdToParaId,
 } from "./comment-run";
+
+class NonParagraphChild extends FileChild {
+    public constructor() {
+        super("w:tbl");
+    }
+}
 
 describe("CommentRangeStart", () => {
     describe("#constructor()", () => {
@@ -101,6 +108,38 @@ describe("Comment", () => {
             expect(tree).to.deep.equal({
                 "w:comment": { _attr: { "w:id": 0, "w:date": "1999-01-01T00:00:00.000Z" } },
             });
+        });
+
+        it("should skip non-w:p children when scanning for the trailing paragraph", () => {
+            // commentChildren is [_attr, w:tbl] — the loop must walk past the non-paragraph
+            // element without injecting paraId.
+            const component = new Comment(
+                { id: 0, children: [new NonParagraphChild()], date: new Date("1999-01-01T00:00:00.000Z") },
+                "00000001",
+            );
+            const serialized = JSON.stringify(new Formatter().format(component));
+            expect(serialized).to.contain("w:tbl");
+            expect(serialized).to.not.contain("w14:paraId");
+        });
+
+        it("should silently skip injection when the trailing paragraph has no children array", () => {
+            // An empty Paragraph serializes as { "w:p": {} } (object, not array),
+            // so the inner Array.isArray guard fails and the paraId is dropped without crashing.
+            const component = new Comment({ id: 0, children: [new Paragraph({})], date: new Date("1999-01-01T00:00:00.000Z") }, "00000001");
+            const serialized = JSON.stringify(new Formatter().format(component));
+            expect(serialized).to.not.contain("w14:paraId");
+        });
+
+        it("should return undefined from prepForXml when the underlying component yields no result", () => {
+            // Force super.prepForXml() to yield undefined; the early-return guards on
+            // `!result` must propagate that without throwing.
+            const component = new Comment(
+                { id: 0, children: [new Paragraph("comment")], date: new Date("1999-01-01T00:00:00.000Z") },
+                "00000001",
+            );
+            const noopContext = { viewWrapper: undefined as never, file: undefined as never, stack: [] };
+            vi.spyOn(Object.getPrototypeOf(Object.getPrototypeOf(component)), "prepForXml").mockReturnValue(undefined);
+            expect(component.prepForXml(noopContext)).to.be.undefined;
         });
 
         it("should create by using default date", () => {
@@ -195,13 +234,23 @@ describe("Comments", () => {
                     {
                         "w:comment": [
                             { _attr: { "w:id": 0, "w:date": "1999-01-01T00:00:00.000Z" } },
-                            { "w:p": [{ "w:r": [{ "w:t": [{ _attr: { "xml:space": "preserve" } }, "test-comment"] }] }] },
+                            {
+                                "w:p": [
+                                    { _attr: { "w14:paraId": "00000001", "w14:textId": "00000001" } },
+                                    { "w:r": [{ "w:t": [{ _attr: { "xml:space": "preserve" } }, "test-comment"] }] },
+                                ],
+                            },
                         ],
                     },
                     {
                         "w:comment": [
                             { _attr: { "w:id": 1, "w:date": "1999-01-01T00:00:00.000Z" } },
-                            { "w:p": [{ "w:r": [{ "w:t": [{ _attr: { "xml:space": "preserve" } }, "test-comment-2"] }] }] },
+                            {
+                                "w:p": [
+                                    { _attr: { "w14:paraId": "00000002", "w14:textId": "00000002" } },
+                                    { "w:r": [{ "w:t": [{ _attr: { "xml:space": "preserve" } }, "test-comment-2"] }] },
+                                ],
+                            },
                         ],
                     },
                 ],
@@ -228,6 +277,21 @@ describe("Comments", () => {
             ]);
         });
 
+        it("should not have ThreadData, CommentIdData, or CommentExtensibleData when there are no comments", () => {
+            const component = new Comments({ children: [] });
+            expect(component.ThreadData).to.be.undefined;
+            expect(component.CommentIdData).to.be.undefined;
+            expect(component.CommentExtensibleData).to.be.undefined;
+        });
+
+        it("should expose Relationships", () => {
+            const component = new Comments({
+                children: [{ id: 0, children: [new Paragraph("comment")], date: new Date("1999-01-01T00:00:00.000Z") }],
+            });
+            expect(component.Relationships).to.not.be.undefined;
+            expect(component.Relationships.RelationshipCount).to.equal(0);
+        });
+
         it("should map resolved option to done in ThreadData", () => {
             const component = new Comments({
                 children: [
@@ -239,7 +303,7 @@ describe("Comments", () => {
             expect(component.ThreadData![1].done).to.equal(true);
         });
 
-        it("should inject w14:paraId into last paragraph when threading is active", () => {
+        it("should inject w14:paraId into last paragraph of every comment", () => {
             const component = new Comments({
                 children: [
                     { id: 0, children: [new Paragraph("parent")], date: new Date("1999-01-01T00:00:00.000Z") },
@@ -254,31 +318,22 @@ describe("Comments", () => {
             expect(serialized).to.contain('"w14:textId":"00000002"');
         });
 
-        it("should not inject w14:paraId when no threading", () => {
+        it("should inject w14:paraId for non-threaded comments as well", () => {
             const component = new Comments({
                 children: [{ id: 0, children: [new Paragraph("comment")], date: new Date("1999-01-01T00:00:00.000Z") }],
             });
             const tree = new Formatter().format(component);
             const serialized = JSON.stringify(tree);
-            expect(serialized).to.not.contain("w14:paraId");
+            expect(serialized).to.contain('"w14:paraId":"00000001"');
         });
 
-        it("should not have CommentIdData or CommentExtensibleData when no dateUtc", () => {
-            const component = new Comments({
-                children: [{ id: 0, children: [new Paragraph("comment")], date: new Date("1999-01-01T00:00:00.000Z") }],
-            });
-            expect(component.CommentIdData).to.be.undefined;
-            expect(component.CommentExtensibleData).to.be.undefined;
-        });
-
-        it("should produce CommentIdData and CommentExtensibleData when dateUtc is used", () => {
+        it("should always populate CommentIdData and CommentExtensibleData when comments exist", () => {
             const component = new Comments({
                 children: [
                     {
                         id: 0,
                         children: [new Paragraph("comment")],
-                        date: new Date("1999-01-01T00:00:00.000Z"),
-                        dateUtc: new Date("2026-04-15T14:47:00.000Z"),
+                        date: new Date("2026-04-15T14:47:00.000Z"),
                     },
                 ],
             });
@@ -286,36 +341,40 @@ describe("Comments", () => {
             expect(component.CommentExtensibleData).to.deep.equal([{ durableId: "10000001", dateUtc: "2026-04-15T14:47:00.000Z" }]);
         });
 
-        it("should inject w14:paraId when only dateUtc is used (no parentId)", () => {
+        it("should write the same UTC instant to both w:date and w16cex:dateUtc", () => {
+            const date = new Date("2026-04-15T14:47:00.000Z");
             const component = new Comments({
-                children: [
-                    {
-                        id: 0,
-                        children: [new Paragraph("comment")],
-                        date: new Date("1999-01-01T00:00:00.000Z"),
-                        dateUtc: new Date("2026-04-15T14:47:00.000Z"),
-                    },
-                ],
+                children: [{ id: 0, children: [new Paragraph("comment")], date }],
             });
             const tree = new Formatter().format(component);
             const serialized = JSON.stringify(tree);
-            expect(serialized).to.contain('"w14:paraId":"00000001"');
+            expect(serialized).to.contain('"w:date":"2026-04-15T14:47:00.000Z"');
+            expect(component.CommentExtensibleData?.[0].dateUtc).to.equal("2026-04-15T14:47:00.000Z");
         });
 
-        it("should produce both ThreadData and CommentIdData when threading and dateUtc are combined", () => {
+        it("should default the date to the same instant in w:date and w16cex:dateUtc when omitted", () => {
+            // beforeEach freezes Date to 1999-01-01T00:00:00.000Z
+            const component = new Comments({
+                children: [{ id: 0, children: [new Paragraph("comment")] }],
+            });
+            const tree = new Formatter().format(component);
+            const serialized = JSON.stringify(tree);
+            expect(serialized).to.contain('"w:date":"1999-01-01T00:00:00.000Z"');
+            expect(component.CommentExtensibleData?.[0].dateUtc).to.equal("1999-01-01T00:00:00.000Z");
+        });
+
+        it("should produce ThreadData, CommentIdData, and CommentExtensibleData when threading is used", () => {
             const component = new Comments({
                 children: [
                     {
                         id: 0,
                         children: [new Paragraph("parent")],
-                        date: new Date("1999-01-01T00:00:00.000Z"),
-                        dateUtc: new Date("2026-04-15T14:47:00.000Z"),
+                        date: new Date("2026-04-15T14:47:00.000Z"),
                     },
                     {
                         id: 1,
                         children: [new Paragraph("reply")],
-                        date: new Date("1999-01-01T00:00:00.000Z"),
-                        dateUtc: new Date("2026-04-15T15:00:00.000Z"),
+                        date: new Date("2026-04-15T15:00:00.000Z"),
                         parentId: 0,
                     },
                 ],
@@ -328,28 +387,6 @@ describe("Comments", () => {
             expect(component.CommentExtensibleData).to.deep.equal([
                 { durableId: "10000001", dateUtc: "2026-04-15T14:47:00.000Z" },
                 { durableId: "10000002", dateUtc: "2026-04-15T15:00:00.000Z" },
-            ]);
-        });
-
-        it("should omit dateUtc from CommentExtensibleData entry when a comment lacks dateUtc in a mixed batch", () => {
-            const component = new Comments({
-                children: [
-                    {
-                        id: 0,
-                        children: [new Paragraph("with utc")],
-                        date: new Date("1999-01-01T00:00:00.000Z"),
-                        dateUtc: new Date("2026-04-15T14:47:00.000Z"),
-                    },
-                    {
-                        id: 1,
-                        children: [new Paragraph("without utc")],
-                        date: new Date("1999-01-01T00:00:00.000Z"),
-                    },
-                ],
-            });
-            expect(component.CommentExtensibleData).to.deep.equal([
-                { durableId: "10000001", dateUtc: "2026-04-15T14:47:00.000Z" },
-                { durableId: "10000002", dateUtc: undefined },
             ]);
         });
     });

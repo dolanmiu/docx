@@ -153,7 +153,7 @@ describe("Compiler", () => {
             expect(commentsExtendedText).to.contain("w15:paraIdParent");
         });
 
-        it("should include commentsIds.xml and commentsExtensible.xml when comments have dateUtc", { timeout: 99999999 }, async () => {
+        it("should include commentsIds.xml and commentsExtensible.xml whenever comments exist", { timeout: 99999999 }, async () => {
             const file = new File({
                 sections: [],
                 comments: {
@@ -161,7 +161,7 @@ describe("Compiler", () => {
                         {
                             id: 0,
                             children: [new Paragraph("comment")],
-                            dateUtc: new Date("2026-04-15T14:47:00.000Z"),
+                            date: new Date("2026-04-15T14:47:00.000Z"),
                         },
                     ],
                 },

@@ -20,7 +20,7 @@ import { type IContext, type IXmlableObject, XmlAttributeComponent, XmlComponent
  * @property children - Content of the comment (typically paragraphs)
  * @property initials - Initials of the comment author
  * @property author - Name of the comment author
- * @property date - Date and time the comment was created
+ * @property date - UTC instant when the comment was created
  */
 export type ICommentOptions = {
     /** Unique identifier for the comment */
@@ -31,10 +31,8 @@ export type ICommentOptions = {
     readonly initials?: string;
     /** Name of the comment author */
     readonly author?: string;
-    /** Date and time the comment was created */
+    /** UTC Date and time the comment was created */
     readonly date?: Date;
-    /** UTC date and time the comment was created, stored in commentsExtensible.xml */
-    readonly dateUtc?: Date;
     /** ID of the parent comment for reply threading */
     readonly parentId?: number;
     /** Whether the comment thread is marked as resolved */
@@ -432,41 +430,38 @@ export class Comments extends XmlComponent {
             }),
         );
 
-        const hasThreading = children.some((child) => child.parentId !== undefined);
-        const hasDateUtc = children.some((child) => child.dateUtc !== undefined);
-        const needsParaIds = hasThreading || hasDateUtc;
+        if (children.length > 0) {
+            // Resolve `date` once per child so the same UTC instant flows into
+            // both `w:date` (in comments.xml) and `w16cex:dateUtc` (in commentsExtensible.xml).
+            const resolvedChildren = children.map((child) => ({
+                ...child,
+                date: child.date ?? new Date(),
+            }));
 
-        if (needsParaIds) {
-            const idToParaId = new Map<number, string>(children.map((child) => [child.id, commentIdToParaId(child.id)]));
+            const idToParaId = new Map<number, string>(resolvedChildren.map((child) => [child.id, commentIdToParaId(child.id)]));
+            const idToDurableId = new Map<number, string>(resolvedChildren.map((child) => [child.id, commentIdToDurableId(child.id)]));
 
-            for (const child of children) {
+            for (const child of resolvedChildren) {
                 this.root.push(new Comment(child, idToParaId.get(child.id)));
             }
 
+            this.commentIdData = resolvedChildren.map((child) => ({
+                paraId: idToParaId.get(child.id)!,
+                durableId: idToDurableId.get(child.id)!,
+            }));
+
+            this.commentExtensibleData = resolvedChildren.map((child) => ({
+                durableId: idToDurableId.get(child.id)!,
+                dateUtc: child.date.toISOString(),
+            }));
+
+            const hasThreading = resolvedChildren.some((child) => child.parentId !== undefined);
             if (hasThreading) {
-                this.threadData = children.map((child) => ({
+                this.threadData = resolvedChildren.map((child) => ({
                     paraId: idToParaId.get(child.id)!,
                     parentParaId: child.parentId !== undefined ? idToParaId.get(child.parentId) : undefined,
                     done: child.resolved,
                 }));
-            }
-
-            if (hasDateUtc) {
-                const idToDurableId = new Map<number, string>(children.map((child) => [child.id, commentIdToDurableId(child.id)]));
-
-                this.commentIdData = children.map((child) => ({
-                    paraId: idToParaId.get(child.id)!,
-                    durableId: idToDurableId.get(child.id)!,
-                }));
-
-                this.commentExtensibleData = children.map((child) => ({
-                    durableId: idToDurableId.get(child.id)!,
-                    dateUtc: child.dateUtc?.toISOString(),
-                }));
-            }
-        } else {
-            for (const child of children) {
-                this.root.push(new Comment(child));
             }
         }
 
