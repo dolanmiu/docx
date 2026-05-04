@@ -43,6 +43,48 @@ describe("Styles", () => {
                 },
             ]);
         });
+        it("should not include w:pStyle inside paragraphStyles paragraph properties", () => {
+            const styles = new Styles({
+                paragraphStyles: [
+                    {
+                        id: "pStyleId",
+                        paragraph: {
+                            numbering: {
+                                reference: "test-reference",
+                                level: 0,
+                            },
+                        },
+                    },
+                ],
+            });
+            const tree = new Formatter().format(styles, {
+                file: {
+                    Numbering: {
+                        createConcreteNumberingInstance: (_: string, __: number) => undefined,
+                    },
+                } as any,
+                viewWrapper: {},
+                stack: [],
+            })["w:styles"].filter((x: any) => !x._attr);
+
+            expect(tree).to.deep.equal([
+                {
+                    "w:style": [
+                        { _attr: { "w:type": "paragraph", "w:styleId": "pStyleId" } },
+                        {
+                            "w:pPr": [
+                                {
+                                    "w:numPr": [
+                                        { "w:ilvl": { _attr: { "w:val": 0 } } },
+                                        { "w:numId": { _attr: { "w:val": "{test-reference-0}" } } },
+                                    ],
+                                },
+                            ],
+                        },
+                    ],
+                },
+            ]);
+        });
     });
 
     describe("#createCharacterStyle", () => {
