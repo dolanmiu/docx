@@ -31,7 +31,7 @@ export type ICommentOptions = {
     readonly initials?: string;
     /** Name of the comment author */
     readonly author?: string;
-    /** UTC Date and time the comment was created */
+    /** Date and time the comment was created */
     readonly date?: Date;
     /** ID of the parent comment for reply threading */
     readonly parentId?: number;

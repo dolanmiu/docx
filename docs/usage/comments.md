@@ -54,7 +54,7 @@ const doc = new Document({
 | -------- | ------------- | -------- | ------------------------------------------------ |
 | id       | `number`      | Required | Unique identifier                                |
 | author   | `string`      | Optional | Comment author name                              |
-| date     | `Date`        | Optional | UTC instant when the comment was created         |
+| date     | `Date`        | Optional | Comment timestamp                                |
 | initials | `string`      | Optional | Author initials                                  |
 | children | `Paragraph[]` | Required | Comment content                                  |
 | parentId | `number`      | Optional | ID of parent comment for reply threading         |
@@ -194,12 +194,6 @@ comments: {
     ],
 }
 ```
-
-## Date semantics
-
-`date` is the UTC instant when the comment was created. The library writes it to both `w:date` (in `comments.xml`) and `w16cex:dateUtc` (in `commentsExtensible.xml`).
-
-Word's modern comment UI reads `w16cex:dateUtc` and displays the timestamp in the reader's local time zone. Word's older "N hours ago" UI reads `w:date` and (per a long-standing Word quirk) treats it as already in the reader's local time zone, so older clients may show the timestamp shifted by the reader's UTC offset. There is no way for this library to fix that — JS `Date` cannot represent a "this is in time zone X" value, and Word ignores any timezone suffix on `w:date` regardless.
 
 ## Rich Text Comments
 
