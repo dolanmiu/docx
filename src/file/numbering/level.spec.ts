@@ -58,5 +58,23 @@ describe("Level", () => {
                 ],
             });
         });
+
+        it("should create a paragraph style inside w:lvl", () => {
+            const concreteNumbering = new Level({
+                level: 0,
+                style: {
+                    style: "my-list-style",
+                },
+            });
+            const tree = new Formatter().format(concreteNumbering);
+
+            expect(tree["w:lvl"]).toContainEqual({
+                "w:pStyle": {
+                    _attr: {
+                        "w:val": "my-list-style",
+                    },
+                },
+            });
+        });
     });
 });
