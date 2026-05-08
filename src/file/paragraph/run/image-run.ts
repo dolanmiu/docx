@@ -8,15 +8,17 @@
  * @module
  */
 import type { DocPropertiesOptions } from "@file/drawing/doc-properties/doc-properties";
-import type { IContext, IXmlableObject } from "@file/xml-components";
+import { ChangeAttributes, type IChangedAttributesProperties } from "@file/track-revision/track-revision";
+import { type IContext, type IXmlableObject, XmlComponent } from "@file/xml-components";
 import { hashedId } from "@util/convenience-functions";
 
+import { RunProperties } from "./properties";
+import { Run } from "./run";
 import { Drawing, type IFloating } from "../../drawing";
 import type { OutlineOptions } from "../../drawing/inline/graphic/graphic-data/pic/shape-properties/outline/outline";
 import type { SolidFillOptions } from "../../drawing/inline/graphic/graphic-data/pic/shape-properties/outline/solid-fill";
 import type { IMediaTransformation } from "../../media";
 import type { IMediaData } from "../../media/data";
-import { Run } from "../run";
 
 /**
  * Core options for image configuration.
@@ -27,6 +29,8 @@ type CoreImageOptions = {
     readonly altText?: DocPropertiesOptions;
     readonly outline?: OutlineOptions;
     readonly solidFill?: SolidFillOptions;
+    readonly insertion?: IChangedAttributesProperties;
+    readonly deletion?: IChangedAttributesProperties;
 };
 
 type RegularImageOptions = {
@@ -107,16 +111,14 @@ const createImageData = (options: IImageOptions, key: string): Pick<IMediaData, 
  * });
  * ```
  */
-export class ImageRun extends Run {
+export class ImageRun extends XmlComponent {
     private readonly imageData: IMediaData;
 
     public constructor(options: IImageOptions) {
-        super({});
-
         const hash = hashedId(options.data);
         const key = `${hash}.${options.type}`;
 
-        this.imageData =
+        const imageData: IMediaData =
             options.type === "svg"
                 ? {
                       type: options.type,
@@ -136,13 +138,42 @@ export class ImageRun extends Run {
                       type: options.type,
                       ...createImageData(options, key),
                   };
-        const drawing = new Drawing(this.imageData, {
+
+        const drawing = new Drawing(imageData, {
             floating: options.floating,
             docProperties: options.altText,
             outline: options.outline,
         });
 
-        this.root.push(drawing);
+        const run = new Run({ children: [drawing] });
+
+        if (options.insertion) {
+            super("w:ins");
+            this.root.push(
+                new ChangeAttributes({
+                    id: options.insertion.id,
+                    author: options.insertion.author,
+                    date: options.insertion.date,
+                }),
+            );
+            this.addChildElement(run);
+        } else if (options.deletion) {
+            super("w:del");
+            this.root.push(
+                new ChangeAttributes({
+                    id: options.deletion.id,
+                    author: options.deletion.author,
+                    date: options.deletion.date,
+                }),
+            );
+            this.addChildElement(run);
+        } else {
+            super("w:r");
+            this.root.push(new RunProperties({}));
+            this.root.push(drawing);
+        }
+
+        this.imageData = imageData;
     }
 
     public prepForXml(context: IContext): IXmlableObject | undefined {
