@@ -1,40 +1,125 @@
-// http://officeopenxml.com/WPborders.php
-import { BorderElement, BorderStyle, IBorderOptions } from "@file/border";
+/**
+ * Paragraph border module for WordprocessingML documents.
+ *
+ * This module provides border options for paragraphs.
+ *
+ * Reference: http://officeopenxml.com/WPborders.php
+ *
+ * @module
+ */
+import { BorderStyle, type IBorderOptions, createBorderElement } from "@file/border";
 import { IgnoreIfEmptyXmlComponent, XmlComponent } from "@file/xml-components";
 
+/**
+ * Options for configuring paragraph borders.
+ *
+ * Borders can be applied to top, bottom, left, right, and between paragraphs.
+ *
+ * @property top - Border for the top edge of the paragraph
+ * @property bottom - Border for the bottom edge of the paragraph
+ * @property left - Border for the left edge of the paragraph
+ * @property right - Border for the right edge of the paragraph
+ * @property between - Border between consecutive paragraphs with the same border settings
+ */
 export type IBordersOptions = {
+    /** Border for the top edge of the paragraph */
     readonly top?: IBorderOptions;
+    /** Border for the bottom edge of the paragraph */
     readonly bottom?: IBorderOptions;
+    /** Border for the left edge of the paragraph */
     readonly left?: IBorderOptions;
+    /** Border for the right edge of the paragraph */
     readonly right?: IBorderOptions;
+    /** Border between consecutive paragraphs with the same border settings */
+    readonly between?: IBorderOptions;
 };
 
+/**
+ * Represents paragraph borders in a WordprocessingML document.
+ *
+ * The pBdr element specifies borders that surround the paragraph.
+ *
+ * Reference: http://officeopenxml.com/WPborders.php
+ *
+ * ## XSD Schema
+ * ```xml
+ * <xsd:complexType name="CT_PBdr">
+ *   <xsd:sequence>
+ *     <xsd:element name="top" type="CT_Border" minOccurs="0"/>
+ *     <xsd:element name="left" type="CT_Border" minOccurs="0"/>
+ *     <xsd:element name="bottom" type="CT_Border" minOccurs="0"/>
+ *     <xsd:element name="right" type="CT_Border" minOccurs="0"/>
+ *     <xsd:element name="between" type="CT_Border" minOccurs="0"/>
+ *     <xsd:element name="bar" type="CT_Border" minOccurs="0"/>
+ *   </xsd:sequence>
+ * </xsd:complexType>
+ * ```
+ *
+ * @example
+ * ```typescript
+ * new Paragraph({
+ *   border: {
+ *     top: { style: BorderStyle.SINGLE, size: 6, color: "FF0000" },
+ *     bottom: { style: BorderStyle.SINGLE, size: 6, color: "FF0000" },
+ *   },
+ *   children: [new TextRun("Paragraph with top and bottom borders")],
+ * });
+ * ```
+ */
 export class Border extends IgnoreIfEmptyXmlComponent {
     public constructor(options: IBordersOptions) {
         super("w:pBdr");
 
         if (options.top) {
-            this.root.push(new BorderElement("w:top", options.top));
+            this.root.push(createBorderElement("w:top", options.top));
         }
 
         if (options.bottom) {
-            this.root.push(new BorderElement("w:bottom", options.bottom));
+            this.root.push(createBorderElement("w:bottom", options.bottom));
         }
 
         if (options.left) {
-            this.root.push(new BorderElement("w:left", options.left));
+            this.root.push(createBorderElement("w:left", options.left));
         }
 
         if (options.right) {
-            this.root.push(new BorderElement("w:right", options.right));
+            this.root.push(createBorderElement("w:right", options.right));
+        }
+
+        if (options.between) {
+            this.root.push(createBorderElement("w:between", options.between));
         }
     }
 }
 
+/**
+ * Represents a thematic break (horizontal rule) in a WordprocessingML document.
+ *
+ * Creates a horizontal line across the paragraph using a bottom border.
+ *
+ * Reference: http://officeopenxml.com/WPborders.php
+ *
+ * ## XSD Schema
+ * ```xml
+ * <xsd:complexType name="CT_PBdr">
+ *   <xsd:sequence>
+ *     <xsd:element name="bottom" type="CT_Border" minOccurs="0"/>
+ *   </xsd:sequence>
+ * </xsd:complexType>
+ * ```
+ *
+ * @example
+ * ```typescript
+ * new Paragraph({
+ *   thematicBreak: true,
+ *   children: [new TextRun("Paragraph with horizontal rule below")],
+ * });
+ * ```
+ */
 export class ThematicBreak extends XmlComponent {
     public constructor() {
         super("w:pBdr");
-        const bottom = new BorderElement("w:bottom", {
+        const bottom = createBorderElement("w:bottom", {
             color: "auto",
             space: 1,
             style: BorderStyle.SINGLE,

@@ -2,11 +2,11 @@ import { describe, expect, it } from "vitest";
 
 import { Formatter } from "@export/formatter";
 
-import { HeaderFooterReference, HeaderFooterReferenceType, HeaderFooterType } from "./header-footer-reference";
+import { HeaderFooterReferenceType, HeaderFooterType, createHeaderFooterReference } from "./header-footer-reference";
 
-describe("HeaderFooterReference", () => {
-    it("#constructor (footer)", () => {
-        const footer = new HeaderFooterReference(HeaderFooterType.FOOTER, {
+describe("createHeaderFooterReference", () => {
+    it("should create footer reference", () => {
+        const footer = createHeaderFooterReference(HeaderFooterType.FOOTER, {
             type: HeaderFooterReferenceType.DEFAULT,
             id: 1,
         });
@@ -22,8 +22,8 @@ describe("HeaderFooterReference", () => {
         });
     });
 
-    it("#constructor (header)", () => {
-        const header = new HeaderFooterReference(HeaderFooterType.HEADER, {
+    it("should create header reference", () => {
+        const header = createHeaderFooterReference(HeaderFooterType.HEADER, {
             type: HeaderFooterReferenceType.DEFAULT,
             id: 1,
         });
@@ -39,8 +39,8 @@ describe("HeaderFooterReference", () => {
         });
     });
 
-    it("should create without a type", () => {
-        const footer = new HeaderFooterReference(HeaderFooterType.FOOTER, {
+    it("should create without a type (defaults to DEFAULT)", () => {
+        const footer = createHeaderFooterReference(HeaderFooterType.FOOTER, {
             id: 1,
         });
 

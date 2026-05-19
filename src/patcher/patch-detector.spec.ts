@@ -391,4 +391,17 @@ describe("patch-detector", () => {
             });
         });
     });
+
+    describe("with JSZip instance", () => {
+        it("should accept a JSZip instance directly", async () => {
+            const zip = new JSZip();
+            zip.file("word/document.xml", MOCK_XML);
+            zip.file("[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`);
+
+            const output = await patchDetector({
+                data: zip,
+            });
+            expect(output).toMatchObject(["name", "paragraph_replace", "table", "image_test", "table_heading_1", "item_1"]);
+        });
+    });
 });

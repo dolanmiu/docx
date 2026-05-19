@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 
+// cspell:words CESU
+
 import {
     abstractNumUniqueNumericIdGen,
     bookmarkUniqueNumericIdGen,
@@ -7,6 +9,7 @@ import {
     convertInchesToTwip,
     convertMillimetersToTwip,
     docPropertiesUniqueNumericIdGen,
+    encodeUtf8,
     hashedId,
     uniqueId,
     uniqueNumericIdCreator,
@@ -96,6 +99,48 @@ describe("Utility", () => {
     describe("#uniqueUuid", () => {
         it("should generate a unique pseudorandom ID", () => {
             expect(uniqueUuid()).to.not.be.empty;
+        });
+    });
+
+    describe("#encodeUtf8", () => {
+        it("should encode ASCII strings correctly", () => {
+            const result = encodeUtf8("hello");
+            expect(result).to.have.lengthOf(5);
+            expect(Array.from(result)).to.deep.equal([0x68, 0x65, 0x6c, 0x6c, 0x6f]);
+        });
+
+        it("should encode multi-byte characters correctly", () => {
+            // "é" is U+00E9, encoded as C3 A9 in UTF-8
+            const result = encodeUtf8("é");
+            expect(Array.from(result)).to.deep.equal([0xc3, 0xa9]);
+        });
+
+        it("should encode emoji (surrogate pairs) correctly as 4-byte UTF-8", () => {
+            // U+1F600 (😀) should be encoded as F0 9F 98 80, NOT as CESU-8 (ED xx xx ED xx xx)
+            const emoji = String.fromCodePoint(0x1f600);
+            const result = encodeUtf8(emoji);
+
+            // Verify it's 4 bytes (proper UTF-8), not 6 bytes (CESU-8)
+            expect(result).to.have.lengthOf(4);
+            expect(Array.from(result)).to.deep.equal([0xf0, 0x9f, 0x98, 0x80]);
+        });
+
+        it("should encode Material Design Icons (high code points) correctly", () => {
+            // U+F0219 is a Material Design Icon, encoded as F3 B0 88 99 in UTF-8
+            const icon = String.fromCodePoint(0xf0219);
+            const result = encodeUtf8(icon);
+
+            // Verify it's 4 bytes (proper UTF-8), not 6 bytes (CESU-8)
+            expect(result).to.have.lengthOf(4);
+            expect(Array.from(result)).to.deep.equal([0xf3, 0xb0, 0x88, 0x99]);
+        });
+
+        it("should encode mixed content with astral characters correctly", () => {
+            const mixed = "Hello 😀 World";
+            const result = encodeUtf8(mixed);
+
+            // "Hello " (6 bytes) + 😀 (4 bytes) + " World" (6 bytes) = 16 bytes
+            expect(result).to.have.lengthOf(16);
         });
     });
 });

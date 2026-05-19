@@ -3,8 +3,6 @@
 import * as fs from "fs";
 import { AlignmentType, Document, HeadingLevel, Packer, Paragraph, Tab, TabStopPosition, TabStopType, TextRun } from "docx";
 
-// tslint:disable:no-shadowed-variable
-
 const PHONE_NUMBER = "07534563401";
 const PROFILE_URL = "https://www.linkedin.com/in/dolan1";
 const EMAIL = "docx@com";
@@ -165,7 +163,6 @@ const achievements: Achievement[] = [
 ];
 
 class DocumentCreator {
-    // tslint:disable-next-line: typedef
     public create([experiences, educations, skills, achievements]: [Experience[], Education[], Skill[], Achievement[]]): Document {
         const document = new Document({
             sections: [
@@ -311,14 +308,12 @@ class DocumentCreator {
         });
     }
 
-    // tslint:disable-next-line:no-any
     public createSkillList(skills: any[]): Paragraph {
         return new Paragraph({
             children: [new TextRun(skills.map((skill) => skill.name).join(", ") + ".")],
         });
     }
 
-    // tslint:disable-next-line:no-any
     public createAchievementsList(achievements: any[]): Paragraph[] {
         return achievements.map(
             (achievement) =>
@@ -341,7 +336,6 @@ class DocumentCreator {
         return text.split("\n\n");
     }
 
-    // tslint:disable-next-line:no-any
     public createPositionDateText(startDate: any, endDate: any, isCurrent: boolean): string {
         const startDateText = this.getMonthFromInt(startDate.month) + ". " + startDate.year;
         const endDateText = isCurrent ? "Present" : `${this.getMonthFromInt(endDate.month)}. ${endDate.year}`;

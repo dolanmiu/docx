@@ -1,3 +1,26 @@
+/**
+ * Sample default styles module for WordprocessingML documents.
+ *
+ * Provides legacy default style definitions for backward compatibility.
+ * This is an older format and new code should use DefaultStylesFactory instead.
+ *
+ * Reference: http://officeopenxml.com/WPstyles.php
+ *
+ * @module
+ */
+
+/**
+ * Creates a latent style exception element.
+ *
+ * @param name - The name of the style
+ * @param uiPriority - UI priority for displaying the style
+ * @param qFormat - Whether this style should appear in the quick format gallery
+ * @param semiHidden - Whether the style is semi-hidden in the UI
+ * @param unhideWhenUsed - Whether the style should unhide when used
+ * @returns Array of objects representing the latent style exception
+ *
+ * @internal
+ */
 const createLsdException = (
     name: string,
     uiPriority?: number,
@@ -20,6 +43,22 @@ const createLsdException = (
     ];
 };
 
+/**
+ * Generates default style definitions in legacy XML format.
+ *
+ * This function creates a complete set of default styles including document defaults,
+ * latent styles, and common paragraph/character styles in the older object format.
+ *
+ * @deprecated This is a legacy format. New code should use DefaultStylesFactory instead.
+ *
+ * @returns Object representation of default styles in XML format
+ *
+ * @example
+ * ```typescript
+ * // Legacy usage - prefer DefaultStylesFactory for new code
+ * const styles = DefaultStyle();
+ * ```
+ */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const DefaultStyle = (): Record<string, any> => {
     const style = {

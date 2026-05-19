@@ -1,19 +1,24 @@
 // http://officeopenxml.com/drwPicInline.php
-import { IMediaData, IMediaDataTransformation } from "@file/media";
-import { BuilderElement, XmlComponent } from "@file/xml-components";
+import type { IExtendedMediaData, IMediaDataTransformation } from "@file/media";
+import { BuilderElement, type XmlComponent } from "@file/xml-components";
 
-import { DocProperties, DocPropertiesOptions } from "./../doc-properties/doc-properties";
+import { DocProperties, type DocPropertiesOptions } from "./../doc-properties/doc-properties";
 import { createEffectExtent } from "./../effect-extent/effect-extent";
 import { createExtent } from "./../extent/extent";
 import { createGraphicFrameProperties } from "./../graphic-frame/graphic-frame-properties";
 import { Graphic } from "./../inline/graphic";
-import { OutlineOptions } from "./graphic/graphic-data/pic/shape-properties/outline/outline";
+import type { OutlineOptions } from "./graphic/graphic-data/pic/shape-properties/outline/outline";
+import type { SolidFillOptions } from "./graphic/graphic-data/pic/shape-properties/outline/solid-fill";
 
+/**
+ * Options for creating an inline drawing element.
+ */
 type InlineOptions = {
-    readonly mediaData: IMediaData;
+    readonly mediaData: IExtendedMediaData;
     readonly transform: IMediaDataTransformation;
     readonly docProperties?: DocPropertiesOptions;
     readonly outline?: OutlineOptions;
+    readonly solidFill?: SolidFillOptions;
 };
 
 // <xsd:complexType name="CT_Inline">
@@ -30,7 +35,7 @@ type InlineOptions = {
 //     <xsd:attribute name="distL" type="ST_WrapDistance" use="optional"/>
 //     <xsd:attribute name="distR" type="ST_WrapDistance" use="optional"/>
 // </xsd:complexType>
-export const createInline = ({ mediaData, transform, docProperties, outline }: InlineOptions): XmlComponent =>
+export const createInline = ({ mediaData, transform, docProperties, outline, solidFill }: InlineOptions): XmlComponent =>
     new BuilderElement({
         name: "wp:inline",
         attributes: {
@@ -65,6 +70,6 @@ export const createInline = ({ mediaData, transform, docProperties, outline }: I
             ),
             new DocProperties(docProperties),
             createGraphicFrameProperties(),
-            new Graphic({ mediaData, transform, outline }),
+            new Graphic({ mediaData, transform, outline, solidFill }),
         ],
     });

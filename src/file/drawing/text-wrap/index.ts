@@ -1,3 +1,8 @@
+/**
+ * Text wrap module exports.
+ *
+ * @module
+ */
 export * from "./text-wrapping";
 export * from "./wrap-none";
 export * from "./wrap-square";

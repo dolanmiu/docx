@@ -97,6 +97,8 @@ const text = new TextRun({
 });
 ```
 
+See [demo/45-highlighting-text.ts](https://github.com/dolanmiu/docx/blob/master/demo/45-highlighting-text.ts) for highlighting examples, and [demo/46-shading-text.ts](https://github.com/dolanmiu/docx/blob/master/demo/46-shading-text.ts) for shading examples.
+
 ### Strike through
 
 ```ts

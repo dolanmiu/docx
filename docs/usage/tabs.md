@@ -182,3 +182,13 @@ new Paragraph({
 | alignment  | `PositionalTabAlignment`  | The alignment of the tab stop         | `LEFT`, `RIGHT`, `CENTER`                                     |
 | relativeTo | `PositionalTabRelativeTo` | The relative position of the tab stop | `MARGIN`, `INDENT`                                            |
 | leader     | `PositionalTabLeader`     | The leader of the tab stop            | `NONE`, `DOT`, `HYPHEN`, `UNDERSCORE`, `MIDDLE_DOT`, `EQUALS` |
+
+## Demos
+
+[Tab Stops Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/75-tab-stops.ts ":include")
+
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/75-tab-stops.ts_
+
+[Positional Tabs Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/84-positional-tabs.ts ":include")
+
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/84-positional-tabs.ts_

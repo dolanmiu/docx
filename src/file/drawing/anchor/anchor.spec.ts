@@ -3,7 +3,7 @@ import { assert, describe, expect, it } from "vitest";
 import { Formatter } from "@export/formatter";
 import { Utility } from "tests/utility";
 
-import { IDrawingOptions } from "../drawing";
+import type { IDrawingOptions } from "../drawing";
 import { TextWrappingType } from "../text-wrap";
 import { Anchor } from "./anchor";
 

@@ -1,21 +1,33 @@
-import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
-
-// <xsd:complexType name="CT_VerticalJc">
-//     <xsd:attribute name="val" type="ST_VerticalJc" use="required"/>
-// </xsd:complexType>
-
-// <xsd:simpleType name="ST_VerticalJc">
-// <xsd:restriction base="xsd:string">
-//   <xsd:enumeration value="both"/>
-//   <xsd:enumeration value="top"/>
-//   <xsd:enumeration value="center"/>
-//   <xsd:enumeration value="bottom"/>
-// </xsd:restriction>
-// </xsd:simpleType>
+/**
+ * Vertical alignment module for WordprocessingML documents.
+ *
+ * This module provides vertical alignment options for table cells and sections.
+ *
+ * ## XSD Schema
+ * ```xml
+ * <xsd:complexType name="CT_VerticalJc">
+ *   <xsd:attribute name="val" type="ST_VerticalJc" use="required"/>
+ * </xsd:complexType>
+ *
+ * <xsd:simpleType name="ST_VerticalJc">
+ *   <xsd:restriction base="xsd:string">
+ *     <xsd:enumeration value="both"/>
+ *     <xsd:enumeration value="top"/>
+ *     <xsd:enumeration value="center"/>
+ *     <xsd:enumeration value="bottom"/>
+ *   </xsd:restriction>
+ * </xsd:simpleType>
+ * ```
+ *
+ * @module
+ */
+import { BuilderElement, type XmlComponent } from "@file/xml-components";
 
 /**
  * Enumeration for table-cell vertical alignment. Only `top`, `center`, `bottom`
- * are valid according to ECMA-376 (§17.18.87 ST_VerticalJc within <w:tcPr>).
+ * are valid according to ECMA-376 (§17.18.87 ST_VerticalJc within `<w:tcPr>`).
+ *
+ * @publicApi
  */
 export const VerticalAlignTable = {
     TOP: "top",
@@ -26,6 +38,8 @@ export const VerticalAlignTable = {
 /**
  * Enumeration for section (<w:sectPr>) vertical alignment. Adds `both` on top of
  * the table-cell set (§17.18.87 ST_VerticalJc within <w:sectPr>).
+ *
+ * @publicApi
  */
 export const VerticalAlignSection = {
     ...VerticalAlignTable,
@@ -36,6 +50,8 @@ export const VerticalAlignSection = {
  * @deprecated Use {@link VerticalAlignTable} for table cells or
  * {@link VerticalAlignSection} for section properties. This alias remains for
  * backward-compatibility and will be removed in the next major release.
+ *
+ * @publicApi
  */
 export const VerticalAlign = VerticalAlignSection;
 
@@ -43,17 +59,20 @@ export type TableVerticalAlign = (typeof VerticalAlignTable)[keyof typeof Vertic
 
 export type SectionVerticalAlign = (typeof VerticalAlignSection)[keyof typeof VerticalAlignSection];
 
-export class VerticalAlignAttributes extends XmlAttributeComponent<{
-    readonly verticalAlign?: (typeof VerticalAlign)[keyof typeof VerticalAlign];
-}> {
-    protected readonly xmlKeys = {
-        verticalAlign: "w:val",
-    };
-}
-
-export class VerticalAlignElement extends XmlComponent {
-    public constructor(value: (typeof VerticalAlign)[keyof typeof VerticalAlign]) {
-        super("w:vAlign");
-        this.root.push(new VerticalAlignAttributes({ verticalAlign: value }));
-    }
-}
+/**
+ * Creates a vertical alignment element in a WordprocessingML document.
+ *
+ * Used in table cells and sections to control vertical text positioning.
+ *
+ * @example
+ * ```typescript
+ * createVerticalAlign(VerticalAlignTable.CENTER);
+ * ```
+ */
+export const createVerticalAlign = (value: (typeof VerticalAlign)[keyof typeof VerticalAlign]): XmlComponent =>
+    new BuilderElement<{ readonly verticalAlign: (typeof VerticalAlign)[keyof typeof VerticalAlign] }>({
+        name: "w:vAlign",
+        attributes: {
+            verticalAlign: { key: "w:val", value },
+        },
+    });

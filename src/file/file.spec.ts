@@ -355,6 +355,25 @@ describe("File", () => {
         });
     });
 
+    describe("#createEndnote", () => {
+        it("should create endnote", () => {
+            const wrapper = new File({
+                endnotes: {
+                    1: {
+                        children: [new Paragraph("hello endnote")],
+                    },
+                },
+                sections: [],
+            });
+
+            const tree = new Formatter().format(wrapper.Endnotes.View);
+
+            expect(tree["w:endnotes"]).to.be.an("array");
+            // Should have attributes, two default endnotes (separator and continuation separator), plus one created endnote
+            expect(tree["w:endnotes"].length).to.equal(4);
+        });
+    });
+
     it("should create default run and paragraph property document defaults", () => {
         const doc = new File({
             styles: {
@@ -474,6 +493,30 @@ describe("File", () => {
                             </w:pPr>
                         </w:style>
                     </w:styles>`,
+            });
+
+            expect(doc.Styles).to.not.be.undefined;
+        });
+
+        it("should merge external styles with default styles when both are provided", () => {
+            const doc = new File({
+                sections: [],
+                externalStyles: `
+                    <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+                    <w:styles xmlns:mc="first" xmlns:r="second">
+                        <w:style w:type="paragraph" w:styleId="Heading1">
+                            <w:name w:val="heading 1"/>
+                        </w:style>
+                    </w:styles>`,
+                styles: {
+                    default: {
+                        heading1: {
+                            run: {
+                                size: 28,
+                            },
+                        },
+                    },
+                },
             });
 
             expect(doc.Styles).to.not.be.undefined;

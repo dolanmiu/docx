@@ -1,12 +1,30 @@
-import { NextAttributeComponent, StringEnumValueElement, XmlComponent } from "@file/xml-components";
-import { PositiveUniversalMeasure, UniversalMeasure, signedTwipsMeasureValue, twipsMeasureValue } from "@util/values";
+/**
+ * Table float properties module for WordprocessingML documents.
+ *
+ * This module provides floating table positioning options, allowing tables
+ * to float with text wrapping around them.
+ *
+ * Reference: http://officeopenxml.com/WPtableFloating.php
+ *
+ * @module
+ */
+import { BuilderElement, type XmlComponent } from "@file/xml-components";
+import { type PositiveUniversalMeasure, type UniversalMeasure, signedTwipsMeasureValue, twipsMeasureValue } from "@util/values";
 
+/**
+ * Anchor types for floating table positioning.
+ *
+ * Specifies the base object from which positioning is determined.
+ */
 export const TableAnchorType = {
     MARGIN: "margin",
     PAGE: "page",
     TEXT: "text",
 } as const;
 
+/**
+ * Relative horizontal position values for floating tables.
+ */
 export const RelativeHorizontalPosition = {
     CENTER: "center",
     INSIDE: "inside",
@@ -15,6 +33,9 @@ export const RelativeHorizontalPosition = {
     RIGHT: "right",
 } as const;
 
+/**
+ * Relative vertical position values for floating tables.
+ */
 export const RelativeVerticalPosition = {
     CENTER: "center",
     INSIDE: "inside",
@@ -24,12 +45,19 @@ export const RelativeVerticalPosition = {
     TOP: "top",
 } as const;
 
-// <xsd:simpleType name="ST_TblOverlap">
-//     <xsd:restriction base="xsd:string">
-//         <xsd:enumeration value="never"/>
-//         <xsd:enumeration value="overlap"/>
-//     </xsd:restriction>
-// </xsd:simpleType>
+/**
+ * Table overlap behavior types.
+ *
+ * ## XSD Schema
+ * ```xml
+ * <xsd:simpleType name="ST_TblOverlap">
+ *   <xsd:restriction base="xsd:string">
+ *     <xsd:enumeration value="never"/>
+ *     <xsd:enumeration value="overlap"/>
+ *   </xsd:restriction>
+ * </xsd:simpleType>
+ * ```
+ */
 export const OverlapType = {
     NEVER: "never",
     OVERLAP: "overlap",
@@ -126,84 +154,109 @@ export type ITableFloatOptions = {
     readonly overlap?: (typeof OverlapType)[keyof typeof OverlapType];
 };
 
-// <xsd:complexType name="CT_TblPPr">
-//     <xsd:attribute name="leftFromText" type="s:ST_TwipsMeasure"/>
-//     <xsd:attribute name="rightFromText" type="s:ST_TwipsMeasure"/>
-//     <xsd:attribute name="topFromText" type="s:ST_TwipsMeasure"/>
-//     <xsd:attribute name="bottomFromText" type="s:ST_TwipsMeasure"/>
-//     <xsd:attribute name="vertAnchor" type="ST_VAnchor"/>
-//     <xsd:attribute name="horzAnchor" type="ST_HAnchor"/>
-//     <xsd:attribute name="tblpXSpec" type="s:ST_XAlign"/>
-//     <xsd:attribute name="tblpX" type="ST_SignedTwipsMeasure"/>
-//     <xsd:attribute name="tblpYSpec" type="s:ST_YAlign"/>
-//     <xsd:attribute name="tblpY" type="ST_SignedTwipsMeasure"/>
-// </xsd:complexType>
+/**
+ * Creates a table overlap element.
+ *
+ * @internal
+ */
+const createOverlapElement = (overlap: (typeof OverlapType)[keyof typeof OverlapType]): XmlComponent =>
+    new BuilderElement<{ readonly val: (typeof OverlapType)[keyof typeof OverlapType] }>({
+        name: "w:tblOverlap",
+        attributes: {
+            val: { key: "w:val", value: overlap },
+        },
+    });
 
-export class TableFloatProperties extends XmlComponent {
-    public constructor({
-        horizontalAnchor,
-        verticalAnchor,
-        absoluteHorizontalPosition,
-        relativeHorizontalPosition,
-        absoluteVerticalPosition,
-        relativeVerticalPosition,
-        bottomFromText,
-        topFromText,
-        leftFromText,
-        rightFromText,
-        overlap,
-    }: ITableFloatOptions) {
-        super("w:tblpPr");
-        this.root.push(
-            new NextAttributeComponent<Omit<ITableFloatOptions, "overlap">>({
-                leftFromText: {
-                    key: "w:leftFromText",
-                    value: leftFromText === undefined ? undefined : twipsMeasureValue(leftFromText),
-                },
-                rightFromText: {
-                    key: "w:rightFromText",
-                    value: rightFromText === undefined ? undefined : twipsMeasureValue(rightFromText),
-                },
-                topFromText: {
-                    key: "w:topFromText",
-                    value: topFromText === undefined ? undefined : twipsMeasureValue(topFromText),
-                },
-                bottomFromText: {
-                    key: "w:bottomFromText",
-                    value: bottomFromText === undefined ? undefined : twipsMeasureValue(bottomFromText),
-                },
-                absoluteHorizontalPosition: {
-                    key: "w:tblpX",
-                    value: absoluteHorizontalPosition === undefined ? undefined : signedTwipsMeasureValue(absoluteHorizontalPosition),
-                },
-                absoluteVerticalPosition: {
-                    key: "w:tblpY",
-                    value: absoluteVerticalPosition === undefined ? undefined : signedTwipsMeasureValue(absoluteVerticalPosition),
-                },
-                horizontalAnchor: {
-                    key: "w:horzAnchor",
-                    value: horizontalAnchor === undefined ? undefined : horizontalAnchor,
-                },
-                relativeHorizontalPosition: {
-                    key: "w:tblpXSpec",
-                    value: relativeHorizontalPosition,
-                },
-                relativeVerticalPosition: {
-                    key: "w:tblpYSpec",
-                    value: relativeVerticalPosition,
-                },
-                verticalAnchor: {
-                    key: "w:vertAnchor",
-                    value: verticalAnchor,
-                },
-            }),
-        );
-
-        if (overlap) {
-            // <xsd:complexType name="CT_TblOverlap">
-            //     <xsd:attribute name="val" type="ST_TblOverlap" use="required"/>
-            // </xsd:complexType>
-            this.root.push(new StringEnumValueElement<(typeof OverlapType)[keyof typeof OverlapType]>("w:tblOverlap", overlap));
-        }
-    }
-}
+/**
+ * Creates floating table properties in a WordprocessingML document.
+ *
+ * This element specifies the positioning of a floating table,
+ * including anchor points, offsets, and text wrapping behavior.
+ *
+ * Reference: http://officeopenxml.com/WPtableFloating.php
+ *
+ * ## XSD Schema
+ * ```xml
+ * <xsd:complexType name="CT_TblPPr">
+ *   <xsd:attribute name="leftFromText" type="s:ST_TwipsMeasure"/>
+ *   <xsd:attribute name="rightFromText" type="s:ST_TwipsMeasure"/>
+ *   <xsd:attribute name="topFromText" type="s:ST_TwipsMeasure"/>
+ *   <xsd:attribute name="bottomFromText" type="s:ST_TwipsMeasure"/>
+ *   <xsd:attribute name="vertAnchor" type="ST_VAnchor"/>
+ *   <xsd:attribute name="horzAnchor" type="ST_HAnchor"/>
+ *   <xsd:attribute name="tblpXSpec" type="s:ST_XAlign"/>
+ *   <xsd:attribute name="tblpX" type="ST_SignedTwipsMeasure"/>
+ *   <xsd:attribute name="tblpYSpec" type="s:ST_YAlign"/>
+ *   <xsd:attribute name="tblpY" type="ST_SignedTwipsMeasure"/>
+ * </xsd:complexType>
+ * ```
+ *
+ * @example
+ * ```typescript
+ * createTableFloatProperties({
+ *   horizontalAnchor: TableAnchorType.MARGIN,
+ *   relativeHorizontalPosition: RelativeHorizontalPosition.CENTER,
+ *   topFromText: 200,
+ *   bottomFromText: 200,
+ * });
+ * ```
+ */
+export const createTableFloatProperties = ({
+    horizontalAnchor,
+    verticalAnchor,
+    absoluteHorizontalPosition,
+    relativeHorizontalPosition,
+    absoluteVerticalPosition,
+    relativeVerticalPosition,
+    bottomFromText,
+    topFromText,
+    leftFromText,
+    rightFromText,
+    overlap,
+}: ITableFloatOptions): XmlComponent =>
+    new BuilderElement<Omit<ITableFloatOptions, "overlap">>({
+        name: "w:tblpPr",
+        attributes: {
+            leftFromText: {
+                key: "w:leftFromText",
+                value: leftFromText === undefined ? undefined : twipsMeasureValue(leftFromText),
+            },
+            rightFromText: {
+                key: "w:rightFromText",
+                value: rightFromText === undefined ? undefined : twipsMeasureValue(rightFromText),
+            },
+            topFromText: {
+                key: "w:topFromText",
+                value: topFromText === undefined ? undefined : twipsMeasureValue(topFromText),
+            },
+            bottomFromText: {
+                key: "w:bottomFromText",
+                value: bottomFromText === undefined ? undefined : twipsMeasureValue(bottomFromText),
+            },
+            absoluteHorizontalPosition: {
+                key: "w:tblpX",
+                value: absoluteHorizontalPosition === undefined ? undefined : signedTwipsMeasureValue(absoluteHorizontalPosition),
+            },
+            absoluteVerticalPosition: {
+                key: "w:tblpY",
+                value: absoluteVerticalPosition === undefined ? undefined : signedTwipsMeasureValue(absoluteVerticalPosition),
+            },
+            horizontalAnchor: {
+                key: "w:horzAnchor",
+                value: horizontalAnchor,
+            },
+            relativeHorizontalPosition: {
+                key: "w:tblpXSpec",
+                value: relativeHorizontalPosition,
+            },
+            relativeVerticalPosition: {
+                key: "w:tblpYSpec",
+                value: relativeVerticalPosition,
+            },
+            verticalAnchor: {
+                key: "w:vertAnchor",
+                value: verticalAnchor,
+            },
+        },
+        children: overlap ? [createOverlapElement(overlap)] : undefined,
+    });

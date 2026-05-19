@@ -1,7 +1,43 @@
+/**
+ * Font obfuscation module for embedding fonts in WordprocessingML documents.
+ *
+ * This module implements the OOXML font obfuscation algorithm used to embed
+ * fonts in DOCX documents. Obfuscation is required by the OOXML specification
+ * to prevent simple extraction of embedded font files.
+ *
+ * Reference: ECMA-376 Part 2, Section 11.1 (Font Embedding)
+ *
+ * @module
+ */
+
+/** Start offset for obfuscation in the font file */
 const obfuscatedStartOffset = 0;
+/** End offset for obfuscation (first 32 bytes are obfuscated) */
 const obfuscatedEndOffset = 32;
+/** Expected GUID size (32 hex characters without dashes) */
 const guidSize = 32;
 
+/**
+ * Obfuscates a TrueType font file for embedding in OOXML documents.
+ *
+ * The obfuscation algorithm XORs the first 32 bytes of the font file
+ * with a reversed byte sequence derived from the font's GUID key.
+ * This prevents simple extraction while maintaining font functionality.
+ *
+ * @param buf - The original font file as a byte array
+ * @param fontKey - The GUID key for the font (with or without dashes)
+ * @returns The obfuscated font data
+ * @throws Error if the fontKey is not a valid 32-character GUID
+ *
+ * @example
+ * ```typescript
+ * const fontData = readFileSync("font.ttf");
+ * const fontKey = "00000000-0000-0000-0000-000000000000";
+ * const obfuscatedData = obfuscate(fontData, fontKey);
+ * ```
+ *
+ * @internal
+ */
 export const obfuscate = (buf: Uint8Array, fontKey: string): Uint8Array => {
     const guid = fontKey.replace(/-/g, "");
     if (guid.length !== guidSize) {

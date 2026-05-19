@@ -1,4 +1,4 @@
-import { BuilderElement, XmlComponent } from "@file/xml-components";
+import { BuilderElement, type XmlComponent } from "@file/xml-components";
 
 import { GraphicFrameLocks } from "./graphic-frame-locks/graphic-frame-locks";
 

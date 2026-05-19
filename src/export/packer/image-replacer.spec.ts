@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { Media } from "@file/media";
+import type { Media } from "@file/media";
 
 import { ImageReplacer } from "./image-replacer";
 

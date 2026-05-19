@@ -1,6 +1,35 @@
 import { XmlAttributeComponent } from "@file/xml-components";
 
-export class FooterAttributes extends XmlAttributeComponent<{
+/**
+ * XML namespace attributes for footer elements.
+ *
+ * This interface defines all XML namespace declarations that can be used in footer elements,
+ * including WordprocessingML, DrawingML, VML, and various Office-specific namespaces.
+ *
+ * @property wpc - WordprocessingML Canvas namespace (Word 2010+)
+ * @property mc - Markup Compatibility namespace
+ * @property o - Office namespace
+ * @property r - Relationships namespace
+ * @property m - Math namespace
+ * @property v - VML (Vector Markup Language) namespace
+ * @property wp14 - WordprocessingDrawing namespace (Word 2010+)
+ * @property wp - WordprocessingDrawing namespace
+ * @property w10 - Word 2000 namespace
+ * @property w - Main WordprocessingML namespace
+ * @property w14 - WordprocessingML namespace (Word 2010+)
+ * @property w15 - WordprocessingML namespace (Word 2012+)
+ * @property wpg - WordprocessingGroup namespace (Word 2010+)
+ * @property wpi - WordprocessingInk namespace (Word 2010+)
+ * @property wne - WordprocessingML namespace extensions
+ * @property wps - WordprocessingShape namespace (Word 2010+)
+ * @property cp - Core Properties namespace
+ * @property dc - Dublin Core namespace
+ * @property dcterms - Dublin Core Terms namespace
+ * @property dcmitype - Dublin Core DCMI Type namespace
+ * @property xsi - XML Schema Instance namespace
+ * @property type - XSI type attribute
+ */
+export type IFooterAttributesProperties = {
     readonly wpc?: string;
     readonly mc?: string;
     readonly o?: string;
@@ -23,7 +52,23 @@ export class FooterAttributes extends XmlAttributeComponent<{
     readonly dcmitype?: string;
     readonly xsi?: string;
     readonly type?: string;
-}> {
+};
+
+/**
+ * Component for managing XML namespace attributes on footer elements.
+ *
+ * This class handles the serialization of namespace declarations that are required
+ * for proper XML validation and processing of footer content in WordprocessingML documents.
+ *
+ * @example
+ * ```typescript
+ * new FooterAttributes({
+ *   w: "http://schemas.openxmlformats.org/wordprocessingml/2006/main",
+ *   r: "http://schemas.openxmlformats.org/officeDocument/2006/relationships"
+ * });
+ * ```
+ */
+export class FooterAttributes extends XmlAttributeComponent<IFooterAttributesProperties> {
     protected readonly xmlKeys = {
         wpc: "xmlns:wpc",
         mc: "xmlns:mc",
