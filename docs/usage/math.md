@@ -283,3 +283,9 @@ new MathLimitLower({
     limit: [new MathRun("x→0")],
 }),
 ```
+
+## Demo
+
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/55-math.ts ":include")
+
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/55-math.ts_

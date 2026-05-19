@@ -2,6 +2,34 @@
 
 !> Images requires an understanding of [Sections](usage/sections.md) and [Paragraphs](usage/paragraph.md).
 
+## Common Use Cases
+
+| I want to...                           | Use                     | Example                      |
+| -------------------------------------- | ----------------------- | ---------------------------- |
+| Insert an image inline with text       | Inline (default)        | Logo next to company name    |
+| Position image at specific coordinates | Floating with offset    | Letterhead logo at top-right |
+| Have text wrap around an image         | Floating with wrap      | Magazine-style layout        |
+| Put an image in a table cell           | Inline in TableCell     | Product catalog              |
+| Add image to header/footer             | Inline in Header/Footer | Company letterhead           |
+
+## Inline vs Floating: When to Use Which
+
+**Use Inline when:**
+
+- Image should flow with text
+- Image is part of content (diagrams, screenshots)
+- Image goes inside tables
+- Image in headers/footers
+
+**Use Floating when:**
+
+- Image needs precise positioning
+- Text should wrap around image
+- Image overlays content (watermarks)
+- Complex page layouts
+
+---
+
 To create a `floating` image on top of text:
 
 ```ts
@@ -27,7 +55,7 @@ By default with no arguments, its an `inline` image:
 
 ```ts
 const image = new ImageRun({
-    type: 'gif',
+    type: "gif",
     data: fs.readFileSync("./demo/images/pizza.gif"),
     transformation: {
         width: 100,
@@ -85,8 +113,8 @@ const doc = new Document({
 
 Three types of image positioning is supported:
 
--   Floating
--   Inline
+- Floating
+- Inline
 
 By default, images are exported as `Inline` elements.
 
@@ -100,7 +128,7 @@ To change the position the image to be on top of the text, simply add the `float
 
 ```ts
 const image = new ImageRun({
-    type: 'png',
+    type: "png",
     data: buffer,
     transformation: {
         width: 903,
@@ -119,7 +147,7 @@ const image = new ImageRun({
 
 ```ts
 const image = new ImageRun({
-    type: 'png',
+    type: "png",
     data: buffer,
     transformation: {
         width: 903,
@@ -185,7 +213,7 @@ For example:
 
 ```ts
 const image = new ImageRun({
-    type: 'gif',
+    type: "gif",
     data: fs.readFileSync("./demo/images/pizza.gif"),
     transformation: {
         width: 200,
@@ -234,7 +262,7 @@ For example:
 
 ```ts
 const image = new ImageRun({
-    type: 'gif',
+    type: "gif",
     data: fs.readFileSync("./demo/images/pizza.gif"),
     transformation: {
         width: 200,
@@ -265,7 +293,7 @@ Specifies common non-visual DrawingML properties. A name, title and description 
 
 ```ts
 const image = new ImageRun({
-    type: 'gif',
+    type: "gif",
     data: fs.readFileSync("./demo/images/pizza.gif"),
     altText: {
         title: "This is an ultimate title",

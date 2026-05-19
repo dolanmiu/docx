@@ -455,6 +455,86 @@ describe("from-docx", () => {
             });
         });
 
+        describe("document.xml and [Content_Types].xml without relationships file", () => {
+            beforeEach(() => {
+                vi.spyOn(JSZip, "loadAsync").mockReturnValue(
+                    new Promise<JSZip>((resolve) => {
+                        const zip = new JSZip();
+
+                        zip.file("word/document.xml", MOCK_XML);
+                        zip.file("[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`);
+                        resolve(zip);
+                    }),
+                );
+            });
+
+            afterEach(() => {
+                vi.restoreAllMocks();
+            });
+
+            it("should create a relationships file for hyperlink only patches", async () => {
+                const output = await patchDocument({
+                    outputType: "uint8array",
+                    data: Buffer.from(""),
+                    patches: {
+                        // eslint-disable-next-line @typescript-eslint/naming-convention
+                        image_test: {
+                            type: PatchType.PARAGRAPH,
+                            children: [
+                                new ExternalHyperlink({
+                                    children: [
+                                        new TextRun({
+                                            text: "Google Link",
+                                        }),
+                                    ],
+                                    link: "https://www.google.co.uk",
+                                }),
+                            ],
+                        },
+                    },
+                });
+                expect(output).to.not.be.undefined;
+            });
+        });
+
+        describe("document.xml without attributes on w:document", () => {
+            const MOCK_XML_NO_ATTRS = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:document>
+    <w:body>
+        <w:p>
+            <w:r>
+                <w:t>Hello {{name}}</w:t>
+            </w:r>
+        </w:p>
+    </w:body>
+</w:document>`;
+
+            beforeEach(() => {
+                const zip = new JSZip();
+                zip.file("word/document.xml", MOCK_XML_NO_ATTRS);
+                zip.file("[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`);
+                vi.spyOn(JSZip, "loadAsync").mockResolvedValue(zip);
+            });
+
+            afterEach(() => {
+                vi.restoreAllMocks();
+            });
+
+            it("should patch a document whose w:document element has no attributes", async () => {
+                const output = await patchDocument({
+                    outputType: "uint8array",
+                    data: Buffer.from(""),
+                    patches: {
+                        name: {
+                            type: PatchType.PARAGRAPH,
+                            children: [new TextRun("World")],
+                        },
+                    },
+                });
+                expect(output).to.not.be.undefined;
+            });
+        });
+
         describe("document.xml", () => {
             beforeEach(() => {
                 vi.spyOn(JSZip, "loadAsync").mockReturnValue(

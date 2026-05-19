@@ -1,18 +1,32 @@
-import { DocPropertiesOptions } from "@file/drawing/doc-properties/doc-properties";
-import { IContext, IXmlableObject } from "@file/xml-components";
+/**
+ * ImageRun module for WordprocessingML documents.
+ *
+ * This module provides support for inserting images into documents.
+ *
+ * Reference: http://officeopenxml.com/drwPicInline.php
+ *
+ * @module
+ */
+import type { DocPropertiesOptions } from "@file/drawing/doc-properties/doc-properties";
+import type { IContext, IXmlableObject } from "@file/xml-components";
 import { hashedId } from "@util/convenience-functions";
 
-import { Drawing, IFloating } from "../../drawing";
-import { OutlineOptions } from "../../drawing/inline/graphic/graphic-data/pic/shape-properties/outline/outline";
-import { IMediaTransformation } from "../../media";
-import { IMediaData } from "../../media/data";
+import { Drawing, type IFloating } from "../../drawing";
+import type { OutlineOptions } from "../../drawing/inline/graphic/graphic-data/pic/shape-properties/outline/outline";
+import type { SolidFillOptions } from "../../drawing/inline/graphic/graphic-data/pic/shape-properties/outline/solid-fill";
+import type { IMediaTransformation } from "../../media";
+import type { IMediaData } from "../../media/data";
 import { Run } from "../run";
 
+/**
+ * Core options for image configuration.
+ */
 type CoreImageOptions = {
     readonly transformation: IMediaTransformation;
     readonly floating?: IFloating;
     readonly altText?: DocPropertiesOptions;
     readonly outline?: OutlineOptions;
+    readonly solidFill?: SolidFillOptions;
 };
 
 type RegularImageOptions = {
@@ -29,32 +43,29 @@ type SvgMediaOptions = {
     readonly fallback: RegularImageOptions;
 };
 
+/**
+ * Options for creating an ImageRun.
+ *
+ * @see {@link ImageRun}
+ */
 export type IImageOptions = (RegularImageOptions | SvgMediaOptions) & CoreImageOptions;
 
 const convertDataURIToBinary = (dataURI: string): Uint8Array => {
-    if (typeof atob === "function") {
-        // https://gist.github.com/borismus/1032746
-        // https://github.com/mafintosh/base64-to-uint8array
-        const BASE64_MARKER = ";base64,";
-        const base64Index = dataURI.indexOf(BASE64_MARKER);
+    // https://gist.github.com/borismus/1032746
+    // https://github.com/mafintosh/base64-to-uint8array
+    const BASE64_MARKER = ";base64,";
+    const base64Index = dataURI.indexOf(BASE64_MARKER);
 
-        const base64IndexWithOffset = base64Index === -1 ? 0 : base64Index + BASE64_MARKER.length;
+    const base64IndexWithOffset = base64Index === -1 ? 0 : base64Index + BASE64_MARKER.length;
 
-        return new Uint8Array(
-            atob(dataURI.substring(base64IndexWithOffset))
-                .split("")
-                .map((c) => c.charCodeAt(0)),
-        );
-        /* c8 ignore next 6 */
-    } else {
-        // Not possible to test this branch in NodeJS
-        // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
-        const b = require("buf" + "fer");
-        return new b.Buffer(dataURI, "base64");
-    }
+    return new Uint8Array(
+        atob(dataURI.substring(base64IndexWithOffset))
+            .split("")
+            .map((c) => c.charCodeAt(0)),
+    );
 };
 
-const standardizeData = (data: string | Buffer | Uint8Array | ArrayBuffer): Buffer | Uint8Array | ArrayBuffer =>
+export const standardizeData = (data: string | Buffer | Uint8Array | ArrayBuffer): Buffer | Uint8Array | ArrayBuffer =>
     typeof data === "string" ? convertDataURIToBinary(data) : data;
 
 const createImageData = (options: IImageOptions, key: string): Pick<IMediaData, "data" | "fileName" | "transformation"> => ({
@@ -74,6 +85,28 @@ const createImageData = (options: IImageOptions, key: string): Pick<IMediaData, 
     },
 });
 
+/**
+ * Represents an image in a WordprocessingML document.
+ *
+ * ImageRun embeds an image within a run, supporting various formats
+ * including JPG, PNG, GIF, BMP, and SVG.
+ *
+ * Reference: http://officeopenxml.com/drwPicInline.php
+ *
+ * @publicApi
+ *
+ * @example
+ * ```typescript
+ * new ImageRun({
+ *   data: fs.readFileSync("./image.png"),
+ *   transformation: {
+ *     width: 100,
+ *     height: 100,
+ *   },
+ *   type: "png",
+ * });
+ * ```
+ */
 export class ImageRun extends Run {
     private readonly imageData: IMediaData;
 

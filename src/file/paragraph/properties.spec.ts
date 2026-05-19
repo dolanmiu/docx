@@ -3,8 +3,10 @@ import { describe, expect, it } from "vitest";
 import { Formatter } from "@export/formatter";
 
 import { DocumentWrapper } from "../document-wrapper";
-import { File } from "../file";
+import type { File } from "../file";
+import { AlignmentType } from "./formatting";
 import { ParagraphProperties } from "./properties";
+import { FontWrapper } from "../fonts/font-wrapper";
 
 describe("ParagraphProperties", () => {
     describe("#constructor()", () => {
@@ -227,6 +229,151 @@ describe("ParagraphProperties", () => {
                                         "w:val": "10pt",
                                     },
                                 },
+                            },
+                        ],
+                    },
+                ],
+            });
+        });
+
+        it("should create with the run property insertion", () => {
+            const properties = new ParagraphProperties({
+                run: {
+                    insertion: { id: 1, author: "Firstname Lastname", date: "123" },
+                },
+            });
+            const tree = new Formatter().format(properties);
+
+            expect(tree).to.deep.equal({
+                "w:pPr": [
+                    {
+                        "w:rPr": [
+                            {
+                                "w:ins": {
+                                    _attr: {
+                                        "w:author": "Firstname Lastname",
+                                        "w:date": "123",
+                                        "w:id": 1,
+                                    },
+                                },
+                            },
+                        ],
+                    },
+                ],
+            });
+        });
+
+        it("should create with the run property deletion", () => {
+            const properties = new ParagraphProperties({
+                run: {
+                    deletion: { id: 1, author: "Firstname Lastname", date: "123" },
+                },
+            });
+            const tree = new Formatter().format(properties);
+
+            expect(tree).to.deep.equal({
+                "w:pPr": [
+                    {
+                        "w:rPr": [
+                            {
+                                "w:del": {
+                                    _attr: {
+                                        "w:author": "Firstname Lastname",
+                                        "w:date": "123",
+                                        "w:id": 1,
+                                    },
+                                },
+                            },
+                        ],
+                    },
+                ],
+            });
+        });
+
+        it("should skip numbering instance creation when viewWrapper is FontWrapper", () => {
+            const properties = new ParagraphProperties({
+                numbering: {
+                    reference: "test-reference",
+                    level: 0,
+                    instance: 0,
+                },
+            });
+            const tree = new Formatter().format(properties, {
+                file: {} as File,
+                viewWrapper: new FontWrapper([]),
+                stack: [],
+            });
+
+            expect(tree).to.deep.equal({
+                "w:pPr": [
+                    {
+                        "w:pStyle": {
+                            _attr: {
+                                "w:val": "ListParagraph",
+                            },
+                        },
+                    },
+                    {
+                        "w:numPr": [
+                            {
+                                "w:ilvl": {
+                                    _attr: {
+                                        "w:val": 0,
+                                    },
+                                },
+                            },
+                            {
+                                "w:numId": {
+                                    _attr: {
+                                        "w:val": "{test-reference-0}",
+                                    },
+                                },
+                            },
+                        ],
+                    },
+                ],
+            });
+        });
+
+        it("should create with revision", () => {
+            const properties = new ParagraphProperties({
+                alignment: AlignmentType.CENTER,
+                revision: {
+                    id: 1,
+                    author: "Firstname Lastname",
+                    date: "123",
+                    alignment: AlignmentType.LEFT,
+                },
+            });
+            const tree = new Formatter().format(properties);
+            expect(tree).to.deep.equal({
+                "w:pPr": [
+                    {
+                        "w:jc": {
+                            _attr: {
+                                "w:val": "center",
+                            },
+                        },
+                    },
+                    {
+                        "w:pPrChange": [
+                            {
+                                _attr: {
+                                    "w:author": "Firstname Lastname",
+                                    "w:date": "123",
+                                    "w:id": 1,
+                                },
+                            },
+                            {
+                                "w:pPr": [
+                                    {
+                                        "w:jc": {
+                                            _attr: {
+                                                "w:val": "left",
+                                            },
+                                        },
+                                    },
+                                ],
                             },
                         ],
                     },

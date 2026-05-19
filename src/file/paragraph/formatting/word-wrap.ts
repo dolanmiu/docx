@@ -1,14 +1,26 @@
-// http://officeopenxml.com/WPalignment.php
-// http://officeopenxml.com/WPtableAlignment.php
-import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
+/**
+ * Word wrap module for WordprocessingML documents.
+ *
+ * This module provides word wrap settings for paragraphs.
+ *
+ * Reference: http://officeopenxml.com/WPalignment.php
+ *
+ * @see http://officeopenxml.com/WPtableAlignment.php
+ *
+ * @module
+ */
+import { BuilderElement, type XmlComponent } from "@file/xml-components";
 
-export class WordWrapAttributes extends XmlAttributeComponent<{ readonly val: 0 }> {
-    protected readonly xmlKeys = { val: "w:val" };
-}
-
-export class WordWrap extends XmlComponent {
-    public constructor() {
-        super("w:wordWrap");
-        this.root.push(new WordWrapAttributes({ val: 0 }));
-    }
-}
+/**
+ * Creates word wrap settings element for a WordprocessingML document.
+ *
+ * The wordWrap element specifies whether word wrap should be disabled
+ * for the paragraph.
+ */
+export const createWordWrap = (): XmlComponent =>
+    new BuilderElement<{ readonly val: 0 }>({
+        name: "w:wordWrap",
+        attributes: {
+            val: { key: "w:val", value: 0 },
+        },
+    });

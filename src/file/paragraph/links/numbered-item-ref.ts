@@ -1,6 +1,20 @@
-import { SimpleField } from "../run";
+/**
+ * Numbered item reference module for WordprocessingML documents.
+ *
+ * This module provides cross-references to numbered items (such as
+ * numbered paragraphs, list items, or headings) within a document.
+ *
+ * Reference: https://learn.microsoft.com/en-us/openspecs/office_standards/ms-oi29500/7088a8ce-e784-49d4-94b8-cba6ef8fce78
+ *
+ * @module
+ */
+import { SimpleField } from "../run/simple-field";
 
-// https://learn.microsoft.com/en-us/openspecs/office_standards/ms-oi29500/7088a8ce-e784-49d4-94b8-cba6ef8fce78
+/**
+ * Format options for numbered item references.
+ *
+ * Specifies how the paragraph number should be displayed when referenced.
+ */
 export enum NumberedItemReferenceFormat {
     NONE = "none",
     /**
@@ -41,6 +55,18 @@ const SWITCH_MAP: Record<NumberedItemReferenceFormat, Switch | undefined> = {
 
 /**
  * Creates a field/cross reference to a numbered item in the document.
+ *
+ * The REF field displays the text or page number of a bookmarked paragraph,
+ * particularly useful for referencing numbered headings or list items.
+ *
+ * @example
+ * ```typescript
+ * // Reference a numbered heading
+ * new NumberedItemReference("heading_1_bookmark", "1.2.3", {
+ *   hyperlink: true,
+ *   referenceFormat: NumberedItemReferenceFormat.FULL_CONTEXT,
+ * });
+ * ```
  */
 export class NumberedItemReference extends SimpleField {
     public constructor(
@@ -55,8 +81,6 @@ export class NumberedItemReference extends SimpleField {
         const { hyperlink = true, referenceFormat = NumberedItemReferenceFormat.FULL_CONTEXT } = options;
         const baseInstruction = `REF ${bookmarkId}`;
 
-        // TODO: Requires TypeScript 5.5 update for it to understand `filter`
-        // @ts-expect-error TS2322
         const switches: readonly Switch[] = [...(hyperlink ? (["\\h"] as const) : []), ...[SWITCH_MAP[referenceFormat]].filter((a) => !!a)];
 
         const instruction = `${baseInstruction} ${switches.join(" ")}`;

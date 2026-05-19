@@ -51,8 +51,7 @@ describe("External styles factory", () => {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const importedStyle = new ExternalStylesFactory().newInstance(externalStyles) as any;
 
-            expect(importedStyle.rootKey).to.equal("w:styles");
-            expect(importedStyle.root[0]._attr).to.deep.equal({
+            expect(importedStyle.initialStyles._attr).to.deep.equal({
                 "xmlns:mc": "first",
                 "xmlns:r": "second",
             });
@@ -61,7 +60,9 @@ describe("External styles factory", () => {
         it("should parse other child elements of w:styles", () => {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const importedStyle = new ExternalStylesFactory().newInstance(externalStyles) as any;
-            expect(JSON.parse(JSON.stringify(importedStyle.root[1]))).to.deep.equal({
+            const importedStyles = importedStyle.importedStyles!;
+
+            expect(JSON.parse(JSON.stringify(importedStyles[0]))).to.deep.equal({
                 root: [
                     {
                         root: [
@@ -126,7 +127,7 @@ describe("External styles factory", () => {
                 ],
                 rootKey: "w:docDefaults",
             });
-            expect(JSON.parse(JSON.stringify(importedStyle.root[2]))).to.deep.equal({
+            expect(JSON.parse(JSON.stringify(importedStyles[1]))).to.deep.equal({
                 root: [
                     {
                         root: {
@@ -150,12 +151,24 @@ describe("External styles factory", () => {
             );
         });
 
+        it("should handle w:styles with no child elements", () => {
+            const emptyStyles = `
+            <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+            <w:styles xmlns:mc="first" xmlns:r="second">
+            </w:styles>`;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const importedStyle = new ExternalStylesFactory().newInstance(emptyStyles) as any;
+
+            expect(importedStyle.importedStyles).to.deep.equal([]);
+        });
+
         it("should parse styles elements", () => {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const importedStyle = new ExternalStylesFactory().newInstance(externalStyles) as any;
+            const importedStyles = importedStyle.importedStyles!;
 
-            expect(importedStyle.root.length).to.equal(5);
-            expect(JSON.parse(JSON.stringify(importedStyle.root[3]))).to.deep.equal({
+            expect(importedStyles.length).to.equal(4);
+            expect(JSON.parse(JSON.stringify(importedStyles[2]))).to.deep.equal({
                 root: [
                     {
                         root: {
@@ -184,7 +197,7 @@ describe("External styles factory", () => {
                 rootKey: "w:style",
             });
 
-            expect(JSON.parse(JSON.stringify(importedStyle.root[4]))).to.deep.equal({
+            expect(JSON.parse(JSON.stringify(importedStyles[3]))).to.deep.equal({
                 root: [
                     {
                         root: {

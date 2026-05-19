@@ -8,10 +8,7 @@ You can add multiple `symbol runs` in `Paragraphs` along with [text runs](usage/
 import { Paragraph, TextRun, SymbolRun } from "docx";
 
 const paragraph = new Paragraph({
-    children: [
-        new TextRun("This is a checkbox: "),
-        new SymbolRun("F071")
-    ],
+    children: [new TextRun("This is a checkbox: "), new SymbolRun("F071")],
 });
 ```
 

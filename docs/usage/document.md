@@ -5,20 +5,81 @@
 To create a new document, it is very easy:
 
 ```ts
-const doc = new docx.Document();
+const doc = new docx.Document({
+    sections: [
+        {
+            children: [new Paragraph("Hello World")],
+        },
+    ],
+});
 ```
 
-## Document properties
+## Document Properties
 
-You can add properties to the Word document by specifying options, for example:
+You can add metadata properties to the Word document:
 
 ```ts
 const doc = new docx.Document({
     creator: "Dolan Miu",
     description: "My extremely interesting document",
     title: "My Document",
+    subject: "Report",
+    keywords: "report, annual, finance",
+    sections: [
+        /* ... */
+    ],
 });
 ```
+
+These properties appear in Word's File > Info panel and in file properties.
+
+## Options by Category
+
+### Metadata Properties
+
+| Property       | Type     | Description                   |
+| -------------- | -------- | ----------------------------- |
+| title          | `string` | Document title                |
+| subject        | `string` | Document subject              |
+| creator        | `string` | Author name                   |
+| keywords       | `string` | Keywords for searching        |
+| description    | `string` | Document description/comments |
+| lastModifiedBy | `string` | Last person to modify         |
+| revision       | `number` | Revision number               |
+
+### Content Options
+
+| Property  | Type                                        | Description       |
+| --------- | ------------------------------------------- | ----------------- |
+| sections  | `ISectionOptions[]`                         | Document sections |
+| comments  | `ICommentsOptions`                          | Document comments |
+| footnotes | `Record<string, { children: Paragraph[] }>` | Footnotes         |
+
+### Styling Options
+
+| Property       | Type                | Description              |
+| -------------- | ------------------- | ------------------------ |
+| styles         | `IStylesOptions`    | Custom styles            |
+| externalStyles | `string`            | External XML styles      |
+| numbering      | `INumberingOptions` | Numbering definitions    |
+| fonts          | `FontOptions[]`     | Embedded fonts           |
+| defaultTabStop | `number`            | Default tab stop (twips) |
+
+### Document Behavior
+
+| Property                   | Type                                                   | Description                |
+| -------------------------- | ------------------------------------------------------ | -------------------------- |
+| background                 | `IDocumentBackgroundOptions`                           | Document background        |
+| features                   | `{ trackRevisions?: boolean; updateFields?: boolean }` | Feature flags              |
+| evenAndOddHeaderAndFooters | `boolean`                                              | Different odd/even headers |
+| hyphenation                | `IHyphenationOptions`                                  | Hyphenation settings       |
+
+### Compatibility
+
+| Property                 | Type                    | Description                |
+| ------------------------ | ----------------------- | -------------------------- |
+| compatibility            | `ICompatibilityOptions` | Compatibility settings     |
+| compatabilityModeVersion | `number`                | Word version compatibility |
 
 ### Full list of options:
 
@@ -60,6 +121,60 @@ const doc = new docx.Document({
 ```
 
 You can mix and match whatever properties you want, or provide no properties.
+
+### Custom Properties
+
+Add custom metadata properties that appear in Word's document properties:
+
+```ts
+const doc = new docx.Document({
+    customProperties: [
+        {
+            name: "Department",
+            value: "Engineering",
+        },
+        {
+            name: "Project Code",
+            value: "PRJ-2024-001",
+        },
+        {
+            name: "Approved",
+            value: true,
+        },
+        {
+            name: "Version",
+            value: 2.5,
+        },
+    ],
+    sections: [
+        /* ... */
+    ],
+});
+```
+
+Custom properties support these value types:
+
+- `string` - Text values
+- `number` - Numeric values
+- `boolean` - True/false values
+
+### Document Features
+
+Enable special features like track changes or field updating:
+
+```ts
+const doc = new docx.Document({
+    features: {
+        trackRevisions: true, // Enable track changes
+        updateFields: true, // Update fields (like TOC) when opened
+    },
+    sections: [
+        /* ... */
+    ],
+});
+```
+
+?> Set `updateFields: true` when using Table of Contents so it updates automatically when the document is opened.
 
 ### Units for positioning
 

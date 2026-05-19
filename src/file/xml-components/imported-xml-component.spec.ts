@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { Element, xml2js } from "xml-js";
+import { type Element, xml2js } from "xml-js";
 
 import { EMPTY_OBJECT } from "@file/xml-components";
 
-import { IContext } from "./base";
+import type { IContext } from "./base";
 import { ImportedRootElementAttributes, ImportedXmlComponent, convertToXmlComponent } from "./imported-xml-component";
 
 const xmlString = `
@@ -94,6 +94,24 @@ describe("ImportedXmlComponent", () => {
             const xmlObj = { type: "invalid" } as Element;
             const converted = convertToXmlComponent(xmlObj);
             expect(converted).to.equal(undefined);
+        });
+
+        it("should skip child elements that return undefined", () => {
+            const xmlObj: Element = {
+                type: "element",
+                name: "w:p",
+                elements: [
+                    { type: "text", text: "hello" },
+                    { type: "comment", comment: "a comment" } as unknown as Element,
+                    { type: "element", name: "w:r", elements: [] },
+                ],
+            };
+            const converted = convertToXmlComponent(xmlObj);
+            expect(converted).not.to.equal(undefined);
+            // The comment child should be skipped (returns undefined)
+            // We should have text and w:r but not the comment
+            const json = JSON.parse(JSON.stringify(converted));
+            expect(json.root).to.have.length(2);
         });
     });
 });

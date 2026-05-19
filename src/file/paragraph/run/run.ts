@@ -1,10 +1,19 @@
-// http://officeopenxml.com/WPtext.php
-import { FootnoteReferenceRun } from "@file/footnotes/footnote/run/reference-run";
-import { FieldInstruction } from "@file/table-of-contents/field-instruction";
+/**
+ * Run module for WordprocessingML documents.
+ *
+ * A run is a region of text with a common set of properties. It is the primary
+ * unit of inline content in a paragraph.
+ *
+ * Reference: http://officeopenxml.com/WPtext.php
+ *
+ * @module
+ */
+import type { FootnoteReferenceRun } from "@file/footnotes/footnote/run/reference-run";
+import type { FieldInstruction } from "@file/table-of-contents/field-instruction";
 import { XmlComponent } from "@file/xml-components";
 
-import { Break } from "./break";
-import {
+import { createBreak } from "./break";
+import type {
     AnnotationReference,
     CarriageReturn,
     ContinuationSeparator,
@@ -23,13 +32,12 @@ import {
     YearLong,
     YearShort,
 } from "./empty-children";
-import { Begin, End, Separate } from "./field";
+import { createBegin, createEnd, createSeparate } from "./field";
 import { CurrentSection, NumberOfPages, NumberOfPagesSection, Page } from "./page-number";
-import { PositionalTab } from "./positional-tab";
-import { IRunPropertiesOptions, RunProperties } from "./properties";
+import { type IParagraphRunPropertiesOptions, type IRunPropertiesOptions, RunProperties } from "./properties";
 import { Text } from "./run-components/text";
 
-export type IRunOptions = {
+type IRunOptionsBase = {
     // <xsd:choice>
     //     <xsd:element name="br" type="CT_Br" />
     //     <xsd:element name="t" type="CT_Text" />
@@ -66,13 +74,9 @@ export type IRunOptions = {
     //     <xsd:element name="lastRenderedPageBreak" type="CT_Empty" minOccurs="0" maxOccurs="1" />
     // </xsd:choice>
     readonly children?: readonly (
-        | Begin
         | FieldInstruction
-        | Separate
-        | End
         | (typeof PageNumber)[keyof typeof PageNumber]
         | FootnoteReferenceRun
-        | Break
         | AnnotationReference
         | CarriageReturn
         | ContinuationSeparator
@@ -90,20 +94,78 @@ export type IRunOptions = {
         | Tab
         | YearLong
         | YearShort
-        | PositionalTab
+        | XmlComponent
         | string
     )[];
     readonly break?: number;
     readonly text?: string;
-} & IRunPropertiesOptions;
+};
 
+/**
+ * Options for creating a Run element.
+ *
+ * The run element specifies a region of text with a common set of properties.
+ * The children property can contain various inline content elements.
+ *
+ * @see {@link Run}
+ */
+export type IRunOptions = IRunOptionsBase & IRunPropertiesOptions;
+
+export type IParagraphRunOptions = IRunOptionsBase & IParagraphRunPropertiesOptions;
+
+/**
+ * Constants for page number field types.
+ *
+ * These values are used to insert dynamic page number fields into a document.
+ *
+ * Reference: http://officeopenxml.com/WPfields.php
+ *
+ * @publicApi
+ */
 export const PageNumber = {
+    /** Inserts the current page number */
     CURRENT: "CURRENT",
+    /** Inserts the total number of pages in the document */
     TOTAL_PAGES: "TOTAL_PAGES",
+    /** Inserts the total number of pages in the current section */
     TOTAL_PAGES_IN_SECTION: "TOTAL_PAGES_IN_SECTION",
+    /** Inserts the current section number */
     CURRENT_SECTION: "SECTION",
 } as const;
 
+/**
+ * Represents a run of text with uniform formatting in a WordprocessingML document.
+ *
+ * A run is the lowest level unit of text in a paragraph. All content within a run
+ * shares the same formatting properties (bold, italic, font, size, etc.).
+ *
+ * Reference: http://officeopenxml.com/WPtext.php
+ *
+ * ## XSD Schema
+ * ```xml
+ * <xsd:complexType name="CT_R">
+ *   <xsd:sequence>
+ *     <xsd:group ref="EG_RPr" minOccurs="0"/>
+ *     <xsd:group ref="EG_RunInnerContent" minOccurs="0" maxOccurs="unbounded"/>
+ *   </xsd:sequence>
+ *   <xsd:attribute name="rsidRPr" type="ST_LongHexNumber"/>
+ *   <xsd:attribute name="rsidDel" type="ST_LongHexNumber"/>
+ *   <xsd:attribute name="rsidR" type="ST_LongHexNumber"/>
+ * </xsd:complexType>
+ * ```
+ *
+ * @example
+ * ```typescript
+ * // Simple run with text
+ * new Run({ text: "Hello World" });
+ *
+ * // Bold and italic run
+ * new Run({ text: "Formatted", bold: true, italics: true });
+ *
+ * // Run with page number
+ * new Run({ children: [PageNumber.CURRENT] });
+ * ```
+ */
 export class Run extends XmlComponent {
     protected readonly properties: RunProperties;
 
@@ -114,7 +176,7 @@ export class Run extends XmlComponent {
 
         if (options.break) {
             for (let i = 0; i < options.break; i++) {
-                this.root.push(new Break());
+                this.root.push(createBreak());
             }
         }
 
@@ -123,28 +185,28 @@ export class Run extends XmlComponent {
                 if (typeof child === "string") {
                     switch (child) {
                         case PageNumber.CURRENT:
-                            this.root.push(new Begin());
+                            this.root.push(createBegin());
                             this.root.push(new Page());
-                            this.root.push(new Separate());
-                            this.root.push(new End());
+                            this.root.push(createSeparate());
+                            this.root.push(createEnd());
                             break;
                         case PageNumber.TOTAL_PAGES:
-                            this.root.push(new Begin());
+                            this.root.push(createBegin());
                             this.root.push(new NumberOfPages());
-                            this.root.push(new Separate());
-                            this.root.push(new End());
+                            this.root.push(createSeparate());
+                            this.root.push(createEnd());
                             break;
                         case PageNumber.TOTAL_PAGES_IN_SECTION:
-                            this.root.push(new Begin());
+                            this.root.push(createBegin());
                             this.root.push(new NumberOfPagesSection());
-                            this.root.push(new Separate());
-                            this.root.push(new End());
+                            this.root.push(createSeparate());
+                            this.root.push(createEnd());
                             break;
                         case PageNumber.CURRENT_SECTION:
-                            this.root.push(new Begin());
+                            this.root.push(createBegin());
                             this.root.push(new CurrentSection());
-                            this.root.push(new Separate());
-                            this.root.push(new End());
+                            this.root.push(createSeparate());
+                            this.root.push(createEnd());
                             break;
                         default:
                             this.root.push(new Text(child));

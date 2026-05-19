@@ -1,10 +1,15 @@
+/**
+ * Replacer module for performing placeholder substitution in XML structures.
+ *
+ * @module
+ */
 import xml from "xml";
-import { Element } from "xml-js";
+import type { Element } from "xml-js";
 
 import { Formatter } from "@export/formatter";
-import { IContext, XmlComponent } from "@file/xml-components";
+import type { IContext, XmlComponent } from "@file/xml-components";
 
-import { IPatch, PatchType } from "./from-docx";
+import { type IPatch, PatchType } from "./from-docx";
 import { findRunElementIndexWithToken, splitRunElement } from "./paragraph-split-inject";
 import { replaceTokenInParagraphElement } from "./paragraph-token-replacer";
 import { findLocationOfText } from "./traverser";
@@ -14,11 +19,31 @@ const formatter = new Formatter();
 
 const SPLIT_TOKEN = "ɵ";
 
+/**
+ * Result of a replacement operation.
+ *
+ * @property element - The modified XML element
+ * @property didFindOccurrence - Whether a placeholder occurrence was found and replaced
+ */
 type IReplacerResult = {
     readonly element: Element;
     readonly didFindOccurrence: boolean;
 };
 
+/**
+ * Replaces placeholder text in XML with new content from a patch.
+ *
+ * This function locates placeholder text within the XML structure and performs
+ * the appropriate replacement based on the patch type (document or paragraph level).
+ * It handles splitting runs, preserving styles, and injecting the new content.
+ *
+ * @param json - The XML element structure to search
+ * @param patch - The patch definition containing replacement content
+ * @param patchText - The placeholder text to find (e.g., "{{name}}")
+ * @param context - The document context for formatting
+ * @param keepOriginalStyles - Whether to preserve original text formatting
+ * @returns Result containing the modified element and whether a replacement occurred
+ */
 export const replacer = ({
     json,
     patch,

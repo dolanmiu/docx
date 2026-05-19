@@ -1,22 +1,15 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import { Formatter } from "@export/formatter";
 
-import { Break } from "./break";
+import { createBreak } from "./break";
 
-describe("Break", () => {
-    let currentBreak: Break;
-
-    beforeEach(() => {
-        currentBreak = new Break();
-    });
-
-    describe("#constructor()", () => {
-        it("should create a Break with correct root key", () => {
-            const tree = new Formatter().format(currentBreak);
-            expect(tree).to.deep.equal({
-                "w:br": {},
-            });
+describe("createBreak", () => {
+    it("should create a Break element with correct root key", () => {
+        const breakElement = createBreak();
+        const tree = new Formatter().format(breakElement);
+        expect(tree).to.deep.equal({
+            "w:br": {},
         });
     });
 });

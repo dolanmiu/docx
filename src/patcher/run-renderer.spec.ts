@@ -93,5 +93,52 @@ describe("run-renderer", () => {
                 text: "",
             });
         });
+
+        it("should handle w:t elements with undefined text", () => {
+            const output = renderParagraphNode({
+                element: {
+                    name: "w:p",
+                    elements: [
+                        {
+                            name: "w:r",
+                            elements: [
+                                {
+                                    name: "w:t",
+                                    elements: [
+                                        {
+                                            type: "text",
+                                            // text is undefined
+                                        },
+                                    ],
+                                },
+                            ],
+                        },
+                    ],
+                },
+                index: 0,
+                parent: undefined,
+            });
+            expect(output).to.deep.equal({
+                index: 0,
+                pathToParagraph: [0],
+                runs: [
+                    {
+                        end: -1,
+                        index: 0,
+                        parts: [
+                            {
+                                end: -1,
+                                index: 0,
+                                start: 0,
+                                text: "",
+                            },
+                        ],
+                        start: 0,
+                        text: "",
+                    },
+                ],
+                text: "",
+            });
+        });
     });
 });

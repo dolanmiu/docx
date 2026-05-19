@@ -9,15 +9,15 @@ new Paragraph({
     children: [
         new TextRun({
             children: ["Page #: ", PageNumber.CURRENT],
-        })
-    ]
-})
+        }),
+    ],
+});
 ```
 
 ## Current page number
 
 ```ts
-PageNumber.CURRENT
+PageNumber.CURRENT;
 ```
 
 For example:
@@ -27,15 +27,15 @@ new Paragraph({
     children: [
         new TextRun({
             children: ["Page Number ", PageNumber.CURRENT],
-        })
-    ]
-})
+        }),
+    ],
+});
 ```
 
 ## Total number of pages
 
 ```ts
-PageNumber.TOTAL_PAGES
+PageNumber.TOTAL_PAGES;
 ```
 
 For example:
@@ -45,11 +45,10 @@ new Paragraph({
     children: [
         new TextRun({
             children: ["Total Pages Number: ", PageNumber.TOTAL_PAGES],
-        })
-    ]
-})
+        }),
+    ],
+});
 ```
-
 
 ## Both
 
@@ -72,6 +71,6 @@ new Paragraph({
 
 Adding page numbers to Header and Footer
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/39-page-numbers.ts ':include')
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/39-page-numbers.ts ":include")
 
 _Source: https://github.com/dolanmiu/docx/blob/master/demo/39-page-numbers.ts_

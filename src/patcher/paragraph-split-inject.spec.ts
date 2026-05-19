@@ -228,8 +228,15 @@ describe("paragraph-split-inject", () => {
                 "*",
             );
 
+            // When the token is not found in the text, splitIndex remains -1
+            // so left gets nothing and right gets all elements
             expect(output).to.deep.equal({
                 left: {
+                    elements: [],
+                    name: "w:r",
+                    type: "element",
+                },
+                right: {
                     elements: [
                         {
                             attributes: {
@@ -240,11 +247,6 @@ describe("paragraph-split-inject", () => {
                             type: "element",
                         },
                     ],
-                    name: "w:r",
-                    type: "element",
-                },
-                right: {
-                    elements: [],
                     name: "w:r",
                     type: "element",
                 },
@@ -268,6 +270,65 @@ describe("paragraph-split-inject", () => {
                 },
                 right: {
                     elements: [],
+                    name: "w:r",
+                    type: "element",
+                },
+            });
+        });
+
+        it("should put all content on the right when token is not found", () => {
+            const output = splitRunElement(
+                {
+                    name: "w:r",
+                    type: "element",
+                    elements: [
+                        {
+                            name: "w:t",
+                            type: "element",
+                            elements: [
+                                {
+                                    type: "text",
+                                    text: "hello world",
+                                },
+                            ],
+                        },
+                        {
+                            name: "w:x",
+                            type: "element",
+                        },
+                    ],
+                },
+                "*",
+            );
+
+            // When the token is not found, splitIndex remains -1
+            // so left gets nothing and right gets all elements
+            expect(output).to.deep.equal({
+                left: {
+                    elements: [],
+                    name: "w:r",
+                    type: "element",
+                },
+                right: {
+                    elements: [
+                        {
+                            attributes: {
+                                "xml:space": "preserve",
+                            },
+                            elements: [
+                                {
+                                    text: "hello world",
+                                    type: "text",
+                                },
+                            ],
+                            name: "w:t",
+                            type: "element",
+                        },
+                        {
+                            name: "w:x",
+                            type: "element",
+                        },
+                    ],
                     name: "w:r",
                     type: "element",
                 },

@@ -79,7 +79,17 @@ Packer.toString(doc, true, overrides).then((string) => {
 You can also use the lower-level `Packer.pack` method to export to any specified type.
 
 ```ts
-Packer.pack(doc, 'string').then((string) => {
+Packer.pack(doc, "string").then((string) => {
     console.log(string);
 });
 ```
+
+## Demos
+
+[Export to Base64 Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/19-export-to-base64.ts ":include")
+
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/19-export-to-base64.ts_
+
+[Node.js Stream Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/74-nodejs-stream.ts ":include")
+
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/74-nodejs-stream.ts_

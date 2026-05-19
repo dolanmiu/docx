@@ -1,3 +1,8 @@
+/**
+ * Paragraph module exports.
+ *
+ * @module
+ */
 export * from "./formatting";
 export * from "./paragraph";
 export * from "./properties";
