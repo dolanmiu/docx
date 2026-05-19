@@ -1,20 +1,20 @@
 // watermark.ts
-import { XmlComponent } from "@file/xml-components";
 import { Paragraph } from "@file/paragraph";
+import { XmlComponent } from "@file/xml-components";
 
-export interface WatermarkOptions {
-    text: string;
-    color?: string;
-    opacity?: number;
-    fontSize?: number;
-    fontFamily?: string;
-    rotation?: number; // degrees
-    width?: number;
-    height?: number;
+export type WatermarkOptions = {
+    readonly text: string;
+    readonly color?: string;
+    readonly opacity?: number;
+    readonly fontSize?: number;
+    readonly fontFamily?: string;
+    readonly rotation?: number; // degrees
+    readonly width?: number;
+    readonly height?: number;
 }
 
 export class Watermark extends XmlComponent {
-    constructor(options: WatermarkOptions) {
+    public constructor(options: WatermarkOptions) {
         super("w:r");
 
         const {
@@ -25,7 +25,7 @@ export class Watermark extends XmlComponent {
             fontFamily = "Arial",
             rotation = 315, // -45 degrees in Word format
             width = 497.65,
-            height = 89.55
+            height = 89.55,
         } = options;
 
         // Convert rotation to Word's format (multiply by 65536)
@@ -36,7 +36,7 @@ export class Watermark extends XmlComponent {
         this.root.push(
             new Pict({
                 shape: new VShape({
-                    id: "PowerPlusWaterMarkObject" + Math.floor(Math.random() * 100000000),
+                    id: `PowerPlusWaterMarkObject${Math.floor(Math.random() * 100000000)}`,
                     spid: "_x0000_s2049",
                     spt: "136",
                     type: "#_x0000_t136",
@@ -52,7 +52,7 @@ export class Watermark extends XmlComponent {
                         `rotation:${wordRotation}f`,
                         "z-index:-251657216",
                         "mso-width-relative:page",
-                        "mso-height-relative:page"
+                        "mso-height-relative:page",
                     ].join(";"),
                     fillcolor: color,
                     filled: "t",
@@ -64,7 +64,7 @@ export class Watermark extends XmlComponent {
                         new VFill({
                             on: "t",
                             opacity: `${wordOpacity}f`,
-                            focussize: "0,0"
+                            focussize: "0,0",
                         }),
                         new VStroke({ on: "f" }),
                         new VImageData({ title: "" }),
@@ -73,7 +73,7 @@ export class Watermark extends XmlComponent {
                             grouping: "f",
                             rotation: "f",
                             text: "f",
-                            aspectratio: "t"
+                            aspectratio: "t",
                         }),
                         new VTextPath({
                             on: "t",
@@ -81,41 +81,37 @@ export class Watermark extends XmlComponent {
                             fitpath: "t",
                             trim: "t",
                             xscale: "f",
-                            string: text,
-                            style: [
-                                `font-family:${fontFamily}`,
-                                `font-size:${fontSize}pt`,
-                                "v-text-align:center"
-                            ].join(";")
-                        })
-                    ]
-                })
-            })
+                            text: text,
+                            style: [`font-family:${fontFamily}`, `font-size:${fontSize}pt`, "v-text-align:center"].join(";"),
+                        }),
+                    ],
+                }),
+            }),
         );
     }
 }
 
 // VML Shape components
 class Pict extends XmlComponent {
-    constructor(options: { shape: VShape }) {
+    public constructor(options: { readonly shape: VShape }) {
         super("w:pict");
         this.root.push(options.shape);
     }
 }
 
 class VShape extends XmlComponent {
-    constructor(options: {
-        id: string;
-        spid: string;
-        spt: string;
-        type: string;
-        style: string;
-        fillcolor: string;
-        filled: string;
-        stroked: string;
-        coordsize: string;
-        adj: string;
-        children: XmlComponent[];
+    public constructor(options: {
+        readonly id: string;
+        readonly spid: string;
+        readonly spt: string;
+        readonly type: string;
+        readonly style: string;
+        readonly fillcolor: string;
+        readonly filled: string;
+        readonly stroked: string;
+        readonly coordsize: string;
+        readonly adj: string;
+        readonly children: readonly XmlComponent[];
     }) {
         super("v:shape");
 
@@ -130,55 +126,49 @@ class VShape extends XmlComponent {
                 filled: options.filled,
                 stroked: options.stroked,
                 coordsize: options.coordsize,
-                adj: options.adj
-            }
+                adj: options.adj,
+            },
         });
 
-        options.children.forEach(child => this.root.push(child));
+        options.children.forEach((child) => this.root.push(child));
     }
 }
 
 class VPath extends XmlComponent {
-    constructor() {
+    public constructor() {
         super("v:path");
     }
 }
 
 class VFill extends XmlComponent {
-    constructor(options: { on: string; opacity: string; focussize: string }) {
+    public constructor(options: { readonly on: string; readonly opacity: string; readonly focussize: string }) {
         super("v:fill");
         this.root.push({
             _attr: {
                 on: options.on,
                 opacity: options.opacity,
-                focussize: options.focussize
-            }
+                focussize: options.focussize,
+            },
         });
     }
 }
 
 class VStroke extends XmlComponent {
-    constructor(options: { on: string }) {
+    public constructor(options: { readonly on: string }) {
         super("v:stroke");
         this.root.push({ _attr: { on: options.on } });
     }
 }
 
 class VImageData extends XmlComponent {
-    constructor(options: { title: string }) {
+    public constructor(options: { readonly title: string }) {
         super("v:imagedata");
         this.root.push({ _attr: { "o:title": options.title } });
     }
 }
 
 class OLock extends XmlComponent {
-    constructor(options: {
-        ext: string;
-        grouping: string;
-        rotation: string;
-        text: string;
-        aspectratio: string;
-    }) {
+    public constructor(options: { readonly ext: string; readonly grouping: string; readonly rotation: string; readonly text: string; readonly aspectratio: string }) {
         super("o:lock");
         this.root.push({
             _attr: {
@@ -186,21 +176,21 @@ class OLock extends XmlComponent {
                 grouping: options.grouping,
                 rotation: options.rotation,
                 text: options.text,
-                aspectratio: options.aspectratio
-            }
+                aspectratio: options.aspectratio,
+            },
         });
     }
 }
 
 class VTextPath extends XmlComponent {
-    constructor(options: {
-        on: string;
-        fitshape: string;
-        fitpath: string;
-        trim: string;
-        xscale: string;
-        string: string;
-        style: string;
+    public constructor(options: {
+        readonly on: string;
+        readonly fitshape: string;
+        readonly fitpath: string;
+        readonly trim: string;
+        readonly xscale: string;
+        readonly text: string;
+        readonly style: string
     }) {
         super("v:textpath");
         this.root.push({
@@ -210,19 +200,19 @@ class VTextPath extends XmlComponent {
                 fitpath: options.fitpath,
                 trim: options.trim,
                 xscale: options.xscale,
-                string: options.string,
-                style: options.style
-            }
+                "string": options.text,
+                style: options.style,
+            },
         });
     }
 }
 
 // Usage example for header/footer
 export class WatermarkParagraph extends Paragraph {
-    constructor(watermarkOptions: WatermarkOptions) {
+    public constructor(watermarkOptions: WatermarkOptions) {
         super({
             children: [new Watermark(watermarkOptions)],
-            style: "5" // Header style
+            style: "5", // Header style
         });
     }
 }

@@ -1,32 +1,17 @@
 // watermark.spec.ts
 import { describe, expect, it, beforeEach } from "vitest";
+import { IContext } from "@file/xml-components";
+import { File } from "@file/file";
+import { IViewWrapper } from "@file/document-wrapper";
 import { Watermark, WatermarkParagraph, WatermarkOptions } from "./watermark";
 
-// Alternative approach: Create a more comprehensive mock or use vi.fn()
-const createMockContext = () => ({
-    file: {
-        currentRelationshipId: 1,
-        documentWrapper: {},
-        headers: {},
-        footers: {},
-        contentTypes: {},
-        customProperties: {},
-        appProperties: {},
-        coreProperties: {},
-        numbering: {},
-        styles: {},
-        settings: {},
-        media: {},
-        fontTableWrapper: {},
-        webSettingsWrapper: {},
-        documentRelationships: {},
-        headerWrappers: {},
-        footerWrappers: {},
-        // Add other required File properties as needed
-    },
-    viewWrapper: {},
-    stack: []
-} as any); // Still using 'as any' for simplicity
+const createMockContext = (): IContext => {
+    return {
+        file: {} as unknown as File,
+        viewWrapper: {} as unknown as IViewWrapper,
+        stack: [],
+    };
+};
 
 const mockContext = createMockContext();
 
@@ -49,7 +34,7 @@ describe("Watermark", () => {
                 fontFamily: "Times New Roman",
                 rotation: 45,
                 width: 600,
-                height: 100
+                height: 100,
             };
 
             watermark = new Watermark(options);
@@ -59,7 +44,7 @@ describe("Watermark", () => {
 
         it("should handle special characters in text", () => {
             watermark = new Watermark({
-                text: "GIZLI & ÖZEL"
+                text: "GIZLI & ÖZEL",
             });
 
             expect(watermark).toBeInstanceOf(Watermark);
@@ -74,7 +59,7 @@ describe("Watermark", () => {
                 opacity: 0.5,
                 fontSize: 36,
                 fontFamily: "Arial",
-                rotation: 315
+                rotation: 315,
             });
         });
 
@@ -90,7 +75,7 @@ describe("Watermark", () => {
             const options: WatermarkOptions = {
                 text: "TEST",
                 color: "#FF0000",
-                opacity: 0.7
+                opacity: 0.7,
             };
 
             const testWatermark = new Watermark(options);
@@ -188,7 +173,7 @@ describe("Watermark", () => {
             watermark = new Watermark({
                 text: "DRAFT",
                 color: "#808080",
-                opacity: 0.3
+                opacity: 0.3,
             });
 
             // Test that watermark object is created correctly
@@ -198,7 +183,7 @@ describe("Watermark", () => {
 
         it("should handle special characters in text", () => {
             watermark = new Watermark({
-                text: "A & B < C > D"
+                text: "A & B < C > D",
             });
 
             // Test that watermark object is created correctly with special chars
@@ -243,7 +228,7 @@ describe("Watermark", () => {
         it("should handle 360 degree rotation", () => {
             watermark = new Watermark({
                 text: "FULL CIRCLE",
-                rotation: 360
+                rotation: 360,
             });
 
             const xmlObj = watermark.prepForXml(mockContext);
@@ -294,7 +279,7 @@ describe("WatermarkParagraph", () => {
     describe("#constructor", () => {
         it("should create a paragraph with watermark", () => {
             watermarkParagraph = new WatermarkParagraph({
-                text: "CONFIDENTIAL"
+                text: "CONFIDENTIAL",
             });
 
             expect(watermarkParagraph).toBeInstanceOf(WatermarkParagraph);
@@ -323,7 +308,7 @@ describe("WatermarkParagraph", () => {
 
         it("should contain watermark run", () => {
             watermarkParagraph = new WatermarkParagraph({
-                text: "TEST"
+                text: "TEST",
             });
 
             const xmlObj = watermarkParagraph.prepForXml(mockContext);
@@ -349,20 +334,22 @@ describe("Integration tests", () => {
             color: "#FF0000",
             opacity: 0.4,
             fontSize: 42,
-            rotation: 315
+            rotation: 315,
         };
 
         const watermarkParagraph = new WatermarkParagraph(watermarkOptions);
 
         // Simulate document structure
         const mockDocument = {
-            sections: [{
-                headers: {
-                    default: {
-                        children: [watermarkParagraph]
-                    }
-                }
-            }]
+            sections: [
+                {
+                    headers: {
+                        default: {
+                            children: [watermarkParagraph],
+                        },
+                    },
+                },
+            ],
         };
 
         expect(mockDocument.sections[0].headers.default.children).toHaveLength(1);
