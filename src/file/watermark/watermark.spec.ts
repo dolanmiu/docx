@@ -1,18 +1,17 @@
 // watermark.spec.ts
-import { describe, expect, it, beforeEach } from "vitest";
-import type { IContext } from "@file/xml-components"; // type ekledik
-import { File } from "@file/file";
-import type { IViewWrapper } from "@file/document-wrapper"; // type ekledik
-import { Watermark, WatermarkParagraph } from "./watermark";
-import type { WatermarkOptions } from "./watermark"; // Sınıflardan ayırıp type olarak import ettik
+import { beforeEach, describe, expect, it } from "vitest";
 
-const createMockContext = (): IContext => {
-    return {
-        file: {} as unknown as File,
-        viewWrapper: {} as unknown as IViewWrapper,
-        stack: [],
-    };
-};
+import type { IViewWrapper } from "@file/document-wrapper";
+import type { File } from "@file/file";
+import type { IContext } from "@file/xml-components";
+
+import { Watermark, type WatermarkOptions, WatermarkParagraph } from "./watermark";
+
+const createMockContext = (): IContext => ({
+    file: {} as unknown as File,
+    viewWrapper: {} as unknown as IViewWrapper,
+    stack: [],
+});
 
 const mockContext = createMockContext();
 
@@ -89,13 +88,13 @@ describe("Watermark", () => {
         /*
         it("should include VML shape with correct attributes", () => {
             const xmlObj = watermark.prepForXml(mockContext);
-            
+
             expect(xmlObj).toBeDefined();
             const run = xmlObj!["w:r"][0];
-            
+
             expect(run).toHaveProperty("w:pict");
             expect(run["w:pict"]).toBeInstanceOf(Array);
-            
+
             const pict = run["w:pict"][0];
             expect(pict).toHaveProperty("v:shape");
         });
@@ -121,23 +120,23 @@ describe("Watermark", () => {
         /*
         it("should set correct rotation value", () => {
             const xmlObj = watermark.prepForXml(mockContext);
-            
+
             expect(xmlObj).toBeDefined();
             const run = xmlObj!["w:r"][0];
             const shape = run["w:pict"][0]["v:shape"][0];
-            
+
             // 315 degrees * 65536 = 20643840
             expect(shape._attr.style).toContain("rotation:20643840f");
         });
 
         it("should set correct opacity value", () => {
             const xmlObj = watermark.prepForXml(mockContext);
-            
+
             expect(xmlObj).toBeDefined();
             const run = xmlObj!["w:r"][0];
             const shape = run["w:pict"][0]["v:shape"][0];
             const fill = shape["v:fill"];
-            
+
             // 0.5 * 65536 = 32768
             expect(fill).toBeInstanceOf(Array);
             expect(fill[0]._attr.opacity).toBe("32768f");
@@ -145,24 +144,24 @@ describe("Watermark", () => {
 
         it("should include watermark text in textpath", () => {
             const xmlObj = watermark.prepForXml(mockContext);
-            
+
             expect(xmlObj).toBeDefined();
             const run = xmlObj!["w:r"][0];
             const shape = run["w:pict"][0]["v:shape"][0];
             const textpath = shape["v:textpath"];
-            
+
             expect(textpath).toBeInstanceOf(Array);
             expect(textpath[0]._attr.string).toBe("TEST WATERMARK");
         });
 
         it("should set correct font properties", () => {
             const xmlObj = watermark.prepForXml(mockContext);
-            
+
             expect(xmlObj).toBeDefined();
             const run = xmlObj!["w:r"][0];
             const shape = run["w:pict"][0]["v:shape"][0];
             const textpath = shape["v:textpath"][0];
-            
+
             expect(textpath._attr.style).toContain("font-family:Arial");
             expect(textpath._attr.style).toContain("font-size:36pt");
         });
@@ -315,10 +314,10 @@ describe("WatermarkParagraph", () => {
             const xmlObj = watermarkParagraph.prepForXml(mockContext);
 
             expect(xmlObj).toBeDefined();
-            const paragraph = xmlObj!["w:p"];
+            const paragraph = xmlObj!["w:p"] as readonly Record<string, unknown>[];
 
             // Should contain a run with watermark
-            const runs = paragraph.filter((item: any) => item["w:r"]);
+            const runs = paragraph.filter((item) => (item as Record<string, unknown>)["w:r"]);
             expect(runs.length).toBeGreaterThan(0);
 
             // First run should contain pict element
