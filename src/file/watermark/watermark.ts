@@ -206,7 +206,7 @@ class VTextPath extends XmlComponent {
                 fitpath: options.fitpath,
                 trim: options.trim,
                 xscale: options.xscale,
-                "string": options.text,
+                ["string"]: options.text,
                 style: options.style,
             },
         });
