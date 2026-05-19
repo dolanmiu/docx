@@ -11,7 +11,7 @@ export type WatermarkOptions = {
     readonly rotation?: number; // degrees
     readonly width?: number;
     readonly height?: number;
-}
+};
 
 export class Watermark extends XmlComponent {
     public constructor(options: WatermarkOptions) {
@@ -168,7 +168,13 @@ class VImageData extends XmlComponent {
 }
 
 class OLock extends XmlComponent {
-    public constructor(options: { readonly ext: string; readonly grouping: string; readonly rotation: string; readonly text: string; readonly aspectratio: string }) {
+    public constructor(options: {
+        readonly ext: string;
+        readonly grouping: string;
+        readonly rotation: string;
+        readonly text: string;
+        readonly aspectratio: string;
+    }) {
         super("o:lock");
         this.root.push({
             _attr: {
@@ -190,7 +196,7 @@ class VTextPath extends XmlComponent {
         readonly trim: string;
         readonly xscale: string;
         readonly text: string;
-        readonly style: string
+        readonly style: string;
     }) {
         super("v:textpath");
         this.root.push({
@@ -200,7 +206,7 @@ class VTextPath extends XmlComponent {
                 fitpath: options.fitpath,
                 trim: options.trim,
                 xscale: options.xscale,
-                "string": options.text,
+                string: options.text,
                 style: options.style,
             },
         });
