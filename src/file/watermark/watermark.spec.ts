@@ -317,9 +317,8 @@ describe("WatermarkParagraph", () => {
             const paragraph = xmlObj!["w:p"] as readonly Record<string, unknown>[];
 
             // Should contain a run with watermark
-            const runs = paragraph.filter(
-                (item): item is { "w:r": readonly Record<string, unknown>[] } =>
-                    Array.isArray(item["w:r"]),
+            const runs = paragraph.filter((item): item is { readonly "w:r": readonly Record<string, unknown>[] } =>
+                Array.isArray(item["w:r"]),
             );
             expect(runs.length).toBeGreaterThan(0);
 
