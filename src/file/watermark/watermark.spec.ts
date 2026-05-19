@@ -317,11 +317,14 @@ describe("WatermarkParagraph", () => {
             const paragraph = xmlObj!["w:p"] as readonly Record<string, unknown>[];
 
             // Should contain a run with watermark
-            const runs = paragraph.filter((item) => (item as Record<string, unknown>)["w:r"]);
+            const runs = paragraph.filter(
+                (item): item is { "w:r": readonly Record<string, unknown>[] } =>
+                    Array.isArray(item["w:r"]),
+            );
             expect(runs.length).toBeGreaterThan(0);
 
             // First run should contain pict element
-            const firstRun = runs[0]["w:r"][0];
+            const firstRun = runs[0]["w:r"][0] as Record<string, unknown>;
             expect(firstRun).toHaveProperty("w:pict");
         });
     });
