@@ -1,9 +1,10 @@
 // watermark.spec.ts
 import { describe, expect, it, beforeEach } from "vitest";
-import { IContext } from "@file/xml-components";
+import type { IContext } from "@file/xml-components"; // type ekledik
 import { File } from "@file/file";
-import { IViewWrapper } from "@file/document-wrapper";
-import { Watermark, WatermarkParagraph, WatermarkOptions } from "./watermark";
+import type { IViewWrapper } from "@file/document-wrapper"; // type ekledik
+import { Watermark, WatermarkParagraph } from "./watermark";
+import type { WatermarkOptions } from "./watermark"; // Sınıflardan ayırıp type olarak import ettik
 
 const createMockContext = (): IContext => {
     return {
