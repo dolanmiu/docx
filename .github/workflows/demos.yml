@@ -226,3 +226,9 @@ jobs:
             # - uses: "./.github/actions/validate-docx"
             - run: npm run run-ts -- ./demo/100-table-look.ts
             # - uses: "./.github/actions/validate-docx"
+            - run: npm run run-ts -- ./demo/101-comment-replies.ts
+            - uses: "./.github/actions/validate-docx"
+            - run: npm run run-ts -- ./demo/102-numbering-level-paragraph-style.ts
+            - uses: "./.github/actions/validate-docx"
+            - run: npm run run-ts -- ./demo/103-track-change-images.ts
+            - uses: "./.github/actions/validate-docx"
