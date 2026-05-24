@@ -204,13 +204,54 @@ const paragraph = new Paragraph({
 
 ## Indentation
 
-Use `indent.firstLine` for twips-based indentation, or `indent.firstLineChars` when you want Word to treat the first-line indent as a character count. `firstLineChars` uses hundredths of a character, so `200` means two characters.
+Set paragraph indentation from the page margins using the `indent` property.
+
+### IIndentAttributesProperties
+
+| Property       | Type                                 | Notes    | Description                                                                 |
+| -------------- | ------------------------------------ | -------- | --------------------------------------------------------------------------- |
+| start          | `number \| UniversalMeasure`         | Optional | Indentation from the leading edge (left in LTR, right in RTL), in twips     |
+| end            | `number \| UniversalMeasure`         | Optional | Indentation from the trailing edge (right in LTR, left in RTL), in twips    |
+| left           | `number \| UniversalMeasure`         | Optional | Indentation from the left margin, in twips                                  |
+| right          | `number \| UniversalMeasure`         | Optional | Indentation from the right margin, in twips                                 |
+| hanging        | `number \| PositiveUniversalMeasure` | Optional | Hanging indent removed from the first line, in twips                        |
+| firstLine      | `number \| PositiveUniversalMeasure` | Optional | Additional first-line indent, in twips                                      |
+| firstLineChars | `number`                             | Optional | First-line indent in hundredths of a character width (e.g. `200` = 2 chars) |
+
+> `start`/`end` are the bidi-aware equivalents of `left`/`right`. Prefer `start`/`end` for documents that may be rendered in RTL languages.
+
+**Example — first-line indent in twips:**
+
+```ts
+const paragraph = new Paragraph({
+    text: "Indented first line",
+    indent: {
+        firstLine: 720, // 720 twips = 0.5 inch
+    },
+});
+```
+
+**Example — character-based first-line indent:**
+
+Use `firstLineChars` when you want Word to calculate the indent relative to the font's character width rather than a fixed measurement. The value is in hundredths of a character, so `200` means two characters.
 
 ```ts
 const paragraph = new Paragraph({
     text: "First line indented by two characters",
     indent: {
         firstLineChars: 200,
+    },
+});
+```
+
+**Example — left and hanging indent:**
+
+```ts
+const paragraph = new Paragraph({
+    text: "Hanging indent paragraph",
+    indent: {
+        left: 720,
+        hanging: 360, // first line hangs back 360 twips from the left indent
     },
 });
 ```
@@ -228,8 +269,6 @@ const paragraph = new Paragraph({
 ## Styles
 
 To create styles, please refer to the [styling documentation](usage/styling-with-js)
-
-![Word 2013 Styles menu](http://content.gcflearnfree.org/topics/233/style_apply_choose.png "Word 2013 Styles menu")
 
 ### Headings and titles
 
@@ -260,26 +299,31 @@ The above will create a `heading 1` which is `centered`.
 
 ### Justified text with breaks
 
-When a paragraph is justified, you may want to not justify the contents of incomplete lines, which end in a soft line break.
-
-![Justified line before](https://user-images.githubusercontent.com/7989576/53820338-e060c680-3f6b-11e9-817c-ecb43271951e.png)
-
-This is possible to achieve using:
+When a paragraph is justified, incomplete lines ending in a soft line break are stretched to fill the full width by default. To prevent this, enable `doNotExpandShiftReturn` in the document's compatibility options:
 
 ```ts
-this.doc.Settings.addCompatibility().doNotExpandShiftReturn();
+const doc = new Document({
+    compatibility: {
+        doNotExpandShiftReturn: true,
+    },
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    text: "This justified paragraph won't stretch soft line breaks.",
+                    alignment: AlignmentType.JUSTIFIED,
+                }),
+            ],
+        },
+    ],
+});
 ```
-
-The result is:
-
-![Justified line after](https://user-images.githubusercontent.com/7989576/53820344-e2c32080-3f6b-11e9-9afe-24a2ed6e0d78.png)
 
 ## Thematic Break
 
 To add a thematic break in the `Paragraph`:
 
 ```ts
-const paragraph = new docx.Paragraph("Amazing Heading");
 const paragraph = new Paragraph({
     text: "Amazing Heading",
     heading: HeadingLevel.HEADING_1,

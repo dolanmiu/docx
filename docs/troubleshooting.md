@@ -4,14 +4,16 @@ This guide covers common issues and their solutions when working with docx.
 
 ## Quick Index
 
-| Symptom                  | Go to                                      |
-| ------------------------ | ------------------------------------------ |
-| File corrupt/won't open  | [Document Won't Open](#document-wont-open) |
-| Images appear blank      | [Images Not Showing](#images-not-showing)  |
-| Buffer not defined error | [Browser Issues](#browser-issues)          |
-| Table cells misaligned   | [Table Issues](#table-issues)              |
-| Styles not applying      | [Styling Issues](#styling-issues)          |
-| Memory errors            | [Memory Issues](#memory-issues)            |
+| Symptom                             | Go to                                      |
+| ----------------------------------- | ------------------------------------------ |
+| File corrupt/won't open             | [Document Won't Open](#document-wont-open) |
+| Unreadable content with custom font | [Document Won't Open](#document-wont-open) |
+| Images appear blank                 | [Images Not Showing](#images-not-showing)  |
+| Buffer not defined error            | [Browser Issues](#browser-issues)          |
+| Table cells misaligned              | [Table Issues](#table-issues)              |
+| Styles not applying                 | [Styling Issues](#styling-issues)          |
+| Embedded font charset ignored       | [Styling Issues](#styling-issues)          |
+| Memory errors                       | [Memory Issues](#memory-issues)            |
 
 ## Document Won't Open
 
@@ -52,6 +54,12 @@ app.get("/download", async (req, res) => {
     res.send(buffer);
 });
 ```
+
+### "Word found unreadable content" with embedded fonts
+
+**Cause:** In older versions of docx (&lt; 9.x), embedded fonts whose family name contained spaces or non-ASCII characters produced zip entries with those characters in the path. Word expects embedded-font paths to be plain ASCII filenames.
+
+**Solution:** Upgrade to docx 9.x or later. The library now writes embedded fonts as sequential filenames (`font1.odttf`, `font2.odttf`, …) which avoids the issue entirely. No code changes are needed — any `name` you pass to the `fonts` array continues to work as before.
 
 ### "We're sorry. We can't open document.docx"
 
@@ -255,6 +263,27 @@ const doc = new Document({
             name: "CustomFont",
             data: fs.readFileSync("./font.ttf"),
             characterSet: CharacterSet.ANSI,
+        },
+    ],
+    // ...
+});
+```
+
+### Embedded font `characterSet` ignored (non-Latin text renders incorrectly)
+
+**Cause:** In versions prior to the fix in [#3387](https://github.com/dolanmiu/docx/pull/3387), the `characterSet` option was accepted but not written to `fontTable.xml`. This caused the `w:charset` element to be missing, so Word would fall back to a default encoding.
+
+**Solution:** Upgrade to the latest version of docx. The `characterSet` property is now correctly passed through to the font table. Ensure you specify the appropriate character set for your font:
+
+```ts
+import { CharacterSet, Document } from "docx";
+
+const doc = new Document({
+    fonts: [
+        {
+            name: "MyJapaneseFont",
+            data: fs.readFileSync("./fonts/NotoSansJP.ttf"),
+            characterSet: CharacterSet.SHIFTJIS,
         },
     ],
     // ...

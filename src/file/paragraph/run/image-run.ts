@@ -24,26 +24,35 @@ import type { IMediaData } from "../../media/data";
  * Core options for image configuration.
  */
 type CoreImageOptions = {
+    /** Size, position, rotation, and flip settings for the image. Width and height are specified in pixels. */
     readonly transformation: IMediaTransformation;
+    /** Floating layout options. When set, the image is positioned freely on the page rather than inline with text. Controls text wrapping, overlap, anchoring, and z-order. */
     readonly floating?: IFloating;
+    /** Accessibility properties for the image, including a name, description (alt text), and title. */
     readonly altText?: DocPropertiesOptions;
+    /** Border/outline settings for the image, including line width, color, cap style, and compound line type. */
     readonly outline?: OutlineOptions;
+    /** Solid color fill behind the image, using either an RGB hex value or a theme scheme color. */
     readonly solidFill?: SolidFillOptions;
+    /** Marks the image as an inserted revision for change tracking. Requires an id, author name, and date. */
     readonly insertion?: IChangedAttributesProperties;
+    /** Marks the image as a deleted revision for change tracking. Requires an id, author name, and date. */
     readonly deletion?: IChangedAttributesProperties;
 };
 
 type RegularImageOptions = {
+    /** The image format. */
     readonly type: "jpg" | "png" | "gif" | "bmp";
+    /** The image data. Accepts a Buffer, Uint8Array, ArrayBuffer, or a base64-encoded data URI string. */
     readonly data: Buffer | string | Uint8Array | ArrayBuffer;
 };
 
 type SvgMediaOptions = {
+    /** The image format. Must be `"svg"` for SVG images. */
     readonly type: "svg";
+    /** The SVG image data. Accepts a Buffer, Uint8Array, ArrayBuffer, or a base64-encoded data URI string. */
     readonly data: Buffer | string | Uint8Array | ArrayBuffer;
-    /**
-     * Required in case the Word processor does not support SVG.
-     */
+    /** A non-SVG fallback image, required for Word processors that do not support SVG rendering. */
     readonly fallback: RegularImageOptions;
 };
 
@@ -93,7 +102,8 @@ const createImageData = (options: IImageOptions, key: string): Pick<IMediaData, 
  * Represents an image in a WordprocessingML document.
  *
  * ImageRun embeds an image within a run, supporting various formats
- * including JPG, PNG, GIF, BMP, and SVG.
+ * including JPG, PNG, GIF, BMP, and SVG. Optionally wraps the run in
+ * `<w:ins>` or `<w:del>` for track-change insertion/deletion markup.
  *
  * Reference: http://officeopenxml.com/drwPicInline.php
  *
@@ -147,6 +157,8 @@ export class ImageRun extends XmlComponent {
 
         const run = new Run({ children: [drawing] });
 
+        // Track-change wrappers: w:ins / w:del enclose the run so Word
+        // displays the image as an inserted or deleted revision.
         if (options.insertion) {
             super("w:ins");
             this.root.push(

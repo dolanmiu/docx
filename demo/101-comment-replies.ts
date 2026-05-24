@@ -1,4 +1,9 @@
-// Example demonstrating comment replies (threading) and resolved comments
+/**
+ * Demo 101: Comment replies (threading) and resolved comments.
+ *
+ * Shows two comment threads: one active with replies, one resolved.
+ * See docs/usage/comments.md for full documentation.
+ */
 
 import * as fs from "fs";
 import { CommentRangeEnd, CommentRangeStart, CommentReference, Document, Packer, Paragraph, TextRun } from "docx";

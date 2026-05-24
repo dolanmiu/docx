@@ -165,6 +165,7 @@ export class File {
     private readonly appProperties: AppProperties;
     private readonly styles: Styles;
     private readonly comments: Comments;
+    /** Extended comment data for reply threading and resolved state (word/commentsExtended.xml). */
     private readonly commentsExtended?: CommentsExtended;
     private readonly fontWrapper: FontWrapper;
 
@@ -179,6 +180,7 @@ export class File {
         this.numbering = new Numbering(options.numbering ? options.numbering : { config: [] });
 
         this.comments = new Comments(options.comments ?? { children: [] });
+        // Build commentsExtended.xml when comments use reply threading (parentId)
         if (this.comments.ThreadData) {
             this.commentsExtended = new CommentsExtended(this.comments.ThreadData);
         }
@@ -452,6 +454,7 @@ export class File {
         return this.comments;
     }
 
+    /** Extended comments part for reply threading. Undefined when no comment threads exist. */
     public get CommentsExtended(): CommentsExtended | undefined {
         return this.commentsExtended;
     }

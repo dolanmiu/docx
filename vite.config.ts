@@ -1,13 +1,11 @@
 import { resolve } from "path";
 import dts from "vite-plugin-dts";
 import { nodePolyfills } from "vite-plugin-node-polyfills";
-import tsconfigPaths from "vite-tsconfig-paths";
 import { configDefaults, defineConfig } from "vitest/config";
 import { copyFileSync } from "node:fs";
 
 export default defineConfig({
     plugins: [
-        tsconfigPaths(),
         dts({
             rollupTypes: true,
             afterBuild: () => {
@@ -25,6 +23,7 @@ export default defineConfig({
         }),
     ],
     resolve: {
+        tsconfigPaths: true,
         alias: {
             "@util/": `${resolve(__dirname, "src/util")}/`,
             "@export/": `${resolve(__dirname, "src/export")}/`,

@@ -311,6 +311,25 @@ const image = new ImageRun({
 | title       | `string` | Required | `My awesome title of my image`       |
 | description | `string` | Required | `My awesome description of my image` |
 
+## Track Changes
+
+Images can be marked as inserted or deleted revisions for change tracking. Pass an `insertion` or `deletion` property to `ImageRun`:
+
+```ts
+new ImageRun({
+    type: "png",
+    data: fs.readFileSync("./image.png"),
+    transformation: { width: 120, height: 120 },
+    insertion: {
+        id: 30,
+        author: "Firstname Lastname",
+        date: "2020-10-06T09:00:00Z",
+    },
+});
+```
+
+See [Change Tracking – Image Revisions](usage/change-tracking.md#image-revisions) for full details and examples.
+
 ## Examples
 
 ### Add image to the document
