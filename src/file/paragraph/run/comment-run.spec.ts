@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { Formatter } from "@export/formatter";
 
+import { Table, TableCell, TableRow } from "../../table";
 import { Paragraph } from "../paragraph";
 import { Comment, CommentRangeEnd, CommentRangeStart, CommentReference, Comments, commentIdToParaId } from "./comment-run";
 
@@ -93,6 +94,23 @@ describe("Comment", () => {
             expect(tree).to.deep.equal({
                 "w:comment": { _attr: { "w:id": 0, "w:date": "1999-01-01T00:00:00.000Z" } },
             });
+        });
+
+        it("should not inject paraId when comment contains only non-paragraph children", () => {
+            const table = new Table({
+                rows: [new TableRow({ children: [new TableCell({ children: [new Paragraph("cell")] })] })],
+            });
+            const component = new Comment({ id: 0, children: [table], date: new Date("1999-01-01T00:00:00.000Z") }, "00000001");
+            const tree = new Formatter().format(component);
+            const serialized = JSON.stringify(tree);
+            expect(serialized).to.not.contain("w14:paraId");
+        });
+
+        it("should not inject paraId when comment contains only an empty paragraph", () => {
+            const component = new Comment({ id: 0, children: [new Paragraph({})], date: new Date("1999-01-01T00:00:00.000Z") }, "00000001");
+            const tree = new Formatter().format(component);
+            const serialized = JSON.stringify(tree);
+            expect(serialized).to.not.contain("w14:paraId");
         });
 
         it("should create by using default date", () => {

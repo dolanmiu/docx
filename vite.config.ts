@@ -7,7 +7,7 @@ import { copyFileSync } from "node:fs";
 export default defineConfig({
     plugins: [
         dts({
-            rollupTypes: true,
+            bundleTypes: true,
             afterBuild: () => {
                 // https://github.com/dolanmiu/docx/pull/2883
                 // To pass publint - `npx publint@latest`
@@ -70,7 +70,7 @@ export default defineConfig({
             reporter: ["text", "json", "html"],
             thresholds: {
                 statements: 100,
-                branches: 99.68,
+                branches: 100,
                 functions: 100,
                 lines: 100,
             },
