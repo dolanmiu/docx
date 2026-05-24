@@ -37,6 +37,10 @@ const doc = new Document({
 });
 ```
 
+## Font Names
+
+The `name` property can contain spaces and non-ASCII characters (e.g. `"EB Garamond"`, `"Noto Sans JP"`). Internally, docx uses sequential filenames (`font1.odttf`, `font2.odttf`, …) for the embedded font data in the zip package, so the font name you choose has no effect on file compatibility.
+
 ## Font Options
 
 | Property     | Type           | Notes    | Description                |
@@ -46,6 +50,8 @@ const doc = new Document({
 | characterSet | `CharacterSet` | Optional | Character set for the font |
 
 ## Character Sets
+
+The `characterSet` property controls the `w:charset` element in `fontTable.xml`, which tells Word how to interpret the font's character encoding. While optional, specifying the correct character set is important for non-Latin scripts — without it, Word may fall back to a default encoding and render characters incorrectly.
 
 Available character sets:
 

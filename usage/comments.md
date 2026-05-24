@@ -50,15 +50,17 @@ const doc = new Document({
 
 ## Comment Options
 
-| Property | Type          | Notes    | Description                                      |
-| -------- | ------------- | -------- | ------------------------------------------------ |
-| id       | `number`      | Required | Unique identifier                                |
-| author   | `string`      | Optional | Comment author name                              |
-| date     | `Date`        | Optional | Comment timestamp                                |
-| initials | `string`      | Optional | Author initials                                  |
-| children | `Paragraph[]` | Required | Comment content                                  |
-| parentId | `number`      | Optional | ID of parent comment for reply threading         |
-| resolved | `boolean`     | Optional | Whether the comment thread is marked as resolved |
+| Property | Type          | Notes    | Description                                                                                      |
+| -------- | ------------- | -------- | ------------------------------------------------------------------------------------------------ |
+| id       | `number`      | Required | Unique identifier                                                                                |
+| author   | `string`      | Optional | Comment author name                                                                              |
+| date     | `Date`        | Optional | Comment timestamp                                                                                |
+| initials | `string`      | Optional | Author initials                                                                                  |
+| children | `Paragraph[]` | Required | Comment content                                                                                  |
+| parentId | `number`      | Optional | ID of parent comment for reply threading                                                         |
+| resolved | `boolean`     | Optional | Whether the comment thread is marked as resolved. The entire thread displays as resolved in Word |
+
+?> Comments in the `children` array can be passed as plain objects or as `new Comment({...})` instances — both forms are equivalent.
 
 ## Point Comment
 
@@ -119,7 +121,7 @@ const doc = new Document({
 
 ## Reply Threads
 
-Create comment replies using the `parentId` property to build a thread. Reply comments must also have `CommentRangeStart`, `CommentRangeEnd`, and `CommentReference` wrapping the same text as their parent:
+Create comment replies using the `parentId` property to build a thread. Reply comments must also have `CommentRangeStart`, `CommentRangeEnd`, and `CommentReference` wrapping the same text as their parent — Word uses these to anchor each comment to document text, and without them the comment has no visible anchor and may be discarded:
 
 ```ts
 const doc = new Document({
@@ -172,7 +174,7 @@ const doc = new Document({
 
 ## Resolved Comments
 
-Mark a comment thread as resolved using the `resolved` property.
+Mark a comment thread as resolved using the `resolved` property. Setting `resolved: true` on any comment in a thread causes Word to display the entire thread as resolved. For clarity, set it on the root comment:
 
 ```ts
 comments: {
@@ -181,6 +183,7 @@ comments: {
             id: 0,
             author: "Charlie",
             date: new Date("2024-01-15"),
+            resolved: true, // Marks the entire thread as resolved
             children: [new Paragraph("This timeline needs updating.")],
         },
         {
@@ -188,7 +191,6 @@ comments: {
             author: "Diana",
             date: new Date("2024-01-16"),
             parentId: 0,
-            resolved: true, // Marks this thread as resolved
             children: [new Paragraph("Done - updated the dates.")],
         },
     ],
