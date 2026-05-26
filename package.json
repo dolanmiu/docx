@@ -91,7 +91,7 @@
         "eslint-plugin-unicorn": "^63.0.0",
         "execa": "^9.4.0",
         "glob": "^13.0.3",
-        "inquirer": "^13.2.2",
+        "inquirer": "^14.0.0",
         "jiti": "^2.3.3",
         "jsdom": "^29.0.0",
         "pre-commit": "^1.2.2",
