@@ -82,7 +82,7 @@
         "@vitest/ui": "^4.1.7",
         "cspell": "^10.0.0",
         "docsify-cli": "^4.3.0",
-        "eslint": "^9.13.0",
+        "eslint": "^10.4.0",
         "eslint-import-resolver-typescript": "^4.3.2",
         "eslint-plugin-functional": "^9.0.3",
         "eslint-plugin-import": "^2.26.0",
