@@ -72,6 +72,7 @@
     },
     "homepage": "https://docx.js.org",
     "devDependencies": {
+        "@microsoft/api-extractor": "^7.58.7",
         "@types/inquirer": "^9.0.3",
         "@types/unzipper": "^0.10.4",
         "@types/xml": "^1.0.8",
