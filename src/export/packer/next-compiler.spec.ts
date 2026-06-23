@@ -218,6 +218,30 @@ describe("Compiler", () => {
             expect(commentsIdsText).to.contain('w16cid:durableId="33334444"');
         });
 
+        it("should emit commentsIds.xml falling back to paraId for comments without a durableId", { timeout: 99999999 }, async () => {
+            const file = new File({
+                sections: [],
+                comments: {
+                    children: [
+                        { id: 0, children: [new Paragraph("with durable")], durableId: "12AB34CD" },
+                        { id: 1, children: [new Paragraph("without durable")] },
+                    ],
+                },
+            });
+            const zipFile = compiler.compile(file);
+            const fileNames = Object.keys(zipFile.files).map((f) => zipFile.files[f].name);
+
+            expect(fileNames).to.include("word/commentsIds.xml");
+
+            const commentsIdsText = await zipFile.file("word/commentsIds.xml")?.async("text");
+            // Comment WITH a durableId keeps its durableId (paraId 00000001 for id 0)
+            expect(commentsIdsText).to.contain('w16cid:paraId="00000001"');
+            expect(commentsIdsText).to.contain('w16cid:durableId="12AB34CD"');
+            // Comment WITHOUT a durableId falls back to its generated paraId (00000002 for id 1)
+            expect(commentsIdsText).to.contain('w16cid:paraId="00000002"');
+            expect(commentsIdsText).to.contain('w16cid:durableId="00000002"');
+        });
+
         it("should call the format method X times equalling X files to be formatted", () => {
             // This test is required because before, there was a case where Document was formatted twice, which was inefficient
             // This also caused issues such as running prepForXml multiple times as format() was ran multiple times.

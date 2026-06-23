@@ -453,6 +453,13 @@ describe("File", () => {
             });
 
             expect(doc.CommentsIds).to.not.be.undefined;
+
+            const tree = new Formatter().format(doc.CommentsIds!);
+            const root = tree["w16cid:commentsIds"] as readonly Record<string, { readonly _attr: Record<string, string> }>[];
+            const commentId = root.find((entry) => "w16cid:commentId" in entry)?.["w16cid:commentId"];
+            expect(commentId).to.not.be.undefined;
+            expect(commentId!._attr["w16cid:durableId"]).to.equal("12AB34CD");
+            expect(commentId!._attr["w16cid:paraId"]).to.be.a("string");
         });
 
         it("should create CommentsIds when threaded comments have durableId", () => {
