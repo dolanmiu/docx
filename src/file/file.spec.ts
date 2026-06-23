@@ -443,6 +443,42 @@ describe("File", () => {
 
             expect(doc.CommentsExtended).to.be.undefined;
         });
+
+        it("should create CommentsIds when a single (non-threaded) comment has durableId", () => {
+            const doc = new File({
+                comments: {
+                    children: [{ id: 0, children: [new Paragraph("comment")], durableId: "12AB34CD" }],
+                },
+                sections: [],
+            });
+
+            expect(doc.CommentsIds).to.not.be.undefined;
+        });
+
+        it("should create CommentsIds when threaded comments have durableId", () => {
+            const doc = new File({
+                comments: {
+                    children: [
+                        { id: 0, children: [new Paragraph("parent")], durableId: "11112222" },
+                        { id: 1, children: [new Paragraph("reply")], parentId: 0, durableId: "33334444" },
+                    ],
+                },
+                sections: [],
+            });
+
+            expect(doc.CommentsIds).to.not.be.undefined;
+        });
+
+        it("should not create CommentsIds when no durableId", () => {
+            const doc = new File({
+                comments: {
+                    children: [{ id: 0, children: [new Paragraph("comment")] }],
+                },
+                sections: [],
+            });
+
+            expect(doc.CommentsIds).to.be.undefined;
+        });
     });
 
     describe("#numbering", () => {
