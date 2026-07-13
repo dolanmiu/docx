@@ -26,8 +26,10 @@ import { CommentsExtended } from "./paragraph/run/comments-extended";
 import { Relationships } from "./relationships";
 import { Settings } from "./settings";
 import { Styles } from "./styles";
+import { DocumentDefaults } from "./styles/defaults/document-defaults";
 import { ExternalStylesFactory } from "./styles/external-styles-factory";
 import { DefaultStylesFactory } from "./styles/factory";
+import { Style } from "./styles/style/style";
 
 /**
  * Options for a document section.
@@ -212,10 +214,22 @@ export class File {
             const defaultFactory = new DefaultStylesFactory();
             const defaultStyles = defaultFactory.newInstance(options.styles?.default);
             const externalFactory = new ExternalStylesFactory();
-            const externalStyles = externalFactory.newInstance(options.externalStyles);
+            const { externalStyleIds, hasDocDefaults, ...externalStyles } = externalFactory.newInstance(options.externalStyles);
+            const externalStyleIdSet = new Set(externalStyleIds);
+
+            // External styles win: drop any built-in default the external styles already provide. Otherwise the
+            // merged styles.xml carries duplicate `w:docDefaults`/`w:styleId` (invalid OOXML, and Word applies the
+            // built-in one, silently clobbering the user's style). See dolanmiu/docx#3422.
+            const deduplicatedDefaultStyles = (defaultStyles.importedStyles ?? []).filter((style) => {
+                if (hasDocDefaults && style instanceof DocumentDefaults) {
+                    return false;
+                }
+                return !(style instanceof Style && style.styleId !== undefined && externalStyleIdSet.has(style.styleId));
+            });
+
             this.styles = new Styles({
                 ...externalStyles,
-                importedStyles: [...defaultStyles.importedStyles!, ...externalStyles.importedStyles!],
+                importedStyles: [...deduplicatedDefaultStyles, ...(externalStyles.importedStyles ?? [])],
             });
         } else if (options.styles) {
             const stylesFactory = new DefaultStylesFactory();

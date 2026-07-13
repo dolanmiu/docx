@@ -161,8 +161,12 @@ class StyleAttributes extends XmlAttributeComponent<IStyleAttributes> {
  * ```
  */
 export class Style extends XmlComponent {
+    /** The `w:styleId` of this style, exposed so callers can de-duplicate styles by id. */
+    public readonly styleId?: string;
+
     public constructor(attributes: IStyleAttributes, options: IStyleOptions) {
         super("w:style");
+        this.styleId = attributes.styleId;
         this.root.push(new StyleAttributes(attributes));
         if (options.name) {
             this.root.push(new Name(options.name));

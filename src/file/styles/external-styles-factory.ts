@@ -14,6 +14,19 @@ import { ImportedRootElementAttributes, type ImportedXmlComponent, convertToXmlC
 import type { IStylesOptions } from "./styles";
 
 /**
+ * Result of parsing external styles.
+ *
+ * Extends {@link IStylesOptions} with the identities needed to de-duplicate the
+ * imported styles against the library's built-in default styles.
+ */
+export type IExternalStylesResult = IStylesOptions & {
+    /** The `w:styleId`s declared by the external styles. */
+    readonly externalStyleIds: readonly string[];
+    /** Whether the external styles declare their own `w:docDefaults`. */
+    readonly hasDocDefaults: boolean;
+};
+
+/**
  * Factory for creating styles from external XML sources.
  *
  * This factory parses styles from XML (typically from a styles.xml file)
@@ -53,7 +66,7 @@ export class ExternalStylesFactory {
      * @returns Styles object containing all parsed styles
      * @throws Error if styles element cannot be found in the XML
      */
-    public newInstance(xmlData: string): IStylesOptions {
+    public newInstance(xmlData: string): IExternalStylesResult {
         const xmlObj = xml2js(xmlData, { compact: false }) as XMLElement;
 
         let stylesXmlElement: XMLElement | undefined;
@@ -68,9 +81,16 @@ export class ExternalStylesFactory {
 
         const stylesElements = stylesXmlElement.elements || [];
 
+        const externalStyleIds = stylesElements
+            .filter((childElm) => childElm.name === "w:style" && childElm.attributes?.["w:styleId"] !== undefined)
+            .map((childElm) => String(childElm.attributes!["w:styleId"]));
+        const hasDocDefaults = stylesElements.some((childElm) => childElm.name === "w:docDefaults");
+
         return {
             initialStyles: new ImportedRootElementAttributes(stylesXmlElement.attributes),
             importedStyles: stylesElements.map((childElm) => convertToXmlComponent(childElm) as ImportedXmlComponent),
+            externalStyleIds,
+            hasDocDefaults,
         };
     }
 }

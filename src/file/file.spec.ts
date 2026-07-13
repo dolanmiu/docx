@@ -546,6 +546,37 @@ describe("File", () => {
 
             expect(doc.Styles).to.not.be.undefined;
         });
+
+        it("should not duplicate docDefaults or styleIds that the external styles override (#3422)", () => {
+            const doc = new File({
+                sections: [],
+                externalStyles: `
+                    <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+                    <w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+                        <w:docDefaults>
+                            <w:rPrDefault><w:rPr><w:sz w:val="20"/></w:rPr></w:rPrDefault>
+                        </w:docDefaults>
+                        <w:style w:type="paragraph" w:styleId="Title">
+                            <w:name w:val="Custom Title"/>
+                            <w:rPr><w:sz w:val="72"/></w:rPr>
+                        </w:style>
+                    </w:styles>`,
+            });
+
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const styles: readonly any[] = (new Formatter().format(doc.Styles) as any)["w:styles"];
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const stylesWithId = (id: string): readonly any[] =>
+                styles.filter((element) => Array.isArray(element["w:style"]) && element["w:style"][0]?._attr?.["w:styleId"] === id);
+
+            // The external docDefaults and Title replace the built-in ones instead of being appended alongside them.
+            expect(styles.filter((element) => element["w:docDefaults"] !== undefined)).to.have.length(1);
+            expect(stylesWithId("Title")).to.have.length(1);
+            // The surviving Title is the external one, not the built-in (which is named "Title", not "Custom Title").
+            expect(JSON.stringify(stylesWithId("Title")[0])).to.contain("Custom Title");
+            // Built-in defaults that the external styles do NOT override are still present.
+            expect(stylesWithId("Heading2")).to.have.length(1);
+        });
     });
 
     describe("#features", () => {
