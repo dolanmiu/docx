@@ -220,7 +220,7 @@ export class File {
             // External styles win: drop any built-in default the external styles already provide. Otherwise the
             // merged styles.xml carries duplicate `w:docDefaults`/`w:styleId` (invalid OOXML, and Word applies the
             // built-in one, silently clobbering the user's style). See dolanmiu/docx#3422.
-            const deduplicatedDefaultStyles = (defaultStyles.importedStyles ?? []).filter((style) => {
+            const deduplicatedDefaultStyles = defaultStyles.importedStyles!.filter((style) => {
                 if (hasDocDefaults && style instanceof DocumentDefaults) {
                     return false;
                 }
@@ -229,7 +229,7 @@ export class File {
 
             this.styles = new Styles({
                 ...externalStyles,
-                importedStyles: [...deduplicatedDefaultStyles, ...(externalStyles.importedStyles ?? [])],
+                importedStyles: [...deduplicatedDefaultStyles, ...externalStyles.importedStyles!],
             });
         } else if (options.styles) {
             const stylesFactory = new DefaultStylesFactory();

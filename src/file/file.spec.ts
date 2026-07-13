@@ -577,6 +577,60 @@ describe("File", () => {
             // Built-in defaults that the external styles do NOT override are still present.
             expect(stylesWithId("Heading2")).to.have.length(1);
         });
+
+        it("should keep the built-in docDefaults when the external styles omit their own (#3422)", () => {
+            const doc = new File({
+                sections: [],
+                externalStyles: `
+                    <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+                    <w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+                        <w:style w:type="paragraph" w:styleId="Title">
+                            <w:name w:val="Custom Title"/>
+                        </w:style>
+                    </w:styles>`,
+            });
+
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const styles: readonly any[] = (new Formatter().format(doc.Styles) as any)["w:styles"];
+
+            // Without external docDefaults, the built-in docDefaults must survive (exactly one, not dropped).
+            expect(styles.filter((element) => element["w:docDefaults"] !== undefined)).to.have.length(1);
+        });
+
+        it("should replace every overridden built-in style while adding unknown external ids (#3422)", () => {
+            const doc = new File({
+                sections: [],
+                externalStyles: `
+                    <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+                    <w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+                        <w:style w:type="paragraph" w:styleId="Title">
+                            <w:name w:val="Custom Title"/>
+                        </w:style>
+                        <w:style w:type="paragraph" w:styleId="Heading1">
+                            <w:name w:val="Custom Heading 1"/>
+                        </w:style>
+                        <w:style w:type="paragraph" w:styleId="MyCustomStyle">
+                            <w:name w:val="My Custom Style"/>
+                        </w:style>
+                    </w:styles>`,
+            });
+
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const styles: readonly any[] = (new Formatter().format(doc.Styles) as any)["w:styles"];
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const stylesWithId = (id: string): readonly any[] =>
+                styles.filter((element) => Array.isArray(element["w:style"]) && element["w:style"][0]?._attr?.["w:styleId"] === id);
+
+            // Both overridden built-ins collapse to their single external replacement.
+            expect(stylesWithId("Title")).to.have.length(1);
+            expect(JSON.stringify(stylesWithId("Title")[0])).to.contain("Custom Title");
+            expect(stylesWithId("Heading1")).to.have.length(1);
+            expect(JSON.stringify(stylesWithId("Heading1")[0])).to.contain("Custom Heading 1");
+            // An external style with no built-in counterpart is added, removing nothing.
+            expect(stylesWithId("MyCustomStyle")).to.have.length(1);
+            // Unrelated built-ins are untouched.
+            expect(stylesWithId("Heading2")).to.have.length(1);
+        });
     });
 
     describe("#features", () => {
