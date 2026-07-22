@@ -135,7 +135,7 @@ describe("TableCellMargin", () => {
 
             const tree = new Formatter().format(cellMargin!);
             expect(tree).to.deep.equal({
-                "w:tcMar": [{ "w:left": { _attr: { "w:type": "pct", "w:w": "5%" } } }],
+                "w:tcMar": [{ "w:left": { _attr: { "w:type": "pct", "w:w": 250 } } }],
             });
         });
     });
