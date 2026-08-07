@@ -37,6 +37,8 @@ export type ICommentOptions = {
     readonly parentId?: number;
     /** Whether the comment thread is marked as resolved */
     readonly resolved?: boolean;
+    /** Stable comment id written to word/commentsIds.xml (w16cid:durableId). Preserved by Word across edits, unlike w:id. */
+    readonly durableId?: string;
 };
 
 /**
@@ -330,6 +332,16 @@ export type ICommentThreadData = {
 };
 
 /**
+ * Comment id data for a single comment, used to build commentsIds.xml.
+ */
+export type ICommentIdData = {
+    /** 8-character uppercase hex identifier linking to w14:paraId on the comment's paragraph */
+    readonly paraId: string;
+    /** Stable comment id preserved by Word across edits (maps to w16cid:durableId) */
+    readonly durableId: string;
+};
+
+/**
  * Converts a comment ID to a deterministic 8-character uppercase hex paraId.
  */
 export const commentIdToParaId = (id: number): string => (id + 1).toString(16).toUpperCase().padStart(8, "0");
@@ -375,6 +387,7 @@ export const commentIdToParaId = (id: number): string => (id + 1).toString(16).t
 export class Comments extends XmlComponent {
     private readonly relationships: Relationships;
     private readonly threadData?: readonly ICommentThreadData[];
+    private readonly commentIdsData?: readonly ICommentIdData[];
 
     public constructor({ children }: ICommentsOptions) {
         super("w:comments");
@@ -415,22 +428,33 @@ export class Comments extends XmlComponent {
             }),
         );
 
-        // When any comment uses parentId, generate paraIds for all comments
-        // and build threadData for CommentsExtended (commentsExtended.xml)
+        // Generate paraIds for all comments when reply threading is active (parentId)
+        // or any comment carries a durableId. paraIds back both commentsExtended.xml
+        // (threading) and commentsIds.xml (durable ids).
         const hasThreading = children.some((child) => child.parentId !== undefined);
+        const hasDurableIds = children.some((child) => child.durableId !== undefined);
 
-        if (hasThreading) {
+        if (hasThreading || hasDurableIds) {
             const idToParaId = new Map<number, string>(children.map((child) => [child.id, commentIdToParaId(child.id)]));
 
             for (const child of children) {
                 this.root.push(new Comment(child, idToParaId.get(child.id)));
             }
 
-            this.threadData = children.map((child) => ({
-                paraId: idToParaId.get(child.id)!,
-                parentParaId: child.parentId !== undefined ? idToParaId.get(child.parentId) : undefined,
-                done: child.resolved,
-            }));
+            if (hasThreading) {
+                this.threadData = children.map((child) => ({
+                    paraId: idToParaId.get(child.id)!,
+                    parentParaId: child.parentId !== undefined ? idToParaId.get(child.parentId) : undefined,
+                    done: child.resolved,
+                }));
+            }
+
+            if (hasDurableIds) {
+                this.commentIdsData = children.map((child) => ({
+                    paraId: idToParaId.get(child.id)!,
+                    durableId: child.durableId ?? idToParaId.get(child.id)!,
+                }));
+            }
         } else {
             for (const child of children) {
                 this.root.push(new Comment(child));
@@ -447,5 +471,10 @@ export class Comments extends XmlComponent {
     /** Thread data for commentsExtended.xml, or undefined when no comments use parentId. */
     public get ThreadData(): readonly ICommentThreadData[] | undefined {
         return this.threadData;
+    }
+
+    /** Comment id data for commentsIds.xml, or undefined when no comments carry a durableId. */
+    public get CommentIdsData(): readonly ICommentIdData[] | undefined {
+        return this.commentIdsData;
     }
 }

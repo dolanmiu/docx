@@ -10,7 +10,7 @@
  */
 import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
 
-import type { ICommentThreadData } from "./comment-run";
+import type { ICommentIdData, ICommentThreadData } from "./comment-run";
 
 /**
  * @internal
@@ -91,6 +91,83 @@ export class CommentsExtended extends XmlComponent {
 
         for (const data of threadData) {
             this.root.push(new CommentEx(data));
+        }
+    }
+}
+
+/**
+ * @internal
+ */
+class CommentIdAttributes extends XmlAttributeComponent<{
+    readonly paraId: string;
+    readonly durableId: string;
+}> {
+    protected readonly xmlKeys = {
+        paraId: "w16cid:paraId",
+        durableId: "w16cid:durableId",
+    };
+}
+
+/**
+ * @internal
+ */
+class CommentId extends XmlComponent {
+    public constructor(options: ICommentIdData) {
+        super("w16cid:commentId");
+
+        this.root.push(
+            new CommentIdAttributes({
+                paraId: options.paraId,
+                durableId: options.durableId,
+            }),
+        );
+    }
+}
+
+/**
+ * @internal
+ */
+class CommentsIdsAttributes extends XmlAttributeComponent<{
+    readonly "xmlns:w16cid"?: string;
+    readonly "xmlns:mc"?: string;
+    readonly "mc:Ignorable"?: string;
+}> {
+    protected readonly xmlKeys = {
+        "xmlns:w16cid": "xmlns:w16cid",
+        "xmlns:mc": "xmlns:mc",
+        "mc:Ignorable": "mc:Ignorable",
+    };
+}
+
+/**
+ * Represents the commentsIds part (word/commentsIds.xml).
+ *
+ * Contains w16cid:commentId elements that map each comment's volatile paraId
+ * to a stable w16cid:durableId preserved by Word across edits.
+ *
+ * ## XSD Schema (wml-cid.xsd)
+ * ```xml
+ * <xsd:complexType name="CT_CommentsIds">
+ *   <xsd:sequence>
+ *     <xsd:element name="commentId" type="CT_CommentId" minOccurs="0" maxOccurs="unbounded"/>
+ *   </xsd:sequence>
+ * </xsd:complexType>
+ * ```
+ */
+export class CommentsIds extends XmlComponent {
+    public constructor(commentIdsData: readonly ICommentIdData[]) {
+        super("w16cid:commentsIds");
+
+        this.root.push(
+            new CommentsIdsAttributes({
+                "xmlns:w16cid": "http://schemas.microsoft.com/office/word/2016/wordml/cid",
+                "xmlns:mc": "http://schemas.openxmlformats.org/markup-compatibility/2006",
+                "mc:Ignorable": "w16cid",
+            }),
+        );
+
+        for (const data of commentIdsData) {
+            this.root.push(new CommentId(data));
         }
     }
 }
