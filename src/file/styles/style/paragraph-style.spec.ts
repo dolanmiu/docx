@@ -106,6 +106,43 @@ describe("ParagraphStyle", () => {
             });
         });
 
+        it("should not include w:pStyle for paragraph styles with numbering", () => {
+            const style = new StyleForParagraph({
+                id: "myStyleId",
+                paragraph: {
+                    numbering: {
+                        reference: "test-reference",
+                        level: 0,
+                    },
+                },
+            });
+            const tree = new Formatter().format(style, {
+                file: {
+                    Numbering: {
+                        createConcreteNumberingInstance: (_: string, __: number) => undefined,
+                    },
+                } as never,
+                viewWrapper: {},
+                stack: [],
+            });
+
+            expect(tree).to.deep.equal({
+                "w:style": [
+                    { _attr: { "w:type": "paragraph", "w:styleId": "myStyleId" } },
+                    {
+                        "w:pPr": [
+                            {
+                                "w:numPr": [
+                                    { "w:ilvl": { _attr: { "w:val": 0 } } },
+                                    { "w:numId": { _attr: { "w:val": "{test-reference-0}" } } },
+                                ],
+                            },
+                        ],
+                    },
+                ],
+            });
+        });
+
         it("#center", () => {
             const style = new StyleForParagraph({
                 id: "myStyleId",
