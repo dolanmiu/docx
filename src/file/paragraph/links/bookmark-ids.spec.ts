@@ -29,4 +29,29 @@ describe("BookmarkIds", () => {
 
         expect(second.getId("a")).to.equal(1);
     });
+
+    it("should not allocate an id that was reserved", () => {
+        const ids = new BookmarkIds();
+        ids.reserve(1);
+
+        expect(ids.getId("first")).to.equal(2);
+    });
+
+    it("should skip past a run of reserved ids", () => {
+        const ids = new BookmarkIds();
+        ids.reserve(1);
+        ids.reserve(2);
+        ids.reserve(4);
+
+        expect(ids.getId("first")).to.equal(3);
+        expect(ids.getId("second")).to.equal(5);
+    });
+
+    it("should keep a reserved id that was already allocated", () => {
+        const ids = new BookmarkIds();
+        const allocated = ids.getId("first");
+        ids.reserve(allocated);
+
+        expect(ids.getId("first")).to.equal(allocated);
+    });
 });

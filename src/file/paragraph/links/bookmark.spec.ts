@@ -87,4 +87,14 @@ describe("Bookmark", () => {
 
         expect(tree["w:bookmarkEnd"]._attr["w:id"]).to.equal(7);
     });
+
+    // An explicit id used to be emitted without telling the registry, so the next
+    // allocated bookmark could be handed the same number.
+    it("should not allocate an id already taken by an explicit one", () => {
+        const explicit = new Formatter().format(new BookmarkStart("fixed", 1), context);
+        const implicit = new Formatter().format(new Bookmark({ id: "other", children: [new TextRun("x")] }).start, context);
+
+        expect(explicit["w:bookmarkStart"]._attr["w:id"]).to.equal(1);
+        expect(implicit["w:bookmarkStart"]._attr["w:id"]).to.equal(2);
+    });
 });

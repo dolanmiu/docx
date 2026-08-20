@@ -519,8 +519,13 @@ describe("File", () => {
             expect(doc.BookmarkIds).to.not.be.undefined;
         });
 
-        it("should number bookmarks from one for each document", () => {
-            expect(new File({ sections: [] }).BookmarkIds.getId("anchor")).to.equal(1);
+        it("should reuse a bookmark id within one document and restart in the next", () => {
+            const doc = new File({ sections: [] });
+
+            expect(doc.BookmarkIds.getId("anchor")).to.equal(1);
+            expect(doc.BookmarkIds.getId("other")).to.equal(2);
+            expect(doc.BookmarkIds.getId("anchor")).to.equal(1);
+
             expect(new File({ sections: [] }).BookmarkIds.getId("anchor")).to.equal(1);
         });
     });

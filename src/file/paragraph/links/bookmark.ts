@@ -119,12 +119,13 @@ export class BookmarkStart extends XmlComponent {
     }
 
     public prepForXml(context: IContext): IXmlableObject | undefined {
-        this.root.push(
-            new BookmarkStartAttributes({
-                name: this.name,
-                id: this.linkId ?? context.file.BookmarkIds.getId(this.name),
-            }),
-        );
+        const id = this.linkId ?? context.file.BookmarkIds.getId(this.name);
+
+        // Reserving an allocated id is a no-op; an explicit one has to be recorded
+        // so it is not handed to another bookmark later in the document.
+        context.file.BookmarkIds.reserve(id);
+
+        this.root.push(new BookmarkStartAttributes({ name: this.name, id }));
 
         return super.prepForXml(context);
     }
@@ -170,11 +171,11 @@ export class BookmarkEnd extends XmlComponent {
     }
 
     public prepForXml(context: IContext): IXmlableObject | undefined {
-        this.root.push(
-            new BookmarkEndAttributes({
-                id: typeof this.nameOrLinkId === "number" ? this.nameOrLinkId : context.file.BookmarkIds.getId(this.nameOrLinkId),
-            }),
-        );
+        const id = typeof this.nameOrLinkId === "number" ? this.nameOrLinkId : context.file.BookmarkIds.getId(this.nameOrLinkId);
+
+        context.file.BookmarkIds.reserve(id);
+
+        this.root.push(new BookmarkEndAttributes({ id }));
 
         return super.prepForXml(context);
     }
