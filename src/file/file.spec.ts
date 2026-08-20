@@ -516,6 +516,12 @@ describe("File", () => {
             expect(doc.FootNotes).to.not.be.undefined;
             expect(doc.Settings).to.not.be.undefined;
             expect(doc.Comments).to.not.be.undefined;
+            expect(doc.BookmarkIds).to.not.be.undefined;
+        });
+
+        it("should number bookmarks from one for each document", () => {
+            expect(new File({ sections: [] }).BookmarkIds.getId("anchor")).to.equal(1);
+            expect(new File({ sections: [] }).BookmarkIds.getId("anchor")).to.equal(1);
         });
     });
 

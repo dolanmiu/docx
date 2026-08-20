@@ -6,7 +6,7 @@ import type { IContext } from "@file/xml-components";
 import type { IViewWrapper } from "../../document-wrapper";
 import type { File } from "../../file";
 import { TextRun } from "../run";
-import { Bookmark, BookmarkStart } from "./bookmark";
+import { Bookmark, BookmarkEnd, BookmarkStart } from "./bookmark";
 import { BookmarkIds } from "./bookmark-ids";
 
 const documentContext = (): IContext => ({
@@ -76,9 +76,15 @@ describe("Bookmark", () => {
         expect(new Formatter().format(second.start, otherDocument)["w:bookmarkStart"]._attr["w:id"]).to.equal(1);
     });
 
-    it("should keep an explicitly supplied id", () => {
+    it("should keep an explicitly supplied id on the start element", () => {
         const tree = new Formatter().format(new BookmarkStart("named", 7), context);
 
         expect(tree["w:bookmarkStart"]._attr["w:id"]).to.equal(7);
+    });
+
+    it("should keep an explicitly supplied id on the end element", () => {
+        const tree = new Formatter().format(new BookmarkEnd(7), context);
+
+        expect(tree["w:bookmarkEnd"]._attr["w:id"]).to.equal(7);
     });
 });
