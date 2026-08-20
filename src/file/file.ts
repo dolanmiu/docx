@@ -21,6 +21,7 @@ import type { Footer, Header } from "./header";
 import { HeaderWrapper, type IDocumentHeader } from "./header-wrapper";
 import { Media } from "./media";
 import { Numbering } from "./numbering";
+import { BookmarkIds } from "./paragraph/links/bookmark-ids";
 import { Comments } from "./paragraph/run/comment-run";
 import { CommentsExtended, CommentsIds } from "./paragraph/run/comments-extended";
 import { Relationships } from "./relationships";
@@ -156,6 +157,7 @@ export class File {
     private readonly coreProperties: CoreProperties;
     private readonly numbering: Numbering;
     private readonly media: Media;
+    private readonly bookmarkIds = new BookmarkIds();
     private readonly fileRelationships: Relationships;
     private readonly footnotesWrapper: FootnotesWrapper;
     private readonly endnotesWrapper: EndnotesWrapper;
@@ -428,6 +430,10 @@ export class File {
 
     public get Media(): Media {
         return this.media;
+    }
+
+    public get BookmarkIds(): BookmarkIds {
+        return this.bookmarkIds;
     }
 
     public get FileRelationships(): Relationships {

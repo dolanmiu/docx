@@ -12,6 +12,7 @@ import { ShadingType } from "../shading";
 import { AlignmentType, HeadingLevel, LeaderType, PageBreak, TabStopPosition, TabStopType } from "./formatting";
 import { FrameAnchorType } from "./frame";
 import { Bookmark, ExternalHyperlink } from "./links";
+import { BookmarkIds } from "./links/bookmark-ids";
 import { Paragraph } from "./paragraph";
 import { TextRun } from "./run";
 
@@ -717,13 +718,18 @@ describe("Paragraph", () => {
                 }),
             ],
         });
-        const tree = new Formatter().format(paragraph);
+        const tree = new Formatter().format(paragraph, {
+            file: { BookmarkIds: new BookmarkIds() } as unknown as File,
+            viewWrapper: {} as unknown as IViewWrapper,
+            stack: [],
+        });
+
         expect(tree).to.deep.equal({
             "w:p": [
                 {
                     "w:bookmarkStart": {
                         _attr: {
-                            "w:id": -101,
+                            "w:id": 1,
                             "w:name": "test-id",
                         },
                     },
@@ -745,7 +751,7 @@ describe("Paragraph", () => {
                 {
                     "w:bookmarkEnd": {
                         _attr: {
-                            "w:id": -101,
+                            "w:id": 1,
                         },
                     },
                 },
