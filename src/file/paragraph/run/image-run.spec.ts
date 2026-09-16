@@ -1026,6 +1026,72 @@ describe("ImageRun", () => {
             });
         });
 
+        it("should add crop attributes to the source rectangle", () => {
+            const currentImageRun = new ImageRun({
+                type: "png",
+                data: Buffer.from(""),
+                transformation: {
+                    width: 200,
+                    height: 200,
+                },
+                crop: {
+                    left: 10,
+                    top: 5,
+                    right: 10,
+                    bottom: 5,
+                },
+            });
+
+            const tree = new Formatter().format(currentImageRun, {
+                file: {
+                    Media: {
+                        addImage: vi.fn(),
+                    },
+                } as unknown as File,
+                viewWrapper: {} as unknown as IViewWrapper,
+                stack: [],
+            });
+
+            expect(tree).toStrictEqual({
+                "w:r": [
+                    {
+                        "w:drawing": [
+                            {
+                                "wp:inline": expect.arrayContaining([
+                                    {
+                                        "a:graphic": expect.arrayContaining([
+                                            {
+                                                "a:graphicData": expect.arrayContaining([
+                                                    {
+                                                        "pic:pic": expect.arrayContaining([
+                                                            {
+                                                                "pic:blipFill": expect.arrayContaining([
+                                                                    {
+                                                                        "a:srcRect": {
+                                                                            _attr: {
+                                                                                l: 10000,
+                                                                                t: 5000,
+                                                                                r: 10000,
+                                                                                b: 5000,
+                                                                            },
+                                                                        },
+                                                                    },
+                                                                ]),
+                                                            },
+                                                        ]),
+                                                    },
+                                                ]),
+                                            },
+                                        ]),
+                                    },
+                                ]),
+                            },
+                        ],
+                    },
+                ],
+            });
+        });
+
         it("should strip base64 marker", () => {
             const spy = vi.spyOn(global, "atob").mockReturnValue("atob result");
 

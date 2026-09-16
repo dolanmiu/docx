@@ -15,6 +15,7 @@ import { hashedId } from "@util/convenience-functions";
 import { RunProperties } from "./properties";
 import { Run } from "./run";
 import { Drawing, type IFloating } from "../../drawing";
+import type { ICropOptions } from "../../drawing/inline/graphic/graphic-data/pic/blip/source-rectangle";
 import type { OutlineOptions } from "../../drawing/inline/graphic/graphic-data/pic/shape-properties/outline/outline";
 import type { SolidFillOptions } from "../../drawing/inline/graphic/graphic-data/pic/shape-properties/outline/solid-fill";
 import type { IMediaTransformation } from "../../media";
@@ -34,6 +35,8 @@ type CoreImageOptions = {
     readonly outline?: OutlineOptions;
     /** Solid color fill behind the image, using either an RGB hex value or a theme scheme color. */
     readonly solidFill?: SolidFillOptions;
+    /** Crops the image by trimming a percentage (0-100) off each edge before it is stretched to fill the frame. */
+    readonly crop?: ICropOptions;
     /** Marks the image as an inserted revision for change tracking. Requires an id, author name, and date. */
     readonly insertion?: IChangedAttributesProperties;
     /** Marks the image as a deleted revision for change tracking. Requires an id, author name, and date. */
@@ -153,6 +156,7 @@ export class ImageRun extends XmlComponent {
             floating: options.floating,
             docProperties: options.altText,
             outline: options.outline,
+            crop: options.crop,
         });
 
         const run = new Run({ children: [drawing] });
