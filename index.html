@@ -12,6 +12,14 @@
             title="docsify-darklight-theme"
             type="text/css"
         />
+        <style>
+            /* The cover page (.cover-main) and the GitHub corner share z-index: 1 in the theme,
+               and the cover is rendered later in the DOM, so it overlaps the corner once the
+               page is scrolled. Lift the corner above the cover so it stays clickable. */
+            .github-corner {
+                z-index: 2;
+            }
+        </style>
     </head>
 
     <body>
