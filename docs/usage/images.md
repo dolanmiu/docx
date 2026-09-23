@@ -11,6 +11,7 @@
 | Have text wrap around an image         | Floating with wrap      | Magazine-style layout        |
 | Put an image in a table cell           | Inline in TableCell     | Product catalog              |
 | Add image to header/footer             | Inline in Header/Footer | Company letterhead           |
+| Trim edges off an image                | `crop` option           | Removing unwanted borders    |
 
 ## Inline vs Floating: When to Use Which
 
@@ -310,6 +311,36 @@ const image = new ImageRun({
 | name        | `string` | Required | `Specimen A`                         |
 | title       | `string` | Required | `My awesome title of my image`       |
 | description | `string` | Required | `My awesome description of my image` |
+
+## Cropping
+
+Crop an image by trimming a percentage off each edge before it's stretched to fill its frame. Pass a `crop` property to `ImageRun` with `left`, `top`, `right` and/or `bottom` percentages (`0` to `100`):
+
+```ts
+const image = new ImageRun({
+    type: "png",
+    data: fs.readFileSync("./demo/images/pizza.png"),
+    transformation: {
+        width: 200,
+        height: 200,
+    },
+    crop: {
+        left: 10,
+        top: 5,
+        right: 10,
+        bottom: 5,
+    },
+});
+```
+
+### Options
+
+| Property | Type     | Notes    | Possible Values |
+| -------- | -------- | -------- | --------------- |
+| left     | `number` | Optional | `0` to `100`    |
+| top      | `number` | Optional | `0` to `100`    |
+| right    | `number` | Optional | `0` to `100`    |
+| bottom   | `number` | Optional | `0` to `100`    |
 
 ## Track Changes
 

@@ -2,6 +2,7 @@ import type { IExtendedMediaData, IMediaDataTransformation } from "@file/media";
 import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
 
 import { GraphicData } from "./graphic-data";
+import type { ICropOptions } from "./graphic-data/pic/blip/source-rectangle";
 import type { OutlineOptions } from "./graphic-data/pic/shape-properties/outline/outline";
 import type { SolidFillOptions } from "./graphic-data/pic/shape-properties/outline/solid-fill";
 
@@ -51,11 +52,13 @@ export class Graphic extends XmlComponent {
         transform,
         outline,
         solidFill,
+        crop,
     }: {
         readonly mediaData: IExtendedMediaData;
         readonly transform: IMediaDataTransformation;
         readonly outline?: OutlineOptions;
         readonly solidFill?: SolidFillOptions;
+        readonly crop?: ICropOptions;
     }) {
         super("a:graphic");
         this.root.push(
@@ -64,7 +67,7 @@ export class Graphic extends XmlComponent {
             }),
         );
 
-        this.data = new GraphicData({ mediaData, transform, outline, solidFill });
+        this.data = new GraphicData({ mediaData, transform, outline, solidFill, crop });
 
         this.root.push(this.data);
     }
