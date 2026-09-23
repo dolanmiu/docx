@@ -8,7 +8,7 @@
  *
  * @module
  */
-import { XmlComponent } from "@file/xml-components";
+import { BuilderElement, XmlComponent } from "@file/xml-components";
 
 /**
  * Represents a list of adjustment values for preset geometry.
@@ -30,10 +30,23 @@ import { XmlComponent } from "@file/xml-components";
  * @example
  * ```typescript
  * const avLst = new AdjustmentValues();
+ * const rounded = new AdjustmentValues({ adj: 25000 }); // <a:gd name="adj" fmla="val 25000"/>
  * ```
  */
 export class AdjustmentValues extends XmlComponent {
-    public constructor() {
+    public constructor(adjustments: Readonly<Record<string, number>> = {}) {
         super("a:avLst");
+
+        for (const [name, value] of Object.entries(adjustments)) {
+            this.root.push(
+                new BuilderElement<{ readonly name: string; readonly formula: string }>({
+                    name: "a:gd",
+                    attributes: {
+                        name: { key: "name", value: name },
+                        formula: { key: "fmla", value: `val ${Math.round(value)}` },
+                    },
+                }),
+            );
+        }
     }
 }

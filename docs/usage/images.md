@@ -2,6 +2,8 @@
 
 !> Images requires an understanding of [Sections](usage/sections.md) and [Paragraphs](usage/paragraph.md).
 
+?> To draw rectangles, lines, arrows and other shapes instead of pictures, see [Shapes](usage/shapes.md).
+
 ## Common Use Cases
 
 | I want to...                           | Use                     | Example                      |

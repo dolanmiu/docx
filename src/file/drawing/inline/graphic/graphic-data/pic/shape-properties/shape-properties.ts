@@ -89,13 +89,15 @@ export class ShapeProperties extends XmlComponent {
         this.root.push(this.form);
         this.root.push(new PresetGeometry());
 
-        if (outline) {
-            this.root.push(createNoFill());
-            this.root.push(createOutline(outline));
-        }
-
+        // The schema allows one fill, and it must come before the outline (a:ln)
         if (solidFill) {
             this.root.push(createSolidFill(solidFill));
+        } else if (outline) {
+            this.root.push(createNoFill());
+        }
+
+        if (outline) {
+            this.root.push(createOutline(outline));
         }
     }
 }

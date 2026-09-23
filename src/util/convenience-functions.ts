@@ -116,6 +116,24 @@ export const concreteNumUniqueNumericIdGen = (): UniqueNumericIdCreator => uniqu
 export const docPropertiesUniqueNumericIdGen = (): UniqueNumericIdCreator => uniqueNumericIdCreator();
 
 /**
+ * Returns the next drawing ID from a single counter shared by every drawing.
+ *
+ * Drawing IDs (`wp:docPr` and `wps:cNvPr`) must be unique within a document,
+ * and Word reports unreadable content when two drawings share one. A drawing
+ * is created before it belongs to a document, so all drawings draw from this
+ * one counter rather than a generator per instance.
+ *
+ * @returns A number no earlier call has returned
+ *
+ * @example
+ * ```typescript
+ * const first = docPropertiesUniqueNumericId();
+ * const second = docPropertiesUniqueNumericId(); // first + 1
+ * ```
+ */
+export const docPropertiesUniqueNumericId: UniqueNumericIdCreator = docPropertiesUniqueNumericIdGen();
+
+/**
  * Creates a unique numeric ID generator for bookmarks.
  *
  * Bookmarks are used to mark specific locations in a document for navigation

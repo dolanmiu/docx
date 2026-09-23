@@ -202,24 +202,30 @@ export type OutlineOptions = OutlineAttributes & OutlineFillProperties;
  * ```
  */
 export const createOutline = (options: OutlineOptions): XmlComponent =>
-    new BuilderElement<OutlineAttributes>({
+    new BuilderElement<{
+        readonly width?: number;
+        readonly cap?: (typeof LineCap)[keyof typeof LineCap];
+        readonly compoundLine?: (typeof CompoundLine)[keyof typeof CompoundLine];
+        readonly align?: (typeof PenAlignment)[keyof typeof PenAlignment];
+    }>({
         name: "a:ln",
         attributes: {
             width: {
                 key: "w",
                 value: options.width,
             },
+            // The options take the constant names (e.g. "ROUND"), but the XML needs their values (e.g. "rnd")
             cap: {
                 key: "cap",
-                value: options.cap,
+                value: options.cap === undefined ? undefined : LineCap[options.cap],
             },
             compoundLine: {
                 key: "cmpd",
-                value: options.compoundLine,
+                value: options.compoundLine === undefined ? undefined : CompoundLine[options.compoundLine],
             },
             align: {
                 key: "algn",
-                value: options.align,
+                value: options.align === undefined ? undefined : PenAlignment[options.align],
             },
         },
         children: [

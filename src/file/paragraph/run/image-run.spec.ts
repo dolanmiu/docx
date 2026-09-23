@@ -1,12 +1,21 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { Formatter } from "@export/formatter";
 import type { IViewWrapper } from "@file/document-wrapper";
 import type { File } from "@file/file";
+import * as convenienceFunctions from "@util/convenience-functions";
 
 import { ImageRun } from "./image-run";
 
 describe("ImageRun", () => {
+    beforeEach(() => {
+        vi.spyOn(convenienceFunctions, "docPropertiesUniqueNumericId").mockReturnValue(1);
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
     describe("#constructor()", () => {
         it("should create with Buffer", () => {
             const currentImageRun = new ImageRun({

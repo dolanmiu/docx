@@ -40,4 +40,10 @@ describe("DocProperties", () => {
         expect(tree["wp:docPr"]._attr).not.to.have.property("descr");
         expect(tree["wp:docPr"]._attr).not.to.have.property("title");
     });
+
+    it("should give each drawing its own id when none is supplied", () => {
+        const first = new Formatter().format(new DocProperties({ name: "first" }));
+        const second = new Formatter().format(new DocProperties({ name: "second" }));
+        expect(second["wp:docPr"]._attr.id).to.equal(first["wp:docPr"]._attr.id + 1);
+    });
 });

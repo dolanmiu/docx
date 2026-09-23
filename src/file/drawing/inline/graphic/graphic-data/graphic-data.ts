@@ -84,7 +84,7 @@ export class GraphicData extends XmlComponent {
                 }
             });
             // const wps = new WpsShape({ ...mediaData.data, transformation: transform, outline, solidFill });
-            const wpg = createWpgGroup({ children, transformation: transform });
+            const wpg = createWpgGroup({ children, transformation: transform, childOffset: md.childOffset, childExtent: md.childExtent });
             this.root.push(wpg);
         } else {
             this.root.push(

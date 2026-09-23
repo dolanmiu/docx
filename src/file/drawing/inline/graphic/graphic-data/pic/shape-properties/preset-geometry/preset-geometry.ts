@@ -12,6 +12,7 @@ import { XmlComponent } from "@file/xml-components";
 
 import { AdjustmentValues } from "./adjustment-values/adjustment-values";
 import { PresetGeometryAttributes } from "./preset-geometry-attributes";
+import type { PresetShapeType } from "../../../wps/preset-shape/preset-shape-type";
 
 /**
  * Represents a preset geometry for a DrawingML shape.
@@ -34,19 +35,28 @@ import { PresetGeometryAttributes } from "./preset-geometry-attributes";
  *
  * @example
  * ```typescript
- * const geometry = new PresetGeometry();
+ * const rectangle = new PresetGeometry();
+ * const roundedRectangle = new PresetGeometry({ type: "roundRect", adjustments: { adj: 25000 } });
  * ```
  */
 export class PresetGeometry extends XmlComponent {
-    public constructor() {
+    public constructor({
+        type = "rect",
+        adjustments,
+    }: {
+        /** The preset shape. Defaults to a rectangle. */
+        readonly type?: PresetShapeType;
+        /** Raw shape guide values, keyed by guide name (e.g. `{ adj: 25000 }`). */
+        readonly adjustments?: Readonly<Record<string, number>>;
+    } = {}) {
         super("a:prstGeom");
 
         this.root.push(
             new PresetGeometryAttributes({
-                prst: "rect",
+                prst: type,
             }),
         );
 
-        this.root.push(new AdjustmentValues());
+        this.root.push(new AdjustmentValues(adjustments));
     }
 }

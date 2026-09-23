@@ -3,7 +3,7 @@ import type { IExtendedMediaData, IMediaDataTransformation } from "@file/media";
 import { BuilderElement, type XmlComponent } from "@file/xml-components";
 
 import { DocProperties, type DocPropertiesOptions } from "./../doc-properties/doc-properties";
-import { createEffectExtent } from "./../effect-extent/effect-extent";
+import { type EffectExtentAttributes, createEffectExtent } from "./../effect-extent/effect-extent";
 import { createExtent } from "./../extent/extent";
 import { createGraphicFrameProperties } from "./../graphic-frame/graphic-frame-properties";
 import { Graphic } from "./../inline/graphic";
@@ -21,6 +21,7 @@ type InlineOptions = {
     readonly outline?: OutlineOptions;
     readonly solidFill?: SolidFillOptions;
     readonly crop?: ICropOptions;
+    readonly effectExtent?: EffectExtentAttributes;
 };
 
 // <xsd:complexType name="CT_Inline">
@@ -37,7 +38,15 @@ type InlineOptions = {
 //     <xsd:attribute name="distL" type="ST_WrapDistance" use="optional"/>
 //     <xsd:attribute name="distR" type="ST_WrapDistance" use="optional"/>
 // </xsd:complexType>
-export const createInline = ({ mediaData, transform, docProperties, outline, solidFill, crop }: InlineOptions): XmlComponent =>
+export const createInline = ({
+    mediaData,
+    transform,
+    docProperties,
+    outline,
+    solidFill,
+    crop,
+    effectExtent,
+}: InlineOptions): XmlComponent =>
     new BuilderElement({
         name: "wp:inline",
         attributes: {
@@ -61,14 +70,15 @@ export const createInline = ({ mediaData, transform, docProperties, outline, sol
         children: [
             createExtent({ x: transform.emus.x, y: transform.emus.y }),
             createEffectExtent(
-                outline
-                    ? {
-                          top: (outline.width ?? 9525) * 2,
-                          right: (outline.width ?? 9525) * 2,
-                          bottom: (outline.width ?? 9525) * 2,
-                          left: (outline.width ?? 9525) * 2,
-                      }
-                    : { top: 0, right: 0, bottom: 0, left: 0 },
+                effectExtent ??
+                    (outline
+                        ? {
+                              top: (outline.width ?? 9525) * 2,
+                              right: (outline.width ?? 9525) * 2,
+                              bottom: (outline.width ?? 9525) * 2,
+                              left: (outline.width ?? 9525) * 2,
+                          }
+                        : { top: 0, right: 0, bottom: 0, left: 0 }),
             ),
             new DocProperties(docProperties),
             createGraphicFrameProperties(),

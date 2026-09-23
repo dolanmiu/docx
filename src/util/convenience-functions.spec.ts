@@ -9,6 +9,7 @@ import {
     concreteNumUniqueNumericIdGen,
     convertInchesToTwip,
     convertMillimetersToTwip,
+    docPropertiesUniqueNumericId,
     docPropertiesUniqueNumericIdGen,
     encodeUtf8,
     hashedId,
@@ -60,6 +61,13 @@ describe("Utility", () => {
             const uniqueNumericId = docPropertiesUniqueNumericIdGen();
             expect(uniqueNumericId()).to.equal(1);
             expect(uniqueNumericId()).to.equal(2);
+        });
+    });
+
+    describe("#docPropertiesUniqueNumericId", () => {
+        it("should keep counting across calls instead of restarting", () => {
+            const first = docPropertiesUniqueNumericId();
+            expect(docPropertiesUniqueNumericId()).to.equal(first + 1);
         });
     });
 

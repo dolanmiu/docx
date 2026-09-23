@@ -1,6 +1,6 @@
 import type { OutlineOptions } from "@file/drawing/inline/graphic/graphic-data/pic/shape-properties/outline/outline";
 import type { SolidFillOptions } from "@file/drawing/inline/graphic/graphic-data/pic/shape-properties/outline/solid-fill";
-import type { WpsShapeCoreOptions } from "@file/drawing/inline/graphic/graphic-data/wps";
+import type { PresetShapeCoreOptions, WpsShapeCoreOptions } from "@file/drawing/inline/graphic/graphic-data/wps";
 
 export type IMediaDataTransformation = {
     readonly offset?: {
@@ -73,7 +73,7 @@ type SvgMediaData = {
 export type WpsMediaData = {
     readonly type: "wps";
     readonly transformation: IMediaDataTransformation;
-    readonly data: WpsShapeCoreOptions;
+    readonly data: WpsShapeCoreOptions | PresetShapeCoreOptions;
 };
 
 export type WpgCommonMediaData = {
@@ -87,6 +87,16 @@ export type WpgMediaData = {
     readonly type: "wpg";
     readonly transformation: IMediaDataTransformation;
     readonly children: readonly IGroupChildMediaData[];
+    /** Top-left corner (in EMUs) of the coordinate space the children are positioned in. Defaults to 0,0. */
+    readonly childOffset?: {
+        readonly x: number;
+        readonly y: number;
+    };
+    /** Size (in EMUs) of the coordinate space the children are positioned in. Defaults to the group's own size. */
+    readonly childExtent?: {
+        readonly x: number;
+        readonly y: number;
+    };
 };
 
 export type IExtendedMediaData = IMediaData | WpsMediaData | WpgMediaData;

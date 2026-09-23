@@ -1,6 +1,7 @@
-import { assert, describe, expect, it } from "vitest";
+import { afterEach, assert, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { Formatter } from "@export/formatter";
+import * as convenienceFunctions from "@util/convenience-functions";
 import { Utility } from "tests/utility";
 
 import type { IDrawingOptions } from "../drawing";
@@ -38,6 +39,14 @@ const createAnchor = (drawingOptions: IDrawingOptions): Anchor =>
     });
 
 describe("Anchor", () => {
+    beforeEach(() => {
+        vi.spyOn(convenienceFunctions, "docPropertiesUniqueNumericId").mockReturnValue(1);
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
     let anchor: Anchor;
 
     describe("#constructor()", () => {

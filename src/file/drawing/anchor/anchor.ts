@@ -114,7 +114,7 @@ export class Anchor extends XmlComponent {
         this.root.push(createHorizontalPosition(floating.horizontalPosition));
         this.root.push(createVerticalPosition(floating.verticalPosition));
         this.root.push(createExtent({ x: transform.emus.x, y: transform.emus.y }));
-        this.root.push(createEffectExtent({ top: 0, right: 0, bottom: 0, left: 0 }));
+        this.root.push(createEffectExtent(drawingOptions.effectExtent ?? { top: 0, right: 0, bottom: 0, left: 0 }));
 
         if (drawingOptions.floating !== undefined && drawingOptions.floating.wrap !== undefined) {
             switch (drawingOptions.floating.wrap.type) {
