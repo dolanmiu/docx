@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import { Formatter } from "@export/formatter";
+import { DocumentWrapper } from "@file/document-wrapper";
+import type { File } from "@file/file";
 import { AlignmentType, EmphasisMarkType, TabStopPosition } from "@file/paragraph";
 import { HighlightColor } from "@file/paragraph/run";
 import { UnderlineType } from "@file/paragraph/run/underline";
@@ -106,7 +108,7 @@ describe("ParagraphStyle", () => {
             });
         });
 
-        it("should not include w:pStyle for paragraph styles with numbering", () => {
+        it("should not add the ListParagraph style when the style defines numbering", () => {
             const style = new StyleForParagraph({
                 id: "myStyleId",
                 paragraph: {
@@ -121,8 +123,8 @@ describe("ParagraphStyle", () => {
                     Numbering: {
                         createConcreteNumberingInstance: (_: string, __: number) => undefined,
                     },
-                } as never,
-                viewWrapper: {},
+                } as File,
+                viewWrapper: new DocumentWrapper({ background: {} }),
                 stack: [],
             });
 

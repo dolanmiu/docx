@@ -408,7 +408,8 @@ export class LevelBase extends XmlComponent {
             this.root.push(createParagraphStyle(style.style));
         }
 
-        this.paragraphProperties = new ParagraphProperties(style && style.paragraph);
+        // A level's paragraph properties are a definition, so no implicit `ListParagraph` reference belongs here.
+        this.paragraphProperties = new ParagraphProperties(style && style.paragraph, { implicitListParagraphStyle: false });
         this.runProperties = new RunProperties(style && style.run);
 
         this.root.push(this.paragraphProperties);

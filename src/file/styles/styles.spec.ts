@@ -2,6 +2,8 @@
 import { describe, expect, it } from "vitest";
 
 import { Formatter } from "@export/formatter";
+import { DocumentWrapper } from "@file/document-wrapper";
+import type { File } from "@file/file";
 import { EMPTY_OBJECT } from "@file/xml-components";
 
 import { Styles } from "./styles";
@@ -43,7 +45,7 @@ describe("Styles", () => {
                 },
             ]);
         });
-        it("should not include w:pStyle inside paragraphStyles paragraph properties", () => {
+        it("should not add the ListParagraph style to a paragraph style that defines numbering", () => {
             const styles = new Styles({
                 paragraphStyles: [
                     {
@@ -62,12 +64,13 @@ describe("Styles", () => {
                     Numbering: {
                         createConcreteNumberingInstance: (_: string, __: number) => undefined,
                     },
-                } as any,
-                viewWrapper: {},
+                } as File,
+                viewWrapper: new DocumentWrapper({ background: {} }),
                 stack: [],
-            })["w:styles"].filter((x: any) => !x._attr);
+            });
+            const styleElements = tree["w:styles"].filter((x: any) => !x._attr);
 
-            expect(tree).to.deep.equal([
+            expect(styleElements).to.deep.equal([
                 {
                     "w:style": [
                         { _attr: { "w:type": "paragraph", "w:styleId": "pStyleId" } },
