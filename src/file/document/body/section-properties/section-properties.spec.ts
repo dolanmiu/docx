@@ -34,6 +34,56 @@ const PAGE_SIZE_DEFAULTS = {
 };
 
 describe("SectionProperties", () => {
+    describe("#AvailableTextWidth", () => {
+        it("is the default page width minus the default margins", () => {
+            expect(new SectionProperties().AvailableTextWidth).to.equal(
+                sectionPageSizeDefaults.WIDTH - sectionMarginDefaults.LEFT - sectionMarginDefaults.RIGHT,
+            );
+        });
+
+        it("subtracts the left and right margins and the gutter", () => {
+            const properties = new SectionProperties({
+                page: { size: { width: 12240, height: 15840 }, margin: { left: 1000, right: 500, gutter: 200 } },
+            });
+
+            expect(properties.AvailableTextWidth).to.equal(12240 - 1000 - 500 - 200);
+        });
+
+        it("uses the page height as the width in landscape orientation", () => {
+            const properties = new SectionProperties({
+                page: { size: { width: 12240, height: 15840, orientation: PageOrientation.LANDSCAPE } },
+            });
+
+            expect(properties.AvailableTextWidth).to.equal(15840 - 1440 - 1440);
+        });
+
+        it("converts universal measures to twips", () => {
+            const properties = new SectionProperties({
+                page: { size: { width: "8.5in", height: "11in" }, margin: { left: "1in", right: "0.5in" } },
+            });
+
+            expect(properties.AvailableTextWidth).to.equal(12240 - 1440 - 720);
+        });
+
+        it("is the width of a single column in a multi-column section", () => {
+            const properties = new SectionProperties({
+                page: { size: { width: 12240, height: 15840 } },
+                column: { count: 2, space: 720 },
+            });
+
+            expect(properties.AvailableTextWidth).to.equal((12240 - 2880 - 720) / 2);
+        });
+
+        it("assumes Word's default column spacing when none is given", () => {
+            const properties = new SectionProperties({
+                page: { size: { width: 12240, height: 15840 } },
+                column: { count: 3 },
+            });
+
+            expect(properties.AvailableTextWidth).to.be.closeTo((12240 - 2880 - 2 * 720) / 3, 1e-9);
+        });
+    });
+
     describe("#constructor()", () => {
         it("should create section properties with options", () => {
             const media = new Media();
@@ -274,6 +324,28 @@ describe("SectionProperties", () => {
             const type = tree["w:sectPr"].find((item: any) => item["w:textDirection"] !== undefined);
             expect(type).to.deep.equal({
                 "w:textDirection": { _attr: { "w:val": "tbRl" } },
+            });
+        });
+
+        it.each([1, 5, 9])("should create section properties with page size code %i", (code) => {
+            const properties = new SectionProperties({
+                page: {
+                    size: {
+                        code,
+                    },
+                },
+            });
+            const tree = new Formatter().format(properties);
+
+            expect(Object.keys(tree)).to.deep.equal(["w:sectPr"]);
+            const pageSize = tree["w:sectPr"].find((item: any) => item["w:pgSz"] !== undefined);
+            expect(pageSize).to.deep.equal({
+                "w:pgSz": {
+                    _attr: {
+                        ...PAGE_SIZE_DEFAULTS,
+                        "w:code": code,
+                    },
+                },
             });
         });
 

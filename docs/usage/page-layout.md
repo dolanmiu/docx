@@ -67,6 +67,43 @@ const doc = new Document({
 
 ?> When switching to landscape, you must manually swap the width and height values. The `orientation` property alone only tells Word how to display the page - you still need to provide the correct dimensions.
 
+## Printer Paper Code
+
+Use the `code` property to specify a printer-specific paper code. This tells the printer which paper tray or paper type to use when the specified dimensions could match multiple paper types. Common codes include `1` (Letter), `5` (Legal), `8` (A3), and `9` (A4).
+
+```ts
+import { Document, Paragraph, convertMillimetersToTwip } from "docx";
+
+const doc = new Document({
+    sections: [
+        {
+            properties: {
+                page: {
+                    size: {
+                        width: convertMillimetersToTwip(210),
+                        height: convertMillimetersToTwip(297),
+                        code: 9, // A4 paper code
+                    },
+                },
+            },
+            children: [new Paragraph("Page with A4 printer paper code")],
+        },
+    ],
+});
+```
+
+### Common Printer Paper Codes
+
+| Code | Paper Size          |
+| ---- | ------------------- |
+| 1    | Letter (8.5" x 11") |
+| 5    | Legal (8.5" x 14")  |
+| 8    | A3 (297 x 420mm)    |
+| 9    | A4 (210 x 297mm)    |
+| 11   | A5 (148 x 210mm)    |
+
+?> The `code` value is passed directly to the printer and is not interpreted by the library. Refer to your printer's documentation for supported codes.
+
 ## Page Margins
 
 Set margins for the page:

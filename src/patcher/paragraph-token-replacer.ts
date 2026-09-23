@@ -94,7 +94,6 @@ export const replaceTokenInParagraphElement = ({
                         patchTextElement(paragraphElement.elements![run.index].elements![index], "");
                     }
                     break;
-                /* c8 ignore next */
                 default:
             }
         }

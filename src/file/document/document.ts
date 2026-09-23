@@ -5,6 +5,7 @@
  *
  * @module
  */
+import type { FileChild } from "@file/file-child";
 import { XmlComponent } from "@file/xml-components";
 
 import type { ConcreteHyperlink, Paragraph } from "../paragraph";
@@ -128,10 +129,10 @@ export class Document extends XmlComponent {
     /**
      * Adds a block-level element to the document body.
      *
-     * @param item - The element to add (paragraph, table, table of contents, or hyperlink)
+     * @param item - The element to add (paragraph, table, table of contents, hyperlink, or any other file child)
      * @returns The Document instance for method chaining
      */
-    public add(item: Paragraph | Table | TableOfContents | ConcreteHyperlink): Document {
+    public add(item: Paragraph | Table | TableOfContents | ConcreteHyperlink | FileChild): Document {
         this.body.push(item);
         return this;
     }

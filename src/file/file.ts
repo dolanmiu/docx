@@ -22,6 +22,7 @@ import { HeaderWrapper, type IDocumentHeader } from "./header-wrapper";
 import { Media } from "./media";
 import { Numbering } from "./numbering";
 import { Comments } from "./paragraph/run/comment-run";
+import { CommentsExtended, CommentsIds } from "./paragraph/run/comments-extended";
 import { Relationships } from "./relationships";
 import { Settings } from "./settings";
 import { Styles } from "./styles";
@@ -164,6 +165,10 @@ export class File {
     private readonly appProperties: AppProperties;
     private readonly styles: Styles;
     private readonly comments: Comments;
+    /** Extended comment data for reply threading and resolved state (word/commentsExtended.xml). */
+    private readonly commentsExtended?: CommentsExtended;
+    /** Durable comment id mapping (word/commentsIds.xml). */
+    private readonly commentsIds?: CommentsIds;
     private readonly fontWrapper: FontWrapper;
 
     public constructor(options: IPropertiesOptions) {
@@ -177,6 +182,14 @@ export class File {
         this.numbering = new Numbering(options.numbering ? options.numbering : { config: [] });
 
         this.comments = new Comments(options.comments ?? { children: [] });
+        // Build commentsExtended.xml when comments use reply threading (parentId)
+        if (this.comments.ThreadData) {
+            this.commentsExtended = new CommentsExtended(this.comments.ThreadData);
+        }
+        // Build commentsIds.xml when comments carry a durableId
+        if (this.comments.CommentIdsData) {
+            this.commentsIds = new CommentsIds(this.comments.CommentIdsData);
+        }
         this.fileRelationships = new Relationships();
         this.customProperties = new CustomProperties(options.customProperties ?? []);
         this.appProperties = new AppProperties();
@@ -375,6 +388,26 @@ export class File {
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments",
             "comments.xml",
         );
+
+        if (this.commentsExtended) {
+            this.documentWrapper.Relationships.addRelationship(
+                // eslint-disable-next-line functional/immutable-data
+                this.currentRelationshipId++,
+                "http://schemas.microsoft.com/office/2011/relationships/commentsExtended",
+                "commentsExtended.xml",
+            );
+            this.contentTypes.addCommentsExtended();
+        }
+
+        if (this.commentsIds) {
+            this.documentWrapper.Relationships.addRelationship(
+                // eslint-disable-next-line functional/immutable-data
+                this.currentRelationshipId++,
+                "http://schemas.microsoft.com/office/2016/09/relationships/commentsIds",
+                "commentsIds.xml",
+            );
+            this.contentTypes.addCommentsIds();
+        }
     }
 
     public get Document(): DocumentWrapper {
@@ -435,6 +468,16 @@ export class File {
 
     public get Comments(): Comments {
         return this.comments;
+    }
+
+    /** Extended comments part for reply threading. Undefined when no comment threads exist. */
+    public get CommentsExtended(): CommentsExtended | undefined {
+        return this.commentsExtended;
+    }
+
+    /** Durable comment id part. Undefined when no comment carries a durableId. */
+    public get CommentsIds(): CommentsIds | undefined {
+        return this.commentsIds;
     }
 
     public get FontTable(): FontWrapper {

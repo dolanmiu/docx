@@ -7,6 +7,7 @@ import { createEffectExtent } from "./../effect-extent/effect-extent";
 import { createExtent } from "./../extent/extent";
 import { createGraphicFrameProperties } from "./../graphic-frame/graphic-frame-properties";
 import { Graphic } from "./../inline/graphic";
+import type { ICropOptions } from "./graphic/graphic-data/pic/blip/source-rectangle";
 import type { OutlineOptions } from "./graphic/graphic-data/pic/shape-properties/outline/outline";
 import type { SolidFillOptions } from "./graphic/graphic-data/pic/shape-properties/outline/solid-fill";
 
@@ -19,6 +20,7 @@ type InlineOptions = {
     readonly docProperties?: DocPropertiesOptions;
     readonly outline?: OutlineOptions;
     readonly solidFill?: SolidFillOptions;
+    readonly crop?: ICropOptions;
 };
 
 // <xsd:complexType name="CT_Inline">
@@ -35,7 +37,7 @@ type InlineOptions = {
 //     <xsd:attribute name="distL" type="ST_WrapDistance" use="optional"/>
 //     <xsd:attribute name="distR" type="ST_WrapDistance" use="optional"/>
 // </xsd:complexType>
-export const createInline = ({ mediaData, transform, docProperties, outline, solidFill }: InlineOptions): XmlComponent =>
+export const createInline = ({ mediaData, transform, docProperties, outline, solidFill, crop }: InlineOptions): XmlComponent =>
     new BuilderElement({
         name: "wp:inline",
         attributes: {
@@ -70,6 +72,6 @@ export const createInline = ({ mediaData, transform, docProperties, outline, sol
             ),
             new DocProperties(docProperties),
             createGraphicFrameProperties(),
-            new Graphic({ mediaData, transform, outline, solidFill }),
+            new Graphic({ mediaData, transform, outline, solidFill, crop }),
         ],
     });

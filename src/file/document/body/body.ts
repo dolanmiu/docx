@@ -55,9 +55,43 @@ import { type ISectionPropertiesOptions, SectionProperties } from "./section-pro
 export class Body extends XmlComponent {
     // eslint-disable-next-line functional/prefer-readonly-type
     private readonly sections: SectionProperties[] = [];
+    /**
+     * Section properties that were moved into a paragraph at the end of their section
+     * by {@link addSection}, keyed by that paragraph. Used to find the section that
+     * governs a given child of the body.
+     */
+    private readonly sectionParagraphs = new Map<Paragraph, SectionProperties>();
 
     public constructor() {
         super("w:body");
+    }
+
+    /**
+     * Finds the section properties that govern a top-level child of the body.
+     *
+     * A section's properties are stored after its content (either in the closing
+     * paragraph of the section or, for the last section, at the end of the body), so
+     * the governing section is the first one found at or after the child. When no
+     * child is given (or it is not a direct child of the body), the first section is
+     * returned.
+     *
+     * @param child - A direct child of the body (paragraph, table, etc.)
+     * @returns The governing section properties, or undefined if the body has no sections
+     */
+    public getSectionPropertiesFor(child?: XmlComponent): SectionProperties | undefined {
+        const start = child ? this.root.indexOf(child) + 1 : 0;
+        for (let i = start; i < this.root.length; i++) {
+            const component = this.root[i];
+            if (component instanceof SectionProperties) {
+                return component;
+            }
+            const section = this.sectionParagraphs.get(component);
+            if (section) {
+                return section;
+            }
+        }
+
+        return this.sections[this.sections.length - 1];
     }
 
     /**
@@ -75,7 +109,12 @@ export class Body extends XmlComponent {
      */
     public addSection(options: ISectionPropertiesOptions): void {
         const currentSection = this.sections.pop() as SectionProperties;
-        this.root.push(this.createSectionParagraph(currentSection));
+        const sectionParagraph = this.createSectionParagraph(currentSection);
+        this.root.push(sectionParagraph);
+        if (currentSection) {
+            // eslint-disable-next-line functional/immutable-data
+            this.sectionParagraphs.set(sectionParagraph, currentSection);
+        }
 
         this.sections.push(new SectionProperties(options));
     }

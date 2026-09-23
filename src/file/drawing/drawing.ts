@@ -5,6 +5,7 @@ import { Anchor } from "./anchor";
 import type { DocPropertiesOptions } from "./doc-properties/doc-properties";
 import type { IFloating } from "./floating";
 import { createInline } from "./inline";
+import type { ICropOptions } from "./inline/graphic/graphic-data/pic/blip/source-rectangle";
 import type { OutlineOptions } from "./inline/graphic/graphic-data/pic/shape-properties/outline/outline";
 import type { SolidFillOptions } from "./inline/graphic/graphic-data/pic/shape-properties/outline/solid-fill";
 
@@ -30,6 +31,7 @@ export type IDrawingOptions = {
     readonly docProperties?: DocPropertiesOptions;
     readonly outline?: OutlineOptions;
     readonly solidFill?: SolidFillOptions;
+    readonly crop?: ICropOptions;
 };
 
 /**
@@ -62,6 +64,7 @@ export class Drawing extends XmlComponent {
                     docProperties: drawingOptions.docProperties,
                     outline: drawingOptions.outline,
                     solidFill: drawingOptions.solidFill,
+                    crop: drawingOptions.crop,
                 }),
             );
         } else {

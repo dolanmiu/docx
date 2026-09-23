@@ -46,6 +46,7 @@ import type { HeaderWrapper } from "@file/header-wrapper";
 import { ChangeAttributes, type IChangedAttributesProperties } from "@file/track-revision/track-revision";
 import { type SectionVerticalAlign, createVerticalAlign } from "@file/vertical-align";
 import { OnOffElement, XmlComponent } from "@file/xml-components";
+import { type PositiveUniversalMeasure, universalMeasureToTwips } from "@util/values";
 
 import { type IColumnsAttributes, createColumns } from "./properties/columns";
 import { type IDocGridAttributesProperties, createDocumentGrid } from "./properties/doc-grid";
@@ -230,12 +231,22 @@ export const sectionPageSizeDefaults = {
  * ```
  */
 export class SectionProperties extends XmlComponent {
+    /**
+     * Width, in twips, available to block-level content in this section.
+     *
+     * This is the page width (accounting for orientation) minus the left and right
+     * margins and the gutter. When the section is laid out in several columns, it is
+     * the width of a single column. Percentage table widths are resolved against it.
+     */
+    private readonly availableTextWidth: number;
+
     public constructor({
         page: {
             size: {
                 width = sectionPageSizeDefaults.WIDTH,
                 height = sectionPageSizeDefaults.HEIGHT,
                 orientation = sectionPageSizeDefaults.ORIENTATION,
+                code,
             } = {},
             margin: {
                 top = sectionMarginDefaults.TOP,
@@ -262,6 +273,14 @@ export class SectionProperties extends XmlComponent {
     }: ISectionPropertiesOptions = {}) {
         super("w:sectPr");
 
+        this.availableTextWidth = SectionProperties.calculateAvailableTextWidth({
+            pageWidth: orientation === PageOrientation.LANDSCAPE ? height : width,
+            left,
+            right,
+            gutter,
+            column,
+        });
+
         this.addHeaderFooterGroup(HeaderFooterType.HEADER, headerWrapperGroup);
         this.addHeaderFooterGroup(HeaderFooterType.FOOTER, footerWrapperGroup);
 
@@ -269,7 +288,7 @@ export class SectionProperties extends XmlComponent {
             this.root.push(createSectionType(type));
         }
 
-        this.root.push(createPageSize({ width, height, orientation }));
+        this.root.push(createPageSize({ width, height, orientation, code }));
         this.root.push(createPageMargin(top, right, bottom, left, header, footer, gutter));
 
         if (borders) {
@@ -303,6 +322,53 @@ export class SectionProperties extends XmlComponent {
         }
 
         this.root.push(createDocumentGrid({ linePitch, charSpace, type: gridType }));
+    }
+
+    /**
+     * Width, in twips, available to block-level content (paragraphs and tables) in this section.
+     *
+     * Page width minus the left and right margins and the gutter, divided among the
+     * section's columns when there is more than one. Tables use this to resolve
+     * percentage widths into the absolute twip grid that Google Docs, Apple Pages and
+     * other consumers lay tables out from.
+     *
+     * @example
+     * ```typescript
+     * // A4 portrait with 1 inch margins
+     * new SectionProperties().AvailableTextWidth; // 11906 - 1440 - 1440 = 9026
+     * ```
+     */
+    public get AvailableTextWidth(): number {
+        return this.availableTextWidth;
+    }
+
+    private static calculateAvailableTextWidth({
+        pageWidth,
+        left,
+        right,
+        gutter,
+        column,
+    }: {
+        readonly pageWidth: number | PositiveUniversalMeasure;
+        readonly left: number | PositiveUniversalMeasure;
+        readonly right: number | PositiveUniversalMeasure;
+        readonly gutter: number | PositiveUniversalMeasure;
+        readonly column?: IColumnsAttributes;
+    }): number {
+        const textWidth =
+            universalMeasureToTwips(pageWidth) -
+            universalMeasureToTwips(left) -
+            universalMeasureToTwips(right) -
+            universalMeasureToTwips(gutter);
+
+        const columnCount = column?.count ?? 1;
+        if (columnCount <= 1) {
+            return textWidth;
+        }
+
+        // Word's default spacing between columns is 0.5 inch
+        const columnSpace = universalMeasureToTwips(column?.space ?? 720);
+        return (textWidth - columnSpace * (columnCount - 1)) / columnCount;
     }
 
     private addHeaderFooterGroup(

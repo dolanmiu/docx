@@ -290,6 +290,79 @@ describe("ParagraphProperties", () => {
             });
         });
 
+        it("should not add the ListParagraph style to numbered paragraphs when implicitListParagraphStyle is false", () => {
+            const properties = new ParagraphProperties(
+                {
+                    numbering: {
+                        reference: "test-reference",
+                        level: 0,
+                    },
+                },
+                { implicitListParagraphStyle: false },
+            );
+            const tree = new Formatter().format(properties, {
+                file: {
+                    Numbering: {
+                        createConcreteNumberingInstance: (_: string, __: number) => undefined,
+                    },
+                } as File,
+                viewWrapper: new DocumentWrapper({ background: {} }),
+                stack: [],
+            });
+
+            expect(tree).to.deep.equal({
+                "w:pPr": [
+                    {
+                        "w:numPr": [{ "w:ilvl": { _attr: { "w:val": 0 } } }, { "w:numId": { _attr: { "w:val": "{test-reference-0}" } } }],
+                    },
+                ],
+            });
+        });
+
+        it("should not add the ListParagraph style to bullet paragraphs when implicitListParagraphStyle is false", () => {
+            const properties = new ParagraphProperties({ bullet: { level: 0 } }, { implicitListParagraphStyle: false });
+            const tree = new Formatter().format(properties);
+
+            expect(tree).to.deep.equal({
+                "w:pPr": [
+                    {
+                        "w:numPr": [{ "w:ilvl": { _attr: { "w:val": 0 } } }, { "w:numId": { _attr: { "w:val": 1 } } }],
+                    },
+                ],
+            });
+        });
+
+        it("should keep an explicitly requested style when implicitListParagraphStyle is false", () => {
+            const properties = new ParagraphProperties(
+                {
+                    style: "MyStyle",
+                    numbering: {
+                        reference: "test-reference",
+                        level: 0,
+                    },
+                },
+                { implicitListParagraphStyle: false },
+            );
+            const tree = new Formatter().format(properties, {
+                file: {
+                    Numbering: {
+                        createConcreteNumberingInstance: (_: string, __: number) => undefined,
+                    },
+                } as File,
+                viewWrapper: new DocumentWrapper({ background: {} }),
+                stack: [],
+            });
+
+            expect(tree).to.deep.equal({
+                "w:pPr": [
+                    { "w:pStyle": { _attr: { "w:val": "MyStyle" } } },
+                    {
+                        "w:numPr": [{ "w:ilvl": { _attr: { "w:val": 0 } } }, { "w:numId": { _attr: { "w:val": "{test-reference-0}" } } }],
+                    },
+                ],
+            });
+        });
+
         it("should skip numbering instance creation when viewWrapper is FontWrapper", () => {
             const properties = new ParagraphProperties({
                 numbering: {

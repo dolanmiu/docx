@@ -9,7 +9,7 @@
  * @module
  */
 import { XmlComponent } from "@file/xml-components";
-import { bookmarkUniqueNumericIdGen } from "@util/convenience-functions";
+import { bookmarkUniqueNumericId } from "@util/convenience-functions";
 
 import type { ParagraphChild } from "../paragraph";
 import { BookmarkEndAttributes, BookmarkStartAttributes } from "./bookmark-attributes";
@@ -68,14 +68,12 @@ export type IBookmarkOptions = {
  * ```
  */
 export class Bookmark {
-    private readonly bookmarkUniqueNumericId = bookmarkUniqueNumericIdGen();
-
     public readonly start: BookmarkStart;
     public readonly children: readonly ParagraphChild[];
     public readonly end: BookmarkEnd;
 
     public constructor(options: IBookmarkOptions) {
-        const linkId = this.bookmarkUniqueNumericId();
+        const linkId = bookmarkUniqueNumericId();
 
         this.start = new BookmarkStart(options.id, linkId);
         this.children = options.children;

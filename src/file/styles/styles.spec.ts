@@ -2,6 +2,8 @@
 import { describe, expect, it } from "vitest";
 
 import { Formatter } from "@export/formatter";
+import { DocumentWrapper } from "@file/document-wrapper";
+import type { File } from "@file/file";
 import { EMPTY_OBJECT } from "@file/xml-components";
 
 import { Styles } from "./styles";
@@ -39,6 +41,49 @@ describe("Styles", () => {
                     "w:style": [
                         { _attr: { "w:type": "paragraph", "w:styleId": "pStyleId" } },
                         { "w:name": { _attr: { "w:val": "Paragraph Style" } } },
+                    ],
+                },
+            ]);
+        });
+        it("should not add the ListParagraph style to a paragraph style that defines numbering", () => {
+            const styles = new Styles({
+                paragraphStyles: [
+                    {
+                        id: "pStyleId",
+                        paragraph: {
+                            numbering: {
+                                reference: "test-reference",
+                                level: 0,
+                            },
+                        },
+                    },
+                ],
+            });
+            const tree = new Formatter().format(styles, {
+                file: {
+                    Numbering: {
+                        createConcreteNumberingInstance: (_: string, __: number) => undefined,
+                    },
+                } as File,
+                viewWrapper: new DocumentWrapper({ background: {} }),
+                stack: [],
+            });
+            const styleElements = tree["w:styles"].filter((x: any) => !x._attr);
+
+            expect(styleElements).to.deep.equal([
+                {
+                    "w:style": [
+                        { _attr: { "w:type": "paragraph", "w:styleId": "pStyleId" } },
+                        {
+                            "w:pPr": [
+                                {
+                                    "w:numPr": [
+                                        { "w:ilvl": { _attr: { "w:val": 0 } } },
+                                        { "w:numId": { _attr: { "w:val": "{test-reference-0}" } } },
+                                    ],
+                                },
+                            ],
+                        },
                     ],
                 },
             ]);

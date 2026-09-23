@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import { Formatter } from "@export/formatter";
+import { DocumentWrapper } from "@file/document-wrapper";
+import type { File } from "@file/file";
 import { AlignmentType, EmphasisMarkType, TabStopPosition } from "@file/paragraph";
 import { HighlightColor } from "@file/paragraph/run";
 import { UnderlineType } from "@file/paragraph/run/underline";
@@ -101,6 +103,43 @@ describe("ParagraphStyle", () => {
                     { _attr: { "w:type": "paragraph", "w:styleId": "myStyleId" } },
                     {
                         "w:pPr": [{ "w:spacing": { _attr: { "w:before": 50, "w:after": 150 } } }],
+                    },
+                ],
+            });
+        });
+
+        it("should not add the ListParagraph style when the style defines numbering", () => {
+            const style = new StyleForParagraph({
+                id: "myStyleId",
+                paragraph: {
+                    numbering: {
+                        reference: "test-reference",
+                        level: 0,
+                    },
+                },
+            });
+            const tree = new Formatter().format(style, {
+                file: {
+                    Numbering: {
+                        createConcreteNumberingInstance: (_: string, __: number) => undefined,
+                    },
+                } as File,
+                viewWrapper: new DocumentWrapper({ background: {} }),
+                stack: [],
+            });
+
+            expect(tree).to.deep.equal({
+                "w:style": [
+                    { _attr: { "w:type": "paragraph", "w:styleId": "myStyleId" } },
+                    {
+                        "w:pPr": [
+                            {
+                                "w:numPr": [
+                                    { "w:ilvl": { _attr: { "w:val": 0 } } },
+                                    { "w:numId": { _attr: { "w:val": "{test-reference-0}" } } },
+                                ],
+                            },
+                        ],
                     },
                 ],
             });

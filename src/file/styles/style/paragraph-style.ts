@@ -83,7 +83,8 @@ export class StyleForParagraph extends Style {
     public constructor(options: IParagraphStyleOptions) {
         super({ type: "paragraph", styleId: options.id }, options);
 
-        this.paragraphProperties = new ParagraphProperties(options.paragraph);
+        // A style definition inherits through `basedOn`, so it must never carry the implicit `ListParagraph` reference.
+        this.paragraphProperties = new ParagraphProperties(options.paragraph, { implicitListParagraphStyle: false });
         this.runProperties = new RunProperties(options.run);
 
         this.root.push(this.paragraphProperties);

@@ -13,6 +13,7 @@ import type { IMediaData, IMediaDataTransformation } from "@file/media";
 import { XmlComponent } from "@file/xml-components";
 
 import { BlipFill } from "./blip/blip-fill";
+import type { ICropOptions } from "./blip/source-rectangle";
 import { NonVisualPicProperties } from "./non-visual-pic-properties/non-visual-pic-properties";
 import { PicAttributes } from "./pic-attributes";
 import type { OutlineOptions } from "./shape-properties/outline/outline";
@@ -51,10 +52,12 @@ export class Pic extends XmlComponent {
         mediaData,
         transform,
         outline,
+        crop,
     }: {
         readonly mediaData: IMediaData;
         readonly transform: IMediaDataTransformation;
         readonly outline?: OutlineOptions;
+        readonly crop?: ICropOptions;
     }) {
         super("pic:pic");
 
@@ -65,7 +68,7 @@ export class Pic extends XmlComponent {
         );
 
         this.root.push(new NonVisualPicProperties());
-        this.root.push(new BlipFill(mediaData));
+        this.root.push(new BlipFill(mediaData, crop));
         this.root.push(new ShapeProperties({ element: "pic", transform, outline }));
     }
 }

@@ -398,8 +398,77 @@ const cell = new TableCell({
 });
 ```
 
+## Image Revisions
+
+You can mark an `ImageRun` as inserted or deleted by passing an `insertion` or `deletion` property. This wraps the image run in a `<w:ins>` or `<w:del>` element so that Word displays it as a tracked change.
+
+```ts
+import { Document, ImageRun, Paragraph, TextRun } from "docx";
+import * as fs from "fs";
+
+const doc = new Document({
+    features: {
+        trackRevisions: true,
+    },
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new TextRun("Inserted image: "),
+                        new ImageRun({
+                            type: "png",
+                            data: fs.readFileSync("./image.png"),
+                            transformation: { width: 120, height: 120 },
+                            insertion: {
+                                id: 30,
+                                author: "Firstname Lastname",
+                                date: "2020-10-06T09:00:00Z",
+                            },
+                        }),
+                    ],
+                }),
+                new Paragraph({
+                    children: [
+                        new TextRun("Deleted image: "),
+                        new ImageRun({
+                            type: "png",
+                            data: fs.readFileSync("./image.png"),
+                            transformation: { width: 120, height: 120 },
+                            deletion: {
+                                id: 31,
+                                author: "Firstname Lastname",
+                                date: "2020-10-06T09:00:00Z",
+                            },
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
+});
+```
+
+The `insertion` and `deletion` options accept the same properties as text track changes:
+
+| Property | Type     | Notes    | Description                      |
+| -------- | -------- | -------- | -------------------------------- |
+| id       | `number` | Required | Unique revision ID               |
+| author   | `string` | Required | Author of the change             |
+| date     | `string` | Required | ISO 8601 timestamp of the change |
+
+?> An `ImageRun` can have either `insertion` or `deletion`, but not both. If neither is provided, the image renders normally without track change markup.
+
 ## Demo
+
+### Track Revisions (Text)
 
 [Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/60-track-revisions.ts ":include")
 
 _Source: https://github.com/dolanmiu/docx/blob/master/demo/60-track-revisions.ts_
+
+### Track Change Images
+
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/103-track-change-images.ts ":include")
+
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/103-track-change-images.ts_

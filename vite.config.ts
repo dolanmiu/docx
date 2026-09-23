@@ -1,15 +1,13 @@
 import { resolve } from "path";
 import dts from "vite-plugin-dts";
 import { nodePolyfills } from "vite-plugin-node-polyfills";
-import tsconfigPaths from "vite-tsconfig-paths";
 import { configDefaults, defineConfig } from "vitest/config";
 import { copyFileSync } from "node:fs";
 
 export default defineConfig({
     plugins: [
-        tsconfigPaths(),
         dts({
-            rollupTypes: true,
+            bundleTypes: true,
             afterBuild: () => {
                 // https://github.com/dolanmiu/docx/pull/2883
                 // To pass publint - `npx publint@latest`
@@ -25,6 +23,7 @@ export default defineConfig({
         }),
     ],
     resolve: {
+        tsconfigPaths: true,
         alias: {
             "@util/": `${resolve(__dirname, "src/util")}/`,
             "@export/": `${resolve(__dirname, "src/export")}/`,
@@ -71,7 +70,7 @@ export default defineConfig({
             reporter: ["text", "json", "html"],
             thresholds: {
                 statements: 100,
-                branches: 99.68,
+                branches: 100,
                 functions: 100,
                 lines: 100,
             },

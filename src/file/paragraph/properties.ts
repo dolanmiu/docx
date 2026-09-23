@@ -80,7 +80,11 @@ export type IParagraphStylePropertiesOptions = {
               readonly level: number;
               /** Instance number for multiple lists with same reference */
               readonly instance?: number;
-              /** Whether this is a custom numbering definition */
+              /**
+               * Whether the numbering is fully custom, in which case the paragraph is not given the
+               * built-in `ListParagraph` style. Only affects document paragraphs; style, numbering level
+               * and document default definitions never receive that style.
+               */
               readonly custom?: boolean;
           }
         | false;
@@ -140,6 +144,24 @@ export type IParagraphPropertiesOptions = {
     readonly revision?: IParagraphPropertiesChangeOptions;
     readonly includeIfEmpty?: boolean;
 } & IParagraphPropertiesOptionsBase;
+
+/**
+ * Options that control how a {@link ParagraphProperties} element is assembled, as opposed to what it contains.
+ */
+export type IParagraphPropertiesConfig = {
+    /**
+     * Whether `bullet` and `numbering` paragraphs that do not name a style of their own are given
+     * Word's built-in `ListParagraph` style through an implicit `w:pStyle`.
+     *
+     * This is the default for document paragraphs, so that list items pick up the built-in list formatting.
+     * Paragraph style, numbering level and document default definitions must pass `false`: a `w:pStyle`
+     * inside a definition is not how a definition inherits from another style (that is `basedOn`), and
+     * Word has been observed to fall back to `ListParagraph` instead of applying the custom style when it finds one there.
+     *
+     * @default true
+     */
+    readonly implicitListParagraphStyle?: boolean;
+};
 
 /**
  * Represents paragraph properties (pPr) in a WordprocessingML document.
@@ -249,7 +271,13 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
     // eslint-disable-next-line functional/prefer-readonly-type
     private readonly numberingReferences: { readonly reference: string; readonly instance: number }[] = [];
 
-    public constructor(options?: IParagraphPropertiesOptions) {
+    /**
+     * Creates paragraph properties.
+     *
+     * @param options - The paragraph formatting to emit
+     * @param config - Controls how the element is assembled; see {@link IParagraphPropertiesConfig}
+     */
+    public constructor(options?: IParagraphPropertiesOptions, { implicitListParagraphStyle = true }: IParagraphPropertiesConfig = {}) {
         super("w:pPr", options?.includeIfEmpty);
 
         if (!options) {
@@ -260,15 +288,13 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
             this.push(createParagraphStyle(options.heading));
         }
 
-        if (options.bullet) {
-            this.push(createParagraphStyle("ListParagraph"));
-        }
+        if (implicitListParagraphStyle) {
+            if (options.bullet) {
+                this.push(createParagraphStyle("ListParagraph"));
+            }
 
-        if (options.numbering) {
-            if (!options.style && !options.heading) {
-                if (!options.numbering.custom) {
-                    this.push(createParagraphStyle("ListParagraph"));
-                }
+            if (options.numbering && !options.numbering.custom && !options.style && !options.heading) {
+                this.push(createParagraphStyle("ListParagraph"));
             }
         }
 
