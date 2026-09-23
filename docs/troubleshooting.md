@@ -44,9 +44,7 @@ fs.writeFileSync("document.docx", buffer);
 
 ```ts
 app.get("/download", async (req, res) => {
-    const doc = new Document({
-        /* ... */
-    });
+    const doc = new Document({/* ... */});
     const buffer = await Packer.toBuffer(doc);
 
     res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
@@ -304,17 +302,13 @@ sections: [
     {
         headers: { default: myHeader },
         footers: { default: myFooter },
-        children: [
-            /* ... */
-        ],
+        children: [/* ... */],
     },
     {
         // New section inherits headers unless overridden
         headers: { default: myHeader }, // Repeat if needed
         footers: { default: myFooter },
-        children: [
-            /* ... */
-        ],
+        children: [/* ... */],
     },
 ];
 ```
@@ -335,9 +329,7 @@ sections: [
             default: normalHeader,
             first: firstPageHeader, // Only shows with titlePage: true
         },
-        children: [
-            /* ... */
-        ],
+        children: [/* ... */],
     },
 ];
 ```
