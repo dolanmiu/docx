@@ -194,7 +194,7 @@ describe("values", () => {
 
         it("should throw on an unknown unit or a malformed amount", () => {
             expect(() => universalMeasureToTwips("10px" as never)).to.throw();
-            expect(() => universalMeasureToTwips("abcin" as never)).to.throw();
+            expect(() => universalMeasureToTwips("1.2.3in" as never)).to.throw();
         });
     });
 });
