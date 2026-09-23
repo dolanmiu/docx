@@ -30,17 +30,17 @@ if (firstArg && !isNaN(firstArgNumber)) {
 } else {
     const answers = await inquirer.prompt<Answers>([
         {
-            type: "list",
+            type: "select",
             name: "type",
             message: "Select demo from a list or via number",
             choices: ["list", "number"],
         },
         {
-            type: "list",
+            type: "select",
             name: "demoFile",
             message: "What demo do you wish to run?",
             choices: demoFiles,
-            filter: (input) => parseInt(input.split("-")[0], 10),
+            filter: (input: string) => parseInt(input.split("-")[0], 10),
             when: (a) => a.type === "list",
         },
         {
