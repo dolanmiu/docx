@@ -1,4 +1,4 @@
-<!DOCTYPE html><html class="default" lang="en" data-base="../"><head><meta charset="utf-8"/><meta http-equiv="x-ua-compatible" content="IE=edge"/><title>ITableRowPropertiesChangeOptions | docx</title><meta name="description" content="Documentation for docx"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="../assets/style.css"/><link rel="stylesheet" href="../assets/highlight.css"/><script defer src="../assets/main.js"></script><script async src="../assets/icons.js" id="tsd-icons-script"></script><script async src="../assets/search.js" id="tsd-search-script"></script><script async src="../assets/navigation.js" id="tsd-nav-script"></script><script async src="../assets/hierarchy.js" id="tsd-hierarchy-script"></script></head><body><script>document.documentElement.dataset.theme = localStorage.getItem("tsd-theme") || "os";document.body.style.display="none";setTimeout(() => window.app?app.showPage():document.body.style.removeProperty("display"),500)</script><header class="tsd-page-toolbar">
+<!DOCTYPE html><html class="default" lang="en" data-base="../"><head><meta charset="utf-8"/><meta http-equiv="x-ua-compatible" content="IE=edge"/><title>bookmarkUniqueNumericId | docx</title><meta name="description" content="Documentation for docx"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="../assets/style.css"/><link rel="stylesheet" href="../assets/highlight.css"/><script defer src="../assets/main.js"></script><script async src="../assets/icons.js" id="tsd-icons-script"></script><script async src="../assets/search.js" id="tsd-search-script"></script><script async src="../assets/navigation.js" id="tsd-nav-script"></script><script async src="../assets/hierarchy.js" id="tsd-hierarchy-script"></script></head><body><script>document.documentElement.dataset.theme = localStorage.getItem("tsd-theme") || "os";document.body.style.display="none";setTimeout(() => window.app?app.showPage():document.body.style.removeProperty("display"),500)</script><header class="tsd-page-toolbar">
 <div class="tsd-toolbar-contents container"><a href="../index.html" class="title">docx</a>
 <div id="tsd-toolbar-links"></div><button id="tsd-search-trigger" class="tsd-widget" aria-label="Search"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-search"></use></svg></button><dialog id="tsd-search" aria-label="Search"><input role="combobox" id="tsd-search-input" aria-controls="tsd-search-results" aria-autocomplete="list" aria-expanded="true" autocapitalize="off" autocomplete="off" placeholder="Search the docs" maxLength="100"/>
 <ul role="listbox" id="tsd-search-results"></ul>
@@ -8,11 +8,25 @@
 <div class="col-content">
 <div class="tsd-page-title">
 <ul class="tsd-breadcrumb" aria-label="Breadcrumb">
-<li><a href="" aria-current="page">ITableRowPropertiesChangeOptions</a></li></ul>
-<h1>Type Alias ITableRowPropertiesChangeOptions</h1></div>
-<div class="tsd-signature"><span class="tsd-kind-type-alias">ITableRowPropertiesChangeOptions</span><span class="tsd-signature-symbol">:</span> <a href="ITableRowPropertiesOptionsBase.html" class="tsd-signature-type tsd-kind-type-alias">ITableRowPropertiesOptionsBase</a> <span class="tsd-signature-symbol">&amp;</span> <span class="tsd-signature-type">IChangedAttributesProperties</span></div><aside class="tsd-sources">
+<li><a href="" aria-current="page">bookmarkUniqueNumericId</a></li></ul>
+<h1>Variable bookmarkUniqueNumericId<code class="tsd-tag">Const</code></h1></div>
+<div class="tsd-signature"><span class="tsd-kind-variable">bookmarkUniqueNumericId</span><span class="tsd-signature-symbol">:</span> <a href="../types/UniqueNumericIdCreator.html" class="tsd-signature-type tsd-kind-type-alias">UniqueNumericIdCreator</a><span class="tsd-signature-symbol"> = ...</span></div>
+<div class="tsd-comment tsd-typography"><p>Returns the next bookmark ID from a single counter shared by every bookmark.</p>
+<p>Bookmark IDs must be unique within a document, but a bookmark is created
+before it belongs to one, so all bookmarks draw from this one counter rather
+than a generator per instance.</p>
+</div>
+<div class="tsd-comment tsd-typography">
+<div class="tsd-tag-returns">
+<h4 class="tsd-anchor-link" id="returns">Returns<a href="#returns" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4><p>A number no earlier call has returned</p>
+</div>
+<div class="tsd-tag-example">
+<h4 class="tsd-anchor-link" id="example">Example<a href="#example" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4><pre><code class="typescript"><span class="hl-5">const</span><span class="hl-1"> </span><span class="hl-6">first</span><span class="hl-1"> = </span><span class="hl-7">bookmarkUniqueNumericId</span><span class="hl-1">();</span><br/><span class="hl-5">const</span><span class="hl-1"> </span><span class="hl-6">second</span><span class="hl-1"> = </span><span class="hl-7">bookmarkUniqueNumericId</span><span class="hl-1">(); </span><span class="hl-4">// first + 1</span>
+</code><button type="button">Copy</button></pre>
+
+</div></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/b47805170666f025a5eeb9668bda7aca69bb8993/src/file/table/table-row/table-row-properties.ts#L86">file/table/table-row/table-row-properties.ts:86</a></li></ul></aside></div>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/b47805170666f025a5eeb9668bda7aca69bb8993/src/util/convenience-functions.ts#L149">util/convenience-functions.ts:149</a></li></ul></aside></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">
