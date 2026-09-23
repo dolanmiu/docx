@@ -1,7 +1,7 @@
 import JSZip from "jszip";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { ExternalHyperlink, ImageRun, Paragraph, TextRun } from "@file/paragraph";
+import { Bookmark, ExternalHyperlink, ImageRun, Paragraph, TextRun } from "@file/paragraph";
 
 import { PatchType, patchDocument } from "./from-docx";
 
@@ -283,6 +283,30 @@ describe("from-docx", () => {
                     patches: {},
                 });
                 expect(output).to.not.be.undefined;
+            });
+
+            it("should patch in a bookmark whose start and end share one id", async () => {
+                // The patcher formats with a stand-in file, so a bookmark that
+                // looked its id up from the document threw here.
+                const output = await patchDocument({
+                    outputType: "uint8array",
+                    data: Buffer.from(""),
+                    patches: {
+                        // eslint-disable-next-line @typescript-eslint/naming-convention
+                        paragraph_replace: {
+                            type: PatchType.DOCUMENT,
+                            children: [new Paragraph({ children: [new Bookmark({ id: "anchor", children: [new TextRun("Anchor")] })] })],
+                        },
+                    },
+                });
+
+                // `JSZip.loadAsync` is mocked above; the instance method reads the real output.
+                const xml = await (await new JSZip().loadAsync(output)).file("word/document.xml")?.async("text");
+                const start = xml?.match(/<w:bookmarkStart w:name="anchor" w:id="(\d+)"\/>/);
+                const end = xml?.match(/<w:bookmarkEnd w:id="(\d+)"\/>/);
+
+                expect(start?.[1]).to.be.a("string");
+                expect(end?.[1]).to.equal(start?.[1]);
             });
 
             it("should work with the raw JSZip type", async () => {

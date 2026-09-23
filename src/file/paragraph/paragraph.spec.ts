@@ -18,7 +18,7 @@ import { TextRun } from "./run";
 describe("Paragraph", () => {
     beforeEach(() => {
         vi.spyOn(convenienceFunctions, "uniqueId").mockReturnValue("test-unique-id");
-        vi.spyOn(convenienceFunctions, "bookmarkUniqueNumericIdGen").mockReturnValue(() => -101);
+        vi.spyOn(convenienceFunctions, "bookmarkUniqueNumericId").mockReturnValue(-101);
     });
 
     afterEach(() => {
