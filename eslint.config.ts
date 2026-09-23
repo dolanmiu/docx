@@ -1,6 +1,7 @@
 import eslint from "@eslint/js";
 import type { Linter } from "eslint";
-import importPlugin from "eslint-plugin-import";
+import { createTypeScriptImportResolver } from "eslint-import-resolver-typescript";
+import { createNodeResolver, importX } from "eslint-plugin-import-x";
 import unicorn from "eslint-plugin-unicorn";
 import jsdoc from "eslint-plugin-jsdoc";
 import preferArrow from "eslint-plugin-prefer-arrow";
@@ -13,7 +14,7 @@ const config: Linter.Config<Linter.RulesRecord>[] = [
         ignores: ["**/vite.config.ts", "**/dist/**", "**/coverage/**", "**/*.js", "eslint.config.ts", "**/demo/**", "**/scripts/**"],
     },
     eslint.configs.recommended,
-    importPlugin.flatConfigs.recommended,
+    importX.flatConfigs.recommended,
     ...tsEslint.configs.recommended,
     ...tsEslint.configs.stylistic,
     {
@@ -33,10 +34,7 @@ const config: Linter.Config<Linter.RulesRecord>[] = [
         },
 
         settings: {
-            "import/resolver": {
-                typescript: true,
-                node: true,
-            },
+            "import-x/resolver-next": [createTypeScriptImportResolver(), createNodeResolver()],
         },
 
         rules: {
@@ -221,10 +219,10 @@ const config: Linter.Config<Linter.RulesRecord>[] = [
             "id-denylist": ["error", "any", "Number", "number", "String", "string", "Boolean", "boolean", "Undefined", "undefined"],
 
             "id-match": "error",
-            "import/no-default-export": "error",
-            "import/no-duplicates": ["error", { "prefer-inline": true }],
-            "import/no-extraneous-dependencies": "off",
-            "import/no-internal-modules": "off",
+            "import-x/no-default-export": "error",
+            "import-x/no-duplicates": ["error", { "prefer-inline": true }],
+            "import-x/no-extraneous-dependencies": "off",
+            "import-x/no-internal-modules": "off",
             "sort-imports": [
                 "error",
                 {
@@ -232,7 +230,7 @@ const config: Linter.Config<Linter.RulesRecord>[] = [
                     ignoreDeclarationSort: true,
                 },
             ],
-            "import/order": [
+            "import-x/order": [
                 "error",
                 {
                     groups: [["external", "builtin"], "internal", ["sibling", "parent", "index"]],
