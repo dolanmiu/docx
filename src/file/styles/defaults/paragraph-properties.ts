@@ -13,7 +13,7 @@ import { XmlComponent } from "@file/xml-components";
  * ```xml
  * <xsd:complexType name="CT_PPrDefault">
  *   <xsd:sequence>
- *     <xsd:element name="pPr" type="CT_PPr" minOccurs="0"/>
+ *     <xsd:element name="pPr" type="CT_PPrGeneral" minOccurs="0"/>
  *   </xsd:sequence>
  * </xsd:complexType>
  * ```
@@ -29,6 +29,7 @@ import { XmlComponent } from "@file/xml-components";
 export class ParagraphPropertiesDefaults extends XmlComponent {
     public constructor(options?: IParagraphStylePropertiesOptions) {
         super("w:pPrDefault");
-        this.root.push(new ParagraphProperties(options));
+        // Document defaults are a definition, not a paragraph, so no implicit `ListParagraph` reference belongs here.
+        this.root.push(new ParagraphProperties(options, { implicitListParagraphStyle: false }));
     }
 }
