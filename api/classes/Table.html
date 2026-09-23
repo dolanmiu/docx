@@ -35,7 +35,7 @@ Tables are used to organize content into a grid structure.</p>
 <ul class="tsd-hierarchy">
 <li class="tsd-hierarchy-item"><span class="tsd-hierarchy-target">Table</span></li></ul></li></ul></section><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/b47805170666f025a5eeb9668bda7aca69bb8993/src/file/table/table.ts#L94">file/table/table.ts:94</a></li></ul></aside>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/99517e0c1cf192c678cea11ce933a5ac8ea56428/src/file/table/table.ts#L99">file/table/table.ts:99</a></li></ul></aside>
 <section class="tsd-panel-group tsd-index-group">
 <section class="tsd-panel tsd-index-panel">
 <details class="tsd-index-content tsd-accordion" open><summary class="tsd-accordion-summary tsd-index-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
@@ -50,9 +50,14 @@ Tables are used to organize content into a grid structure.</p>
 <div class="tsd-index-list"><a href="#filechild" class="tsd-index-link tsd-is-inherited"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>file<wbr/>Child</span></a>
 </div></section>
 <section class="tsd-index-section">
+<h3 class="tsd-index-heading tsd-anchor-link" id="accessors">Accessors<a href="#accessors" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<div class="tsd-index-list"><a href="#columnwidths" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Accessor"><use href="../assets/icons.svg#icon-262144"></use></svg><span>Column<wbr/>Widths</span></a>
+</div></section>
+<section class="tsd-index-section">
 <h3 class="tsd-index-heading tsd-anchor-link" id="methods">Methods<a href="#methods" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-index-list"><a href="#addchildelement" class="tsd-index-link deprecated tsd-is-inherited"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>add<wbr/>Child<wbr/>Element</span></a>
-<a href="#prepforxml" class="tsd-index-link tsd-is-inherited"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>prep<wbr/>For<wbr/>Xml</span></a>
+<a href="#getcellwidth" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>get<wbr/>Cell<wbr/>Width</span></a>
+<a href="#prepforxml" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>prep<wbr/>For<wbr/>Xml</span></a>
 </div></section></div></details></section></section>
 <details class="tsd-panel-group tsd-member-group tsd-accordion" open><summary class="tsd-accordion-summary" data-key="section-Constructors"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
 <h2 class="tsd-anchor-link" id="constructors-1">Constructors<a href="#constructors-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2></summary>
@@ -70,7 +75,7 @@ Tables are used to organize content into a grid structure.</p>
 <h4 class="tsd-returns-title">Returns <a href="" class="tsd-signature-type tsd-kind-class">Table</a></h4><aside class="tsd-sources">
 <p>Overrides <a href="FileChild.html">FileChild</a>.<a href="FileChild.html#constructor">constructor</a></p>
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/b47805170666f025a5eeb9668bda7aca69bb8993/src/file/table/table.ts#L95">file/table/table.ts:95</a></li></ul></aside></div></li></ul></section></section></details>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/99517e0c1cf192c678cea11ce933a5ac8ea56428/src/file/table/table.ts#L112">file/table/table.ts:112</a></li></ul></aside></div></li></ul></section></section></details>
 <details class="tsd-panel-group tsd-member-group tsd-accordion" open><summary class="tsd-accordion-summary" data-key="section-Properties"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
 <h2 class="tsd-anchor-link" id="properties-1">Properties<a href="#properties-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2></summary>
 <section>
@@ -81,7 +86,25 @@ Tables are used to organize content into a grid structure.</p>
 </div><aside class="tsd-sources">
 <p>Inherited from <a href="FileChild.html">FileChild</a>.<a href="FileChild.html#filechild">fileChild</a></p>
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/b47805170666f025a5eeb9668bda7aca69bb8993/src/file/file-child.ts#L19">file/file-child.ts:19</a></li></ul></aside></section></section></details>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/99517e0c1cf192c678cea11ce933a5ac8ea56428/src/file/file-child.ts#L19">file/file-child.ts:19</a></li></ul></aside></section></section></details>
+<details class="tsd-panel-group tsd-member-group tsd-accordion" open><summary class="tsd-accordion-summary" data-key="section-Accessors"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
+<h2 class="tsd-anchor-link" id="accessors-1">Accessors<a href="#accessors-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2></summary>
+<section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="columnwidths"><span>Column<wbr/>Widths</span><a href="#columnwidths" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul class="tsd-signatures">
+<li>
+<div class="tsd-signature" id="columnwidthscolumnwidths"><span class="tsd-signature-keyword">get</span> <span class="tsd-kind-get-signature">ColumnWidths</span><span class="tsd-signature-symbol">()</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-keyword">readonly</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">[]</span></div>
+<div class="tsd-description">
+<div class="tsd-comment tsd-typography"><p>Widths of the grid columns in twips, as they will be written to <code>w:tblGrid</code>.</p>
+<p>These are the explicit <code>columnWidths</code> when given, otherwise the widths derived
+from the table and cell widths. Derived widths are resolved against the page (or
+the parent cell for nested tables) during serialization, so before that they
+reflect the default page size.</p>
+</div>
+<h4 class="tsd-returns-title">Returns <span class="tsd-signature-keyword">readonly</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">[]</span></h4><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/99517e0c1cf192c678cea11ce933a5ac8ea56428/src/file/table/table.ts#L198">file/table/table.ts:198</a></li></ul></aside></div></li></ul></section></section></details>
 <details class="tsd-panel-group tsd-member-group tsd-accordion" open><summary class="tsd-accordion-summary" data-key="section-Methods"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
 <h2 class="tsd-anchor-link" id="methods-1">Methods<a href="#methods-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2></summary>
 <section>
@@ -107,38 +130,47 @@ Tables are used to organize content into a grid structure.</p>
 </div></div><aside class="tsd-sources">
 <p>Inherited from <a href="FileChild.html">FileChild</a>.<a href="FileChild.html#addchildelement">addChildElement</a></p>
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/b47805170666f025a5eeb9668bda7aca69bb8993/src/file/xml-components/xml-component.ts#L126">file/xml-components/xml-component.ts:126</a></li></ul></aside></div></li></ul></section>
-<section class="tsd-panel tsd-member tsd-is-inherited">
-<h3 class="tsd-anchor-link" id="prepforxml"><span>prep<wbr/>For<wbr/>Xml</span><a href="#prepforxml" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
-<ul class="tsd-signatures tsd-is-inherited">
-<li class="tsd-is-inherited">
-<div class="tsd-signature tsd-anchor-link" id="prepforxml-1"><span class="tsd-kind-call-signature">prepForXml</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">context</span><span class="tsd-signature-symbol">:</span> <a href="../types/IContext.html" class="tsd-signature-type tsd-kind-type-alias">IContext</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <a href="../interfaces/IXmlableObject.html" class="tsd-signature-type tsd-kind-interface">IXmlableObject</a> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">undefined</span><a href="#prepforxml-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/99517e0c1cf192c678cea11ce933a5ac8ea56428/src/file/xml-components/xml-component.ts#L126">file/xml-components/xml-component.ts:126</a></li></ul></aside></div></li></ul></section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="getcellwidth"><span>get<wbr/>Cell<wbr/>Width</span><a href="#getcellwidth" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul class="tsd-signatures">
+<li class="">
+<div class="tsd-signature tsd-anchor-link" id="getcellwidth-1"><span class="tsd-kind-call-signature">getCellWidth</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">row</span><span class="tsd-signature-symbol">:</span> <a href="TableRow.html" class="tsd-signature-type tsd-kind-class">TableRow</a><span class="tsd-signature-symbol">,</span> <span class="tsd-kind-parameter">cell</span><span class="tsd-signature-symbol">:</span> <a href="TableCell.html" class="tsd-signature-type tsd-kind-class">TableCell</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">undefined</span><a href="#getcellwidth-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
 <div class="tsd-description">
-<div class="tsd-comment tsd-typography"><p>Prepares this component and its children for XML serialization.</p>
-<p>This method is called by the Formatter to convert the component tree into
-an object structure compatible with the xml library (<a href="https://www.npmjs.com/package/xml">https://www.npmjs.com/package/xml</a>).
-It recursively processes all children and handles special cases like
-attribute-only elements and empty elements.</p>
-<p>The method can be overridden by subclasses to customize XML representation
-or execute side effects during serialization (e.g., creating relationships).</p>
+<div class="tsd-comment tsd-typography"><p>Width in twips, according to the grid, of a cell in one of this table's rows.</p>
+<p>Used by nested tables to resolve their own widths against the cell they sit in.</p>
 </div>
 <div class="tsd-parameters">
 <h4 class="tsd-parameters-title">Parameters</h4>
 <ul class="tsd-parameter-list">
-<li><span><span class="tsd-kind-parameter">context</span>: <a href="../types/IContext.html" class="tsd-signature-type tsd-kind-type-alias">IContext</a></span>
-<div class="tsd-comment tsd-typography"><p>The serialization context containing document state</p>
+<li><span><span class="tsd-kind-parameter">row</span>: <a href="TableRow.html" class="tsd-signature-type tsd-kind-class">TableRow</a></span>
+<div class="tsd-comment tsd-typography"><p>A row of this table</p>
+</div></li>
+<li><span><span class="tsd-kind-parameter">cell</span>: <a href="TableCell.html" class="tsd-signature-type tsd-kind-class">TableCell</a></span>
+<div class="tsd-comment tsd-typography"><p>A cell of that row</p>
 </div></li></ul></div>
-<h4 class="tsd-returns-title">Returns <a href="../interfaces/IXmlableObject.html" class="tsd-signature-type tsd-kind-interface">IXmlableObject</a> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">undefined</span></h4><p>The XML-serializable object, or undefined to exclude from output</p>
-
-<div class="tsd-comment tsd-typography">
-<div class="tsd-tag-example">
-<h4 class="tsd-anchor-link" id="example-1">Example<a href="#example-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4><pre><code class="typescript"><span class="hl-4">// Override to add custom serialization logic</span><br/><span class="hl-7">prepForXml</span><span class="hl-1">(</span><span class="hl-2">context</span><span class="hl-1">: </span><span class="hl-2">IContext</span><span class="hl-1">): </span><span class="hl-2">IXmlableObject</span><span class="hl-1"> | </span><span class="hl-5">undefined</span><span class="hl-1"> {</span><br/><span class="hl-1">  </span><span class="hl-4">// Custom logic here</span><br/><span class="hl-1">  </span><span class="hl-0">return</span><span class="hl-1"> </span><span class="hl-5">super</span><span class="hl-1">.</span><span class="hl-7">prepForXml</span><span class="hl-1">(</span><span class="hl-2">context</span><span class="hl-1">);</span><br/><span class="hl-1">}</span>
-</code><button type="button">Copy</button></pre>
-
-</div></div><aside class="tsd-sources">
-<p>Inherited from <a href="FileChild.html">FileChild</a>.<a href="FileChild.html#prepforxml">prepForXml</a></p>
+<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">number</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">undefined</span></h4><p>The summed width of the grid columns the cell spans, or undefined if the cell cannot be located on the grid</p>
+<aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/b47805170666f025a5eeb9668bda7aca69bb8993/src/file/xml-components/xml-component.ts#L88">file/xml-components/xml-component.ts:88</a></li></ul></aside></div></li></ul></section></section></details></div>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/99517e0c1cf192c678cea11ce933a5ac8ea56428/src/file/table/table.ts#L211">file/table/table.ts:211</a></li></ul></aside></div></li></ul></section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="prepforxml"><span>prep<wbr/>For<wbr/>Xml</span><a href="#prepforxml" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul class="tsd-signatures">
+<li class="">
+<div class="tsd-signature tsd-anchor-link" id="prepforxml-1"><span class="tsd-kind-call-signature">prepForXml</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">context</span><span class="tsd-signature-symbol">:</span> <a href="../types/IContext.html" class="tsd-signature-type tsd-kind-type-alias">IContext</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <a href="../interfaces/IXmlableObject.html" class="tsd-signature-type tsd-kind-interface">IXmlableObject</a> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">undefined</span><a href="#prepforxml-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
+<div class="tsd-description">
+<div class="tsd-comment tsd-typography"><p>Resolves derived grid column widths against the width actually available to the
+table (the section's text width, or the parent cell for nested tables) before
+serializing.</p>
+</div>
+<div class="tsd-parameters">
+<h4 class="tsd-parameters-title">Parameters</h4>
+<ul class="tsd-parameter-list">
+<li><span><span class="tsd-kind-parameter">context</span>: <a href="../types/IContext.html" class="tsd-signature-type tsd-kind-type-alias">IContext</a></span></li></ul></div>
+<h4 class="tsd-returns-title">Returns <a href="../interfaces/IXmlableObject.html" class="tsd-signature-type tsd-kind-interface">IXmlableObject</a> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">undefined</span></h4><aside class="tsd-sources">
+<p>Overrides <a href="FileChild.html">FileChild</a>.<a href="FileChild.html#prepforxml">prepForXml</a></p>
+<ul>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/99517e0c1cf192c678cea11ce933a5ac8ea56428/src/file/table/table.ts#L232">file/table/table.ts:232</a></li></ul></aside></div></li></ul></section></section></details></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">
@@ -157,8 +189,10 @@ or execute side effects during serialization (e.g., creating relationships).</p>
 <div><a href="#constructor"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Constructor"><use href="../assets/icons.svg#icon-512"></use></svg><span>constructor</span></a></div></details>
 <details open class="tsd-accordion tsd-page-navigation-section"><summary class="tsd-accordion-summary" data-key="section-Properties"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>Properties</summary>
 <div><a href="#filechild" class="tsd-is-inherited"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>file<wbr/>Child</span></a></div></details>
+<details open class="tsd-accordion tsd-page-navigation-section"><summary class="tsd-accordion-summary" data-key="section-Accessors"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>Accessors</summary>
+<div><a href="#columnwidths"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Accessor"><use href="../assets/icons.svg#icon-262144"></use></svg><span>Column<wbr/>Widths</span></a></div></details>
 <details open class="tsd-accordion tsd-page-navigation-section"><summary class="tsd-accordion-summary" data-key="section-Methods"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>Methods</summary>
-<div><a href="#addchildelement" class="tsd-is-inherited"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>add<wbr/>Child<wbr/>Element</span></a><a href="#prepforxml" class="tsd-is-inherited"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>prep<wbr/>For<wbr/>Xml</span></a></div></details></div></details></div>
+<div><a href="#addchildelement" class="tsd-is-inherited"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>add<wbr/>Child<wbr/>Element</span></a><a href="#getcellwidth"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>get<wbr/>Cell<wbr/>Width</span></a><a href="#prepforxml"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>prep<wbr/>For<wbr/>Xml</span></a></div></details></div></details></div>
 <div class="site-menu">
 <nav class="tsd-navigation"><a href="../modules.html">docx</a>
 <ul class="tsd-small-nested-navigation" id="tsd-nav-container">
