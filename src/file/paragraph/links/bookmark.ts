@@ -8,7 +8,8 @@
  *
  * @module
  */
-import { type IContext, type IXmlableObject, XmlComponent } from "@file/xml-components";
+import { XmlComponent } from "@file/xml-components";
+import { bookmarkUniqueNumericId } from "@util/convenience-functions";
 
 import type { ParagraphChild } from "../paragraph";
 import { BookmarkEndAttributes, BookmarkStartAttributes } from "./bookmark-attributes";
@@ -72,9 +73,11 @@ export class Bookmark {
     public readonly end: BookmarkEnd;
 
     public constructor(options: IBookmarkOptions) {
-        this.start = new BookmarkStart(options.id);
+        const linkId = bookmarkUniqueNumericId();
+
+        this.start = new BookmarkStart(options.id, linkId);
         this.children = options.children;
-        this.end = new BookmarkEnd(options.id);
+        this.end = new BookmarkEnd(linkId);
     }
 }
 
@@ -99,35 +102,20 @@ export class Bookmark {
  * </xsd:complexType>
  * ```
  *
- * Without `linkId`, the id is resolved from the document on serialization.
- *
  * @example
  * ```typescript
- * new BookmarkStart("myBookmark");
- * new BookmarkStart("myBookmark", 1); // explicit id
+ * new BookmarkStart("myBookmark", 1);
  * ```
  */
 export class BookmarkStart extends XmlComponent {
-    private readonly name: string;
-    private readonly linkId?: number;
-
-    public constructor(id: string, linkId?: number) {
+    public constructor(id: string, linkId: number) {
         super("w:bookmarkStart");
 
-        this.name = id;
-        this.linkId = linkId;
-    }
-
-    public prepForXml(context: IContext): IXmlableObject | undefined {
-        const id = this.linkId ?? context.file.BookmarkIds.getId(this.name);
-
-        // Reserving an allocated id is a no-op; an explicit one has to be recorded
-        // so it is not handed to another bookmark later in the document.
-        context.file.BookmarkIds.reserve(id);
-
-        this.root.push(new BookmarkStartAttributes({ name: this.name, id }));
-
-        return super.prepForXml(context);
+        const attributes = new BookmarkStartAttributes({
+            name: id,
+            id: linkId,
+        });
+        this.root.push(attributes);
     }
 }
 
@@ -152,31 +140,18 @@ export class BookmarkStart extends XmlComponent {
  * </xsd:complexType>
  * ```
  *
- * Given a name, the id is resolved from the document on serialization, which is
- * how it matches the `BookmarkStart` for that name.
- *
  * @example
  * ```typescript
- * new BookmarkEnd("myBookmark");
- * new BookmarkEnd(1); // explicit id
+ * new BookmarkEnd(1);
  * ```
  */
 export class BookmarkEnd extends XmlComponent {
-    private readonly nameOrLinkId: string | number;
-
-    public constructor(nameOrLinkId: string | number) {
+    public constructor(linkId: number) {
         super("w:bookmarkEnd");
 
-        this.nameOrLinkId = nameOrLinkId;
-    }
-
-    public prepForXml(context: IContext): IXmlableObject | undefined {
-        const id = typeof this.nameOrLinkId === "number" ? this.nameOrLinkId : context.file.BookmarkIds.getId(this.nameOrLinkId);
-
-        context.file.BookmarkIds.reserve(id);
-
-        this.root.push(new BookmarkEndAttributes({ id }));
-
-        return super.prepForXml(context);
+        const attributes = new BookmarkEndAttributes({
+            id: linkId,
+        });
+        this.root.push(attributes);
     }
 }

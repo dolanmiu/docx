@@ -1,100 +1,57 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { assert, beforeEach, describe, expect, it } from "vitest";
 
-import { Formatter } from "@export/formatter";
-import type { IContext } from "@file/xml-components";
+import { Utility } from "tests/utility";
 
-import type { IViewWrapper } from "../../document-wrapper";
-import type { File } from "../../file";
 import { TextRun } from "../run";
-import { Bookmark, BookmarkEnd, BookmarkStart } from "./bookmark";
-import { BookmarkIds } from "./bookmark-ids";
-
-const documentContext = (): IContext => ({
-    file: { BookmarkIds: new BookmarkIds() } as unknown as File,
-    viewWrapper: {} as unknown as IViewWrapper,
-    stack: [],
-});
+import { Bookmark } from "./bookmark";
 
 describe("Bookmark", () => {
-    let context: IContext;
-    let textRun: TextRun;
     let bookmark: Bookmark;
 
     beforeEach(() => {
-        context = documentContext();
-        textRun = new TextRun("Internal Link");
-        bookmark = new Bookmark({ id: "anchor", children: [textRun] });
+        bookmark = new Bookmark({
+            id: "anchor",
+            children: [new TextRun("Internal Link")],
+        });
     });
 
     it("should create a bookmark with three root elements", () => {
-        expect(new Formatter().format(bookmark.start, context)).to.have.property("w:bookmarkStart");
-        expect(new Formatter().format(textRun, context)).to.have.property("w:r");
-        expect(new Formatter().format(bookmark.end, context)).to.have.property("w:bookmarkEnd");
+        const newJson = Utility.jsonify(bookmark);
+        assert.equal(newJson.rootKey, undefined);
+        assert.equal(newJson.start.rootKey, "w:bookmarkStart");
+        assert.equal(newJson.children[0].rootKey, "w:r");
+        assert.equal(newJson.end.rootKey, "w:bookmarkEnd");
     });
 
     it("should create a bookmark with the correct attributes on the bookmark start element", () => {
-        const tree = new Formatter().format(bookmark.start, context);
+        const newJson = Utility.jsonify(bookmark);
 
-        expect(tree["w:bookmarkStart"]._attr["w:name"]).to.equal("anchor");
+        assert.equal(newJson.start.root[0].root.name, "anchor");
     });
 
-    it("should keep the bookmark's children", () => {
-        expect(bookmark.children).to.deep.equal([textRun]);
-        expect(JSON.stringify(new Formatter().format(textRun, context))).to.contain("Internal Link");
+    it("should create a bookmark with the correct attributes on the text element", () => {
+        const newJson = Utility.jsonify(bookmark);
+        assert.equal(JSON.stringify(newJson.children[0].root[1].root[1]), JSON.stringify("Internal Link"));
     });
 
     it("should create a bookmark with the correct attributes on the bookmark end element", () => {
-        const tree = new Formatter().format(bookmark.end, context);
-
-        expect(tree["w:bookmarkEnd"]._attr["w:id"]).to.be.a("number");
+        const newJson = Utility.jsonify(bookmark);
+        expect(newJson.end.root[0].root.id).to.be.a("number");
     });
 
     it("should pair the start and end elements with the same id", () => {
-        const start = new Formatter().format(bookmark.start, context);
-        const end = new Formatter().format(bookmark.end, context);
-
-        expect(start["w:bookmarkStart"]._attr["w:id"]).to.equal(end["w:bookmarkEnd"]._attr["w:id"]);
+        const newJson = Utility.jsonify(bookmark);
+        expect(newJson.end.root[0].root.id).to.equal(newJson.start.root[0].root.id);
     });
 
-    // Regression: a per-instance generator gave every bookmark `w:id="1"`, so
-    // start and end pairing was ambiguous and Word could not resolve references.
-    it("should give each bookmark in a document a distinct id", () => {
-        const bookmarks = ["first", "second", "third"].map((id) => new Bookmark({ id, children: [new TextRun(id)] }));
+    it("should give each bookmark a distinct id", () => {
+        // Regression for https://github.com/dolanmiu/docx/issues/3478 — each
+        // Bookmark held its own generator, so every bookmark was written with
+        // `w:id="1"` and Word could not tell their starts and ends apart.
+        const ids = ["first", "second", "third"].map(
+            (id) => Utility.jsonify(new Bookmark({ id, children: [new TextRun(id)] })).start.root[0].root.id,
+        );
 
-        const ids = bookmarks.map((item) => new Formatter().format(item.start, context)["w:bookmarkStart"]._attr["w:id"]);
-
-        expect(ids).to.deep.equal([1, 2, 3]);
-    });
-
-    it("should number bookmarks from one in every document", () => {
-        const first = new Bookmark({ id: "a", children: [new TextRun("a")] });
-        new Formatter().format(first.start, context);
-
-        const otherDocument = documentContext();
-        const second = new Bookmark({ id: "b", children: [new TextRun("b")] });
-
-        expect(new Formatter().format(second.start, otherDocument)["w:bookmarkStart"]._attr["w:id"]).to.equal(1);
-    });
-
-    it("should keep an explicitly supplied id on the start element", () => {
-        const tree = new Formatter().format(new BookmarkStart("named", 7), context);
-
-        expect(tree["w:bookmarkStart"]._attr["w:id"]).to.equal(7);
-    });
-
-    it("should keep an explicitly supplied id on the end element", () => {
-        const tree = new Formatter().format(new BookmarkEnd(7), context);
-
-        expect(tree["w:bookmarkEnd"]._attr["w:id"]).to.equal(7);
-    });
-
-    // An explicit id used to be emitted without telling the registry, so the next
-    // allocated bookmark could be handed the same number.
-    it("should not allocate an id already taken by an explicit one", () => {
-        const explicit = new Formatter().format(new BookmarkStart("fixed", 1), context);
-        const implicit = new Formatter().format(new Bookmark({ id: "other", children: [new TextRun("x")] }).start, context);
-
-        expect(explicit["w:bookmarkStart"]._attr["w:id"]).to.equal(1);
-        expect(implicit["w:bookmarkStart"]._attr["w:id"]).to.equal(2);
+        expect(new Set(ids).size).to.equal(3);
     });
 });

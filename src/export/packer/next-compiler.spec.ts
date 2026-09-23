@@ -2,7 +2,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vites
 
 import { File } from "@file/file";
 import { Footer, Header } from "@file/header";
-import { ImageRun, Paragraph } from "@file/paragraph";
+import { Bookmark, ImageRun, Paragraph, TextRun } from "@file/paragraph";
 import * as convenienceFunctions from "@util/convenience-functions";
 
 import { Compiler } from "./next-compiler";
@@ -240,6 +240,42 @@ describe("Compiler", () => {
             // Comment WITHOUT a durableId falls back to its generated paraId (00000002 for id 1)
             expect(commentsIdsText).to.contain('w16cid:paraId="00000002"');
             expect(commentsIdsText).to.contain('w16cid:durableId="00000002"');
+        });
+
+        it("should write each bookmark with one distinct id shared by its start and end", async () => {
+            const bookmarked = (name: string): Paragraph =>
+                new Paragraph({ children: [new Bookmark({ id: name, children: [new TextRun(name)] })] });
+            const file = new File({
+                sections: [
+                    {
+                        headers: { default: new Header({ children: [bookmarked("header")] }) },
+                        footers: { default: new Footer({ children: [bookmarked("footer")] }) },
+                        children: [bookmarked("first"), bookmarked("second")],
+                    },
+                ],
+            });
+
+            // Headers and footers are formatted more than once per compile, and a
+            // document can be packed repeatedly, so compile twice.
+            compiler.compile(file);
+            const zipFile = compiler.compile(file);
+            const xml = (
+                await Promise.all(
+                    ["word/document.xml", "word/header1.xml", "word/footer1.xml"].map((name) => zipFile.file(name)?.async("text")),
+                )
+            ).join("");
+
+            const idsOf = (tag: string): readonly (readonly string[])[] =>
+                [...xml.matchAll(new RegExp(`<${tag} ([^>]*)>`, "g"))].map(([, attributes]) =>
+                    [...attributes.matchAll(/w:id="(\d+)"/g)].map(([, id]) => id),
+                );
+            const startIds = idsOf("w:bookmarkStart");
+            const endIds = idsOf("w:bookmarkEnd");
+
+            expect(startIds).to.have.length(4);
+            expect(startIds.every((ids) => ids.length === 1)).to.equal(true);
+            expect(new Set(startIds.flat()).size).to.equal(4);
+            expect(endIds).to.deep.equal(startIds);
         });
 
         it("should call the format method X times equalling X files to be formatted", () => {
