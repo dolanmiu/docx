@@ -48,9 +48,7 @@ const doc = new Document({
                     },
                 },
             },
-            children: [
-                /* ... */
-            ],
+            children: [/* ... */],
         },
     ],
 });
@@ -74,9 +72,7 @@ const doc = new Document({
                     },
                 },
             },
-            children: [
-                /* ... */
-            ],
+            children: [/* ... */],
         },
     ],
 });
@@ -96,9 +92,7 @@ const doc = new Document({
                     space: convertMillimetersToTwip(10), // 10mm between columns
                 },
             },
-            children: [
-                /* ... */
-            ],
+            children: [/* ... */],
         },
     ],
 });

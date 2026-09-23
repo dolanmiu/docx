@@ -112,9 +112,7 @@ const doc = new Document({
             },
         },
     },
-    sections: [
-        /* ... */
-    ],
+    sections: [/* ... */],
 });
 ```
 

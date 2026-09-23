@@ -63,9 +63,7 @@ const doc = new Document({
                     children: [], // No footer on first page
                 }),
             },
-            children: [
-                /* ... */
-            ],
+            children: [/* ... */],
         },
     ],
 });
@@ -98,9 +96,7 @@ const doc = new Document({
                     ],
                 }),
             },
-            children: [
-                /* ... */
-            ],
+            children: [/* ... */],
         },
     ],
 });
@@ -250,15 +246,9 @@ sections: [
                 },
             },
         },
-        headers: {
-            /* ... */
-        },
-        footers: {
-            /* ... */
-        },
-        children: [
-            /* ... */
-        ],
+        headers: {/* ... */},
+        footers: {/* ... */},
+        children: [/* ... */],
     },
 ];
 ```
