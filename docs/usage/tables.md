@@ -55,6 +55,21 @@ const table = new Table({
 });
 ```
 
+### Column Widths
+
+A table's columns are defined by its grid (`w:tblGrid`), whose widths are always in twips (twentieths of a point). You can set them explicitly with `columnWidths`:
+
+```ts
+const table = new Table({
+    ...,
+    columnWidths: [3505, 5505],
+});
+```
+
+When `columnWidths` is omitted, `docx` derives the grid for you from the table's `width` and the cells' `width`s. Percentages are resolved against the actual page size and margins of the section the table is in (or the parent cell for nested tables) when the document is packed, and columns without a width share whatever is left equally. So a 100% wide table with 90% / 10% cells on a default A4 page gets a grid of `[8123, 903]`, and a table with no widths at all gets equal, full-width columns.
+
+!> Microsoft Word lays tables out from the `width`s and only treats the grid as a hint, but Google Docs, Apple Pages, QuickLook and many other readers lay tables out from the grid alone and ignore percentage widths. Earlier versions of `docx` wrote a placeholder grid of 100 twips per column, which made every table with percentage widths collapse to one character per column in those readers. If you set `columnWidths` yourself, make sure the values are real twips that match your intended widths.
+
 ### Set Indent
 
 ```ts

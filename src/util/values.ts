@@ -222,6 +222,49 @@ export const universalMeasureValue = (val: UniversalMeasure): UniversalMeasure =
 };
 
 /**
+ * Twips per unit for each universal measure suffix.
+ *
+ * 1 inch = 72 points = 1440 twips; 1 pica = 12 points.
+ */
+const TWIPS_PER_UNIT: Readonly<Record<string, number>> = {
+    in: 1440,
+    cm: 1440 / 2.54,
+    mm: 1440 / 25.4,
+    pt: 20,
+    pc: 240,
+    pi: 240,
+};
+
+/**
+ * Converts a universal measure (or a value already in twips) into twips.
+ *
+ * Numbers are assumed to already be in twips and are returned unchanged.
+ * Strings are converted according to their unit suffix.
+ *
+ * @param val - A number of twips or a universal measure such as "10mm" or "1.5in"
+ * @returns The equivalent number of twips (not rounded)
+ *
+ * @example
+ * ```typescript
+ * universalMeasureToTwips(720); // Returns 720
+ * universalMeasureToTwips("1in"); // Returns 1440
+ * universalMeasureToTwips("2.54cm"); // Returns 1440
+ * ```
+ */
+export const universalMeasureToTwips = (val: UniversalMeasure | number): number => {
+    if (typeof val === "number") {
+        return val;
+    }
+    const unit = val.slice(-2);
+    const amount = Number(val.substring(0, val.length - 2));
+    const twipsPerUnit = TWIPS_PER_UNIT[unit];
+    if (twipsPerUnit === undefined || Number.isNaN(amount)) {
+        throw new Error(`Invalid universal measure '${val}'. Expected a number followed by mm, cm, in, pt, pc or pi.`);
+    }
+    return amount * twipsPerUnit;
+};
+
+/**
  * Validates and normalizes a positive universal measure value.
  *
  * Reference: ST_PositiveUniversalMeasure in OOXML specification

@@ -12,6 +12,7 @@ import {
     signedHpsMeasureValue,
     signedTwipsMeasureValue,
     twipsMeasureValue,
+    universalMeasureToTwips,
     universalMeasureValue,
     unsignedDecimalNumber,
 } from "./values";
@@ -168,6 +169,32 @@ describe("values", () => {
     describe("dateTimeValue", () => {
         it("should allow valid values", () => {
             expect(dateTimeValue(new Date())).to.match(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:.\d+)?Z/);
+        });
+    });
+
+    describe("universalMeasureToTwips", () => {
+        it("should return numbers unchanged, as they are already twips", () => {
+            expect(universalMeasureToTwips(720)).to.equal(720);
+            expect(universalMeasureToTwips(0)).to.equal(0);
+        });
+
+        it("should convert every supported unit to twips", () => {
+            expect(universalMeasureToTwips("1in")).to.equal(1440);
+            expect(universalMeasureToTwips("72pt")).to.equal(1440);
+            expect(universalMeasureToTwips("6pc")).to.equal(1440);
+            expect(universalMeasureToTwips("6pi")).to.equal(1440);
+            expect(universalMeasureToTwips("2.54cm")).to.be.closeTo(1440, 1e-9);
+            expect(universalMeasureToTwips("25.4mm")).to.be.closeTo(1440, 1e-9);
+        });
+
+        it("should keep fractional and negative amounts", () => {
+            expect(universalMeasureToTwips("0.5in")).to.equal(720);
+            expect(universalMeasureToTwips("-1in")).to.equal(-1440);
+        });
+
+        it("should throw on an unknown unit or a malformed amount", () => {
+            expect(() => universalMeasureToTwips("10px" as never)).to.throw();
+            expect(() => universalMeasureToTwips("abcin" as never)).to.throw();
         });
     });
 });

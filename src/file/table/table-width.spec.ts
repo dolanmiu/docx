@@ -1,8 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { Formatter } from "@export/formatter";
-
-import { WidthType, createTableWidthElement } from "./table-width";
+import { WidthType, createTableWidthElement } from "@file/table/table-width";
 
 describe("createTableWidthElement", () => {
     it("writes a numeric pct width in fiftieths of a percent, matching Word (#1457)", () => {
@@ -14,9 +13,10 @@ describe("createTableWidthElement", () => {
     });
 
     it("rounds fractional percentages to the nearest fiftieth", () => {
-        const tree = new Formatter().format(createTableWidthElement("w:tblW", { size: 33.3, type: WidthType.PERCENTAGE }));
+        // 33.31 * 50 = 1665.5, which only becomes 1666 with rounding (truncation would give 1665)
+        const tree = new Formatter().format(createTableWidthElement("w:tblW", { size: 33.31, type: WidthType.PERCENTAGE }));
 
-        expect(tree).to.deep.equal({ "w:tblW": { _attr: { "w:type": "pct", "w:w": 1665 } } });
+        expect(tree).to.deep.equal({ "w:tblW": { _attr: { "w:type": "pct", "w:w": 1666 } } });
     });
 
     it("still emits the literal percent string when the caller passes a Percentage", () => {
