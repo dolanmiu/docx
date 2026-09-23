@@ -7,4 +7,4 @@
 - Battle tested, mature, 100% coverage (yes, every line is tested)
 
 [GitHub](https://github.com/dolanmiu/docx)
-[Get Started](#Welcome)
+[Get Started](#welcome-to-docx)
