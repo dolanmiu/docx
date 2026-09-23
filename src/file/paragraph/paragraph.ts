@@ -13,6 +13,7 @@ import { uniqueId } from "@util/convenience-functions";
 import type { CheckBox } from "../checkbox";
 import { TargetModeType } from "../relationships/relationship/relationship";
 import type { DeletedTextRun, InsertedTextRun } from "../track-revision";
+import type { ImageWatermark, TextWatermark } from "../watermark";
 import type { ColumnBreak, PageBreak } from "./formatting/break";
 import { Bookmark, ConcreteHyperlink, ExternalHyperlink, type InternalHyperlink } from "./links";
 import type { Math } from "./math";
@@ -54,7 +55,9 @@ export type ParagraphChild =
     | CommentRangeStart
     | CommentRangeEnd
     | CommentReference
-    | CheckBox;
+    | CheckBox
+    | TextWatermark
+    | ImageWatermark;
 
 /**
  * Options for creating a Paragraph element.

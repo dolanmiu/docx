@@ -34,4 +34,5 @@ export * from "./vertical-align";
 export * from "./checkbox";
 export * from "./fonts";
 export * from "./textbox";
+export * from "./watermark";
 export { type IPropertiesOptions } from "./core-properties";

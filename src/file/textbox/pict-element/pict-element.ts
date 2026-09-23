@@ -5,7 +5,8 @@
  *
  * @module
  */
-import { BuilderElement, type XmlComponent } from "@file/xml-components";
+import { createPict } from "@file/vml";
+import type { XmlComponent } from "@file/xml-components";
 
 /**
  * Options for creating a picture element.
@@ -52,8 +53,4 @@ export type IPictElement = {
  * });
  * ```
  */
-export const createPictElement = ({ shape }: IPictElement): XmlComponent =>
-    new BuilderElement<{ readonly style?: string }>({
-        name: "w:pict",
-        children: [shape],
-    });
+export const createPictElement = ({ shape }: IPictElement): XmlComponent => createPict({ children: [shape] });

@@ -231,6 +231,24 @@ const header = new Header({
 });
 ```
 
+## Watermarks
+
+Watermarks are placed in headers so that they repeat on every page:
+
+```ts
+import { Header, Paragraph, TextWatermark } from "docx";
+
+const header = new Header({
+    children: [
+        new Paragraph({
+            children: [new TextWatermark({ text: "DRAFT" })],
+        }),
+    ],
+});
+```
+
+See [Watermarks](usage/watermarks.md) for text and image watermark options.
+
 ## Header/Footer Margins
 
 Control the distance from the edge of the page:
