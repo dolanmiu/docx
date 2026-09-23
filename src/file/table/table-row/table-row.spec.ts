@@ -10,6 +10,19 @@ import { TableRow } from "./table-row";
 import { CellSpacingType } from "../table-cell-spacing";
 
 describe("TableRow", () => {
+    describe("#CellCount", () => {
+        it("counts the cells the row was created with, regardless of column spans", () => {
+            const row = new TableRow({
+                children: [
+                    new TableCell({ children: [new Paragraph("a")] }),
+                    new TableCell({ children: [new Paragraph("b")], columnSpan: 2 }),
+                ],
+            });
+
+            expect(row.CellCount).to.equal(2);
+        });
+    });
+
     describe("#constructor", () => {
         it("should create with no cells", () => {
             const tableRow = new TableRow({
