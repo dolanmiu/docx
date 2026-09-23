@@ -106,7 +106,7 @@
         "vite": "^8.0.0",
         "vite-plugin-dts": "^5.0.1",
         "vite-plugin-node-polyfills": "^0.28.0",
-        "vitest": "^4.1.7"
+        "vitest": "^5.0.1"
     },
     "engines": {
         "node": ">=10"
