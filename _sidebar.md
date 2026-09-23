@@ -31,6 +31,7 @@
 - Page Layout
     - [Page Layout](usage/page-layout.md)
     - [Headers & Footers](usage/headers-and-footers.md)
+    - [Watermarks](usage/watermarks.md)
     - [Page Numbers](usage/page-numbers.md)
     - [Columns](usage/columns.md)
     - [Line Numbers](usage/line-numbers.md)
