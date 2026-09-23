@@ -9,7 +9,13 @@
  * @module
  */
 import { BuilderElement, type XmlComponent } from "@file/xml-components";
-import { type PositiveUniversalMeasure, type UniversalMeasure, signedTwipsMeasureValue, twipsMeasureValue } from "@util/values";
+import {
+    type PositiveUniversalMeasure,
+    type UniversalMeasure,
+    decimalNumber,
+    signedTwipsMeasureValue,
+    twipsMeasureValue,
+} from "@util/values";
 
 /**
  * Properties for configuring paragraph indentation.
@@ -17,12 +23,20 @@ import { type PositiveUniversalMeasure, type UniversalMeasure, signedTwipsMeasur
  * Values can be specified as numbers (in twips) or as universal measures (e.g., "1in", "2.5cm").
  */
 export type IIndentAttributesProperties = {
+    // Indentation from the leading edge — left in LTR, right in RTL (ST_SignedTwipsMeasure)
     readonly start?: number | UniversalMeasure;
+    // Indentation from the trailing edge — right in LTR, left in RTL (ST_SignedTwipsMeasure)
     readonly end?: number | UniversalMeasure;
+    // Indentation from the left margin (ST_SignedTwipsMeasure)
     readonly left?: number | UniversalMeasure;
+    // Indentation from the right margin (ST_SignedTwipsMeasure)
     readonly right?: number | UniversalMeasure;
+    // Hanging indent removed from the first line (ST_TwipsMeasure)
     readonly hanging?: number | PositiveUniversalMeasure;
+    // Additional first-line indent in twips (ST_TwipsMeasure)
     readonly firstLine?: number | PositiveUniversalMeasure;
+    // Hundredths of a character width (ST_DecimalNumber); e.g. 200 = 2 characters
+    readonly firstLineChars?: number;
 };
 
 /**
@@ -50,7 +64,7 @@ export type IIndentAttributesProperties = {
  * </xsd:complexType>
  * ```
  */
-export const createIndent = ({ start, end, left, right, hanging, firstLine }: IIndentAttributesProperties): XmlComponent =>
+export const createIndent = ({ start, end, left, right, hanging, firstLine, firstLineChars }: IIndentAttributesProperties): XmlComponent =>
     new BuilderElement<IIndentAttributesProperties>({
         name: "w:ind",
         attributes: {
@@ -60,5 +74,6 @@ export const createIndent = ({ start, end, left, right, hanging, firstLine }: II
             right: { key: "w:right", value: right === undefined ? undefined : signedTwipsMeasureValue(right) },
             hanging: { key: "w:hanging", value: hanging === undefined ? undefined : twipsMeasureValue(hanging) },
             firstLine: { key: "w:firstLine", value: firstLine === undefined ? undefined : twipsMeasureValue(firstLine) },
+            firstLineChars: { key: "w:firstLineChars", value: firstLineChars === undefined ? undefined : decimalNumber(firstLineChars) },
         },
     });

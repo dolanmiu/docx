@@ -25,9 +25,7 @@ const doc = new docx.Document({
     title: "My Document",
     subject: "Report",
     keywords: "report, annual, finance",
-    sections: [
-        /* ... */
-    ],
+    sections: [/* ... */],
 });
 ```
 
@@ -146,9 +144,7 @@ const doc = new docx.Document({
             value: 2.5,
         },
     ],
-    sections: [
-        /* ... */
-    ],
+    sections: [/* ... */],
 });
 ```
 
@@ -168,9 +164,7 @@ const doc = new docx.Document({
         trackRevisions: true, // Enable track changes
         updateFields: true, // Update fields (like TOC) when opened
     },
-    sections: [
-        /* ... */
-    ],
+    sections: [/* ... */],
 });
 ```
 

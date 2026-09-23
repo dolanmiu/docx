@@ -43,10 +43,15 @@ export class FontWrapper implements IViewWrapper {
         this.relationships = new Relationships();
 
         for (let i = 0; i < options.length; i++) {
+            // Use sequential filenames (`font1.odttf`, `font2.odttf` …) rather
+            // than the user-facing family name. Word treats the embedded-font
+            // path as a literal filename and rejects spaces / non-ASCII in
+            // the docx package — see https://github.com/dolanmiu/docx/issues/3019.
+            // The user-facing family name lives only in <w:font name="..."/>.
             this.relationships.addRelationship(
                 i + 1,
                 "http://schemas.openxmlformats.org/officeDocument/2006/relationships/font",
-                `fonts/${options[i].name}.odttf`,
+                `fonts/font${i + 1}.odttf`,
             );
         }
     }

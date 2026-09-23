@@ -41,7 +41,15 @@ Levels define the numbering definition itself, what it looks like, the indention
 | format    | `LevelFormat` | Optional | `DECIMAL`, `UPPER_ROMAN`, `LOWER_ROMAN`, `UPPER_LETTER`, `LOWER_LETTER`, `ORDINAL`, `CARDINAL_TEXT`, `ORDINAL_TEXT`, `HEX`, `CHICAGO`, `IDEOGRAPH__DIGITAL`, `JAPANESE_COUNTING`, `AIUEO`, `IROHA`, `DECIMAL_FULL_WIDTH`, `DECIMAL_HALF_WIDTH`, `JAPANESE_LEGAL`, `JAPANESE_DIGITAL_TEN_THOUSAND`, `DECIMAL_ENCLOSED_CIRCLE`, `DECIMAL_FULL_WIDTH2`, `AIUEO_FULL_WIDTH`, `IROHA_FULL_WIDTH`, `DECIMAL_ZERO`, `BULLET`, `GANADA`, `CHOSUNG`, `DECIMAL_ENCLOSED_FULLSTOP`, `DECIMAL_ENCLOSED_PARENTHESES`, `DECIMAL_ENCLOSED_CIRCLE_CHINESE`, `IDEOGRAPH_ENCLOSED_CIRCLE`, `IDEOGRAPH_TRADITIONAL`, `IDEOGRAPH_ZODIAC`, `IDEOGRAPH_ZODIAC_TRADITIONAL`, `TAIWANESE_COUNTING`, `IDEOGRAPH_LEGAL_TRADITIONAL`, `TAIWANESE_COUNTING_THOUSAND`, `TAIWANESE_DIGITAL`, `CHINESE_COUNTING`, `CHINESE_LEGAL_SIMPLIFIED`, `CHINESE_COUNTING_THOUSAND`, `KOREAN_DIGITAL`, `KOREAN_COUNTING`, `KOREAN_LEGAL`, `KOREAN_DIGITAL2`, `VIETNAMESE_COUNTING`, `RUSSIAN_LOWER`, `RUSSIAN_UPPER`, `NONE`, `NUMBER_IN_DASH`, `HEBREW1`, `HEBREW2`, `ARABIC_ALPHA`, `ARABIC_ABJAD`, `HINDI_VOWELS`, `HINDI_CONSONANTS`, `HINDI_NUMBERS`, `HINDI_COUNTING`, `THAI_LETTERS`, `THAI_NUMBERS`, `THAI_COUNTING`, `BAHT_TEXT`, `DOLLAR_TEXT`, `CUSTOM` |
 | text      | `string`      | Optional | A unique `string` to describe the shape of the bullet                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | alignment | `string`      | Required | `START`, `CENTER`, `END`, `BOTH`, `MEDIUM_KASHIDA`, `DISTRIBUTE`, `NUM_TAB`, `HIGH_KASHIDA`, `LOW_KASHIDA`, `THAI_DISTRIBUTE`, `LEFT`, `RIGHT`, `JUSTIFIED`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| style     | `string`      | Optional | [Sections](usage/styling-with-js.md)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| style     | `object`      | Optional | An object containing `run`, `paragraph`, and `style` sub-properties (see below)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+
+#### Style sub-properties
+
+| Property  | Type     | Notes    | Description                                                                                                                                                                                                                |
+| --------- | -------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| run       | `object` | Optional | Run style properties for the numbering text (font, size, bold, etc.)                                                                                                                                                       |
+| paragraph | `object` | Optional | Paragraph style properties for the level (indent, spacing, etc.)                                                                                                                                                           |
+| style     | `string` | Optional | A paragraph style ID to associate with the level. Paragraphs using that style will automatically adopt this numbering level. See [Associating a level with a paragraph style](#associating-a-level-with-a-paragraph-style) |
 
 ## Using ordered lists in `docx`
 
@@ -215,8 +223,79 @@ new Paragraph({
 }),
 ```
 
-## Full Example
+## Associating a level with a paragraph style
+
+You can link a numbering level to a paragraph style using `style.style`. Any paragraph that uses the associated style will automatically adopt the numbering level without needing to specify `numbering` on each paragraph individually.
+
+This is useful for creating reusable list styles — define the numbering once and apply it via the paragraph style:
+
+```ts
+const doc = new Document({
+    styles: {
+        paragraphStyles: [
+            {
+                id: "numberedListParagraph",
+                name: "Numbered List Paragraph",
+                paragraph: {
+                    numbering: {
+                        reference: "styled-numbering",
+                        level: 0,
+                    },
+                    spacing: { after: 120 },
+                },
+            },
+        ],
+    },
+    numbering: {
+        config: [
+            {
+                reference: "styled-numbering",
+                levels: [
+                    {
+                        level: 0,
+                        format: LevelFormat.DECIMAL,
+                        text: "%1.",
+                        alignment: AlignmentType.START,
+                        style: {
+                            style: "numberedListParagraph",
+                            paragraph: {
+                                indent: { left: 720, hanging: 260 },
+                            },
+                        },
+                    },
+                ],
+            },
+        ],
+    },
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    text: "First styled list item",
+                    style: "numberedListParagraph",
+                }),
+                new Paragraph({
+                    text: "Second styled list item",
+                    style: "numberedListParagraph",
+                }),
+            ],
+        },
+    ],
+});
+```
+
+The `style.style` value must match the `id` of a paragraph style defined in `styles.paragraphStyles`. This creates a `<w:pStyle>` element inside the numbering level definition, linking the two.
+
+## Examples
+
+### Numbering and Bullet Points
 
 [Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/3-numbering-and-bullet-points.ts ":include")
 
 _Source: https://github.com/dolanmiu/docx/blob/master/demo/3-numbering-and-bullet-points.ts_
+
+### Numbering with Paragraph Styles
+
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/102-numbering-level-paragraph-style.ts ":include")
+
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/102-numbering-level-paragraph-style.ts_

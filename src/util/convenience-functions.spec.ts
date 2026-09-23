@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 
 import {
     abstractNumUniqueNumericIdGen,
+    bookmarkUniqueNumericId,
     bookmarkUniqueNumericIdGen,
     concreteNumUniqueNumericIdGen,
     convertInchesToTwip,
@@ -67,6 +68,13 @@ describe("Utility", () => {
             const uniqueNumericId = bookmarkUniqueNumericIdGen();
             expect(uniqueNumericId()).to.equal(1);
             expect(uniqueNumericId()).to.equal(2);
+        });
+    });
+
+    describe("#bookmarkUniqueNumericId", () => {
+        it("should keep counting across calls instead of restarting", () => {
+            const first = bookmarkUniqueNumericId();
+            expect(bookmarkUniqueNumericId()).to.equal(first + 1);
         });
     });
 

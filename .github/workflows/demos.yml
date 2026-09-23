@@ -12,7 +12,7 @@ jobs:
         name: Demos
         runs-on: ubuntu-latest
         steps:
-            - uses: actions/checkout@v4
+            - uses: actions/checkout@v5
             - uses: "./.github/actions/install-and-build"
             - name: Run Demos
               run: npm run run-ts -- ./demo/1-basic.ts
@@ -226,3 +226,9 @@ jobs:
             # - uses: "./.github/actions/validate-docx"
             - run: npm run run-ts -- ./demo/100-table-look.ts
             # - uses: "./.github/actions/validate-docx"
+            - run: npm run run-ts -- ./demo/101-comment-replies.ts
+            - uses: "./.github/actions/validate-docx"
+            - run: npm run run-ts -- ./demo/102-numbering-level-paragraph-style.ts
+            - uses: "./.github/actions/validate-docx"
+            - run: npm run run-ts -- ./demo/103-track-change-images.ts
+            - uses: "./.github/actions/validate-docx"

@@ -38,4 +38,20 @@ describe("Bookmark", () => {
         const newJson = Utility.jsonify(bookmark);
         expect(newJson.end.root[0].root.id).to.be.a("number");
     });
+
+    it("should pair the start and end elements with the same id", () => {
+        const newJson = Utility.jsonify(bookmark);
+        expect(newJson.end.root[0].root.id).to.equal(newJson.start.root[0].root.id);
+    });
+
+    it("should give each bookmark a distinct id", () => {
+        // Regression for https://github.com/dolanmiu/docx/issues/3478 — each
+        // Bookmark held its own generator, so every bookmark was written with
+        // `w:id="1"` and Word could not tell their starts and ends apart.
+        const ids = ["first", "second", "third"].map(
+            (id) => Utility.jsonify(new Bookmark({ id, children: [new TextRun(id)] })).start.root[0].root.id,
+        );
+
+        expect(new Set(ids).size).to.equal(3);
+    });
 });

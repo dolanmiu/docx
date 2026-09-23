@@ -143,9 +143,7 @@ const doc = new Document({
             children: [
                 new Table({
                     // Wide table that needs landscape
-                    rows: [
-                        /* ... */
-                    ],
+                    rows: [/* ... */],
                 }),
             ],
         },

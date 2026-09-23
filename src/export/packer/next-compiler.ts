@@ -73,6 +73,10 @@ type IXmlifyedFileMapping = {
     readonly Comments?: IXmlifyedFile;
     /** Comments relationships (word/_rels/comments.xml.rels) */
     readonly CommentsRelationships?: IXmlifyedFile;
+    /** Comments extended for reply threading (word/commentsExtended.xml) */
+    readonly CommentsExtended?: IXmlifyedFile;
+    /** Durable comment ids (word/commentsIds.xml) */
+    readonly CommentsIds?: IXmlifyedFile;
     /** Font table (word/fontTable.xml) */
     readonly FontTable?: IXmlifyedFile;
     /** Font table relationships (word/_rels/fontTable.xml.rels) */
@@ -155,9 +159,12 @@ export class Compiler {
             }
         }
 
-        for (const { data: buffer, name, fontKey } of file.FontTable.fontOptionsWithKey) {
-            const [nameWithoutExtension] = name.split(".");
-            zip.file(`word/fonts/${nameWithoutExtension}.odttf`, obfuscate(buffer, fontKey));
+        // Sequential filenames (font1.odttf, font2.odttf, …) — must match the
+        // Target paths set in FontWrapper. Word rejects embedded-font paths
+        // containing spaces or non-ASCII when those characters appear in the
+        // package zip entry; see https://github.com/dolanmiu/docx/issues/3019.
+        for (const [i, { data: buffer, fontKey }] of file.FontTable.fontOptionsWithKey.entries()) {
+            zip.file(`word/fonts/font${i + 1}.odttf`, obfuscate(buffer, fontKey));
         }
 
         return zip;
@@ -632,6 +639,54 @@ export class Compiler {
                 })(),
                 path: "word/_rels/comments.xml.rels",
             },
+            ...(file.CommentsExtended
+                ? {
+                      CommentsExtended: {
+                          data: xml(
+                              this.formatter.format(file.CommentsExtended, {
+                                  viewWrapper: {
+                                      View: file.CommentsExtended,
+                                      Relationships: file.Comments.Relationships,
+                                  },
+                                  file,
+                                  stack: [],
+                              }),
+                              {
+                                  indent: prettify,
+                                  declaration: {
+                                      standalone: "yes",
+                                      encoding: "UTF-8",
+                                  },
+                              },
+                          ),
+                          path: "word/commentsExtended.xml",
+                      },
+                  }
+                : {}),
+            ...(file.CommentsIds
+                ? {
+                      CommentsIds: {
+                          data: xml(
+                              this.formatter.format(file.CommentsIds, {
+                                  viewWrapper: {
+                                      View: file.CommentsIds,
+                                      Relationships: file.Comments.Relationships,
+                                  },
+                                  file,
+                                  stack: [],
+                              }),
+                              {
+                                  indent: prettify,
+                                  declaration: {
+                                      standalone: "yes",
+                                      encoding: "UTF-8",
+                                  },
+                              },
+                          ),
+                          path: "word/commentsIds.xml",
+                      },
+                  }
+                : {}),
             FontTable: {
                 data: xml(
                     this.formatter.format(file.FontTable.View, {

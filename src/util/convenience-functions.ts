@@ -132,6 +132,23 @@ export const docPropertiesUniqueNumericIdGen = (): UniqueNumericIdCreator => uni
 export const bookmarkUniqueNumericIdGen = (): UniqueNumericIdCreator => uniqueNumericIdCreator();
 
 /**
+ * Returns the next bookmark ID from a single counter shared by every bookmark.
+ *
+ * Bookmark IDs must be unique within a document, but a bookmark is created
+ * before it belongs to one, so all bookmarks draw from this one counter rather
+ * than a generator per instance.
+ *
+ * @returns A number no earlier call has returned
+ *
+ * @example
+ * ```typescript
+ * const first = bookmarkUniqueNumericId();
+ * const second = bookmarkUniqueNumericId(); // first + 1
+ * ```
+ */
+export const bookmarkUniqueNumericId: UniqueNumericIdCreator = bookmarkUniqueNumericIdGen();
+
+/**
  * Generates a unique lowercase alphanumeric ID using nanoid.
  *
  * The ID is suitable for use as a relationship ID or other unique identifier

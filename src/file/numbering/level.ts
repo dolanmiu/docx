@@ -11,7 +11,7 @@
 import { Attributes, NumberValueElement, XmlAttributeComponent, XmlComponent } from "@file/xml-components";
 import { decimalNumber } from "@util/values";
 
-import { AlignmentType } from "../paragraph/formatting";
+import { AlignmentType, createParagraphStyle } from "../paragraph/formatting";
 import { type ILevelParagraphStylePropertiesOptions, ParagraphProperties } from "../paragraph/properties";
 import { type IRunStylePropertiesOptions, RunProperties } from "../paragraph/run/properties";
 
@@ -292,6 +292,12 @@ export type ILevelsOptions = {
         readonly run?: IRunStylePropertiesOptions;
         /** Paragraph style properties for the level. */
         readonly paragraph?: ILevelParagraphStylePropertiesOptions;
+        /**
+         * The paragraph style id that the level should be associated with.
+         *
+         * https://learn.microsoft.com/en-us/dotnet/api/documentformat.openxml.wordprocessing.paragraphstyleidinlevel?view=openxml-3.0.1
+         */
+        readonly style?: string;
     };
 };
 
@@ -397,6 +403,10 @@ export class LevelBase extends XmlComponent {
         }
 
         this.root.push(new LevelJc(alignment));
+
+        if (style?.style) {
+            this.root.push(createParagraphStyle(style.style));
+        }
 
         this.paragraphProperties = new ParagraphProperties(style && style.paragraph);
         this.runProperties = new RunProperties(style && style.run);

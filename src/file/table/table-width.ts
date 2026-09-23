@@ -70,7 +70,14 @@ export type ITableWidthProperties = {
 export const createTableWidthElement = (name: string, { type = WidthType.AUTO, size }: ITableWidthProperties): XmlComponent => {
     let tableWidthValue = size;
     if (type === WidthType.PERCENTAGE && typeof size === "number") {
-        tableWidthValue = `${size}%`;
+        // For pct widths, Word writes the value in fiftieths of a percent
+        // (100% = 5000), not a "50%" string. Both forms are permitted by
+        // ST_MeasurementOrPercent, but stricter consumers — Google Docs and
+        // Apple Pages/QuickLook/Mail — misread the string form and collapse the
+        // table columns. Emit the integer to match Word's output. Callers who
+        // want the literal percent string can still pass a Percentage (e.g.
+        // "50%"). See #1457.
+        tableWidthValue = Math.round(size * 50);
     }
 
     return new BuilderElement<ITableWidthProperties>({
