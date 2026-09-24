@@ -662,6 +662,13 @@ Shapes are positioned with `transformation.offset`, in pixels from the canvas's 
 
 Shapes are written as DrawingML shapes (`wps:wsp`), groups (`wpg:wgp` and `wpg:grpSp`), pictures (`pic:pic`) and drawing canvases (`wpc:wpc`), the formats Word has used since Word 2010. Word 2007 and older can't display them. Other word processors differ in how much of DrawingML they draw, so check the result in the applications your readers use.
 
+LibreOffice (checked with version 26.8) draws most shapes as Word does, but:
+
+- It doesn't draw reflections, inner shadows, double and triple lines (`compound`) or gradient lines. A gradient line is drawn in its first colour.
+- It draws an elbow connector that goes around a shape as if it didn't, because it can't draw a connector whose middle bend is outside the box between its ends.
+- It draws the text of a shape that has `resizeShapeToFitText`, or of a group or canvas that starts a new line, on the first line of the paragraph.
+- It doesn't turn the text of a rotated shape with the shape.
+
 ## Examples
 
 ### Inline shapes
