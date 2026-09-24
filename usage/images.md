@@ -314,6 +314,42 @@ const image = new ImageRun({
 | title       | `string` | Required | `My awesome title of my image`       |
 | description | `string` | Required | `My awesome description of my image` |
 
+## Links and Decorative Images
+
+Give an image a `link` to open a web page when it is clicked (with Ctrl in Word), the same as Word's **Insert > Link** on a picture:
+
+```ts
+const image = new ImageRun({
+    type: "png",
+    data: fs.readFileSync("./logo.png"),
+    transformation: { width: 120, height: 40 },
+    altText: { name: "Logo", description: "Company logo", title: "Logo" },
+    link: "https://example.com",
+});
+```
+
+An image inside an `ExternalHyperlink` links to the hyperlink's address already. If it has a `link` of its own, its own link is used.
+
+Mark an image as `decorative` when it carries no information, such as a border or a flourish, so screen readers skip it. It is the same as Word's **Mark as decorative**, and is used instead of alternative text:
+
+```ts
+const flourish = new ImageRun({
+    type: "png",
+    data: fs.readFileSync("./flourish.png"),
+    transformation: { width: 300, height: 20 },
+    decorative: true,
+});
+```
+
+Both work for inline and floating images.
+
+### Options
+
+| Property   | Type      | Notes    | Possible Values         |
+| ---------- | --------- | -------- | ----------------------- |
+| link       | `string`  | Optional | `"https://example.com"` |
+| decorative | `boolean` | Optional | `true`                  |
+
 ## Cropping
 
 Crop an image by trimming a percentage off each edge before it's stretched to fill its frame. Pass a `crop` property to `ImageRun` with `left`, `top`, `right` and/or `bottom` percentages (`0` to `100`):
@@ -388,3 +424,9 @@ Example showing how to float images on top of text and optimally give a `margin`
 [Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/38-text-wrapping.ts ":include")
 
 _Source: https://github.com/dolanmiu/docx/blob/master/demo/38-text-wrapping.ts_
+
+### Links and decorative images
+
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/114-image-links.ts ":include")
+
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/114-image-links.ts_

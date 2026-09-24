@@ -6,10 +6,22 @@ A watermark is faint text or a picture drawn behind the content of every page, s
 
 Word stores a watermark as a shape inside the page header, so it repeats on every page of the section. `docx` follows the same approach: place a `TextWatermark` or `ImageWatermark` inside a `Paragraph` in a `Header`. The generated markup matches what Word writes, so Word recognizes the watermark and can remove or replace it through its own **Design > Watermark** menu.
 
+## Importing
+
+Watermarks come with the `docx` package. Import them from `docx/watermarks`, and everything else, such as the document, its headers and their paragraphs, from `docx`:
+
+```ts
+import { Document, Header, Paragraph } from "docx";
+import { ImageWatermark, TextWatermark } from "docx/watermarks";
+```
+
+In a page without a bundler, load `dist/watermarks.umd.cjs` after `dist/index.umd.cjs` (or `dist/watermarks.iife.js` after `dist/index.iife.js`). It adds a `docxWatermarks` global, such as `new docxWatermarks.TextWatermark({ text: "DRAFT" })`.
+
 ## Text Watermark
 
 ```ts
-import { Document, Header, Packer, Paragraph, TextWatermark } from "docx";
+import { Document, Header, Packer, Paragraph } from "docx";
+import { TextWatermark } from "docx/watermarks";
 
 const doc = new Document({
     sections: [
@@ -84,7 +96,8 @@ new TextWatermark({
 
 ```ts
 import * as fs from "fs";
-import { Document, Header, ImageWatermark, Packer, Paragraph } from "docx";
+import { Document, Header, Packer, Paragraph } from "docx";
+import { ImageWatermark } from "docx/watermarks";
 
 const doc = new Document({
     sections: [

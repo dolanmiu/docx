@@ -236,7 +236,8 @@ const header = new Header({
 Watermarks are placed in headers so that they repeat on every page:
 
 ```ts
-import { Header, Paragraph, TextWatermark } from "docx";
+import { Header, Paragraph } from "docx";
+import { TextWatermark } from "docx/watermarks";
 
 const header = new Header({
     children: [

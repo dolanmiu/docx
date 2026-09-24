@@ -1,6 +1,6 @@
 # Shape Patterns and Text Warps
 
-This page lists the preset patterns a [shape's fill](usage/shapes.md#pattern-fills) can use, and the WordArt-style warps and text directions for [text in shapes](usage/shapes.md#text-layout).
+This page lists the preset patterns a [shape's fill](usage/shapes.md#pattern-fills) can use, and the WordArt-style warps and text directions for [text in shapes](usage/shapes.md#text-layout). Shapes come from `docx/shapes`: `import { ShapeRun } from "docx/shapes";`.
 
 Office Open XML abbreviates or numbers many of these names, such as `dkUpDiag` and `textWave2`. This library names each one after what it is, and writes the OOXML name to the file. The OOXML column lets you look a name up in the specification or find it in a document's XML.
 
