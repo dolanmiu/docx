@@ -24,6 +24,7 @@ import type { OutputByType, OutputType } from "@util/output-type";
 import { appendContentType } from "./content-types-manager";
 import { appendRelationship, getNextRelationshipIndex } from "./relationship-manager";
 import { replacer } from "./replacer";
+import { readThemeColors } from "./theme-colors";
 import { toJson } from "./util";
 
 /**
@@ -196,8 +197,11 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
 }: PatchDocumentOptions<T>): Promise<OutputByType[T]> => {
     const zipContent = data instanceof JSZip ? data : await JSZip.loadAsync(data);
     const contexts = new Map<string, IContext>();
+    // Theme colors in patches are written with the hex color they come to in the document's theme
+    const themeColors = await readThemeColors(zipContent);
     const file = {
         Media: new Media(),
+        Theme: themeColors && { Colors: themeColors },
     } as unknown as File;
 
     const map = new Map<string, Element>();

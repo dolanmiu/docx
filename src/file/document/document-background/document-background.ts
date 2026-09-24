@@ -1,15 +1,16 @@
 /**
  * Document background module for WordprocessingML documents.
  *
- * This module provides functionality for setting document background colors
- * and theme-based backgrounds.
+ * This module provides functionality for setting document background colors,
+ * in hex or in a color of the document's theme.
  *
  * Reference: http://officeopenxml.com/WPdocument.php
  *
  * @module
  */
+import { COLOR_ATTRIBUTES, ColorAttributeComponent, type ThemeColor } from "@file/theme/theme-color";
 import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
-import { hexColorValue, uCharHexNumber } from "@util/values";
+import { uCharHexNumber } from "@util/values";
 
 /**
  * Attributes for the document background element.
@@ -61,13 +62,28 @@ export class DocumentBackgroundAttributes extends XmlAttributeComponent<{
  * @see {@link DocumentBackground}
  */
 export type IDocumentBackgroundOptions = {
-    /** Background color in hex format (e.g., "FF0000" for red) */
-    readonly color?: string;
-    /** Theme color name (e.g., "accent1", "dark1") */
+    /**
+     * Background color: a hex color such as `"FF0000"`, or a color of the document's theme such as
+     * `{ theme: "accent1", lighter: 80 }`
+     */
+    readonly color?: string | ThemeColor;
+    /**
+     * Theme color name (e.g., "accent1", "dark1")
+     *
+     * @deprecated Give `color` a theme color instead, such as `{ theme: "accent1" }`
+     */
     readonly themeColor?: string;
-    /** Theme shade value (darkens the theme color) */
+    /**
+     * Theme shade value (darkens the theme color)
+     *
+     * @deprecated Give `color` a theme color instead, such as `{ theme: "accent1", darker: 25 }`
+     */
     readonly themeShade?: string;
-    /** Theme tint value (lightens the theme color) */
+    /**
+     * Theme tint value (lightens the theme color)
+     *
+     * @deprecated Give `color` a theme color instead, such as `{ theme: "accent1", lighter: 40 }`
+     */
     readonly themeTint?: string;
 };
 
@@ -99,20 +115,27 @@ export type IDocumentBackgroundOptions = {
  * @example
  * ```typescript
  * new DocumentBackground({ color: "FFFF00" }); // Yellow background
- * new DocumentBackground({ themeColor: "accent1" }); // Theme accent color
+ * new DocumentBackground({ color: { theme: "accent1", lighter: 80 } }); // A light version of the theme's first accent color
  * ```
  */
 export class DocumentBackground extends XmlComponent {
-    public constructor(options: IDocumentBackgroundOptions) {
+    /**
+     * @throws If a color isn't valid, or `color` is a theme color and `themeColor`, `themeShade` or `themeTint` is given
+     */
+    public constructor({ color, themeColor, themeShade, themeTint }: IDocumentBackgroundOptions) {
         super("w:background");
 
+        if (typeof color === "object" && (themeColor !== undefined || themeShade !== undefined || themeTint !== undefined)) {
+            throw new Error("Invalid background. Expected a theme color in color, or themeColor, themeShade and themeTint, not both");
+        }
+
         this.root.push(
-            new DocumentBackgroundAttributes({
-                color: options.color === undefined ? undefined : hexColorValue(options.color),
-                themeColor: options.themeColor,
-                themeShade: options.themeShade === undefined ? undefined : uCharHexNumber(options.themeShade),
-                themeTint: options.themeTint === undefined ? undefined : uCharHexNumber(options.themeTint),
-            }),
+            new ColorAttributeComponent([
+                { keys: COLOR_ATTRIBUTES, color },
+                { key: "w:themeColor", value: themeColor },
+                { key: "w:themeShade", value: themeShade === undefined ? undefined : uCharHexNumber(themeShade) },
+                { key: "w:themeTint", value: themeTint === undefined ? undefined : uCharHexNumber(themeTint) },
+            ]),
         );
     }
 }

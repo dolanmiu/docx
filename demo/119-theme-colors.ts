@@ -1,5 +1,5 @@
-// Text, underlines, borders, shading and a table in the colors of the document's theme, lighter or darker as Word's
-// color menus offer them. Choosing other colors on Word's Design tab changes them all.
+// Text, underlines, borders, shading, a table and the page in the colors of the document's theme, lighter or darker as
+// Word's color menus offer them. Choosing other colors on Word's Design tab changes them all.
 // See docs/usage/themes.md.
 
 import * as fs from "fs";
@@ -43,6 +43,8 @@ const doc = new Document({
         name: "Harbour",
         colors: { dark2: "1B3A4B", light2: "EEF2F3", accent1: "1F6F8B", accent2: "E07A5F", accent3: "3D9970" },
     },
+    // The page, in the theme's second light color
+    background: { color: { theme: "light2" } },
     styles: {
         default: {
             heading1: {
