@@ -10,7 +10,7 @@
 - **TypeScript First** - Full type definitions with IntelliSense support
 - **Universal** - Works in Node.js, browsers, and serverless environments
 - **No Dependencies** - Zero external runtime dependencies
-- **Full Featured** - Tables, images, headers, footers, styles, and more
+- **Full Featured** - Tables, images, shapes, headers, footers, styles, and more
 
 ## Quick Navigation
 
