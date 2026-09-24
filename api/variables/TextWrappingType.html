@@ -10,7 +10,7 @@
 <ul class="tsd-breadcrumb" aria-label="Breadcrumb">
 <li><a href="" aria-current="page">TextWrappingType</a></li></ul>
 <h1>Variable TextWrappingType<code class="tsd-tag">Const</code></h1></div>
-<div class="tsd-signature"><span class="tsd-kind-variable">TextWrappingType</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">{</span> <span class="tsd-kind-property">NONE</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">0</span><span class="tsd-signature-symbol">;</span> <span class="tsd-kind-property">SQUARE</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">1</span><span class="tsd-signature-symbol">;</span> <span class="tsd-kind-property">TIGHT</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">2</span><span class="tsd-signature-symbol">;</span> <span class="tsd-kind-property">TOP_AND_BOTTOM</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">3</span> <span class="tsd-signature-symbol">}</span><span class="tsd-signature-symbol"> = ...</span></div>
+<div class="tsd-signature"><span class="tsd-kind-variable">TextWrappingType</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">{</span><br/>    <span class="tsd-kind-property">NONE</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">0</span><span class="tsd-signature-symbol">;</span><br/>    <span class="tsd-kind-property">SQUARE</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">1</span><span class="tsd-signature-symbol">;</span><br/>    <span class="tsd-kind-property">THROUGH</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">4</span><span class="tsd-signature-symbol">;</span><br/>    <span class="tsd-kind-property">TIGHT</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">2</span><span class="tsd-signature-symbol">;</span><br/>    <span class="tsd-kind-property">TOP_AND_BOTTOM</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">3</span><span class="tsd-signature-symbol">;</span><br/><span class="tsd-signature-symbol">}</span><span class="tsd-signature-symbol"> = ...</span></div>
 <div class="tsd-comment tsd-typography"><p>Enumeration of text wrapping types for floating drawings.</p>
 <p>Reference: <a href="http://officeopenxml.com/drwPicFloating-textWrap.php">http://officeopenxml.com/drwPicFloating-textWrap.php</a></p>
 </div>
@@ -18,18 +18,30 @@
 <h4>Type Declaration</h4>
 <ul class="tsd-parameters">
 <li class="tsd-parameter">
-<h5 id="none"><code class="tsd-tag">Readonly</code><span class="tsd-kind-property">NONE</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">0</span></h5></li>
+<h5 id="none"><code class="tsd-tag">Readonly</code><span class="tsd-kind-property">NONE</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">0</span></h5>
+<div class="tsd-comment tsd-typography"><p>Text doesn't wrap around the drawing. It is drawn in front of or behind the text</p>
+</div></li>
 <li class="tsd-parameter">
-<h5 id="square"><code class="tsd-tag">Readonly</code><span class="tsd-kind-property">SQUARE</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">1</span></h5></li>
+<h5 id="square"><code class="tsd-tag">Readonly</code><span class="tsd-kind-property">SQUARE</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">1</span></h5>
+<div class="tsd-comment tsd-typography"><p>Text wraps around the drawing's box</p>
+</div></li>
 <li class="tsd-parameter">
-<h5 id="tight"><code class="tsd-tag">Readonly</code><span class="tsd-kind-property">TIGHT</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">2</span></h5></li>
+<h5 id="through"><code class="tsd-tag">Readonly</code><span class="tsd-kind-property">THROUGH</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">4</span></h5>
+<div class="tsd-comment tsd-typography"><p>Text wraps closely around the drawing's outline, and fills any open space inside it</p>
+</div></li>
 <li class="tsd-parameter">
-<h5 id="top_and_bottom"><code class="tsd-tag">Readonly</code><span class="tsd-kind-property">TOP_AND_BOTTOM</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">3</span></h5></li></ul></div>
+<h5 id="tight"><code class="tsd-tag">Readonly</code><span class="tsd-kind-property">TIGHT</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">2</span></h5>
+<div class="tsd-comment tsd-typography"><p>Text wraps closely around the drawing's outline</p>
+</div></li>
+<li class="tsd-parameter">
+<h5 id="top_and_bottom"><code class="tsd-tag">Readonly</code><span class="tsd-kind-property">TOP_AND_BOTTOM</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">3</span></h5>
+<div class="tsd-comment tsd-typography"><p>Text sits above and below the drawing, not beside it</p>
+</div></li></ul></div>
 <div class="tsd-comment tsd-typography">
 <div class="tsd-tag-publicApi">
 <h4 class="tsd-anchor-link" id="public-api">Public Api<a href="#public-api" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4></div></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/ee37e5b38c7ff8f07bd39e3f9e727ea9d5123817/src/file/drawing/text-wrap/text-wrapping.ts#L19">file/drawing/text-wrap/text-wrapping.ts:19</a></li></ul></aside></div>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/859ea7ec7b2f8826b87a9f8156f225e482572b0b/src/file/drawing/text-wrap/text-wrapping.ts#L19">file/drawing/text-wrap/text-wrapping.ts:19</a></li></ul></aside></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">

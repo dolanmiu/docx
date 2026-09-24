@@ -10,19 +10,24 @@
 <ul class="tsd-breadcrumb" aria-label="Breadcrumb">
 <li><a href="" aria-current="page">ConnectorEnd</a></li></ul>
 <h1>Type Alias ConnectorEnd</h1></div>
-<div class="tsd-signature"><span class="tsd-kind-type-alias">ConnectorEnd</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-symbol">{</span> <span class="tsd-kind-property">id</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span> <span class="tsd-kind-property">side</span><span class="tsd-signature-symbol">?:</span> <a href="ConnectorSide.html" class="tsd-signature-type tsd-kind-type-alias">ConnectorSide</a> <span class="tsd-signature-symbol">}</span></div>
-<div class="tsd-comment tsd-typography"><p>One end of a connector: the <code>id</code> of the shape it attaches to, or the <code>id</code> and the <code>side</code> of the shape.
-Without a <code>side</code>, the connector attaches to the side that faces the shape at its other end.</p>
+<div class="tsd-signature"><span class="tsd-kind-type-alias">ConnectorEnd</span><span class="tsd-signature-symbol">:</span><br/>    <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">string</span><br/>    <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-symbol">{</span> <span class="tsd-kind-property">id</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span> <span class="tsd-kind-property">point</span><span class="tsd-signature-symbol">?:</span> <a href="ConnectorPoint.html" class="tsd-signature-type tsd-kind-type-alias">ConnectorPoint</a><span class="tsd-signature-symbol">;</span> <span class="tsd-kind-property">side</span><span class="tsd-signature-symbol">?:</span> <a href="ConnectorSide.html" class="tsd-signature-type tsd-kind-type-alias">ConnectorSide</a> <span class="tsd-signature-symbol">}</span></div>
+<div class="tsd-comment tsd-typography"><p>One end of a connector: the <code>id</code> of the shape it attaches to, or the <code>id</code> with a <code>side</code> or <code>point</code> of the shape.
+Without either, the connector attaches to the side that faces the shape at its other end.</p>
 </div>
 <div class="tsd-type-declaration">
 <h4>Type Declaration</h4>
 <ul>
 <li><span class="tsd-signature-type">string</span></li>
-<li><span class="tsd-signature-symbol">{</span> <span class="tsd-kind-property">id</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span> <span class="tsd-kind-property">side</span><span class="tsd-signature-symbol">?:</span> <a href="ConnectorSide.html" class="tsd-signature-type tsd-kind-type-alias">ConnectorSide</a> <span class="tsd-signature-symbol">}</span>
+<li><span class="tsd-signature-symbol">{</span> <span class="tsd-kind-property">id</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span> <span class="tsd-kind-property">point</span><span class="tsd-signature-symbol">?:</span> <a href="ConnectorPoint.html" class="tsd-signature-type tsd-kind-type-alias">ConnectorPoint</a><span class="tsd-signature-symbol">;</span> <span class="tsd-kind-property">side</span><span class="tsd-signature-symbol">?:</span> <a href="ConnectorSide.html" class="tsd-signature-type tsd-kind-type-alias">ConnectorSide</a> <span class="tsd-signature-symbol">}</span>
 <ul class="tsd-parameters">
 <li class="tsd-parameter">
 <h5><code class="tsd-tag">Readonly</code><span class="tsd-kind-property">id</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span></h5>
 <div class="tsd-comment tsd-typography"><p>The <code>id</code> of the shape</p>
+</div></li>
+<li class="tsd-parameter">
+<h5><code class="tsd-tag">Optional</code> <code class="tsd-tag">Readonly</code><span class="tsd-kind-property">point</span><span class="tsd-signature-symbol">?: </span><a href="ConnectorPoint.html" class="tsd-signature-type tsd-kind-type-alias">ConnectorPoint</a></h5>
+<div class="tsd-comment tsd-typography"><p>Attaches to the connection point nearest this point, such as <code>{ x: 0, y: 100 }</code> for the one nearest the
+bottom-left corner. On a shape without connection points, the connector ends at this point</p>
 </div></li>
 <li class="tsd-parameter">
 <h5><code class="tsd-tag">Optional</code> <code class="tsd-tag">Readonly</code><span class="tsd-kind-property">side</span><span class="tsd-signature-symbol">?: </span><a href="ConnectorSide.html" class="tsd-signature-type tsd-kind-type-alias">ConnectorSide</a></h5>
@@ -32,7 +37,7 @@ Without a <code>side</code>, the connector attaches to the side that faces the s
 <div class="tsd-tag-publicApi">
 <h4 class="tsd-anchor-link" id="public-api">Public Api<a href="#public-api" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4></div></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/ee37e5b38c7ff8f07bd39e3f9e727ea9d5123817/src/file/paragraph/run/shape-connector.ts#L24">file/paragraph/run/shape-connector.ts:24</a></li></ul></aside></div>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/859ea7ec7b2f8826b87a9f8156f225e482572b0b/src/file/paragraph/run/shape-connector.ts#L38">file/paragraph/run/shape-connector.ts:38</a></li></ul></aside></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">

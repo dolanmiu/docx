@@ -10,9 +10,9 @@
 <ul class="tsd-breadcrumb" aria-label="Breadcrumb">
 <li><a href="" aria-current="page">WpcMediaData</a></li></ul>
 <h1>Type Alias WpcMediaData</h1></div>
-<div class="tsd-signature"><span class="tsd-signature-keyword">type</span> <span class="tsd-kind-type-alias">WpcMediaData</span> <span class="tsd-signature-symbol">=</span> <span class="tsd-signature-symbol">{</span><br/>    <a class="tsd-kind-property" href="#children">children</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-keyword">readonly</span> <a href="WpsMediaData.html" class="tsd-signature-type tsd-kind-type-alias">WpsMediaData</a><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#fill">fill</a><span class="tsd-signature-symbol">?:</span> <a href="ShapeFill.html" class="tsd-signature-type tsd-kind-type-alias">ShapeFill</a><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#line">line</a><span class="tsd-signature-symbol">?:</span> <a href="ShapeLine.html" class="tsd-signature-type tsd-kind-type-alias">ShapeLine</a><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#transformation">transformation</a><span class="tsd-signature-symbol">:</span> <a href="IMediaDataTransformation.html" class="tsd-signature-type tsd-kind-type-alias">IMediaDataTransformation</a><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#type">type</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">&quot;wpc&quot;</span><span class="tsd-signature-symbol">;</span><br/><span class="tsd-signature-symbol">}</span></div><aside class="tsd-sources">
+<div class="tsd-signature"><span class="tsd-signature-keyword">type</span> <span class="tsd-kind-type-alias">WpcMediaData</span> <span class="tsd-signature-symbol">=</span> <span class="tsd-signature-symbol">{</span><br/>    <a class="tsd-kind-property" href="#children">children</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-keyword">readonly</span> <a href="ShapeDrawingChildMediaData.html" class="tsd-signature-type tsd-kind-type-alias">ShapeDrawingChildMediaData</a><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#fill">fill</a><span class="tsd-signature-symbol">?:</span> <a href="ShapeFill.html" class="tsd-signature-type tsd-kind-type-alias">ShapeFill</a><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#line">line</a><span class="tsd-signature-symbol">?:</span> <a href="ShapeLine.html" class="tsd-signature-type tsd-kind-type-alias">ShapeLine</a><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#transformation">transformation</a><span class="tsd-signature-symbol">:</span> <a href="IMediaDataTransformation.html" class="tsd-signature-type tsd-kind-type-alias">IMediaDataTransformation</a><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#type">type</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">&quot;wpc&quot;</span><span class="tsd-signature-symbol">;</span><br/><span class="tsd-signature-symbol">}</span></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/ee37e5b38c7ff8f07bd39e3f9e727ea9d5123817/src/file/media/data.ts#L102">file/media/data.ts:102</a></li></ul></aside>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/859ea7ec7b2f8826b87a9f8156f225e482572b0b/src/file/media/data.ts#L143">file/media/data.ts:143</a></li></ul></aside>
 <section class="tsd-panel-group tsd-index-group">
 <section class="tsd-panel tsd-index-panel">
 <details class="tsd-index-content tsd-accordion" open><summary class="tsd-accordion-summary tsd-index-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
@@ -31,35 +31,35 @@
 <section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="children"><code class="tsd-tag">Readonly</code><span>children</span><a href="#children" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
-<div class="tsd-signature"><span class="tsd-kind-property">children</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-keyword">readonly</span> <a href="WpsMediaData.html" class="tsd-signature-type tsd-kind-type-alias">WpsMediaData</a><span class="tsd-signature-symbol">[]</span></div>
-<div class="tsd-comment tsd-typography"><p>The shapes on the canvas, positioned in EMUs from its top-left corner</p>
+<div class="tsd-signature"><span class="tsd-kind-property">children</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-keyword">readonly</span> <a href="ShapeDrawingChildMediaData.html" class="tsd-signature-type tsd-kind-type-alias">ShapeDrawingChildMediaData</a><span class="tsd-signature-symbol">[]</span></div>
+<div class="tsd-comment tsd-typography"><p>The shapes, pictures and groups on the canvas, positioned in EMUs from its top-left corner</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/ee37e5b38c7ff8f07bd39e3f9e727ea9d5123817/src/file/media/data.ts#L106">file/media/data.ts:106</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/859ea7ec7b2f8826b87a9f8156f225e482572b0b/src/file/media/data.ts#L147">file/media/data.ts:147</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="fill"><code class="tsd-tag">Optional</code> <code class="tsd-tag">Readonly</code><span>fill</span><a href="#fill" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">fill</span><span class="tsd-signature-symbol">?:</span> <a href="ShapeFill.html" class="tsd-signature-type tsd-kind-type-alias">ShapeFill</a></div>
 <div class="tsd-comment tsd-typography"><p>The canvas's background</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/ee37e5b38c7ff8f07bd39e3f9e727ea9d5123817/src/file/media/data.ts#L108">file/media/data.ts:108</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/859ea7ec7b2f8826b87a9f8156f225e482572b0b/src/file/media/data.ts#L149">file/media/data.ts:149</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="line"><code class="tsd-tag">Optional</code> <code class="tsd-tag">Readonly</code><span>line</span><a href="#line" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">line</span><span class="tsd-signature-symbol">?:</span> <a href="ShapeLine.html" class="tsd-signature-type tsd-kind-type-alias">ShapeLine</a></div>
 <div class="tsd-comment tsd-typography"><p>The canvas's outline</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/ee37e5b38c7ff8f07bd39e3f9e727ea9d5123817/src/file/media/data.ts#L110">file/media/data.ts:110</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/859ea7ec7b2f8826b87a9f8156f225e482572b0b/src/file/media/data.ts#L151">file/media/data.ts:151</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="transformation"><code class="tsd-tag">Readonly</code><span>transformation</span><a href="#transformation" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">transformation</span><span class="tsd-signature-symbol">:</span> <a href="IMediaDataTransformation.html" class="tsd-signature-type tsd-kind-type-alias">IMediaDataTransformation</a></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/ee37e5b38c7ff8f07bd39e3f9e727ea9d5123817/src/file/media/data.ts#L104">file/media/data.ts:104</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/859ea7ec7b2f8826b87a9f8156f225e482572b0b/src/file/media/data.ts#L145">file/media/data.ts:145</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="type"><code class="tsd-tag">Readonly</code><span>type</span><a href="#type" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">type</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">&quot;wpc&quot;</span></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/ee37e5b38c7ff8f07bd39e3f9e727ea9d5123817/src/file/media/data.ts#L103">file/media/data.ts:103</a></li></ul></aside></section></section></details></div>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/859ea7ec7b2f8826b87a9f8156f225e482572b0b/src/file/media/data.ts#L144">file/media/data.ts:144</a></li></ul></aside></section></section></details></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">
