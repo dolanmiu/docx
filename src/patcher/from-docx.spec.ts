@@ -597,6 +597,59 @@ describe("from-docx", () => {
                 ).rejects.toThrowError());
         });
 
+        describe("A document with a theme", () => {
+            // cspell:ignore srgbClr
+            const theme = (accent1: string): string =>
+                `<a:theme xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:themeElements><a:clrScheme name="Office"><a:accent1><a:srgbClr val="${accent1}"/></a:accent1></a:clrScheme></a:themeElements></a:theme>`;
+
+            const createZip = (files: readonly (readonly [string, string])[]): JSZip =>
+                files.reduce(
+                    (zip, [path, content]) => zip.file(path, content),
+                    new JSZip()
+                        .file("word/document.xml", MOCK_XML)
+                        .file("[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`),
+                );
+
+            const patchName = async (zip: JSZip): Promise<string> => {
+                vi.spyOn(JSZip, "loadAsync").mockResolvedValue(zip);
+                const output = await patchDocument({
+                    outputType: "uint8array",
+                    data: Buffer.from(""),
+                    patches: {
+                        name: {
+                            type: PatchType.PARAGRAPH,
+                            children: [new TextRun({ text: "John Doe", color: { theme: "accent1", darker: 25 } })],
+                        },
+                    },
+                });
+                const patched = await new JSZip().loadAsync(output);
+                return patched.file("word/document.xml")!.async("text");
+            };
+
+            afterEach(() => {
+                vi.restoreAllMocks();
+            });
+
+            it("should write theme colors with the hex color they come to in the document's theme", async () => {
+                const document = await patchName(
+                    createZip([
+                        [
+                            "word/_rels/document.xml.rels",
+                            `<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme" Target="theme/theme1.xml"/></Relationships>`,
+                        ],
+                        // Office 2007's first accent color
+                        ["word/theme/theme1.xml", theme("4F81BD")],
+                    ]),
+                );
+                expect(document).to.include(`<w:color w:val="366091" w:themeColor="accent1" w:themeShade="BF"/>`);
+            });
+
+            it("should use Office's colors in a document without a theme", async () => {
+                const document = await patchName(createZip([]));
+                expect(document).to.include(`<w:color w:val="2F5496" w:themeColor="accent1" w:themeShade="BF"/>`);
+            });
+        });
+
         describe("Images", () => {
             beforeEach(() => {
                 vi.spyOn(JSZip, "loadAsync").mockReturnValue(
