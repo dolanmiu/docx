@@ -120,10 +120,11 @@ const doc = new Document({
 | A run's or style's `underline`                                                        | `underline.color`   |
 | `shading` of runs, paragraphs, tables and table cells                                 | `fill` and `color`  |
 | A run's `border`, and each side of the borders of paragraphs, tables, cells and pages | `color`             |
+| `Document`'s `background`, the color of the page                                      | `color`             |
 
 The theme's color names are those in [Theme Colors](#theme-colors). Word's color menus call `dark1` and `light1` "Text 1" and "Background 1", and `dark2` and `light2` "Text 2" and "Background 2".
 
-Word writes a theme color with the color it comes to, for applications that don't read the theme, and so does `docx`: `{ theme: "accent1", darker: 25 }` in Office's theme is written as `2F5496`, the color Word writes for "Blue, Accent 1, Darker 25%". For some colors, the color `docx` writes is one or two off Word's in a channel. With [`patchDocument`](usage/patcher.md), that color is worked out from Office's theme rather than the document's. Word takes the color from the theme either way.
+Word writes a theme color with the color it comes to, for applications that don't read the theme, and so does `docx`: `{ theme: "accent1", darker: 25 }` in Office's theme is written as `2F5496`, the color Word writes for "Blue, Accent 1, Darker 25%". For some colors, the color `docx` writes is one or two off Word's in a channel. With [`patchDocument`](usage/patcher.md), that color is worked out from the template's theme, or from Office's if the template has none. Word takes the color from the theme either way.
 
 ## Shapes in the theme's colors
 

@@ -120,7 +120,17 @@ const doc = new docx.Document({
 });
 ```
 
-You can mix and match whatever properties you want, or provide no properties.
+Or use a color of the document's theme, lighter or darker if you like, so the page changes color with the theme. See [Themes](usage/themes.md#text-tables-and-borders-in-the-themes-colors):
+
+```ts
+const doc = new docx.Document({
+    background: {
+        color: { theme: "accent2", lighter: 80 },
+    },
+});
+```
+
+`themeColor`, `themeTint` and `themeShade` are deprecated: give `color` a theme color instead.
 
 ### Custom Properties
 
