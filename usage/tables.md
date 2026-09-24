@@ -184,12 +184,12 @@ const tableRow = new TableRow({
 
 #### Border Options
 
-| Property | Type                                                  | Notes    |
-| -------- | ----------------------------------------------------- | -------- |
-| top      | `{ style: BorderStyle, size: number, color: string }` | Optional |
-| bottom   | `{ style: BorderStyle, size: number, color: string }` | Optional |
-| left     | `{ style: BorderStyle, size: number, color: string }` | Optional |
-| right    | `{ style: BorderStyle, size: number, color: string }` | Optional |
+| Property | Type                                                                | Notes    |
+| -------- | ------------------------------------------------------------------- | -------- |
+| top      | `{ style: BorderStyle, size: number, color: string \| ThemeColor }` | Optional |
+| bottom   | `{ style: BorderStyle, size: number, color: string \| ThemeColor }` | Optional |
+| left     | `{ style: BorderStyle, size: number, color: string \| ThemeColor }` | Optional |
+| right    | `{ style: BorderStyle, size: number, color: string \| ThemeColor }` | Optional |
 
 ##### Example
 

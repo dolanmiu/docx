@@ -117,12 +117,12 @@ Add borders to a `Paragraph`. Good for making the `Paragraph` stand out. Border 
 
 `top`, `bottom`, `left`, `right`, `between` of the border
 
-| Property | Type     | Notes    |
-| -------- | -------- | -------- |
-| color    | `string` | Required |
-| space    | `number` | Required |
-| style    | `string` | Required |
-| size     | `number` | Required |
+| Property | Type                   | Notes    |
+| -------- | ---------------------- | -------- |
+| color    | `string \| ThemeColor` | Required |
+| space    | `number`               | Required |
+| style    | `string`               | Required |
+| size     | `number`               | Required |
 
 **Example:**
 
@@ -147,6 +147,8 @@ const paragraph = new Paragraph({
     },
 });
 ```
+
+Colors of borders and shading can be hex values, or colors of the document's theme, such as `{ theme: "accent1", lighter: 40 }`. See [Themes](usage/themes.md#text-tables-and-borders-in-the-themes-colors).
 
 ## Shading
 
