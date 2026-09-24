@@ -12,8 +12,7 @@ import type { DocPropertiesOptions } from "@file/drawing/doc-properties/doc-prop
 import { getShapeLineOverhang } from "@file/drawing/inline/graphic/graphic-data/wps/preset-shape";
 import { docPropertiesUniqueNumericId } from "@util/convenience-functions";
 
-import type { IShapeOptions } from "./shape-run";
-import { createPresetShapeData, createUniformEffectExtent } from "./shape-run-data";
+import { type ShapeBaseOptions, type WithPresetShape, createPresetShapeData, createUniformEffectExtent } from "./shape-run-data";
 import { createTransformation } from "./wps-shape-run";
 import { Drawing, type IFloating } from "../../drawing";
 import type { IMediaDataTransformation, IMediaTransformation, WpsMediaData } from "../../media";
@@ -26,7 +25,7 @@ import { Run } from "../run";
  * @see {@link ShapeGroupRun}
  * @publicApi
  */
-export type IShapeGroupChildOptions = Omit<IShapeOptions, "floating">;
+export type IShapeGroupChildOptions = WithPresetShape<ShapeBaseOptions>;
 
 /**
  * Options for creating a group of shapes.

@@ -34,10 +34,10 @@ const doc = new Document({
                     children: [
                         new ShapeRun({ type: "rect", transformation: { width: 60, height: 60 }, fill: "4472C4", line: "none" }),
                         space(),
-                        // Adjustments are raw OOXML guide values. For roundRect, adj is the corner radius.
+                        // Adjustments set a shape's handles. A roundRect's cornerRadius is a percent of its shorter side.
                         new ShapeRun({
                             type: "roundRect",
-                            adjustments: { adj: 30000 },
+                            adjustments: { cornerRadius: 30 },
                             transformation: { width: 60, height: 60 },
                             fill: "ED7D31",
                         }),
@@ -68,6 +68,15 @@ const doc = new Document({
                         new ShapeRun({ type: "flowChartMagneticDisk", transformation: { width: 52, height: 52 }, fill: "DDEBF7" }),
                         space(),
                         new ShapeRun({ type: "gear9", transformation: { width: 52, height: 52 }, fill: "BFBFBF" }),
+                        space(),
+                        // Angles are in degrees, clockwise from 3 o'clock
+                        new ShapeRun({
+                            type: "pie",
+                            adjustments: { startAngle: 0, endAngle: 270 },
+                            transformation: { width: 52, height: 52 },
+                            fill: "7030A0",
+                            line: "none",
+                        }),
                     ],
                 }),
 
@@ -239,7 +248,7 @@ const doc = new Document({
                         // A callout floating at the right of the text, with the text wrapping around it
                         new ShapeRun({
                             type: "wedgeRoundRectCallout",
-                            adjustments: { adj1: -70000, adj2: 20000 },
+                            adjustments: { pointerX: -70, pointerY: 20 },
                             transformation: { width: 180, height: 80 },
                             fill: "FFF2CC",
                             line: { color: "BF9000", width: 1.25 },

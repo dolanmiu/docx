@@ -243,29 +243,41 @@ new ShapeRun({
 
 ## Adjustments
 
-Many shapes have handles in Word that change their proportions, such as the corner radius of a rounded rectangle or the thickness of an arrow. `adjustments` sets them directly. The names and values are the raw shape guides from the Office Open XML preset definitions, usually in thousandths of a percent.
+Many shapes have handles in Word that change their proportions, such as the corner radius of a rounded rectangle or the thickness of an arrow. `adjustments` sets them. Each shape has its own adjustments, named after what they change:
 
 <!-- cspell:disable -->
 
-| Shape                                       | Adjustment     | Default           | Controls                                                            |
-| ------------------------------------------- | -------------- | ----------------- | ------------------------------------------------------------------- |
-| `roundRect`                                 | `adj`          | `16667`           | Corner radius, as a share of the shorter side (up to `50000`)       |
-| `triangle`                                  | `adj`          | `50000`           | Where the top point sits, from the left (`0`) to the right edge     |
-| `star5`                                     | `adj`          | `19098`           | Depth of the points (smaller is spikier)                            |
-| `donut`                                     | `adj`          | `25000`           | Thickness of the ring                                               |
-| `rightArrow`                                | `adj1`, `adj2` | `50000`, `50000`  | Thickness of the shaft, and length of the head                      |
-| `wedgeRectCallout`, `wedgeRoundRectCallout` | `adj1`, `adj2` | `-20833`, `62500` | Where the pointer ends, from the centre, as a share of width/height |
+| Shape                                     | Adjustments                                           | Default           |
+| ----------------------------------------- | ----------------------------------------------------- | ----------------- |
+| `roundRect`                               | `cornerRadius`: radius of the corners                 | `16.667`          |
+| `triangle`                                | `apexPosition`: where the top point is, from the left | `50`              |
+| `star5`                                   | `innerRadius`: radius of the inner points             | `38.196`          |
+| `donut`                                   | `thickness`: thickness of the ring                    | `25`              |
+| `rightArrow`                              | `shaftThickness`, `headLength`                        | `50`, `50`        |
+| `pie`, `arc`, `chord`                     | `startAngle`, `endAngle`                              | depends on shape  |
+| `wedgeRectCallout`, `wedgeEllipseCallout` | `pointerX`, `pointerY`: tip of the pointer            | `-20.833`, `62.5` |
 
 <!-- cspell:enable -->
+
+Lengths and positions are percentages, and angles are in degrees clockwise from 3 o'clock. Most lengths are a percentage of the shape's shorter side, so a `cornerRadius` of `50` makes the ends of a rounded rectangle fully round. [Shape Adjustments](usage/shape-adjustments.md) lists the adjustments of all 120 shapes that have them, with what each percentage is of and its default.
 
 ```ts
 new ShapeRun({
     type: "roundRect",
-    adjustments: { adj: 30000 },
+    adjustments: { cornerRadius: 30 },
     transformation: { width: 120, height: 60 },
     fill: "ED7D31",
 });
+
+new ShapeRun({
+    type: "pie",
+    adjustments: { startAngle: 0, endAngle: 270 },
+    transformation: { width: 60, height: 60 },
+    fill: "7030A0",
+});
 ```
+
+In TypeScript, `adjustments` only accepts the names that belong to the shape's `type`, so your editor suggests them. Word keeps each value within the range the shape allows, so a value that is too large acts like the largest allowed value.
 
 ## Inline and Floating
 
@@ -341,7 +353,7 @@ A group can be `floating`, and can have `altText`, just like a single shape.
 | `transformation` | `IMediaTransformation`   | Required | Size in pixels, rotation and flip. See [Size and Rotation](#size-and-rotation)   |
 | `fill`           | `ShapeFill`              | Optional | See [Fill](#fill). Default is no fill                                            |
 | `line`           | `ShapeLine`              | Optional | See [Line](#line). Default is a black line 1pt wide                              |
-| `adjustments`    | `Record<string, number>` | Optional | See [Adjustments](#adjustments)                                                  |
+| `adjustments`    | `ShapeAdjustments<type>` | Optional | The shape's handles, which depend on `type`. See [Adjustments](#adjustments)     |
 | `children`       | `Paragraph[]`            | Optional | Text inside the shape                                                            |
 | `bodyProperties` | `IBodyPropertiesOptions` | Optional | Where the text sits in the shape                                                 |
 | `floating`       | `IFloating`              | Optional | Positions the shape on the page. See [Inline and Floating](#inline-and-floating) |

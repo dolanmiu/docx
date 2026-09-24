@@ -104,7 +104,7 @@ describe("ShapeRun", () => {
         const tree = new Formatter().format(
             new ShapeRun({
                 type: "wedgeRoundRectCallout",
-                adjustments: { adj1: -20833, adj2: 62500 },
+                adjustments: { pointerX: -20.833, pointerY: 62.5 },
                 transformation: { width: 200, height: 100, rotation: 30 },
                 fill: {
                     type: "gradient",

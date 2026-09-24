@@ -8,20 +8,11 @@
  *
  * @module
  */
-import type { DocPropertiesOptions } from "@file/drawing/doc-properties/doc-properties";
-import type { IBodyPropertiesOptions } from "@file/drawing/inline/graphic/graphic-data/wps/body-properties";
-import {
-    type PresetShapeType,
-    type ShapeFill,
-    type ShapeLine,
-    getShapeLineOverhang,
-} from "@file/drawing/inline/graphic/graphic-data/wps/preset-shape";
-import type { Paragraph } from "@file/paragraph";
+import { getShapeLineOverhang } from "@file/drawing/inline/graphic/graphic-data/wps/preset-shape";
 
-import { createPresetShapeData, createUniformEffectExtent } from "./shape-run-data";
+import { type ShapeBaseOptions, type WithPresetShape, createPresetShapeData, createUniformEffectExtent } from "./shape-run-data";
 import { createTransformation } from "./wps-shape-run";
 import { Drawing, type IFloating } from "../../drawing";
-import type { IMediaTransformation } from "../../media";
 import { Run } from "../run";
 
 export type {
@@ -31,7 +22,9 @@ export type {
     GradientShapeFill,
     GradientStop,
     LineDash,
+    PresetShapeAdjustments,
     PresetShapeType,
+    ShapeAdjustments,
     ShapeFill,
     ShapeLine,
     ShapeLineOptions,
@@ -41,29 +34,18 @@ export type {
 /**
  * Options for creating a shape.
  *
+ * `adjustments` depends on `type`: each shape has its own, such as `cornerRadius` for a `"roundRect"`
+ * or `startAngle` and `endAngle` for a `"pie"`.
+ *
  * @see {@link ShapeRun}
  * @publicApi
  */
-export type IShapeOptions = {
-    /** The preset shape, such as `"rect"`, `"ellipse"`, `"line"` or `"rightArrow"` */
-    readonly type: PresetShapeType;
-    /** Size in pixels, with optional rotation (degrees) and flip. Inside a group, `offset` positions the shape. */
-    readonly transformation: IMediaTransformation;
-    /** How the shape is filled. Default is no fill */
-    readonly fill?: ShapeFill;
-    /** The shape's line. Default is a solid black line 1pt wide */
-    readonly line?: ShapeLine;
-    /** Raw shape guide values, keyed by guide name (e.g. `{ adj: 25000 }` for the corners of a `"roundRect"`) */
-    readonly adjustments?: Readonly<Record<string, number>>;
-    /** Paragraphs of text inside the shape */
-    readonly children?: readonly Paragraph[];
-    /** Text layout inside the shape. Text is centred vertically unless `verticalAnchor` is set */
-    readonly bodyProperties?: IBodyPropertiesOptions;
-    /** Floats the shape on the page instead of placing it inline with text */
-    readonly floating?: IFloating;
-    /** Name, description and title used by screen readers */
-    readonly altText?: DocPropertiesOptions;
-};
+export type IShapeOptions = WithPresetShape<
+    ShapeBaseOptions & {
+        /** Floats the shape on the page instead of placing it inline with text */
+        readonly floating?: IFloating;
+    }
+>;
 
 /**
  * Represents a shape in a WordprocessingML document.
