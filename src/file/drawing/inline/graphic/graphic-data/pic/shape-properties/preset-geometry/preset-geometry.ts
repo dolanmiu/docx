@@ -34,28 +34,19 @@ import { PresetGeometryAttributes } from "./preset-geometry-attributes";
  *
  * @example
  * ```typescript
- * const rectangle = new PresetGeometry();
- * const roundedRectangle = new PresetGeometry({ type: "roundRect", adjustments: { adj: 25000 } });
+ * const geometry = new PresetGeometry();
  * ```
  */
 export class PresetGeometry extends XmlComponent {
-    public constructor({
-        type = "rect",
-        adjustments,
-    }: {
-        /** The preset shape's OOXML name (`ST_ShapeType`), such as `"roundRect"`. Defaults to a rectangle. */
-        readonly type?: string;
-        /** Raw shape guide values, keyed by guide name (e.g. `{ adj: 25000 }`). */
-        readonly adjustments?: Readonly<Record<string, number>>;
-    } = {}) {
+    public constructor() {
         super("a:prstGeom");
 
         this.root.push(
             new PresetGeometryAttributes({
-                prst: type,
+                prst: "rect",
             }),
         );
 
-        this.root.push(new AdjustmentValues(adjustments));
+        this.root.push(new AdjustmentValues());
     }
 }

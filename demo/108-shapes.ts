@@ -9,12 +9,12 @@ import {
     HorizontalPositionRelativeFrom,
     Packer,
     Paragraph,
-    ShapeRun,
     TextRun,
     TextWrappingSide,
     TextWrappingType,
     VerticalPositionRelativeFrom,
 } from "docx";
+import { ShapeRun } from "docx/shapes";
 
 const heading = (text: string): Paragraph => new Paragraph({ heading: HeadingLevel.HEADING_2, children: [new TextRun(text)] });
 

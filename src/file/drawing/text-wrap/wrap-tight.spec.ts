@@ -23,9 +23,15 @@ describe("createWrapTight", () => {
         });
     });
 
+    it("should take the margins first, as it did before it took a side, and write only the left and right", () => {
+        expect(new Formatter().format(createWrapTight({ left: 10, right: 20, top: 30, bottom: 40 }))).to.deep.equal({
+            "wp:wrapTight": [{ _attr: { wrapText: "bothSides", distL: 10, distR: 20 } }, boxPolygon],
+        });
+    });
+
     it("should write the side and the left and right distances", () => {
         const tree = new Formatter().format(
-            createWrapTight({ side: TextWrappingSide.LARGEST }, { left: 114300, right: 114300, top: 10, bottom: 10 }),
+            createWrapTight({ left: 114300, right: 114300, top: 10, bottom: 10 }, { side: TextWrappingSide.LARGEST }),
         );
         expect(tree).to.deep.equal({
             "wp:wrapTight": [{ _attr: { wrapText: "largest", distL: 114300, distR: 114300 } }, boxPolygon],
@@ -35,7 +41,7 @@ describe("createWrapTight", () => {
 
 describe("createWrapThrough", () => {
     it("should write a wrapThrough element with a wrap polygon", () => {
-        expect(new Formatter().format(createWrapThrough({ side: TextWrappingSide.LEFT }, { left: 5 }))).to.deep.equal({
+        expect(new Formatter().format(createWrapThrough({ left: 5 }, { side: TextWrappingSide.LEFT }))).to.deep.equal({
             "wp:wrapThrough": [{ _attr: { wrapText: "left", distL: 5 } }, boxPolygon],
         });
     });

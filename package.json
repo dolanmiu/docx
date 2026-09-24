@@ -16,25 +16,56 @@
                 "types": "./dist/index.d.cts",
                 "default": "./dist/index.cjs"
             }
+        },
+        "./shapes": {
+            "import": {
+                "types": "./dist/shapes.d.ts",
+                "default": "./dist/shapes.mjs"
+            },
+            "require": {
+                "types": "./dist/shapes.d.cts",
+                "default": "./dist/shapes.cjs"
+            }
+        },
+        "./watermarks": {
+            "import": {
+                "types": "./dist/watermarks.d.ts",
+                "default": "./dist/watermarks.mjs"
+            },
+            "require": {
+                "types": "./dist/watermarks.d.cts",
+                "default": "./dist/watermarks.cjs"
+            }
+        }
+    },
+    "typesVersions": {
+        "*": {
+            "shapes": [
+                "./dist/shapes.d.ts"
+            ],
+            "watermarks": [
+                "./dist/watermarks.d.ts"
+            ]
         }
     },
     "files": [
         "dist"
     ],
     "scripts": {
-        "build": "tsc && vite build",
+        "build": "tsc && vite build && vite build --config vite.entries.config.ts --mode shapes && vite build --config vite.entries.config.ts --mode watermarks",
         "test": "vitest --ui --coverage",
         "test:ci": "vitest run --coverage",
         "prepublishOnly": "npm run build --omit=dev",
         "lint": "eslint --config eslint.config.ts",
         "predemo": "npm run build",
         "demo": "tsx ./demo/index.ts",
-        "typedoc": "typedoc src/index.ts --tsconfig tsconfig.typedoc.json",
+        "typedoc": "typedoc src/index.ts src/shapes/index.ts src/watermarks/index.ts --tsconfig tsconfig.typedoc.json",
         "prettier": "prettier -l \"{src,scripts,demo,docs}/**/*.{ts,html,md}\"",
         "prettier:fix": "npm run prettier -- --write",
         "cspell": "cspell \"{src,demo,docs,scripts}/**/*.{ts,scss,html,md}\" && cspell \"./*.*\"",
         "serve.docs": "cd docs && docsify serve",
         "extract": "tsx scripts/extract-document.ts",
+        "check-api": "tsx scripts/check-api.ts",
         "run-ts": "tsx"
     },
     "pre-commit": [

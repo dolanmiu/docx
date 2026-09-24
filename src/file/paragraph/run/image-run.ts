@@ -8,6 +8,7 @@
  * @module
  */
 import type { DocPropertiesOptions } from "@file/drawing/doc-properties/doc-properties";
+import type { DrawingLinkOptions } from "@file/drawing/doc-properties/non-visual-drawing-properties";
 import { ChangeAttributes, type IChangedAttributesProperties } from "@file/track-revision/track-revision";
 import { type IContext, type IXmlableObject, XmlComponent } from "@file/xml-components";
 import { hashedId } from "@util/convenience-functions";
@@ -20,12 +21,15 @@ import type { OutlineOptions } from "../../drawing/inline/graphic/graphic-data/p
 import type { SolidFillOptions } from "../../drawing/inline/graphic/graphic-data/pic/shape-properties/outline/solid-fill";
 import type { IMediaTransformation } from "../../media";
 import type { IMediaData } from "../../media/data";
-import { standardizeData } from "../../media/image-data";
 
 /**
  * Core options for image configuration.
+ *
+ * `link` opens a web address when the image is clicked (with Ctrl in Word), and takes precedence over a hyperlink the
+ * image is in. `decorative` marks the image as decorative, as Word's "Mark as decorative" does, so screen readers skip
+ * it: use it instead of alternative text for images that carry no information, such as borders and flourishes.
  */
-type CoreImageOptions = {
+type CoreImageOptions = DrawingLinkOptions & {
     /** Size, position, rotation, and flip settings for the image. Width and height are specified in pixels. */
     readonly transformation: IMediaTransformation;
     /** Floating layout options. When set, the image is positioned freely on the page rather than inline with text. Controls text wrapping, overlap, anchoring, and z-order. */
@@ -67,7 +71,23 @@ type SvgMediaOptions = {
  */
 export type IImageOptions = (RegularImageOptions | SvgMediaOptions) & CoreImageOptions;
 
-export { standardizeData } from "../../media/image-data";
+const convertDataURIToBinary = (dataURI: string): Uint8Array => {
+    // https://gist.github.com/borismus/1032746
+    // https://github.com/mafintosh/base64-to-uint8array
+    const BASE64_MARKER = ";base64,";
+    const base64Index = dataURI.indexOf(BASE64_MARKER);
+
+    const base64IndexWithOffset = base64Index === -1 ? 0 : base64Index + BASE64_MARKER.length;
+
+    return new Uint8Array(
+        atob(dataURI.substring(base64IndexWithOffset))
+            .split("")
+            .map((c) => c.charCodeAt(0)),
+    );
+};
+
+export const standardizeData = (data: string | Buffer | Uint8Array | ArrayBuffer): Buffer | Uint8Array | ArrayBuffer =>
+    typeof data === "string" ? convertDataURIToBinary(data) : data;
 
 const createImageData = (options: IImageOptions, key: string): Pick<IMediaData, "data" | "fileName" | "transformation"> => ({
     data: standardizeData(options.data),
@@ -142,6 +162,8 @@ export class ImageRun extends XmlComponent {
             docProperties: options.altText,
             outline: options.outline,
             crop: options.crop,
+            link: options.link,
+            decorative: options.decorative,
         });
 
         const run = new Run({ children: [drawing] });

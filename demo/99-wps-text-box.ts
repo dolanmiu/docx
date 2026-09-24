@@ -1,5 +1,7 @@
 // WPS (WordProcessing Shape) text boxes - modern DrawingML-based alternative to legacy VML text boxes (demo 94)
 // Demonstrates: basic text box, styled fill/outline, rotation, floating positioning, and vertical alignment
+// WpsShapeRun is deprecated. For new documents, use ShapeRun from "docx/shapes" (demo 108), which draws any of the
+// preset shapes, with text, fills, lines and effects.
 import * as fs from "fs";
 
 import {

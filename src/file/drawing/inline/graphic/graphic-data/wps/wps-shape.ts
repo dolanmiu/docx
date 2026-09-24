@@ -4,7 +4,6 @@ import { BuilderElement, type XmlComponent } from "@file/xml-components";
 
 import { type IBodyPropertiesOptions, createBodyProperties } from "./body-properties";
 import { type INonVisualShapePropertiesOptions, createNonVisualShapeProperties } from "./non-visual-shape-properties";
-import { type PresetShapeCoreOptions, createPresetShape } from "./preset-shape/preset-shape";
 import { createWpsTextBox } from "./wps-text-box";
 import type { OutlineOptions } from "../pic/shape-properties/outline/outline";
 import type { SolidFillOptions } from "../pic/shape-properties/outline/solid-fill";
@@ -16,17 +15,13 @@ export type WpsShapeCoreOptions = {
     readonly bodyProperties?: IBodyPropertiesOptions;
 };
 
-export type WpsShapeOptions = (WpsShapeCoreOptions | PresetShapeCoreOptions) & {
+export type WpsShapeOptions = WpsShapeCoreOptions & {
     readonly transformation: IMediaDataTransformation;
     readonly outline?: OutlineOptions;
     readonly solidFill?: SolidFillOptions;
 };
 
 export const createWpsShape = (options: WpsShapeOptions): XmlComponent =>
-    // Preset shapes (ShapeRun) carry a geometry; text boxes (WpsShapeRun) do not
-    "geometry" in options ? createPresetShape(options) : createTextBoxShape(options);
-
-const createTextBoxShape = (options: WpsShapeCoreOptions & WpsShapeOptions): XmlComponent =>
     new BuilderElement({
         name: "wps:wsp",
         children: [

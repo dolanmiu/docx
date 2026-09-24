@@ -3,17 +3,8 @@
 // See docs/usage/shapes.md.
 
 import * as fs from "fs";
-import {
-    AlignmentType,
-    Document,
-    HeadingLevel,
-    type IShapeCanvasChildOptions,
-    Packer,
-    Paragraph,
-    ShapeCanvasRun,
-    ShapeGroupRun,
-    TextRun,
-} from "docx";
+import { AlignmentType, Document, HeadingLevel, Packer, Paragraph, TextRun } from "docx";
+import { type IShapeCanvasChildOptions, ShapeCanvasRun, ShapeGroupRun } from "docx/shapes";
 
 const label = (text: string, color = "FFFFFF"): Paragraph =>
     new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text, color, bold: true, size: 18 })] });

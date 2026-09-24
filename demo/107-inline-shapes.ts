@@ -3,7 +3,8 @@
 // See docs/usage/shapes.md.
 
 import * as fs from "fs";
-import { Document, HeadingLevel, Packer, Paragraph, ShapeRun, Table, TableCell, TableRow, TextRun, WidthType } from "docx";
+import { Document, HeadingLevel, Packer, Paragraph, Table, TableCell, TableRow, TextRun, WidthType } from "docx";
+import { ShapeRun } from "docx/shapes";
 
 // A solid black bar, like the blanks on a printed form
 const bar = (width: number, height = 4): ShapeRun =>

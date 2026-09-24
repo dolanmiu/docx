@@ -70,8 +70,8 @@ const createWrapPolygon = (): XmlComponent =>
 
 const createPolygonWrap = (
     name: "wp:wrapTight" | "wp:wrapThrough",
-    textWrapping?: Pick<ITextWrapping, "side">,
     margins: IMargins = {},
+    textWrapping?: Pick<ITextWrapping, "side">,
 ): XmlComponent =>
     new BuilderElement<IWrapPolygonAttributes>({
         name,
@@ -102,9 +102,12 @@ const createPolygonWrap = (
  *   <xsd:attribute name="distR" type="ST_WrapDistance"/>
  * </xsd:complexType>
  * ```
+ *
+ * @param margins - The distances from the text on the left and right. The top and bottom aren't written for tight wrapping
+ * @param textWrapping - Which sides the text wraps on. Defaults to both
  */
-export const createWrapTight = (textWrapping?: Pick<ITextWrapping, "side">, margins?: IMargins): XmlComponent =>
-    createPolygonWrap("wp:wrapTight", textWrapping, margins);
+export const createWrapTight = (margins?: IMargins, textWrapping?: Pick<ITextWrapping, "side">): XmlComponent =>
+    createPolygonWrap("wp:wrapTight", margins, textWrapping);
 
 /**
  * Creates through text wrapping for a floating drawing.
@@ -125,6 +128,9 @@ export const createWrapTight = (textWrapping?: Pick<ITextWrapping, "side">, marg
  *   <xsd:attribute name="distR" type="ST_WrapDistance"/>
  * </xsd:complexType>
  * ```
+ *
+ * @param margins - The distances from the text on the left and right. The top and bottom aren't written for through wrapping
+ * @param textWrapping - Which sides the text wraps on. Defaults to both
  */
-export const createWrapThrough = (textWrapping?: Pick<ITextWrapping, "side">, margins?: IMargins): XmlComponent =>
-    createPolygonWrap("wp:wrapThrough", textWrapping, margins);
+export const createWrapThrough = (margins?: IMargins, textWrapping?: Pick<ITextWrapping, "side">): XmlComponent =>
+    createPolygonWrap("wp:wrapThrough", margins, textWrapping);

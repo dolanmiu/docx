@@ -33,7 +33,8 @@
             "@util/*": ["./util/*"],
             "@export/*": ["./export/*"],
             "@file/*": ["./file/*"],
-            "@shared": ["./shared/index.ts"]
+            "@shared": ["./shared/index.ts"],
+            "docx": ["./index.ts"]
         }
     },
     "include": ["src"]

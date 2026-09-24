@@ -1,5 +1,5 @@
 /**
- * Generates src/file/drawing/inline/graphic/graphic-data/wps/text-metrics/font-widths.ts: how wide each character is
+ * Generates src/shapes/text-metrics/font-widths.ts: how wide each character is
  * in the fonts Word documents use most, so shapes can be sized to fit their text.
  *
  * The widths come from fonts with an open license that are made to have the same widths as Word's fonts:
@@ -19,7 +19,7 @@ import { execSync } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-const OUTPUT = "src/file/drawing/inline/graphic/graphic-data/wps/text-metrics/font-widths.ts";
+const OUTPUT = "src/shapes/text-metrics/font-widths.ts";
 
 // Each font Word documents use, and the font files with the same widths
 const FONTS = [

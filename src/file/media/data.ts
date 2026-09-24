@@ -1,13 +1,7 @@
 import type { OutlineOptions } from "@file/drawing/inline/graphic/graphic-data/pic/shape-properties/outline/outline";
 import type { SolidFillOptions } from "@file/drawing/inline/graphic/graphic-data/pic/shape-properties/outline/solid-fill";
-import type {
-    PresetShapeCoreOptions,
-    PresetShapeNonVisualProperties,
-    ShapeFill,
-    ShapeLine,
-    ShapePictureCoreOptions,
-    WpsShapeCoreOptions,
-} from "@file/drawing/inline/graphic/graphic-data/wps";
+import type { WpsShapeCoreOptions } from "@file/drawing/inline/graphic/graphic-data/wps/wps-shape";
+import type { XmlComponent } from "@file/xml-components";
 
 export type IMediaDataTransformation = {
     readonly offset?: {
@@ -80,7 +74,7 @@ type SvgMediaData = {
 export type WpsMediaData = {
     readonly type: "wps";
     readonly transformation: IMediaDataTransformation;
-    readonly data: WpsShapeCoreOptions | PresetShapeCoreOptions;
+    readonly data: WpsShapeCoreOptions;
 };
 
 export type WpgCommonMediaData = {
@@ -90,68 +84,39 @@ export type WpgCommonMediaData = {
 
 export type IGroupChildMediaData = (WpsMediaData | IMediaData) & WpgCommonMediaData;
 
-/**
- * A picture in a ShapeGroupRun or ShapeCanvasRun, written as `pic:pic`.
- */
-export type ShapePictureMediaData = {
-    readonly type: "picture";
-    readonly transformation: IMediaDataTransformation;
-    readonly data: ShapePictureCoreOptions;
-};
-
-/**
- * A group inside a ShapeGroupRun or ShapeCanvasRun, written as `wpg:grpSp` in a group or `wpg:wgp` on a canvas.
- */
-export type ShapeNestedGroupMediaData = {
-    readonly type: "group";
-    readonly transformation: IMediaDataTransformation;
-    /** Top-left corner (in EMUs) of the coordinate space the children are positioned in */
-    readonly childOffset: {
-        readonly x: number;
-        readonly y: number;
-    };
-    /** Size (in EMUs) of the coordinate space the children are positioned in */
-    readonly childExtent: {
-        readonly x: number;
-        readonly y: number;
-    };
-    readonly children: readonly ShapeDrawingChildMediaData[];
-    readonly nonVisualDrawingProperties: PresetShapeNonVisualProperties;
-};
-
-/**
- * A shape, picture or group in a ShapeGroupRun or ShapeCanvasRun.
- */
-export type ShapeDrawingChildMediaData = WpsMediaData | ShapePictureMediaData | ShapeNestedGroupMediaData;
-
 export type WpgMediaData = {
     readonly type: "wpg";
     readonly transformation: IMediaDataTransformation;
-    readonly children: readonly (IGroupChildMediaData | ShapeDrawingChildMediaData)[];
-    /** Top-left corner (in EMUs) of the coordinate space the children are positioned in. Defaults to 0,0. */
-    readonly childOffset?: {
-        readonly x: number;
-        readonly y: number;
-    };
-    /** Size (in EMUs) of the coordinate space the children are positioned in. Defaults to the group's own size. */
-    readonly childExtent?: {
-        readonly x: number;
-        readonly y: number;
-    };
+    readonly children: readonly IGroupChildMediaData[];
 };
 
-export type WpcMediaData = {
-    readonly type: "wpc";
+/**
+ * Any DrawingML graphic, such as a shape, group or drawing canvas, written into a {@link Drawing} as it is given.
+ *
+ * The drawing writes the parts every drawing has: its size and position (`wp:inline` or `wp:anchor`), its id and
+ * alternative text (`wp:docPr`) and `a:graphic`. `content` is written inside `a:graphicData`, and `uri` says what kind of
+ * graphic it is. This is how `docx/shapes` writes its shapes.
+ *
+ * @example
+ * ```typescript
+ * new Drawing({
+ *   type: "graphic",
+ *   uri: "http://schemas.microsoft.com/office/word/2010/wordprocessingShape",
+ *   transformation: createTransformation({ width: 100, height: 50 }),
+ *   content: new BuilderElement({ name: "wps:wsp", children: [...] }),
+ * });
+ * ```
+ */
+export type GraphicMediaData = {
+    readonly type: "graphic";
+    /** What kind of graphic `content` is: the `uri` attribute of `a:graphicData` */
+    readonly uri: string;
     readonly transformation: IMediaDataTransformation;
-    /** The shapes, pictures and groups on the canvas, positioned in EMUs from its top-left corner */
-    readonly children: readonly ShapeDrawingChildMediaData[];
-    /** The canvas's background */
-    readonly fill?: ShapeFill;
-    /** The canvas's outline */
-    readonly line?: ShapeLine;
+    /** The graphic, written inside `a:graphicData` */
+    readonly content: XmlComponent;
 };
 
-export type IExtendedMediaData = IMediaData | WpsMediaData | WpgMediaData | WpcMediaData;
+export type IExtendedMediaData = IMediaData | WpsMediaData | WpgMediaData | GraphicMediaData;
 
 export type IMediaData = (RegularMediaData | SvgMediaData) & CoreMediaData;
 

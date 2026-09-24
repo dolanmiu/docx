@@ -1,7 +1,8 @@
 // Add a text watermark behind every page
 
 import * as fs from "fs";
-import { Document, Header, Packer, PageBreak, Paragraph, TextWatermark } from "docx";
+import { Document, Header, Packer, PageBreak, Paragraph } from "docx";
+import { TextWatermark } from "docx/watermarks";
 
 const doc = new Document({
     sections: [

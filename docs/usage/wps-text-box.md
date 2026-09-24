@@ -4,7 +4,7 @@ WPS (WordProcessing Shape) text boxes are the modern, DrawingML-based alternativ
 
 !> `WPS Text Boxes` require an understanding of [Paragraphs](usage/paragraph.md).
 
-!> `WpsShapeRun` is deprecated. Use [`ShapeRun`](usage/shapes.md) with `type: "rectangle"` and `children` instead: it has simpler options for fills, lines, effects and text layout, and any shape can hold text.
+!> `WpsShapeRun` is deprecated. Use [`ShapeRun`](usage/shapes.md) from `docx/shapes`, with `type: "rectangle"` and `children`, instead: it has simpler options for fills, lines, effects and text layout, and any shape can hold text.
 
 ## When to Use WPS vs VML Text Boxes
 

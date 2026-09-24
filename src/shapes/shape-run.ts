@@ -1,0 +1,125 @@
+/**
+ * Shape run module for WordprocessingML documents.
+ *
+ * This module provides support for preset DrawingML shapes, such as rectangles,
+ * ellipses, lines and arrows, drawn inline with text or floating on the page.
+ *
+ * Reference: http://officeopenxml.com/drwSp.php
+ *
+ * @module
+ */
+import { Drawing, type IFloating, Run, createTransformation } from "docx";
+
+import { SHAPE_URI } from "./drawing/shape-drawing-child";
+import { createPresetShape } from "./preset-shape/preset-shape";
+import { type ShapeBaseOptions, type WithPresetShape, createPresetShapeData, getShapeEffectExtent } from "./shape-run-data";
+import { resolveShapeSize } from "./shape-text-size";
+
+export type {
+    Arrowhead,
+    ArrowheadSize,
+    ArrowheadType,
+    CustomLineDash,
+    GradientPath,
+    GradientShapeFill,
+    GradientStop,
+    ImageSource,
+    LineDash,
+    PatternShapeFill,
+    PictureShapeFill,
+    PictureTile,
+    PictureTileAlignment,
+    PictureTileMirror,
+    PresetShapeAdjustments,
+    PresetShapeType,
+    ShapeAdjustments,
+    ShapeCompoundLine,
+    ShapeEffects,
+    ShapeFill,
+    ShapeGlow,
+    ShapeLine,
+    ShapeLineCap,
+    ShapeLineJoin,
+    ShapeLineOptions,
+    ShapePattern,
+    ShapeReflection,
+    ShapeShadow,
+    ShapeTextDirection,
+    ShapeTextOptions,
+    ShapeTextVerticalAlignment,
+    ShapeTextWarp,
+    SolidShapeFill,
+} from "./preset-shape";
+export type { ShapeSize, ShapeTransformation } from "./shape-text-size";
+
+/**
+ * Options for creating a shape.
+ *
+ * `adjustments` depends on `type`: each shape has its own, such as `cornerRadius` for a `"roundedRectangle"`
+ * or `startAngle` and `endAngle` for a `"pie"`.
+ *
+ * @see {@link ShapeRun}
+ * @publicApi
+ */
+export type IShapeOptions = WithPresetShape<
+    ShapeBaseOptions & {
+        /** Floats the shape on the page instead of placing it inline with text */
+        readonly floating?: IFloating;
+    }
+>;
+
+/**
+ * Represents a shape in a WordprocessingML document.
+ *
+ * A shape is one of the 187 DrawingML presets, such as a rectangle, ellipse, line,
+ * arrow, star, callout or flowchart symbol. It can have a fill, a line with dashes
+ * and arrowheads, and text inside it. It sits inline with text unless `floating` is set.
+ *
+ * Reference: http://officeopenxml.com/drwSp.php
+ *
+ * @publicApi
+ *
+ * @example
+ * ```typescript
+ * // A black bar inline with text
+ * new Paragraph({
+ *   children: [
+ *     new TextRun("Name: "),
+ *     new ShapeRun({ type: "rectangle", transformation: { width: 200, height: 4 }, fill: "000000", line: "none" }),
+ *   ],
+ * });
+ *
+ * // An arrow
+ * new ShapeRun({
+ *   type: "line",
+ *   transformation: { width: 300, height: 0 },
+ *   line: { color: "C00000", width: 2, endArrow: "triangle" },
+ * });
+ * ```
+ */
+export class ShapeRun extends Run {
+    public constructor(options: IShapeOptions) {
+        super({});
+
+        const transformation = resolveShapeSize(options);
+        // A shape on its own is positioned by the run (or `floating`), not by an offset
+        const drawingTransformation = createTransformation({ ...transformation, offset: undefined });
+        this.root.push(
+            new Drawing(
+                {
+                    type: "graphic",
+                    uri: SHAPE_URI,
+                    transformation: drawingTransformation,
+                    content: createPresetShape({ ...createPresetShapeData(options), transformation: drawingTransformation }),
+                },
+                {
+                    floating: options.floating,
+                    docProperties: options.altText,
+                    link: options.link,
+                    decorative: options.decorative,
+                    effectExtent: getShapeEffectExtent({ ...options, transformation }),
+                },
+            ),
+        );
+    }
+}

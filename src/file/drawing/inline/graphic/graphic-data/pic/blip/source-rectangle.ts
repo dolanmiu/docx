@@ -15,8 +15,6 @@ import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
  * Each value is a percentage (0-100) of the image dimension to crop away
  * from the given edge. For example, `{ left: 10 }` crops 10% off the left
  * side of the image.
- *
- * @see {@link SourceRectangle}
  */
 export type ICropOptions = {
     /** Percentage (0-100) of the image width to crop from the left edge. */

@@ -1,5 +1,5 @@
 /**
- * Generates src/file/drawing/inline/graphic/graphic-data/wps/preset-shape/preset-shape-geometry.ts
+ * Generates src/shapes/preset-shape/preset-shape-geometry.ts
  * from the preset shape definitions of Office Open XML (presetShapeDefinitions.xml, ECMA-376 Part 1).
  *
  * For each preset shape it keeps what is needed to find the shape's connection sites and where its text goes:
@@ -17,10 +17,10 @@ import { readFileSync, writeFileSync } from "node:fs";
 
 import { type Element, xml2js } from "xml-js";
 
-import { PRESET_SHAPE_OOXML_NAMES } from "../src/file/drawing/inline/graphic/graphic-data/wps/preset-shape/preset-shape-type";
+import { PRESET_SHAPE_OOXML_NAMES } from "../src/shapes/preset-shape/preset-shape-type";
 
 const SOURCE_URL = "https://raw.githubusercontent.com/LibreOffice/core/master/oox/source/drawingml/customshapes/presetShapeDefinitions.xml";
-const OUTPUT = "src/file/drawing/inline/graphic/graphic-data/wps/preset-shape/preset-shape-geometry.ts";
+const OUTPUT = "src/shapes/preset-shape/preset-shape-geometry.ts";
 
 const loadDefinitions = async (path?: string): Promise<string> => {
     if (path) {

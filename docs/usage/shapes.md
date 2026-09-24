@@ -23,10 +23,32 @@ Like an image, a shape is a run inside a `Paragraph`. It sits in the line of tex
 | Add a shadow, glow or reflection              | `effects`                                    | Card with a drop shadow       |
 | Draw a shape that isn't a preset              | `type: "custom"` with an SVG `path`          | Logo, badge, freeform outline |
 
+## Importing
+
+Shapes come with the `docx` package. Import them from `docx/shapes`, and everything else, such as the document and its paragraphs, from `docx`:
+
+```ts
+import { Document, Packer, Paragraph } from "docx";
+import { ShapeCanvasRun, ShapeGroupRun, ShapeRun } from "docx/shapes";
+```
+
+The examples on this page use `ShapeRun`, `ShapeGroupRun` and `ShapeCanvasRun` from `docx/shapes`. Types such as `IShapeGroupChildOptions` come from there too.
+
+In a page without a bundler, load the shapes after `docx`: `dist/shapes.umd.cjs` after `dist/index.umd.cjs`, or `dist/shapes.iife.js` after `dist/index.iife.js`. They add a `docxShapes` global next to the `docx` one:
+
+```html
+<script src="node_modules/docx/dist/index.umd.cjs"></script>
+<script src="node_modules/docx/dist/shapes.umd.cjs"></script>
+<script>
+    const shape = new docxShapes.ShapeRun({ type: "ellipse", transformation: { width: 100, height: 60 } });
+</script>
+```
+
 ## Basic Usage
 
 ```ts
-import { Document, Packer, Paragraph, ShapeRun, TextRun } from "docx";
+import { Document, Packer, Paragraph, TextRun } from "docx";
+import { ShapeRun } from "docx/shapes";
 
 const doc = new Document({
     sections: [
@@ -750,7 +772,7 @@ The positions are worked out when the document is made and written as ordinary o
 
 ## ShapeRun vs WpsShapeRun and WpgGroupRun
 
-[`WpsShapeRun`](usage/wps-text-box.md) draws a rectangular text box, and `WpgGroupRun` groups text boxes and pictures. `ShapeRun` draws any shape, with or without text, and `ShapeGroupRun` groups shapes, pictures and groups, with simpler options for fills, lines, effects and text. They write the same kinds of DrawingML elements. `WpsShapeRun` and `WpgGroupRun` are deprecated, so use `ShapeRun` and `ShapeGroupRun` for new documents.
+[`WpsShapeRun`](usage/wps-text-box.md) draws a rectangular text box, and `WpgGroupRun` groups text boxes and pictures. `ShapeRun` draws any shape, with or without text, and `ShapeGroupRun` groups shapes, pictures and groups, with simpler options for fills, lines, effects and text. They write the same kinds of DrawingML elements. `WpsShapeRun` and `WpgGroupRun` are deprecated, so use `ShapeRun` and `ShapeGroupRun` from `docx/shapes` for new documents. `WpsShapeRun` and `WpgGroupRun` stay in `docx`.
 
 ## Compatibility
 

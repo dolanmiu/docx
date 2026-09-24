@@ -1,7 +1,9 @@
 <!doctype html>
 <html>
     <head>
-        <script src="../build/index.umd.js"></script>
+        <script src="../dist/index.umd.cjs"></script>
+        <!-- docx/shapes: load it after docx. It adds the docxShapes global -->
+        <script src="../dist/shapes.umd.cjs"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/1.3.8/FileSaver.js"></script>
     </head>
 
@@ -26,6 +28,16 @@
                                         new docx.TextRun({
                                             children: [new docx.Tab(), "Github is the best"],
                                             bold: true,
+                                        }),
+                                    ],
+                                }),
+                                new docx.Paragraph({
+                                    children: [
+                                        new docxShapes.ShapeRun({
+                                            type: "roundedRectangle",
+                                            text: "A shape",
+                                            transformation: { width: "fitText", height: 40 },
+                                            fill: "4472C4",
                                         }),
                                     ],
                                 }),
