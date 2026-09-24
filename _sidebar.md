@@ -20,6 +20,7 @@
     - [Text](usage/text.md)
     - [Images](usage/images.md)
     - [Shapes](usage/shapes.md)
+        - [Shape Types](usage/shape-types.md)
         - [Shape Adjustments](usage/shape-adjustments.md)
     - [Tables](usage/tables.md)
     - [Bullet Points](usage/bullet-points.md)
