@@ -1,7 +1,8 @@
 // Add an image watermark behind every page
 
 import * as fs from "fs";
-import { Document, Header, ImageWatermark, Packer, PageBreak, Paragraph } from "docx";
+import { Document, Header, Packer, PageBreak, Paragraph } from "docx";
+import { ImageWatermark } from "docx/watermarks";
 
 const doc = new Document({
     sections: [

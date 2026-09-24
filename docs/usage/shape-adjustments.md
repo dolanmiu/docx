@@ -3,6 +3,8 @@
 Adjustments change the proportions of a [shape](usage/shapes.md), the same way as dragging its yellow handles in Word. This page lists the adjustments of every shape that has them. Shapes that aren't listed, such as `rectangle`, `ellipse` and the flowchart shapes, have none.
 
 ```ts
+import { ShapeRun } from "docx/shapes";
+
 new ShapeRun({
     type: "rightArrowCallout",
     adjustments: { shaftThickness: 20, headWidth: 50, headLength: 25, boxWidth: 60 },

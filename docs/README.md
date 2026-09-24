@@ -40,6 +40,13 @@ import * as docx from "docx";
 import { Document, Packer, Paragraph, TextRun } from "docx";
 ```
 
+[Shapes](usage/shapes.md) and [watermarks](usage/watermarks.md) come with the package too, from `docx/shapes` and `docx/watermarks`:
+
+```ts
+import { ShapeRun } from "docx/shapes";
+import { TextWatermark } from "docx/watermarks";
+```
+
 ## Basic Usage
 
 ```ts

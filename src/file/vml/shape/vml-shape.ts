@@ -101,15 +101,16 @@ type VmlShapeAttributes = {
  * @param options - Configuration options for the shape
  * @returns An XmlComponent representing the v:shape element
  *
+ * Text boxes are drawn with it, and so are the watermarks in `docx/watermarks`.
+ *
  * @example
  * ```typescript
  * const shape = createVmlShape({
- *   id: "watermark",
- *   type: "#_x0000_t136",
- *   style: { position: "absolute", width: "527.85pt", height: "131.95pt", rotation: 315 },
+ *   id: "box",
+ *   type: "#_x0000_t202",
+ *   style: { position: "absolute", width: "200pt", height: "50pt", rotation: 10 },
  *   fillColor: "silver",
  *   stroked: false,
- *   children: [createVmlFill({ opacity: 0.5 }), createVmlTextPath({ text: "DRAFT" })],
  * });
  * ```
  */

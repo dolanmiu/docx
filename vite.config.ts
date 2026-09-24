@@ -7,7 +7,13 @@ import { copyFileSync } from "node:fs";
 export default defineConfig({
     plugins: [
         dts({
-            bundleTypes: true,
+            bundleTypes: {
+                // Keep every declaration. API Extractor's default output leaves out those whose JSDoc says @internal,
+                // which would remove exported names from the types
+                extractorConfig: {
+                    dtsRollup: { publicTrimmedFilePath: "", untrimmedFilePath: resolve(__dirname, "dist/index.d.ts") },
+                },
+            },
             // tsconfig.json removes comments, but the JSDoc in declarations is what users see in their editors
             compilerOptions: { removeComments: false },
             afterBuild: () => {

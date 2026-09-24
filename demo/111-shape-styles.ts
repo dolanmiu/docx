@@ -2,7 +2,8 @@
 // See docs/usage/shapes.md.
 
 import * as fs from "fs";
-import { AlignmentType, Document, HeadingLevel, Packer, Paragraph, ShapeRun, TextRun } from "docx";
+import { AlignmentType, Document, HeadingLevel, Packer, Paragraph, TextRun } from "docx";
+import { ShapeRun } from "docx/shapes";
 
 const heading = (text: string): Paragraph => new Paragraph({ heading: HeadingLevel.HEADING_2, children: [new TextRun(text)] });
 

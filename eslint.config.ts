@@ -11,7 +11,7 @@ import tsEslint from "typescript-eslint";
 
 const config: Linter.Config<Linter.RulesRecord>[] = [
     {
-        ignores: ["**/vite.config.ts", "**/dist/**", "**/coverage/**", "**/*.js", "eslint.config.ts", "**/demo/**", "**/scripts/**"],
+        ignores: ["**/vite*.config.ts", "**/dist/**", "**/coverage/**", "**/*.js", "eslint.config.ts", "**/demo/**", "**/scripts/**"],
     },
     eslint.configs.recommended,
     importX.flatConfigs.recommended,
@@ -363,6 +363,55 @@ const config: Linter.Config<Linter.RulesRecord>[] = [
                 "error",
                 {
                     argsIgnorePattern: "^[_]+$",
+                },
+            ],
+        },
+    },
+    // docx's optional entries, docx/shapes (src/shapes) and docx/watermarks (src/watermarks), are built on docx's public
+    // API. They import docx by name, so their builds leave docx out and the package has one copy of each class and id
+    // counter. docx doesn't import them. Specs may import docx's internals, such as the Formatter
+    {
+        files: ["src/**/*.ts"],
+        ignores: ["src/shapes/**", "src/watermarks/**", "**/*.spec.ts"],
+        rules: {
+            "no-restricted-imports": [
+                "error",
+                {
+                    paths: [{ name: "docx", message: "docx doesn't import itself by name. Use a path alias such as @file/" }],
+                    patterns: [
+                        { group: ["docx/*"], message: "docx doesn't import its optional entries, such as docx/shapes" },
+                        { regex: "(^|/)(shapes|watermarks)(/|$)", message: "docx doesn't import its optional entries, such as docx/shapes" },
+                    ],
+                },
+            ],
+        },
+    },
+    {
+        files: ["src/shapes/*.ts", "src/watermarks/*.ts"],
+        ignores: ["**/*.spec.ts"],
+        rules: {
+            "no-restricted-imports": [
+                "error",
+                {
+                    patterns: [
+                        { group: ["@file/*", "@util/*", "@export/*", "@shared", "@shared/*"], message: 'Optional entries import docx from "docx"' },
+                        { regex: "^\\.\\./", message: 'Optional entries import docx from "docx"' },
+                    ],
+                },
+            ],
+        },
+    },
+    {
+        files: ["src/shapes/*/*.ts", "src/watermarks/*/*.ts"],
+        ignores: ["**/*.spec.ts"],
+        rules: {
+            "no-restricted-imports": [
+                "error",
+                {
+                    patterns: [
+                        { group: ["@file/*", "@util/*", "@export/*", "@shared", "@shared/*"], message: 'Optional entries import docx from "docx"' },
+                        { regex: "^\\.\\./\\.\\./", message: 'Optional entries import docx from "docx"' },
+                    ],
                 },
             ],
         },

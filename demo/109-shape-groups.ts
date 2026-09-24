@@ -9,14 +9,13 @@ import {
     HeadingLevel,
     HorizontalPositionAlign,
     HorizontalPositionRelativeFrom,
-    type IShapeGroupChildOptions,
     Packer,
     Paragraph,
-    ShapeGroupRun,
     TextRun,
     TextWrappingType,
     VerticalPositionRelativeFrom,
 } from "docx";
+import { type IShapeGroupChildOptions, ShapeGroupRun } from "docx/shapes";
 
 const label = (text: string): Paragraph =>
     new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text, color: "FFFFFF", bold: true })] });

@@ -15,6 +15,9 @@ jobs:
             - name: Checkout Repo
               uses: actions/checkout@v5
             - uses: "./.github/actions/install-and-build"
+            # Fails if anything the last release exported has been removed or changed incompatibly
+            - name: Check the API against the last release
+              run: npm run check-api
             - name: Archive Production Artifact
               uses: actions/upload-artifact@v4
               with:

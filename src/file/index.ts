@@ -34,5 +34,6 @@ export * from "./vertical-align";
 export * from "./checkbox";
 export * from "./fonts";
 export * from "./textbox";
-export * from "./watermark";
+// The VML shape that text boxes are drawn with, which docx/watermarks uses too
+export { type IVmlShapeOptions, type LengthUnit, type VmlShapeStyle, createVmlShape } from "./vml";
 export { type IPropertiesOptions } from "./core-properties";

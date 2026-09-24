@@ -4,17 +4,8 @@
 // See docs/usage/shapes.md.
 
 import * as fs from "fs";
-import {
-    Document,
-    HeadingLevel,
-    type IShapeCanvasChildOptions,
-    Packer,
-    Paragraph,
-    ShapeCanvasRun,
-    ShapeGroupRun,
-    ShapeRun,
-    TextRun,
-} from "docx";
+import { Document, HeadingLevel, Packer, Paragraph, TextRun } from "docx";
+import { type IShapeCanvasChildOptions, ShapeCanvasRun, ShapeGroupRun, ShapeRun } from "docx/shapes";
 
 const arrow = { color: "404040", width: 1.25, endArrow: "triangle" } as const;
 const plain = { color: "7F7F7F", width: 1 } as const;

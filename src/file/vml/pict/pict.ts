@@ -45,7 +45,7 @@ export type IPictOptions = {
  * @example
  * ```typescript
  * const pict = createPict({
- *   children: [createWordArtShapeType(), createVmlShape({ id: "shape1", type: "#_x0000_t136" })],
+ *   children: [createVmlShape({ id: "shape1", style: { width: 100, height: 50 } })],
  * });
  * ```
  */

@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 
 import { Formatter } from "@export/formatter";
+import { BuilderElement } from "@file/xml-components";
 
 import { createVmlShape } from "./vml-shape";
-import { createVmlFill } from "../fill/vml-fill";
 
 describe("createVmlShape", () => {
     it("should create a self-closing shape with only an id when nothing else is given", () => {
@@ -62,7 +62,12 @@ describe("createVmlShape", () => {
         const tree = new Formatter().format(
             createVmlShape({
                 id: "shape-1",
-                children: [createVmlFill({ opacity: 0.5 })],
+                children: [
+                    new BuilderElement<{ readonly opacity: number }>({
+                        name: "v:fill",
+                        attributes: { opacity: { key: "opacity", value: 0.5 } },
+                    }),
+                ],
             }),
         );
 

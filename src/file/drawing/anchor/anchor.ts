@@ -129,10 +129,10 @@ export class Anchor extends XmlComponent {
                     this.root.push(createWrapSquare(drawingOptions.floating.wrap, drawingOptions.floating.margins));
                     break;
                 case TextWrappingType.TIGHT:
-                    this.root.push(createWrapTight(drawingOptions.floating.wrap, drawingOptions.floating.margins));
+                    this.root.push(createWrapTight(drawingOptions.floating.margins, drawingOptions.floating.wrap));
                     break;
                 case TextWrappingType.THROUGH:
-                    this.root.push(createWrapThrough(drawingOptions.floating.wrap, drawingOptions.floating.margins));
+                    this.root.push(createWrapThrough(drawingOptions.floating.margins, drawingOptions.floating.wrap));
                     break;
                 case TextWrappingType.TOP_AND_BOTTOM:
                     this.root.push(createWrapTopAndBottom(drawingOptions.floating.margins));

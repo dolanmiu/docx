@@ -28,9 +28,7 @@ import { DrawingLink, type DrawingLinkOptions, createDecorativeExtensionList } f
 // </complexType>
 
 /**
- * Options for configuring document properties of a drawing.
- *
- * @see {@link DocProperties}
+ * Options for configuring document properties of a drawing: its name and alternative text, written in `wp:docPr`.
  */
 export type DocPropertiesOptions = {
     /** Name of the drawing element (used for identification) */

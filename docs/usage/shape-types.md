@@ -1,6 +1,6 @@
 # Shape Types
 
-This page lists all 187 preset [shapes](usage/shapes.md) that `type` accepts, by category.
+This page lists all 187 preset [shapes](usage/shapes.md) that `type` accepts, by category. Shapes come from `docx/shapes`: `import { ShapeRun } from "docx/shapes";`.
 
 Office Open XML abbreviates or numbers many of these names, such as `roundRect` and `ribbon2`. This library names each shape after what it is instead, and writes the OOXML name to the file. The OOXML column lets you look a shape up in the specification or find it in a document's XML. Passing an OOXML name that differs from the library's name throws an error that suggests the right one.
 

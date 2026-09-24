@@ -3,9 +3,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Formatter } from "@export/formatter";
 import type { IViewWrapper } from "@file/document-wrapper";
 import type { File } from "@file/file";
+import type { IContext, IXmlableObject } from "@file/xml-components";
 import * as convenienceFunctions from "@util/convenience-functions";
 
 import { ImageRun } from "./image-run";
+import { ConcreteHyperlink } from "../links";
 
 describe("ImageRun", () => {
     beforeEach(() => {
@@ -1251,6 +1253,88 @@ describe("ImageRun", () => {
                 `${expectedHash}.png`,
                 expect.objectContaining({ fileName: `${expectedHash}.png` }),
             );
+        });
+    });
+
+    describe("links and decorative images", () => {
+        const format = (imageRun: ImageRun, stack: readonly unknown[] = []) => {
+            const addRelationship = vi.fn();
+            const tree = new Formatter().format(imageRun, {
+                file: { Media: { addImage: vi.fn() } } as unknown as File,
+                viewWrapper: { Relationships: { addRelationship } } as unknown as IViewWrapper,
+                stack,
+            } as unknown as IContext);
+            return { tree, addRelationship };
+        };
+        const docProperties = (tree: IXmlableObject, placement: "wp:inline" | "wp:anchor"): readonly IXmlableObject[] => {
+            const run = tree["w:r"].find((child: IXmlableObject) => "w:drawing" in child);
+            const drawing = run["w:drawing"][0][placement];
+            return drawing.find((child: IXmlableObject) => "wp:docPr" in child)["wp:docPr"];
+        };
+        const image = { type: "png", data: Buffer.from(""), transformation: { width: 100, height: 100 } } as const;
+
+        it("should open a web address when the image is clicked, through a relationship from the part it is in", () => {
+            const { tree, addRelationship } = format(new ImageRun({ ...image, link: "https://example.com" }));
+
+            expect(addRelationship).toHaveBeenCalledOnce();
+            const [linkId, type, target, mode] = addRelationship.mock.calls[0];
+            expect([type, target, mode]).to.deep.equal([
+                "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink",
+                "https://example.com",
+                "External",
+            ]);
+            expect(docProperties(tree, "wp:inline")[1]).to.deep.equal({
+                "a:hlinkClick": {
+                    _attr: { "xmlns:a": "http://schemas.openxmlformats.org/drawingml/2006/main", "r:id": `rId${linkId}` },
+                },
+            });
+        });
+
+        it("should mark the image as decorative, so screen readers skip it", () => {
+            const { tree, addRelationship } = format(new ImageRun({ ...image, decorative: true }));
+
+            expect(addRelationship).not.toHaveBeenCalled();
+            expect(docProperties(tree, "wp:inline")[1]).to.deep.equal({
+                "a:extLst": [
+                    { _attr: { "xmlns:a": "http://schemas.openxmlformats.org/drawingml/2006/main" } },
+                    {
+                        "a:ext": [
+                            { _attr: { uri: "{C183D7F6-B498-43B3-948B-1728B52AA6E4}" } },
+                            {
+                                "adec:decorative": {
+                                    _attr: { "xmlns:adec": "http://schemas.microsoft.com/office/drawing/2017/decorative", val: 1 },
+                                },
+                            },
+                        ],
+                    },
+                ],
+            });
+        });
+
+        it("should link and mark a floating image, with the link first", () => {
+            const { tree } = format(
+                new ImageRun({
+                    ...image,
+                    link: "https://example.com",
+                    decorative: true,
+                    floating: { horizontalPosition: { offset: 0 }, verticalPosition: { offset: 0 } },
+                }),
+            );
+
+            expect(docProperties(tree, "wp:anchor").map((child) => Object.keys(child)[0])).to.deep.equal([
+                "_attr",
+                "a:hlinkClick",
+                "a:extLst",
+            ]);
+        });
+
+        it("should prefer its own link to a hyperlink it is in", () => {
+            const { tree, addRelationship } = format(new ImageRun({ ...image, link: "https://example.com" }), [
+                new ConcreteHyperlink([], "outer"),
+            ]);
+
+            const [linkId] = addRelationship.mock.calls[0];
+            expect(docProperties(tree, "wp:inline")[1]["a:hlinkClick"]._attr["r:id"]).to.equal(`rId${linkId}`);
         });
     });
 

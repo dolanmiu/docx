@@ -13,7 +13,6 @@ import { uniqueId } from "@util/convenience-functions";
 import type { CheckBox } from "../checkbox";
 import { TargetModeType } from "../relationships/relationship/relationship";
 import type { DeletedTextRun, InsertedTextRun } from "../track-revision";
-import type { ImageWatermark, TextWatermark } from "../watermark";
 import type { ColumnBreak, PageBreak } from "./formatting/break";
 import { Bookmark, ConcreteHyperlink, ExternalHyperlink, type InternalHyperlink } from "./links";
 import type { Math } from "./math";
@@ -22,9 +21,6 @@ import {
     type ImageRun,
     type Run,
     type SequentialIdentifier,
-    type ShapeCanvasRun,
-    type ShapeGroupRun,
-    type ShapeRun,
     type SimpleField,
     type SimpleMailMergeField,
     type SymbolRun,
@@ -40,9 +36,6 @@ import type { Comment, CommentRangeEnd, CommentRangeStart, CommentReference, Com
 export type ParagraphChild =
     | TextRun
     | ImageRun
-    | ShapeRun
-    | ShapeGroupRun
-    | ShapeCanvasRun
     | SymbolRun
     | Bookmark
     | PageBreak
@@ -61,9 +54,7 @@ export type ParagraphChild =
     | CommentRangeStart
     | CommentRangeEnd
     | CommentReference
-    | CheckBox
-    | TextWatermark
-    | ImageWatermark;
+    | CheckBox;
 
 /**
  * Options for creating a Paragraph element.

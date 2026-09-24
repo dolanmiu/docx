@@ -17,7 +17,7 @@ type CoreGroupOptions = {
 
 /**
  * @publicApi
- * @deprecated Use {@link ShapeGroupRun}, whose children can be shapes, pictures, groups and connectors.
+ * @deprecated Use `ShapeGroupRun` from `docx/shapes`, whose children can be shapes, pictures, groups and connectors.
  */
 export type IWpgGroupOptions = { readonly type: "wpg" } & CoreGroupOptions;
 
@@ -25,7 +25,8 @@ export type IWpgGroupOptions = { readonly type: "wpg" } & CoreGroupOptions;
  * A group of text boxes and pictures.
  *
  * @publicApi
- * @deprecated Use {@link ShapeGroupRun}, whose children can be shapes, pictures, groups and connectors, positioned in pixels.
+ * @deprecated Use `ShapeGroupRun` from `docx/shapes`, whose children can be shapes, pictures, groups and connectors,
+ * positioned in pixels.
  */
 export class WpgGroupRun extends Run {
     private readonly wpgGroupData: WpgMediaData;
