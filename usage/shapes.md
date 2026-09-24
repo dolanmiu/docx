@@ -13,10 +13,12 @@ Like an image, a shape is a run inside a `Paragraph`. It sits in the line of tex
 | Draw a bar or blank line in a sentence        | `rectangle` with a `fill` and `line: "none"` | Blanks on a printed form      |
 | Draw a line to write or sign on               | `line` with `height: 0`                      | Signature line                |
 | Point at something                            | `line` with an arrowhead                     | Arrow in a diagram            |
-| Put text in a coloured box, circle or callout | Any shape with `children`                    | Flowchart step, speech bubble |
+| Put text in a coloured box, circle or callout | Any shape with `text` or `children`          | Flowchart step, speech bubble |
+| Make a shape as big as its text               | `width: "fitText"` or `height: "fitText"`    | Buttons, labels, tags         |
 | Place a shape anywhere on the page            | `floating`                                   | Stamp in a corner             |
 | Keep several shapes together as one drawing   | `ShapeGroupRun`                              | Badge, simple diagram         |
 | Join shapes with lines that follow them       | `ShapeCanvasRun` with connectors             | Flowchart, org chart          |
+| Lay out a diagram without working out offsets | `layout` on a canvas or group                | Flowchart, org chart, grid    |
 | Crop a photo to a circle                      | `ellipse` with a picture `fill`              | Profile picture               |
 | Add a shadow, glow or reflection              | `effects`                                    | Card with a drop shadow       |
 | Draw a shape that isn't a preset              | `type: "custom"` with an SVG `path`          | Logo, badge, freeform outline |
@@ -79,13 +81,13 @@ The `PresetShapeType` type lists every shape, so your editor can suggest them as
 
 `transformation` works the same way as for [images](usage/images.md):
 
-| Property   | Type                                           | Notes    | Description                                         |
-| ---------- | ---------------------------------------------- | -------- | --------------------------------------------------- |
-| `width`    | `number`                                       | Required | Width in pixels                                     |
-| `height`   | `number`                                       | Required | Height in pixels                                    |
-| `rotation` | `number`                                       | Optional | Clockwise rotation in degrees                       |
-| `flip`     | `{ horizontal?: boolean; vertical?: boolean }` | Optional | Mirrors the shape                                   |
-| `offset`   | `{ left?: number; top?: number }`              | Optional | Position in pixels. Only used for shapes in a group |
+| Property   | Type                                           | Notes    | Description                                                                                    |
+| ---------- | ---------------------------------------------- | -------- | ---------------------------------------------------------------------------------------------- |
+| `width`    | `number` \| `"fitText"`                        | Required | Width in pixels, or `"fitText"`. See [Sizing a shape to its text](#sizing-a-shape-to-its-text) |
+| `height`   | `number` \| `"fitText"`                        | Required | Height in pixels, or `"fitText"`                                                               |
+| `rotation` | `number`                                       | Optional | Clockwise rotation in degrees                                                                  |
+| `flip`     | `{ horizontal?: boolean; vertical?: boolean }` | Optional | Mirrors the shape                                                                              |
+| `offset`   | `{ left?: number; top?: number }`              | Optional | Position in pixels. Only used for shapes in a group or canvas                                  |
 
 ### Lines
 
@@ -277,7 +279,13 @@ An `Arrowhead` is one of `"triangle"`, `"stealth"`, `"diamond"`, `"oval"` or `"a
 
 ## Text in Shapes
 
-Add paragraphs to `children` to put text inside a shape. The text is centred vertically. Use the paragraph's `alignment` to centre it horizontally.
+`text` puts a line of text in the middle of a shape, in the document's default font. Each `\n` starts a new, centred paragraph:
+
+```ts
+new ShapeRun({ type: "flowChartProcess", text: "Review", transformation: { width: 120, height: 40 }, fill: "DEEBF7" });
+```
+
+For text with formatting, add paragraphs to `children`. The text is centred vertically. Use the paragraph's `alignment` to centre it horizontally. `text` comes before `children` when a shape has both.
 
 ```ts
 new ShapeRun({
@@ -293,6 +301,31 @@ new ShapeRun({
     ],
 });
 ```
+
+### Sizing a shape to its text
+
+Set `width` or `height` to `"fitText"` to size a shape to its text:
+
+```ts
+// As wide as "Write the draft" on one line, and 40 pixels tall
+new ShapeRun({ type: "flowChartProcess", text: "Write the draft", transformation: { width: "fitText", height: 40 } });
+
+// 160 pixels wide, and as tall as the text wrapped at that width
+new ShapeRun({
+    type: "rectangle",
+    children: [new Paragraph("A longer note that wraps")],
+    transformation: { width: 160, height: "fitText" },
+});
+```
+
+- `width: "fitText"` fits the longest line of text, without wrapping.
+- `height: "fitText"` fits every line, wrapped at the shape's width unless `textOptions.wrap` is `false`.
+- Both include the text margins, and allow for shapes whose text box is smaller than the shape, such as ellipses and diamonds.
+- Text that runs up or down the shape (`textOptions.direction`) is measured across the shape's height.
+
+The size is worked out when the document is made, from how wide each character is in the run's font and size. Widths are built in for Calibri, Cambria, Arial, Times New Roman and Courier New. Other fonts are measured as the one most like them: Aptos and other sans-serif fonts as Arial, and serif fonts as Times New Roman. Text without a font or size of its own is measured in Word's defaults, 10pt Times New Roman, because the document's styles aren't known when the shape is made. Give the runs a `font` and `size` if your document uses other defaults.
+
+The estimate is close for the built-in fonts and rougher for others. For an exact fit once Word has laid the text out, use `textOptions.resizeShapeToFitText` as well.
 
 ### Text layout
 
@@ -572,13 +605,30 @@ Elbow and curved connectors leave and arrive at right angles to the sides they a
 
 When the usual route would cross another shape in the group or canvas, an elbow or curved connector takes a route with up to four bends that goes around it, a margin away, if there is one.
 
-`label` puts text on a connector, in a box centred on the middle of its route. Give a background `fill` to hide the line behind the text:
+Without a `route`, a connector is straight, unless a straight line would go through another shape in the group or canvas. Then it takes an elbow route around it. Give `route: "straight"` to keep it straight anyway.
+
+`label` puts text on a connector, in a box centred on its route. Give a background `fill` to hide the line behind the text:
 
 ```ts
 { type: "connector", from: "ask", to: "go", label: { text: "Yes", fill: "FFFFFF" } }
 ```
 
-A label is a string, or an object with `text` (a string or paragraphs), and optional `width` and `height` in pixels, `fill` and `line`. It is a separate text box, so Word doesn't move it when the connector moves.
+A label is a string, or an object with:
+
+- `text`: a string or paragraphs.
+- `position`: `"start"`, `"middle"` (the default) or `"end"`. At the start or end, the label sits just clear of the shape there, such as `"Yes"` and `"No"` beside a decision.
+- `width` and `height`: in pixels. By default the box fits the text, measured as for [`"fitText"`](#sizing-a-shape-to-its-text).
+- `fill` and `line`.
+
+A label that would sit on a shape, or on an earlier label, moves along its route until it is clear. If there is no room on the route, it goes beside it. A label is a separate text box, so Word doesn't move it when the connector moves.
+
+### Connectors that meet
+
+When several connectors with arrowheads meet at the same point of a shape with straight sides, their ends are spread out along the side, so each arrowhead can be seen. Connectors between the same two shapes are spread out at both ends, so they run side by side. The ends are ordered by where the connectors go, so they don't cross.
+
+Ends without arrowheads that go to different shapes stay together, as the lines from a box in an org chart do. So do ends given as a `point`, and ends on shapes without straight sides, such as ellipses and diamonds.
+
+Spreading works on rectangles, rounded rectangles, pictures, and the process, alternate process, predefined process, internal storage, terminator and document flowchart shapes. The ends stay attached to the shape's connection point, so if a shape is moved in Word, Word joins them there again.
 
 The connector's `line` works as for any shape: `startArrow` is drawn at `from` and `endArrow` at `to`. Connectors can come before or after the shapes they join in `children`; the order sets which is drawn on top.
 
@@ -599,7 +649,48 @@ new ShapeCanvasRun({
 });
 ```
 
-Shapes are positioned with `transformation.offset`, in pixels from the canvas's top-left corner. Without a `transformation`, the canvas reaches from its corner to the right and bottom of the shapes, including their lines, arrowheads and effects. Anything drawn above or to the left of the corner, such as the line of a shape at the corner, moves everything onto the canvas. A canvas can be `floating` and can have `altText`.
+Shapes are positioned with `transformation.offset`, in pixels from the canvas's top-left corner, or by a [`layout`](#laying-out-diagrams). Without a `transformation`, the canvas reaches from its corner to the right and bottom of the shapes, including their lines, arrowheads and effects. Anything drawn above or to the left of the corner, such as the line of a shape at the corner, moves everything onto the canvas. A canvas can be `floating` and can have `altText`.
+
+## Laying Out Diagrams
+
+Give a canvas or group a `layout` to place its shapes for you. Shapes, pictures and groups without an `offset` are placed by the layout, and connectors are routed between them afterwards:
+
+```ts
+new ShapeCanvasRun({
+    layout: { type: "flow", direction: "down" },
+    children: [
+        { id: "start", type: "flowChartTerminator", text: "Start", transformation: { width: 100, height: 36 } },
+        { id: "review", type: "flowChartDecision", text: "Approved?", transformation: { width: "fitText", height: 70 } },
+        { id: "publish", type: "flowChartProcess", text: "Publish", transformation: { width: "fitText", height: 40 } },
+        { id: "fix", type: "flowChartProcess", text: "Fix it", transformation: { width: "fitText", height: 40 } },
+        { type: "connector", from: "start", to: "review", line: { endArrow: "triangle" } },
+        { type: "connector", from: "review", to: "publish", route: "elbow", label: { text: "Yes", position: "start" } },
+        { type: "connector", from: "review", to: "fix", route: "elbow", label: { text: "No", position: "start" } },
+        { type: "connector", from: "fix", to: "review", route: "elbow", line: { endArrow: "triangle" } },
+    ],
+});
+```
+
+| `layout.type` | Places the shapes                                                                                                                                                                       |
+| ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `"flow"`      | In levels along the connectors, like a flowchart. Each shape goes on the level after the shapes that connect to it, and each level is ordered so connectors cross as little as they can |
+| `"tree"`      | As a tree, like an org chart. Each connector joins a parent (`from`) to a child (`to`), and each parent is centred over its children                                                    |
+| `"grid"`      | In rows and columns, in the order they are given, each centred in its cell                                                                                                              |
+
+| Option         | Layouts    | Description                                                                            |
+| -------------- | ---------- | -------------------------------------------------------------------------------------- |
+| `direction`    | flow, tree | `"down"` (the default), `"right"`, `"up"` or `"left"`: the way the levels run          |
+| `spacing`      | all        | Space between shapes on the same level, or between rows and columns, in pixels         |
+| `levelSpacing` | flow, tree | Space between one level and the next, in pixels                                        |
+| `columns`      | grid       | The number of columns. By default, enough to make the grid about as wide as it is tall |
+
+Spacing defaults to 40 pixels between shapes and 50 between levels in a flow, 20 and 40 in a tree, and 40 in a grid.
+
+In a flow or tree, a connector without a `side` leaves one level from the side facing the next level and arrives from the side facing the level before, such as bottom to top when the levels run down. A connector back to the level before goes between the same sides the other way, and one that leads further back, such as a loop to redo a step, leaves and arrives at the side (right, or bottom when the levels run across) and goes around the shapes. In a flow, connectors that lead back don't change the levels.
+
+A shape with an `offset` keeps it, and the layout places the other shapes as if it weren't there, starting at the top-left corner. A group inside a canvas or group is placed as one shape, and can have a `layout` of its own for its children. Rotated shapes are placed by the box around them.
+
+The positions are worked out when the document is made and written as ordinary offsets, so the diagram can be edited in Word like any other.
 
 ## Options
 
@@ -608,13 +699,14 @@ Shapes are positioned with `transformation.offset`, in pixels from the canvas's 
 | Property         | Type                            | Notes    | Description                                                                      |
 | ---------------- | ------------------------------- | -------- | -------------------------------------------------------------------------------- |
 | `type`           | `PresetShapeType` \| `"custom"` | Required | The preset shape, such as `"rectangle"`, `"ellipse"` or `"line"`, or `"custom"`  |
-| `transformation` | `IMediaTransformation`          | Required | Size in pixels, rotation and flip. See [Size and Rotation](#size-and-rotation)   |
+| `transformation` | `ShapeTransformation`           | Required | Size in pixels, rotation and flip. See [Size and Rotation](#size-and-rotation)   |
 | `fill`           | `ShapeFill`                     | Optional | See [Fill](#fill). Default is no fill                                            |
 | `line`           | `ShapeLine`                     | Optional | See [Line](#line). Default is a black line 1pt wide                              |
 | `adjustments`    | `ShapeAdjustments<type>`        | Optional | The shape's handles, which depend on `type`. See [Adjustments](#adjustments)     |
 | `path`           | `string`                        | Optional | SVG path data, for `type: "custom"`. See [Custom Shapes](#custom-shapes)         |
 | `effects`        | `ShapeEffects`                  | Optional | Shadows, glow, soft edges and reflection. See [Effects](#effects)                |
-| `children`       | `Paragraph[]`                   | Optional | Text inside the shape                                                            |
+| `text`           | `string`                        | Optional | Centred text inside the shape. See [Text in Shapes](#text-in-shapes)             |
+| `children`       | `Paragraph[]`                   | Optional | Paragraphs inside the shape                                                      |
 | `textOptions`    | `ShapeTextOptions`              | Optional | How the text is laid out. See [Text layout](#text-layout)                        |
 | `floating`       | `IFloating`                     | Optional | Positions the shape on the page. See [Inline and Floating](#inline-and-floating) |
 | `altText`        | `DocPropertiesOptions`          | Optional | `name`, `description` and `title` for screen readers                             |
@@ -627,32 +719,34 @@ Shapes are positioned with `transformation.offset`, in pixels from the canvas's 
 | ---------------- | --------------------------- | -------- | ----------------------------------------------------------------------------------------------------------------------- |
 | `children`       | `IShapeGroupChildOptions[]` | Required | Shapes, each with the options of a `ShapeRun` except `floating`, plus an optional `id`, pictures, groups and connectors |
 | `transformation` | `IMediaTransformation`      | Optional | Size in pixels, rotation and flip. Defaults to the box around the children                                              |
+| `layout`         | `ShapeLayout`               | Optional | Places the children without an `offset`. See [Laying Out Diagrams](#laying-out-diagrams)                                |
 | `floating`       | `IFloating`                 | Optional | Positions the group on the page                                                                                         |
 | `altText`        | `DocPropertiesOptions`      | Optional | `name`, `description` and `title` for screen readers                                                                    |
 
 ### ShapeCanvasRun
 
-| Property         | Type                                | Notes    | Description                                                             |
-| ---------------- | ----------------------------------- | -------- | ----------------------------------------------------------------------- |
-| `children`       | `IShapeCanvasChildOptions[]`        | Required | Shapes and connectors, as for a `ShapeGroupRun`                         |
-| `transformation` | `{ width: number; height: number }` | Optional | Size in pixels. Defaults to reaching the right and bottom of the shapes |
-| `fill`           | `ShapeFill`                         | Optional | The canvas's background. Default is none                                |
-| `line`           | `ShapeLine`                         | Optional | The canvas's outline. Default is none                                   |
-| `floating`       | `IFloating`                         | Optional | Positions the canvas on the page                                        |
-| `altText`        | `DocPropertiesOptions`              | Optional | `name`, `description` and `title` for screen readers                    |
+| Property         | Type                                | Notes    | Description                                                                              |
+| ---------------- | ----------------------------------- | -------- | ---------------------------------------------------------------------------------------- |
+| `children`       | `IShapeCanvasChildOptions[]`        | Required | Shapes and connectors, as for a `ShapeGroupRun`                                          |
+| `transformation` | `{ width: number; height: number }` | Optional | Size in pixels. Defaults to reaching the right and bottom of the shapes                  |
+| `fill`           | `ShapeFill`                         | Optional | The canvas's background. Default is none                                                 |
+| `line`           | `ShapeLine`                         | Optional | The canvas's outline. Default is none                                                    |
+| `layout`         | `ShapeLayout`                       | Optional | Places the children without an `offset`. See [Laying Out Diagrams](#laying-out-diagrams) |
+| `floating`       | `IFloating`                         | Optional | Positions the canvas on the page                                                         |
+| `altText`        | `DocPropertiesOptions`              | Optional | `name`, `description` and `title` for screen readers                                     |
 
 ### Connector
 
-| Property  | Type                         | Notes    | Description                                                              |
-| --------- | ---------------------------- | -------- | ------------------------------------------------------------------------ |
-| `type`    | `"connector"`                | Required |                                                                          |
-| `from`    | `ConnectorEnd`               | Required | The `id` of the shape it starts at, or `{ id, side }` or `{ id, point }` |
-| `to`      | `ConnectorEnd`               | Required | The `id` of the shape it ends at, or `{ id, side }` or `{ id, point }`   |
-| `route`   | `ConnectorRoute`             | Optional | `"straight"` (the default), `"elbow"` or `"curved"`                      |
-| `margin`  | `number`                     | Optional | How far out elbow and curved connectors go, in pixels. Default `24`      |
-| `label`   | `string` \| `ConnectorLabel` | Optional | Text in a box on the middle of the route                                 |
-| `line`    | `ShapeLine`                  | Optional | See [Line](#line). `startArrow` is at `from` and `endArrow` at `to`      |
-| `altText` | `DocPropertiesOptions`       | Optional | `name`, `description` and `title` for screen readers                     |
+| Property  | Type                         | Notes    | Description                                                                                    |
+| --------- | ---------------------------- | -------- | ---------------------------------------------------------------------------------------------- |
+| `type`    | `"connector"`                | Required |                                                                                                |
+| `from`    | `ConnectorEnd`               | Required | The `id` of the shape it starts at, or `{ id, side }` or `{ id, point }`                       |
+| `to`      | `ConnectorEnd`               | Required | The `id` of the shape it ends at, or `{ id, side }` or `{ id, point }`                         |
+| `route`   | `ConnectorRoute`             | Optional | `"straight"`, `"elbow"` or `"curved"`. Default is straight, or elbow around a shape in the way |
+| `margin`  | `number`                     | Optional | How far out elbow and curved connectors go, in pixels. Default `24`                            |
+| `label`   | `string` \| `ConnectorLabel` | Optional | Text in a box on the route, at its `position`                                                  |
+| `line`    | `ShapeLine`                  | Optional | See [Line](#line). `startArrow` is at `from` and `endArrow` at `to`                            |
+| `altText` | `DocPropertiesOptions`       | Optional | `name`, `description` and `title` for screen readers                                           |
 
 ## ShapeRun vs WpsShapeRun and WpgGroupRun
 
@@ -662,12 +756,18 @@ Shapes are positioned with `transformation.offset`, in pixels from the canvas's 
 
 Shapes are written as DrawingML shapes (`wps:wsp`), groups (`wpg:wgp` and `wpg:grpSp`), pictures (`pic:pic`) and drawing canvases (`wpc:wpc`), the formats Word has used since Word 2010. Word 2007 and older can't display them. Other word processors differ in how much of DrawingML they draw, so check the result in the applications your readers use.
 
+A canvas is written with the same shapes as a group after it, in `mc:AlternateContent`. Applications that can't draw canvases, such as Apple Pages, draw the group instead. Word and LibreOffice draw the canvas.
+
 LibreOffice (checked with version 26.8) draws most shapes as Word does, but:
 
 - It doesn't draw reflections, inner shadows, double and triple lines (`compound`) or gradient lines. A gradient line is drawn in its first colour.
-- It draws an elbow connector that goes around a shape as if it didn't, because it can't draw a connector whose middle bend is outside the box between its ends.
+- On a canvas, it draws connectors between their shapes' connection points in its own way, rather than on the route in the document. A connector that goes around a shape may go through it, and connector ends that are spread along a side meet at the connection point. In a group, it draws the route in the document.
 - It draws the text of a shape that has `resizeShapeToFitText`, or of a group or canvas that starts a new line, on the first line of the paragraph.
 - It doesn't turn the text of a rotated shape with the shape.
+
+Apple Pages (checked with version 15.1) draws shapes and groups, and the group in place of a canvas, but:
+
+- It draws text that has no size of its own larger than Word does. Shapes sized with `"fitText"` and connector labels are sized for Word's 10pt, so give the text a `size` if it has to fit in Pages as well.
 
 ## Examples
 
@@ -718,3 +818,11 @@ Pictures and groups on a canvas, connector labels, connecting to a point on a sh
 [Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/112-shape-diagrams.ts ":include")
 
 _Source: https://github.com/dolanmiu/docx/blob/master/demo/112-shape-diagrams.ts_
+
+### Automatic layout
+
+Shapes sized to fit their text, a flowchart, an org chart and a grid laid out automatically, spread and side-by-side connectors, and labels at the start of a connector.
+
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/113-shape-layout.ts ":include")
+
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/113-shape-layout.ts_

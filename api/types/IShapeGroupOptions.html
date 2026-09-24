@@ -10,7 +10,7 @@
 <ul class="tsd-breadcrumb" aria-label="Breadcrumb">
 <li><a href="" aria-current="page">IShapeGroupOptions</a></li></ul>
 <h1>Type Alias IShapeGroupOptions</h1></div>
-<div class="tsd-signature"><span class="tsd-kind-type-alias">IShapeGroupOptions</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">DrawingLinkOptions</span> <span class="tsd-signature-symbol">&amp;</span> <span class="tsd-signature-symbol">{</span><br/>    <span class="tsd-kind-property">altText</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">DocPropertiesOptions</span><span class="tsd-signature-symbol">;</span><br/>    <span class="tsd-kind-property">children</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-keyword">readonly</span> <a href="IShapeGroupChildOptions.html" class="tsd-signature-type tsd-kind-type-alias">IShapeGroupChildOptions</a><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">;</span><br/>    <span class="tsd-kind-property">floating</span><span class="tsd-signature-symbol">?:</span> <a href="IFloating.html" class="tsd-signature-type tsd-kind-type-alias">IFloating</a><span class="tsd-signature-symbol">;</span><br/>    <span class="tsd-kind-property">transformation</span><span class="tsd-signature-symbol">?:</span> <a href="IMediaTransformation.html" class="tsd-signature-type tsd-kind-type-alias">IMediaTransformation</a><span class="tsd-signature-symbol">;</span><br/><span class="tsd-signature-symbol">}</span></div>
+<div class="tsd-signature"><span class="tsd-kind-type-alias">IShapeGroupOptions</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">DrawingLinkOptions</span> <span class="tsd-signature-symbol">&amp;</span> <span class="tsd-signature-symbol">{</span><br/>    <span class="tsd-kind-property">altText</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">DocPropertiesOptions</span><span class="tsd-signature-symbol">;</span><br/>    <span class="tsd-kind-property">children</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-keyword">readonly</span> <a href="IShapeGroupChildOptions.html" class="tsd-signature-type tsd-kind-type-alias">IShapeGroupChildOptions</a><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">;</span><br/>    <span class="tsd-kind-property">floating</span><span class="tsd-signature-symbol">?:</span> <a href="IFloating.html" class="tsd-signature-type tsd-kind-type-alias">IFloating</a><span class="tsd-signature-symbol">;</span><br/>    <span class="tsd-kind-property">layout</span><span class="tsd-signature-symbol">?:</span> <a href="ShapeLayout.html" class="tsd-signature-type tsd-kind-type-alias">ShapeLayout</a><span class="tsd-signature-symbol">;</span><br/>    <span class="tsd-kind-property">transformation</span><span class="tsd-signature-symbol">?:</span> <a href="IMediaTransformation.html" class="tsd-signature-type tsd-kind-type-alias">IMediaTransformation</a><span class="tsd-signature-symbol">;</span><br/><span class="tsd-signature-symbol">}</span></div>
 <div class="tsd-comment tsd-typography"><p>Options for creating a group of shapes.</p>
 </div>
 <div class="tsd-type-declaration">
@@ -29,6 +29,11 @@
 <div class="tsd-comment tsd-typography"><p>Floats the group on the page instead of placing it inline with text</p>
 </div></li>
 <li class="tsd-parameter">
+<h5><code class="tsd-tag">Optional</code> <code class="tsd-tag">Readonly</code><span class="tsd-kind-property">layout</span><span class="tsd-signature-symbol">?: </span><a href="ShapeLayout.html" class="tsd-signature-type tsd-kind-type-alias">ShapeLayout</a></h5>
+<div class="tsd-comment tsd-typography"><p>Places the shapes, pictures and groups that have no <code>offset</code>: in levels along their connectors like a flowchart,
+as a tree like an org chart, or in a grid</p>
+</div></li>
+<li class="tsd-parameter">
 <h5><code class="tsd-tag">Optional</code> <code class="tsd-tag">Readonly</code><span class="tsd-kind-property">transformation</span><span class="tsd-signature-symbol">?: </span><a href="IMediaTransformation.html" class="tsd-signature-type tsd-kind-type-alias">IMediaTransformation</a></h5>
 <div class="tsd-comment tsd-typography"><p>Size of the group in pixels, with optional rotation and flip. Defaults to the size of
 the box around the children. A different size scales every shape in the group.</p>
@@ -40,7 +45,7 @@ the box around the children. A different size scales every shape in the group.</
 <div class="tsd-tag-publicApi">
 <h4 class="tsd-anchor-link" id="public-api">Public Api<a href="#public-api" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4></div></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/859ea7ec7b2f8826b87a9f8156f225e482572b0b/src/file/paragraph/run/shape-group-run.ts#L28">file/paragraph/run/shape-group-run.ts:28</a></li></ul></aside></div>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/bf7eb857dfa645e9cd269b4019355e3778dd2387/src/file/paragraph/run/shape-group-run.ts#L30">file/paragraph/run/shape-group-run.ts:30</a></li></ul></aside></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">

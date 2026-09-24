@@ -15,7 +15,9 @@
 <p>A canvas holds shapes like a <a href="ShapeGroupRun.html" class="tsd-kind-class">ShapeGroupRun</a>, but its shapes keep their own size, and Word
 keeps connectors attached to their shapes when the shapes are moved. Use it for flowcharts and
 diagrams that people will edit.</p>
-<p>The shapes are positioned with <code>transformation.offset</code>, in pixels from the canvas's top-left corner.</p>
+<p>The shapes are positioned with <code>transformation.offset</code>, in pixels from the canvas's top-left corner, or by a <code>layout</code>.</p>
+<p>Applications that can't draw canvases, such as Apple Pages, draw the same shapes as a group instead: the canvas is
+written in <code>mc:AlternateContent</code>, with the group as its fallback.</p>
 </div>
 <div class="tsd-comment tsd-typography">
 <div class="tsd-tag-publicApi">
@@ -25,14 +27,14 @@ diagrams that people will edit.</p>
 </code><button type="button">Copy</button></pre>
 
 </div></div></section>
-<section class="tsd-panel tsd-hierarchy" data-refl="561">
+<section class="tsd-panel tsd-hierarchy" data-refl="563">
 <h4>Hierarchy (<a href="../hierarchy.html#ShapeCanvasRun">View Summary</a>)</h4>
 <ul class="tsd-hierarchy">
 <li class="tsd-hierarchy-item"><a href="Run.html" class="tsd-signature-type tsd-kind-class">Run</a>
 <ul class="tsd-hierarchy">
 <li class="tsd-hierarchy-item"><span class="tsd-hierarchy-target">ShapeCanvasRun</span></li></ul></li></ul></section><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/859ea7ec7b2f8826b87a9f8156f225e482572b0b/src/file/paragraph/run/shape-canvas-run.ts#L78">file/paragraph/run/shape-canvas-run.ts:78</a></li></ul></aside>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/bf7eb857dfa645e9cd269b4019355e3778dd2387/src/file/paragraph/run/shape-canvas-run.ts#L90">file/paragraph/run/shape-canvas-run.ts:90</a></li></ul></aside>
 <section class="tsd-panel-group tsd-index-group">
 <section class="tsd-panel tsd-index-panel">
 <details class="tsd-index-content tsd-accordion" open><summary class="tsd-accordion-summary tsd-index-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
@@ -63,7 +65,7 @@ diagrams that people will edit.</p>
 <h4 class="tsd-returns-title">Returns <a href="" class="tsd-signature-type tsd-kind-class">ShapeCanvasRun</a></h4><aside class="tsd-sources">
 <p>Overrides <a href="Run.html">Run</a>.<a href="Run.html#constructor">constructor</a></p>
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/859ea7ec7b2f8826b87a9f8156f225e482572b0b/src/file/paragraph/run/shape-canvas-run.ts#L79">file/paragraph/run/shape-canvas-run.ts:79</a></li></ul></aside></div></li></ul></section></section></details>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/bf7eb857dfa645e9cd269b4019355e3778dd2387/src/file/paragraph/run/shape-canvas-run.ts#L91">file/paragraph/run/shape-canvas-run.ts:91</a></li></ul></aside></div></li></ul></section></section></details>
 <details class="tsd-panel-group tsd-member-group tsd-accordion" open><summary class="tsd-accordion-summary" data-key="section-Methods"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
 <h2 class="tsd-anchor-link" id="methods-1">Methods<a href="#methods-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2></summary>
 <section>
@@ -89,7 +91,7 @@ diagrams that people will edit.</p>
 </div></div><aside class="tsd-sources">
 <p>Inherited from <a href="Run.html">Run</a>.<a href="Run.html#addchildelement">addChildElement</a></p>
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/859ea7ec7b2f8826b87a9f8156f225e482572b0b/src/file/xml-components/xml-component.ts#L126">file/xml-components/xml-component.ts:126</a></li></ul></aside></div></li></ul></section>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/bf7eb857dfa645e9cd269b4019355e3778dd2387/src/file/xml-components/xml-component.ts#L126">file/xml-components/xml-component.ts:126</a></li></ul></aside></div></li></ul></section>
 <section class="tsd-panel tsd-member tsd-is-inherited">
 <h3 class="tsd-anchor-link" id="prepforxml"><span>prep<wbr/>For<wbr/>Xml</span><a href="#prepforxml" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-is-inherited">
@@ -120,7 +122,7 @@ or execute side effects during serialization (e.g., creating relationships).</p>
 </div></div><aside class="tsd-sources">
 <p>Inherited from <a href="Run.html">Run</a>.<a href="Run.html#prepforxml">prepForXml</a></p>
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/859ea7ec7b2f8826b87a9f8156f225e482572b0b/src/file/xml-components/xml-component.ts#L88">file/xml-components/xml-component.ts:88</a></li></ul></aside></div></li></ul></section></section></details></div>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/bf7eb857dfa645e9cd269b4019355e3778dd2387/src/file/xml-components/xml-component.ts#L88">file/xml-components/xml-component.ts:88</a></li></ul></aside></div></li></ul></section></section></details></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">

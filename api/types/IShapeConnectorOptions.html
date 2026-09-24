@@ -14,13 +14,15 @@
 <div class="tsd-comment tsd-typography"><p>A connector between two shapes in a <a href="../classes/ShapeGroupRun.html" class="tsd-kind-class">ShapeGroupRun</a> or <a href="../classes/ShapeCanvasRun.html" class="tsd-kind-class">ShapeCanvasRun</a>.</p>
 <p>The connector is drawn from one shape to the other, so it doesn't need a size or position.
 On a <a href="../classes/ShapeCanvasRun.html" class="tsd-kind-class">ShapeCanvasRun</a>, Word keeps it attached when either shape is moved.</p>
+<p>When several connectors with arrowheads meet at the same point of a shape with straight sides, such as a rectangle,
+or several connectors join the same two shapes, their ends are spread out along the side so they don't overlap.</p>
 </div>
 <div class="tsd-comment tsd-typography">
 <div class="tsd-tag-publicApi">
 <h4 class="tsd-anchor-link" id="public-api">Public Api<a href="#public-api" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4></div></div></section>
 <div class="tsd-signature"><span class="tsd-signature-keyword">type</span> <span class="tsd-kind-type-alias">IShapeConnectorOptions</span> <span class="tsd-signature-symbol">=</span> <span class="tsd-signature-symbol">{</span><br/>    <a class="tsd-kind-property" href="#alttext">altText</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">DocPropertiesOptions</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#from">from</a><span class="tsd-signature-symbol">:</span> <a href="ConnectorEnd.html" class="tsd-signature-type tsd-kind-type-alias">ConnectorEnd</a><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#label">label</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span> <span class="tsd-signature-symbol">|</span> <a href="ConnectorLabel.html" class="tsd-signature-type tsd-kind-type-alias">ConnectorLabel</a><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#line">line</a><span class="tsd-signature-symbol">?:</span> <a href="ShapeLine.html" class="tsd-signature-type tsd-kind-type-alias">ShapeLine</a><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#margin">margin</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#route">route</a><span class="tsd-signature-symbol">?:</span> <a href="ConnectorRoute.html" class="tsd-signature-type tsd-kind-type-alias">ConnectorRoute</a><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#to">to</a><span class="tsd-signature-symbol">:</span> <a href="ConnectorEnd.html" class="tsd-signature-type tsd-kind-type-alias">ConnectorEnd</a><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#type">type</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">&quot;connector&quot;</span><span class="tsd-signature-symbol">;</span><br/><span class="tsd-signature-symbol">}</span></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/859ea7ec7b2f8826b87a9f8156f225e482572b0b/src/file/paragraph/run/shape-connector.ts#L78">file/paragraph/run/shape-connector.ts:78</a></li></ul></aside>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/bf7eb857dfa645e9cd269b4019355e3778dd2387/src/file/paragraph/run/shape-connector.ts#L94">file/paragraph/run/shape-connector.ts:94</a></li></ul></aside>
 <section class="tsd-panel-group tsd-index-group">
 <section class="tsd-panel tsd-index-panel">
 <details class="tsd-index-content tsd-accordion" open><summary class="tsd-accordion-summary tsd-index-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
@@ -46,55 +48,56 @@ On a <a href="../classes/ShapeCanvasRun.html" class="tsd-kind-class">ShapeCanvas
 <div class="tsd-comment tsd-typography"><p>Name, description and title used by screen readers</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/859ea7ec7b2f8826b87a9f8156f225e482572b0b/src/file/paragraph/run/shape-connector.ts#L96">file/paragraph/run/shape-connector.ts:96</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/bf7eb857dfa645e9cd269b4019355e3778dd2387/src/file/paragraph/run/shape-connector.ts#L115">file/paragraph/run/shape-connector.ts:115</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="from"><code class="tsd-tag">Readonly</code><span>from</span><a href="#from" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">from</span><span class="tsd-signature-symbol">:</span> <a href="ConnectorEnd.html" class="tsd-signature-type tsd-kind-type-alias">ConnectorEnd</a></div>
 <div class="tsd-comment tsd-typography"><p>Where the connector starts</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/859ea7ec7b2f8826b87a9f8156f225e482572b0b/src/file/paragraph/run/shape-connector.ts#L81">file/paragraph/run/shape-connector.ts:81</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/bf7eb857dfa645e9cd269b4019355e3778dd2387/src/file/paragraph/run/shape-connector.ts#L97">file/paragraph/run/shape-connector.ts:97</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="label"><code class="tsd-tag">Optional</code> <code class="tsd-tag">Readonly</code><span>label</span><a href="#label" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">label</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span> <span class="tsd-signature-symbol">|</span> <a href="ConnectorLabel.html" class="tsd-signature-type tsd-kind-type-alias">ConnectorLabel</a></div>
-<div class="tsd-comment tsd-typography"><p>Text on the connector, such as <code>&quot;Yes&quot;</code>, in a box centred on the middle of the route. The box is a separate
+<div class="tsd-comment tsd-typography"><p>Text on the connector, such as <code>&quot;Yes&quot;</code>, in a box centred on the route. The box is a separate
 shape, so Word doesn't move it when the connector moves</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/859ea7ec7b2f8826b87a9f8156f225e482572b0b/src/file/paragraph/run/shape-connector.ts#L94">file/paragraph/run/shape-connector.ts:94</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/bf7eb857dfa645e9cd269b4019355e3778dd2387/src/file/paragraph/run/shape-connector.ts#L113">file/paragraph/run/shape-connector.ts:113</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="line"><code class="tsd-tag">Optional</code> <code class="tsd-tag">Readonly</code><span>line</span><a href="#line" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">line</span><span class="tsd-signature-symbol">?:</span> <a href="ShapeLine.html" class="tsd-signature-type tsd-kind-type-alias">ShapeLine</a></div>
 <div class="tsd-comment tsd-typography"><p>The connector's line, including any arrowheads. <code>startArrow</code> is at <code>from</code> and <code>endArrow</code> at <code>to</code>. Default is a solid black line 1pt wide</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/859ea7ec7b2f8826b87a9f8156f225e482572b0b/src/file/paragraph/run/shape-connector.ts#L89">file/paragraph/run/shape-connector.ts:89</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/bf7eb857dfa645e9cd269b4019355e3778dd2387/src/file/paragraph/run/shape-connector.ts#L108">file/paragraph/run/shape-connector.ts:108</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="margin"><code class="tsd-tag">Optional</code> <code class="tsd-tag">Readonly</code><span>margin</span><a href="#margin" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">margin</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">number</span></div>
 <div class="tsd-comment tsd-typography"><p>How far, in pixels, an elbow or curved connector goes past a shape before it turns. Default is 24 (a quarter of an inch)</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/859ea7ec7b2f8826b87a9f8156f225e482572b0b/src/file/paragraph/run/shape-connector.ts#L87">file/paragraph/run/shape-connector.ts:87</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/bf7eb857dfa645e9cd269b4019355e3778dd2387/src/file/paragraph/run/shape-connector.ts#L106">file/paragraph/run/shape-connector.ts:106</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="route"><code class="tsd-tag">Optional</code> <code class="tsd-tag">Readonly</code><span>route</span><a href="#route" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">route</span><span class="tsd-signature-symbol">?:</span> <a href="ConnectorRoute.html" class="tsd-signature-type tsd-kind-type-alias">ConnectorRoute</a></div>
-<div class="tsd-comment tsd-typography"><p>A straight line, right-angled bends, or curves. Default is <code>&quot;straight&quot;</code></p>
+<div class="tsd-comment tsd-typography"><p>A straight line, right-angled bends, or curves. Default is <code>&quot;straight&quot;</code>, or <code>&quot;elbow&quot;</code> when a straight line
+would go through another shape</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/859ea7ec7b2f8826b87a9f8156f225e482572b0b/src/file/paragraph/run/shape-connector.ts#L85">file/paragraph/run/shape-connector.ts:85</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/bf7eb857dfa645e9cd269b4019355e3778dd2387/src/file/paragraph/run/shape-connector.ts#L104">file/paragraph/run/shape-connector.ts:104</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="to"><code class="tsd-tag">Readonly</code><span>to</span><a href="#to" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">to</span><span class="tsd-signature-symbol">:</span> <a href="ConnectorEnd.html" class="tsd-signature-type tsd-kind-type-alias">ConnectorEnd</a></div>
 <div class="tsd-comment tsd-typography"><p>Where the connector ends</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/859ea7ec7b2f8826b87a9f8156f225e482572b0b/src/file/paragraph/run/shape-connector.ts#L83">file/paragraph/run/shape-connector.ts:83</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/bf7eb857dfa645e9cd269b4019355e3778dd2387/src/file/paragraph/run/shape-connector.ts#L99">file/paragraph/run/shape-connector.ts:99</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="type"><code class="tsd-tag">Readonly</code><span>type</span><a href="#type" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">type</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">&quot;connector&quot;</span></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/859ea7ec7b2f8826b87a9f8156f225e482572b0b/src/file/paragraph/run/shape-connector.ts#L79">file/paragraph/run/shape-connector.ts:79</a></li></ul></aside></section></section></details></div>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/bf7eb857dfa645e9cd269b4019355e3778dd2387/src/file/paragraph/run/shape-connector.ts#L95">file/paragraph/run/shape-connector.ts:95</a></li></ul></aside></section></section></details></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">
