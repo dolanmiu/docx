@@ -9,6 +9,7 @@
  * @module
  */
 import { type ShapeBaseOptions, type WithPresetShape, createPresetShapeData, getShapeEffectExtent } from "./shape-run-data";
+import { resolveShapeSize } from "./shape-text-size";
 import { createTransformation } from "./wps-shape-run";
 import { Drawing, type IFloating } from "../../drawing";
 import { Run } from "../run";
@@ -48,6 +49,7 @@ export type {
     ShapeTextWarp,
     SolidShapeFill,
 } from "@file/drawing/inline/graphic/graphic-data/wps/preset-shape";
+export type { ShapeSize, ShapeTransformation } from "./shape-text-size";
 
 /**
  * Options for creating a shape.
@@ -98,12 +100,13 @@ export class ShapeRun extends Run {
     public constructor(options: IShapeOptions) {
         super({});
 
+        const transformation = resolveShapeSize(options);
         this.root.push(
             new Drawing(
                 {
                     type: "wps",
                     // A shape on its own is positioned by the run (or `floating`), not by an offset
-                    transformation: createTransformation({ ...options.transformation, offset: undefined }),
+                    transformation: createTransformation({ ...transformation, offset: undefined }),
                     data: createPresetShapeData(options),
                 },
                 {
@@ -111,7 +114,7 @@ export class ShapeRun extends Run {
                     docProperties: options.altText,
                     link: options.link,
                     decorative: options.decorative,
-                    effectExtent: getShapeEffectExtent(options),
+                    effectExtent: getShapeEffectExtent({ ...options, transformation }),
                 },
             ),
         );

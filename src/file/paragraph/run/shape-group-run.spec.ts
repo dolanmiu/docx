@@ -95,6 +95,19 @@ describe("ShapeGroupRun", () => {
         ]);
     });
 
+    it("should lay out shapes without an offset", () => {
+        const tree = new Formatter().format(
+            new ShapeGroupRun({
+                layout: { type: "grid", columns: 2, spacing: 10 },
+                children: [
+                    { type: "rectangle", transformation: { width: 100, height: 40 } },
+                    { type: "ellipse", transformation: { width: 50, height: 50 } },
+                ],
+            }),
+        );
+        expect(getChild(getContainer(tree), "wp:extent")).to.deep.equal({ "wp:extent": { _attr: { cx: 160 * 9525, cy: 50 * 9525 } } });
+    });
+
     it("should draw connectors between its shapes", () => {
         const tree = new Formatter().format(
             new ShapeGroupRun({

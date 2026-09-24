@@ -7,8 +7,15 @@ import * as convenienceFunctions from "@util/convenience-functions";
 
 import { ShapeCanvasRun } from "./shape-canvas-run";
 
-const getContainer = (tree: IXmlableObject): readonly IXmlableObject[] => {
-    const drawing = tree["w:r"][0]["w:drawing"][0];
+// The canvas's drawing, or the group drawn by applications that can't draw canvases
+const getDrawing = (tree: IXmlableObject, part: "mc:Choice" | "mc:Fallback" = "mc:Choice"): IXmlableObject => {
+    const alternates: readonly IXmlableObject[] = tree["w:r"][0]["mc:AlternateContent"];
+    const content: readonly IXmlableObject[] = alternates.find((alternate) => part in alternate)![part];
+    return content.find((child) => "w:drawing" in child)!["w:drawing"][0];
+};
+
+const getContainer = (tree: IXmlableObject, part?: "mc:Choice" | "mc:Fallback"): readonly IXmlableObject[] => {
+    const drawing = getDrawing(tree, part);
     return drawing["wp:inline"] ?? drawing["wp:anchor"];
 };
 
@@ -20,8 +27,8 @@ const getChild = (children: readonly IXmlableObject[], key: string): IXmlableObj
     return child;
 };
 
-const getGraphicData = (tree: IXmlableObject): readonly IXmlableObject[] =>
-    getChild(getChild(getContainer(tree), "a:graphic")["a:graphic"], "a:graphicData")["a:graphicData"];
+const getGraphicData = (tree: IXmlableObject, part?: "mc:Choice" | "mc:Fallback"): readonly IXmlableObject[] =>
+    getChild(getChild(getContainer(tree, part), "a:graphic")["a:graphic"], "a:graphicData")["a:graphicData"];
 
 describe("ShapeCanvasRun", () => {
     beforeEach(() => {
@@ -73,6 +80,73 @@ describe("ShapeCanvasRun", () => {
         expect(getChild(container, "wp:docPr")).to.deep.equal({ "wp:docPr": { _attr: { id: 4, name: "Flowchart" } } });
     });
 
+    it("should draw the same shapes as a group for applications that can't draw canvases", () => {
+        const tree = new Formatter().format(
+            new ShapeCanvasRun({
+                children: [
+                    { id: "a", type: "rectangle", transformation: { width: 50, height: 50 } },
+                    { id: "b", type: "rectangle", transformation: { offset: { left: 100 }, width: 50, height: 50 } },
+                    { type: "connector", from: "a", to: "b" },
+                ],
+                transformation: { width: 300, height: 200 },
+                fill: "F2F2F2",
+                line: "BFBFBF",
+            }),
+        );
+
+        expect(tree["w:r"][0]["mc:AlternateContent"][0]["mc:Choice"][0]).to.deep.equal({ _attr: { Requires: "wpc" } });
+        const graphicData = getGraphicData(tree, "mc:Fallback");
+        expect(graphicData[0]).to.deep.equal({ _attr: { uri: "http://schemas.microsoft.com/office/word/2010/wordprocessingGroup" } });
+        const group = graphicData[1]["wpg:wgp"];
+        // The group is the canvas's size, with a rectangle behind the shapes for its background and outline
+        expect(group[1]["wpg:grpSpPr"][0]["a:xfrm"].slice(1)).to.deep.equal([
+            { "a:off": { _attr: { x: 0, y: 0 } } },
+            { "a:ext": { _attr: { cx: 300 * 9525, cy: 200 * 9525 } } },
+            { "a:chOff": { _attr: { x: 0, y: 0 } } },
+            { "a:chExt": { _attr: { cx: 300 * 9525, cy: 200 * 9525 } } },
+        ]);
+        expect(group[2]["wps:wsp"][0]).to.deep.equal({ "wps:cNvPr": { _attr: { id: 8, name: "Canvas 8" } } });
+        expect(JSON.stringify(group[2])).to.include("F2F2F2");
+        // The shapes and connector are laid out again, with ids of their own
+        expect(group.slice(3).map((child: IXmlableObject) => child["wps:wsp"][0]["wps:cNvPr"]._attr.id)).to.deep.equal([5, 6, 7]);
+        expect(group[5]["wps:wsp"][1]).to.deep.equal({
+            "wps:cNvCnPr": [{ "a:stCxn": { _attr: { id: 5, idx: 3 } } }, { "a:endCxn": { _attr: { id: 6, idx: 1 } } }],
+        });
+        expect(getChild(getContainer(tree, "mc:Fallback"), "wp:effectExtent")).to.deep.equal({
+            "wp:effectExtent": { _attr: { t: 6350, r: 6350, b: 6350, l: 6350 } },
+        });
+    });
+
+    it("should reach as far in its fallback as its shapes do", () => {
+        const tree = new Formatter().format(
+            new ShapeCanvasRun({
+                children: [{ type: "rectangle", transformation: { offset: { left: 90 }, width: 50, height: 50 } }],
+                transformation: { width: 100, height: 100 },
+            }),
+        );
+        // The shape reaches 40 pixels and half its line past the canvas's right edge, which a group doesn't cut off
+        expect(getChild(getContainer(tree, "mc:Fallback"), "wp:effectExtent")).to.deep.equal({
+            "wp:effectExtent": { _attr: { t: 0, r: 40 * 9525 + 6350, b: 0, l: 0 } },
+        });
+    });
+
+    it("should lay out shapes without an offset", () => {
+        const tree = new Formatter().format(
+            new ShapeCanvasRun({
+                layout: { type: "flow", levelSpacing: 20 },
+                children: [
+                    { id: "a", type: "rectangle", transformation: { width: 100, height: 40 } },
+                    { id: "b", type: "rectangle", transformation: { width: 100, height: 40 } },
+                    { type: "connector", from: "a", to: "b" },
+                ],
+            }),
+        );
+        // Two levels of 40 pixels, 20 apart, and the shapes' lines, half a point either side
+        expect(getChild(getContainer(tree), "wp:extent")).to.deep.equal({
+            "wp:extent": { _attr: { cx: 100 * 9525 + 12700, cy: 100 * 9525 + 12700 } },
+        });
+    });
+
     it("should take its size, background, outline and position from its options", () => {
         const tree = new Formatter().format(
             new ShapeCanvasRun({
@@ -87,7 +161,8 @@ describe("ShapeCanvasRun", () => {
             }),
         );
 
-        expect(tree["w:r"][0]["w:drawing"][0]).to.have.property("wp:anchor");
+        expect(getDrawing(tree)).to.have.property("wp:anchor");
+        expect(getDrawing(tree, "mc:Fallback")).to.have.property("wp:anchor");
         expect(getChild(getContainer(tree), "wp:extent")).to.deep.equal({ "wp:extent": { _attr: { cx: 300 * 9525, cy: 200 * 9525 } } });
         const canvas = getGraphicData(tree)[1]["wpc:wpc"];
         expect(canvas[0]).to.deep.equal({ "wpc:bg": [{ "a:solidFill": [{ "a:srgbClr": { _attr: { val: "F2F2F2" } } }] }] });

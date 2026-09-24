@@ -9,18 +9,33 @@ on:
 
 jobs:
     render:
-        name: Validate and render shape demos
-        runs-on: ubuntu-latest
+        name: Validate, render and compare shape demos
+        runs-on: ubuntu-24.04
         steps:
             - uses: actions/checkout@v5
             - uses: "./.github/actions/install-and-build"
-            - name: Install LibreOffice, Poppler and xmllint
+            - name: Install xmllint
               run: |
                   sudo apt-get update
-                  sudo apt-get install -y --no-install-recommends libreoffice-writer poppler-utils libxml2-utils
+                  sudo apt-get install -y --no-install-recommends libxml2-utils
+            - uses: docker/setup-buildx-action@v3
+            # The pinned LibreOffice and fonts the reference images were drawn with
+            - name: Build the image the pages are drawn in
+              uses: docker/build-push-action@v6
+              with:
+                  context: scripts/shape-demos
+                  platforms: linux/amd64
+                  tags: docx-shape-renderer
+                  load: true
+                  cache-from: type=gha,scope=shape-renderer
+                  cache-to: type=gha,mode=max,scope=shape-renderer
             - name: Run, validate and render the shape demos
               run: scripts/render-shape-demos.sh build/shape-demos
-            - name: Upload the pages as images
+              env:
+                  SHAPE_RENDER_IMAGE: docx-shape-renderer
+            - name: Compare the pages with the reference images
+              run: npm run run-ts -- scripts/compare-shape-renders.ts build/shape-demos
+            - name: Upload the pages and their differences
               if: always()
               uses: actions/upload-artifact@v4
               with:

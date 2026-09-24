@@ -92,6 +92,17 @@ describe("ShapeRun", () => {
         });
     });
 
+    it("should fit its size to its text", () => {
+        const tree = new Formatter().format(
+            new ShapeRun({ type: "rectangle", text: "Hello", transformation: { width: "fitText", height: "fitText" } }),
+        );
+        const inline = tree["w:r"][0]["w:drawing"][0]["wp:inline"];
+        // "Hello" in 10pt Times New Roman, with Word's default text margins
+        expect(inline[1]).to.deep.equal({ "wp:extent": { _attr: { cx: 51 * 9525, cy: 25 * 9525 } } });
+        const shape = inline[5]["a:graphic"][1]["a:graphicData"][1]["wps:wsp"];
+        expect(JSON.stringify(shape)).to.include('"Hello"');
+    });
+
     it("should ignore an offset, which only applies inside a group", () => {
         const tree = new Formatter().format(
             new ShapeRun({ type: "ellipse", transformation: { width: 100, height: 100, offset: { left: 50, top: 50 } } }),

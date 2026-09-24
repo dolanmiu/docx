@@ -9,10 +9,14 @@
 import type { DocPropertiesOptions } from "@file/drawing/doc-properties/doc-properties";
 import type { DrawingLinkOptions } from "@file/drawing/doc-properties/non-visual-drawing-properties";
 import { type ShapeFill, type ShapeLine, getShapeLineOverhang } from "@file/drawing/inline/graphic/graphic-data/wps";
+import type { ShapeDrawingChildMediaData } from "@file/media";
+import { docPropertiesUniqueNumericId } from "@util/convenience-functions";
 
-import { type IShapeGroupChildOptions, layoutShapeDrawing } from "./shape-drawing";
+import { type IShapeGroupChildOptions, getGroupEffectExtent, layoutShapeDrawing } from "./shape-drawing";
+import type { ShapeLayout } from "./shape-layout";
 import { createUniformEffectExtent } from "./shape-run-data";
 import { Drawing, type IFloating } from "../../drawing";
+import { createAlternateContent } from "../../drawing/alternate-content";
 import { Run } from "../run";
 
 /**
@@ -45,6 +49,11 @@ export type IShapeCanvasOptions = DrawingLinkOptions & {
     readonly fill?: ShapeFill;
     /** The canvas's outline. Default is none */
     readonly line?: ShapeLine;
+    /**
+     * Places the shapes, pictures and groups that have no `offset`: in levels along their connectors like a flowchart,
+     * as a tree like an org chart, or in a grid
+     */
+    readonly layout?: ShapeLayout;
     /** Floats the canvas on the page instead of placing it inline with text */
     readonly floating?: IFloating;
     /** Name, description and title used by screen readers */
@@ -60,7 +69,10 @@ const EMUS_PER_PIXEL = 9525;
  * keeps connectors attached to their shapes when the shapes are moved. Use it for flowcharts and
  * diagrams that people will edit.
  *
- * The shapes are positioned with `transformation.offset`, in pixels from the canvas's top-left corner.
+ * The shapes are positioned with `transformation.offset`, in pixels from the canvas's top-left corner, or by a `layout`.
+ *
+ * Applications that can't draw canvases, such as Apple Pages, draw the same shapes as a group instead: the canvas is
+ * written in `mc:AlternateContent`, with the group as its fallback.
  *
  * @publicApi
  *
@@ -81,7 +93,7 @@ export class ShapeCanvasRun extends Run {
 
         // Canvas coordinates start at its top-left corner, and Word cuts off anything outside the canvas, so everything
         // that is drawn, including lines, arrowheads and effects, is moved onto it
-        const { children, reach } = layoutShapeDrawing(options.children, true);
+        const { children, reach } = layoutShapeDrawing(options.children, { keepPositive: true, layout: options.layout });
         const emus = options.transformation
             ? {
                   x: Math.round(options.transformation.width * EMUS_PER_PIXEL),
@@ -89,24 +101,49 @@ export class ShapeCanvasRun extends Run {
               }
             : { x: Math.ceil(reach.right), y: Math.ceil(reach.bottom) };
 
-        this.root.push(
-            new Drawing(
-                {
-                    type: "wpc",
-                    transformation: { pixels: { x: Math.round(emus.x / EMUS_PER_PIXEL), y: Math.round(emus.y / EMUS_PER_PIXEL) }, emus },
-                    children,
-                    fill: options.fill,
-                    line: options.line,
-                },
-                {
-                    floating: options.floating,
-                    docProperties: options.altText,
-                    link: options.link,
-                    decorative: options.decorative,
-                    // Only the canvas's own outline reaches past its edges
-                    effectExtent: createUniformEffectExtent(options.line ? getShapeLineOverhang(options.line) : 0),
-                },
-            ),
+        const transformation = { pixels: { x: Math.round(emus.x / EMUS_PER_PIXEL), y: Math.round(emus.y / EMUS_PER_PIXEL) }, emus };
+        const lineOverhang = options.line ? getShapeLineOverhang(options.line) : 0;
+        const drawingOptions = {
+            floating: options.floating,
+            docProperties: options.altText,
+            link: options.link,
+            decorative: options.decorative,
+        };
+
+        const canvas = new Drawing(
+            { type: "wpc", transformation, children, fill: options.fill, line: options.line },
+            // Only the canvas's own outline reaches past its edges
+            { ...drawingOptions, effectExtent: createUniformEffectExtent(lineOverhang) },
         );
+
+        // Applications that can't draw canvases, such as Apple Pages, draw the same diagram as a group. It is laid out
+        // again so its shapes have ids of their own, and a rectangle behind them draws the canvas's background and outline
+        const fallback = layoutShapeDrawing(options.children, { keepPositive: true, layout: options.layout });
+        const backgroundId = docPropertiesUniqueNumericId();
+        const background: ShapeDrawingChildMediaData = {
+            type: "wps",
+            transformation: { offset: { pixels: { x: 0, y: 0 }, emus: { x: 0, y: 0 } }, ...transformation },
+            data: {
+                geometry: { type: "rectangle" },
+                fill: options.fill,
+                line: options.line ?? "none",
+                nonVisualDrawingProperties: { id: backgroundId, name: `Canvas ${backgroundId}` },
+            },
+        };
+        const groupReach = {
+            left: Math.min(-lineOverhang, fallback.reach.left),
+            top: Math.min(-lineOverhang, fallback.reach.top),
+            right: Math.max(emus.x + lineOverhang, fallback.reach.right),
+            bottom: Math.max(emus.y + lineOverhang, fallback.reach.bottom),
+        };
+        const group = new Drawing(
+            { type: "wpg", transformation, children: [background, ...fallback.children], childOffset: { x: 0, y: 0 }, childExtent: emus },
+            {
+                ...drawingOptions,
+                effectExtent: getGroupEffectExtent({ reach: groupReach }, { x: 0, y: 0 }, emus, { width: emus.x, height: emus.y }),
+            },
+        );
+
+        this.root.push(createAlternateContent({ requires: "wpc", choice: canvas, fallback: group }));
     }
 }

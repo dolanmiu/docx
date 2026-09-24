@@ -12,12 +12,14 @@ import type { DocPropertiesOptions } from "@file/drawing/doc-properties/doc-prop
 import type { DrawingLinkOptions } from "@file/drawing/doc-properties/non-visual-drawing-properties";
 
 import { type IShapeGroupChildOptions, getGroupEffectExtent, layoutShapeDrawing } from "./shape-drawing";
+import type { ShapeLayout } from "./shape-layout";
 import { createTransformation } from "./wps-shape-run";
 import { Drawing, type IFloating } from "../../drawing";
 import type { IMediaDataTransformation, IMediaTransformation } from "../../media";
 import { Run } from "../run";
 
 export type { IShapeGroupChildOptions, IShapeNestedGroupOptions, IShapePictureOptions } from "./shape-drawing";
+export type { ShapeFlowLayout, ShapeGridLayout, ShapeLayout, ShapeLayoutDirection, ShapeTreeLayout } from "./shape-layout";
 
 /**
  * Options for creating a group of shapes.
@@ -33,6 +35,11 @@ export type IShapeGroupOptions = DrawingLinkOptions & {
      * the box around the children. A different size scales every shape in the group.
      */
     readonly transformation?: IMediaTransformation;
+    /**
+     * Places the shapes, pictures and groups that have no `offset`: in levels along their connectors like a flowchart,
+     * as a tree like an org chart, or in a grid
+     */
+    readonly layout?: ShapeLayout;
     /** Floats the group on the page instead of placing it inline with text */
     readonly floating?: IFloating;
     /** Name, description and title used by screen readers */
@@ -70,7 +77,7 @@ export class ShapeGroupRun extends Run {
     public constructor(options: IShapeGroupOptions) {
         super({});
 
-        const layout = layoutShapeDrawing(options.children);
+        const layout = layoutShapeDrawing(options.children, { layout: options.layout });
         const { children, bounds } = layout;
 
         // The children's coordinate space is the box around them, in EMUs

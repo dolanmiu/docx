@@ -4,3 +4,4 @@ export * from "./preset-shape";
 export * from "./connector";
 export * from "./custom-geometry";
 export * from "./picture/shape-picture";
+export * from "./text-metrics";
