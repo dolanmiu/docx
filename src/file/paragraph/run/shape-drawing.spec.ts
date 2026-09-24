@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { PresetShapeCoreOptions } from "@file/drawing/inline/graphic/graphic-data/wps";
+import { type PresetShapeCoreOptions, measureTextWidth } from "@file/drawing/inline/graphic/graphic-data/wps";
 import type { ShapeDrawingChildMediaData } from "@file/media";
 import * as convenienceFunctions from "@util/convenience-functions";
 
@@ -28,6 +28,33 @@ const sitesOf = (child: ShapeDrawingChildMediaData): readonly (number | undefine
     const { connections } = dataOf(child);
     return [connections?.start?.index, connections?.end?.index];
 };
+
+/** Where a connector starts and ends, in whole pixels */
+const endsOf = (child: ShapeDrawingChildMediaData): readonly (readonly [number, number])[] => {
+    const { offset, emus, rotation = 0, flip } = child.transformation;
+    const centre = { x: (offset?.emus?.x ?? 0) + emus.x / 2, y: (offset?.emus?.y ?? 0) + emus.y / 2 };
+    const radians = (rotation / 60000) * (Math.PI / 180);
+    const place = (x: number, y: number): readonly [number, number] => {
+        const dx = (flip?.horizontal ? -1 : 1) * (x - emus.x / 2);
+        const dy = (flip?.vertical ? -1 : 1) * (y - emus.y / 2);
+        return [
+            Math.round((centre.x + dx * Math.cos(radians) - dy * Math.sin(radians)) / EMUS_PER_PIXEL),
+            Math.round((centre.y + dx * Math.sin(radians) + dy * Math.cos(radians)) / EMUS_PER_PIXEL),
+        ];
+    };
+    return [place(0, 0), place(emus.x, emus.y)];
+};
+
+/** Where a child's box is, in whole pixels */
+const offsetOf = (child: ShapeDrawingChildMediaData): readonly [number, number] => [
+    Math.round((child.transformation.offset?.emus?.x ?? 0) / EMUS_PER_PIXEL),
+    Math.round((child.transformation.offset?.emus?.y ?? 0) / EMUS_PER_PIXEL),
+];
+
+const shape = (id: string, extra: Partial<IShapeGroupChildOptions> = {}): IShapeGroupChildOptions =>
+    ({ id, type: "rectangle", transformation: { width: 100, height: 50 }, ...extra }) as IShapeGroupChildOptions;
+
+const arrow = { endArrow: "triangle" } as const;
 
 describe("layoutShapeDrawing", () => {
     beforeEach(() => {
@@ -169,7 +196,7 @@ describe("layoutShapeDrawing", () => {
 
         expect(dataOf(children[2]).connections).to.deep.equal({ start: { id: 1, index: 3 }, end: undefined });
         expect(dataOf(children[3]).connections).to.deep.equal({ start: undefined, end: { id: 1, index: 3 } });
-        expect(children[2].transformation.emus).to.deep.equal({ x: 100 * EMUS_PER_PIXEL, y: 0 });
+        expect(children[2].transformation.emus.x).to.equal(100 * EMUS_PER_PIXEL);
     });
 
     it("should include connectors in the box around the children, and lines in what is drawn", () => {
@@ -194,7 +221,7 @@ describe("layoutShapeDrawing", () => {
     it("should move everything that is drawn onto the positive side when asked", () => {
         const layout = layoutShapeDrawing(
             [box("a", 0, 0), box("b", 0, 100), connect({ id: "a", side: "top" }, { id: "b", side: "top" }, { route: "elbow" })],
-            true,
+            { keepPositive: true },
         );
 
         // The connector goes round the left of the top shape and loops over the lower one, a quarter of an inch out
@@ -326,7 +353,8 @@ describe("layoutShapeDrawing", () => {
             const { children } = layoutShapeDrawing([box("a", 0, 0), box("b", 300, 0), connect("a", "b", { label: "Yes" })]);
 
             const label = children[3];
-            // The connector runs from x = 100 to 300 pixels at y = 25, and "Yes" is about 3 * 7 + 8 pixels wide
+            // The connector runs from x = 100 to 300 pixels at y = 25. "Yes" is 21 pixels wide in 10pt Times New Roman,
+            // and 15 tall, and the box has 8 pixels more width and 4 more height
             expect(label.transformation).to.deep.include({
                 offset: { pixels: { x: 186, y: 15 }, emus: { x: Math.round(185.5 * EMUS_PER_PIXEL), y: 15 * EMUS_PER_PIXEL } },
                 emus: { x: 29 * EMUS_PER_PIXEL, y: 20 * EMUS_PER_PIXEL },
@@ -353,9 +381,10 @@ describe("layoutShapeDrawing", () => {
             expect(dataOf(label)).to.deep.include({ fill: "FFFFFF", line: "000000", children: paragraphs });
         });
 
-        it("should be 100 pixels wide for paragraphs without a width", () => {
+        it("should fit paragraphs without a size, with a little space around them", () => {
             const { children } = layoutShapeDrawing([box("a", 0, 0), box("b", 300, 0), connect("a", "b", { label: { text: [] } })]);
-            expect(children[3].transformation.emus.x).to.equal(100 * EMUS_PER_PIXEL);
+            // No text: only the space around it
+            expect(children[3].transformation.emus).to.deep.equal({ x: 8 * EMUS_PER_PIXEL, y: 4 * EMUS_PER_PIXEL });
         });
 
         it("should sit on the start of a connector with no length", () => {
@@ -518,6 +547,374 @@ describe("layoutShapeDrawing", () => {
         ]);
         // The bottom-right corner is the second corner, and the nearest facing down
         expect(sitesOf(children[2])[0]).to.equal(1);
+    });
+
+    describe("text", () => {
+        it("should size a shape to fit its text, and write the text as centred paragraphs", () => {
+            const { children } = layoutShapeDrawing([
+                { type: "rectangle", text: "Hello", transformation: { width: "fitText", height: 40 } },
+            ] as readonly IShapeGroupChildOptions[]);
+            expect(children[0].transformation.pixels.x).to.equal(Math.ceil(measureTextWidth("Hello") * (4 / 3) + 19.2 + 2));
+            expect(dataOf(children[0]).children).to.have.length(1);
+        });
+    });
+
+    describe("layouts", () => {
+        it("should place children without an offset with the layout, and keep those with one where they are", () => {
+            const { children } = layoutShapeDrawing(
+                [
+                    shape("a"),
+                    shape("b"),
+                    shape("c", { transformation: { offset: { left: 500 }, width: 100, height: 50 } }),
+                    connect("a", "b"),
+                ],
+                { layout: { type: "flow" } },
+            );
+            expect(offsetOf(children[0])).to.deep.equal([0, 0]);
+            expect(offsetOf(children[1])).to.deep.equal([0, 100]);
+            expect(offsetOf(children[2])).to.deep.equal([500, 0]);
+        });
+
+        it("should keep children with an offset where they are when there is nothing else to place", () => {
+            const { children } = layoutShapeDrawing([box("a", 10, 20)], { layout: { type: "tree" } });
+            expect(offsetOf(children[0])).to.deep.equal([10, 20]);
+        });
+
+        it("should place a turned shape by the box around it, centred on whole pixels", () => {
+            const { children } = layoutShapeDrawing(
+                [shape("a", { transformation: { width: 101, height: 50, rotation: 90 } }), shape("b")],
+                { layout: { type: "grid", columns: 2, spacing: 10 } },
+            );
+            // The turned shape takes up 50 by 101 pixels, and its box is centred in that, rounded to a whole pixel
+            expect(children[0].transformation.offset?.emus).to.deep.equal({
+                x: Math.round(25 * EMUS_PER_PIXEL - 50.5 * EMUS_PER_PIXEL),
+                y: 51 * EMUS_PER_PIXEL - 25 * EMUS_PER_PIXEL,
+            });
+            expect(offsetOf(children[1])).to.deep.equal([60, 26]);
+        });
+
+        it("should place groups by their size, following connectors to the shapes inside them, and lay out their own children", () => {
+            const { children } = layoutShapeDrawing(
+                [
+                    shape("a"),
+                    { type: "group", layout: { type: "grid", columns: 1, spacing: 0 }, children: [shape("b"), shape("c")] },
+                    connect("a", "c"),
+                ],
+                { layout: { type: "flow", levelSpacing: 10 } },
+            );
+            expect(offsetOf(children[1])).to.deep.equal([0, 60]);
+            const group = children[1];
+            expect(group.type === "group" && group.children.map(offsetOf)).to.deep.equal([
+                [0, 0],
+                [0, 50],
+            ]);
+        });
+
+        it("should lay out pictures", () => {
+            const { children } = layoutShapeDrawing(
+                [shape("a"), { type: "picture", image: { type: "png", data: Buffer.from("") }, transformation: { width: 30, height: 30 } }],
+                { layout: { type: "grid", columns: 2, spacing: 10 } },
+            );
+            expect(offsetOf(children[1])).to.deep.equal([110, 10]);
+        });
+
+        describe("connector sides", () => {
+            it("should leave a level from the side facing the next level, and arrive from the side facing the one before", () => {
+                const down = layoutShapeDrawing([shape("a"), shape("b"), connect("a", "b")], { layout: { type: "flow" } });
+                expect(sitesOf(down.children[2])).to.deep.equal([2, 0]);
+                const right = layoutShapeDrawing([shape("a"), shape("b"), connect("a", "b")], {
+                    layout: { type: "tree", direction: "right" },
+                });
+                expect(sitesOf(right.children[2])).to.deep.equal([3, 1]);
+                const up = layoutShapeDrawing([shape("a"), shape("b"), connect("a", "b")], { layout: { type: "flow", direction: "up" } });
+                expect(sitesOf(up.children[2])).to.deep.equal([0, 2]);
+                const left = layoutShapeDrawing([shape("a"), shape("b"), connect("a", "b")], {
+                    layout: { type: "flow", direction: "left" },
+                });
+                expect(sitesOf(left.children[2])).to.deep.equal([1, 3]);
+            });
+
+            it("should go back to the level before between the same sides, and loop round the side to levels further back", () => {
+                const { children } = layoutShapeDrawing(
+                    [
+                        shape("a"),
+                        shape("b"),
+                        shape("c"),
+                        connect("a", "b"),
+                        connect("b", "c"),
+                        connect("b", "a"),
+                        connect("c", "a", { route: "elbow" }),
+                    ],
+                    { layout: { type: "flow" } },
+                );
+                expect(sitesOf(children[5])).to.deep.equal([0, 2]);
+                expect(sitesOf(children[6])).to.deep.equal([3, 3]);
+            });
+
+            it("should face each other on the same level, and keep sides that are given", () => {
+                // In a tree, the connector between the children doesn't make c a child of b, as c already has a parent
+                const { children } = layoutShapeDrawing(
+                    [
+                        shape("a"),
+                        shape("b"),
+                        shape("c"),
+                        connect("a", "b"),
+                        connect("a", "c"),
+                        connect("b", "c"),
+                        connect({ id: "a", side: "left" }, "b"),
+                    ],
+                    { layout: { type: "tree" } },
+                );
+                expect(sitesOf(children[5])).to.deep.equal([3, 1]);
+                expect(sitesOf(children[6])[0]).to.equal(1);
+            });
+
+            it("should face each other in a grid, and for shapes the layout didn't place", () => {
+                const grid = layoutShapeDrawing([shape("a"), shape("b"), connect("a", "b")], { layout: { type: "grid", columns: 1 } });
+                expect(sitesOf(grid.children[2])).to.deep.equal([2, 0]);
+                const pinned = layoutShapeDrawing([shape("a"), box("b", 300, 0), connect("a", "b")], { layout: { type: "flow" } });
+                expect(sitesOf(pinned.children[2])).to.deep.equal([3, 1]);
+            });
+        });
+    });
+
+    describe("spreading connector ends", () => {
+        const target = (type: string, extra: Record<string, unknown> = {}): IShapeGroupChildOptions =>
+            ({
+                id: "t",
+                type,
+                transformation: { offset: { left: 200, top: 100 }, width: 100, height: 60 },
+                ...extra,
+            }) as IShapeGroupChildOptions;
+
+        it("should spread arrowheads that meet at one site along the side, keeping them attached", () => {
+            const { children } = layoutShapeDrawing([
+                box("a", 0, 0),
+                box("b", 0, 200),
+                target("rectangle"),
+                connect("a", "t", { line: arrow }),
+                connect("b", "t", { line: arrow }),
+            ]);
+            // The connector from above arrives at the upper point
+            expect(endsOf(children[3])[1]).to.deep.equal([200, 120]);
+            expect(endsOf(children[4])[1]).to.deep.equal([200, 140]);
+            expect(sitesOf(children[3])[1]).to.equal(1);
+            expect(sitesOf(children[4])[1]).to.equal(1);
+        });
+
+        it("should spread arrowheads at the start of connectors", () => {
+            const { children } = layoutShapeDrawing([
+                box("a", 0, 0),
+                box("b", 0, 200),
+                target("flowChartProcess"),
+                connect("t", "a", { line: { startArrow: "triangle" } }),
+                connect("t", "b"),
+            ]);
+            expect(endsOf(children[3])[0]).to.deep.equal([200, 120]);
+            expect(endsOf(children[4])[0]).to.deep.equal([200, 140]);
+        });
+
+        it("should keep ends without arrowheads that go to different shapes together", () => {
+            const { children } = layoutShapeDrawing([
+                box("a", 0, 0),
+                box("b", 0, 200),
+                target("rectangle"),
+                connect("t", "a"),
+                connect("t", "b"),
+            ]);
+            expect(endsOf(children[3])[0]).to.deep.equal([200, 130]);
+            expect(endsOf(children[4])[0]).to.deep.equal([200, 130]);
+        });
+
+        it("should draw connectors between the same two shapes side by side", () => {
+            const { children } = layoutShapeDrawing([box("a", 0, 0), box("b", 200, 0), connect("a", "b"), connect("b", "a")]);
+            expect(endsOf(children[2])).to.deep.equal([
+                [100, 17],
+                [200, 17],
+            ]);
+            expect(endsOf(children[3])).to.deep.equal([
+                [200, 33],
+                [100, 33],
+            ]);
+        });
+
+        it("should spread ends along the straight part of a side", () => {
+            const topEnds = (type: string, extra: Record<string, unknown> = {}): readonly number[] => {
+                const { children } = layoutShapeDrawing([
+                    box("a", 150, -200),
+                    box("b", 250, -200),
+                    target(type, extra),
+                    connect("a", { id: "t", side: "top" }, { line: arrow }),
+                    connect("b", { id: "t", side: "top" }, { line: arrow }),
+                ]);
+                return [endsOf(children[3])[1][0], endsOf(children[4])[1][0]];
+            };
+            // A rectangle's whole side, split in three
+            expect(topEnds("rectangle")).to.deep.equal([233, 267]);
+            expect(topEnds("flowChartPredefinedProcess")).to.deep.equal([233, 267]);
+            expect(topEnds("flowChartInternalStorage")).to.deep.equal([233, 267]);
+            expect(topEnds("flowChartDocument")).to.deep.equal([233, 267]);
+            // Less the rounded corners
+            expect(topEnds("roundedRectangle", { adjustments: { cornerRadius: 50 } })).to.deep.equal([243, 257]);
+            expect(topEnds("roundedRectangle")).to.deep.equal([237, 263]);
+            expect(topEnds("flowChartAlternateProcess")).to.deep.equal([237, 263]);
+            // Between a terminator's round ends
+            expect(topEnds("flowChartTerminator")).to.deep.equal([239, 261]);
+            // Other shapes keep their ends at the site
+            expect(topEnds("ellipse")).to.deep.equal([250, 250]);
+        });
+
+        it("should spread ends on the sides of shapes that are straight, and not where a site isn't on a side", () => {
+            const ends = (type: string, side: "left" | "right" | "bottom"): readonly (readonly [number, number])[] => {
+                const { children } = layoutShapeDrawing([
+                    box("a", -200, -200),
+                    box("b", 600, 400),
+                    target(type),
+                    connect("a", { id: "t", side }, { line: arrow }),
+                    connect("b", { id: "t", side }, { line: arrow }),
+                ]);
+                return [endsOf(children[3])[1], endsOf(children[4])[1]];
+            };
+            expect(ends("flowChartDocument", "right")).to.deep.equal([
+                [300, 116],
+                [300, 132],
+            ]);
+            expect(ends("flowChartTerminator", "right")).to.deep.equal([
+                [300, 130],
+                [300, 130],
+            ]);
+            // A document's bottom site is on its wavy edge
+            expect(ends("flowChartDocument", "bottom")[0]).to.deep.equal(ends("flowChartDocument", "bottom")[1]);
+            expect(ends("rectangle", "bottom")).to.deep.equal([
+                [233, 160],
+                [267, 160],
+            ]);
+        });
+
+        it("should order the ends on a turned shape by where the connectors go", () => {
+            const { children } = layoutShapeDrawing([
+                box("a", 0, 0),
+                box("b", 0, 200),
+                target("rectangle", { transformation: { offset: { left: 200, top: 100 }, width: 100, height: 60, rotation: 180 } }),
+                connect("a", "t", { line: arrow }),
+                connect("b", "t", { line: arrow }),
+            ]);
+            expect(endsOf(children[3])[1]).to.deep.equal([200, 120]);
+            expect(endsOf(children[4])[1]).to.deep.equal([200, 140]);
+        });
+
+        it("should spread ends on pictures, and leave ends given as points where they are", () => {
+            const picture = layoutShapeDrawing([
+                box("a", 0, 0),
+                box("b", 0, 200),
+                {
+                    id: "t",
+                    type: "picture",
+                    image: { type: "png", data: Buffer.from("") },
+                    transformation: { offset: { left: 200, top: 100 }, width: 100, height: 60 },
+                },
+                connect("a", "t", { line: arrow }),
+                connect("b", "t", { line: arrow }),
+            ]);
+            expect(endsOf(picture.children[3])[1]).to.deep.equal([200, 120]);
+            const points = layoutShapeDrawing([
+                box("a", 0, 0),
+                box("b", 0, 200),
+                target("rectangle"),
+                connect("a", { id: "t", point: { x: 0, y: 50 } }, { line: arrow }),
+                connect("b", { id: "t", point: { x: 0, y: 50 } }, { line: arrow }),
+            ]);
+            expect(endsOf(points.children[3])[1]).to.deep.equal([200, 130]);
+        });
+    });
+
+    describe("shapes in the way", () => {
+        const inTheWay = { transformation: { offset: { left: 200, top: -20 }, width: 50, height: 90 } };
+
+        it("should bend a connector without a route around a shape a straight line would go through", () => {
+            const { children } = layoutShapeDrawing([box("a", 0, 0), box("b", 400, 0), box("x", 200, -20, inTheWay), connect("a", "b")]);
+            expect(dataOf(children[3]).geometry.type).to.equal("elbowConnectorFourBends");
+            expect(dataOf(children[3]).nonVisualDrawingProperties?.name).to.equal("Elbow Connector 4");
+        });
+
+        it("should keep a connector straight when it is asked to be, or nothing is in the way", () => {
+            const straight = layoutShapeDrawing([
+                box("a", 0, 0),
+                box("b", 400, 0),
+                box("x", 200, -20, inTheWay),
+                connect("a", "b", { route: "straight" }),
+            ]);
+            expect(dataOf(straight.children[3]).geometry.type).to.equal("straightConnector");
+            // Beside the line, above it, and too small to be in the way
+            const clear = layoutShapeDrawing([
+                box("a", 0, 0),
+                box("b", 400, 100),
+                box("beside", 400, -200),
+                box("above", 150, -100, { transformation: { offset: { left: 150, top: -100 }, width: 20, height: 20 } }),
+                box("tiny", 250, 60, { transformation: { offset: { left: 250, top: 60 }, width: 1, height: 1 } }),
+                connect("a", "b"),
+            ]);
+            expect(dataOf(clear.children[5]).geometry.type).to.equal("straightConnector");
+            const vertical = layoutShapeDrawing([box("a", 0, 0), box("b", 0, 300), box("beside", 200, 100), connect("a", "b")]);
+            expect(dataOf(vertical.children[3]).geometry.type).to.equal("straightConnector");
+        });
+    });
+
+    describe("label positions", () => {
+        it("should put a label at the start or end just clear of the shape there", () => {
+            const start = layoutShapeDrawing([
+                box("a", 0, 0),
+                box("b", 300, 0),
+                connect("a", "b", { label: { text: "", width: 20, height: 10, position: "start" } }),
+            ]);
+            expect(offsetOf(start.children[3])).to.deep.equal([104, 20]);
+            const end = layoutShapeDrawing([
+                box("a", 0, 0),
+                box("b", 300, 0),
+                connect("a", "b", { label: { text: "", width: 20, height: 10, position: "end" } }),
+            ]);
+            expect(offsetOf(end.children[3])).to.deep.equal([276, 20]);
+            const middle = layoutShapeDrawing([
+                box("a", 0, 0),
+                box("b", 300, 0),
+                connect("a", "b", { label: { text: "", width: 20, height: 10, position: "middle" } }),
+            ]);
+            expect(offsetOf(middle.children[3])).to.deep.equal([190, 20]);
+        });
+
+        it("should move a label along the route until it is off every shape", () => {
+            const { children } = layoutShapeDrawing([
+                box("a", 0, 0),
+                box("b", 300, 0),
+                box("x", 180, 0, { transformation: { offset: { left: 180 }, width: 40, height: 50 } }),
+                connect("a", "b", { route: "straight", label: { text: "", width: 30, height: 10 } }),
+            ]);
+            // The middle of the route is at 200, and the first place clear of the shape is 36 pixels on
+            expect(offsetOf(children[4])).to.deep.equal([221, 20]);
+        });
+
+        it("should keep labels apart, putting a label beside its route when there is no room on it", () => {
+            const { children } = layoutShapeDrawing([
+                box("a", 0, 0, { transformation: { width: 100, height: 40 } }),
+                box("b", 160, 0, { transformation: { offset: { left: 160 }, width: 100, height: 40 } }),
+                connect("a", "b", { label: { text: "", width: 60, height: 20, position: "start" } }),
+                connect("b", "a", { label: { text: "", width: 60, height: 20, position: "start" } }),
+            ]);
+            const [, firstTop] = offsetOf(children[3]);
+            const [, secondTop] = offsetOf(children[5]);
+            // The first label is on the upper connector, and the second below the lower one
+            expect(firstTop).to.equal(3);
+            expect(secondTop).to.equal(31);
+        });
+
+        it("should stay where it is wanted when nowhere is clear", () => {
+            const { children } = layoutShapeDrawing([
+                box("a", 0, 0, { transformation: { width: 100, height: 200 } }),
+                box("b", 110, 0, { transformation: { offset: { left: 110 }, width: 100, height: 200 } }),
+                connect("a", "b", { label: { text: "", width: 40, height: 20 } }),
+            ]);
+            expect(offsetOf(children[3])).to.deep.equal([85, 90]);
+        });
     });
 
     it("should throw on an empty list, a repeated id or an unknown id", () => {

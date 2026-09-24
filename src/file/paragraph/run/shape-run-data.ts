@@ -20,19 +20,26 @@ import {
 import type { IMediaTransformation } from "@file/media";
 import type { Paragraph } from "@file/paragraph";
 
+import { type ShapeTransformation, createTextParagraphs } from "./shape-text-size";
+
 /**
  * Options every shape has, whatever its type.
  */
 export type ShapeBaseOptions = DrawingLinkOptions & {
-    /** Size in pixels, with optional rotation (degrees) and flip. Inside a group, `offset` positions the shape. */
-    readonly transformation: IMediaTransformation;
+    /**
+     * Size in pixels, with optional rotation (degrees) and flip. `"fitText"` sizes the shape to fit its text.
+     * Inside a group, `offset` positions the shape
+     */
+    readonly transformation: ShapeTransformation;
     /** How the shape is filled. Default is no fill */
     readonly fill?: ShapeFill;
     /** The shape's line. Default is a solid black line 1pt wide */
     readonly line?: ShapeLine;
     /** Shadows, glow, soft edges and reflection */
     readonly effects?: ShapeEffects;
-    /** Paragraphs of text inside the shape */
+    /** Text inside the shape, centred. Each line is a paragraph. For text with formatting, use `children` */
+    readonly text?: string;
+    /** Paragraphs of text inside the shape, after `text` */
     readonly children?: readonly Paragraph[];
     /** How the text inside the shape is laid out: alignment, margins, autofit, direction, columns and warps */
     readonly textOptions?: ShapeTextOptions;
@@ -77,7 +84,7 @@ export const createPresetShapeData = (options: WithPresetShape<ShapeBaseOptions>
     fill: options.fill,
     line: options.line,
     effects: options.effects,
-    children: options.children,
+    children: options.text === undefined ? options.children : [...createTextParagraphs(options.text), ...(options.children ?? [])],
     textOptions: options.textOptions,
 });
 
@@ -94,13 +101,14 @@ export const createUniformEffectExtent = (overhang: number): EffectExtentAttribu
 const EMUS_PER_PIXEL = 9525;
 
 /**
+ * A shape's line, effects and size in pixels, which are what decide how far it reaches past its box.
+ */
+type SizedShape = Pick<ShapeBaseOptions, "line" | "effects"> & { readonly transformation: IMediaTransformation };
+
+/**
  * How far, in EMUs, a shape's line, arrowheads and effects reach past each side of its box, before it is rotated.
  */
-export const getShapeOverhang = ({
-    line,
-    effects,
-    transformation,
-}: Pick<ShapeBaseOptions, "line" | "effects" | "transformation">): EffectExtentAttributes => {
+export const getShapeOverhang = ({ line, effects, transformation }: SizedShape): EffectExtentAttributes => {
     const lineOverhang = getShapeLineOverhang(line);
     const effectsOverhang = getShapeEffectsOverhang(effects, transformation.height * EMUS_PER_PIXEL, transformation.rotation);
     return {
@@ -115,7 +123,7 @@ export const getShapeOverhang = ({
  * How far, in EMUs, a shape reaches past each side of its box: the corners of a rotated shape,
  * and its line, arrowheads and effects. As in Word, this is the drawing's `wp:effectExtent`.
  */
-export const getShapeEffectExtent = (options: Pick<ShapeBaseOptions, "line" | "effects" | "transformation">): EffectExtentAttributes => {
+export const getShapeEffectExtent = (options: SizedShape): EffectExtentAttributes => {
     const overhang = getShapeOverhang(options);
     const { width, height, rotation = 0 } = options.transformation;
     // Half the size of the box around the rotated shape, less half the shape's own size
