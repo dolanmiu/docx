@@ -41,6 +41,24 @@ describe("createPresetShape", () => {
         expect(tree["wps:wsp"][0]).to.deep.equal({ "wps:cNvCnPr": {} });
     });
 
+    it("should write the shapes a connector is attached to", () => {
+        const tree = new Formatter().format(
+            createPresetShape({
+                geometry: { type: "elbowConnector" },
+                connections: { start: { id: 3, index: 2 }, end: { id: 4, index: 0 } },
+                transformation,
+            }),
+        );
+        expect(tree["wps:wsp"][0]).to.deep.equal({
+            "wps:cNvCnPr": [{ "a:stCxn": { _attr: { id: 3, idx: 2 } } }, { "a:endCxn": { _attr: { id: 4, idx: 0 } } }],
+        });
+
+        const endOnly = new Formatter().format(
+            createPresetShape({ geometry: { type: "line" }, connections: { end: { id: 4, index: 1 } }, transformation }),
+        );
+        expect(endOnly["wps:wsp"][0]).to.deep.equal({ "wps:cNvCnPr": [{ "a:endCxn": { _attr: { id: 4, idx: 1 } } }] });
+    });
+
     it("should centre text vertically by default", () => {
         const tree = new Formatter().format(
             createPresetShape({ geometry: { type: "rectangle" }, children: [new Paragraph("Hello")], transformation }),

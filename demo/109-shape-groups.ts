@@ -1,5 +1,5 @@
 // Shape groups: several shapes laid out, moved and resized together as one drawing.
-// Each child is positioned with transformation.offset, in pixels.
+// Each child is positioned with transformation.offset, in pixels, and connectors join shapes by their ids.
 // See docs/usage/shapes.md.
 
 import * as fs from "fs";
@@ -21,15 +21,18 @@ import {
 const label = (text: string): Paragraph =>
     new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text, color: "FFFFFF", bold: true })] });
 
-const arrow = (left: number, top: number, width: number): IShapeGroupChildOptions => ({
-    type: "straightConnector",
-    transformation: { offset: { left, top }, width, height: 0 },
+// A connector from one shape to the next. The group draws it between the facing sides of the two shapes
+const arrow = (from: string, to: string): IShapeGroupChildOptions => ({
+    type: "connector",
+    from,
+    to,
     line: { color: "404040", width: 1.5, endArrow: "triangle" },
 });
 
 // A small flowchart: Start -> Process -> Decision -> End
 const flowchart: readonly IShapeGroupChildOptions[] = [
     {
+        id: "start",
         type: "flowChartTerminator",
         transformation: { width: 100, height: 44 },
         fill: "4472C4",
@@ -37,8 +40,8 @@ const flowchart: readonly IShapeGroupChildOptions[] = [
         children: [label("Start")],
         altText: { name: "Start" },
     },
-    arrow(100, 22, 30),
     {
+        id: "draft",
         type: "flowChartProcess",
         transformation: { offset: { left: 130 }, width: 110, height: 44 },
         fill: "ED7D31",
@@ -46,8 +49,8 @@ const flowchart: readonly IShapeGroupChildOptions[] = [
         children: [label("Draft")],
         altText: { name: "Draft" },
     },
-    arrow(240, 22, 30),
     {
+        id: "review",
         type: "flowChartDecision",
         transformation: { offset: { left: 270, top: -14 }, width: 110, height: 72 },
         fill: "70AD47",
@@ -55,8 +58,8 @@ const flowchart: readonly IShapeGroupChildOptions[] = [
         children: [label("OK?")],
         altText: { name: "Review" },
     },
-    arrow(380, 22, 30),
     {
+        id: "publish",
         type: "flowChartTerminator",
         transformation: { offset: { left: 410 }, width: 100, height: 44 },
         fill: "4472C4",
@@ -64,6 +67,9 @@ const flowchart: readonly IShapeGroupChildOptions[] = [
         children: [label("Publish")],
         altText: { name: "Publish" },
     },
+    arrow("start", "draft"),
+    arrow("draft", "review"),
+    arrow("review", "publish"),
 ];
 
 const doc = new Document({

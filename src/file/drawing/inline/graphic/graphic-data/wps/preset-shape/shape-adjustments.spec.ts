@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 
-import { createShapeGuides } from "./shape-adjustments";
+import { PRESET_SHAPE_GEOMETRY } from "./preset-shape-geometry";
+import type { PresetShapeType } from "./preset-shape-type";
+import { PRESET_SHAPE_ADJUSTMENTS, createShapeGuides } from "./shape-adjustments";
 
 describe("createShapeGuides", () => {
     it("should write a percentage in thousandths of a percent", () => {
@@ -55,5 +57,23 @@ describe("createShapeGuides", () => {
         expect(() => createShapeGuides("rectangle", { cornerRadius: 10 })).to.throw(
             'Invalid adjustment "cornerRadius". Shape "rectangle" has no adjustments',
         );
+    });
+
+    it("should cover exactly the adjustment guides of each preset shape definition", () => {
+        for (const [type, definition] of Object.entries(PRESET_SHAPE_GEOMETRY)) {
+            // Guides such as `hf` and `vf` are fixed scale factors without handles, so they have no adjustments
+            const guides = Object.keys(definition.defaults ?? {}).filter((guide) => guide.startsWith("adj"));
+            const adjustments: Readonly<Record<string, { readonly guide: string }>> =
+                PRESET_SHAPE_ADJUSTMENTS[type as keyof typeof PRESET_SHAPE_ADJUSTMENTS] ?? {};
+            expect(
+                Object.values(adjustments)
+                    .map(({ guide }) => guide)
+                    .toSorted(),
+                type,
+            ).to.deep.equal(guides.toSorted());
+        }
+        for (const type of Object.keys(PRESET_SHAPE_ADJUSTMENTS)) {
+            expect(PRESET_SHAPE_GEOMETRY[type as PresetShapeType], type).to.not.equal(undefined);
+        }
     });
 });

@@ -1,6 +1,6 @@
 import type { OutlineOptions } from "@file/drawing/inline/graphic/graphic-data/pic/shape-properties/outline/outline";
 import type { SolidFillOptions } from "@file/drawing/inline/graphic/graphic-data/pic/shape-properties/outline/solid-fill";
-import type { PresetShapeCoreOptions, WpsShapeCoreOptions } from "@file/drawing/inline/graphic/graphic-data/wps";
+import type { PresetShapeCoreOptions, ShapeFill, ShapeLine, WpsShapeCoreOptions } from "@file/drawing/inline/graphic/graphic-data/wps";
 
 export type IMediaDataTransformation = {
     readonly offset?: {
@@ -99,7 +99,18 @@ export type WpgMediaData = {
     };
 };
 
-export type IExtendedMediaData = IMediaData | WpsMediaData | WpgMediaData;
+export type WpcMediaData = {
+    readonly type: "wpc";
+    readonly transformation: IMediaDataTransformation;
+    /** The shapes on the canvas, positioned in EMUs from its top-left corner */
+    readonly children: readonly WpsMediaData[];
+    /** The canvas's background */
+    readonly fill?: ShapeFill;
+    /** The canvas's outline */
+    readonly line?: ShapeLine;
+};
+
+export type IExtendedMediaData = IMediaData | WpsMediaData | WpgMediaData | WpcMediaData;
 
 export type IMediaData = (RegularMediaData | SvgMediaData) & CoreMediaData;
 

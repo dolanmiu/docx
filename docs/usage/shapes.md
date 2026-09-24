@@ -2,20 +2,21 @@
 
 !> Shapes require an understanding of [Paragraphs](usage/paragraph.md).
 
-Shapes are drawings made from lines and fills rather than pictures: rectangles, ellipses, lines, arrows, stars, callouts, flowchart symbols and more. Use a `ShapeRun` for one shape and a `ShapeGroupRun` for several shapes that belong together.
+Shapes are drawings made from lines and fills rather than pictures: rectangles, ellipses, lines, arrows, stars, callouts, flowchart symbols and more. Use a `ShapeRun` for one shape, a `ShapeGroupRun` for several shapes that belong together, and a `ShapeCanvasRun` for diagrams whose shapes are joined by connectors.
 
 Like an image, a shape is a run inside a `Paragraph`. It sits in the line of text unless you make it `floating`.
 
 ## Common Use Cases
 
-| I want to...                                  | Use                                          | Example                          |
-| --------------------------------------------- | -------------------------------------------- | -------------------------------- |
-| Draw a bar or blank line in a sentence        | `rectangle` with a `fill` and `line: "none"` | Blanks on a printed form         |
-| Draw a line to write or sign on               | `line` with `height: 0`                      | Signature line                   |
-| Point at something                            | `line` with an arrowhead                     | Arrow in a diagram               |
-| Put text in a coloured box, circle or callout | Any shape with `children`                    | Flowchart step, speech bubble    |
-| Place a shape anywhere on the page            | `floating`                                   | Stamp in a corner                |
-| Keep several shapes together as one drawing   | `ShapeGroupRun`                              | Flowchart, badge, simple diagram |
+| I want to...                                  | Use                                          | Example                       |
+| --------------------------------------------- | -------------------------------------------- | ----------------------------- |
+| Draw a bar or blank line in a sentence        | `rectangle` with a `fill` and `line: "none"` | Blanks on a printed form      |
+| Draw a line to write or sign on               | `line` with `height: 0`                      | Signature line                |
+| Point at something                            | `line` with an arrowhead                     | Arrow in a diagram            |
+| Put text in a coloured box, circle or callout | Any shape with `children`                    | Flowchart step, speech bubble |
+| Place a shape anywhere on the page            | `floating`                                   | Stamp in a corner             |
+| Keep several shapes together as one drawing   | `ShapeGroupRun`                              | Badge, simple diagram         |
+| Join shapes with lines that follow them       | `ShapeCanvasRun` with connectors             | Flowchart, org chart          |
 
 ## Basic Usage
 
@@ -90,6 +91,8 @@ A line runs from the top-left corner of its box to the bottom-right corner:
 - `height: 0` draws a horizontal line, and `width: 0` a vertical one.
 - Any other size draws a diagonal line. Add `flip: { vertical: true }` to run it from the bottom-left to the top-right instead.
 - `startArrow` goes where the line starts (the top-left, or the bottom-left when flipped vertically) and `endArrow` where it ends.
+
+To join two shapes, use a [connector](#connectors) instead. It is drawn from one shape to the other for you.
 
 ```ts
 // Horizontal
@@ -321,13 +324,8 @@ A `ShapeGroupRun` keeps several shapes together, so they move, resize and wrap a
 ```ts
 new ShapeGroupRun({
     children: [
-        { type: "flowChartTerminator", transformation: { width: 100, height: 44 }, fill: "4472C4", line: "none" },
-        {
-            type: "straightConnector",
-            transformation: { offset: { left: 100, top: 22 }, width: 30, height: 0 },
-            line: { endArrow: "triangle" },
-        },
-        { type: "flowChartProcess", transformation: { offset: { left: 130 }, width: 110, height: 44 }, fill: "ED7D31", line: "none" },
+        { type: "ellipse", transformation: { width: 80, height: 80 }, fill: "5B9BD5", line: "none" },
+        { type: "star5", transformation: { offset: { left: 15, top: 12 }, width: 50, height: 50 }, fill: "FFC000" },
     ],
 });
 ```
@@ -337,11 +335,62 @@ The group is as big as the box around its shapes. Give it a `transformation` to 
 ```ts
 new ShapeGroupRun({
     children: [/* ... */],
-    transformation: { width: 120, height: 22 }, // half the size
+    transformation: { width: 40, height: 40, rotation: 20 }, // half the size, turned by 20 degrees
 });
 ```
 
 A group can be `floating`, and can have `altText`, just like a single shape.
+
+## Connectors
+
+A connector is a line from one shape to another. Give each shape an `id`, then add a child with `type: "connector"` that names the shapes it joins. The connector is drawn between them, so it needs no size or position:
+
+```ts
+new ShapeCanvasRun({
+    children: [
+        { id: "start", type: "flowChartTerminator", transformation: { width: 120, height: 40 }, fill: "4472C4" },
+        { id: "step", type: "flowChartProcess", transformation: { offset: { top: 90 }, width: 120, height: 44 }, fill: "ED7D31" },
+        { type: "connector", from: "start", to: "step", line: { endArrow: "triangle" } },
+    ],
+});
+```
+
+A connector attaches to the sides of the shapes that face each other. To choose a side, give an object with the shape's `id` and a `side` of `"top"`, `"right"`, `"bottom"` or `"left"`:
+
+```ts
+{ type: "connector", from: { id: "fix", side: "top" }, to: { id: "draft", side: "right" }, route: "elbow" }
+```
+
+`route` sets the path the connector takes:
+
+| `route`      | Path                                                                                      |
+| ------------ | ----------------------------------------------------------------------------------------- |
+| `"straight"` | A straight line between the two shapes (the default)                                      |
+| `"elbow"`    | Horizontal and vertical lines with right-angled bends, like Word's elbow connector        |
+| `"curved"`   | A smooth curve that leaves and arrives square to the shapes, like Word's curved connector |
+
+Elbow and curved connectors leave and arrive at right angles to the sides they attach to, and go around a shape when they have to, for example to join two shapes' top sides.
+
+The connector's `line` works as for any shape: `startArrow` is drawn at `from` and `endArrow` at `to`. Connectors can come before or after the shapes they join in `children`; the order sets which is drawn on top.
+
+A connector attaches at one of the points Word offers on the shape, such as the middle of a rectangle's side or the tip of a triangle, so Word treats it as connected. Shapes without connection points, such as the chart shapes, are connected at the middle of a side without being attached.
+
+## Canvases
+
+A `ShapeCanvasRun` is a drawing canvas: an area of the document that holds shapes, like Word's **Insert > Shapes > New Drawing Canvas**. It takes the same children as a group, but its shapes keep their own size.
+
+Word only keeps connectors attached on a canvas. When you move a shape on a canvas in Word, its connectors follow it. In a group, connectors are drawn in the same way, but they stay where they are when a shape is moved, so use a canvas for diagrams that people will edit.
+
+```ts
+new ShapeCanvasRun({
+    children: [/* shapes and connectors */],
+    transformation: { width: 400, height: 300 },
+    fill: "F7F7F7",
+    line: "BFBFBF",
+});
+```
+
+Shapes are positioned with `transformation.offset`, in pixels from the canvas's top-left corner. Without a `transformation`, the canvas reaches from its corner to the right and bottom of the shapes. A canvas can be `floating` and can have `altText`.
 
 ## Options
 
@@ -361,12 +410,34 @@ A group can be `floating`, and can have `altText`, just like a single shape.
 
 ### ShapeGroupRun
 
-| Property         | Type                        | Notes    | Description                                                                |
-| ---------------- | --------------------------- | -------- | -------------------------------------------------------------------------- |
-| `children`       | `IShapeGroupChildOptions[]` | Required | The shapes, each with the options of a `ShapeRun` except `floating`        |
-| `transformation` | `IMediaTransformation`      | Optional | Size in pixels, rotation and flip. Defaults to the box around the children |
-| `floating`       | `IFloating`                 | Optional | Positions the group on the page                                            |
-| `altText`        | `DocPropertiesOptions`      | Optional | `name`, `description` and `title` for screen readers                       |
+| Property         | Type                        | Notes    | Description                                                                                            |
+| ---------------- | --------------------------- | -------- | ------------------------------------------------------------------------------------------------------ |
+| `children`       | `IShapeGroupChildOptions[]` | Required | Shapes, each with the options of a `ShapeRun` except `floating`, plus an optional `id`, and connectors |
+| `transformation` | `IMediaTransformation`      | Optional | Size in pixels, rotation and flip. Defaults to the box around the children                             |
+| `floating`       | `IFloating`                 | Optional | Positions the group on the page                                                                        |
+| `altText`        | `DocPropertiesOptions`      | Optional | `name`, `description` and `title` for screen readers                                                   |
+
+### ShapeCanvasRun
+
+| Property         | Type                                | Notes    | Description                                                             |
+| ---------------- | ----------------------------------- | -------- | ----------------------------------------------------------------------- |
+| `children`       | `IShapeCanvasChildOptions[]`        | Required | Shapes and connectors, as for a `ShapeGroupRun`                         |
+| `transformation` | `{ width: number; height: number }` | Optional | Size in pixels. Defaults to reaching the right and bottom of the shapes |
+| `fill`           | `ShapeFill`                         | Optional | The canvas's background. Default is none                                |
+| `line`           | `ShapeLine`                         | Optional | The canvas's outline. Default is none                                   |
+| `floating`       | `IFloating`                         | Optional | Positions the canvas on the page                                        |
+| `altText`        | `DocPropertiesOptions`              | Optional | `name`, `description` and `title` for screen readers                    |
+
+### Connector
+
+| Property  | Type                   | Notes    | Description                                                         |
+| --------- | ---------------------- | -------- | ------------------------------------------------------------------- |
+| `type`    | `"connector"`          | Required |                                                                     |
+| `from`    | `ConnectorEnd`         | Required | The `id` of the shape it starts at, or `{ id, side }`               |
+| `to`      | `ConnectorEnd`         | Required | The `id` of the shape it ends at, or `{ id, side }`                 |
+| `route`   | `ConnectorRoute`       | Optional | `"straight"` (the default), `"elbow"` or `"curved"`                 |
+| `line`    | `ShapeLine`            | Optional | See [Line](#line). `startArrow` is at `from` and `endArrow` at `to` |
+| `altText` | `DocPropertiesOptions` | Optional | `name`, `description` and `title` for screen readers                |
 
 ## ShapeRun vs WpsShapeRun
 
@@ -374,7 +445,7 @@ A group can be `floating`, and can have `altText`, just like a single shape.
 
 ## Compatibility
 
-Shapes are written as DrawingML shapes (`wps:wsp`), the format Word has used since Word 2010. Word 2007 and older can't display them. Other word processors differ in how much of DrawingML they draw, so check the result in the applications your readers use.
+Shapes are written as DrawingML shapes (`wps:wsp`), groups (`wpg:wgp`) and drawing canvases (`wpc:wpc`), the formats Word has used since Word 2010. Word 2007 and older can't display them. Other word processors differ in how much of DrawingML they draw, so check the result in the applications your readers use.
 
 ## Examples
 
@@ -401,3 +472,11 @@ A flowchart built from a group of shapes, the same group scaled down, and a floa
 [Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/109-shape-groups.ts ":include")
 
 _Source: https://github.com/dolanmiu/docx/blob/master/demo/109-shape-groups.ts_
+
+### Connectors and canvases
+
+A flowchart on a canvas whose connectors stay attached, straight, elbow and curved routes, and connectors on chosen sides.
+
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/110-shape-connectors.ts ":include")
+
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/110-shape-connectors.ts_

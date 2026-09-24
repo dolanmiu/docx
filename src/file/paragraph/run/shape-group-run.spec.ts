@@ -94,6 +94,29 @@ describe("ShapeGroupRun", () => {
         ]);
     });
 
+    it("should draw connectors between its shapes", () => {
+        const tree = new Formatter().format(
+            new ShapeGroupRun({
+                children: [
+                    { id: "a", type: "rectangle", transformation: { width: 100, height: 50 } },
+                    { id: "b", type: "ellipse", transformation: { offset: { left: 200, top: 100 }, width: 100, height: 50 } },
+                    { type: "connector", from: "a", to: "b", route: "curved", line: { endArrow: "triangle" } },
+                ],
+            }),
+        );
+
+        const connector = getGroup(tree)[4]["wps:wsp"];
+        expect(connector[1]).to.deep.equal({
+            "wps:cNvCnPr": [{ "a:stCxn": { _attr: { id: 1, idx: 3 } } }, { "a:endCxn": { _attr: { id: 2, idx: 2 } } }],
+        });
+        expect(connector[2]["wps:spPr"][1]).to.deep.equal({
+            "a:prstGeom": [
+                { _attr: { prst: "curvedConnector3" } },
+                { "a:avLst": [{ "a:gd": { _attr: { name: "adj1", fmla: "val 50000" } } }] },
+            ],
+        });
+    });
+
     it("should start the children's coordinate space at the top-left-most child", () => {
         const tree = new Formatter().format(
             new ShapeGroupRun({
