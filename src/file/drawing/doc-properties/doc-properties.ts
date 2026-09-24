@@ -13,6 +13,7 @@ import { type IContext, type IXmlableObject, NextAttributeComponent, XmlComponen
 import { docPropertiesUniqueNumericId } from "@util/convenience-functions";
 
 import { createHyperlinkClick } from "./doc-properties-children";
+import { DrawingLink, type DrawingLinkOptions, createDecorativeExtensionList } from "./non-visual-drawing-properties";
 
 // <complexType name="CT_NonVisualDrawingProps">
 //     <sequence>
@@ -65,7 +66,13 @@ export type DocPropertiesOptions = {
  * ```
  */
 export class DocProperties extends XmlComponent {
-    public constructor({ name, description, title, id }: DocPropertiesOptions = { name: "", description: "", title: "" }) {
+    private readonly link?: DrawingLink;
+    private readonly decorative?: boolean;
+
+    public constructor(
+        { name, description, title, id }: DocPropertiesOptions = { name: "", description: "", title: "" },
+        { link, decorative }: DrawingLinkOptions = {},
+    ) {
         super("wp:docPr");
 
         const attributes: Record<string, { readonly key: string; readonly value: string | number }> = {
@@ -94,19 +101,34 @@ export class DocProperties extends XmlComponent {
         }
 
         this.root.push(new NextAttributeComponent(attributes));
+        this.link = link === undefined ? undefined : new DrawingLink(link);
+        this.decorative = decorative;
     }
 
     public prepForXml(context: IContext): IXmlableObject | undefined {
-        for (let i = context.stack.length - 1; i >= 0; i--) {
-            const element = context.stack[i];
-            if (!(element instanceof ConcreteHyperlink)) {
-                continue;
-            }
+        if (this.link) {
+            this.link.addRelationship(context);
+            this.root.push(this.link.createClick(true));
+        } else {
+            for (let i = context.stack.length - 1; i >= 0; i--) {
+                const element = context.stack[i];
+                if (!(element instanceof ConcreteHyperlink)) {
+                    continue;
+                }
 
-            this.root.push(createHyperlinkClick(element.linkId, true));
-            break;
+                this.root.push(createHyperlinkClick(element.linkId, true));
+                break;
+            }
         }
 
-        return super.prepForXml(context);
+        // The extension list comes after the link in the schema
+        if (this.decorative) {
+            this.root.push(createDecorativeExtensionList(true));
+        }
+
+        const result = super.prepForXml(context);
+        // Keep only the attributes, so the element is the same if the document is written again
+        this.root.splice(1);
+        return result;
     }
 }

@@ -1,6 +1,9 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { Formatter } from "@export/formatter";
+import type { IViewWrapper } from "@file/document-wrapper";
+import { ConcreteHyperlink } from "@file/paragraph";
+import type { IContext } from "@file/xml-components";
 
 import { DocProperties } from "./doc-properties";
 
@@ -45,5 +48,58 @@ describe("DocProperties", () => {
         const first = new Formatter().format(new DocProperties({ name: "first" }));
         const second = new Formatter().format(new DocProperties({ name: "second" }));
         expect(second["wp:docPr"]._attr.id).to.equal(first["wp:docPr"]._attr.id + 1);
+    });
+});
+
+describe("DocProperties links and decorative drawings", () => {
+    const createContext = (addRelationship = vi.fn(), stack: readonly unknown[] = []): IContext =>
+        ({ stack, viewWrapper: { Relationships: { addRelationship } } as unknown as IViewWrapper }) as unknown as IContext;
+
+    it("should link the drawing to a web address", () => {
+        const addRelationship = vi.fn();
+        const tree = new Formatter().format(
+            new DocProperties({ name: "Logo", id: "1" }, { link: "https://example.com" }),
+            createContext(addRelationship),
+        );
+
+        const [linkId, , target] = addRelationship.mock.calls[0];
+        expect(target).to.equal("https://example.com");
+        expect(tree).to.deep.equal({
+            "wp:docPr": [
+                { _attr: { id: "1", name: "Logo" } },
+                {
+                    "a:hlinkClick": {
+                        _attr: { "xmlns:a": "http://schemas.openxmlformats.org/drawingml/2006/main", "r:id": `rId${linkId}` },
+                    },
+                },
+            ],
+        });
+    });
+
+    it("should mark the drawing as decorative, after its link", () => {
+        const tree = new Formatter().format(
+            new DocProperties({ name: "Rule", id: "1" }, { link: "https://example.com", decorative: true }),
+            createContext(),
+        );
+        expect(tree["wp:docPr"].map((child: object) => Object.keys(child)[0])).to.deep.equal(["_attr", "a:hlinkClick", "a:extLst"]);
+        expect(tree["wp:docPr"][2]["a:extLst"][0]).to.deep.equal({
+            _attr: { "xmlns:a": "http://schemas.openxmlformats.org/drawingml/2006/main" },
+        });
+    });
+
+    it("should write the same element each time it is written", () => {
+        const properties = new DocProperties({ name: "Rule", id: "1" }, { decorative: true });
+        const first = new Formatter().format(properties, createContext());
+        const second = new Formatter().format(properties, createContext());
+        expect(second).to.deep.equal(first);
+    });
+
+    it("should prefer its own link to the hyperlink it is in", () => {
+        const hyperlink = new ConcreteHyperlink([], "outer");
+        const tree = new Formatter().format(
+            new DocProperties({ name: "Logo", id: "1" }, { link: "https://example.com" }),
+            createContext(vi.fn(), [hyperlink]),
+        );
+        expect(tree["wp:docPr"][1]["a:hlinkClick"]._attr["r:id"]).to.not.equal("rIdouter");
     });
 });

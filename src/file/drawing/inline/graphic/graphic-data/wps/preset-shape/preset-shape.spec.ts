@@ -4,7 +4,6 @@ import { Formatter } from "@export/formatter";
 import { Paragraph } from "@file/paragraph";
 
 import { createPresetShape } from "./preset-shape";
-import { VerticalAnchor } from "../body-properties";
 
 const transformation = { pixels: { x: 100, y: 50 }, emus: { x: 952500, y: 476250 } };
 
@@ -74,17 +73,24 @@ describe("createPresetShape", () => {
         expect(tree["wps:wsp"][3]).to.deep.equal({ "wps:bodyPr": { _attr: { anchor: "ctr" } } });
     });
 
-    it("should let body properties override the vertical anchor", () => {
+    it("should let text options override the vertical alignment", () => {
         const tree = new Formatter().format(
             createPresetShape({
                 geometry: { type: "rectangle" },
                 children: [new Paragraph("Hello")],
-                bodyProperties: { verticalAnchor: VerticalAnchor.BOTTOM, margins: { left: 0 } },
+                textOptions: { verticalAlignment: "bottom", margins: { left: 0 } },
                 transformation,
             }),
         );
 
         expect(tree["wps:wsp"][3]).to.deep.equal({ "wps:bodyPr": { _attr: { lIns: 0, anchor: "b" } } });
+    });
+
+    it("should write effects after the line", () => {
+        const tree = new Formatter().format(
+            createPresetShape({ geometry: { type: "rectangle" }, effects: { softEdges: 1 }, transformation }),
+        );
+        expect(tree["wps:wsp"][1]["wps:spPr"][4]).to.deep.equal({ "a:effectLst": [{ "a:softEdge": { _attr: { rad: 12700 } } }] });
     });
 
     it("should write non-visual drawing properties first when given", () => {

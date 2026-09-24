@@ -239,10 +239,10 @@ const image = new ImageRun({
 
 Wrap options have the following properties are:
 
-| Property | Type               | Notes    | Possible Values                             |
-| -------- | ------------------ | -------- | ------------------------------------------- |
-| type     | `TextWrappingType` | Optional | `NONE`, `SQUARE`, `TIGHT`, `TOP_AND_BOTTOM` |
-| side     | `TextWrappingSide` | Optional | `BOTH_SIDES`, `LEFT`, `RIGHT`, `LARGEST`    |
+| Property | Type               | Notes    | Possible Values                                        |
+| -------- | ------------------ | -------- | ------------------------------------------------------ |
+| type     | `TextWrappingType` | Optional | `NONE`, `SQUARE`, `TIGHT`, `THROUGH`, `TOP_AND_BOTTOM` |
+| side     | `TextWrappingSide` | Optional | `BOTH_SIDES`, `LEFT`, `RIGHT`, `LARGEST`               |
 
 ## Margins
 

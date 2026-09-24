@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { Formatter } from "@export/formatter";
 import { HorizontalPositionRelativeFrom, VerticalPositionRelativeFrom } from "@file/index";
-import type { IXmlableObject } from "@file/xml-components";
+import type { IContext, IXmlableObject } from "@file/xml-components";
 import * as convenienceFunctions from "@util/convenience-functions";
 
 import { ShapeCanvasRun } from "./shape-canvas-run";
@@ -52,7 +52,9 @@ describe("ShapeCanvasRun", () => {
         expect(canvas).to.have.length(5);
 
         const connector = canvas[4]["wps:wsp"];
-        expect(connector[0]).to.deep.equal({ "wps:cNvPr": { _attr: { id: 3, name: "" } } });
+        // Shapes are named as Word names them, after what they are and their id
+        expect(canvas[2]["wps:wsp"][0]).to.deep.equal({ "wps:cNvPr": { _attr: { id: 1, name: "Flow Chart Terminator 1" } } });
+        expect(connector[0]).to.deep.equal({ "wps:cNvPr": { _attr: { id: 3, name: "Straight Connector 3" } } });
         expect(connector[1]).to.deep.equal({
             "wps:cNvCnPr": [{ "a:stCxn": { _attr: { id: 1, idx: 2 } } }, { "a:endCxn": { _attr: { id: 2, idx: 0 } } }],
         });
@@ -62,9 +64,12 @@ describe("ShapeCanvasRun", () => {
             { "a:ext": { _attr: { cx: 0, cy: 60 * 9525 } } },
         ]);
 
-        // The canvas reaches from its corner to the bottom-right of the shapes
+        // The canvas reaches from its corner to the bottom-right of the shapes and their 1pt lines
         const container = getContainer(tree);
-        expect(getChild(container, "wp:extent")).to.deep.equal({ "wp:extent": { _attr: { cx: 130 * 9525, cy: 150 * 9525 } } });
+        expect(getChild(container, "wp:extent")).to.deep.equal({
+            "wp:extent": { _attr: { cx: 130 * 9525 + 6350, cy: 150 * 9525 + 6350 } },
+        });
+        expect(getChild(container, "wp:effectExtent")).to.deep.equal({ "wp:effectExtent": { _attr: { t: 0, r: 0, b: 0, l: 0 } } });
         expect(getChild(container, "wp:docPr")).to.deep.equal({ "wp:docPr": { _attr: { id: 4, name: "Flowchart" } } });
     });
 
@@ -87,6 +92,41 @@ describe("ShapeCanvasRun", () => {
         const canvas = getGraphicData(tree)[1]["wpc:wpc"];
         expect(canvas[0]).to.deep.equal({ "wpc:bg": [{ "a:solidFill": [{ "a:srgbClr": { _attr: { val: "F2F2F2" } } }] }] });
         expect(canvas[1]["wpc:whole"][0]["a:ln"][0]).to.deep.equal({ _attr: { w: 12700 } });
+        // Only the canvas's own outline reaches past its edges
+        expect(getChild(getContainer(tree), "wp:effectExtent")).to.deep.equal({
+            "wp:effectExtent": { _attr: { t: 6350, r: 6350, b: 6350, l: 6350 } },
+        });
+    });
+
+    it("should write pictures and groups on the canvas, with groups as wpg:wgp", () => {
+        const tree = new Formatter().format(
+            new ShapeCanvasRun({
+                children: [
+                    {
+                        id: "logo",
+                        type: "picture",
+                        image: { type: "png", data: Buffer.from("logo") },
+                        transformation: { width: 50, height: 50 },
+                    },
+                    {
+                        type: "group",
+                        transformation: { offset: { left: 150 } },
+                        children: [{ id: "circle", type: "ellipse", transformation: { width: 50, height: 50 } }],
+                    },
+                    { type: "connector", from: "logo", to: "circle", line: "none" },
+                ],
+                decorative: true,
+            }),
+            { file: { Media: { addImage: vi.fn() } }, stack: [] } as unknown as IContext,
+        );
+
+        const canvas = getGraphicData(tree)[1]["wpc:wpc"];
+        expect(canvas.slice(2).map((child: object) => Object.keys(child)[0])).to.deep.equal(["pic:pic", "wpg:wgp", "wps:wsp"]);
+        // From the right of the picture to the left of the ellipse in the group, which is the ellipse's site 2
+        expect(canvas[4]["wps:wsp"][1]).to.deep.equal({
+            "wps:cNvCnPr": [{ "a:stCxn": { _attr: { id: 1, idx: 3 } } }, { "a:endCxn": { _attr: { id: 3, idx: 2 } } }],
+        });
+        expect(getChild(getContainer(tree), "wp:docPr")["wp:docPr"][1]).to.have.property("a:extLst");
     });
 
     it("should move the shapes down when a connector loops above them", () => {
@@ -100,12 +140,16 @@ describe("ShapeCanvasRun", () => {
             }),
         );
 
-        // The loop goes a quarter of an inch above the shapes, plus a pixel because its box can't have no width
+        // The loop goes a quarter of an inch above the shapes, plus a pixel because its box can't have no width,
+        // and everything moves half a line's width more so the 1pt lines are on the canvas
         const loop = 228600 + 9525;
+        const halfLine = 6350;
         const canvas = getGraphicData(tree)[1]["wpc:wpc"];
-        expect(canvas[2]["wps:wsp"][2]["wps:spPr"][0]["a:xfrm"][1]).to.deep.equal({ "a:off": { _attr: { x: 0, y: loop } } });
+        expect(canvas[2]["wps:wsp"][2]["wps:spPr"][0]["a:xfrm"][1]).to.deep.equal({
+            "a:off": { _attr: { x: halfLine, y: loop + halfLine } },
+        });
         expect(getChild(getContainer(tree), "wp:extent")).to.deep.equal({
-            "wp:extent": { _attr: { cx: 300 * 9525, cy: 50 * 9525 + loop } },
+            "wp:extent": { _attr: { cx: 300 * 9525 + 2 * halfLine, cy: 50 * 9525 + loop + 2 * halfLine } },
         });
     });
 });

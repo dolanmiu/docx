@@ -200,7 +200,28 @@ describe("Anchor", () => {
             assert.equal(textWrap.rootKey, "wp:wrapTight");
         });
 
-        it("should create a Drawing with tight text wrapping", () => {
+        it("should create a Drawing with through text wrapping", () => {
+            anchor = createAnchor({
+                floating: {
+                    horizontalPosition: {
+                        offset: 0,
+                    },
+                    verticalPosition: {
+                        offset: 0,
+                    },
+                    wrap: {
+                        type: TextWrappingType.THROUGH,
+                    },
+                },
+            });
+            const newJson = Utility.jsonify(anchor);
+            assert.equal(newJson.root.length, 10);
+
+            const textWrap = newJson.root[6];
+            assert.equal(textWrap.rootKey, "wp:wrapThrough");
+        });
+
+        it("should create a Drawing with top and bottom text wrapping", () => {
             anchor = createAnchor({
                 floating: {
                     verticalPosition: {

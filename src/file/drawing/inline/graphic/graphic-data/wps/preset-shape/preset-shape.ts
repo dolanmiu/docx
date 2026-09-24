@@ -3,26 +3,27 @@
  *
  * @module
  */
+import {
+    NonVisualDrawingProperties,
+    type NonVisualDrawingPropertiesOptions,
+} from "@file/drawing/doc-properties/non-visual-drawing-properties";
 import type { IMediaDataTransformation } from "@file/media";
 import type { Paragraph } from "@file/paragraph";
 import { BuilderElement, type XmlComponent } from "@file/xml-components";
 
 import { type PresetShapeGeometry, createPresetShapeProperties } from "./preset-shape-properties";
 import { isConnectorShapeType } from "./preset-shape-type";
+import type { ShapeEffects } from "./shape-effects";
 import type { ShapeFill } from "./shape-fill";
 import type { ShapeLine } from "./shape-line";
-import { type IBodyPropertiesOptions, VerticalAnchor, createBodyProperties } from "../body-properties";
+import { type ShapeTextOptions, createShapeTextProperties } from "./shape-text";
 import { createWpsTextBox } from "../wps-text-box";
 
 /**
- * Non-visual properties (`wps:cNvPr`) that identify a shape inside a group.
+ * Non-visual properties (`wps:cNvPr`) that identify a shape inside a group: its id, name and alternative text,
+ * a link followed when it is clicked, and whether it is decorative.
  */
-export type PresetShapeNonVisualProperties = {
-    readonly id: number;
-    readonly name: string;
-    readonly description?: string;
-    readonly title?: string;
-};
+export type PresetShapeNonVisualProperties = NonVisualDrawingPropertiesOptions;
 
 /**
  * The shape a connector is attached to (`a:stCxn` / `a:endCxn`): its `wps:cNvPr` id and the index of its connection site.
@@ -41,8 +42,9 @@ export type PresetShapeCoreOptions = {
     };
     readonly fill?: ShapeFill;
     readonly line?: ShapeLine;
+    readonly effects?: ShapeEffects;
     readonly children?: readonly Paragraph[];
-    readonly bodyProperties?: IBodyPropertiesOptions;
+    readonly textOptions?: ShapeTextOptions;
     readonly nonVisualDrawingProperties?: PresetShapeNonVisualProperties;
 };
 
@@ -50,16 +52,13 @@ export type PresetShapeOptions = PresetShapeCoreOptions & {
     readonly transformation: IMediaDataTransformation;
 };
 
-const createNonVisualDrawingProperties = ({ id, name, description, title }: PresetShapeNonVisualProperties): XmlComponent =>
-    new BuilderElement<{ readonly id: number; readonly name: string; readonly description?: string; readonly title?: string }>({
-        name: "wps:cNvPr",
-        attributes: {
-            id: { key: "id", value: id },
-            name: { key: "name", value: name },
-            description: { key: "descr", value: description },
-            title: { key: "title", value: title },
-        },
-    });
+/**
+ * Creates the non-visual drawing properties of a shape, picture or group inside a drawing, such as `wps:cNvPr`.
+ */
+export const createNonVisualDrawingProperties = (
+    properties: PresetShapeNonVisualProperties,
+    name: "wps:cNvPr" | "pic:cNvPr" | "wpg:cNvPr" = "wps:cNvPr",
+): XmlComponent => new NonVisualDrawingProperties(name, properties);
 
 // <xsd:complexType name="CT_Connection">
 //     <xsd:attribute name="id" type="ST_DrawingElementId" use="required"/>
@@ -97,7 +96,7 @@ const createNonVisualConnectorProperties = (connections: PresetShapeCoreOptions[
  * Lines and connectors are written with `wps:cNvCnPr`, which says which shapes they are attached to,
  * and other shapes with `wps:cNvSpPr`.
  * A text box (`wps:txbx`) is written only when the shape has children, and its text is
- * centred vertically unless `bodyProperties` says otherwise.
+ * centred vertically unless `textOptions` says otherwise.
  *
  * ## XSD Schema
  * ```xml
@@ -125,8 +124,9 @@ export const createPresetShape = ({
     connections,
     fill,
     line,
+    effects,
     children,
-    bodyProperties,
+    textOptions,
     nonVisualDrawingProperties,
     transformation,
 }: PresetShapeOptions): XmlComponent =>
@@ -134,11 +134,11 @@ export const createPresetShape = ({
         name: "wps:wsp",
         children: [
             ...(nonVisualDrawingProperties ? [createNonVisualDrawingProperties(nonVisualDrawingProperties)] : []),
-            isConnectorShapeType(geometry.type)
+            geometry.type !== "custom" && isConnectorShapeType(geometry.type)
                 ? createNonVisualConnectorProperties(connections)
                 : new BuilderElement({ name: "wps:cNvSpPr" }),
-            createPresetShapeProperties({ transformation, geometry, fill, line }),
+            createPresetShapeProperties({ transformation, geometry, fill, line, effects }),
             ...(children ? [createWpsTextBox(children)] : []),
-            createBodyProperties(children ? { verticalAnchor: VerticalAnchor.CENTER, ...bodyProperties } : bodyProperties),
+            createShapeTextProperties(children ? { verticalAlignment: "center", ...textOptions } : textOptions),
         ],
     });

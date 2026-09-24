@@ -5,7 +5,14 @@ import { XmlComponent } from "@file/xml-components";
 import type { IDrawingOptions } from "../drawing";
 import { type IFloating, createHorizontalPosition, createSimplePos, createVerticalPosition } from "../floating";
 import { Graphic } from "../inline/graphic";
-import { TextWrappingType, createWrapNone, createWrapSquare, createWrapTight, createWrapTopAndBottom } from "../text-wrap";
+import {
+    TextWrappingType,
+    createWrapNone,
+    createWrapSquare,
+    createWrapThrough,
+    createWrapTight,
+    createWrapTopAndBottom,
+} from "../text-wrap";
 import { DocProperties } from "./../doc-properties/doc-properties";
 import { createEffectExtent } from "./../effect-extent/effect-extent";
 import { createExtent } from "./../extent/extent";
@@ -122,7 +129,10 @@ export class Anchor extends XmlComponent {
                     this.root.push(createWrapSquare(drawingOptions.floating.wrap, drawingOptions.floating.margins));
                     break;
                 case TextWrappingType.TIGHT:
-                    this.root.push(createWrapTight(drawingOptions.floating.margins));
+                    this.root.push(createWrapTight(drawingOptions.floating.wrap, drawingOptions.floating.margins));
+                    break;
+                case TextWrappingType.THROUGH:
+                    this.root.push(createWrapThrough(drawingOptions.floating.wrap, drawingOptions.floating.margins));
                     break;
                 case TextWrappingType.TOP_AND_BOTTOM:
                     this.root.push(createWrapTopAndBottom(drawingOptions.floating.margins));
@@ -135,7 +145,9 @@ export class Anchor extends XmlComponent {
             this.root.push(createWrapNone());
         }
 
-        this.root.push(new DocProperties(drawingOptions.docProperties));
+        this.root.push(
+            new DocProperties(drawingOptions.docProperties, { link: drawingOptions.link, decorative: drawingOptions.decorative }),
+        );
         this.root.push(createGraphicFrameProperties());
         this.root.push(
             new Graphic({
