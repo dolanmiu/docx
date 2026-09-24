@@ -34,7 +34,7 @@ describe("Compiler", () => {
             const fileNames = Object.keys(zipFile.files).map((f) => zipFile.files[f].name);
 
             expect(fileNames).is.an.instanceof(Array);
-            expect(fileNames).has.length(22);
+            expect(fileNames).has.length(24);
             expect(fileNames).to.include("word/document.xml");
             expect(fileNames).to.include("word/styles.xml");
             expect(fileNames).to.include("docProps/core.xml");
@@ -50,6 +50,7 @@ describe("Compiler", () => {
             expect(fileNames).to.include("word/fontTable.xml");
             expect(fileNames).to.include("word/_rels/document.xml.rels");
             expect(fileNames).to.include("word/_rels/fontTable.xml.rels");
+            expect(fileNames).to.include("word/theme/theme1.xml");
             expect(fileNames).to.include("[Content_Types].xml");
             expect(fileNames).to.include("_rels/.rels");
         });
@@ -90,7 +91,7 @@ describe("Compiler", () => {
             const fileNames = Object.keys(zipFile.files).map((f) => zipFile.files[f].name);
 
             expect(fileNames).is.an.instanceof(Array);
-            expect(fileNames).has.length(30);
+            expect(fileNames).has.length(32);
 
             expect(fileNames).to.include("word/header1.xml");
             expect(fileNames).to.include("word/_rels/header1.xml.rels");
@@ -119,7 +120,7 @@ describe("Compiler", () => {
             const fileNames = Object.keys(zipFile.files).map((f) => zipFile.files[f].name);
 
             expect(fileNames).is.an.instanceof(Array);
-            expect(fileNames).has.length(23);
+            expect(fileNames).has.length(25);
 
             expect(fileNames).to.include("word/comments.xml");
             expect(fileNames).to.include("word/commentsExtended.xml");
@@ -331,7 +332,7 @@ describe("Compiler", () => {
             const spy = vi.spyOn(compiler["formatter"], "format");
 
             compiler.compile(file);
-            expect(spy).toBeCalledTimes(18);
+            expect(spy).toBeCalledTimes(19);
         });
 
         it("should work with media datas", () => {

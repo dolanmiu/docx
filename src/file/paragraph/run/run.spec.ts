@@ -338,6 +338,16 @@ describe("Run", () => {
                 ],
             });
         });
+
+        it("should set the font to the theme's font for body text", () => {
+            const tree = new Formatter().format(new Run({ font: { theme: "body" } }));
+            expect(tree["w:r"][0]["w:rPr"][0]["w:rFonts"]._attr).to.deep.equal({
+                "w:asciiTheme": "minorHAnsi",
+                "w:eastAsiaTheme": "minorEastAsia",
+                "w:hAnsiTheme": "minorHAnsi",
+                "w:cstheme": "minorBidi",
+            });
+        });
     });
 
     describe("#color", () => {

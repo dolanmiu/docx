@@ -25,6 +25,17 @@ type RunFormat = Omit<TextFont, "size"> & {
     readonly hidden?: boolean;
 };
 
+/**
+ * The fonts for Latin text of the document theme's fonts for headings and body text.
+ */
+type ThemeFonts = {
+    readonly headings: string;
+    readonly body: string;
+};
+
+// Office's, which a document's theme has unless the document gives others
+const OFFICE_THEME_FONTS: ThemeFonts = { headings: "Calibri Light", body: "Calibri" };
+
 type StyleDefinition = {
     readonly type?: string;
     readonly basedOn?: string;
@@ -45,12 +56,14 @@ export type TextStyles = {
     readonly defaultParagraphStyle?: string;
     /** The style of runs that don't give one */
     readonly defaultCharacterStyle?: string;
+    /** The theme's fonts, for text in them */
+    readonly themeFonts: ThemeFonts;
 };
 
 /**
- * No styles: text is measured in Word's own defaults, 10pt Times New Roman with single spacing.
+ * No styles: text is measured in Word's own defaults, 10pt Times New Roman with single spacing, and Office's theme.
  */
-export const WORD_DEFAULT_STYLES: TextStyles = { run: {}, paragraph: {}, styles: new Map() };
+export const WORD_DEFAULT_STYLES: TextStyles = { run: {}, paragraph: {}, styles: new Map(), themeFonts: OFFICE_THEME_FONTS };
 
 // Small capitals are drawn as capitals at 80% of the size of the text, as LibreOffice draws them
 const SMALL_CAPS_SCALE = 0.8;
@@ -115,14 +128,31 @@ const combine = <T extends object>(formats: readonly T[]): T =>
     formats.reduce((all, format) => ({ ...all, ...withoutUndefined(format) }), {} as T);
 
 /**
- * Reads run properties (`w:rPr`). Fonts given by the document theme (`w:asciiTheme`) are left out: the library doesn't
- * write a theme.
+ * The font a theme font refers to: `majorHAnsi` and the other major fonts are the theme's font for headings, and the
+ * minor fonts its font for body text.
  */
-const readRunFormat = (element: unknown): RunFormat => {
+const themeFontOf = (theme: unknown, themeFonts: ThemeFonts): string | undefined => {
+    if (typeof theme !== "string") {
+        return undefined;
+    }
+    if (theme.startsWith("major")) {
+        return themeFonts.headings;
+    }
+    return theme.startsWith("minor") ? themeFonts.body : undefined;
+};
+
+/**
+ * Reads run properties (`w:rPr`). A font of the theme (`w:asciiTheme`) takes the place of the font named beside it.
+ */
+const readRunFormat = (element: unknown, themeFonts: ThemeFonts): RunFormat => {
     const children = childrenOf(element);
     const fonts = attributesOf(find(children, "w:rFonts"));
     return withoutUndefined({
-        font: stringOf(fonts["w:ascii"]) ?? stringOf(fonts["w:hAnsi"]),
+        font:
+            themeFontOf(fonts["w:asciiTheme"], themeFonts) ??
+            stringOf(fonts["w:ascii"]) ??
+            themeFontOf(fonts["w:hAnsiTheme"], themeFonts) ??
+            stringOf(fonts["w:hAnsi"]),
         size: scaled(numberOf(attributesOf(find(children, "w:sz"))["w:val"]), 2),
         bold: onOff(children, "w:b"),
         allCaps: onOff(children, "w:caps"),
@@ -171,9 +201,21 @@ const readParagraphFormat = (element: unknown): ParagraphFormat => {
 const valueOf = (children: readonly XmlObject[], name: string): string | undefined => stringOf(attributesOf(find(children, name))["w:val"]);
 
 /**
- * Reads the document's defaults and styles from its styles part (`w:styles`), once it is formatted.
+ * Reads the fonts of a document's theme (`a:theme`), once it is formatted.
  */
-export const readTextStyles = (xml: XmlObject): TextStyles => {
+const readThemeFonts = (xml: XmlObject): ThemeFonts => {
+    const elements = childrenOf(find(childrenOf(xml["a:theme"]), "a:themeElements"));
+    const scheme = childrenOf(find(elements, "a:fontScheme"));
+    // Every font of a theme has a font for Latin text
+    const latin = (name: string): string => attributesOf(find(childrenOf(find(scheme, name)), "a:latin")).typeface as string;
+    return { headings: latin("a:majorFont"), body: latin("a:minorFont") };
+};
+
+/**
+ * Reads the document's defaults and styles from its styles part (`w:styles`), once it is formatted, with the fonts of
+ * its theme.
+ */
+export const readTextStyles = (xml: XmlObject, themeFonts: ThemeFonts = OFFICE_THEME_FONTS): TextStyles => {
     const root = childrenOf(xml["w:styles"]);
     // A document given styles of its own can have two sets of defaults: the library's, then the document's
     const defaults = root.filter((child) => "w:docDefaults" in child).map((child) => childrenOf(child["w:docDefaults"]));
@@ -188,7 +230,7 @@ export const readTextStyles = (xml: XmlObject): TextStyles => {
                 definition: {
                     type: stringOf(attributes["w:type"]),
                     basedOn: valueOf(children, "w:basedOn"),
-                    run: readRunFormat(find(children, "w:rPr")),
+                    run: readRunFormat(find(children, "w:rPr"), themeFonts),
                     paragraph: readParagraphFormat(find(children, "w:pPr")),
                 },
             };
@@ -199,26 +241,34 @@ export const readTextStyles = (xml: XmlObject): TextStyles => {
     const byId = new Map(styles.map((style) => [style.id, style.definition] as const));
 
     return {
-        run: combine(defaults.map((children) => readRunFormat(find(childrenOf(find(children, "w:rPrDefault")), "w:rPr")))),
+        run: combine(defaults.map((children) => readRunFormat(find(childrenOf(find(children, "w:rPrDefault")), "w:rPr"), themeFonts))),
         paragraph: combine(defaults.map((children) => readParagraphFormat(find(childrenOf(find(children, "w:pPrDefault")), "w:pPr")))),
         styles: byId,
         // Word uses "Normal" for paragraphs when no paragraph style is marked as the default
         defaultParagraphStyle: defaultStyle("paragraph") ?? (byId.get("Normal")?.type === "paragraph" ? "Normal" : undefined),
         defaultCharacterStyle: defaultStyle("character"),
+        themeFonts,
     };
 };
 
 const stylesRead = new WeakMap<object, TextStyles>();
 
 /**
- * The styles of the document being written, or Word's defaults when the context has no document.
+ * The styles of the document being written, with the fonts of its theme, or Word's defaults when the context has no
+ * document.
  */
 export const getTextStyles = (context: IContext): TextStyles => {
-    const styles = (context as Partial<IContext>).file?.Styles;
+    const { file } = context as Partial<IContext>;
+    const styles = file?.Styles;
     if (!styles) {
         return WORD_DEFAULT_STYLES;
     }
-    const read = stylesRead.get(styles) ?? readTextStyles(styles.prepForXml(READING_CONTEXT) as XmlObject);
+    const read =
+        stylesRead.get(styles) ??
+        readTextStyles(
+            styles.prepForXml(READING_CONTEXT) as XmlObject,
+            readThemeFonts(file.Theme.prepForXml(READING_CONTEXT) as XmlObject),
+        );
     stylesRead.set(styles, read);
     return read;
 };
@@ -238,7 +288,7 @@ const styleChain = ({ styles }: TextStyles, id: string | undefined, type: string
 /**
  * The text of a run, with tabs as `"\t"` and line breaks as `"\n"`, and its own formatting and character style.
  */
-const readRun = (run: TextRun): { readonly text: string; readonly format: RunFormat; readonly style?: string } => {
+const readRun = (run: TextRun, themeFonts: ThemeFonts): { readonly text: string; readonly format: RunFormat; readonly style?: string } => {
     // Formatting a run needs no document, as long as it has no fields or other parts that refer to one
     const xml = run.prepForXml(READING_CONTEXT) as { readonly "w:r": readonly XmlObject[] };
     const children = xml["w:r"];
@@ -254,7 +304,7 @@ const readRun = (run: TextRun): { readonly text: string; readonly format: RunFor
             return "w:br" in child || "w:cr" in child ? "\n" : "";
         })
         .join("");
-    return { text, format: readRunFormat(properties), style: valueOf(childrenOf(properties), "w:rStyle") };
+    return { text, format: readRunFormat(properties, themeFonts), style: valueOf(childrenOf(properties), "w:rStyle") };
 };
 
 /**
@@ -308,13 +358,13 @@ const readParagraph = (paragraph: Paragraph, styles: TextStyles): TextParagraph 
     const paragraphRun = combine([styles.run, ...paragraphStyles.map(({ run }) => run)]);
 
     const spans = runsIn(children).flatMap((run) => {
-        const { text, format, style: runStyle } = readRun(run);
+        const { text, format, style: runStyle } = readRun(run, styles.themeFonts);
         const characterStyles = styleChain(styles, runStyle ?? styles.defaultCharacterStyle, "character");
         return spansOf(text, combine([paragraphRun, ...characterStyles.map(({ run: styleRun }) => styleRun), format]));
     });
     return {
         spans,
-        font: fontOf(combine([paragraphRun, readRunFormat(find(propertyChildren, "w:rPr"))])),
+        font: fontOf(combine([paragraphRun, readRunFormat(find(propertyChildren, "w:rPr"), styles.themeFonts)])),
         format: combine([
             styles.paragraph,
             ...paragraphStyles.map(({ paragraph: format }) => format),

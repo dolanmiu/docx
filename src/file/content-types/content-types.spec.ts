@@ -109,6 +109,14 @@ describe("ContentTypes", () => {
                     },
                 },
             });
+            expect(tree["Types"][21]).to.deep.equal({
+                Override: {
+                    _attr: {
+                        ContentType: "application/vnd.openxmlformats-officedocument.theme+xml",
+                        PartName: "/word/theme/theme1.xml",
+                    },
+                },
+            });
         });
     });
 
@@ -118,7 +126,7 @@ describe("ContentTypes", () => {
             contentTypes.addFooter(102);
             const tree = new Formatter().format(contentTypes);
 
-            expect(tree["Types"][21]).to.deep.equal({
+            expect(tree["Types"][22]).to.deep.equal({
                 Override: {
                     _attr: {
                         ContentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.footer+xml",
@@ -127,7 +135,7 @@ describe("ContentTypes", () => {
                 },
             });
 
-            expect(tree["Types"][22]).to.deep.equal({
+            expect(tree["Types"][23]).to.deep.equal({
                 Override: {
                     _attr: {
                         ContentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.footer+xml",
@@ -144,7 +152,7 @@ describe("ContentTypes", () => {
             contentTypes.addHeader(202);
             const tree = new Formatter().format(contentTypes);
 
-            expect(tree["Types"][21]).to.deep.equal({
+            expect(tree["Types"][22]).to.deep.equal({
                 Override: {
                     _attr: {
                         ContentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.header+xml",
@@ -153,7 +161,7 @@ describe("ContentTypes", () => {
                 },
             });
 
-            expect(tree["Types"][22]).to.deep.equal({
+            expect(tree["Types"][23]).to.deep.equal({
                 Override: {
                     _attr: {
                         ContentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.header+xml",

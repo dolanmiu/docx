@@ -261,3 +261,5 @@ jobs:
             # - uses: "./.github/actions/validate-docx"
             - run: npm run run-ts -- ./demo/117-shape-page-layout.ts
             # - uses: "./.github/actions/validate-docx"
+            - run: npm run run-ts -- ./demo/118-theme.ts
+            # - uses: "./.github/actions/validate-docx"

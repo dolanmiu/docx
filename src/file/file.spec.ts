@@ -516,6 +516,44 @@ describe("File", () => {
             expect(doc.FootNotes).to.not.be.undefined;
             expect(doc.Settings).to.not.be.undefined;
             expect(doc.Comments).to.not.be.undefined;
+            expect(doc.Theme).to.not.be.undefined;
+        });
+    });
+
+    describe("#theme", () => {
+        it("should write a theme with the given colors and fonts, and a relationship to it after the headers' and footers'", () => {
+            const doc = new File({
+                theme: { name: "Forest", colors: { accent1: "2E7D32" }, fonts: { headings: "Georgia" } },
+                sections: [{ headers: { default: new Header() }, footers: { default: new Footer() }, children: [] }],
+            });
+
+            const relationships = new Formatter().format(doc.Document.Relationships)["Relationships"];
+            const ids = relationships
+                .slice(1)
+                .map(({ Relationship }: { readonly Relationship: { readonly _attr: object } }) => Relationship._attr);
+            expect(ids.slice(-3)).to.deep.equal([
+                {
+                    Id: "rId7",
+                    Type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/header",
+                    Target: "header1.xml",
+                },
+                {
+                    Id: "rId8",
+                    Type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer",
+                    Target: "footer1.xml",
+                },
+                {
+                    Id: "rId9",
+                    Type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme",
+                    Target: "theme/theme1.xml",
+                },
+            ]);
+
+            const theme = new Formatter().format(doc.Theme)["a:theme"];
+            expect(theme[0]._attr.name).to.equal("Forest");
+            const [colors, fonts] = theme[1]["a:themeElements"];
+            expect(colors["a:clrScheme"][5]).to.deep.equal({ "a:accent1": [{ "a:srgbClr": { _attr: { val: "2E7D32" } } }] });
+            expect(fonts["a:fontScheme"][1]["a:majorFont"][0]).to.deep.equal({ "a:latin": { _attr: { typeface: "Georgia" } } });
         });
     });
 

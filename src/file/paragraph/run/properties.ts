@@ -27,7 +27,7 @@ import type { PositiveUniversalMeasure, UniversalMeasure } from "@util/values";
 import { type EmphasisMarkType, createEmphasisMark } from "./emphasis-mark";
 import { CharacterSpacing, Color, Highlight, HighlightComplexScript } from "./formatting";
 import { type ILanguageOptions, createLanguageComponent } from "./language";
-import { type IFontAttributesProperties, createRunFonts } from "./run-fonts";
+import { type IFontAttributesProperties, type IThemeFontReference, createRunFonts } from "./run-fonts";
 import { createSubScript, createSuperScript } from "./script";
 import { type UnderlineType, createUnderline } from "./underline";
 
@@ -181,7 +181,11 @@ export type IRunStylePropertiesOptions = {
     readonly doubleStrike?: boolean;
     readonly subScript?: boolean;
     readonly superScript?: boolean;
-    readonly font?: string | IFontOptions | IFontAttributesProperties;
+    /**
+     * The font: a font name, a font for each character set, or one of the fonts of the document's theme, such as
+     * `{ theme: "body" }`
+     */
+    readonly font?: string | IFontOptions | IFontAttributesProperties | IThemeFontReference;
     readonly highlight?: (typeof HighlightColor)[keyof typeof HighlightColor];
     readonly highlightComplexScript?: boolean | string;
     readonly characterSpacing?: number;

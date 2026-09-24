@@ -116,6 +116,27 @@ const doc = new Document({
 });
 ```
 
+### As the Theme's Font
+
+A font can also be one of the fonts of the document's [theme](usage/themes.md), so text in it changes font when the theme's fonts change:
+
+```ts
+const doc = new Document({
+    fonts: [{ name: "CustomFont", data: fontData, characterSet: CharacterSet.ANSI }],
+    theme: { fonts: { body: "CustomFont" } },
+    styles: {
+        default: {
+            document: {
+                run: {
+                    font: { theme: "body" },
+                },
+            },
+        },
+    },
+    sections: [/* ... */],
+});
+```
+
 ## Multiple Fonts
 
 Embed multiple fonts:

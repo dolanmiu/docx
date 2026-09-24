@@ -55,13 +55,14 @@ These properties appear in Word's File > Info panel and in file properties.
 
 ### Styling Options
 
-| Property       | Type                | Description              |
-| -------------- | ------------------- | ------------------------ |
-| styles         | `IStylesOptions`    | Custom styles            |
-| externalStyles | `string`            | External XML styles      |
-| numbering      | `INumberingOptions` | Numbering definitions    |
-| fonts          | `FontOptions[]`     | Embedded fonts           |
-| defaultTabStop | `number`            | Default tab stop (twips) |
+| Property       | Type                | Description                                                   |
+| -------------- | ------------------- | ------------------------------------------------------------- |
+| styles         | `IStylesOptions`    | Custom styles                                                 |
+| externalStyles | `string`            | External XML styles                                           |
+| numbering      | `INumberingOptions` | Numbering definitions                                         |
+| fonts          | `FontOptions[]`     | Embedded fonts                                                |
+| defaultTabStop | `number`            | Default tab stop (twips)                                      |
+| theme          | `IThemeOptions`     | The document's [theme](usage/themes.md): its colors and fonts |
 
 ### Document Behavior
 
@@ -105,6 +106,7 @@ These properties appear in Word's File > Info panel and in file properties.
 | defaultTabStop             | `number`                                                 | Optional |
 | fonts                      | ` FontOptions[]`                                         | Optional |
 | hyphenation                | `IHyphenationOptions`                                    | Optional |
+| theme                      | `IThemeOptions`                                          | Optional |
 
 ### Change background color of Document
 

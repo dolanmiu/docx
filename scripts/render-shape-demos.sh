@@ -23,7 +23,7 @@ OUT="${1:-build/shape-demos}"
 shift || true
 DEMOS=("$@")
 if [ ${#DEMOS[@]} -eq 0 ]; then
-    DEMOS=(107-inline-shapes 108-shapes 109-shape-groups 110-shape-connectors 111-shape-styles 112-shape-diagrams 113-shape-layout 115-shape-document-styles 116-shape-swimlanes 117-shape-page-layout)
+    DEMOS=(107-inline-shapes 108-shapes 109-shape-groups 110-shape-connectors 111-shape-styles 112-shape-diagrams 113-shape-layout 115-shape-document-styles 116-shape-swimlanes 117-shape-page-layout 118-theme)
 fi
 SOFFICE="${SOFFICE:-soffice}"
 WP="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing"
@@ -84,6 +84,13 @@ for demo in "${DEMOS[@]}"; do
             failed=1
         fi
     done
+
+    # The document's theme
+    if ! xmllint --noout --schema ooxml-schemas/ISO-IEC29500-4_2016/dml-main.xsd "$extracted/word/theme/theme1.xml" 2> "$extracted/errors.txt"; then
+        cat "$extracted/errors.txt"
+        echo "::error::$demo has a theme that doesn't match the schema"
+        failed=1
+    fi
 
     # Drawing ids must be unique across the document
     repeated="$(grep -ho '\(wp:docPr\|wps:cNvPr\|pic:cNvPr\|wpg:cNvPr\) id="[0-9]*"' "$extracted"/word/*.xml | sed 's/.*id=//' | sort | uniq -d)"

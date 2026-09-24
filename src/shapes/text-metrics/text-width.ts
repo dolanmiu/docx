@@ -83,7 +83,7 @@ const TAB_STOP = 36;
 
 // Fonts that are measured with a font in the table, because they have the same widths or are close to them
 const SIMILAR_FONTS: readonly (readonly [RegExp, string])[] = [
-    [/^(carlito|segoe ui|candara|corbel)$/i, "Calibri"],
+    [/^(carlito|calibri light|segoe ui|candara|corbel)$/i, "Calibri"],
     [/^caladea$/i, "Cambria"],
     [/mono|courier|consolas|code|typewriter/i, "Courier New"],
     [/times|tinos|liberation serif|georgia|garamond|palatino|book antiqua|(?<!sans[ -]?)serif|roman/i, "Times New Roman"],

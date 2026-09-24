@@ -42,6 +42,7 @@ export type {
     PresetShapeAdjustments,
     PresetShapeType,
     ShapeAdjustments,
+    ShapeColor,
     ShapeCompoundLine,
     ShapeEffects,
     ShapeFill,
@@ -57,6 +58,8 @@ export type {
     ShapeTextOptions,
     ShapeTextVerticalAlignment,
     ShapeTextWarp,
+    ShapeThemeColor,
+    ShapeThemeColorName,
     SolidShapeFill,
 } from "./preset-shape";
 export type { ShapeSize, ShapeTransformation } from "./shape-text-size";

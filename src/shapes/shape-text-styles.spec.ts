@@ -92,8 +92,8 @@ describe("getTextStyles", () => {
                 }),
             ),
         );
-        // The theme font isn't known, so the font comes from the other attributes
-        expect(styles.run).to.deep.equal({ font: "Aptos", size: 12, bold: false });
+        // The theme's font for body text takes the place of the font named beside it
+        expect(styles.run).to.deep.equal({ font: "Calibri", size: 12, bold: false });
         expect(styles.paragraph).to.deep.equal({ spaceAfter: 8, lineSpacing: { rule: "multiple", multiple: 278 / 240 } });
         expect(styles.styles.get("Quote")).to.deep.equal({
             type: "paragraph",
@@ -114,6 +114,55 @@ describe("getTextStyles", () => {
             run: { font: "Arial", hidden: true, smallCaps: true },
             paragraph: { lineSpacing: { rule: "atLeast", height: 24 }, indentLeft: 5, indentRight: 10, firstLineIndent: 15 },
         });
+    });
+
+    it("should read the fonts of the document's theme where styles and text use them", () => {
+        const styles = getTextStyles(
+            contextOf(
+                new File({
+                    theme: { fonts: { headings: "Arial", body: { latin: "Georgia", eastAsia: "Yu Mincho" } } },
+                    styles: {
+                        default: { document: { run: { font: { theme: "body" } } }, heading1: { run: { font: { theme: "headings" } } } },
+                    },
+                    sections: [],
+                }),
+            ),
+        );
+        expect(styles.themeFonts).to.deep.equal({ headings: "Arial", body: "Georgia" });
+        expect(styles.run.font).to.equal("Georgia");
+        expect(styles.styles.get("Heading1")?.run.font).to.equal("Arial");
+
+        // Text in a theme font of its own
+        const { spans } = readOne(
+            new Paragraph({
+                heading: HeadingLevel.HEADING_1,
+                children: [new TextRun("Heading"), new TextRun({ text: "Body", font: { theme: "body" } })],
+            }),
+            styles,
+        );
+        expect(spans).to.deep.equal([
+            { text: "Heading", font: "Arial" },
+            { text: "Body", font: "Georgia" },
+        ]);
+    });
+
+    it("should read the theme's fonts for Latin text beside fonts named for it, and leave out theme fonts that aren't known", () => {
+        const styles = getTextStyles(
+            contextOf(
+                new File({
+                    externalStyles: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+    <w:style w:type="paragraph" w:styleId="Named"><w:name w:val="Named"/><w:rPr><w:rFonts w:ascii="Arial" w:hAnsiTheme="majorHAnsi"/></w:rPr></w:style>
+    <w:style w:type="paragraph" w:styleId="HighAnsi"><w:name w:val="HighAnsi"/><w:rPr><w:rFonts w:hAnsiTheme="majorHAnsi"/></w:rPr></w:style>
+    <w:style w:type="paragraph" w:styleId="Unknown"><w:name w:val="Unknown"/><w:rPr><w:rFonts w:asciiTheme="other" w:hAnsi="Tahoma"/></w:rPr></w:style>
+</w:styles>`,
+                    sections: [],
+                }),
+            ),
+        );
+        expect(styles.styles.get("Named")?.run.font).to.equal("Arial");
+        expect(styles.styles.get("HighAnsi")?.run.font).to.equal("Calibri Light");
+        expect(styles.styles.get("Unknown")?.run.font).to.equal("Tahoma");
     });
 });
 

@@ -34,6 +34,23 @@ export type IFontAttributesProperties = {
 };
 
 /**
+ * One of the fonts of the document's theme: its font for headings, or its font for body text.
+ *
+ * @publicApi
+ */
+export type ThemeFont = "headings" | "body";
+
+/**
+ * A font of the document's theme. Text in it changes font when the theme's fonts change.
+ *
+ * @publicApi
+ */
+export type IThemeFontReference = {
+    /** The theme's font for headings (`major`) or for body text (`minor`) */
+    readonly theme: ThemeFont;
+};
+
+/**
  * Creates font settings for a run in a WordprocessingML document.
  *
  * The rFonts element specifies which fonts should be used for different character
@@ -69,9 +86,12 @@ export type IFontAttributesProperties = {
  *   cs: "Arial",
  *   hAnsi: "Arial",
  * });
+ *
+ * // Use the theme's font for body text, in every character set
+ * createRunFonts({ theme: "body" });
  * ```
  */
-export const createRunFonts = (nameOrAttrs: string | IFontAttributesProperties, hint?: string): XmlComponent => {
+export const createRunFonts = (nameOrAttrs: string | IFontAttributesProperties | IThemeFontReference, hint?: string): XmlComponent => {
     if (typeof nameOrAttrs === "string") {
         const name = nameOrAttrs;
         return new BuilderElement<IFontAttributesProperties>({
@@ -82,6 +102,25 @@ export const createRunFonts = (nameOrAttrs: string | IFontAttributesProperties, 
                 eastAsia: { key: "w:eastAsia", value: name },
                 hAnsi: { key: "w:hAnsi", value: name },
                 hint: { key: "w:hint", value: hint },
+            },
+        });
+    }
+
+    if ("theme" in nameOrAttrs) {
+        // The theme's fonts are its major and minor fonts. Word refers to the font for Latin text as the one for high ANSI
+        const theme = nameOrAttrs.theme === "headings" ? "major" : "minor";
+        return new BuilderElement<{
+            readonly ascii: string;
+            readonly eastAsia: string;
+            readonly hAnsi: string;
+            readonly cs: string;
+        }>({
+            name: "w:rFonts",
+            attributes: {
+                ascii: { key: "w:asciiTheme", value: `${theme}HAnsi` },
+                eastAsia: { key: "w:eastAsiaTheme", value: `${theme}EastAsia` },
+                hAnsi: { key: "w:hAnsiTheme", value: `${theme}HAnsi` },
+                cs: { key: "w:cstheme", value: `${theme}Bidi` },
             },
         });
     }

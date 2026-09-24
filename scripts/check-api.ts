@@ -152,8 +152,16 @@ const withoutHiddenMembers = (fileName: string, source: string): string => {
 };
 
 /**
+ * The name the release's declaration of a class keeps in the release's types with the build's classes.
+ */
+const releasedClassName = (localName: string): string => `ReleasedClass_${localName}`;
+
+/**
  * Replaces the release's exported classes with the build's, for comparing types. Users pass instances of the build's
  * classes, such as a `Table` in a section's children, so an option type should be checked with those.
+ *
+ * Each class's own declaration is kept under another name, so its constructor and members can be checked the same way:
+ * `new Document(options)` is given options holding the build's paragraphs and tables.
  */
 const withBuiltClasses = (fileName: string, source: string, classes: ReadonlyMap<string, string>): string => {
     const file = ts.createSourceFile(fileName, source, ts.ScriptTarget.Latest, true);
@@ -170,11 +178,17 @@ const withBuiltClasses = (fileName: string, source: string, classes: ReadonlyMap
         const declared = parameters.length ? `<${parameters.map((parameter) => parameter.getText(file)).join(", ")}>` : "";
         const args = parameters.length ? `<${parameters.map((parameter) => parameter.name.text).join(", ")}>` : "";
         const built = `import("../built/index").${exportName}`;
+        const declaration = statement
+            .getText(file)
+            .replace(
+                /^(export\s+)?(declare\s+)?(abstract\s+)?class\s+\w+/,
+                (_, _export, _declare, abstract) => `export declare ${abstract ?? ""}class ${releasedClassName(name)}`,
+            );
         return [
             {
                 start: statement.getStart(file),
                 end: statement.end,
-                text: `${exported}declare const ${name}: typeof ${built};\n${exported}type ${name}${declared} = ${built}${args};`,
+                text: `${exported}declare const ${name}: typeof ${built};\n${exported}type ${name}${declared} = ${built}${args};\n${declaration}`,
             },
         ];
     });
@@ -248,10 +262,11 @@ const checkTypes = (release: string, releaseEntry: Entry, builtEntry: Entry, ind
         'import type * as Released from "./released/index";',
         'import type * as ReleasedTypes from "./released-types/index";',
         'import type * as Built from "./built/index";',
-        ...releasedExports.map(({ name, isValue, typeParameters }, line) => {
+        ...releasedExports.map(({ name, localName, isValue, isClass, typeParameters }, line) => {
             if (isValue) {
-                // What the build exports can be used wherever the release's was
-                return `declare const built${line}: typeof Built.${name}; export const check${line}: typeof Released.${name} = built${line};`;
+                // What the build exports can be used wherever the release's was, with the build's classes
+                const released = isClass && classes.has(localName) ? releasedClassName(localName) : name;
+                return `declare const built${line}: typeof Built.${name}; export const check${line}: typeof ReleasedTypes.${released} = built${line};`;
             }
             // The type accepts everything the release's did
             const args = typeParameters ? `<${Array.from({ length: typeParameters }, () => "any").join(", ")}>` : "";

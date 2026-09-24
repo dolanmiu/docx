@@ -790,7 +790,8 @@ describe("layoutShapeDrawing", () => {
                 box("b", 0, 200),
                 target("rectangle"),
                 connect("t", "a"),
-                connect("t", "b"),
+                // A line in a colour of the theme has no arrowheads
+                connect("t", "b", { line: { theme: "accent1" } }),
             ]);
             expect(endsOf(children[3])[0]).to.deep.equal([200, 130]);
             expect(endsOf(children[4])[0]).to.deep.equal([200, 130]);

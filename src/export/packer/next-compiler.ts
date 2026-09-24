@@ -81,6 +81,8 @@ type IXmlifyedFileMapping = {
     readonly FontTable?: IXmlifyedFile;
     /** Font table relationships (word/_rels/fontTable.xml.rels) */
     readonly FontTableRelationships?: IXmlifyedFile;
+    /** Theme (word/theme/theme1.xml) */
+    readonly Theme: IXmlifyedFile;
 };
 
 /**
@@ -720,6 +722,23 @@ export class Compiler {
                         },
                     ))(),
                 path: "word/_rels/fontTable.xml.rels",
+            },
+            Theme: {
+                data: xml(
+                    this.formatter.format(file.Theme, {
+                        viewWrapper: file.Document,
+                        file,
+                        stack: [],
+                    }),
+                    {
+                        indent: prettify,
+                        declaration: {
+                            standalone: "yes",
+                            encoding: "UTF-8",
+                        },
+                    },
+                ),
+                path: "word/theme/theme1.xml",
             },
         };
     }
