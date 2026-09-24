@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { Formatter } from "@export/formatter";
+import { File } from "@file/file";
 import * as convenienceFunctions from "@util/convenience-functions";
 import { HorizontalPositionRelativeFrom, type IContext, type IXmlableObject, VerticalPositionRelativeFrom } from "docx";
 
@@ -76,7 +77,7 @@ describe("ShapeCanvasRun", () => {
             "wp:extent": { _attr: { cx: 130 * 9525 + 6350, cy: 150 * 9525 + 6350 } },
         });
         expect(getChild(container, "wp:effectExtent")).to.deep.equal({ "wp:effectExtent": { _attr: { t: 0, r: 0, b: 0, l: 0 } } });
-        expect(getChild(container, "wp:docPr")).to.deep.equal({ "wp:docPr": { _attr: { id: 4, name: "Flowchart" } } });
+        expect(getChild(container, "wp:docPr")).to.deep.equal({ "wp:docPr": { _attr: { id: "4", name: "Flowchart" } } });
     });
 
     it("should draw the same shapes as a group for applications that can't draw canvases", () => {
@@ -104,7 +105,10 @@ describe("ShapeCanvasRun", () => {
             { "a:chOff": { _attr: { x: 0, y: 0 } } },
             { "a:chExt": { _attr: { cx: 300 * 9525, cy: 200 * 9525 } } },
         ]);
-        expect(group[2]["wps:wsp"][0]).to.deep.equal({ "wps:cNvPr": { _attr: { id: 8, name: "Canvas 8" } } });
+        // The background is decorative, so screen readers skip it
+        const background = group[2]["wps:wsp"][0]["wps:cNvPr"];
+        expect(background[0]).to.deep.equal({ _attr: { id: 8, name: "Canvas 8" } });
+        expect(background[1]).to.have.property("a:extLst");
         expect(JSON.stringify(group[2])).to.include("F2F2F2");
         // The shapes and connector are laid out again, with ids of their own
         expect(group.slice(3).map((child: IXmlableObject) => child["wps:wsp"][0]["wps:cNvPr"]._attr.id)).to.deep.equal([5, 6, 7]);
@@ -225,5 +229,36 @@ describe("ShapeCanvasRun", () => {
         expect(getChild(getContainer(tree), "wp:extent")).to.deep.equal({
             "wp:extent": { _attr: { cx: 300 * 9525 + 2 * halfLine, cy: 50 * 9525 + loop + 2 * halfLine } },
         });
+    });
+
+    it("should lay out a canvas and its fallback in the document's styles when it is written", () => {
+        const canvas = new ShapeCanvasRun({
+            children: [{ type: "rectangle", text: "Start", transformation: { width: "fitText", height: "fitText" } }],
+        });
+        const context = {
+            file: new File({ styles: { default: { document: { run: { size: 40 } } } }, sections: [] }),
+            stack: [],
+        } as unknown as IContext;
+        const plain = new Formatter().format(canvas);
+        const styled = new Formatter().format(canvas, context);
+
+        const extent = (tree: IXmlableObject, part: "mc:Choice" | "mc:Fallback"): IXmlableObject =>
+            getChild(getContainer(tree, part), "wp:extent")["wp:extent"]._attr;
+        for (const part of ["mc:Choice", "mc:Fallback"] as const) {
+            expect(extent(styled, part).cx).to.be.greaterThan(extent(plain, part).cx);
+            expect(extent(styled, part).cy).to.be.greaterThan(extent(plain, part).cy);
+            expect(getChild(getContainer(styled, part), "wp:docPr")).to.deep.equal(getChild(getContainer(plain, part), "wp:docPr"));
+        }
+    });
+
+    it("should leave out the group for applications that can't draw canvases", () => {
+        const tree = new Formatter().format(
+            new ShapeCanvasRun({ fallback: false, children: [{ type: "rectangle", transformation: { width: 10, height: 10 } }] }),
+        );
+        const drawing = tree["w:r"][0]["w:drawing"];
+        expect(drawing[0]["wp:inline"].find((child: IXmlableObject) => "wp:docPr" in child)).to.deep.equal({
+            "wp:docPr": { _attr: { id: "2", name: "", descr: "", title: "" } },
+        });
+        expect(tree["w:r"]).to.have.length(1);
     });
 });

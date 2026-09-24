@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { Formatter } from "@export/formatter";
+import { File } from "@file/file";
 import * as convenienceFunctions from "@util/convenience-functions";
 import { HorizontalPositionRelativeFrom, type IContext, type IXmlableObject, VerticalPositionRelativeFrom } from "docx";
 
@@ -64,7 +65,10 @@ describe("ShapeGroupRun", () => {
             "wp:effectExtent": { _attr: { t: 6350, r: 6350, b: 6350, l: 0 } },
         });
         // Children take ids 1-3 when they are created, before the group's docPr
-        expect(getChild(container, "wp:docPr")).to.deep.equal({ "wp:docPr": { _attr: { id: 4, name: "", descr: "", title: "" } } });
+        // Described from the names of its shapes, as it has no description of its own
+        expect(getChild(container, "wp:docPr")).to.deep.equal({
+            "wp:docPr": { _attr: { id: "4", name: "", descr: "Start. End.", title: "" } },
+        });
 
         const group = getGroup(tree);
         expect(group[1]).to.deep.equal({
@@ -168,7 +172,7 @@ describe("ShapeGroupRun", () => {
         expect(getChild(container, "wp:effectExtent")).to.deep.equal({
             "wp:effectExtent": { _attr: { t: 476250, r: 0, b: 476250, l: 0 } },
         });
-        expect(getChild(container, "wp:docPr")).to.deep.equal({ "wp:docPr": { _attr: { id: 2, name: "Group" } } });
+        expect(getChild(container, "wp:docPr")).to.deep.equal({ "wp:docPr": { _attr: { id: "2", name: "Group" } } });
 
         expect(getGroup(tree)[1]["wpg:grpSpPr"][0]["a:xfrm"]).to.deep.equal([
             { _attr: { rot: 5400000 } },
@@ -228,5 +232,32 @@ describe("ShapeGroupRun", () => {
 
     it("should reject a group without children", () => {
         expect(() => new ShapeGroupRun({ children: [] })).to.throw("Expected at least 1 child shape");
+    });
+
+    it("should lay out a group whose shapes fit their text in the document's styles when it is written", () => {
+        const group = new ShapeGroupRun({
+            children: [
+                { id: "a", type: "rectangle", text: "Start", transformation: { width: "fitText", height: 40 } },
+                { id: "b", type: "rectangle", transformation: { offset: { left: 200 }, width: 60, height: 40 } },
+                { type: "connector", from: "a", to: "b", label: "Next" },
+            ],
+        });
+        const context = {
+            file: new File({ styles: { default: { document: { run: { size: 40 } } } }, sections: [] }),
+            stack: [],
+        } as unknown as IContext;
+        const plain = getGroup(new Formatter().format(group));
+        const styled = getGroup(new Formatter().format(group, context));
+
+        const width = (children: readonly IXmlableObject[], index: number): number =>
+            Object.values(children[index])[0][2]["wps:spPr"][0]["a:xfrm"][2]["a:ext"]._attr.cx;
+        // The shape and the connector's label are wider in the bigger text, and the connector is shorter
+        expect(width(styled, 2)).to.be.greaterThan(width(plain, 2));
+        expect(width(styled, 5)).to.be.greaterThan(width(plain, 5));
+        expect(width(styled, 4)).to.be.lessThan(width(plain, 4));
+        // The shapes keep their ids
+        const ids = (children: readonly IXmlableObject[]): readonly unknown[] =>
+            children.slice(2).map((child) => Object.values(child)[0][0]["wps:cNvPr"]._attr.id);
+        expect(ids(styled)).to.deep.equal(ids(plain));
     });
 });

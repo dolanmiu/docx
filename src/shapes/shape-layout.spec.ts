@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { type LayoutItem, type LayoutPosition, layoutItems, placeInOrder } from "./shape-layout";
+import { type LayoutItem, type LayoutPosition, layoutItems } from "./shape-layout";
 
 const EMUS_PER_PIXEL = 9525;
 
@@ -11,20 +11,6 @@ const pixels = (positions: readonly LayoutPosition[]): readonly (readonly [numbe
     positions.map(({ x, y }) => [Math.round(x / EMUS_PER_PIXEL), Math.round(y / EMUS_PER_PIXEL)] as const);
 
 const centreX = ({ x }: LayoutPosition, item: LayoutItem): number => Math.round((x + item.width / 2) / EMUS_PER_PIXEL);
-
-describe("placeInOrder", () => {
-    it("should keep items at their wanted positions when they are far enough apart", () => {
-        expect(placeInOrder([0, 20, 40], [10, 10])).to.deep.equal([0, 20, 40]);
-    });
-
-    it("should spread items that want the same place evenly around it", () => {
-        expect(placeInOrder([0, 0, 0], [10, 10])).to.deep.equal([-10, 0, 10]);
-    });
-
-    it("should move only the items that are too close", () => {
-        expect(placeInOrder([5, 0, 20], [10, 10])).to.deep.equal([-2.5, 7.5, 20]);
-    });
-});
 
 describe("layoutItems", () => {
     it("should place nothing when there is nothing to place", () => {
@@ -134,6 +120,55 @@ describe("layoutItems", () => {
             const crossing = [0, 1, 2].flatMap((from) => [3, 4, 5].map((to) => ({ from, to })));
             const { levels } = layoutItems({ type: "flow" }, seven, crossing);
             expect(levels).to.deep.equal([0, 0, 0, 1, 1, 1, 0]);
+        });
+
+        it("should place a shape a connector leaves the side of its parent for on that side of the other shapes", () => {
+            // A decision leads to "No" out of its right side and to "Yes" out of its bottom. "No" is given first
+            const decision = [box(80, 60), box(60, 30), box(60, 30)];
+            const right = layoutItems({ type: "flow" }, decision, [
+                { from: 0, to: 1, across: 1 },
+                { from: 0, to: 2 },
+            ]);
+            const [parent, no, yes] = pixels(right.positions);
+            expect(no[0]).to.be.greaterThan(yes[0]);
+            // "Yes" is lined up under the decision
+            expect(yes[0] + 30).to.equal(parent[0] + 40);
+
+            const left = pixels(
+                layoutItems({ type: "flow" }, decision, [
+                    { from: 0, to: 1 },
+                    { from: 0, to: 2, across: -1 },
+                ]).positions,
+            );
+            expect(left[2][0]).to.be.lessThan(left[1][0]);
+        });
+
+        it("should prefer fewer crossings to shapes on the side their connector leaves from", () => {
+            // 0 leads to 2 and 3 and 1 leads to 3. Putting 3 on 0's left would cross 1's connector
+            const { positions } = layoutItems(
+                { type: "flow" },
+                [box(20, 10), box(20, 10), box(20, 10), box(20, 10)],
+                [
+                    { from: 0, to: 2 },
+                    { from: 0, to: 3, across: -1 },
+                    { from: 1, to: 3 },
+                ],
+            );
+            const [, , c, d] = pixels(positions);
+            expect(c[0]).to.be.lessThan(d[0]);
+        });
+
+        it("should leave room between levels for the labels of connectors between them", () => {
+            const { positions } = layoutItems(
+                { type: "flow", levelSpacing: 20 },
+                [box(40, 20), box(40, 20), box(40, 20)],
+                [
+                    { from: 0, to: 1, labelLength: 50 * EMUS_PER_PIXEL },
+                    { from: 1, to: 2, labelLength: 4 * EMUS_PER_PIXEL },
+                ],
+            );
+            // 50 pixels and 8 either side, then the level spacing, which is more than a short label needs
+            expect(pixels(positions).map(([, y]) => y)).to.deep.equal([0, 86, 126]);
         });
 
         it("should place shapes without connectors side by side, and ignore repeated connectors and loops", () => {
@@ -252,6 +287,98 @@ describe("layoutItems", () => {
             expect(pixels(layoutItems({ type: "tree", direction: "left", levelSpacing: 5 }, two, edge).positions)).to.deep.equal([
                 [35, 0],
                 [0, 0],
+            ]);
+        });
+    });
+
+    describe("lanes", () => {
+        const headers = { length: 20 * EMUS_PER_PIXEL, widths: [30 * EMUS_PER_PIXEL, 30 * EMUS_PER_PIXEL, 90 * EMUS_PER_PIXEL] };
+        const inLane = (lane: number, width = 40): LayoutItem => ({ ...box(width, 20), lane });
+        const toPixels = ({ x, y, width, height }: LayoutPosition & LayoutItem): readonly number[] =>
+            [x, y, width, height].map((value) => Math.round(value / EMUS_PER_PIXEL));
+
+        it("should keep each lane's shapes in its band, with the bands side by side and headers before the first level", () => {
+            // b is given before a, but a's lane comes first
+            const result = layoutItems(
+                { type: "flow", spacing: 10, levelSpacing: 20, lanes: ["A", "B", "C"] },
+                [inLane(0), inLane(1), inLane(0), inLane(1, 60)],
+                [
+                    { from: 0, to: 2 },
+                    { from: 1, to: 3 },
+                ],
+                headers,
+            );
+            const positions = pixels(result.positions);
+            // Lane A is 50 pixels wide: its shapes and half the spacing either side. Lane B fits its wider shape
+            expect(result.lanes!.map(({ band }) => toPixels(band))).to.deep.equal([
+                [0, 0, 50, 100],
+                [50, 0, 70, 100],
+                [120, 0, 90, 100],
+            ]);
+            expect(result.lanes!.map(({ header }) => toPixels(header))).to.deep.equal([
+                [0, 0, 50, 20],
+                [50, 0, 70, 20],
+                [120, 0, 90, 20],
+            ]);
+            // The first level starts after the headers and half the level spacing
+            expect(positions).to.deep.equal([
+                [5, 30],
+                [65, 30],
+                [5, 70],
+                [55, 70],
+            ]);
+        });
+
+        it("should order each level by lane, and put shapes without a lane in the first", () => {
+            const { positions } = layoutItems({ type: "flow", spacing: 10, lanes: ["A", "B"] }, [inLane(1), box(40, 20), inLane(0)], [], {
+                length: 0,
+                widths: [0, 0],
+            });
+            const [inB, noLane, inA] = pixels(positions);
+            expect(inA[0]).to.be.lessThan(inB[0]);
+            expect(noLane[0]).to.be.lessThan(inB[0]);
+        });
+
+        it("should run the lanes across the page when the flow runs across it", () => {
+            const result = layoutItems(
+                { type: "flow", direction: "right", spacing: 10, levelSpacing: 20, lanes: ["A", "B"] },
+                [inLane(0), inLane(1)],
+                [{ from: 0, to: 1 }],
+                { length: 30 * EMUS_PER_PIXEL, widths: [0, 0] },
+            );
+            expect(result.lanes!.map(({ band }) => toPixels(band))).to.deep.equal([
+                [0, 0, 150, 30],
+                [0, 30, 150, 30],
+            ]);
+            expect(toPixels(result.lanes![1].header)).to.deep.equal([0, 30, 30, 30]);
+        });
+
+        it("should make lanes without headers as wide as their shapes need", () => {
+            const { lanes } = layoutItems({ type: "flow", spacing: 10, levelSpacing: 20, lanes: ["A"] }, [inLane(0)], []);
+            expect(toPixels(lanes![0].band)).to.deep.equal([0, 0, 50, 40]);
+            expect(toPixels(lanes![0].header)).to.deep.equal([0, 0, 50, 0]);
+        });
+
+        it("should put the headers at the start of a flow that runs up", () => {
+            const result = layoutItems({ type: "flow", direction: "up", lanes: ["A"] }, [inLane(0)], [], {
+                length: 20 * EMUS_PER_PIXEL,
+                widths: [0],
+            });
+            const [band] = result.lanes!;
+            expect(band.header.y + band.header.height).to.equal(band.band.y + band.band.height);
+        });
+    });
+
+    describe("labels in trees", () => {
+        it("should leave room between levels for the labels of connectors between them", () => {
+            const { positions } = layoutItems(
+                { type: "tree", levelSpacing: 20, direction: "right" },
+                [box(40, 20), box(40, 20)],
+                [{ from: 0, to: 1, labelLength: 30 * EMUS_PER_PIXEL }],
+            );
+            expect(pixels(positions)).to.deep.equal([
+                [0, 0],
+                [86, 0],
             ]);
         });
     });

@@ -1,8 +1,16 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { Formatter } from "@export/formatter";
+import { File } from "@file/file";
 import * as convenienceFunctions from "@util/convenience-functions";
-import { HorizontalPositionAlign, type IContext, Paragraph, TextWrappingType, VerticalPositionRelativeFrom } from "docx";
+import {
+    HorizontalPositionAlign,
+    type IContext,
+    type IXmlableObject,
+    Paragraph,
+    TextWrappingType,
+    VerticalPositionRelativeFrom,
+} from "docx";
 
 import { ShapeRun } from "./shape-run";
 
@@ -29,7 +37,7 @@ describe("ShapeRun", () => {
                                 { _attr: { distT: 0, distB: 0, distL: 0, distR: 0 } },
                                 { "wp:extent": { _attr: { cx: 1905000, cy: 38100 } } },
                                 { "wp:effectExtent": { _attr: { t: 0, r: 0, b: 0, l: 0 } } },
-                                { "wp:docPr": { _attr: { id: 1, name: "", descr: "", title: "" } } },
+                                { "wp:docPr": { _attr: { id: "1", name: "", descr: "", title: "" } } },
                                 {
                                     "wp:cNvGraphicFramePr": [
                                         {
@@ -139,7 +147,7 @@ describe("ShapeRun", () => {
             "wp:effectExtent": { _attr: { t: 418795, r: 116865, b: 418795, l: 116865 } },
         });
         expect(anchor.find((child: object) => "wp:docPr" in child)).to.deep.equal({
-            "wp:docPr": { _attr: { id: 1, name: "Callout", descr: "A speech bubble", title: "Callout" } },
+            "wp:docPr": { _attr: { id: "1", name: "Callout", descr: "A speech bubble", title: "Callout" } },
         });
 
         const graphic = anchor.find((child: object) => "a:graphic" in child)["a:graphic"];
@@ -192,6 +200,48 @@ describe("ShapeRun", () => {
         const shape = tree["w:r"][0]["w:drawing"][0]["wp:inline"][5]["a:graphic"][1]["a:graphicData"][1]["wps:wsp"];
         expect(shape[0]).to.deep.equal({ "wps:cNvSpPr": {} });
         expect(Object.keys(shape[1]["wps:spPr"][1])).to.deep.equal(["a:custGeom"]);
+    });
+
+    describe("in the document's styles", () => {
+        const contextOf = (document: object): IContext =>
+            ({ file: new File({ styles: { default: { document } }, sections: [] }), stack: [] }) as unknown as IContext;
+        const inlineOf = (tree: IXmlableObject): readonly IXmlableObject[] => tree["w:r"][0]["w:drawing"][0]["wp:inline"];
+        const extentOf = (tree: IXmlableObject): IXmlableObject => inlineOf(tree).find((child) => "wp:extent" in child)!["wp:extent"]._attr;
+
+        it("should size a shape to fit its text when it is written, keeping its drawing id", () => {
+            const shape = new ShapeRun({ type: "rectangle", text: "Hello world", transformation: { width: "fitText", height: "fitText" } });
+            const plain = new Formatter().format(shape);
+            const context = contextOf({ run: { font: "Calibri", size: 32 } });
+            const styled = new Formatter().format(shape, context);
+
+            expect(extentOf(styled).cx).to.be.greaterThan(extentOf(plain).cx);
+            expect(extentOf(styled).cy).to.be.greaterThan(extentOf(plain).cy);
+            const docPr = (tree: IXmlableObject): IXmlableObject => inlineOf(tree).find((child) => "wp:docPr" in child)!;
+            expect(docPr(styled)).to.deep.equal(docPr(plain));
+            // Writing the document again writes the same drawing
+            expect(new Formatter().format(shape, context)).to.deep.equal(styled);
+        });
+
+        it("should write text without the space the document puts after paragraphs", () => {
+            const tree = new Formatter().format(
+                new ShapeRun({ type: "rectangle", text: "Hi", transformation: { width: 50, height: 50 } }),
+                contextOf({ paragraph: { spacing: { after: 160 } } }),
+            );
+            const shape = inlineOf(tree).find((child) => "a:graphic" in child)!["a:graphic"][1]["a:graphicData"][1]["wps:wsp"];
+            const paragraph = shape[2]["wps:txbx"][0]["w:txbxContent"][0]["w:p"];
+            expect(paragraph[0]["w:pPr"][0]).to.deep.equal({ "w:spacing": { _attr: { "w:before": 0, "w:after": 0 } } });
+        });
+
+        it("should write the shape laid out when it was created when the document's styles format its text the same way", () => {
+            const shape = new ShapeRun({ type: "rectangle", text: "Hello", transformation: { width: "fitText", height: 20 } });
+            // The library's default styles only format headings and other paragraphs with styles of their own
+            expect(new Formatter().format(shape, contextOf({}))).to.deep.equal(new Formatter().format(shape));
+        });
+
+        it("should write shapes whose size doesn't depend on text as they are", () => {
+            const shape = new ShapeRun({ type: "rectangle", transformation: { width: 50, height: 50 } });
+            expect(new Formatter().format(shape, contextOf({ run: { size: 40 } }))).to.deep.equal(new Formatter().format(shape));
+        });
     });
 
     it("should link the shape, and mark it as decorative", () => {

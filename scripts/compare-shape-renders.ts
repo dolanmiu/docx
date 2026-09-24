@@ -1,11 +1,14 @@
 /**
  * Compares the pages drawn by scripts/render-shape-demos.sh with the reference images in scripts/shape-demos/references.
  *
- * Usage: npm run run-ts -- scripts/compare-shape-renders.ts [renders directory] [--update]
+ * Usage: npm run run-ts -- scripts/compare-shape-renders.ts [renders directory] [--references directory] [--update]
  *
  * The renders directory defaults to build/shape-demos. A page fails when more than a few of its pixels differ from the
  * reference, or when a page was added or is missing. An image of each difference, with the changed pixels in red, is
  * written to the renders directory's `diff` folder.
+ *
+ * With --references, the pages are compared with those in another directory instead, such as pages Apple Pages drew
+ * from the master branch (see scripts/render-shape-demos-in-pages.sh).
  *
  * With --update, the references are replaced with the renders. Only update them from renders drawn in the Docker image
  * (SHAPE_RENDER_IMAGE), as LibreOffice versions and fonts draw pages differently.
@@ -16,7 +19,7 @@ import { join } from "node:path";
 import pixelmatch from "pixelmatch";
 import { PNG } from "pngjs";
 
-const REFERENCES = "scripts/shape-demos/references";
+const DEFAULT_REFERENCES = "scripts/shape-demos/references";
 // How different two pixels' colours can be before they count as different, from 0 to 1. This ignores slight changes in anti-aliasing
 const COLOUR_THRESHOLD = 0.1;
 // How many pixels of a page can differ before it fails
@@ -24,7 +27,11 @@ const MAX_DIFFERENT_PIXELS = 25;
 
 const args = process.argv.slice(2);
 const update = args.includes("--update");
-const renders = args.find((arg) => !arg.startsWith("--")) ?? "build/shape-demos";
+// Where the directory after --references is, if it is given
+const referencesIndex = args.indexOf("--references") + 1;
+const REFERENCES = referencesIndex > 0 ? args[referencesIndex] : DEFAULT_REFERENCES;
+const renders =
+    args.find((arg, index) => !arg.startsWith("--") && (referencesIndex === 0 || index !== referencesIndex)) ?? "build/shape-demos";
 
 const pagesIn = (directory: string): readonly string[] =>
     existsSync(directory)

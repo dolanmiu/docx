@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import { type Bounds, type ConnectorEndpoint, type ConnectorGeometry, type Point, routeConnector } from "./connector-route";
+import {
+    type Bounds,
+    type ConnectorEndpoint,
+    type ConnectorGeometry,
+    type Point,
+    fitElbowConnector,
+    routeConnector,
+} from "./connector-route";
 
 const MARGIN = 228600;
 
@@ -318,6 +325,87 @@ describe("routeConnector", () => {
             expect(geometry).to.deep.include({ type: "elbowConnector", adjustments: { bendX: 50 } });
         });
 
+        it("should go through a gap narrower than two margins, and still attach to the shapes", () => {
+            // A wall of shapes with a gap in it, below the line between the ends. The shapes at the ends of the wall are
+            // too far away to be tried for places to bend
+            const wall = Array.from({ length: 15 }, (_, index) => [
+                box(900, 450 - 400 * (index + 1), 1100, 450 - 400 * index),
+                box(900, 550 + 400 * index, 1100, 550 + 400 * (index + 1)),
+            ]).flat();
+            const start = at(0, 0, 0);
+            const end = at(2000, 0, 180);
+            const geometry = routeConnector("elbow", start, end, { obstacles: wall });
+            expect(geometry.type).to.equal("elbowConnectorFourBends");
+            expectConnects(geometry, start, end, 9525);
+            // Through the middle of the gap
+            expect(geometry.points[2].y).to.equal(500000);
+        });
+
+        it("should go through a gap with two or three bends as the presets do", () => {
+            // A vertical wall with a gap, and an end past it that faces up
+            const vertical = Array.from({ length: 15 }, (_, index) => [
+                box(900, 450 - 400 * (index + 1), 1100, 450 - 400 * index),
+                box(900, 550 + 400 * index, 1100, 550 + 400 * (index + 1)),
+            ]).flat();
+            const start = at(0, 0, 0);
+            const below = at(2000, 1400, 270);
+            const turning = routeConnector("elbow", start, below, { obstacles: vertical });
+            expect(turning.type).to.equal("elbowConnectorThreeBends");
+            expectConnects(turning, start, below, 9525);
+            expect(turning.points[2].y).to.equal(500000);
+
+            // A horizontal wall with a gap, and an end below it that faces left
+            const horizontal = Array.from({ length: 15 }, (_, index) => [
+                box(750 - 400 * (index + 1), 400, 750 - 400 * index, 600),
+                box(850 + 400 * index, 400, 850 + 400 * (index + 1), 600),
+            ]).flat();
+            const across = at(2000, 1000, 180);
+            const straight = routeConnector("elbow", start, across, { obstacles: horizontal });
+            expect(straight.type).to.equal("elbowConnector");
+            expectConnects(straight, start, across, 9525);
+            expect(straight.points[1].x).to.equal(800000);
+        });
+
+        it("should draw a route that needs more than four bends as a line that isn't attached", () => {
+            const pixels = (x: number, y: number): Point => ({ x: x * 9525, y: y * 9525 });
+            const shape = (left: number, top: number, right: number, bottom: number): Bounds => ({
+                left: left * 9525,
+                top: top * 9525,
+                right: right * 9525,
+                bottom: bottom * 9525,
+            });
+            const geometry = routeConnector(
+                "elbow",
+                { point: pixels(0, 0), angle: 270 },
+                { point: pixels(200, 40), angle: 0 },
+                { margin: 20 * 9525, obstacles: [shape(220, 100, 260, 160), shape(-20, -80, 20, -60), shape(160, -80, 240, 0)] },
+            );
+            expect(geometry).to.deep.include({
+                type: "freeform",
+                offset: pixels(0, -20),
+                width: 220 * 9525,
+                height: 60 * 9525,
+                rotation: 0,
+                flip: { horizontal: false, vertical: false },
+            });
+            expect(geometry.points).to.deep.equal([
+                pixels(0, 0),
+                pixels(0, -20),
+                pixels(40, -20),
+                pixels(40, 20),
+                pixels(220, 20),
+                pixels(220, 40),
+                pixels(200, 40),
+            ]);
+        });
+
+        it("should keep the curved route through an obstacle, rather than draw a line", () => {
+            const geometry = routeConnector("curved", at(0, 0, 90), at(1000, 0, 0), {
+                obstacles: [box(-100, 300, 100, 400), box(900, -200, 1300, 400)],
+            });
+            expect(geometry.type).to.not.equal("freeform");
+        });
+
         it("should only look at the obstacles nearest the connector for places to bend", () => {
             const far = Array.from({ length: 20 }, (_, index) => box(5000 + index * 300, 5000, 5100 + index * 300, 5100));
             const start = at(0, 0, 0);
@@ -325,6 +413,32 @@ describe("routeConnector", () => {
             const geometry = routeConnector("elbow", start, end, { obstacles: [...far, box(400, -100, 600, 100)] });
             expect(geometry.type).to.equal("elbowConnectorFourBends");
             expectConnects(geometry, start, end, 9525);
+        });
+    });
+
+    describe("fitElbowConnector", () => {
+        it("should draw a route whose bends have moved with the preset that bends there", () => {
+            const start = at(0, 0, 0);
+            const end = at(1000, 500, 180);
+            const moved = [start.point, { x: 300000, y: 0 }, { x: 300000, y: 500000 }, end.point];
+            const geometry = fitElbowConnector(start, end, moved, MARGIN);
+            expect(geometry).to.deep.include({ type: "elbowConnector", adjustments: { bendX: 30 } });
+            expectConnects(geometry, start, end);
+        });
+
+        it("should draw a route with more than four bends as a freeform line", () => {
+            const points = [
+                { x: 0, y: 0 },
+                { x: 0, y: -100 },
+                { x: 200, y: -100 },
+                { x: 200, y: 100 },
+                { x: 400, y: 100 },
+                { x: 400, y: 50 },
+                { x: 300, y: 50 },
+            ];
+            const geometry = fitElbowConnector({ point: points[0], angle: 270 }, { point: points[6], angle: 0 }, points, 50);
+            expect(geometry.type).to.equal("freeform");
+            expect(geometry.points).to.equal(points);
         });
     });
 });
