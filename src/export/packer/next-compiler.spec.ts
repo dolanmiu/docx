@@ -2,7 +2,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vites
 
 import { File } from "@file/file";
 import { Footer, Header } from "@file/header";
-import { Bookmark, ImageRun, Paragraph, TextRun } from "@file/paragraph";
+import { Bookmark, ImageRun, Paragraph, ShapeGroupRun, ShapeRun, TextRun, WpsShapeRun } from "@file/paragraph";
 import * as convenienceFunctions from "@util/convenience-functions";
 
 import { Compiler } from "./next-compiler";
@@ -276,6 +276,57 @@ describe("Compiler", () => {
             expect(startIds.every((ids) => ids.length === 1)).to.equal(true);
             expect(new Set(startIds.flat()).size).to.equal(4);
             expect(endIds).to.deep.equal(startIds);
+        });
+
+        it("should write each drawing and grouped shape with a distinct id", async () => {
+            const image = (): Paragraph =>
+                new Paragraph({
+                    children: [new ImageRun({ type: "png", data: Buffer.from("", "base64"), transformation: { width: 10, height: 10 } })],
+                });
+            const textBox = (): Paragraph =>
+                new Paragraph({
+                    children: [
+                        new WpsShapeRun({ type: "wps", children: [new Paragraph("text")], transformation: { width: 10, height: 10 } }),
+                    ],
+                });
+            const shape = (): Paragraph =>
+                new Paragraph({ children: [new ShapeRun({ type: "ellipse", transformation: { width: 10, height: 10 } })] });
+            const group = (): Paragraph =>
+                new Paragraph({
+                    children: [
+                        new ShapeGroupRun({
+                            children: [
+                                { type: "rect", transformation: { width: 10, height: 10 } },
+                                { type: "rect", transformation: { offset: { left: 10 }, width: 10, height: 10 } },
+                            ],
+                        }),
+                    ],
+                });
+            const file = new File({
+                sections: [
+                    {
+                        headers: { default: new Header({ children: [textBox(), shape()] }) },
+                        footers: { default: new Footer({ children: [image(), group()] }) },
+                        children: [image(), textBox(), shape(), group(), image()],
+                    },
+                ],
+            });
+
+            // Headers and footers are formatted more than once per compile, and a
+            // document can be packed repeatedly, so compile twice.
+            compiler.compile(file);
+            const zipFile = compiler.compile(file);
+            const xml = (
+                await Promise.all(
+                    ["word/document.xml", "word/header1.xml", "word/footer1.xml"].map((name) => zipFile.file(name)?.async("text")),
+                )
+            ).join("");
+
+            // Shapes inside groups carry ids too, which must not clash with any docPr id
+            const ids = [...xml.matchAll(/<(?:wp:docPr|wps:cNvPr) id="(\d+)"/g)].map(([, id]) => id);
+
+            expect(ids).to.have.length(13);
+            expect(new Set(ids).size).to.equal(13);
         });
 
         it("should call the format method X times equalling X files to be formatted", () => {

@@ -28,8 +28,8 @@ const doc = new Document({
                                 }),
                             ],
                             transformation: {
-                                width: 4000000,
-                                height: 800000,
+                                width: 420,
+                                height: 84,
                             },
                         }),
                     ],
@@ -54,8 +54,8 @@ const doc = new Document({
                                 }),
                             ],
                             transformation: {
-                                width: 4000000,
-                                height: 800000,
+                                width: 420,
+                                height: 84,
                             },
                             solidFill: {
                                 type: "rgb",
@@ -84,8 +84,8 @@ const doc = new Document({
                                 }),
                             ],
                             transformation: {
-                                width: 3000000,
-                                height: 600000,
+                                width: 315,
+                                height: 63,
                                 rotation: 15,
                             },
                             outline: {
@@ -112,8 +112,8 @@ const doc = new Document({
                                 }),
                             ],
                             transformation: {
-                                width: 3500000,
-                                height: 700000,
+                                width: 368,
+                                height: 74,
                             },
                             outline: {
                                 type: "solidFill",
@@ -150,8 +150,8 @@ const doc = new Document({
                                 }),
                             ],
                             transformation: {
-                                width: 4000000,
-                                height: 1200000,
+                                width: 420,
+                                height: 126,
                             },
                             solidFill: {
                                 type: "rgb",

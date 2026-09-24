@@ -4,6 +4,8 @@ WPS (WordProcessing Shape) text boxes are the modern, DrawingML-based alternativ
 
 !> `WPS Text Boxes` require an understanding of [Paragraphs](usage/paragraph.md).
 
+?> For shapes other than rectangles, or simpler fill and line options, use [`ShapeRun`](usage/shapes.md). Any shape can hold text through its `children`.
+
 ## When to Use WPS vs VML Text Boxes
 
 | Feature            | WPS Text Box (`WpsShapeRun`) | VML Text Box (`Textbox`) |

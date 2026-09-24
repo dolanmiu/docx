@@ -63,4 +63,25 @@ describe("createOutline", () => {
             ],
         });
     });
+
+    it("should write the OOXML values for cap, compound line and alignment", () => {
+        const tree = new Formatter().format(
+            createOutline({ type: "noFill", width: 12700, cap: "ROUND", compoundLine: "THICK_THIN", align: "INSET" }),
+        );
+        expect(tree).to.deep.equal({
+            "a:ln": [
+                {
+                    _attr: {
+                        w: 12700,
+                        cap: "rnd",
+                        cmpd: "thickThin",
+                        algn: "in",
+                    },
+                },
+                {
+                    "a:noFill": {},
+                },
+            ],
+        });
+    });
 });

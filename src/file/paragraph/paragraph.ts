@@ -22,6 +22,8 @@ import {
     type ImageRun,
     type Run,
     type SequentialIdentifier,
+    type ShapeGroupRun,
+    type ShapeRun,
     type SimpleField,
     type SimpleMailMergeField,
     type SymbolRun,
@@ -37,6 +39,8 @@ import type { Comment, CommentRangeEnd, CommentRangeStart, CommentReference, Com
 export type ParagraphChild =
     | TextRun
     | ImageRun
+    | ShapeRun
+    | ShapeGroupRun
     | SymbolRun
     | Bookmark
     | PageBreak

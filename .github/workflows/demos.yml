@@ -232,3 +232,10 @@ jobs:
             - uses: "./.github/actions/validate-docx"
             - run: npm run run-ts -- ./demo/103-track-change-images.ts
             - uses: "./.github/actions/validate-docx"
+            # The bundled schemas don't declare the Word 2010 wps/wpg namespaces used by shapes, so validation is skipped (as for demo 99)
+            - run: npm run run-ts -- ./demo/107-inline-shapes.ts
+            # - uses: "./.github/actions/validate-docx"
+            - run: npm run run-ts -- ./demo/108-shapes.ts
+            # - uses: "./.github/actions/validate-docx"
+            - run: npm run run-ts -- ./demo/109-shape-groups.ts
+            # - uses: "./.github/actions/validate-docx"

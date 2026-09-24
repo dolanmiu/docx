@@ -19,6 +19,8 @@
         - [Symbols](usage/symbols.md)
     - [Text](usage/text.md)
     - [Images](usage/images.md)
+    - [Shapes](usage/shapes.md)
+        - [Shape Adjustments](usage/shape-adjustments.md)
     - [Tables](usage/tables.md)
     - [Bullet Points](usage/bullet-points.md)
     - [Numbering](usage/numbering.md)

@@ -10,7 +10,7 @@
  */
 import { ConcreteHyperlink } from "@file/paragraph";
 import { type IContext, type IXmlableObject, NextAttributeComponent, XmlComponent } from "@file/xml-components";
-import { docPropertiesUniqueNumericIdGen } from "@util/convenience-functions";
+import { docPropertiesUniqueNumericId } from "@util/convenience-functions";
 
 import { createHyperlinkClick } from "./doc-properties-children";
 
@@ -65,15 +65,13 @@ export type DocPropertiesOptions = {
  * ```
  */
 export class DocProperties extends XmlComponent {
-    private readonly docPropertiesUniqueNumericId = docPropertiesUniqueNumericIdGen();
-
     public constructor({ name, description, title, id }: DocPropertiesOptions = { name: "", description: "", title: "" }) {
         super("wp:docPr");
 
         const attributes: Record<string, { readonly key: string; readonly value: string | number }> = {
             id: {
                 key: "id",
-                value: id ?? this.docPropertiesUniqueNumericId(),
+                value: id ?? docPropertiesUniqueNumericId(),
             },
             name: {
                 key: "name",

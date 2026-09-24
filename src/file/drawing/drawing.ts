@@ -3,6 +3,7 @@ import { XmlComponent } from "@file/xml-components";
 
 import { Anchor } from "./anchor";
 import type { DocPropertiesOptions } from "./doc-properties/doc-properties";
+import type { EffectExtentAttributes } from "./effect-extent/effect-extent";
 import type { IFloating } from "./floating";
 import { createInline } from "./inline";
 import type { ICropOptions } from "./inline/graphic/graphic-data/pic/blip/source-rectangle";
@@ -32,6 +33,8 @@ export type IDrawingOptions = {
     readonly outline?: OutlineOptions;
     readonly solidFill?: SolidFillOptions;
     readonly crop?: ICropOptions;
+    /** How far the drawing's visible effects (such as a thick line) reach past its box, in EMUs */
+    readonly effectExtent?: EffectExtentAttributes;
 };
 
 /**
@@ -65,6 +68,7 @@ export class Drawing extends XmlComponent {
                     outline: drawingOptions.outline,
                     solidFill: drawingOptions.solidFill,
                     crop: drawingOptions.crop,
+                    effectExtent: drawingOptions.effectExtent,
                 }),
             );
         } else {

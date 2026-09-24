@@ -1,7 +1,8 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { Formatter } from "@export/formatter";
 import type { IContext } from "@file/xml-components";
+import * as convenienceFunctions from "@util/convenience-functions";
 
 import { ConcreteHyperlink, TextRun } from "../";
 import { Drawing, type IDrawingOptions } from "./drawing";
@@ -29,6 +30,14 @@ const createDrawing = (drawingOptions?: IDrawingOptions): Drawing =>
     );
 
 describe("Drawing", () => {
+    beforeEach(() => {
+        vi.spyOn(convenienceFunctions, "docPropertiesUniqueNumericId").mockReturnValue(1);
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
     let currentBreak: Drawing;
 
     describe("#constructor()", () => {
