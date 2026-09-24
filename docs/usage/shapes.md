@@ -135,7 +135,7 @@ new ShapeRun({
 
 ## Fill
 
-`fill` can be a colour, `"none"`, a solid fill, a gradient, a pattern or a picture. Colours are 6-digit hex values, with or without a `#`.
+`fill` can be a colour, `"none"`, a solid fill, a gradient, a pattern or a picture. Colours are 6-digit hex values, with or without a `#`, or [colours of the document's theme](#theme-colours).
 
 ```ts
 // A colour
@@ -147,6 +147,52 @@ new ShapeRun({ type: "ellipse", transformation: { width: 90, height: 90 }, fill:
 // No fill (the default)
 new ShapeRun({ type: "rectangle", transformation: { width: 100, height: 50 }, fill: "none" });
 ```
+
+### Theme colours
+
+Anywhere a shape takes a colour, it can take one of the colours of the document's [theme](usage/themes.md) instead: `{ theme: "accent1" }`. The shape changes colour when the theme's colours change, such as when a different theme is chosen on Word's **Design** tab.
+
+`lighter` and `darker` make the colour lighter or darker, from 0 (unchanged) to 100 (white or black), as Word's colour menus do: "Blue, Accent 1, Lighter 80%" is `{ theme: "accent1", lighter: 80 }`.
+
+```ts
+// Filled in a light version of the theme's first accent colour, with a darker outline
+new ShapeRun({
+    type: "roundedRectangle",
+    transformation: { width: 120, height: 60 },
+    fill: { theme: "accent1", lighter: 80 },
+    line: { theme: "accent1", darker: 25 },
+});
+
+// Theme colours with transparency, and in gradients, patterns, lines and effects
+new ShapeRun({
+    type: "ellipse",
+    transformation: { width: 90, height: 90 },
+    fill: { color: { theme: "accent2" }, transparency: 40 },
+    line: { color: { theme: "dark2" }, width: 2 },
+    effects: { glow: { color: { theme: "accent4" }, size: 6 } },
+});
+```
+
+<!-- cspell:disable -->
+
+| `theme`             | OOXML name | Office's colour |
+| ------------------- | ---------- | --------------- |
+| `dark1`             | `dk1`      | Black           |
+| `light1`            | `lt1`      | White           |
+| `dark2`             | `dk2`      | `44546A`        |
+| `light2`            | `lt2`      | `E7E6E6`        |
+| `accent1`           | `accent1`  | `4472C4`        |
+| `accent2`           | `accent2`  | `ED7D31`        |
+| `accent3`           | `accent3`  | `A5A5A5`        |
+| `accent4`           | `accent4`  | `FFC000`        |
+| `accent5`           | `accent5`  | `5B9BD5`        |
+| `accent6`           | `accent6`  | `70AD47`        |
+| `hyperlink`         | `hlink`    | `0563C1`        |
+| `followedHyperlink` | `folHlink` | `954F72`        |
+
+<!-- cspell:enable -->
+
+They are written as `a:schemeClr`, and `lighter` and `darker` as Word writes them: `lighter` scales the colour's luminance (`a:lumMod`) and adds to it (`a:lumOff`), and `darker` scales it.
 
 ### Gradients
 
@@ -201,12 +247,12 @@ new ShapeRun({
 });
 ```
 
-| Property          | Type           | Notes    | Description                                                      |
-| ----------------- | -------------- | -------- | ---------------------------------------------------------------- |
-| `type`            | `"pattern"`    | Required |                                                                  |
-| `pattern`         | `ShapePattern` | Required | Such as `"percent20"`, `"horizontal"`, `"smallCheckerBoard"`     |
-| `color`           | `string`       | Optional | 6-digit hex colour of the lines and dots. Default is `000000`    |
-| `backgroundColor` | `string`       | Optional | 6-digit hex colour of the space behind them. Default is `FFFFFF` |
+| Property          | Type           | Notes    | Description                                                  |
+| ----------------- | -------------- | -------- | ------------------------------------------------------------ |
+| `type`            | `"pattern"`    | Required |                                                              |
+| `pattern`         | `ShapePattern` | Required | Such as `"percent20"`, `"horizontal"`, `"smallCheckerBoard"` |
+| `color`           | `ShapeColor`   | Optional | Colour of the lines and dots. Default is `000000`            |
+| `backgroundColor` | `ShapeColor`   | Optional | Colour of the space behind them. Default is `FFFFFF`         |
 
 ### Picture fills
 
@@ -241,7 +287,7 @@ new ShapeRun({
 
 ## Line
 
-`line` is the shape's outline, or the line itself for `line` and connector shapes. It can be a colour, `"none"` or an object:
+`line` is the shape's outline, or the line itself for `line` and connector shapes. It can be a colour, a [theme colour](#theme-colours), `"none"` or an object:
 
 ```ts
 new ShapeRun({
@@ -259,7 +305,7 @@ new ShapeRun({
 
 | Property       | Type                                                                     | Notes    | Description                                                              |
 | -------------- | ------------------------------------------------------------------------ | -------- | ------------------------------------------------------------------------ |
-| `color`        | `string`                                                                 | Optional | 6-digit hex colour. Default is `000000` (black)                          |
+| `color`        | `ShapeColor`                                                             | Optional | Hex or [theme](#theme-colours) colour. Default is `000000` (black)       |
 | `width`        | `number`                                                                 | Optional | Width in points, from `0` to `1584`. Default is `1`                      |
 | `transparency` | `number`                                                                 | Optional | From `0` (opaque) to `100` (invisible)                                   |
 | `dash`         | `LineDash` \| `CustomLineDash`                                           | Optional | A dash pattern, or dashes of your own. Default is a solid line           |
@@ -993,3 +1039,11 @@ A rule as wide as the text, a sidebar sized and placed as percentages of the tex
 [Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/117-shape-page-layout.ts ":include")
 
 _Source: https://github.com/dolanmiu/docx/blob/master/demo/117-shape-page-layout.ts_
+
+### Theme colours
+
+A document with a theme of its own, swatches of its colours and of lighter and darker versions of one, and a diagram in them.
+
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/118-theme.ts ":include")
+
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/118-theme.ts_

@@ -42,6 +42,7 @@ import {
     createShapeGuides,
     getShapeEffectsOverhang,
     getShapeLineOverhang,
+    isThemeColor,
 } from "./preset-shape";
 import type { ConnectorEnd, ConnectorLabel, ConnectorSide, IShapeConnectorOptions } from "./shape-connector";
 import { type ShapeLane, type ShapeLayout, type ShapeLayoutDirection, layoutItems } from "./shape-layout";
@@ -824,7 +825,7 @@ type ResolvedConnector = {
 };
 
 const hasArrow = (line: ShapeLine | undefined, end: "startArrow" | "endArrow"): boolean =>
-    typeof line === "object" && line[end] !== undefined;
+    typeof line === "object" && !isThemeColor(line) && line[end] !== undefined;
 
 /**
  * Finds the shapes and connection sites a connector attaches to.

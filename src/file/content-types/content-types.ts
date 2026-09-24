@@ -69,6 +69,7 @@ export class ContentTypes extends XmlComponent {
         this.root.push(
             createOverride("application/vnd.openxmlformats-officedocument.wordprocessingml.fontTable+xml", "/word/fontTable.xml"),
         );
+        this.root.push(createOverride("application/vnd.openxmlformats-officedocument.theme+xml", "/word/theme/theme1.xml"));
     }
 
     /**

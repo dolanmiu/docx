@@ -42,6 +42,23 @@ describe("createShapeFill", () => {
         });
     });
 
+    it("should write a solid fill for a colour of the document's theme", () => {
+        expect(new Formatter().format(createShapeFill({ theme: "accent2", lighter: 80 }))).to.deep.equal({
+            "a:solidFill": [
+                {
+                    "a:schemeClr": [
+                        { _attr: { val: "accent2" } },
+                        { "a:lumMod": { _attr: { val: 20000 } } },
+                        { "a:lumOff": { _attr: { val: 80000 } } },
+                    ],
+                },
+            ],
+        });
+        expect(new Formatter().format(createShapeFill({ color: { theme: "accent2" }, transparency: 40 }))).to.deep.equal({
+            "a:solidFill": [{ "a:schemeClr": [{ _attr: { val: "accent2" } }, { "a:alpha": { _attr: { val: 60000 } } }] }],
+        });
+    });
+
     it("should accept an explicit solid type", () => {
         expect(new Formatter().format(createShapeFill({ type: "solid", color: "FF0000" }))).to.deep.equal({
             "a:solidFill": [{ "a:srgbClr": { _attr: { val: "FF0000" } } }],
@@ -116,6 +133,24 @@ describe("createShapeFill", () => {
             });
         });
 
+        it("should write stops in colours of the document's theme", () => {
+            const tree = new Formatter().format(
+                createShapeFill({
+                    type: "gradient",
+                    stops: [
+                        { position: 0, color: { theme: "accent1", lighter: 60 } },
+                        { position: 100, color: { theme: "accent1" }, transparency: 20 },
+                    ],
+                }),
+            );
+            expect(tree["a:gradFill"][1]["a:gsLst"][1]).to.deep.equal({
+                "a:gs": [
+                    { _attr: { pos: 100000 } },
+                    { "a:schemeClr": [{ _attr: { val: "accent1" } }, { "a:alpha": { _attr: { val: 80000 } } }] },
+                ],
+            });
+        });
+
         it("should reject fewer than two stops", () => {
             expect(() => createShapeFill({ type: "gradient", stops: [{ position: 0, color: "000000" }] })).to.throw(
                 "Expected at least 2 stops, got 1",
@@ -157,6 +192,21 @@ describe("createShapeFill", () => {
                     { "a:bgClr": [{ "a:srgbClr": { _attr: { val: "DEEBF7" } } }] },
                 ],
             });
+        });
+
+        it("should write colours of the document's theme", () => {
+            const tree = new Formatter().format(
+                createShapeFill({
+                    type: "pattern",
+                    pattern: "percent20",
+                    color: { theme: "accent1" },
+                    backgroundColor: { theme: "light1" },
+                }),
+            );
+            expect(tree["a:pattFill"].slice(1)).to.deep.equal([
+                { "a:fgClr": [{ "a:schemeClr": { _attr: { val: "accent1" } } }] },
+                { "a:bgClr": [{ "a:schemeClr": { _attr: { val: "lt1" } } }] },
+            ]);
         });
     });
 

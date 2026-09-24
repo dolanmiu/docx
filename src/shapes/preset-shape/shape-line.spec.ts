@@ -25,6 +25,17 @@ describe("createShapeLine", () => {
         });
     });
 
+    it("should write a 1pt line in a colour of the document's theme, given on its own or in the line's options", () => {
+        const accent = { "a:solidFill": [{ "a:schemeClr": [{ _attr: { val: "accent1" } }, { "a:lumMod": { _attr: { val: 50000 } } }] }] };
+        expect(new Formatter().format(createShapeLine({ theme: "accent1", darker: 50 }))).to.deep.equal({
+            "a:ln": [{ _attr: { w: 12700 } }, accent],
+        });
+        expect(new Formatter().format(createShapeLine({ color: { theme: "accent1", darker: 50 }, width: 2 }))).to.deep.equal({
+            "a:ln": [{ _attr: { w: 25400 } }, accent],
+        });
+        expect(getShapeLineOverhang({ theme: "accent1" })).to.equal(getShapeLineOverhang("4472C4"));
+    });
+
     it("should write every option in schema order", () => {
         const tree = new Formatter().format(
             createShapeLine({

@@ -28,6 +28,7 @@ import { Settings } from "./settings";
 import { Styles } from "./styles";
 import { ExternalStylesFactory } from "./styles/external-styles-factory";
 import { DefaultStylesFactory } from "./styles/factory";
+import { Theme } from "./theme";
 
 /**
  * Options for a document section.
@@ -170,6 +171,7 @@ export class File {
     /** Durable comment id mapping (word/commentsIds.xml). */
     private readonly commentsIds?: CommentsIds;
     private readonly fontWrapper: FontWrapper;
+    private readonly theme: Theme;
 
     public constructor(options: IPropertiesOptions) {
         this.coreProperties = new CoreProperties({
@@ -256,6 +258,15 @@ export class File {
         }
 
         this.fontWrapper = new FontWrapper(options.fonts ?? []);
+
+        this.theme = new Theme(options.theme);
+        // After the headers and footers, so their relationships keep the ids they had before documents had a theme
+        this.documentWrapper.Relationships.addRelationship(
+            // eslint-disable-next-line functional/immutable-data
+            this.currentRelationshipId++,
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme",
+            "theme/theme1.xml",
+        );
     }
 
     private addSection({ headers = {}, footers = {}, children, properties }: ISectionOptions): void {
@@ -482,5 +493,10 @@ export class File {
 
     public get FontTable(): FontWrapper {
         return this.fontWrapper;
+    }
+
+    /** The document's theme (word/theme/theme1.xml). */
+    public get Theme(): Theme {
+        return this.theme;
     }
 }

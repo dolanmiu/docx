@@ -222,6 +222,22 @@ describe("ShapeRun", () => {
             expect(new Formatter().format(shape, context)).to.deep.equal(styled);
         });
 
+        it("should size a shape to fit its text in the font of the document's theme", () => {
+            const shape = new ShapeRun({ type: "rectangle", text: "Hello world", transformation: { width: "fitText", height: 40 } });
+            const widthIn = (body: string): number =>
+                extentOf(
+                    new Formatter().format(shape, {
+                        file: new File({
+                            theme: { fonts: { body } },
+                            styles: { default: { document: { run: { font: { theme: "body" }, size: 24 } } } },
+                            sections: [],
+                        }),
+                        stack: [],
+                    } as unknown as IContext),
+                ).cx;
+            expect(widthIn("Courier New")).to.be.greaterThan(widthIn("Arial"));
+        });
+
         it("should write text without the space the document puts after paragraphs", () => {
             const tree = new Formatter().format(
                 new ShapeRun({ type: "rectangle", text: "Hi", transformation: { width: 50, height: 50 } }),

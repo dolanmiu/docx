@@ -21,6 +21,7 @@ import type { ISectionOptions } from "../file";
 import type { INumberingOptions } from "../numbering";
 import type { Paragraph } from "../paragraph";
 import type { IStylesOptions } from "../styles";
+import type { IThemeOptions } from "../theme";
 
 /**
  * Options for configuring document properties.
@@ -47,6 +48,7 @@ import type { IStylesOptions } from "../styles";
  * @property defaultTabStop - Default tab stop width
  * @property fonts - Font configurations
  * @property hyphenation - Hyphenation settings
+ * @property theme - The document's theme: its colors, and its fonts for headings and body text
  */
 export type IPropertiesOptions = {
     readonly sections: readonly ISectionOptions[];
@@ -89,6 +91,11 @@ export type IPropertiesOptions = {
     readonly defaultTabStop?: number;
     readonly fonts?: readonly FontOptions[];
     readonly hyphenation?: IHyphenationOptions;
+    /**
+     * The document's theme: its colors, and its fonts for headings and body text. Every document has a theme, Office's
+     * from Office 2016 to 2021 unless the options change it
+     */
+    readonly theme?: IThemeOptions;
 };
 
 /**

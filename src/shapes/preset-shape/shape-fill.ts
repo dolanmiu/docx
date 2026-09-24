@@ -13,7 +13,7 @@ import {
     XmlComponent,
 } from "docx";
 
-import { createShapeColor } from "./shape-color";
+import { type ShapeColor, type ShapeThemeColor, createShapeColor, isThemeColor } from "./shape-color";
 import { percentageValue, positiveFixedAngle } from "./shape-units";
 import { createNoFill, createSourceRectangle, createStretch, createSvgBlipExtension } from "../drawing/drawing-parts";
 import { type ImageSource, createImageMediaData } from "../picture/image-data";
@@ -28,8 +28,8 @@ export type { ImageSource } from "../picture/image-data";
 export type GradientStop = {
     /** Where the stop sits along the gradient, from 0 to 100 */
     readonly position: number;
-    /** A 6-digit hex colour such as `"FF0000"` */
-    readonly color: string;
+    /** A 6-digit hex colour such as `"FF0000"`, or a colour of the document's theme such as `{ theme: "accent1" }` */
+    readonly color: ShapeColor;
     /** From 0 (opaque) to 100 (invisible) */
     readonly transparency?: number;
 };
@@ -41,8 +41,8 @@ export type GradientStop = {
  */
 export type SolidShapeFill = {
     readonly type?: "solid";
-    /** A 6-digit hex colour such as `"FF0000"` */
-    readonly color: string;
+    /** A 6-digit hex colour such as `"FF0000"`, or a colour of the document's theme such as `{ theme: "accent1" }` */
+    readonly color: ShapeColor;
     /** From 0 (opaque) to 100 (invisible) */
     readonly transparency?: number;
 };
@@ -148,10 +148,10 @@ export type PatternShapeFill = {
     readonly type: "pattern";
     /** The pattern, such as `"percent20"`, `"horizontal"` or `"smallCheckerBoard"` */
     readonly pattern: ShapePattern;
-    /** A 6-digit hex colour for the pattern's lines and dots. Default is `"000000"` */
-    readonly color?: string;
-    /** A 6-digit hex colour for the space behind the pattern. Default is `"FFFFFF"` */
-    readonly backgroundColor?: string;
+    /** The colour of the pattern's lines and dots: a hex colour or a colour of the document's theme. Default is `"000000"` */
+    readonly color?: ShapeColor;
+    /** The colour of the space behind the pattern: a hex colour or a colour of the document's theme. Default is `"FFFFFF"` */
+    readonly backgroundColor?: ShapeColor;
 };
 
 /**
@@ -216,11 +216,12 @@ export type PictureShapeFill = {
 };
 
 /**
- * How a shape is filled: a hex colour, `"none"`, or a solid, gradient, pattern or picture fill.
+ * How a shape is filled: a hex colour, a colour of the document's theme such as `{ theme: "accent1" }`, `"none"`, or a
+ * solid, gradient, pattern or picture fill.
  *
  * @publicApi
  */
-export type ShapeFill = string | SolidShapeFill | GradientShapeFill | PatternShapeFill | PictureShapeFill;
+export type ShapeFill = string | ShapeThemeColor | SolidShapeFill | GradientShapeFill | PatternShapeFill | PictureShapeFill;
 
 // <xsd:complexType name="CT_GradientStop">
 //     <xsd:sequence>
@@ -458,7 +459,7 @@ export const createPictureFill = (fill: Omit<PictureShapeFill, "type">, name: "a
  * Creates the fill element for a preset shape.
  *
  * - `undefined` or `"none"` writes `<a:noFill/>`
- * - A hex colour or a solid fill writes `<a:solidFill>`
+ * - A hex colour, a colour of the theme or a solid fill writes `<a:solidFill>`
  * - A gradient fill writes `<a:gradFill>`
  * - A pattern fill writes `<a:pattFill>`
  * - A picture fill writes `<a:blipFill>`, and adds the picture to the document when it is written
@@ -468,7 +469,7 @@ export const createShapeFill = (fill: ShapeFill = "none"): XmlComponent => {
         return createNoFill();
     }
 
-    if (typeof fill === "string") {
+    if (typeof fill === "string" || isThemeColor(fill)) {
         return new BuilderElement({ name: "a:solidFill", children: [createShapeColor(fill)] });
     }
 

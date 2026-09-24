@@ -5,7 +5,7 @@
  */
 import { BuilderElement, type XmlComponent } from "docx";
 
-import { createShapeColor } from "./shape-color";
+import { type ShapeColor, type ShapeThemeColor, createShapeColor, isThemeColor } from "./shape-color";
 import { type GradientShapeFill, createShapeFill } from "./shape-fill";
 import { pointsToEmus } from "./shape-units";
 import { createNoFill } from "../drawing/drawing-parts";
@@ -130,8 +130,8 @@ export type Arrowhead =
  * @publicApi
  */
 export type ShapeLineOptions = {
-    /** A 6-digit hex colour such as `"FF0000"`. Default is `"000000"` */
-    readonly color?: string;
+    /** A 6-digit hex colour such as `"FF0000"`, or a colour of the document's theme such as `{ theme: "accent1" }`. Default is `"000000"` */
+    readonly color?: ShapeColor;
     /** Line width in points, from 0 to 1584. Default is 1 */
     readonly width?: number;
     /** From 0 (opaque) to 100 (invisible) */
@@ -153,11 +153,12 @@ export type ShapeLineOptions = {
 };
 
 /**
- * A shape's line: a hex colour, `"none"`, or line options.
+ * A shape's line: a hex colour, a colour of the document's theme such as `{ theme: "accent1" }`, `"none"`, or line
+ * options.
  *
  * @publicApi
  */
-export type ShapeLine = string | ShapeLineOptions;
+export type ShapeLine = string | ShapeThemeColor | ShapeLineOptions;
 
 // How many times the line width an arrowhead is, and its OOXML name (`ST_LineEndWidth` / `ST_LineEndLength`)
 const ARROWHEAD_SIZES: Readonly<Record<ArrowheadSize, { readonly factor: number; readonly ooxmlName: string }>> = {
@@ -166,7 +167,7 @@ const ARROWHEAD_SIZES: Readonly<Record<ArrowheadSize, { readonly factor: number;
     large: { factor: 5, ooxmlName: "lg" },
 };
 
-const resolveLine = (line: ShapeLine): ShapeLineOptions => (typeof line === "string" ? { color: line } : line);
+const resolveLine = (line: ShapeLine): ShapeLineOptions => (typeof line === "string" || isThemeColor(line) ? { color: line } : line);
 
 const lineWidthEmus = ({ width = 1 }: ShapeLineOptions): number => pointsToEmus(width, "line width");
 

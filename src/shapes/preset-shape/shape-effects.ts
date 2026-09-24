@@ -7,7 +7,7 @@
  */
 import { BuilderElement, type EffectExtentAttributes, type XmlComponent } from "docx";
 
-import { createShapeColor } from "./shape-color";
+import { type ShapeColor, createShapeColor } from "./shape-color";
 import { percentageValue, pointsToEmus, positiveFixedAngle } from "./shape-units";
 
 /**
@@ -16,8 +16,8 @@ import { percentageValue, pointsToEmus, positiveFixedAngle } from "./shape-units
  * @publicApi
  */
 export type ShapeShadow = {
-    /** A 6-digit hex colour such as `"000000"`. Default is black */
-    readonly color?: string;
+    /** A 6-digit hex colour such as `"000000"`, or a colour of the document's theme such as `{ theme: "dark1" }`. Default is black */
+    readonly color?: ShapeColor;
     /** From 0 (opaque) to 100 (invisible). Default is 60 */
     readonly transparency?: number;
     /** How far the shadow's edge is blurred, in points. Default is 4 */
@@ -34,8 +34,8 @@ export type ShapeShadow = {
  * @publicApi
  */
 export type ShapeGlow = {
-    /** A 6-digit hex colour such as `"FFC000"` */
-    readonly color: string;
+    /** A 6-digit hex colour such as `"FFC000"`, or a colour of the document's theme such as `{ theme: "accent4" }` */
+    readonly color: ShapeColor;
     /** How far the glow reaches past the shape, in points. Default is 5 */
     readonly size?: number;
     /** From 0 (opaque) to 100 (invisible). Default is 60 */
@@ -77,7 +77,7 @@ export type ShapeEffects = {
 };
 
 type ResolvedShadow = {
-    readonly color: string;
+    readonly color: ShapeColor;
     readonly transparency: number;
     /** In EMUs */
     readonly blur: number;

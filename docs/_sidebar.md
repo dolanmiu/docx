@@ -53,6 +53,7 @@
     - Styling
         - [Styling with JS](usage/styling-with-js.md)
         - [Styling with XML](usage/styling-with-xml.md)
+        - [Themes](usage/themes.md)
 
 - Exporting
     - [Packers](usage/packers.md)
