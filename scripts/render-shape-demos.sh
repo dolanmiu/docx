@@ -23,7 +23,7 @@ OUT="${1:-build/shape-demos}"
 shift || true
 DEMOS=("$@")
 if [ ${#DEMOS[@]} -eq 0 ]; then
-    DEMOS=(107-inline-shapes 108-shapes 109-shape-groups 110-shape-connectors 111-shape-styles 112-shape-diagrams 113-shape-layout)
+    DEMOS=(107-inline-shapes 108-shapes 109-shape-groups 110-shape-connectors 111-shape-styles 112-shape-diagrams 113-shape-layout 115-shape-document-styles 116-shape-swimlanes 117-shape-page-layout)
 fi
 SOFFICE="${SOFFICE:-soffice}"
 WP="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing"
@@ -42,12 +42,35 @@ for demo in "${DEMOS[@]}"; do
     # (mc:AlternateContent) is checked twice: as read by applications that use the choice, and by those that don't
     extracted="$(mktemp -d)"
     unzip -q -o "$OUT/$demo.docx" -d "$extracted"
+
+    # The Word 2010 drawing extensions (wp14), which the ISO schemas don't have, are checked against their own schema,
+    # and where they are: a floating drawing's relative sizes come after its graphic, and a percentage offset is the
+    # choice for a position, with its offset in EMUs as the fallback
+    perl -0ne 'print qq(<wp14:check xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordprocessingDrawing">);
+        print "$1\n" while /(<wp14:(sizeRel[HV])\b.*?<\/wp14:\2>|<wp14:(pctPos[HV]Offset)>.*?<\/wp14:\3>)/gs;
+        print "</wp14:check>\n"' "$extracted/word/document.xml" > "$extracted/wp14.xml"
+    if ! xmllint --noout --schema scripts/shape-demos/wp14.xsd "$extracted/wp14.xml" 2> "$extracted/errors.txt"; then
+        cat "$extracted/errors.txt"
+        echo "::error::$demo has Word 2010 drawing extensions that don't match their schema"
+        failed=1
+    fi
+    misplaced="$(perl -0ne '$all = () = /<wp14:(?:sizeRel[HV]|pctPos[HV]Offset)\b/g;
+        $placed = () = /<wp:position([HV]) relativeFrom="\w+"><mc:AlternateContent><mc:Choice Requires="wp14"><wp14:pctPos\1Offset>-?\d+<\/wp14:pctPos\1Offset><\/mc:Choice><mc:Fallback><wp:posOffset>-?\d+<\/wp:posOffset><\/mc:Fallback><\/mc:AlternateContent><\/wp:position\1>/g;
+        while (/<\/a:graphic>((?:<wp14:sizeRel[HV]\b.*?<\/wp14:sizeRel[HV]>)+)<\/wp:anchor>/gs) { my $sizes = $1; $placed += () = $sizes =~ /<wp14:sizeRel[HV]\b/g; }
+        print $all - $placed' "$extracted/word/document.xml")"
+    if [ "$misplaced" != 0 ]; then
+        echo "::error::$demo has $misplaced Word 2010 drawing extensions where they don't go"
+        failed=1
+    fi
+
     for view in choice fallback; do
         if [ "$view" = choice ]; then
             keep='s#<mc:Fallback>.*?</mc:Fallback>##g; s#</?mc:(AlternateContent|Choice)[^>]*>##g'
         else
             keep='s#<mc:Choice [^>]*>.*?</mc:Choice>##g; s#</?mc:(AlternateContent|Fallback)[^>]*>##g'
         fi
+        # Without the extensions, which were checked above: a percentage offset becomes an offset
+        keep="$keep; s#<wp14:pctPos[HV]Offset>-?\d+</wp14:pctPos[HV]Offset>#<wp:posOffset>0</wp:posOffset>#g; s#<wp14:sizeRel([HV])\b.*?</wp14:sizeRel\1>##g"
         perl -pe "$keep" "$extracted/word/document.xml" |
             sed -e "s#http://schemas.microsoft.com/office/word/2010/wordprocessingShape#$WP#g" \
                 -e "s#http://schemas.microsoft.com/office/word/2010/wordprocessingGroup#$WP#g" \

@@ -3,7 +3,15 @@
  *
  * @module
  */
-import type { DocPropertiesOptions, DrawingLinkOptions, EffectExtentAttributes, IMediaTransformation, Paragraph } from "docx";
+import {
+    type DocPropertiesOptions,
+    type DrawingLinkOptions,
+    type EffectExtentAttributes,
+    type IFloating,
+    type IMediaTransformation,
+    type Paragraph,
+    docPropertiesUniqueNumericId,
+} from "docx";
 
 import {
     type PresetShapeCoreOptions,
@@ -17,6 +25,7 @@ import {
     getShapeLineOverhang,
 } from "./preset-shape";
 import { type ShapeTransformation, createTextParagraphs } from "./shape-text-size";
+import type { TextStyles } from "./shape-text-styles";
 
 /**
  * Options every shape has, whatever its type.
@@ -74,14 +83,36 @@ export type WithPresetShape<Options> =
 
 /**
  * Maps shape options to the data used to write a `wps:wsp` element.
+ *
+ * @param styles - The document's styles, which `text` is written to suit
  */
-export const createPresetShapeData = (options: WithPresetShape<ShapeBaseOptions>): PresetShapeCoreOptions => ({
+export const createPresetShapeData = (options: WithPresetShape<ShapeBaseOptions>, styles?: TextStyles): PresetShapeCoreOptions => ({
     geometry: options.type === "custom" ? { type: "custom", path: options.path } : { type: options.type, adjustments: options.adjustments },
     fill: options.fill,
     line: options.line,
     effects: options.effects,
-    children: options.text === undefined ? options.children : [...createTextParagraphs(options.text), ...(options.children ?? [])],
+    children: options.text === undefined ? options.children : [...createTextParagraphs(options.text, styles), ...(options.children ?? [])],
     textOptions: options.textOptions,
+});
+
+/**
+ * The options of a drawing that don't depend on its layout, with the drawing's id. The id is given now, so a drawing
+ * that is laid out again when it is written keeps it.
+ */
+export const createDrawingProperties = ({
+    floating,
+    altText,
+    link,
+    decorative,
+}: DrawingLinkOptions & { readonly floating?: IFloating; readonly altText?: DocPropertiesOptions }): DrawingLinkOptions & {
+    readonly floating?: IFloating;
+    readonly docProperties: DocPropertiesOptions;
+} => ({
+    floating,
+    // A drawing without alt text has an empty name, description and title, as it does without an id
+    docProperties: { ...(altText ?? { name: "", description: "", title: "" }), id: altText?.id ?? `${docPropertiesUniqueNumericId()}` },
+    link,
+    decorative,
 });
 
 /**

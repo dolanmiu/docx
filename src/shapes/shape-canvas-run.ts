@@ -6,16 +6,33 @@
  *
  * @module
  */
-import { type DocPropertiesOptions, Drawing, type DrawingLinkOptions, type IFloating, Run, docPropertiesUniqueNumericId } from "docx";
+import {
+    type DocPropertiesOptions,
+    Drawing,
+    type DrawingLinkOptions,
+    type IFloating,
+    Run,
+    type XmlComponent,
+    docPropertiesUniqueNumericId,
+} from "docx";
 
 import { createAlternateContent } from "./drawing/alternate-content";
 import { CANVAS_URI, GROUP_URI, type ShapeDrawingChildMediaData, createShapeDrawingChild } from "./drawing/shape-drawing-child";
 import { createShapeGroup } from "./drawing/shape-group";
+import { createStyledDrawing } from "./drawing/styled-drawing";
 import { createWpcCanvas } from "./drawing/wpc-canvas";
 import { type ShapeFill, type ShapeLine, getShapeLineOverhang } from "./preset-shape";
-import { type IShapeGroupChildOptions, getGroupEffectExtent, layoutShapeDrawing } from "./shape-drawing";
+import { describeDrawing } from "./shape-description";
+import {
+    type IShapeGroupChildOptions,
+    createShapeDrawingNodes,
+    drawingStyledParagraphs,
+    getGroupEffectExtent,
+    layoutShapeDrawing,
+} from "./shape-drawing";
 import type { ShapeLayout } from "./shape-layout";
-import { createUniformEffectExtent } from "./shape-run-data";
+import { createDrawingProperties, createUniformEffectExtent } from "./shape-run-data";
+import type { TextStyles } from "./shape-text-styles";
 
 /**
  * A shape, picture, group or connector on a canvas. It takes the same options as a child of a {@link ShapeGroupRun}.
@@ -54,6 +71,11 @@ export type IShapeCanvasOptions = DrawingLinkOptions & {
     readonly layout?: ShapeLayout;
     /** Floats the canvas on the page instead of placing it inline with text */
     readonly floating?: IFloating;
+    /**
+     * Whether to write the same diagram as a group too, for applications that can't draw canvases, such as Apple Pages.
+     * Default is `true`. Without it, the canvas takes up half as much of the document, and those applications draw nothing
+     */
+    readonly fallback?: boolean;
     /** Name, description and title used by screen readers */
     readonly altText?: DocPropertiesOptions;
 };
@@ -70,7 +92,7 @@ const EMUS_PER_PIXEL = 9525;
  * The shapes are positioned with `transformation.offset`, in pixels from the canvas's top-left corner, or by a `layout`.
  *
  * Applications that can't draw canvases, such as Apple Pages, draw the same shapes as a group instead: the canvas is
- * written in `mc:AlternateContent`, with the group as its fallback.
+ * written in `mc:AlternateContent`, with the group as its fallback, unless `fallback` is `false`.
  *
  * @publicApi
  *
@@ -89,78 +111,97 @@ export class ShapeCanvasRun extends Run {
     public constructor(options: IShapeCanvasOptions) {
         super({});
 
-        // Canvas coordinates start at its top-left corner, and Word cuts off anything outside the canvas, so everything
-        // that is drawn, including lines, arrowheads and effects, is moved onto it
-        const { children, reach } = layoutShapeDrawing(options.children, { keepPositive: true, layout: options.layout });
-        const emus = options.transformation
-            ? {
-                  x: Math.round(options.transformation.width * EMUS_PER_PIXEL),
-                  y: Math.round(options.transformation.height * EMUS_PER_PIXEL),
-              }
-            : { x: Math.ceil(reach.right), y: Math.ceil(reach.bottom) };
+        // Drawing ids, in the order they are written: the canvas's shapes, the canvas, then the fallback's shapes, its
+        // background and the group
+        // Without a description of its own, the canvas is described from its shapes' text and connectors
+        const altText = describeDrawing(options);
+        const canvasNodes = createShapeDrawingNodes(options.children, options.layout);
+        const canvasOptions = createDrawingProperties({ ...options, altText });
+        const fallback =
+            options.fallback === false
+                ? undefined
+                : {
+                      nodes: createShapeDrawingNodes(options.children, options.layout),
+                      backgroundId: docPropertiesUniqueNumericId(),
+                      options: createDrawingProperties({ ...options, altText }),
+                  };
 
-        const transformation = { pixels: { x: Math.round(emus.x / EMUS_PER_PIXEL), y: Math.round(emus.y / EMUS_PER_PIXEL) }, emus };
-        const lineOverhang = options.line ? getShapeLineOverhang(options.line) : 0;
-        const drawingOptions = {
-            floating: options.floating,
-            docProperties: options.altText,
-            link: options.link,
-            decorative: options.decorative,
-        };
+        const create = (styles: TextStyles): XmlComponent => {
+            // Canvas coordinates start at its top-left corner, and Word cuts off anything outside the canvas, so everything
+            // that is drawn, including lines, arrowheads and effects, is moved onto it
+            const { children, reach } = layoutShapeDrawing(canvasNodes, { keepPositive: true, layout: options.layout, styles });
+            const emus = options.transformation
+                ? {
+                      x: Math.round(options.transformation.width * EMUS_PER_PIXEL),
+                      y: Math.round(options.transformation.height * EMUS_PER_PIXEL),
+                  }
+                : { x: Math.ceil(reach.right), y: Math.ceil(reach.bottom) };
 
-        const canvas = new Drawing(
-            {
-                type: "graphic",
-                uri: CANVAS_URI,
-                transformation,
-                content: createWpcCanvas({
-                    children: children.map((child) => createShapeDrawingChild(child, "wpg:wgp")),
-                    fill: options.fill,
-                    line: options.line,
-                }),
-            },
-            // Only the canvas's own outline reaches past its edges
-            { ...drawingOptions, effectExtent: createUniformEffectExtent(lineOverhang) },
-        );
+            const transformation = { pixels: { x: Math.round(emus.x / EMUS_PER_PIXEL), y: Math.round(emus.y / EMUS_PER_PIXEL) }, emus };
+            const lineOverhang = options.line ? getShapeLineOverhang(options.line) : 0;
 
-        // Applications that can't draw canvases, such as Apple Pages, draw the same diagram as a group. It is laid out
-        // again so its shapes have ids of their own, and a rectangle behind them draws the canvas's background and outline
-        const fallback = layoutShapeDrawing(options.children, { keepPositive: true, layout: options.layout });
-        const backgroundId = docPropertiesUniqueNumericId();
-        const background: ShapeDrawingChildMediaData = {
-            type: "wps",
-            transformation: { offset: { pixels: { x: 0, y: 0 }, emus: { x: 0, y: 0 } }, ...transformation },
-            data: {
-                geometry: { type: "rectangle" },
-                fill: options.fill,
-                line: options.line ?? "none",
-                nonVisualDrawingProperties: { id: backgroundId, name: `Canvas ${backgroundId}` },
-            },
-        };
-        const groupReach = {
-            left: Math.min(-lineOverhang, fallback.reach.left),
-            top: Math.min(-lineOverhang, fallback.reach.top),
-            right: Math.max(emus.x + lineOverhang, fallback.reach.right),
-            bottom: Math.max(emus.y + lineOverhang, fallback.reach.bottom),
-        };
-        const group = new Drawing(
-            {
-                type: "graphic",
-                uri: GROUP_URI,
-                transformation,
-                content: createShapeGroup({
+            const canvas = new Drawing(
+                {
+                    type: "graphic",
+                    uri: CANVAS_URI,
                     transformation,
-                    childOffset: { x: 0, y: 0 },
-                    childExtent: emus,
-                    children: [background, ...fallback.children].map((child) => createShapeDrawingChild(child, "wpg:grpSp")),
-                }),
-            },
-            {
-                ...drawingOptions,
-                effectExtent: getGroupEffectExtent({ reach: groupReach }, { x: 0, y: 0 }, emus, { width: emus.x, height: emus.y }),
-            },
-        );
+                    content: createWpcCanvas({
+                        children: children.map((child) => createShapeDrawingChild(child, "wpg:wgp")),
+                        fill: options.fill,
+                        line: options.line,
+                    }),
+                },
+                // Only the canvas's own outline reaches past its edges
+                { ...canvasOptions, effectExtent: createUniformEffectExtent(lineOverhang) },
+            );
 
-        this.root.push(createAlternateContent({ requires: "wpc", choice: canvas, fallback: group }));
+            if (!fallback) {
+                return canvas;
+            }
+
+            // Applications that can't draw canvases, such as Apple Pages, draw the same diagram as a group. Its shapes
+            // have ids of their own, and a rectangle behind them draws the canvas's background and outline
+            const { backgroundId } = fallback;
+            const group = layoutShapeDrawing(fallback.nodes, { keepPositive: true, layout: options.layout, styles });
+            const background: ShapeDrawingChildMediaData = {
+                type: "wps",
+                transformation: { offset: { pixels: { x: 0, y: 0 }, emus: { x: 0, y: 0 } }, ...transformation },
+                data: {
+                    geometry: { type: "rectangle" },
+                    fill: options.fill,
+                    line: options.line ?? "none",
+                    // Screen readers skip it: it is only the canvas's background
+                    nonVisualDrawingProperties: { id: backgroundId, name: `Canvas ${backgroundId}`, decorative: true },
+                },
+            };
+            const groupReach = {
+                left: Math.min(-lineOverhang, group.reach.left),
+                top: Math.min(-lineOverhang, group.reach.top),
+                right: Math.max(emus.x + lineOverhang, group.reach.right),
+                bottom: Math.max(emus.y + lineOverhang, group.reach.bottom),
+            };
+            const groupDrawing = new Drawing(
+                {
+                    type: "graphic",
+                    uri: GROUP_URI,
+                    transformation,
+                    content: createShapeGroup({
+                        transformation,
+                        childOffset: { x: 0, y: 0 },
+                        childExtent: emus,
+                        children: [background, ...group.children].map((child) => createShapeDrawingChild(child, "wpg:grpSp")),
+                    }),
+                },
+                {
+                    ...fallback.options,
+                    effectExtent: getGroupEffectExtent({ reach: groupReach }, { x: 0, y: 0 }, emus, { width: emus.x, height: emus.y }),
+                },
+            );
+
+            return createAlternateContent({ requires: "wpc", choice: canvas, fallback: groupDrawing });
+        };
+
+        // A canvas whose shapes fit their text is laid out in the document's styles when it is written
+        this.root.push(createStyledDrawing(create, drawingStyledParagraphs(options.children, options.layout)));
     }
 }

@@ -7,10 +7,11 @@
  * outside the box, which is how a connector loops around a shape.
  *
  * When an elbow or curved connector's usual route would cross other shapes, the router looks for a route
- * with up to four bends that goes around them.
+ * with up to four bends that goes around them. An elbow connector that needs more bends is drawn as a freeform line.
  *
  * @module
  */
+import { findOrthogonalRoute } from "./orthogonal-route";
 import type { PresetShapeType } from "../preset-shape/preset-shape-type";
 
 /**
@@ -62,7 +63,11 @@ export type ConnectorRoute = "straight" | "elbow" | "curved";
  * The shape that draws a connector.
  */
 export type ConnectorGeometry = {
-    readonly type: PresetShapeType;
+    /**
+     * The connector preset, or a freeform line for an elbow route with more bends than the presets have. A freeform
+     * line isn't attached to the shapes it joins
+     */
+    readonly type: PresetShapeType | "freeform";
     /** Where the connector bends, as percentages of its box */
     readonly adjustments: Readonly<Record<string, number>>;
     /** Top-left corner of the box, before rotation */
@@ -254,7 +259,7 @@ const findElbowPath = (frame: BoxFrame): BoxPath => (frame.parallel ? findParall
  * The obstacles a path goes through, or goes nearer to than `clearance`. A path that only touches an obstacle's edge,
  * as a connector does where it meets a shape, doesn't go through it.
  */
-const countCrossings = (points: readonly Point[], obstacles: readonly Bounds[], clearance = 0): number =>
+export const countRouteCrossings = (points: readonly Point[], obstacles: readonly Bounds[], clearance = 0): number =>
     obstacles.filter((obstacle) =>
         points.slice(1).some((to, index) => {
             const from = points[index];
@@ -407,25 +412,42 @@ const findAvoidingPath = (frame: BoxFrame, obstacles: readonly Bounds[], toPage:
               ),
           ];
 
-    // Fewest obstacles crossed, then fewest passed within a margin, then the shortest, counting each bend as a margin's length
-    const score = (path: BoxPath): readonly number[] => {
-        const points = path.points.map(toPage);
-        return [
-            countCrossings(points, obstacles),
-            countCrossings(points, obstacles, margin),
-            pathLength(path.points) + (path.points.length - 2) * margin,
-        ];
-    };
-    const isBetter = (a: readonly number[], b: readonly number[]): boolean => {
-        const index = a.findIndex((value, position) => value !== b[position]);
-        return index !== -1 && a[index] < b[index];
-    };
-    const scored = candidates.map((path) => ({ path, score: score(path) }));
-    return scored.reduce<(typeof scored)[number] | undefined>(
-        (best, candidate) => (!best || isBetter(candidate.score, best.score) ? candidate : best),
-        undefined,
-    )?.path;
+    // Only obstacles within a margin of the box around every path can be crossed or passed
+    const onPage = candidates.map((path) => ({ path, points: path.points.map(toPage) }));
+    const reach = expandBounds(boundsOfPoints(onPage.flatMap(({ points }) => points)), margin);
+    const near = obstacles.filter((obstacle) => boundsOverlap(obstacle, reach));
+
+    // Fewest obstacles crossed, then fewest passed within a margin, then the shortest, counting each bend as a margin's
+    // length. Each measure is only taken for the paths that are best by the ones before it
+    type Candidate = (typeof onPage)[number];
+    const measures: readonly ((candidate: Candidate) => number)[] = [
+        ({ points }) => countRouteCrossings(points, near),
+        ({ points }) => countRouteCrossings(points, near, margin),
+        ({ path }) => pathLength(path.points) + (path.points.length - 2) * margin,
+    ];
+    const best = measures.reduce<readonly Candidate[]>((remaining, measure) => {
+        const measured = remaining.map((candidate) => ({ candidate, value: measure(candidate) }));
+        const least = Math.min(...measured.map(({ value }) => value));
+        return measured.filter(({ value }) => value === least).map(({ candidate }) => candidate);
+    }, onPage);
+    return best[0]?.path;
 };
+
+const boundsOfPoints = (points: readonly Point[]): Bounds => ({
+    left: Math.min(...points.map(({ x }) => x)),
+    top: Math.min(...points.map(({ y }) => y)),
+    right: Math.max(...points.map(({ x }) => x)),
+    bottom: Math.max(...points.map(({ y }) => y)),
+});
+
+const expandBounds = ({ left, top, right, bottom }: Bounds, by: number): Bounds => ({
+    left: left - by,
+    top: top - by,
+    right: right + by,
+    bottom: bottom + by,
+});
+
+const boundsOverlap = (a: Bounds, b: Bounds): boolean => a.left <= b.right && b.left <= a.right && a.top <= b.bottom && b.top <= a.bottom;
 
 const pageMapping =
     (start: ConnectorEndpoint, ex: Point, ey: Point): ((point: Point) => Point) =>
@@ -435,19 +457,81 @@ const pageMapping =
     });
 
 /**
- * The usual elbow path between two ends, or one that goes around the obstacles the usual path goes through.
+ * The usual elbow path between two ends, or one that goes around the obstacles the usual path goes through. An elbow
+ * connector that can't get around them with four bends takes a route with more, if there is one.
+ *
+ * @returns The path in its box, or the corners of a route with more bends, on the page
  */
-const findRoutedPath = (start: ConnectorEndpoint, end: ConnectorEndpoint, margin: number, obstacles: readonly Bounds[]): BoxPath => {
+const findRoutedPath = (
+    route: Exclude<ConnectorRoute, "straight">,
+    start: ConnectorEndpoint,
+    end: ConnectorEndpoint,
+    margin: number,
+    obstacles: readonly Bounds[],
+): BoxPath | readonly Point[] => {
     const frame = findElbowFrame(start, end, margin);
     const path = findElbowPath(frame);
     const toPage = pageMapping(start, frame.ex, frame.ey);
-    const crossings = countCrossings(path.points.map(toPage), obstacles);
+    const crossings = countRouteCrossings(path.points.map(toPage), obstacles);
     if (crossings === 0) {
         return path;
     }
 
     const avoiding = findAvoidingPath(frame, obstacles, toPage);
-    return avoiding && countCrossings(avoiding.points.map(toPage), obstacles) < crossings ? avoiding : path;
+    const best = avoiding && countRouteCrossings(avoiding.points.map(toPage), obstacles) < crossings ? avoiding : path;
+    if (route === "curved" || countRouteCrossings(best.points.map(toPage), obstacles) === 0) {
+        return best;
+    }
+    const detour = findOrthogonalRoute(start, end, margin, obstacles);
+    if (!detour || countRouteCrossings(detour, obstacles) > 0) {
+        return best;
+    }
+    return toBoxPath(frame, detour.map(toBox(start, frame))) ?? detour;
+};
+
+// Moves a point on the page into a connector's box
+const toBox =
+    (start: ConnectorEndpoint, { ex, ey }: BoxFrame): ((point: Point) => Point) =>
+    (point: Point): Point => {
+        const offset = { x: point.x - start.point.x, y: point.y - start.point.y };
+        return { x: dot(offset, ex), y: dot(offset, ey) };
+    };
+
+// The adjustments of the elbow connector presets with two, three and four bends, in the order the bends come
+const BEND_ADJUSTMENTS: Readonly<Record<number, readonly string[]>> = {
+    2: ["bendX"],
+    3: ["firstBendX", "secondBendY"],
+    4: ["firstBendX", "secondBendY", "thirdBendX"],
+};
+
+/**
+ * The elbow connector preset that draws a route with two to four bends. A route that leaves along the box's x axis and
+ * arrives along the axis the frame gives bends as one of the presets does, with its bends where the preset's adjustments
+ * put them. A route with one bend has its bend where the usual route does, so it is never a detour.
+ *
+ * @param points - The route's ends and corners, in box coordinates
+ */
+const toBoxPath = ({ ex, ey, width, height }: BoxFrame, points: readonly Point[]): BoxPath | undefined => {
+    const corners = points.slice(1, -1);
+    const names = BEND_ADJUSTMENTS[corners.length] as readonly string[] | undefined;
+    if (!names) {
+        return undefined;
+    }
+    // Bends are measured along the box, so the box can't be flat
+    const w = Math.max(width, MIN_BEND_LENGTH);
+    const h = Math.max(height, MIN_BEND_LENGTH);
+    // The preset ends at the far corner of the box, and its last corner lines up with it
+    const last = corners[corners.length - 1];
+    return {
+        ex,
+        ey,
+        width: w,
+        height: h,
+        points: [...points.slice(0, -2), corners.length % 2 === 0 ? { x: last.x, y: h } : { x: w, y: last.y }, { x: w, y: h }],
+        adjustments: Object.fromEntries(
+            names.map((name, index) => [name, index % 2 === 0 ? percentOf(corners[index].x, w) : percentOf(corners[index].y, h)]),
+        ),
+    };
 };
 
 const findStraightPath = (start: ConnectorEndpoint, end: ConnectorEndpoint): BoxPath => {
@@ -484,7 +568,28 @@ export const routeConnector = (
     if (!(margin >= 0)) {
         throw new Error(`Invalid connector margin ${margin}. Expected a distance of 0 or more`);
     }
-    const path = route === "straight" ? findStraightPath(start, end) : findRoutedPath(start, end, margin, obstacles);
+    const routed = route === "straight" ? findStraightPath(start, end) : findRoutedPath(route, start, end, margin, obstacles);
+    return toGeometry(route, start, routed);
+};
+
+/**
+ * The connector for a path in its box, or a freeform line through the corners of a route on the page.
+ */
+const toGeometry = (route: ConnectorRoute, start: ConnectorEndpoint, routed: BoxPath | readonly Point[]): ConnectorGeometry => {
+    if (!("ex" in routed)) {
+        const box = boundsOfPoints(routed);
+        return {
+            type: "freeform",
+            adjustments: {},
+            offset: { x: box.left, y: box.top },
+            width: box.right - box.left,
+            height: box.bottom - box.top,
+            rotation: 0,
+            flip: { horizontal: false, vertical: false },
+            points: routed,
+        };
+    }
+    const path = routed;
     const { ex, ey, width, height } = path;
     const toPage = pageMapping(start, ex, ey);
 
@@ -503,4 +608,20 @@ export const routeConnector = (
         flip: vertical ? { horizontal: ex.y < 0, vertical: ey.x > 0 } : { horizontal: ex.x < 0, vertical: ey.y < 0 },
         points: path.points.map(toPage),
     };
+};
+
+/**
+ * The elbow connector that follows a route through the given corners, such as a route whose bends have been moved:
+ * the preset whose bends are at those corners, or a freeform line if it has more than four bends.
+ *
+ * @param points - The ends and corners of the route, on the page, leaving and arriving as `start` and `end` do
+ */
+export const fitElbowConnector = (
+    start: ConnectorEndpoint,
+    end: ConnectorEndpoint,
+    points: readonly Point[],
+    margin: number,
+): ConnectorGeometry => {
+    const frame = findElbowFrame(start, end, margin);
+    return toGeometry("elbow", start, toBoxPath(frame, points.map(toBox(start, frame))) ?? points);
 };

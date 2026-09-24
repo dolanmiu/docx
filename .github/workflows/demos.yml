@@ -255,3 +255,9 @@ jobs:
             # - uses: "./.github/actions/validate-docx"
             - run: npm run run-ts -- ./demo/114-image-links.ts
             - uses: "./.github/actions/validate-docx"
+            - run: npm run run-ts -- ./demo/115-shape-document-styles.ts
+            # - uses: "./.github/actions/validate-docx"
+            - run: npm run run-ts -- ./demo/116-shape-swimlanes.ts
+            # - uses: "./.github/actions/validate-docx"
+            - run: npm run run-ts -- ./demo/117-shape-page-layout.ts
+            # - uses: "./.github/actions/validate-docx"

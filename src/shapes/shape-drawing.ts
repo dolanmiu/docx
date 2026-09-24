@@ -12,10 +12,23 @@ import {
     type ICropOptions,
     type IMediaDataTransformation,
     type IMediaTransformation,
+    type Paragraph,
     docPropertiesUniqueNumericId,
 } from "docx";
 
-import { type Bounds, type ConnectionSite, type ConnectorEndpoint, type Point, getConnectionSites, routeConnector } from "./connector";
+import {
+    type Bounds,
+    type ConnectionSite,
+    type ConnectorEndpoint,
+    type ConnectorGeometry,
+    type ConnectorRoute,
+    type Point,
+    countRouteCrossings,
+    fitElbowConnector,
+    getConnectionSites,
+    routeConnector,
+    separateChannels,
+} from "./connector";
 import { createCustomGeometryPath, outwardAngle } from "./custom-geometry";
 import type { ShapeDrawingChildMediaData } from "./drawing/shape-drawing-child";
 import type { ImageSource } from "./picture/image-data";
@@ -24,15 +37,17 @@ import {
     type PresetShapeCoreOptions,
     type PresetShapeNonVisualProperties,
     type ShapeEffects,
+    type ShapeFill,
     type ShapeLine,
     createShapeGuides,
     getShapeEffectsOverhang,
     getShapeLineOverhang,
 } from "./preset-shape";
 import type { ConnectorEnd, ConnectorLabel, ConnectorSide, IShapeConnectorOptions } from "./shape-connector";
-import { type ShapeLayout, type ShapeLayoutDirection, layoutItems } from "./shape-layout";
+import { type ShapeLane, type ShapeLayout, type ShapeLayoutDirection, layoutItems } from "./shape-layout";
 import { type ShapeBaseOptions, type WithPresetShape, createPresetShapeData, getShapeOverhang } from "./shape-run-data";
-import { createTextParagraphs, getParagraphSpans, resolveShapeSize } from "./shape-text-size";
+import { createTextParagraphs, resolveShapeSize } from "./shape-text-size";
+import { type TextStyles, WORD_DEFAULT_STYLES, readTextParagraphs } from "./shape-text-styles";
 import { measureText } from "./text-metrics";
 
 /**
@@ -48,6 +63,8 @@ export type IShapePictureOptions = DrawingLinkOptions & {
     readonly transformation: IMediaTransformation;
     /** A name that connectors use to attach to this picture. It must be unique within the group or canvas */
     readonly id?: string;
+    /** The lane of the flow the picture goes in, by its name. See `ShapeFlowLayout.lanes` */
+    readonly lane?: string;
     /** Crops the picture by a percentage of each side, from 0 to 100 */
     readonly crop?: ICropOptions;
     /** An outline around the picture. Default is none */
@@ -81,6 +98,8 @@ export type IShapeNestedGroupOptions = DrawingLinkOptions & {
     };
     /** Places the children that have no `offset`, such as in a flowchart, tree or grid */
     readonly layout?: ShapeLayout;
+    /** The lane of the flow the group goes in, by its name. See `ShapeFlowLayout.lanes` */
+    readonly lane?: string;
     /** Name, description and title used by screen readers */
     readonly altText?: DocPropertiesOptions;
 };
@@ -98,6 +117,8 @@ export type IShapeGroupChildOptions =
           ShapeBaseOptions & {
               /** A name that connectors use to attach to this shape. It must be unique within the group or canvas */
               readonly id?: string;
+              /** The lane of the flow the shape goes in, by its name. See `ShapeFlowLayout.lanes` */
+              readonly lane?: string;
           }
       >
     | IShapeConnectorOptions
@@ -119,7 +140,12 @@ type Node =
           readonly options: IShapeNestedGroupOptions;
           readonly drawingId: number;
           readonly children: readonly Node[];
+          /** The drawing ids of the band and header of each lane of the group's layout */
+          readonly laneIds: readonly LaneIds[];
       };
+
+/** The drawing ids of a lane's band and header */
+type LaneIds = readonly [number, number];
 
 type Box = {
     readonly x: number;
@@ -223,6 +249,14 @@ const LABEL_PADDING = { width: 8, height: 4 };
 // How far a label at the start or end of a connector is from the shape, and how far it moves at a time to get off a shape, in pixels
 const LABEL_GAP = 4;
 const LABEL_STEP = 4;
+// How far apart elbow connectors that would lie on top of each other are moved, in pixels
+const CHANNEL_SPACING = 6;
+// Space around the name in a lane's header, in pixels
+const LANE_PADDING = 6;
+// A lane's line, unless it is given one: a thin grey line
+const LANE_LINE: ShapeLine = { color: "A5A5A5", width: 0.75 };
+// A lane's header's background, unless it is given one
+const LANE_HEADER_FILL: ShapeFill = "F2F2F2";
 
 const SIDE_ANGLES: Readonly<Record<ConnectorSide, number>> = { right: 0, bottom: 90, left: 180, top: 270 };
 
@@ -319,6 +353,9 @@ const centreOf = ({ left, top, right, bottom }: Bounds): Point => ({ x: (left + 
 
 const overlaps = (a: Bounds, b: Bounds): boolean => a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
 
+const overlapArea = (a: Bounds, b: Bounds): number =>
+    Math.max(0, Math.min(a.right, b.right) - Math.max(a.left, b.left)) * Math.max(0, Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top));
+
 const shrink = ({ left, top, right, bottom }: Bounds, by: number): Bounds => ({
     left: left + by,
     top: top + by,
@@ -412,6 +449,14 @@ const shapeSites = (options: ShapeChildOptions, width: number, height: number): 
 };
 
 /**
+ * Gives the band and header of each lane of a layout drawing ids.
+ */
+const assignLaneIds = (layout?: ShapeLayout): readonly LaneIds[] =>
+    layout?.type === "flow"
+        ? (layout.lanes ?? []).map(() => [docPropertiesUniqueNumericId(), docPropertiesUniqueNumericId()] as const)
+        : [];
+
+/**
  * Gives every shape, picture, group, connector and label a drawing id, in the order they are written.
  */
 const assignIds = (children: readonly IShapeGroupChildOptions[]): readonly Node[] =>
@@ -425,7 +470,9 @@ const assignIds = (children: readonly IShapeGroupChildOptions[]): readonly Node[
                 return { kind: "picture", options, drawingId: docPropertiesUniqueNumericId() };
             case "group": {
                 const drawingId = docPropertiesUniqueNumericId();
-                return { kind: "group", options, drawingId, children: assignIds(options.children) };
+                // A group's lanes are drawn first, behind its children
+                const laneIds = assignLaneIds(options.layout);
+                return { kind: "group", options, drawingId, laneIds, children: assignIds(options.children) };
             }
             default:
                 return { kind: "shape", options, drawingId: docPropertiesUniqueNumericId() };
@@ -468,7 +515,13 @@ type ConnectorNode = Extract<Node, { readonly kind: "connector" }>;
  *
  * @param transformation - The shape's transformation, with its size worked out if it fits its text
  */
-const layoutShape = (options: ShapeChildOptions, transformation: IMediaTransformation, drawingId: number, position: Point): PlacedShape => {
+const layoutShape = (
+    options: ShapeChildOptions,
+    transformation: IMediaTransformation,
+    drawingId: number,
+    position: Point,
+    styles: TextStyles,
+): PlacedShape => {
     const { rotation: degrees, flip } = transformation;
     const box = boxAt(position, transformation);
     const matrix = placement(box, degrees, flip);
@@ -491,7 +544,7 @@ const layoutShape = (options: ShapeChildOptions, transformation: IMediaTransform
                 rotation: degrees,
                 flip,
                 data: {
-                    ...createPresetShapeData(options),
+                    ...createPresetShapeData(options, styles),
                     nonVisualDrawingProperties: createNonVisualDrawingProperties(drawingId, kind, options),
                 },
             },
@@ -646,19 +699,47 @@ const pointAlong = (points: readonly Point[], distance: number): { readonly poin
 };
 
 /**
+ * The paragraphs a label is written with: centred lines of text given as a string, or the paragraphs it is given.
+ */
+const labelParagraphs = (label: string | ConnectorLabel, styles: TextStyles): readonly Paragraph[] => {
+    const text = typeof label === "string" ? label : label.text;
+    return typeof text === "string" ? createTextParagraphs(text, styles) : text;
+};
+
+/**
+ * The size of a connector's label in pixels: as big as its text, unless it is given a size.
+ *
+ * @param paragraphs - The label's paragraphs, as they are written
+ */
+const labelSize = (
+    label: string | ConnectorLabel,
+    paragraphs: readonly Paragraph[],
+    styles: TextStyles,
+): { readonly width: number; readonly height: number } => {
+    const { width, height } = typeof label === "string" ? { width: undefined, height: undefined } : label;
+    const measured =
+        width === undefined || height === undefined ? measureText(readTextParagraphs(paragraphs, styles)) : { width: 0, height: 0 };
+    return {
+        width: width ?? Math.ceil(measured.width * PIXELS_PER_POINT) + LABEL_PADDING.width,
+        height: height ?? Math.ceil(measured.height * PIXELS_PER_POINT) + LABEL_PADDING.height,
+    };
+};
+
+/**
  * A connector's label: a text box without a line, centred on the connector's route. At the start or end of the
  * route it is just clear of the shape, and it moves along the route until it is off every shape and label, if it can,
  * or else beside the route.
  */
-const layoutLabel = (label: string | ConnectorLabel, points: readonly Point[], drawingId: number, avoid: readonly Bounds[]): Placed => {
-    const { text, width, height, fill = "none", line = "none", position = "middle" } = typeof label === "string" ? { text: label } : label;
-    const paragraphs = typeof text === "string" ? createTextParagraphs(text) : text;
-    // The label is as big as its text, unless it is given a size
-    const measured = width === undefined || height === undefined ? measureText(getParagraphSpans(paragraphs)) : { width: 0, height: 0 };
-    const size = {
-        width: width ?? Math.ceil(measured.width * PIXELS_PER_POINT) + LABEL_PADDING.width,
-        height: height ?? Math.ceil(measured.height * PIXELS_PER_POINT) + LABEL_PADDING.height,
-    };
+const layoutLabel = (
+    label: string | ConnectorLabel,
+    points: readonly Point[],
+    drawingId: number,
+    avoid: { readonly boxes: readonly Bounds[]; readonly lines: readonly (readonly Point[])[] },
+    styles: TextStyles,
+): Placed => {
+    const { fill = "none", line = "none", position = "middle" } = typeof label === "string" ? {} : label;
+    const paragraphs = labelParagraphs(label, styles);
+    const size = labelSize(label, paragraphs, styles);
     const half = { x: (size.width * EMUS_PER_PIXEL) / 2, y: (size.height * EMUS_PER_PIXEL) / 2 };
     // How far the label reaches from its centre in a direction, and a little more
     const reach = ({ x, y }: Point): number => Math.abs(x) * half.x + Math.abs(y) * half.y + LABEL_GAP * EMUS_PER_PIXEL;
@@ -681,14 +762,25 @@ const layoutLabel = (label: string | ConnectorLabel, points: readonly Point[], d
             height: Math.round(half.y * 2),
         };
     };
-    // Places further and further along the route, either way, then the same beside the route
+    // Places further and further along the route, either way, then the same beside the route: first on the side
+    // further from the shapes and labels
     const step = LABEL_STEP * EMUS_PER_PIXEL;
     const distances = [
         wanted,
         ...Array.from({ length: Math.ceil(total / step) }, (_, index) => [wanted + (index + 1) * step, wanted - (index + 1) * step]).flat(),
     ].filter((distance) => distance >= 0 && distance <= total);
-    const places = [0, 1, -1].flatMap((side) => distances.map((distance) => labelBox(distance, side)));
-    const box = places.find((place) => !avoid.some((other) => overlaps(shrink(boundsOfBox(place), 1), other))) ?? places[0];
+    // How much of the space around a place beside the route, as far again as the label is big, is taken up
+    const crowding = (side: number): number => {
+        const { x, y, width, height } = labelBox(wanted, side);
+        const around = { left: x - width, top: y - height, right: x + 2 * width, bottom: y + 2 * height };
+        return avoid.boxes.reduce((taken, other) => taken + overlapArea(around, other), 0);
+    };
+    const sides = [0, ...(crowding(-1) < crowding(1) ? [-1, 1] : [1, -1])];
+    const places = sides.flatMap((side) => distances.map((distance) => labelBox(distance, side)));
+    const isClear = (place: Box): boolean =>
+        !avoid.boxes.some((other) => overlaps(shrink(boundsOfBox(place), 1), other)) &&
+        !avoid.lines.some((route) => route.slice(1).some((to, index) => crossesBox(route[index], to, boundsOfBox(place))));
+    const box = places.find(isClear) ?? places[0];
 
     return {
         child: {
@@ -887,49 +979,117 @@ const crossesBox = (from: Point, to: Point, bounds: Bounds): boolean => {
 };
 
 /**
- * Routes a connector between the shapes it joins, and places its label clear of the shapes and of `labels`.
+ * A connector with its route.
+ */
+type RoutedConnector = ResolvedConnector & {
+    readonly route: ConnectorRoute;
+    readonly geometry: ConnectorGeometry;
+};
+
+/**
+ * Routes a connector between the shapes it joins. A connector without a `route` is straight, unless a straight line
+ * would go through another shape, when it bends around it.
+ */
+const routeResolved = (connector: ResolvedConnector, leaves: readonly Leaf[]): RoutedConnector => {
+    const {
+        node: { options },
+        ends: [start, finish],
+    } = connector;
+    const others = leaves.filter((leaf) => leaf !== start.leaf && leaf !== finish.leaf).map(leafBounds);
+    const route = options.route ?? (others.some((shape) => crossesBox(start.site.point, finish.site.point, shape)) ? "elbow" : "straight");
+    return {
+        ...connector,
+        route,
+        geometry: routeConnector(route, start.site, finish.site, { margin: marginOf(options), obstacles: leaves.map(leafBounds) }),
+    };
+};
+
+const marginOf = ({ margin }: IShapeConnectorOptions): number => (margin ?? DEFAULT_CONNECTOR_MARGIN) * EMUS_PER_PIXEL;
+
+/**
+ * Moves apart the lines of elbow connectors that would lie on top of each other, unless moving one would take it
+ * through more shapes.
+ */
+const separateRoutes = (routed: readonly RoutedConnector[], leaves: readonly Leaf[]): readonly RoutedConnector[] => {
+    const obstacles = leaves.map(leafBounds);
+    const separated = separateChannels(
+        routed.map(({ route, geometry }) => ({ points: geometry.points, movable: route === "elbow" })),
+        CHANNEL_SPACING * EMUS_PER_PIXEL,
+    );
+    return routed.map((connector, index) => {
+        const points = separated[index];
+        if (points === connector.geometry.points) {
+            return connector;
+        }
+        const [start, finish] = connector.ends;
+        const geometry = fitElbowConnector(start.site, finish.site, points, marginOf(connector.node.options));
+        return countRouteCrossings(geometry.points, obstacles) > countRouteCrossings(connector.geometry.points, obstacles)
+            ? connector
+            : { ...connector, geometry };
+    });
+};
+
+/**
+ * Writes a routed connector, and places its label clear of the shapes, of `labels` and of the other connectors' `lines`.
  * A connector without a `route` is straight, unless a straight line would go through another shape, when it bends
  * around it.
  */
 const layoutConnector = (
-    { node, ends: [start, finish] }: ResolvedConnector,
+    { node, ends: [start, finish], route, geometry }: RoutedConnector,
     leaves: readonly Leaf[],
-    labels: readonly Bounds[],
+    avoid: { readonly labels: readonly Bounds[]; readonly lines: readonly (readonly Point[])[] },
+    styles: TextStyles,
 ): readonly Placed[] => {
     const { options: connector, drawingId, labelId } = node;
     const obstacles = leaves.map(leafBounds);
-    const others = leaves.filter((leaf) => leaf !== start.leaf && leaf !== finish.leaf).map(leafBounds);
-    const route =
-        connector.route ?? (others.some((shape) => crossesBox(start.site.point, finish.site.point, shape)) ? "elbow" : "straight");
-    const geometry = routeConnector(route, start.site, finish.site, {
-        margin: (connector.margin ?? DEFAULT_CONNECTOR_MARGIN) * EMUS_PER_PIXEL,
-        obstacles,
-    });
 
     const path = boundsOf(geometry.points);
+    const data: PresetShapeCoreOptions =
+        geometry.type === "freeform"
+            ? {
+                  // A route with more bends than the connector presets have is a line that isn't attached to the shapes
+                  geometry: {
+                      type: "custom",
+                      path: geometry.points
+                          .map(({ x, y }, index) => `${index === 0 ? "M" : "L"} ${x - path.left} ${y - path.top}`)
+                          .join(" "),
+                  },
+                  line: connector.line,
+                  nonVisualDrawingProperties: createNonVisualDrawingProperties(drawingId, "freeform", connector),
+              }
+            : {
+                  geometry: { type: geometry.type, adjustments: geometry.adjustments },
+                  line: connector.line,
+                  // Attach the connector to shapes with connection sites
+                  connections: {
+                      start: start.site.index === undefined ? undefined : { id: start.leaf.drawingId, index: start.site.index },
+                      end: finish.site.index === undefined ? undefined : { id: finish.leaf.drawingId, index: finish.site.index },
+                  },
+                  nonVisualDrawingProperties: createNonVisualDrawingProperties(drawingId, ROUTE_NAMES[route], connector),
+              };
     const placed: Placed = {
         child: {
             type: "wps",
             box: { ...geometry.offset, width: geometry.width, height: geometry.height },
             rotation: geometry.rotation,
             flip: { horizontal: geometry.flip.horizontal || undefined, vertical: geometry.flip.vertical || undefined },
-            data: {
-                geometry: { type: geometry.type, adjustments: geometry.adjustments },
-                line: connector.line,
-                // Attach the connector to shapes with connection sites
-                connections: {
-                    start: start.site.index === undefined ? undefined : { id: start.leaf.drawingId, index: start.site.index },
-                    end: finish.site.index === undefined ? undefined : { id: finish.leaf.drawingId, index: finish.site.index },
-                },
-                nonVisualDrawingProperties: createNonVisualDrawingProperties(drawingId, ROUTE_NAMES[route], connector),
-            },
+            data,
         },
         box: path,
         reach: expand(path, uniformExtent(getShapeLineOverhang(connector.line))),
     };
 
     return connector.label && labelId !== undefined
-        ? [placed, layoutLabel(connector.label, geometry.points, labelId, [...obstacles, ...labels])]
+        ? [
+              placed,
+              layoutLabel(
+                  connector.label,
+                  geometry.points,
+                  labelId,
+                  { boxes: [...obstacles, ...avoid.labels], lines: avoid.lines },
+                  styles,
+              ),
+          ]
         : [placed];
 };
 
@@ -945,8 +1105,8 @@ type InnerGroup = {
     readonly height: number;
 };
 
-const layoutInnerGroup = (node: Extract<Node, { readonly kind: "group" }>, allIds: ReadonlySet<string>): InnerGroup => {
-    const inner = layoutGroup(node.children, allIds, node.options.layout);
+const layoutInnerGroup = (node: Extract<Node, { readonly kind: "group" }>, allIds: ReadonlySet<string>, styles: TextStyles): InnerGroup => {
+    const inner = layoutGroup(node.children, allIds, styles, node.options.layout, node.laneIds);
     const childOffset = { x: Math.round(inner.box.left), y: Math.round(inner.box.top) };
     const childExtent = { x: Math.round(inner.box.right) - childOffset.x, y: Math.round(inner.box.bottom) - childOffset.y };
     const { width, height } = node.options.transformation ?? {};
@@ -1014,10 +1174,10 @@ type Sized = {
 /**
  * Places a shape, picture or group with the top-left corner of its box, before rotation, at a point.
  */
-const placeSized = ({ node, transformation, inner }: Sized, position: Point): PlacedShape => {
+const placeSized = ({ node, transformation, inner }: Sized, position: Point, styles: TextStyles): PlacedShape => {
     switch (node.kind) {
         case "shape":
-            return layoutShape(node.options, transformation!, node.drawingId, position);
+            return layoutShape(node.options, transformation!, node.drawingId, position, styles);
         case "picture":
             return layoutPicture(node.options, node.drawingId, position);
         default:
@@ -1025,10 +1185,10 @@ const placeSized = ({ node, transformation, inner }: Sized, position: Point): Pl
     }
 };
 
-const sizeNode = (node: Exclude<Node, ConnectorNode>, allIds: ReadonlySet<string>): Sized => {
+const sizeNode = (node: Exclude<Node, ConnectorNode>, allIds: ReadonlySet<string>, styles: TextStyles): Sized => {
     switch (node.kind) {
         case "shape": {
-            const transformation = resolveShapeSize(node.options);
+            const transformation = resolveShapeSize(node.options, styles);
             const { width, height } = boxAt({ x: 0, y: 0 }, transformation);
             return {
                 node,
@@ -1050,7 +1210,7 @@ const sizeNode = (node: Exclude<Node, ConnectorNode>, allIds: ReadonlySet<string
             };
         }
         default: {
-            const inner = layoutInnerGroup(node, allIds);
+            const inner = layoutInnerGroup(node, allIds, styles);
             return {
                 node,
                 offset: offsetOf(node.options.transformation?.offset),
@@ -1070,35 +1230,92 @@ type Arrangement = {
     readonly positions: readonly Point[];
     /** The level of each child the layout placed in a flow or tree */
     readonly levels: ReadonlyMap<Sized["node"], number>;
+    /** The lanes of a flow, with where their bands and headers go */
+    readonly lanes: readonly PlacedLane[];
+};
+
+type PlacedLane = {
+    readonly lane: ShapeLane;
+    readonly band: Box;
+    readonly header: Box;
+    /** The lane's name, written in its header */
+    readonly paragraphs: readonly Paragraph[];
 };
 
 /**
  * Where to place each shape, picture and group: at its `offset`, or where the layout puts it. The layout places the
  * box around each rotated child, and follows the connectors between the children it places.
  */
-const arrange = (sized: readonly Sized[], connectors: readonly ConnectorNode[], layout?: ShapeLayout): Arrangement => {
+const arrange = (sized: readonly Sized[], connectors: readonly ConnectorNode[], styles: TextStyles, layout?: ShapeLayout): Arrangement => {
     const origin = { x: 0, y: 0 };
+    const lanes = lanesOf(layout);
+    const laneIndex = ({ node }: Sized): number => {
+        const { lane } = node.options;
+        const index = lane === undefined ? 0 : lanes.findIndex(({ name }) => name === lane);
+        if (index === -1) {
+            throw new Error(`Invalid lane "${lane}". The layout has no lane with that name`);
+        }
+        return index;
+    };
+    sized.forEach(laneIndex);
     if (!layout) {
-        return { positions: sized.map(({ offset }) => offset ?? origin), levels: new Map() };
+        return { positions: sized.map(({ offset }) => offset ?? origin), levels: new Map(), lanes: [] };
     }
+    // A connector to a shape inside a group follows the group
+    const has = (item: Sized, connectorEnd: ConnectorEnd): boolean => idsOf(item.node).includes(endId(connectorEnd));
     const free = sized.filter((item) => item.offset === undefined);
-    const turned = free.map((item) => {
+    // Shapes with an offset that connect to shapes the layout places take part in it, and the layout is placed around them
+    const anchors = sized.filter(
+        (item) =>
+            item.offset !== undefined &&
+            connectors.some(
+                ({ options: { from, to } }) =>
+                    (has(item, from) && free.some((other) => has(other, to))) || (has(item, to) && free.some((other) => has(other, from))),
+            ),
+    );
+    const placed = sized.filter((item) => item.offset === undefined || anchors.includes(item));
+    const turned = placed.map((item) => {
         const radians = ((item.rotation ?? 0) * Math.PI) / 180;
         const cos = Math.abs(Math.cos(radians));
         const sin = Math.abs(Math.sin(radians));
-        return { width: item.width * cos + item.height * sin, height: item.width * sin + item.height * cos };
+        return { width: item.width * cos + item.height * sin, height: item.width * sin + item.height * cos, lane: laneIndex(item) };
     });
-    // A connector to a shape inside a group follows the group
-    const itemWith = (connectorEnd: ConnectorEnd): number => free.findIndex((item) => idsOf(item.node).includes(endId(connectorEnd)));
+    const itemWith = (connectorEnd: ConnectorEnd): number => placed.findIndex((item) => has(item, connectorEnd));
+    // The levels of a flow or tree leave room for labels along the direction they run in
+    const vertical = layout.type === "grid" || layout.direction === undefined || layout.direction === "down" || layout.direction === "up";
+    const labelLength = ({ label }: IShapeConnectorOptions): number | undefined => {
+        if (label === undefined) {
+            return undefined;
+        }
+        const size = labelSize(label, labelParagraphs(label, styles), styles);
+        return (vertical ? size.height : size.width) * EMUS_PER_PIXEL;
+    };
     const edges = connectors
-        .map(({ options }) => ({ from: itemWith(options.from), to: itemWith(options.to) }))
+        .map(({ options }) => ({
+            from: itemWith(options.from),
+            to: itemWith(options.to),
+            across: layout.type === "grid" ? undefined : sideAcross(options, layout.direction),
+            labelLength: layout.type === "grid" ? undefined : labelLength(options),
+        }))
         .filter(({ from, to }) => from !== -1 && to !== -1);
-    const { positions, levels } = layoutItems(layout, turned, edges);
+    // A lane's header fits its name: when the flow runs down, the header is as long as the name is tall and the lane at
+    // least as wide as the name, and when it runs across, the header is as long as the longest name
+    const headerParagraphs = lanes.map(({ name }) => createTextParagraphs(name, styles));
+    const headerSizes = headerParagraphs.map((paragraphs) => {
+        const { width, height } = measureText(readTextParagraphs(paragraphs, styles));
+        const [along, across] = vertical ? [height, width] : [width, height];
+        return {
+            along: (Math.ceil(along * PIXELS_PER_POINT) + 2 * LANE_PADDING) * EMUS_PER_PIXEL,
+            across: (Math.ceil(across * PIXELS_PER_POINT) + 2 * LANE_PADDING) * EMUS_PER_PIXEL,
+        };
+    });
+    const headers = { length: Math.max(0, ...headerSizes.map(({ along }) => along)), widths: headerSizes.map(({ across }) => across) };
+    const { positions, levels, lanes: laneBoxes = [] } = layoutItems(layout, turned, edges, headers);
 
     // Centred on whole pixels, with the box before rotation centred in the box around the rotated child
     const snap = (centre: number, length: number): number => Math.round(Math.round(centre / EMUS_PER_PIXEL) * EMUS_PER_PIXEL - length / 2);
     const laidOut = new Map(
-        free.map((item, index) => [
+        placed.map((item, index) => [
             item,
             {
                 x: snap(positions[index].x + turned[index].width / 2, item.width),
@@ -1106,10 +1323,113 @@ const arrange = (sized: readonly Sized[], connectors: readonly ConnectorNode[], 
             },
         ]),
     );
+    // Moved, by whole pixels, so the shapes with an offset are where it puts them, or as near as they can all be
+    const shiftBy = (axis: "x" | "y"): number =>
+        Math.round((mean(anchors.map((item) => item.offset![axis] - laidOut.get(item)![axis])) ?? 0) / EMUS_PER_PIXEL) * EMUS_PER_PIXEL;
+    const shift = { x: shiftBy("x"), y: shiftBy("y") };
+    const shifted = ({ x, y, width, height }: Box): Box => ({ x: Math.round(x + shift.x), y: Math.round(y + shift.y), width, height });
     return {
-        positions: sized.map((item) => item.offset ?? laidOut.get(item)!),
-        levels: new Map(levels ? free.map((item, index) => [item.node, levels[index]]) : []),
+        positions: sized.map((item) => {
+            const position = laidOut.get(item);
+            return item.offset ?? { x: position!.x + shift.x, y: position!.y + shift.y };
+        }),
+        levels: new Map(levels ? placed.map((item, index) => [item.node, levels[index]]) : []),
+        lanes: laneBoxes.map(({ band, header }, index) => ({
+            lane: lanes[index],
+            band: shifted(band),
+            header: shifted(header),
+            paragraphs: headerParagraphs[index],
+        })),
     };
+};
+
+const mean = (values: readonly number[]): number | undefined =>
+    values.length > 0 ? values.reduce((total, value) => total + value, 0) / values.length : undefined;
+
+/**
+ * The lanes of a flow, with a name for each.
+ *
+ * @throws If two lanes have the same name
+ */
+const lanesOf = (layout?: ShapeLayout): readonly ShapeLane[] => {
+    const lanes = layout?.type === "flow" ? (layout.lanes ?? []).map((lane) => (typeof lane === "string" ? { name: lane } : lane)) : [];
+    const repeated = lanes.find(({ name }, index) => lanes.findIndex((other) => other.name === name) !== index);
+    if (repeated) {
+        throw new Error(`Invalid lane "${repeated.name}". Each lane in a layout needs a different name`);
+    }
+    return lanes;
+};
+
+/**
+ * A lane's band, drawn behind the shapes in it, and its header, with its name in it.
+ */
+const layoutLane = ({ lane, band, header, paragraphs }: PlacedLane, [bandId, headerId]: LaneIds, styles: TextStyles): readonly Placed[] => {
+    const line = lane.line ?? LANE_LINE;
+    const overhang = uniformExtent(getShapeLineOverhang(line));
+    const pixels = ({ width, height }: Box): { readonly width: number; readonly height: number } => ({
+        width: width / EMUS_PER_PIXEL,
+        height: height / EMUS_PER_PIXEL,
+    });
+    return [
+        {
+            child: {
+                type: "wps",
+                box: band,
+                data: {
+                    ...createPresetShapeData({ type: "rectangle", transformation: pixels(band), fill: lane.fill, line }, styles),
+                    // Screen readers read the lane's name in its header, and skip its band
+                    nonVisualDrawingProperties: createNonVisualDrawingProperties(bandId, "rectangle", {
+                        altText: { name: lane.name },
+                        decorative: true,
+                    }),
+                },
+            },
+            box: boundsOfBox(band),
+            reach: expand(boundsOfBox(band), overhang),
+        },
+        {
+            child: {
+                type: "wps",
+                box: header,
+                data: {
+                    ...createPresetShapeData(
+                        {
+                            type: "rectangle",
+                            transformation: pixels(header),
+                            fill: lane.headerFill ?? LANE_HEADER_FILL,
+                            line,
+                            children: paragraphs,
+                            textOptions: { margins: { top: 0, right: 0, bottom: 0, left: 0 }, wrap: false, verticalAlignment: "center" },
+                        },
+                        styles,
+                    ),
+                    nonVisualDrawingProperties: createNonVisualDrawingProperties(headerId, "textBox", {}),
+                },
+            },
+            box: boundsOfBox(header),
+            reach: expand(boundsOfBox(header), overhang),
+        },
+    ];
+};
+
+/**
+ * Which way across the levels a connector with a side goes: leaving the right of a shape in a flow that runs down puts
+ * the shape it leads to on the right, and so does arriving at the left of it.
+ */
+const sideAcross = (connector: IShapeConnectorOptions, direction: ShapeLayoutDirection = "down"): -1 | 1 | undefined => {
+    const [before, after]: readonly [ConnectorSide, ConnectorSide] =
+        direction === "down" || direction === "up" ? ["left", "right"] : ["top", "bottom"];
+    const sideOf = (connectorEnd: ConnectorEnd): ConnectorSide | undefined =>
+        typeof connectorEnd === "string" ? undefined : connectorEnd.side;
+    const from = sideOf(connector.from);
+    if (from === before || from === after) {
+        return from === after ? 1 : -1;
+    }
+    const to = sideOf(connector.to);
+    if (to === before || to === after) {
+        return to === before ? 1 : -1;
+    }
+    return undefined;
 };
 
 // The sides connectors leave and arrive at between levels of a flow or tree, and the side connectors that lead back use
@@ -1149,7 +1469,13 @@ const levelSides = (
 /**
  * Lays out the children of a group: first the shapes, pictures and groups, then the connectors between them.
  */
-const layoutGroup = (nodes: readonly Node[], allIds: ReadonlySet<string>, layout?: ShapeLayout): GroupLayout => {
+const layoutGroup = (
+    nodes: readonly Node[],
+    allIds: ReadonlySet<string>,
+    styles: TextStyles,
+    layout?: ShapeLayout,
+    laneIds: readonly LaneIds[] = [],
+): GroupLayout => {
     if (nodes.length === 0) {
         throw new Error("Invalid shape group. Expected at least 1 child shape");
     }
@@ -1158,9 +1484,9 @@ const layoutGroup = (nodes: readonly Node[], allIds: ReadonlySet<string>, layout
     const connectors = nodes.filter((node): node is ConnectorNode => node.kind === "connector");
     const sized = nodes
         .filter((node): node is Exclude<Node, ConnectorNode> => node.kind !== "connector")
-        .map((node) => sizeNode(node, allIds));
-    const { positions, levels } = arrange(sized, connectors, layout);
-    const shapes = new Map(sized.map((item, index) => [item.node, placeSized(item, positions[index])] as const));
+        .map((node) => sizeNode(node, allIds, styles));
+    const { positions, levels, lanes } = arrange(sized, connectors, styles, layout);
+    const shapes = new Map(sized.map((item, index) => [item.node, placeSized(item, positions[index], styles)] as const));
     const leaves = [...shapes.values()].flatMap(({ leaves: shapeLeaves }) => shapeLeaves);
     const levelOf = (id: string): number | undefined => {
         const item = sized.find(({ node }) => idsOf(node).includes(id));
@@ -1176,10 +1502,16 @@ const layoutGroup = (nodes: readonly Node[], allIds: ReadonlySet<string>, layout
             ),
         ),
     );
-    // Connectors are routed in order, and each label keeps clear of the labels before it
-    const routed = resolved.reduce(
+    // Connectors are routed, then moved apart where they lie on top of each other, and each label keeps clear of the
+    // other connectors and the labels before it
+    const separated = separateRoutes(
+        resolved.map((connector) => routeResolved(connector, leaves)),
+        leaves,
+    );
+    const routed = separated.reduce(
         ({ connectors: done, labels }, connector) => {
-            const pieces = layoutConnector(connector, leaves, labels);
+            const lines = separated.filter((other) => other !== connector).map(({ geometry }) => geometry.points);
+            const pieces = layoutConnector(connector, leaves, { labels, lines }, styles);
             return {
                 connectors: new Map([...done, [connector.node, pieces]]),
                 labels: [...labels, ...pieces.slice(1).map(({ box }) => box)],
@@ -1188,8 +1520,11 @@ const layoutGroup = (nodes: readonly Node[], allIds: ReadonlySet<string>, layout
         { connectors: new Map<ConnectorNode, readonly Placed[]>(), labels: [] as readonly Bounds[] },
     ).connectors;
 
-    // Everything is drawn in the order it is given
-    const placed = nodes.flatMap((node) => (node.kind === "connector" ? routed.get(node)! : [shapes.get(node)!.placed]));
+    // The lanes are drawn first, then everything in the order it is given
+    const placed = [
+        ...lanes.flatMap((lane, index) => layoutLane(lane, laneIds[index], styles)),
+        ...nodes.flatMap((node) => (node.kind === "connector" ? routed.get(node)! : [shapes.get(node)!.placed])),
+    ];
     return {
         children: placed.map(({ child }) => child),
         box: union(placed.map(({ box }) => box)),
@@ -1228,20 +1563,49 @@ const toMediaData = (child: LaidOutChild, shift: Point): ShapeDrawingChildMediaD
 };
 
 /**
+ * The children of a group or canvas, with the drawing ids they are written with.
+ */
+export type ShapeDrawingNodes = {
+    readonly nodes: readonly Node[];
+    /** The `id` of every shape and picture */
+    readonly ids: ReadonlySet<string>;
+    /** The drawing ids of the band and header of each lane of the layout */
+    readonly laneIds: readonly LaneIds[];
+};
+
+/**
+ * Gives the children of a group or canvas their drawing ids. Every shape, picture, group and connector identifies
+ * itself with a cNvPr, which needs an id that is unique in the document.
+ *
+ * @throws If two shapes or pictures have the same `id`
+ */
+export const createShapeDrawingNodes = (children: readonly IShapeGroupChildOptions[], layout?: ShapeLayout): ShapeDrawingNodes => {
+    // The lanes are drawn first, behind the children
+    const laneIds = assignLaneIds(layout);
+    const nodes = assignIds(children);
+    return { nodes, ids: collectIds(nodes), laneIds };
+};
+
+/**
  * Lays out the shapes, pictures, groups and connectors of a group or canvas. They are drawn in the order given,
  * and connectors can attach to shapes that come after them.
  *
+ * @param children - The children, or the children with their drawing ids
  * @param options.keepPositive - Moves everything right and down, if needed, so nothing that is drawn is above or to the left of (0, 0)
  * @param options.layout - Places the children that have no `offset`
- * @throws If a group has no children, two shapes have the same `id`, or a connector refers to an `id` no shape in its group has
+ * @param options.styles - The document's styles, which text is measured in. Default is Word's own defaults
+ * @throws If a group has no children, two shapes have the same `id`, a connector refers to an `id` no shape in its group has, or a shape to a lane the layout doesn't have
  */
 export const layoutShapeDrawing = (
-    children: readonly IShapeGroupChildOptions[],
-    { keepPositive = false, layout: shapeLayout }: { readonly keepPositive?: boolean; readonly layout?: ShapeLayout } = {},
+    children: readonly IShapeGroupChildOptions[] | ShapeDrawingNodes,
+    {
+        keepPositive = false,
+        layout: shapeLayout,
+        styles = WORD_DEFAULT_STYLES,
+    }: { readonly keepPositive?: boolean; readonly layout?: ShapeLayout; readonly styles?: TextStyles } = {},
 ): ShapeDrawingLayout => {
-    // Every shape, picture, group and connector identifies itself with a cNvPr, which needs a unique id
-    const nodes = assignIds(children);
-    const layout = layoutGroup(nodes, collectIds(nodes), shapeLayout);
+    const { nodes, ids, laneIds } = "nodes" in children ? children : createShapeDrawingNodes(children, shapeLayout);
+    const layout = layoutGroup(nodes, ids, styles, shapeLayout, laneIds);
     const shift = keepPositive ? { x: Math.max(0, -layout.reach.left), y: Math.max(0, -layout.reach.top) } : { x: 0, y: 0 };
     const move = ({ left, top, right, bottom }: Bounds): Bounds => ({
         left: left + shift.x,
@@ -1255,6 +1619,47 @@ export const layoutShapeDrawing = (
         bounds: move(layout.box),
         reach: move(layout.reach),
     };
+};
+
+/**
+ * The paragraphs of text in a shape whose size or text depends on the document's styles, or nothing if they don't:
+ * its size fits its text, or its `text` is written to suit them.
+ */
+export const shapeStyledParagraphs = ({
+    transformation,
+    text,
+    children = [],
+}: Pick<ShapeBaseOptions, "transformation" | "text" | "children">): readonly Paragraph[] | undefined =>
+    transformation.width === "fitText" || transformation.height === "fitText" || text !== undefined ? children : undefined;
+
+/**
+ * The paragraphs of text in a group or canvas whose layout depends on the document's styles, or nothing if it doesn't:
+ * a shape in it fits its text or has `text`, a label is sized to its text or has text given as a string, or its layout
+ * has lanes, whose headers fit their names.
+ */
+export const drawingStyledParagraphs = (
+    children: readonly IShapeGroupChildOptions[],
+    layout?: ShapeLayout,
+): readonly Paragraph[] | undefined => {
+    const found = children.map((child): readonly Paragraph[] | undefined => {
+        switch (child.type) {
+            case "connector": {
+                const label = typeof child.label === "string" ? { text: child.label } : child.label;
+                if (label === undefined || (typeof label.text !== "string" && label.width !== undefined && label.height !== undefined)) {
+                    return undefined;
+                }
+                return typeof label.text === "string" ? [] : label.text;
+            }
+            case "picture":
+                return undefined;
+            case "group":
+                return drawingStyledParagraphs(child.children, child.layout);
+            default:
+                return shapeStyledParagraphs(child);
+        }
+    });
+    const hasLanes = layout?.type === "flow" && layout.lanes !== undefined && layout.lanes.length > 0;
+    return hasLanes || found.some((paragraphs) => paragraphs !== undefined) ? found.flatMap((paragraphs) => paragraphs ?? []) : undefined;
 };
 
 /**

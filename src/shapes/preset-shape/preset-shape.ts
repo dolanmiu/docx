@@ -19,6 +19,7 @@ import type { ShapeFill } from "./shape-fill";
 import type { ShapeLine } from "./shape-line";
 import { type ShapeTextOptions, createShapeTextProperties } from "./shape-text";
 import { createTextBox } from "../drawing/drawing-parts";
+import { createTextFlowBox } from "../drawing/text-flow";
 
 /**
  * Non-visual properties (`wps:cNvPr`) that identify a shape inside a group: its id, name and alternative text,
@@ -47,6 +48,8 @@ export type PresetShapeCoreOptions = {
     readonly children?: readonly Paragraph[];
     readonly textOptions?: ShapeTextOptions;
     readonly nonVisualDrawingProperties?: PresetShapeNonVisualProperties;
+    /** The name of the text flow the shape is in, whose text flows from one shape to the next */
+    readonly textFlow?: string;
 };
 
 export type PresetShapeOptions = PresetShapeCoreOptions & {
@@ -130,6 +133,7 @@ export const createPresetShape = ({
     textOptions,
     nonVisualDrawingProperties,
     transformation,
+    textFlow,
 }: PresetShapeOptions): XmlComponent =>
     new BuilderElement({
         name: "wps:wsp",
@@ -139,7 +143,8 @@ export const createPresetShape = ({
                 ? createNonVisualConnectorProperties(connections)
                 : new BuilderElement({ name: "wps:cNvSpPr" }),
             createPresetShapeProperties({ transformation, geometry, fill, line, effects }),
-            ...(children ? [createTextBox(children)] : []),
-            createShapeTextProperties(children ? { verticalAlignment: "center", ...textOptions } : textOptions),
+            ...(textFlow === undefined ? (children ? [createTextBox(children)] : []) : [createTextFlowBox(textFlow, children ?? [])]),
+            // Text flows from the top of each shape of a flow into the next
+            createShapeTextProperties(textFlow === undefined && children ? { verticalAlignment: "center", ...textOptions } : textOptions),
         ],
     });

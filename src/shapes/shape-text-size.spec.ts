@@ -1,12 +1,17 @@
 import { describe, expect, it } from "vitest";
 
 import { Formatter } from "@export/formatter";
-import { ExternalHyperlink, ImageRun, InternalHyperlink, Paragraph, Tab, TextRun } from "docx";
+import { File } from "@file/file";
+import { type IContext, Paragraph } from "docx";
 
-import { createTextParagraphs, getParagraphSpans, resolveShapeSize } from "./shape-text-size";
+import { createTextParagraphs, resolveShapeSize } from "./shape-text-size";
+import { type TextStyles, getTextStyles } from "./shape-text-styles";
 import { measureLineHeight, measureTextWidth } from "./text-metrics";
 
 const PIXELS_PER_POINT = 4 / 3;
+
+const stylesOf = (document: object): TextStyles =>
+    getTextStyles({ file: new File({ styles: { default: { document } }, sections: [] }), stack: [] } as unknown as IContext);
 
 describe("createTextParagraphs", () => {
     it("should make a centred paragraph for each line", () => {
@@ -20,50 +25,12 @@ describe("createTextParagraphs", () => {
             ],
         });
     });
-});
 
-describe("getParagraphSpans", () => {
-    it("should read the text and font of each run", () => {
-        const spans = getParagraphSpans([
-            new Paragraph({
-                children: [
-                    new TextRun("Plain"),
-                    new TextRun({ text: "Big", font: "Arial", size: 24, bold: true }),
-                    new TextRun({ text: "Not bold", font: { ascii: "Calibri" }, bold: false }),
-                    new TextRun({ text: "caps", allCaps: true }),
-                ],
-            }),
-        ]);
-        expect(spans).to.deep.equal([
-            [
-                { text: "Plain", font: undefined, size: undefined, bold: undefined },
-                { text: "Big", font: "Arial", size: 12, bold: true },
-                { text: "Not bold", font: "Calibri", size: undefined, bold: false },
-                { text: "CAPS", font: undefined, size: undefined, bold: undefined },
-            ],
-        ]);
-    });
-
-    it("should read tabs and line breaks", () => {
-        const [[span]] = getParagraphSpans([
-            new Paragraph({ children: [new TextRun({ text: "a", break: 1 }), new TextRun({ children: [new Tab(), "b"] })] }),
-        ]);
-        expect(span.text).to.equal("\na");
-        expect(getParagraphSpans([new Paragraph({ children: [new TextRun({ children: [new Tab(), "b"] })] })])[0][0].text).to.equal("\tb");
-    });
-
-    it("should read the text of hyperlinks, and leave out runs without text", () => {
-        const image = new ImageRun({ type: "png", data: Buffer.from(""), transformation: { width: 10, height: 10 } });
-        const spans = getParagraphSpans([
-            new Paragraph({
-                children: [
-                    new ExternalHyperlink({ link: "https://example.com", children: [new TextRun("web")] }),
-                    new InternalHyperlink({ anchor: "top", children: [new TextRun("inside")] }),
-                    image,
-                ],
-            }),
-        ]);
-        expect(spans[0].map(({ text }) => text)).to.deep.equal(["web", "inside"]);
+    it("should leave out the space the document puts before and after paragraphs", () => {
+        const [paragraph] = createTextParagraphs("One", stylesOf({ paragraph: { spacing: { after: 160 } } }));
+        expect(new Formatter().format(paragraph)["w:p"][0]).to.deep.equal({
+            "w:pPr": [{ "w:spacing": { _attr: { "w:before": 0, "w:after": 0 } } }, { "w:jc": { _attr: { "w:val": "center" } } }],
+        });
     });
 });
 
@@ -171,6 +138,30 @@ describe("resolveShapeSize", () => {
         // A pie's text box is empty when the pie is much wider than it is tall
         const { width } = resolveShapeSize({ type: "pie", text: "Slice", transformation: { width: "fitText", height: 20 } });
         expect(Number.isFinite(width) && width > 0).to.equal(true);
+    });
+
+    it("should measure text in the document's styles", () => {
+        const options = { type: "rectangle", text: "Hello", transformation: { width: "fitText", height: "fitText" } } as const;
+        const styles = stylesOf({ run: { font: "Calibri", size: 22 }, paragraph: { spacing: { after: 160, line: 480 } } });
+        const { width, height } = resolveShapeSize(options, styles);
+        expect(width).to.equal(Math.ceil((measureTextWidth("Hello", { font: "Calibri", size: 11 }) + 14.4) * PIXELS_PER_POINT + 2));
+        // Double spacing, and no space after: the text's paragraph leaves it out
+        expect(height).to.equal(Math.ceil((2 * measureLineHeight({ font: "Calibri", size: 11 }) + 7.2) * PIXELS_PER_POINT));
+
+        // Paragraphs of the shape's own keep the document's spacing
+        const own = resolveShapeSize(
+            { type: "rectangle", children: [new Paragraph("Hello")], transformation: { width: 100, height: "fitText" } },
+            styles,
+        );
+        expect(own.height).to.equal(Math.ceil((2 * measureLineHeight({ font: "Calibri", size: 11 }) + 8 + 7.2) * PIXELS_PER_POINT));
+    });
+
+    it("should make a shape without text as tall as an empty paragraph in the document's styles", () => {
+        const { height } = resolveShapeSize(
+            { type: "rectangle", transformation: { width: 40, height: "fitText" } },
+            stylesOf({ run: { size: 40 } }),
+        );
+        expect(height).to.equal(Math.ceil((measureLineHeight({ size: 20 }) + 7.2) * PIXELS_PER_POINT));
     });
 
     it("should give up on a text box that doesn't grow with the shape", () => {
