@@ -79,6 +79,52 @@ const doc = new Document({
 
 The library's own styles don't use the theme's fonts, so text looks as it always has until a style or a run asks for them. Word's styles, such as those in `externalStyles` taken from a Word document, use them: Word's `Normal` style is in the theme's font for body text, and its headings in the font for headings. The theme is the one `docx` writes, not the theme of the document the styles came from, so give that theme's fonts and colors in `theme` to keep them.
 
+## Text, tables and borders in the theme's colors
+
+Wherever text, underlines, borders and shading take a color, they can take one of the theme's colors instead: `{ theme: "accent1" }`. They change color when the theme's colors change.
+
+`lighter` and `darker` make the color lighter or darker, from 0 (unchanged) to 100 (white or black), as Word's color menus do: "Blue, Accent 1, Lighter 80%" is `{ theme: "accent1", lighter: 80 }`, and "Blue, Accent 1, Darker 25%" is `{ theme: "accent1", darker: 25 }`.
+
+```ts
+const doc = new Document({
+    theme: { colors: { accent1: "1F6F8B" } },
+    styles: {
+        default: {
+            heading1: { run: { color: { theme: "accent1", darker: 25 } } },
+        },
+    },
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    // A rule under the paragraph, and a light background
+                    border: { bottom: { style: BorderStyle.SINGLE, size: 6, color: { theme: "accent1" } } },
+                    shading: { type: ShadingType.CLEAR, fill: { theme: "accent1", lighter: 80 } },
+                    children: [
+                        new TextRun({ text: "Accent text", color: { theme: "accent1" } }),
+                        new TextRun({
+                            text: " with a wavy underline",
+                            underline: { type: UnderlineType.WAVE, color: { theme: "accent2" } },
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
+});
+```
+
+| Option                                                                                | Takes a theme color |
+| ------------------------------------------------------------------------------------- | ------------------- |
+| A run's or style's `color`                                                            | `color`             |
+| A run's or style's `underline`                                                        | `underline.color`   |
+| `shading` of runs, paragraphs, tables and table cells                                 | `fill` and `color`  |
+| A run's `border`, and each side of the borders of paragraphs, tables, cells and pages | `color`             |
+
+The theme's color names are those in [Theme Colors](#theme-colors). Word's color menus call `dark1` and `light1` "Text 1" and "Background 1", and `dark2` and `light2` "Text 2" and "Background 2".
+
+Word writes a theme color with the color it comes to, for applications that don't read the theme, and so does `docx`: `{ theme: "accent1", darker: 25 }` in Office's theme is written as `2F5496`, the color Word writes for "Blue, Accent 1, Darker 25%". For some colors, the color `docx` writes is one or two off Word's in a channel. With [`patchDocument`](usage/patcher.md), that color is worked out from Office's theme rather than the document's. Word takes the color from the theme either way.
+
 ## Shapes in the theme's colors
 
 Shapes from `docx/shapes` can be filled and outlined in the theme's colors, lighter or darker if you like, as Word's color menus offer them. See [Theme colours](usage/shapes.md#theme-colours).
@@ -94,8 +140,16 @@ new ShapeRun({
 });
 ```
 
-## Example
+## Examples
+
+### A theme of its own
 
 [Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/118-theme.ts ":include")
 
 _Source: https://github.com/dolanmiu/docx/blob/master/demo/118-theme.ts_
+
+### Text, tables and borders in the theme's colors
+
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/119-theme-colors.ts ":include")
+
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/119-theme-colors.ts_

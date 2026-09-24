@@ -42,10 +42,10 @@ Underline has a few options
 
 #### Options
 
-| Property | Type            | Notes    | Possible Values                                                                                                                                                           |
-| -------- | --------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| type     | `UnderlineType` | Optional | SINGLE, WORD, DOUBLE, THICK, DOTTED, DOTTEDHEAV, DASH, DASHEDHEAV, DASHLONG, DASHLONGHEAV, DOTDASH, DASHDOTHEAVY, DOTDOTDAS, DASHDOTDOTHEAVY, WAVE, WAVYHEAVY, WAVYDOUBLE |
-| color    | `string`        | Optional | Color Hex values                                                                                                                                                          |
+| Property | Type                   | Notes    | Possible Values                                                                                                                                                           |
+| -------- | ---------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| type     | `UnderlineType`        | Optional | SINGLE, WORD, DOUBLE, THICK, DOTTED, DOTTEDHEAV, DASH, DASHEDHEAV, DASHLONG, DASHLONGHEAV, DOTDASH, DASHDOTHEAVY, DOTDOTDAS, DASHDOTDOTHEAVY, WAVE, WAVYHEAVY, WAVYDOUBLE |
+| color    | `string \| ThemeColor` | Optional | Color Hex values, or a color of the document's theme such as `{ theme: "accent1" }` (see [Themes](usage/themes.md#text-tables-and-borders-in-the-themes-colors))          |
 
 **Example:**
 

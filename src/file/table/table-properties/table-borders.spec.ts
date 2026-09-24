@@ -506,6 +506,12 @@ describe("TableBorders", () => {
         });
 
         describe("TableBorders.NONE convenience object", () => {
+            it("should declare its colors as hex colors, as it did before borders took theme colors", () => {
+                // This compiles only while the color is declared as a string
+                const color: string | undefined = TableBorders.NONE.top?.color;
+                expect(color).to.equal("auto");
+            });
+
             it("should add no borders", () => {
                 const tableBorders = new TableBorders(TableBorders.NONE);
                 const tree = new Formatter().format(tableBorders);

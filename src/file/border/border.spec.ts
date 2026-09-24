@@ -50,5 +50,20 @@ describe("BorderElement", () => {
                 },
             });
         });
+        it("should create a border in a color of the document's theme", () => {
+            const border = createBorderElement("w:top", { style: BorderStyle.SINGLE, size: 4, color: { theme: "accent1", lighter: 60 } });
+            const tree = new Formatter().format(border);
+            expect(tree).to.deep.equal({
+                "w:top": {
+                    _attr: {
+                        "w:val": "single",
+                        "w:color": "B4C6E7",
+                        "w:themeColor": "accent1",
+                        "w:themeTint": "66",
+                        "w:sz": 4,
+                    },
+                },
+            });
+        });
     });
 });

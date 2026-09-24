@@ -5,7 +5,7 @@ import { Formatter } from "@export/formatter";
 import { sectionMarginDefaults, sectionPageSizeDefaults } from "./document";
 import { File } from "./file";
 import { Footer, Header } from "./header";
-import { Paragraph } from "./paragraph";
+import { Paragraph, TextRun } from "./paragraph";
 
 const PAGE_SIZE_DEFAULTS = {
     "w:h": sectionPageSizeDefaults.HEIGHT,
@@ -554,6 +554,34 @@ describe("File", () => {
             const [colors, fonts] = theme[1]["a:themeElements"];
             expect(colors["a:clrScheme"][5]).to.deep.equal({ "a:accent1": [{ "a:srgbClr": { _attr: { val: "2E7D32" } } }] });
             expect(fonts["a:fontScheme"][1]["a:majorFont"][0]).to.deep.equal({ "a:latin": { _attr: { typeface: "Georgia" } } });
+        });
+
+        it("should write theme colors in text, borders and shading with the colors they come to in the document's theme", () => {
+            const doc = new File({
+                theme: { colors: { accent1: "2E7D32", light2: "EEF2F3" } },
+                sections: [
+                    {
+                        children: [
+                            new Paragraph({
+                                border: { bottom: { style: "single", size: 6, color: { theme: "accent1" } } },
+                                shading: { type: "clear", fill: { theme: "light2" } },
+                                children: [new TextRun({ text: "Green", color: { theme: "accent1", darker: 25 } })],
+                            }),
+                        ],
+                    },
+                ],
+            });
+
+            const xml = JSON.stringify(new Formatter().format(doc.Document.View, { file: doc, viewWrapper: doc.Document, stack: [] }));
+            expect(xml).to.include(
+                JSON.stringify({ "w:color": { _attr: { "w:val": "225D25", "w:themeColor": "accent1", "w:themeShade": "BF" } } }),
+            );
+            expect(xml).to.include(
+                JSON.stringify({ "w:bottom": { _attr: { "w:val": "single", "w:color": "2E7D32", "w:themeColor": "accent1", "w:sz": 6 } } }),
+            );
+            expect(xml).to.include(
+                JSON.stringify({ "w:shd": { _attr: { "w:fill": "EEF2F3", "w:themeFill": "light2", "w:val": "clear" } } }),
+            );
         });
     });
 

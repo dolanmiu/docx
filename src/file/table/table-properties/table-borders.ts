@@ -25,7 +25,14 @@ export type ITableBordersOptions = {
     readonly insideVertical?: IBorderOptions;
 };
 
-const NONE_BORDER: IBorderOptions = {
+/**
+ * A border with a hex color, as borders had before they took colors of the document's theme.
+ *
+ * @inline
+ */
+type HexColorBorderOptions = Omit<IBorderOptions, "color"> & { readonly color?: string };
+
+const NONE_BORDER: HexColorBorderOptions = {
     style: BorderStyle.NONE,
     size: 0,
     color: "auto",
@@ -58,7 +65,11 @@ const DEFAULT_BORDER: IBorderOptions = {
  * ```
  */
 export class TableBorders extends XmlComponent {
-    public static readonly NONE: ITableBordersOptions = {
+    /**
+     * No borders. Its borders are declared with hex colors, as they were before borders took colors of the document's
+     * theme, so that code reading them still compiles.
+     */
+    public static readonly NONE: { readonly [Side in keyof ITableBordersOptions]: HexColorBorderOptions } = {
         top: NONE_BORDER,
         bottom: NONE_BORDER,
         left: NONE_BORDER,

@@ -187,12 +187,12 @@ const doc = new Document({
 
 ### Border Options
 
-| Property | Type          | Description                                          |
-| -------- | ------------- | ---------------------------------------------------- |
-| style    | `BorderStyle` | Border style                                         |
-| size     | `number`      | Border width in 1/8 points (e.g., 8 = 1pt, 16 = 2pt) |
-| color    | `string`      | Hex color code                                       |
-| space    | `number`      | Space from text (points)                             |
+| Property | Type                   | Description                                          |
+| -------- | ---------------------- | ---------------------------------------------------- |
+| style    | `BorderStyle`          | Border style                                         |
+| size     | `number`               | Border width in 1/8 points (e.g., 8 = 1pt, 16 = 2pt) |
+| color    | `string \| ThemeColor` | Hex color code, or a color of the document's theme   |
+| space    | `number`               | Space from text (points)                             |
 
 ### Border Styles
 

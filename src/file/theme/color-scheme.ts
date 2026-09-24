@@ -49,6 +49,11 @@ export type IThemeColorsOptions = {
 
 type ThemeColorName = keyof IThemeColorsOptions;
 
+/**
+ * Each color of a theme, as a 6-digit hex color.
+ */
+export type ThemeColorValues = Readonly<Record<ThemeColorName, string>>;
+
 /* cspell:disable */
 // Each color, in the order the scheme lists them, and its OOXML name
 const COLOR_OOXML_NAMES: Readonly<Record<ThemeColorName, string>> = {
@@ -86,15 +91,33 @@ const OFFICE_SYSTEM_COLORS: Readonly<Record<"dark1" | "light1", { readonly value
     light1: { value: "window", lastColor: "FFFFFF" },
 };
 
-const createRgbColor = (name: ThemeColorName, color: string): XmlComponent => {
+const rgbColorValue = (name: ThemeColorName, color: string): string => {
     if (color === "auto") {
         throw new Error(`Invalid theme color ${name} 'auto'. Expected 6 digit hex value`);
     }
-    return new BuilderElement<{ readonly value: string }>({
-        name: "a:srgbClr",
-        attributes: { value: { key: "val", value: hexColorValue(color) } },
-    });
+    return hexColorValue(color);
 };
+
+/**
+ * The hex color of each of a theme's colors, with Office's in place of those not given. The system's window text and
+ * window colors are black and white.
+ *
+ * @throws If a color isn't a 6-digit hex value
+ */
+export const themeColorValues = (colors: IThemeColorsOptions = {}): ThemeColorValues =>
+    Object.fromEntries(
+        (Object.keys(COLOR_OOXML_NAMES) as readonly ThemeColorName[]).map((name) => {
+            const color = colors[name];
+            const office = name === "dark1" || name === "light1" ? OFFICE_SYSTEM_COLORS[name].lastColor : OFFICE_COLORS[name];
+            return [name, color === undefined ? office : rgbColorValue(name, color)];
+        }),
+    ) as ThemeColorValues;
+
+const createRgbColor = (name: ThemeColorName, color: string): XmlComponent =>
+    new BuilderElement<{ readonly value: string }>({
+        name: "a:srgbClr",
+        attributes: { value: { key: "val", value: rgbColorValue(name, color) } },
+    });
 
 const createColor = (name: ThemeColorName, colors: IThemeColorsOptions): XmlComponent => {
     const color = colors[name];
