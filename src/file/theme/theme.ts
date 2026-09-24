@@ -11,9 +11,10 @@
  */
 import { BuilderElement, NextAttributeComponent, XmlComponent } from "@file/xml-components";
 
-import { type IThemeColorsOptions, createColorScheme } from "./color-scheme";
+import { type IThemeColorsOptions, createColorScheme, themeColorValues } from "./color-scheme";
 import { type IThemeFontsOptions, createFontScheme } from "./font-scheme";
 import { createFormatScheme } from "./format-scheme";
+import type { ThemeColorName } from "./theme-color";
 
 export type { IThemeColorsOptions } from "./color-scheme";
 export type { IThemeFontOptions, IThemeFontsOptions } from "./font-scheme";
@@ -74,8 +75,11 @@ export type IThemeOptions = {
  * ```
  */
 export class Theme extends XmlComponent {
+    private readonly colors: Readonly<Record<ThemeColorName, string>>;
+
     public constructor({ name = "Office Theme", colors, fonts }: IThemeOptions = {}) {
         super("a:theme");
+        this.colors = themeColorValues(colors);
 
         this.root.push(
             new NextAttributeComponent<{ readonly namespace: string; readonly name: string }>({
@@ -96,5 +100,12 @@ export class Theme extends XmlComponent {
         );
         this.root.push(new BuilderElement({ name: "a:objectDefaults" }));
         this.root.push(new BuilderElement({ name: "a:extraClrSchemeLst" }));
+    }
+
+    /**
+     * The hex color of each of the theme's colors. The system's window text and window colors are black and white.
+     */
+    public get Colors(): Readonly<Record<ThemeColorName, string>> {
+        return this.colors;
     }
 }

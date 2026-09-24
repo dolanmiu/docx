@@ -152,7 +152,7 @@ new ShapeRun({ type: "rectangle", transformation: { width: 100, height: 50 }, fi
 
 Anywhere a shape takes a colour, it can take one of the colours of the document's [theme](usage/themes.md) instead: `{ theme: "accent1" }`. The shape changes colour when the theme's colours change, such as when a different theme is chosen on Word's **Design** tab.
 
-`lighter` and `darker` make the colour lighter or darker, from 0 (unchanged) to 100 (white or black), as Word's colour menus do: "Blue, Accent 1, Lighter 80%" is `{ theme: "accent1", lighter: 80 }`.
+`lighter` and `darker` make the colour lighter or darker, from 0 (unchanged) to 100 (white or black), as Word's colour menus do: "Blue, Accent 1, Lighter 80%" is `{ theme: "accent1", lighter: 80 }`. Text, borders and shading take the same colours: see [Themes](usage/themes.md#text-tables-and-borders-in-the-themes-colors).
 
 ```ts
 // Filled in a light version of the theme's first accent colour, with a darker outline

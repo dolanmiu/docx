@@ -28,21 +28,22 @@
  *
  * @module
  */
-import { BuilderElement, type XmlComponent } from "@file/xml-components";
-import { eighthPointMeasureValue, hexColorValue, pointMeasureValue } from "@util/values";
+import { COLOR_ATTRIBUTES, type ThemeColor, createColorElement } from "@file/theme/theme-color";
+import type { XmlComponent } from "@file/xml-components";
+import { eighthPointMeasureValue, pointMeasureValue } from "@util/values";
 
 /**
  * Options for configuring a border element.
  *
  * @property style - The border style (single, dashed, dotted, etc.)
- * @property color - Border color in hex format (e.g., "FF00AA" for purple)
+ * @property color - Border color in hex format (e.g., "FF00AA" for purple), or a color of the document's theme
  * @property size - Border thickness in eighths of a point (1/8 pt)
  * @property space - Spacing offset from the content in points
  */
 export type IBorderOptions = {
     readonly style: (typeof BorderStyle)[keyof typeof BorderStyle];
-    /** Border color, in hex (eg 'FF00AA') */
-    readonly color?: string;
+    /** Border color, in hex (eg 'FF00AA'), or a color of the document's theme (eg `{ theme: "accent1" }`) */
+    readonly color?: string | ThemeColor;
     /** Size of the border in 1/8 pt */
     readonly size?: number;
     /** Spacing offset. Values are specified in pt */
@@ -68,15 +69,12 @@ export type IBorderOptions = {
  * ```
  */
 export const createBorderElement = (elementName: string, { color, size, space, style }: IBorderOptions): XmlComponent =>
-    new BuilderElement<IBorderOptions>({
-        name: elementName,
-        attributes: {
-            style: { key: "w:val", value: style },
-            color: { key: "w:color", value: color === undefined ? undefined : hexColorValue(color) },
-            size: { key: "w:sz", value: size === undefined ? undefined : eighthPointMeasureValue(size) },
-            space: { key: "w:space", value: space === undefined ? undefined : pointMeasureValue(space) },
-        },
-    });
+    createColorElement(elementName, [
+        { key: "w:val", value: style },
+        { keys: COLOR_ATTRIBUTES, color },
+        { key: "w:sz", value: size === undefined ? undefined : eighthPointMeasureValue(size) },
+        { key: "w:space", value: space === undefined ? undefined : pointMeasureValue(space) },
+    ]);
 
 /**
  * Table borders are defined with the <w:tblBorders> element. Child elements of this element specify the kinds of `border`:

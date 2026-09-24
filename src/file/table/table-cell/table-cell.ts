@@ -5,10 +5,13 @@
  *
  * @module
  */
+import type { IBorderOptions } from "@file/border";
 import { Paragraph } from "@file/paragraph";
+import type { IShadingAttributesProperties } from "@file/shading";
 import { type IContext, type IXmlableObject, XmlComponent } from "@file/xml-components";
 
 import type { Table } from "../table";
+import type { ITableCellBorders } from "./table-cell-components";
 import { type ITableCellPropertiesOptions, TableCellProperties } from "./table-cell-properties";
 
 /**
@@ -20,6 +23,16 @@ export type ITableCellOptions = {
     /** Array of Paragraph or nested Table elements that make up the cell content */
     readonly children: readonly (Paragraph | Table)[];
 } & ITableCellPropertiesOptions;
+
+/**
+ * Borders and shading with hex colors, as a cell's options had them before they took colors of the document's theme.
+ *
+ * @inline
+ */
+type WithHexColors<T> = Omit<T, "borders" | "shading"> & {
+    readonly borders?: { readonly [Side in keyof ITableCellBorders]: Omit<IBorderOptions, "color"> & { readonly color?: string } };
+    readonly shading?: Omit<IShadingAttributesProperties, "color" | "fill"> & { readonly fill?: string; readonly color?: string };
+};
 
 /**
  * Represents a table cell in a WordprocessingML document.
@@ -52,8 +65,20 @@ export type ITableCellOptions = {
  * ```
  */
 export class TableCell extends XmlComponent {
-    public constructor(public readonly options: ITableCellOptions) {
+    /**
+     * The options the cell was created with.
+     *
+     * Its borders and shading are declared with hex colors, as they were before they took colors of the document's
+     * theme, so that code reading them still compiles. A cell given a theme color has it here as it was given.
+     */
+    public readonly options: WithHexColors<Omit<ITableCellOptions, "revision">> & {
+        readonly revision?: WithHexColors<NonNullable<ITableCellOptions["revision"]>>;
+    };
+
+    public constructor(options: ITableCellOptions) {
         super("w:tc");
+        // Declared with the types it had before theme colors, which a minor release can't change
+        this.options = options as TableCell["options"];
 
         this.root.push(new TableCellProperties(options));
 

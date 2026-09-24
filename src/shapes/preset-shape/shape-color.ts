@@ -3,28 +3,17 @@
  *
  * @module
  */
-import { BuilderElement, type XmlComponent, hexColorValue } from "docx";
+import { BuilderElement, type ThemeColor, type ThemeColorName, type XmlComponent, hexColorValue } from "docx";
 
 import { percentageValue } from "./shape-units";
 
 /**
- * One of the twelve colours of the document's theme, as `Document`'s `theme.colors` names them.
+ * One of the twelve colours of the document's theme, as `Document`'s `theme.colors` names them. The same as `docx`'s
+ * `ThemeColorName`.
  *
  * @publicApi
  */
-export type ShapeThemeColorName =
-    | "dark1"
-    | "light1"
-    | "dark2"
-    | "light2"
-    | "accent1"
-    | "accent2"
-    | "accent3"
-    | "accent4"
-    | "accent5"
-    | "accent6"
-    | "hyperlink"
-    | "followedHyperlink";
+export type ShapeThemeColorName = ThemeColorName;
 
 /* cspell:disable */
 // Each colour of the document's theme mapped to its OOXML name (`ST_SchemeColorVal`)
@@ -57,18 +46,12 @@ const THEME_COLOR_SUGGESTIONS: ReadonlyMap<string, string> = new Map([
 
 /**
  * A colour of the document's theme, lighter or darker if you like, as Word's colour menus offer them: "Blue, Accent 1,
- * Lighter 40%" is `{ theme: "accent1", lighter: 40 }`. The shape changes colour when the theme's colours change.
+ * Lighter 40%" is `{ theme: "accent1", lighter: 40 }`. The shape changes colour when the theme's colours change. The
+ * same as `docx`'s `ThemeColor`, which text, borders and shading take.
  *
  * @publicApi
  */
-export type ShapeThemeColor = {
-    /** The theme's colour, such as `"accent1"` or `"dark2"` */
-    readonly theme: ShapeThemeColorName;
-    /** Makes the colour lighter, from 0 (unchanged) to 100 (white) */
-    readonly lighter?: number;
-    /** Makes the colour darker, from 0 (unchanged) to 100 (black) */
-    readonly darker?: number;
-};
+export type ShapeThemeColor = ThemeColor;
 
 /**
  * A colour: a 6-digit hex colour such as `"FF0000"`, or a colour of the document's theme such as `{ theme: "accent1" }`.

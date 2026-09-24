@@ -35,5 +35,12 @@ describe("Color", () => {
                 },
             });
         });
+
+        it("should create a color of the document's theme", () => {
+            const tree = new Formatter().format(new Color({ theme: "accent1", lighter: 40 }));
+            expect(tree).to.deep.equal({
+                "w:color": { _attr: { "w:val": "8EAADB", "w:themeColor": "accent1", "w:themeTint": "99" } },
+            });
+        });
     });
 });

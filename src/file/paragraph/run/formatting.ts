@@ -8,8 +8,9 @@
  *
  * @module
  */
+import { COLOR_ATTRIBUTES, ColorAttributeComponent, type ThemeColor } from "@file/theme/theme-color";
 import { Attributes, XmlComponent } from "@file/xml-components";
-import { type UniversalMeasure, hexColorValue, signedTwipsMeasureValue } from "@util/values";
+import { type UniversalMeasure, signedTwipsMeasureValue } from "@util/values";
 
 /**
  * Represents character spacing (tracking) in a run.
@@ -59,18 +60,15 @@ export class CharacterSpacing extends XmlComponent {
  * ```typescript
  * new Color("FF0000"); // Red text
  * new Color("auto"); // Automatic color
+ * new Color({ theme: "accent1", darker: 25 }); // The theme's first accent color, 25% darker
  * ```
  *
  * @internal
  */
 export class Color extends XmlComponent {
-    public constructor(color: string) {
+    public constructor(color: string | ThemeColor) {
         super("w:color");
-        this.root.push(
-            new Attributes({
-                val: hexColorValue(color),
-            }),
-        );
+        this.root.push(new ColorAttributeComponent([{ keys: { ...COLOR_ATTRIBUTES, color: "w:val" }, color }]));
     }
 }
 

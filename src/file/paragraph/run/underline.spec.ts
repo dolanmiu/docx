@@ -32,4 +32,11 @@ describe("createUnderline", () => {
             "w:u": { _attr: { "w:val": "double", "w:color": "FF00CC" } },
         });
     });
+
+    it("should use a color of the document's theme", () => {
+        const tree = new Formatter().format(createUnderline(UnderlineType.WAVE, { theme: "accent2" }));
+        expect(tree).to.deep.equal({
+            "w:u": { _attr: { "w:val": "wave", "w:color": "ED7D31", "w:themeColor": "accent2" } },
+        });
+    });
 });

@@ -267,6 +267,47 @@ describe("TableCellBorders", () => {
 
 describe("TableCell", () => {
     describe("#constructor", () => {
+        it("should take colors of the document's theme for its borders and shading", () => {
+            const cell = new TableCell({
+                children: [],
+                shading: { type: ShadingType.CLEAR, fill: { theme: "accent1", lighter: 80 } },
+                borders: { bottom: { style: BorderStyle.SINGLE, size: 4, color: { theme: "accent1" } } },
+                revision: { id: 1, author: "Firstname Lastname", date: "123", shading: { fill: { theme: "accent2" } } },
+            });
+            const [properties] = new Formatter().format(cell)["w:tc"];
+            expect(properties["w:tcPr"]).to.deep.include.members([
+                {
+                    "w:tcBorders": [
+                        { "w:bottom": { _attr: { "w:val": "single", "w:color": "4472C4", "w:themeColor": "accent1", "w:sz": 4 } } },
+                    ],
+                },
+                { "w:shd": { _attr: { "w:fill": "D9E2F3", "w:themeFill": "accent1", "w:themeFillTint": "33", "w:val": "clear" } } },
+            ]);
+            // The options keep the theme colors as they were given
+            expect(cell.options.shading?.fill).to.deep.equal({ theme: "accent1", lighter: 80 });
+        });
+
+        it("should declare its options' colors as hex colors, as it did before they took theme colors", () => {
+            const cell = new TableCell({
+                children: [],
+                shading: { fill: "EEEEEE" },
+                borders: { top: { style: BorderStyle.SINGLE, color: "FF0000" } },
+                revision: {
+                    id: 1,
+                    author: "Firstname Lastname",
+                    date: "123",
+                    borders: { top: { style: BorderStyle.SINGLE, color: "00FF00" } },
+                },
+            });
+            // These compile only while the colors are declared as strings
+            const colors: readonly (string | undefined)[] = [
+                cell.options.shading?.fill,
+                cell.options.borders?.top?.color,
+                cell.options.revision?.borders?.top?.color,
+            ];
+            expect(colors).to.deep.equal(["EEEEEE", "FF0000", "00FF00"]);
+        });
+
         it("should create", () => {
             const cell = new TableCell({
                 children: [],

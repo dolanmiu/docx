@@ -11,6 +11,7 @@
  */
 import { type IBorderOptions, createBorderElement } from "@file/border";
 import { type IShadingAttributesProperties, createShading } from "@file/shading";
+import type { ThemeColor } from "@file/theme/theme-color";
 import { ChangeAttributes, type IChangedAttributesProperties } from "@file/track-revision/track-revision";
 import { DeletionTrackChange } from "@file/track-revision/track-revision-components/deletion-track-change";
 import { InsertionTrackChange } from "@file/track-revision/track-revision-components/insertion-track-change";
@@ -162,14 +163,15 @@ export type IRunStylePropertiesOptions = {
     readonly italics?: boolean;
     readonly italicsComplexScript?: boolean;
     readonly underline?: {
-        readonly color?: string;
+        readonly color?: string | ThemeColor;
         readonly type?: (typeof UnderlineType)[keyof typeof UnderlineType];
     };
     readonly effect?: (typeof TextEffect)[keyof typeof TextEffect];
     readonly emphasisMark?: {
         readonly type?: (typeof EmphasisMarkType)[keyof typeof EmphasisMarkType];
     };
-    readonly color?: string;
+    /** The text's color: a hex color such as `"FF0000"`, `"auto"`, or a color of the document's theme such as `{ theme: "accent1" }` */
+    readonly color?: string | ThemeColor;
     readonly kern?: number | PositiveUniversalMeasure;
     readonly position?: UniversalMeasure;
     readonly size?: number | PositiveUniversalMeasure;

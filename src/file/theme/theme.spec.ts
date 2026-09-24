@@ -116,6 +116,25 @@ describe("Theme", () => {
         ]);
     });
 
+    it("should give the hex color of each of its colors, with Office's in place of those not given", () => {
+        expect(new Theme().Colors).to.deep.equal({
+            dark1: "000000",
+            light1: "FFFFFF",
+            dark2: "44546A",
+            light2: "E7E6E6",
+            accent1: "4472C4",
+            accent2: "ED7D31",
+            accent3: "A5A5A5",
+            accent4: "FFC000",
+            accent5: "5B9BD5",
+            accent6: "70AD47",
+            hyperlink: "0563C1",
+            followedHyperlink: "954F72",
+        });
+        const { Colors } = new Theme({ colors: { dark1: "#1B1B1B", accent2: "c62828" } });
+        expect([Colors.dark1, Colors.light1, Colors.accent2]).to.deep.equal(["1B1B1B", "FFFFFF", "c62828"]);
+    });
+
     it("should throw for a color that isn't a hex color", () => {
         expect(() => new Theme({ colors: { accent1: "auto" } })).to.throw("Invalid theme color accent1 'auto'. Expected 6 digit hex value");
         expect(() => new Theme({ colors: { hyperlink: "blue" } })).to.throw();

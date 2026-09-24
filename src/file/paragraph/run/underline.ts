@@ -7,8 +7,8 @@
  *
  * @module
  */
-import { BuilderElement, type XmlComponent } from "@file/xml-components";
-import { hexColorValue } from "@util/values";
+import { COLOR_ATTRIBUTES, type ThemeColor, createColorElement } from "@file/theme/theme-color";
+import type { XmlComponent } from "@file/xml-components";
 
 /**
  * Underline style types for text.
@@ -84,11 +84,6 @@ export const UnderlineType = {
     NONE: "none",
 } as const;
 
-type IUnderlineAttributes = {
-    readonly val: (typeof UnderlineType)[keyof typeof UnderlineType];
-    readonly color?: string;
-};
-
 /**
  * Creates underline formatting for a run in a WordprocessingML document.
  *
@@ -118,16 +113,16 @@ type IUnderlineAttributes = {
  *
  * // Red wavy underline
  * createUnderline(UnderlineType.WAVE, "FF0000");
+ *
+ * // Underline in the theme's first accent color
+ * createUnderline(UnderlineType.SINGLE, { theme: "accent1" });
  * ```
  */
 export const createUnderline = (
     underlineType: (typeof UnderlineType)[keyof typeof UnderlineType] = UnderlineType.SINGLE,
-    color?: string,
+    color?: string | ThemeColor,
 ): XmlComponent =>
-    new BuilderElement<IUnderlineAttributes>({
-        name: "w:u",
-        attributes: {
-            val: { key: "w:val", value: underlineType },
-            color: { key: "w:color", value: color === undefined ? undefined : hexColorValue(color) },
-        },
-    });
+    createColorElement("w:u", [
+        { key: "w:val", value: underlineType },
+        { keys: COLOR_ATTRIBUTES, color },
+    ]);
