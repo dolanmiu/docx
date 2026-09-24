@@ -867,7 +867,7 @@ const degrees = (guide: string): AdjustmentDefinition => ({ guide, factor: 60000
 const remainingPercent = (guide: string): AdjustmentDefinition => ({ guide, factor: -1000, offset: 100000 });
 
 /* cspell:disable */
-const PRESET_SHAPE_ADJUSTMENTS: {
+export const PRESET_SHAPE_ADJUSTMENTS: {
     readonly [T in keyof PresetShapeAdjustments]: { readonly [K in keyof PresetShapeAdjustments[T]]-?: AdjustmentDefinition };
 } = {
     arc: { startAngle: degrees("adj1"), endAngle: degrees("adj2") },

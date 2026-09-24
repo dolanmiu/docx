@@ -22,6 +22,7 @@ import {
     type ImageRun,
     type Run,
     type SequentialIdentifier,
+    type ShapeCanvasRun,
     type ShapeGroupRun,
     type ShapeRun,
     type SimpleField,
@@ -41,6 +42,7 @@ export type ParagraphChild =
     | ImageRun
     | ShapeRun
     | ShapeGroupRun
+    | ShapeCanvasRun
     | SymbolRun
     | Bookmark
     | PageBreak

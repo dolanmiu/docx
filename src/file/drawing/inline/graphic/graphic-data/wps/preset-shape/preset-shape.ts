@@ -24,8 +24,21 @@ export type PresetShapeNonVisualProperties = {
     readonly title?: string;
 };
 
+/**
+ * The shape a connector is attached to (`a:stCxn` / `a:endCxn`): its `wps:cNvPr` id and the index of its connection site.
+ */
+export type ShapeConnection = {
+    readonly id: number;
+    readonly index: number;
+};
+
 export type PresetShapeCoreOptions = {
     readonly geometry: PresetShapeGeometry;
+    /** The shapes a connector's start and end are attached to. Only written for lines and connectors */
+    readonly connections?: {
+        readonly start?: ShapeConnection;
+        readonly end?: ShapeConnection;
+    };
     readonly fill?: ShapeFill;
     readonly line?: ShapeLine;
     readonly children?: readonly Paragraph[];
@@ -48,10 +61,41 @@ const createNonVisualDrawingProperties = ({ id, name, description, title }: Pres
         },
     });
 
+// <xsd:complexType name="CT_Connection">
+//     <xsd:attribute name="id" type="ST_DrawingElementId" use="required"/>
+//     <xsd:attribute name="idx" type="xsd:unsignedInt" use="required"/>
+// </xsd:complexType>
+const createConnection = (name: "a:stCxn" | "a:endCxn", { id, index }: ShapeConnection): XmlComponent =>
+    new BuilderElement<ShapeConnection>({
+        name,
+        attributes: {
+            id: { key: "id", value: id },
+            index: { key: "idx", value: index },
+        },
+    });
+
+// <xsd:complexType name="CT_NonVisualConnectorProperties">
+//     <xsd:sequence>
+//         <xsd:element name="cxnSpLocks" type="CT_ConnectorLocking" minOccurs="0" maxOccurs="1"/>
+//         <xsd:element name="stCxn" type="CT_Connection" minOccurs="0" maxOccurs="1"/>
+//         <xsd:element name="endCxn" type="CT_Connection" minOccurs="0" maxOccurs="1"/>
+//         <xsd:element name="extLst" type="CT_OfficeArtExtensionList" minOccurs="0" maxOccurs="1"/>
+//     </xsd:sequence>
+// </xsd:complexType>
+const createNonVisualConnectorProperties = (connections: PresetShapeCoreOptions["connections"] = {}): XmlComponent =>
+    new BuilderElement({
+        name: "wps:cNvCnPr",
+        children: [
+            ...(connections.start ? [createConnection("a:stCxn", connections.start)] : []),
+            ...(connections.end ? [createConnection("a:endCxn", connections.end)] : []),
+        ],
+    });
+
 /**
  * Creates a `wps:wsp` element for a preset shape.
  *
- * Lines and connectors are written with `wps:cNvCnPr`, other shapes with `wps:cNvSpPr`.
+ * Lines and connectors are written with `wps:cNvCnPr`, which says which shapes they are attached to,
+ * and other shapes with `wps:cNvSpPr`.
  * A text box (`wps:txbx`) is written only when the shape has children, and its text is
  * centred vertically unless `bodyProperties` says otherwise.
  *
@@ -78,6 +122,7 @@ const createNonVisualDrawingProperties = ({ id, name, description, title }: Pres
  */
 export const createPresetShape = ({
     geometry,
+    connections,
     fill,
     line,
     children,
@@ -89,7 +134,9 @@ export const createPresetShape = ({
         name: "wps:wsp",
         children: [
             ...(nonVisualDrawingProperties ? [createNonVisualDrawingProperties(nonVisualDrawingProperties)] : []),
-            new BuilderElement({ name: isConnectorShapeType(geometry.type) ? "wps:cNvCnPr" : "wps:cNvSpPr" }),
+            isConnectorShapeType(geometry.type)
+                ? createNonVisualConnectorProperties(connections)
+                : new BuilderElement({ name: "wps:cNvSpPr" }),
             createPresetShapeProperties({ transformation, geometry, fill, line }),
             ...(children ? [createWpsTextBox(children)] : []),
             createBodyProperties(children ? { verticalAnchor: VerticalAnchor.CENTER, ...bodyProperties } : bodyProperties),

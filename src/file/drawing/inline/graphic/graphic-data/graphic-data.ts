@@ -7,6 +7,7 @@ import { Pic } from "./pic";
 import type { ICropOptions } from "./pic/blip/source-rectangle";
 import type { OutlineOptions } from "./pic/shape-properties/outline/outline";
 import type { SolidFillOptions } from "./pic/shape-properties/outline/solid-fill";
+import { createWpcCanvas } from "./wpc/wpc-canvas";
 import { createWpgGroup } from "./wpg/wpg-group";
 
 /**
@@ -86,6 +87,14 @@ export class GraphicData extends XmlComponent {
             // const wps = new WpsShape({ ...mediaData.data, transformation: transform, outline, solidFill });
             const wpg = createWpgGroup({ children, transformation: transform, childOffset: md.childOffset, childExtent: md.childExtent });
             this.root.push(wpg);
+        } else if (mediaData.type === "wpc") {
+            this.root.push(
+                new GraphicDataAttributes({
+                    uri: "http://schemas.microsoft.com/office/word/2010/wordprocessingCanvas",
+                }),
+            );
+            const children = mediaData.children.map((child) => createWpsShape({ ...child.data, transformation: child.transformation }));
+            this.root.push(createWpcCanvas({ children, fill: mediaData.fill, line: mediaData.line }));
         } else {
             this.root.push(
                 new GraphicDataAttributes({

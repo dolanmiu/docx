@@ -12,7 +12,7 @@
  * The OOXML names are often abbreviated (`roundRect`) or numbered (`ribbon2`), so the library uses names
  * that say what the shape is.
  */
-const PRESET_SHAPE_OOXML_NAMES = {
+export const PRESET_SHAPE_OOXML_NAMES = {
     // Lines and connectors
     line: "line",
     inverseLine: "lineInv",
