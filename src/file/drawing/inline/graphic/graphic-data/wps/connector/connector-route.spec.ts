@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { type ConnectorEndpoint, type ConnectorGeometry, type Point, routeConnector } from "./connector-route";
+import { type Bounds, type ConnectorEndpoint, type ConnectorGeometry, type Point, routeConnector } from "./connector-route";
 
 const MARGIN = 228600;
 
@@ -239,6 +239,92 @@ describe("routeConnector", () => {
             expect(routeConnector("curved", at(0, 0, 0), at(1000, 500, 270)).type).to.equal("curvedConnectorOneBend");
             expect(routeConnector("curved", at(0, 0, 180), at(1000, 500, 270)).type).to.equal("curvedConnectorThreeBends");
             expect(routeConnector("curved", at(1000, 0, 0), at(0, 500, 180)).type).to.equal("curvedConnectorFourBends");
+        });
+    });
+    describe("margin", () => {
+        it("should loop out by the margin it is given", () => {
+            const geometry = routeConnector("elbow", at(0, 0, 0), at(1000, 500, 0), { margin: 100000 });
+            expect(geometry.adjustments.bendX).to.be.closeTo(((1000000 + 100000) / 1000000) * 100, 1e-9);
+        });
+
+        it("should reject a negative margin", () => {
+            expect(() => routeConnector("elbow", at(0, 0, 0), at(1000, 500, 180), { margin: -1 })).to.throw("Invalid connector margin -1");
+            expect(() => routeConnector("straight", at(0, 0, 0), at(1000, 500, 180), { margin: Number.NaN })).to.throw(
+                "Invalid connector margin NaN",
+            );
+        });
+    });
+
+    describe("obstacles", () => {
+        const box = (left: number, top: number, right: number, bottom: number): Bounds => ({
+            left: left * 1000,
+            top: top * 1000,
+            right: right * 1000,
+            bottom: bottom * 1000,
+        });
+
+        it("should keep the usual route when it doesn't cross an obstacle", () => {
+            const geometry = routeConnector("elbow", at(0, 0, 0), at(1000, 500, 180), { obstacles: [box(2000, 2000, 2100, 2100)] });
+            expect(geometry).to.deep.include({ type: "elbowConnector", adjustments: { bendX: 50 } });
+        });
+
+        it("should go around an obstacle between facing ends, clear of it by a margin", () => {
+            const start = at(0, 0, 0);
+            const end = at(1000, 0, 180);
+            const geometry = routeConnector("elbow", start, end, { obstacles: [box(400, -100, 600, 100)] });
+            expect(geometry.type).to.equal("elbowConnectorFourBends");
+            expectConnects(geometry, start, end, 9525);
+            // Below the obstacle, a margin away from it and from its sides
+            expect(geometry.points.map(({ x, y }) => [x, y])).to.deep.equal([
+                [0, 0],
+                [400000 - MARGIN, 0],
+                [400000 - MARGIN, 100000 + MARGIN],
+                [600000 + MARGIN, 100000 + MARGIN],
+                [600000 + MARGIN, 9525],
+                [1000000, 9525],
+            ]);
+        });
+
+        it("should bend three times to go around an obstacle in the corner of a right angle", () => {
+            const start = at(0, 0, 0);
+            const end = at(1000, 1000, 270);
+            // The usual route goes right along the top, then down. An obstacle sits in the top-right corner
+            const geometry = routeConnector("elbow", start, end, { obstacles: [box(800, -200, 1200, 200)] });
+            expect(geometry.type).to.equal("elbowConnectorThreeBends");
+            expectConnects(geometry, start, end);
+        });
+
+        it("should go around an obstacle when it arrives at a right angle from behind", () => {
+            const start = at(0, 0, 0);
+            // The end faces down, so the connector comes up into it from below
+            const end = at(1000, 1000, 90);
+            const geometry = routeConnector("elbow", start, end, { obstacles: [box(400, -100, 600, 100)] });
+            expect(geometry.type).to.equal("elbowConnectorThreeBends");
+            expectConnects(geometry, start, end);
+            expect(geometry.points[1].x).to.equal(400000 - MARGIN);
+        });
+
+        it("should keep one bend at a right angle when that route is clear", () => {
+            const start = at(0, 0, 0);
+            const end = at(1000, 1000, 270);
+            // The usual route is clear, but an obstacle below it makes the router look
+            const geometry = routeConnector("elbow", start, end, { obstacles: [box(300, 300, 600, 600)] });
+            expect(geometry.type).to.equal("elbowConnectorOneBend");
+        });
+
+        it("should keep the usual route when no route is clear of more obstacles", () => {
+            // The end is inside an obstacle, so every route crosses it
+            const geometry = routeConnector("elbow", at(0, 0, 0), at(1000, 500, 180), { obstacles: [box(900, 400, 1100, 600)] });
+            expect(geometry).to.deep.include({ type: "elbowConnector", adjustments: { bendX: 50 } });
+        });
+
+        it("should only look at the obstacles nearest the connector for places to bend", () => {
+            const far = Array.from({ length: 20 }, (_, index) => box(5000 + index * 300, 5000, 5100 + index * 300, 5100));
+            const start = at(0, 0, 0);
+            const end = at(1000, 0, 180);
+            const geometry = routeConnector("elbow", start, end, { obstacles: [...far, box(400, -100, 600, 100)] });
+            expect(geometry.type).to.equal("elbowConnectorFourBends");
+            expectConnects(geometry, start, end, 9525);
         });
     });
 });

@@ -1,0 +1,29 @@
+name: Shape demos
+on:
+    push:
+        branches:
+            - master
+    pull_request:
+        branches:
+            - master
+
+jobs:
+    render:
+        name: Validate and render shape demos
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v5
+            - uses: "./.github/actions/install-and-build"
+            - name: Install LibreOffice, Poppler and xmllint
+              run: |
+                  sudo apt-get update
+                  sudo apt-get install -y --no-install-recommends libreoffice-writer poppler-utils libxml2-utils
+            - name: Run, validate and render the shape demos
+              run: scripts/render-shape-demos.sh build/shape-demos
+            - name: Upload the pages as images
+              if: always()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: shape-demos
+                  path: build/shape-demos
+                  if-no-files-found: warn

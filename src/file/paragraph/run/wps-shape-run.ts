@@ -19,6 +19,8 @@ type CoreShapeOptions = {
 
 /**
  * @publicApi
+ * @deprecated Use {@link ShapeRun} with `type: "rectangle"` and `children` for a text box. It has plain options for fills,
+ * lines, effects and text layout.
  */
 export type IWpsShapeOptions = WpsShapeCoreOptions & { readonly type: "wps" } & CoreShapeOptions;
 
@@ -46,7 +48,11 @@ export const createTransformation = (options: IMediaTransformation): IMediaDataT
 });
 
 /**
+ * A rectangular text box.
+ *
  * @publicApi
+ * @deprecated Use {@link ShapeRun} with `type: "rectangle"` and `children` for a text box. It has plain options for fills,
+ * lines, effects and text layout, and can be any of the preset shapes.
  */
 export class WpsShapeRun extends Run {
     private readonly wpsShapeData: WpsMediaData;

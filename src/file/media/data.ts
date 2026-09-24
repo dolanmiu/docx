@@ -1,6 +1,13 @@
 import type { OutlineOptions } from "@file/drawing/inline/graphic/graphic-data/pic/shape-properties/outline/outline";
 import type { SolidFillOptions } from "@file/drawing/inline/graphic/graphic-data/pic/shape-properties/outline/solid-fill";
-import type { PresetShapeCoreOptions, ShapeFill, ShapeLine, WpsShapeCoreOptions } from "@file/drawing/inline/graphic/graphic-data/wps";
+import type {
+    PresetShapeCoreOptions,
+    PresetShapeNonVisualProperties,
+    ShapeFill,
+    ShapeLine,
+    ShapePictureCoreOptions,
+    WpsShapeCoreOptions,
+} from "@file/drawing/inline/graphic/graphic-data/wps";
 
 export type IMediaDataTransformation = {
     readonly offset?: {
@@ -83,10 +90,44 @@ export type WpgCommonMediaData = {
 
 export type IGroupChildMediaData = (WpsMediaData | IMediaData) & WpgCommonMediaData;
 
+/**
+ * A picture in a ShapeGroupRun or ShapeCanvasRun, written as `pic:pic`.
+ */
+export type ShapePictureMediaData = {
+    readonly type: "picture";
+    readonly transformation: IMediaDataTransformation;
+    readonly data: ShapePictureCoreOptions;
+};
+
+/**
+ * A group inside a ShapeGroupRun or ShapeCanvasRun, written as `wpg:grpSp` in a group or `wpg:wgp` on a canvas.
+ */
+export type ShapeNestedGroupMediaData = {
+    readonly type: "group";
+    readonly transformation: IMediaDataTransformation;
+    /** Top-left corner (in EMUs) of the coordinate space the children are positioned in */
+    readonly childOffset: {
+        readonly x: number;
+        readonly y: number;
+    };
+    /** Size (in EMUs) of the coordinate space the children are positioned in */
+    readonly childExtent: {
+        readonly x: number;
+        readonly y: number;
+    };
+    readonly children: readonly ShapeDrawingChildMediaData[];
+    readonly nonVisualDrawingProperties: PresetShapeNonVisualProperties;
+};
+
+/**
+ * A shape, picture or group in a ShapeGroupRun or ShapeCanvasRun.
+ */
+export type ShapeDrawingChildMediaData = WpsMediaData | ShapePictureMediaData | ShapeNestedGroupMediaData;
+
 export type WpgMediaData = {
     readonly type: "wpg";
     readonly transformation: IMediaDataTransformation;
-    readonly children: readonly IGroupChildMediaData[];
+    readonly children: readonly (IGroupChildMediaData | ShapeDrawingChildMediaData)[];
     /** Top-left corner (in EMUs) of the coordinate space the children are positioned in. Defaults to 0,0. */
     readonly childOffset?: {
         readonly x: number;
@@ -102,8 +143,8 @@ export type WpgMediaData = {
 export type WpcMediaData = {
     readonly type: "wpc";
     readonly transformation: IMediaDataTransformation;
-    /** The shapes on the canvas, positioned in EMUs from its top-left corner */
-    readonly children: readonly WpsMediaData[];
+    /** The shapes, pictures and groups on the canvas, positioned in EMUs from its top-left corner */
+    readonly children: readonly ShapeDrawingChildMediaData[];
     /** The canvas's background */
     readonly fill?: ShapeFill;
     /** The canvas's outline */

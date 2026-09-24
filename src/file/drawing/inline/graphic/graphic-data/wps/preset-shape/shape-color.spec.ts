@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { Formatter } from "@export/formatter";
 
-import { createShapeColor, percentageValue } from "./shape-color";
+import { createShapeColor } from "./shape-color";
 
 describe("createShapeColor", () => {
     it("should create an RGB colour", () => {
@@ -36,16 +36,5 @@ describe("createShapeColor", () => {
     it("should reject a transparency outside 0 to 100", () => {
         expect(() => createShapeColor("000000", 101)).to.throw("Invalid transparency 101");
         expect(() => createShapeColor("000000", -1)).to.throw("Invalid transparency -1");
-    });
-});
-
-describe("percentageValue", () => {
-    it("should return values from 0 to 100", () => {
-        expect(percentageValue(0, "value")).to.equal(0);
-        expect(percentageValue(100, "value")).to.equal(100);
-    });
-
-    it("should reject NaN", () => {
-        expect(() => percentageValue(Number.NaN, "value")).to.throw("Invalid value NaN");
     });
 });

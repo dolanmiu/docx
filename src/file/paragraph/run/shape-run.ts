@@ -8,9 +8,7 @@
  *
  * @module
  */
-import { getShapeLineOverhang } from "@file/drawing/inline/graphic/graphic-data/wps/preset-shape";
-
-import { type ShapeBaseOptions, type WithPresetShape, createPresetShapeData, createUniformEffectExtent } from "./shape-run-data";
+import { type ShapeBaseOptions, type WithPresetShape, createPresetShapeData, getShapeEffectExtent } from "./shape-run-data";
 import { createTransformation } from "./wps-shape-run";
 import { Drawing, type IFloating } from "../../drawing";
 import { Run } from "../run";
@@ -19,16 +17,35 @@ export type {
     Arrowhead,
     ArrowheadSize,
     ArrowheadType,
+    CustomLineDash,
     GradientPath,
     GradientShapeFill,
     GradientStop,
+    ImageSource,
     LineDash,
+    PatternShapeFill,
+    PictureShapeFill,
+    PictureTile,
+    PictureTileAlignment,
+    PictureTileMirror,
     PresetShapeAdjustments,
     PresetShapeType,
     ShapeAdjustments,
+    ShapeCompoundLine,
+    ShapeEffects,
     ShapeFill,
+    ShapeGlow,
     ShapeLine,
+    ShapeLineCap,
+    ShapeLineJoin,
     ShapeLineOptions,
+    ShapePattern,
+    ShapeReflection,
+    ShapeShadow,
+    ShapeTextDirection,
+    ShapeTextOptions,
+    ShapeTextVerticalAlignment,
+    ShapeTextWarp,
     SolidShapeFill,
 } from "@file/drawing/inline/graphic/graphic-data/wps/preset-shape";
 
@@ -92,7 +109,9 @@ export class ShapeRun extends Run {
                 {
                     floating: options.floating,
                     docProperties: options.altText,
-                    effectExtent: createUniformEffectExtent(getShapeLineOverhang(options.line)),
+                    link: options.link,
+                    decorative: options.decorative,
+                    effectExtent: getShapeEffectExtent(options),
                 },
             ),
         );

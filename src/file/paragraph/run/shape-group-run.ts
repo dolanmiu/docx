@@ -9,15 +9,15 @@
  * @module
  */
 import type { DocPropertiesOptions } from "@file/drawing/doc-properties/doc-properties";
+import type { DrawingLinkOptions } from "@file/drawing/doc-properties/non-visual-drawing-properties";
 
-import { type IShapeGroupChildOptions, layoutShapeDrawing } from "./shape-drawing";
-import { createUniformEffectExtent } from "./shape-run-data";
+import { type IShapeGroupChildOptions, getGroupEffectExtent, layoutShapeDrawing } from "./shape-drawing";
 import { createTransformation } from "./wps-shape-run";
 import { Drawing, type IFloating } from "../../drawing";
 import type { IMediaDataTransformation, IMediaTransformation } from "../../media";
 import { Run } from "../run";
 
-export type { IShapeGroupChildOptions } from "./shape-drawing";
+export type { IShapeGroupChildOptions, IShapeNestedGroupOptions, IShapePictureOptions } from "./shape-drawing";
 
 /**
  * Options for creating a group of shapes.
@@ -25,8 +25,8 @@ export type { IShapeGroupChildOptions } from "./shape-drawing";
  * @see {@link ShapeGroupRun}
  * @publicApi
  */
-export type IShapeGroupOptions = {
-    /** The shapes in the group, and the connectors between them */
+export type IShapeGroupOptions = DrawingLinkOptions & {
+    /** The shapes, pictures and groups in the group, and the connectors between them */
     readonly children: readonly IShapeGroupChildOptions[];
     /**
      * Size of the group in pixels, with optional rotation and flip. Defaults to the size of
@@ -70,7 +70,8 @@ export class ShapeGroupRun extends Run {
     public constructor(options: IShapeGroupOptions) {
         super({});
 
-        const { children, bounds, overhang } = layoutShapeDrawing(options.children);
+        const layout = layoutShapeDrawing(options.children);
+        const { children, bounds } = layout;
 
         // The children's coordinate space is the box around them, in EMUs
         const childOffset = { x: Math.round(bounds.left), y: Math.round(bounds.top) };
@@ -89,7 +90,15 @@ export class ShapeGroupRun extends Run {
                 {
                     floating: options.floating,
                     docProperties: options.altText,
-                    effectExtent: createUniformEffectExtent(overhang),
+                    link: options.link,
+                    decorative: options.decorative,
+                    // Lines, effects and rotated shapes can reach past the group's box
+                    effectExtent: getGroupEffectExtent(layout, childOffset, childExtent, {
+                        width: groupTransformation.emus.x,
+                        height: groupTransformation.emus.y,
+                        rotation: options.transformation?.rotation,
+                        flip: options.transformation?.flip,
+                    }),
                 },
             ),
         );

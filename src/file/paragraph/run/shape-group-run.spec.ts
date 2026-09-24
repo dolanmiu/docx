@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { Formatter } from "@export/formatter";
 import { HorizontalPositionRelativeFrom, VerticalPositionRelativeFrom } from "@file/index";
-import type { IXmlableObject } from "@file/xml-components";
+import type { IContext, IXmlableObject } from "@file/xml-components";
 import * as convenienceFunctions from "@util/convenience-functions";
 
 import { ShapeGroupRun } from "./shape-group-run";
@@ -60,8 +60,9 @@ describe("ShapeGroupRun", () => {
 
         const container = getContainer(tree);
         expect(getChild(container, "wp:extent")).to.deep.equal({ "wp:extent": { _attr: { cx: 2667000, cy: 457200 } } });
+        // The arrowhead stays inside the group, and only the ellipse's 1pt line reaches past it
         expect(getChild(container, "wp:effectExtent")).to.deep.equal({
-            "wp:effectExtent": { _attr: { t: 38100, r: 38100, b: 38100, l: 38100 } },
+            "wp:effectExtent": { _attr: { t: 6350, r: 6350, b: 6350, l: 0 } },
         });
         // Children take ids 1-3 when they are created, before the group's docPr
         expect(getChild(container, "wp:docPr")).to.deep.equal({ "wp:docPr": { _attr: { id: 4, name: "", descr: "", title: "" } } });
@@ -83,7 +84,7 @@ describe("ShapeGroupRun", () => {
 
         expect(group.slice(2).map((shape) => shape["wps:wsp"][0])).to.deep.equal([
             { "wps:cNvPr": { _attr: { id: 1, name: "Start" } } },
-            { "wps:cNvPr": { _attr: { id: 2, name: "" } } },
+            { "wps:cNvPr": { _attr: { id: 2, name: "Straight Connector 2" } } },
             { "wps:cNvPr": { _attr: { id: 3, name: "End", descr: "d", title: "t" } } },
         ]);
         expect(group[3]["wps:wsp"][1]).to.deep.equal({ "wps:cNvCnPr": {} });
@@ -151,7 +152,10 @@ describe("ShapeGroupRun", () => {
         const container = getContainer(tree);
         expect(tree["w:r"][0]["w:drawing"][0]).to.have.property("wp:anchor");
         expect(getChild(container, "wp:extent")).to.deep.equal({ "wp:extent": { _attr: { cx: 1905000, cy: 952500 } } });
-        expect(getChild(container, "wp:effectExtent")).to.deep.equal({ "wp:effectExtent": { _attr: { t: 0, r: 0, b: 0, l: 0 } } });
+        // Turned a quarter turn, the 200 by 100 pixel group reaches 50 pixels above and below its box
+        expect(getChild(container, "wp:effectExtent")).to.deep.equal({
+            "wp:effectExtent": { _attr: { t: 476250, r: 0, b: 476250, l: 0 } },
+        });
         expect(getChild(container, "wp:docPr")).to.deep.equal({ "wp:docPr": { _attr: { id: 2, name: "Group" } } });
 
         expect(getGroup(tree)[1]["wpg:grpSpPr"][0]["a:xfrm"]).to.deep.equal([
@@ -161,6 +165,53 @@ describe("ShapeGroupRun", () => {
             { "a:chOff": { _attr: { x: 0, y: 0 } } },
             { "a:chExt": { _attr: { cx: 952500, cy: 476250 } } },
         ]);
+    });
+
+    it("should write pictures and groups inside the group, and add the pictures to the document", () => {
+        const addImage = vi.fn();
+        const tree = new Formatter().format(
+            new ShapeGroupRun({
+                children: [
+                    { type: "picture", image: { type: "png", data: Buffer.from("logo") }, transformation: { width: 50, height: 50 } },
+                    {
+                        type: "group",
+                        transformation: { offset: { left: 60 } },
+                        children: [{ type: "ellipse", transformation: { width: 50, height: 50 } }],
+                    },
+                ],
+                link: "https://example.com",
+                decorative: true,
+            }),
+            {
+                file: { Media: { addImage } },
+                stack: [],
+                viewWrapper: { Relationships: { addRelationship: vi.fn() } },
+            } as unknown as IContext,
+        );
+
+        const group = getGroup(tree);
+        expect(Object.keys(group[2])).to.deep.equal(["pic:pic"]);
+        expect(Object.keys(group[3])).to.deep.equal(["wpg:grpSp"]);
+        expect(group[3]["wpg:grpSp"][0]).to.deep.equal({ "wpg:cNvPr": { _attr: { id: 2, name: "Group 2" } } });
+        expect(addImage).toHaveBeenCalledTimes(1);
+
+        const docProperties = getChild(getContainer(tree), "wp:docPr")["wp:docPr"];
+        expect(docProperties.map((child: object) => Object.keys(child)[0])).to.deep.equal(["_attr", "a:hlinkClick", "a:extLst"]);
+    });
+
+    it("should size a group of lines with no width or height", () => {
+        const vertical = new Formatter().format(
+            new ShapeGroupRun({ children: [{ type: "line", transformation: { width: 0, height: 100 } }] }),
+        );
+        expect(getChild(getContainer(vertical), "wp:extent")).to.deep.equal({ "wp:extent": { _attr: { cx: 0, cy: 952500 } } });
+        expect(getChild(getContainer(vertical), "wp:effectExtent")).to.deep.equal({
+            "wp:effectExtent": { _attr: { t: 6350, r: 6350, b: 6350, l: 6350 } },
+        });
+
+        const horizontal = new Formatter().format(
+            new ShapeGroupRun({ children: [{ type: "line", transformation: { width: 100, height: 0 } }] }),
+        );
+        expect(getChild(getContainer(horizontal), "wp:extent")).to.deep.equal({ "wp:extent": { _attr: { cx: 952500, cy: 0 } } });
     });
 
     it("should reject a group without children", () => {

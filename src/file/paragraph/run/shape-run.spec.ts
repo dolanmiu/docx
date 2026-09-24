@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Formatter } from "@export/formatter";
 import { HorizontalPositionAlign, TextWrappingType, VerticalPositionRelativeFrom } from "@file/index";
 import { Paragraph } from "@file/paragraph";
+import type { IContext } from "@file/xml-components";
 import * as convenienceFunctions from "@util/convenience-functions";
 
 import { ShapeRun } from "./shape-run";
@@ -124,8 +125,9 @@ describe("ShapeRun", () => {
         );
 
         const anchor = tree["w:r"][0]["w:drawing"][0]["wp:anchor"];
+        // Turned 30 degrees, the 200 by 100 pixel box reaches 11.6 pixels further left and right and 43.3 further up and down
         expect(anchor.find((child: object) => "wp:effectExtent" in child)).to.deep.equal({
-            "wp:effectExtent": { _attr: { t: 6350, r: 6350, b: 6350, l: 6350 } },
+            "wp:effectExtent": { _attr: { t: 418795, r: 116865, b: 418795, l: 116865 } },
         });
         expect(anchor.find((child: object) => "wp:docPr" in child)).to.deep.equal({
             "wp:docPr": { _attr: { id: 1, name: "Callout", descr: "A speech bubble", title: "Callout" } },
@@ -156,5 +158,57 @@ describe("ShapeRun", () => {
         });
         const tree = new Formatter().format(paragraph);
         expect(tree["w:p"][0]).to.have.property("w:r");
+    });
+    it("should reach past its box by its effects and line", () => {
+        const tree = new Formatter().format(
+            new ShapeRun({
+                type: "rectangle",
+                transformation: { width: 100, height: 100 },
+                line: "none",
+                effects: { glow: { color: "FFC000", size: 10 }, shadow: { blur: 0, distance: 5, angle: 90 } },
+            }),
+        );
+
+        const inline = tree["w:r"][0]["w:drawing"][0]["wp:inline"];
+        expect(inline[2]).to.deep.equal({ "wp:effectExtent": { _attr: { t: 127000, r: 127000, b: 127000, l: 127000 } } });
+        const properties = inline[5]["a:graphic"][1]["a:graphicData"][1]["wps:wsp"][1]["wps:spPr"];
+        expect(Object.keys(properties[4])).to.deep.equal(["a:effectLst"]);
+    });
+
+    it("should draw a custom shape from a path", () => {
+        const tree = new Formatter().format(
+            new ShapeRun({ type: "custom", path: "M 0 0 L 10 0 L 5 10 Z", transformation: { width: 100, height: 100 }, fill: "FF0000" }),
+        );
+
+        const shape = tree["w:r"][0]["w:drawing"][0]["wp:inline"][5]["a:graphic"][1]["a:graphicData"][1]["wps:wsp"];
+        expect(shape[0]).to.deep.equal({ "wps:cNvSpPr": {} });
+        expect(Object.keys(shape[1]["wps:spPr"][1])).to.deep.equal(["a:custGeom"]);
+    });
+
+    it("should link the shape, and mark it as decorative", () => {
+        const addRelationship = vi.fn();
+        const tree = new Formatter().format(
+            new ShapeRun({
+                type: "rectangle",
+                transformation: { width: 200, height: 4 },
+                link: "https://example.com",
+                decorative: true,
+                floating: {
+                    horizontalPosition: { align: HorizontalPositionAlign.CENTER },
+                    verticalPosition: { relative: VerticalPositionRelativeFrom.PARAGRAPH, offset: 0 },
+                },
+            }),
+            { stack: [], viewWrapper: { Relationships: { addRelationship } } } as unknown as IContext,
+        );
+
+        const anchor = tree["w:r"][0]["w:drawing"][0]["wp:anchor"];
+        const docProperties = anchor.find((child: object) => "wp:docPr" in child)["wp:docPr"];
+        expect(docProperties.map((child: object) => Object.keys(child)[0])).to.deep.equal(["_attr", "a:hlinkClick", "a:extLst"]);
+        expect(addRelationship).toHaveBeenCalledWith(
+            expect.any(String),
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink",
+            "https://example.com",
+            "External",
+        );
     });
 });

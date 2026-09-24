@@ -6,17 +6,7 @@
 import { BuilderElement, type XmlComponent } from "@file/xml-components";
 import { hexColorValue } from "@util/values";
 
-/**
- * Checks that a percentage option is between 0 and 100 and returns it.
- *
- * @throws If the value is outside 0 to 100
- */
-export const percentageValue = (value: number, option: string): number => {
-    if (!(value >= 0 && value <= 100)) {
-        throw new Error(`Invalid ${option} ${value}. Expected a number from 0 to 100`);
-    }
-    return value;
-};
+import { percentageValue } from "./shape-units";
 
 /**
  * Creates an `a:srgbClr` element from a hex colour, with an optional transparency.

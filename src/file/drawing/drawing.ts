@@ -3,6 +3,7 @@ import { XmlComponent } from "@file/xml-components";
 
 import { Anchor } from "./anchor";
 import type { DocPropertiesOptions } from "./doc-properties/doc-properties";
+import type { DrawingLinkOptions } from "./doc-properties/non-visual-drawing-properties";
 import type { EffectExtentAttributes } from "./effect-extent/effect-extent";
 import type { IFloating } from "./floating";
 import { createInline } from "./inline";
@@ -27,7 +28,7 @@ export type IDistance = {
  *
  * @see {@link Drawing}
  */
-export type IDrawingOptions = {
+export type IDrawingOptions = DrawingLinkOptions & {
     readonly floating?: IFloating;
     readonly docProperties?: DocPropertiesOptions;
     readonly outline?: OutlineOptions;
@@ -69,6 +70,8 @@ export class Drawing extends XmlComponent {
                     solidFill: drawingOptions.solidFill,
                     crop: drawingOptions.crop,
                     effectExtent: drawingOptions.effectExtent,
+                    link: drawingOptions.link,
+                    decorative: drawingOptions.decorative,
                 }),
             );
         } else {

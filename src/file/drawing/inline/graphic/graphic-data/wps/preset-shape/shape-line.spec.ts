@@ -47,6 +47,89 @@ describe("createShapeLine", () => {
         });
     });
 
+    it("should write the cap, compound line and join with their OOXML names", () => {
+        const tree = new Formatter().format(createShapeLine({ cap: "round", compound: "thickThin", join: "bevel", dash: "longDash" }));
+        expect(tree).to.deep.equal({
+            "a:ln": [
+                { _attr: { w: 12700, cap: "rnd", cmpd: "thickThin" } },
+                black,
+                { "a:prstDash": { _attr: { val: "lgDash" } } },
+                { "a:bevel": {} },
+            ],
+        });
+    });
+
+    it("should write each cap and compound line", () => {
+        const attributes = (options: Parameters<typeof createShapeLine>[0]): unknown =>
+            new Formatter().format(createShapeLine(options))["a:ln"][0]._attr;
+        expect(attributes({ cap: "flat" })).to.deep.equal({ w: 12700, cap: "flat" });
+        expect(attributes({ cap: "square" })).to.deep.equal({ w: 12700, cap: "sq" });
+        expect(attributes({ compound: "single" })).to.deep.equal({ w: 12700, cmpd: "sng" });
+        expect(attributes({ compound: "double" })).to.deep.equal({ w: 12700, cmpd: "dbl" });
+        expect(attributes({ compound: "thinThick" })).to.deep.equal({ w: 12700, cmpd: "thinThick" });
+        expect(attributes({ compound: "triple" })).to.deep.equal({ w: 12700, cmpd: "tri" });
+    });
+
+    it("should write round joins, and miter joins with Word's limit", () => {
+        expect(new Formatter().format(createShapeLine({ join: "round" }))["a:ln"][2]).to.deep.equal({ "a:round": {} });
+        expect(new Formatter().format(createShapeLine({ join: "miter" }))["a:ln"][2]).to.deep.equal({
+            "a:miter": { _attr: { lim: 800000 } },
+        });
+    });
+
+    it("should write a custom dash in thousandths of a percent of the line width", () => {
+        const tree = new Formatter().format(
+            createShapeLine({
+                dash: [
+                    { length: 4, gap: 1.5 },
+                    { length: 0.5, gap: 1.5 },
+                ],
+            }),
+        );
+        expect(tree["a:ln"][2]).to.deep.equal({
+            "a:custDash": [{ "a:ds": { _attr: { d: 400000, sp: 150000 } } }, { "a:ds": { _attr: { d: 50000, sp: 150000 } } }],
+        });
+    });
+
+    it("should reject a custom dash without dashes, or with negative lengths", () => {
+        expect(() => createShapeLine({ dash: [] })).to.throw("Invalid custom line dash. Expected at least 1 dash");
+        expect(() => createShapeLine({ dash: [{ length: -1, gap: 1 }] })).to.throw("Invalid custom line dash { length: -1, gap: 1 }");
+        expect(() => createShapeLine({ dash: [{ length: 1, gap: Number.NaN }] })).to.throw("Invalid custom line dash");
+    });
+
+    it("should colour the line with a gradient instead of its colour", () => {
+        const tree = new Formatter().format(
+            createShapeLine({
+                color: "FF0000",
+                width: 3,
+                gradient: {
+                    angle: 90,
+                    stops: [
+                        { position: 0, color: "4472C4" },
+                        { position: 100, color: "70AD47" },
+                    ],
+                },
+            }),
+        );
+        expect(tree).to.deep.equal({
+            "a:ln": [
+                { _attr: { w: 38100 } },
+                {
+                    "a:gradFill": [
+                        { _attr: { rotWithShape: true } },
+                        {
+                            "a:gsLst": [
+                                { "a:gs": [{ _attr: { pos: 0 } }, { "a:srgbClr": { _attr: { val: "4472C4" } } }] },
+                                { "a:gs": [{ _attr: { pos: 100000 } }, { "a:srgbClr": { _attr: { val: "70AD47" } } }] },
+                            ],
+                        },
+                        { "a:lin": { _attr: { ang: 5400000 } } },
+                    ],
+                },
+            ],
+        });
+    });
+
     it("should default the colour to black when other options are given", () => {
         expect(new Formatter().format(createShapeLine({ width: 0 }))).to.deep.equal({
             "a:ln": [{ _attr: { w: 0 } }, black],

@@ -8,6 +8,8 @@ export default defineConfig({
     plugins: [
         dts({
             bundleTypes: true,
+            // tsconfig.json removes comments, but the JSDoc in declarations is what users see in their editors
+            compilerOptions: { removeComments: false },
             afterBuild: () => {
                 // https://github.com/dolanmiu/docx/pull/2883
                 // To pass publint - `npx publint@latest`

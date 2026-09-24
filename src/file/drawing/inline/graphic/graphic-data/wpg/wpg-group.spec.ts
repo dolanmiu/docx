@@ -56,3 +56,22 @@ describe("createWpgGroup", () => {
         });
     });
 });
+
+describe("createWpgGroup inside a group", () => {
+    it("should write a group inside a group as wpg:grpSp, with its id and name first", () => {
+        const tree = new Formatter().format(
+            createWpgGroup({
+                name: "wpg:grpSp",
+                nonVisualDrawingProperties: { id: 4, name: "Group 4" },
+                children: [],
+                transformation: { pixels: { x: 10, y: 10 }, emus: { x: 95250, y: 95250 } },
+            }),
+        );
+
+        expect(Object.keys(tree)).to.deep.equal(["wpg:grpSp"]);
+        expect(tree["wpg:grpSp"].slice(0, 2)).to.deep.equal([
+            { "wpg:cNvPr": { _attr: { id: 4, name: "Group 4" } } },
+            { "wpg:cNvGrpSpPr": {} },
+        ]);
+    });
+});

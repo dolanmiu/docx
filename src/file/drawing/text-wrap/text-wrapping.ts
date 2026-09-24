@@ -17,10 +17,16 @@ import type { IDistance } from "../drawing";
  * @publicApi
  */
 export const TextWrappingType = {
+    /** Text doesn't wrap around the drawing. It is drawn in front of or behind the text */
     NONE: 0,
+    /** Text wraps around the drawing's box */
     SQUARE: 1,
+    /** Text wraps closely around the drawing's outline */
     TIGHT: 2,
+    /** Text sits above and below the drawing, not beside it */
     TOP_AND_BOTTOM: 3,
+    /** Text wraps closely around the drawing's outline, and fills any open space inside it */
+    THROUGH: 4,
 } as const;
 
 /**

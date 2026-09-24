@@ -3,6 +3,7 @@ import type { IExtendedMediaData, IMediaDataTransformation } from "@file/media";
 import { BuilderElement, type XmlComponent } from "@file/xml-components";
 
 import { DocProperties, type DocPropertiesOptions } from "./../doc-properties/doc-properties";
+import type { DrawingLinkOptions } from "./../doc-properties/non-visual-drawing-properties";
 import { type EffectExtentAttributes, createEffectExtent } from "./../effect-extent/effect-extent";
 import { createExtent } from "./../extent/extent";
 import { createGraphicFrameProperties } from "./../graphic-frame/graphic-frame-properties";
@@ -14,7 +15,7 @@ import type { SolidFillOptions } from "./graphic/graphic-data/pic/shape-properti
 /**
  * Options for creating an inline drawing element.
  */
-type InlineOptions = {
+type InlineOptions = DrawingLinkOptions & {
     readonly mediaData: IExtendedMediaData;
     readonly transform: IMediaDataTransformation;
     readonly docProperties?: DocPropertiesOptions;
@@ -46,6 +47,8 @@ export const createInline = ({
     solidFill,
     crop,
     effectExtent,
+    link,
+    decorative,
 }: InlineOptions): XmlComponent =>
     new BuilderElement({
         name: "wp:inline",
@@ -80,7 +83,7 @@ export const createInline = ({
                           }
                         : { top: 0, right: 0, bottom: 0, left: 0 }),
             ),
-            new DocProperties(docProperties),
+            new DocProperties(docProperties, { link, decorative }),
             createGraphicFrameProperties(),
             new Graphic({ mediaData, transform, outline, solidFill, crop }),
         ],

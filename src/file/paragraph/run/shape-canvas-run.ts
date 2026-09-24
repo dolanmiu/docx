@@ -7,7 +7,8 @@
  * @module
  */
 import type { DocPropertiesOptions } from "@file/drawing/doc-properties/doc-properties";
-import type { ShapeFill, ShapeLine } from "@file/drawing/inline/graphic/graphic-data/wps";
+import type { DrawingLinkOptions } from "@file/drawing/doc-properties/non-visual-drawing-properties";
+import { type ShapeFill, type ShapeLine, getShapeLineOverhang } from "@file/drawing/inline/graphic/graphic-data/wps";
 
 import { type IShapeGroupChildOptions, layoutShapeDrawing } from "./shape-drawing";
 import { createUniformEffectExtent } from "./shape-run-data";
@@ -15,7 +16,7 @@ import { Drawing, type IFloating } from "../../drawing";
 import { Run } from "../run";
 
 /**
- * A shape or connector on a canvas. It takes the same options as a shape or connector in a {@link ShapeGroupRun}.
+ * A shape, picture, group or connector on a canvas. It takes the same options as a child of a {@link ShapeGroupRun}.
  *
  * @see {@link ShapeCanvasRun}
  * @publicApi
@@ -28,12 +29,13 @@ export type IShapeCanvasChildOptions = IShapeGroupChildOptions;
  * @see {@link ShapeCanvasRun}
  * @publicApi
  */
-export type IShapeCanvasOptions = {
-    /** The shapes on the canvas, and the connectors between them */
+export type IShapeCanvasOptions = DrawingLinkOptions & {
+    /** The shapes, pictures and groups on the canvas, and the connectors between them */
     readonly children: readonly IShapeCanvasChildOptions[];
     /**
      * Size of the canvas in pixels. Defaults to reaching from the top-left corner to the right and bottom
-     * of the shapes, so an `offset` leaves space above and to the left of a shape. The shapes are not scaled.
+     * of the shapes, including their lines and effects, so an `offset` leaves space above and to the left of a shape.
+     * The shapes are not scaled.
      */
     readonly transformation?: {
         readonly width: number;
@@ -77,14 +79,15 @@ export class ShapeCanvasRun extends Run {
     public constructor(options: IShapeCanvasOptions) {
         super({});
 
-        // Canvas coordinates start at its top-left corner, so nothing can be above or to the left of it
-        const { children, bounds, overhang } = layoutShapeDrawing(options.children, true);
+        // Canvas coordinates start at its top-left corner, and Word cuts off anything outside the canvas, so everything
+        // that is drawn, including lines, arrowheads and effects, is moved onto it
+        const { children, reach } = layoutShapeDrawing(options.children, true);
         const emus = options.transformation
             ? {
                   x: Math.round(options.transformation.width * EMUS_PER_PIXEL),
                   y: Math.round(options.transformation.height * EMUS_PER_PIXEL),
               }
-            : { x: Math.round(bounds.right), y: Math.round(bounds.bottom) };
+            : { x: Math.ceil(reach.right), y: Math.ceil(reach.bottom) };
 
         this.root.push(
             new Drawing(
@@ -98,7 +101,10 @@ export class ShapeCanvasRun extends Run {
                 {
                     floating: options.floating,
                     docProperties: options.altText,
-                    effectExtent: createUniformEffectExtent(overhang),
+                    link: options.link,
+                    decorative: options.decorative,
+                    // Only the canvas's own outline reaches past its edges
+                    effectExtent: createUniformEffectExtent(options.line ? getShapeLineOverhang(options.line) : 0),
                 },
             ),
         );
