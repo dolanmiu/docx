@@ -10,18 +10,16 @@
 <ul class="tsd-breadcrumb" aria-label="Breadcrumb">
 <li><a href="" aria-current="page">IShapeGroupChildOptions</a></li></ul>
 <h1>Type Alias IShapeGroupChildOptions</h1></div>
-<div class="tsd-signature"><span class="tsd-kind-type-alias">IShapeGroupChildOptions</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">WithPresetShape</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">ShapeBaseOptions</span><span class="tsd-signature-symbol">&gt;</span></div>
-<div class="tsd-comment tsd-typography"><p>A shape inside a group. <code>transformation.offset</code> positions it, in pixels,
-relative to the other shapes in the group.</p>
+<div class="tsd-signature"><span class="tsd-kind-type-alias">IShapeGroupChildOptions</span><span class="tsd-signature-symbol">:</span><br/>    <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">WithPresetShape</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">ShapeBaseOptions</span> <span class="tsd-signature-symbol">&amp;</span> <span class="tsd-signature-symbol">{</span> <span class="tsd-kind-property">id</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span> <span class="tsd-signature-symbol">}</span><span class="tsd-signature-symbol">&gt;</span><br/>    <span class="tsd-signature-symbol">|</span> <a href="IShapeConnectorOptions.html" class="tsd-signature-type tsd-kind-type-alias">IShapeConnectorOptions</a></div>
+<div class="tsd-comment tsd-typography"><p>A shape or connector inside a <a href="../classes/ShapeGroupRun.html" class="tsd-kind-class">ShapeGroupRun</a> or <a href="../classes/ShapeCanvasRun.html" class="tsd-kind-class">ShapeCanvasRun</a>.</p>
+<p>A shape takes the options of a <a href="../classes/ShapeRun.html" class="tsd-kind-class">ShapeRun</a> except <code>floating</code>. <code>transformation.offset</code> positions it,
+in pixels, and <code>id</code> names it so connectors can attach to it.</p>
 </div>
 <div class="tsd-comment tsd-typography">
-<div class="tsd-tag-see">
-<h4 class="tsd-anchor-link" id="see">See<a href="#see" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4><p><a href="../classes/ShapeGroupRun.html" class="tsd-kind-class">ShapeGroupRun</a></p>
-</div>
 <div class="tsd-tag-publicApi">
 <h4 class="tsd-anchor-link" id="public-api">Public Api<a href="#public-api" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4></div></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/576e76ac260c5170dcf012bb9115d2af38e6726f/src/file/paragraph/run/shape-group-run.ts#L28">file/paragraph/run/shape-group-run.ts:28</a></li></ul></aside></div>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/ee37e5b38c7ff8f07bd39e3f9e727ea9d5123817/src/file/paragraph/run/shape-drawing.ts#L33">file/paragraph/run/shape-drawing.ts:33</a></li></ul></aside></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">
