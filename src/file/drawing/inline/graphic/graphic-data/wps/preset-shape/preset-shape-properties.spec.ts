@@ -9,7 +9,7 @@ describe("createPresetShapeProperties", () => {
         const tree = new Formatter().format(
             createPresetShapeProperties({
                 transformation: { pixels: { x: 100, y: 50 }, emus: { x: 952500, y: 476250 }, rotation: 2700000, flip: { vertical: true } },
-                geometry: { type: "roundRect", adjustments: { cornerRadius: 25 } },
+                geometry: { type: "roundedRectangle", adjustments: { cornerRadius: 25 } },
                 fill: "FFC000",
                 line: { color: "7F6000", width: 2 },
             }),

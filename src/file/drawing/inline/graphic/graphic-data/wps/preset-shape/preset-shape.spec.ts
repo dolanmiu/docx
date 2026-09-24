@@ -37,13 +37,13 @@ describe("createPresetShape", () => {
     });
 
     it("should write lines and connectors with connector properties", () => {
-        const tree = new Formatter().format(createPresetShape({ geometry: { type: "straightConnector1" }, transformation }));
+        const tree = new Formatter().format(createPresetShape({ geometry: { type: "straightConnector" }, transformation }));
         expect(tree["wps:wsp"][0]).to.deep.equal({ "wps:cNvCnPr": {} });
     });
 
     it("should centre text vertically by default", () => {
         const tree = new Formatter().format(
-            createPresetShape({ geometry: { type: "rect" }, children: [new Paragraph("Hello")], transformation }),
+            createPresetShape({ geometry: { type: "rectangle" }, children: [new Paragraph("Hello")], transformation }),
         );
 
         expect(tree["wps:wsp"][2]).to.deep.equal({
@@ -59,7 +59,7 @@ describe("createPresetShape", () => {
     it("should let body properties override the vertical anchor", () => {
         const tree = new Formatter().format(
             createPresetShape({
-                geometry: { type: "rect" },
+                geometry: { type: "rectangle" },
                 children: [new Paragraph("Hello")],
                 bodyProperties: { verticalAnchor: VerticalAnchor.BOTTOM, margins: { left: 0 } },
                 transformation,
@@ -72,7 +72,7 @@ describe("createPresetShape", () => {
     it("should write non-visual drawing properties first when given", () => {
         const tree = new Formatter().format(
             createPresetShape({
-                geometry: { type: "rect" },
+                geometry: { type: "rectangle" },
                 nonVisualDrawingProperties: { id: 7, name: "Box", description: "A box", title: "Box title" },
                 transformation,
             }),

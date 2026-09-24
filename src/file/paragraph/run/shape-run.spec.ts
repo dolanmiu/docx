@@ -18,7 +18,7 @@ describe("ShapeRun", () => {
 
     it("should draw an inline black bar", () => {
         const tree = new Formatter().format(
-            new ShapeRun({ type: "rect", transformation: { width: 200, height: 4 }, fill: "000000", line: "none" }),
+            new ShapeRun({ type: "rectangle", transformation: { width: 200, height: 4 }, fill: "000000", line: "none" }),
         );
 
         expect(tree).to.deep.equal({
@@ -103,7 +103,7 @@ describe("ShapeRun", () => {
     it("should float a shape with text, adjustments and alt text", () => {
         const tree = new Formatter().format(
             new ShapeRun({
-                type: "wedgeRoundRectCallout",
+                type: "roundedRectangularCallout",
                 adjustments: { pointerX: -20.833, pointerY: 62.5 },
                 transformation: { width: 200, height: 100, rotation: 30 },
                 fill: {
@@ -152,7 +152,7 @@ describe("ShapeRun", () => {
 
     it("should be accepted as a paragraph child", () => {
         const paragraph = new Paragraph({
-            children: [new ShapeRun({ type: "rect", transformation: { width: 10, height: 10 } })],
+            children: [new ShapeRun({ type: "rectangle", transformation: { width: 10, height: 10 } })],
         });
         const tree = new Formatter().format(paragraph);
         expect(tree["w:p"][0]).to.have.property("w:r");

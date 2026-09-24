@@ -64,8 +64,8 @@ const EMUS_PER_PIXEL = 9525;
  * ```typescript
  * new ShapeGroupRun({
  *   children: [
- *     { type: "rect", transformation: { width: 120, height: 48 }, fill: "4472C4" },
- *     { type: "straightConnector1", transformation: { offset: { left: 120, top: 24 }, width: 40, height: 0 }, line: { endArrow: "triangle" } },
+ *     { type: "rectangle", transformation: { width: 120, height: 48 }, fill: "4472C4" },
+ *     { type: "straightConnector", transformation: { offset: { left: 120, top: 24 }, width: 40, height: 0 }, line: { endArrow: "triangle" } },
  *     { type: "ellipse", transformation: { offset: { left: 160 }, width: 120, height: 48 }, fill: "ED7D31" },
  *   ],
  * });

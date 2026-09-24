@@ -296,8 +296,8 @@ describe("Compiler", () => {
                     children: [
                         new ShapeGroupRun({
                             children: [
-                                { type: "rect", transformation: { width: 10, height: 10 } },
-                                { type: "rect", transformation: { offset: { left: 10 }, width: 10, height: 10 } },
+                                { type: "rectangle", transformation: { width: 10, height: 10 } },
+                                { type: "rectangle", transformation: { offset: { left: 10 }, width: 10, height: 10 } },
                             ],
                         }),
                     ],

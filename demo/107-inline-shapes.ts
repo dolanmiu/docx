@@ -7,7 +7,7 @@ import { Document, HeadingLevel, Packer, Paragraph, ShapeRun, Table, TableCell, 
 
 // A solid black bar, like the blanks on a printed form
 const bar = (width: number, height = 4): ShapeRun =>
-    new ShapeRun({ type: "rect", transformation: { width, height }, fill: "000000", line: "none" });
+    new ShapeRun({ type: "rectangle", transformation: { width, height }, fill: "000000", line: "none" });
 
 // A thin line to sign or write on
 const writingLine = (width: number): ShapeRun =>
@@ -37,9 +37,9 @@ const doc = new Document({
                     spacing: { before: 480 },
                     children: [
                         new TextRun("The account holder, "),
-                        new ShapeRun({ type: "rect", transformation: { width: 120, height: 14 }, fill: "000000", line: "none" }),
+                        new ShapeRun({ type: "rectangle", transformation: { width: 120, height: 14 }, fill: "000000", line: "none" }),
                         new TextRun(", agreed to the terms on "),
-                        new ShapeRun({ type: "rect", transformation: { width: 70, height: 14 }, fill: "000000", line: "none" }),
+                        new ShapeRun({ type: "rectangle", transformation: { width: 70, height: 14 }, fill: "000000", line: "none" }),
                         new TextRun("."),
                     ],
                 }),

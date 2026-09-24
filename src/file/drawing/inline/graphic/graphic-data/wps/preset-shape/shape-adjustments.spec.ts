@@ -4,7 +4,7 @@ import { createShapeGuides } from "./shape-adjustments";
 
 describe("createShapeGuides", () => {
     it("should write a percentage in thousandths of a percent", () => {
-        expect(createShapeGuides("roundRect", { cornerRadius: 30 })).to.deep.equal({ adj: 30000 });
+        expect(createShapeGuides("roundedRectangle", { cornerRadius: 30 })).to.deep.equal({ adj: 30000 });
     });
 
     it("should write angles in 60,000ths of a degree", () => {
@@ -13,7 +13,7 @@ describe("createShapeGuides", () => {
 
     it("should map each adjustment to its own guide", () => {
         expect(
-            createShapeGuides("wedgeRoundRectCallout", {
+            createShapeGuides("roundedRectangularCallout", {
                 pointerX: -20.833,
                 pointerY: 62.5,
                 cornerRadius: 16.667,
@@ -32,7 +32,7 @@ describe("createShapeGuides", () => {
     });
 
     it("should write the remaining percentage for a stripe width", () => {
-        expect(createShapeGuides("diagStripe", { stripeWidth: 30 })).to.deep.equal({ adj: 70000 });
+        expect(createShapeGuides("diagonalStripe", { stripeWidth: 30 })).to.deep.equal({ adj: 70000 });
     });
 
     it("should skip adjustments that are undefined", () => {
@@ -40,20 +40,20 @@ describe("createShapeGuides", () => {
     });
 
     it("should return no guides when there are no adjustments", () => {
-        expect(createShapeGuides("roundRect")).to.deep.equal({});
-        expect(createShapeGuides("rect", {})).to.deep.equal({});
+        expect(createShapeGuides("roundedRectangle")).to.deep.equal({});
+        expect(createShapeGuides("rectangle", {})).to.deep.equal({});
     });
 
     it("should throw on a name the shape does not have", () => {
         expect(() => createShapeGuides("rightArrow", { adj1: 50000 })).to.throw(
             'Invalid adjustment "adj1" for shape "rightArrow". Expected one of: shaftThickness, headLength',
         );
-        expect(() => createShapeGuides("roundRect", { toString: 1 })).to.throw('Invalid adjustment "toString"');
+        expect(() => createShapeGuides("roundedRectangle", { toString: 1 })).to.throw('Invalid adjustment "toString"');
     });
 
     it("should throw on any adjustment for a shape without handles", () => {
-        expect(() => createShapeGuides("rect", { cornerRadius: 10 })).to.throw(
-            'Invalid adjustment "cornerRadius". Shape "rect" has no adjustments',
+        expect(() => createShapeGuides("rectangle", { cornerRadius: 10 })).to.throw(
+            'Invalid adjustment "cornerRadius". Shape "rectangle" has no adjustments',
         );
     });
 });

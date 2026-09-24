@@ -6,7 +6,7 @@
 import type { IMediaDataTransformation } from "@file/media";
 import { BuilderElement, type XmlComponent } from "@file/xml-components";
 
-import type { PresetShapeType } from "./preset-shape-type";
+import { type PresetShapeType, getOoxmlShapeName } from "./preset-shape-type";
 import { createShapeGuides } from "./shape-adjustments";
 import { type ShapeFill, createShapeFill } from "./shape-fill";
 import { type ShapeLine, createShapeLine } from "./shape-line";
@@ -18,7 +18,7 @@ import { PresetGeometry } from "../../pic/shape-properties/preset-geometry/prese
  */
 export type PresetShapeGeometry = {
     readonly type: PresetShapeType;
-    /** The shape's adjustments, such as `{ cornerRadius: 25 }` for a `"roundRect"` */
+    /** The shape's adjustments, such as `{ cornerRadius: 25 }` for a `"roundedRectangle"` */
     readonly adjustments?: Readonly<Record<string, number | undefined>>;
 };
 
@@ -50,7 +50,10 @@ export const createPresetShapeProperties = ({ transformation, geometry, fill, li
         name: "wps:spPr",
         children: [
             new Form(transformation),
-            new PresetGeometry({ type: geometry.type, adjustments: createShapeGuides(geometry.type, geometry.adjustments) }),
+            new PresetGeometry({
+                type: getOoxmlShapeName(geometry.type),
+                adjustments: createShapeGuides(geometry.type, geometry.adjustments),
+            }),
             createShapeFill(fill),
             createShapeLine(line),
         ],

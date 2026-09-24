@@ -81,6 +81,11 @@ describe("createShapeFill", () => {
             });
         });
 
+        it("should write the OOXML name of a rectangular radial gradient", () => {
+            const tree = new Formatter().format(createShapeFill({ type: "gradient", stops, path: "rectangle" }));
+            expect(tree["a:gradFill"][2]["a:path"][0]).to.deep.equal({ _attr: { path: "rect" } });
+        });
+
         it("should sort the stops and write their transparency", () => {
             const tree = new Formatter().format(
                 createShapeFill({

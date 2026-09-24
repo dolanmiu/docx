@@ -43,9 +43,9 @@ export type ShapeBaseOptions = {
 export type WithPresetShape<Options> =
     | {
           readonly [T in PresetShapeType]: Options & {
-              /** The preset shape, such as `"rect"`, `"ellipse"`, `"line"` or `"rightArrow"` */
+              /** The preset shape, such as `"rectangle"`, `"ellipse"`, `"line"` or `"rightArrow"` */
               readonly type: T;
-              /** The shape's handles, such as `{ cornerRadius: 25 }` for a `"roundRect"`. Lengths are percentages and angles are degrees */
+              /** The shape's handles, such as `{ cornerRadius: 25 }` for a `"roundedRectangle"`. Lengths are percentages and angles are degrees */
               readonly adjustments?: ShapeAdjustments<T>;
           };
       }[PresetShapeType]

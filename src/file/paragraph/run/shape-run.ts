@@ -19,6 +19,7 @@ export type {
     Arrowhead,
     ArrowheadSize,
     ArrowheadType,
+    GradientPath,
     GradientShapeFill,
     GradientStop,
     LineDash,
@@ -34,7 +35,7 @@ export type {
 /**
  * Options for creating a shape.
  *
- * `adjustments` depends on `type`: each shape has its own, such as `cornerRadius` for a `"roundRect"`
+ * `adjustments` depends on `type`: each shape has its own, such as `cornerRadius` for a `"roundedRectangle"`
  * or `startAngle` and `endAngle` for a `"pie"`.
  *
  * @see {@link ShapeRun}
@@ -64,7 +65,7 @@ export type IShapeOptions = WithPresetShape<
  * new Paragraph({
  *   children: [
  *     new TextRun("Name: "),
- *     new ShapeRun({ type: "rect", transformation: { width: 200, height: 4 }, fill: "000000", line: "none" }),
+ *     new ShapeRun({ type: "rectangle", transformation: { width: 200, height: 4 }, fill: "000000", line: "none" }),
  *   ],
  * });
  *

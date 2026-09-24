@@ -22,7 +22,7 @@ const label = (text: string): Paragraph =>
     new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text, color: "FFFFFF", bold: true })] });
 
 const arrow = (left: number, top: number, width: number): IShapeGroupChildOptions => ({
-    type: "straightConnector1",
+    type: "straightConnector",
     transformation: { offset: { left, top }, width, height: 0 },
     line: { color: "404040", width: 1.5, endArrow: "triangle" },
 });

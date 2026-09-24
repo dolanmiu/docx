@@ -32,11 +32,11 @@ const doc = new Document({
                 heading("Preset shapes"),
                 new Paragraph({
                     children: [
-                        new ShapeRun({ type: "rect", transformation: { width: 60, height: 60 }, fill: "4472C4", line: "none" }),
+                        new ShapeRun({ type: "rectangle", transformation: { width: 60, height: 60 }, fill: "4472C4", line: "none" }),
                         space(),
                         // Adjustments set a shape's handles. A roundRect's cornerRadius is a percent of its shorter side.
                         new ShapeRun({
-                            type: "roundRect",
+                            type: "roundedRectangle",
                             adjustments: { cornerRadius: 30 },
                             transformation: { width: 60, height: 60 },
                             fill: "ED7D31",
@@ -96,7 +96,7 @@ const doc = new Document({
                         new ShapeRun({
                             type: "line",
                             transformation: { width: 400, height: 0 },
-                            line: { color: "7F7F7F", width: 1.5, dash: "sysDot" },
+                            line: { color: "7F7F7F", width: 1.5, dash: "shortDot" },
                         }),
                     ],
                 }),
@@ -123,7 +123,7 @@ const doc = new Document({
                         new ShapeRun({
                             type: "line",
                             transformation: { width: 400, height: 0 },
-                            line: { width: 1.5, startArrow: "oval", endArrow: { type: "stealth", width: "lg", length: "lg" } },
+                            line: { width: 1.5, startArrow: "oval", endArrow: { type: "stealth", width: "large", length: "large" } },
                         }),
                     ],
                 }),
@@ -146,7 +146,7 @@ const doc = new Document({
                 new Paragraph({
                     children: [
                         new ShapeRun({
-                            type: "rect",
+                            type: "rectangle",
                             transformation: { width: 160, height: 80 },
                             line: "none",
                             fill: {
@@ -174,7 +174,7 @@ const doc = new Document({
                         }),
                         space(),
                         new ShapeRun({
-                            type: "roundRect",
+                            type: "roundedRectangle",
                             transformation: { width: 160, height: 80 },
                             line: "none",
                             fill: {
@@ -247,7 +247,7 @@ const doc = new Document({
                     children: [
                         // A callout floating at the right of the text, with the text wrapping around it
                         new ShapeRun({
-                            type: "wedgeRoundRectCallout",
+                            type: "roundedRectangularCallout",
                             adjustments: { pointerX: -70, pointerY: 20 },
                             transformation: { width: 180, height: 80 },
                             fill: "FFF2CC",
@@ -274,10 +274,10 @@ const doc = new Document({
                     spacing: { before: 480 },
                     children: [
                         new ShapeRun({
-                            type: "rect",
+                            type: "rectangle",
                             transformation: { width: 140, height: 50, rotation: -15 },
                             fill: "E2F0D9",
-                            line: { color: "548235", width: 2, dash: "lgDash" },
+                            line: { color: "548235", width: 2, dash: "longDash" },
                             children: [
                                 new Paragraph({
                                     alignment: AlignmentType.CENTER,

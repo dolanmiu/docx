@@ -9,14 +9,28 @@ import { createShapeColor } from "./shape-color";
 import { createNoFill } from "../../pic/shape-properties/outline/no-fill";
 
 /* cspell:disable */
+// Each dash pattern mapped to its OOXML name (`ST_PresetLineDashVal`). The "short" patterns are the ones OOXML calls "sys"
+const LINE_DASH_OOXML_NAMES = {
+    solid: "solid",
+    dot: "dot",
+    dash: "dash",
+    longDash: "lgDash",
+    dashDot: "dashDot",
+    longDashDot: "lgDashDot",
+    longDashDotDot: "lgDashDotDot",
+    shortDash: "sysDash",
+    shortDot: "sysDot",
+    shortDashDot: "sysDashDot",
+    shortDashDotDot: "sysDashDotDot",
+} as const;
+/* cspell:enable */
+
 /**
- * A preset dash pattern (`ST_PresetLineDashVal`).
+ * A preset dash pattern.
  *
  * @publicApi
  */
-export type LineDash =
-    "solid" | "dot" | "dash" | "lgDash" | "dashDot" | "lgDashDot" | "lgDashDotDot" | "sysDash" | "sysDot" | "sysDashDot" | "sysDashDotDot";
-/* cspell:enable */
+export type LineDash = keyof typeof LINE_DASH_OOXML_NAMES;
 
 /**
  * The style of an arrowhead (`ST_LineEndType`).
@@ -26,11 +40,11 @@ export type LineDash =
 export type ArrowheadType = "triangle" | "stealth" | "diamond" | "oval" | "arrow";
 
 /**
- * The size of an arrowhead relative to the line width (`ST_LineEndWidth` / `ST_LineEndLength`).
+ * The size of an arrowhead relative to the line width.
  *
  * @publicApi
  */
-export type ArrowheadSize = "sm" | "med" | "lg";
+export type ArrowheadSize = "small" | "medium" | "large";
 
 /**
  * An arrowhead at one end of a line: a style, or a style with a size.
@@ -41,9 +55,9 @@ export type Arrowhead =
     | ArrowheadType
     | {
           readonly type: ArrowheadType;
-          /** Width of the arrowhead. Default is `"med"` */
+          /** Width of the arrowhead. Default is `"medium"` */
           readonly width?: ArrowheadSize;
-          /** Length of the arrowhead. Default is `"med"` */
+          /** Length of the arrowhead. Default is `"medium"` */
           readonly length?: ArrowheadSize;
       };
 
@@ -77,7 +91,12 @@ export type ShapeLine = string | ShapeLineOptions;
 const EMUS_PER_POINT = 12700;
 // ST_LineWidth allows up to 20116800 EMUs
 const MAX_LINE_WIDTH_POINTS = 1584;
-const ARROWHEAD_SIZE_FACTOR: Readonly<Record<ArrowheadSize, number>> = { sm: 2, med: 3, lg: 5 };
+// How many times the line width an arrowhead is, and its OOXML name (`ST_LineEndWidth` / `ST_LineEndLength`)
+const ARROWHEAD_SIZES: Readonly<Record<ArrowheadSize, { readonly factor: number; readonly ooxmlName: string }>> = {
+    small: { factor: 2, ooxmlName: "sm" },
+    medium: { factor: 3, ooxmlName: "med" },
+    large: { factor: 5, ooxmlName: "lg" },
+};
 
 const resolveLine = (line: ShapeLine): ShapeLineOptions => (typeof line === "string" ? { color: line } : line);
 
@@ -95,8 +114,8 @@ const arrowheadFactor = (arrowhead?: Arrowhead): number => {
     if (!arrowhead) {
         return 1;
     }
-    const { width = "med", length = "med" } = resolveArrowhead(arrowhead);
-    return Math.max(ARROWHEAD_SIZE_FACTOR[width], ARROWHEAD_SIZE_FACTOR[length]);
+    const { width = "medium", length = "medium" } = resolveArrowhead(arrowhead);
+    return Math.max(ARROWHEAD_SIZES[width].factor, ARROWHEAD_SIZES[length].factor);
 };
 
 // <xsd:complexType name="CT_LineEndProperties">
@@ -106,12 +125,12 @@ const arrowheadFactor = (arrowhead?: Arrowhead): number => {
 // </xsd:complexType>
 const createLineEnd = (name: "a:headEnd" | "a:tailEnd", arrowhead: Arrowhead): XmlComponent => {
     const { type, width, length } = resolveArrowhead(arrowhead);
-    return new BuilderElement<{ readonly type: ArrowheadType; readonly width?: ArrowheadSize; readonly length?: ArrowheadSize }>({
+    return new BuilderElement<{ readonly type: ArrowheadType; readonly width?: string; readonly length?: string }>({
         name,
         attributes: {
             type: { key: "type", value: type },
-            width: { key: "w", value: width },
-            length: { key: "len", value: length },
+            width: { key: "w", value: width && ARROWHEAD_SIZES[width].ooxmlName },
+            length: { key: "len", value: length && ARROWHEAD_SIZES[length].ooxmlName },
         },
     });
 };
@@ -159,9 +178,9 @@ export const createShapeLine = (line: ShapeLine = {}): XmlComponent => {
             new BuilderElement({ name: "a:solidFill", children: [createShapeColor(options.color ?? "000000", options.transparency)] }),
             ...(options.dash
                 ? [
-                      new BuilderElement<{ readonly value: LineDash }>({
+                      new BuilderElement<{ readonly value: string }>({
                           name: "a:prstDash",
-                          attributes: { value: { key: "val", value: options.dash } },
+                          attributes: { value: { key: "val", value: LINE_DASH_OOXML_NAMES[options.dash] } },
                       }),
                   ]
                 : []),

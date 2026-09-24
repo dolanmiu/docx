@@ -37,9 +37,15 @@ describe("ShapeGroupRun", () => {
         const tree = new Formatter().format(
             new ShapeGroupRun({
                 children: [
-                    { type: "rect", transformation: { width: 120, height: 48 }, fill: "4472C4", line: "none", altText: { name: "Start" } },
                     {
-                        type: "straightConnector1",
+                        type: "rectangle",
+                        transformation: { width: 120, height: 48 },
+                        fill: "4472C4",
+                        line: "none",
+                        altText: { name: "Start" },
+                    },
+                    {
+                        type: "straightConnector",
                         transformation: { offset: { left: 120, top: 24 }, width: 40, height: 0 },
                         line: { width: 2, endArrow: "triangle" },
                     },
@@ -92,8 +98,8 @@ describe("ShapeGroupRun", () => {
         const tree = new Formatter().format(
             new ShapeGroupRun({
                 children: [
-                    { type: "rect", transformation: { offset: { left: -10, top: 20 }, width: 100, height: 50 } },
-                    { type: "rect", transformation: { offset: { left: 40, top: 40 }, width: 100, height: 50 } },
+                    { type: "rectangle", transformation: { offset: { left: -10, top: 20 }, width: 100, height: 50 } },
+                    { type: "rectangle", transformation: { offset: { left: 40, top: 40 }, width: 100, height: 50 } },
                 ],
             }),
         );
@@ -109,7 +115,7 @@ describe("ShapeGroupRun", () => {
     it("should scale, rotate and float the group with its own transformation", () => {
         const tree = new Formatter().format(
             new ShapeGroupRun({
-                children: [{ type: "rect", transformation: { width: 100, height: 50 }, line: "none" }],
+                children: [{ type: "rectangle", transformation: { width: 100, height: 50 }, line: "none" }],
                 transformation: { width: 200, height: 100, rotation: 90, offset: { left: 5, top: 5 } },
                 floating: {
                     horizontalPosition: { relative: HorizontalPositionRelativeFrom.PAGE, offset: 914400 },

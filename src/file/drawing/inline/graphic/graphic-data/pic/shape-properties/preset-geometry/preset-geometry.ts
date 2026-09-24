@@ -12,7 +12,6 @@ import { XmlComponent } from "@file/xml-components";
 
 import { AdjustmentValues } from "./adjustment-values/adjustment-values";
 import { PresetGeometryAttributes } from "./preset-geometry-attributes";
-import type { PresetShapeType } from "../../../wps/preset-shape/preset-shape-type";
 
 /**
  * Represents a preset geometry for a DrawingML shape.
@@ -44,8 +43,8 @@ export class PresetGeometry extends XmlComponent {
         type = "rect",
         adjustments,
     }: {
-        /** The preset shape. Defaults to a rectangle. */
-        readonly type?: PresetShapeType;
+        /** The preset shape's OOXML name (`ST_ShapeType`), such as `"roundRect"`. Defaults to a rectangle. */
+        readonly type?: string;
         /** Raw shape guide values, keyed by guide name (e.g. `{ adj: 25000 }`). */
         readonly adjustments?: Readonly<Record<string, number>>;
     } = {}) {

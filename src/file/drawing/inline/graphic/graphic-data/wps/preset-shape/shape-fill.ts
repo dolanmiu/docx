@@ -36,6 +36,16 @@ export type SolidShapeFill = {
 };
 
 /**
+ * The outline a radial gradient spreads out in from the centre.
+ *
+ * @publicApi
+ */
+export type GradientPath = "circle" | "rectangle" | "shape";
+
+// OOXML names (`ST_PathShadeType`)
+const GRADIENT_PATH_OOXML_NAMES: Readonly<Record<GradientPath, string>> = { circle: "circle", rectangle: "rect", shape: "shape" };
+
+/**
  * A gradient fill. It is linear unless `path` is set.
  *
  * @publicApi
@@ -47,7 +57,7 @@ export type GradientShapeFill = {
     /** Direction of a linear gradient in degrees, clockwise from left-to-right. Default is 0 */
     readonly angle?: number;
     /** Makes the gradient radiate from the centre: in a circle, a rectangle, or following the shape's outline */
-    readonly path?: "circle" | "rect" | "shape";
+    readonly path?: GradientPath;
 };
 
 /**
@@ -81,11 +91,11 @@ const createLinearShade = (angle: number): XmlComponent =>
         },
     });
 
-const createPathShade = (path: "circle" | "rect" | "shape"): XmlComponent =>
+const createPathShade = (path: GradientPath): XmlComponent =>
     new BuilderElement<{ readonly path: string }>({
         name: "a:path",
         attributes: {
-            path: { key: "path", value: path },
+            path: { key: "path", value: GRADIENT_PATH_OOXML_NAMES[path] },
         },
         children: [
             // Focus the gradient on the centre of the shape

@@ -31,9 +31,9 @@ describe("createShapeLine", () => {
                 color: "C00000",
                 width: 2.5,
                 transparency: 10,
-                dash: "sysDot",
+                dash: "shortDot",
                 startArrow: "oval",
-                endArrow: { type: "triangle", width: "lg", length: "sm" },
+                endArrow: { type: "triangle", width: "large", length: "small" },
             }),
         );
         expect(tree).to.deep.equal({
@@ -75,9 +75,9 @@ describe("getShapeLineOverhang", () => {
 
     it("should grow with the largest arrowhead", () => {
         expect(getShapeLineOverhang({ width: 2, endArrow: "triangle" })).to.equal(38100);
-        expect(getShapeLineOverhang({ width: 2, startArrow: { type: "oval", width: "sm", length: "lg" }, endArrow: "arrow" })).to.equal(
-            63500,
-        );
-        expect(getShapeLineOverhang({ width: 2, startArrow: { type: "diamond", width: "sm", length: "sm" } })).to.equal(25400);
+        expect(
+            getShapeLineOverhang({ width: 2, startArrow: { type: "oval", width: "small", length: "large" }, endArrow: "arrow" }),
+        ).to.equal(63500);
+        expect(getShapeLineOverhang({ width: 2, startArrow: { type: "diamond", width: "small", length: "small" } })).to.equal(25400);
     });
 });

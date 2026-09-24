@@ -8,14 +8,14 @@ Like an image, a shape is a run inside a `Paragraph`. It sits in the line of tex
 
 ## Common Use Cases
 
-| I want to...                                  | Use                                           | Example                          |
-| --------------------------------------------- | --------------------------------------------- | -------------------------------- |
-| Draw a bar or blank line in a sentence        | `rect` with a `fill` and `line: "none"`       | Blanks on a printed form         |
-| Draw a line to write or sign on               | `line` with `height: 0`                       | Signature line                   |
-| Point at something                            | `line` or `straightConnector1` with arrowhead | Arrow in a diagram               |
-| Put text in a coloured box, circle or callout | Any shape with `children`                     | Flowchart step, speech bubble    |
-| Place a shape anywhere on the page            | `floating`                                    | Stamp in a corner                |
-| Keep several shapes together as one drawing   | `ShapeGroupRun`                               | Flowchart, badge, simple diagram |
+| I want to...                                  | Use                                          | Example                          |
+| --------------------------------------------- | -------------------------------------------- | -------------------------------- |
+| Draw a bar or blank line in a sentence        | `rectangle` with a `fill` and `line: "none"` | Blanks on a printed form         |
+| Draw a line to write or sign on               | `line` with `height: 0`                      | Signature line                   |
+| Point at something                            | `line` with an arrowhead                     | Arrow in a diagram               |
+| Put text in a coloured box, circle or callout | Any shape with `children`                    | Flowchart step, speech bubble    |
+| Place a shape anywhere on the page            | `floating`                                   | Stamp in a corner                |
+| Keep several shapes together as one drawing   | `ShapeGroupRun`                              | Flowchart, badge, simple diagram |
 
 ## Basic Usage
 
@@ -30,7 +30,7 @@ const doc = new Document({
                     children: [
                         new TextRun("Name: "),
                         new ShapeRun({
-                            type: "rect",
+                            type: "rectangle",
                             transformation: { width: 200, height: 4 },
                             fill: "000000",
                             line: "none",
@@ -53,23 +53,23 @@ new ShapeRun({ type: "ellipse", transformation: { width: 100, height: 60 } });
 
 ## Shape Types
 
-`type` is the name of one of the 187 preset shapes defined by Office Open XML. The names are the ones Word writes in its own files, so you can look any of them up in the specification. Some common ones are:
+`type` is the name of one of the 187 preset shapes in Office Open XML. The names say what each shape is, such as `roundedRectangle` or `ribbonUp`. Some common ones are:
 
 <!-- cspell:disable -->
 
-| Category          | Shapes                                                                                                                   |
-| ----------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| Basic shapes      | `rect`, `roundRect`, `ellipse`, `triangle`, `rtTriangle`, `diamond`, `parallelogram`, `trapezoid`, `pentagon`, `hexagon` |
-| Lines             | `line`, `straightConnector1`, `bentConnector3`, `curvedConnector3`                                                       |
-| Block arrows      | `rightArrow`, `leftArrow`, `upArrow`, `downArrow`, `leftRightArrow`, `bentArrow`, `uturnArrow`, `circularArrow`          |
-| Stars and banners | `star4`, `star5`, `star6`, `star8`, `star12`, `ribbon`, `ribbon2`, `wave`, `horizontalScroll`                            |
-| Callouts          | `wedgeRectCallout`, `wedgeRoundRectCallout`, `wedgeEllipseCallout`, `cloudCallout`, `borderCallout1`                     |
-| Flowchart         | `flowChartProcess`, `flowChartDecision`, `flowChartTerminator`, `flowChartDocument`, `flowChartMagneticDisk`             |
-| Symbols           | `heart`, `lightningBolt`, `sun`, `moon`, `smileyFace`, `cloud`, `noSmoking`, `plus`, `gear6`, `gear9`                    |
+| Category          | Shapes                                                                                                                      |
+| ----------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| Basic shapes      | `rectangle`, `roundedRectangle`, `ellipse`, `triangle`, `rightTriangle`, `diamond`, `parallelogram`, `trapezoid`, `hexagon` |
+| Lines             | `line`, `straightConnector`, `elbowConnector`, `curvedConnector`                                                            |
+| Block arrows      | `rightArrow`, `leftArrow`, `upArrow`, `downArrow`, `leftRightArrow`, `bentArrow`, `uTurnArrow`, `circularArrow`             |
+| Stars and banners | `star4`, `star5`, `star6`, `star8`, `star12`, `explosion12`, `ribbonUp`, `ribbonDown`, `wave`, `horizontalScroll`           |
+| Callouts          | `rectangularCallout`, `roundedRectangularCallout`, `ellipticalCallout`, `cloudCallout`, `lineCallout`                       |
+| Flowchart         | `flowChartProcess`, `flowChartDecision`, `flowChartTerminator`, `flowChartDocument`, `flowChartMagneticDisk`                |
+| Symbols           | `heart`, `lightningBolt`, `sun`, `moon`, `smileyFace`, `cloud`, `noSymbol`, `cross`, `gear6`, `gear9`                       |
 
 <!-- cspell:enable -->
 
-The `PresetShapeType` type lists every shape, so your editor can suggest them as you type.
+The `PresetShapeType` type lists every shape, so your editor can suggest them as you type. [Shape Types](usage/shape-types.md) lists all of them, with the name each one has in the OOXML specification.
 
 ## Size and Rotation
 
@@ -109,13 +109,13 @@ new ShapeRun({
 
 ```ts
 // A colour
-new ShapeRun({ type: "rect", transformation: { width: 100, height: 50 }, fill: "4472C4" });
+new ShapeRun({ type: "rectangle", transformation: { width: 100, height: 50 }, fill: "4472C4" });
 
 // A colour with transparency, from 0 (opaque) to 100 (invisible)
 new ShapeRun({ type: "ellipse", transformation: { width: 90, height: 90 }, fill: { color: "FF0000", transparency: 50 } });
 
 // No fill (the default)
-new ShapeRun({ type: "rect", transformation: { width: 100, height: 50 }, fill: "none" });
+new ShapeRun({ type: "rectangle", transformation: { width: 100, height: 50 }, fill: "none" });
 ```
 
 ### Gradients
@@ -125,7 +125,7 @@ A gradient needs at least two `stops`. Each stop has a `position` from 0 to 100 
 ```ts
 // Linear, from top to bottom
 new ShapeRun({
-    type: "rect",
+    type: "rectangle",
     transformation: { width: 160, height: 80 },
     fill: {
         type: "gradient",
@@ -152,12 +152,12 @@ new ShapeRun({
 });
 ```
 
-| Property | Type                                | Notes    | Description                                                                                                                   |
-| -------- | ----------------------------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| `type`   | `"gradient"`                        | Required |                                                                                                                               |
-| `stops`  | `GradientStop[]`                    | Required | At least two colour stops                                                                                                     |
-| `angle`  | `number`                            | Optional | Direction of a linear gradient in degrees, clockwise. `0` (the default) runs left to right and `90` runs top to bottom        |
-| `path`   | `"circle"` \| `"rect"` \| `"shape"` | Optional | Makes the gradient radiate from the centre in a circle, a rectangle or following the shape's outline, instead of being linear |
+| Property | Type                                     | Notes    | Description                                                                                                                   |
+| -------- | ---------------------------------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `type`   | `"gradient"`                             | Required |                                                                                                                               |
+| `stops`  | `GradientStop[]`                         | Required | At least two colour stops                                                                                                     |
+| `angle`  | `number`                                 | Optional | Direction of a linear gradient in degrees, clockwise. `0` (the default) runs left to right and `90` runs top to bottom        |
+| `path`   | `"circle"` \| `"rectangle"` \| `"shape"` | Optional | Makes the gradient radiate from the centre in a circle, a rectangle or following the shape's outline, instead of being linear |
 
 ## Line
 
@@ -172,7 +172,7 @@ new ShapeRun({
         width: 2,
         dash: "dash",
         startArrow: "oval",
-        endArrow: { type: "triangle", width: "lg", length: "lg" },
+        endArrow: { type: "triangle", width: "large", length: "large" },
     },
 });
 ```
@@ -188,23 +188,23 @@ new ShapeRun({
 
 <!-- cspell:disable -->
 
-| `dash`          | Pattern                                   |
-| --------------- | ----------------------------------------- |
-| `solid`         | Solid (default)                           |
-| `sysDot`        | Round dot                                 |
-| `sysDash`       | Square dot                                |
-| `dash`          | Dash                                      |
-| `dashDot`       | Dash dot                                  |
-| `lgDash`        | Long dash                                 |
-| `lgDashDot`     | Long dash dot                             |
-| `lgDashDotDot`  | Long dash dot dot                         |
-| `dot`           | Dots with wider gaps                      |
-| `sysDashDot`    | Dash dot with the dots close together     |
-| `sysDashDotDot` | Dash dot dot with the dots close together |
+| `dash`            | Pattern                                   |
+| ----------------- | ----------------------------------------- |
+| `solid`           | Solid (default)                           |
+| `shortDot`        | Round dot                                 |
+| `shortDash`       | Square dot                                |
+| `dash`            | Dash                                      |
+| `dashDot`         | Dash dot                                  |
+| `longDash`        | Long dash                                 |
+| `longDashDot`     | Long dash dot                             |
+| `longDashDotDot`  | Long dash dot dot                         |
+| `dot`             | Dots with wider gaps                      |
+| `shortDashDot`    | Dash dot with the dots close together     |
+| `shortDashDotDot` | Dash dot dot with the dots close together |
 
 <!-- cspell:enable -->
 
-An `Arrowhead` is one of `"triangle"`, `"stealth"`, `"diamond"`, `"oval"` or `"arrow"`, or an object with a `type` and a `width` and `length` of `"sm"`, `"med"` (the default) or `"lg"`.
+An `Arrowhead` is one of `"triangle"`, `"stealth"`, `"diamond"`, `"oval"` or `"arrow"`, or an object with a `type` and a `width` and `length` of `"small"`, `"medium"` (the default) or `"large"`.
 
 ?> Arrowheads can be put on any shape's line, but they are only drawn on open shapes such as `line`, the connectors and `arc`.
 
@@ -231,7 +231,7 @@ new ShapeRun({
 
 ```ts
 new ShapeRun({
-    type: "rect",
+    type: "rectangle",
     transformation: { width: 200, height: 100 },
     children: [new Paragraph("Top left")],
     bodyProperties: {
@@ -249,13 +249,13 @@ Many shapes have handles in Word that change their proportions, such as the corn
 
 | Shape                                     | Adjustments                                           | Default           |
 | ----------------------------------------- | ----------------------------------------------------- | ----------------- |
-| `roundRect`                               | `cornerRadius`: radius of the corners                 | `16.667`          |
+| `roundedRectangle`                        | `cornerRadius`: radius of the corners                 | `16.667`          |
 | `triangle`                                | `apexPosition`: where the top point is, from the left | `50`              |
 | `star5`                                   | `innerRadius`: radius of the inner points             | `38.196`          |
 | `donut`                                   | `thickness`: thickness of the ring                    | `25`              |
 | `rightArrow`                              | `shaftThickness`, `headLength`                        | `50`, `50`        |
 | `pie`, `arc`, `chord`                     | `startAngle`, `endAngle`                              | depends on shape  |
-| `wedgeRectCallout`, `wedgeEllipseCallout` | `pointerX`, `pointerY`: tip of the pointer            | `-20.833`, `62.5` |
+| `rectangularCallout`, `ellipticalCallout` | `pointerX`, `pointerY`: tip of the pointer            | `-20.833`, `62.5` |
 
 <!-- cspell:enable -->
 
@@ -263,7 +263,7 @@ Lengths and positions are percentages, and angles are in degrees clockwise from 
 
 ```ts
 new ShapeRun({
-    type: "roundRect",
+    type: "roundedRectangle",
     adjustments: { cornerRadius: 30 },
     transformation: { width: 120, height: 60 },
     fill: "ED7D31",
@@ -287,7 +287,7 @@ Add `floating` to position it on the page instead. The options are the same as f
 
 ```ts
 new ShapeRun({
-    type: "wedgeRoundRectCallout",
+    type: "roundedRectangularCallout",
     transformation: { width: 180, height: 80 },
     fill: "FFF2CC",
     children: [new Paragraph("Shapes can float, too!")],
@@ -323,7 +323,7 @@ new ShapeGroupRun({
     children: [
         { type: "flowChartTerminator", transformation: { width: 100, height: 44 }, fill: "4472C4", line: "none" },
         {
-            type: "straightConnector1",
+            type: "straightConnector",
             transformation: { offset: { left: 100, top: 22 }, width: 30, height: 0 },
             line: { endArrow: "triangle" },
         },
@@ -349,7 +349,7 @@ A group can be `floating`, and can have `altText`, just like a single shape.
 
 | Property         | Type                     | Notes    | Description                                                                      |
 | ---------------- | ------------------------ | -------- | -------------------------------------------------------------------------------- |
-| `type`           | `PresetShapeType`        | Required | The preset shape, such as `"rect"`, `"ellipse"` or `"line"`                      |
+| `type`           | `PresetShapeType`        | Required | The preset shape, such as `"rectangle"`, `"ellipse"` or `"line"`                 |
 | `transformation` | `IMediaTransformation`   | Required | Size in pixels, rotation and flip. See [Size and Rotation](#size-and-rotation)   |
 | `fill`           | `ShapeFill`              | Optional | See [Fill](#fill). Default is no fill                                            |
 | `line`           | `ShapeLine`              | Optional | See [Line](#line). Default is a black line 1pt wide                              |
