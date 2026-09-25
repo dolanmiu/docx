@@ -119,7 +119,7 @@
         "eslint-import-resolver-typescript": "^4.3.2",
         "eslint-plugin-functional": "^9.0.3",
         "eslint-plugin-import-x": "^4.17.1",
-        "eslint-plugin-jsdoc": "^63.0.0",
+        "eslint-plugin-jsdoc": "^64.5.4",
         "eslint-plugin-no-null": "^1.0.2",
         "eslint-plugin-prefer-arrow": "^1.2.3",
         "eslint-plugin-unicorn": "^64.0.0",
