@@ -420,6 +420,41 @@ describe("File", () => {
             expect(doc.Comments).to.not.be.undefined;
         });
 
+        it("should not add a comments relationship or content type when there are no comments", () => {
+            const doc = new File({
+                comments: {
+                    children: [],
+                },
+                sections: [],
+            });
+
+            expect(JSON.stringify(new Formatter().format(doc.Document.Relationships))).to.not.contain("comments");
+            expect(JSON.stringify(new Formatter().format(doc.ContentTypes))).to.not.contain("comments");
+        });
+
+        it("should add a comments relationship and content type when there are comments", () => {
+            const doc = new File({
+                comments: {
+                    children: [{ id: 0, children: [new Paragraph("comment")] }],
+                },
+                sections: [],
+            });
+
+            expect(JSON.stringify(new Formatter().format(doc.Document.Relationships))).to.contain(
+                JSON.stringify({
+                    Id: "rId6",
+                    Type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments",
+                    Target: "comments.xml",
+                }),
+            );
+            expect(JSON.stringify(new Formatter().format(doc.ContentTypes))).to.contain(
+                JSON.stringify({
+                    ContentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.comments+xml",
+                    PartName: "/word/comments.xml",
+                }),
+            );
+        });
+
         it("should create CommentsExtended when comments have parentId", () => {
             const doc = new File({
                 comments: {
@@ -534,17 +569,17 @@ describe("File", () => {
                 .map(({ Relationship }: { readonly Relationship: { readonly _attr: object } }) => Relationship._attr);
             expect(ids.slice(-3)).to.deep.equal([
                 {
-                    Id: "rId7",
+                    Id: "rId6",
                     Type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/header",
                     Target: "header1.xml",
                 },
                 {
-                    Id: "rId8",
+                    Id: "rId7",
                     Type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer",
                     Target: "footer1.xml",
                 },
                 {
-                    Id: "rId9",
+                    Id: "rId8",
                     Type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme",
                     Target: "theme/theme1.xml",
                 },

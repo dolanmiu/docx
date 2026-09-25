@@ -605,42 +605,46 @@ export class Compiler {
                 ),
                 path: "word/settings.xml",
             },
-            Comments: {
-                data: (() => {
-                    const xmlData = this.imageReplacer.replace(commentXmlData, commentMediaDatas, commentRelationshipCount);
-                    const referenedXmlData = this.numberingReplacer.replace(xmlData, file.Numbering.ConcreteNumbering);
-                    return referenedXmlData;
-                })(),
-                path: "word/comments.xml",
-            },
-            CommentsRelationships: {
-                data: (() => {
-                    commentMediaDatas.forEach((mediaData, i) => {
-                        file.Comments.Relationships.addRelationship(
-                            commentRelationshipCount + i,
-                            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
-                            `media/${mediaData.fileName}`,
-                        );
-                    });
-                    return xml(
-                        this.formatter.format(file.Comments.Relationships, {
-                            viewWrapper: {
-                                View: file.Comments,
-                                Relationships: file.Comments.Relationships,
-                            },
-                            file,
-                            stack: [],
-                        }),
-                        {
-                            indent: prettify,
-                            declaration: {
-                                encoding: "UTF-8",
-                            },
-                        },
-                    );
-                })(),
-                path: "word/_rels/comments.xml.rels",
-            },
+            ...(file.Comments.IsEmpty
+                ? {}
+                : {
+                      Comments: {
+                          data: (() => {
+                              const xmlData = this.imageReplacer.replace(commentXmlData, commentMediaDatas, commentRelationshipCount);
+                              const referenedXmlData = this.numberingReplacer.replace(xmlData, file.Numbering.ConcreteNumbering);
+                              return referenedXmlData;
+                          })(),
+                          path: "word/comments.xml",
+                      },
+                      CommentsRelationships: {
+                          data: (() => {
+                              commentMediaDatas.forEach((mediaData, i) => {
+                                  file.Comments.Relationships.addRelationship(
+                                      commentRelationshipCount + i,
+                                      "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
+                                      `media/${mediaData.fileName}`,
+                                  );
+                              });
+                              return xml(
+                                  this.formatter.format(file.Comments.Relationships, {
+                                      viewWrapper: {
+                                          View: file.Comments,
+                                          Relationships: file.Comments.Relationships,
+                                      },
+                                      file,
+                                      stack: [],
+                                  }),
+                                  {
+                                      indent: prettify,
+                                      declaration: {
+                                          encoding: "UTF-8",
+                                      },
+                                  },
+                              );
+                          })(),
+                          path: "word/_rels/comments.xml.rels",
+                      },
+                  }),
             ...(file.CommentsExtended
                 ? {
                       CommentsExtended: {

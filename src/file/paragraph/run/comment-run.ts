@@ -390,9 +390,12 @@ export class Comments extends XmlComponent {
     private readonly relationships: Relationships;
     private readonly threadData?: readonly ICommentThreadData[];
     private readonly commentIdsData?: readonly ICommentIdData[];
+    private readonly isEmpty: boolean;
 
     public constructor({ children }: ICommentsOptions) {
         super("w:comments");
+
+        this.isEmpty = children.length === 0;
 
         this.root.push(
             new RootCommentsAttributes({
@@ -480,5 +483,10 @@ export class Comments extends XmlComponent {
     /** Comment id data for commentsIds.xml, or undefined when no comments carry a durableId. */
     public get CommentIdsData(): readonly ICommentIdData[] | undefined {
         return this.commentIdsData;
+    }
+
+    /** Whether there are no comments, in which case the document has no comments.xml part. */
+    public get IsEmpty(): boolean {
+        return this.isEmpty;
     }
 }
