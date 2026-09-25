@@ -151,27 +151,20 @@ export type ITableFloatOptions = {
      * to the right of the table. The value is in twentieths of a point. If omitted, the value is assumed to be zero.
      */
     readonly rightFromText?: number | PositiveUniversalMeasure;
+
+    /**
+     * Specifies whether the table may overlap other floating tables. It is written in the table's properties as
+     * w:tblOverlap, beside w:tblpPr.
+     */
     readonly overlap?: (typeof OverlapType)[keyof typeof OverlapType];
 };
-
-/**
- * Creates a table overlap element.
- *
- * @internal
- */
-const createOverlapElement = (overlap: (typeof OverlapType)[keyof typeof OverlapType]): XmlComponent =>
-    new BuilderElement<{ readonly val: (typeof OverlapType)[keyof typeof OverlapType] }>({
-        name: "w:tblOverlap",
-        attributes: {
-            val: { key: "w:val", value: overlap },
-        },
-    });
 
 /**
  * Creates floating table properties in a WordprocessingML document.
  *
  * This element specifies the positioning of a floating table,
  * including anchor points, offsets, and text wrapping behavior.
+ * The overlap option isn't part of it: the table properties write it as w:tblOverlap.
  *
  * Reference: http://officeopenxml.com/WPtableFloating.php
  *
@@ -212,7 +205,6 @@ export const createTableFloatProperties = ({
     topFromText,
     leftFromText,
     rightFromText,
-    overlap,
 }: ITableFloatOptions): XmlComponent =>
     new BuilderElement<Omit<ITableFloatOptions, "overlap">>({
         name: "w:tblpPr",
@@ -258,5 +250,4 @@ export const createTableFloatProperties = ({
                 value: verticalAnchor,
             },
         },
-        children: overlap ? [createOverlapElement(overlap)] : undefined,
     });

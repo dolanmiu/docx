@@ -44,14 +44,14 @@
  * @module
  */
 import { ChangeAttributes, type IChangedAttributesProperties } from "@file/track-revision/track-revision";
-import { IgnoreIfEmptyXmlComponent, OnOffElement, StringValueElement, XmlComponent } from "@file/xml-components";
+import { BuilderElement, IgnoreIfEmptyXmlComponent, OnOffElement, StringValueElement, XmlComponent } from "@file/xml-components";
 
 import { type AlignmentType, createAlignment } from "../../paragraph";
 import { type IShadingAttributesProperties, createShading } from "../../shading";
 import { type ITableWidthProperties, createTableWidthElement } from "../table-width";
 import { type ITableBordersOptions, TableBorders } from "./table-borders";
 import { type ITableCellMarginOptions, createTableCellMargin } from "./table-cell-margin";
-import { type ITableFloatOptions, createTableFloatProperties } from "./table-float-properties";
+import { type ITableFloatOptions, type OverlapType, createTableFloatProperties } from "./table-float-properties";
 import { type TableLayoutType, createTableLayout } from "./table-layout";
 import { type ITableCellSpacingProperties, createTableCellSpacing } from "../table-cell-spacing";
 import { type ITableLookOptions, createTableLook } from "./table-look";
@@ -72,6 +72,17 @@ export type ITablePropertiesOptionsBase = {
 };
 
 export type ITablePropertiesChangeOptions = ITablePropertiesOptions & IChangedAttributesProperties;
+
+// <xsd:complexType name="CT_TblOverlap">
+//   <xsd:attribute name="val" type="ST_TblOverlap" use="required"/>
+// </xsd:complexType>
+const createTableOverlap = (overlap: (typeof OverlapType)[keyof typeof OverlapType]): XmlComponent =>
+    new BuilderElement<{ readonly val: (typeof OverlapType)[keyof typeof OverlapType] }>({
+        name: "w:tblOverlap",
+        attributes: {
+            val: { key: "w:val", value: overlap },
+        },
+    });
 
 /**
  * Options for configuring table properties.
@@ -101,6 +112,11 @@ export class TableProperties extends IgnoreIfEmptyXmlComponent {
 
         if (options.float) {
             this.root.push(createTableFloatProperties(options.float));
+        }
+
+        // w:tblOverlap goes beside w:tblpPr, which can't have children
+        if (options.float?.overlap) {
+            this.root.push(createTableOverlap(options.float.overlap));
         }
 
         if (options.visuallyRightToLeft !== undefined) {

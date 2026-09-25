@@ -29,25 +29,16 @@ describe("Table Float Properties", () => {
             expect(tree).to.deep.equal(DEFAULT_TFP);
         });
 
-        it("should add overlap", () => {
+        it("should leave overlap out of w:tblpPr, which can't have children", () => {
             const properties = createTableFloatProperties({
                 overlap: OverlapType.NEVER,
             });
             const tree = new Formatter().format(properties);
 
             expect(tree).to.deep.equal({
-                "w:tblpPr": [
-                    {
-                        _attr: {},
-                    },
-                    {
-                        "w:tblOverlap": {
-                            _attr: {
-                                "w:val": "never",
-                            },
-                        },
-                    },
-                ],
+                "w:tblpPr": {
+                    _attr: {},
+                },
             });
         });
     });

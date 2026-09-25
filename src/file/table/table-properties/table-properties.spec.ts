@@ -5,6 +5,7 @@ import { AlignmentType } from "@file/paragraph";
 import { ShadingType } from "@file/shading";
 
 import { WidthType } from "../table-width";
+import { OverlapType, TableAnchorType } from "./table-float-properties";
 import { TableLayoutType } from "./table-layout";
 import { TableProperties } from "./table-properties";
 import { CellSpacingType } from "../table-cell-spacing";
@@ -103,6 +104,38 @@ describe("TableProperties", () => {
             const tree = new Formatter().format(tp);
             expect(tree).to.deep.equal({
                 "w:tblPr": [{ "w:tblCellSpacing": { _attr: { "w:type": "dxa", "w:w": 1234 } } }],
+            });
+        });
+
+        it("should write a floating table's overlap beside w:tblpPr, not inside it", () => {
+            const tp = new TableProperties({
+                style: "TableNormal",
+                float: {
+                    horizontalAnchor: TableAnchorType.MARGIN,
+                    overlap: OverlapType.NEVER,
+                },
+                visuallyRightToLeft: true,
+            });
+            const tree = new Formatter().format(tp);
+            expect(tree).to.deep.equal({
+                "w:tblPr": [
+                    { "w:tblStyle": { _attr: { "w:val": "TableNormal" } } },
+                    { "w:tblpPr": { _attr: { "w:horzAnchor": "margin" } } },
+                    { "w:tblOverlap": { _attr: { "w:val": "never" } } },
+                    { "w:bidiVisual": {} },
+                ],
+            });
+        });
+
+        it("should not write an overlap for a floating table without one", () => {
+            const tp = new TableProperties({
+                float: {
+                    horizontalAnchor: TableAnchorType.MARGIN,
+                },
+            });
+            const tree = new Formatter().format(tp);
+            expect(tree).to.deep.equal({
+                "w:tblPr": [{ "w:tblpPr": { _attr: { "w:horzAnchor": "margin" } } }],
             });
         });
 
