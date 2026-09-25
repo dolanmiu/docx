@@ -483,10 +483,7 @@ const findRoutedPath = (
         return best;
     }
     const detour = findOrthogonalRoute(start, end, margin, obstacles);
-    if (!detour || countRouteCrossings(detour, obstacles) > 0) {
-        return best;
-    }
-    return toBoxPath(frame, detour.map(toBox(start, frame))) ?? detour;
+    return !detour || countRouteCrossings(detour, obstacles) > 0 ? best : (toBoxPath(frame, detour.map(toBox(start, frame))) ?? detour);
 };
 
 // Moves a point on the page into a connector's box

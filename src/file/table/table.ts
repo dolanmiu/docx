@@ -217,11 +217,7 @@ export class Table extends FileChild {
 
         const start = cells.slice(0, cellIndex).reduce((column, previous) => column + (previous.options.columnSpan || 1), 0);
         const columns = this.resolvedColumnWidths.slice(start, start + (cell.options.columnSpan || 1));
-        if (columns.length === 0) {
-            return undefined;
-        }
-
-        return columns.reduce((sum, columnWidth) => sum + columnWidth, 0);
+        return columns.length === 0 ? undefined : columns.reduce((sum, columnWidth) => sum + columnWidth, 0);
     }
 
     /**

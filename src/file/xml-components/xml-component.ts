@@ -180,10 +180,6 @@ export abstract class IgnoreIfEmptyXmlComponent extends XmlComponent {
         }
         // Ignore the object if its falsey or is an empty object (would produce
         // an empty XML element if allowed to be included in the output).
-        if (result && (typeof result[this.rootKey] !== "object" || Object.keys(result[this.rootKey]).length)) {
-            return result;
-        }
-
-        return undefined;
+        return result && (typeof result[this.rootKey] !== "object" || Object.keys(result[this.rootKey]).length) ? result : undefined;
     }
 }

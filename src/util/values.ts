@@ -431,10 +431,7 @@ export const measurementOrPercentValue = (val: number | Percentage | UniversalMe
     if (typeof val === "number") {
         return decimalNumber(val);
     }
-    if (val.slice(-1) === "%") {
-        return percentageValue(val as Percentage);
-    }
-    return universalMeasureValue(val as UniversalMeasure);
+    return val.slice(-1) === "%" ? percentageValue(val as Percentage) : universalMeasureValue(val as UniversalMeasure);
 };
 
 /**

@@ -128,10 +128,9 @@ const characterWidth = (widths: readonly number[], code: number): number => {
     if (isWide(code)) {
         return 1000;
     }
-    if (code >= 0x300 && code <= 0x36f) {
-        return 0;
-    }
-    return AVERAGE_LETTER_INDEXES.reduce((total, letter) => total + widths[letter], 0) / AVERAGE_LETTER_INDEXES.length;
+    return code >= 0x300 && code <= 0x36f
+        ? 0
+        : AVERAGE_LETTER_INDEXES.reduce((total, letter) => total + widths[letter], 0) / AVERAGE_LETTER_INDEXES.length;
 };
 
 const sizeOf = ({ size = DEFAULT_FONT_SIZE }: TextFont): number => size;
@@ -147,12 +146,13 @@ export const measureTextWidth = (text: string, font: TextFont = {}, start = 0): 
     const size = sizeOf(font);
     const { characterSpacing = 0, scale = 100 } = font;
     return (
-        [...text].reduce((position, character) => {
-            if (character === "\t") {
-                return (Math.floor(position / TAB_STOP) + 1) * TAB_STOP;
-            }
-            return position + (characterWidth(widths, character.codePointAt(0)!) * size * scale) / 100000 + characterSpacing;
-        }, start) - start
+        [...text].reduce(
+            (position, character) =>
+                character === "\t"
+                    ? (Math.floor(position / TAB_STOP) + 1) * TAB_STOP
+                    : position + (characterWidth(widths, character.codePointAt(0)!) * size * scale) / 100000 + characterSpacing,
+            start,
+        ) - start
     );
 };
 

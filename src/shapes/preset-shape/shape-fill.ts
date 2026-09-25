@@ -481,9 +481,7 @@ export const createShapeFill = (fill: ShapeFill = "none"): XmlComponent => {
         return createPatternFill(fill);
     }
 
-    if (fill.type === "picture") {
-        return createPictureFill(fill);
-    }
-
-    return new BuilderElement({ name: "a:solidFill", children: [createShapeColor(fill.color, fill.transparency)] });
+    return fill.type === "picture"
+        ? createPictureFill(fill)
+        : new BuilderElement({ name: "a:solidFill", children: [createShapeColor(fill.color, fill.transparency)] });
 };
