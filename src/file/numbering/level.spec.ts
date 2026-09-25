@@ -23,6 +23,32 @@ describe("Level", () => {
         });
     });
 
+    it("writes its children in the schema's order", () => {
+        const tree = new Formatter().format(
+            new Level({
+                level: 0,
+                format: LevelFormat.DECIMAL,
+                text: "%1.",
+                suffix: LevelSuffix.SPACE,
+                isLegalNumberingStyle: true,
+                style: { style: "ListHeading", paragraph: { indent: { left: 720 } }, run: { bold: true } },
+            }),
+        );
+
+        expect(tree["w:lvl"].map((child: object) => Object.keys(child)[0])).to.deep.equal([
+            "w:start",
+            "w:numFmt",
+            "w:pStyle",
+            "w:isLgl",
+            "w:suff",
+            "w:lvlText",
+            "w:lvlJc",
+            "w:pPr",
+            "w:rPr",
+            "_attr",
+        ]);
+    });
+
     describe("alignment", () => {
         const levelAlignment = (alignment: (typeof AlignmentType)[keyof typeof AlignmentType]): unknown =>
             new Formatter().format(new Level({ level: 0, alignment }))["w:lvl"].find((child: object) => "w:lvlJc" in child);

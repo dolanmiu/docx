@@ -401,18 +401,23 @@ export class LevelBase extends XmlComponent {
     }: ILevelsOptions) {
         super("w:lvl");
 
+        // In CT_Lvl's order
         this.root.push(new NumberValueElement("w:start", decimalNumber(start)));
 
         if (format) {
             this.root.push(new NumberFormat(format));
         }
 
-        if (suffix) {
-            this.root.push(new Suffix(suffix));
+        if (style?.style) {
+            this.root.push(createParagraphStyle(style.style));
         }
 
         if (isLegalNumberingStyle) {
             this.root.push(new IsLegalNumberingStyle());
+        }
+
+        if (suffix) {
+            this.root.push(new Suffix(suffix));
         }
 
         if (text) {
@@ -420,10 +425,6 @@ export class LevelBase extends XmlComponent {
         }
 
         this.root.push(new LevelJc(alignment));
-
-        if (style?.style) {
-            this.root.push(createParagraphStyle(style.style));
-        }
 
         // A level's paragraph properties are a definition, so no implicit `ListParagraph` reference belongs here.
         this.paragraphProperties = new ParagraphProperties(style && style.paragraph, { implicitListParagraphStyle: false });
