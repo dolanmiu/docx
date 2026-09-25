@@ -183,11 +183,77 @@ const withRunProperties = (runElement: Element, originalRunProperties: Element):
     ];
     const mergedRunProperties = {
         ...ownRunProperties,
-        // w:rPrChange has to come after every other property
-        elements: [...properties.filter((e) => e.name !== "w:rPrChange"), ...properties.filter((e) => e.name === "w:rPrChange")],
+        elements: [...properties].sort((a, b) => runPropertyRank(a) - runPropertyRank(b)),
     };
 
     return { ...runElement, elements: childElementsOf(runElement).map((e) => (e === ownRunProperties ? mergedRunProperties : e)) };
+};
+
+/**
+ * The order Office's schema puts a run's properties in: CT_RPr's elements, then Word 2010's text effects and
+ * OpenType features. ISO 29500 allows any order, but Office and the Open XML SDK validator don't.
+ */
+const RUN_PROPERTY_ORDER = [
+    "w:rStyle",
+    "w:rFonts",
+    "w:b",
+    "w:bCs",
+    "w:i",
+    "w:iCs",
+    "w:caps",
+    "w:smallCaps",
+    "w:strike",
+    "w:dstrike",
+    "w:outline",
+    "w:shadow",
+    "w:emboss",
+    "w:imprint",
+    "w:noProof",
+    "w:snapToGrid",
+    "w:vanish",
+    "w:webHidden",
+    "w:color",
+    "w:spacing",
+    "w:w",
+    "w:kern",
+    "w:position",
+    "w:sz",
+    "w:szCs",
+    "w:highlight",
+    "w:u",
+    "w:effect",
+    "w:bdr",
+    "w:shd",
+    "w:fitText",
+    "w:vertAlign",
+    "w:rtl",
+    "w:cs",
+    "w:em",
+    "w:lang",
+    "w:eastAsianLayout",
+    "w:specVanish",
+    "w:oMath",
+    "w14:glow",
+    "w14:shadow",
+    "w14:reflection",
+    "w14:textOutline",
+    "w14:textFill",
+    "w14:scene3d",
+    "w14:props3d",
+    "w14:ligatures",
+    "w14:numForm",
+    "w14:numSpacing",
+    "w14:stylisticSets",
+    "w14:cntxtAlts",
+];
+
+// A property that isn't listed keeps its place after the listed ones. w:rPrChange has to come after every other property
+const runPropertyRank = (element: Element): number => {
+    if (element.name === "w:rPrChange") {
+        return RUN_PROPERTY_ORDER.length + 1;
+    }
+    const index = RUN_PROPERTY_ORDER.indexOf(element.name ?? "");
+    return index === -1 ? RUN_PROPERTY_ORDER.length : index;
 };
 
 const childElementsOf = (element: Element): readonly Element[] => element.elements ?? [];
