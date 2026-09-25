@@ -33,6 +33,23 @@ const doc = new Document({
                         zIndex: "auto",
                     },
                 }),
+                // A textbox in a paragraph's children is in that paragraph, after its text
+                new Paragraph({
+                    children: [
+                        new TextRun("A textbox in a paragraph: "),
+                        new Textbox({
+                            children: [
+                                new Paragraph({
+                                    children: [new TextRun("Hi i'm a textbox in a paragraph!")],
+                                }),
+                            ],
+                            style: {
+                                width: "200pt",
+                                height: "auto",
+                            },
+                        }),
+                    ],
+                }),
             ],
         },
     ],

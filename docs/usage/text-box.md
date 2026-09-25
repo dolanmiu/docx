@@ -89,6 +89,25 @@ Available alignment values:
 - `"center"` - Center on page
 - `"right"` - Align to right margin
 
+## In a Paragraph
+
+A text box can also be one of a paragraph's children, such as after some text. It is then part of that paragraph, and its own paragraph options, such as `alignment`, don't apply:
+
+```ts
+new Paragraph({
+    children: [
+        new TextRun("See the note: "),
+        new Textbox({
+            children: [new Paragraph("A note")],
+            style: {
+                width: "200pt",
+                height: "auto",
+            },
+        }),
+    ],
+});
+```
+
 ## Multiple Paragraphs
 
 Text boxes can contain multiple paragraphs:
