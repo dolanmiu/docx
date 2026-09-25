@@ -245,8 +245,8 @@ export type ICompatibilityOptions = {
  *     <xsd:element name="noTabHangInd" type="CT_OnOff" minOccurs="0"/>
  *     <xsd:element name="noLeading" type="CT_OnOff" minOccurs="0"/>
  *     <xsd:element name="usePrinterMetrics" type="CT_OnOff" minOccurs="0"/>
- *     <xsd:element name="compatSetting" type="CT_CompatSetting" minOccurs="0" maxOccurs="unbounded"/>
  *     <!-- Additional compatibility elements omitted for brevity -->
+ *     <xsd:element name="compatSetting" type="CT_CompatSetting" minOccurs="0" maxOccurs="unbounded"/>
  *   </xsd:sequence>
  * </xsd:complexType>
  * ```
@@ -269,10 +269,6 @@ export type ICompatibilityOptions = {
 export class Compatibility extends XmlComponent {
     public constructor(options: ICompatibilityOptions) {
         super("w:compat");
-
-        if (options.version) {
-            this.root.push(createCompatibilitySetting(options.version));
-        }
 
         if (options.useSingleBorderforContiguousCells) {
             this.root.push(new OnOffElement("w:useSingleBorderforContiguousCells", options.useSingleBorderforContiguousCells));
@@ -532,6 +528,11 @@ export class Compatibility extends XmlComponent {
 
         if (options.cachedColumnBalance) {
             this.root.push(new OnOffElement("w:cachedColBalance", options.cachedColumnBalance));
+        }
+
+        // CT_Compat puts the compatibility settings after every other element
+        if (options.version) {
+            this.root.push(createCompatibilitySetting(options.version));
         }
     }
 }
