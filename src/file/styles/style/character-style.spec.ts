@@ -730,12 +730,12 @@ describe("CharacterStyle", () => {
         const highlightTests = [
             {
                 highlight: HighlightColor.YELLOW,
-                expected: [{ "w:highlight": { _attr: { "w:val": "yellow" } } }, { "w:highlightCs": { _attr: { "w:val": "yellow" } } }],
+                expected: [{ "w:highlight": { _attr: { "w:val": "yellow" } } }],
             },
             {
                 highlight: HighlightColor.YELLOW,
                 highlightComplexScript: true,
-                expected: [{ "w:highlight": { _attr: { "w:val": "yellow" } } }, { "w:highlightCs": { _attr: { "w:val": "yellow" } } }],
+                expected: [{ "w:highlight": { _attr: { "w:val": "yellow" } } }],
             },
             {
                 highlight: HighlightColor.YELLOW,
@@ -745,11 +745,11 @@ describe("CharacterStyle", () => {
             {
                 highlight: HighlightColor.YELLOW,
                 highlightComplexScript: "550099",
-                expected: [{ "w:highlight": { _attr: { "w:val": "yellow" } } }, { "w:highlightCs": { _attr: { "w:val": "550099" } } }],
+                expected: [{ "w:highlight": { _attr: { "w:val": "yellow" } } }],
             },
         ];
         highlightTests.forEach(({ highlight, highlightComplexScript, expected }) => {
-            it(`#highlight ${highlight} cs ${highlightComplexScript}`, () => {
+            it(`#highlight ${highlight} writes only w:highlight, as highlightComplexScript (${highlightComplexScript}) has no effect`, () => {
                 const style = new StyleForCharacter({
                     id: "myStyleId",
                     run: { highlight, highlightComplexScript },

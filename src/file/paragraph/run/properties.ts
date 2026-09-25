@@ -26,7 +26,7 @@ import {
 import type { PositiveUniversalMeasure, UniversalMeasure } from "@util/values";
 
 import { type EmphasisMarkType, createEmphasisMark } from "./emphasis-mark";
-import { CharacterSpacing, Color, Highlight, HighlightComplexScript } from "./formatting";
+import { CharacterSpacing, Color, Highlight } from "./formatting";
 import { type ILanguageOptions, createLanguageComponent } from "./language";
 import { type IFontAttributesProperties, type IThemeFontReference, createRunFonts } from "./run-fonts";
 import { createSubScript, createSuperScript } from "./script";
@@ -189,6 +189,10 @@ export type IRunStylePropertiesOptions = {
      */
     readonly font?: string | IFontOptions | IFontAttributesProperties | IThemeFontReference;
     readonly highlight?: (typeof HighlightColor)[keyof typeof HighlightColor];
+    /**
+     * @deprecated Has no effect. WordprocessingML has no highlight of its own for complex script text: `highlight`
+     * highlights all the run's text. docx used to write it as `w:highlightCs`, which is in no schema.
+     */
     readonly highlightComplexScript?: boolean | string;
     readonly characterSpacing?: number;
     readonly shading?: IShadingAttributesProperties;
@@ -354,13 +358,6 @@ export class RunProperties extends IgnoreIfEmptyXmlComponent {
 
         if (options.highlight) {
             this.push(new Highlight(options.highlight));
-        }
-        const highlightCs =
-            options.highlightComplexScript === undefined || options.highlightComplexScript === true
-                ? options.highlight
-                : options.highlightComplexScript;
-        if (highlightCs) {
-            this.push(new HighlightComplexScript(highlightCs));
         }
 
         if (options.underline) {

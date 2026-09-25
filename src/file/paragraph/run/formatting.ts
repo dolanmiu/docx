@@ -118,22 +118,3 @@ export class Highlight extends XmlComponent {
         );
     }
 }
-
-/**
- * Represents text highlighting for complex scripts.
- *
- * Used for highlighting text in complex script languages
- * (e.g., Arabic, Hebrew, Thai).
- *
- * @internal
- */
-export class HighlightComplexScript extends XmlComponent {
-    public constructor(color: string) {
-        super("w:highlightCs");
-        this.root.push(
-            new Attributes({
-                val: color,
-            }),
-        );
-    }
-}

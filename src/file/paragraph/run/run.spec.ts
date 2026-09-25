@@ -214,7 +214,7 @@ describe("Run", () => {
     });
 
     describe("#highlight()", () => {
-        it("it should add highlight to the properties", () => {
+        it("should add the highlight to the properties, without w:highlightCs, which is in no schema", () => {
             const run = new Run({
                 highlight: HighlightColor.YELLOW,
             });
@@ -222,16 +222,7 @@ describe("Run", () => {
             expect(tree).to.deep.equal({
                 "w:r": [
                     {
-                        "w:rPr": [
-                            { "w:highlight": { _attr: { "w:val": "yellow" } } },
-                            {
-                                "w:highlightCs": {
-                                    _attr: {
-                                        "w:val": "yellow",
-                                    },
-                                },
-                            },
-                        ],
+                        "w:rPr": [{ "w:highlight": { _attr: { "w:val": "yellow" } } }],
                     },
                 ],
             });
