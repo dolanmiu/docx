@@ -6,12 +6,27 @@ import { ShadingType, createShading } from "./shading";
 
 describe("Shading", () => {
     describe("#createShading", () => {
-        it("should create", () => {
+        it("should write clear shading when no pattern is given, as w:val is required", () => {
             const shading = createShading({});
             const tree = new Formatter().format(shading);
             expect(tree).to.deep.equal({
                 "w:shd": {
-                    _attr: {},
+                    _attr: {
+                        "w:val": "clear",
+                    },
+                },
+            });
+        });
+
+        it("should write a fill with no pattern as clear shading", () => {
+            const shading = createShading({ fill: "00FF00" });
+            const tree = new Formatter().format(shading);
+            expect(tree).to.deep.equal({
+                "w:shd": {
+                    _attr: {
+                        "w:fill": "00FF00",
+                        "w:val": "clear",
+                    },
                 },
             });
         });
