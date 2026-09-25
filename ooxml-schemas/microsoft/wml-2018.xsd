@@ -1,5 +1,7 @@
- <xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:w12="http://schemas.openxmlformats.org/wordprocessingml/2006/main" elementFormDefault="qualified" attributeFormDefault="qualified" blockDefault="#all" xmlns="http://schemas.microsoft.com/office/word/2018/wordml" targetNamespace="http://schemas.microsoft.com/office/word/2018/wordml">
-   <xsd:import id="w12" namespace="http://schemas.openxmlformats.org/wordprocessingml/2006/main" schemaLocation="word12.xsd"/>
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- [MS-DOCX] 5.5, http://schemas.microsoft.com/office/word/2018/wordml Schema: https://learn.microsoft.com/en-us/openspecs/office_standards/ms-docx/6970e332-57ff-4ab5-a9a4-3b8834bbc477 -->
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:w12="http://schemas.openxmlformats.org/wordprocessingml/2006/main" elementFormDefault="qualified" attributeFormDefault="qualified" blockDefault="#all" xmlns="http://schemas.microsoft.com/office/word/2018/wordml" targetNamespace="http://schemas.microsoft.com/office/word/2018/wordml">
+   <xsd:import id="w12" namespace="http://schemas.openxmlformats.org/wordprocessingml/2006/main" schemaLocation="../ISO-IEC29500-4_2016/wml.xsd"/>
    <xsd:complexType name="CT_Extension">
      <xsd:sequence>
        <xsd:any processContents="lax"/>

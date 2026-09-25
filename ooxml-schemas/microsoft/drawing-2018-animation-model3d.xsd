@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- [MS-ODRAWXML] 5.34, http://schemas.microsoft.com/office/drawing/2018/animation/model3d Schema: https://learn.microsoft.com/en-us/openspecs/office_standards/ms-odrawxml/c939a613-ae17-423a-9d33-7fb2e07b7b7f -->
+<xsd:schema targetNamespace="http://schemas.microsoft.com/office/drawing/2018/animation/model3d" xmlns="http://schemas.microsoft.com/office/drawing/2018/animation/model3d" elementFormDefault="qualified" attributeFormDefault="unqualified" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:aanim="http://schemas.microsoft.com/office/drawing/2018/animation" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+   <xsd:import namespace="http://schemas.microsoft.com/office/drawing/2018/animation" schemaLocation="drawing-2018-animation.xsd"/>
+   <xsd:import namespace="http://schemas.openxmlformats.org/drawingml/2006/main" schemaLocation="../ISO-IEC29500-4_2016/dml-main.xsd"/>
+   <xsd:simpleType name="ST_EmbeddedAnimationID">
+     <xsd:restriction base="xsd:unsignedInt"/>
+   </xsd:simpleType>
+   <xsd:complexType name="CT_EmbeddedAnimation">
+     <xsd:sequence>
+       <xsd:element name="animPr" type="aanim:CT_AnimationProperties" minOccurs="1" maxOccurs="1"/>
+       <xsd:element name="extLst" type="a:CT_OfficeArtExtensionList" minOccurs="0" maxOccurs="1"/>
+     </xsd:sequence>
+     <xsd:attribute name="animId" type="ST_EmbeddedAnimationID" use="required"/>
+   </xsd:complexType>
+   <xsd:complexType name="CT_PosterFrame">
+     <xsd:attribute name="animId" use="required" type="ST_EmbeddedAnimationID"/>
+     <xsd:attribute name="frame" type="a:ST_PositiveFixedPercentage" use="optional" default="0"/>
+   </xsd:complexType>
+   <xsd:element name="embedAnim" type="CT_EmbeddedAnimation"/>
+   <xsd:element name="posterFrame" type="CT_PosterFrame"/>
+ </xsd:schema>

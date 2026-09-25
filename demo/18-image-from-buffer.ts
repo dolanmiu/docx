@@ -12,6 +12,7 @@ const doc = new Document({
                 new Paragraph({
                     children: [
                         new ImageRun({
+                            type: "png",
                             data: Buffer.from(imageBase64Data, "base64"),
                             transformation: {
                                 width: 100,

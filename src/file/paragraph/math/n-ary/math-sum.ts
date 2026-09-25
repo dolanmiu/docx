@@ -72,13 +72,9 @@ export class MathSum extends XmlComponent {
             }),
         );
 
-        if (!!options.subScript) {
-            this.root.push(createMathSubScriptElement({ children: options.subScript }));
-        }
-
-        if (!!options.superScript) {
-            this.root.push(createMathSuperScriptElement({ children: options.superScript }));
-        }
+        // The schema needs both limits, so a hidden one is written empty
+        this.root.push(createMathSubScriptElement({ children: options.subScript ?? [] }));
+        this.root.push(createMathSuperScriptElement({ children: options.superScript ?? [] }));
 
         this.root.push(createMathBase({ children: options.children }));
     }

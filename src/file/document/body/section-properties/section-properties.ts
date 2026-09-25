@@ -317,11 +317,12 @@ export class SectionProperties extends XmlComponent {
             this.root.push(new PageTextDirection(textDirection));
         }
 
+        this.root.push(createDocumentGrid({ linePitch, charSpace, type: gridType }));
+
+        // CT_SectPr puts the previous section properties after all the others
         if (revision) {
             this.root.push(new SectionPropertiesChange(revision));
         }
-
-        this.root.push(createDocumentGrid({ linePitch, charSpace, type: gridType }));
     }
 
     /**

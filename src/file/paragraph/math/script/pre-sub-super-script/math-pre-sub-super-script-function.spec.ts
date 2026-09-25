@@ -7,7 +7,7 @@ import { MathRun } from "../../math-run";
 
 describe("MathPreSubScript", () => {
     describe("#constructor()", () => {
-        it("should create a MathPreSubScript with correct root key", () => {
+        it("should write the pre-scripts before the base, as the schema orders them", () => {
             const mathPreSubScript = new MathPreSubSuperScript({
                 children: [new MathRun("e")],
                 subScript: [new MathRun("2")],
@@ -19,17 +19,6 @@ describe("MathPreSubScript", () => {
                 "m:sPre": [
                     {
                         "m:sPrePr": {},
-                    },
-                    {
-                        "m:e": [
-                            {
-                                "m:r": [
-                                    {
-                                        "m:t": ["e"],
-                                    },
-                                ],
-                            },
-                        ],
                     },
                     {
                         "m:sub": [
@@ -48,6 +37,17 @@ describe("MathPreSubScript", () => {
                                 "m:r": [
                                     {
                                         "m:t": ["5"],
+                                    },
+                                ],
+                            },
+                        ],
+                    },
+                    {
+                        "m:e": [
+                            {
+                                "m:r": [
+                                    {
+                                        "m:t": ["e"],
                                     },
                                 ],
                             },

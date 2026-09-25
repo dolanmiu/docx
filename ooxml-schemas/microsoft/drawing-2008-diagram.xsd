@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- [MS-ODRAWXML] 5.6, http://schemas.microsoft.com/office/drawing/2008/diagram Schema: https://learn.microsoft.com/en-us/openspecs/office_standards/ms-odrawxml/e1b56dd5-305b-4b3b-a983-28df1d4ffc3f -->
+<xsd:schema targetNamespace="http://schemas.microsoft.com/office/drawing/2008/diagram" elementFormDefault="qualified" attributeFormDefault="unqualified" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:d="http://schemas.openxmlformats.org/drawingml/2006/diagram" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns="http://schemas.microsoft.com/office/drawing/2008/diagram">
+   <xsd:import namespace="http://schemas.openxmlformats.org/drawingml/2006/diagram" schemaLocation="../ISO-IEC29500-4_2016/dml-diagram.xsd"/>
+   <xsd:import namespace="http://schemas.openxmlformats.org/drawingml/2006/main" schemaLocation="../ISO-IEC29500-4_2016/dml-main.xsd"/>
+   <xsd:import namespace="http://schemas.openxmlformats.org/drawingml/2006/main" schemaLocation="../ISO-IEC29500-4_2016/dml-main.xsd"/>
+   <xsd:import namespace="http://schemas.openxmlformats.org/drawingml/2006/main" schemaLocation="../ISO-IEC29500-4_2016/dml-main.xsd"/>
+   <xsd:import namespace="http://schemas.openxmlformats.org/drawingml/2006/main" schemaLocation="../ISO-IEC29500-4_2016/dml-main.xsd"/>
+   <xsd:import namespace="http://schemas.openxmlformats.org/officeDocument/2006/relationships" schemaLocation="../ISO-IEC29500-4_2016/shared-relationshipReference.xsd"/>
+   <xsd:complexType name="CT_ShapeNonVisual">
+     <xsd:sequence>
+       <xsd:element name="cNvPr" type="a:CT_NonVisualDrawingProps" minOccurs="1" maxOccurs="1"/>
+       <xsd:element name="cNvSpPr" type="a:CT_NonVisualDrawingShapeProps" minOccurs="1" maxOccurs="1"/>
+     </xsd:sequence>
+   </xsd:complexType>
+   <xsd:complexType name="CT_Shape">
+     <xsd:sequence>
+       <xsd:element name="nvSpPr" type="CT_ShapeNonVisual" minOccurs="1" maxOccurs="1"/>
+       <xsd:element name="spPr" type="a:CT_ShapeProperties" minOccurs="1" maxOccurs="1"/>
+       <xsd:element name="style" type="a:CT_ShapeStyle" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="txBody" type="a:CT_TextBody" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="txXfrm" type="a:CT_Transform2D" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="extLst" type="a:CT_OfficeArtExtensionList" minOccurs="0" maxOccurs="1"/>
+     </xsd:sequence>
+     <xsd:attribute name="modelId" type="d:ST_ModelId" use="required"/>
+   </xsd:complexType>
+   <xsd:complexType name="CT_GroupShapeNonVisual">
+     <xsd:sequence>
+       <xsd:element name="cNvPr" type="a:CT_NonVisualDrawingProps" minOccurs="1" maxOccurs="1"/>
+       <xsd:element name="cNvGrpSpPr" type="a:CT_NonVisualGroupDrawingShapeProps" minOccurs="1" maxOccurs="1"/>
+     </xsd:sequence>
+   </xsd:complexType>
+   <xsd:complexType name="CT_GroupShape">
+     <xsd:sequence>
+       <xsd:element name="nvGrpSpPr" type="CT_GroupShapeNonVisual" minOccurs="1" maxOccurs="1"/>
+       <xsd:element name="grpSpPr" type="a:CT_GroupShapeProperties" minOccurs="1" maxOccurs="1"/>
+       <xsd:choice minOccurs="0" maxOccurs="unbounded">
+         <xsd:element name="sp" type="CT_Shape"/>
+         <xsd:element name="grpSp" type="CT_GroupShape"/>
+       </xsd:choice>
+       <xsd:element name="extLst" type="a:CT_OfficeArtExtensionList" minOccurs="0" maxOccurs="1"/>
+     </xsd:sequence>
+   </xsd:complexType>
+   <xsd:complexType name="CT_Drawing">
+     <xsd:sequence>
+       <xsd:element name="spTree" type="CT_GroupShape" minOccurs="1" maxOccurs="1"/>
+     </xsd:sequence>
+   </xsd:complexType>
+   <xsd:element name="drawing" type="CT_Drawing"/>
+   <xsd:complexType name="CT_DataModelExtBlock">
+     <xsd:attribute name="relId" type="xsd:string"/>
+     <xsd:attribute name="minVer" type="xsd:anyURI"/>
+   </xsd:complexType>
+   <xsd:element name="dataModelExt" type="CT_DataModelExtBlock"/>
+ </xsd:schema>

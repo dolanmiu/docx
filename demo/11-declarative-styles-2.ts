@@ -222,6 +222,7 @@ const doc = new Document({
                 new Paragraph({
                     children: [
                         new ImageRun({
+                            type: "gif",
                             data: fs.readFileSync("./demo/images/pizza.gif"),
                             transformation: {
                                 width: 100,
@@ -271,6 +272,7 @@ const doc = new Document({
                 new Paragraph({
                     children: [
                         new ImageRun({
+                            type: "gif",
                             data: fs.readFileSync("./demo/images/pizza.gif"),
                             transformation: {
                                 width: 100,
@@ -286,6 +288,7 @@ const doc = new Document({
                 new Paragraph({
                     children: [
                         new ImageRun({
+                            type: "gif",
                             data: fs.readFileSync("./demo/images/pizza.gif"),
                             transformation: {
                                 width: 100,

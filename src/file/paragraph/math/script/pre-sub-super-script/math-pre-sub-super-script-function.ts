@@ -66,9 +66,9 @@ export class MathPreSubSuperScript extends BuilderElement {
             name: "m:sPre",
             children: [
                 createMathPreSubSuperScriptProperties(),
-                createMathBase({ children: children }),
                 createMathSubScriptElement({ children: subScript }),
                 createMathSuperScriptElement({ children: superScript }),
+                createMathBase({ children: children }),
             ],
         });
     }

@@ -17,6 +17,11 @@ describe("obfuscate", () => {
         expect(buffer[0]).toBe(0xff);
     });
 
+    it("should obfuscate the same way with a lower-case key as with the upper-case key written in the font table", () => {
+        const input = new Uint8Array(64).map((_, i) => i);
+        expect(obfuscate(input, "8fe2cf26-5e68-f0dc-37a8-b5d5c909da91")).toEqual(obfuscate(input, "8FE2CF26-5E68-F0DC-37A8-B5D5C909DA91"));
+    });
+
     it("should throw error if uuid is not correct", () => {
         expect(() => obfuscate(Buffer.from(""), "bad-uuid")).toThrowError();
     });

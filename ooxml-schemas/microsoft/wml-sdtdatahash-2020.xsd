@@ -1,4 +1,7 @@
- <xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:w12="http://schemas.openxmlformats.org/wordprocessingml/2006/main" elementFormDefault="qualified" attributeFormDefault="qualified" blockDefault="#all" xmlns="http://schemas.microsoft.com/office/word/2020/wordml/sdtdatahash" targetNamespace="http://schemas.microsoft.com/office/word/2020/wordml/sdtdatahash">
-   <xsd:import id="w12" namespace="http://schemas.openxmlformats.org/wordprocessingml/2006/main" schemaLocation="word12.xsd"/>
-   <xsd:attribute name="storeItemChecksum" type="w12:ST_String"/>
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- [MS-DOCX] 5.7, http://schemas.microsoft.com/office/word/2020/wordml/sdtdatahash Schema: https://learn.microsoft.com/en-us/openspecs/office_standards/ms-docx/c865ba38-51df-45bc-91ae-f6beaffeb264 -->
+<xsd:schema xmlns:s="http://schemas.openxmlformats.org/officeDocument/2006/sharedTypes" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:w12="http://schemas.openxmlformats.org/wordprocessingml/2006/main" elementFormDefault="qualified" attributeFormDefault="qualified" blockDefault="#all" xmlns="http://schemas.microsoft.com/office/word/2020/wordml/sdtdatahash" targetNamespace="http://schemas.microsoft.com/office/word/2020/wordml/sdtdatahash">
+   <xsd:import namespace="http://schemas.openxmlformats.org/officeDocument/2006/sharedTypes" schemaLocation="../ISO-IEC29500-4_2016/shared-commonSimpleTypes.xsd"/>
+   <xsd:import id="w12" namespace="http://schemas.openxmlformats.org/wordprocessingml/2006/main" schemaLocation="../ISO-IEC29500-4_2016/wml.xsd"/>
+   <xsd:attribute name="storeItemChecksum" type="s:ST_String"/>
  </xsd:schema>

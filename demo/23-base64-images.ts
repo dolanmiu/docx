@@ -13,6 +13,7 @@ const doc = new Document({
                     children: [
                         new TextRun("Hello World"),
                         new ImageRun({
+                            type: "bmp",
                             data: fs.readFileSync("./demo/images/parrots.bmp"),
                             transformation: {
                                 width: 100,
@@ -24,6 +25,7 @@ const doc = new Document({
                 new Paragraph({
                     children: [
                         new ImageRun({
+                            type: "jpg",
                             data: fs.readFileSync("./demo/images/image1.jpeg"),
                             transformation: {
                                 width: 100,
@@ -35,6 +37,7 @@ const doc = new Document({
                 new Paragraph({
                     children: [
                         new ImageRun({
+                            type: "png",
                             data: fs.readFileSync("./demo/images/dog.png"),
                             transformation: {
                                 width: 100,
@@ -46,6 +49,7 @@ const doc = new Document({
                 new Paragraph({
                     children: [
                         new ImageRun({
+                            type: "jpg",
                             data: fs.readFileSync("./demo/images/cat.jpg"),
                             transformation: {
                                 width: 100,
@@ -57,6 +61,7 @@ const doc = new Document({
                 new Paragraph({
                     children: [
                         new ImageRun({
+                            type: "bmp",
                             data: fs.readFileSync("./demo/images/parrots.bmp"),
                             transformation: {
                                 width: 100,
@@ -68,6 +73,7 @@ const doc = new Document({
                 new Paragraph({
                     children: [
                         new ImageRun({
+                            type: "png",
                             data: Buffer.from(imageBase64Data, "base64"),
                             transformation: {
                                 width: 100,

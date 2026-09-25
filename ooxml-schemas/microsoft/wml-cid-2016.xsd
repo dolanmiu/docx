@@ -1,5 +1,11 @@
- <xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:w12="http://schemas.openxmlformats.org/wordprocessingml/2006/main" elementFormDefault="qualified" attributeFormDefault="qualified" blockDefault="#all" xmlns="http://schemas.microsoft.com/office/word/2016/wordml/cid" targetNamespace="http://schemas.microsoft.com/office/word/2016/wordml/cid">
-   <xsd:import id="w12" namespace="http://schemas.openxmlformats.org/wordprocessingml/2006/main" schemaLocation="word12.xsd"/>
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- [MS-DOCX] 5.4, http://schemas.microsoft.com/office/word/2016/wordml/cid Schema: https://learn.microsoft.com/en-us/openspecs/office_standards/ms-docx/8e395dbe-ff70-43c3-b9fe-e758c8f69683 -->
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:w12="http://schemas.openxmlformats.org/wordprocessingml/2006/main" elementFormDefault="qualified" attributeFormDefault="qualified" blockDefault="#all" xmlns="http://schemas.microsoft.com/office/word/2016/wordml/cid" targetNamespace="http://schemas.microsoft.com/office/word/2016/wordml/cid">
+   <xsd:import id="w12" namespace="http://schemas.openxmlformats.org/wordprocessingml/2006/main" schemaLocation="../ISO-IEC29500-4_2016/wml.xsd"/>
+   <xsd:attributeGroup name="decimaldurableId">
+     <xsd:attribute name="durableId" type="w12:ST_DecimalNumber" use="optional"/>
+   </xsd:attributeGroup>
+   <xsd:attribute name="durableId" type="w12:ST_LongHexNumber"/>
    <xsd:complexType name="CT_CommentsIds">
      <xsd:sequence>
        <xsd:element name="commentId" type="CT_CommentId" minOccurs="0" maxOccurs="unbounded"/>

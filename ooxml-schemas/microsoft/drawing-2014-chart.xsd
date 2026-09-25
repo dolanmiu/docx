@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- [MS-ODRAWXML] 5.20, http://schemas.microsoft.com/office/drawing/2014/chart Schema: https://learn.microsoft.com/en-us/openspecs/office_standards/ms-odrawxml/40b8f1fc-b266-4f1f-90ec-d8ae7bafb140 -->
+<xsd:schema targetNamespace="http://schemas.microsoft.com/office/drawing/2014/chart" elementFormDefault="qualified" attributeFormDefault="unqualified" xmlns="http://schemas.microsoft.com/office/drawing/2014/chart" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart" xmlns:blockDefault="#all">
+   <xsd:import namespace="http://schemas.openxmlformats.org/drawingml/2006/chart" schemaLocation="../ISO-IEC29500-4_2016/dml-chart.xsd"/>
+   <xsd:import namespace="http://schemas.openxmlformats.org/drawingml/2006/main" schemaLocation="../ISO-IEC29500-4_2016/dml-main.xsd"/>
+   <xsd:complexType name="CT_ChartUniqueID">
+     <xsd:attribute name="val" type="xsd:string" use="required"/>
+   </xsd:complexType>
+   <xsd:complexType name="CT_ChartDataPointUniqueIDMapEntry">
+     <xsd:sequence>
+       <xsd:element name="ptidx" type="xsd:unsignedInt" minOccurs="1" maxOccurs="1"/>
+       <xsd:element name="uniqueID" type="CT_ChartUniqueID" minOccurs="1" maxOccurs="1"/>
+     </xsd:sequence>
+   </xsd:complexType>
+   <xsd:complexType name="CT_ChartDataPointUniqueIDMap">
+     <xsd:sequence>
+       <xsd:element name="ptentry" type="CT_ChartDataPointUniqueIDMapEntry" minOccurs="0" maxOccurs="unbounded"/>
+     </xsd:sequence>
+   </xsd:complexType>
+   <xsd:element name="datapointuniqueidmap" type="CT_ChartDataPointUniqueIDMap"/>
+   <xsd:complexType name="CT_BooleanFalse">
+     <xsd:attribute name="val" type="xsd:boolean" use="optional" default="false"/>
+   </xsd:complexType>
+   <xsd:element name="spPr" type="a:CT_ShapeProperties"/>
+   <xsd:element name="explosion" type="c:CT_UnsignedInt"/>
+   <xsd:element name="invertIfNegative" type="c:CT_Boolean"/>
+   <xsd:element name="bubble3D" type="c:CT_Boolean"/>
+   <xsd:element name="marker" type="c:CT_Marker"/>
+   <xsd:element name="dLbl" type="c:CT_DLbl"/>
+   <xsd:complexType name="CT_CategoryFilterException">
+     <xsd:sequence>
+       <xsd:element name="uniqueId" type="CT_ChartUniqueID" minOccurs="1" maxOccurs="1"/>
+       <xsd:element ref="spPr" minOccurs="0" maxOccurs="1"/>
+       <xsd:element ref="explosion" minOccurs="0" maxOccurs="1"/>
+       <xsd:element ref="invertIfNegative" minOccurs="0" maxOccurs="1"/>
+       <xsd:element ref="bubble3D" minOccurs="0" maxOccurs="1"/>
+       <xsd:element ref="marker" minOccurs="0" maxOccurs="1"/>
+       <xsd:element ref="dLbl" minOccurs="0" maxOccurs="1"/>
+     </xsd:sequence>
+   </xsd:complexType>
+   <xsd:complexType name="CT_CategoryFilterExceptions">
+     <xsd:sequence>
+       <xsd:element name="categoryFilterException" type="CT_CategoryFilterException" minOccurs="1" maxOccurs="unbounded"/>
+     </xsd:sequence>
+   </xsd:complexType>
+   <xsd:element name="categoryFilterExceptions" type="CT_CategoryFilterExceptions"/>
+   <xsd:complexType name="CT_NumFilteredLiteralCache">
+     <xsd:sequence>
+       <xsd:element name="numCache" type="c:CT_NumData" minOccurs="1" maxOccurs="1"/>
+     </xsd:sequence>
+   </xsd:complexType>
+   <xsd:complexType name="CT_StrFilteredLiteralCache">
+     <xsd:sequence>
+       <xsd:element name="strCache" type="c:CT_StrData" minOccurs="1" maxOccurs="1"/>
+     </xsd:sequence>
+   </xsd:complexType>
+   <xsd:complexType name="CT_MultiLvlStrFilteredLiteralCache">
+     <xsd:sequence>
+       <xsd:element name="multiLvlStrCache" type="c:CT_MultiLvlStrData" minOccurs="1" maxOccurs="1"/>
+     </xsd:sequence>
+   </xsd:complexType>
+   <xsd:complexType name="CT_LiteralDataChart">
+     <xsd:attribute name="val" type="xsd:boolean" use="required"/>
+   </xsd:complexType>
+   <xsd:complexType name="CT_PivotOptions16">
+     <xsd:sequence>
+       <xsd:element name="showExpandCollapseFieldButtons" type="CT_BooleanFalse" minOccurs="0" maxOccurs="1"/>
+     </xsd:sequence>
+   </xsd:complexType>
+   <xsd:element name="pivotOptions16" type="CT_PivotOptions16"/>
+ </xsd:schema>

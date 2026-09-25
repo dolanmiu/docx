@@ -5,6 +5,7 @@ import { AlignmentType } from "@file/paragraph";
 import { ShadingType } from "@file/shading";
 
 import { WidthType } from "../table-width";
+import { OverlapType, TableAnchorType } from "./table-float-properties";
 import { TableLayoutType } from "./table-layout";
 import { TableProperties } from "./table-properties";
 import { CellSpacingType } from "../table-cell-spacing";
@@ -103,6 +104,55 @@ describe("TableProperties", () => {
             const tree = new Formatter().format(tp);
             expect(tree).to.deep.equal({
                 "w:tblPr": [{ "w:tblCellSpacing": { _attr: { "w:type": "dxa", "w:w": 1234 } } }],
+            });
+        });
+
+        it("should write the cell spacing after the alignment and before the indent and borders, as the schema requires", () => {
+            const tp = new TableProperties({
+                cellSpacing: {
+                    value: 1234,
+                    type: CellSpacingType.DXA,
+                },
+                tableLook: { firstRow: true },
+                borders: {},
+                indent: { size: 100, type: WidthType.DXA },
+                alignment: AlignmentType.CENTER,
+                width: { size: 5000, type: WidthType.DXA },
+            });
+            const tree = new Formatter().format(tp);
+            const elements = (tree["w:tblPr"] as readonly Record<string, unknown>[]).map((child) => Object.keys(child)[0]);
+            expect(elements).to.deep.equal(["w:tblW", "w:jc", "w:tblCellSpacing", "w:tblInd", "w:tblBorders", "w:tblLook"]);
+        });
+
+        it("should write a floating table's overlap beside w:tblpPr, not inside it", () => {
+            const tp = new TableProperties({
+                style: "TableNormal",
+                float: {
+                    horizontalAnchor: TableAnchorType.MARGIN,
+                    overlap: OverlapType.NEVER,
+                },
+                visuallyRightToLeft: true,
+            });
+            const tree = new Formatter().format(tp);
+            expect(tree).to.deep.equal({
+                "w:tblPr": [
+                    { "w:tblStyle": { _attr: { "w:val": "TableNormal" } } },
+                    { "w:tblpPr": { _attr: { "w:horzAnchor": "margin" } } },
+                    { "w:tblOverlap": { _attr: { "w:val": "never" } } },
+                    { "w:bidiVisual": {} },
+                ],
+            });
+        });
+
+        it("should not write an overlap for a floating table without one", () => {
+            const tp = new TableProperties({
+                float: {
+                    horizontalAnchor: TableAnchorType.MARGIN,
+                },
+            });
+            const tree = new Formatter().format(tp);
+            expect(tree).to.deep.equal({
+                "w:tblPr": [{ "w:tblpPr": { _attr: { "w:horzAnchor": "margin" } } }],
             });
         });
 
@@ -232,6 +282,16 @@ describe("TableProperties", () => {
                         "w:bidiVisual": {},
                     },
                 ],
+            });
+        });
+
+        it("writes a table that isn't visually right to left as off, the only false value Office takes there", () => {
+            const tp = new TableProperties({
+                visuallyRightToLeft: false,
+            });
+            const tree = new Formatter().format(tp);
+            expect(tree).to.deep.equal({
+                "w:tblPr": [{ "w:bidiVisual": { _attr: { "w:val": "off" } } }],
             });
         });
     });

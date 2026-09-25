@@ -220,4 +220,29 @@ describe("font", () => {
             ]),
         });
     });
+
+    it("should write a lower-case font key in upper case, as ST_Guid only allows upper-case hex digits", () => {
+        const tree = new Formatter().format(
+            createFont({
+                name: "Times New Roman",
+                embedRegular: {
+                    id: "rId0",
+                    fontKey: "8fe2cf26-5e68-f0dc-37a8-b5d5c909da91",
+                },
+            }),
+        );
+
+        expect(tree).toStrictEqual({
+            "w:font": expect.arrayContaining([
+                {
+                    "w:embedRegular": {
+                        _attr: {
+                            "r:id": "rId0",
+                            "w:fontKey": "{8FE2CF26-5E68-F0DC-37A8-B5D5C909DA91}",
+                        },
+                    },
+                },
+            ]),
+        });
+    });
 });

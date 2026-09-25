@@ -98,6 +98,7 @@ const doc = new Document({
                         new ExternalHyperlink({
                             children: [
                                 new ImageRun({
+                                    type: "jpg",
                                     data: fs.readFileSync("./demo/images/image1.jpeg"),
                                     transformation: {
                                         width: 100,

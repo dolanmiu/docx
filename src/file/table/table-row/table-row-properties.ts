@@ -49,9 +49,10 @@
  */
 import { DeletedTableRow, InsertedTableRow } from "@file/track-revision";
 import { ChangeAttributes, type IChangedAttributesProperties } from "@file/track-revision/track-revision";
-import { IgnoreIfEmptyXmlComponent, OnOffElement, XmlComponent } from "@file/xml-components";
+import { IgnoreIfEmptyXmlComponent, XmlComponent } from "@file/xml-components";
 import type { PositiveUniversalMeasure } from "@util/values";
 
+import { createOnOffOnlyElement } from "../on-off-only-element";
 import { type HeightRule, createTableRowHeight } from "./table-row-height";
 import { type ITableCellSpacingProperties, createTableCellSpacing } from "../table-cell-spacing";
 
@@ -110,11 +111,11 @@ export class TableRowProperties extends IgnoreIfEmptyXmlComponent {
         super("w:trPr", options.includeIfEmpty);
 
         if (options.cantSplit !== undefined) {
-            this.root.push(new OnOffElement("w:cantSplit", options.cantSplit));
+            this.root.push(createOnOffOnlyElement("w:cantSplit", options.cantSplit));
         }
 
         if (options.tableHeader !== undefined) {
-            this.root.push(new OnOffElement("w:tblHeader", options.tableHeader));
+            this.root.push(createOnOffOnlyElement("w:tblHeader", options.tableHeader));
         }
 
         if (options.height) {

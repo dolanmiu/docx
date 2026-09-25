@@ -23,6 +23,72 @@ describe("Level", () => {
         });
     });
 
+    it("writes its children in the schema's order", () => {
+        const tree = new Formatter().format(
+            new Level({
+                level: 0,
+                format: LevelFormat.DECIMAL,
+                text: "%1.",
+                suffix: LevelSuffix.SPACE,
+                isLegalNumberingStyle: true,
+                style: { style: "ListHeading", paragraph: { indent: { left: 720 } }, run: { bold: true } },
+            }),
+        );
+
+        expect(tree["w:lvl"].map((child: object) => Object.keys(child)[0])).to.deep.equal([
+            "w:start",
+            "w:numFmt",
+            "w:pStyle",
+            "w:isLgl",
+            "w:suff",
+            "w:lvlText",
+            "w:lvlJc",
+            "w:pPr",
+            "w:rPr",
+            "_attr",
+        ]);
+    });
+
+    it("leaves highlight, math and revision out of its run properties, since Office doesn't allow them for a number", () => {
+        const tree = new Formatter().format(
+            new Level({
+                level: 0,
+                style: {
+                    run: {
+                        bold: true,
+                        highlight: "yellow",
+                        math: true,
+                        revision: { id: 1, author: "Firstname Lastname", date: "123", bold: false },
+                    },
+                },
+            }),
+        );
+
+        expect(tree["w:lvl"].find((child: object) => "w:rPr" in child)).to.deep.equal({ "w:rPr": [{ "w:b": {} }, { "w:bCs": {} }] });
+    });
+
+    describe("alignment", () => {
+        const levelAlignment = (alignment: (typeof AlignmentType)[keyof typeof AlignmentType]): unknown =>
+            new Formatter().format(new Level({ level: 0, alignment }))["w:lvl"].find((child: object) => "w:lvlJc" in child);
+
+        it("writes left, center and right as they are, since they're the only values Office allows for a level", () => {
+            expect(levelAlignment(AlignmentType.LEFT)).to.deep.equal({ "w:lvlJc": { _attr: { "w:val": "left" } } });
+            expect(levelAlignment(AlignmentType.CENTER)).to.deep.equal({ "w:lvlJc": { _attr: { "w:val": "center" } } });
+            expect(levelAlignment(AlignmentType.RIGHT)).to.deep.equal({ "w:lvlJc": { _attr: { "w:val": "right" } } });
+        });
+
+        it("writes start as left and end as right", () => {
+            expect(levelAlignment(AlignmentType.START)).to.deep.equal({ "w:lvlJc": { _attr: { "w:val": "left" } } });
+            expect(levelAlignment(AlignmentType.END)).to.deep.equal({ "w:lvlJc": { _attr: { "w:val": "right" } } });
+        });
+
+        it("writes the justified alignments as left", () => {
+            expect(levelAlignment(AlignmentType.JUSTIFIED)).to.deep.equal({ "w:lvlJc": { _attr: { "w:val": "left" } } });
+            expect(levelAlignment(AlignmentType.DISTRIBUTE)).to.deep.equal({ "w:lvlJc": { _attr: { "w:val": "left" } } });
+            expect(levelAlignment(AlignmentType.THAI_DISTRIBUTE)).to.deep.equal({ "w:lvlJc": { _attr: { "w:val": "left" } } });
+        });
+    });
+
     describe("isLegalNumberingStyle", () => {
         it("should work", () => {
             const concreteNumbering = new Level({
@@ -45,13 +111,13 @@ describe("Level", () => {
                     {
                         "w:lvlJc": {
                             _attr: {
-                                "w:val": "start",
+                                "w:val": "left",
                             },
                         },
                     },
                     {
                         _attr: {
-                            "w15:tentative": 1,
+                            "w:tentative": 1,
                             "w:ilvl": 9,
                         },
                     },

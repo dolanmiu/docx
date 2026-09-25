@@ -8,7 +8,7 @@
  * @module
  */
 import type { IDefaultStylesOptions } from "@file/styles/factory";
-import { type BaseXmlComponent, type ImportedXmlComponent, XmlComponent } from "@file/xml-components";
+import { type BaseXmlComponent, type IContext, type IXmlableObject, type ImportedXmlComponent, XmlComponent } from "@file/xml-components";
 
 import { StyleForCharacter, StyleForParagraph } from "./style";
 import type { ICharacterStyleOptions } from "./style/character-style";
@@ -26,7 +26,10 @@ import type { IParagraphStyleOptions } from "./style/paragraph-style";
  * @see {@link Styles}
  */
 export type IStylesOptions = {
-    /** Default styles for document, headings, and common elements */
+    /**
+     * Default styles for document, headings, and common elements. With `externalStyles`, each one given here takes the
+     * place of the external style with its id, or of the external document defaults
+     */
     readonly default?: IDefaultStylesOptions;
     /** Initial base XML component for styles root element */
     readonly initialStyles?: BaseXmlComponent;
@@ -37,6 +40,12 @@ export type IStylesOptions = {
     /** Array of styles imported from external sources */
     readonly importedStyles?: readonly (XmlComponent | StyleForParagraph | StyleForCharacter | ImportedXmlComponent)[];
 };
+
+/** The name of a formatted element, such as `w:style`, or `_attr` for its parent's attributes */
+const nameOf = (child: unknown): string | undefined => (typeof child === "object" ? Object.keys(child as object)[0] : undefined);
+
+/** The id of a formatted `w:style` */
+const styleIdOf = (style: IXmlableObject): string | undefined => [style["w:style"]].flat().find((part) => part._attr)?._attr["w:styleId"];
 
 /**
  * Represents the styles definitions in a WordprocessingML document.
@@ -101,5 +110,29 @@ export class Styles extends XmlComponent {
                 this.root.push(new StyleForCharacter(style));
             }
         }
+    }
+
+    /**
+     * Writes the styles in the schema's order: the document defaults, the latent styles, then the styles. A style id
+     * can only be used once, so a style replaces an earlier one with its id. That way external styles replace docx's
+     * default styles, and paragraph and character styles replace the default and imported ones. Of several document
+     * defaults, or several latent styles, the last is kept.
+     */
+    public prepForXml(context: IContext): IXmlableObject {
+        const xml = super.prepForXml(context) as IXmlableObject;
+        const children: unknown = xml["w:styles"];
+        if (!Array.isArray(children)) {
+            return xml;
+        }
+        const named = (name: string): readonly unknown[] => children.filter((child) => nameOf(child) === name);
+        const ids = children.map((child) => (nameOf(child) === "w:style" ? styleIdOf(child) : undefined));
+        const styles = children.filter(
+            (child, index) =>
+                !["_attr", "w:docDefaults", "w:latentStyles"].includes(nameOf(child) as string) &&
+                (ids[index] === undefined || ids.lastIndexOf(ids[index]) === index),
+        );
+        return {
+            "w:styles": [...named("_attr"), ...named("w:docDefaults").slice(-1), ...named("w:latentStyles").slice(-1), ...styles],
+        };
     }
 }

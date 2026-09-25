@@ -74,4 +74,14 @@ export abstract class BaseXmlComponent {
      * @returns The XML-serializable object, or undefined to exclude from output
      */
     public abstract prepForXml(context: IContext): IXmlableObject | undefined;
+
+    /**
+     * The components written in this one's place, one after another, when it can't be written as a single element,
+     * such as a run with another run in its children. Undefined when it is written as itself.
+     *
+     * @internal
+     */
+    public get writtenAs(): readonly BaseXmlComponent[] | undefined {
+        return undefined;
+    }
 }

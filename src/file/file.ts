@@ -27,8 +27,9 @@ import { Relationships } from "./relationships";
 import { Settings } from "./settings";
 import { Styles } from "./styles";
 import { ExternalStylesFactory } from "./styles/external-styles-factory";
-import { DefaultStylesFactory } from "./styles/factory";
+import { DefaultStylesFactory, createDefaultStyles } from "./styles/factory";
 import { Theme } from "./theme";
+import type { XmlComponent } from "./xml-components";
 
 /**
  * Options for a document section.
@@ -217,13 +218,20 @@ export class File {
         this.media = new Media();
 
         if (options.externalStyles !== undefined) {
-            const defaultFactory = new DefaultStylesFactory();
-            const defaultStyles = defaultFactory.newInstance(options.styles?.default);
+            const given = options.styles?.default ?? {};
+            const defaultStyles = Object.entries(createDefaultStyles(given));
+            const isGiven = ([key]: readonly [string, XmlComponent]): boolean => given[key as keyof typeof given] !== undefined;
             const externalFactory = new ExternalStylesFactory();
             const externalStyles = externalFactory.newInstance(options.externalStyles);
+            // A style replaces an earlier one with its id. So the external styles replace docx's default styles, and the
+            // default styles given in styles.default replace the external ones
             this.styles = new Styles({
                 ...externalStyles,
-                importedStyles: [...defaultStyles.importedStyles!, ...externalStyles.importedStyles!],
+                importedStyles: [
+                    ...defaultStyles.filter((entry) => !isGiven(entry)).map(([, style]) => style),
+                    ...externalStyles.importedStyles!,
+                    ...defaultStyles.filter(isGiven).map(([, style]) => style),
+                ],
             });
         } else if (options.styles) {
             const stylesFactory = new DefaultStylesFactory();

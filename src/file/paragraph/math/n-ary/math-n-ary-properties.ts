@@ -61,7 +61,7 @@ export const createMathNAryProperties = ({
         children: [
             ...(!!accent ? [createMathAccentCharacter({ accent })] : []),
             createMathLimitLocation({ value: limitLocationVal }),
-            ...(!hasSuperScript ? [createMathSuperScriptHide()] : []),
             ...(!hasSubScript ? [createMathSubScriptHide()] : []),
+            ...(!hasSuperScript ? [createMathSuperScriptHide()] : []),
         ],
     });

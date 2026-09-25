@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- [MS-ODRAWXML] 5.14, http://schemas.microsoft.com/office/drawing/2012/main Schema: https://learn.microsoft.com/en-us/openspecs/office_standards/ms-odrawxml/a87e4aa0-8ba3-41f1-a6a3-67c2afcca6b3 -->
+<xsd:schema xmlns:s="http://schemas.openxmlformats.org/officeDocument/2006/sharedTypes" targetNamespace="http://schemas.microsoft.com/office/drawing/2012/main" elementFormDefault="qualified" xmlns="http://schemas.microsoft.com/office/drawing/2012/main" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">
+   <xsd:import namespace="http://schemas.openxmlformats.org/officeDocument/2006/sharedTypes" schemaLocation="../ISO-IEC29500-4_2016/shared-commonSimpleTypes.xsd"/>
+   <xsd:import namespace="http://schemas.openxmlformats.org/drawingml/2006/main" schemaLocation="../ISO-IEC29500-4_2016/dml-main.xsd"/>
+   <xsd:simpleType name="ST_TargetScreenSz">
+     <xsd:restriction base="xsd:token">
+       <xsd:enumeration value="544x376"/>
+       <xsd:enumeration value="640x480"/>
+       <xsd:enumeration value="720x512"/>
+       <xsd:enumeration value="800x600"/>
+       <xsd:enumeration value="1024x768"/>
+       <xsd:enumeration value="1152x882"/>
+       <xsd:enumeration value="1152x900"/>
+       <xsd:enumeration value="1280x1024"/>
+       <xsd:enumeration value="1600x1200"/>
+       <xsd:enumeration value="1800x1440"/>
+       <xsd:enumeration value="1920x1200"/>
+     </xsd:restriction>
+   </xsd:simpleType>
+   <xsd:complexType name="CT_BackgroundPr">
+     <xsd:attribute name="bwMode" type="a:ST_BlackWhiteMode"/>
+     <xsd:attribute name="bwPure" type="a:ST_BlackWhiteMode"/>
+     <xsd:attribute name="bwNormal" type="a:ST_BlackWhiteMode"/>
+     <xsd:attribute name="targetScreenSize" type="ST_TargetScreenSz"/>
+   </xsd:complexType>
+   <xsd:element name="backgroundPr" type="CT_BackgroundPr"/>
+   <xsd:complexType name="CT_NonVisualGroupProps">
+     <xsd:attribute name="isLegacyGroup" type="xsd:boolean"/>
+   </xsd:complexType>
+   <xsd:element name="nonVisualGroupProps" type="CT_NonVisualGroupProps"/>
+   <xsd:complexType name="CT_ObjectPr">
+     <xsd:attribute name="objectId" type="xsd:string"/>
+     <xsd:attribute name="isActiveX" type="xsd:boolean"/>
+     <xsd:attribute name="linkType" type="xsd:string"/>
+   </xsd:complexType>
+   <xsd:element name="objectPr" type="CT_ObjectPr"/>
+   <xsd:complexType name="CT_SignatureLine">
+     <xsd:attribute name="isSignatureLine" type="xsd:boolean"/>
+     <xsd:attribute name="id" type="s:ST_Guid"/>
+     <xsd:attribute name="provId" type="s:ST_Guid"/>
+     <xsd:attribute name="signingInstructionsSet" type="xsd:boolean"/>
+     <xsd:attribute name="allowComments" type="xsd:boolean"/>
+     <xsd:attribute name="showSignDate" type="xsd:boolean"/>
+     <xsd:attribute name="suggestedSigner" type="xsd:string"/>
+     <xsd:attribute name="suggestedSigner2" type="xsd:string"/>
+     <xsd:attribute name="suggestedSignerEmail" type="xsd:string"/>
+     <xsd:attribute name="signingInstructions" type="xsd:string"/>
+     <xsd:attribute name="addlXml" type="xsd:string"/>
+     <xsd:attribute name="sigProvUrl" type="xsd:string"/>
+   </xsd:complexType>
+   <xsd:element name="signatureLine" type="CT_SignatureLine"/>
+ </xsd:schema>

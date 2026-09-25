@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- [MS-ODRAWXML] 5.23, http://schemas.microsoft.com/office/drawing/2014/main Schema: https://learn.microsoft.com/en-us/openspecs/office_standards/ms-odrawxml/55a2958e-599f-46a0-8812-029155d485cb -->
+<xsd:schema xmlns:s="http://schemas.openxmlformats.org/officeDocument/2006/sharedTypes" targetNamespace="http://schemas.microsoft.com/office/drawing/2014/main" xmlns="http://schemas.microsoft.com/office/drawing/2014/main" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" elementFormDefault="qualified" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+   <xsd:import namespace="http://schemas.openxmlformats.org/officeDocument/2006/sharedTypes" schemaLocation="../ISO-IEC29500-4_2016/shared-commonSimpleTypes.xsd"/>
+   <xsd:import namespace="http://schemas.openxmlformats.org/drawingml/2006/main" schemaLocation="../ISO-IEC29500-4_2016/dml-main.xsd"/>
+   <xsd:complexType name="CT_CreationId">
+     <xsd:attribute name="id" type="s:ST_Guid" use="optional"/>
+   </xsd:complexType>
+   <xsd:complexType name="CT_PredecessorDrawingElementReference">
+     <xsd:attribute name="pred" type="s:ST_Guid" use="optional"/>
+   </xsd:complexType>
+   <xsd:complexType name="CT_ConnectableReferences">
+     <xsd:attribute name="st" type="s:ST_Guid" use="optional"/>
+     <xsd:attribute name="end" type="s:ST_Guid" use="optional"/>
+   </xsd:complexType>
+   <xsd:element name="creationId" type="CT_CreationId"/>
+   <xsd:element name="predDERef" type="CT_PredecessorDrawingElementReference"/>
+   <xsd:element name="cxnDERefs" type="CT_ConnectableReferences"/>
+   <xsd:complexType name="CT_Identifier">
+     <xsd:attribute name="val" type="xsd:unsignedInt" use="required"/>
+   </xsd:complexType>
+   <xsd:element name="rowId" type="CT_Identifier"/>
+   <xsd:element name="colId" type="CT_Identifier"/>
+ </xsd:schema>

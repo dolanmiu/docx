@@ -3,6 +3,7 @@ import type { Element } from "xml-js";
 
 import type { IViewWrapper } from "@file/document-wrapper";
 import type { File } from "@file/file";
+import { FootnoteReferenceRun } from "@file/footnotes/footnote/run/reference-run";
 import { ConcreteHyperlink, Paragraph, type ParagraphChild, TextRun } from "@file/paragraph";
 
 import { PatchType } from "./from-docx";
@@ -975,6 +976,18 @@ describe("replacer", () => {
                 expect(textsOf({ elements: [body] })).to.deep.equal(["X", "END", "X"]);
             });
 
+            it("should write a run with a footnote reference in its children as runs side by side, not one inside another", () => {
+                const paragraph = createParagraph(createRun(createText("{{ph}}")));
+
+                replaceWith({ elements: [paragraph] }, [new TextRun({ children: ["X", new FootnoteReferenceRun(1)] })]);
+
+                const runs = (paragraph.elements ?? []).filter((element) => element.name === "w:r");
+                expect(runs.flatMap((run) => namesOf(run.elements)))
+                    .to.include("w:footnoteReference")
+                    .and.not.include("w:r");
+                expect(textsOf({ elements: [paragraph] })).to.deep.equal(["X"]);
+            });
+
             it("should replace every occurrence in a paragraph", () => {
                 const paragraph = createParagraph(createRun(createText("{{ph}} and {{ph}}")));
 
@@ -1051,10 +1064,72 @@ describe("replacer", () => {
                 const insertedRun = paragraph.elements![1];
                 expect(namesOf(insertedRun.elements)).to.deep.equal(["w:rPr", "w:t"]);
                 expect(insertedRun.elements![0].elements).toMatchObject([
-                    { name: "w:i" },
                     { name: "w:b" },
                     { name: "w:bCs" },
+                    { name: "w:i" },
                     { name: "w:color", attributes: { "w:val": "00FF00" } },
+                ]);
+            });
+
+            it("should put the merged run properties in the schema's order, whichever run they come from", () => {
+                const originalProperties: Element = {
+                    type: "element",
+                    name: "w:rPr",
+                    elements: [
+                        { type: "element", name: "w:sz", attributes: { "w:val": "56" } },
+                        { type: "element", name: "w:szCs", attributes: { "w:val": "56" } },
+                    ],
+                };
+                const paragraph = createParagraph(createRun(originalProperties, createText("{{ph}}")));
+
+                replaceWith({ elements: [paragraph] }, [new TextRun({ text: "X", font: "Trebuchet MS", underline: {} })]);
+
+                expect(namesOf(paragraph.elements![1].elements![0].elements)).to.deep.equal(["w:rFonts", "w:sz", "w:szCs", "w:u"]);
+            });
+
+            it("should put Word 2010's run properties after the others, and properties it doesn't know after those", () => {
+                const originalProperties: Element = {
+                    type: "element",
+                    name: "w:rPr",
+                    elements: [
+                        { type: "element", name: "w14:ligatures", attributes: { "w14:val": "standard" } },
+                        { type: "element", name: "w16:unknown" },
+                        { type: "element", name: "w14:textOutline" },
+                        { type: "element", name: "w:lang", attributes: { "w:val": "en-GB" } },
+                    ],
+                };
+                const paragraph = createParagraph(createRun(originalProperties, createText("{{ph}}")));
+
+                replaceWith({ elements: [paragraph] }, [new TextRun({ text: "X", bold: true })]);
+
+                expect(namesOf(paragraph.elements![1].elements![0].elements)).to.deep.equal([
+                    "w:b",
+                    "w:bCs",
+                    "w:lang",
+                    "w14:textOutline",
+                    "w14:ligatures",
+                    "w16:unknown",
+                ]);
+            });
+
+            it("should keep content without a name, such as an XML comment, after the run properties", () => {
+                const originalProperties: Element = {
+                    type: "element",
+                    name: "w:rPr",
+                    elements: [
+                        { type: "comment", comment: "kept" },
+                        { type: "element", name: "w:i" },
+                    ],
+                };
+                const paragraph = createParagraph(createRun(originalProperties, createText("{{ph}}")));
+
+                replaceWith({ elements: [paragraph] }, [new TextRun({ text: "X", bold: true })]);
+
+                expect(paragraph.elements![1].elements![0].elements!.map((e) => e.name ?? e.type)).to.deep.equal([
+                    "w:b",
+                    "w:bCs",
+                    "w:i",
+                    "comment",
                 ]);
             });
 
@@ -1071,7 +1146,7 @@ describe("replacer", () => {
 
                 replaceWith({ elements: [paragraph] }, [new TextRun({ text: "X", bold: true })]);
 
-                expect(namesOf(paragraph.elements![1].elements![0].elements)).to.deep.equal(["w:i", "w:b", "w:bCs", "w:rPrChange"]);
+                expect(namesOf(paragraph.elements![1].elements![0].elements)).to.deep.equal(["w:b", "w:bCs", "w:i", "w:rPrChange"]);
             });
 
             it("should keep a run's own properties when the placeholder's w:rPr is empty", () => {

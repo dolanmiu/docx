@@ -6,7 +6,7 @@ import { Paragraph } from "@file/paragraph";
 import { createVmlTextbox } from "./vml-texbox";
 
 describe("VmlTextbox", () => {
-    it("should work", () => {
+    it("should write the style, and no o:insetmode, which Office only takes on the shape", () => {
         const tree = new Formatter().format(
             createVmlTextbox({
                 style: "test-style",
@@ -16,13 +16,13 @@ describe("VmlTextbox", () => {
 
         expect(tree).toStrictEqual({
             "v:textbox": [
-                { _attr: { insetmode: "auto", style: "test-style" } },
+                { _attr: { style: "test-style" } },
                 { "w:txbxContent": [{ "w:p": [{ "w:r": [{ "w:t": [{ _attr: { "xml:space": "preserve" } }, "test-content"] }] }] }] },
             ],
         });
     });
 
-    it("should work with inset", () => {
+    it("should write the inset as left, top, right and bottom", () => {
         const tree = new Formatter().format(
             createVmlTextbox({
                 style: "test-style",
@@ -38,7 +38,7 @@ describe("VmlTextbox", () => {
 
         expect(tree).toStrictEqual({
             "v:textbox": [
-                { _attr: { insetmode: "custom", style: "test-style", inset: "0, 0, 0, 0" } },
+                { _attr: { style: "test-style", inset: "0, 0, 0, 0" } },
                 { "w:txbxContent": [{ "w:p": [{ "w:r": [{ "w:t": [{ _attr: { "xml:space": "preserve" } }, "test-content"] }] }] }] },
             ],
         });

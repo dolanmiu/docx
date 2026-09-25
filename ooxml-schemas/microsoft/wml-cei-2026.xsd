@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- [MS-DOCX] 5.10, http://schemas.microsoft.com/office/word/2026/wordml/cei Schema: https://learn.microsoft.com/en-us/openspecs/office_standards/ms-docx/4c5c0c9a-50e6-4d50-a387-9e5aceecd2f9 -->
+<xsd:schema xmlns:w16="http://schemas.microsoft.com/office/word/2018/wordml" xmlns:xsd="http://www.w3.org/2001/XMLSchema" blockDefault="#all" xmlns="http://schemas.microsoft.com/office/word/2026/wordml/cei" targetNamespace="http://schemas.microsoft.com/office/word/2026/wordml/cei" elementFormDefault="qualified" attributeFormDefault="qualified">
+   <xsd:import id="w16" namespace="http://schemas.microsoft.com/office/word/2018/wordml" schemaLocation="wml-2018.xsd"/>
+   <xsd:complexType name="CT_CommentEntityInfo">
+     <xsd:sequence>
+       <xsd:element name="extLst" type="w16:CT_ExtensionList" minOccurs="0" maxOccurs="1"/>
+     </xsd:sequence>
+     <xsd:attribute name="entityType" type="xsd:unsignedInt" use="optional" default="0"/>
+   </xsd:complexType>
+   <xsd:element name="commentEntityInfo" type="CT_CommentEntityInfo"/>
+ </xsd:schema>

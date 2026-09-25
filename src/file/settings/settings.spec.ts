@@ -197,6 +197,37 @@ describe("Settings", () => {
             });
         });
 
+        it("should write every setting in the schema's order, whatever order the options are given in", () => {
+            const settings = new Settings({
+                updateFields: true,
+                evenAndOddHeaders: true,
+                hyphenation: {
+                    doNotHyphenateCaps: true,
+                    hyphenationZone: 200,
+                    consecutiveHyphenLimit: 3,
+                    autoHyphenation: true,
+                },
+                defaultTabStop: 100,
+                trackRevisions: true,
+            });
+
+            const tree = new Formatter().format(settings);
+            const elements = (tree["w:settings"] as readonly Record<string, unknown>[]).map((child) => Object.keys(child)[0]);
+            expect(elements).to.deep.equal([
+                "_attr",
+                "w:displayBackgroundShape",
+                "w:trackRevisions",
+                "w:defaultTabStop",
+                "w:autoHyphenation",
+                "w:consecutiveHyphenLimit",
+                "w:hyphenationZone",
+                "w:doNotHyphenateCaps",
+                "w:evenAndOddHeaders",
+                "w:updateFields",
+                "w:compat",
+            ]);
+        });
+
         // TODO: Remove when deprecating compatibilityModeVersion
         it("should add compatibility setting with legacy version", () => {
             const settings = new Settings({

@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- [MS-ODRAWXML] 5.10, http://schemas.microsoft.com/office/drawing/2007/8/2/chart Schema: https://learn.microsoft.com/en-us/openspecs/office_standards/ms-odrawxml/070bea84-2201-463c-aeaa-cf258492b5b5 -->
+<xsd:schema targetNamespace="http://schemas.microsoft.com/office/drawing/2007/8/2/chart" elementFormDefault="qualified" attributeFormDefault="unqualified" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns="http://schemas.microsoft.com/office/drawing/2007/8/2/chart" blockDefault="#all" xmlns:cdr="http://schemas.openxmlformats.org/drawingml/2006/chartDrawing" xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart">
+   <xsd:import namespace="http://schemas.openxmlformats.org/drawingml/2006/main" schemaLocation="../ISO-IEC29500-4_2016/dml-main.xsd"/>
+   <xsd:import namespace="http://schemas.openxmlformats.org/drawingml/2006/main" schemaLocation="../ISO-IEC29500-4_2016/dml-main.xsd"/>
+   <xsd:import namespace="http://schemas.openxmlformats.org/drawingml/2006/main" schemaLocation="../ISO-IEC29500-4_2016/dml-main.xsd"/>
+   <xsd:import namespace="http://schemas.openxmlformats.org/officeDocument/2006/relationships" schemaLocation="../ISO-IEC29500-4_2016/shared-relationshipReference.xsd"/>
+   <xsd:import namespace="http://schemas.openxmlformats.org/drawingml/2006/chartDrawing" schemaLocation="../ISO-IEC29500-4_2016/dml-chartDrawing.xsd"/>
+   <xsd:import namespace="http://schemas.openxmlformats.org/drawingml/2006/chart" schemaLocation="../ISO-IEC29500-4_2016/dml-chart.xsd"/>
+   <xsd:complexType name="CT_BooleanTrue">
+     <xsd:attribute name="val" type="xsd:boolean" use="optional" default="true"/>
+   </xsd:complexType>
+   <xsd:complexType name="CT_BooleanFalse">
+     <xsd:attribute name="val" type="xsd:boolean" use="optional" default="false"/>
+   </xsd:complexType>
+   <xsd:complexType name="CT_InvertSolidFillFmt">
+     <xsd:sequence>
+       <xsd:element name="spPr" type="a:CT_ShapeProperties" minOccurs="1" maxOccurs="1"/>
+     </xsd:sequence>
+   </xsd:complexType>
+   <xsd:complexType name="CT_PivotOptions">
+     <xsd:sequence>
+       <xsd:element name="dropZoneFilter" type="CT_BooleanFalse" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="dropZoneCategories" type="CT_BooleanFalse" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="dropZoneData" type="CT_BooleanFalse" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="dropZoneSeries" type="CT_BooleanFalse" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="dropZonesVisible" type="CT_BooleanFalse" minOccurs="0" maxOccurs="1"/>
+     </xsd:sequence>
+   </xsd:complexType>
+   <xsd:simpleType name="ST_Style">
+     <xsd:restriction base="xsd:unsignedByte">
+       <xsd:minInclusive value="101"/>
+       <xsd:maxInclusive value="148"/>
+     </xsd:restriction>
+   </xsd:simpleType>
+   <xsd:complexType name="CT_Style">
+     <xsd:attribute name="val" type="ST_Style" use="required"/>
+   </xsd:complexType>
+   <xsd:element name="pivotOptions" type="CT_PivotOptions"/>
+   <xsd:element name="invertSolidFillFmt" type="CT_InvertSolidFillFmt"/>
+   <xsd:element name="style" type="CT_Style"/>
+ </xsd:schema>

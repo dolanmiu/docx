@@ -35,6 +35,31 @@ describe("Compatibility", () => {
                 ],
             });
         });
+
+        it("should write the compatibility mode after the other compatibility options, as the schema requires", () => {
+            const compatibility = new Compatibility({
+                version: 15,
+                useSingleBorderforContiguousCells: true,
+                cachedColumnBalance: true,
+            });
+
+            const tree = new Formatter().format(compatibility);
+            expect(tree).to.deep.equal({
+                "w:compat": [
+                    { "w:useSingleBorderforContiguousCells": {} },
+                    { "w:cachedColBalance": {} },
+                    {
+                        "w:compatSetting": {
+                            _attr: {
+                                "w:name": "compatibilityMode",
+                                "w:uri": "http://schemas.microsoft.com/office/word",
+                                "w:val": 15,
+                            },
+                        },
+                    },
+                ],
+            });
+        });
     });
 
     describe("#useSingleBorderforContiguousCells", () => {

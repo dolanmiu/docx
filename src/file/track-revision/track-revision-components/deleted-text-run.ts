@@ -5,14 +5,14 @@
  *
  * @module
  */
-import { XmlComponent } from "@file/xml-components";
+import { type BaseXmlComponent, XmlComponent } from "@file/xml-components";
 
 import { DeletedNumberOfPages, DeletedNumberOfPagesSection, DeletedPage } from "./deleted-page-number";
 import { DeletedText } from "./deleted-text";
 import { createBreak } from "../../paragraph/run/break";
 import { createBegin, createEnd, createSeparate } from "../../paragraph/run/field";
 import { RunProperties } from "../../paragraph/run/properties";
-import { type IRunOptions, PageNumber } from "../../paragraph/run/run";
+import { type IRunOptions, PageNumber, Run } from "../../paragraph/run/run";
 import { ChangeAttributes, type IChangedAttributesProperties } from "../track-revision";
 
 /**
@@ -101,12 +101,26 @@ export class DeletedTextRun extends XmlComponent {
  * @internal
  */
 class DeletedTextRunWrapper extends XmlComponent {
+    // A run given in the children, such as a FootnoteReferenceRun, and the run of the children after it
+    private readonly following: readonly XmlComponent[] = [];
+
     public constructor(options: IRunOptions) {
         super("w:r");
         this.root.push(new RunProperties(options));
 
         if (options.children) {
-            for (const child of options.children) {
+            for (const [index, child] of options.children.entries()) {
+                if (child instanceof Run) {
+                    // A run can't be inside another, so this run ends before it, and the children after it go in a run
+                    // with this run's properties
+                    const rest = options.children.slice(index + 1);
+                    this.following = [
+                        child,
+                        ...(rest.length > 0 ? [new DeletedTextRunWrapper({ ...options, break: undefined, children: rest })] : []),
+                    ];
+                    break;
+                }
+
                 if (typeof child === "string") {
                     switch (child) {
                         case PageNumber.CURRENT:
@@ -145,5 +159,10 @@ class DeletedTextRunWrapper extends XmlComponent {
                 this.root.splice(1, 0, createBreak());
             }
         }
+    }
+
+    public get writtenAs(): readonly BaseXmlComponent[] | undefined {
+        // This run, then the ones after it, each written as it would be on its own
+        return this.following.length > 0 ? [this, ...this.following.flatMap((run) => run.writtenAs ?? run)] : undefined;
     }
 }

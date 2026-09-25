@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- [MS-ODRAWXML] 5.9, http://schemas.microsoft.com/office/excel/2010/spreadsheetDrawing Schema: https://learn.microsoft.com/en-us/openspecs/office_standards/ms-odrawxml/ec810aeb-26c0-4f32-a6a4-59abb9a0398f -->
+<xsd:schema elementFormDefault="qualified" targetNamespace="http://schemas.microsoft.com/office/excel/2010/spreadsheetDrawing" xmlns="http://schemas.microsoft.com/office/excel/2010/spreadsheetDrawing" xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing" xmlns:xdr14="http://xldr14SchemaUri" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:a14="http://schemas.microsoft.com/office/drawing/2010/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+   <xsd:import namespace="http://schemas.microsoft.com/office/drawing/2010/main" schemaLocation="drawing-2010-main.xsd"/>
+   <xsd:import namespace="http://schemas.openxmlformats.org/drawingml/2006/main" schemaLocation="../ISO-IEC29500-4_2016/dml-main.xsd"/>
+   <xsd:import namespace="http://schemas.openxmlformats.org/officeDocument/2006/relationships" schemaLocation="../ISO-IEC29500-4_2016/shared-relationshipReference.xsd"/>
+   <xsd:complexType name="CT_ApplicationNonVisualDrawingProps">
+     <xsd:attribute name="macro" type="xsd:string" use="optional"/>
+     <xsd:attribute name="fPublished" type="xsd:boolean" use="optional" default="false"/>
+   </xsd:complexType>
+   <xsd:complexType name="CT_ContentPartNonVisual">
+     <xsd:sequence>
+       <xsd:element name="cNvPr" type="a:CT_NonVisualDrawingProps" minOccurs="1" maxOccurs="1"/>
+       <xsd:element name="cNvContentPartPr" type="a14:CT_NonVisualInkContentPartProperties" minOccurs="0" maxOccurs="1"/>
+     </xsd:sequence>
+   </xsd:complexType>
+   <xsd:complexType name="CT_ContentPart">
+     <xsd:sequence>
+       <xsd:element name="nvContentPartPr" type="CT_ContentPartNonVisual" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="nvPr" type="CT_ApplicationNonVisualDrawingProps" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="xfrm" type="a:CT_Transform2D" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="extLst" type="a:CT_OfficeArtExtensionList" minOccurs="0" maxOccurs="1"/>
+     </xsd:sequence>
+     <xsd:attribute ref="r:id" use="required"/>
+     <xsd:attribute name="bwMode" type="a:ST_BlackWhiteMode" use="optional" default="auto"/>
+   </xsd:complexType>
+   <xsd:element name="contentPart" type="CT_ContentPart"/>
+ </xsd:schema>

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { Formatter } from "@export/formatter";
 import { FootnoteReferenceRun } from "@file/footnotes";
-import { PageNumber } from "@file/paragraph";
+import { PageNumber, Tab } from "@file/paragraph";
 
 import { DeletedTextRun } from "./deleted-text-run";
 
@@ -344,7 +344,7 @@ describe("DeletedTextRun", () => {
     });
 
     describe("footnote references", () => {
-        it("should add a valid footnote reference", () => {
+        it("should write a footnote reference in the children as a run after the deleted run, not inside it", () => {
             const deletedTextRun = new DeletedTextRun({
                 children: ["some text", new FootnoteReferenceRun(1)],
                 id: 0,
@@ -373,14 +373,53 @@ describe("DeletedTextRun", () => {
                                     "some text",
                                 ],
                             },
-                            {
-                                "w:r": [
-                                    { "w:rPr": [{ "w:rStyle": { _attr: { "w:val": "FootnoteReference" } } }] },
-                                    { "w:footnoteReference": { _attr: { "w:id": 1 } } },
-                                ],
-                            },
                         ],
                     },
+                    {
+                        "w:r": [
+                            { "w:rPr": [{ "w:rStyle": { _attr: { "w:val": "FootnoteReference" } } }] },
+                            { "w:footnoteReference": { _attr: { "w:id": 1 } } },
+                        ],
+                    },
+                ],
+            });
+        });
+
+        it("should keep other elements in the children, such as a tab, in the deleted run", () => {
+            const deletedTextRun = new DeletedTextRun({ children: [new Tab(), "A"], id: 0, date: "123", author: "Author" });
+            const tree = new Formatter().format(deletedTextRun);
+            expect(tree).to.deep.equal({
+                "w:del": [
+                    { _attr: { "w:author": "Author", "w:date": "123", "w:id": 0 } },
+                    { "w:r": [{ "w:tab": {} }, { "w:delText": [{ _attr: { "xml:space": "preserve" } }, "A"] }] },
+                ],
+            });
+        });
+
+        it("should split the deleted run at each footnote reference, and keep its properties for the text after it", () => {
+            const deletedTextRun = new DeletedTextRun({
+                children: ["A", new FootnoteReferenceRun(1), "B", new FootnoteReferenceRun(2)],
+                bold: true,
+                id: 0,
+                date: "123",
+                author: "Author",
+            });
+            const tree = new Formatter().format(deletedTextRun);
+            const bold = { "w:rPr": [{ "w:b": {} }, { "w:bCs": {} }] };
+            const deleted = (text: string) => ({ "w:r": [bold, { "w:delText": [{ _attr: { "xml:space": "preserve" } }, text] }] });
+            const reference = (id: number) => ({
+                "w:r": [
+                    { "w:rPr": [{ "w:rStyle": { _attr: { "w:val": "FootnoteReference" } } }] },
+                    { "w:footnoteReference": { _attr: { "w:id": id } } },
+                ],
+            });
+            expect(tree).to.deep.equal({
+                "w:del": [
+                    { _attr: { "w:author": "Author", "w:date": "123", "w:id": 0 } },
+                    deleted("A"),
+                    reference(1),
+                    deleted("B"),
+                    reference(2),
                 ],
             });
         });

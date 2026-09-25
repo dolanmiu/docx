@@ -6,6 +6,7 @@ import { sectionMarginDefaults, sectionPageSizeDefaults } from "./document";
 import { File } from "./file";
 import { Footer, Header } from "./header";
 import { Paragraph, TextRun } from "./paragraph";
+import { createDefaultStyles } from "./styles/factory";
 
 const PAGE_SIZE_DEFAULTS = {
     "w:h": sectionPageSizeDefaults.HEIGHT,
@@ -641,6 +642,10 @@ describe("File", () => {
                         <w:style w:type="paragraph" w:styleId="Heading1">
                             <w:name w:val="heading 1"/>
                         </w:style>
+                        <w:style w:type="paragraph" w:styleId="Title">
+                            <w:name w:val="Title"/>
+                        </w:style>
+                        <w:docDefaults><w:rPrDefault/></w:docDefaults>
                     </w:styles>`,
                 styles: {
                     default: {
@@ -653,7 +658,45 @@ describe("File", () => {
                 },
             });
 
-            expect(doc.Styles).to.not.be.undefined;
+            const tree = new Formatter().format(doc.Styles)["w:styles"];
+            const names = tree.map((child: object) => Object.keys(child)[0]);
+            const ids = tree.map(
+                (child: { readonly "w:style"?: readonly { readonly _attr?: Record<string, string> }[] }) =>
+                    child["w:style"]?.find((part) => part._attr)?._attr?.["w:styleId"],
+            );
+
+            // The external document defaults take the place of docx's, and come first
+            expect(names.filter((name: string) => name === "w:docDefaults")).to.have.length(1);
+            expect(tree[1]).to.deep.equal({ "w:docDefaults": [{ "w:rPrDefault": {} }] });
+            // The external Title takes the place of docx's
+            expect(ids.filter((id: string) => id === "Title")).to.have.length(1);
+            expect(tree[ids.indexOf("Title")]).to.deep.equal({
+                "w:style": [{ _attr: { "w:type": "paragraph", "w:styleId": "Title" } }, { "w:name": { _attr: { "w:val": "Title" } } }],
+            });
+            // The Heading1 given in styles.default takes the place of the external one, and docx's styles fill in the rest
+            expect(ids.filter((id: string) => id === "Heading1")).to.have.length(1);
+            expect(tree[ids.indexOf("Heading1")]).to.deep.equal(
+                new Formatter().format(createDefaultStyles({ heading1: { run: { size: 28 } } }).heading1),
+            );
+            expect(ids).to.include("Heading2");
+        });
+
+        it("should replace the external document defaults with those given in styles.default", () => {
+            const doc = new File({
+                sections: [],
+                externalStyles: `
+                    <w:styles xmlns:w="main">
+                        <w:docDefaults><w:rPrDefault/></w:docDefaults>
+                    </w:styles>`,
+                styles: { default: { document: { run: { font: "Arial" } } } },
+            });
+
+            const tree = new Formatter().format(doc.Styles)["w:styles"];
+            const defaults = tree.filter((child: object) => "w:docDefaults" in child);
+            expect(defaults).to.deep.equal([
+                new Formatter().format(createDefaultStyles({ document: { run: { font: "Arial" } } }).document),
+            ]);
+            expect(tree[1]).to.deep.equal(defaults[0]);
         });
     });
 

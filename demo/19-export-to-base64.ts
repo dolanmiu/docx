@@ -26,5 +26,6 @@ const doc = new Document({
 });
 
 Packer.toBase64String(doc).then((str) => {
-    fs.writeFileSync("My Document.docx", str);
+    // The string can be sent on as it is, such as in a data URI. Decoded, it is the document
+    fs.writeFileSync("My Document.docx", Buffer.from(str, "base64"));
 });

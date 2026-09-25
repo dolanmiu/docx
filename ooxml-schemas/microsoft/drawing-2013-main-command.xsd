@@ -1,0 +1,256 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- [MS-ODRAWXML] 5.27, http://schemas.microsoft.com/office/drawing/2013/main/command Schema: https://learn.microsoft.com/en-us/openspecs/office_standards/ms-odrawxml/f01549ab-276f-461a-a9be-c672a5393b1a -->
+<xsd:schema xmlns:s="http://schemas.openxmlformats.org/officeDocument/2006/sharedTypes" elementFormDefault="qualified" targetNamespace="http://schemas.microsoft.com/office/drawing/2013/main/command" xmlns="http://schemas.microsoft.com/office/drawing/2013/main/command" xmlns:ac="http://schemas.microsoft.com/office/drawing/2013/main/command" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:inkml="http://www.w3.org/2003/InkML">
+   <xsd:import namespace="http://schemas.openxmlformats.org/officeDocument/2006/sharedTypes" schemaLocation="../ISO-IEC29500-4_2016/shared-commonSimpleTypes.xsd"/>
+   <xsd:import namespace="http://schemas.openxmlformats.org/drawingml/2006/main" schemaLocation="../ISO-IEC29500-4_2016/dml-main.xsd"/>
+   <xsd:attributeGroup name="AG_DrawingElementId">
+     <xsd:attribute name="id" type="a:ST_DrawingElementId" use="required"/>
+     <xsd:attribute name="creationId" type="s:ST_Guid" use="optional"/>
+   </xsd:attributeGroup>
+   <xsd:complexType name="CT_ShapeMoniker">
+     <xsd:attributeGroup ref="AG_DrawingElementId"/>
+   </xsd:complexType>
+   <xsd:complexType name="CT_GroupShapeMoniker">
+     <xsd:attributeGroup ref="AG_DrawingElementId"/>
+   </xsd:complexType>
+   <xsd:complexType name="CT_GraphicFrameMoniker">
+     <xsd:attributeGroup ref="AG_DrawingElementId"/>
+   </xsd:complexType>
+   <xsd:complexType name="CT_ConnectorMoniker">
+     <xsd:attributeGroup ref="AG_DrawingElementId"/>
+   </xsd:complexType>
+   <xsd:complexType name="CT_PictureMoniker">
+     <xsd:attributeGroup ref="AG_DrawingElementId"/>
+   </xsd:complexType>
+   <xsd:complexType name="CT_InkMoniker">
+     <xsd:attributeGroup ref="AG_DrawingElementId"/>
+   </xsd:complexType>
+   <xsd:complexType name="CT_TextCharRangeContext">
+     <xsd:attribute name="len" type="xsd:unsignedInt" use="optional" default="0"/>
+     <xsd:attribute name="hash" type="xsd:unsignedInt" use="required"/>
+   </xsd:complexType>
+   <xsd:complexType name="CT_TextCharRangeMoniker">
+     <xsd:sequence>
+       <xsd:element name="context" type="CT_TextCharRangeContext" minOccurs="0" maxOccurs="1"/>
+     </xsd:sequence>
+     <xsd:attribute name="cp" type="xsd:int" use="required"/>
+     <xsd:attribute name="len" type="xsd:int" use="optional" default="0"/>
+   </xsd:complexType>
+   <xsd:complexType name="CT_DrawingElementMonikerList">
+     <xsd:sequence>
+       <xsd:any minOccurs="0" maxOccurs="unbounded"/>
+     </xsd:sequence>
+   </xsd:complexType>
+   <xsd:element name="deMkLst" type="CT_DrawingElementMonikerList"/>
+   <xsd:complexType name="CT_ShapeMonikerList">
+     <xsd:sequence>
+       <xsd:any minOccurs="0" maxOccurs="unbounded"/>
+     </xsd:sequence>
+   </xsd:complexType>
+   <xsd:element name="spMkLst" type="CT_ShapeMonikerList"/>
+   <xsd:complexType name="CT_GroupShapeMonikerList">
+     <xsd:sequence>
+       <xsd:any minOccurs="0" maxOccurs="unbounded"/>
+     </xsd:sequence>
+   </xsd:complexType>
+   <xsd:element name="grpSpMkLst" type="CT_GroupShapeMonikerList"/>
+   <xsd:complexType name="CT_GraphicFrameMonikerList">
+     <xsd:sequence>
+       <xsd:any minOccurs="0" maxOccurs="unbounded"/>
+     </xsd:sequence>
+   </xsd:complexType>
+   <xsd:element name="graphicFrameMkLst" type="CT_GraphicFrameMonikerList"/>
+   <xsd:complexType name="CT_ConnectorMonikerList">
+     <xsd:sequence>
+       <xsd:any minOccurs="0" maxOccurs="unbounded"/>
+     </xsd:sequence>
+   </xsd:complexType>
+   <xsd:element name="cxnSpMkLst" type="CT_ConnectorMonikerList"/>
+   <xsd:complexType name="CT_PictureMonikerList">
+     <xsd:sequence>
+       <xsd:any minOccurs="0" maxOccurs="unbounded"/>
+     </xsd:sequence>
+   </xsd:complexType>
+   <xsd:element name="picMkLst" type="CT_PictureMonikerList"/>
+   <xsd:complexType name="CT_InkMonikerList">
+     <xsd:sequence>
+       <xsd:any minOccurs="0" maxOccurs="unbounded"/>
+     </xsd:sequence>
+   </xsd:complexType>
+   <xsd:element name="inkMkLst" type="CT_InkMonikerList"/>
+   <xsd:complexType name="CT_TextCharRangeMonikerList">
+     <xsd:sequence>
+       <xsd:any minOccurs="0" maxOccurs="unbounded"/>
+     </xsd:sequence>
+   </xsd:complexType>
+   <xsd:element name="txMkLst" type="CT_TextCharRangeMonikerList"/>
+   <xsd:attributeGroup name="AG_ChangesUser">
+     <xsd:attribute name="name" type="xsd:string" use="optional"/>
+     <xsd:attribute name="userId" type="xsd:string" use="optional"/>
+     <xsd:attribute name="providerId" type="xsd:string" use="optional"/>
+     <xsd:attribute name="clId" type="xsd:string" use="optional"/>
+     <xsd:attribute name="email" type="xsd:string" use="optional"/>
+   </xsd:attributeGroup>
+   <xsd:attributeGroup name="AG_ChangesVersion">
+     <xsd:attribute name="dt" type="xsd:dateTime" use="optional"/>
+     <xsd:attribute name="v" type="xsd:unsignedInt" use="optional"/>
+     <xsd:attribute name="id" type="s:ST_Guid" use="optional"/>
+   </xsd:attributeGroup>
+   <xsd:complexType name="CT_ChangesData">
+     <xsd:sequence>
+       <xsd:element name="extLst" type="a:CT_OfficeArtExtensionList" minOccurs="0" maxOccurs="1"/>
+     </xsd:sequence>
+     <xsd:attributeGroup ref="AG_ChangesUser"/>
+     <xsd:attributeGroup ref="AG_ChangesVersion"/>
+     <xsd:attribute name="actId" type="xsd:int" use="optional"/>
+   </xsd:complexType>
+   <xsd:simpleType name="ST_ShapeChangeBit">
+     <xsd:restriction base="xsd:token">
+       <xsd:enumeration value="add"/>
+       <xsd:enumeration value="del"/>
+       <xsd:enumeration value="mod"/>
+       <xsd:enumeration value="ord"/>
+       <xsd:enumeration value="topLvl"/>
+       <xsd:enumeration value="modVis"/>
+       <xsd:enumeration value="replST"/>
+       <xsd:enumeration value="delST"/>
+       <xsd:enumeration value="replId"/>
+       <xsd:enumeration value="modCrop"/>
+     </xsd:restriction>
+   </xsd:simpleType>
+   <xsd:simpleType name="ST_ShapeChangesBits">
+     <xsd:list itemType="ST_ShapeChangeBit"/>
+   </xsd:simpleType>
+   <xsd:complexType name="CT_ShapeChanges">
+     <xsd:sequence>
+       <xsd:element name="chgData" type="CT_ChangesData" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="spMkLst" type="CT_ShapeMonikerList" minOccurs="1" maxOccurs="1"/>
+       <xsd:element name="extLst" type="a:CT_OfficeArtExtensionList" minOccurs="0" maxOccurs="1"/>
+     </xsd:sequence>
+     <xsd:attribute name="chg" type="ST_ShapeChangesBits" use="required"/>
+   </xsd:complexType>
+   <xsd:simpleType name="ST_GroupShapeChangeBit">
+     <xsd:restriction base="xsd:token">
+       <xsd:enumeration value="add"/>
+       <xsd:enumeration value="del"/>
+       <xsd:enumeration value="mod"/>
+       <xsd:enumeration value="ord"/>
+       <xsd:enumeration value="topLvl"/>
+       <xsd:enumeration value="modVis"/>
+       <xsd:enumeration value="replST"/>
+       <xsd:enumeration value="delST"/>
+       <xsd:enumeration value="replId"/>
+     </xsd:restriction>
+   </xsd:simpleType>
+   <xsd:simpleType name="ST_GroupShapeChangesBits">
+     <xsd:list itemType="ST_GroupShapeChangeBit"/>
+   </xsd:simpleType>
+   <xsd:complexType name="CT_GroupShapeChanges">
+     <xsd:sequence>
+       <xsd:element name="chgData" type="CT_ChangesData" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="grpSpMkLst" type="CT_GroupShapeMonikerList" minOccurs="1" maxOccurs="1"/>
+       <xsd:element name="extLst" type="a:CT_OfficeArtExtensionList" minOccurs="0" maxOccurs="1"/>
+     </xsd:sequence>
+     <xsd:attribute name="chg" type="ST_GroupShapeChangesBits" use="required"/>
+   </xsd:complexType>
+   <xsd:simpleType name="ST_ConnectorChangeBit">
+     <xsd:restriction base="xsd:token">
+       <xsd:enumeration value="add"/>
+       <xsd:enumeration value="del"/>
+       <xsd:enumeration value="mod"/>
+       <xsd:enumeration value="ord"/>
+       <xsd:enumeration value="topLvl"/>
+       <xsd:enumeration value="modVis"/>
+       <xsd:enumeration value="replST"/>
+       <xsd:enumeration value="delST"/>
+       <xsd:enumeration value="replId"/>
+     </xsd:restriction>
+   </xsd:simpleType>
+   <xsd:simpleType name="ST_ConnectorChangesBits">
+     <xsd:list itemType="ST_ConnectorChangeBit"/>
+   </xsd:simpleType>
+   <xsd:complexType name="CT_ConnectorChanges">
+     <xsd:sequence>
+       <xsd:element name="chgData" type="CT_ChangesData" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="cxnSpMkLst" type="CT_ConnectorMonikerList" minOccurs="1" maxOccurs="1"/>
+       <xsd:element name="extLst" type="a:CT_OfficeArtExtensionList" minOccurs="0" maxOccurs="1"/>
+     </xsd:sequence>
+     <xsd:attribute name="chg" type="ST_ConnectorChangesBits" use="required"/>
+   </xsd:complexType>
+   <xsd:simpleType name="ST_PictureChangeBit">
+     <xsd:restriction base="xsd:token">
+       <xsd:enumeration value="add"/>
+       <xsd:enumeration value="del"/>
+       <xsd:enumeration value="mod"/>
+       <xsd:enumeration value="ord"/>
+       <xsd:enumeration value="topLvl"/>
+       <xsd:enumeration value="modVis"/>
+       <xsd:enumeration value="replST"/>
+       <xsd:enumeration value="delST"/>
+       <xsd:enumeration value="replId"/>
+       <xsd:enumeration value="modCrop"/>
+     </xsd:restriction>
+   </xsd:simpleType>
+   <xsd:simpleType name="ST_PictureChangesBits">
+     <xsd:list itemType="ST_PictureChangeBit"/>
+   </xsd:simpleType>
+   <xsd:complexType name="CT_PictureChanges">
+     <xsd:sequence>
+       <xsd:element name="chgData" type="CT_ChangesData" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="picMkLst" type="CT_PictureMonikerList" minOccurs="1" maxOccurs="1"/>
+       <xsd:element name="extLst" type="a:CT_OfficeArtExtensionList" minOccurs="0" maxOccurs="1"/>
+     </xsd:sequence>
+     <xsd:attribute name="chg" type="ST_PictureChangesBits" use="required"/>
+   </xsd:complexType>
+   <xsd:simpleType name="ST_InkChangeBit">
+     <xsd:restriction base="xsd:token">
+       <xsd:enumeration value="add"/>
+       <xsd:enumeration value="del"/>
+       <xsd:enumeration value="mod"/>
+       <xsd:enumeration value="ord"/>
+       <xsd:enumeration value="topLvl"/>
+       <xsd:enumeration value="modVis"/>
+       <xsd:enumeration value="replST"/>
+       <xsd:enumeration value="delST"/>
+       <xsd:enumeration value="replId"/>
+       <xsd:enumeration value="reco"/>
+       <xsd:enumeration value="modStrokes"/>
+     </xsd:restriction>
+   </xsd:simpleType>
+   <xsd:simpleType name="ST_InkChangesBits">
+     <xsd:list itemType="ST_InkChangeBit"/>
+   </xsd:simpleType>
+   <xsd:complexType name="CT_InkChanges">
+     <xsd:sequence>
+       <xsd:element name="chgData" type="CT_ChangesData" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="inkMkLst" type="CT_InkMonikerList" minOccurs="1" maxOccurs="1"/>
+       <xsd:element name="extLst" type="a:CT_OfficeArtExtensionList" minOccurs="0" maxOccurs="1"/>
+     </xsd:sequence>
+     <xsd:attribute name="chg" type="ST_InkChangesBits" use="required"/>
+   </xsd:complexType>
+   <xsd:simpleType name="ST_GraphicFrameChangeBit">
+     <xsd:restriction base="xsd:token">
+       <xsd:enumeration value="add"/>
+       <xsd:enumeration value="del"/>
+       <xsd:enumeration value="mod"/>
+       <xsd:enumeration value="ord"/>
+       <xsd:enumeration value="topLvl"/>
+       <xsd:enumeration value="modVis"/>
+       <xsd:enumeration value="replST"/>
+       <xsd:enumeration value="delST"/>
+       <xsd:enumeration value="replId"/>
+       <xsd:enumeration value="modGraphic"/>
+     </xsd:restriction>
+   </xsd:simpleType>
+   <xsd:simpleType name="ST_GraphicFrameChangesBits">
+     <xsd:list itemType="ST_GraphicFrameChangeBit"/>
+   </xsd:simpleType>
+   <xsd:complexType name="CT_GraphicFrameChanges">
+     <xsd:sequence>
+       <xsd:element name="chgData" type="CT_ChangesData" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="graphicFrameMkLst" type="CT_GraphicFrameMonikerList" minOccurs="1" maxOccurs="1"/>
+       <xsd:element name="extLst" type="a:CT_OfficeArtExtensionList" minOccurs="0" maxOccurs="1"/>
+     </xsd:sequence>
+     <xsd:attribute name="chg" type="ST_GraphicFrameChangesBits" use="required"/>
+   </xsd:complexType>
+ </xsd:schema>

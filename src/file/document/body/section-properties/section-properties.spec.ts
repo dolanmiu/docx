@@ -374,5 +374,18 @@ describe("SectionProperties", () => {
                 "w:textDirection": { _attr: { "w:val": "lrTb" } },
             });
         });
+
+        it("should write the previous section properties last, after the document grid, as the schema requires", () => {
+            const properties = new SectionProperties({
+                revision: {
+                    id: 1,
+                    author: "Firstname Lastname",
+                    date: "123",
+                },
+            });
+            const tree = new Formatter().format(properties);
+            const elements = (tree["w:sectPr"] as readonly Record<string, unknown>[]).map((child) => Object.keys(child)[0]);
+            expect(elements.slice(-2)).to.deep.equal(["w:docGrid", "w:sectPrChange"]);
+        });
     });
 });

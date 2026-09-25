@@ -1,8 +1,13 @@
- <xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:w12="http://schemas.openxmlformats.org/wordprocessingml/2006/main" elementFormDefault="qualified" attributeFormDefault="qualified" blockDefault="#all" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:s="http://schemas.openxmlformats.org/officeDocument/2006/sharedTypes" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns="http://schemas.microsoft.com/office/word/2010/wordml" targetNamespace="http://schemas.microsoft.com/office/word/2010/wordml">
-   <!-- <xsd:import id="rel" namespace="http://schemas.openxmlformats.org/officeDocument/2006/relationships" schemaLocation="orel.xsd"/> -->
-   <xsd:import id="w" namespace="http://schemas.openxmlformats.org/wordprocessingml/2006/main" schemaLocation="word12.xsd"/>
-   <!-- <xsd:import namespace="http://schemas.openxmlformats.org/drawingml/2006/main" schemaLocation="oartbasetypes.xsd"/>
-   <xsd:import namespace="http://schemas.openxmlformats.org/drawingml/2006/main" schemaLocation="oartsplineproperties.xsd"/> -->
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- [MS-DOCX] 5.1, http://schemas.microsoft.com/office/word/2010/wordml Schema: https://learn.microsoft.com/en-us/openspecs/office_standards/ms-docx/9704b59f-bc49-4618-ac66-41beb82a0d7f -->
+<xsd:schema xmlns:s="http://schemas.openxmlformats.org/officeDocument/2006/sharedTypes" attributeFormDefault="qualified" blockDefault="#all" elementFormDefault="qualified" targetNamespace="http://schemas.microsoft.com/office/word/2010/wordml" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:w12="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns="http://schemas.microsoft.com/office/word/2010/wordml">
+   <xsd:import namespace="http://schemas.openxmlformats.org/officeDocument/2006/sharedTypes" schemaLocation="../ISO-IEC29500-4_2016/shared-commonSimpleTypes.xsd"/>
+   <xsd:import namespace="http://schemas.openxmlformats.org/drawingml/2006/main" schemaLocation="../ISO-IEC29500-4_2016/dml-main.xsd"/>
+   <xsd:import namespace="http://schemas.openxmlformats.org/drawingml/2006/main" schemaLocation="../ISO-IEC29500-4_2016/dml-main.xsd"/>
+   <xsd:import id="rel" namespace="http://schemas.openxmlformats.org/officeDocument/2006/relationships" schemaLocation="../ISO-IEC29500-4_2016/shared-relationshipReference.xsd"/>
+   <xsd:import id="w" namespace="http://schemas.openxmlformats.org/wordprocessingml/2006/main" schemaLocation="../ISO-IEC29500-4_2016/wml.xsd"/>
+   <!-- The rest of this namespace, from [MS-ODRAWXML] 5.3 -->
+   <xsd:include schemaLocation="wml-2010-contentPart.xsd"/>
    <xsd:complexType name="CT_LongHexNumber">
      <xsd:attribute name="val" type="w:ST_LongHexNumber" use="required"/>
    </xsd:complexType>
@@ -24,7 +29,7 @@
      <xsd:attribute name="textId" type="w:ST_LongHexNumber"/>
    </xsd:attributeGroup>
    <xsd:attribute name="anchorId" type="w:ST_LongHexNumber"/>
-   <xsd:attribute name="noSpellErr" type="ST_OnOff"/>
+   <xsd:attribute name="noSpellErr" type="s:ST_OnOff"/>
    <xsd:element name="customXmlConflictInsRangeStart" type="w:CT_TrackChange"/>
    <xsd:element name="customXmlConflictInsRangeEnd" type="w:CT_Markup"/>
    <xsd:element name="customXmlConflictDelRangeStart" type="w:CT_TrackChange"/>

@@ -34,7 +34,7 @@ import type { XmlComponent } from "@file/xml-components";
  *
  * @property fill - Background fill color in hex format (e.g., "FF0000" for red), or a color of the document's theme
  * @property color - Pattern color in hex format, or a color of the document's theme
- * @property type - Shading pattern type
+ * @property type - Shading pattern type. Without one, the shading is clear: the fill color only
  */
 export type IShadingAttributesProperties = {
     readonly fill?: string | ThemeColor;
@@ -54,7 +54,8 @@ export const createShading = ({ fill, color, type }: IShadingAttributesPropertie
     createColorElement("w:shd", [
         { keys: { color: "w:fill", theme: "w:themeFill", tint: "w:themeFillTint", shade: "w:themeFillShade" }, color: fill },
         { keys: COLOR_ATTRIBUTES, color },
-        { key: "w:val", value: type },
+        // w:val is required. Without a pattern, the shading is clear: the fill color only, as Word writes it
+        { key: "w:val", value: type ?? ShadingType.CLEAR },
     ]);
 
 /**

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- [MS-ODRAWXML] 5.16, http://schemas.microsoft.com/office/drawing/2010/diagram Schema: https://learn.microsoft.com/en-us/openspecs/office_standards/ms-odrawxml/6a404d68-14de-4124-b7db-bb48398538ac -->
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns="http://schemas.microsoft.com/office/drawing/2010/diagram" targetNamespace="http://schemas.microsoft.com/office/drawing/2010/diagram" elementFormDefault="qualified" attributeFormDefault="unqualified">
+   <xsd:import namespace="http://schemas.openxmlformats.org/drawingml/2006/main" schemaLocation="../ISO-IEC29500-4_2016/dml-main.xsd"/>
+   <xsd:import namespace="http://schemas.openxmlformats.org/drawingml/2006/main" schemaLocation="../ISO-IEC29500-4_2016/dml-main.xsd"/>
+   <xsd:element name="cNvPr" type="a:CT_NonVisualDrawingProps"/>
+   <xsd:complexType name="CT_Boolean">
+     <xsd:attribute name="val" type="xsd:boolean" use="optional" default="false"/>
+   </xsd:complexType>
+   <xsd:element name="recolorImg" type="CT_Boolean"/>
+ </xsd:schema>

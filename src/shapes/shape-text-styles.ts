@@ -217,7 +217,7 @@ const readThemeFonts = (xml: XmlObject): ThemeFonts => {
  */
 export const readTextStyles = (xml: XmlObject, themeFonts: ThemeFonts = OFFICE_THEME_FONTS): TextStyles => {
     const root = childrenOf(xml["w:styles"]);
-    // A document given styles of its own can have two sets of defaults: the library's, then the document's
+    // Styles writes one set of defaults: the library's, or those of the styles a document is given
     const defaults = root.filter((child) => "w:docDefaults" in child).map((child) => childrenOf(child["w:docDefaults"]));
     const styles = root
         .filter((child) => "w:style" in child)

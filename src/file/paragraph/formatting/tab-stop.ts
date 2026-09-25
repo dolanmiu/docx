@@ -8,12 +8,13 @@
  * @module
  */
 import { BuilderElement, type XmlComponent } from "@file/xml-components";
+import { signedTwipsMeasureValue } from "@util/values";
 
 /**
  * Definition for a single tab stop.
  *
  * @property type - The type of tab stop alignment
- * @property position - The position of the tab stop in twips
+ * @property position - The position of the tab stop in twips. A fraction is rounded down to a whole number of twips
  * @property leader - Optional leader character to fill space before the tab
  *
  * @see {@link TabStop}
@@ -21,7 +22,7 @@ import { BuilderElement, type XmlComponent } from "@file/xml-components";
 export type TabStopDefinition = {
     /** The type of tab stop alignment */
     readonly type: (typeof TabStopType)[keyof typeof TabStopType];
-    /** The position of the tab stop in twips */
+    /** The position of the tab stop in twips. A fraction is rounded down to a whole number of twips */
     readonly position: number | (typeof TabStopPosition)[keyof typeof TabStopPosition];
     /** Optional leader character to fill space before the tab */
     readonly leader?: (typeof LeaderType)[keyof typeof LeaderType];
@@ -108,7 +109,8 @@ export const createTabStopItem = ({ type, position, leader }: TabStopDefinition)
         name: "w:tab",
         attributes: {
             val: { key: "w:val", value: type },
-            pos: { key: "w:pos", value: position },
+            // A whole number of twips, so a position worked out as a fraction, such as a quarter of the page, is still valid
+            pos: { key: "w:pos", value: signedTwipsMeasureValue(position) },
             leader: { key: "w:leader", value: leader },
         },
     });

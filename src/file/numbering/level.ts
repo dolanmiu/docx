@@ -180,7 +180,7 @@ class LevelAttributes extends XmlAttributeComponent<{
 }> {
     protected readonly xmlKeys = {
         ilvl: "w:ilvl",
-        tentative: "w15:tentative",
+        tentative: "w:tentative",
     };
 }
 
@@ -217,6 +217,20 @@ class LevelText extends XmlComponent {
     }
 }
 
+// Office's schema only allows left, center and right for a level's number, where a paragraph's w:jc takes any
+// AlignmentType. So START and the justified alignments are written as left, and END as right
+const levelAlignment = (value: (typeof AlignmentType)[keyof typeof AlignmentType]): "left" | "center" | "right" => {
+    switch (value) {
+        case AlignmentType.CENTER:
+            return "center";
+        case AlignmentType.END:
+        case AlignmentType.RIGHT:
+            return "right";
+        default:
+            return "left";
+    }
+};
+
 /**
  * Alignment specification for level numbering.
  */
@@ -225,7 +239,7 @@ class LevelJc extends XmlComponent {
         super("w:lvlJc");
         this.root.push(
             new Attributes({
-                val: value,
+                val: levelAlignment(value),
             }),
         );
     }
@@ -278,7 +292,10 @@ export type ILevelsOptions = {
     readonly format?: (typeof LevelFormat)[keyof typeof LevelFormat];
     /** Level text template with placeholders like %1, %2. */
     readonly text?: string;
-    /** Text alignment for the numbering. */
+    /**
+     * Alignment of the level's number: left, center or right. START and the justified alignments are written as left,
+     * and END as right, since Office doesn't allow the others here. Defaults to START.
+     */
     readonly alignment?: (typeof AlignmentType)[keyof typeof AlignmentType];
     /** Starting number for this level. */
     readonly start?: number;
@@ -288,7 +305,10 @@ export type ILevelsOptions = {
     readonly isLegalNumberingStyle?: boolean;
     /** Run and paragraph style properties. */
     readonly style?: {
-        /** Run style properties for the numbering text. */
+        /**
+         * Run style properties for the numbering text. Its highlight, math and revision aren't written, since Office
+         * doesn't allow them for a level's number.
+         */
         readonly run?: IRunStylePropertiesOptions;
         /** Paragraph style properties for the level. */
         readonly paragraph?: ILevelParagraphStylePropertiesOptions;
@@ -384,18 +404,23 @@ export class LevelBase extends XmlComponent {
     }: ILevelsOptions) {
         super("w:lvl");
 
+        // In CT_Lvl's order
         this.root.push(new NumberValueElement("w:start", decimalNumber(start)));
 
         if (format) {
             this.root.push(new NumberFormat(format));
         }
 
-        if (suffix) {
-            this.root.push(new Suffix(suffix));
+        if (style?.style) {
+            this.root.push(createParagraphStyle(style.style));
         }
 
         if (isLegalNumberingStyle) {
             this.root.push(new IsLegalNumberingStyle());
+        }
+
+        if (suffix) {
+            this.root.push(new Suffix(suffix));
         }
 
         if (text) {
@@ -404,13 +429,10 @@ export class LevelBase extends XmlComponent {
 
         this.root.push(new LevelJc(alignment));
 
-        if (style?.style) {
-            this.root.push(createParagraphStyle(style.style));
-        }
-
         // A level's paragraph properties are a definition, so no implicit `ListParagraph` reference belongs here.
         this.paragraphProperties = new ParagraphProperties(style && style.paragraph, { implicitListParagraphStyle: false });
-        this.runProperties = new RunProperties(style && style.run);
+        // Office's schema has no w:highlight, w:oMath or w:rPrChange in a level's run properties
+        this.runProperties = new RunProperties(style?.run && { ...style.run, highlight: undefined, math: undefined, revision: undefined });
 
         this.root.push(this.paragraphProperties);
         this.root.push(this.runProperties);
