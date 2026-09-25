@@ -35,7 +35,7 @@ const doc = new Document({
                     alignment: AlignmentType.CENTER,
                     heading: "Heading1",
                     revision: {
-                        id: 10,
+                        id: 0,
                         author: REVISION_AUTHOR,
                         date: REVISION_DATE,
                         alignment: AlignmentType.LEFT,
@@ -70,7 +70,7 @@ const doc = new Document({
                                             children: [new TextRun("Inserted row cell")],
                                             run: {
                                                 insertion: {
-                                                    id: 0,
+                                                    id: 1,
                                                     author: REVISION_AUTHOR,
                                                     date: REVISION_DATE,
                                                 },
@@ -84,7 +84,7 @@ const doc = new Document({
                                             children: [new TextRun("Inserted row cell")],
                                             run: {
                                                 insertion: {
-                                                    id: 0,
+                                                    id: 2,
                                                     author: REVISION_AUTHOR,
                                                     date: REVISION_DATE,
                                                 },
@@ -94,7 +94,7 @@ const doc = new Document({
                                 }),
                             ],
                             insertion: {
-                                id: 0,
+                                id: 3,
                                 author: REVISION_AUTHOR,
                                 date: REVISION_DATE,
                             },
@@ -107,7 +107,7 @@ const doc = new Document({
                                             children: [new TextRun("Deleted row cell")],
                                             run: {
                                                 deletion: {
-                                                    id: 1,
+                                                    id: 4,
                                                     author: REVISION_AUTHOR,
                                                     date: REVISION_DATE,
                                                 },
@@ -121,7 +121,7 @@ const doc = new Document({
                                             children: [new TextRun("Deleted row cell")],
                                             run: {
                                                 deletion: {
-                                                    id: 1,
+                                                    id: 5,
                                                     author: REVISION_AUTHOR,
                                                     date: REVISION_DATE,
                                                 },
@@ -131,7 +131,7 @@ const doc = new Document({
                                 }),
                             ],
                             deletion: {
-                                id: 1,
+                                id: 6,
                                 author: REVISION_AUTHOR,
                                 date: REVISION_DATE,
                             },
@@ -155,14 +155,14 @@ const doc = new Document({
                                             children: [
                                                 new InsertedTextRun({
                                                     text: "Inserted cell",
-                                                    id: 2,
+                                                    id: 7,
                                                     author: REVISION_AUTHOR,
                                                     date: REVISION_DATE,
                                                 }),
                                             ],
                                             run: {
                                                 insertion: {
-                                                    id: 2,
+                                                    id: 8,
                                                     author: REVISION_AUTHOR,
                                                     date: REVISION_DATE,
                                                 },
@@ -170,7 +170,7 @@ const doc = new Document({
                                         }),
                                     ],
                                     insertion: {
-                                        id: 2,
+                                        id: 9,
                                         author: REVISION_AUTHOR,
                                         date: REVISION_DATE,
                                     },
@@ -186,14 +186,14 @@ const doc = new Document({
                                             children: [
                                                 new InsertedTextRun({
                                                     text: "Inserted cell",
-                                                    id: 2,
+                                                    id: 10,
                                                     author: REVISION_AUTHOR,
                                                     date: REVISION_DATE,
                                                 }),
                                             ],
                                             run: {
                                                 insertion: {
-                                                    id: 2,
+                                                    id: 11,
                                                     author: REVISION_AUTHOR,
                                                     date: REVISION_DATE,
                                                 },
@@ -201,7 +201,7 @@ const doc = new Document({
                                         }),
                                     ],
                                     insertion: {
-                                        id: 2,
+                                        id: 12,
                                         author: REVISION_AUTHOR,
                                         date: REVISION_DATE,
                                     },
@@ -229,14 +229,14 @@ const doc = new Document({
                                             children: [
                                                 new DeletedTextRun({
                                                     text: "Deleted cell",
-                                                    id: 3,
+                                                    id: 13,
                                                     author: REVISION_AUTHOR,
                                                     date: REVISION_DATE,
                                                 }),
                                             ],
                                             run: {
                                                 deletion: {
-                                                    id: 3,
+                                                    id: 14,
                                                     author: REVISION_AUTHOR,
                                                     date: REVISION_DATE,
                                                 },
@@ -244,7 +244,7 @@ const doc = new Document({
                                         }),
                                     ],
                                     deletion: {
-                                        id: 3,
+                                        id: 15,
                                         author: REVISION_AUTHOR,
                                         date: REVISION_DATE,
                                     },
@@ -260,14 +260,14 @@ const doc = new Document({
                                             children: [
                                                 new DeletedTextRun({
                                                     text: "Deleted cell",
-                                                    id: 3,
+                                                    id: 16,
                                                     author: REVISION_AUTHOR,
                                                     date: REVISION_DATE,
                                                 }),
                                             ],
                                             run: {
                                                 deletion: {
-                                                    id: 3,
+                                                    id: 17,
                                                     author: REVISION_AUTHOR,
                                                     date: REVISION_DATE,
                                                 },
@@ -275,7 +275,7 @@ const doc = new Document({
                                         }),
                                     ],
                                     deletion: {
-                                        id: 3,
+                                        id: 18,
                                         author: REVISION_AUTHOR,
                                         date: REVISION_DATE,
                                     },
@@ -304,7 +304,7 @@ const doc = new Document({
                                     verticalAlign: VerticalAlignTable.CENTER,
                                     revision: {
                                         width: { size: 2000, type: WidthType.DXA },
-                                        id: 4,
+                                        id: 19,
                                         author: REVISION_AUTHOR,
                                         date: REVISION_DATE,
                                         verticalAlign: VerticalAlignTable.TOP,
@@ -319,7 +319,7 @@ const doc = new Document({
                                     },
                                     revision: {
                                         width: { size: 2000, type: WidthType.DXA },
-                                        id: 4,
+                                        id: 20,
                                         author: REVISION_AUTHOR,
                                         date: REVISION_DATE,
                                     },
@@ -333,7 +333,7 @@ const doc = new Document({
                                     width: { size: 4000, type: WidthType.DXA },
                                     revision: {
                                         width: { size: 2000, type: WidthType.DXA },
-                                        id: 4,
+                                        id: 21,
                                         author: REVISION_AUTHOR,
                                         date: REVISION_DATE,
                                     },
@@ -343,7 +343,7 @@ const doc = new Document({
                                     width: { size: 2000, type: WidthType.DXA },
                                     revision: {
                                         width: { size: 2000, type: WidthType.DXA },
-                                        id: 4,
+                                        id: 22,
                                         author: REVISION_AUTHOR,
                                         date: REVISION_DATE,
                                     },
@@ -367,7 +367,7 @@ const doc = new Document({
                             tableHeader: true,
                             height: { value: 600, rule: HeightRule.EXACT },
                             revision: {
-                                id: 5,
+                                id: 23,
                                 author: REVISION_AUTHOR,
                                 date: REVISION_DATE,
                                 tableHeader: false,
@@ -414,7 +414,7 @@ const doc = new Document({
                     },
                     layout: "fixed",
                     revision: {
-                        id: 6,
+                        id: 24,
                         author: REVISION_AUTHOR,
                         date: REVISION_DATE,
                         borders: {
@@ -474,7 +474,7 @@ const doc = new Document({
                     },
                 },
                 revision: {
-                    id: 20,
+                    id: 25,
                     author: REVISION_AUTHOR,
                     date: REVISION_DATE,
                     page: {
