@@ -121,7 +121,8 @@ const createFontRelationship = ({ id, fontKey, subsetted }: IFontRelationshipOpt
         name,
         attributes: {
             id: { key: "r:id", value: id },
-            ...(fontKey ? { fontKey: { key: "w:fontKey", value: `{${fontKey}}` } } : {}),
+            // ST_Guid only allows upper-case hex digits. The obfuscation reads the key's hex digits in either case
+            ...(fontKey ? { fontKey: { key: "w:fontKey", value: `{${fontKey.toUpperCase()}}` } } : {}),
         },
         children: [...(subsetted ? [new OnOffElement("w:subsetted", subsetted)] : [])],
     });
