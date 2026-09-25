@@ -189,14 +189,14 @@ describe("TableRow", () => {
                             {
                                 "w:cantSplit": {
                                     _attr: {
-                                        "w:val": false,
+                                        "w:val": "off",
                                     },
                                 },
                             },
                             {
                                 "w:tblHeader": {
                                     _attr: {
-                                        "w:val": false,
+                                        "w:val": "off",
                                     },
                                 },
                             },

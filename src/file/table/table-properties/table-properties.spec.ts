@@ -267,6 +267,16 @@ describe("TableProperties", () => {
                 ],
             });
         });
+
+        it("writes a table that isn't visually right to left as off, the only false value Office takes there", () => {
+            const tp = new TableProperties({
+                visuallyRightToLeft: false,
+            });
+            const tree = new Formatter().format(tp);
+            expect(tree).to.deep.equal({
+                "w:tblPr": [{ "w:bidiVisual": { _attr: { "w:val": "off" } } }],
+            });
+        });
     });
 
     describe("#tableLook", () => {

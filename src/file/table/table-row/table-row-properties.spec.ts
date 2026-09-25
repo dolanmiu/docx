@@ -45,6 +45,14 @@ describe("TableRowProperties", () => {
             expect(tree).to.deep.equal({ "w:trPr": [{ "w:tblHeader": {} }] });
         });
 
+        it("writes a row that can split and isn't a header row as off, the only false value Office takes there", () => {
+            const rowProperties = new TableRowProperties({ cantSplit: false, tableHeader: false });
+            const tree = new Formatter().format(rowProperties);
+            expect(tree).to.deep.equal({
+                "w:trPr": [{ "w:cantSplit": { _attr: { "w:val": "off" } } }, { "w:tblHeader": { _attr: { "w:val": "off" } } }],
+            });
+        });
+
         it("sets row height exact", () => {
             const rowProperties = new TableRowProperties({
                 height: {
@@ -113,6 +121,44 @@ describe("TableRowProperties", () => {
                             },
                             {
                                 "w:trPr": {},
+                            },
+                        ],
+                    },
+                ],
+            });
+        });
+
+        it("writes a revision's previous cantSplit and tableHeader of false as off", () => {
+            const rowProperties = new TableRowProperties({
+                cantSplit: true,
+                tableHeader: true,
+                revision: {
+                    id: 1,
+                    author: "Firstname Lastname",
+                    date: "123",
+                    cantSplit: false,
+                    tableHeader: false,
+                },
+            });
+            const tree = new Formatter().format(rowProperties);
+            expect(tree).to.deep.equal({
+                "w:trPr": [
+                    { "w:cantSplit": {} },
+                    { "w:tblHeader": {} },
+                    {
+                        "w:trPrChange": [
+                            {
+                                _attr: {
+                                    "w:author": "Firstname Lastname",
+                                    "w:date": "123",
+                                    "w:id": 1,
+                                },
+                            },
+                            {
+                                "w:trPr": [
+                                    { "w:cantSplit": { _attr: { "w:val": "off" } } },
+                                    { "w:tblHeader": { _attr: { "w:val": "off" } } },
+                                ],
                             },
                         ],
                     },

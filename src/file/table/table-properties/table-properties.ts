@@ -44,10 +44,11 @@
  * @module
  */
 import { ChangeAttributes, type IChangedAttributesProperties } from "@file/track-revision/track-revision";
-import { BuilderElement, IgnoreIfEmptyXmlComponent, OnOffElement, StringValueElement, XmlComponent } from "@file/xml-components";
+import { BuilderElement, IgnoreIfEmptyXmlComponent, StringValueElement, XmlComponent } from "@file/xml-components";
 
 import { type AlignmentType, createAlignment } from "../../paragraph";
 import { type IShadingAttributesProperties, createShading } from "../../shading";
+import { createOnOffOnlyElement } from "../on-off-only-element";
 import { type ITableWidthProperties, createTableWidthElement } from "../table-width";
 import { type ITableBordersOptions, TableBorders } from "./table-borders";
 import { type ITableCellMarginOptions, createTableCellMargin } from "./table-cell-margin";
@@ -120,7 +121,7 @@ export class TableProperties extends IgnoreIfEmptyXmlComponent {
         }
 
         if (options.visuallyRightToLeft !== undefined) {
-            this.root.push(new OnOffElement("w:bidiVisual", options.visuallyRightToLeft));
+            this.root.push(createOnOffOnlyElement("w:bidiVisual", options.visuallyRightToLeft));
         }
 
         if (options.width) {
