@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import type { Element } from "xml-js";
 
 import type { IViewWrapper } from "@file/document-wrapper";
 import type { File } from "@file/file";
@@ -821,6 +822,101 @@ describe("replacer", () => {
             // Verify the rendered text is correct
             const paragraphs = traverse(json);
             expect(paragraphs[0].text).to.equal("AXBCYD");
+        });
+
+        describe("document type with the placeholder in more than one paragraph", () => {
+            const createParagraph = (text: string) => ({
+                type: "element",
+                name: "w:p",
+                elements: [
+                    {
+                        type: "element",
+                        name: "w:r",
+                        elements: [{ type: "element", name: "w:t", elements: [{ type: "text", text }] }],
+                    },
+                ],
+            });
+
+            const replaceWithTwoParagraphs = (json: Element) =>
+                replacer({
+                    json,
+                    patch: {
+                        type: PatchType.DOCUMENT,
+                        children: [new Paragraph("INSERTED"), new Paragraph("tail")],
+                    },
+                    patchText: "{{ph}}",
+                    context: {
+                        file: {} as unknown as File,
+                        viewWrapper: { Relationships: {} } as unknown as IViewWrapper,
+                        stack: [],
+                    },
+                });
+
+            it("should replace every occurrence once and keep the content between them", () => {
+                const json = {
+                    elements: [
+                        {
+                            type: "element",
+                            name: "w:body",
+                            elements: [
+                                createParagraph("HEADING ONE"),
+                                createParagraph("{{ph}}"),
+                                createParagraph("HEADING TWO"),
+                                createParagraph("{{ph}}"),
+                            ],
+                        },
+                    ],
+                };
+
+                const { didFindOccurrence } = replaceWithTwoParagraphs(json);
+
+                expect(didFindOccurrence).toBe(true);
+                expect(traverse(json).map((p) => p.text)).to.deep.equal([
+                    "HEADING ONE",
+                    "INSERTED",
+                    "tail",
+                    "HEADING TWO",
+                    "INSERTED",
+                    "tail",
+                ]);
+            });
+
+            it("should replace occurrences at different depths", () => {
+                const cell = { type: "element", name: "w:tc", elements: [createParagraph("{{ph}}")] };
+                const body = {
+                    type: "element",
+                    name: "w:body",
+                    elements: [
+                        createParagraph("{{ph}}"),
+                        {
+                            type: "element",
+                            name: "w:tbl",
+                            elements: [{ type: "element", name: "w:tr", elements: [cell] }],
+                        },
+                        createParagraph("END"),
+                    ],
+                };
+
+                replaceWithTwoParagraphs({ elements: [body] });
+
+                expect(body.elements.map((e) => e.name)).to.deep.equal(["w:p", "w:p", "w:tbl", "w:p"]);
+                expect(traverse({ elements: [cell] }).map((p) => p.text)).to.deep.equal(["INSERTED", "tail"]);
+                expect(traverse({ elements: [body] }).map((p) => p.text)).to.deep.equal(["INSERTED", "tail", "END", "INSERTED", "tail"]);
+            });
+
+            it("should replace a paragraph that contains another occurrence, such as in a text box", () => {
+                const textBoxRun = {
+                    type: "element",
+                    name: "w:r",
+                    elements: [{ type: "element", name: "w:txbxContent", elements: [createParagraph("{{ph}}")] }],
+                };
+                const outerParagraph = { type: "element", name: "w:p", elements: [...createParagraph("{{ph}}").elements, textBoxRun] };
+                const body = { type: "element", name: "w:body", elements: [outerParagraph, createParagraph("END")] };
+
+                replaceWithTwoParagraphs({ elements: [body] });
+
+                expect(traverse({ elements: [body] }).map((p) => p.text)).to.deep.equal(["INSERTED", "tail", "END"]);
+            });
         });
     });
 });

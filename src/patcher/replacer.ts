@@ -63,7 +63,14 @@ export const replacer = ({
         return { element: json, didFindOccurrence: false };
     }
 
-    for (const renderedParagraph of renderedParagraphs) {
+    // A document patch splices the paragraph out of its parent, shifting the indices of later siblings.
+    // Patching in reverse document order, innermost first, keeps every remaining path valid.
+    const orderedParagraphs =
+        patch.type === PatchType.DOCUMENT
+            ? [...renderedParagraphs].sort((a, b) => compareReverseDocumentOrder(a.pathToParagraph, b.pathToParagraph))
+            : renderedParagraphs;
+
+    for (const renderedParagraph of orderedParagraphs) {
         const textJson = patch.children.map((c) => toJson(xml(formatter.format(c as XmlComponent, context)))).map((c) => c.elements![0]);
 
         switch (patch.type) {
@@ -137,3 +144,13 @@ const goToParentElementFromPath = (json: Element, path: readonly number[]): Elem
     goToElementFromPath(json, path.slice(0, path.length - 1));
 
 const getLastElementIndexFromPath = (path: readonly number[]): number => path[path.length - 1];
+
+const compareReverseDocumentOrder = (a: readonly number[], b: readonly number[]): number => {
+    for (let i = 0; i < Math.min(a.length, b.length); i++) {
+        if (a[i] !== b[i]) {
+            return b[i] - a[i];
+        }
+    }
+
+    return b.length - a.length;
+};
