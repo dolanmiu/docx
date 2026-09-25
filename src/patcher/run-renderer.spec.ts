@@ -140,5 +140,38 @@ describe("run-renderer", () => {
                 text: "",
             });
         });
+
+        it("should start each text in a run straight after the one before it", () => {
+            const output = renderParagraphNode({
+                element: {
+                    name: "w:p",
+                    elements: [
+                        {
+                            name: "w:r",
+                            elements: [
+                                { name: "w:t", elements: [{ type: "text", text: "Name:" }] },
+                                { name: "w:tab" },
+                                { name: "w:t", elements: [{ type: "text", text: "{{ph}}" }] },
+                            ],
+                        },
+                    ],
+                },
+                index: 0,
+                parent: undefined,
+            });
+
+            expect(output.runs).to.deep.equal([
+                {
+                    text: "Name:{{ph}}",
+                    parts: [
+                        { text: "Name:", index: 0, start: 0, end: 4 },
+                        { text: "{{ph}}", index: 2, start: 5, end: 10 },
+                    ],
+                    index: 0,
+                    start: 0,
+                    end: 10,
+                },
+            ]);
+        });
     });
 });

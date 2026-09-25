@@ -126,20 +126,18 @@ const renderRunNode = (node: Element, index: number, currentRunStringIndex: numb
     let currentTextStringIndex = currentRunStringIndex;
 
     const parts = node.elements
-        .map((element, i: number) =>
-            element.name === "w:t" && element.elements && element.elements.length > 0
-                ? {
-                      text: element.elements[0].text?.toString() ?? "",
-                      index: i,
-                      start: currentTextStringIndex,
-                      end: (() => {
-                          // Side effect
-                          currentTextStringIndex += (element.elements[0].text?.toString() ?? "").length - 1;
-                          return currentTextStringIndex;
-                      })(),
-                  }
-                : undefined,
-        )
+        .map((element, i: number) => {
+            if (element.name !== "w:t" || !element.elements || element.elements.length === 0) {
+                return undefined;
+            }
+
+            const partText = element.elements[0].text?.toString() ?? "";
+            const start = currentTextStringIndex;
+            // Side effect: the next part starts straight after this one
+            currentTextStringIndex += partText.length;
+
+            return { text: partText, index: i, start, end: start + partText.length - 1 };
+        })
         .filter((e) => !!e)
         .map((e) => e as IParts);
 
@@ -150,7 +148,7 @@ const renderRunNode = (node: Element, index: number, currentRunStringIndex: numb
         parts,
         index,
         start: currentRunStringIndex,
-        end: currentTextStringIndex,
+        end: parts.length > 0 ? parts[parts.length - 1].end : currentRunStringIndex,
     };
 };
 
