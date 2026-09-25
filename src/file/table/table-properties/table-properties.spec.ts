@@ -107,6 +107,23 @@ describe("TableProperties", () => {
             });
         });
 
+        it("should write the cell spacing after the alignment and before the indent and borders, as the schema requires", () => {
+            const tp = new TableProperties({
+                cellSpacing: {
+                    value: 1234,
+                    type: CellSpacingType.DXA,
+                },
+                tableLook: { firstRow: true },
+                borders: {},
+                indent: { size: 100, type: WidthType.DXA },
+                alignment: AlignmentType.CENTER,
+                width: { size: 5000, type: WidthType.DXA },
+            });
+            const tree = new Formatter().format(tp);
+            const elements = (tree["w:tblPr"] as readonly Record<string, unknown>[]).map((child) => Object.keys(child)[0]);
+            expect(elements).to.deep.equal(["w:tblW", "w:jc", "w:tblCellSpacing", "w:tblInd", "w:tblBorders", "w:tblLook"]);
+        });
+
         it("should write a floating table's overlap beside w:tblpPr, not inside it", () => {
             const tp = new TableProperties({
                 style: "TableNormal",

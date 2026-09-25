@@ -132,6 +132,10 @@ export class TableProperties extends IgnoreIfEmptyXmlComponent {
             this.root.push(createAlignment(options.alignment));
         }
 
+        if (options.cellSpacing) {
+            this.root.push(createTableCellSpacing(options.cellSpacing));
+        }
+
         if (options.indent) {
             this.root.push(createTableWidthElement("w:tblInd", options.indent));
         }
@@ -157,10 +161,6 @@ export class TableProperties extends IgnoreIfEmptyXmlComponent {
 
         if (options.tableLook) {
             this.root.push(createTableLook(options.tableLook));
-        }
-
-        if (options.cellSpacing) {
-            this.root.push(createTableCellSpacing(options.cellSpacing));
         }
 
         if (options.revision) {
