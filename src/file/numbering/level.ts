@@ -217,6 +217,20 @@ class LevelText extends XmlComponent {
     }
 }
 
+// Office's schema only allows left, center and right for a level's number, where a paragraph's w:jc takes any
+// AlignmentType. So START and the justified alignments are written as left, and END as right
+const levelAlignment = (value: (typeof AlignmentType)[keyof typeof AlignmentType]): "left" | "center" | "right" => {
+    switch (value) {
+        case AlignmentType.CENTER:
+            return "center";
+        case AlignmentType.END:
+        case AlignmentType.RIGHT:
+            return "right";
+        default:
+            return "left";
+    }
+};
+
 /**
  * Alignment specification for level numbering.
  */
@@ -225,7 +239,7 @@ class LevelJc extends XmlComponent {
         super("w:lvlJc");
         this.root.push(
             new Attributes({
-                val: value,
+                val: levelAlignment(value),
             }),
         );
     }
@@ -278,7 +292,10 @@ export type ILevelsOptions = {
     readonly format?: (typeof LevelFormat)[keyof typeof LevelFormat];
     /** Level text template with placeholders like %1, %2. */
     readonly text?: string;
-    /** Text alignment for the numbering. */
+    /**
+     * Alignment of the level's number: left, center or right. START and the justified alignments are written as left,
+     * and END as right, since Office doesn't allow the others here. Defaults to START.
+     */
     readonly alignment?: (typeof AlignmentType)[keyof typeof AlignmentType];
     /** Starting number for this level. */
     readonly start?: number;

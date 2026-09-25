@@ -23,6 +23,28 @@ describe("Level", () => {
         });
     });
 
+    describe("alignment", () => {
+        const levelAlignment = (alignment: (typeof AlignmentType)[keyof typeof AlignmentType]): unknown =>
+            new Formatter().format(new Level({ level: 0, alignment }))["w:lvl"].find((child: object) => "w:lvlJc" in child);
+
+        it("writes left, center and right as they are, since they're the only values Office allows for a level", () => {
+            expect(levelAlignment(AlignmentType.LEFT)).to.deep.equal({ "w:lvlJc": { _attr: { "w:val": "left" } } });
+            expect(levelAlignment(AlignmentType.CENTER)).to.deep.equal({ "w:lvlJc": { _attr: { "w:val": "center" } } });
+            expect(levelAlignment(AlignmentType.RIGHT)).to.deep.equal({ "w:lvlJc": { _attr: { "w:val": "right" } } });
+        });
+
+        it("writes start as left and end as right", () => {
+            expect(levelAlignment(AlignmentType.START)).to.deep.equal({ "w:lvlJc": { _attr: { "w:val": "left" } } });
+            expect(levelAlignment(AlignmentType.END)).to.deep.equal({ "w:lvlJc": { _attr: { "w:val": "right" } } });
+        });
+
+        it("writes the justified alignments as left", () => {
+            expect(levelAlignment(AlignmentType.JUSTIFIED)).to.deep.equal({ "w:lvlJc": { _attr: { "w:val": "left" } } });
+            expect(levelAlignment(AlignmentType.DISTRIBUTE)).to.deep.equal({ "w:lvlJc": { _attr: { "w:val": "left" } } });
+            expect(levelAlignment(AlignmentType.THAI_DISTRIBUTE)).to.deep.equal({ "w:lvlJc": { _attr: { "w:val": "left" } } });
+        });
+    });
+
     describe("isLegalNumberingStyle", () => {
         it("should work", () => {
             const concreteNumbering = new Level({
@@ -45,7 +67,7 @@ describe("Level", () => {
                     {
                         "w:lvlJc": {
                             _attr: {
-                                "w:val": "start",
+                                "w:val": "left",
                             },
                         },
                     },

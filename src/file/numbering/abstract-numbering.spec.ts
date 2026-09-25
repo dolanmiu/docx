@@ -67,7 +67,7 @@ describe("AbstractNumbering", () => {
                             {
                                 "w:lvlJc": {
                                     _attr: {
-                                        "w:val": "end",
+                                        "w:val": "right",
                                     },
                                 },
                             },
@@ -83,7 +83,7 @@ describe("AbstractNumbering", () => {
             });
         });
 
-        it("uses 'start' as the default alignment", () => {
+        it("writes the default alignment, start, as left", () => {
             const abstractNumbering = new AbstractNumbering(1, [
                 {
                     level: 3,
@@ -133,7 +133,7 @@ describe("AbstractNumbering", () => {
                             {
                                 "w:lvlJc": {
                                     _attr: {
-                                        "w:val": "start",
+                                        "w:val": "left",
                                     },
                                 },
                             },
@@ -208,7 +208,7 @@ describe("AbstractNumbering", () => {
                             {
                                 "w:lvlJc": {
                                     _attr: {
-                                        "w:val": "end",
+                                        "w:val": "right",
                                     },
                                 },
                             },
@@ -281,7 +281,7 @@ describe("AbstractNumbering", () => {
                                 {
                                     "w:lvlJc": {
                                         _attr: {
-                                            "w:val": "start",
+                                            "w:val": "left",
                                         },
                                     },
                                 },
@@ -363,7 +363,7 @@ describe("AbstractNumbering", () => {
                                 {
                                     "w:lvlJc": {
                                         _attr: {
-                                            "w:val": "start",
+                                            "w:val": "left",
                                         },
                                     },
                                 },
@@ -446,7 +446,7 @@ describe("AbstractNumbering", () => {
                                 {
                                     "w:lvlJc": {
                                         _attr: {
-                                            "w:val": "start",
+                                            "w:val": "left",
                                         },
                                     },
                                 },
@@ -528,7 +528,7 @@ describe("AbstractNumbering", () => {
                                 {
                                     "w:lvlJc": {
                                         _attr: {
-                                            "w:val": "start",
+                                            "w:val": "left",
                                         },
                                     },
                                 },
@@ -610,7 +610,7 @@ describe("AbstractNumbering", () => {
                                 {
                                     "w:lvlJc": {
                                         _attr: {
-                                            "w:val": "start",
+                                            "w:val": "left",
                                         },
                                     },
                                 },
@@ -692,7 +692,7 @@ describe("AbstractNumbering", () => {
                                 {
                                     "w:lvlJc": {
                                         _attr: {
-                                            "w:val": "start",
+                                            "w:val": "left",
                                         },
                                     },
                                 },
@@ -774,7 +774,7 @@ describe("AbstractNumbering", () => {
                                 {
                                     "w:lvlJc": {
                                         _attr: {
-                                            "w:val": "start",
+                                            "w:val": "left",
                                         },
                                     },
                                 },
@@ -863,7 +863,7 @@ describe("AbstractNumbering", () => {
                                 {
                                     "w:lvlJc": {
                                         _attr: {
-                                            "w:val": "start",
+                                            "w:val": "left",
                                         },
                                     },
                                 },
@@ -950,7 +950,7 @@ describe("AbstractNumbering", () => {
                                 {
                                     "w:lvlJc": {
                                         _attr: {
-                                            "w:val": "start",
+                                            "w:val": "left",
                                         },
                                     },
                                 },
@@ -1037,7 +1037,7 @@ describe("AbstractNumbering", () => {
                                 {
                                     "w:lvlJc": {
                                         _attr: {
-                                            "w:val": "start",
+                                            "w:val": "left",
                                         },
                                     },
                                 },
@@ -1115,7 +1115,7 @@ describe("AbstractNumbering", () => {
                                 {
                                     "w:lvlJc": {
                                         _attr: {
-                                            "w:val": "start",
+                                            "w:val": "left",
                                         },
                                     },
                                 },
@@ -1215,7 +1215,7 @@ describe("AbstractNumbering", () => {
                                     {
                                         "w:lvlJc": {
                                             _attr: {
-                                                "w:val": "start",
+                                                "w:val": "left",
                                             },
                                         },
                                     },
@@ -1290,7 +1290,7 @@ describe("AbstractNumbering", () => {
                                 {
                                     "w:lvlJc": {
                                         _attr: {
-                                            "w:val": "start",
+                                            "w:val": "left",
                                         },
                                     },
                                 },
@@ -1368,7 +1368,7 @@ describe("AbstractNumbering", () => {
                                 {
                                     "w:lvlJc": {
                                         _attr: {
-                                            "w:val": "start",
+                                            "w:val": "left",
                                         },
                                     },
                                 },
@@ -1447,7 +1447,7 @@ describe("AbstractNumbering", () => {
                                 {
                                     "w:lvlJc": {
                                         _attr: {
-                                            "w:val": "start",
+                                            "w:val": "left",
                                         },
                                     },
                                 },
@@ -1525,7 +1525,7 @@ describe("AbstractNumbering", () => {
                                 {
                                     "w:lvlJc": {
                                         _attr: {
-                                            "w:val": "start",
+                                            "w:val": "left",
                                         },
                                     },
                                 },
@@ -1603,7 +1603,7 @@ describe("AbstractNumbering", () => {
                                 {
                                     "w:lvlJc": {
                                         _attr: {
-                                            "w:val": "start",
+                                            "w:val": "left",
                                         },
                                     },
                                 },
@@ -1677,7 +1677,7 @@ describe("AbstractNumbering", () => {
                                 {
                                     "w:lvlJc": {
                                         _attr: {
-                                            "w:val": "start",
+                                            "w:val": "left",
                                         },
                                     },
                                 },
@@ -1751,7 +1751,7 @@ describe("AbstractNumbering", () => {
                                 {
                                     "w:lvlJc": {
                                         _attr: {
-                                            "w:val": "start",
+                                            "w:val": "left",
                                         },
                                     },
                                 },
@@ -1839,7 +1839,7 @@ describe("AbstractNumbering", () => {
                                 {
                                     "w:lvlJc": {
                                         _attr: {
-                                            "w:val": "start",
+                                            "w:val": "left",
                                         },
                                     },
                                 },
@@ -1937,7 +1937,7 @@ describe("AbstractNumbering", () => {
                                     {
                                         "w:lvlJc": {
                                             _attr: {
-                                                "w:val": "start",
+                                                "w:val": "left",
                                             },
                                         },
                                     },
@@ -2027,7 +2027,7 @@ describe("AbstractNumbering", () => {
                                     {
                                         "w:lvlJc": {
                                             _attr: {
-                                                "w:val": "start",
+                                                "w:val": "left",
                                             },
                                         },
                                     },
@@ -2122,7 +2122,7 @@ describe("AbstractNumbering", () => {
                                     {
                                         "w:lvlJc": {
                                             _attr: {
-                                                "w:val": "start",
+                                                "w:val": "left",
                                             },
                                         },
                                     },
@@ -2214,7 +2214,7 @@ describe("AbstractNumbering", () => {
                                     {
                                         "w:lvlJc": {
                                             _attr: {
-                                                "w:val": "start",
+                                                "w:val": "left",
                                             },
                                         },
                                     },
@@ -2290,7 +2290,7 @@ describe("AbstractNumbering", () => {
                                     {
                                         "w:lvlJc": {
                                             _attr: {
-                                                "w:val": "start",
+                                                "w:val": "left",
                                             },
                                         },
                                     },
@@ -2366,7 +2366,7 @@ describe("AbstractNumbering", () => {
                                     {
                                         "w:lvlJc": {
                                             _attr: {
-                                                "w:val": "start",
+                                                "w:val": "left",
                                             },
                                         },
                                     },
@@ -2443,7 +2443,7 @@ describe("AbstractNumbering", () => {
                                     {
                                         "w:lvlJc": {
                                             _attr: {
-                                                "w:val": "start",
+                                                "w:val": "left",
                                             },
                                         },
                                     },
@@ -2519,7 +2519,7 @@ describe("AbstractNumbering", () => {
                                     {
                                         "w:lvlJc": {
                                             _attr: {
-                                                "w:val": "start",
+                                                "w:val": "left",
                                             },
                                         },
                                     },
@@ -2595,7 +2595,7 @@ describe("AbstractNumbering", () => {
                                     {
                                         "w:lvlJc": {
                                             _attr: {
-                                                "w:val": "start",
+                                                "w:val": "left",
                                             },
                                         },
                                     },
@@ -2670,7 +2670,7 @@ describe("AbstractNumbering", () => {
                                 {
                                     "w:lvlJc": {
                                         _attr: {
-                                            "w:val": "start",
+                                            "w:val": "left",
                                         },
                                     },
                                 },
