@@ -191,12 +191,13 @@ export class TableCellProperties extends IgnoreIfEmptyXmlComponent {
             this.root.push(new DeletedTableCell(options.deletion));
         }
 
-        if (options.revision) {
-            this.root.push(new TableCellPropertiesChange(options.revision));
-        }
-
         if (options.cellMerge) {
             this.root.push(new CellMerge(options.cellMerge));
+        }
+
+        // CT_TcPr puts the previous cell properties after all the others
+        if (options.revision) {
+            this.root.push(new TableCellPropertiesChange(options.revision));
         }
     }
 }
