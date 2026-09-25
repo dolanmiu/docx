@@ -9,7 +9,6 @@
  */
 import type { ParagraphChild } from "@file/paragraph";
 import { BuilderElement, type XmlComponent } from "@file/xml-components";
-import type { InsetMode } from "@util/types";
 
 import { createTextboxContent } from "../texbox-content/textbox-content";
 import type { LengthUnit } from "../types";
@@ -82,16 +81,14 @@ export type IVTextboxOptions = {
  * ```
  */
 export const createVmlTextbox = ({ style, children, inset }: IVTextboxOptions): XmlComponent =>
-    new BuilderElement<{ readonly style?: string; readonly inset?: string; readonly insetMode?: InsetMode }>({
+    new BuilderElement<{ readonly style?: string; readonly inset?: string }>({
         name: "v:textbox",
+        // No o:insetmode: Office only takes it on the shape. Its default, custom, uses the inset attribute, which
+        // defaults to Word's usual margins when it's left out
         attributes: {
             style: {
                 key: "style",
                 value: style,
-            },
-            insetMode: {
-                key: "insetmode",
-                value: inset ? "custom" : "auto",
             },
             inset: {
                 key: "inset",

@@ -25,7 +25,7 @@ const TEXTBOX_RUN = {
                         { _attr: { id: expect.any(String), type: "#_x0000_t202", style: "width:10pt" } },
                         {
                             "v:textbox": [
-                                { _attr: { insetmode: "auto", style: "mso-fit-shape-to-text:t;" } },
+                                { _attr: { style: "mso-fit-shape-to-text:t;" } },
                                 {
                                     "w:txbxContent": [
                                         {
