@@ -65,7 +65,7 @@ describe("MathIntegral", () => {
             });
         });
 
-        it("should create a MathIntegral with correct root key without sub-script and super-scripts", () => {
+        it("should hide both limits, and still write them empty, without sub-script and super-scripts", () => {
             const mathIntegral = new MathIntegral({
                 children: [new MathRun("1")],
             });
@@ -83,20 +83,26 @@ describe("MathIntegral", () => {
                                 },
                             },
                             {
-                                "m:supHide": {
-                                    _attr: {
-                                        "m:val": 1,
-                                    },
-                                },
-                            },
-                            {
                                 "m:subHide": {
                                     _attr: {
                                         "m:val": 1,
                                     },
                                 },
                             },
+                            {
+                                "m:supHide": {
+                                    _attr: {
+                                        "m:val": 1,
+                                    },
+                                },
+                            },
                         ],
+                    },
+                    {
+                        "m:sub": {},
+                    },
+                    {
+                        "m:sup": {},
                     },
                     {
                         "m:e": [

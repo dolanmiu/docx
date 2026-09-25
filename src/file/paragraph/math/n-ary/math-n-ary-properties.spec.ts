@@ -104,7 +104,7 @@ describe("createMathNAryProperties", () => {
             });
         });
 
-        it("should add both super-script and sub-script hide attributes", () => {
+        it("should hide the sub-script before the super-script, as the schema orders them", () => {
             const mathNAryProperties = createMathNAryProperties({
                 accent: "∑",
                 hasSuperScript: false,
@@ -129,14 +129,14 @@ describe("createMathNAryProperties", () => {
                         },
                     },
                     {
-                        "m:supHide": {
+                        "m:subHide": {
                             _attr: {
                                 "m:val": 1,
                             },
                         },
                     },
                     {
-                        "m:subHide": {
+                        "m:supHide": {
                             _attr: {
                                 "m:val": 1,
                             },

@@ -72,7 +72,7 @@ describe("MathSum", () => {
             });
         });
 
-        it("should add a hide when there is no subScript or superScript", () => {
+        it("should hide both limits, and still write them empty, when there is no subScript or superScript", () => {
             const mathSum = new MathSum({
                 children: [new MathRun("1")],
             });
@@ -97,20 +97,26 @@ describe("MathSum", () => {
                                 },
                             },
                             {
-                                "m:supHide": {
-                                    _attr: {
-                                        "m:val": 1,
-                                    },
-                                },
-                            },
-                            {
                                 "m:subHide": {
                                     _attr: {
                                         "m:val": 1,
                                     },
                                 },
                             },
+                            {
+                                "m:supHide": {
+                                    _attr: {
+                                        "m:val": 1,
+                                    },
+                                },
+                            },
                         ],
+                    },
+                    {
+                        "m:sub": {},
+                    },
+                    {
+                        "m:sup": {},
                     },
                     {
                         "m:e": [
@@ -123,6 +129,29 @@ describe("MathSum", () => {
                             },
                         ],
                     },
+                ],
+            });
+        });
+
+        it("should write an empty, hidden superscript when there is only a subScript", () => {
+            const mathSum = new MathSum({
+                children: [new MathRun("1")],
+                subScript: [new MathRun("i")],
+            });
+
+            const tree = new Formatter().format(mathSum);
+            expect(tree).to.deep.equal({
+                "m:nary": [
+                    {
+                        "m:naryPr": [
+                            { "m:chr": { _attr: { "m:val": "∑" } } },
+                            { "m:limLoc": { _attr: { "m:val": "undOvr" } } },
+                            { "m:supHide": { _attr: { "m:val": 1 } } },
+                        ],
+                    },
+                    { "m:sub": [{ "m:r": [{ "m:t": ["i"] }] }] },
+                    { "m:sup": {} },
+                    { "m:e": [{ "m:r": [{ "m:t": ["1"] }] }] },
                 ],
             });
         });
