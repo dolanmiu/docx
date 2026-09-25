@@ -202,6 +202,27 @@ describe("ShapeRun", () => {
         expect(Object.keys(shape[1]["wps:spPr"][1])).to.deep.equal(["a:custGeom"]);
     });
 
+    it("should draw a custom shape from several paths, with its text area and connection points", () => {
+        const tree = new Formatter().format(
+            new ShapeRun({
+                type: "custom",
+                paths: [{ path: "M 0 0 H 100 V 100 H 0 Z" }, { path: "M 0 0 L 100 100", fill: false, line: true }],
+                textArea: { left: 0, top: 0, right: 100, bottom: 50 },
+                connectionPoints: [{ x: 50, y: 0, side: "top" }],
+                transformation: { width: 100, height: 100 },
+            }),
+        );
+
+        const shape = tree["w:r"][0]["w:drawing"][0]["wp:inline"][5]["a:graphic"][1]["a:graphicData"][1]["wps:wsp"];
+        const geometry = shape[1]["wps:spPr"][1]["a:custGeom"];
+        expect(geometry[1]["a:gdLst"]).to.have.length(6);
+        expect(geometry[3]).to.deep.equal({
+            "a:cxnLst": [{ "a:cxn": [{ _attr: { ang: 16200000 } }, { "a:pos": { _attr: { x: "connsiteX0", y: "connsiteY0" } } }] }],
+        });
+        expect(geometry[4]["a:rect"]._attr.b).to.equal("textAreaBottom");
+        expect(geometry[5]["a:pathLst"]).to.have.length(2);
+    });
+
     describe("in the document's styles", () => {
         const contextOf = (document: object): IContext =>
             ({ file: new File({ styles: { default: { document } }, sections: [] }), stack: [] }) as unknown as IContext;

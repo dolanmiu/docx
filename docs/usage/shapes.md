@@ -22,6 +22,7 @@ Like an image, a shape is a run inside a `Paragraph`. It sits in the line of tex
 | Crop a photo to a circle                      | `ellipse` with a picture `fill`              | Profile picture               |
 | Add a shadow, glow or reflection              | `effects`                                    | Card with a drop shadow       |
 | Draw a shape that isn't a preset              | `type: "custom"` with an SVG `path`          | Logo, badge, freeform outline |
+| Draw an icon with shading, holes or details   | `type: "custom"` with several `paths`        | Cube, cylinder, page, ring    |
 
 ## Importing
 
@@ -558,7 +559,114 @@ new ShapeRun({
 
 The path can use the commands `M` (move), `L` (line), `H` and `V` (horizontal and vertical lines), `C` and `S` (cubic curves), `Q` and `T` (quadratic curves), `A` (elliptical arcs) and `Z` (close), in upper case for absolute coordinates and lower case for relative ones. A path that isn't closed is still filled, as in SVG, but its line and arrowheads are drawn only along the path.
 
-Custom shapes can hold text like any other shape. Connectors attach to the corners and ends of the path.
+Custom shapes can hold text like any other shape. Connectors attach to the corners and ends of the path, unless the shape has [connection points](#connection-points) of its own.
+
+### Several paths
+
+`paths` draws a shape from several paths, in the same units, such as the faces of a box or the body and top of a cylinder. The box around all of them is scaled to fill the shape, and later paths are drawn over earlier ones.
+
+```ts
+// A box whose top is lighter and whose right side is darker than its fill
+new ShapeRun({
+    type: "custom",
+    paths: [
+        { path: "M 0 25 L 50 0 L 100 25 L 50 50 Z", fill: "lighter" },
+        { path: "M 0 25 L 50 50 L 50 110 L 0 85 Z" },
+        { path: "M 50 50 L 100 25 L 100 85 L 50 110 Z", fill: "darker" },
+    ],
+    transformation: { width: 80, height: 88 },
+    fill: "4472C4",
+});
+
+// A page with a folded corner, and lines that are drawn but not filled
+new ShapeRun({
+    type: "custom",
+    paths: [
+        { path: "M 0 0 H 70 L 100 30 V 130 H 0 Z" },
+        { path: "M 70 0 V 30 H 100", fill: "darker" },
+        { path: "M 15 55 H 85 M 15 75 H 85 M 15 95 H 60", fill: false },
+    ],
+    transformation: { width: 68, height: 88 },
+    fill: "F2F2F2",
+    line: "7F7F7F",
+});
+```
+
+Each path is filled with the shape's `fill` and outlined with its `line`, as Word's preset shapes shade the top of a cube or the inside of a can:
+
+| Option | Type                  | Description                                                                                                                                                                |
+| ------ | --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `path` | `string`              | SVG path data                                                                                                                                                              |
+| `fill` | `CustomShapePathFill` | `true` (the default) fills the path with the shape's fill, and `false` leaves it empty. `"lighter"`, `"slightlyLighter"`, `"darker"` and `"slightlyDarker"` shade the fill |
+| `line` | `boolean`             | Whether the shape's line is drawn along the path. Default is `true`                                                                                                        |
+
+A shape has one fill and one line, so paths can't have colours of their own. For parts in different colours, put shapes in a [group](#groups).
+
+### Holes
+
+A closed part of a path inside another part is a hole in it, and a part inside a hole is filled again. This works whichever way round each part is drawn: parts are turned round where they need to be, so that applications that fill paths by the non-zero rule, which needs a hole to go the other way, cut the same holes as LibreOffice, which fills by the even-odd rule.
+
+```ts
+// A ring
+new ShapeRun({
+    type: "custom",
+    path: "M 0 50 A 50 50 0 0 1 100 50 A 50 50 0 0 1 0 50 Z M 22 50 A 28 28 0 0 1 78 50 A 28 28 0 0 1 22 50 Z",
+    transformation: { width: 88, height: 88 },
+    fill: "70AD47",
+});
+```
+
+Holes are cut within a path. Separate paths in `paths` are filled one after the other, so they don't cut holes in each other. A path that crosses itself, such as a star drawn as one line with five points, is filled differently by different applications: LibreOffice leaves its middle empty. Draw the outline of a star instead.
+
+### Text area
+
+The text of a custom shape uses the whole shape, unless `textArea` gives the box it goes in, in the units of the paths. A speech bubble's text can then go in the bubble and not its tail. `"fitText"` sizes the shape so its text fits in the text area.
+
+```ts
+new ShapeRun({
+    type: "custom",
+    path: "M 10 0 H 150 A 10 10 0 0 1 160 10 V 70 A 10 10 0 0 1 150 80 H 60 L 35 105 L 40 80 H 10 A 10 10 0 0 1 0 70 V 10 A 10 10 0 0 1 10 0 Z",
+    textArea: { left: 0, top: 0, right: 160, bottom: 80 },
+    transformation: { width: 180, height: "fitText" },
+    fill: "FBE5D6",
+    text: "Clear of the tail",
+});
+```
+
+### Connection points
+
+Connectors attach to the corners and ends of a custom shape's paths. For a shape whose corners aren't where connectors should meet it, such as a cylinder, `connectionPoints` gives the points of its own, in the units of the paths. Each point faces the side of the shape it is nearest, or the `side` given, and connectors leave it towards that side. A connector's end with a `side` attaches to the point facing that side, and one with a `point` to the nearest point. An empty list leaves the shape without connection points, and connectors end at the middles of its sides.
+
+```ts
+new ShapeCanvasRun({
+    children: [
+        { id: "server", type: "rectangle", text: "Server", transformation: { offset: { top: 28 }, width: 110, height: 44 } },
+        {
+            id: "database",
+            type: "custom",
+            paths: [
+                { path: "M 0 12 A 50 12 0 0 0 100 12 V 88 A 50 12 0 0 1 0 88 Z" },
+                { path: "M 0 12 A 50 12 0 0 1 100 12 A 50 12 0 0 1 0 12 Z", fill: "lighter" },
+            ],
+            // The middles of its top, right side, bottom and left side
+            connectionPoints: [
+                { x: 50, y: 0 },
+                { x: 100, y: 50 },
+                { x: 50, y: 100 },
+                { x: 0, y: 50 },
+            ],
+            // Below the top
+            textArea: { left: 0, top: 24, right: 100, bottom: 100 },
+            text: "Orders",
+            transformation: { offset: { left: 200 }, width: 90, height: 100 },
+            fill: "FFC000",
+        },
+        { type: "connector", from: "server", to: "database", line: { endArrow: "triangle" } },
+    ],
+});
+```
+
+The connection points and text area keep their place in the shape when it is resized in Word, as the points of freeforms drawn in Office do.
 
 ## Links and Decorative Shapes
 
@@ -883,23 +991,26 @@ Each lane is as wide as its shapes and its name need. The shapes in each lane ar
 
 ### ShapeRun
 
-| Property         | Type                            | Notes    | Description                                                                                       |
-| ---------------- | ------------------------------- | -------- | ------------------------------------------------------------------------------------------------- |
-| `type`           | `PresetShapeType` \| `"custom"` | Required | The preset shape, such as `"rectangle"`, `"ellipse"` or `"line"`, or `"custom"`                   |
-| `transformation` | `ShapeTransformation`           | Required | Size in pixels, rotation and flip. See [Size and Rotation](#size-and-rotation)                    |
-| `fill`           | `ShapeFill`                     | Optional | See [Fill](#fill). Default is no fill                                                             |
-| `line`           | `ShapeLine`                     | Optional | See [Line](#line). Default is a black line 1pt wide                                               |
-| `adjustments`    | `ShapeAdjustments<type>`        | Optional | The shape's handles, which depend on `type`. See [Adjustments](#adjustments)                      |
-| `path`           | `string`                        | Optional | SVG path data, for `type: "custom"`. See [Custom Shapes](#custom-shapes)                          |
-| `effects`        | `ShapeEffects`                  | Optional | Shadows, glow, soft edges and reflection. See [Effects](#effects)                                 |
-| `text`           | `string`                        | Optional | Centred text inside the shape. See [Text in Shapes](#text-in-shapes)                              |
-| `children`       | `Paragraph[]`                   | Optional | Paragraphs inside the shape                                                                       |
-| `textOptions`    | `ShapeTextOptions`              | Optional | How the text is laid out. See [Text layout](#text-layout)                                         |
-| `floating`       | `ShapeFloating`                 | Optional | Positions the shape on the page. See [Inline and Floating](#inline-and-floating)                  |
-| `textFlow`       | `string`                        | Optional | The text flow the shape is in. See [Text that flows](#text-that-flows-from-one-shape-to-the-next) |
-| `altText`        | `DocPropertiesOptions`          | Optional | `name`, `description` and `title` for screen readers                                              |
-| `link`           | `string`                        | Optional | A web address the shape opens when it is clicked                                                  |
-| `decorative`     | `boolean`                       | Optional | Marks the shape as decorative, so screen readers skip it                                          |
+| Property           | Type                            | Notes    | Description                                                                                       |
+| ------------------ | ------------------------------- | -------- | ------------------------------------------------------------------------------------------------- |
+| `type`             | `PresetShapeType` \| `"custom"` | Required | The preset shape, such as `"rectangle"`, `"ellipse"` or `"line"`, or `"custom"`                   |
+| `transformation`   | `ShapeTransformation`           | Required | Size in pixels, rotation and flip. See [Size and Rotation](#size-and-rotation)                    |
+| `fill`             | `ShapeFill`                     | Optional | See [Fill](#fill). Default is no fill                                                             |
+| `line`             | `ShapeLine`                     | Optional | See [Line](#line). Default is a black line 1pt wide                                               |
+| `adjustments`      | `ShapeAdjustments<type>`        | Optional | The shape's handles, which depend on `type`. See [Adjustments](#adjustments)                      |
+| `path`             | `string`                        | Optional | SVG path data, for `type: "custom"`. See [Custom Shapes](#custom-shapes)                          |
+| `paths`            | `CustomShapePath[]`             | Optional | Several paths, for `type: "custom"`, instead of `path`. See [Several paths](#several-paths)       |
+| `textArea`         | `CustomShapeTextArea`           | Optional | Where the text of a custom shape goes. See [Text area](#text-area)                                |
+| `connectionPoints` | `CustomShapeConnectionPoint[]`  | Optional | The points connectors attach to on a custom shape. See [Connection points](#connection-points)    |
+| `effects`          | `ShapeEffects`                  | Optional | Shadows, glow, soft edges and reflection. See [Effects](#effects)                                 |
+| `text`             | `string`                        | Optional | Centred text inside the shape. See [Text in Shapes](#text-in-shapes)                              |
+| `children`         | `Paragraph[]`                   | Optional | Paragraphs inside the shape                                                                       |
+| `textOptions`      | `ShapeTextOptions`              | Optional | How the text is laid out. See [Text layout](#text-layout)                                         |
+| `floating`         | `ShapeFloating`                 | Optional | Positions the shape on the page. See [Inline and Floating](#inline-and-floating)                  |
+| `textFlow`         | `string`                        | Optional | The text flow the shape is in. See [Text that flows](#text-that-flows-from-one-shape-to-the-next) |
+| `altText`          | `DocPropertiesOptions`          | Optional | `name`, `description` and `title` for screen readers                                              |
+| `link`             | `string`                        | Optional | A web address the shape opens when it is clicked                                                  |
+| `decorative`       | `boolean`                       | Optional | Marks the shape as decorative, so screen readers skip it                                          |
 
 ### ShapeGroupRun
 
@@ -953,6 +1064,7 @@ LibreOffice (checked with version 26.8) draws most shapes as Word does, but:
 - On a canvas, it draws connectors between their shapes' connection points in its own way, rather than on the route in the document. A connector that goes around a shape may go through it, and connector ends that are spread along a side meet at the connection point. In a group, it draws the route in the document.
 - It draws the text of a shape that has `resizeShapeToFitText`, or of a group or canvas that starts a new line, on the first line of the paragraph.
 - It doesn't turn the text of a rotated shape with the shape.
+- It fills a custom shape's path by the even-odd rule, so a path that crosses itself has gaps where it encloses an area twice.
 
 Apple Pages (checked with version 15.1) draws shapes and groups, and the group in place of a canvas, but:
 
@@ -1047,3 +1159,11 @@ A document with a theme of its own, swatches of its colours and of lighter and d
 [Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/118-theme.ts ":include")
 
 _Source: https://github.com/dolanmiu/docx/blob/master/demo/118-theme.ts_
+
+### Custom shapes
+
+Custom shapes drawn from several paths, with shaded faces, holes, text areas, and connection points of their own on a canvas.
+
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/120-custom-shapes.ts ":include")
+
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/120-custom-shapes.ts_

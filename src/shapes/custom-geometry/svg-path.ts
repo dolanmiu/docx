@@ -301,10 +301,16 @@ const bezierTurningPoints = (coefficients: readonly [number, number, number]): r
     return [(-b + root) / (2 * a), (-b - root) / (2 * a)];
 };
 
-const cubicAt = (p0: number, p1: number, p2: number, p3: number, t: number): number =>
+/**
+ * A cubic Bézier curve's position along one axis at `t`, from 0 to 1.
+ */
+export const cubicAt = (p0: number, p1: number, p2: number, p3: number, t: number): number =>
     (1 - t) ** 3 * p0 + 3 * (1 - t) ** 2 * t * p1 + 3 * (1 - t) * t * t * p2 + t ** 3 * p3;
 
-const quadraticAt = (p0: number, p1: number, p2: number, t: number): number => (1 - t) ** 2 * p0 + 2 * (1 - t) * t * p1 + t * t * p2;
+/**
+ * A quadratic Bézier curve's position along one axis at `t`, from 0 to 1.
+ */
+export const quadraticAt = (p0: number, p1: number, p2: number, t: number): number => (1 - t) ** 2 * p0 + 2 * (1 - t) * t * p1 + t * t * p2;
 
 const isWithin = (t: number): boolean => t > 0 && t < 1;
 

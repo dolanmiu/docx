@@ -10,7 +10,7 @@ import { createShapeGuides } from "./shape-adjustments";
 import { type ShapeEffects, createShapeEffects } from "./shape-effects";
 import { type ShapeFill, createShapeFill } from "./shape-fill";
 import { type ShapeLine, createShapeLine } from "./shape-line";
-import { createCustomGeometry, createCustomGeometryPath } from "../custom-geometry/custom-geometry";
+import { type CustomGeometryOptions, createCustomGeometry, createCustomGeometryData } from "../custom-geometry/custom-geometry";
 import { createPresetGeometry, createTransform } from "../drawing/drawing-parts";
 
 /**
@@ -22,11 +22,10 @@ export type PresetShapeGeometry =
           /** The shape's adjustments, such as `{ cornerRadius: 25 }` for a `"roundedRectangle"` */
           readonly adjustments?: Readonly<Record<string, number | undefined>>;
       }
-    | {
+    | (CustomGeometryOptions & {
+          /** A custom shape, drawn from SVG path data scaled to fill the shape */
           readonly type: "custom";
-          /** SVG path data, such as `"M 0 0 L 100 0 L 50 80 Z"`, scaled to fill the shape */
-          readonly path: string;
-      };
+      });
 
 export type PresetShapePropertiesOptions = {
     readonly transformation: IMediaDataTransformation;
@@ -65,7 +64,7 @@ export const createPresetShapeProperties = ({
         children: [
             createTransform(transformation),
             geometry.type === "custom"
-                ? createCustomGeometry(createCustomGeometryPath(geometry.path, transformation.emus.x, transformation.emus.y))
+                ? createCustomGeometry(createCustomGeometryData(geometry, transformation.emus.x, transformation.emus.y))
                 : createPresetGeometry(getOoxmlShapeName(geometry.type), createShapeGuides(geometry.type, geometry.adjustments)),
             createShapeFill(fill),
             createShapeLine(line),

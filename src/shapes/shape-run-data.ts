@@ -13,6 +13,7 @@ import {
     docPropertiesUniqueNumericId,
 } from "docx";
 
+import type { CustomShapeGeometry } from "./custom-geometry";
 import {
     type PresetShapeCoreOptions,
     type PresetShapeType,
@@ -57,7 +58,7 @@ export type ShapeBaseOptions = DrawingLinkOptions & {
  *
  * There is one member per preset shape, so `adjustments` only accepts the names of that shape's handles.
  * Another member takes any shape type without adjustments, for when the type is only known at runtime,
- * and the last one is a custom shape drawn from a `path`.
+ * and the last one is a custom shape drawn from a `path` or `paths`.
  */
 export type WithPresetShape<Options> =
     | {
@@ -69,17 +70,12 @@ export type WithPresetShape<Options> =
           };
       }[PresetShapeType]
     | (Options & { readonly type: PresetShapeType; readonly adjustments?: undefined })
-    | (Options & {
-          /** A shape of your own, drawn from `path` */
-          readonly type: "custom";
-          /**
-           * The outline of the shape as SVG path data, such as `"M 0 0 L 100 0 L 50 80 Z"` for a triangle.
-           * It can use the commands M, L, H, V, C, S, Q, T, A and Z, in any units: the path is scaled so the
-           * box around it fills the shape
-           */
-          readonly path: string;
-          readonly adjustments?: undefined;
-      });
+    | (Options &
+          CustomShapeGeometry & {
+              /** A shape of your own, drawn from `path` or `paths` */
+              readonly type: "custom";
+              readonly adjustments?: undefined;
+          });
 
 /**
  * Maps shape options to the data used to write a `wps:wsp` element.
@@ -87,7 +83,16 @@ export type WithPresetShape<Options> =
  * @param styles - The document's styles, which `text` is written to suit
  */
 export const createPresetShapeData = (options: WithPresetShape<ShapeBaseOptions>, styles?: TextStyles): PresetShapeCoreOptions => ({
-    geometry: options.type === "custom" ? { type: "custom", path: options.path } : { type: options.type, adjustments: options.adjustments },
+    geometry:
+        options.type === "custom"
+            ? {
+                  type: "custom",
+                  path: options.path,
+                  paths: options.paths,
+                  textArea: options.textArea,
+                  connectionPoints: options.connectionPoints,
+              }
+            : { type: options.type, adjustments: options.adjustments },
     fill: options.fill,
     line: options.line,
     effects: options.effects,

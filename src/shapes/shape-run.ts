@@ -62,6 +62,13 @@ export type {
     ShapeThemeColorName,
     SolidShapeFill,
 } from "./preset-shape";
+export type {
+    CustomShapeConnectionPoint,
+    CustomShapeGeometry,
+    CustomShapePath,
+    CustomShapePathFill,
+    CustomShapeTextArea,
+} from "./custom-geometry";
 export type { ShapeSize, ShapeTransformation } from "./shape-text-size";
 export type {
     ShapeFloating,
