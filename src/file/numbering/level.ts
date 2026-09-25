@@ -305,7 +305,10 @@ export type ILevelsOptions = {
     readonly isLegalNumberingStyle?: boolean;
     /** Run and paragraph style properties. */
     readonly style?: {
-        /** Run style properties for the numbering text. */
+        /**
+         * Run style properties for the numbering text. Its highlight, math and revision aren't written, since Office
+         * doesn't allow them for a level's number.
+         */
         readonly run?: IRunStylePropertiesOptions;
         /** Paragraph style properties for the level. */
         readonly paragraph?: ILevelParagraphStylePropertiesOptions;
@@ -428,7 +431,8 @@ export class LevelBase extends XmlComponent {
 
         // A level's paragraph properties are a definition, so no implicit `ListParagraph` reference belongs here.
         this.paragraphProperties = new ParagraphProperties(style && style.paragraph, { implicitListParagraphStyle: false });
-        this.runProperties = new RunProperties(style && style.run);
+        // Office's schema has no w:highlight, w:oMath or w:rPrChange in a level's run properties
+        this.runProperties = new RunProperties(style?.run && { ...style.run, highlight: undefined, math: undefined, revision: undefined });
 
         this.root.push(this.paragraphProperties);
         this.root.push(this.runProperties);

@@ -2047,99 +2047,26 @@ describe("AbstractNumbering", () => {
                 });
             });
 
-            const highlightTests = [
-                {
-                    highlight: HighlightColor.YELLOW,
-                    expected: [{ "w:highlight": { _attr: { "w:val": "yellow" } } }],
-                },
-                {
-                    highlight: HighlightColor.YELLOW,
-                    highlightComplexScript: true,
-                    expected: [{ "w:highlight": { _attr: { "w:val": "yellow" } } }],
-                },
-                {
-                    highlight: HighlightColor.YELLOW,
-                    highlightComplexScript: false,
-                    expected: [{ "w:highlight": { _attr: { "w:val": "yellow" } } }],
-                },
-                {
-                    highlight: HighlightColor.YELLOW,
-                    highlightComplexScript: "550099",
-                    expected: [{ "w:highlight": { _attr: { "w:val": "yellow" } } }],
-                },
-            ];
-            highlightTests.forEach(({ highlight, highlightComplexScript, expected }) => {
-                it(`#highlight ${highlight} writes only w:highlight, as highlightComplexScript (${highlightComplexScript}) has no effect`, () => {
-                    const abstractNumbering = new AbstractNumbering(1, [
-                        {
-                            level: 0,
-                            format: LevelFormat.LOWER_ROMAN,
-                            text: "%0.",
-                            style: {
-                                run: { highlight, highlightComplexScript },
-                            },
+            it("#highlight isn't written, since Office doesn't allow a level's number to be highlighted", () => {
+                const abstractNumbering = new AbstractNumbering(1, [
+                    {
+                        level: 0,
+                        format: LevelFormat.LOWER_ROMAN,
+                        text: "%0.",
+                        style: {
+                            run: { highlight: HighlightColor.YELLOW, highlightComplexScript: true },
                         },
-                    ]);
-                    const tree = new Formatter().format(abstractNumbering);
-                    expect(tree).to.deep.equal({
-                        "w:abstractNum": [
-                            {
-                                _attr: {
-                                    "w15:restartNumberingAfterBreak": 0,
-                                    "w:abstractNumId": 1,
-                                },
-                            },
-                            {
-                                "w:multiLevelType": {
-                                    _attr: {
-                                        "w:val": "hybridMultilevel",
-                                    },
-                                },
-                            },
-                            {
-                                "w:lvl": [
-                                    {
-                                        "w:start": {
-                                            _attr: {
-                                                "w:val": 1,
-                                            },
-                                        },
-                                    },
-                                    {
-                                        "w:numFmt": {
-                                            _attr: {
-                                                "w:val": "lowerRoman",
-                                            },
-                                        },
-                                    },
-                                    {
-                                        "w:lvlText": {
-                                            _attr: {
-                                                "w:val": "%0.",
-                                            },
-                                        },
-                                    },
-                                    {
-                                        "w:lvlJc": {
-                                            _attr: {
-                                                "w:val": "left",
-                                            },
-                                        },
-                                    },
-                                    {
-                                        "w:rPr": expected,
-                                    },
-                                    {
-                                        _attr: {
-                                            "w15:tentative": 1,
-                                            "w:ilvl": 0,
-                                        },
-                                    },
-                                ],
-                            },
-                        ],
-                    });
-                });
+                    },
+                ]);
+                const tree = new Formatter().format(abstractNumbering);
+                const level = tree["w:abstractNum"].find((child: object) => "w:lvl" in child)["w:lvl"];
+                expect(level.map((child: object) => Object.keys(child)[0])).to.deep.equal([
+                    "w:start",
+                    "w:numFmt",
+                    "w:lvlText",
+                    "w:lvlJc",
+                    "_attr",
+                ]);
             });
 
             const shadingTests = [

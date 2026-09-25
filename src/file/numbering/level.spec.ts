@@ -49,6 +49,24 @@ describe("Level", () => {
         ]);
     });
 
+    it("leaves highlight, math and revision out of its run properties, since Office doesn't allow them for a number", () => {
+        const tree = new Formatter().format(
+            new Level({
+                level: 0,
+                style: {
+                    run: {
+                        bold: true,
+                        highlight: "yellow",
+                        math: true,
+                        revision: { id: 1, author: "Firstname Lastname", date: "123", bold: false },
+                    },
+                },
+            }),
+        );
+
+        expect(tree["w:lvl"].find((child: object) => "w:rPr" in child)).to.deep.equal({ "w:rPr": [{ "w:b": {} }, { "w:bCs": {} }] });
+    });
+
     describe("alignment", () => {
         const levelAlignment = (alignment: (typeof AlignmentType)[keyof typeof AlignmentType]): unknown =>
             new Formatter().format(new Level({ level: 0, alignment }))["w:lvl"].find((child: object) => "w:lvlJc" in child);
