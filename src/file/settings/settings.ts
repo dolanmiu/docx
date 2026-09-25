@@ -216,12 +216,12 @@ export type IHyphenationOptions = {
  * <xsd:complexType name="CT_Settings">
  *   <xsd:sequence>
  *     <xsd:element name="trackRevisions" type="CT_OnOff" minOccurs="0"/>
- *     <xsd:element name="evenAndOddHeaders" type="CT_OnOff" minOccurs="0"/>
  *     <xsd:element name="defaultTabStop" type="CT_TwipsMeasure" minOccurs="0"/>
  *     <xsd:element name="autoHyphenation" type="CT_OnOff" minOccurs="0"/>
  *     <xsd:element name="consecutiveHyphenLimit" type="CT_DecimalNumber" minOccurs="0"/>
  *     <xsd:element name="hyphenationZone" type="CT_TwipsMeasure" minOccurs="0"/>
  *     <xsd:element name="doNotHyphenateCaps" type="CT_OnOff" minOccurs="0"/>
+ *     <xsd:element name="evenAndOddHeaders" type="CT_OnOff" minOccurs="0"/>
  *     <xsd:element name="updateFields" type="CT_OnOff" minOccurs="0"/>
  *     <xsd:element name="compat" type="CT_Compat" minOccurs="0"/>
  *     <!-- Additional elements omitted for brevity -->
@@ -278,19 +278,10 @@ export class Settings extends XmlComponent {
         // https://c-rex.net/projects/samples/ooxml/e1/Part4/OOXML_P4_DOCX_displayBackgroundSha_topic_ID0ET4SX.html
         this.root.push(new OnOffElement("w:displayBackgroundShape", true));
 
+        // The elements are written in CT_Settings' order, which the schema requires
         // https://c-rex.net/projects/samples/ooxml/e1/Part4/OOXML_P4_DOCX_trackRevisions_topic_ID0EKXKY.html
         if (options.trackRevisions !== undefined) {
             this.root.push(new OnOffElement("w:trackRevisions", options.trackRevisions));
-        }
-
-        // http://officeopenxml.com/WPSectionFooterReference.php
-        // https://c-rex.net/projects/samples/ooxml/e1/Part4/OOXML_P4_DOCX_evenAndOddHeaders_topic_ID0ET1WU.html
-        if (options.evenAndOddHeaders !== undefined) {
-            this.root.push(new OnOffElement("w:evenAndOddHeaders", options.evenAndOddHeaders));
-        }
-
-        if (options.updateFields !== undefined) {
-            this.root.push(new OnOffElement("w:updateFields", options.updateFields));
         }
 
         // https://c-rex.net/samples/ooxml/e1/Part4/OOXML_P4_DOCX_defaultTabStop_topic_ID0EIXSX.html
@@ -303,19 +294,29 @@ export class Settings extends XmlComponent {
             this.root.push(new OnOffElement("w:autoHyphenation", options.hyphenation.autoHyphenation));
         }
 
-        // https://c-rex.net/samples/ooxml/e1/Part4/OOXML_P4_DOCX_hyphenationZone_topic_ID0ERI3X.html
-        if (options.hyphenation?.hyphenationZone !== undefined) {
-            this.root.push(new NumberValueElement("w:hyphenationZone", options.hyphenation.hyphenationZone));
-        }
-
         // https://c-rex.net/samples/ooxml/e1/Part4/OOXML_P4_DOCX_consecutiveHyphenLim_topic_ID0EQ6RX.html
         if (options.hyphenation?.consecutiveHyphenLimit !== undefined) {
             this.root.push(new NumberValueElement("w:consecutiveHyphenLimit", options.hyphenation.consecutiveHyphenLimit));
         }
 
+        // https://c-rex.net/samples/ooxml/e1/Part4/OOXML_P4_DOCX_hyphenationZone_topic_ID0ERI3X.html
+        if (options.hyphenation?.hyphenationZone !== undefined) {
+            this.root.push(new NumberValueElement("w:hyphenationZone", options.hyphenation.hyphenationZone));
+        }
+
         // https://c-rex.net/samples/ooxml/e1/Part4/OOXML_P4_DOCX_doNotHyphenateCaps_topic_ID0EW4XX.html
         if (options.hyphenation?.doNotHyphenateCaps !== undefined) {
             this.root.push(new OnOffElement("w:doNotHyphenateCaps", options.hyphenation.doNotHyphenateCaps));
+        }
+
+        // http://officeopenxml.com/WPSectionFooterReference.php
+        // https://c-rex.net/projects/samples/ooxml/e1/Part4/OOXML_P4_DOCX_evenAndOddHeaders_topic_ID0ET1WU.html
+        if (options.evenAndOddHeaders !== undefined) {
+            this.root.push(new OnOffElement("w:evenAndOddHeaders", options.evenAndOddHeaders));
+        }
+
+        if (options.updateFields !== undefined) {
+            this.root.push(new OnOffElement("w:updateFields", options.updateFields));
         }
 
         this.root.push(
