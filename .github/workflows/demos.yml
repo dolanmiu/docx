@@ -265,3 +265,5 @@ jobs:
             # - uses: "./.github/actions/validate-docx"
             - run: npm run run-ts -- ./demo/119-theme-colors.ts
             - uses: "./.github/actions/validate-docx"
+            - run: npm run run-ts -- ./demo/120-custom-shapes.ts
+            # - uses: "./.github/actions/validate-docx"

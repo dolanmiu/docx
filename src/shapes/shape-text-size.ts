@@ -6,6 +6,7 @@
  */
 import { AlignmentType, type IMediaTransformation, Paragraph, TextRun } from "docx";
 
+import { type CustomGeometryOptions, getCustomTextRectangle } from "./custom-geometry";
 import { type PresetShapeType, type ShapeTextOptions, createShapeGuides } from "./preset-shape";
 import { type ShapePercentage, percentageOf } from "./shape-floating";
 import { type TextStyles, WORD_DEFAULT_STYLES, hasDefaultParagraphSpacing, readTextParagraphs } from "./shape-text-styles";
@@ -53,7 +54,7 @@ export const createTextParagraphs = (text: string, styles: TextStyles = WORD_DEF
 /**
  * What a shape needs to be sized to fit its text.
  */
-export type TextSizingOptions = {
+export type TextSizingOptions = CustomGeometryOptions & {
     readonly type: PresetShapeType | "custom";
     /** The shape's adjustments, by their readable names */
     readonly adjustments?: Readonly<Record<string, number | undefined>>;
@@ -132,7 +133,10 @@ export const resolveShapeSize = (
     // The text box's length across and along the text, in pixels, for a shape of the given size
     const textBox = (acrossSize: number, alongSize: number): { readonly across: number; readonly along: number } => {
         const [width, height] = turned ? [alongSize, acrossSize] : [acrossSize, alongSize];
-        const box = getTextRectangle(options.type, width * EMUS_PER_PIXEL, height * EMUS_PER_PIXEL, guides);
+        const box =
+            options.type === "custom"
+                ? getCustomTextRectangle(options, width * EMUS_PER_PIXEL, height * EMUS_PER_PIXEL)
+                : getTextRectangle(options.type, width * EMUS_PER_PIXEL, height * EMUS_PER_PIXEL, guides);
         const size = { width: (box.right - box.left) / EMUS_PER_PIXEL, height: (box.bottom - box.top) / EMUS_PER_PIXEL };
         return turned ? { across: size.height, along: size.width } : { across: size.width, along: size.height };
     };

@@ -557,6 +557,52 @@ describe("layoutShapeDrawing", () => {
         expect(sitesOf(children[2])[0]).to.equal(1);
     });
 
+    it("should connect to a custom shape's own connection points, by side or by the point nearest", () => {
+        // A cylinder, with points at the middle of its top, bottom and sides
+        const cylinder = {
+            id: "c",
+            type: "custom",
+            paths: [
+                { path: "M 0 10 A 50 10 0 0 1 100 10 V 90 A 50 10 0 0 1 0 90 Z" },
+                { path: "M 0 10 A 50 10 0 0 0 100 10", fill: false },
+            ],
+            connectionPoints: [
+                { x: 50, y: 0 },
+                { x: 100, y: 50 },
+                { x: 50, y: 100 },
+                { x: 0, y: 50, side: "left" },
+            ],
+            transformation: { offset: { left: 0, top: 0 }, width: 100, height: 100 },
+        } as IShapeGroupChildOptions;
+        const { children } = layoutShapeDrawing([
+            cylinder,
+            box("below", 0, 300),
+            box("left", -300, 25),
+            connect("c", "below"),
+            connect({ id: "c", side: "left" }, "left"),
+            connect({ id: "c", point: { x: 90, y: 60 } }, "below"),
+        ]);
+        expect(sitesOf(children[3])[0]).to.equal(2);
+        expect(sitesOf(children[4])[0]).to.equal(3);
+        expect(sitesOf(children[5])[0]).to.equal(1);
+    });
+
+    it("should end connectors at the middle of a side of a custom shape without connection points", () => {
+        const { children } = layoutShapeDrawing([
+            {
+                id: "t",
+                type: "custom",
+                path: "M 50 0 L 100 100 L 0 100 Z",
+                connectionPoints: [],
+                transformation: { width: 100, height: 100 },
+            },
+            box("a", 0, 300),
+            connect("t", "a"),
+        ] as readonly IShapeGroupChildOptions[]);
+        expect(sitesOf(children[2])).to.deep.equal([undefined, 0]);
+        expect(endsOf(children[2])[0]).to.deep.equal([50, 100]);
+    });
+
     describe("text", () => {
         it("should size a shape to fit its text, and write the text as centred paragraphs", () => {
             const { children } = layoutShapeDrawing([
@@ -1152,7 +1198,7 @@ describe("connectors that need more bends than the presets have", () => {
         const connector = children[6];
         const data = dataOf(connector);
         expect(data.geometry.type).to.equal("custom");
-        expect(data.geometry.type === "custom" && data.geometry.path.startsWith("M 0 ")).to.equal(true);
+        expect(data.geometry.type === "custom" && data.geometry.path?.startsWith("M 0 ")).to.equal(true);
         expect(data.connections).to.equal(undefined);
         expect(data.line).to.deep.equal(arrow);
         expect(data.nonVisualDrawingProperties?.name).to.match(/^Freeform \d+$/);

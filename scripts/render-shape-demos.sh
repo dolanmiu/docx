@@ -23,7 +23,7 @@ OUT="${1:-build/shape-demos}"
 shift || true
 DEMOS=("$@")
 if [ ${#DEMOS[@]} -eq 0 ]; then
-    DEMOS=(107-inline-shapes 108-shapes 109-shape-groups 110-shape-connectors 111-shape-styles 112-shape-diagrams 113-shape-layout 115-shape-document-styles 116-shape-swimlanes 117-shape-page-layout 118-theme)
+    DEMOS=(107-inline-shapes 108-shapes 109-shape-groups 110-shape-connectors 111-shape-styles 112-shape-diagrams 113-shape-layout 115-shape-document-styles 116-shape-swimlanes 117-shape-page-layout 118-theme 120-custom-shapes)
 fi
 SOFFICE="${SOFFICE:-soffice}"
 WP="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing"

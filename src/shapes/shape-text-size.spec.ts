@@ -103,6 +103,20 @@ describe("resolveShapeSize", () => {
         );
     });
 
+    it("should fit the text of a custom shape in its text area", () => {
+        const rectangle = resolveShapeSize({ type: "rectangle", text: "Hello", transformation: { width: "fitText", height: "fitText" } });
+        // The text area is the middle half of the shape across, and its top half down
+        const { width, height } = resolveShapeSize({
+            type: "custom",
+            path: "M 0 0 H 100 V 100 H 0 Z",
+            textArea: { left: 25, top: 0, right: 75, bottom: 50 },
+            text: "Hello",
+            transformation: { width: "fitText", height: "fitText" },
+        });
+        expect(width).to.be.closeTo(rectangle.width * 2, 2);
+        expect(height).to.be.closeTo(rectangle.height * 2, 2);
+    });
+
     it("should measure text that runs up or down the shape across its height", () => {
         const { width, height } = resolveShapeSize({
             type: "rectangle",

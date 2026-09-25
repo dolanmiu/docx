@@ -29,7 +29,7 @@ import {
     routeConnector,
     separateChannels,
 } from "./connector";
-import { createCustomGeometryPath, outwardAngle } from "./custom-geometry";
+import { createCustomGeometryData, outwardAngle } from "./custom-geometry";
 import type { ShapeDrawingChildMediaData } from "./drawing/shape-drawing-child";
 import type { ImageSource } from "./picture/image-data";
 import type { ShapePictureCoreOptions } from "./picture/shape-picture";
@@ -444,7 +444,7 @@ const straightSidesOf = (options: ShapeChildOptions, width: number, height: numb
 const shapeSites = (options: ShapeChildOptions, width: number, height: number): readonly LocalSite[] => {
     const sites =
         options.type === "custom"
-            ? createCustomGeometryPath(options.path, width, height).sites
+            ? createCustomGeometryData(options, width, height).sites
             : getConnectionSites(options.type, width, height, createShapeGuides(options.type, options.adjustments));
     return sites.map((site, index) => ({ ...site, index }));
 };
