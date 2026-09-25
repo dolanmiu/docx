@@ -36,6 +36,8 @@ const doc = new docx.Document({
 });
 ```
 
+Your styles take the place of the library's default styles with the same ids, and your document defaults take the place of the library's. The library's default styles fill in the ones your `styles.xml` leaves out, such as `Hyperlink` or `FootnoteText`. A default style you set in `styles.default`, such as `heading1` or `document`, takes the place of yours.
+
 You can use paragraphs, `heading1()`, `heading2()` etc and it will be styled according to your `styles.xml` created earlier. You can even use your new style you made by calling the `style` method:
 
 ```ts

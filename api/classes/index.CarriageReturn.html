@@ -15,14 +15,14 @@
 <div class="tsd-comment tsd-typography"><p>Represents a carriage return character.</p>
 <p>Inserts a carriage return, which may be rendered differently than a standard line break.</p>
 </div></section>
-<section class="tsd-panel tsd-hierarchy" data-refl="879">
+<section class="tsd-panel tsd-hierarchy" data-refl="964">
 <h4>Hierarchy (<a href="../hierarchy.html#index.CarriageReturn">View Summary</a>)</h4>
 <ul class="tsd-hierarchy">
 <li class="tsd-hierarchy-item"><a href="index.EmptyElement.html" class="tsd-signature-type tsd-kind-class">EmptyElement</a>
 <ul class="tsd-hierarchy">
 <li class="tsd-hierarchy-item"><span class="tsd-hierarchy-target">CarriageReturn</span></li></ul></li></ul></section><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/d932e1de4461a014f53c91170505cad3490f62d7/src/file/paragraph/run/empty-children.ts#L194">file/paragraph/run/empty-children.ts:194</a></li></ul></aside>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/2a1cc45dcb34e52d8839490b7ead1dd46a55547e/src/file/paragraph/run/empty-children.ts#L194">file/paragraph/run/empty-children.ts:194</a></li></ul></aside>
 <section class="tsd-panel-group tsd-index-group">
 <section class="tsd-panel tsd-index-panel">
 <details class="tsd-index-content tsd-accordion" open><summary class="tsd-accordion-summary tsd-index-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
@@ -31,6 +31,10 @@
 <section class="tsd-index-section">
 <h3 class="tsd-index-heading tsd-anchor-link" id="constructors">Constructors<a href="#constructors" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-index-list"><a href="#constructor" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Constructor"><use href="../assets/icons.svg#icon-512"></use></svg><span>constructor</span></a>
+</div></section>
+<section class="tsd-index-section">
+<h3 class="tsd-index-heading tsd-anchor-link" id="accessors">Accessors<a href="#accessors" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<div class="tsd-index-list"><a href="#writtenas" class="tsd-index-link tsd-is-inherited"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Accessor"><use href="../assets/icons.svg#icon-262144"></use></svg><span>written<wbr/>As</span></a>
 </div></section>
 <section class="tsd-index-section">
 <h3 class="tsd-index-heading tsd-anchor-link" id="methods">Methods<a href="#methods" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
@@ -49,7 +53,23 @@
 <h4 class="tsd-returns-title">Returns <a href="" class="tsd-signature-type tsd-kind-class">CarriageReturn</a></h4><aside class="tsd-sources">
 <p>Overrides <a href="index.EmptyElement.html">EmptyElement</a>.<a href="index.EmptyElement.html#constructor">constructor</a></p>
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/d932e1de4461a014f53c91170505cad3490f62d7/src/file/paragraph/run/empty-children.ts#L195">file/paragraph/run/empty-children.ts:195</a></li></ul></aside></div></li></ul></section></section></details>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/2a1cc45dcb34e52d8839490b7ead1dd46a55547e/src/file/paragraph/run/empty-children.ts#L195">file/paragraph/run/empty-children.ts:195</a></li></ul></aside></div></li></ul></section></section></details>
+<details class="tsd-panel-group tsd-member-group tsd-accordion" open><summary class="tsd-accordion-summary" data-key="section-Accessors"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
+<h2 class="tsd-anchor-link" id="accessors-1">Accessors<a href="#accessors-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2></summary>
+<section>
+<section class="tsd-panel tsd-member tsd-is-inherited">
+<h3 class="tsd-anchor-link" id="writtenas"><span>written<wbr/>As</span><a href="#writtenas" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul class="tsd-signatures tsd-is-inherited">
+<li>
+<div class="tsd-signature" id="writtenaswrittenas"><span class="tsd-signature-keyword">get</span> <span class="tsd-kind-get-signature">writtenAs</span><span class="tsd-signature-symbol">()</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-keyword">readonly</span> <a href="index.BaseXmlComponent.html" class="tsd-signature-type tsd-kind-class">BaseXmlComponent</a><span class="tsd-signature-symbol">[]</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">undefined</span></div>
+<div class="tsd-description"><code class="tsd-tag">Internal</code>
+<div class="tsd-comment tsd-typography"><p>The components written in this one's place, one after another, when it can't be written as a single element,
+such as a run with another run in its children. Undefined when it is written as itself.</p>
+</div>
+<h4 class="tsd-returns-title">Returns <span class="tsd-signature-keyword">readonly</span> <a href="index.BaseXmlComponent.html" class="tsd-signature-type tsd-kind-class">BaseXmlComponent</a><span class="tsd-signature-symbol">[]</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">undefined</span></h4><aside class="tsd-sources">
+<p>Inherited from EmptyElement.writtenAs</p>
+<ul>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/2a1cc45dcb34e52d8839490b7ead1dd46a55547e/src/file/xml-components/base.ts#L84">file/xml-components/base.ts:84</a></li></ul></aside></div></li></ul></section></section></details>
 <details class="tsd-panel-group tsd-member-group tsd-accordion" open><summary class="tsd-accordion-summary" data-key="section-Methods"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
 <h2 class="tsd-anchor-link" id="methods-1">Methods<a href="#methods-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2></summary>
 <section>
@@ -75,7 +95,7 @@
 </div></div><aside class="tsd-sources">
 <p>Inherited from <a href="index.EmptyElement.html">EmptyElement</a>.<a href="index.EmptyElement.html#addchildelement">addChildElement</a></p>
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/d932e1de4461a014f53c91170505cad3490f62d7/src/file/xml-components/xml-component.ts#L126">file/xml-components/xml-component.ts:126</a></li></ul></aside></div></li></ul></section>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/2a1cc45dcb34e52d8839490b7ead1dd46a55547e/src/file/xml-components/xml-component.ts#L128">file/xml-components/xml-component.ts:128</a></li></ul></aside></div></li></ul></section>
 <section class="tsd-panel tsd-member tsd-is-inherited">
 <h3 class="tsd-anchor-link" id="prepforxml"><span>prep<wbr/>For<wbr/>Xml</span><a href="#prepforxml" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-is-inherited">
@@ -106,7 +126,7 @@ or execute side effects during serialization (e.g., creating relationships).</p>
 </div></div><aside class="tsd-sources">
 <p>Inherited from <a href="index.EmptyElement.html">EmptyElement</a>.<a href="index.EmptyElement.html#prepforxml">prepForXml</a></p>
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/d932e1de4461a014f53c91170505cad3490f62d7/src/file/xml-components/xml-component.ts#L88">file/xml-components/xml-component.ts:88</a></li></ul></aside></div></li></ul></section></section></details></div>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/2a1cc45dcb34e52d8839490b7ead1dd46a55547e/src/file/xml-components/xml-component.ts#L88">file/xml-components/xml-component.ts:88</a></li></ul></aside></div></li></ul></section></section></details></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">
@@ -123,6 +143,8 @@ or execute side effects during serialization (e.g., creating relationships).</p>
 <div class="tsd-accordion-details">
 <details open class="tsd-accordion tsd-page-navigation-section"><summary class="tsd-accordion-summary" data-key="section-Constructors"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>Constructors</summary>
 <div><a href="#constructor"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Constructor"><use href="../assets/icons.svg#icon-512"></use></svg><span>constructor</span></a></div></details>
+<details open class="tsd-accordion tsd-page-navigation-section"><summary class="tsd-accordion-summary" data-key="section-Accessors"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>Accessors</summary>
+<div><a href="#writtenas" class="tsd-is-inherited"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Accessor"><use href="../assets/icons.svg#icon-262144"></use></svg><span>written<wbr/>As</span></a></div></details>
 <details open class="tsd-accordion tsd-page-navigation-section"><summary class="tsd-accordion-summary" data-key="section-Methods"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>Methods</summary>
 <div><a href="#addchildelement" class="tsd-is-inherited"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>add<wbr/>Child<wbr/>Element</span></a><a href="#prepforxml" class="tsd-is-inherited"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>prep<wbr/>For<wbr/>Xml</span></a></div></details></div></details></div>
 <div class="site-menu">

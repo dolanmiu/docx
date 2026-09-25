@@ -36,6 +36,9 @@ Key schemas:
 | `ooxml-schemas/ISO-IEC29500-4_2016/dml-main.xsd`    | DrawingML (images, shapes)                 |
 | `ooxml-schemas/ISO-IEC29500-4_2016/shared-math.xsd` | Math equations                             |
 | `ooxml-schemas/ISO-IEC29500-4_2016/vml-main.xsd`    | VML (legacy shapes, textboxes)             |
+| `ooxml-schemas/microsoft/`                          | Microsoft's extensions (`w14:`, `wps:`...) |
+
+`ooxml-schemas/README.md` lists every schema and where it's from.
 
 Always cross-reference these schemas when implementing or modifying XML generation:
 
