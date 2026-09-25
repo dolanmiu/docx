@@ -7,7 +7,7 @@ import { Border, ThematicBreak } from "./border";
 
 describe("Border", () => {
     describe("#constructor", () => {
-        it("should create", () => {
+        it("should write the borders in the schema's order: top, left, bottom, right, between", () => {
             const border = new Border({
                 top: {
                     color: "FF0000",
@@ -56,21 +56,21 @@ describe("Border", () => {
                         },
                     },
                     {
-                        "w:bottom": {
-                            _attr: {
-                                "w:color": "FF0000",
-                                "w:space": 3,
-                                "w:sz": 4,
-                                "w:val": "wave",
-                            },
-                        },
-                    },
-                    {
                         "w:left": {
                             _attr: {
                                 "w:color": "FF0000",
                                 "w:space": 5,
                                 "w:sz": 6,
+                                "w:val": "wave",
+                            },
+                        },
+                    },
+                    {
+                        "w:bottom": {
+                            _attr: {
+                                "w:color": "FF0000",
+                                "w:space": 3,
+                                "w:sz": 4,
                                 "w:val": "wave",
                             },
                         },

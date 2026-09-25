@@ -70,16 +70,17 @@ export class Border extends IgnoreIfEmptyXmlComponent {
     public constructor(options: IBordersOptions) {
         super("w:pBdr");
 
+        // In the schema's order: top, left, bottom, right, between
         if (options.top) {
             this.root.push(createBorderElement("w:top", options.top));
         }
 
-        if (options.bottom) {
-            this.root.push(createBorderElement("w:bottom", options.bottom));
-        }
-
         if (options.left) {
             this.root.push(createBorderElement("w:left", options.left));
+        }
+
+        if (options.bottom) {
+            this.root.push(createBorderElement("w:bottom", options.bottom));
         }
 
         if (options.right) {
