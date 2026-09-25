@@ -6,6 +6,9 @@ import { DocumentWrapper } from "@file/document-wrapper";
 import type { File } from "@file/file";
 import { EMPTY_OBJECT } from "@file/xml-components";
 
+import { DocumentDefaults } from "./defaults";
+import { ExternalStylesFactory } from "./external-styles-factory";
+import { DefaultStylesFactory } from "./factory";
 import { Styles } from "./styles";
 
 describe("Styles", () => {
@@ -147,6 +150,68 @@ describe("Styles", () => {
                     ],
                 },
             ]);
+        });
+    });
+
+    describe("#prepForXml", () => {
+        it("should replace a default style with a paragraph style of the same id", () => {
+            const styles = new Styles({
+                ...new DefaultStylesFactory().newInstance(),
+                paragraphStyles: [{ id: "Heading2", name: "My Heading 2" }],
+            });
+            const tree = new Formatter().format(styles)["w:styles"];
+            const headings = tree.filter((x: any) => [x["w:style"]].flat().some((part: any) => part?._attr?.["w:styleId"] === "Heading2"));
+            expect(headings).to.deep.equal([
+                {
+                    "w:style": [
+                        { _attr: { "w:type": "paragraph", "w:styleId": "Heading2" } },
+                        { "w:name": { _attr: { "w:val": "My Heading 2" } } },
+                    ],
+                },
+            ]);
+            expect(tree).to.have.length(new Formatter().format(new Styles(new DefaultStylesFactory().newInstance()))["w:styles"].length);
+        });
+
+        it("should put the document defaults and the latent styles first, and keep the last of each", () => {
+            const external = new ExternalStylesFactory().newInstance(`<w:styles xmlns:w="main">
+                <w:style w:type="paragraph" w:styleId="Normal"><w:name w:val="Normal"/></w:style>
+                <w:latentStyles w:defQFormat="0"/>
+                <w:docDefaults><w:rPrDefault/></w:docDefaults>
+            </w:styles>`);
+            const styles = new Styles({ ...external, importedStyles: [new DocumentDefaults({}), ...external.importedStyles!] });
+            expect(new Formatter().format(styles)).to.deep.equal({
+                "w:styles": [
+                    { _attr: { "xmlns:w": "main" } },
+                    { "w:docDefaults": [{ "w:rPrDefault": EMPTY_OBJECT }] },
+                    { "w:latentStyles": { _attr: { "w:defQFormat": "0" } } },
+                    {
+                        "w:style": [
+                            { _attr: { "w:type": "paragraph", "w:styleId": "Normal" } },
+                            { "w:name": { _attr: { "w:val": "Normal" } } },
+                        ],
+                    },
+                ],
+            });
+        });
+
+        it("should write styles with nothing in them as an empty element", () => {
+            expect(new Formatter().format(new Styles({}))).to.deep.equal({ "w:styles": EMPTY_OBJECT });
+        });
+
+        it("should keep every style without an id, and text, where they are", () => {
+            const styles = new Styles(
+                new ExternalStylesFactory().newInstance(
+                    `<w:styles xmlns:w="main">text<w:style/><w:style><w:name w:val="No id"/></w:style></w:styles>`,
+                ),
+            );
+            expect(new Formatter().format(styles)).to.deep.equal({
+                "w:styles": [
+                    { _attr: { "xmlns:w": "main" } },
+                    "text",
+                    { "w:style": EMPTY_OBJECT },
+                    { "w:style": [{ "w:name": { _attr: { "w:val": "No id" } } }] },
+                ],
+            });
         });
     });
 });

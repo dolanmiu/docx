@@ -641,6 +641,7 @@ describe("File", () => {
                         <w:style w:type="paragraph" w:styleId="Heading1">
                             <w:name w:val="heading 1"/>
                         </w:style>
+                        <w:docDefaults><w:rPrDefault/></w:docDefaults>
                     </w:styles>`,
                 styles: {
                     default: {
@@ -653,7 +654,25 @@ describe("File", () => {
                 },
             });
 
-            expect(doc.Styles).to.not.be.undefined;
+            const tree = new Formatter().format(doc.Styles)["w:styles"];
+            const names = tree.map((child: object) => Object.keys(child)[0]);
+            const ids = tree.map(
+                (child: { readonly "w:style"?: readonly { readonly _attr?: Record<string, string> }[] }) =>
+                    child["w:style"]?.find((part) => part._attr)?._attr?.["w:styleId"],
+            );
+
+            // The external document defaults take the place of docx's, and come first
+            expect(names.filter((name: string) => name === "w:docDefaults")).to.have.length(1);
+            expect(tree[1]).to.deep.equal({ "w:docDefaults": [{ "w:rPrDefault": {} }] });
+            // The external Heading1 takes the place of docx's, and docx's styles fill in the rest
+            expect(ids.filter((id: string) => id === "Heading1")).to.have.length(1);
+            expect(tree[ids.indexOf("Heading1")]).to.deep.equal({
+                "w:style": [
+                    { _attr: { "w:type": "paragraph", "w:styleId": "Heading1" } },
+                    { "w:name": { _attr: { "w:val": "heading 1" } } },
+                ],
+            });
+            expect(ids).to.include("Title");
         });
     });
 
