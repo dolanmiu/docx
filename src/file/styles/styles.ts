@@ -26,7 +26,10 @@ import type { IParagraphStyleOptions } from "./style/paragraph-style";
  * @see {@link Styles}
  */
 export type IStylesOptions = {
-    /** Default styles for document, headings, and common elements */
+    /**
+     * Default styles for document, headings, and common elements. With `externalStyles`, each one given here takes the
+     * place of the external style with its id, or of the external document defaults
+     */
     readonly default?: IDefaultStylesOptions;
     /** Initial base XML component for styles root element */
     readonly initialStyles?: BaseXmlComponent;

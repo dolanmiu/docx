@@ -7,6 +7,8 @@
  *
  * @module
  */
+import type { XmlComponent } from "@file/xml-components";
+
 import { DocumentDefaults, type IDocumentDefaultsOptions } from "./defaults";
 import {
     EndnoteReferenceStyle,
@@ -86,6 +88,77 @@ export type IDefaultStylesOptions = {
 };
 
 /**
+ * docx's default styles, each under the option of `styles.default` that configures it.
+ *
+ * @internal
+ */
+export const createDefaultStyles = (
+    options: IDefaultStylesOptions = {},
+): { readonly [Key in keyof IDefaultStylesOptions]-?: XmlComponent } => ({
+    document: new DocumentDefaults(options.document ?? {}),
+    title: new TitleStyle({
+        run: {
+            size: 56,
+        },
+        ...options.title,
+    }),
+    heading1: new Heading1Style({
+        run: {
+            color: "2E74B5",
+            size: 32,
+        },
+        ...options.heading1,
+    }),
+    heading2: new Heading2Style({
+        run: {
+            color: "2E74B5",
+            size: 26,
+        },
+        ...options.heading2,
+    }),
+    heading3: new Heading3Style({
+        run: {
+            color: "1F4D78",
+            size: 24,
+        },
+        ...options.heading3,
+    }),
+    heading4: new Heading4Style({
+        run: {
+            color: "2E74B5",
+            italics: true,
+        },
+        ...options.heading4,
+    }),
+    heading5: new Heading5Style({
+        run: {
+            color: "2E74B5",
+        },
+        ...options.heading5,
+    }),
+    heading6: new Heading6Style({
+        run: {
+            color: "1F4D78",
+        },
+        ...options.heading6,
+    }),
+    strong: new StrongStyle({
+        run: {
+            bold: true,
+        },
+        ...options.strong,
+    }),
+    listParagraph: new ListParagraph(options.listParagraph || {}),
+    hyperlink: new HyperlinkStyle(options.hyperlink || {}),
+    footnoteReference: new FootnoteReferenceStyle(options.footnoteReference || {}),
+    footnoteText: new FootnoteText(options.footnoteText || {}),
+    footnoteTextChar: new FootnoteTextChar(options.footnoteTextChar || {}),
+    endnoteReference: new EndnoteReferenceStyle(options.endnoteReference || {}),
+    endnoteText: new EndnoteText(options.endnoteText || {}),
+    endnoteTextChar: new EndnoteTextChar(options.endnoteTextChar || {}),
+});
+
+/**
  * Factory for creating default document styles.
  *
  * This factory creates a complete set of default styles for common document elements
@@ -110,69 +183,7 @@ export class DefaultStylesFactory {
         const documentAttributes = new DocumentAttributes(["mc", "r", "w", "w14", "w15"], "w14 w15");
         return {
             initialStyles: documentAttributes,
-            importedStyles: [
-                new DocumentDefaults(options.document ?? {}),
-                new TitleStyle({
-                    run: {
-                        size: 56,
-                    },
-                    ...options.title,
-                }),
-                new Heading1Style({
-                    run: {
-                        color: "2E74B5",
-                        size: 32,
-                    },
-                    ...options.heading1,
-                }),
-                new Heading2Style({
-                    run: {
-                        color: "2E74B5",
-                        size: 26,
-                    },
-                    ...options.heading2,
-                }),
-                new Heading3Style({
-                    run: {
-                        color: "1F4D78",
-                        size: 24,
-                    },
-                    ...options.heading3,
-                }),
-                new Heading4Style({
-                    run: {
-                        color: "2E74B5",
-                        italics: true,
-                    },
-                    ...options.heading4,
-                }),
-                new Heading5Style({
-                    run: {
-                        color: "2E74B5",
-                    },
-                    ...options.heading5,
-                }),
-                new Heading6Style({
-                    run: {
-                        color: "1F4D78",
-                    },
-                    ...options.heading6,
-                }),
-                new StrongStyle({
-                    run: {
-                        bold: true,
-                    },
-                    ...options.strong,
-                }),
-                new ListParagraph(options.listParagraph || {}),
-                new HyperlinkStyle(options.hyperlink || {}),
-                new FootnoteReferenceStyle(options.footnoteReference || {}),
-                new FootnoteText(options.footnoteText || {}),
-                new FootnoteTextChar(options.footnoteTextChar || {}),
-                new EndnoteReferenceStyle(options.endnoteReference || {}),
-                new EndnoteText(options.endnoteText || {}),
-                new EndnoteTextChar(options.endnoteTextChar || {}),
-            ],
+            importedStyles: Object.values(createDefaultStyles(options)),
         };
     }
 }
