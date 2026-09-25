@@ -75,7 +75,6 @@ export class GraphicData extends XmlComponent {
             );
             const md = mediaData as WpgMediaData;
             const children = md.children.map((child) => {
-                // eslint-disable-next-line unicorn/prefer-ternary
                 if (child.type === "wps") {
                     return createWpsShape({
                         ...child.data,

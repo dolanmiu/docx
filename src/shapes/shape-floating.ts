@@ -230,10 +230,9 @@ const addPercentages = (xml: IXmlableObject, { width, height, horizontal, vertic
             if ("wp:positionH" in child && horizontal !== undefined) {
                 return { "wp:positionH": withPercentage(child["wp:positionH"], "wp14:pctPosHOffset", horizontal) };
             }
-            if ("wp:positionV" in child && vertical !== undefined) {
-                return { "wp:positionV": withPercentage(child["wp:positionV"], "wp14:pctPosVOffset", vertical) };
-            }
-            return child;
+            return "wp:positionV" in child && vertical !== undefined
+                ? { "wp:positionV": withPercentage(child["wp:positionV"], "wp14:pctPosVOffset", vertical) }
+                : child;
         }),
         ...(width
             ? [{ "wp14:sizeRelH": [{ _attr: { relativeFrom: width.relativeFrom } }, { "wp14:pctWidth": [`${width.percentage}`] }] }]

@@ -641,10 +641,7 @@ const pickSite = (leaf: Leaf, side: ConnectorSide): PageSite => {
             return angleDifference < 0;
         }
         const alongDifference = along(site) - along(best);
-        if (Math.abs(alongDifference) > 1) {
-            return alongDifference > 0;
-        }
-        return across(site) < across(best);
+        return Math.abs(alongDifference) > 1 ? alongDifference > 0 : across(site) < across(best);
     };
 
     return sites.reduce((best, site) => (isBetter(site, best) ? site : best));
