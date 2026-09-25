@@ -16,8 +16,10 @@
 <p>A Textbox creates a floating text container using VML shapes that can be positioned
 anywhere on the page. Unlike regular paragraphs, textboxes support absolute positioning,
 custom dimensions, and text wrapping control.</p>
-<p>The textbox is implemented as a paragraph containing a picture element (w:pict) with
-a VML shape (v:shape) that contains a VML textbox (v:textbox) with the actual content.</p>
+<p>The textbox is implemented as a paragraph with a run containing a picture element (w:pict)
+with a VML shape (v:shape) that contains a VML textbox (v:textbox) with the actual content.
+In a paragraph's children, the textbox is only the run, in that paragraph, and its own
+paragraph options, such as its alignment, don't apply.</p>
 </div>
 <div class="tsd-comment tsd-typography">
 <div class="tsd-tag-publicApi">
@@ -25,6 +27,7 @@ a VML shape (v:shape) that contains a VML textbox (v:textbox) with the actual co
 <p>The Textbox combines multiple OOXML elements:</p>
 <ul>
 <li>w:p (paragraph container)</li>
+<li>w:r (run containing the picture)</li>
 <li>w:pict (picture element containing VML)</li>
 <li>v:shape (VML shape with styling)</li>
 <li>v:textbox (VML textbox content container)</li>
@@ -32,7 +35,7 @@ a VML shape (v:shape) that contains a VML textbox (v:textbox) with the actual co
 </ul>
 </div>
 <div class="tsd-tag-example">
-<h4 class="tsd-anchor-link" id="example">Example<a href="#example" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4><pre><code class="typescript"><span class="hl-8">// Simple textbox with text</span><br/><span class="hl-4">new</span><span class="hl-1"> </span><span class="hl-6">Textbox</span><span class="hl-1">({</span><br/><span class="hl-1">  </span><span class="hl-2">children:</span><span class="hl-1"> [</span><span class="hl-4">new</span><span class="hl-1"> </span><span class="hl-6">TextRun</span><span class="hl-1">(</span><span class="hl-3">&quot;Hello World&quot;</span><span class="hl-1">)],</span><br/><span class="hl-1">  </span><span class="hl-2">style:</span><span class="hl-1"> {</span><br/><span class="hl-1">    </span><span class="hl-2">width:</span><span class="hl-1"> </span><span class="hl-3">&quot;3in&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">    </span><span class="hl-2">height:</span><span class="hl-1"> </span><span class="hl-3">&quot;1in&quot;</span><br/><span class="hl-1">  }</span><br/><span class="hl-1">});</span><br/><br/><span class="hl-8">// Positioned textbox with wrapping</span><br/><span class="hl-4">new</span><span class="hl-1"> </span><span class="hl-6">Textbox</span><span class="hl-1">({</span><br/><span class="hl-1">  </span><span class="hl-2">children:</span><span class="hl-1"> [</span><br/><span class="hl-1">    </span><span class="hl-4">new</span><span class="hl-1"> </span><span class="hl-6">TextRun</span><span class="hl-1">({ </span><span class="hl-2">text:</span><span class="hl-1"> </span><span class="hl-3">&quot;Floating Text&quot;</span><span class="hl-1">, </span><span class="hl-2">bold:</span><span class="hl-1"> </span><span class="hl-4">true</span><span class="hl-1"> }),</span><br/><span class="hl-1">    </span><span class="hl-4">new</span><span class="hl-1"> </span><span class="hl-6">TextRun</span><span class="hl-1">({ </span><span class="hl-2">text:</span><span class="hl-1"> </span><span class="hl-3">&quot; in a textbox&quot;</span><span class="hl-1">, </span><span class="hl-2">break:</span><span class="hl-1"> </span><span class="hl-7">1</span><span class="hl-1"> })</span><br/><span class="hl-1">  ],</span><br/><span class="hl-1">  </span><span class="hl-2">style:</span><span class="hl-1"> {</span><br/><span class="hl-1">    </span><span class="hl-2">width:</span><span class="hl-1"> </span><span class="hl-3">&quot;2.5in&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">    </span><span class="hl-2">height:</span><span class="hl-1"> </span><span class="hl-3">&quot;1.5in&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">    </span><span class="hl-2">position:</span><span class="hl-1"> </span><span class="hl-3">&quot;absolute&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">    </span><span class="hl-2">left:</span><span class="hl-1"> </span><span class="hl-3">&quot;1in&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">    </span><span class="hl-2">top:</span><span class="hl-1"> </span><span class="hl-3">&quot;2in&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">    </span><span class="hl-2">wrapStyle:</span><span class="hl-1"> </span><span class="hl-3">&quot;square&quot;</span><br/><span class="hl-1">  }</span><br/><span class="hl-1">});</span>
+<h4 class="tsd-anchor-link" id="example">Example<a href="#example" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4><pre><code class="typescript"><span class="hl-8">// Simple textbox with text</span><br/><span class="hl-4">new</span><span class="hl-1"> </span><span class="hl-6">Textbox</span><span class="hl-1">({</span><br/><span class="hl-1">  </span><span class="hl-2">children:</span><span class="hl-1"> [</span><span class="hl-4">new</span><span class="hl-1"> </span><span class="hl-6">Paragraph</span><span class="hl-1">(</span><span class="hl-3">&quot;Hello World&quot;</span><span class="hl-1">)],</span><br/><span class="hl-1">  </span><span class="hl-2">style:</span><span class="hl-1"> {</span><br/><span class="hl-1">    </span><span class="hl-2">width:</span><span class="hl-1"> </span><span class="hl-3">&quot;3in&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">    </span><span class="hl-2">height:</span><span class="hl-1"> </span><span class="hl-3">&quot;1in&quot;</span><br/><span class="hl-1">  }</span><br/><span class="hl-1">});</span><br/><br/><span class="hl-8">// Positioned textbox with wrapping</span><br/><span class="hl-4">new</span><span class="hl-1"> </span><span class="hl-6">Textbox</span><span class="hl-1">({</span><br/><span class="hl-1">  </span><span class="hl-2">children:</span><span class="hl-1"> [</span><br/><span class="hl-1">    </span><span class="hl-4">new</span><span class="hl-1"> </span><span class="hl-6">Paragraph</span><span class="hl-1">({</span><br/><span class="hl-1">      </span><span class="hl-2">children:</span><span class="hl-1"> [</span><br/><span class="hl-1">        </span><span class="hl-4">new</span><span class="hl-1"> </span><span class="hl-6">TextRun</span><span class="hl-1">({ </span><span class="hl-2">text:</span><span class="hl-1"> </span><span class="hl-3">&quot;Floating Text&quot;</span><span class="hl-1">, </span><span class="hl-2">bold:</span><span class="hl-1"> </span><span class="hl-4">true</span><span class="hl-1"> }),</span><br/><span class="hl-1">        </span><span class="hl-4">new</span><span class="hl-1"> </span><span class="hl-6">TextRun</span><span class="hl-1">({ </span><span class="hl-2">text:</span><span class="hl-1"> </span><span class="hl-3">&quot; in a textbox&quot;</span><span class="hl-1">, </span><span class="hl-2">break:</span><span class="hl-1"> </span><span class="hl-7">1</span><span class="hl-1"> })</span><br/><span class="hl-1">      ]</span><br/><span class="hl-1">    })</span><br/><span class="hl-1">  ],</span><br/><span class="hl-1">  </span><span class="hl-2">style:</span><span class="hl-1"> {</span><br/><span class="hl-1">    </span><span class="hl-2">width:</span><span class="hl-1"> </span><span class="hl-3">&quot;2.5in&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">    </span><span class="hl-2">height:</span><span class="hl-1"> </span><span class="hl-3">&quot;1.5in&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">    </span><span class="hl-2">position:</span><span class="hl-1"> </span><span class="hl-3">&quot;absolute&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">    </span><span class="hl-2">left:</span><span class="hl-1"> </span><span class="hl-3">&quot;1in&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">    </span><span class="hl-2">top:</span><span class="hl-1"> </span><span class="hl-3">&quot;2in&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">    </span><span class="hl-2">wrapStyle:</span><span class="hl-1"> </span><span class="hl-3">&quot;square&quot;</span><br/><span class="hl-1">  }</span><br/><span class="hl-1">});</span><br/><br/><span class="hl-8">// Textbox in a paragraph, after its text</span><br/><span class="hl-4">new</span><span class="hl-1"> </span><span class="hl-6">Paragraph</span><span class="hl-1">({</span><br/><span class="hl-1">  </span><span class="hl-2">children:</span><span class="hl-1"> [</span><br/><span class="hl-1">    </span><span class="hl-4">new</span><span class="hl-1"> </span><span class="hl-6">TextRun</span><span class="hl-1">(</span><span class="hl-3">&quot;See the note: &quot;</span><span class="hl-1">),</span><br/><span class="hl-1">    </span><span class="hl-4">new</span><span class="hl-1"> </span><span class="hl-6">Textbox</span><span class="hl-1">({</span><br/><span class="hl-1">      </span><span class="hl-2">children:</span><span class="hl-1"> [</span><span class="hl-4">new</span><span class="hl-1"> </span><span class="hl-6">Paragraph</span><span class="hl-1">(</span><span class="hl-3">&quot;A note&quot;</span><span class="hl-1">)],</span><br/><span class="hl-1">      </span><span class="hl-2">style:</span><span class="hl-1"> { </span><span class="hl-2">width:</span><span class="hl-1"> </span><span class="hl-3">&quot;2in&quot;</span><span class="hl-1">, </span><span class="hl-2">height:</span><span class="hl-1"> </span><span class="hl-3">&quot;auto&quot;</span><span class="hl-1"> }</span><br/><span class="hl-1">    })</span><br/><span class="hl-1">  ]</span><br/><span class="hl-1">});</span>
 </code><button type="button">Copy</button></pre>
 
 </div></div></section>
@@ -43,7 +46,7 @@ a VML shape (v:shape) that contains a VML textbox (v:textbox) with the actual co
 <ul class="tsd-hierarchy">
 <li class="tsd-hierarchy-item"><span class="tsd-hierarchy-target">Textbox</span></li></ul></li></ul></section><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/e7b568f4e6cfb080bd2512ff2444cb327ffff67e/src/file/textbox/textbox.ts#L77">file/textbox/textbox.ts:77</a></li></ul></aside>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/943124e7dac04209a4f17fdcb7e575bc08c2fd04/src/file/textbox/textbox.ts#L96">file/textbox/textbox.ts:96</a></li></ul></aside>
 <section class="tsd-panel-group tsd-index-group">
 <section class="tsd-panel tsd-index-panel">
 <details class="tsd-index-content tsd-accordion" open><summary class="tsd-accordion-summary tsd-index-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
@@ -60,7 +63,7 @@ a VML shape (v:shape) that contains a VML textbox (v:textbox) with the actual co
 <section class="tsd-index-section">
 <h3 class="tsd-index-heading tsd-anchor-link" id="methods">Methods<a href="#methods" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-index-list"><a href="#addchildelement" class="tsd-index-link deprecated tsd-is-inherited"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>add<wbr/>Child<wbr/>Element</span></a>
-<a href="#prepforxml" class="tsd-index-link tsd-is-inherited"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>prep<wbr/>For<wbr/>Xml</span></a>
+<a href="#prepforxml" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>prep<wbr/>For<wbr/>Xml</span></a>
 </div></section></div></details></section></section>
 <details class="tsd-panel-group tsd-member-group tsd-accordion" open><summary class="tsd-accordion-summary" data-key="section-Constructors"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
 <h2 class="tsd-anchor-link" id="constructors-1">Constructors<a href="#constructors-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2></summary>
@@ -78,7 +81,7 @@ a VML shape (v:shape) that contains a VML textbox (v:textbox) with the actual co
 <h4 class="tsd-returns-title">Returns <a href="" class="tsd-signature-type tsd-kind-class">Textbox</a></h4><aside class="tsd-sources">
 <p>Overrides <a href="index.FileChild.html">FileChild</a>.<a href="index.FileChild.html#constructor">constructor</a></p>
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/e7b568f4e6cfb080bd2512ff2444cb327ffff67e/src/file/textbox/textbox.ts#L78">file/textbox/textbox.ts:78</a></li></ul></aside></div></li></ul></section></section></details>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/943124e7dac04209a4f17fdcb7e575bc08c2fd04/src/file/textbox/textbox.ts#L99">file/textbox/textbox.ts:99</a></li></ul></aside></div></li></ul></section></section></details>
 <details class="tsd-panel-group tsd-member-group tsd-accordion" open><summary class="tsd-accordion-summary" data-key="section-Properties"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
 <h2 class="tsd-anchor-link" id="properties-1">Properties<a href="#properties-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2></summary>
 <section>
@@ -89,7 +92,7 @@ a VML shape (v:shape) that contains a VML textbox (v:textbox) with the actual co
 </div><aside class="tsd-sources">
 <p>Inherited from <a href="index.FileChild.html">FileChild</a>.<a href="index.FileChild.html#filechild">fileChild</a></p>
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/e7b568f4e6cfb080bd2512ff2444cb327ffff67e/src/file/file-child.ts#L19">file/file-child.ts:19</a></li></ul></aside></section></section></details>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/943124e7dac04209a4f17fdcb7e575bc08c2fd04/src/file/file-child.ts#L19">file/file-child.ts:19</a></li></ul></aside></section></section></details>
 <details class="tsd-panel-group tsd-member-group tsd-accordion" open><summary class="tsd-accordion-summary" data-key="section-Methods"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
 <h2 class="tsd-anchor-link" id="methods-1">Methods<a href="#methods-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2></summary>
 <section>
@@ -115,11 +118,11 @@ a VML shape (v:shape) that contains a VML textbox (v:textbox) with the actual co
 </div></div><aside class="tsd-sources">
 <p>Inherited from <a href="index.FileChild.html">FileChild</a>.<a href="index.FileChild.html#addchildelement">addChildElement</a></p>
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/e7b568f4e6cfb080bd2512ff2444cb327ffff67e/src/file/xml-components/xml-component.ts#L126">file/xml-components/xml-component.ts:126</a></li></ul></aside></div></li></ul></section>
-<section class="tsd-panel tsd-member tsd-is-inherited">
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/943124e7dac04209a4f17fdcb7e575bc08c2fd04/src/file/xml-components/xml-component.ts#L126">file/xml-components/xml-component.ts:126</a></li></ul></aside></div></li></ul></section>
+<section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="prepforxml"><span>prep<wbr/>For<wbr/>Xml</span><a href="#prepforxml" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
-<ul class="tsd-signatures tsd-is-inherited">
-<li class="tsd-is-inherited">
+<ul class="tsd-signatures">
+<li class="">
 <div class="tsd-signature tsd-anchor-link" id="prepforxml-1"><span class="tsd-kind-call-signature">prepForXml</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">context</span><span class="tsd-signature-symbol">:</span> <a href="../types/index.IContext.html" class="tsd-signature-type tsd-kind-type-alias">IContext</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <a href="../interfaces/index.IXmlableObject.html" class="tsd-signature-type tsd-kind-interface">IXmlableObject</a> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">undefined</span><a href="#prepforxml-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
 <div class="tsd-description">
 <div class="tsd-comment tsd-typography"><p>Prepares this component and its children for XML serialization.</p>
@@ -144,9 +147,9 @@ or execute side effects during serialization (e.g., creating relationships).</p>
 </code><button type="button">Copy</button></pre>
 
 </div></div><aside class="tsd-sources">
-<p>Inherited from <a href="index.FileChild.html">FileChild</a>.<a href="index.FileChild.html#prepforxml">prepForXml</a></p>
+<p>Overrides <a href="index.FileChild.html">FileChild</a>.<a href="index.FileChild.html#prepforxml">prepForXml</a></p>
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/e7b568f4e6cfb080bd2512ff2444cb327ffff67e/src/file/xml-components/xml-component.ts#L88">file/xml-components/xml-component.ts:88</a></li></ul></aside></div></li></ul></section></section></details></div>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/943124e7dac04209a4f17fdcb7e575bc08c2fd04/src/file/textbox/textbox.ts#L119">file/textbox/textbox.ts:119</a></li></ul></aside></div></li></ul></section></section></details></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">
@@ -166,7 +169,7 @@ or execute side effects during serialization (e.g., creating relationships).</p>
 <details open class="tsd-accordion tsd-page-navigation-section"><summary class="tsd-accordion-summary" data-key="section-Properties"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>Properties</summary>
 <div><a href="#filechild" class="tsd-is-inherited"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>file<wbr/>Child</span></a></div></details>
 <details open class="tsd-accordion tsd-page-navigation-section"><summary class="tsd-accordion-summary" data-key="section-Methods"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>Methods</summary>
-<div><a href="#addchildelement" class="tsd-is-inherited"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>add<wbr/>Child<wbr/>Element</span></a><a href="#prepforxml" class="tsd-is-inherited"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>prep<wbr/>For<wbr/>Xml</span></a></div></details></div></details></div>
+<div><a href="#addchildelement" class="tsd-is-inherited"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>add<wbr/>Child<wbr/>Element</span></a><a href="#prepforxml"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>prep<wbr/>For<wbr/>Xml</span></a></div></details></div></details></div>
 <div class="site-menu">
 <nav class="tsd-navigation"><a href="../modules.html">docx</a>
 <ul class="tsd-small-nested-navigation" id="tsd-nav-container">
