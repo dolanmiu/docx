@@ -102,6 +102,21 @@ describe("createShapeLine", () => {
         });
     });
 
+    it("should write a custom dash or gap of 0 as the smallest length Office accepts", () => {
+        const tree = new Formatter().format(
+            createShapeLine({
+                cap: "round",
+                dash: [
+                    { length: 0, gap: 2 },
+                    { length: 3, gap: 0 },
+                ],
+            }),
+        );
+        expect(tree["a:ln"][2]).to.deep.equal({
+            "a:custDash": [{ "a:ds": { _attr: { d: 1, sp: 200000 } } }, { "a:ds": { _attr: { d: 300000, sp: 1 } } }],
+        });
+    });
+
     it("should reject a custom dash without dashes, or with negative lengths", () => {
         expect(() => createShapeLine({ dash: [] })).to.throw("Invalid custom line dash. Expected at least 1 dash");
         expect(() => createShapeLine({ dash: [{ length: -1, gap: 1 }] })).to.throw("Invalid custom line dash { length: -1, gap: 1 }");

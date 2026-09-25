@@ -208,9 +208,10 @@ const createDash = (dash: LineDash | CustomLineDash): XmlComponent => {
             return new BuilderElement<{ readonly length: number; readonly gap: number }>({
                 name: "a:ds",
                 attributes: {
-                    // Thousandths of a percent of the line width
-                    length: { key: "d", value: Math.round(length * 100000) },
-                    gap: { key: "sp", value: Math.round(gap * 100000) },
+                    // Thousandths of a percent of the line width. Office wants at least 1, so a dash or gap of 0, such as a
+                    // dash that its round caps draw as a dot, is written as 1
+                    length: { key: "d", value: Math.max(1, Math.round(length * 100000)) },
+                    gap: { key: "sp", value: Math.max(1, Math.round(gap * 100000)) },
                 },
             });
         }),
