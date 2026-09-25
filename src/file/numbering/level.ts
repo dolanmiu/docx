@@ -180,7 +180,7 @@ class LevelAttributes extends XmlAttributeComponent<{
 }> {
     protected readonly xmlKeys = {
         ilvl: "w:ilvl",
-        tentative: "w15:tentative",
+        tentative: "w:tentative",
     };
 }
 

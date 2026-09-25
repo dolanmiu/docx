@@ -117,7 +117,7 @@ describe("Level", () => {
                     },
                     {
                         _attr: {
-                            "w15:tentative": 1,
+                            "w:tentative": 1,
                             "w:ilvl": 9,
                         },
                     },

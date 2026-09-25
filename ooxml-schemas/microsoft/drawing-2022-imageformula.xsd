@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- [MS-ODRAWXML] 5.41, http://schemas.microsoft.com/office/drawing/2022/imageformula Schema: https://learn.microsoft.com/en-us/openspecs/office_standards/ms-odrawxml/0c47e53f-d2a7-457d-b7a0-26c7544dd7b2 -->
+<xsd:schema targetNamespace="http://schemas.microsoft.com/office/drawing/2022/imageformula" xmlns="http://schemas.microsoft.com/office/drawing/2022/imageformula" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" elementFormDefault="qualified" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+   <xsd:complexType name="CT_ImageFormula">
+     <xsd:attribute name="formula" type="xsd:string"/>
+   </xsd:complexType>
+   <xsd:element name="imageFormula" type="CT_ImageFormula"/>
+ </xsd:schema>

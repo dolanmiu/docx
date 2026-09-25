@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- [MS-OFFMACRO2] 5.1, http://schemas.microsoft.com/office/word/2006/wordml Schema: https://learn.microsoft.com/en-us/openspecs/office_standards/ms-offmacro2/230e441a-0a5b-4c4c-8239-0a446f235101 -->
+<xsd:schema xmlns:s="http://schemas.openxmlformats.org/officeDocument/2006/sharedTypes" elementFormDefault="qualified"
+ xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns="http://schemas.microsoft.com/office/word/2006/wordml" targetNamespace="http://schemas.microsoft.com/office/word/2006/wordml">
+   <xsd:import namespace="http://schemas.openxmlformats.org/officeDocument/2006/sharedTypes" schemaLocation="../ISO-IEC29500-4_2016/shared-commonSimpleTypes.xsd"/>
+   <xsd:import namespace="http://schemas.openxmlformats.org/wordprocessingml/2006/main" schemaLocation="../ISO-IEC29500-4_2016/wml.xsd"/>
+   <xsd:import id="rel" namespace="http://schemas.openxmlformats.org/officeDocument/2006/relationships" schemaLocation="../ISO-IEC29500-4_2016/shared-relationshipReference.xsd"/>
+   <xsd:element name="vbaSuppData" type="CT_VbaSuppData"/>
+   <!-- Not in [MS-OFFMACRO2]: the wordprocessingShape schema refers to it, from a schema Microsoft hasn't published -->
+   <xsd:element name="txbxContent" type="w:CT_TxbxContent"/>
+   <xsd:complexType name="CT_DocEvents">
+     <xsd:sequence>
+       <xsd:element name="eventDocNew" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="eventDocOpen" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="eventDocClose" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="eventDocSync" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="eventDocXmlAfterInsert" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="eventDocXmlBeforeDelete" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="eventDocContentControlAfterInsert" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="eventDocContentControlBeforeDelete" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="eventDocContentControlOnExit" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="eventDocContentControlOnEnter" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="eventDocStoreUpdate" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="eventDocContentControlContentUpdate" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="eventDocBuildingBlockAfterInsert" minOccurs="0" maxOccurs="1"/>
+     </xsd:sequence>
+   </xsd:complexType>
+   <xsd:complexType name="CT_Mcd">
+     <xsd:attribute name="macroName" type="s:ST_String" use="optional"/>
+     <xsd:attribute name="name" type="s:ST_String" use="optional"/>
+     <xsd:attribute name="menuHelp" type="s:ST_String" use="optional"/>
+     <xsd:attribute name="bEncrypt" type="w:ST_UcharHexNumber"/>
+    <xsd:attribute name="cmg" type="w:ST_UcharHexNumber"/>
+  </xsd:complexType>
+  <xsd:complexType name="CT_Mcds">
+    <xsd:sequence>
+      <xsd:element name="mcd" type="CT_Mcd" minOccurs="0" maxOccurs="unbounded"/>
+    </xsd:sequence>
+  </xsd:complexType>
+  <xsd:complexType name="CT_VbaSuppData">
+    <xsd:sequence>
+      <xsd:element name="docEvents" type="CT_DocEvents" minOccurs="0" maxOccurs="1"/>
+      <xsd:element name="mcds" type="CT_Mcds" minOccurs="0" maxOccurs="1"/>
+    </xsd:sequence>
+  </xsd:complexType>
+</xsd:schema>

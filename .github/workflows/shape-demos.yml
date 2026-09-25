@@ -14,10 +14,6 @@ jobs:
         steps:
             - uses: actions/checkout@v5
             - uses: "./.github/actions/install-and-build"
-            - name: Install xmllint
-              run: |
-                  sudo apt-get update
-                  sudo apt-get install -y --no-install-recommends libxml2-utils
             - uses: docker/setup-buildx-action@v3
             # The pinned LibreOffice and fonts the reference images were drawn with
             - name: Build the image the pages are drawn in

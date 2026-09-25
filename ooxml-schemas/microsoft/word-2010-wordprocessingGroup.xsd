@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- [MS-ODRAWXML] 5.4, http://schemas.microsoft.com/office/word/2010/wordprocessingGroup Schema: https://learn.microsoft.com/en-us/openspecs/office_standards/ms-odrawxml/fbe733bf-85e2-46f9-b548-9292b44670ce -->
+<xsd:schema elementFormDefault="qualified" targetNamespace="http://schemas.microsoft.com/office/word/2010/wordprocessingGroup" xmlns="http://schemas.microsoft.com/office/word/2010/wordprocessingGroup" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:wps="http://schemas.microsoft.com/office/word/2010/wordprocessingShape" xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture" xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml">
+   <xsd:import namespace="http://schemas.openxmlformats.org/drawingml/2006/main" schemaLocation="../ISO-IEC29500-4_2016/dml-main.xsd"/>
+   <xsd:import namespace="http://schemas.openxmlformats.org/drawingml/2006/main" schemaLocation="../ISO-IEC29500-4_2016/dml-main.xsd"/>
+   <xsd:import namespace="http://schemas.openxmlformats.org/drawingml/2006/main" schemaLocation="../ISO-IEC29500-4_2016/dml-main.xsd"/>
+   <xsd:import namespace="http://schemas.microsoft.com/office/word/2010/wordprocessingShape" schemaLocation="word-2010-wordprocessingShape.xsd"/>
+   <xsd:import namespace="http://schemas.microsoft.com/office/word/2010/wordml" schemaLocation="wml-2010.xsd"/>
+   <xsd:import namespace="http://schemas.openxmlformats.org/drawingml/2006/picture" schemaLocation="../ISO-IEC29500-4_2016/dml-picture.xsd"/>
+   <xsd:complexType name="CT_GraphicFrame">
+     <xsd:sequence>
+       <xsd:element name="cNvPr" type="a:CT_NonVisualDrawingProps" minOccurs="1" maxOccurs="1"/>
+       <xsd:element name="cNvFrPr" type="a:CT_NonVisualGraphicFrameProperties" minOccurs="1" maxOccurs="1"/>
+       <xsd:element name="xfrm" type="a:CT_Transform2D" minOccurs="1" maxOccurs="1"/>
+       <xsd:element ref="a:graphic" minOccurs="1" maxOccurs="1"/>
+       <xsd:element name="extLst" type="a:CT_OfficeArtExtensionList" minOccurs="0" maxOccurs="1"/>
+     </xsd:sequence>
+   </xsd:complexType>
+   <xsd:complexType name="CT_WordprocessingGroup">
+     <xsd:sequence minOccurs="1" maxOccurs="1">
+       <xsd:element name="cNvPr" type="a:CT_NonVisualDrawingProps" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="cNvGrpSpPr" type="a:CT_NonVisualGroupDrawingShapeProps" minOccurs="1" maxOccurs="1"/>
+       <xsd:element name="grpSpPr" type="a:CT_GroupShapeProperties" minOccurs="1" maxOccurs="1"/>
+       <xsd:choice minOccurs="0" maxOccurs="unbounded">
+         <xsd:element ref="wps:wsp"/>
+         <xsd:element name="grpSp" type="CT_WordprocessingGroup"/>
+         <xsd:element name="graphicFrame" type="CT_GraphicFrame"/>
+         <xsd:element ref="pic:pic"/>
+         <xsd:element ref="w14:contentPart"/>
+       </xsd:choice>
+       <xsd:element name="extLst" type="a:CT_OfficeArtExtensionList" minOccurs="0" maxOccurs="1"/>
+     </xsd:sequence>
+   </xsd:complexType>
+   <xsd:element name="wgp" type="CT_WordprocessingGroup"/>
+ </xsd:schema>

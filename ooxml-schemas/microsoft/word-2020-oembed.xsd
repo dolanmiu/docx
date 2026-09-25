@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- [MS-ODRAWXML] 5.38, http://schemas.microsoft.com/office/word/2020/oembed Schema: https://learn.microsoft.com/en-us/openspecs/office_standards/ms-odrawxml/b495a2c4-89bf-47e3-b165-dacb3508bb72 -->
+<xsd:schema targetNamespace="http://schemas.microsoft.com/office/word/2020/oembed" xmlns:xsd="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" attributeFormDefault="unqualified" xmlns="http://schemas.microsoft.com/office/word/2020/oembed">
+   <xsd:complexType name="CT_OEmbed">
+     <xsd:attribute name="oEmbedUrl" type="xsd:string" use="required"/>
+     <xsd:attribute name="mediaType" type="xsd:string" use="required"/>
+     <xsd:attribute name="picLocksAutoForOEmbed" type="xsd:boolean" use="optional" default="false"/>
+   </xsd:complexType>
+   <xsd:element name="oembed" type="CT_OEmbed"/>
+ </xsd:schema>

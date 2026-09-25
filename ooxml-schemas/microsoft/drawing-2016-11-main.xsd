@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- [MS-ODRAWXML] 5.25, http://schemas.microsoft.com/office/drawing/2016/11/main Schema: https://learn.microsoft.com/en-us/openspecs/office_standards/ms-odrawxml/96e8cdeb-7774-461b-957e-09b7ec8e2765 -->
+<xsd:schema targetNamespace="http://schemas.microsoft.com/office/drawing/2016/11/main" elementFormDefault="qualified" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns="http://schemas.microsoft.com/office/drawing/2016/11/main">
+   <xsd:import namespace="http://schemas.openxmlformats.org/officeDocument/2006/relationships" schemaLocation="../ISO-IEC29500-4_2016/shared-relationshipReference.xsd"/>
+   <xsd:complexType name="CT_PictureAttributionSourceURL">
+     <xsd:attribute ref="r:id" use="required"/>
+   </xsd:complexType>
+   <xsd:element name="picAttrSrcUrl" type="CT_PictureAttributionSourceURL"/>
+ </xsd:schema>

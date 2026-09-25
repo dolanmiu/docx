@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- [MS-ODRAWXML] 5.33, http://schemas.microsoft.com/office/drawing/2018/hyperlinkcolor Schema: https://learn.microsoft.com/en-us/openspecs/office_standards/ms-odrawxml/014fbc20-3705-4812-b8cd-93f5af05b504 -->
+<xsd:schema targetNamespace="http://schemas.microsoft.com/office/drawing/2018/hyperlinkcolor" xmlns="http://schemas.microsoft.com/office/drawing/2018/hyperlinkcolor" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" elementFormDefault="qualified" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+   <xsd:simpleType name="ST_HyperlinkColor">
+     <xsd:restriction base="xsd:token">
+       <xsd:enumeration value="hlink"/>
+       <xsd:enumeration value="tx"/>
+     </xsd:restriction>
+   </xsd:simpleType>
+   <xsd:complexType name="CT_HyperlinkColor">
+     <xsd:attribute name="val" type="ST_HyperlinkColor" use="required"/>
+   </xsd:complexType>
+   <xsd:element name="hlinkClr" type="CT_HyperlinkColor"/>
+ </xsd:schema>

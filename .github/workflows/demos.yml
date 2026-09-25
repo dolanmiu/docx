@@ -22,7 +22,12 @@ jobs:
             - name: Install the Open XML SDK validator
               run: npm install --no-save --no-audit --no-fund @xarsh/ooxml-validator@0.3.0
             # Each shard runs every fourth demo, and checks the document it writes with the Open XML SDK validator, which
-            # checks every part against Office's schemas, including Word 2010's extensions
+            # checks every part against Office's schemas, including Word 2010's extensions. It's checked as each version of
+            # Office since 2010 reads it: older versions skip the newer extensions and read their fallbacks. Office 2007 is
+            # left out, as it only knows the standard's first edition, from before ISO/IEC 29500, and rejects what Word
+            # itself writes.
+            # The validator checks only the first file it's given (each demo writes one), and its option is
+            # --officeVersion, not the --office-version its README gives. It reads a version it doesn't know as Microsoft365
             - name: Run and validate the demos
               shell: bash
               run: |
@@ -30,6 +35,9 @@ jobs:
                       echo "::group::$demo"
                       rm -f ./*.docx
                       npm run --silent run-ts -- "$demo"
-                      npx ooxml-validator ./*.docx
+                      for version in Office2010 Office2013 Office2016 Office2019 Office2021 Microsoft365; do
+                          echo "$version"
+                          npx ooxml-validator ./*.docx --officeVersion "$version"
+                      done
                       echo "::endgroup::"
                   done

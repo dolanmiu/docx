@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- [MS-ODRAWXML] 5.7, http://schemas.microsoft.com/ink/2010/main Schema: https://learn.microsoft.com/en-us/openspecs/office_standards/ms-odrawxml/b0e5b36b-68a8-4fd4-874c-e5e187ba574f -->
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" attributeFormDefault="unqualified" elementFormDefault="qualified" targetNamespace="http://schemas.microsoft.com/ink/2010/main" xmlns="http://schemas.microsoft.com/ink/2010/main" xmlns:msink="http://schemas.microsoft.com/ink/2010/main">
+   <xsd:simpleType name="ST_KnownCtxNodeType">
+     <xsd:restriction base="xsd:string">
+       <xsd:enumeration value="root"/>
+       <xsd:enumeration value="unclassifiedInk"/>
+       <xsd:enumeration value="writingRegion"/>
+       <xsd:enumeration value="analysisHint"/>
+       <xsd:enumeration value="object"/>
+       <xsd:enumeration value="inkDrawing"/>
+       <xsd:enumeration value="image"/>
+       <xsd:enumeration value="paragraph"/>
+       <xsd:enumeration value="line"/>
+       <xsd:enumeration value="inkBullet"/>
+       <xsd:enumeration value="inkWord"/>
+       <xsd:enumeration value="textWord"/>
+       <xsd:enumeration value="customRecognizer"/>
+       <xsd:enumeration value="mathRegion"/>
+       <xsd:enumeration value="mathEquation"/>
+       <xsd:enumeration value="mathStruct"/>
+       <xsd:enumeration value="mathSymbol"/>
+       <xsd:enumeration value="mathIdentifier"/>
+       <xsd:enumeration value="mathOperator"/>
+       <xsd:enumeration value="mathNumber"/>
+       <xsd:enumeration value="nonInkDrawing"/>
+       <xsd:enumeration value="groupNode"/>
+       <xsd:enumeration value="mixedDrawing"/>
+     </xsd:restriction>
+   </xsd:simpleType>
+   <xsd:simpleType name="ST_Guid">
+     <xsd:restriction base="xsd:token">
+       <xsd:pattern value="\{[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}\}"/>
+     </xsd:restriction>
+   </xsd:simpleType>
+   <xsd:simpleType name="ST_Ref">
+     <xsd:union memberTypes="msink:ST_Guid xsd:unsignedInt"/>
+   </xsd:simpleType>
+   <xsd:simpleType name="ST_CtxNodeType">
+     <xsd:union memberTypes="msink:ST_KnownCtxNodeType msink:ST_Guid"/>
+   </xsd:simpleType>
+   <xsd:simpleType name="ST_Dir">
+     <xsd:restriction base="xsd:string">
+       <xsd:enumeration value="to"/>
+       <xsd:enumeration value="from"/>
+       <xsd:enumeration value="with"/>
+     </xsd:restriction>
+   </xsd:simpleType>
+   <xsd:simpleType name="ST_KnownSemanticType">
+     <xsd:restriction base="xsd:string">
+       <xsd:enumeration value="none"/>
+       <xsd:enumeration value="underline"/>
+       <xsd:enumeration value="strikethrough"/>
+       <xsd:enumeration value="highlight"/>
+       <xsd:enumeration value="scratchOut"/>
+       <xsd:enumeration value="verticalRange"/>
+       <xsd:enumeration value="callout"/>
+       <xsd:enumeration value="enclosure"/>
+       <xsd:enumeration value="comment"/>
+       <xsd:enumeration value="container"/>
+       <xsd:enumeration value="connector"/>
+     </xsd:restriction>
+   </xsd:simpleType>
+   <xsd:simpleType name="ST_SemanticType">
+     <xsd:union memberTypes="ST_KnownSemanticType xsd:unsignedInt"/>
+   </xsd:simpleType>
+   <xsd:simpleType name="ST_Point">
+     <xsd:restriction base="xsd:string">
+       <xsd:pattern value="-?[0-9]+,-?[0-9]+"/>
+     </xsd:restriction>
+   </xsd:simpleType>
+   <xsd:simpleType name="ST_Points">
+     <xsd:list itemType="msink:ST_Point"/>
+   </xsd:simpleType>
+   <xsd:complexType name="CT_Property">
+     <xsd:simpleContent>
+       <xsd:extension base="xsd:hexBinary">
+         <xsd:attribute name="type" type="ST_Guid"/>
+       </xsd:extension>
+     </xsd:simpleContent>
+   </xsd:complexType>
+   <xsd:complexType name="CT_CtxLink">
+     <xsd:attribute name="direction" type="ST_Dir"/>
+     <xsd:attribute name="ref" type="ST_Ref"/>
+   </xsd:complexType>
+   <xsd:complexType name="CT_CtxNode">
+     <xsd:sequence>
+       <xsd:element name="property" type="CT_Property" minOccurs="0" maxOccurs="unbounded"/>
+       <xsd:element name="sourceLink" type="CT_CtxLink" minOccurs="0" maxOccurs="unbounded"/>
+       <xsd:element name="destinationLink" type="CT_CtxLink" minOccurs="0" maxOccurs="unbounded"/>
+     </xsd:sequence>
+     <xsd:attribute name="id" type="ST_Guid" use="optional"/>
+     <xsd:attribute name="type" type="ST_CtxNodeType" use="required"/>
+     <xsd:attribute name="rotatedBoundingBox" type="ST_Points" use="optional"/>
+     <xsd:attribute name="alignmentLevel" type="xsd:int" use="optional" default="0"/>
+     <xsd:attribute name="contentType" type="xsd:int" use="optional" default="0"/>
+     <xsd:attribute name="ascender" type="ST_Points" use="optional" default="0,0"/>
+     <xsd:attribute name="descender" type="ST_Points" use="optional" default="0,0"/>
+     <xsd:attribute name="baseline" type="ST_Points" use="optional" default="0,0"/>
+     <xsd:attribute name="midline" type="ST_Points" use="optional" default="0,0"/>
+     <xsd:attribute name="customRecognizerId" type="ST_Guid" use="optional"/>
+     <xsd:attribute name="mathML" type="xsd:string" use="optional" default=""/>
+     <xsd:attribute name="mathStruct" type="xsd:string" use="optional" default=""/>
+     <xsd:attribute name="mathSymbol" type="xsd:string" use="optional" default=""/>
+     <xsd:attribute name="beginModifierType" type="xsd:string" use="optional" default=""/>
+     <xsd:attribute name="endModifierType" type="xsd:string" use="optional" default=""/>
+     <xsd:attribute name="rotationAngle" type="xsd:int" use="optional" default="0"/>
+     <xsd:attribute name="hotPoints" type="ST_Points" use="optional"/>
+     <xsd:attribute name="centroid" type="ST_Point" use="optional"/>
+     <xsd:attribute name="semanticType" type="ST_SemanticType" use="optional" default="none"/>
+     <xsd:attribute name="shapeName" type="xsd:string" use="optional" default=""/>
+     <xsd:attribute name="shapeGeometry" type="ST_Points" use="optional"/>
+   </xsd:complexType>
+   <xsd:element name="context" type="CT_CtxNode"/>
+ </xsd:schema>

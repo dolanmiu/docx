@@ -105,6 +105,7 @@ class RootCommentsAttributes extends XmlAttributeComponent<{
     readonly "xmlns:wpi"?: string;
     readonly "xmlns:wne"?: string;
     readonly "xmlns:wps"?: string;
+    readonly "mc:Ignorable"?: string;
 }> {
     protected readonly xmlKeys = {
         "xmlns:cx": "xmlns:cx",
@@ -138,6 +139,7 @@ class RootCommentsAttributes extends XmlAttributeComponent<{
         "xmlns:wpi": "xmlns:wpi",
         "xmlns:wne": "xmlns:wne",
         "xmlns:wps": "xmlns:wps",
+        "mc:Ignorable": "mc:Ignorable",
     };
 }
 
@@ -425,6 +427,8 @@ export class Comments extends XmlComponent {
                 "xmlns:wpi": "http://schemas.microsoft.com/office/word/2010/wordprocessingInk",
                 "xmlns:wne": "http://schemas.microsoft.com/office/word/2006/wordml",
                 "xmlns:wps": "http://schemas.microsoft.com/office/word/2010/wordprocessingShape",
+                // The comments' paragraphs have w14:paraId and w14:textId, which applications that don't know them skip
+                "mc:Ignorable": "w14 w15 wp14",
             }),
         );
 

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- [MS-ODRAWXML] 5.32, http://schemas.microsoft.com/office/drawing/2017/decorative Schema: https://learn.microsoft.com/en-us/openspecs/office_standards/ms-odrawxml/6146d89f-9146-415b-99e2-39e694b5a980 -->
+<xsd:schema targetNamespace="http://schemas.microsoft.com/office/drawing/2017/decorative" xmlns="http://schemas.microsoft.com/office/drawing/2017/decorative" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" elementFormDefault="qualified" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+   <xsd:import namespace="http://schemas.openxmlformats.org/drawingml/2006/main" schemaLocation="../ISO-IEC29500-4_2016/dml-main.xsd"/>
+   <xsd:complexType name="CT_Decorative">
+     <xsd:attribute name="val" type="xsd:boolean" use="optional"/>
+   </xsd:complexType>
+   <xsd:element name="decorative" type="CT_Decorative"/>
+ </xsd:schema>

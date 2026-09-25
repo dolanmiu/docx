@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- [MS-ODRAWXML] 5.5, http://schemas.microsoft.com/office/word/2010/wordprocessingCanvas Schema: https://learn.microsoft.com/en-us/openspecs/office_standards/ms-odrawxml/0af4dfe1-b07b-41eb-a48b-87aadd16b51b -->
+<xsd:schema elementFormDefault="qualified" targetNamespace="http://schemas.microsoft.com/office/word/2010/wordprocessingCanvas" xmlns="http://schemas.microsoft.com/office/word/2010/wordprocessingCanvas" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:wpg="http://schemas.microsoft.com/office/word/2010/wordprocessingGroup" xmlns:wps="http://schemas.microsoft.com/office/word/2010/wordprocessingShape" xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture">
+   <xsd:import namespace="http://schemas.microsoft.com/office/word/2010/wordml" schemaLocation="wml-2010.xsd"/>
+   <xsd:import namespace="http://schemas.microsoft.com/office/word/2010/wordprocessingGroup" schemaLocation="word-2010-wordprocessingGroup.xsd"/>
+   <xsd:import namespace="http://schemas.microsoft.com/office/word/2010/wordprocessingShape" schemaLocation="word-2010-wordprocessingShape.xsd"/>
+   <xsd:import namespace="http://schemas.openxmlformats.org/drawingml/2006/main" schemaLocation="../ISO-IEC29500-4_2016/dml-main.xsd"/>
+   <xsd:import namespace="http://schemas.openxmlformats.org/drawingml/2006/picture" schemaLocation="../ISO-IEC29500-4_2016/dml-picture.xsd"/>
+   <xsd:complexType name="CT_WordprocessingCanvas">
+     <xsd:sequence minOccurs="1" maxOccurs="1">
+       <xsd:element name="bg" type="a:CT_BackgroundFormatting" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="whole" type="a:CT_WholeE2oFormatting" minOccurs="0" maxOccurs="1"/>
+       <xsd:choice minOccurs="0" maxOccurs="unbounded">
+         <xsd:element ref="wps:wsp"/>
+         <xsd:element ref="pic:pic"/>
+         <xsd:element ref="w14:contentPart"/>
+         <xsd:element ref="wpg:wgp"/>
+         <xsd:element name="graphicFrame" type="wpg:CT_GraphicFrame"/>
+       </xsd:choice>
+       <xsd:element name="extLst" type="a:CT_OfficeArtExtensionList" minOccurs="0" maxOccurs="1"/>
+     </xsd:sequence>
+   </xsd:complexType>
+   <xsd:element name="wpc" type="CT_WordprocessingCanvas"/>
+ </xsd:schema>

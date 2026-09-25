@@ -27,7 +27,7 @@ describe("Numbering", () => {
                     expect(Object.keys(el)).to.have.lengthOf(1);
                     expect(Object.keys(el["w:lvl"])).to.deep.equal(["_attr", "w:start", "w:lvlJc", "w:numFmt", "w:pPr", "w:rPr"]);
                     expect(el["w:lvl"]).to.have.deep.members([
-                        { _attr: { "w:ilvl": ix, "w15:tentative": 1 } },
+                        { _attr: { "w:ilvl": ix, "w:tentative": 1 } },
                         { "w:start": [{ _attr: { "w:val": 1 } }] },
                         { "w:lvlJc": [{ _attr: { "w:val": "left" } }] },
                         { "w:numFmt": [{ _attr: { "w:val": "bullet" } }] },

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- [MS-ODRAWXML] 5.37, http://schemas.microsoft.com/office/drawing/2020/classificationShape Schema: https://learn.microsoft.com/en-us/openspecs/office_standards/ms-odrawxml/1f3ad775-d46f-4c60-8457-04121d909fe3 -->
+<xsd:schema targetNamespace="http://schemas.microsoft.com/office/drawing/2020/classificationShape" xmlns="http://schemas.microsoft.com/office/drawing/2020/classificationShape" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" elementFormDefault="qualified" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+   <xsd:import namespace="http://schemas.openxmlformats.org/drawingml/2006/main" schemaLocation="../ISO-IEC29500-4_2016/dml-main.xsd"/>
+   <xsd:simpleType name="ST_ClassificationOutcomeType">
+     <xsd:restriction base="xsd:token">
+       <xsd:enumeration value="none"/>
+       <xsd:enumeration value="hdr"/>
+       <xsd:enumeration value="ftr"/>
+       <xsd:enumeration value="watermark"/>
+     </xsd:restriction>
+   </xsd:simpleType>
+   <xsd:complexType name="CT_ClassificationOutcome">
+     <xsd:attribute name="classificationOutcomeType" type="ST_ClassificationOutcomeType" use="optional"/>
+   </xsd:complexType>
+   <xsd:element name="classification" type="CT_ClassificationOutcome"/>
+ </xsd:schema>

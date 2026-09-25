@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- [MS-ODRAWXML] 5.31, http://schemas.microsoft.com/office/drawing/2017/03/chart Schema: https://learn.microsoft.com/en-us/openspecs/office_standards/ms-odrawxml/07ad9d54-eb9e-4d52-831e-aa6487b295c2 -->
+<xsd:schema targetNamespace="http://schemas.microsoft.com/office/drawing/2017/03/chart" elementFormDefault="qualified" attributeFormDefault="qualified" xmlns="http://schemas.microsoft.com/office/drawing/2017/03/chart" xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart" xmlns:xsd="http://www.w3.org/2001/XMLSchema" blockDefault="#all">
+   <xsd:import namespace="http://schemas.openxmlformats.org/drawingml/2006/chart" schemaLocation="../ISO-IEC29500-4_2016/dml-chart.xsd"/>
+   <xsd:complexType name="CT_BooleanFalse">
+     <xsd:attribute name="val" type="xsd:boolean" use="optional" default="false"/>
+   </xsd:complexType>
+   <xsd:complexType name="CT_DataDisplayOptions16">
+     <xsd:sequence>
+       <xsd:element name="dispNaAsBlank" type="CT_BooleanFalse" minOccurs="0" maxOccurs="1"/>
+     </xsd:sequence>
+   </xsd:complexType>
+   <xsd:element name="dataDisplayOptions16" type="CT_DataDisplayOptions16"/>
+ </xsd:schema>

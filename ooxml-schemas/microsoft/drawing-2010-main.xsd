@@ -1,0 +1,282 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- [MS-ODRAWXML] 5.1, http://schemas.microsoft.com/office/drawing/2010/main Schema: https://learn.microsoft.com/en-us/openspecs/office_standards/ms-odrawxml/869af0ef-665b-4f28-a596-0917474ede26 -->
+<xsd:schema targetNamespace="http://schemas.microsoft.com/office/drawing/2010/main" elementFormDefault="qualified" xmlns="http://schemas.microsoft.com/office/drawing/2010/main" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:a14="http://schemas.microsoft.com/office/drawing/2010/main" xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+   <xsd:import namespace="http://schemas.openxmlformats.org/officeDocument/2006/math" schemaLocation="../ISO-IEC29500-4_2016/shared-math.xsd"/>
+   <xsd:import namespace="http://schemas.openxmlformats.org/drawingml/2006/main" schemaLocation="../ISO-IEC29500-4_2016/dml-main.xsd"/>
+   <xsd:import namespace="http://schemas.openxmlformats.org/officeDocument/2006/relationships" schemaLocation="../ISO-IEC29500-4_2016/shared-relationshipReference.xsd"/>
+   <xsd:import namespace="http://schemas.openxmlformats.org/drawingml/2006/main" schemaLocation="../ISO-IEC29500-4_2016/dml-main.xsd"/>
+   <xsd:import namespace="http://schemas.openxmlformats.org/drawingml/2006/main" schemaLocation="../ISO-IEC29500-4_2016/dml-main.xsd"/>
+   <xsd:import namespace="http://schemas.openxmlformats.org/drawingml/2006/main" schemaLocation="../ISO-IEC29500-4_2016/dml-main.xsd"/>
+   <xsd:import namespace="http://schemas.openxmlformats.org/drawingml/2006/main" schemaLocation="../ISO-IEC29500-4_2016/dml-main.xsd"/>
+   <xsd:import namespace="http://schemas.openxmlformats.org/drawingml/2006/main" schemaLocation="../ISO-IEC29500-4_2016/dml-main.xsd"/>
+   <xsd:simpleType name="ST_LegacySpreadsheetColorIndex">
+     <xsd:restriction base="xsd:int">
+       <xsd:minInclusive value="0"/>
+       <xsd:maxInclusive value="80"/>
+     </xsd:restriction>
+   </xsd:simpleType>
+   <xsd:attribute name="legacySpreadsheetColorIndex" type="ST_LegacySpreadsheetColorIndex"/>
+   <xsd:complexType name="CT_TextMath">
+     <xsd:sequence>
+       <xsd:element ref="m:oMath"/>
+     </xsd:sequence>
+   </xsd:complexType>
+   <xsd:element name="m" type="CT_TextMath"/>
+   <xsd:complexType name="CT_ContentPartLocking">
+     <xsd:sequence>
+       <xsd:element name="extLst" type="a:CT_OfficeArtExtensionList" minOccurs="0" maxOccurs="1"/>
+     </xsd:sequence>
+     <xsd:attributeGroup ref="a:AG_Locking"/>
+   </xsd:complexType>
+   <xsd:complexType name="CT_NonVisualInkContentPartProperties">
+     <xsd:sequence>
+       <xsd:element name="cpLocks" type="CT_ContentPartLocking" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="extLst" type="a:CT_OfficeArtExtensionList" minOccurs="0" maxOccurs="1"/>
+     </xsd:sequence>
+     <xsd:attribute name="isComment" type="xsd:boolean" use="optional" default="true"/>
+   </xsd:complexType>
+   <xsd:complexType name="CT_CameraTool">
+     <xsd:attribute name="cellRange" type="xsd:string"/>
+     <xsd:attribute name="spid" use="optional" default="0" type="xsd:string"/>
+   </xsd:complexType>
+   <xsd:element name="cameraTool" type="CT_CameraTool"/>
+   <xsd:complexType name="CT_CompatExt">
+     <xsd:attribute name="spid" type="xsd:string"/>
+   </xsd:complexType>
+   <xsd:element name="compatExt" type="CT_CompatExt"/>
+   <xsd:complexType name="CT_IsGvmlCanvas">
+     <xsd:attribute name="val" type="xsd:boolean" use="required"/>
+   </xsd:complexType>
+   <xsd:complexType name="CT_GvmlContentPartNonVisual">
+     <xsd:sequence>
+       <xsd:element name="cNvPr" type="a:CT_NonVisualDrawingProps" minOccurs="1" maxOccurs="1"/>
+       <xsd:element name="cNvContentPartPr" type="CT_NonVisualInkContentPartProperties" minOccurs="0" maxOccurs="1"/>
+     </xsd:sequence>
+   </xsd:complexType>
+   <xsd:complexType name="CT_GvmlContentPart">
+     <xsd:sequence>
+       <xsd:element name="nvContentPartPr" type="CT_GvmlContentPartNonVisual" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="xfrm" type="a:CT_Transform2D" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="extLst" type="a:CT_OfficeArtExtensionList" minOccurs="0" maxOccurs="1"/>
+     </xsd:sequence>
+     <xsd:attribute name="bwMode" type="a:ST_BlackWhiteMode" use="optional"/>
+     <xsd:attribute ref="r:id" use="required"/>
+   </xsd:complexType>
+   <xsd:element name="isCanvas" type="CT_IsGvmlCanvas"/>
+   <xsd:element name="contentPart" type="CT_GvmlContentPart"/>
+   <xsd:complexType name="CT_ShadowObscured">
+     <xsd:attribute name="val" type="xsd:boolean" use="optional" default="false"/>
+   </xsd:complexType>
+   <xsd:element name="shadowObscured" type="CT_ShadowObscured"/>
+   <xsd:element name="hiddenFill" type="a:CT_FillProperties"/>
+   <xsd:element name="hiddenLine" type="a:CT_LineProperties"/>
+   <xsd:element name="hiddenEffects" type="a:CT_EffectProperties"/>
+   <xsd:element name="hiddenScene3d" type="a:CT_Scene3D"/>
+   <xsd:element name="hiddenSp3d" type="a:CT_Shape3D"/>
+   <xsd:simpleType name="ST_ArtisticEffectParam100">
+     <xsd:restriction base="xsd:int">
+       <xsd:minInclusive value="0"/>
+       <xsd:maxInclusive value="100"/>
+     </xsd:restriction>
+   </xsd:simpleType>
+   <xsd:simpleType name="ST_ArtisticEffectParam10">
+     <xsd:restriction base="xsd:int">
+       <xsd:minInclusive value="0"/>
+       <xsd:maxInclusive value="10"/>
+     </xsd:restriction>
+   </xsd:simpleType>
+   <xsd:simpleType name="ST_ArtisticEffectParam6">
+     <xsd:restriction base="xsd:int">
+       <xsd:minInclusive value="0"/>
+       <xsd:maxInclusive value="6"/>
+     </xsd:restriction>
+   </xsd:simpleType>
+   <xsd:simpleType name="ST_ArtisticEffectParam4">
+     <xsd:restriction base="xsd:int">
+       <xsd:minInclusive value="0"/>
+       <xsd:maxInclusive value="4"/>
+     </xsd:restriction>
+   </xsd:simpleType>
+   <xsd:complexType name="CT_PictureEffectBlur">
+     <xsd:attribute name="radius" type="ST_ArtisticEffectParam100" use="optional" default="10"/>
+   </xsd:complexType>
+   <xsd:complexType name="CT_PictureEffectCement">
+     <xsd:attribute name="trans" type="a:ST_PositiveFixedPercentage" use="optional" default="0"/>
+     <xsd:attribute name="crackSpacing" type="ST_ArtisticEffectParam100" use="optional" default="24"/>
+   </xsd:complexType>
+   <xsd:complexType name="CT_PictureEffectChalkSketch">
+     <xsd:attribute name="trans" type="a:ST_PositiveFixedPercentage" use="optional" default="0"/>
+     <xsd:attribute name="pressure" type="ST_ArtisticEffectParam4" use="optional" default="0"/>
+   </xsd:complexType>
+   <xsd:complexType name="CT_PictureEffectCrisscrossEtching">
+     <xsd:attribute name="trans" type="a:ST_PositiveFixedPercentage" use="optional" default="75"/>
+     <xsd:attribute name="pressure" type="ST_ArtisticEffectParam100" use="optional" default="30"/>
+   </xsd:complexType>
+   <xsd:complexType name="CT_PictureEffectCutout">
+     <xsd:attribute name="trans" type="a:ST_PositiveFixedPercentage" use="optional" default="0"/>
+     <xsd:attribute name="numberOfShades" type="ST_ArtisticEffectParam6" use="optional" default="2"/>
+   </xsd:complexType>
+   <xsd:complexType name="CT_PictureEffectFilmGrain">
+     <xsd:attribute name="trans" type="a:ST_PositiveFixedPercentage" use="optional" default="0"/>
+     <xsd:attribute name="grainSize" type="ST_ArtisticEffectParam100" use="optional" default="40"/>
+   </xsd:complexType>
+   <xsd:complexType name="CT_PictureEffectGlass">
+     <xsd:attribute name="trans" type="a:ST_PositiveFixedPercentage" use="optional" default="0"/>
+     <xsd:attribute name="scaling" type="ST_ArtisticEffectParam100" use="optional" default="34"/>
+   </xsd:complexType>
+   <xsd:complexType name="CT_PictureEffectGlowDiffused">
+     <xsd:attribute name="trans" type="a:ST_PositiveFixedPercentage" use="optional" default="0"/>
+     <xsd:attribute name="intensity" type="ST_ArtisticEffectParam10" use="optional" default="5"/>
+   </xsd:complexType>
+   <xsd:complexType name="CT_PictureEffectGlowEdges">
+     <xsd:attribute name="trans" type="a:ST_PositiveFixedPercentage" use="optional" default="15"/>
+     <xsd:attribute name="smoothness" type="ST_ArtisticEffectParam10" use="optional" default="3"/>
+   </xsd:complexType>
+   <xsd:complexType name="CT_PictureEffectLightScreen">
+     <xsd:attribute name="trans" type="a:ST_PositiveFixedPercentage" use="optional" default="0"/>
+     <xsd:attribute name="gridSize" type="ST_ArtisticEffectParam10" use="optional" default="4"/>
+   </xsd:complexType>
+   <xsd:complexType name="CT_PictureEffectLineDrawing">
+     <xsd:attribute name="trans" type="a:ST_PositiveFixedPercentage" use="optional" default="25"/>
+     <xsd:attribute name="pencilSize" type="ST_ArtisticEffectParam100" use="optional" default="0"/>
+   </xsd:complexType>
+   <xsd:complexType name="CT_PictureEffectMarker">
+     <xsd:attribute name="trans" type="a:ST_PositiveFixedPercentage" use="optional" default="0"/>
+     <xsd:attribute name="size" type="ST_ArtisticEffectParam100" use="optional" default="97"/>
+   </xsd:complexType>
+   <xsd:complexType name="CT_PictureEffectMosiaicBubbles">
+     <xsd:attribute name="trans" type="a:ST_PositiveFixedPercentage" use="optional" default="0"/>
+     <xsd:attribute name="pressure" type="ST_ArtisticEffectParam100" use="optional" default="14"/>
+   </xsd:complexType>
+   <xsd:complexType name="CT_PictureEffectPaintBrush">
+     <xsd:attribute name="trans" type="a:ST_PositiveFixedPercentage" use="optional" default="0"/>
+     <xsd:attribute name="brushSize" type="ST_ArtisticEffectParam10" use="optional" default="2"/>
+   </xsd:complexType>
+   <xsd:complexType name="CT_PictureEffectPaintStrokes">
+     <xsd:attribute name="trans" type="a:ST_PositiveFixedPercentage" use="optional" default="0"/>
+     <xsd:attribute name="intensity" type="ST_ArtisticEffectParam10" use="optional" default="5"/>
+   </xsd:complexType>
+   <xsd:complexType name="CT_PictureEffectPastelsSmooth">
+     <xsd:attribute name="trans" type="a:ST_PositiveFixedPercentage" use="optional" default="0"/>
+     <xsd:attribute name="scaling" type="ST_ArtisticEffectParam100" use="optional" default="34"/>
+   </xsd:complexType>
+   <xsd:complexType name="CT_PictureEffectPencilGrayscale">
+     <xsd:attribute name="trans" type="a:ST_PositiveFixedPercentage" use="optional" default="0"/>
+     <xsd:attribute name="pencilSize" type="ST_ArtisticEffectParam100" use="optional" default="27"/>
+   </xsd:complexType>
+   <xsd:complexType name="CT_PictureEffectPencilSketch">
+     <xsd:attribute name="trans" type="a:ST_PositiveFixedPercentage" use="optional" default="0"/>
+     <xsd:attribute name="pressure" type="ST_ArtisticEffectParam100" use="optional" default="22"/>
+   </xsd:complexType>
+   <xsd:complexType name="CT_PictureEffectPhotocopy">
+     <xsd:attribute name="trans" type="a:ST_PositiveFixedPercentage" use="optional" default="30"/>
+     <xsd:attribute name="detail" type="ST_ArtisticEffectParam10" use="optional" default="3"/>
+   </xsd:complexType>
+   <xsd:complexType name="CT_PictureEffectPlasticWrap">
+     <xsd:attribute name="trans" type="a:ST_PositiveFixedPercentage" use="optional" default="0"/>
+     <xsd:attribute name="smoothness" type="ST_ArtisticEffectParam10" use="optional" default="5"/>
+   </xsd:complexType>
+   <xsd:complexType name="CT_PictureEffectTexturizer">
+     <xsd:attribute name="trans" type="a:ST_PositiveFixedPercentage" use="optional" default="0"/>
+     <xsd:attribute name="scaling" type="ST_ArtisticEffectParam100" use="optional" default="34"/>
+   </xsd:complexType>
+   <xsd:complexType name="CT_PictureEffectWatercolorSponge">
+     <xsd:attribute name="trans" type="a:ST_PositiveFixedPercentage" use="optional" default="0"/>
+     <xsd:attribute name="brushSize" type="ST_ArtisticEffectParam10" use="optional" default="2"/>
+   </xsd:complexType>
+   <xsd:complexType name="CT_PictureEffectBackgroundRemovalForegroundMark">
+     <xsd:attribute name="x1" type="a:ST_PositiveFixedPercentage" use="required"/>
+     <xsd:attribute name="y1" type="a:ST_PositiveFixedPercentage" use="required"/>
+     <xsd:attribute name="x2" type="a:ST_PositiveFixedPercentage" use="required"/>
+     <xsd:attribute name="y2" type="a:ST_PositiveFixedPercentage" use="required"/>
+   </xsd:complexType>
+   <xsd:complexType name="CT_PictureEffectBackgroundRemovalBackgroundMark">
+     <xsd:attribute name="x1" type="a:ST_PositiveFixedPercentage" use="required"/>
+     <xsd:attribute name="y1" type="a:ST_PositiveFixedPercentage" use="required"/>
+     <xsd:attribute name="x2" type="a:ST_PositiveFixedPercentage" use="required"/>
+     <xsd:attribute name="y2" type="a:ST_PositiveFixedPercentage" use="required"/>
+   </xsd:complexType>
+   <xsd:complexType name="CT_PictureEffectBackgroundRemoval">
+     <xsd:sequence>
+       <xsd:element name="foregroundMark" type="CT_PictureEffectBackgroundRemovalForegroundMark" minOccurs="0" maxOccurs="unbounded"/>
+       <xsd:element name="backgroundMark" type="CT_PictureEffectBackgroundRemovalBackgroundMark" minOccurs="0" maxOccurs="unbounded"/>
+     </xsd:sequence>
+     <xsd:attribute name="t" type="a:ST_PositiveFixedPercentage" use="required"/>
+     <xsd:attribute name="b" type="a:ST_PositiveFixedPercentage" use="required"/>
+     <xsd:attribute name="l" type="a:ST_PositiveFixedPercentage" use="required"/>
+     <xsd:attribute name="r" type="a:ST_PositiveFixedPercentage" use="required"/>
+   </xsd:complexType>
+   <xsd:complexType name="CT_PictureEffectBrightnessContrast">
+     <xsd:attribute name="bright" type="a:ST_FixedPercentage" use="optional" default="0"/>
+     <xsd:attribute name="contrast" type="a:ST_FixedPercentage" use="optional" default="0"/>
+   </xsd:complexType>
+   <xsd:simpleType name="ST_ColorTemperature">
+     <xsd:restriction base="xsd:int">
+       <xsd:minInclusive value="1500"/>
+       <xsd:maxInclusive value="11500"/>
+     </xsd:restriction>
+   </xsd:simpleType>
+   <xsd:complexType name="CT_PictureEffectColorTemperature">
+     <xsd:attribute name="colorTemp" type="ST_ColorTemperature" use="optional" default="6500"/>
+   </xsd:complexType>
+   <xsd:simpleType name="ST_SaturationAmount">
+     <xsd:restriction base="a:ST_PercentageDecimal">
+       <xsd:minInclusive value="0"/>
+       <xsd:maxInclusive value="400000"/>
+     </xsd:restriction>
+   </xsd:simpleType>
+   <xsd:complexType name="CT_PictureEffectSaturation">
+     <xsd:attribute name="sat" type="ST_SaturationAmount" use="optional" default="100"/>
+   </xsd:complexType>
+   <xsd:complexType name="CT_PictureEffectSharpenSoften">
+     <xsd:attribute name="amount" type="a:ST_FixedPercentage" use="optional" default="0"/>
+   </xsd:complexType>
+   <xsd:complexType name="CT_PictureEffect">
+     <xsd:choice minOccurs="1" maxOccurs="1">
+       <xsd:element name="artisticBlur" type="CT_PictureEffectBlur" minOccurs="1" maxOccurs="1"/>
+       <xsd:element name="artisticCement" type="CT_PictureEffectCement" minOccurs="1" maxOccurs="1"/>
+       <xsd:element name="artisticChalkSketch" type="CT_PictureEffectChalkSketch" minOccurs="1" maxOccurs="1"/>
+       <xsd:element name="artisticCrisscrossEtching" type="CT_PictureEffectCrisscrossEtching" minOccurs="1" maxOccurs="1"/>
+       <xsd:element name="artisticCutout" type="CT_PictureEffectCutout" minOccurs="1" maxOccurs="1"/>
+       <xsd:element name="artisticFilmGrain" type="CT_PictureEffectFilmGrain" minOccurs="1" maxOccurs="1"/>
+       <xsd:element name="artisticGlass" type="CT_PictureEffectGlass" minOccurs="1" maxOccurs="1"/>
+       <xsd:element name="artisticGlowDiffused" type="CT_PictureEffectGlowDiffused" minOccurs="1" maxOccurs="1"/>
+       <xsd:element name="artisticGlowEdges" type="CT_PictureEffectGlowEdges" minOccurs="1" maxOccurs="1"/>
+       <xsd:element name="artisticLightScreen" type="CT_PictureEffectLightScreen" minOccurs="1" maxOccurs="1"/>
+       <xsd:element name="artisticLineDrawing" type="CT_PictureEffectLineDrawing" minOccurs="1" maxOccurs="1"/>
+       <xsd:element name="artisticMarker" type="CT_PictureEffectMarker" minOccurs="1" maxOccurs="1"/>
+       <xsd:element name="artisticMosiaicBubbles" type="CT_PictureEffectMosiaicBubbles" minOccurs="1" maxOccurs="1"/>
+       <xsd:element name="artisticPaintStrokes" type="CT_PictureEffectPaintStrokes" minOccurs="1" maxOccurs="1"/>
+       <xsd:element name="artisticPaintBrush" type="CT_PictureEffectPaintBrush" minOccurs="1" maxOccurs="1"/>
+       <xsd:element name="artisticPastelsSmooth" type="CT_PictureEffectPastelsSmooth" minOccurs="1" maxOccurs="1"/>
+       <xsd:element name="artisticPencilGrayscale" type="CT_PictureEffectPencilGrayscale" minOccurs="1" maxOccurs="1"/>
+       <xsd:element name="artisticPencilSketch" type="CT_PictureEffectPencilSketch" minOccurs="1" maxOccurs="1"/>
+       <xsd:element name="artisticPhotocopy" type="CT_PictureEffectPhotocopy" minOccurs="1" maxOccurs="1"/>
+       <xsd:element name="artisticPlasticWrap" type="CT_PictureEffectPlasticWrap" minOccurs="1" maxOccurs="1"/>
+       <xsd:element name="artisticTexturizer" type="CT_PictureEffectTexturizer" minOccurs="1" maxOccurs="1"/>
+       <xsd:element name="artisticWatercolorSponge" type="CT_PictureEffectWatercolorSponge" minOccurs="1" maxOccurs="1"/>
+       <xsd:element name="backgroundRemoval" type="CT_PictureEffectBackgroundRemoval" minOccurs="1" maxOccurs="1"/>
+       <xsd:element name="brightnessContrast" type="CT_PictureEffectBrightnessContrast" minOccurs="1" maxOccurs="1"/>
+       <xsd:element name="colorTemperature" type="CT_PictureEffectColorTemperature" minOccurs="1" maxOccurs="1"/>
+       <xsd:element name="saturation" type="CT_PictureEffectSaturation" minOccurs="1" maxOccurs="1"/>
+       <xsd:element name="sharpenSoften" type="CT_PictureEffectSharpenSoften" minOccurs="1" maxOccurs="1"/>
+     </xsd:choice>
+     <xsd:attribute name="visible" type="xsd:boolean" use="optional" default="true"/>
+   </xsd:complexType>
+   <xsd:complexType name="CT_PictureLayer">
+     <xsd:sequence>
+       <xsd:element name="imgEffect" type="CT_PictureEffect" minOccurs="0" maxOccurs="unbounded"/>
+     </xsd:sequence>
+     <xsd:attribute ref="r:embed" use="optional" default=""/>
+   </xsd:complexType>
+   <xsd:complexType name="CT_Photo">
+     <xsd:sequence>
+       <xsd:element name="imgLayer" type="CT_PictureLayer" minOccurs="1" maxOccurs="1"/>
+     </xsd:sequence>
+   </xsd:complexType>
+   <xsd:element name="imgProps" type="CT_Photo"/>
+   <xsd:complexType name="CT_UseLocalDpi">
+     <xsd:attribute name="val" type="xsd:boolean" use="optional" default="true"/>
+   </xsd:complexType>
+   <xsd:element name="useLocalDpi" type="CT_UseLocalDpi"/>
+ </xsd:schema>

@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- [MS-ODRAWXML] 5.15, http://schemas.microsoft.com/office/drawing/2012/chartStyle Schema: https://learn.microsoft.com/en-us/openspecs/office_standards/ms-odrawxml/a7bb9c01-d274-47ee-a16a-90e26877e8a4 -->
+<xsd:schema targetNamespace="http://schemas.microsoft.com/office/drawing/2012/chartStyle" elementFormDefault="qualified" attributeFormDefault="unqualified" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns="http://schemas.microsoft.com/office/drawing/2012/chartStyle">
+   <xsd:import namespace="http://schemas.openxmlformats.org/drawingml/2006/main" schemaLocation="../ISO-IEC29500-4_2016/dml-main.xsd"/>
+   <xsd:import namespace="http://schemas.openxmlformats.org/drawingml/2006/main" schemaLocation="../ISO-IEC29500-4_2016/dml-main.xsd"/>
+   <xsd:import namespace="http://schemas.openxmlformats.org/drawingml/2006/main" schemaLocation="../ISO-IEC29500-4_2016/dml-main.xsd"/>
+   <xsd:simpleType name="ST_ColorStyleMethodEnum">
+     <xsd:restriction base="xsd:token">
+       <xsd:enumeration value="cycle"/>
+       <xsd:enumeration value="withinLinear"/>
+       <xsd:enumeration value="acrossLinear"/>
+       <xsd:enumeration value="withinLinearReversed"/>
+       <xsd:enumeration value="acrossLinearReversed"/>
+     </xsd:restriction>
+   </xsd:simpleType>
+   <xsd:simpleType name="ST_ColorStyleMethod">
+     <xsd:union memberTypes="ST_ColorStyleMethodEnum xsd:string"/>
+   </xsd:simpleType>
+   <xsd:complexType name="CT_ColorStyleVariation">
+     <xsd:sequence>
+       <xsd:group ref="a:EG_ColorTransform" minOccurs="0" maxOccurs="unbounded"/>
+     </xsd:sequence>
+   </xsd:complexType>
+   <xsd:simpleType name="ST_StyleReferenceModifierEnum">
+     <xsd:restriction base="xsd:token">
+       <xsd:enumeration value="ignoreCSTransforms"/>
+     </xsd:restriction>
+   </xsd:simpleType>
+   <xsd:simpleType name="ST_StyleReferenceModifier">
+     <xsd:union memberTypes="ST_StyleReferenceModifierEnum xsd:string"/>
+   </xsd:simpleType>
+   <xsd:simpleType name="ST_StyleReferenceModifierList">
+     <xsd:list itemType="ST_StyleReferenceModifier"/>
+   </xsd:simpleType>
+   <xsd:complexType name="CT_ColorStyle">
+     <xsd:sequence>
+       <xsd:group ref="a:EG_ColorChoice" minOccurs="1" maxOccurs="unbounded"/>
+       <xsd:element name="variation" type="CT_ColorStyleVariation" minOccurs="0" maxOccurs="unbounded"/>
+       <xsd:element name="extLst" type="a:CT_OfficeArtExtensionList" minOccurs="0" maxOccurs="1"/>
+     </xsd:sequence>
+     <xsd:attribute name="meth" type="ST_ColorStyleMethod" use="required"/>
+     <xsd:attribute name="id" type="xsd:unsignedInt" use="optional"/>
+   </xsd:complexType>
+   <xsd:element name="colorStyle" type="CT_ColorStyle"/>
+   <xsd:simpleType name="ST_StyleColorEnum">
+     <xsd:restriction base="xsd:token">
+       <xsd:enumeration value="auto"/>
+     </xsd:restriction>
+   </xsd:simpleType>
+   <xsd:simpleType name="ST_StyleColorVal">
+     <xsd:union memberTypes="xsd:unsignedInt ST_StyleColorEnum xsd:string"/>
+   </xsd:simpleType>
+   <xsd:complexType name="CT_StyleColor">
+     <xsd:sequence>
+       <xsd:group ref="a:EG_ColorTransform" minOccurs="0" maxOccurs="unbounded"/>
+     </xsd:sequence>
+     <xsd:attribute name="val" type="ST_StyleColorVal"/>
+   </xsd:complexType>
+   <xsd:complexType name="CT_StyleReference">
+     <xsd:sequence>
+       <xsd:group ref="a:EG_ColorChoice" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="styleClr" type="CT_StyleColor" minOccurs="0" maxOccurs="1"/>
+     </xsd:sequence>
+     <xsd:attribute name="idx" type="a:ST_StyleMatrixColumnIndex" use="required"/>
+     <xsd:attribute name="mods" type="ST_StyleReferenceModifierList" use="optional"/>
+   </xsd:complexType>
+   <xsd:complexType name="CT_FontReference">
+     <xsd:sequence>
+       <xsd:group ref="a:EG_ColorChoice" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="styleClr" type="CT_StyleColor" minOccurs="0" maxOccurs="1"/>
+     </xsd:sequence>
+     <xsd:attribute name="idx" type="a:ST_FontCollectionIndex" use="required"/>
+     <xsd:attribute name="mods" type="ST_StyleReferenceModifierList" use="optional"/>
+   </xsd:complexType>
+   <xsd:simpleType name="ST_StyleEntryModifierEnum">
+     <xsd:restriction base="xsd:token">
+       <xsd:enumeration value="allowNoFillOverride"/>
+       <xsd:enumeration value="allowNoLineOverride"/>
+     </xsd:restriction>
+   </xsd:simpleType>
+   <xsd:simpleType name="ST_StyleEntryModifier">
+     <xsd:union memberTypes="ST_StyleEntryModifierEnum xsd:string"/>
+   </xsd:simpleType>
+   <xsd:simpleType name="ST_StyleEntryModifierList">
+     <xsd:list itemType="ST_StyleEntryModifier"/>
+   </xsd:simpleType>
+   <xsd:simpleType name="ST_MarkerStyle">
+     <xsd:restriction base="xsd:token">
+       <xsd:enumeration value="circle"/>
+       <xsd:enumeration value="dash"/>
+       <xsd:enumeration value="diamond"/>
+       <xsd:enumeration value="dot"/>
+       <xsd:enumeration value="plus"/>
+       <xsd:enumeration value="square"/>
+       <xsd:enumeration value="star"/>
+       <xsd:enumeration value="triangle"/>
+       <xsd:enumeration value="x"/>
+     </xsd:restriction>
+   </xsd:simpleType>
+   <xsd:simpleType name="ST_MarkerSize">
+     <xsd:restriction base="xsd:unsignedByte">
+       <xsd:minInclusive value="2"/>
+       <xsd:maxInclusive value="72"/>
+     </xsd:restriction>
+   </xsd:simpleType>
+   <xsd:complexType name="CT_MarkerLayout">
+     <xsd:attribute name="symbol" type="ST_MarkerStyle" use="optional"/>
+     <xsd:attribute name="size" type="ST_MarkerSize" use="optional"/>
+   </xsd:complexType>
+   <xsd:complexType name="CT_StyleEntry">
+     <xsd:sequence>
+       <xsd:element name="lnRef" type="CT_StyleReference" minOccurs="1" maxOccurs="1"/>
+       <xsd:element name="lineWidthScale" type="xsd:double" minOccurs="0" maxOccurs="1" default="1.0"/>
+       <xsd:element name="fillRef" type="CT_StyleReference" minOccurs="1" maxOccurs="1"/>
+       <xsd:element name="effectRef" type="CT_StyleReference" minOccurs="1" maxOccurs="1"/>
+       <xsd:element name="fontRef" type="CT_FontReference" minOccurs="1" maxOccurs="1"/>
+       <xsd:element name="spPr" type="a:CT_ShapeProperties" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="defRPr" type="a:CT_TextCharacterProperties" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="bodyPr" type="a:CT_TextBodyProperties" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="extLst" type="a:CT_OfficeArtExtensionList" minOccurs="0" maxOccurs="1"/>
+     </xsd:sequence>
+     <xsd:attribute name="mods" type="ST_StyleEntryModifierList" use="optional"/>
+   </xsd:complexType>
+   <xsd:complexType name="CT_ChartStyle">
+     <xsd:sequence>
+       <xsd:element name="axisTitle" type="CT_StyleEntry" minOccurs="1" maxOccurs="1"/>
+       <xsd:element name="categoryAxis" type="CT_StyleEntry" minOccurs="1" maxOccurs="1"/>
+       <xsd:element name="chartArea" type="CT_StyleEntry" minOccurs="1" maxOccurs="1"/>
+       <xsd:element name="dataLabel" type="CT_StyleEntry" minOccurs="1" maxOccurs="1"/>
+       <xsd:element name="dataLabelCallout" type="CT_StyleEntry" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="dataPoint" type="CT_StyleEntry" minOccurs="1" maxOccurs="1"/>
+       <xsd:element name="dataPoint3D" type="CT_StyleEntry" minOccurs="1" maxOccurs="1"/>
+       <xsd:element name="dataPointLine" type="CT_StyleEntry" minOccurs="1" maxOccurs="1"/>
+       <xsd:element name="dataPointMarker" type="CT_StyleEntry" minOccurs="1" maxOccurs="1"/>
+       <xsd:element name="dataPointMarkerLayout" type="CT_MarkerLayout" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="dataPointWireframe" type="CT_StyleEntry" minOccurs="1" maxOccurs="1"/>
+       <xsd:element name="dataTable" type="CT_StyleEntry" minOccurs="1" maxOccurs="1"/>
+       <xsd:element name="downBar" type="CT_StyleEntry" minOccurs="1" maxOccurs="1"/>
+       <xsd:element name="dropLine" type="CT_StyleEntry" minOccurs="1" maxOccurs="1"/>
+       <xsd:element name="errorBar" type="CT_StyleEntry" minOccurs="1" maxOccurs="1"/>
+       <xsd:element name="floor" type="CT_StyleEntry" minOccurs="1" maxOccurs="1"/>
+       <xsd:element name="gridlineMajor" type="CT_StyleEntry" minOccurs="1" maxOccurs="1"/>
+       <xsd:element name="gridlineMinor" type="CT_StyleEntry" minOccurs="1" maxOccurs="1"/>
+       <xsd:element name="hiLoLine" type="CT_StyleEntry" minOccurs="1" maxOccurs="1"/>
+       <xsd:element name="leaderLine" type="CT_StyleEntry" minOccurs="1" maxOccurs="1"/>
+       <xsd:element name="legend" type="CT_StyleEntry" minOccurs="1" maxOccurs="1"/>
+       <xsd:element name="plotArea" type="CT_StyleEntry" minOccurs="1" maxOccurs="1"/>
+       <xsd:element name="plotArea3D" type="CT_StyleEntry" minOccurs="1" maxOccurs="1"/>
+       <xsd:element name="seriesAxis" type="CT_StyleEntry" minOccurs="1" maxOccurs="1"/>
+       <xsd:element name="seriesLine" type="CT_StyleEntry" minOccurs="1" maxOccurs="1"/>
+       <xsd:element name="title" type="CT_StyleEntry" minOccurs="1" maxOccurs="1"/>
+       <xsd:element name="trendline" type="CT_StyleEntry" minOccurs="1" maxOccurs="1"/>
+       <xsd:element name="trendlineLabel" type="CT_StyleEntry" minOccurs="1" maxOccurs="1"/>
+       <xsd:element name="upBar" type="CT_StyleEntry" minOccurs="1" maxOccurs="1"/>
+       <xsd:element name="valueAxis" type="CT_StyleEntry" minOccurs="1" maxOccurs="1"/>
+       <xsd:element name="wall" type="CT_StyleEntry" minOccurs="1" maxOccurs="1"/>
+       <xsd:element name="extLst" type="a:CT_OfficeArtExtensionList" minOccurs="0" maxOccurs="1"/>
+     </xsd:sequence>
+     <xsd:attribute name="id" type="xsd:unsignedInt" use="optional"/>
+   </xsd:complexType>
+   <xsd:element name="chartStyle" type="CT_ChartStyle"/>
+ </xsd:schema>

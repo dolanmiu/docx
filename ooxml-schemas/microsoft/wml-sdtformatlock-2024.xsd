@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- [MS-DOCX] 5.9, http://schemas.microsoft.com/office/word/2024/wordml/sdtformatlock Schema: https://learn.microsoft.com/en-us/openspecs/office_standards/ms-docx/14bc8126-7c6e-41a8-b042-c199036e2339 -->
+<xsd:schema xmlns:s="http://schemas.openxmlformats.org/officeDocument/2006/sharedTypes" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:w12="http://schemas.openxmlformats.org/wordprocessingml/2006/main" elementFormDefault="qualified" attributeFormDefault="qualified" blockDefault="#all" xmlns="http://schemas.microsoft.com/office/word/2024/wordml/sdtformatlock" targetNamespace="http://schemas.microsoft.com/office/word/2024/wordml/sdtformatlock">
+   <xsd:import namespace="http://schemas.openxmlformats.org/officeDocument/2006/sharedTypes" schemaLocation="../ISO-IEC29500-4_2016/shared-commonSimpleTypes.xsd"/>
+   <xsd:import id="w12" namespace="http://schemas.openxmlformats.org/wordprocessingml/2006/main" schemaLocation="../ISO-IEC29500-4_2016/wml.xsd"/>
+   <xsd:attribute name="formattingAllowed" type="s:ST_OnOff"/>
+ </xsd:schema>

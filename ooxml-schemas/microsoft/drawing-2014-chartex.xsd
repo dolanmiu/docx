@@ -1,0 +1,863 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- [MS-ODRAWXML] 5.22, http://schemas.microsoft.com/office/drawing/2014/chartex Schema: https://learn.microsoft.com/en-us/openspecs/office_standards/ms-odrawxml/e2723b0a-9120-42a5-bd11-c252ccb13c1e -->
+<xsd:schema targetNamespace="http://schemas.microsoft.com/office/drawing/2014/chartex" elementFormDefault="qualified" attributeFormDefault="unqualified" xmlns="http://schemas.microsoft.com/office/drawing/2014/chartex" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+   <xsd:import namespace="http://schemas.openxmlformats.org/drawingml/2006/main" schemaLocation="../ISO-IEC29500-4_2016/dml-main.xsd"/>
+   <xsd:import namespace="http://schemas.openxmlformats.org/drawingml/2006/main" schemaLocation="../ISO-IEC29500-4_2016/dml-main.xsd"/>
+   <xsd:import namespace="http://schemas.openxmlformats.org/drawingml/2006/main" schemaLocation="../ISO-IEC29500-4_2016/dml-main.xsd"/>
+   <xsd:import namespace="http://schemas.openxmlformats.org/drawingml/2006/main" schemaLocation="../ISO-IEC29500-4_2016/dml-main.xsd"/>
+   <xsd:import namespace="http://schemas.openxmlformats.org/officeDocument/2006/relationships" schemaLocation="../ISO-IEC29500-4_2016/shared-relationshipReference.xsd"/>
+   <xsd:simpleType name="ST_ExtensionDropMode">
+     <xsd:restriction base="xsd:string">
+       <xsd:enumeration value="never"/>
+       <xsd:enumeration value="onModelChange"/>
+       <xsd:enumeration value="onDataChange"/>
+       <xsd:enumeration value="always"/>
+     </xsd:restriction>
+   </xsd:simpleType>
+   <xsd:complexType name="CT_FeatureExtension">
+     <xsd:sequence>
+       <xsd:any processContents="lax"/>
+     </xsd:sequence>
+     <xsd:attribute name="feature" type="xsd:string" use="required"/>
+     <xsd:attribute name="drop" type="ST_ExtensionDropMode" use="optional" default="never"/>
+   </xsd:complexType>
+   <xsd:complexType name="CT_Extension">
+     <xsd:sequence>
+       <xsd:any processContents="lax"/>
+     </xsd:sequence>
+     <xsd:attribute name="uri" type="xsd:token"/>
+   </xsd:complexType>
+   <xsd:complexType name="CT_ExtensionList">
+     <xsd:sequence>
+       <xsd:element name="ext" type="CT_Extension" minOccurs="0" maxOccurs="unbounded"/>
+     </xsd:sequence>
+   </xsd:complexType>
+   <xsd:simpleType name="ST_DoubleOrAutomatic">
+     <xsd:union memberTypes="xsd:double">
+       <xsd:simpleType>
+         <xsd:restriction base="xsd:string">
+           <xsd:enumeration value="auto"/>
+         </xsd:restriction>
+       </xsd:simpleType>
+     </xsd:union>
+   </xsd:simpleType>
+   <xsd:complexType name="CT_NumberFormat">
+     <xsd:attribute name="formatCode" type="xsd:string" use="required"/>
+     <xsd:attribute name="sourceLinked" type="xsd:boolean" use="optional"/>
+   </xsd:complexType>
+   <xsd:complexType name="CT_RelId">
+     <xsd:attribute ref="r:id" use="required"/>
+   </xsd:complexType>
+   <xsd:complexType name="CT_ValueColors">
+     <xsd:sequence>
+       <xsd:element name="minColor" type="a:CT_SolidColorFillProperties" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="midColor" type="a:CT_SolidColorFillProperties" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="maxColor" type="a:CT_SolidColorFillProperties" minOccurs="0" maxOccurs="1"/>
+     </xsd:sequence>
+   </xsd:complexType>
+   <xsd:complexType name="CT_ExternalData">
+     <xsd:attribute ref="r:id" use="required"/>
+     <xsd:attribute name="autoUpdate" type="xsd:boolean" use="optional"/>
+   </xsd:complexType>
+   <xsd:simpleType name="ST_FormulaDirection">
+     <xsd:restriction base="xsd:string">
+       <xsd:enumeration value="col"/>
+       <xsd:enumeration value="row"/>
+     </xsd:restriction>
+   </xsd:simpleType>
+   <xsd:complexType name="CT_Formula">
+     <xsd:simpleContent>
+       <xsd:extension base="xsd:string">
+         <xsd:attribute name="dir" type="ST_FormulaDirection" use="optional" default="col"/>
+       </xsd:extension>
+     </xsd:simpleContent>
+   </xsd:complexType>
+   <xsd:simpleType name="ST_DataId">
+     <xsd:restriction base="xsd:unsignedInt"/>
+   </xsd:simpleType>
+   <xsd:complexType name="CT_DataId">
+     <xsd:attribute name="val" type="ST_DataId" use="required"/>
+   </xsd:complexType>
+   <xsd:complexType name="CT_StringValue">
+     <xsd:simpleContent>
+       <xsd:extension base="xsd:string">
+         <xsd:attribute name="idx" type="xsd:unsignedInt" use="required"/>
+       </xsd:extension>
+     </xsd:simpleContent>
+   </xsd:complexType>
+   <xsd:complexType name="CT_StringLevel">
+     <xsd:sequence>
+       <xsd:element name="pt" type="CT_StringValue" minOccurs="0" maxOccurs="unbounded"/>
+     </xsd:sequence>
+     <xsd:attribute name="ptCount" type="xsd:unsignedInt" use="required"/>
+     <xsd:attribute name="name" type="xsd:string" use="optional"/>
+   </xsd:complexType>
+   <xsd:simpleType name="ST_StringDimensionType">
+     <xsd:restriction base="xsd:string">
+       <xsd:enumeration value="cat"/>
+       <xsd:enumeration value="colorStr"/>
+       <xsd:enumeration value="entityId"/>
+     </xsd:restriction>
+   </xsd:simpleType>
+   <xsd:complexType name="CT_StringDimension">
+     <xsd:choice minOccurs="1" maxOccurs="1">
+       <xsd:sequence>
+         <xsd:element name="f" type="CT_Formula" minOccurs="1" maxOccurs="1"/>
+         <xsd:element name="nf" type="CT_Formula" minOccurs="0" maxOccurs="1"/>
+         <xsd:element name="lvl" type="CT_StringLevel" minOccurs="0" maxOccurs="unbounded"/>
+       </xsd:sequence>
+       <xsd:element name="lvl" type="CT_StringLevel" minOccurs="1" maxOccurs="unbounded"/>
+     </xsd:choice>
+     <xsd:attribute name="type" type="ST_StringDimensionType" use="required"/>
+   </xsd:complexType>
+   <xsd:complexType name="CT_NumericValue">
+     <xsd:simpleContent>
+       <xsd:extension base="xsd:double">
+         <xsd:attribute name="idx" type="xsd:unsignedInt" use="required"/>
+       </xsd:extension>
+     </xsd:simpleContent>
+   </xsd:complexType>
+   <xsd:complexType name="CT_NumericLevel">
+     <xsd:sequence>
+       <xsd:element name="pt" type="CT_NumericValue" minOccurs="0" maxOccurs="unbounded"/>
+     </xsd:sequence>
+     <xsd:attribute name="ptCount" type="xsd:unsignedInt" use="required"/>
+     <xsd:attribute name="formatCode" type="xsd:string" use="optional"/>
+     <xsd:attribute name="name" type="xsd:string" use="optional"/>
+   </xsd:complexType>
+   <xsd:simpleType name="ST_NumericDimensionType">
+     <xsd:restriction base="xsd:string">
+       <xsd:enumeration value="val"/>
+       <xsd:enumeration value="x"/>
+       <xsd:enumeration value="y"/>
+       <xsd:enumeration value="size"/>
+       <xsd:enumeration value="colorVal"/>
+     </xsd:restriction>
+   </xsd:simpleType>
+   <xsd:complexType name="CT_NumericDimension">
+     <xsd:choice minOccurs="1" maxOccurs="1">
+       <xsd:sequence>
+         <xsd:element name="f" type="CT_Formula" minOccurs="1" maxOccurs="1"/>
+         <xsd:element name="nf" type="CT_Formula" minOccurs="0" maxOccurs="1"/>
+         <xsd:element name="lvl" type="CT_NumericLevel" minOccurs="0" maxOccurs="unbounded"/>
+       </xsd:sequence>
+       <xsd:element name="lvl" type="CT_NumericLevel" minOccurs="1" maxOccurs="unbounded"/>
+     </xsd:choice>
+     <xsd:attribute name="type" type="ST_NumericDimensionType" use="required"/>
+   </xsd:complexType>
+   <xsd:complexType name="CT_Data">
+     <xsd:sequence>
+       <xsd:choice minOccurs="1" maxOccurs="unbounded">
+         <xsd:element name="numDim" type="CT_NumericDimension" minOccurs="1" maxOccurs="1"/>
+         <xsd:element name="strDim" type="CT_StringDimension" minOccurs="1" maxOccurs="1"/>
+       </xsd:choice>
+       <xsd:element name="extLst" type="CT_ExtensionList" minOccurs="0" maxOccurs="1"/>
+     </xsd:sequence>
+     <xsd:attribute name="id" type="ST_DataId" use="required"/>
+   </xsd:complexType>
+   <xsd:complexType name="CT_ChartData">
+     <xsd:sequence>
+       <xsd:element name="externalData" type="CT_ExternalData" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="data" type="CT_Data" minOccurs="1" maxOccurs="unbounded"/>
+       <xsd:element name="extLst" type="CT_ExtensionList" minOccurs="0" maxOccurs="1"/>
+     </xsd:sequence>
+   </xsd:complexType>
+   <xsd:complexType name="CT_TextData">
+     <xsd:choice minOccurs="1" maxOccurs="1">
+       <xsd:sequence>
+         <xsd:element name="f" type="CT_Formula" minOccurs="1" maxOccurs="1"/>
+         <xsd:element name="v" type="xsd:string" minOccurs="0" maxOccurs="1"/>
+       </xsd:sequence>
+       <xsd:element name="v" type="xsd:string" minOccurs="1" maxOccurs="1"/>
+     </xsd:choice>
+   </xsd:complexType>
+   <xsd:complexType name="CT_Text">
+     <xsd:sequence>
+       <xsd:choice minOccurs="1" maxOccurs="1">
+         <xsd:element name="txData" type="CT_TextData" minOccurs="1" maxOccurs="1"/>
+         <xsd:element name="rich" type="a:CT_TextBody" minOccurs="1" maxOccurs="1"/>
+       </xsd:choice>
+     </xsd:sequence>
+   </xsd:complexType>
+   <xsd:simpleType name="ST_SidePos">
+     <xsd:restriction base="xsd:string">
+       <xsd:enumeration value="l"/>
+       <xsd:enumeration value="t"/>
+       <xsd:enumeration value="r"/>
+       <xsd:enumeration value="b"/>
+     </xsd:restriction>
+   </xsd:simpleType>
+   <xsd:simpleType name="ST_PosAlign">
+     <xsd:restriction base="xsd:string">
+       <xsd:enumeration value="min"/>
+       <xsd:enumeration value="ctr"/>
+       <xsd:enumeration value="max"/>
+     </xsd:restriction>
+   </xsd:simpleType>
+   <xsd:complexType name="CT_Offset">
+     <xsd:attribute name="top" type="xsd:double" use="required"/>
+     <xsd:attribute name="left" type="xsd:double" use="required"/>
+   </xsd:complexType>
+   <xsd:complexType name="CT_ChartTitle">
+     <xsd:sequence>
+       <xsd:element name="tx" type="CT_Text" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="spPr" type="a:CT_ShapeProperties" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="txPr" type="a:CT_TextBody" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="offset" type="CT_Offset" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="extLst" type="CT_ExtensionList" minOccurs="0" maxOccurs="1"/>
+     </xsd:sequence>
+     <xsd:attribute name="pos" type="ST_SidePos" use="optional" default="t"/>
+     <xsd:attribute name="align" type="ST_PosAlign" use="optional" default="ctr"/>
+     <xsd:attribute name="overlay" type="xsd:boolean" use="optional" default="0"/>
+   </xsd:complexType>
+   <xsd:simpleType name="ST_AxisId">
+     <xsd:restriction base="xsd:unsignedInt"/>
+   </xsd:simpleType>
+   <xsd:simpleType name="ST_GapWidthRatio">
+     <xsd:union>
+       <xsd:simpleType>
+         <xsd:restriction base="xsd:double">
+           <xsd:minInclusive value="0"/>
+         </xsd:restriction>
+       </xsd:simpleType>
+       <xsd:simpleType>
+         <xsd:restriction base="xsd:string">
+           <xsd:enumeration value="auto"/>
+         </xsd:restriction>
+       </xsd:simpleType>
+     </xsd:union>
+   </xsd:simpleType>
+   <xsd:complexType name="CT_CategoryAxisScaling">
+     <xsd:attribute name="gapWidth" type="ST_GapWidthRatio" use="optional"/>
+   </xsd:complexType>
+   <xsd:simpleType name="ST_ValueAxisUnit">
+     <xsd:union>
+       <xsd:simpleType>
+         <xsd:restriction base="xsd:double">
+           <xsd:minExclusive value="0"/>
+         </xsd:restriction>
+       </xsd:simpleType>
+       <xsd:simpleType>
+         <xsd:restriction base="xsd:string">
+           <xsd:enumeration value="auto"/>
+         </xsd:restriction>
+       </xsd:simpleType>
+     </xsd:union>
+   </xsd:simpleType>
+   <xsd:complexType name="CT_ValueAxisScaling">
+     <xsd:attribute name="max" type="ST_DoubleOrAutomatic" use="optional"/>
+     <xsd:attribute name="min" type="ST_DoubleOrAutomatic" use="optional"/>
+     <xsd:attribute name="majorUnit" type="ST_ValueAxisUnit" use="optional"/>
+     <xsd:attribute name="minorUnit" type="ST_ValueAxisUnit" use="optional"/>
+   </xsd:complexType>
+   <xsd:complexType name="CT_AxisTitle">
+     <xsd:sequence>
+       <xsd:element name="tx" type="CT_Text" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="spPr" type="a:CT_ShapeProperties" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="txPr" type="a:CT_TextBody" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="offset" type="CT_Offset" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="extLst" type="CT_ExtensionList" minOccurs="0" maxOccurs="1"/>
+     </xsd:sequence>
+   </xsd:complexType>
+   <xsd:complexType name="CT_AxisUnitsLabel">
+     <xsd:sequence>
+       <xsd:element name="tx" type="CT_Text" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="spPr" type="a:CT_ShapeProperties" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="txPr" type="a:CT_TextBody" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="extLst" type="CT_ExtensionList" minOccurs="0" maxOccurs="1"/>
+     </xsd:sequence>
+   </xsd:complexType>
+   <xsd:simpleType name="ST_AxisUnit">
+     <xsd:restriction base="xsd:string">
+       <xsd:enumeration value="hundreds"/>
+       <xsd:enumeration value="thousands"/>
+       <xsd:enumeration value="tenThousands"/>
+       <xsd:enumeration value="hundredThousands"/>
+       <xsd:enumeration value="millions"/>
+       <xsd:enumeration value="tenMillions"/>
+       <xsd:enumeration value="hundredMillions"/>
+       <xsd:enumeration value="billions"/>
+       <xsd:enumeration value="trillions"/>
+       <xsd:enumeration value="percentage"/>
+     </xsd:restriction>
+   </xsd:simpleType>
+   <xsd:complexType name="CT_AxisUnits">
+     <xsd:sequence>
+       <xsd:element name="unitsLabel" type="CT_AxisUnitsLabel" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="extLst" type="CT_ExtensionList" minOccurs="0" maxOccurs="1"/>
+     </xsd:sequence>
+     <xsd:attribute name="unit" type="ST_AxisUnit" use="optional"/>
+   </xsd:complexType>
+   <xsd:complexType name="CT_Gridlines">
+     <xsd:sequence>
+       <xsd:element name="spPr" type="a:CT_ShapeProperties" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="extLst" type="CT_ExtensionList" minOccurs="0" maxOccurs="1"/>
+     </xsd:sequence>
+   </xsd:complexType>
+   <xsd:simpleType name="ST_TickMarksType">
+     <xsd:restriction base="xsd:string">
+       <xsd:enumeration value="in"/>
+       <xsd:enumeration value="out"/>
+       <xsd:enumeration value="cross"/>
+       <xsd:enumeration value="none"/>
+     </xsd:restriction>
+   </xsd:simpleType>
+   <xsd:complexType name="CT_TickMarks">
+     <xsd:sequence>
+       <xsd:element name="extLst" type="CT_ExtensionList" minOccurs="0" maxOccurs="1"/>
+     </xsd:sequence>
+     <xsd:attribute name="type" type="ST_TickMarksType" use="optional"/>
+   </xsd:complexType>
+   <xsd:complexType name="CT_TickLabels">
+     <xsd:sequence>
+       <xsd:element name="extLst" type="CT_ExtensionList" minOccurs="0" maxOccurs="1"/>
+     </xsd:sequence>
+   </xsd:complexType>
+   <xsd:complexType name="CT_Axis">
+     <xsd:sequence>
+       <xsd:choice minOccurs="1" maxOccurs="1">
+         <xsd:element name="catScaling" type="CT_CategoryAxisScaling"/>
+         <xsd:element name="valScaling" type="CT_ValueAxisScaling"/>
+       </xsd:choice>
+       <xsd:element name="title" type="CT_AxisTitle" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="units" type="CT_AxisUnits" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="majorGridlines" type="CT_Gridlines" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="minorGridlines" type="CT_Gridlines" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="majorTickMarks" type="CT_TickMarks" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="minorTickMarks" type="CT_TickMarks" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="tickLabels" type="CT_TickLabels" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="numFmt" type="CT_NumberFormat" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="spPr" type="a:CT_ShapeProperties" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="txPr" type="a:CT_TextBody" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="extLst" type="CT_ExtensionList" minOccurs="0" maxOccurs="1"/>
+     </xsd:sequence>
+     <xsd:attribute name="id" type="ST_AxisId" use="required"/>
+     <xsd:attribute name="hidden" type="xsd:boolean" use="optional" default="0"/>
+   </xsd:complexType>
+   <xsd:simpleType name="ST_SeriesLayout">
+     <xsd:restriction base="xsd:string">
+       <xsd:enumeration value="boxWhisker"/>
+       <xsd:enumeration value="clusteredColumn"/>
+       <xsd:enumeration value="funnel"/>
+       <xsd:enumeration value="paretoLine"/>
+       <xsd:enumeration value="regionMap"/>
+       <xsd:enumeration value="sunburst"/>
+       <xsd:enumeration value="treemap"/>
+       <xsd:enumeration value="waterfall"/>
+     </xsd:restriction>
+   </xsd:simpleType>
+   <xsd:simpleType name="ST_ParentLabelLayout">
+     <xsd:restriction base="xsd:string">
+       <xsd:enumeration value="none"/>
+       <xsd:enumeration value="banner"/>
+       <xsd:enumeration value="overlapping"/>
+     </xsd:restriction>
+   </xsd:simpleType>
+   <xsd:complexType name="CT_ParentLabelLayout">
+     <xsd:attribute name="val" type="ST_ParentLabelLayout" use="required"/>
+   </xsd:complexType>
+   <xsd:simpleType name="ST_RegionLabelLayout">
+     <xsd:restriction base="xsd:string">
+       <xsd:enumeration value="none"/>
+       <xsd:enumeration value="bestFitOnly"/>
+       <xsd:enumeration value="showAll"/>
+     </xsd:restriction>
+   </xsd:simpleType>
+   <xsd:complexType name="CT_RegionLabelLayout">
+     <xsd:attribute name="val" type="ST_RegionLabelLayout" use="required"/>
+   </xsd:complexType>
+   <xsd:complexType name="CT_SeriesElementVisibilities">
+     <xsd:attribute name="connectorLines" type="xsd:boolean" use="optional"/>
+     <xsd:attribute name="meanLine" type="xsd:boolean" use="optional"/>
+     <xsd:attribute name="meanMarker" type="xsd:boolean" use="optional"/>
+     <xsd:attribute name="nonoutliers" type="xsd:boolean" use="optional"/>
+     <xsd:attribute name="outliers" type="xsd:boolean" use="optional"/>
+   </xsd:complexType>
+   <xsd:simpleType name="ST_IntervalClosedSide">
+     <xsd:restriction base="xsd:string">
+       <xsd:enumeration value="l"/>
+       <xsd:enumeration value="r"/>
+     </xsd:restriction>
+   </xsd:simpleType>
+   <xsd:complexType name="CT_Aggregation"/>
+   <xsd:complexType name="CT_Binning">
+     <xsd:choice minOccurs="0" maxOccurs="1">
+       <xsd:element name="binSize" type="xsd:double"/>
+       <xsd:element name="binCount" type="xsd:unsignedInt"/>
+     </xsd:choice>
+     <xsd:attribute name="intervalClosed" type="ST_IntervalClosedSide" use="optional"/>
+     <xsd:attribute name="underflow" type="ST_DoubleOrAutomatic" use="optional"/>
+     <xsd:attribute name="overflow" type="ST_DoubleOrAutomatic" use="optional"/>
+   </xsd:complexType>
+   <xsd:simpleType name="ST_EntityType">
+     <xsd:restriction base="xsd:string">
+       <xsd:enumeration value="Address"/>
+       <xsd:enumeration value="AdminDistrict"/>
+       <xsd:enumeration value="AdminDistrict2"/>
+       <xsd:enumeration value="AdminDistrict3"/>
+       <xsd:enumeration value="Continent"/>
+       <xsd:enumeration value="CountryRegion"/>
+       <xsd:enumeration value="Locality"/>
+       <xsd:enumeration value="Ocean"/>
+       <xsd:enumeration value="Planet"/>
+       <xsd:enumeration value="PostalCode"/>
+       <xsd:enumeration value="Region"/>
+       <xsd:enumeration value="Unsupported"/>
+     </xsd:restriction>
+   </xsd:simpleType>
+   <xsd:complexType name="CT_GeoLocationQuery">
+     <xsd:attribute name="countryRegion" type="xsd:string" use="optional"/>
+     <xsd:attribute name="adminDistrict1" type="xsd:string" use="optional"/>
+     <xsd:attribute name="adminDistrict2" type="xsd:string" use="optional"/>
+     <xsd:attribute name="postalCode" type="xsd:string" use="optional"/>
+     <xsd:attribute name="entityType" type="ST_EntityType" use="required"/>
+   </xsd:complexType>
+   <xsd:complexType name="CT_Address">
+     <xsd:attribute name="address1" type="xsd:string" use="optional"/>
+     <xsd:attribute name="countryRegion" type="xsd:string" use="optional"/>
+     <xsd:attribute name="adminDistrict1" type="xsd:string" use="optional"/>
+     <xsd:attribute name="adminDistrict2" type="xsd:string" use="optional"/>
+     <xsd:attribute name="postalCode" type="xsd:string" use="optional"/>
+     <xsd:attribute name="locality" type="xsd:string" use="optional"/>
+     <xsd:attribute name="isoCountryCode" type="xsd:string" use="optional"/>
+   </xsd:complexType>
+   <xsd:complexType name="CT_GeoLocation">
+     <xsd:sequence>
+       <xsd:element name="address" type="CT_Address" minOccurs="0" maxOccurs="1"/>
+     </xsd:sequence>
+     <xsd:attribute name="latitude" type="xsd:double" use="optional"/>
+     <xsd:attribute name="longitude" type="xsd:double" use="optional"/>
+     <xsd:attribute name="entityName" type="xsd:string" use="required"/>
+     <xsd:attribute name="entityType" type="ST_EntityType" use="required"/>
+   </xsd:complexType>
+   <xsd:complexType name="CT_GeoLocations">
+     <xsd:sequence>
+       <xsd:element name="geoLocation" type="CT_GeoLocation" minOccurs="0" maxOccurs="1"/>
+     </xsd:sequence>
+   </xsd:complexType>
+   <xsd:complexType name="CT_GeoLocationQueryResult">
+     <xsd:sequence>
+       <xsd:element name="geoLocationQuery" type="CT_GeoLocationQuery" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="geoLocations" type="CT_GeoLocations" minOccurs="0" maxOccurs="1"/>
+     </xsd:sequence>
+   </xsd:complexType>
+   <xsd:complexType name="CT_GeoLocationQueryResults">
+     <xsd:sequence>
+       <xsd:element name="geoLocationQueryResult" type="CT_GeoLocationQueryResult" minOccurs="0" maxOccurs="unbounded"/>
+     </xsd:sequence>
+   </xsd:complexType>
+   <xsd:complexType name="CT_GeoPolygon">
+     <xsd:attribute name="polygonId" type="xsd:string" use="required"/>
+     <xsd:attribute name="numPoints" type="xsd:integer" use="required"/>
+     <xsd:attribute name="pcaRings" type="xsd:string" use="required"/>
+   </xsd:complexType>
+   <xsd:complexType name="CT_GeoPolygons">
+     <xsd:sequence>
+       <xsd:element name="geoPolygon" type="CT_GeoPolygon" minOccurs="0" maxOccurs="unbounded"/>
+     </xsd:sequence>
+   </xsd:complexType>
+   <xsd:complexType name="CT_Copyrights">
+     <xsd:sequence>
+       <xsd:element name="copyright" type="xsd:string" minOccurs="0" maxOccurs="unbounded"/>
+     </xsd:sequence>
+   </xsd:complexType>
+   <xsd:complexType name="CT_GeoData">
+     <xsd:sequence>
+       <xsd:element name="geoPolygons" type="CT_GeoPolygons" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="copyrights" type="CT_Copyrights" minOccurs="0" maxOccurs="1"/>
+     </xsd:sequence>
+     <xsd:attribute name="entityName" type="xsd:string" use="required"/>
+     <xsd:attribute name="entityId" type="xsd:string" use="required"/>
+     <xsd:attribute name="east" type="xsd:double" use="required"/>
+     <xsd:attribute name="west" type="xsd:double" use="required"/>
+     <xsd:attribute name="north" type="xsd:double" use="required"/>
+     <xsd:attribute name="south" type="xsd:double" use="required"/>
+   </xsd:complexType>
+   <xsd:complexType name="CT_GeoDataEntityQuery">
+     <xsd:attribute name="entityType" type="ST_EntityType" use="required"/>
+     <xsd:attribute name="entityId" type="xsd:string" use="required"/>
+   </xsd:complexType>
+   <xsd:complexType name="CT_GeoDataEntityQueryResult">
+     <xsd:sequence>
+       <xsd:element name="geoDataEntityQuery" type="CT_GeoDataEntityQuery" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="geoData" type="CT_GeoData" minOccurs="0" maxOccurs="1"/>
+     </xsd:sequence>
+   </xsd:complexType>
+   <xsd:complexType name="CT_GeoDataEntityQueryResults">
+     <xsd:sequence>
+       <xsd:element name="geoDataEntityQueryResult" type="CT_GeoDataEntityQueryResult" minOccurs="0" maxOccurs="unbounded"/>
+     </xsd:sequence>
+   </xsd:complexType>
+   <xsd:complexType name="CT_GeoDataPointQuery">
+     <xsd:attribute name="entityType" type="ST_EntityType" use="required"/>
+     <xsd:attribute name="latitude" type="xsd:double" use="required"/>
+     <xsd:attribute name="longitude" type="xsd:double" use="required"/>
+   </xsd:complexType>
+   <xsd:complexType name="CT_GeoDataPointToEntityQuery">
+     <xsd:attribute name="entityType" type="ST_EntityType" use="required"/>
+     <xsd:attribute name="entityId" type="xsd:string" use="required"/>
+   </xsd:complexType>
+   <xsd:complexType name="CT_GeoDataPointToEntityQueryResult">
+     <xsd:sequence>
+       <xsd:element name="geoDataPointQuery" type="CT_GeoDataPointQuery" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="geoDataPointToEntityQuery" type="CT_GeoDataPointToEntityQuery" minOccurs="0" maxOccurs="1"/>
+     </xsd:sequence>
+   </xsd:complexType>
+   <xsd:complexType name="CT_GeoDataPointToEntityQueryResults">
+     <xsd:sequence>
+       <xsd:element name="geoDataPointToEntityQueryResult" type="CT_GeoDataPointToEntityQueryResult" minOccurs="0" maxOccurs="unbounded"/>
+     </xsd:sequence>
+   </xsd:complexType>
+   <xsd:complexType name="CT_GeoChildTypes">
+     <xsd:sequence>
+       <xsd:element name="entityType" type="ST_EntityType" minOccurs="0" maxOccurs="unbounded"/>
+     </xsd:sequence>
+   </xsd:complexType>
+   <xsd:complexType name="CT_GeoChildEntitiesQuery">
+     <xsd:sequence>
+       <xsd:element name="geoChildTypes" type="CT_GeoChildTypes" minOccurs="0" maxOccurs="1"/>
+     </xsd:sequence>
+     <xsd:attribute name="entityId" type="xsd:string" use="required"/>
+   </xsd:complexType>
+   <xsd:complexType name="CT_GeoHierarchyEntity">
+     <xsd:attribute name="entityName" type="xsd:string" use="required"/>
+     <xsd:attribute name="entityId" type="xsd:string" use="required"/>
+     <xsd:attribute name="entityType" type="ST_EntityType" use="required"/>
+   </xsd:complexType>
+   <xsd:complexType name="CT_GeoChildEntities">
+     <xsd:sequence>
+       <xsd:element name="geoHierarchyEntity" type="CT_GeoHierarchyEntity" minOccurs="0" maxOccurs="unbounded"/>
+     </xsd:sequence>
+   </xsd:complexType>
+   <xsd:complexType name="CT_GeoChildEntitiesQueryResult">
+     <xsd:sequence>
+       <xsd:element name="geoChildEntitiesQuery" type="CT_GeoChildEntitiesQuery" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="geoChildEntities" type="CT_GeoChildEntities" minOccurs="0" maxOccurs="1"/>
+     </xsd:sequence>
+   </xsd:complexType>
+   <xsd:complexType name="CT_GeoChildEntitiesQueryResults">
+     <xsd:sequence>
+       <xsd:element name="geoChildEntitiesQueryResult" type="CT_GeoChildEntitiesQueryResult" minOccurs="0" maxOccurs="unbounded"/>
+     </xsd:sequence>
+   </xsd:complexType>
+   <xsd:complexType name="CT_GeoParentEntitiesQuery">
+     <xsd:attribute name="entityId" type="xsd:string" use="required"/>
+   </xsd:complexType>
+   <xsd:complexType name="CT_GeoEntity">
+     <xsd:attribute name="entityName" type="xsd:string" use="required"/>
+     <xsd:attribute name="entityType" type="ST_EntityType" use="required"/>
+   </xsd:complexType>
+   <xsd:complexType name="CT_GeoParentEntity">
+     <xsd:attribute name="entityId" type="xsd:string" use="required"/>
+   </xsd:complexType>
+   <xsd:complexType name="CT_GeoParentEntitiesQueryResult">
+     <xsd:sequence>
+       <xsd:element name="geoParentEntitiesQuery" type="CT_GeoParentEntitiesQuery" minOccurs="1" maxOccurs="1"/>
+       <xsd:element name="geoEntity" type="CT_GeoEntity" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="geoParentEntity" type="CT_GeoParentEntity" minOccurs="0" maxOccurs="1"/>
+     </xsd:sequence>
+   </xsd:complexType>
+   <xsd:complexType name="CT_GeoParentEntitiesQueryResults">
+     <xsd:sequence>
+       <xsd:element name="geoParentEntitiesQueryResult" type="CT_GeoParentEntitiesQueryResult" minOccurs="0" maxOccurs="unbounded"/>
+     </xsd:sequence>
+   </xsd:complexType>
+   <xsd:complexType name="CT_Clear">
+     <xsd:sequence>
+       <xsd:element name="geoLocationQueryResults" type="CT_GeoLocationQueryResults" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="geoDataEntityQueryResults" type="CT_GeoDataEntityQueryResults" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="geoDataPointToEntityQueryResults" type="CT_GeoDataPointToEntityQueryResults" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="geoChildEntitiesQueryResults" type="CT_GeoChildEntitiesQueryResults" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="geoParentEntitiesQueryResults" type="CT_GeoParentEntitiesQueryResults" minOccurs="0" maxOccurs="1"/>
+     </xsd:sequence>
+   </xsd:complexType>
+   <xsd:complexType name="CT_GeoCache">
+     <xsd:choice minOccurs="1" maxOccurs="unbounded">
+       <xsd:element name="binary" type="xsd:base64Binary" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="clear" type="CT_Clear" minOccurs="0" maxOccurs="1"/>
+     </xsd:choice>
+     <xsd:attribute name="provider" type="xsd:string" use="required"/>
+   </xsd:complexType>
+   <xsd:simpleType name="ST_GeoProjectionType">
+     <xsd:restriction base="xsd:string">
+       <xsd:enumeration value="mercator"/>
+       <xsd:enumeration value="miller"/>
+       <xsd:enumeration value="robinson"/>
+       <xsd:enumeration value="albers"/>
+     </xsd:restriction>
+   </xsd:simpleType>
+   <xsd:simpleType name="ST_GeoMappingLevel">
+     <xsd:restriction base="xsd:string">
+       <xsd:enumeration value="dataOnly"/>
+       <xsd:enumeration value="postalCode"/>
+       <xsd:enumeration value="county"/>
+       <xsd:enumeration value="state"/>
+       <xsd:enumeration value="countryRegion"/>
+       <xsd:enumeration value="countryRegionList"/>
+       <xsd:enumeration value="world"/>
+     </xsd:restriction>
+   </xsd:simpleType>
+   <xsd:complexType name="CT_Geography">
+     <xsd:sequence>
+       <xsd:element name="geoCache" type="CT_GeoCache" minOccurs="0" maxOccurs="1"/>
+     </xsd:sequence>
+     <xsd:attribute name="projectionType" type="ST_GeoProjectionType" use="optional"/>
+     <xsd:attribute name="viewedRegionType" type="ST_GeoMappingLevel" use="optional"/>
+     <xsd:attribute name="cultureLanguage" type="xsd:language" use="required"/>
+     <xsd:attribute name="cultureRegion" type="xsd:string" use="required"/>
+     <xsd:attribute name="attribution" type="xsd:string" use="required"/>
+   </xsd:complexType>
+   <xsd:simpleType name="ST_QuartileMethod">
+     <xsd:restriction base="xsd:string">
+       <xsd:enumeration value="inclusive"/>
+       <xsd:enumeration value="exclusive"/>
+     </xsd:restriction>
+   </xsd:simpleType>
+   <xsd:complexType name="CT_Statistics">
+     <xsd:attribute name="quartileMethod" type="ST_QuartileMethod" use="optional"/>
+   </xsd:complexType>
+   <xsd:complexType name="CT_SubtotalIndex">
+     <xsd:attribute name="val" type="xsd:unsignedInt" use="required"/>
+   </xsd:complexType>
+   <xsd:complexType name="CT_Subtotals">
+     <xsd:sequence>
+       <xsd:element name="idx" type="CT_SubtotalIndex" minOccurs="0" maxOccurs="unbounded"/>
+     </xsd:sequence>
+   </xsd:complexType>
+   <xsd:complexType name="CT_SeriesLayoutProperties">
+     <xsd:sequence>
+       <xsd:element name="parentLabelLayout" type="CT_ParentLabelLayout" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="regionLabelLayout" type="CT_RegionLabelLayout" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="visibility" type="CT_SeriesElementVisibilities" minOccurs="0" maxOccurs="1"/>
+       <xsd:choice minOccurs="0" maxOccurs="1">
+         <xsd:element name="aggregation" type="CT_Aggregation" minOccurs="0" maxOccurs="1"/>
+         <xsd:element name="binning" type="CT_Binning" minOccurs="0" maxOccurs="1"/>
+       </xsd:choice>
+       <xsd:element name="geography" type="CT_Geography" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="statistics" type="CT_Statistics" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="subtotals" type="CT_Subtotals" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="extLst" type="CT_ExtensionList" minOccurs="0" maxOccurs="1"/>
+     </xsd:sequence>
+   </xsd:complexType>
+   <xsd:complexType name="CT_DataPoint">
+     <xsd:sequence>
+       <xsd:element name="spPr" type="a:CT_ShapeProperties" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="extLst" type="CT_ExtensionList" minOccurs="0" maxOccurs="1"/>
+     </xsd:sequence>
+     <xsd:attribute name="idx" type="xsd:unsignedInt" use="required"/>
+   </xsd:complexType>
+   <xsd:simpleType name="ST_DataLabelPos">
+     <xsd:restriction base="xsd:string">
+       <xsd:enumeration value="bestFit"/>
+       <xsd:enumeration value="b"/>
+       <xsd:enumeration value="ctr"/>
+       <xsd:enumeration value="inBase"/>
+       <xsd:enumeration value="inEnd"/>
+       <xsd:enumeration value="l"/>
+       <xsd:enumeration value="outEnd"/>
+       <xsd:enumeration value="r"/>
+       <xsd:enumeration value="t"/>
+     </xsd:restriction>
+   </xsd:simpleType>
+   <xsd:simpleType name="ST_ValueColorPositionCount">
+     <xsd:restriction base="xsd:int">
+       <xsd:minInclusive value="2"/>
+       <xsd:maxInclusive value="3"/>
+     </xsd:restriction>
+   </xsd:simpleType>
+   <xsd:complexType name="CT_ExtremeValueColorPosition"/>
+   <xsd:complexType name="CT_NumberColorPosition">
+     <xsd:attribute name="val" type="xsd:double" use="required"/>
+   </xsd:complexType>
+   <xsd:complexType name="CT_PercentageColorPosition">
+     <xsd:attribute name="val" type="xsd:double" use="required"/>
+   </xsd:complexType>
+   <xsd:complexType name="CT_ValueColorEndPosition">
+     <xsd:choice minOccurs="1" maxOccurs="1">
+       <xsd:element name="extremeValue" type="CT_ExtremeValueColorPosition"/>
+       <xsd:element name="number" type="CT_NumberColorPosition"/>
+       <xsd:element name="percent" type="CT_PercentageColorPosition"/>
+     </xsd:choice>
+   </xsd:complexType>
+   <xsd:complexType name="CT_ValueColorMiddlePosition">
+     <xsd:choice minOccurs="1" maxOccurs="1">
+       <xsd:element name="number" type="CT_NumberColorPosition"/>
+       <xsd:element name="percent" type="CT_PercentageColorPosition"/>
+     </xsd:choice>
+   </xsd:complexType>
+   <xsd:complexType name="CT_ValueColorPositions">
+     <xsd:sequence>
+       <xsd:element name="min" type="CT_ValueColorEndPosition" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="mid" type="CT_ValueColorMiddlePosition" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="max" type="CT_ValueColorEndPosition" minOccurs="0" maxOccurs="1"/>
+     </xsd:sequence>
+     <xsd:attribute name="count" type="ST_ValueColorPositionCount" use="optional" default="2"/>
+   </xsd:complexType>
+   <xsd:complexType name="CT_DataLabelVisibilities">
+     <xsd:attribute name="seriesName" type="xsd:boolean" use="optional"/>
+     <xsd:attribute name="categoryName" type="xsd:boolean" use="optional"/>
+     <xsd:attribute name="value" type="xsd:boolean" use="optional"/>
+   </xsd:complexType>
+   <xsd:complexType name="CT_DataLabel">
+     <xsd:sequence>
+       <xsd:element name="numFmt" type="CT_NumberFormat" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="spPr" type="a:CT_ShapeProperties" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="txPr" type="a:CT_TextBody" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="visibility" type="CT_DataLabelVisibilities" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="separator" type="xsd:string" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="extLst" type="CT_ExtensionList" minOccurs="0" maxOccurs="1"/>
+     </xsd:sequence>
+     <xsd:attribute name="idx" type="xsd:unsignedInt" use="required"/>
+     <xsd:attribute name="pos" type="ST_DataLabelPos" use="optional"/>
+   </xsd:complexType>
+   <xsd:complexType name="CT_DataLabelHidden">
+     <xsd:attribute name="idx" type="xsd:unsignedInt" use="required"/>
+   </xsd:complexType>
+   <xsd:complexType name="CT_DataLabels">
+     <xsd:sequence>
+       <xsd:element name="numFmt" type="CT_NumberFormat" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="spPr" type="a:CT_ShapeProperties" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="txPr" type="a:CT_TextBody" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="visibility" type="CT_DataLabelVisibilities" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="separator" type="xsd:string" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="dataLabel" type="CT_DataLabel" minOccurs="0" maxOccurs="unbounded"/>
+       <xsd:element name="dataLabelHidden" type="CT_DataLabelHidden" minOccurs="0" maxOccurs="unbounded"/>
+       <xsd:element name="extLst" type="CT_ExtensionList" minOccurs="0" maxOccurs="1"/>
+     </xsd:sequence>
+     <xsd:attribute name="pos" type="ST_DataLabelPos" use="optional"/>
+   </xsd:complexType>
+   <xsd:complexType name="CT_Series">
+     <xsd:sequence>
+       <xsd:element name="tx" type="CT_Text" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="spPr" type="a:CT_ShapeProperties" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="valueColors" type="CT_ValueColors" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="valueColorPositions" type="CT_ValueColorPositions" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="dataPt" type="CT_DataPoint" minOccurs="0" maxOccurs="unbounded"/>
+       <xsd:element name="dataLabels" type="CT_DataLabels" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="dataId" type="CT_DataId" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="layoutPr" type="CT_SeriesLayoutProperties" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="axisId" type="ST_AxisId" minOccurs="0" maxOccurs="unbounded"/>
+       <xsd:element name="extLst" type="CT_ExtensionList" minOccurs="0" maxOccurs="1"/>
+     </xsd:sequence>
+     <xsd:attribute name="layoutId" type="ST_SeriesLayout" use="required"/>
+     <xsd:attribute name="hidden" type="xsd:boolean" use="optional" default="0"/>
+     <xsd:attribute name="ownerIdx" type="xsd:unsignedInt" use="optional"/>
+     <xsd:attribute name="uniqueId" type="xsd:string" use="optional"/>
+     <xsd:attribute name="formatIdx" type="xsd:unsignedInt" use="optional"/>
+   </xsd:complexType>
+   <xsd:complexType name="CT_Legend">
+     <xsd:sequence>
+       <xsd:element name="spPr" type="a:CT_ShapeProperties" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="txPr" type="a:CT_TextBody" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="offset" type="CT_Offset" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="extLst" type="CT_ExtensionList" minOccurs="0" maxOccurs="1"/>
+     </xsd:sequence>
+     <xsd:attribute name="pos" type="ST_SidePos" use="optional" default="r"/>
+     <xsd:attribute name="align" type="ST_PosAlign" use="optional" default="ctr"/>
+     <xsd:attribute name="overlay" type="xsd:boolean" use="optional" default="0"/>
+   </xsd:complexType>
+   <xsd:complexType name="CT_PlotSurface">
+     <xsd:sequence>
+       <xsd:element name="spPr" type="a:CT_ShapeProperties" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="extLst" type="CT_ExtensionList" minOccurs="0" maxOccurs="1"/>
+     </xsd:sequence>
+   </xsd:complexType>
+   <xsd:complexType name="CT_PlotAreaRegion">
+     <xsd:sequence>
+       <xsd:element name="plotSurface" type="CT_PlotSurface" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="series" type="CT_Series" minOccurs="0" maxOccurs="unbounded"/>
+       <xsd:element name="extLst" type="CT_ExtensionList" minOccurs="0" maxOccurs="1"/>
+     </xsd:sequence>
+   </xsd:complexType>
+   <xsd:complexType name="CT_PlotArea">
+     <xsd:sequence>
+       <xsd:element name="plotAreaRegion" type="CT_PlotAreaRegion" minOccurs="1" maxOccurs="1"/>
+       <xsd:element name="axis" type="CT_Axis" minOccurs="0" maxOccurs="unbounded"/>
+       <xsd:element name="spPr" type="a:CT_ShapeProperties" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="extLst" type="CT_ExtensionList" minOccurs="0" maxOccurs="1"/>
+     </xsd:sequence>
+   </xsd:complexType>
+   <xsd:complexType name="CT_Chart">
+     <xsd:sequence>
+       <xsd:element name="title" type="CT_ChartTitle" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="plotArea" type="CT_PlotArea" minOccurs="1" maxOccurs="1"/>
+       <xsd:element name="legend" type="CT_Legend" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="extLst" type="CT_ExtensionList" minOccurs="0" maxOccurs="1"/>
+     </xsd:sequence>
+   </xsd:complexType>
+   <xsd:complexType name="CT_FormatOverride">
+     <xsd:sequence>
+       <xsd:element name="spPr" type="a:CT_ShapeProperties" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="extLst" type="CT_ExtensionList" minOccurs="0" maxOccurs="1"/>
+     </xsd:sequence>
+     <xsd:attribute name="idx" type="xsd:unsignedInt" use="required"/>
+   </xsd:complexType>
+   <xsd:complexType name="CT_FormatOverrides">
+     <xsd:sequence>
+       <xsd:element name="fmtOvr" type="CT_FormatOverride" minOccurs="0" maxOccurs="unbounded"/>
+     </xsd:sequence>
+   </xsd:complexType>
+   <xsd:complexType name="CT_HeaderFooter">
+     <xsd:sequence>
+       <xsd:element name="oddHeader" type="xsd:string" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="oddFooter" type="xsd:string" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="evenHeader" type="xsd:string" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="evenFooter" type="xsd:string" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="firstHeader" type="xsd:string" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="firstFooter" type="xsd:string" minOccurs="0" maxOccurs="1"/>
+     </xsd:sequence>
+     <xsd:attribute name="alignWithMargins" type="xsd:boolean" use="optional" default="true"/>
+     <xsd:attribute name="differentOddEven" type="xsd:boolean" use="optional" default="false"/>
+     <xsd:attribute name="differentFirst" type="xsd:boolean" use="optional" default="false"/>
+   </xsd:complexType>
+   <xsd:complexType name="CT_PageMargins">
+     <xsd:attribute name="l" type="xsd:double" use="required"/>
+     <xsd:attribute name="r" type="xsd:double" use="required"/>
+     <xsd:attribute name="t" type="xsd:double" use="required"/>
+     <xsd:attribute name="b" type="xsd:double" use="required"/>
+     <xsd:attribute name="header" type="xsd:double" use="required"/>
+     <xsd:attribute name="footer" type="xsd:double" use="required"/>
+   </xsd:complexType>
+   <xsd:simpleType name="ST_PageOrientation">
+     <xsd:restriction base="xsd:string">
+       <xsd:enumeration value="default"/>
+       <xsd:enumeration value="portrait"/>
+       <xsd:enumeration value="landscape"/>
+     </xsd:restriction>
+   </xsd:simpleType>
+   <xsd:complexType name="CT_PageSetup">
+     <xsd:attribute name="paperSize" type="xsd:unsignedInt" use="optional" default="1"/>
+     <xsd:attribute name="firstPageNumber" type="xsd:unsignedInt" use="optional" default="1"/>
+     <xsd:attribute name="orientation" type="ST_PageOrientation" use="optional" default="default"/>
+     <xsd:attribute name="blackAndWhite" type="xsd:boolean" use="optional" default="false"/>
+     <xsd:attribute name="draft" type="xsd:boolean" use="optional" default="false"/>
+     <xsd:attribute name="useFirstPageNumber" type="xsd:boolean" use="optional" default="false"/>
+     <xsd:attribute name="horizontalDpi" type="xsd:int" use="optional" default="600"/>
+     <xsd:attribute name="verticalDpi" type="xsd:int" use="optional" default="600"/>
+     <xsd:attribute name="copies" type="xsd:unsignedInt" use="optional" default="1"/>
+   </xsd:complexType>
+   <xsd:complexType name="CT_PrintSettings">
+     <xsd:sequence>
+       <xsd:element name="headerFooter" type="CT_HeaderFooter" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="pageMargins" type="CT_PageMargins" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="pageSetup" type="CT_PageSetup" minOccurs="0" maxOccurs="1"/>
+     </xsd:sequence>
+   </xsd:complexType>
+   <xsd:complexType name="CT_ChartSpace">
+     <xsd:sequence>
+       <xsd:element name="chartData" type="CT_ChartData" minOccurs="1" maxOccurs="1"/>
+       <xsd:element name="chart" type="CT_Chart" minOccurs="1" maxOccurs="1"/>
+       <xsd:element name="spPr" type="a:CT_ShapeProperties" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="txPr" type="a:CT_TextBody" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="clrMapOvr" type="a:CT_ColorMapping" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="fmtOvrs" type="CT_FormatOverrides" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="printSettings" type="CT_PrintSettings" minOccurs="0" maxOccurs="1"/>
+       <xsd:element name="extLst" type="CT_ExtensionList" minOccurs="0" maxOccurs="1"/>
+     </xsd:sequence>
+     <xsd:attribute name="version" type="xsd:string" use="optional" default="0.0"/>
+     <xsd:attribute name="featureList" type="xsd:string" use="optional" default=""/>
+     <xsd:attribute name="fallbackImg" type="xsd:string" use="optional" default=""/>
+   </xsd:complexType>
+   <xsd:element name="chartSpace" type="CT_ChartSpace"/>
+   <xsd:element name="chart" type="CT_RelId"/>
+ </xsd:schema>
