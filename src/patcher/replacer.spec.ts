@@ -3,6 +3,7 @@ import type { Element } from "xml-js";
 
 import type { IViewWrapper } from "@file/document-wrapper";
 import type { File } from "@file/file";
+import { FootnoteReferenceRun } from "@file/footnotes/footnote/run/reference-run";
 import { ConcreteHyperlink, Paragraph, type ParagraphChild, TextRun } from "@file/paragraph";
 
 import { PatchType } from "./from-docx";
@@ -973,6 +974,18 @@ describe("replacer", () => {
                 replaceWith({ elements: [body] }, [new TextRun("X")]);
 
                 expect(textsOf({ elements: [body] })).to.deep.equal(["X", "END", "X"]);
+            });
+
+            it("should write a run with a footnote reference in its children as runs side by side, not one inside another", () => {
+                const paragraph = createParagraph(createRun(createText("{{ph}}")));
+
+                replaceWith({ elements: [paragraph] }, [new TextRun({ children: ["X", new FootnoteReferenceRun(1)] })]);
+
+                const runs = (paragraph.elements ?? []).filter((element) => element.name === "w:r");
+                expect(runs.flatMap((run) => namesOf(run.elements)))
+                    .to.include("w:footnoteReference")
+                    .and.not.include("w:r");
+                expect(textsOf({ elements: [paragraph] })).to.deep.equal(["X"]);
             });
 
             it("should replace every occurrence in a paragraph", () => {

@@ -91,11 +91,13 @@ export abstract class XmlComponent extends BaseXmlComponent {
         // eslint-disable-next-line functional/immutable-data
         context.stack.push(this);
 
-        // Recursively prepare all children for serialization
+        // Recursively prepare all children for serialization. A child written as several components, such as a run with
+        // a run in its children, is written as each of them in turn
         const children = this.root
-            .map((comp) => {
+            .flatMap((comp) => {
                 if (comp instanceof BaseXmlComponent) {
-                    return comp.prepForXml(context);
+                    const parts = comp.writtenAs;
+                    return parts ? parts.map((part) => part.prepForXml(context)) : comp.prepForXml(context);
                 }
                 return comp;
             })

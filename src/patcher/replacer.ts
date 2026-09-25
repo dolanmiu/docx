@@ -117,7 +117,10 @@ export const replacer = ({
 };
 
 const formatChildren = (patch: IPatch, context: IContext): readonly Element[] =>
-    patch.children.map((c) => toJson(xml(formatter.format(c as XmlComponent, context)))).map((c) => c.elements![0]);
+    patch.children
+        .flatMap((c) => (c as XmlComponent).writtenAs ?? (c as XmlComponent))
+        .map((c) => toJson(xml(formatter.format(c, context))))
+        .map((c) => c.elements![0]);
 
 /**
  * Replaces the first occurrence of the placeholder from `fromIndex` on, splitting the run it starts in.

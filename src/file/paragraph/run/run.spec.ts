@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import { Formatter } from "@export/formatter";
 import { BorderStyle } from "@file/border";
+import { FootnoteReferenceRun } from "@file/footnotes/footnote/run/reference-run";
+import { Paragraph } from "@file/paragraph";
 import { ShadingType } from "@file/shading";
 
 import { EmphasisMarkType } from "./emphasis-mark";
@@ -756,6 +758,53 @@ describe("Run", () => {
                     ],
                 });
             });
+        });
+    });
+    describe("#children with a run", () => {
+        const text = (value: string) => ({ "w:t": [{ _attr: { "xml:space": "preserve" } }, value] });
+        const bold = { "w:rPr": [{ "w:b": {} }, { "w:bCs": {} }] };
+        const reference = (id: number) => ({
+            "w:r": [
+                { "w:rPr": [{ "w:rStyle": { _attr: { "w:val": "FootnoteReference" } } }] },
+                { "w:footnoteReference": { _attr: { "w:id": id } } },
+            ],
+        });
+
+        it("should end the run before a footnote reference, and write the children after it in a run with the same properties", () => {
+            const paragraph = new Paragraph({
+                children: [new Run({ bold: true, children: ["Before", new FootnoteReferenceRun(1), "After"] })],
+            });
+
+            const tree = new Formatter().format(paragraph);
+            expect(tree).to.deep.equal({
+                "w:p": [{ "w:r": [bold, text("Before")] }, reference(1), { "w:r": [bold, text("After")] }],
+            });
+        });
+
+        it("should split the run at each run in its children", () => {
+            const paragraph = new Paragraph({
+                children: [new Run({ children: ["A", new FootnoteReferenceRun(1), "B", new FootnoteReferenceRun(2), "C"] })],
+            });
+
+            const tree = new Formatter().format(paragraph);
+            expect(tree).to.deep.equal({
+                "w:p": [{ "w:r": [text("A")] }, reference(1), { "w:r": [text("B")] }, reference(2), { "w:r": [text("C")] }],
+            });
+        });
+
+        it("should not write an empty run after a run at the end of the children, and only break before the first", () => {
+            const paragraph = new Paragraph({
+                children: [new Run({ break: 1, children: ["A", new FootnoteReferenceRun(1)] })],
+            });
+
+            const tree = new Formatter().format(paragraph);
+            expect(tree).to.deep.equal({
+                "w:p": [{ "w:r": [{ "w:br": {} }, text("A")] }, reference(1)],
+            });
+        });
+
+        it("should be written as itself when it has no run in its children", () => {
+            expect(new Run({ children: ["A"] }).writtenAs).to.equal(undefined);
         });
     });
 });

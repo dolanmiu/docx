@@ -10,7 +10,7 @@
  */
 import type { FootnoteReferenceRun } from "@file/footnotes/footnote/run/reference-run";
 import type { FieldInstruction } from "@file/table-of-contents/field-instruction";
-import { XmlComponent } from "@file/xml-components";
+import { type BaseXmlComponent, XmlComponent } from "@file/xml-components";
 
 import { createBreak } from "./break";
 import type {
@@ -168,6 +168,8 @@ export const PageNumber = {
  */
 export class Run extends XmlComponent {
     protected readonly properties: RunProperties;
+    // A run given in the children, such as a FootnoteReferenceRun, and the run of the children after it
+    private readonly following: readonly Run[] = [];
 
     public constructor(options: IRunOptions) {
         super("w:r");
@@ -181,7 +183,15 @@ export class Run extends XmlComponent {
         }
 
         if (options.children) {
-            for (const child of options.children) {
+            for (const [index, child] of options.children.entries()) {
+                if (child instanceof Run) {
+                    // A run can't be inside another, so this run ends before it, and the children after it go in a run
+                    // with this run's properties
+                    const rest = options.children.slice(index + 1);
+                    this.following = [child, ...(rest.length > 0 ? [new Run({ ...options, break: undefined, children: rest })] : [])];
+                    break;
+                }
+
                 if (typeof child === "string") {
                     switch (child) {
                         case PageNumber.CURRENT:
@@ -220,5 +230,10 @@ export class Run extends XmlComponent {
         } else if (options.text !== undefined) {
             this.root.push(new Text(options.text));
         }
+    }
+
+    public get writtenAs(): readonly BaseXmlComponent[] | undefined {
+        // This run, then the ones after it, each written as it would be on its own
+        return this.following.length > 0 ? [this, ...this.following.flatMap((run) => run.writtenAs ?? run)] : undefined;
     }
 }
