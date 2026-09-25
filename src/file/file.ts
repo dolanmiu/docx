@@ -401,12 +401,16 @@ export class File {
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/settings",
             "settings.xml",
         );
-        this.documentWrapper.Relationships.addRelationship(
-            // eslint-disable-next-line functional/immutable-data
-            this.currentRelationshipId++,
-            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments",
-            "comments.xml",
-        );
+        // Only when there are comments: Google Drive won't open a document with an empty comments part
+        if (!this.comments.IsEmpty) {
+            this.documentWrapper.Relationships.addRelationship(
+                // eslint-disable-next-line functional/immutable-data
+                this.currentRelationshipId++,
+                "http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments",
+                "comments.xml",
+            );
+            this.contentTypes.addComments();
+        }
 
         if (this.commentsExtended) {
             this.documentWrapper.Relationships.addRelationship(

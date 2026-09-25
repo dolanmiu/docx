@@ -27,7 +27,7 @@ describe("Compiler", () => {
             const file = new File({
                 sections: [],
                 comments: {
-                    children: [],
+                    children: [{ id: 0, children: [new Paragraph("comment")] }],
                 },
             });
             const zipFile = compiler.compile(file);
@@ -53,6 +53,44 @@ describe("Compiler", () => {
             expect(fileNames).to.include("word/theme/theme1.xml");
             expect(fileNames).to.include("[Content_Types].xml");
             expect(fileNames).to.include("_rels/.rels");
+        });
+
+        it("should not pack a comments part, or refer to one, when there are no comments", async () => {
+            const zipFile = compiler.compile(new File({ sections: [], comments: { children: [] } }));
+            const fileNames = Object.keys(zipFile.files);
+
+            expect(fileNames).to.not.include("word/comments.xml");
+            expect(fileNames).to.not.include("word/_rels/comments.xml.rels");
+            expect(await zipFile.file("[Content_Types].xml")?.async("text")).to.not.contain("comments");
+            expect(await zipFile.file("word/_rels/document.xml.rels")?.async("text")).to.not.contain("comments");
+        });
+
+        it("should pack a comments part, and refer to it, when there are comments", async () => {
+            const zipFile = compiler.compile(
+                new File({ sections: [], comments: { children: [{ id: 0, children: [new Paragraph("comment")] }] } }),
+            );
+            const fileNames = Object.keys(zipFile.files);
+
+            expect(fileNames).to.include("word/comments.xml");
+            expect(fileNames).to.include("word/_rels/comments.xml.rels");
+            expect(await zipFile.file("[Content_Types].xml")?.async("text")).to.contain(
+                '<Override ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.comments+xml" PartName="/word/comments.xml"/>',
+            );
+            expect(await zipFile.file("word/_rels/document.xml.rels")?.async("text")).to.contain(
+                'Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments" Target="comments.xml"',
+            );
+        });
+
+        it("should give an image in a comment a relationship from the comments part", async () => {
+            const image = new ImageRun({ type: "png", data: Buffer.from("", "base64"), transformation: { width: 10, height: 10 } });
+            const zipFile = compiler.compile(
+                new File({ sections: [], comments: { children: [{ id: 0, children: [new Paragraph({ children: [image] })] }] } }),
+            );
+
+            expect(await zipFile.file("word/comments.xml")?.async("text")).to.contain('r:embed="rId1"');
+            expect(await zipFile.file("word/_rels/comments.xml.rels")?.async("text")).to.match(
+                /<Relationship Id="rId1" Type="http:\/\/schemas.openxmlformats.org\/officeDocument\/2006\/relationships\/image" Target="media\/[^"]+\.png"\/>/,
+            );
         });
 
         it("should pack all additional headers and footers", { timeout: 99999999 }, () => {
@@ -91,7 +129,7 @@ describe("Compiler", () => {
             const fileNames = Object.keys(zipFile.files).map((f) => zipFile.files[f].name);
 
             expect(fileNames).is.an.instanceof(Array);
-            expect(fileNames).has.length(32);
+            expect(fileNames).has.length(30);
 
             expect(fileNames).to.include("word/header1.xml");
             expect(fileNames).to.include("word/_rels/header1.xml.rels");
@@ -120,7 +158,7 @@ describe("Compiler", () => {
             const fileNames = Object.keys(zipFile.files).map((f) => zipFile.files[f].name);
 
             expect(fileNames).is.an.instanceof(Array);
-            expect(fileNames).has.length(25);
+            expect(fileNames).has.length(24);
 
             expect(fileNames).to.include("word/comments.xml");
             expect(fileNames).to.include("word/commentsExtended.xml");
@@ -332,7 +370,7 @@ describe("Compiler", () => {
             const spy = vi.spyOn(compiler["formatter"], "format");
 
             compiler.compile(file);
-            expect(spy).toBeCalledTimes(19);
+            expect(spy).toBeCalledTimes(18);
         });
 
         it("should work with media datas", () => {
