@@ -31,6 +31,7 @@ const ReplaceMode = {
  * @param renderedParagraph - Pre-rendered paragraph structure with text positions
  * @param originalText - The token text to replace (e.g., "{{name}}")
  * @param replacementText - The text to replace it with (often a split token)
+ * @param fromIndex - Where in the paragraph's text to start looking for the token (default: 0)
  * @returns The modified paragraph element
  *
  * @example
@@ -48,13 +49,15 @@ export const replaceTokenInParagraphElement = ({
     renderedParagraph,
     originalText,
     replacementText,
+    fromIndex = 0,
 }: {
     readonly paragraphElement: Element;
     readonly renderedParagraph: IRenderedParagraphNode;
     readonly originalText: string;
     readonly replacementText: string;
+    readonly fromIndex?: number;
 }): Element => {
-    const startIndex = renderedParagraph.text.indexOf(originalText);
+    const startIndex = renderedParagraph.text.indexOf(originalText, fromIndex);
     const endIndex = startIndex + originalText.length - 1;
 
     let replaceMode: (typeof ReplaceMode)[keyof typeof ReplaceMode] = ReplaceMode.START;
@@ -66,14 +69,16 @@ export const replaceTokenInParagraphElement = ({
                     if (startIndex >= start && startIndex <= end) {
                         const offsetStartIndex = startIndex - start;
                         const offsetEndIndex = Math.min(endIndex, end) - start;
-                        const partToReplace = run.text.substring(offsetStartIndex, offsetEndIndex + 1);
+                        // The offsets are relative to this part, so they index into its text, not the whole run's
+                        const partToReplace = text.substring(offsetStartIndex, offsetEndIndex + 1);
                         // We use a token to split the text if the replacement is within the same run
                         // If not, we just add text to the middle of the run later
                         if (partToReplace === "") {
                             continue;
                         }
 
-                        const firstPart = text.replace(partToReplace, replacementText);
+                        // Replace by position, as the same text can come earlier in the part
+                        const firstPart = text.substring(0, offsetStartIndex) + replacementText + text.substring(offsetEndIndex + 1);
                         patchTextElement(paragraphElement.elements![run.index].elements![index], firstPart);
                         replaceMode = ReplaceMode.MIDDLE;
                         continue;

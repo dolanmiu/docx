@@ -113,7 +113,7 @@ export type PatchDocumentOutputType = OutputType;
  * @property patches - Map of placeholder keys to patch definitions
  * @property keepOriginalStyles - Whether to preserve original text formatting
  * @property placeholderDelimiters - Custom delimiter characters for placeholders
- * @property recursive - Whether to search for multiple occurrences of placeholders
+ * @property recursive - Whether to replace every occurrence of a placeholder in a paragraph, rather than only the first
  */
 export type PatchDocumentOptions<T extends PatchDocumentOutputType = PatchDocumentOutputType> = {
     /** Output format type */
@@ -129,7 +129,7 @@ export type PatchDocumentOptions<T extends PatchDocumentOutputType = PatchDocume
         readonly start: string;
         readonly end: string;
     }>;
-    /** Search for multiple occurrences after patching (default: true) */
+    /** Replace every occurrence of a placeholder in a paragraph, rather than only the first (default: true) */
     readonly recursive?: boolean;
 };
 
@@ -190,9 +190,6 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
     patches,
     keepOriginalStyles,
     placeholderDelimiters = { start: "{{", end: "}}" } as const,
-    /**
-     * Search for occurrences over patched document
-     */
     recursive = true,
 }: PatchDocumentOptions<T>): Promise<OutputByType[T]> => {
     const zipContent = data instanceof JSZip ? data : await JSZip.loadAsync(data);
@@ -282,44 +279,37 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
             for (const [patchKey, patchValue] of Object.entries(patches)) {
                 const patchText = `${start}${patchKey}${end}`;
                 // TODO: mutates json. Make it immutable
-                // We need to loop through to catch every occurrence of the patch text
-                // It is possible that the patch text is in the same run
-                // This algorithm is limited to one patch per text run
-                // We break out of the loop once it cannot find any more occurrences
+                // The replacer patches every occurrence in one pass, and never searches the content it inserts,
+                // so a patch that contains its own placeholder is fine
                 // https://github.com/dolanmiu/docx/issues/2267
-                while (true) {
-                    const { didFindOccurrence } = replacer({
-                        json,
-                        patch: {
-                            ...patchValue,
-                            children: patchValue.children.map((element) => {
-                                // We need to replace external hyperlinks with concrete hyperlinks
-                                if (element instanceof ExternalHyperlink) {
-                                    const concreteHyperlink = new ConcreteHyperlink(element.options.children, uniqueId());
-                                    // eslint-disable-next-line functional/immutable-data
-                                    hyperlinkRelationshipAdditions.push({
-                                        key,
-                                        hyperlink: {
-                                            id: concreteHyperlink.linkId,
-                                            link: element.options.link,
-                                        },
-                                    });
-                                    return concreteHyperlink;
-                                } else {
-                                    return element;
-                                }
-                            }),
-                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        } as any,
-                        patchText,
-                        context,
-                        keepOriginalStyles,
-                    });
-                    // What the reason doing that? Once document is patched - it search over patched json again, that takes too long if patched document has big and deep structure.
-                    if (!recursive || !didFindOccurrence) {
-                        break;
-                    }
-                }
+                replacer({
+                    json,
+                    patch: {
+                        ...patchValue,
+                        children: patchValue.children.map((element) => {
+                            // We need to replace external hyperlinks with concrete hyperlinks
+                            if (element instanceof ExternalHyperlink) {
+                                const concreteHyperlink = new ConcreteHyperlink(element.options.children, uniqueId());
+                                // eslint-disable-next-line functional/immutable-data
+                                hyperlinkRelationshipAdditions.push({
+                                    key,
+                                    hyperlink: {
+                                        id: concreteHyperlink.linkId,
+                                        link: element.options.link,
+                                    },
+                                });
+                                return concreteHyperlink;
+                            } else {
+                                return element;
+                            }
+                        }),
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    } as any,
+                    patchText,
+                    context,
+                    keepOriginalStyles,
+                    recursive,
+                });
             }
 
             const mediaDatas = imageReplacer.getMediaData(JSON.stringify(json), context.file.Media);

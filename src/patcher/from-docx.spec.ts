@@ -3,7 +3,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { Bookmark, ExternalHyperlink, ImageRun, Paragraph, TextRun } from "@file/paragraph";
 
-import { PatchType, patchDocument } from "./from-docx";
+import { type IPatch, PatchType, patchDocument } from "./from-docx";
+import { traverse } from "./traverser";
+import { toJson } from "./util";
 
 const MOCK_XML = `
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -688,6 +690,46 @@ describe("from-docx", () => {
                         },
                     }),
                 ).rejects.toThrowError());
+        });
+
+        describe("A placeholder that is in a paragraph twice", () => {
+            const patchName = async (patch: IPatch, recursive?: boolean): Promise<readonly string[]> => {
+                vi.spyOn(JSZip, "loadAsync").mockResolvedValue(
+                    new JSZip()
+                        .file(
+                            "word/document.xml",
+                            `<w:document><w:body><w:p><w:r><w:t>{{name}} and {{name}}</w:t></w:r></w:p></w:body></w:document>`,
+                        )
+                        .file("[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`),
+                );
+                const output = await patchDocument({
+                    outputType: "uint8array",
+                    data: Buffer.from(""),
+                    patches: { name: patch },
+                    recursive,
+                });
+                const patched = await new JSZip().loadAsync(output);
+                return traverse(toJson(await patched.file("word/document.xml")!.async("text"))).map((p) => p.text);
+            };
+
+            afterEach(() => {
+                vi.restoreAllMocks();
+            });
+
+            it("should replace both, and not the placeholder in a paragraph patch's own content", async () => {
+                const texts = await patchName({ type: PatchType.PARAGRAPH, children: [new TextRun("[{{name}}]")] });
+                expect(texts).to.deep.equal(["[{{name}}] and [{{name}}]"]);
+            });
+
+            it("should replace the paragraph once, and not the placeholder in a document patch's own content", async () => {
+                const texts = await patchName({ type: PatchType.DOCUMENT, children: [new Paragraph("again {{name}}")] });
+                expect(texts).to.deep.equal(["again {{name}}"]);
+            });
+
+            it("should only replace the first if recursive is false", async () => {
+                const texts = await patchName({ type: PatchType.PARAGRAPH, children: [new TextRun("John")] }, false);
+                expect(texts).to.deep.equal(["John and {{name}}"]);
+            });
         });
     });
 });

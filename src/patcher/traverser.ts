@@ -32,7 +32,8 @@ const elementsToWrapper = (wrapper: ElementWrapper): readonly ElementWrapper[] =
  *
  * Uses breadth-first search to walk through the XML structure, identifying
  * all paragraph elements (w:p) and rendering their text content along with
- * positional information.
+ * positional information. The replacer relies on this order: shallower
+ * paragraphs come first, and at the same depth, earlier ones come first.
  *
  * @param node - The root XML element to traverse
  * @returns Array of rendered paragraph nodes with text content and positions

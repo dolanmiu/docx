@@ -348,5 +348,72 @@ describe("paragraph-token-replacer", () => {
                 elements: [{ name: "w:t", elements: [{ type: "text", text: " world" }] }],
             });
         });
+
+        it("should replace a token in a later text of a run, using positions within that text", () => {
+            const output = replaceTokenInParagraphElement({
+                paragraphElement: {
+                    name: "w:p",
+                    elements: [
+                        {
+                            name: "w:r",
+                            elements: [
+                                { name: "w:t", elements: [{ type: "text", text: "Name:" }] },
+                                { name: "w:tab" },
+                                { name: "w:t", elements: [{ type: "text", text: "{{name}}" }] },
+                            ],
+                        },
+                    ],
+                },
+                renderedParagraph: {
+                    text: "Name:{{name}}",
+                    runs: [
+                        {
+                            text: "Name:{{name}}",
+                            parts: [
+                                { text: "Name:", index: 0, start: 0, end: 4 },
+                                { text: "{{name}}", index: 2, start: 5, end: 12 },
+                            ],
+                            index: 0,
+                            start: 0,
+                            end: 12,
+                        },
+                    ],
+                    index: 0,
+                    pathToParagraph: [0],
+                },
+                originalText: "{{name}}",
+                replacementText: "John",
+            });
+
+            expect(output.elements![0].elements!.map((e) => e.elements?.[0]?.text)).to.deep.equal(["Name:", undefined, "John"]);
+        });
+
+        it("should look for the token from fromIndex on", () => {
+            const output = replaceTokenInParagraphElement({
+                paragraphElement: {
+                    name: "w:p",
+                    elements: [{ name: "w:r", elements: [{ name: "w:t", elements: [{ type: "text", text: "{{name}} {{name}}" }] }] }],
+                },
+                renderedParagraph: {
+                    text: "{{name}} {{name}}",
+                    runs: [
+                        {
+                            text: "{{name}} {{name}}",
+                            parts: [{ text: "{{name}} {{name}}", index: 0, start: 0, end: 16 }],
+                            index: 0,
+                            start: 0,
+                            end: 16,
+                        },
+                    ],
+                    index: 0,
+                    pathToParagraph: [0],
+                },
+                originalText: "{{name}}",
+                replacementText: "John",
+                fromIndex: 1,
+            });
+
+            expect(output.elements![0].elements![0].elements![0].text).to.equal("{{name}} John");
+        });
     });
 });
