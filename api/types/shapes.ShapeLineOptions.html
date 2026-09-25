@@ -19,7 +19,7 @@
 <h4 class="tsd-anchor-link" id="public-api">Public Api<a href="#public-api" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4></div></div></section>
 <div class="tsd-signature"><span class="tsd-signature-keyword">type</span> <span class="tsd-kind-type-alias">ShapeLineOptions</span> <span class="tsd-signature-symbol">=</span> <span class="tsd-signature-symbol">{</span><br/>    <a class="tsd-kind-property" href="#cap">cap</a><span class="tsd-signature-symbol">?:</span> <a href="shapes.ShapeLineCap.html" class="tsd-signature-type tsd-kind-type-alias">ShapeLineCap</a><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#color">color</a><span class="tsd-signature-symbol">?:</span> <a href="shapes.ShapeColor.html" class="tsd-signature-type tsd-kind-type-alias">ShapeColor</a><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#compound">compound</a><span class="tsd-signature-symbol">?:</span> <a href="shapes.ShapeCompoundLine.html" class="tsd-signature-type tsd-kind-type-alias">ShapeCompoundLine</a><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#dash">dash</a><span class="tsd-signature-symbol">?:</span> <a href="shapes.LineDash.html" class="tsd-signature-type tsd-kind-type-alias">LineDash</a> <span class="tsd-signature-symbol">|</span> <a href="shapes.CustomLineDash.html" class="tsd-signature-type tsd-kind-type-alias">CustomLineDash</a><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#endarrow">endArrow</a><span class="tsd-signature-symbol">?:</span> <a href="shapes.Arrowhead.html" class="tsd-signature-type tsd-kind-type-alias">Arrowhead</a><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#gradient">gradient</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">Omit</span><span class="tsd-signature-symbol">&lt;</span><a href="shapes.GradientShapeFill.html" class="tsd-signature-type tsd-kind-type-alias">GradientShapeFill</a><span class="tsd-signature-symbol">,</span> <span class="tsd-signature-type">&quot;type&quot;</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#join">join</a><span class="tsd-signature-symbol">?:</span> <a href="shapes.ShapeLineJoin.html" class="tsd-signature-type tsd-kind-type-alias">ShapeLineJoin</a><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#startarrow">startArrow</a><span class="tsd-signature-symbol">?:</span> <a href="shapes.Arrowhead.html" class="tsd-signature-type tsd-kind-type-alias">Arrowhead</a><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#transparency">transparency</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#width">width</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">;</span><br/><span class="tsd-signature-symbol">}</span></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/c06577432e76f3a6e2d95a4a1ba79cf11c5c56e5/src/shapes/preset-shape/shape-line.ts#L132">shapes/preset-shape/shape-line.ts:132</a></li></ul></aside>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/4090b8365337494a54a60a2d28987e3714068f5c/src/shapes/preset-shape/shape-line.ts#L132">shapes/preset-shape/shape-line.ts:132</a></li></ul></aside>
 <section class="tsd-panel-group tsd-index-group">
 <section class="tsd-panel tsd-index-panel">
 <details class="tsd-index-content tsd-accordion" open><summary class="tsd-accordion-summary tsd-index-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
@@ -47,70 +47,70 @@
 <div class="tsd-comment tsd-typography"><p>The shape of the line's ends and of the ends of each dash</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/c06577432e76f3a6e2d95a4a1ba79cf11c5c56e5/src/shapes/preset-shape/shape-line.ts#L144">shapes/preset-shape/shape-line.ts:144</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/4090b8365337494a54a60a2d28987e3714068f5c/src/shapes/preset-shape/shape-line.ts#L144">shapes/preset-shape/shape-line.ts:144</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="color"><code class="tsd-tag">Optional</code> <code class="tsd-tag">Readonly</code><span>color</span><a href="#color" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">color</span><span class="tsd-signature-symbol">?:</span> <a href="shapes.ShapeColor.html" class="tsd-signature-type tsd-kind-type-alias">ShapeColor</a></div>
 <div class="tsd-comment tsd-typography"><p>A 6-digit hex colour such as <code>&quot;FF0000&quot;</code>, or a colour of the document's theme such as <code>{ theme: &quot;accent1&quot; }</code>. Default is <code>&quot;000000&quot;</code></p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/c06577432e76f3a6e2d95a4a1ba79cf11c5c56e5/src/shapes/preset-shape/shape-line.ts#L134">shapes/preset-shape/shape-line.ts:134</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/4090b8365337494a54a60a2d28987e3714068f5c/src/shapes/preset-shape/shape-line.ts#L134">shapes/preset-shape/shape-line.ts:134</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="compound"><code class="tsd-tag">Optional</code> <code class="tsd-tag">Readonly</code><span>compound</span><a href="#compound" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">compound</span><span class="tsd-signature-symbol">?:</span> <a href="shapes.ShapeCompoundLine.html" class="tsd-signature-type tsd-kind-type-alias">ShapeCompoundLine</a></div>
 <div class="tsd-comment tsd-typography"><p>Draws the line as two or three parallel lines within its width. Default is <code>&quot;single&quot;</code></p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/c06577432e76f3a6e2d95a4a1ba79cf11c5c56e5/src/shapes/preset-shape/shape-line.ts#L148">shapes/preset-shape/shape-line.ts:148</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/4090b8365337494a54a60a2d28987e3714068f5c/src/shapes/preset-shape/shape-line.ts#L148">shapes/preset-shape/shape-line.ts:148</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="dash"><code class="tsd-tag">Optional</code> <code class="tsd-tag">Readonly</code><span>dash</span><a href="#dash" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">dash</span><span class="tsd-signature-symbol">?:</span> <a href="shapes.LineDash.html" class="tsd-signature-type tsd-kind-type-alias">LineDash</a> <span class="tsd-signature-symbol">|</span> <a href="shapes.CustomLineDash.html" class="tsd-signature-type tsd-kind-type-alias">CustomLineDash</a></div>
 <div class="tsd-comment tsd-typography"><p>A preset dash pattern, or dashes and gaps of your own. Default is a solid line</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/c06577432e76f3a6e2d95a4a1ba79cf11c5c56e5/src/shapes/preset-shape/shape-line.ts#L142">shapes/preset-shape/shape-line.ts:142</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/4090b8365337494a54a60a2d28987e3714068f5c/src/shapes/preset-shape/shape-line.ts#L142">shapes/preset-shape/shape-line.ts:142</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="endarrow"><code class="tsd-tag">Optional</code> <code class="tsd-tag">Readonly</code><span>end<wbr/>Arrow</span><a href="#endarrow" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">endArrow</span><span class="tsd-signature-symbol">?:</span> <a href="shapes.Arrowhead.html" class="tsd-signature-type tsd-kind-type-alias">Arrowhead</a></div>
 <div class="tsd-comment tsd-typography"><p>Arrowhead at the end of the line</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/c06577432e76f3a6e2d95a4a1ba79cf11c5c56e5/src/shapes/preset-shape/shape-line.ts#L152">shapes/preset-shape/shape-line.ts:152</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/4090b8365337494a54a60a2d28987e3714068f5c/src/shapes/preset-shape/shape-line.ts#L152">shapes/preset-shape/shape-line.ts:152</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="gradient"><code class="tsd-tag">Optional</code> <code class="tsd-tag">Readonly</code><span>gradient</span><a href="#gradient" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">gradient</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">Omit</span><span class="tsd-signature-symbol">&lt;</span><a href="shapes.GradientShapeFill.html" class="tsd-signature-type tsd-kind-type-alias">GradientShapeFill</a><span class="tsd-signature-symbol">,</span> <span class="tsd-signature-type">&quot;type&quot;</span><span class="tsd-signature-symbol">&gt;</span></div>
 <div class="tsd-comment tsd-typography"><p>Colours the line with a gradient instead of <code>color</code></p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/c06577432e76f3a6e2d95a4a1ba79cf11c5c56e5/src/shapes/preset-shape/shape-line.ts#L140">shapes/preset-shape/shape-line.ts:140</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/4090b8365337494a54a60a2d28987e3714068f5c/src/shapes/preset-shape/shape-line.ts#L140">shapes/preset-shape/shape-line.ts:140</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="join"><code class="tsd-tag">Optional</code> <code class="tsd-tag">Readonly</code><span>join</span><a href="#join" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">join</span><span class="tsd-signature-symbol">?:</span> <a href="shapes.ShapeLineJoin.html" class="tsd-signature-type tsd-kind-type-alias">ShapeLineJoin</a></div>
 <div class="tsd-comment tsd-typography"><p>The shape of the corners where the line turns</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/c06577432e76f3a6e2d95a4a1ba79cf11c5c56e5/src/shapes/preset-shape/shape-line.ts#L146">shapes/preset-shape/shape-line.ts:146</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/4090b8365337494a54a60a2d28987e3714068f5c/src/shapes/preset-shape/shape-line.ts#L146">shapes/preset-shape/shape-line.ts:146</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="startarrow"><code class="tsd-tag">Optional</code> <code class="tsd-tag">Readonly</code><span>start<wbr/>Arrow</span><a href="#startarrow" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">startArrow</span><span class="tsd-signature-symbol">?:</span> <a href="shapes.Arrowhead.html" class="tsd-signature-type tsd-kind-type-alias">Arrowhead</a></div>
 <div class="tsd-comment tsd-typography"><p>Arrowhead at the start of the line</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/c06577432e76f3a6e2d95a4a1ba79cf11c5c56e5/src/shapes/preset-shape/shape-line.ts#L150">shapes/preset-shape/shape-line.ts:150</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/4090b8365337494a54a60a2d28987e3714068f5c/src/shapes/preset-shape/shape-line.ts#L150">shapes/preset-shape/shape-line.ts:150</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="transparency"><code class="tsd-tag">Optional</code> <code class="tsd-tag">Readonly</code><span>transparency</span><a href="#transparency" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">transparency</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">number</span></div>
 <div class="tsd-comment tsd-typography"><p>From 0 (opaque) to 100 (invisible)</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/c06577432e76f3a6e2d95a4a1ba79cf11c5c56e5/src/shapes/preset-shape/shape-line.ts#L138">shapes/preset-shape/shape-line.ts:138</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/4090b8365337494a54a60a2d28987e3714068f5c/src/shapes/preset-shape/shape-line.ts#L138">shapes/preset-shape/shape-line.ts:138</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="width"><code class="tsd-tag">Optional</code> <code class="tsd-tag">Readonly</code><span>width</span><a href="#width" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">width</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">number</span></div>
 <div class="tsd-comment tsd-typography"><p>Line width in points, from 0 to 1584. Default is 1</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/c06577432e76f3a6e2d95a4a1ba79cf11c5c56e5/src/shapes/preset-shape/shape-line.ts#L136">shapes/preset-shape/shape-line.ts:136</a></li></ul></aside></section></section></details></div>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/4090b8365337494a54a60a2d28987e3714068f5c/src/shapes/preset-shape/shape-line.ts#L136">shapes/preset-shape/shape-line.ts:136</a></li></ul></aside></section></section></details></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">
