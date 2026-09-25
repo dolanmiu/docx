@@ -20,7 +20,7 @@ that connect to it, and the shapes on each level are ordered so connectors cross
 <h4 class="tsd-anchor-link" id="public-api">Public Api<a href="#public-api" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4></div></div></section>
 <div class="tsd-signature"><span class="tsd-signature-keyword">type</span> <span class="tsd-kind-type-alias">ShapeFlowLayout</span> <span class="tsd-signature-symbol">=</span> <span class="tsd-signature-symbol">{</span><br/>    <a class="tsd-kind-property" href="#direction">direction</a><span class="tsd-signature-symbol">?:</span> <a href="shapes.ShapeLayoutDirection.html" class="tsd-signature-type tsd-kind-type-alias">ShapeLayoutDirection</a><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#lanes">lanes</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-keyword">readonly</span> (<span class="tsd-signature-type">string</span> <span class="tsd-signature-symbol">|</span> <a href="shapes.ShapeLane.html" class="tsd-signature-type tsd-kind-type-alias">ShapeLane</a>)<span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#levelspacing">levelSpacing</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#spacing">spacing</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#type">type</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">&quot;flow&quot;</span><span class="tsd-signature-symbol">;</span><br/><span class="tsd-signature-symbol">}</span></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/dd99d943891fe7a507bb318f24c7976d3d57e1cf/src/shapes/shape-layout.ts#L41">shapes/shape-layout.ts:41</a></li></ul></aside>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/7bb5129aa0643ef8e378d1084242a583c55b060a/src/shapes/shape-layout.ts#L41">shapes/shape-layout.ts:41</a></li></ul></aside>
 <section class="tsd-panel-group tsd-index-group">
 <section class="tsd-panel tsd-index-panel">
 <details class="tsd-index-content tsd-accordion" open><summary class="tsd-accordion-summary tsd-index-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
@@ -43,7 +43,7 @@ that connect to it, and the shapes on each level are ordered so connectors cross
 <div class="tsd-comment tsd-typography"><p>The way the flow runs. Default is <code>&quot;down&quot;</code></p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/dd99d943891fe7a507bb318f24c7976d3d57e1cf/src/shapes/shape-layout.ts#L44">shapes/shape-layout.ts:44</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/7bb5129aa0643ef8e378d1084242a583c55b060a/src/shapes/shape-layout.ts#L44">shapes/shape-layout.ts:44</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="lanes"><code class="tsd-tag">Optional</code> <code class="tsd-tag">Readonly</code><span>lanes</span><a href="#lanes" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">lanes</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-keyword">readonly</span> (<span class="tsd-signature-type">string</span> <span class="tsd-signature-symbol">|</span> <a href="shapes.ShapeLane.html" class="tsd-signature-type tsd-kind-type-alias">ShapeLane</a>)<span class="tsd-signature-symbol">[]</span></div>
@@ -52,26 +52,26 @@ with a <code>lane</code> goes in the band of that name, and shapes without one g
 across the direction the flow runs in, each with a header at the start of the flow</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/dd99d943891fe7a507bb318f24c7976d3d57e1cf/src/shapes/shape-layout.ts#L54">shapes/shape-layout.ts:54</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/7bb5129aa0643ef8e378d1084242a583c55b060a/src/shapes/shape-layout.ts#L54">shapes/shape-layout.ts:54</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="levelspacing"><code class="tsd-tag">Optional</code> <code class="tsd-tag">Readonly</code><span>level<wbr/>Spacing</span><a href="#levelspacing" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">levelSpacing</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">number</span></div>
 <div class="tsd-comment tsd-typography"><p>Space between one level and the next, in pixels. Default is 50</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/dd99d943891fe7a507bb318f24c7976d3d57e1cf/src/shapes/shape-layout.ts#L48">shapes/shape-layout.ts:48</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/7bb5129aa0643ef8e378d1084242a583c55b060a/src/shapes/shape-layout.ts#L48">shapes/shape-layout.ts:48</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="spacing"><code class="tsd-tag">Optional</code> <code class="tsd-tag">Readonly</code><span>spacing</span><a href="#spacing" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">spacing</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">number</span></div>
 <div class="tsd-comment tsd-typography"><p>Space between shapes on the same level, in pixels. Default is 40</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/dd99d943891fe7a507bb318f24c7976d3d57e1cf/src/shapes/shape-layout.ts#L46">shapes/shape-layout.ts:46</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/7bb5129aa0643ef8e378d1084242a583c55b060a/src/shapes/shape-layout.ts#L46">shapes/shape-layout.ts:46</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="type"><code class="tsd-tag">Readonly</code><span>type</span><a href="#type" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">type</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">&quot;flow&quot;</span></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/dd99d943891fe7a507bb318f24c7976d3d57e1cf/src/shapes/shape-layout.ts#L42">shapes/shape-layout.ts:42</a></li></ul></aside></section></section></details></div>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/7bb5129aa0643ef8e378d1084242a583c55b060a/src/shapes/shape-layout.ts#L42">shapes/shape-layout.ts:42</a></li></ul></aside></section></section></details></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">
