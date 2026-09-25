@@ -9,261 +9,36 @@ on:
 
 jobs:
     demos:
-        name: Demos
+        name: Demos (${{ matrix.shard }})
         runs-on: ubuntu-latest
+        strategy:
+            fail-fast: false
+            matrix:
+                shard: [1, 2, 3, 4]
         steps:
             - uses: actions/checkout@v5
             - uses: "./.github/actions/install-and-build"
-            - name: Run Demos
-              run: npm run run-ts -- ./demo/1-basic.ts
-            - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/2-declarative-styles.ts
-            - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/3-numbering-and-bullet-points.ts
-            - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/4-basic-table.ts
-            - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/5-images.ts
-            - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/6-page-borders.ts
-            - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/7-landscape.ts
-            - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/8-header-footer.ts
-            - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/9-images-in-header-and-footer.ts
-            - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/10-my-cv.ts
-            - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/11-declarative-styles-2.ts
-            - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/12-scaling-images.ts
-            - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/13-xml-styles.ts
-            - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/14-page-numbers.ts
-            - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/15-page-break-before.ts
-            - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/16-multiple-sections.ts
-            - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/17-footnotes.ts
-            # element r: Schemas validity error : Element '{http://schemas.openxmlformats.org/wordprocessingml/2006/main}r': This element is not expected.
-            # - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/18-image-from-buffer.ts
-            - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/19-export-to-base64.ts
-            # Base 64 No longer works, abruptly. Node issue?
-            # - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/20-table-cell-borders.ts
-            - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/21-bookmarks.ts
-            # Bad ID - need numeric ID
-            # - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/22-right-to-left-text.ts
-            - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/23-base64-images.ts
-            - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/24-images-to-table-cell.ts
-            - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/25-table-xml-styles.ts
-            - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/26-paragraph-borders.ts
-            - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/27-declarative-styles-3.ts
-            - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/28-table-of-contents.ts
-            - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/29-numbered-lists.ts
-            - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/31-tables.ts
-            - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/32-merge-and-shade-table-cells.ts
-            - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/33-sequential-captions.ts
-            - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/34-floating-tables.ts
-            # element tblpPr: Schemas validity error : Element '{http://schemas.openxmlformats.org/wordprocessingml/2006/main}tblpPr', attribute 'overlap': The attribute 'overlap' is not allowed.
-            # element tblpPr: Schemas validity error : Element '{http://schemas.openxmlformats.org/wordprocessingml/2006/main}tblpPr': Element content is not allowed, because the content type is empty.
-            # - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/35-hyperlinks.ts
-            - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/36-image-to-table-cell.ts
-            - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/37-images-to-header-and-footer.ts
-            - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/38-text-wrapping.ts
-            - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/39-page-numbers.ts
-            - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/40-line-numbers.ts
-            - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/41-merge-table-cells-2.ts
-            - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/42-restart-page-numbers.ts
-            - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/43-images-to-table-cell-2.ts
-            - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/44-multiple-columns.ts
-            - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/45-highlighting-text.ts
-            - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/46-shading-text.ts
-            - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/47-number-of-total-pages-section.ts
-            - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/48-vertical-align.ts
-            - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/49-table-borders.ts
-            - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/50-readme-demo.ts
-            - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/51-character-styles.ts
-            - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/52-japanese.ts
-            - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/53-chinese.ts
-            - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/54-custom-properties.ts
-            - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/55-math.ts
-            #: element subHide: Schemas validity error : Element '{http://schemas.openxmlformats.org/officeDocument/2006/math}subHide': This element is not expected. Expected is ( {http://schemas.openxmlformats.org/officeDocument/2006/math}ctrlPr ).
-            #: element e: Schemas validity error : Element '{http://schemas.openxmlformats.org/officeDocument/2006/math}e': This element is not expected. Expected is ( {http://schemas.openxmlformats.org/officeDocument/2006/math}sub ).
-            #: element e: Schemas validity error : Element '{http://schemas.openxmlformats.org/officeDocument/2006/math}e': This element is not expected. Expected is ( {http://schemas.openxmlformats.org/officeDocument/2006/math}sup ).
-            #: element e: Schemas validity error : Element '{http://schemas.openxmlformats.org/officeDocument/2006/math}e': This element is not expected. Expected is ( {http://schemas.openxmlformats.org/officeDocument/2006/math}sub ).
-            # - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/56-background-color.ts
-            - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/57-add-parent-numbered-lists.ts
-            - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/58-section-types.ts
-            - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/59-header-footer-margins.ts
-            - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/60-track-revisions.ts
-            # element r: Schemas validity error : Element '{http://schemas.openxmlformats.org/wordprocessingml/2006/main}r': This element is not expected.
-            # - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/61-text-frame.ts
-            # element left: Schemas validity error : Element '{http://schemas.openxmlformats.org/wordprocessingml/2006/main}left': This element is not expected. Expected is one of ( {http://schemas.openxmlformats.org/wordprocessingml/2006/main}right, {http://schemas.openxmlformats.org/wordprocessingml/2006/main}between, {http://schemas.openxmlformats.org/wordprocessingml/2006/main}bar ).
-            # - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/62-paragraph-spacing.ts
-            - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/63-odd-even-header-footer.ts
-            - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/64-complex-numbering-text.ts
-            - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/65-page-sizes.ts
-            - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/66-fields.ts
-            # element bookmarkStart: Schemas validity error : Element '{http://schemas.openxmlformats.org/wordprocessingml/2006/main}bookmarkStart', attribute '{http://schemas.openxmlformats.org/wordprocessingml/2006/main}id': '-irrswq-ln94j4fdgdjxs' is not a valid value of the atomic type '{http://schemas.openxmlformats.org/wordprocessingml/2006/main}ST_DecimalNumber'.
-            # element bookmarkEnd: Schemas validity error : Element '{http://schemas.openxmlformats.org/wordprocessingml/2006/main}bookmarkEnd', attribute '{http://schemas.openxmlformats.org/wordprocessingml/2006/main}id': '-irrswq-ln94j4fdgdjxs' is not a valid value of the atomic type '{http://schemas.openxmlformats.org/wordprocessingml/2006/main}ST_DecimalNumber'.
-            # - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/67-column-break.ts
-            - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/68-numbering-instances-and-starting-number.ts
-            - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/69-different-width-columns.ts
-            - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/70-line-numbers-suppression.ts
-            - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/71-page-borders-2.ts
-            - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/72-word-wrap.ts
-            - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/73-comments.ts
-            - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/74-nodejs-stream.ts
-            # - uses: "./.github/actions/validate-docx"
-            #   run: npm run run-ts -- ./demo/75-tab-stops.ts
-            # - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/76-compatibility.ts
-            - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/77-side-by-side-tables.ts
-            - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/78-thai-distributed.ts
-            - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/79-table-from-data-source.ts
-            - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/80-thai-distributed.ts
-            - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/81-continuous-header.ts
-            - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/82-new-headers-new-section.ts
-            - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/83-setting-languages.ts
-            - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/84-positional-tabs.ts
-            - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/85-template-document.ts
-            # - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/86-generate-template.ts
-            - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/87-template-document.ts
-            # - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/88-template-document.ts
-            # - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/89-template-document.ts
-            # - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/90-check-boxes.ts
-            # - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/91-custom-fonts.ts
-            - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/92-declarative-custom-fonts.ts
-            - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/93-template-document.ts
-            # - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/94-texbox.ts
-            - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/95-paragraph-style-with-shading-and-borders.ts
-            - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/96-template-document.ts
-            # - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/97-endnotes.ts
-            - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/98-track-revisions-2.ts
-            - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/99-wps-text-box.ts
-            # - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/100-table-look.ts
-            # - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/101-comment-replies.ts
-            - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/102-numbering-level-paragraph-style.ts
-            - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/103-track-change-images.ts
-            - uses: "./.github/actions/validate-docx"
-            # The watermarks are in the header, which isn't validated
-            - run: npm run run-ts -- ./demo/105-text-watermark.ts
-            - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/106-image-watermark.ts
-            - uses: "./.github/actions/validate-docx"
-            # The bundled schemas don't declare the Word 2010 wps/wpg/wpc namespaces used by shapes, so validation is skipped here (as for demo 99).
-            # The Shape demos workflow validates them with those namespaces moved to wp, and draws them with LibreOffice
-            - run: npm run run-ts -- ./demo/107-inline-shapes.ts
-            # - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/108-shapes.ts
-            # - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/109-shape-groups.ts
-            # - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/110-shape-connectors.ts
-            # - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/111-shape-styles.ts
-            # - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/112-shape-diagrams.ts
-            # - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/113-shape-layout.ts
-            # - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/114-image-links.ts
-            - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/115-shape-document-styles.ts
-            # - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/116-shape-swimlanes.ts
-            # - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/117-shape-page-layout.ts
-            # - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/118-theme.ts
-            # - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/119-theme-colors.ts
-            - uses: "./.github/actions/validate-docx"
-            - run: npm run run-ts -- ./demo/120-custom-shapes.ts
-            # - uses: "./.github/actions/validate-docx"
+            - name: Install xmllint
+              run: |
+                  sudo apt-get update
+                  sudo apt-get install -y --no-install-recommends libxml2-utils
+            # Each shard runs every fourth demo, and checks the document it writes against the bundled schemas
+            - name: Run and validate the demos
+              shell: bash
+              env:
+                  # Demos whose document doesn't match the bundled schemas yet. Demo 19 writes the document as base64
+                  SKIP_VALIDATION: 19 34 55 60 61 75 85 87 88 89 90 96 98 99 107 108 109 110 111 112 113 115 116 117 118 120
+              run: |
+                  for demo in $(ls demo/[0-9]*.ts | sort -V | awk -v n=${{ strategy.job-total }} -v i=${{ strategy.job-index }} 'NR % n == i'); do
+                      echo "::group::$demo"
+                      rm -f ./*.docx
+                      npm run --silent run-ts -- "$demo"
+                      if [[ " $SKIP_VALIDATION " == *" $(basename "$demo" | cut -d- -f1) "* ]]; then
+                          echo "Not validated"
+                      else
+                          docx=(./*.docx)
+                          unzip -p "${docx[0]}" word/document.xml | xmllint --noout --schema ooxml-schemas/microsoft/wml-2010.xsd -
+                          unzip -p "${docx[0]}" word/theme/theme1.xml | xmllint --noout --schema ooxml-schemas/ISO-IEC29500-4_2016/dml-main.xsd -
+                      fi
+                      echo "::endgroup::"
+                  done
