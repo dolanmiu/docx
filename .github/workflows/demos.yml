@@ -18,27 +18,18 @@ jobs:
         steps:
             - uses: actions/checkout@v5
             - uses: "./.github/actions/install-and-build"
-            - name: Install xmllint
-              run: |
-                  sudo apt-get update
-                  sudo apt-get install -y --no-install-recommends libxml2-utils
-            # Each shard runs every fourth demo, and checks the document it writes against the bundled schemas
+            # Microsoft's Open XML SDK validator. It's installed only here, as it is 80 MB
+            - name: Install the Open XML SDK validator
+              run: npm install --no-save --no-audit --no-fund @xarsh/ooxml-validator@0.3.0
+            # Each shard runs every fourth demo, and checks the document it writes with the Open XML SDK validator, which
+            # checks every part against Office's schemas, including Word 2010's extensions
             - name: Run and validate the demos
               shell: bash
-              env:
-                  # Demos whose document doesn't match the bundled schemas yet. Demo 19 writes the document as base64
-                  SKIP_VALIDATION: 19 34 55 60 61 75 85 87 88 89 90 96 98 99 107 108 109 110 111 112 113 115 116 117 118 120
               run: |
                   for demo in $(ls demo/[0-9]*.ts | sort -V | awk -v n=${{ strategy.job-total }} -v i=${{ strategy.job-index }} 'NR % n == i'); do
                       echo "::group::$demo"
                       rm -f ./*.docx
                       npm run --silent run-ts -- "$demo"
-                      if [[ " $SKIP_VALIDATION " == *" $(basename "$demo" | cut -d- -f1) "* ]]; then
-                          echo "Not validated"
-                      else
-                          docx=(./*.docx)
-                          unzip -p "${docx[0]}" word/document.xml | xmllint --noout --schema ooxml-schemas/microsoft/wml-2010.xsd -
-                          unzip -p "${docx[0]}" word/theme/theme1.xml | xmllint --noout --schema ooxml-schemas/ISO-IEC29500-4_2016/dml-main.xsd -
-                      fi
+                      npx ooxml-validator ./*.docx
                       echo "::endgroup::"
                   done
