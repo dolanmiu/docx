@@ -10,18 +10,20 @@ import JSZip from "jszip";
 import { type Element, js2xml } from "xml-js";
 
 import { ImageReplacer } from "@export/packer/image-replacer";
+import { xmlifyPackageParts } from "@export/packer/package-part-writer";
 import { DocumentAttributeNamespaces } from "@file/document";
 import type { IViewWrapper } from "@file/document-wrapper";
 import type { File } from "@file/file";
 import type { FileChild } from "@file/file-child";
 import { type IMediaData, Media } from "@file/media";
+import { PackageParts } from "@file/package-part/package-part";
 import { ConcreteHyperlink, ExternalHyperlink, type ParagraphChild } from "@file/paragraph";
-import { TargetModeType } from "@file/relationships/relationship/relationship";
+import { type RelationshipType, TargetModeType } from "@file/relationships/relationship/relationship";
 import type { IContext } from "@file/xml-components";
 import { encodeUtf8, uniqueId } from "@util/convenience-functions";
 import type { OutputByType, OutputType } from "@util/output-type";
 
-import { appendContentType } from "./content-types-manager";
+import { appendContentType, appendContentTypeOverride } from "./content-types-manager";
 import { appendRelationship, getNextRelationshipIndex } from "./relationship-manager";
 import { replacer } from "./replacer";
 import { readThemeColors } from "./theme-colors";
@@ -86,13 +88,16 @@ type IImageRelationshipAddition = {
 };
 
 /**
- * Internal type for tracking hyperlink relationships that need to be added.
+ * Internal type for tracking the relationships that need to be added, such as to a hyperlink's address or a chart.
  */
-type IHyperlinkRelationshipAddition = {
-    /** XML file path where the hyperlink is used */
+type IRelationshipAddition = {
+    /** XML file path the relationship is from */
     readonly key: string;
-    /** Hyperlink relationship details */
-    readonly hyperlink: { readonly id: string; readonly link: string };
+    /** The relationship's id, without its "rId" */
+    readonly id: string | number;
+    readonly type: RelationshipType;
+    readonly target: string;
+    readonly targetMode?: (typeof TargetModeType)[keyof typeof TargetModeType];
 };
 
 /**
@@ -196,9 +201,24 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
     const contexts = new Map<string, IContext>();
     // Theme colors in patches are written with the hex color they come to in the document's theme
     const themeColors = await readThemeColors(zipContent);
+    // The content types of parts that patches add to the package, such as charts
+    // eslint-disable-next-line functional/prefer-readonly-type
+    const contentTypeOverrides: { readonly contentType: string; readonly partName: string }[] = [];
     const file = {
         Media: new Media(),
         Theme: themeColors && { Colors: themeColors },
+        PackageParts: new PackageParts(
+            {
+                // eslint-disable-next-line functional/immutable-data
+                addOverride: (contentType: string, partName: string) => contentTypeOverrides.push({ contentType, partName }),
+            },
+            // New parts are numbered after the template's own, such as its charts
+            new Set(
+                Object.keys(zipContent.files)
+                    .filter((path) => path.startsWith("word/"))
+                    .map((path) => path.slice("word/".length)),
+            ),
+        ),
     } as unknown as File;
 
     const map = new Map<string, Element>();
@@ -206,7 +226,7 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
     // eslint-disable-next-line functional/prefer-readonly-type
     const imageRelationshipAdditions: IImageRelationshipAddition[] = [];
     // eslint-disable-next-line functional/prefer-readonly-type
-    const hyperlinkRelationshipAdditions: IHyperlinkRelationshipAddition[] = [];
+    const relationshipAdditions: IRelationshipAddition[] = [];
     let hasMedia = false;
 
     const binaryContentMap = new Map<string, Uint8Array>();
@@ -249,19 +269,13 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
                 viewWrapper: {
                     Relationships: {
                         addRelationship: (
-                            linkId: string,
-                            _: string,
+                            id: string | number,
+                            type: RelationshipType,
                             target: string,
-                            __: (typeof TargetModeType)[keyof typeof TargetModeType],
+                            targetMode?: (typeof TargetModeType)[keyof typeof TargetModeType],
                         ) => {
                             // eslint-disable-next-line functional/immutable-data
-                            hyperlinkRelationshipAdditions.push({
-                                key,
-                                hyperlink: {
-                                    id: linkId,
-                                    link: target,
-                                },
-                            });
+                            relationshipAdditions.push({ key, id, type, target, targetMode });
                         },
                     },
                 } as unknown as IViewWrapper,
@@ -291,12 +305,12 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
                             if (element instanceof ExternalHyperlink) {
                                 const concreteHyperlink = new ConcreteHyperlink(element.options.children, uniqueId());
                                 // eslint-disable-next-line functional/immutable-data
-                                hyperlinkRelationshipAdditions.push({
+                                relationshipAdditions.push({
                                     key,
-                                    hyperlink: {
-                                        id: concreteHyperlink.linkId,
-                                        link: element.options.link,
-                                    },
+                                    id: concreteHyperlink.linkId,
+                                    type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink",
+                                    target: element.options.link,
+                                    targetMode: TargetModeType.EXTERNAL,
                                 });
                                 return concreteHyperlink;
                             } else {
@@ -350,7 +364,7 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
         }
     }
 
-    for (const { key, hyperlink } of hyperlinkRelationshipAdditions) {
+    for (const { key, id, type, target, targetMode } of relationshipAdditions) {
         // eslint-disable-next-line functional/immutable-data
         const relationshipKey = `word/_rels/${key.split("/").pop()}.rels`;
 
@@ -358,28 +372,32 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
         // eslint-disable-next-line functional/immutable-data
         map.set(relationshipKey, relationshipsJson);
 
-        appendRelationship(
-            relationshipsJson,
-            hyperlink.id,
-            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink",
-            hyperlink.link,
-            TargetModeType.EXTERNAL,
-        );
+        appendRelationship(relationshipsJson, id, type, target, targetMode);
     }
 
-    if (hasMedia) {
+    // The parts that patches added to the package, such as charts, which add their own parts as they are written, such
+    // as a chart's workbook
+    const packageParts = xmlifyPackageParts(file, undefined);
+
+    if (hasMedia || contentTypeOverrides.length > 0) {
         const contentTypesJson = map.get("[Content_Types].xml");
 
         if (!contentTypesJson) {
             throw new Error("Could not find content types file");
         }
 
-        appendContentType(contentTypesJson, "image/png", "png");
-        appendContentType(contentTypesJson, "image/jpeg", "jpeg");
-        appendContentType(contentTypesJson, "image/jpeg", "jpg");
-        appendContentType(contentTypesJson, "image/bmp", "bmp");
-        appendContentType(contentTypesJson, "image/gif", "gif");
-        appendContentType(contentTypesJson, "image/svg+xml", "svg");
+        if (hasMedia) {
+            appendContentType(contentTypesJson, "image/png", "png");
+            appendContentType(contentTypesJson, "image/jpeg", "jpeg");
+            appendContentType(contentTypesJson, "image/jpeg", "jpg");
+            appendContentType(contentTypesJson, "image/bmp", "bmp");
+            appendContentType(contentTypesJson, "image/gif", "gif");
+            appendContentType(contentTypesJson, "image/svg+xml", "svg");
+        }
+
+        for (const { contentType, partName } of contentTypeOverrides) {
+            appendContentTypeOverride(contentTypesJson, contentType, partName);
+        }
     }
 
     const zip = new JSZip();
@@ -396,6 +414,10 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
 
     for (const { data: stream, fileName } of file.Media.Array) {
         zip.file(`word/media/${fileName}`, stream);
+    }
+
+    for (const { path, data: partData } of packageParts) {
+        zip.file(path, typeof partData === "string" ? encodeUtf8(partData) : partData);
     }
 
     return zip.generateAsync({
