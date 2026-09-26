@@ -10,7 +10,7 @@
 - **TypeScript First** - Full type definitions with IntelliSense support
 - **Universal** - Works in Node.js, browsers, and serverless environments
 - **No Dependencies** - Zero external runtime dependencies
-- **Full Featured** - Tables, images, shapes, headers, footers, styles, and more
+- **Full Featured** - Tables, images, shapes, charts, headers, footers, styles, and more
 
 ## Quick Navigation
 
@@ -40,11 +40,12 @@ import * as docx from "docx";
 import { Document, Packer, Paragraph, TextRun } from "docx";
 ```
 
-[Shapes](usage/shapes.md) and [watermarks](usage/watermarks.md) come with the package too, from `docx/shapes` and `docx/watermarks`:
+[Shapes](usage/shapes.md), [watermarks](usage/watermarks.md) and [charts](usage/charts.md) come with the package too, from `docx/shapes`, `docx/watermarks` and `docx/charts`:
 
 ```ts
 import { ShapeRun } from "docx/shapes";
 import { TextWatermark } from "docx/watermarks";
+import { ChartRun } from "docx/charts";
 ```
 
 ## Basic Usage
