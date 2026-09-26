@@ -13,7 +13,7 @@ import { ChangeAttributes, type IChangedAttributesProperties } from "@file/track
 import { type IContext, type IXmlableObject, XmlComponent } from "@file/xml-components";
 import { hashedId } from "@util/convenience-functions";
 
-import { RunProperties } from "./properties";
+import { type IRunPropertiesOptions, RunProperties } from "./properties";
 import { Run } from "./run";
 import { Drawing, type IFloating } from "../../drawing";
 import type { ICropOptions } from "../../drawing/inline/graphic/graphic-data/pic/blip/source-rectangle";
@@ -42,6 +42,8 @@ type CoreImageOptions = DrawingLinkOptions & {
     readonly solidFill?: SolidFillOptions;
     /** Crops the image by trimming a percentage (0-100) off each edge before it is stretched to fill the frame. */
     readonly crop?: ICropOptions;
+    /** Formatting for the run containing the image, including vertical positioning with `position`. */
+    readonly runProperties?: IRunPropertiesOptions;
     /** Marks the image as an inserted revision for change tracking. Requires an id, author name, and date. */
     readonly insertion?: IChangedAttributesProperties;
     /** Marks the image as a deleted revision for change tracking. Requires an id, author name, and date. */
@@ -166,7 +168,7 @@ export class ImageRun extends XmlComponent {
             decorative: options.decorative,
         });
 
-        const run = new Run({ children: [drawing] });
+        const run = new Run({ ...options.runProperties, children: [drawing] });
 
         // Track-change wrappers: w:ins / w:del enclose the run so Word
         // displays the image as an inserted or deleted revision.
@@ -192,7 +194,7 @@ export class ImageRun extends XmlComponent {
             this.addChildElement(run);
         } else {
             super("w:r");
-            this.root.push(new RunProperties({}));
+            this.root.push(new RunProperties(options.runProperties));
             this.root.push(drawing);
         }
 

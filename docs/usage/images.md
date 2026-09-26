@@ -121,6 +121,21 @@ Three types of image positioning is supported:
 
 By default, images are exported as `Inline` elements.
 
+### Run properties
+
+Use `runProperties` to format the run containing an image. For example, `position` raises or lowers an inline image relative to its text baseline using `w:position`:
+
+```ts
+const image = new ImageRun({
+    type: "png",
+    data: fs.readFileSync("./demo/images/pizza.png"),
+    transformation: { width: 100, height: 100 },
+    runProperties: { position: "2pt" },
+});
+```
+
+The value can be a signed length such as `"2pt"` or `"-2pt"`. To place an image at page coordinates or control text wrapping, use [`floating`](#floating) instead.
+
 ### Usage
 
 Pass `options` into the `[POSITION_OPTIONS]` mentioned in the [Intro above](#Intro).
