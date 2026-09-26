@@ -22,6 +22,7 @@ type Entry = {
 const ENTRIES: Readonly<Record<string, Entry>> = {
     shapes: { name: "shapes", global: "docxShapes" },
     watermarks: { name: "watermarks", global: "docxWatermarks" },
+    charts: { name: "charts", global: "docxCharts" },
 };
 
 // API Extractor, which bundles the declarations, copies in those of any module that isn't a library, so it would copy
