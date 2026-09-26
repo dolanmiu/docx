@@ -1,7 +1,11 @@
 import JSZip from "jszip";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { Bookmark, ExternalHyperlink, ImageRun, Paragraph, TextRun } from "@file/paragraph";
+import { Packer } from "@export/packer/packer";
+import { File } from "@file/file";
+import { PackagePart } from "@file/package-part";
+import { Bookmark, ExternalHyperlink, ImageRun, Paragraph, Run, TextRun } from "@file/paragraph";
+import { BuilderElement, type IContext, type IXmlableObject, XmlComponent } from "@file/xml-components";
 
 import { type IPatch, PatchType, patchDocument } from "./from-docx";
 import { traverse } from "./traverser";
@@ -729,6 +733,45 @@ describe("from-docx", () => {
             it("should only replace the first if recursive is false", async () => {
                 const texts = await patchName({ type: PatchType.PARAGRAPH, children: [new TextRun("John")] }, false);
                 expect(texts).to.deep.equal(["John and {{name}}"]);
+            });
+        });
+
+        describe("A patch that adds a part to the package", () => {
+            // Adds a chart's part to the package when it is written, as ChartRun from docx/charts does
+            class ChartReference extends XmlComponent {
+                public constructor(private readonly part: PackagePart) {
+                    super("c:chart");
+                }
+
+                public prepForXml(context: IContext): IXmlableObject | undefined {
+                    this.part.addTo(context);
+                    return super.prepForXml(context);
+                }
+            }
+
+            it("should throw, as patchDocument can't add parts yet", async () => {
+                const template = await Packer.toBuffer(new File({ sections: [{ children: [new Paragraph("{{chart}}")] }] }));
+                const chart = new Run({});
+                chart.addChildElement(
+                    new ChartReference(
+                        new PackagePart({
+                            folder: "charts",
+                            name: "chart",
+                            extension: "xml",
+                            contentType: "application/vnd.openxmlformats-officedocument.drawingml.chart+xml",
+                            relationshipType: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/chart",
+                            content: new BuilderElement({ name: "c:chartSpace" }),
+                        }),
+                    ),
+                );
+
+                await expect(
+                    patchDocument({
+                        outputType: "nodebuffer",
+                        data: template,
+                        patches: { chart: { type: PatchType.PARAGRAPH, children: [chart] } },
+                    }),
+                ).rejects.toThrow("patchDocument can't add parts to a document yet, such as a chart's. Add charts with a new Document");
             });
         });
     });

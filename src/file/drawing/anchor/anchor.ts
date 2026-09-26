@@ -148,7 +148,7 @@ export class Anchor extends XmlComponent {
         this.root.push(
             new DocProperties(drawingOptions.docProperties, { link: drawingOptions.link, decorative: drawingOptions.decorative }),
         );
-        this.root.push(createGraphicFrameProperties());
+        this.root.push(createGraphicFrameProperties(mediaData.type !== "graphic" || mediaData.lockAspectRatio !== false));
         this.root.push(
             new Graphic({
                 mediaData,

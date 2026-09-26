@@ -111,6 +111,16 @@ export class ContentTypes extends XmlComponent {
     }
 
     /**
+     * Registers a part by its name, such as a chart or an embedded workbook that a drawing adds to the package.
+     *
+     * @param contentType - The part's content type
+     * @param partName - The part's name, from the root of the package, such as "/word/charts/chart1.xml"
+     */
+    public addOverride(contentType: string, partName: string): void {
+        this.root.push(createOverride(contentType, partName));
+    }
+
+    /**
      * Registers a header part in the content types.
      *
      * @param index - Header index number (e.g., 1 for header1.xml)

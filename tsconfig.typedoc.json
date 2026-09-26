@@ -39,6 +39,7 @@
             "Relationships",
             "AppProperties",
             "ContentTypes",
+            "PackageParts",
             "CoreProperties",
             "CustomProperties",
             "DocumentWrapper",

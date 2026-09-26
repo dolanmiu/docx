@@ -187,4 +187,20 @@ describe("ContentTypes", () => {
             });
         });
     });
+
+    describe("#addOverride()", () => {
+        it("should add a part by its name", () => {
+            contentTypes.addOverride("application/vnd.openxmlformats-officedocument.drawingml.chart+xml", "/word/charts/chart1.xml");
+            const tree = new Formatter().format(contentTypes);
+
+            expect(tree["Types"][21]).to.deep.equal({
+                Override: {
+                    _attr: {
+                        ContentType: "application/vnd.openxmlformats-officedocument.drawingml.chart+xml",
+                        PartName: "/word/charts/chart1.xml",
+                    },
+                },
+            });
+        });
+    });
 });

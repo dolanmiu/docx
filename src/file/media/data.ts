@@ -114,6 +114,11 @@ export type GraphicMediaData = {
     readonly transformation: IMediaDataTransformation;
     /** The graphic, written inside `a:graphicData` */
     readonly content: XmlComponent;
+    /**
+     * Whether Word keeps the graphic's aspect ratio when it is resized (`noChangeAspect`). Default is true. Charts are
+     * written with false, as Word writes them
+     */
+    readonly lockAspectRatio?: boolean;
 };
 
 export type IExtendedMediaData = IMediaData | WpsMediaData | WpgMediaData | GraphicMediaData;
