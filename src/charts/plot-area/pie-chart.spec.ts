@@ -14,8 +14,12 @@ const names = (element: Element): readonly string[] => (element.elements ?? []).
 const children = (element: Element, name: string): readonly Element[] => element.elements!.filter((one) => one.name === name);
 const value = (element: Element, name: string): unknown => children(element, name)[0]?.attributes?.val;
 
-const create = (options: PieChartOptions | DoughnutChartOptions): ReturnType<typeof createPieChart> =>
-    createPieChart(options, createChartData(options));
+const create = (
+    options: PieChartOptions | DoughnutChartOptions,
+): { readonly group: XmlComponent; readonly axes: readonly XmlComponent[] } => {
+    const { groups, axes } = createPieChart(options, createChartData(options), undefined);
+    return { group: groups[0], axes };
+};
 
 const pie: PieChartOptions = { type: "pie", categories: ["A", "B", "C"], series: [{ name: "Share", values: [3, 2, 1] }] };
 

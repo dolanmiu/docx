@@ -58,7 +58,7 @@ A slice without a colour, or with `undefined`, keeps the theme's colour. A categ
 dataLabels: { percentage: true },
 ```
 
-[Chart Data Labels](usage/chart-data-labels.md) shows what else a label can show.
+[Chart Data Labels](usage/chart-data-labels.md) shows what else a label can show, and where labels can go. Each ring of a doughnut can have labels of its own, with its series' own `dataLabels`.
 
 ## The First Slice
 
@@ -72,14 +72,14 @@ These are all the options of a pie or doughnut chart. Each links to the page tha
 | ----------------- | ------------------------ | -------- | ------------------------------------------------------------------------------------------------------ |
 | `type`            | `"pie"` \| `"doughnut"`  | Required | A pie, or rings                                                                                        |
 | `categories`      | `(string \| number)[]`   | Required | The slices, in order. See [Chart Data](usage/chart-data.md)                                            |
-| `series`          | `PieChartSeries[]`       | Required | `{ name, values, colors? }`. A pie chart has one, and a doughnut chart a ring for each                 |
+| `series`          | `PieChartSeries[]`       | Required | `{ name, values, colors?, dataLabels? }`. A pie chart has one, and a doughnut chart a ring for each    |
 | `holeSize`        | `number`                 | Optional | Doughnut charts: the hole, as a percentage of the doughnut's width, from 10 to 90. Default `50`        |
 | `firstSliceAngle` | `number`                 | Optional | Degrees clockwise from 12 o'clock, from 0 to 360. Default `0`                                          |
 | `dataLabels`      | `PieChartDataLabels`     | Optional | `{ value?, category?, seriesName?, percentage? }`. See [Chart Data Labels](usage/chart-data-labels.md) |
-| `title`           | `string`                 | Optional | See [Chart Titles and Legends](usage/chart-titles-and-legends.md)                                      |
+| `title`           | `string` \| `ChartTitle` | Optional | See [Chart Titles and Legends](usage/chart-titles-and-legends.md)                                      |
 | `legend`          | `false` \| `ChartLegend` | Optional | See [Chart Titles and Legends](usage/chart-titles-and-legends.md)                                      |
 | `transformation`  | `{ width, height }`      | Optional | See [Chart Size and Position](usage/chart-size-and-position.md)                                        |
 | `floating`        | `IFloating`              | Optional | See [Chart Size and Position](usage/chart-size-and-position.md)                                        |
 | `altText`         | `DocPropertiesOptions`   | Optional | See [Chart Size and Position](usage/chart-size-and-position.md)                                        |
 
-Pie and doughnut charts have no axes.
+Pie and doughnut charts have no axes. [Chart Fonts and Fills](usage/chart-fonts-and-fills.md) shows the options every chart has for its text, background and border.

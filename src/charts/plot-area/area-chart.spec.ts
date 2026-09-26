@@ -7,7 +7,7 @@ import type { XmlComponent } from "docx";
 
 import { createChartData } from "../chart-data";
 import type { AreaChartOptions } from "../chart-options";
-import { createAreaChart } from "./area-chart";
+import { createCategoryCharts } from "./category-chart";
 
 const parse = (component: XmlComponent): Element => (xml2js(xml(new Formatter().format(component))) as Element).elements![0];
 const names = (element: Element): readonly string[] => (element.elements ?? []).map(({ name }) => name!);
@@ -16,8 +16,8 @@ const value = (element: Element, name: string): unknown => children(element, nam
 
 const chart = (options: Partial<AreaChartOptions> = {}): { readonly group: Element; readonly axes: readonly Element[] } => {
     const full: AreaChartOptions = { type: "area", categories: ["Jan", "Feb"], series: [{ name: "2025", values: [1, 2] }], ...options };
-    const { group, axes } = createAreaChart(full, createChartData(full));
-    return { group: parse(group), axes: axes.map(parse) };
+    const { groups, axes } = createCategoryCharts(full, createChartData(full), undefined);
+    return { group: parse(groups[0]), axes: axes.map(parse) };
 };
 
 describe("createAreaChart", () => {

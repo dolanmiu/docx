@@ -35,7 +35,17 @@ series: [
 ],
 ```
 
-The colour is the colour of the series' bars, line, area or points.
+The colour is the colour of the series' bars, line, area, points or bubbles. Bubbles are drawn in it a quarter see-through, as Office draws them. A line can have a colour of its own too, apart from its markers: see [Lines](usage/chart-line-and-area.md#lines).
+
+## Bar Colours
+
+A series of bars takes `colors`, with a colour for single bars, in the order of the categories:
+
+```ts
+series: [{ name: "Tickets", values: [42, 57, 38, 71], colors: [undefined, undefined, undefined, "70AD47"] }],
+```
+
+A bar without a colour, or with `undefined`, keeps the series' colour. See [Column and Bar Charts](usage/chart-column-and-bar.md#bar-colours).
 
 ## Slice Colours
 
@@ -49,4 +59,4 @@ A slice without a colour, or with `undefined`, keeps the theme's colour. See [Pi
 
 ## The Rest of the Chart
 
-The chart's background, text, axes and gridlines are in the look Word gives a new chart: a white background, dark grey text and light grey lines, from the theme's `light1` and `dark1` colours.
+The chart's background, text, axes and gridlines are in the look Word gives a new chart: a white background, dark grey text and light grey lines, from the theme's `light1` and `dark1` colours. [Chart Fonts and Fills](usage/chart-fonts-and-fills.md) shows how to give the text, the background and the border colours of their own.

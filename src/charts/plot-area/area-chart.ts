@@ -3,18 +3,17 @@
  *
  * @module
  */
-import type { ChartData } from "../chart-data";
+import type { XmlComponent } from "docx";
+
 import { createElement, createValue } from "../chart-elements";
-import type { AreaChartOptions } from "../chart-options";
+import type { ChartSeries } from "../chart-options";
 import { createFilledSeriesProperties, createSeriesColor } from "../chart-style";
-import { CATEGORY_AXIS_ID, VALUE_AXIS_ID, createCategoryAxis, createValueAxis } from "./axes";
-import { type ChartGroup, GROUPINGS } from "./chart-group";
+import { type CategoryGroup, GROUPINGS, labelsOf } from "./chart-group";
 import { createGroupDataLabels, createSeriesDataLabels } from "./data-labels";
 import { createCategoriesAndValues, createSeriesStart } from "./series";
 
 /**
- * An area chart, with its category and value axes. The value axis crosses at the first and last categories, so the
- * areas reach both sides of the plot, as in Word's and Excel's area charts.
+ * A group of areas.
  *
  * ## XSD Schema
  * ```xml
@@ -41,38 +40,20 @@ import { createCategoriesAndValues, createSeriesStart } from "./series";
  * </xsd:complexType>
  * ```
  */
-export const createAreaChart = (options: AreaChartOptions, data: ChartData): ChartGroup => {
-    const stacking = options.stacking ?? "none";
-
-    return {
-        group: createElement("c:areaChart", {}, [
-            createValue("c:grouping", GROUPINGS[stacking]),
-            createValue("c:varyColors", false),
-            ...data.series.map((series, index) =>
-                createElement("c:ser", {}, [
-                    ...createSeriesStart(index, series),
-                    createFilledSeriesProperties(createSeriesColor(index, options.series[index].color)),
-                    // Office gives an area's labels no position
-                    ...createSeriesDataLabels(options.dataLabels, {}),
-                    ...createCategoriesAndValues(series),
-                ]),
-            ),
-            createGroupDataLabels(),
-            createValue("c:axId", CATEGORY_AXIS_ID),
-            createValue("c:axId", VALUE_AXIS_ID),
-        ]),
-        axes: [
-            createCategoryAxis({ id: CATEGORY_AXIS_ID, crossAxisId: VALUE_AXIS_ID, position: "b" }, options.categoryAxis),
-            createValueAxis(
-                {
-                    id: VALUE_AXIS_ID,
-                    crossAxisId: CATEGORY_AXIS_ID,
-                    position: "l",
-                    crossBetween: "midCat",
-                    percent: stacking === "percent",
-                },
-                options.valueAxis,
-            ),
-        ],
-    };
-};
+export const createAreaChart = ({ series, stacking, axes, dataLabels, font }: CategoryGroup<ChartSeries>): XmlComponent =>
+    createElement("c:areaChart", {}, [
+        createValue("c:grouping", GROUPINGS[stacking]),
+        createValue("c:varyColors", false),
+        ...series.map(({ index, options, data }) =>
+            createElement("c:ser", {}, [
+                ...createSeriesStart(index, data),
+                createFilledSeriesProperties(createSeriesColor(index, options.color)),
+                // Office gives an area's labels no position
+                ...createSeriesDataLabels(labelsOf(options.dataLabels, dataLabels), { shape: "area", series: options.name, font }),
+                ...createCategoriesAndValues(data),
+            ]),
+        ),
+        createGroupDataLabels(),
+        createValue("c:axId", axes.category),
+        createValue("c:axId", axes.value),
+    ]);

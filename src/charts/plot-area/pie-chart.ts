@@ -5,9 +5,9 @@
  */
 import type { ChartData } from "../chart-data";
 import { createElement, createValue } from "../chart-elements";
-import type { DoughnutChartOptions, PieChartOptions } from "../chart-options";
+import type { ChartFont, DoughnutChartOptions, PieChartOptions } from "../chart-options";
 import { createSeriesColor, createSliceProperties } from "../chart-style";
-import type { ChartGroup } from "./chart-group";
+import { type ChartGroups, labelsOf } from "./chart-group";
 import { createGroupDataLabels, createSeriesDataLabels } from "./data-labels";
 import { createCategoriesAndValues, createSeriesStart } from "./series";
 
@@ -47,31 +47,42 @@ import { createCategoriesAndValues, createSeriesStart } from "./series";
  * </xsd:complexType>
  * ```
  */
-export const createPieChart = (options: PieChartOptions | DoughnutChartOptions, data: ChartData): ChartGroup => {
+export const createPieChart = (
+    options: PieChartOptions | DoughnutChartOptions,
+    data: ChartData,
+    font: ChartFont | undefined,
+): ChartGroups => {
     const doughnut = options.type === "doughnut";
 
     return {
-        group: createElement(doughnut ? "c:doughnutChart" : "c:pieChart", {}, [
-            createValue("c:varyColors", true),
-            ...data.series.map((series, index) =>
-                createElement("c:ser", {}, [
-                    ...createSeriesStart(index, series),
-                    ...options.categories.map((_, slice) =>
-                        createElement("c:dPt", {}, [
-                            createValue("c:idx", slice),
-                            createValue("c:bubble3D", false),
-                            createSliceProperties(createSeriesColor(slice, options.series[index].colors?.[slice])),
-                        ]),
-                    ),
-                    // Office puts a pie's labels where they fit best, and gives a doughnut's no position
-                    ...createSeriesDataLabels(options.dataLabels, { position: doughnut ? undefined : "bestFit", leaderLines: true }),
-                    ...createCategoriesAndValues(series),
-                ]),
-            ),
-            createGroupDataLabels(true),
-            createValue("c:firstSliceAng", Math.round(options.firstSliceAngle ?? 0)),
-            ...(options.type === "doughnut" ? [createValue("c:holeSize", Math.round(options.holeSize ?? 50))] : []),
-        ]),
+        groups: [
+            createElement(doughnut ? "c:doughnutChart" : "c:pieChart", {}, [
+                createValue("c:varyColors", true),
+                ...data.series.map((series, index) =>
+                    createElement("c:ser", {}, [
+                        ...createSeriesStart(index, series),
+                        ...options.categories.map((_, slice) =>
+                            createElement("c:dPt", {}, [
+                                createValue("c:idx", slice),
+                                createValue("c:bubble3D", false),
+                                createSliceProperties(createSeriesColor(slice, options.series[index].colors?.[slice])),
+                            ]),
+                        ),
+                        // Office puts a pie's labels where they fit best, and gives a doughnut's no position
+                        ...createSeriesDataLabels(labelsOf(options.series[index].dataLabels, options.dataLabels), {
+                            shape: doughnut ? "doughnut" : "pie",
+                            series: options.series[index].name,
+                            leaderLines: true,
+                            font,
+                        }),
+                        ...createCategoriesAndValues(series),
+                    ]),
+                ),
+                createGroupDataLabels(true),
+                createValue("c:firstSliceAng", Math.round(options.firstSliceAngle ?? 0)),
+                ...(options.type === "doughnut" ? [createValue("c:holeSize", Math.round(options.holeSize ?? 50))] : []),
+            ]),
+        ],
         axes: [],
     };
 };

@@ -7,11 +7,12 @@
  */
 import type { EmbeddedPackageFile, XmlComponent } from "docx";
 
-import type { ChartSheet } from "../chart-data";
+import type { ChartCell, ChartSheet } from "../chart-data";
 import { createElement, createText } from "../chart-elements";
 import { SHEET_NAME, cellName } from "./cell-reference";
 import { formatNumber } from "../plot-area/series";
 
+// cspell:ignore Fmts
 const SPREADSHEET_NAMESPACE = "http://schemas.openxmlformats.org/spreadsheetml/2006/main";
 const RELATIONSHIP_TYPES = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
 
@@ -46,11 +47,24 @@ const createWorkbook = (): XmlComponent =>
         createElement("sheets", {}, [createElement("sheet", { name: SHEET_NAME, sheetId: 1, "r:id": "rId1" })]),
     ]);
 
+// The first id of a number format of the workbook's own. Lower ids are Excel's built-in formats
+const FIRST_NUMBER_FORMAT_ID = 164;
+
 /**
- * The fewest styles Excel accepts: one font, the two fills every workbook has, one border and one cell format.
+ * The fewest styles Excel accepts: one font, the two fills every workbook has, one border and one cell format, then a
+ * cell format for each number format the sheet's cells have, such as a date format.
  */
-const createStyles = (): XmlComponent =>
+const createStyles = (formats: readonly string[]): XmlComponent =>
     createElement("styleSheet", { xmlns: SPREADSHEET_NAMESPACE }, [
+        ...(formats.length === 0
+            ? []
+            : [
+                  createElement(
+                      "numFmts",
+                      { count: formats.length },
+                      formats.map((formatCode, index) => createElement("numFmt", { numFmtId: FIRST_NUMBER_FORMAT_ID + index, formatCode })),
+                  ),
+              ]),
         createElement("fonts", { count: 1 }, [
             createElement("font", {}, [
                 createElement("sz", { val: 11 }),
@@ -70,14 +84,43 @@ const createStyles = (): XmlComponent =>
             ),
         ]),
         createElement("cellStyleXfs", { count: 1 }, [createElement("xf", { numFmtId: 0, fontId: 0, fillId: 0, borderId: 0 })]),
-        createElement("cellXfs", { count: 1 }, [createElement("xf", { numFmtId: 0, fontId: 0, fillId: 0, borderId: 0, xfId: 0 })]),
+        createElement("cellXfs", { count: formats.length + 1 }, [
+            createElement("xf", { numFmtId: 0, fontId: 0, fillId: 0, borderId: 0, xfId: 0 }),
+            ...formats.map((_, index) =>
+                createElement("xf", {
+                    numFmtId: FIRST_NUMBER_FORMAT_ID + index,
+                    fontId: 0,
+                    fillId: 0,
+                    borderId: 0,
+                    xfId: 0,
+                    applyNumberFormat: 1,
+                }),
+            ),
+        ]),
         createElement("cellStyles", { count: 1 }, [createElement("cellStyle", { name: "Normal", xfId: 0, builtinId: 0 })]),
     ]);
 
 /**
- * The sheet: its used range, and each cell that isn't empty. Text is the index of a shared string.
+ * A cell that isn't empty: text, as the index of a shared string, or a number, with the cell format of its number format.
  */
-const createWorksheet = (sheet: ChartSheet, strings: ReadonlyMap<string, number>): XmlComponent => {
+const createCell = (
+    cell: Exclude<ChartCell, undefined>,
+    name: string,
+    strings: ReadonlyMap<string, number>,
+    formats: readonly string[],
+): XmlComponent => {
+    if (typeof cell === "string") {
+        return createElement("c", { r: name, t: "s" }, [createText("v", `${strings.get(cell)}`)]);
+    }
+    return typeof cell === "number"
+        ? createElement("c", { r: name }, [createText("v", formatNumber(cell))])
+        : createElement("c", { r: name, s: formats.indexOf(cell.format) + 1 }, [createText("v", formatNumber(cell.value))]);
+};
+
+/**
+ * The sheet: its used range, and each cell that isn't empty.
+ */
+const createWorksheet = (sheet: ChartSheet, strings: ReadonlyMap<string, number>, formats: readonly string[]): XmlComponent => {
     const columns = Math.max(...sheet.map((row) => row.length));
     return createElement("worksheet", { xmlns: SPREADSHEET_NAMESPACE, "xmlns:r": RELATIONSHIP_TYPES }, [
         createElement("dimension", { ref: `A1:${cellName(columns - 1, sheet.length - 1)}` }),
@@ -85,14 +128,9 @@ const createWorksheet = (sheet: ChartSheet, strings: ReadonlyMap<string, number>
             "sheetData",
             {},
             sheet.flatMap((row, rowIndex) => {
-                const cells = row.flatMap((cell, column) => {
-                    if (cell === undefined) {
-                        return [];
-                    }
-                    return typeof cell === "string"
-                        ? [createElement("c", { r: cellName(column, rowIndex), t: "s" }, [createText("v", `${strings.get(cell)}`)])]
-                        : [createElement("c", { r: cellName(column, rowIndex) }, [createText("v", formatNumber(cell))])];
-                });
+                const cells = row.flatMap((cell, column) =>
+                    cell === undefined ? [] : [createCell(cell, cellName(column, rowIndex), strings, formats)],
+                );
                 return cells.length === 0 ? [] : [createElement("row", { r: rowIndex + 1 }, cells)];
             }),
         ),
@@ -122,6 +160,7 @@ const createSharedStrings = (strings: readonly string[], count: number): XmlComp
 export const createWorkbookFiles = (sheet: ChartSheet): readonly EmbeddedPackageFile[] => {
     const texts = sheet.flat().filter((cell): cell is string => typeof cell === "string");
     const strings = [...new Set(texts)];
+    const formats = [...new Set(sheet.flat().flatMap((cell) => (typeof cell === "object" ? [cell.format] : [])))];
 
     return [
         { path: "[Content_Types].xml", content: createContentTypes() },
@@ -135,8 +174,11 @@ export const createWorkbookFiles = (sheet: ChartSheet): readonly EmbeddedPackage
                 ["sharedStrings", "sharedStrings.xml"],
             ]),
         },
-        { path: "xl/worksheets/sheet1.xml", content: createWorksheet(sheet, new Map(strings.map((text, index) => [text, index]))) },
-        { path: "xl/styles.xml", content: createStyles() },
+        {
+            path: "xl/worksheets/sheet1.xml",
+            content: createWorksheet(sheet, new Map(strings.map((text, index) => [text, index])), formats),
+        },
+        { path: "xl/styles.xml", content: createStyles(formats) },
         { path: "xl/sharedStrings.xml", content: createSharedStrings(strings, texts.length) },
     ];
 };

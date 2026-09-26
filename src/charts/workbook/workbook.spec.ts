@@ -1,3 +1,4 @@
+// cspell:ignore Fmts
 import { describe, expect, it } from "vitest";
 import xml from "xml";
 
@@ -103,6 +104,27 @@ describe("createWorkbookFiles", () => {
                 '<cellXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/></cellXfs>' +
                 '<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>' +
                 "</styleSheet>",
+        );
+    });
+
+    it("should give numbers with a format, such as dates, a cell format of the workbook's own", () => {
+        const dated = files([
+            [undefined, "A"],
+            [{ value: 45658, format: "mmm yyyy" }, 1],
+            [{ value: 45689, format: "mmm yyyy" }, 2],
+            [{ value: 45689.5, format: "d mmm yyyy" }, 3],
+        ]);
+
+        expect(dated["xl/worksheets/sheet1.xml"]).to.contain('<c r="A2" s="1"><v>45658</v></c>');
+        expect(dated["xl/worksheets/sheet1.xml"]).to.contain('<c r="A4" s="2"><v>45689.5</v></c>');
+        expect(dated["xl/styles.xml"]).to.contain(
+            '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' +
+                '<numFmts count="2"><numFmt numFmtId="164" formatCode="mmm yyyy"/><numFmt numFmtId="165" formatCode="d mmm yyyy"/></numFmts><fonts',
+        );
+        expect(dated["xl/styles.xml"]).to.contain(
+            '<cellXfs count="3"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>' +
+                '<xf numFmtId="164" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>' +
+                '<xf numFmtId="165" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/></cellXfs>',
         );
     });
 });

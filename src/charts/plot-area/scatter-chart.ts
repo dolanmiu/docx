@@ -7,11 +7,12 @@ import type { XmlComponent } from "docx";
 
 import type { ChartData } from "../chart-data";
 import { createElement, createValue } from "../chart-elements";
-import type { ScatterChartOptions } from "../chart-options";
-import { createMarker, createScatterSeriesProperties, createSeriesColor } from "../chart-style";
-import { CATEGORY_AXIS_ID, VALUE_AXIS_ID, createValueAxis } from "./axes";
-import type { ChartGroup } from "./chart-group";
+import type { ChartFont, ScatterChartOptions } from "../chart-options";
+import { createScatterSeriesProperties, createSeriesColor } from "../chart-style";
+import { PRIMARY_AXES, createPointAxes } from "./axes";
+import { type ChartGroups, labelsOf } from "./chart-group";
 import { createGroupDataLabels, createSeriesDataLabels } from "./data-labels";
+import { createSeriesMarker } from "./line-chart";
 import { createDataSource, createSeriesStart } from "./series";
 
 /**
@@ -47,39 +48,37 @@ import { createDataSource, createSeriesStart } from "./series";
  * </xsd:complexType>
  * ```
  */
-export const createScatterChart = (options: ScatterChartOptions, data: ChartData): ChartGroup => {
+export const createScatterChart = (options: ScatterChartOptions, data: ChartData, font: ChartFont | undefined): ChartGroups => {
     const lines = options.lines ?? "none";
     const markers = options.markers ?? true;
 
     return {
-        group: createElement("c:scatterChart", {}, [
-            createValue("c:scatterStyle", lines === "smooth" ? "smoothMarker" : "lineMarker"),
-            createValue("c:varyColors", false),
-            ...data.series.map((series, index) => {
-                const seriesColor = (): XmlComponent => createSeriesColor(index, options.series[index].color);
-                return createElement("c:ser", {}, [
-                    ...createSeriesStart(index, series),
-                    createScatterSeriesProperties(lines === "none" ? undefined : seriesColor()),
-                    createMarker(markers ? seriesColor : undefined),
-                    ...createSeriesDataLabels(options.dataLabels, { position: "r" }),
-                    createDataSource("c:xVal", series.categories),
-                    createDataSource("c:yVal", series.values),
-                    createValue("c:smooth", lines === "smooth"),
-                ]);
-            }),
-            createGroupDataLabels(),
-            createValue("c:axId", CATEGORY_AXIS_ID),
-            createValue("c:axId", VALUE_AXIS_ID),
-        ]),
-        axes: [
-            createValueAxis(
-                { id: CATEGORY_AXIS_ID, crossAxisId: VALUE_AXIS_ID, position: "b", crossBetween: "midCat", scatter: true },
-                options.xAxis,
-            ),
-            createValueAxis(
-                { id: VALUE_AXIS_ID, crossAxisId: CATEGORY_AXIS_ID, position: "l", crossBetween: "midCat", scatter: true },
-                options.yAxis,
-            ),
+        groups: [
+            createElement("c:scatterChart", {}, [
+                createValue("c:scatterStyle", lines === "smooth" ? "smoothMarker" : "lineMarker"),
+                createValue("c:varyColors", false),
+                ...data.series.map((series, index) => {
+                    const own = options.series[index];
+                    const seriesColor = (): XmlComponent => createSeriesColor(index, own.color);
+                    return createElement("c:ser", {}, [
+                        ...createSeriesStart(index, series),
+                        createScatterSeriesProperties(lines === "none" ? undefined : seriesColor(), own.line),
+                        createSeriesMarker(own.markers ?? markers, seriesColor),
+                        ...createSeriesDataLabels(labelsOf(own.dataLabels, options.dataLabels), {
+                            shape: "points",
+                            series: own.name,
+                            font,
+                        }),
+                        createDataSource("c:xVal", series.categories),
+                        createDataSource("c:yVal", series.values),
+                        createValue("c:smooth", lines === "smooth"),
+                    ]);
+                }),
+                createGroupDataLabels(),
+                createValue("c:axId", PRIMARY_AXES.category),
+                createValue("c:axId", PRIMARY_AXES.value),
+            ]),
         ],
+        axes: createPointAxes(options, font),
     };
 };
