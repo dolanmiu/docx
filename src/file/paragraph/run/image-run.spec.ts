@@ -1421,4 +1421,27 @@ describe("ImageRun", () => {
             ],
         });
     });
+
+    it.each(["normal", "insertion", "deletion"] as const)("writes image run properties for %s images", (revision) => {
+        const imageRun = new ImageRun({
+            type: "png",
+            data: Buffer.from(""),
+            transformation: { width: 100, height: 100 },
+            runProperties: { noProof: true, position: "2pt" },
+            ...(revision === "normal" ? {} : { [revision]: { id: 1, author: "Author", date: "2026-01-01T12:00:00Z" } }),
+        });
+        const tree = new Formatter().format(imageRun, {
+            file: { Media: { addImage: vi.fn() } } as unknown as File,
+            viewWrapper: {} as unknown as IViewWrapper,
+            stack: [],
+        });
+        const run = revision === "normal" ? tree["w:r"] : tree[revision === "insertion" ? "w:ins" : "w:del"][1]["w:r"];
+
+        expect(run).toEqual([
+            {
+                "w:rPr": [{ "w:noProof": {} }, { "w:position": { _attr: { "w:val": "2pt" } } }],
+            },
+            expect.objectContaining({ "w:drawing": expect.any(Array) }),
+        ]);
+    });
 });
