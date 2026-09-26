@@ -60,15 +60,24 @@ new ChartDataPatch({
         },
     ],
 });
+
+// A stock chart: its prices, and its opening prices and volumes if it has them
+new ChartDataPatch({
+    categories: [new Date("2025-01-06"), new Date("2025-01-07")],
+    high: [103.1, 104.8],
+    low: [100.4, 101.9],
+    close: [102.4, 104.2],
+});
 ```
 
-| Option      | Type                                                          | Notes                                                                                                                                                              |
-| ----------- | ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| categories  | `(string \| number \| Date)[]`                                | For a chart with categories. Dates are for column, bar, line and area charts                                                                                       |
-| series      | `{ name, values }[]` with categories, or `{ name, points }[]` | Each series' name, and a value for each category (`null` for a gap), or its points. A bubble chart's points each need a `size`, and a scatter chart's leave it out |
-| description | `string`                                                      | The chart's alt text description. Default is a description of the new data, such as "Column chart, Sales. 2024: Q1 120, Q2 135." An empty one removes it           |
+| Option                                | Type                                                          | Notes                                                                                                                                                               |
+| ------------------------------------- | ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| categories                            | `(string \| number \| Date)[]` \| `ChartCategoryGroup[]`      | For a chart with categories. Dates, and [groups](usage/chart-data.md#categories-in-groups), are for column, bar, line and area charts                               |
+| series                                | `{ name, values }[]` with categories, or `{ name, points }[]` | Each series' name, and a value for each category (`null` for a gap), or its points. A bubble chart's points each need a `size`, and a scatter chart's leave it out  |
+| high, low, close, open, volume, names | `(number \| null)[]`, `StockChartSeriesNames`                 | For a stock chart, in place of `series`, as for a [stock chart](usage/chart-stock.md). It takes `open` and `volume` if the template's chart has them, and only then |
+| description                           | `string`                                                      | The chart's alt text description. Default is a description of the new data, such as "Column chart, Sales. 2024: Q1 120, Q2 135." An empty one removes it            |
 
-The data is checked when the patch is made, as a `ChartRun`'s is, and then against the template's chart: a pie chart has one series, pie and doughnut charts have no negative values, and a scatter or bubble chart's series have points.
+The data is checked when the patch is made, as a `ChartRun`'s is, and then against the template's chart: a pie chart has one series, pie and doughnut charts have no negative values, a scatter or bubble chart's series have points, and a stock chart has opening prices and volumes if the template's has them.
 
 ## What Changes, and What Stays
 
@@ -78,7 +87,9 @@ The chart keeps its look. Its type, title, colours, fonts, labels, axes, legend 
 - **More series.** New series copy the look of the template's last series, such as its line, markers and labels, in their own colour: the next of the theme's accent colours, as `ChartRun` colours them. In a combo chart, they are drawn the way the last series is.
 - **Fewer series.** The template's other series are removed, with any axes only they used, such as a secondary axis.
 - **More points.** When each point has its own colour, as the slices of a pie do, new points take the next of the theme's accent colours. Otherwise they take their series' colour.
-- **Fewer points.** The colours and labels of points past the new data are removed.
+- **Fewer points.** The colours and labels of points past the new data are removed, and so are a pie of pie's split slices past it.
+- **Slices pulled out.** New slices are pulled out as far as the template's, if every slice of the template is pulled out as far. A slice pulled out on its own is that slice's.
+- **Trendlines, error bars and data tables** stay, and are drawn for the new data. A trendline that can't be fitted to the new values, such as a moving average over more points than there are, isn't drawn, as when a chart's data is edited in Word. New series don't copy the template's last series' trendlines or error bars.
 - **Number formats.** Values keep the chart's number format, such as `0%`. So do categories, when they and the template's are both dates or both numbers.
 - **Dates.** Dates on a date axis are spaced by days, months or years, as the new dates need. Categories that aren't dates make it a text axis.
 - **The workbook.** The chart gets a new embedded workbook holding the new data, so Word's **Edit Data** opens it. The template's workbook is removed, so its data doesn't stay in the document.
@@ -90,7 +101,8 @@ The chart keeps its look. Its type, title, colours, fonts, labels, axes, legend 
 
 - **Drawings that aren't charts**, such as pictures and shapes. In a group of drawings, put the placeholder in the alt text of the chart itself, unless it is the group's only chart.
 - **Office 2016's chart types**: waterfall, histogram, box and whisker, treemap, sunburst, funnel and map charts.
-- **Stock, surface and pivot charts.**
+- **Surface and pivot charts.**
+- **A stock chart combined with a chart other than its volumes' columns.**
 - **Charts with something else in their workbook's cells**: data labels from cells (Word's "Value From Cells"), series hidden with Word's chart filters, error bars with custom values from cells, and titles or labels linked to cells. The new data replaces the workbook, so these would lose their cells.
 - **Data that isn't the chart's kind**, such as points for a column chart or two series for a pie chart.
 - **Two charts' placeholders** in one chart's alt text.

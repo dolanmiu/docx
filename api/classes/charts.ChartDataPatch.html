@@ -25,9 +25,10 @@ slices take the next of the theme's accents.</li>
 <li>The chart's workbook is replaced with one holding the new data, so Word's &quot;Edit Data&quot; opens it.</li>
 <li>The alt text's description is replaced with a description of the new data.</li>
 </ul>
-<p>The patch checks the data against the chart's type when the document is patched: a pie chart has one series, and a
-scatter or bubble chart's series have points. Put the placeholder in the chart's alt text in Word, in &quot;Alt Text&quot; or
-&quot;Edit Alt Text&quot;. A placeholder in the document's text is left as it is.</p>
+<p>The patch checks the data against the chart's type when the document is patched: a pie chart has one series, a
+scatter or bubble chart's series have points, and a stock chart has prices, with opening prices and volumes if the
+template's has them. Put the placeholder in the chart's alt text in Word, in &quot;Alt Text&quot; or &quot;Edit Alt Text&quot;. A
+placeholder in the document's text is left as it is.</p>
 </div>
 <div class="tsd-comment tsd-typography">
 <div class="tsd-tag-publicApi">
@@ -37,14 +38,14 @@ scatter or bubble chart's series have points. Put the placeholder in the chart's
 </code><button type="button">Copy</button></pre>
 
 </div></div></section>
-<section class="tsd-panel tsd-hierarchy" data-refl="4471">
+<section class="tsd-panel tsd-hierarchy" data-refl="4481">
 <h4>Hierarchy (<a href="../hierarchy.html#charts.ChartDataPatch">View Summary</a>)</h4>
 <ul class="tsd-hierarchy">
 <li class="tsd-hierarchy-item"><a href="index.DrawingPatch.html" class="tsd-signature-type tsd-kind-class">DrawingPatch</a>
 <ul class="tsd-hierarchy">
 <li class="tsd-hierarchy-item"><span class="tsd-hierarchy-target">ChartDataPatch</span></li></ul></li></ul></section><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/b7a4bb66b8ad5eb5e3e17b39f74a8204ff9f664b/src/charts/chart-data-patch.ts#L380">charts/chart-data-patch.ts:380</a></li></ul></aside>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/b04040c7b0d44021d7a0306d90afa82fd0402058/src/charts/chart-data-patch.ts#L502">charts/chart-data-patch.ts:502</a></li></ul></aside>
 <section class="tsd-panel-group tsd-index-group">
 <section class="tsd-panel tsd-index-panel">
 <details class="tsd-index-content tsd-accordion" open><summary class="tsd-accordion-summary tsd-index-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
@@ -84,7 +85,7 @@ and others points, series with values have no categories, or a value, category o
 </div></div><aside class="tsd-sources">
 <p>Overrides <a href="index.DrawingPatch.html">DrawingPatch</a>.<a href="index.DrawingPatch.html#constructor">constructor</a></p>
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/b7a4bb66b8ad5eb5e3e17b39f74a8204ff9f664b/src/charts/chart-data-patch.ts#L390">charts/chart-data-patch.ts:390</a></li></ul></aside></div></li></ul></section></section></details>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/b04040c7b0d44021d7a0306d90afa82fd0402058/src/charts/chart-data-patch.ts#L512">charts/chart-data-patch.ts:512</a></li></ul></aside></div></li></ul></section></section></details>
 <details class="tsd-panel-group tsd-member-group tsd-accordion" open><summary class="tsd-accordion-summary" data-key="section-Properties"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
 <h2 class="tsd-anchor-link" id="properties-1">Properties<a href="#properties-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2></summary>
 <section>
@@ -93,7 +94,7 @@ and others points, series with values have no categories, or a value, category o
 <div class="tsd-signature"><span class="tsd-kind-property">type</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">&quot;drawing&quot;</span><span class="tsd-signature-symbol"> = PatchType.DRAWING</span></div><aside class="tsd-sources">
 <p>Inherited from <a href="index.DrawingPatch.html">DrawingPatch</a>.<a href="index.DrawingPatch.html#type">type</a></p>
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/b7a4bb66b8ad5eb5e3e17b39f74a8204ff9f664b/src/patcher/drawing-patch.ts#L90">patcher/drawing-patch.ts:90</a></li></ul></aside></section></section></details>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/b04040c7b0d44021d7a0306d90afa82fd0402058/src/patcher/drawing-patch.ts#L90">patcher/drawing-patch.ts:90</a></li></ul></aside></section></section></details>
 <details class="tsd-panel-group tsd-member-group tsd-accordion" open><summary class="tsd-accordion-summary" data-key="section-Methods"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
 <h2 class="tsd-anchor-link" id="methods-1">Methods<a href="#methods-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2></summary>
 <section>
@@ -113,13 +114,13 @@ and others points, series with values have no categories, or a value, category o
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
 <div class="tsd-comment tsd-typography">
 <div class="tsd-tag-throws">
-<h4 class="tsd-anchor-link" id="throws-1">Throws<a href="#throws-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4><p>If the drawing isn't a chart, is a type of chart this can't patch, such as a stock chart, or has something
+<h4 class="tsd-anchor-link" id="throws-1">Throws<a href="#throws-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4><p>If the drawing isn't a chart, is a type of chart this can't patch, such as a surface chart, or has something
 that refers to its workbook's cells other than its data, such as labels from cells, or the data isn't for the
 chart's type, such as two series for a pie chart</p>
 </div></div><aside class="tsd-sources">
 <p>Overrides <a href="index.DrawingPatch.html">DrawingPatch</a>.<a href="index.DrawingPatch.html#patch">patch</a></p>
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/b7a4bb66b8ad5eb5e3e17b39f74a8204ff9f664b/src/charts/chart-data-patch.ts#L402">charts/chart-data-patch.ts:402</a></li></ul></aside></div></li></ul></section></section></details></div>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/b04040c7b0d44021d7a0306d90afa82fd0402058/src/charts/chart-data-patch.ts#L524">charts/chart-data-patch.ts:524</a></li></ul></aside></div></li></ul></section></section></details></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">

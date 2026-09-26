@@ -20,6 +20,23 @@ new ChartRun({
 
 A `null` value leaves a gap in its line.
 
+## Empty Values
+
+`emptyValues` says how a `null` value is drawn, as Word's "Hidden and Empty Cells" does:
+
+| `emptyValues`     | Draws a `null` as                                                    |
+| ----------------- | -------------------------------------------------------------------- |
+| `"gap"` (default) | A gap: a break in the line, or no column                             |
+| `"zero"`          | Zero                                                                 |
+| `"connect"`       | Nothing, with the line joined from the point before to the one after |
+
+```ts
+series: [{ name: "Visitors", values: [320, 410, null, 380, 460] }],
+emptyValues: "connect",
+```
+
+Column, bar, line, area, radar and stock charts take `emptyValues`. Only lines are joined: a column chart's `"connect"` is a gap. Pages draws every empty value as a gap. See [Chart Compatibility](usage/chart-compatibility.md).
+
 ## Markers
 
 `markers: true` draws a circle at each point, as Word's "Line with Markers" does. There are no markers by default.
@@ -122,38 +139,43 @@ A line or area chart's series can be drawn as columns too, and against a second 
 
 These are all the options of a line or area chart. Each links to the page that explains it.
 
-| Property             | Type                                   | Notes    | Description                                                                                      |
-| -------------------- | -------------------------------------- | -------- | ------------------------------------------------------------------------------------------------ |
-| `type`               | `"line"` \| `"area"`                   | Required | Lines, or filled areas                                                                           |
-| `categories`         | `(string \| number \| Date)[]`         | Required | The categories, in order. See [Chart Data](usage/chart-data.md)                                  |
-| `series`             | `ChartSeries[]`                        | Required | `{ name, values, color?, ... }`, with a value or `null` for each category. See [Series](#series) |
-| `stacking`           | `"none"` \| `"stacked"` \| `"percent"` | Optional | See [Stacking](#stacking). Default `"none"`                                                      |
-| `markers`            | `boolean` \| `ChartMarker`             | Optional | Line charts: a marker at each point. Default `false`. See [Markers](#markers)                    |
-| `smooth`             | `boolean`                              | Optional | Line charts: curved lines. Default `false`                                                       |
-| `title`              | `string` \| `ChartTitle`               | Optional | See [Chart Titles and Legends](usage/chart-titles-and-legends.md)                                |
-| `legend`             | `false` \| `ChartLegend`               | Optional | See [Chart Titles and Legends](usage/chart-titles-and-legends.md)                                |
-| `categoryAxis`       | `ChartAxis`                            | Optional | The axis of categories. See [Chart Axes](usage/chart-axes.md)                                    |
-| `valueAxis`          | `ChartValueAxis`                       | Optional | The axis of values. See [Chart Axes](usage/chart-axes.md)                                        |
-| `secondaryValueAxis` | `ChartValueAxis`                       | Optional | A second axis of values, on the right. See [Combo Charts](usage/chart-combo.md#a-secondary-axis) |
-| `dataLabels`         | `ChartDataLabels`                      | Optional | See [Chart Data Labels](usage/chart-data-labels.md)                                              |
-| `font`               | `ChartFont`                            | Optional | See [Chart Fonts and Fills](usage/chart-fonts-and-fills.md)                                      |
-| `chartArea`          | `ChartAreaStyle`                       | Optional | See [Chart Fonts and Fills](usage/chart-fonts-and-fills.md)                                      |
-| `plotArea`           | `ChartAreaStyle`                       | Optional | See [Chart Fonts and Fills](usage/chart-fonts-and-fills.md)                                      |
-| `transformation`     | `{ width, height }`                    | Optional | See [Chart Size and Position](usage/chart-size-and-position.md)                                  |
-| `floating`           | `IFloating`                            | Optional | See [Chart Size and Position](usage/chart-size-and-position.md)                                  |
-| `altText`            | `DocPropertiesOptions`                 | Optional | See [Chart Size and Position](usage/chart-size-and-position.md)                                  |
-| `decorative`         | `boolean`                              | Optional | See [Chart Size and Position](usage/chart-size-and-position.md#alternative-text)                 |
+| Property             | Type                                                     | Notes    | Description                                                                                                               |
+| -------------------- | -------------------------------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `type`               | `"line"` \| `"area"`                                     | Required | Lines, or filled areas                                                                                                    |
+| `categories`         | `(string \| number \| Date)[]` \| `ChartCategoryGroup[]` | Required | The categories, in order, or [in groups](usage/chart-data.md#categories-in-groups). See [Chart Data](usage/chart-data.md) |
+| `series`             | `ChartSeries[]`                                          | Required | `{ name, values, color?, ... }`, with a value or `null` for each category. See [Series](#series)                          |
+| `stacking`           | `"none"` \| `"stacked"` \| `"percent"`                   | Optional | See [Stacking](#stacking). Default `"none"`                                                                               |
+| `markers`            | `boolean` \| `ChartMarker`                               | Optional | Line charts: a marker at each point. Default `false`. See [Markers](#markers)                                             |
+| `smooth`             | `boolean`                                                | Optional | Line charts: curved lines. Default `false`                                                                                |
+| `title`              | `string` \| `ChartTitle`                                 | Optional | See [Chart Titles and Legends](usage/chart-titles-and-legends.md)                                                         |
+| `legend`             | `false` \| `ChartLegend`                                 | Optional | See [Chart Titles and Legends](usage/chart-titles-and-legends.md)                                                         |
+| `categoryAxis`       | `ChartAxis`                                              | Optional | The axis of categories. See [Chart Axes](usage/chart-axes.md)                                                             |
+| `valueAxis`          | `ChartValueAxis`                                         | Optional | The axis of values. See [Chart Axes](usage/chart-axes.md)                                                                 |
+| `secondaryValueAxis` | `ChartValueAxis`                                         | Optional | A second axis of values, on the right. See [Combo Charts](usage/chart-combo.md#a-secondary-axis)                          |
+| `dataLabels`         | `ChartDataLabels`                                        | Optional | See [Chart Data Labels](usage/chart-data-labels.md)                                                                       |
+| `emptyValues`        | `"gap"` \| `"zero"` \| `"connect"`                       | Optional | How `null` is drawn. Default `"gap"`. See [Empty Values](#empty-values)                                                   |
+| `dataTable`          | `boolean` \| `ChartDataTable`                            | Optional | A table of the data. See [Chart Titles and Legends](usage/chart-titles-and-legends.md#a-data-table)                       |
+| `font`               | `ChartFont`                                              | Optional | See [Chart Fonts and Fills](usage/chart-fonts-and-fills.md)                                                               |
+| `chartArea`          | `ChartAreaStyle`                                         | Optional | See [Chart Fonts and Fills](usage/chart-fonts-and-fills.md)                                                               |
+| `plotArea`           | `ChartAreaStyle`                                         | Optional | See [Chart Fonts and Fills](usage/chart-fonts-and-fills.md)                                                               |
+| `transformation`     | `{ width, height }`                                      | Optional | See [Chart Size and Position](usage/chart-size-and-position.md)                                                           |
+| `floating`           | `IFloating`                                              | Optional | See [Chart Size and Position](usage/chart-size-and-position.md)                                                           |
+| `altText`            | `DocPropertiesOptions`                                   | Optional | See [Chart Size and Position](usage/chart-size-and-position.md)                                                           |
+| `decorative`         | `boolean`                                                | Optional | See [Chart Size and Position](usage/chart-size-and-position.md#alternative-text)                                          |
 
 ### Series
 
-| Property     | Type                               | Notes    | Description                                                                                    |
-| ------------ | ---------------------------------- | -------- | ---------------------------------------------------------------------------------------------- |
-| `name`       | `string`                           | Required | The series' name, shown in the legend                                                          |
-| `values`     | `(number \| null)[]`               | Required | A value for each category, or `null` for a gap                                                 |
-| `color`      | `string` \| `ThemeColor`           | Optional | See [Chart Colours](usage/chart-colors.md)                                                     |
-| `markers`    | `boolean` \| `ChartMarker`         | Optional | The series' own markers. See [Markers](#markers)                                               |
-| `smooth`     | `boolean`                          | Optional | The series' own curved line                                                                    |
-| `line`       | `ChartLine`                        | Optional | `{ color?, width?, dash? }` of the series' line. See [Lines](#lines)                           |
-| `dataLabels` | `false` \| `ChartDataLabels`       | Optional | The series' own labels. See [Chart Data Labels](usage/chart-data-labels.md#each-series-labels) |
-| `type`       | `"column"` \| `"line"` \| `"area"` | Optional | Draws the series another way. See [Combo Charts](usage/chart-combo.md)                         |
-| `axis`       | `"primary"` \| `"secondary"`       | Optional | See [Combo Charts](usage/chart-combo.md#a-secondary-axis)                                      |
+| Property      | Type                                        | Notes    | Description                                                                                          |
+| ------------- | ------------------------------------------- | -------- | ---------------------------------------------------------------------------------------------------- |
+| `name`        | `string`                                    | Required | The series' name, shown in the legend                                                                |
+| `values`      | `(number \| null)[]`                        | Required | A value for each category, or `null` for a gap                                                       |
+| `color`       | `string` \| `ThemeColor`                    | Optional | See [Chart Colours](usage/chart-colors.md)                                                           |
+| `markers`     | `boolean` \| `ChartMarker`                  | Optional | The series' own markers. See [Markers](#markers)                                                     |
+| `smooth`      | `boolean`                                   | Optional | The series' own curved line                                                                          |
+| `line`        | `ChartLine`                                 | Optional | `{ color?, width?, dash? }` of the series' line. See [Lines](#lines)                                 |
+| `dataLabels`  | `false` \| `ChartDataLabels`                | Optional | The series' own labels. See [Chart Data Labels](usage/chart-data-labels.md#each-series-labels)       |
+| `type`        | `"column"` \| `"line"` \| `"area"`          | Optional | Draws the series another way. See [Combo Charts](usage/chart-combo.md)                               |
+| `axis`        | `"primary"` \| `"secondary"`                | Optional | See [Combo Charts](usage/chart-combo.md#a-secondary-axis)                                            |
+| `pointLabels` | `(false \| ChartPointLabel \| undefined)[]` | Optional | Labels of single points. See [Chart Data Labels](usage/chart-data-labels.md#labels-of-single-points) |
+| `trendlines`  | `ChartTrendline[]`                          | Optional | See [Chart Trendlines and Error Bars](usage/chart-trendlines-and-error-bars.md)                      |
+| `errorBars`   | `ChartErrorBars`                            | Optional | See [Chart Trendlines and Error Bars](usage/chart-trendlines-and-error-bars.md#error-bars)           |

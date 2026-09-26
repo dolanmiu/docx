@@ -46,20 +46,21 @@ See [Chart Axes](usage/chart-axes.md).
 
 ## Options
 
-| Property         | Type                       | Notes    | Description                                                                                        |
-| ---------------- | -------------------------- | -------- | -------------------------------------------------------------------------------------------------- |
-| `type`           | `"radar"`                  | Required |                                                                                                    |
-| `categories`     | `(string \| number)[]`     | Required | The spokes, in order. See [Chart Data](usage/chart-data.md)                                        |
-| `series`         | `RadarChartSeries[]`       | Required | `{ name, values, color?, markers?, line?, dataLabels? }`, with a value or `null` for each category |
-| `markers`        | `boolean` \| `ChartMarker` | Optional | A marker at each point. Default `false`. See [Markers](usage/chart-line-and-area.md#markers)       |
-| `filled`         | `boolean`                  | Optional | Fills each series' area. Default `false`                                                           |
-| `categoryAxis`   | `ChartAxis`                | Optional | The spokes and their labels. See [Chart Axes](usage/chart-axes.md)                                 |
-| `valueAxis`      | `ChartValueAxis`           | Optional | The axis up the first spoke. See [Chart Axes](usage/chart-axes.md)                                 |
-| `dataLabels`     | `ChartDataLabels`          | Optional | See [Chart Data Labels](usage/chart-data-labels.md). A radar chart's labels have no `position`     |
-| `title`          | `string` \| `ChartTitle`   | Optional | See [Chart Titles and Legends](usage/chart-titles-and-legends.md)                                  |
-| `legend`         | `false` \| `ChartLegend`   | Optional | See [Chart Titles and Legends](usage/chart-titles-and-legends.md)                                  |
-| `transformation` | `{ width, height }`        | Optional | See [Chart Size and Position](usage/chart-size-and-position.md)                                    |
-| `floating`       | `IFloating`                | Optional | See [Chart Size and Position](usage/chart-size-and-position.md)                                    |
-| `altText`        | `DocPropertiesOptions`     | Optional | See [Chart Size and Position](usage/chart-size-and-position.md)                                    |
+| Property         | Type                               | Notes    | Description                                                                                                      |
+| ---------------- | ---------------------------------- | -------- | ---------------------------------------------------------------------------------------------------------------- |
+| `type`           | `"radar"`                          | Required |                                                                                                                  |
+| `categories`     | `(string \| number)[]`             | Required | The spokes, in order. See [Chart Data](usage/chart-data.md)                                                      |
+| `series`         | `RadarChartSeries[]`               | Required | `{ name, values, color?, markers?, line?, dataLabels?, pointLabels? }`, with a value or `null` for each category |
+| `markers`        | `boolean` \| `ChartMarker`         | Optional | A marker at each point. Default `false`. See [Markers](usage/chart-line-and-area.md#markers)                     |
+| `filled`         | `boolean`                          | Optional | Fills each series' area. Default `false`                                                                         |
+| `categoryAxis`   | `ChartAxis`                        | Optional | The spokes and their labels. See [Chart Axes](usage/chart-axes.md)                                               |
+| `valueAxis`      | `ChartValueAxis`                   | Optional | The axis up the first spoke. See [Chart Axes](usage/chart-axes.md)                                               |
+| `dataLabels`     | `ChartDataLabels`                  | Optional | See [Chart Data Labels](usage/chart-data-labels.md). A radar chart's labels have no `position`                   |
+| `emptyValues`    | `"gap"` \| `"zero"` \| `"connect"` | Optional | How `null` is drawn. Default `"gap"`. See [Empty Values](usage/chart-line-and-area.md#empty-values)              |
+| `title`          | `string` \| `ChartTitle`           | Optional | See [Chart Titles and Legends](usage/chart-titles-and-legends.md)                                                |
+| `legend`         | `false` \| `ChartLegend`           | Optional | See [Chart Titles and Legends](usage/chart-titles-and-legends.md)                                                |
+| `transformation` | `{ width, height }`                | Optional | See [Chart Size and Position](usage/chart-size-and-position.md)                                                  |
+| `floating`       | `IFloating`                        | Optional | See [Chart Size and Position](usage/chart-size-and-position.md)                                                  |
+| `altText`        | `DocPropertiesOptions`             | Optional | See [Chart Size and Position](usage/chart-size-and-position.md)                                                  |
 
 [Chart Fonts and Fills](usage/chart-fonts-and-fills.md) shows the options every chart has for its text, background and border.

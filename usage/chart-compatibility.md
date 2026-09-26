@@ -23,6 +23,10 @@ LibreOffice (checked with version 26.8) draws every chart as intended, and opens
 - It draws a logarithmic axis in base 10, whatever its `logarithmicBase`.
 - It draws bubbles' sizes as their areas, even with `sizeRepresents: "width"`.
 - It doesn't show a bubble's size in its label.
+- It splits a pie of pie or bar of pie chart only by position. With a `split` by value, percentage or categories, it splits off the last two categories.
+- It draws a stock chart's closing price as a tick to the right of its line, and shows only the closing price and volumes in the legend.
+- It doesn't draw a bubble chart's trendlines or error bars.
+- It writes a trendline's equation and R² value in full, whatever the trendline's `label.numberFormat`.
 
 ## Apple Pages
 
@@ -41,9 +45,15 @@ Apple Pages (checked with version 15.1) draws the charts, but:
 - It draws a logarithmic axis in base 10, whatever its `logarithmicBase`.
 - It names an axis' `displayUnits`, but writes its labels in them only when the axis has a `numberFormat` other than `"General"`, such as `"#,##0"`.
 - It draws `"x"`, `"star"`, `"plus"`, `"dash"` and `"dot"` markers as circles.
+- It draws a stock chart's prices as lines, and doesn't draw them at all when the chart has volumes.
+- It draws a pie of pie or bar of pie chart as a plain pie.
+- It shows only the groups' names of categories in groups.
+- It doesn't draw a data table, or show a label's own `text`.
+- It shows the legend entries in `hiddenEntries`, and a trendline's entry only when it has a `name`.
+- It draws every empty value as a gap, whatever the chart's `emptyValues`.
 
 ## Templates
 
 `patchDocument` adds charts to any template, such as one saved by Word, as it adds them to a new `Document`: see [In Templates](usage/chart-size-and-position.md#in-templates). The new ones are numbered after the charts the template has already.
 
-`ChartDataPatch` gives the template's own charts new data, whether Word, LibreOffice or `docx` made them: see [Charts in Templates](usage/chart-templates.md). LibreOffice and Pages draw the new data from the chart's caches, and Word until **Edit Data**, when it reads the new workbook, which holds the same data.
+`ChartDataPatch` gives the template's own charts new data, whether Word, LibreOffice or `docx` made them, including stock charts and categories in groups: see [Charts in Templates](usage/chart-templates.md). LibreOffice and Pages draw the new data from the chart's caches, and Word until **Edit Data**, when it reads the new workbook, which holds the same data.

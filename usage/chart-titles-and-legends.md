@@ -57,9 +57,56 @@ new ChartRun({
 });
 ```
 
+### Hiding Legend Entries
+
+`hiddenEntries` leaves entries out of the legend, by their text, such as a target line everyone knows:
+
+```ts
+series: [
+    { name: "Sales", values: [120, 135, 150, 170] },
+    { name: "Target", values: [140, 140, 140, 140], type: "line" },
+],
+legend: { hiddenEntries: ["Target"] },
+```
+
+An entry is a series' name, a [trendline's](usage/chart-trendlines-and-error-bars.md) name, such as "Linear (Sales)", or on a pie or doughnut chart, a category. The series stays in the chart. `new ChartRun(...)` throws for text that isn't an entry's, and lists the entries.
+
+Pages shows every entry. See [Chart Compatibility](usage/chart-compatibility.md).
+
+## A Data Table
+
+`dataTable: true` puts a table of the chart's data under its plot, as Word's "Data Table" does: a row for each series, with its key from the legend, and a column for each category. It is often used in place of labels, or of the legend:
+
+```ts
+new ChartRun({
+    type: "column",
+    title: "Rainfall (mm)",
+    categories: ["Jan", "Feb", "Mar"],
+    series: [
+        { name: "2024", values: [78, 52, 61] },
+        { name: "2025", values: [83, 60, 49] },
+    ],
+    dataTable: true,
+    legend: false,
+});
+```
+
+`dataTable` takes options too:
+
+| Option              | What it does                                     |
+| ------------------- | ------------------------------------------------ |
+| `legendKeys`        | `false` leaves out each series' key              |
+| `horizontalBorders` | `false` leaves out the lines between the rows    |
+| `verticalBorders`   | `false` leaves out the lines between the columns |
+| `outline`           | `false` leaves out the line around the table     |
+| `font`              | The table's font. Its text is 9 point by default |
+
+Column, bar, line, area and stock charts have a data table. Pages doesn't draw it. See [Chart Compatibility](usage/chart-compatibility.md).
+
 ## Options
 
-| Property | Type                     | Notes    | Description                                                                           |
-| -------- | ------------------------ | -------- | ------------------------------------------------------------------------------------- |
-| `title`  | `string` \| `ChartTitle` | Optional | The title, above the chart, or `{ text, font? }`. Each line is a line of the title    |
-| `legend` | `false` \| `ChartLegend` | Optional | `{ position?, font? }`, or `false` for no legend. Default is a legend below the chart |
+| Property    | Type                          | Notes    | Description                                                                                           |
+| ----------- | ----------------------------- | -------- | ----------------------------------------------------------------------------------------------------- |
+| `title`     | `string` \| `ChartTitle`      | Optional | The title, above the chart, or `{ text, font? }`. Each line is a line of the title                    |
+| `legend`    | `false` \| `ChartLegend`      | Optional | `{ position?, font?, hiddenEntries? }`, or `false` for no legend. Default is a legend below the chart |
+| `dataTable` | `boolean` \| `ChartDataTable` | Optional | `{ legendKeys?, horizontalBorders?, verticalBorders?, outline?, font? }`, or `true`. Default is none  |
