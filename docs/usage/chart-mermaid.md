@@ -30,17 +30,17 @@ new ChartRun({
 });
 ```
 
-| Mermaid                               | `ChartRun`                                                                                   |
-| ------------------------------------- | -------------------------------------------------------------------------------------------- |
-| `pie`                                 | `type: "pie"`                                                                                |
-| `title Pets adopted by volunteers`    | `title: "Pets adopted by volunteers"`                                                        |
-| `"Dogs" : 386`, a line for each slice | `"Dogs"` in `categories`, and `386` in the series' `values`, in the same order               |
-| The slices' percentages               | `dataLabels: { percentage: true }`                                                           |
-| `showData`                            | `dataLabels: { percentage: true, value: true }`, which puts the values on the slices instead |
-| The legend on the right               | `legend: { position: "right" }`. Word puts it below by default                               |
-| `donutHole: 0.4`                      | `type: "doughnut"`, with `holeSize: 40`, from 10 to 90                                       |
-| `legendPosition: "top"`               | `legend: { position: "top" }`                                                                |
-| `highlightSlice: "Dogs"`              | Pull the slice out, with the series' `explosion`: `explosion: [20]`                          |
+| Mermaid                               | `ChartRun`                                                                                                                                                                  |
+| ------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pie`                                 | `type: "pie"`                                                                                                                                                               |
+| `title Pets adopted by volunteers`    | `title: "Pets adopted by volunteers"`                                                                                                                                       |
+| `"Dogs" : 386`, a line for each slice | `"Dogs"` in `categories`, and `386` in the series' `values`, in the same order                                                                                              |
+| The slices' percentages               | `dataLabels: { percentage: true }`                                                                                                                                          |
+| `showData`                            | `dataLabels: { percentage: true, value: true }`, which puts the values on the slices instead                                                                                |
+| The legend on the right               | `legend: { position: "right" }`. Word puts it below by default                                                                                                              |
+| `donutHole: 0.4`                      | `type: "doughnut"`, with `holeSize: 40`, from 10 to 90                                                                                                                      |
+| `legendPosition: "top"`               | `legend: { position: "top" }`                                                                                                                                               |
+| `highlightSlice: "Dogs"`              | No equivalent: Mermaid draws the slice a little larger, and the others fainter. The series' `explosion` can single it out another way, by pulling it out: `explosion: [20]` |
 
 A Word chart's series has a name, which Mermaid's pie has none of, so give it one. See [Pie and Doughnut Charts](usage/chart-pie-and-doughnut.md).
 
