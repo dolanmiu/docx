@@ -279,12 +279,12 @@ Packer.toBuffer(doc).then((buffer) => {
 
 ### Basic usage
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/73-comments.ts ":include")
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/comments/comments.ts ":include")
 
-_Source: https://github.com/dolanmiu/docx/blob/master/demo/73-comments.ts_
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/comments/comments.ts_
 
 ### Comment Replies and Resolved state
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/101-comment-replies.ts ":include")
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/comments/comment-replies.ts ":include")
 
-_Source: https://github.com/dolanmiu/docx/blob/master/demo/101-comment-replies.ts_
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/comments/comment-replies.ts_

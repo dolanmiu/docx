@@ -253,12 +253,12 @@ Packer.toBlob(doc).then((blob) => {
 
 ### Embedding Custom Fonts
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/91-custom-fonts.ts ":include")
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/text/custom-fonts.ts ":include")
 
-_Source: https://github.com/dolanmiu/docx/blob/master/demo/91-custom-fonts.ts_
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/text/custom-fonts.ts_
 
 ### Declarative Custom Fonts
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/92-declarative-custom-fonts.ts ":include")
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/text/custom-fonts-in-styles.ts ":include")
 
-_Source: https://github.com/dolanmiu/docx/blob/master/demo/92-declarative-custom-fonts.ts_
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/text/custom-fonts-in-styles.ts_

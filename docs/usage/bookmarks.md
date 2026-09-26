@@ -183,6 +183,6 @@ new InternalHyperlink({
 
 ## Demo
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/21-bookmarks.ts ":include")
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/links-and-bookmarks/bookmarks.ts ":include")
 
-_Source: https://github.com/dolanmiu/docx/blob/master/demo/21-bookmarks.ts_
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/links-and-bookmarks/bookmarks.ts_

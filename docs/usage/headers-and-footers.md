@@ -448,24 +448,24 @@ Packer.toBuffer(doc).then((buffer) => {
 
 ### Basic Header and Footer
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/8-header-footer.ts ":include")
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/headers-and-footers/header-and-footer.ts ":include")
 
-_Source: https://github.com/dolanmiu/docx/blob/master/demo/8-header-footer.ts_
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/headers-and-footers/header-and-footer.ts_
 
 ### Odd/Even Headers and Footers
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/63-odd-even-header-footer.ts ":include")
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/headers-and-footers/odd-and-even-headers-and-footers.ts ":include")
 
-_Source: https://github.com/dolanmiu/docx/blob/master/demo/63-odd-even-header-footer.ts_
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/headers-and-footers/odd-and-even-headers-and-footers.ts_
 
 ### Header and Footer Margins
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/59-header-footer-margins.ts ":include")
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/headers-and-footers/header-and-footer-margins.ts ":include")
 
-_Source: https://github.com/dolanmiu/docx/blob/master/demo/59-header-footer-margins.ts_
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/headers-and-footers/header-and-footer-margins.ts_
 
 ### Images in Header and Footer
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/9-images-in-header-and-footer.ts ":include")
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/images/images-in-header-and-footer.ts ":include")
 
-_Source: https://github.com/dolanmiu/docx/blob/master/demo/9-images-in-header-and-footer.ts_
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/images/images-in-header-and-footer.ts_

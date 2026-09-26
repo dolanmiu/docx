@@ -4,8 +4,9 @@
 #
 # Usage: scripts/render-shape-demos.sh [output directory] [demo ...]
 #
-# The output directory (default build/shape-demos) gets each demo's .docx, .pdf and one PNG per page.
-# Without demo names, all the shape and chart demos are run. Needs the package built (npm run build) and perl.
+# Each demo is its topic and name, such as shapes/shape-groups. The output directory (default build/shape-demos) gets
+# each demo's .docx, .pdf and one PNG per page, named after the demo. Without demos, all the shape and chart demos are
+# run. Needs the package built (npm run build) and perl.
 #
 # The pages are drawn with LibreOffice (set SOFFICE if soffice isn't on the PATH) and pdftoppm from Poppler.
 # When SHAPE_RENDER_IMAGE names a Docker image built from scripts/shape-demos/Dockerfile, they are drawn in
@@ -21,7 +22,7 @@ OUT="${1:-build/shape-demos}"
 shift || true
 DEMOS=("$@")
 if [ ${#DEMOS[@]} -eq 0 ]; then
-    DEMOS=(107-inline-shapes 108-shapes 109-shape-groups 110-shape-connectors 111-shape-styles 112-shape-diagrams 113-shape-layout 115-shape-document-styles 116-shape-swimlanes 117-shape-page-layout 118-theme 120-custom-shapes 121-charts 122-chart-options 123-charts-in-templates 124-chart-data-in-templates 125-more-charts)
+    DEMOS=(shapes/inline-shapes shapes/shapes shapes/shape-groups shapes/shape-connectors shapes/shape-styles shapes/shape-diagrams shapes/shape-layout shapes/shape-document-styles shapes/shape-swimlanes shapes/shape-page-layout styles/theme shapes/custom-shapes charts/charts charts/chart-options charts/charts-in-templates charts/chart-data-in-templates charts/more-charts)
 fi
 SOFFICE="${SOFFICE:-soffice}"
 
@@ -33,12 +34,13 @@ failed=0
 for demo in "${DEMOS[@]}"; do
     echo "::group::$demo"
     npm run --silent run-ts -- "./demo/$demo.ts"
-    cp "My Document.docx" "$OUT/$demo.docx"
+    docx="$OUT/$(basename "$demo").docx"
+    cp "My Document.docx" "$docx"
 
     # Where the Word 2010 drawing extensions (wp14) are: a floating drawing's relative sizes come after its graphic, and
     # a percentage offset is the choice for a position, with its offset in EMUs as the fallback
     extracted="$(mktemp -d)"
-    unzip -q -o "$OUT/$demo.docx" -d "$extracted"
+    unzip -q -o "$docx" -d "$extracted"
     misplaced="$(perl -0ne '$all = () = /<wp14:(?:sizeRel[HV]|pctPos[HV]Offset)\b/g;
         $placed = () = /<wp:position([HV]) relativeFrom="\w+"><mc:AlternateContent><mc:Choice Requires="wp14"><wp14:pctPos\1Offset>-?\d+<\/wp14:pctPos\1Offset><\/mc:Choice><mc:Fallback><wp:posOffset>-?\d+<\/wp:posOffset><\/mc:Fallback><\/mc:AlternateContent><\/wp:position\1>/g;
         while (/<\/a:graphic>((?:<wp14:sizeRel[HV]\b.*?<\/wp14:sizeRel[HV]>)+)<\/wp:anchor>/gs) { my $sizes = $1; $placed += () = $sizes =~ /<wp14:sizeRel[HV]\b/g; }
@@ -66,7 +68,7 @@ DRAW='for docx in "$@"; do
 done'
 FILES=()
 for demo in "${DEMOS[@]}"; do
-    FILES+=("$demo.docx")
+    FILES+=("$(basename "$demo").docx")
 done
 if [ -n "${SHAPE_RENDER_IMAGE:-}" ]; then
     # LibreOffice keeps its settings in a profile, which has to be somewhere the user running it can write

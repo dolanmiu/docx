@@ -222,6 +222,6 @@ For most use cases, **Text Frames** are recommended. See [Text Frames](usage/tex
 
 ## Demo
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/94-texbox.ts ":include")
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/text-boxes/text-box.ts ":include")
 
-_Source: https://github.com/dolanmiu/docx/blob/master/demo/94-texbox.ts_
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/text-boxes/text-box.ts_

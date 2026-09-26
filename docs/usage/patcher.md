@@ -82,7 +82,7 @@ patchDocument(fs.readFileSync("My Document.docx"), {
                         }),
                         new ImageRun({
                             type: "png",
-                            data: fs.readFileSync("./demo/images/dog.png"),
+                            data: fs.readFileSync("./demo/assets/images/dog.png"),
                             transformation: { width: 100, height: 100 },
                         }),
                     ],
@@ -97,6 +97,6 @@ patchDocument(fs.readFileSync("My Document.docx"), {
 
 ## Demo
 
-_Source: https://github.com/dolanmiu/docx/blob/master/demo/85-template-document.ts_
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/templates/patch-document.ts_
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/85-template-document.ts ":include :type=code typescript")
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/templates/patch-document.ts ":include :type=code typescript")

@@ -33,7 +33,7 @@ jobs:
             - name: Run and validate the demos
               shell: bash
               run: |
-                  for demo in $(ls demo/[0-9]*.ts | sort -V | awk -v n=${{ strategy.job-total }} -v i=${{ strategy.job-index }} 'NR % n == i'); do
+                  for demo in $(find demo -mindepth 2 -name "*.ts" -not -path "demo/assets/*" | sort | awk -v n=${{ strategy.job-total }} -v i=${{ strategy.job-index }} 'NR % n == i'); do
                       echo "::group::$demo"
                       rm -rf ./*.docx embeddings
                       npm run --silent run-ts -- "$demo"

@@ -134,38 +134,38 @@ In a page without a bundler, load the charts after `docx`: `dist/charts.umd.cjs`
 
 A chart of each of the first types, with a small chart in the header, two charts in a table and one floating beside its text.
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/121-charts.ts ":include")
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/charts/charts.ts ":include")
 
-_Source: https://github.com/dolanmiu/docx/blob/master/demo/121-charts.ts_
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/charts/charts.ts_
 
 ### Chart Options
 
 A combo chart with a secondary axis, dates, axes in reverse and on a logarithmic scale, labels and colours, fonts and fills, and radar and bubble charts.
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/122-chart-options.ts ":include")
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/charts/chart-options.ts ":include")
 
-_Source: https://github.com/dolanmiu/docx/blob/master/demo/122-chart-options.ts_
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/charts/chart-options.ts_
 
 ### More Charts
 
 Stock charts, pie of pie and bar of pie charts, categories in groups, trendlines and error bars, the labels of single points, a pulled-out slice, a hidden legend entry, a data table, and a line joined across an empty value.
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/125-more-charts.ts ":include")
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/charts/more-charts.ts ":include")
 
-_Source: https://github.com/dolanmiu/docx/blob/master/demo/125-more-charts.ts_
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/charts/more-charts.ts_
 
 ### Charts in Templates
 
 A column, a pie and a line chart put in a template saved by Word, where its placeholders were.
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/123-charts-in-templates.ts ":include")
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/charts/charts-in-templates.ts ":include")
 
-_Source: https://github.com/dolanmiu/docx/blob/master/demo/123-charts-in-templates.ts_
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/charts/charts-in-templates.ts_
 
 ### Chart Data in Templates
 
 A template's charts, a column, a doughnut and a line chart, given new data, with more series and points than they had, keeping their look.
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/124-chart-data-in-templates.ts ":include")
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/charts/chart-data-in-templates.ts ":include")
 
-_Source: https://github.com/dolanmiu/docx/blob/master/demo/124-chart-data-in-templates.ts_
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/charts/chart-data-in-templates.ts_

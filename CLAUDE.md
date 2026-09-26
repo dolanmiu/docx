@@ -27,5 +27,5 @@ TypeScript library for generating .docx files. Declarative API, works in Node.js
 ## Running Demos
 
 ```bash
-npm run run-ts -- ./demo/<demo-file>.ts
+npm run run-ts -- ./demo/<topic>/<demo>.ts
 ```

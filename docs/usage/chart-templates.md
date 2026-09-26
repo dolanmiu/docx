@@ -115,6 +115,6 @@ The template's charts without a placeholder are left as they are, whatever they 
 
 ## Example
 
-_Source: https://github.com/dolanmiu/docx/blob/master/demo/124-chart-data-in-templates.ts_
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/charts/chart-data-in-templates.ts_
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/124-chart-data-in-templates.ts ":include :type=code typescript")
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/charts/chart-data-in-templates.ts ":include :type=code typescript")

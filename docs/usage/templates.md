@@ -278,6 +278,6 @@ patchDocument({
 
 ## Demo
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/85-template-document.ts ":include")
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/templates/patch-document.ts ":include")
 
-_Source: https://github.com/dolanmiu/docx/blob/master/demo/85-template-document.ts_
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/templates/patch-document.ts_
