@@ -100,6 +100,7 @@ Columns, lines and areas can be drawn together in one chart, with a second value
 | Put a chart in a template                    | `patchDocument`, with the chart in a patch     | [Chart Size and Position](usage/chart-size-and-position.md#in-templates)               |
 | Give a template's chart, made in Word, data  | `patchDocument`, with a `ChartDataPatch`       | [Charts in Templates](usage/chart-templates.md)                                        |
 | Describe a chart for screen readers          | `altText`, or nothing: it is described for you | [Chart Size and Position](usage/chart-size-and-position.md#alternative-text)           |
+| Turn a Mermaid pie or XY chart into a chart  | A `ChartRun` with its data                     | [Charts from Mermaid](usage/chart-mermaid.md)                                          |
 | Know how a chart looks in other applications |                                                | [Chart Compatibility](usage/chart-compatibility.md)                                    |
 
 ## Importing
