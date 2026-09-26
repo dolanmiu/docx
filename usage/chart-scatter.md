@@ -41,6 +41,14 @@ A scatter chart draws a circle at each point, and doesn't join them:
 - `markers: false` leaves out the circles.
 - `lines` joins each series' points, in order: `"none"` (the default), `"straight"` or `"smooth"`.
 
+Markers can have a shape and size, as on a line chart, and a series' `line` a colour, width and dash pattern. A series' own `markers` replace the chart's. See [Markers](usage/chart-line-and-area.md#markers) and [Lines](usage/chart-line-and-area.md#lines).
+
+```ts
+series: [
+    { name: "Group A", points: [{ x: 150, y: 50 }, { x: 165, y: 61 }], markers: { shape: "triangle", size: 7 } },
+],
+```
+
 A smooth line without markers draws a curve, such as a graph of a formula:
 
 ```ts
@@ -60,17 +68,19 @@ A scatter chart has two value axes: `xAxis` along the bottom and `yAxis` up the 
 
 These are all the options of a scatter chart. Each links to the page that explains it.
 
-| Property         | Type                                   | Notes    | Description                                                                                    |
-| ---------------- | -------------------------------------- | -------- | ---------------------------------------------------------------------------------------------- |
-| `type`           | `"scatter"`                            | Required |                                                                                                |
-| `series`         | `ScatterChartSeries[]`                 | Required | `{ name, points, color? }`, where a point is `{ x, y }`. See [Chart Data](usage/chart-data.md) |
-| `markers`        | `boolean`                              | Optional | A circle at each point. Default `true`                                                         |
-| `lines`          | `"none"` \| `"straight"` \| `"smooth"` | Optional | How the points are joined. Default `"none"`                                                    |
-| `xAxis`          | `ChartValueAxis`                       | Optional | The horizontal axis. See [Chart Axes](usage/chart-axes.md)                                     |
-| `yAxis`          | `ChartValueAxis`                       | Optional | The vertical axis. See [Chart Axes](usage/chart-axes.md)                                       |
-| `dataLabels`     | `ChartDataLabels`                      | Optional | See [Chart Data Labels](usage/chart-data-labels.md)                                            |
-| `title`          | `string`                               | Optional | See [Chart Titles and Legends](usage/chart-titles-and-legends.md)                              |
-| `legend`         | `false` \| `ChartLegend`               | Optional | See [Chart Titles and Legends](usage/chart-titles-and-legends.md)                              |
-| `transformation` | `{ width, height }`                    | Optional | See [Chart Size and Position](usage/chart-size-and-position.md)                                |
-| `floating`       | `IFloating`                            | Optional | See [Chart Size and Position](usage/chart-size-and-position.md)                                |
-| `altText`        | `DocPropertiesOptions`                 | Optional | See [Chart Size and Position](usage/chart-size-and-position.md)                                |
+| Property         | Type                                   | Notes    | Description                                                                           |
+| ---------------- | -------------------------------------- | -------- | ------------------------------------------------------------------------------------- |
+| `type`           | `"scatter"`                            | Required |                                                                                       |
+| `series`         | `ScatterChartSeries[]`                 | Required | `{ name, points, color?, markers?, line?, dataLabels? }`, where a point is `{ x, y }` |
+| `markers`        | `boolean` \| `ChartMarker`             | Optional | A marker at each point. Default `true`                                                |
+| `lines`          | `"none"` \| `"straight"` \| `"smooth"` | Optional | How the points are joined. Default `"none"`                                           |
+| `xAxis`          | `ChartValueAxis`                       | Optional | The horizontal axis. See [Chart Axes](usage/chart-axes.md)                            |
+| `yAxis`          | `ChartValueAxis`                       | Optional | The vertical axis. See [Chart Axes](usage/chart-axes.md)                              |
+| `dataLabels`     | `ChartDataLabels`                      | Optional | See [Chart Data Labels](usage/chart-data-labels.md)                                   |
+| `title`          | `string` \| `ChartTitle`               | Optional | See [Chart Titles and Legends](usage/chart-titles-and-legends.md)                     |
+| `legend`         | `false` \| `ChartLegend`               | Optional | See [Chart Titles and Legends](usage/chart-titles-and-legends.md)                     |
+| `transformation` | `{ width, height }`                    | Optional | See [Chart Size and Position](usage/chart-size-and-position.md)                       |
+| `floating`       | `IFloating`                            | Optional | See [Chart Size and Position](usage/chart-size-and-position.md)                       |
+| `altText`        | `DocPropertiesOptions`                 | Optional | See [Chart Size and Position](usage/chart-size-and-position.md)                       |
+
+A series' `line` is only for a chart whose `lines` join the points. A [bubble chart](usage/chart-bubble.md) is a scatter chart whose points have sizes. [Chart Fonts and Fills](usage/chart-fonts-and-fills.md) shows the options every chart has for its text, background and border.

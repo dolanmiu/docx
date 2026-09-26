@@ -11,16 +11,25 @@
 <li><a href="../modules/charts.html">charts</a></li>
 <li><a href="" aria-current="page">ChartValueAxis</a></li></ul>
 <h1>Type Alias ChartValueAxis</h1></div>
-<div class="tsd-signature"><span class="tsd-kind-type-alias">ChartValueAxis</span><span class="tsd-signature-symbol">:</span> <a href="charts.ChartAxis.html" class="tsd-signature-type tsd-kind-type-alias">ChartAxis</a> <span class="tsd-signature-symbol">&amp;</span> <span class="tsd-signature-symbol">{</span><br/>    <span class="tsd-kind-property">interval</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">;</span><br/>    <span class="tsd-kind-property">maximum</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">;</span><br/>    <span class="tsd-kind-property">minimum</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">;</span><br/>    <span class="tsd-kind-property">numberFormat</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span><br/><span class="tsd-signature-symbol">}</span></div>
-<div class="tsd-comment tsd-typography"><p>An axis of values: as <a href="charts.ChartAxis.html" class="tsd-kind-type-alias">ChartAxis</a>, with its range, the interval between its labels, and their number format.
-On a 100% stacked chart, the range and interval are percentages.</p>
+<div class="tsd-signature"><span class="tsd-kind-type-alias">ChartValueAxis</span><span class="tsd-signature-symbol">:</span> <a href="charts.ChartAxis.html" class="tsd-signature-type tsd-kind-type-alias">ChartAxis</a> <span class="tsd-signature-symbol">&amp;</span> <span class="tsd-signature-symbol">{</span><br/>    <span class="tsd-kind-property">displayUnits</span><span class="tsd-signature-symbol">?:</span> <a href="charts.ChartDisplayUnits.html" class="tsd-signature-type tsd-kind-type-alias">ChartDisplayUnits</a><span class="tsd-signature-symbol">;</span><br/>    <span class="tsd-kind-property">interval</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">;</span><br/>    <span class="tsd-kind-property">logarithmicBase</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">;</span><br/>    <span class="tsd-kind-property">maximum</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">;</span><br/>    <span class="tsd-kind-property">minimum</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">;</span><br/><span class="tsd-signature-symbol">}</span></div>
+<div class="tsd-comment tsd-typography"><p>An axis of values: as <a href="charts.ChartAxis.html" class="tsd-kind-type-alias">ChartAxis</a>, with its range, the interval between its labels, and its scale. On a 100%
+stacked chart, the range and interval are percentages.</p>
 </div>
 <div class="tsd-type-declaration">
 <h4>Type Declaration</h4>
 <ul class="tsd-parameters">
 <li class="tsd-parameter">
+<h5><code class="tsd-tag">Optional</code> <code class="tsd-tag">Readonly</code><span class="tsd-kind-property">displayUnits</span><span class="tsd-signature-symbol">?: </span><a href="charts.ChartDisplayUnits.html" class="tsd-signature-type tsd-kind-type-alias">ChartDisplayUnits</a></h5>
+<div class="tsd-comment tsd-typography"><p>Writes the labels in hundreds, thousands, millions and so on. Default is the values as they are</p>
+</div></li>
+<li class="tsd-parameter">
 <h5><code class="tsd-tag">Optional</code> <code class="tsd-tag">Readonly</code><span class="tsd-kind-property">interval</span><span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">number</span></h5>
 <div class="tsd-comment tsd-typography"><p>The interval between the axis' labels and gridlines. Default is chosen from the values</p>
+</div></li>
+<li class="tsd-parameter">
+<h5><code class="tsd-tag">Optional</code> <code class="tsd-tag">Readonly</code><span class="tsd-kind-property">logarithmicBase</span><span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">number</span></h5>
+<div class="tsd-comment tsd-typography"><p>Makes the scale logarithmic, with this base, from 2 to 1000: with 10, the labels are 1, 10, 100 and so on. Values
+of 0 or less can't be shown. Default is a linear scale</p>
 </div></li>
 <li class="tsd-parameter">
 <h5><code class="tsd-tag">Optional</code> <code class="tsd-tag">Readonly</code><span class="tsd-kind-property">maximum</span><span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">number</span></h5>
@@ -29,16 +38,12 @@ On a 100% stacked chart, the range and interval are percentages.</p>
 <li class="tsd-parameter">
 <h5><code class="tsd-tag">Optional</code> <code class="tsd-tag">Readonly</code><span class="tsd-kind-property">minimum</span><span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">number</span></h5>
 <div class="tsd-comment tsd-typography"><p>The lowest value on the axis. Default is chosen from the values</p>
-</div></li>
-<li class="tsd-parameter">
-<h5><code class="tsd-tag">Optional</code> <code class="tsd-tag">Readonly</code><span class="tsd-kind-property">numberFormat</span><span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">string</span></h5>
-<div class="tsd-comment tsd-typography"><p>How the axis' labels are written, as an Excel number format such as <code>&quot;#,##0&quot;</code>, <code>&quot;0.0%&quot;</code> or <code>&quot;$#,##0&quot;</code></p>
 </div></li></ul></div>
 <div class="tsd-comment tsd-typography">
 <div class="tsd-tag-publicApi">
 <h4 class="tsd-anchor-link" id="public-api">Public Api<a href="#public-api" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4></div></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/6207d0067f3405b425662b25222a270a2ad245dc/src/charts/chart-options.ts#L114">charts/chart-options.ts:114</a></li></ul></aside></div>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/43a4e0ce677703e371231cd5f785f468e3910138/src/charts/chart-options.ts#L406">charts/chart-options.ts:406</a></li></ul></aside></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">

@@ -13,11 +13,16 @@ Applications draw a chart from the data in the chart part, so they don't need to
 
 ## Checks
 
-?> Word itself hasn't been checked yet. The charts and their workbooks pass the Open XML SDK validator, Microsoft's own check, for every version of Office since 2010, and are drawn as intended by LibreOffice and Apple Pages.
+?> Word itself hasn't been checked yet. The charts and their workbooks pass the Open XML SDK validator, Microsoft's own check, for every version of Office since 2010, and are drawn as intended by LibreOffice and Apple Pages, apart from the differences below.
 
 ## LibreOffice
 
-LibreOffice (checked with version 26.8) draws every chart as intended, and opens the workbooks in Calc.
+LibreOffice (checked with version 26.8) draws every chart as intended, and opens the workbooks in Calc, but:
+
+- It doesn't write an axis' labels in its `displayUnits`, or name the units beside it.
+- It draws a logarithmic axis in base 10, whatever its `logarithmicBase`.
+- It draws bubbles' sizes as their areas, even with `sizeRepresents: "width"`.
+- It doesn't show a bubble's size in its label.
 
 ## Apple Pages
 
@@ -29,6 +34,13 @@ Apple Pages (checked with version 15.1) draws the charts, but:
 - It puts the last series in front in an area chart that isn't stacked, where LibreOffice puts the first.
 - It divides a value axis into four equal steps, such as 0, 43, 85, 128 and 170, unless it has an `interval`.
 - It narrows a pie or doughnut chart to the pie, so a floating one moves away from the right margin. Word does this with its own pie charts too.
+- It spaces dates evenly, as it does other categories, and labels them in their own format, not the axis' `numberFormat`.
+- It doesn't draw bars' own `colors`: each bar is its series' colour.
+- It keeps the axes where they are by default, whatever their `crossesAt`.
+- It reverses the order of categories, but not of values.
+- It draws a logarithmic axis in base 10, whatever its `logarithmicBase`.
+- It names an axis' `displayUnits`, but writes its labels in them only when the axis has a `numberFormat` other than `"General"`, such as `"#,##0"`.
+- It draws `"x"`, `"star"`, `"plus"`, `"dash"` and `"dot"` markers as circles.
 
 ## Patching
 

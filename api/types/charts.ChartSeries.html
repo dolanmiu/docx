@@ -13,13 +13,14 @@
 <h1>Type Alias ChartSeries</h1></div>
 <section class="tsd-panel tsd-comment">
 <div class="tsd-comment tsd-typography"><p>A series of a column, bar, line or area chart: one value for each category.</p>
+<p><code>markers</code>, <code>smooth</code> and <code>line</code> are for series drawn as lines, and <code>colors</code> for series drawn as bars.</p>
 </div>
 <div class="tsd-comment tsd-typography">
 <div class="tsd-tag-publicApi">
 <h4 class="tsd-anchor-link" id="public-api">Public Api<a href="#public-api" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4></div></div></section>
-<div class="tsd-signature"><span class="tsd-signature-keyword">type</span> <span class="tsd-kind-type-alias">ChartSeries</span> <span class="tsd-signature-symbol">=</span> <span class="tsd-signature-symbol">{</span><br/>    <a class="tsd-kind-property" href="#color">color</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span> <span class="tsd-signature-symbol">|</span> <a href="index.ThemeColor.html" class="tsd-signature-type tsd-kind-type-alias">ThemeColor</a><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#name">name</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#values">values</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-keyword">readonly</span> (<span class="tsd-signature-type">number</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">null</span>)<span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">;</span><br/><span class="tsd-signature-symbol">}</span></div><aside class="tsd-sources">
+<div class="tsd-signature"><span class="tsd-signature-keyword">type</span> <span class="tsd-kind-type-alias">ChartSeries</span> <span class="tsd-signature-symbol">=</span> <span class="tsd-signature-symbol">{</span><br/>    <a class="tsd-kind-property" href="#axis">axis</a><span class="tsd-signature-symbol">?:</span> <a href="charts.ChartAxisGroup.html" class="tsd-signature-type tsd-kind-type-alias">ChartAxisGroup</a><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#color">color</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span> <span class="tsd-signature-symbol">|</span> <a href="index.ThemeColor.html" class="tsd-signature-type tsd-kind-type-alias">ThemeColor</a><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#colors">colors</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-keyword">readonly</span> (<span class="tsd-signature-type">string</span> <span class="tsd-signature-symbol">|</span> <a href="index.ThemeColor.html" class="tsd-signature-type tsd-kind-type-alias">ThemeColor</a> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">undefined</span>)<span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#datalabels">dataLabels</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">false</span> <span class="tsd-signature-symbol">|</span> <a href="charts.ChartDataLabels.html" class="tsd-signature-type tsd-kind-type-alias">ChartDataLabels</a><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#line">line</a><span class="tsd-signature-symbol">?:</span> <a href="charts.ChartLine.html" class="tsd-signature-type tsd-kind-type-alias">ChartLine</a><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#markers">markers</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">boolean</span> <span class="tsd-signature-symbol">|</span> <a href="charts.ChartMarker.html" class="tsd-signature-type tsd-kind-type-alias">ChartMarker</a><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#name">name</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#smooth">smooth</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#type">type</a><span class="tsd-signature-symbol">?:</span> <a href="charts.ComboChartSeriesType.html" class="tsd-signature-type tsd-kind-type-alias">ComboChartSeriesType</a><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#values">values</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-keyword">readonly</span> (<span class="tsd-signature-type">number</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">null</span>)<span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">;</span><br/><span class="tsd-signature-symbol">}</span></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/6207d0067f3405b425662b25222a270a2ad245dc/src/charts/chart-options.ts#L13">charts/chart-options.ts:13</a></li></ul></aside>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/43a4e0ce677703e371231cd5f785f468e3910138/src/charts/chart-options.ts#L186">charts/chart-options.ts:186</a></li></ul></aside>
 <section class="tsd-panel-group tsd-index-group">
 <section class="tsd-panel tsd-index-panel">
 <details class="tsd-index-content tsd-accordion" open><summary class="tsd-accordion-summary tsd-index-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
@@ -27,13 +28,27 @@
 <div class="tsd-accordion-details">
 <section class="tsd-index-section">
 <h3 class="tsd-index-heading tsd-anchor-link" id="properties">Properties<a href="#properties" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
-<div class="tsd-index-list"><a href="#color" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>color?</span></a>
+<div class="tsd-index-list"><a href="#axis" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>axis?</span></a>
+<a href="#color" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>color?</span></a>
+<a href="#colors" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>colors?</span></a>
+<a href="#datalabels" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>data<wbr/>Labels?</span></a>
+<a href="#line" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>line?</span></a>
+<a href="#markers" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>markers?</span></a>
 <a href="#name" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>name</span></a>
+<a href="#smooth" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>smooth?</span></a>
+<a href="#type" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>type?</span></a>
 <a href="#values" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>values</span></a>
 </div></section></div></details></section></section>
 <details class="tsd-panel-group tsd-member-group tsd-accordion" open><summary class="tsd-accordion-summary" data-key="section-Properties"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
 <h2 class="tsd-anchor-link" id="properties-1">Properties<a href="#properties-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2></summary>
 <section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="axis"><code class="tsd-tag">Optional</code> <code class="tsd-tag">Readonly</code><span>axis</span><a href="#axis" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<div class="tsd-signature"><span class="tsd-kind-property">axis</span><span class="tsd-signature-symbol">?:</span> <a href="charts.ChartAxisGroup.html" class="tsd-signature-type tsd-kind-type-alias">ChartAxisGroup</a></div>
+<div class="tsd-comment tsd-typography"><p>Draws the series against the secondary value axis, on the right. Default is <code>&quot;primary&quot;</code></p>
+</div><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/43a4e0ce677703e371231cd5f785f468e3910138/src/charts/chart-options.ts#L202">charts/chart-options.ts:202</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="color"><code class="tsd-tag">Optional</code> <code class="tsd-tag">Readonly</code><span>color</span><a href="#color" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">color</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span> <span class="tsd-signature-symbol">|</span> <a href="index.ThemeColor.html" class="tsd-signature-type tsd-kind-type-alias">ThemeColor</a></div>
@@ -41,21 +56,65 @@
 document's theme such as <code>{ theme: &quot;accent2&quot; }</code>. Default is the next of the theme's accent colours</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/6207d0067f3405b425662b25222a270a2ad245dc/src/charts/chart-options.ts#L22">charts/chart-options.ts:22</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/43a4e0ce677703e371231cd5f785f468e3910138/src/charts/chart-options.ts#L195">charts/chart-options.ts:195</a></li></ul></aside></section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="colors"><code class="tsd-tag">Optional</code> <code class="tsd-tag">Readonly</code><span>colors</span><a href="#colors" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<div class="tsd-signature"><span class="tsd-kind-property">colors</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-keyword">readonly</span> (<span class="tsd-signature-type">string</span> <span class="tsd-signature-symbol">|</span> <a href="index.ThemeColor.html" class="tsd-signature-type tsd-kind-type-alias">ThemeColor</a> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">undefined</span>)<span class="tsd-signature-symbol">[]</span></div>
+<div class="tsd-comment tsd-typography"><p>One colour for each bar, in the order of the categories. A bar without one, or with <code>undefined</code>, takes the series'
+colour. Only for series drawn as bars</p>
+</div><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/43a4e0ce677703e371231cd5f785f468e3910138/src/charts/chart-options.ts#L209">charts/chart-options.ts:209</a></li></ul></aside></section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="datalabels"><code class="tsd-tag">Optional</code> <code class="tsd-tag">Readonly</code><span>data<wbr/>Labels</span><a href="#datalabels" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<div class="tsd-signature"><span class="tsd-kind-property">dataLabels</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">false</span> <span class="tsd-signature-symbol">|</span> <a href="charts.ChartDataLabels.html" class="tsd-signature-type tsd-kind-type-alias">ChartDataLabels</a></div>
+<div class="tsd-comment tsd-typography"><p>The series' own labels, instead of the chart's <code>dataLabels</code>, or <code>false</code> for none</p>
+</div><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/43a4e0ce677703e371231cd5f785f468e3910138/src/charts/chart-options.ts#L204">charts/chart-options.ts:204</a></li></ul></aside></section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="line"><code class="tsd-tag">Optional</code> <code class="tsd-tag">Readonly</code><span>line</span><a href="#line" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<div class="tsd-signature"><span class="tsd-kind-property">line</span><span class="tsd-signature-symbol">?:</span> <a href="charts.ChartLine.html" class="tsd-signature-type tsd-kind-type-alias">ChartLine</a></div>
+<div class="tsd-comment tsd-typography"><p>The line's colour, width and dashes. Only for lines</p>
+</div><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/43a4e0ce677703e371231cd5f785f468e3910138/src/charts/chart-options.ts#L215">charts/chart-options.ts:215</a></li></ul></aside></section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="markers"><code class="tsd-tag">Optional</code> <code class="tsd-tag">Readonly</code><span>markers</span><a href="#markers" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<div class="tsd-signature"><span class="tsd-kind-property">markers</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">boolean</span> <span class="tsd-signature-symbol">|</span> <a href="charts.ChartMarker.html" class="tsd-signature-type tsd-kind-type-alias">ChartMarker</a></div>
+<div class="tsd-comment tsd-typography"><p>Draws a marker at each point, or markers of a shape and size. Default is the chart's <code>markers</code>. Only for lines</p>
+</div><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/43a4e0ce677703e371231cd5f785f468e3910138/src/charts/chart-options.ts#L211">charts/chart-options.ts:211</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="name"><code class="tsd-tag">Readonly</code><span>name</span><a href="#name" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">name</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 <div class="tsd-comment tsd-typography"><p>The series' name, shown in the legend</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/6207d0067f3405b425662b25222a270a2ad245dc/src/charts/chart-options.ts#L15">charts/chart-options.ts:15</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/43a4e0ce677703e371231cd5f785f468e3910138/src/charts/chart-options.ts#L188">charts/chart-options.ts:188</a></li></ul></aside></section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="smooth"><code class="tsd-tag">Optional</code> <code class="tsd-tag">Readonly</code><span>smooth</span><a href="#smooth" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<div class="tsd-signature"><span class="tsd-kind-property">smooth</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">boolean</span></div>
+<div class="tsd-comment tsd-typography"><p>Draws the line as a smooth curve. Default is the chart's <code>smooth</code>. Only for lines</p>
+</div><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/43a4e0ce677703e371231cd5f785f468e3910138/src/charts/chart-options.ts#L213">charts/chart-options.ts:213</a></li></ul></aside></section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="type"><code class="tsd-tag">Optional</code> <code class="tsd-tag">Readonly</code><span>type</span><a href="#type" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<div class="tsd-signature"><span class="tsd-kind-property">type</span><span class="tsd-signature-symbol">?:</span> <a href="charts.ComboChartSeriesType.html" class="tsd-signature-type tsd-kind-type-alias">ComboChartSeriesType</a></div>
+<div class="tsd-comment tsd-typography"><p>Draws the series as columns, a line or an area, whatever the chart's <code>type</code>, as Word's &quot;Combo&quot; charts do. Default
+is the chart's <code>type</code>. A bar chart's series are all bars</p>
+</div><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/43a4e0ce677703e371231cd5f785f468e3910138/src/charts/chart-options.ts#L200">charts/chart-options.ts:200</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="values"><code class="tsd-tag">Readonly</code><span>values</span><a href="#values" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">values</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-keyword">readonly</span> (<span class="tsd-signature-type">number</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">null</span>)<span class="tsd-signature-symbol">[]</span></div>
 <div class="tsd-comment tsd-typography"><p>One value for each category, in order. <code>null</code> leaves a gap. A series can have fewer values than there are categories</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/6207d0067f3405b425662b25222a270a2ad245dc/src/charts/chart-options.ts#L17">charts/chart-options.ts:17</a></li></ul></aside></section></section></details></div>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/43a4e0ce677703e371231cd5f785f468e3910138/src/charts/chart-options.ts#L190">charts/chart-options.ts:190</a></li></ul></aside></section></section></details></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">
@@ -71,7 +130,7 @@ document's theme such as <code>{ theme: &quot;accent2&quot; }</code>. Default is
 <h3>On This Page</h3></summary>
 <div class="tsd-accordion-details">
 <details open class="tsd-accordion tsd-page-navigation-section"><summary class="tsd-accordion-summary" data-key="section-Properties"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>Properties</summary>
-<div><a href="#color"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>color</span></a><a href="#name"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>name</span></a><a href="#values"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>values</span></a></div></details></div></details></div>
+<div><a href="#axis"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>axis</span></a><a href="#color"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>color</span></a><a href="#colors"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>colors</span></a><a href="#datalabels"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>data<wbr/>Labels</span></a><a href="#line"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>line</span></a><a href="#markers"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>markers</span></a><a href="#name"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>name</span></a><a href="#smooth"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>smooth</span></a><a href="#type"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>type</span></a><a href="#values"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>values</span></a></div></details></div></details></div>
 <div class="site-menu">
 <nav class="tsd-navigation"><a href="../modules.html">docx</a>
 <ul class="tsd-small-nested-navigation" id="tsd-nav-container">
