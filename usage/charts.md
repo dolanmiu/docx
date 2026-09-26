@@ -87,6 +87,7 @@ Columns, lines and areas can be drawn together in one chart, with a second value
 | Float a chart beside its text                | `floating`                                     | [Chart Size and Position](usage/chart-size-and-position.md)                  |
 | Put a chart in a table, header or footer     | A `Paragraph` with the chart in it             | [Chart Size and Position](usage/chart-size-and-position.md)                  |
 | Put a chart in a template                    | `patchDocument`, with the chart in a patch     | [Chart Size and Position](usage/chart-size-and-position.md#in-templates)     |
+| Give a template's chart, made in Word, data  | `patchDocument`, with a `ChartDataPatch`       | [Charts in Templates](usage/chart-templates.md)                              |
 | Describe a chart for screen readers          | `altText`, or nothing: it is described for you | [Chart Size and Position](usage/chart-size-and-position.md#alternative-text) |
 | Know how a chart looks in other applications |                                                | [Chart Compatibility](usage/chart-compatibility.md)                          |
 
@@ -140,3 +141,11 @@ A column, a pie and a line chart put in a template saved by Word, where its plac
 [Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/123-charts-in-templates.ts ":include")
 
 _Source: https://github.com/dolanmiu/docx/blob/master/demo/123-charts-in-templates.ts_
+
+### Chart Data in Templates
+
+A template's charts, a column, a doughnut and a line chart, given new data, with more series and points than they had, keeping their look.
+
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/124-chart-data-in-templates.ts ":include")
+
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/124-chart-data-in-templates.ts_

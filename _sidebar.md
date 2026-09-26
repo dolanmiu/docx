@@ -38,6 +38,7 @@
         - [Chart Axes](usage/chart-axes.md)
         - [Chart Data Labels](usage/chart-data-labels.md)
         - [Chart Size and Position](usage/chart-size-and-position.md)
+        - [Charts in Templates](usage/chart-templates.md)
         - [Chart Compatibility](usage/chart-compatibility.md)
     - [Tables](usage/tables.md)
     - [Bullet Points](usage/bullet-points.md)

@@ -11,7 +11,7 @@
 <li><a href="../modules/index.html">index</a></li>
 <li><a href="" aria-current="page">PatchType</a></li></ul>
 <h1>Variable PatchType<code class="tsd-tag">Const</code></h1></div>
-<div class="tsd-signature"><span class="tsd-kind-variable">PatchType</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">{</span> <span class="tsd-kind-property">DOCUMENT</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">&quot;file&quot;</span><span class="tsd-signature-symbol">;</span> <span class="tsd-kind-property">PARAGRAPH</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">&quot;paragraph&quot;</span> <span class="tsd-signature-symbol">}</span><span class="tsd-signature-symbol"> = ...</span></div>
+<div class="tsd-signature"><span class="tsd-kind-variable">PatchType</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">{</span> <span class="tsd-kind-property">DOCUMENT</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">&quot;file&quot;</span><span class="tsd-signature-symbol">;</span> <span class="tsd-kind-property">DRAWING</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">&quot;drawing&quot;</span><span class="tsd-signature-symbol">;</span> <span class="tsd-kind-property">PARAGRAPH</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">&quot;paragraph&quot;</span> <span class="tsd-signature-symbol">}</span><span class="tsd-signature-symbol"> = ...</span></div>
 <div class="tsd-comment tsd-typography"><p>Patch type enumeration.</p>
 <p>Determines how the replacement content should be inserted into the document.</p>
 </div>
@@ -23,6 +23,11 @@
 <div class="tsd-comment tsd-typography"><p>Replace entire file-level elements (e.g., whole paragraphs)</p>
 </div></li>
 <li class="tsd-parameter">
+<h5 id="drawing"><code class="tsd-tag">Readonly</code><span class="tsd-kind-property">DRAWING</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">&quot;drawing&quot;</span></h5>
+<div class="tsd-comment tsd-typography"><p>Change a drawing whose alt text holds the placeholder, and the parts it refers to, such as the data of a chart made
+in Word. See <a href="../classes/index.DrawingPatch.html" class="tsd-kind-class">DrawingPatch</a></p>
+</div></li>
+<li class="tsd-parameter">
 <h5 id="paragraph"><code class="tsd-tag">Readonly</code><span class="tsd-kind-property">PARAGRAPH</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">&quot;paragraph&quot;</span></h5>
 <div class="tsd-comment tsd-typography"><p>Replace content within paragraphs (inline replacement)</p>
 </div></li></ul></div>
@@ -30,7 +35,7 @@
 <div class="tsd-tag-publicApi">
 <h4 class="tsd-anchor-link" id="public-api">Public Api<a href="#public-api" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4></div></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/62f4ecd42d0e2a305c5d92c90a7a438131f9ab8f/src/patcher/from-docx.ts#L48">patcher/from-docx.ts:48</a></li></ul></aside></div>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/b7a4bb66b8ad5eb5e3e17b39f74a8204ff9f664b/src/patcher/patch-type.ts#L14">patcher/patch-type.ts:14</a></li></ul></aside></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">
