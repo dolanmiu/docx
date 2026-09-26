@@ -48,3 +48,29 @@ export const appendContentType = (element: Element, contentType: string, extensi
         type: "element",
     });
 };
+
+/**
+ * Appends a content type for one part of the package to the [Content_Types].xml structure, such as a chart a patch
+ * adds, unless the part already has one.
+ *
+ * @param element - The [Content_Types].xml root element
+ * @param contentType - The part's MIME type (e.g., "application/vnd.openxmlformats-officedocument.drawingml.chart+xml")
+ * @param partName - The part's path in the package (e.g., "/word/charts/chart1.xml")
+ */
+export const appendContentTypeOverride = (element: Element, contentType: string, partName: string): void => {
+    const contentTypeElements = getFirstLevelElements(element, "Types");
+
+    if (contentTypeElements.some((el) => el.type === "element" && el.name === "Override" && el.attributes?.PartName === partName)) {
+        return;
+    }
+
+    // eslint-disable-next-line functional/immutable-data
+    contentTypeElements.push({
+        attributes: {
+            ContentType: contentType,
+            PartName: partName,
+        },
+        name: "Override",
+        type: "element",
+    });
+};

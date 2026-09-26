@@ -86,6 +86,7 @@ Columns, lines and areas can be drawn together in one chart, with a second value
 | Make a chart bigger or smaller               | `transformation`                               | [Chart Size and Position](usage/chart-size-and-position.md)                  |
 | Float a chart beside its text                | `floating`                                     | [Chart Size and Position](usage/chart-size-and-position.md)                  |
 | Put a chart in a table, header or footer     | A `Paragraph` with the chart in it             | [Chart Size and Position](usage/chart-size-and-position.md)                  |
+| Put a chart in a template                    | `patchDocument`, with the chart in a patch     | [Chart Size and Position](usage/chart-size-and-position.md#in-templates)     |
 | Describe a chart for screen readers          | `altText`, or nothing: it is described for you | [Chart Size and Position](usage/chart-size-and-position.md#alternative-text) |
 | Know how a chart looks in other applications |                                                | [Chart Compatibility](usage/chart-compatibility.md)                          |
 
@@ -131,3 +132,11 @@ A combo chart with a secondary axis, dates, axes in reverse and on a logarithmic
 [Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/122-chart-options.ts ":include")
 
 _Source: https://github.com/dolanmiu/docx/blob/master/demo/122-chart-options.ts_
+
+### Charts in Templates
+
+A column, a pie and a line chart put in a template saved by Word, where its placeholders were.
+
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/123-charts-in-templates.ts ":include")
+
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/123-charts-in-templates.ts_

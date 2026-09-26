@@ -93,16 +93,9 @@ export class PackagePart {
 
     /**
      * Adds the part to the package being written, once, and a relationship to it from the part being written.
-     *
-     * @throws When the document is being patched: `patchDocument` can't add parts to a package yet
      */
     public addTo(context: IContext): void {
-        // patchDocument formats patches with a stand-in file, which has no package parts
-        const parts = context.file.PackageParts as PackageParts | undefined;
-        if (parts === undefined) {
-            throw new Error("patchDocument can't add parts to a document yet, such as a chart's. Add charts with a new Document");
-        }
-
+        const parts = context.file.PackageParts;
         const path = parts.add(this);
         const relationships = context.viewWrapper.Relationships;
         if (this.addedTo.has(relationships)) {
@@ -115,14 +108,22 @@ export class PackagePart {
 
 /**
  * The parts added to a document's package when it is written, with their paths under word/, in the order they were
- * added. Not part of the public API: `File` holds one, and the compiler writes its parts.
+ * added. Not part of the public API: `File` holds one, and the compiler writes its parts, as `patchDocument` does.
  */
 export class PackageParts {
     private readonly paths = new Map<PackagePart, string>();
     // The folders of the parts whose XML is being written, by the relationships the XML is formatted with
     private readonly folders = new WeakMap<Relationships, string>();
 
-    public constructor(private readonly contentTypes: ContentTypes) {}
+    /**
+     * @param contentTypes - Where each part's content type is added
+     * @param existingPaths - The paths under word/ of the parts the package already has, such as a template's charts,
+     * which new parts are numbered after
+     */
+    public constructor(
+        private readonly contentTypes: Pick<ContentTypes, "addOverride">,
+        private readonly existingPaths: ReadonlySet<string> = new Set(),
+    ) {}
 
     /**
      * Adds a part, and its content type, once.
@@ -136,9 +137,13 @@ export class PackageParts {
         }
 
         const { folder, name, extension, contentType } = part.options;
-        // Numbered after the parts already added with the same folder and name
-        const count = [...this.paths.keys()].filter(({ options }) => options.folder === folder && options.name === name).length;
-        const path = `${folder}/${name}${count + 1}.${extension}`;
+        // Numbered after the parts already added with the same folder and name, and the package's own
+        const taken = new Set([...this.existingPaths, ...this.paths.values()]);
+        let index = 1;
+        while (taken.has(`${folder}/${name}${index}.${extension}`)) {
+            index++;
+        }
+        const path = `${folder}/${name}${index}.${extension}`;
         // eslint-disable-next-line functional/immutable-data
         this.paths.set(part, path);
         this.contentTypes.addOverride(contentType, `/word/${path}`);

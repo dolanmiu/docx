@@ -1,9 +1,10 @@
+import JSZip from "jszip";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { Formatter } from "@export/formatter";
 import { File } from "@file/file";
 import * as convenienceFunctions from "@util/convenience-functions";
-import { Run } from "docx";
+import { Document, Packer, Paragraph, PatchType, Run, patchDocument } from "docx";
 
 import type { ChartRunOptions } from "./chart-options";
 import { ChartRun } from "./chart-run";
@@ -102,6 +103,32 @@ describe("ChartRun", () => {
 
         expect(JSON.stringify(find(tree, "wp:docPr"))).to.not.contain("Column chart");
         expect(JSON.stringify(tree)).to.contain("adec:decorative");
+    });
+
+    it("should be added to a template by patchDocument, with its workbook", async () => {
+        const template = await Packer.toBuffer(new Document({ sections: [{ children: [new Paragraph("{{chart}}")] }] }));
+        const chart = new ChartRun(column);
+        const zip = await JSZip.loadAsync(
+            await patchDocument({
+                outputType: "nodebuffer",
+                data: template,
+                patches: { chart: { type: PatchType.PARAGRAPH, children: [chart] } },
+            }),
+        );
+        const read = async (path: string): Promise<string | undefined> => {
+            const text = await zip.file(path)?.async("text");
+            return text;
+        };
+
+        expect(await read("word/document.xml")).to.match(/<c:chart xmlns:c="[^"]+" xmlns:r="[^"]+" r:id="rId[^"]+"\/>/);
+        expect(await read("word/_rels/document.xml.rels")).to.contain('Target="charts/chart1.xml"');
+        expect(await read("word/charts/chart1.xml")).to.contain("<c:barDir");
+        expect(await read("word/charts/_rels/chart1.xml.rels")).to.contain('Target="../embeddings/Microsoft_Excel_Worksheet1.xlsx"');
+        const workbook = await JSZip.loadAsync((await zip.file("word/embeddings/Microsoft_Excel_Worksheet1.xlsx")?.async("uint8array"))!);
+        expect(await workbook.file("xl/worksheets/sheet1.xml")?.async("text")).to.contain("<sheetData>");
+        expect(await read("[Content_Types].xml")).to.contain(
+            '<Override ContentType="application/vnd.openxmlformats-officedocument.drawingml.chart+xml" PartName="/word/charts/chart1.xml"/>',
+        );
     });
 
     it("should throw where it is made when an option is wrong", () => {

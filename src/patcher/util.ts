@@ -80,7 +80,7 @@ export const patchSpaceAttribute = (element: Element): Element => ({
 /**
  * Retrieves first-level child elements by parent element name.
  *
- * Finds the first element with the specified name and returns its children.
+ * Finds the first element with the specified name and returns its children, which elements can be added to.
  * Used to access collections like relationship elements or content type definitions.
  *
  * @param relationships - The parent XML element to search
@@ -94,5 +94,13 @@ export const patchSpaceAttribute = (element: Element): Element => ({
  * ```
  */
 // eslint-disable-next-line functional/prefer-readonly-type
-export const getFirstLevelElements = (relationships: Element, id: string): Element[] =>
-    relationships.elements?.filter((e) => e.name === id)[0].elements ?? [];
+export const getFirstLevelElements = (relationships: Element, id: string): Element[] => {
+    const parent = relationships.elements?.find((e) => e.name === id);
+    if (parent === undefined) {
+        return [];
+    }
+    // An empty element, such as <Relationships/>, is given its list of children, so what is added to it is kept
+    // eslint-disable-next-line functional/immutable-data
+    parent.elements ??= [];
+    return parent.elements;
+};

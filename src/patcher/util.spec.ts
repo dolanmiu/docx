@@ -46,5 +46,19 @@ describe("util", () => {
             );
             expect(elements).to.deep.equal([{ type: "element", name: "Relationship" }]);
         });
+
+        it("should return the children of an empty element, such as <Relationships/>, so what is added to them is kept", () => {
+            const relationships = toJson("<Relationships/>");
+            const elements = getFirstLevelElements(relationships, "Relationships");
+            // eslint-disable-next-line functional/immutable-data
+            elements.push({ type: "element", name: "Relationship" });
+
+            expect(getFirstLevelElements(relationships, "Relationships")).to.deep.equal([{ type: "element", name: "Relationship" }]);
+        });
+
+        it("should return an empty array if there is no element of that name", () => {
+            expect(getFirstLevelElements(toJson("<Types/>"), "Relationships")).to.deep.equal([]);
+            expect(getFirstLevelElements({}, "Relationships")).to.deep.equal([]);
+        });
     });
 });

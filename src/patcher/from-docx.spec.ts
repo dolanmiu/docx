@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { Packer } from "@export/packer/packer";
 import { File } from "@file/file";
+import { Header } from "@file/header";
 import { PackagePart } from "@file/package-part";
 import { Bookmark, ExternalHyperlink, ImageRun, Paragraph, Run, TextRun } from "@file/paragraph";
 import { BuilderElement, type IContext, type IXmlableObject, XmlComponent } from "@file/xml-components";
@@ -736,11 +737,45 @@ describe("from-docx", () => {
             });
         });
 
+        describe("A part whose relationships part is empty", () => {
+            it("should add the relationships of its patches, such as an image's in a header", async () => {
+                // docx writes an empty <Relationships/> for a header that refers to nothing
+                const template = await Packer.toBuffer(
+                    new File({
+                        sections: [{ headers: { default: new Header({ children: [new Paragraph("{{image}}")] }) }, children: [] }],
+                    }),
+                );
+                const output = await patchDocument({
+                    outputType: "nodebuffer",
+                    data: template,
+                    patches: {
+                        image: {
+                            type: PatchType.PARAGRAPH,
+                            children: [new ImageRun({ type: "png", data: Buffer.from(""), transformation: { width: 100, height: 100 } })],
+                        },
+                    },
+                });
+                const zip = await JSZip.loadAsync(output);
+
+                expect(await zip.file("word/_rels/header1.xml.rels")?.async("text")).to.match(
+                    /<Relationship Id="rId1" Type="http:\/\/schemas.openxmlformats.org\/officeDocument\/2006\/relationships\/image" Target="media\/[^"]+\.png"\/>/,
+                );
+            });
+        });
+
         describe("A patch that adds a part to the package", () => {
-            // Adds a chart's part to the package when it is written, as ChartRun from docx/charts does
-            class ChartReference extends XmlComponent {
-                public constructor(private readonly part: PackagePart) {
-                    super("c:chart");
+            const CHART_TYPE = "application/vnd.openxmlformats-officedocument.drawingml.chart+xml";
+            const CHART_RELATIONSHIP = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/chart";
+            const PACKAGE_RELATIONSHIP = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/package";
+
+            // Refers to a part, and adds it to the package when it is written, as ChartRun from docx/charts does
+            class PartReference extends XmlComponent {
+                public constructor(
+                    name: string,
+                    private readonly part: PackagePart,
+                ) {
+                    super(name);
+                    this.root.push(part.relationshipId);
                 }
 
                 public prepForXml(context: IContext): IXmlableObject | undefined {
@@ -749,29 +784,137 @@ describe("from-docx", () => {
                 }
             }
 
-            it("should throw, as patchDocument can't add parts yet", async () => {
+            // A chart, with its workbook
+            const createChart = (): { readonly chart: PackagePart; readonly workbook: PackagePart } => {
+                const workbook = new PackagePart({
+                    folder: "embeddings",
+                    name: "Microsoft_Excel_Worksheet",
+                    extension: "xlsx",
+                    contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    relationshipType: PACKAGE_RELATIONSHIP,
+                    content: new Uint8Array([1, 2, 3]),
+                });
+                const chart = new PackagePart({
+                    folder: "charts",
+                    name: "chart",
+                    extension: "xml",
+                    contentType: CHART_TYPE,
+                    relationshipType: CHART_RELATIONSHIP,
+                    content: new BuilderElement({ name: "c:chartSpace", children: [new PartReference("c:externalData", workbook)] }),
+                });
+                return { chart, workbook };
+            };
+
+            const runWith = (part: PackagePart): Run => {
+                const run = new Run({});
+                run.addChildElement(new PartReference("c:chart", part));
+                return run;
+            };
+
+            const patchWith = async (template: Buffer, patches: Readonly<Record<string, IPatch>>): Promise<JSZip> =>
+                JSZip.loadAsync(await patchDocument({ outputType: "nodebuffer", data: template, patches }));
+
+            const read = async (zip: JSZip, path: string): Promise<string | undefined> => {
+                const text = await zip.file(path)?.async("text");
+                return text;
+            };
+
+            it("should write the part, the parts it refers to, their content types and the relationships to them", async () => {
                 const template = await Packer.toBuffer(new File({ sections: [{ children: [new Paragraph("{{chart}}")] }] }));
-                const chart = new Run({});
-                chart.addChildElement(
-                    new ChartReference(
-                        new PackagePart({
-                            folder: "charts",
-                            name: "chart",
-                            extension: "xml",
-                            contentType: "application/vnd.openxmlformats-officedocument.drawingml.chart+xml",
-                            relationshipType: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/chart",
-                            content: new BuilderElement({ name: "c:chartSpace" }),
-                        }),
+                const { chart, workbook } = createChart();
+                const zip = await patchWith(template, { chart: { type: PatchType.PARAGRAPH, children: [runWith(chart)] } });
+
+                expect(await read(zip, "word/document.xml")).to.contain(`<c:chart>${chart.relationshipId}</c:chart>`);
+                expect(await read(zip, "word/_rels/document.xml.rels")).to.contain(
+                    `<Relationship Id="${chart.relationshipId}" Type="${CHART_RELATIONSHIP}" Target="charts/chart1.xml"/>`,
+                );
+                expect(await read(zip, "word/charts/chart1.xml")).to.equal(
+                    `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><c:chartSpace><c:externalData>${workbook.relationshipId}</c:externalData></c:chartSpace>`,
+                );
+                expect(await read(zip, "word/charts/_rels/chart1.xml.rels")).to.equal(
+                    `<?xml version="1.0" encoding="UTF-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">` +
+                        `<Relationship Id="${workbook.relationshipId}" Type="${PACKAGE_RELATIONSHIP}" Target="../embeddings/Microsoft_Excel_Worksheet1.xlsx"/></Relationships>`,
+                );
+                expect(await zip.file("word/embeddings/Microsoft_Excel_Worksheet1.xlsx")?.async("uint8array")).to.deep.equal(
+                    new Uint8Array([1, 2, 3]),
+                );
+
+                const contentTypes = await read(zip, "[Content_Types].xml");
+                expect(contentTypes).to.contain(`<Override ContentType="${CHART_TYPE}" PartName="/word/charts/chart1.xml"/>`);
+                expect(contentTypes).to.contain(
+                    '<Override ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" PartName="/word/embeddings/Microsoft_Excel_Worksheet1.xlsx"/>',
+                );
+            });
+
+            it("should number the parts after the template's own, and add a part once however often it is used", async () => {
+                const own = createChart();
+                const template = await Packer.toBuffer(
+                    new File({
+                        sections: [
+                            {
+                                headers: { default: new Header({ children: [new Paragraph("{{header}}")] }) },
+                                children: [
+                                    new Paragraph({ children: [runWith(own.chart)] }),
+                                    new Paragraph("{{chart}} and {{chart}}"),
+                                    new Paragraph("{{other}}"),
+                                ],
+                            },
+                        ],
+                    }),
+                );
+                const first = createChart();
+                const second = createChart();
+                const zip = await patchWith(template, {
+                    chart: { type: PatchType.PARAGRAPH, children: [runWith(first.chart)] },
+                    other: { type: PatchType.DOCUMENT, children: [new Paragraph({ children: [runWith(second.chart)] })] },
+                    header: { type: PatchType.PARAGRAPH, children: [runWith(first.chart)] },
+                });
+
+                expect(Object.keys(zip.files).filter((path) => /^word\/(charts|embeddings)\/[^/]+$/.test(path))).to.include.members([
+                    "word/charts/chart1.xml",
+                    "word/charts/chart2.xml",
+                    "word/charts/chart3.xml",
+                    "word/embeddings/Microsoft_Excel_Worksheet1.xlsx",
+                    "word/embeddings/Microsoft_Excel_Worksheet2.xlsx",
+                    "word/embeddings/Microsoft_Excel_Worksheet3.xlsx",
+                ]);
+                expect(zip.file("word/charts/chart4.xml")).to.equal(null);
+                expect(await read(zip, "word/charts/chart2.xml")).to.contain(first.workbook.relationshipId);
+                expect(await read(zip, "word/charts/chart3.xml")).to.contain(second.workbook.relationshipId);
+                expect(await read(zip, "word/charts/_rels/chart2.xml.rels")).to.contain(
+                    'Target="../embeddings/Microsoft_Excel_Worksheet2.xlsx"',
+                );
+
+                const relationships = await read(zip, "word/_rels/document.xml.rels");
+                expect(relationships?.split(first.chart.relationshipId)).to.have.length(2);
+                expect(relationships).to.contain(
+                    `Id="${first.chart.relationshipId}" Type="${CHART_RELATIONSHIP}" Target="charts/chart2.xml"`,
+                );
+                expect(relationships).to.contain(
+                    `Id="${second.chart.relationshipId}" Type="${CHART_RELATIONSHIP}" Target="charts/chart3.xml"`,
+                );
+                expect(await read(zip, "word/_rels/header1.xml.rels")).to.contain(
+                    `Id="${first.chart.relationshipId}" Type="${CHART_RELATIONSHIP}" Target="charts/chart2.xml"`,
+                );
+                expect((await read(zip, "[Content_Types].xml"))?.split('PartName="/word/charts/chart2.xml"')).to.have.length(2);
+            });
+
+            it("should throw when the document has no content types", async () => {
+                vi.spyOn(JSZip, "loadAsync").mockResolvedValue(
+                    new JSZip().file(
+                        "word/document.xml",
+                        `<w:document><w:body><w:p><w:r><w:t>{{chart}}</w:t></w:r></w:p></w:body></w:document>`,
                     ),
                 );
 
                 await expect(
                     patchDocument({
                         outputType: "nodebuffer",
-                        data: template,
-                        patches: { chart: { type: PatchType.PARAGRAPH, children: [chart] } },
+                        data: Buffer.from(""),
+                        patches: { chart: { type: PatchType.PARAGRAPH, children: [runWith(createChart().chart)] } },
                     }),
-                ).rejects.toThrow("patchDocument can't add parts to a document yet, such as a chart's. Add charts with a new Document");
+                ).rejects.toThrow("Could not find content types file");
+                vi.restoreAllMocks();
             });
         });
     });

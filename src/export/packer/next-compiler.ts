@@ -8,14 +8,12 @@ import xml from "xml";
 
 import type { File } from "@file/file";
 import { obfuscate } from "@file/fonts/obfuscate-ttf-to-odttf";
-import type { PackagePart } from "@file/package-part/package-part";
-import { Relationships } from "@file/relationships";
-import type { XmlComponent } from "@file/xml-components";
 import { encodeUtf8 } from "@util/convenience-functions";
 
 import { Formatter } from "../formatter";
 import { ImageReplacer } from "./image-replacer";
 import { NumberingReplacer } from "./numbering-replacer";
+import { type PackagePartFile, xmlifyPackageParts } from "./package-part-writer";
 import type { PrettifyType } from "./packer";
 
 /**
@@ -26,15 +24,6 @@ import type { PrettifyType } from "./packer";
  */
 export type IXmlifyedFile = {
     readonly data: string;
-    readonly path: string;
-};
-
-/**
- * A part that something in the document adds to the package, such as a chart or its embedded workbook, or the
- * relationships of one. An embedded package is zipped while the document is.
- */
-type IPackagePartFile = {
-    readonly data: string | Uint8Array | Promise<Uint8Array>;
     readonly path: string;
 };
 
@@ -96,7 +85,7 @@ type IXmlifyedFileMapping = {
     /** Theme (word/theme/theme1.xml) */
     readonly Theme: IXmlifyedFile;
     /** Parts added by the document's content, such as charts (word/charts/chart1.xml), and their relationships */
-    readonly PackageParts: readonly IPackagePartFile[];
+    readonly PackageParts: readonly PackagePartFile[];
 };
 
 /**
@@ -747,7 +736,7 @@ export class Compiler {
                 path: "word/theme/theme1.xml",
             },
             // After every part that can refer to them, which adds them to the package as it is written
-            PackageParts: this.xmlifyPackageParts(file, prettify),
+            PackageParts: xmlifyPackageParts(file, prettify),
             // Last, as parts are added to the package, with their content types, while the others are written
             ContentTypes: {
                 data: xml(
@@ -766,84 +755,5 @@ export class Compiler {
                 path: "[Content_Types].xml",
             },
         };
-    }
-
-    /**
-     * Writes the parts added to the package while the document's parts were written, such as charts. A part's XML can
-     * add parts of its own, such as a chart's embedded workbook, so the parts added meanwhile are written after.
-     *
-     * @param from - How many of the parts have been written
-     */
-    private xmlifyPackageParts(
-        file: File,
-        prettify: (typeof PrettifyType)[keyof typeof PrettifyType] | undefined,
-        from: number = 0,
-    ): readonly IPackagePartFile[] {
-        const parts = file.PackageParts.Array.slice(from);
-        if (parts.length === 0) {
-            return [];
-        }
-        return [
-            ...parts.flatMap(({ part, path }) => this.xmlifyPackagePart(file, part, path, prettify)),
-            ...this.xmlifyPackageParts(file, prettify, from + parts.length),
-        ];
-    }
-
-    private xmlifyPackagePart(
-        file: File,
-        part: PackagePart,
-        path: string,
-        prettify: (typeof PrettifyType)[keyof typeof PrettifyType] | undefined,
-    ): readonly IPackagePartFile[] {
-        const { content } = part.options;
-        if (content instanceof Uint8Array) {
-            return [{ data: content, path: `word/${path}` }];
-        }
-
-        if ("files" in content) {
-            const embedded = new JSZip();
-            for (const { path: filePath, content: fileContent } of content.files) {
-                embedded.file(
-                    filePath,
-                    fileContent instanceof Uint8Array
-                        ? fileContent
-                        : encodeUtf8(this.xmlifyPart(file, fileContent, prettify, new Relationships())),
-                );
-            }
-            return [{ data: embedded.generateAsync({ type: "uint8array", compression: "DEFLATE" }), path: `word/${path}` }];
-        }
-
-        // Relationships added while the XML is written, such as to a chart's workbook, are relative to the part's folder
-        const relationships = file.PackageParts.createRelationships(path);
-        const data = this.xmlifyPart(file, content, prettify, relationships);
-        const folder = path.slice(0, path.lastIndexOf("/"));
-        const name = path.slice(path.lastIndexOf("/") + 1);
-        return [
-            { data, path: `word/${path}` },
-            ...(relationships.RelationshipCount > 0
-                ? [
-                      {
-                          data: this.xmlifyPart(file, relationships, prettify, relationships, false),
-                          path: `word/${folder}/_rels/${name}.rels`,
-                      },
-                  ]
-                : []),
-        ];
-    }
-
-    /**
-     * Formats a part's XML, with the relationships that anything in it that refers to other parts adds to.
-     */
-    private xmlifyPart(
-        file: File,
-        content: XmlComponent,
-        prettify: (typeof PrettifyType)[keyof typeof PrettifyType] | undefined,
-        relationships: Relationships,
-        standalone: boolean = true,
-    ): string {
-        return xml(this.formatter.format(content, { viewWrapper: { View: content, Relationships: relationships }, file, stack: [] }), {
-            indent: prettify,
-            declaration: standalone ? { standalone: "yes", encoding: "UTF-8" } : { encoding: "UTF-8" },
-        });
     }
 }
