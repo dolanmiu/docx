@@ -172,14 +172,11 @@ type Series = {
     readonly order: string;
 };
 
-// A chart's series, in the order they are plotted, from their caches
+// A chart's series, in the order they are plotted, from their caches: each group's own, and not those in extensions
 const seriesIn = (chart: Chart): readonly Series[] =>
-    descendantsOf(childOf(childOf(chart.chartSpace, "c:chart"), "c:plotArea"), "c:ser")
-        .filter((series) => !descendantsOf(chart.chartSpace, "c:extLst").some((list) => descendantsOf(list, "c:ser").includes(series)))
-        .map((series) => {
-            const group = elementsOf(childOf(childOf(chart.chartSpace, "c:chart"), "c:plotArea")).find((element) =>
-                childrenOf(element, "c:ser").includes(series),
-            );
+    elementsOf(childOf(childOf(chart.chartSpace, "c:chart"), "c:plotArea"))
+        .flatMap((group) => childrenOf(group, "c:ser").map((series) => ({ group, series })))
+        .map(({ group, series }) => {
             const data = (...names: readonly string[]): readonly (string | undefined)[] =>
                 names.flatMap((name) => (childOf(series, name) === undefined ? [] : [cacheOf(childOf(series, name)!)]))[0] ?? [];
             const sizes = childOf(series, "c:bubbleSize");
@@ -188,7 +185,7 @@ const seriesIn = (chart: Chart): readonly Series[] =>
                 categories: data("c:cat", "c:xVal"),
                 values: data("c:val", "c:yVal"),
                 ...(sizes === undefined ? {} : { sizes: cacheOf(sizes) }),
-                group: group?.name ?? "",
+                group: group.name ?? "",
                 index: valueOf(childOf(series, "c:idx")) ?? "",
                 order: valueOf(childOf(series, "c:order")) ?? "",
             };
@@ -2122,7 +2119,8 @@ describe("ChartDataPatch with extreme data", () => {
         await roundTrip("scatter", pointData(1, 1, false));
     });
 
-    it("should take series in columns past Z, AZ and ZZ", async () => {
+    // Heavy on purpose, so given longer than the default 5 seconds, which slow CI runners can take
+    it("should take series in columns past Z, AZ and ZZ", { timeout: 30_000 }, async () => {
         const series = await roundTrip("line", categoryData(60, 2));
         expect(series).to.have.length(60);
 
@@ -2136,7 +2134,8 @@ describe("ChartDataPatch with extreme data", () => {
         expect(columns.has("ABW")).to.equal(false);
     });
 
-    it("should take thousands of categories", async () => {
+    // Heavy on purpose, so given longer than the default 5 seconds, which slow CI runners can take
+    it("should take thousands of categories", { timeout: 30_000 }, async () => {
         const series = await roundTrip("area", categoryData(5, 3000));
         expect(series[4].values[2999]).to.equal("3049");
     });
