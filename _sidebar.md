@@ -41,6 +41,7 @@
         - [Chart Trendlines and Error Bars](usage/chart-trendlines-and-error-bars.md)
         - [Chart Size and Position](usage/chart-size-and-position.md)
         - [Charts in Templates](usage/chart-templates.md)
+        - [Charts from Mermaid](usage/chart-mermaid.md)
         - [Chart Compatibility](usage/chart-compatibility.md)
     - [Tables](usage/tables.md)
     - [Bullet Points](usage/bullet-points.md)
