@@ -23,6 +23,7 @@
         - [Shape Types](usage/shape-types.md)
         - [Shape Adjustments](usage/shape-adjustments.md)
         - [Shape Patterns and Text Warps](usage/shape-patterns-and-warps.md)
+    - [Charts](usage/charts.md)
     - [Tables](usage/tables.md)
     - [Bullet Points](usage/bullet-points.md)
     - [Numbering](usage/numbering.md)

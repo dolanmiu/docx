@@ -27,17 +27,23 @@ jobs:
             # left out, as it only knows the standard's first edition, from before ISO/IEC 29500, and rejects what Word
             # itself writes.
             # The validator checks only the first file it's given (each demo writes one), and its option is
-            # --officeVersion, not the --office-version its README gives. It reads a version it doesn't know as Microsoft365
+            # --officeVersion, not the --office-version its README gives. It reads a version it doesn't know as Microsoft365.
+            # It doesn't look inside the workbooks that charts embed, so each is checked on its own. unzip exits with 11
+            # when a document has none
             - name: Run and validate the demos
               shell: bash
               run: |
                   for demo in $(ls demo/[0-9]*.ts | sort -V | awk -v n=${{ strategy.job-total }} -v i=${{ strategy.job-index }} 'NR % n == i'); do
                       echo "::group::$demo"
-                      rm -f ./*.docx
+                      rm -rf ./*.docx embeddings
                       npm run --silent run-ts -- "$demo"
+                      unzip -q ./*.docx "word/embeddings/*.xlsx" -d embeddings || [ $? -eq 11 ]
                       for version in Office2010 Office2013 Office2016 Office2019 Office2021 Microsoft365; do
                           echo "$version"
                           npx ooxml-validator ./*.docx --officeVersion "$version"
+                          for workbook in $(find embeddings -name "*.xlsx" 2>/dev/null); do
+                              npx ooxml-validator "$workbook" --officeVersion "$version"
+                          done
                       done
                       echo "::endgroup::"
                   done

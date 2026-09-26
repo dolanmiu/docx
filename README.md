@@ -65,12 +65,13 @@ More [here](https://github.com/dolanmiu/docx/tree/master/demo)
 
 Please refer to the [documentation at https://docx.js.org/](https://docx.js.org/) for details on how to use this library, examples and much more!
 
-# Shapes and watermarks
+# Shapes, watermarks and charts
 
-Shapes, groups of shapes and diagrams with connectors come with `docx`, from `docx/shapes`, and watermarks from `docx/watermarks`. They are left out of `docx` itself, so documents that don't use them don't carry their code:
+Shapes, groups of shapes and diagrams with connectors come with `docx`, from `docx/shapes`, watermarks from `docx/watermarks`, and native Word charts from `docx/charts`. They are left out of `docx` itself, so documents that don't use them don't carry their code:
 
 ```ts
 import { Document, Header, Paragraph } from "docx";
+import { ChartRun } from "docx/charts";
 import { ShapeRun } from "docx/shapes";
 import { TextWatermark } from "docx/watermarks";
 
@@ -78,13 +79,18 @@ const doc = new Document({
     sections: [
         {
             headers: { default: new Header({ children: [new Paragraph({ children: [new TextWatermark({ text: "DRAFT" })] })] }) },
-            children: [new Paragraph({ children: [new ShapeRun({ type: "ellipse", transformation: { width: 100, height: 60 } })] })],
+            children: [
+                new Paragraph({ children: [new ShapeRun({ type: "ellipse", transformation: { width: 100, height: 60 } })] }),
+                new Paragraph({
+                    children: [new ChartRun({ type: "column", categories: ["Q1", "Q2"], series: [{ name: "Sales", values: [10, 20] }] })],
+                }),
+            ],
         },
     ],
 });
 ```
 
-In a page without a bundler, load `dist/shapes.umd.cjs` or `dist/watermarks.umd.cjs` after `dist/index.umd.cjs`. They add the `docxShapes` and `docxWatermarks` globals. See the [shapes](https://docx.js.org/#/usage/shapes) and [watermarks](https://docx.js.org/#/usage/watermarks) documentation.
+In a page without a bundler, load `dist/shapes.umd.cjs`, `dist/watermarks.umd.cjs` or `dist/charts.umd.cjs` after `dist/index.umd.cjs`. They add the `docxShapes`, `docxWatermarks` and `docxCharts` globals. See the [shapes](https://docx.js.org/#/usage/shapes), [watermarks](https://docx.js.org/#/usage/watermarks) and [charts](https://docx.js.org/#/usage/charts) documentation.
 
 # Playground
 
