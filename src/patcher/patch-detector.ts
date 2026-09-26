@@ -5,6 +5,7 @@
  */
 import JSZip from "jszip";
 
+import { altTextOf, findDrawings } from "./drawing-patch";
 import type { InputDataType } from "./from-docx";
 import { traverse } from "./traverser";
 import { toJson } from "./util";
@@ -22,8 +23,10 @@ type PatchDetectorOptions = {
  * Detects all placeholders present in a document template.
  *
  * Scans through all XML content in a .docx file to find placeholder text
- * enclosed in delimiters (default: {{placeholder}}). This is useful for
- * discovering what patches a template expects before performing replacement.
+ * enclosed in delimiters (default: {{placeholder}}), and placeholders in the
+ * alt text of drawings, such as a chart for `docx/charts`' `ChartDataPatch`.
+ * This is useful for discovering what patches a template expects before
+ * performing replacement.
  *
  * @param options - Patch detector configuration
  * @returns Array of placeholder keys found in the document
@@ -53,8 +56,9 @@ export const patchDetector = async ({ data }: PatchDetectorOptions): Promise<rea
         }
         if (key.startsWith("word/") && !key.endsWith(".xml.rels")) {
             const json = toJson(await value.async("text"));
+            const texts = [...traverse(json).map((p) => p.text), ...findDrawings(json).flatMap(({ properties }) => altTextOf(properties))];
             // eslint-disable-next-line functional/immutable-data
-            traverse(json).forEach((p) => findPatchKeys(p.text).forEach((patch) => patches.add(patch)));
+            texts.forEach((text) => findPatchKeys(text).forEach((patch) => patches.add(patch)));
         }
     }
     return Array.from(patches);

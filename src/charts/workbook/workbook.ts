@@ -5,7 +5,7 @@
  *
  * @module
  */
-import type { EmbeddedPackageFile, XmlComponent } from "docx";
+import { type EmbeddedPackageFile, PackagePart, type XmlComponent } from "docx";
 
 import type { ChartCell, ChartSheet } from "../chart-data";
 import { createElement, createText } from "../chart-elements";
@@ -182,3 +182,18 @@ export const createWorkbookFiles = (sheet: ChartSheet): readonly EmbeddedPackage
         { path: "xl/sharedStrings.xml", content: createSharedStrings(strings, texts.length) },
     ];
 };
+
+/**
+ * The workbook as a part of the package, with its relationship type and content type, which a chart refers to.
+ *
+ * @param sheet - The sheet's cells, row by row
+ */
+export const createWorkbookPart = (sheet: ChartSheet): PackagePart =>
+    new PackagePart({
+        folder: "embeddings",
+        name: "Microsoft_Excel_Worksheet",
+        extension: "xlsx",
+        contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        relationshipType: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/package",
+        content: { files: createWorkbookFiles(sheet) },
+    });

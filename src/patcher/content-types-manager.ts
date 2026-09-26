@@ -74,3 +74,22 @@ export const appendContentTypeOverride = (element: Element, contentType: string,
         type: "element",
     });
 };
+
+/**
+ * Removes the content type of one part of the package from the [Content_Types].xml structure, such as a part a patch
+ * removes. Part names are compared without case.
+ *
+ * @param element - The [Content_Types].xml root element
+ * @param partName - The part's path in the package (e.g., "/word/embeddings/Microsoft_Excel_Worksheet1.xlsx")
+ */
+export const removeContentTypeOverride = (element: Element, partName: string): void => {
+    const types = element.elements?.find((el) => el.name === "Types");
+    if (types?.elements === undefined) {
+        return;
+    }
+
+    // eslint-disable-next-line functional/immutable-data
+    types.elements = types.elements.filter(
+        (el) => !(el.name === "Override" && String(el.attributes?.PartName ?? "").toLowerCase() === partName.toLowerCase()),
+    );
+};

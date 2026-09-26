@@ -90,3 +90,26 @@ export const appendRelationship = (
 
     return relationshipElements;
 };
+
+/**
+ * Creates an empty relationships part, for a part that has none.
+ */
+export const createRelationshipFile = (): Element => ({
+    declaration: {
+        attributes: {
+            version: "1.0",
+            encoding: "UTF-8",
+            standalone: "yes",
+        },
+    },
+    elements: [
+        {
+            type: "element",
+            name: "Relationships",
+            attributes: {
+                xmlns: "http://schemas.openxmlformats.org/package/2006/relationships",
+            },
+            elements: [],
+        },
+    ],
+});

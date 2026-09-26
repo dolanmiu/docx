@@ -35,3 +35,4 @@
  * ```
  */
 export * from "./chart-run";
+export * from "./chart-data-patch";

@@ -72,6 +72,11 @@ export const createDataSource = (name: string, data: ChartTextData | ChartNumber
     createElement(name, {}, [data.type === "text" ? createTextReference(data) : createNumberReference(data)]);
 
 /**
+ * A series' name (`c:tx`): a reference to the cell it is in.
+ */
+export const createSeriesName = (name: ChartTextData): XmlComponent => createElement("c:tx", {}, [createTextReference(name)]);
+
+/**
  * The start of a series (`c:ser`): its index and order, both unique in the chart, and its name (`c:tx`).
  *
  * ## XSD Schema
@@ -89,7 +94,7 @@ export const createDataSource = (name: string, data: ChartTextData | ChartNumber
 export const createSeriesStart = (index: number, data: ChartSeriesData): readonly XmlComponent[] => [
     createValue("c:idx", index),
     createValue("c:order", index),
-    createElement("c:tx", {}, [createTextReference(data.name)]),
+    createSeriesName(data.name),
 ];
 
 /**

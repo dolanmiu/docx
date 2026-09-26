@@ -145,7 +145,10 @@ const checkValueAxis = (axis: ChartValueAxis | undefined, name: string, dates = 
 
 const checkValue = (value: number | null, series: string): void => {
     if (value !== null && !Number.isFinite(value)) {
-        throw new Error(`Invalid value ${value} in series "${series}". Expected a finite number or null`);
+        // Text is quoted, so "5" isn't mistaken for a number
+        throw new Error(
+            `Invalid value ${typeof value === "string" ? `"${value}"` : value} in series "${series}". Expected a finite number or null`,
+        );
     }
 };
 

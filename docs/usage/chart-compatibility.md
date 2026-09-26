@@ -44,4 +44,6 @@ Apple Pages (checked with version 15.1) draws the charts, but:
 
 ## Templates
 
-`patchDocument` adds charts to any template, such as one saved by Word, as it adds them to a new `Document`: see [In Templates](usage/chart-size-and-position.md#in-templates). The charts a template has already are left as they are, and the new ones are numbered after them. Their data can't be changed yet.
+`patchDocument` adds charts to any template, such as one saved by Word, as it adds them to a new `Document`: see [In Templates](usage/chart-size-and-position.md#in-templates). The new ones are numbered after the charts the template has already.
+
+`ChartDataPatch` gives the template's own charts new data, whether Word, LibreOffice or `docx` made them: see [Charts in Templates](usage/chart-templates.md). LibreOffice and Pages draw the new data from the chart's caches, and Word until **Edit Data**, when it reads the new workbook, which holds the same data.

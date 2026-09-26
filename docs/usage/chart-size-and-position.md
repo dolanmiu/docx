@@ -132,7 +132,9 @@ const doc = await patchDocument({
 });
 ```
 
-The chart is added with its workbook, so Word's "Edit Data" works, as it does for a chart in a new `Document`. Placeholders in headers and footers take charts too. The template's own charts are left as they are. See [Patcher](usage/patcher.md).
+The chart is added with its workbook, so Word's "Edit Data" works, as it does for a chart in a new `Document`. Placeholders in headers and footers take charts too. See [Patcher](usage/patcher.md).
+
+To give the template's own charts new data, keeping their look, see [Charts in Templates](usage/chart-templates.md).
 
 ## Alternative Text
 
