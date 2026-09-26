@@ -16,7 +16,7 @@
 </div></section>
 <div class="tsd-signature"><span class="tsd-signature-keyword">type</span> <span class="tsd-kind-type-alias">PackagePartOptions</span> <span class="tsd-signature-symbol">=</span> <span class="tsd-signature-symbol">{</span><br/>    <a class="tsd-kind-property" href="#content">content</a><span class="tsd-signature-symbol">:</span><br/>        <span class="tsd-signature-symbol">|</span> <a href="../classes/index.XmlComponent.html" class="tsd-signature-type tsd-kind-class">XmlComponent</a><br/>        <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">Uint8Array</span><br/>        <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-symbol">{</span> <span class="tsd-kind-property">files</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-keyword">readonly</span> <a href="index.EmbeddedPackageFile.html" class="tsd-signature-type tsd-kind-type-alias">EmbeddedPackageFile</a><span class="tsd-signature-symbol">[]</span> <span class="tsd-signature-symbol">}</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#contenttype">contentType</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#extension">extension</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#folder">folder</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#name">name</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#relationshiptype">relationshipType</a><span class="tsd-signature-symbol">:</span> <a href="index.RelationshipType.html" class="tsd-signature-type tsd-kind-type-alias">RelationshipType</a><span class="tsd-signature-symbol">;</span><br/><span class="tsd-signature-symbol">}</span></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/43a4e0ce677703e371231cd5f785f468e3910138/src/file/package-part/package-part.ts#L27">file/package-part/package-part.ts:27</a></li></ul></aside>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/62f4ecd42d0e2a305c5d92c90a7a438131f9ab8f/src/file/package-part/package-part.ts#L27">file/package-part/package-part.ts:27</a></li></ul></aside>
 <section class="tsd-panel-group tsd-index-group">
 <section class="tsd-panel tsd-index-panel">
 <details class="tsd-index-content tsd-accordion" open><summary class="tsd-accordion-summary tsd-index-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
@@ -42,42 +42,42 @@ embedded workbook, which are zipped. XML can refer to other parts by calling the
 it is formatted, as a document does</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/43a4e0ce677703e371231cd5f785f468e3910138/src/file/package-part/package-part.ts#L43">file/package-part/package-part.ts:43</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/62f4ecd42d0e2a305c5d92c90a7a438131f9ab8f/src/file/package-part/package-part.ts#L43">file/package-part/package-part.ts:43</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="contenttype"><code class="tsd-tag">Readonly</code><span>content<wbr/>Type</span><a href="#contenttype" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">contentType</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 <div class="tsd-comment tsd-typography"><p>The part's content type, such as &quot;application/vnd.openxmlformats-officedocument.drawingml.chart+xml&quot;</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/43a4e0ce677703e371231cd5f785f468e3910138/src/file/package-part/package-part.ts#L35">file/package-part/package-part.ts:35</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/62f4ecd42d0e2a305c5d92c90a7a438131f9ab8f/src/file/package-part/package-part.ts#L35">file/package-part/package-part.ts:35</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="extension"><code class="tsd-tag">Readonly</code><span>extension</span><a href="#extension" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">extension</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 <div class="tsd-comment tsd-typography"><p>The extension of the part's file name, such as &quot;xml&quot;</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/43a4e0ce677703e371231cd5f785f468e3910138/src/file/package-part/package-part.ts#L33">file/package-part/package-part.ts:33</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/62f4ecd42d0e2a305c5d92c90a7a438131f9ab8f/src/file/package-part/package-part.ts#L33">file/package-part/package-part.ts:33</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="folder"><code class="tsd-tag">Readonly</code><span>folder</span><a href="#folder" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">folder</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 <div class="tsd-comment tsd-typography"><p>The folder under word/ the part is written in, such as &quot;charts&quot;</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/43a4e0ce677703e371231cd5f785f468e3910138/src/file/package-part/package-part.ts#L29">file/package-part/package-part.ts:29</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/62f4ecd42d0e2a305c5d92c90a7a438131f9ab8f/src/file/package-part/package-part.ts#L29">file/package-part/package-part.ts:29</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="name"><code class="tsd-tag">Readonly</code><span>name</span><a href="#name" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">name</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 <div class="tsd-comment tsd-typography"><p>The start of the part's file name, which is numbered in the order parts are added: &quot;chart&quot; for word/charts/chart1.xml</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/43a4e0ce677703e371231cd5f785f468e3910138/src/file/package-part/package-part.ts#L31">file/package-part/package-part.ts:31</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/62f4ecd42d0e2a305c5d92c90a7a438131f9ab8f/src/file/package-part/package-part.ts#L31">file/package-part/package-part.ts:31</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="relationshiptype"><code class="tsd-tag">Readonly</code><span>relationship<wbr/>Type</span><a href="#relationshiptype" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">relationshipType</span><span class="tsd-signature-symbol">:</span> <a href="index.RelationshipType.html" class="tsd-signature-type tsd-kind-type-alias">RelationshipType</a></div>
 <div class="tsd-comment tsd-typography"><p>The type of the relationship to the part from the part that refers to it, such as the chart relationship</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/43a4e0ce677703e371231cd5f785f468e3910138/src/file/package-part/package-part.ts#L37">file/package-part/package-part.ts:37</a></li></ul></aside></section></section></details></div>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/62f4ecd42d0e2a305c5d92c90a7a438131f9ab8f/src/file/package-part/package-part.ts#L37">file/package-part/package-part.ts:37</a></li></ul></aside></section></section></details></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">

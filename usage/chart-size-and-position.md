@@ -67,7 +67,7 @@ new Paragraph({
 
 ## Where Charts Can Go
 
-A chart can go in any paragraph: in the body, a table cell, a header, a footer or a footnote.
+A chart can go in any paragraph: in the body, a table cell, a header, a footer or a footnote. It can go in a template too: see [In Templates](#in-templates).
 
 To put two charts side by side, put each in a cell of a table, and make each narrower than its cell:
 
@@ -101,7 +101,38 @@ new Table({
 });
 ```
 
-?> `patchDocument` can't add charts yet: a chart in a patch throws an error. Add charts to a new `Document`.
+## In Templates
+
+`patchDocument` puts a chart where a template has a placeholder, as it does an image. A `DOCUMENT` patch takes a paragraph with the chart in it, and a `PARAGRAPH` patch takes the chart itself, with any other runs:
+
+```ts
+import * as fs from "fs";
+import { Paragraph, patchDocument, PatchType } from "docx";
+import { ChartRun } from "docx/charts";
+
+const doc = await patchDocument({
+    outputType: "nodebuffer",
+    data: fs.readFileSync("Template.docx"),
+    patches: {
+        sales_chart: {
+            type: PatchType.DOCUMENT,
+            children: [
+                new Paragraph({
+                    children: [
+                        new ChartRun({
+                            type: "column",
+                            categories: ["Q1", "Q2", "Q3", "Q4"],
+                            series: [{ name: "Sales", values: [120, 135, 150, 170] }],
+                        }),
+                    ],
+                }),
+            ],
+        },
+    },
+});
+```
+
+The chart is added with its workbook, so Word's "Edit Data" works, as it does for a chart in a new `Document`. Placeholders in headers and footers take charts too. The template's own charts are left as they are. See [Patcher](usage/patcher.md).
 
 ## Alternative Text
 

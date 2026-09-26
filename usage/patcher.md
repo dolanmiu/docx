@@ -53,7 +53,7 @@ The patcher also takes in a `keepOriginalStyles` boolean, which will preserve th
 
 ?> Notice how there is no handlebar notation in the key.
 
-The patch can be as simple as a string, or as complex as a table. Images, hyperlinks, and other complex elements within the `docx` library are also supported.
+The patch can be as simple as a string, or as complex as a table. Images, hyperlinks, charts from `docx/charts` (see [Charts in Templates](usage/chart-size-and-position.md#in-templates)), and other complex elements within the `docx` library are also supported.
 
 ```ts
 patchDocument(fs.readFileSync("My Document.docx"), {

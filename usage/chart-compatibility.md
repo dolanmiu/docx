@@ -42,6 +42,6 @@ Apple Pages (checked with version 15.1) draws the charts, but:
 - It names an axis' `displayUnits`, but writes its labels in them only when the axis has a `numberFormat` other than `"General"`, such as `"#,##0"`.
 - It draws `"x"`, `"star"`, `"plus"`, `"dash"` and `"dot"` markers as circles.
 
-## Patching
+## Templates
 
-`patchDocument` can't add charts yet: a chart in a patch throws an error. Add charts to a new `Document`.
+`patchDocument` adds charts to any template, such as one saved by Word, as it adds them to a new `Document`: see [In Templates](usage/chart-size-and-position.md#in-templates). The charts a template has already are left as they are, and the new ones are numbered after them. Their data can't be changed yet.
