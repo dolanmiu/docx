@@ -24,7 +24,9 @@ import { encodeUtf8, uniqueId } from "@util/convenience-functions";
 import type { OutputByType, OutputType } from "@util/output-type";
 
 import { appendContentType, appendContentTypeOverride } from "./content-types-manager";
-import { appendRelationship, getNextRelationshipIndex } from "./relationship-manager";
+import { type DrawingPatch, patchDrawings, relationshipsPathOf } from "./drawing-patch";
+import { PatchType } from "./patch-type";
+import { appendRelationship, createRelationshipFile, getNextRelationshipIndex } from "./relationship-manager";
 import { replacer } from "./replacer";
 import { readThemeColors } from "./theme-colors";
 import { toJson } from "./util";
@@ -38,19 +40,9 @@ import { toJson } from "./util";
 // eslint-disable-next-line functional/prefer-readonly-type
 export type InputDataType = Buffer | string | number[] | Uint8Array | ArrayBuffer | Blob | NodeJS.ReadableStream | JSZip;
 
-/**
- * Patch type enumeration.
- *
- * Determines how the replacement content should be inserted into the document.
- *
- * @publicApi
- */
-export const PatchType = {
-    /** Replace entire file-level elements (e.g., whole paragraphs) */
-    DOCUMENT: "file",
-    /** Replace content within paragraphs (inline replacement) */
-    PARAGRAPH: "paragraph",
-} as const;
+export { PatchType } from "./patch-type";
+export { DrawingPatch } from "./drawing-patch";
+export type { TemplateDrawing, TemplatePackage, TemplatePart } from "./drawing-patch";
 
 /**
  * Patch definition for paragraph-level replacement.
@@ -125,8 +117,11 @@ export type PatchDocumentOptions<T extends PatchDocumentOutputType = PatchDocume
     readonly outputType: T;
     /** Input document data */
     readonly data: InputDataType;
-    /** Mapping of placeholder keys to patch content */
-    readonly patches: Readonly<Record<string, IPatch>>;
+    /**
+     * Mapping of placeholder keys to patch content, or to a {@link DrawingPatch}, such as `docx/charts`' `ChartDataPatch`,
+     * for a drawing whose alt text holds the placeholder
+     */
+    readonly patches: Readonly<Record<string, IPatch | DrawingPatch>>;
     /** Preserve original formatting of replaced text (default: true) */
     readonly keepOriginalStyles?: boolean;
     /** Custom placeholder delimiters (default: {{ and }}) */
@@ -231,6 +226,21 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
 
     const binaryContentMap = new Map<string, Uint8Array>();
 
+    if (!placeholderDelimiters?.start.trim() || !placeholderDelimiters?.end.trim()) {
+        throw new Error("Both start and end delimiters must be non-empty strings.");
+    }
+    const { start, end } = placeholderDelimiters;
+
+    for (const [key, patch] of Object.entries(patches)) {
+        const valid = patch?.type === PatchType.DRAWING ? typeof patch.patch === "function" : Array.isArray(patch?.children);
+        if (!valid) {
+            throw new Error(
+                `Invalid patch "${key}". Expected { type: PatchType.PARAGRAPH or PatchType.DOCUMENT, children: [...] }, ` +
+                    "or a drawing patch such as ChartDataPatch from docx/charts",
+            );
+        }
+    }
+
     for (const [key, value] of Object.entries(zipContent.files)) {
         const binaryValue = await value.async("uint8array");
         const startBytes = binaryValue.slice(0, 2);
@@ -263,87 +273,101 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
             }
         }
 
-        if (key.startsWith("word/") && !key.endsWith(".xml.rels")) {
-            const context: IContext = {
-                file,
-                viewWrapper: {
-                    Relationships: {
-                        addRelationship: (
-                            id: string | number,
-                            type: RelationshipType,
-                            target: string,
-                            targetMode?: (typeof TargetModeType)[keyof typeof TargetModeType],
-                        ) => {
-                            // eslint-disable-next-line functional/immutable-data
-                            relationshipAdditions.push({ key, id, type, target, targetMode });
-                        },
-                    },
-                } as unknown as IViewWrapper,
-                stack: [],
-            };
-            // eslint-disable-next-line functional/immutable-data
-            contexts.set(key, context);
-
-            if (!placeholderDelimiters?.start.trim() || !placeholderDelimiters?.end.trim()) {
-                throw new Error("Both start and end delimiters must be non-empty strings.");
-            }
-
-            const { start, end } = placeholderDelimiters;
-
-            for (const [patchKey, patchValue] of Object.entries(patches)) {
-                const patchText = `${start}${patchKey}${end}`;
-                // TODO: mutates json. Make it immutable
-                // The replacer patches every occurrence in one pass, and never searches the content it inserts,
-                // so a patch that contains its own placeholder is fine
-                // https://github.com/dolanmiu/docx/issues/2267
-                replacer({
-                    json,
-                    patch: {
-                        ...patchValue,
-                        children: patchValue.children.map((element) => {
-                            // We need to replace external hyperlinks with concrete hyperlinks
-                            if (element instanceof ExternalHyperlink) {
-                                const concreteHyperlink = new ConcreteHyperlink(element.options.children, uniqueId());
-                                // eslint-disable-next-line functional/immutable-data
-                                relationshipAdditions.push({
-                                    key,
-                                    id: concreteHyperlink.linkId,
-                                    type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink",
-                                    target: element.options.link,
-                                    targetMode: TargetModeType.EXTERNAL,
-                                });
-                                return concreteHyperlink;
-                            } else {
-                                return element;
-                            }
-                        }),
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    } as any,
-                    patchText,
-                    context,
-                    keepOriginalStyles,
-                    recursive,
-                });
-            }
-
-            const mediaDatas = imageReplacer.getMediaData(JSON.stringify(json), context.file.Media);
-            if (mediaDatas.length > 0) {
-                hasMedia = true;
-                // eslint-disable-next-line functional/immutable-data
-                imageRelationshipAdditions.push({
-                    key,
-                    mediaDatas,
-                });
-            }
-        }
-
         // eslint-disable-next-line functional/immutable-data
         map.set(key, json);
     }
 
-    for (const { key, mediaDatas } of imageRelationshipAdditions) {
+    const createContext = (key: string): IContext => ({
+        file,
+        viewWrapper: {
+            Relationships: {
+                addRelationship: (
+                    id: string | number,
+                    type: RelationshipType,
+                    target: string,
+                    targetMode?: (typeof TargetModeType)[keyof typeof TargetModeType],
+                ) => {
+                    // eslint-disable-next-line functional/immutable-data
+                    relationshipAdditions.push({ key, id, type, target, targetMode });
+                },
+            },
+        } as unknown as IViewWrapper,
+        stack: [],
+    });
+
+    // Drawings whose alt text holds a placeholder, such as charts, are patched first, so their patches only see the
+    // template's own drawings, and not those the other patches add
+    patchDrawings(
+        {
+            parts: map,
+            binaryParts: binaryContentMap,
+            file,
+            patches: Object.entries(patches).flatMap(([key, patch]) => (patch.type === PatchType.DRAWING ? [[key, patch] as const] : [])),
+            delimiters: { start, end },
+        },
+        createContext,
+    );
+
+    for (const [key, json] of [...map]) {
+        if (!key.startsWith("word/") || key.endsWith(".xml.rels")) {
+            continue;
+        }
+        const context = createContext(key);
         // eslint-disable-next-line functional/immutable-data
-        const relationshipKey = `word/_rels/${key.split("/").pop()}.rels`;
+        contexts.set(key, context);
+
+        for (const [patchKey, patchValue] of Object.entries(patches)) {
+            if (patchValue.type === PatchType.DRAWING) {
+                continue;
+            }
+            const patchText = `${start}${patchKey}${end}`;
+            // TODO: mutates json. Make it immutable
+            // The replacer patches every occurrence in one pass, and never searches the content it inserts,
+            // so a patch that contains its own placeholder is fine
+            // https://github.com/dolanmiu/docx/issues/2267
+            replacer({
+                json,
+                patch: {
+                    ...patchValue,
+                    children: patchValue.children.map((element) => {
+                        // We need to replace external hyperlinks with concrete hyperlinks
+                        if (element instanceof ExternalHyperlink) {
+                            const concreteHyperlink = new ConcreteHyperlink(element.options.children, uniqueId());
+                            // eslint-disable-next-line functional/immutable-data
+                            relationshipAdditions.push({
+                                key,
+                                id: concreteHyperlink.linkId,
+                                type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink",
+                                target: element.options.link,
+                                targetMode: TargetModeType.EXTERNAL,
+                            });
+                            return concreteHyperlink;
+                        } else {
+                            return element;
+                        }
+                    }),
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                } as any,
+                patchText,
+                context,
+                keepOriginalStyles,
+                recursive,
+            });
+        }
+
+        const mediaDatas = imageReplacer.getMediaData(JSON.stringify(json), context.file.Media);
+        if (mediaDatas.length > 0) {
+            hasMedia = true;
+            // eslint-disable-next-line functional/immutable-data
+            imageRelationshipAdditions.push({
+                key,
+                mediaDatas,
+            });
+        }
+    }
+
+    for (const { key, mediaDatas } of imageRelationshipAdditions) {
+        const relationshipKey = relationshipsPathOf(key);
         const relationshipsJson = map.get(relationshipKey) ?? createRelationshipFile();
         // eslint-disable-next-line functional/immutable-data
         map.set(relationshipKey, relationshipsJson);
@@ -365,8 +389,7 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
     }
 
     for (const { key, id, type, target, targetMode } of relationshipAdditions) {
-        // eslint-disable-next-line functional/immutable-data
-        const relationshipKey = `word/_rels/${key.split("/").pop()}.rels`;
+        const relationshipKey = relationshipsPathOf(key);
 
         const relationshipsJson = map.get(relationshipKey) ?? createRelationshipFile();
         // eslint-disable-next-line functional/immutable-data
@@ -427,8 +450,23 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
     });
 };
 
+/**
+ * The element with an extra escape on each "&" in its text. xml-js reads "&amp;" in text as an "&" already escaped, and
+ * would write a text's literal "&amp;", such as in a document about HTML, as "&".
+ */
+const withAmpersandsEscaped = (element: Element): Element => ({
+    ...element,
+    ...(element.elements === undefined
+        ? {}
+        : {
+              elements: element.elements.map((child) =>
+                  child.type === "text" ? { ...child, text: String(child.text).replace(/&/g, "&amp;") } : withAmpersandsEscaped(child),
+              ),
+          }),
+});
+
 const toXml = (jsonObj: Element): string => {
-    const output = js2xml(jsonObj, {
+    const output = js2xml(withAmpersandsEscaped(jsonObj), {
         attributeValueFn: (str) =>
             String(str)
                 .replace(/&(?!amp;|lt;|gt;|quot;|apos;)/g, "&amp;")
@@ -439,23 +477,3 @@ const toXml = (jsonObj: Element): string => {
     });
     return output;
 };
-
-const createRelationshipFile = (): Element => ({
-    declaration: {
-        attributes: {
-            version: "1.0",
-            encoding: "UTF-8",
-            standalone: "yes",
-        },
-    },
-    elements: [
-        {
-            type: "element",
-            name: "Relationships",
-            attributes: {
-                xmlns: "http://schemas.openxmlformats.org/package/2006/relationships",
-            },
-            elements: [],
-        },
-    ],
-});

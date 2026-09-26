@@ -737,6 +737,25 @@ describe("from-docx", () => {
             });
         });
 
+        describe("Text with an escaped ampersand", () => {
+            it("should keep a literal &amp; in the template's text and in a patch's", async () => {
+                const template = await Packer.toBuffer(
+                    new File({ sections: [{ children: [new Paragraph("Write &amp; for & in HTML"), new Paragraph("{{patch}}")] }] }),
+                );
+                const zip = await JSZip.loadAsync(
+                    await patchDocument({
+                        outputType: "nodebuffer",
+                        data: template,
+                        patches: { patch: { type: PatchType.PARAGRAPH, children: [new TextRun("R&amp;D & more")] } },
+                    }),
+                );
+                const document = (await zip.file("word/document.xml")?.async("text")) ?? "";
+
+                expect(document).to.contain("Write &amp;amp; for &amp; in HTML");
+                expect(document).to.contain("R&amp;amp;D &amp; more");
+            });
+        });
+
         describe("A part whose relationships part is empty", () => {
             it("should add the relationships of its patches, such as an image's in a header", async () => {
                 // docx writes an empty <Relationships/> for a header that refers to nothing

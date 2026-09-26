@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { appendContentType, appendContentTypeOverride } from "./content-types-manager";
+import { appendContentType, appendContentTypeOverride, removeContentTypeOverride } from "./content-types-manager";
 import { toJson } from "./util";
 
 describe("content-types-manager", () => {
@@ -91,6 +91,38 @@ describe("content-types-manager", () => {
                 { type: "element", name: "Override", attributes: { ContentType: CHART_TYPE, PartName: "/word/charts/chart1.xml" } },
                 { type: "element", name: "Override", attributes: { ContentType: CHART_TYPE, PartName: "/word/charts/chart2.xml" } },
             ]);
+        });
+    });
+
+    describe("removeContentTypeOverride", () => {
+        const types = (): ReturnType<typeof toJson> =>
+            toJson(
+                '<Types><Default Extension="xlsx" ContentType="a"/><Override PartName="/word/embeddings/Book1.xlsx" ContentType="a"/>' +
+                    '<Override PartName="/word/charts/chart1.xml" ContentType="b"/><Override ContentType="c"/></Types>',
+            );
+
+        it("should remove a part's content type, whatever its capitals, and keep the others", () => {
+            const element = types();
+            removeContentTypeOverride(element, "/WORD/embeddings/book1.XLSX");
+            expect(element.elements![0].elements!.map((el) => el.attributes)).to.deep.equal([
+                { Extension: "xlsx", ContentType: "a" },
+                { PartName: "/word/charts/chart1.xml", ContentType: "b" },
+                { ContentType: "c" },
+            ]);
+        });
+
+        it("should leave content types without the part as they are", () => {
+            const element = types();
+            removeContentTypeOverride(element, "/word/other.xml");
+            expect(element).to.deep.equal(types());
+        });
+
+        it("should leave content types without a Types element, or an empty one, as they are", () => {
+            for (const text of ["<Other/>", "<Types/>"]) {
+                const element = toJson(text);
+                removeContentTypeOverride(element, "/word/document.xml");
+                expect(element).to.deep.equal(toJson(text));
+            }
         });
     });
 });

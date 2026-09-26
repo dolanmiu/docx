@@ -16,6 +16,12 @@ export const columnName = (column: number): string =>
     (column >= 26 ? columnName(Math.floor(column / 26) - 1) : "") + String.fromCharCode(65 + (column % 26));
 
 /**
+ * A column's index, from 0, from its letters: 0 for A, 25 for Z and 26 for AA.
+ */
+export const columnIndexOf = (letters: string): number =>
+    [...letters].reduce((index, letter) => index * 26 + letter.charCodeAt(0) - 64, 0) - 1;
+
+/**
  * A cell's name, such as B2.
  *
  * @param column - The column's index, from 0

@@ -35,7 +35,7 @@ describe("checkChartOptions", () => {
     it("should throw for a value that isn't a finite number or null", () => {
         for (const value of [Number.NaN, Infinity, "5" as unknown as number, undefined as unknown as number]) {
             expect(() => checkChartOptions(column({ series: [{ name: "Bad", values: [1, value] }] }))).to.throw(
-                `Invalid value ${value} in series "Bad". Expected a finite number or null`,
+                `Invalid value ${typeof value === "string" ? `"${value}"` : value} in series "Bad". Expected a finite number or null`,
             );
         }
     });

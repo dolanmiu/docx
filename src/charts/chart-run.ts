@@ -12,7 +12,7 @@ import { chartAltText } from "./chart-description";
 import type { ChartRunOptions } from "./chart-options";
 import { PartReference } from "./chart-reference";
 import { CHART_NAMESPACE, RELATIONSHIPS_NAMESPACE, createChartSpace } from "./chart-space";
-import { createWorkbookFiles } from "./workbook/workbook";
+import { createWorkbookPart } from "./workbook/workbook";
 
 export type {
     AreaChartOptions,
@@ -102,14 +102,7 @@ export class ChartRun extends Run {
         super({});
 
         const data = createChartData(options);
-        const workbook = new PackagePart({
-            folder: "embeddings",
-            name: "Microsoft_Excel_Worksheet",
-            extension: "xlsx",
-            contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            relationshipType: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/package",
-            content: { files: createWorkbookFiles(data.sheet) },
-        });
+        const workbook = createWorkbookPart(data.sheet);
         const chart = new PackagePart({
             folder: "charts",
             name: "chart",
