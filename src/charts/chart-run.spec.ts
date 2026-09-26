@@ -88,19 +88,39 @@ describe("ChartRun", () => {
         expect(find(tree, "wp:cNvGraphicFramePr")).to.deep.equal({});
     });
 
+    it("should describe the chart for screen readers when its alternative text has no description", () => {
+        expect(find(format(new ChartRun(column)), "wp:docPr")).to.deep.equal({
+            _attr: { id: 1, name: "", descr: "Column chart. S: A 1, B 2.", title: "" },
+        });
+        expect(find(format(new ChartRun({ ...column, altText: { name: "Chart 1" } })), "wp:docPr")).to.deep.equal({
+            _attr: { id: 1, name: "Chart 1", descr: "Column chart. S: A 1, B 2." },
+        });
+    });
+
+    it("should mark a decorative chart as decorative, without a description", () => {
+        const tree = format(new ChartRun({ ...column, decorative: true }));
+
+        expect(JSON.stringify(find(tree, "wp:docPr"))).to.not.contain("Column chart");
+        expect(JSON.stringify(tree)).to.contain("adec:decorative");
+    });
+
     it("should throw where it is made when an option is wrong", () => {
         expect(() => new ChartRun({ ...column, series: [] })).to.throw("A chart needs at least one series");
     });
 
     it("should be written in each chart type", () => {
+        const categories = ["A", "B"];
+        const series = [{ name: "S", values: [1, 2] }];
         const charts: readonly ChartRunOptions[] = [
             column,
-            { ...column, type: "bar" },
-            { ...column, type: "line" },
-            { ...column, type: "area" },
-            { ...column, type: "pie" },
-            { ...column, type: "doughnut" },
+            { type: "bar", categories, series },
+            { type: "line", categories, series },
+            { type: "area", categories, series },
+            { type: "pie", categories, series },
+            { type: "doughnut", categories, series },
+            { type: "radar", categories, series },
             { type: "scatter", series: [{ name: "S", points: [{ x: 1, y: 1 }] }] },
+            { type: "bubble", series: [{ name: "S", points: [{ x: 1, y: 1, size: 1 }] }] },
         ];
         for (const options of charts) {
             expect(find(format(new ChartRun(options)), "c:chart")).to.not.equal(undefined);

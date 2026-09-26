@@ -17,6 +17,14 @@ new ChartRun({
 
 Each line of the text is a line of the title, so `"Sales by quarter\n2024"` is a title of two lines.
 
+To give the title a font of its own, give `title` its `text` and a `font`:
+
+```ts
+title: { text: "Sales by quarter", font: { size: 18, bold: true, color: "1F4E79" } },
+```
+
+The title is 14 point text by default. See [Chart Fonts and Fills](usage/chart-fonts-and-fills.md).
+
 ## Legend
 
 The legend is below the chart by default. It shows each series' name, or on a pie or doughnut chart, each category's.
@@ -35,6 +43,8 @@ The legend is below the chart by default. It shows each series' name, or on a pi
 legend: { position: "right" },
 ```
 
+The legend takes a `font` too, such as `legend: { position: "right", font: { size: 10 } }`. Its text is 9 point by default.
+
 `legend: false` leaves out the legend. A chart with one series often doesn't need one, as its title can say what the series is:
 
 ```ts
@@ -49,7 +59,7 @@ new ChartRun({
 
 ## Options
 
-| Property | Type                     | Notes    | Description                                                                    |
-| -------- | ------------------------ | -------- | ------------------------------------------------------------------------------ |
-| `title`  | `string`                 | Optional | The title, above the chart. Each line is a line of the title. Default none     |
-| `legend` | `false` \| `ChartLegend` | Optional | `{ position? }`, or `false` for no legend. Default is a legend below the chart |
+| Property | Type                     | Notes    | Description                                                                           |
+| -------- | ------------------------ | -------- | ------------------------------------------------------------------------------------- |
+| `title`  | `string` \| `ChartTitle` | Optional | The title, above the chart, or `{ text, font? }`. Each line is a line of the title    |
+| `legend` | `false` \| `ChartLegend` | Optional | `{ position?, font? }`, or `false` for no legend. Default is a legend below the chart |

@@ -7,10 +7,10 @@ import type { PackagePart, XmlComponent } from "docx";
 
 import type { ChartData } from "./chart-data";
 import { createElement, createValue } from "./chart-elements";
-import type { ChartLegendPosition, ChartRunOptions } from "./chart-options";
+import type { ChartFont, ChartLegend, ChartLegendPosition, ChartRunOptions } from "./chart-options";
 import { PartReference } from "./chart-reference";
 import { createChartAreaProperties, createChartTextProperties, createNoShapeProperties, createTextProperties } from "./chart-style";
-import { createChartTitle } from "./chart-text";
+import { createChartTitle, fontOf } from "./chart-text";
 import { createPlotArea } from "./plot-area/plot-area";
 
 export const CHART_NAMESPACE = "http://schemas.openxmlformats.org/drawingml/2006/chart";
@@ -28,12 +28,12 @@ const LEGEND_POSITIONS: Readonly<Record<ChartLegendPosition, string>> = {
 /**
  * The legend (`c:legend`), beside the plot rather than over it, in 9 point text.
  */
-const createLegend = (position: ChartLegendPosition): XmlComponent =>
+const createLegend = ({ position = "bottom", font }: ChartLegend, chartFont: ChartFont | undefined): XmlComponent =>
     createElement("c:legend", {}, [
         createValue("c:legendPos", LEGEND_POSITIONS[position]),
         createValue("c:overlay", false),
         createNoShapeProperties(),
-        createTextProperties({ size: 9, rotation: 0 }),
+        createTextProperties({ size: 9, rotation: 0, font: fontOf(chartFont, font) }),
     ]);
 
 /**
@@ -95,15 +95,15 @@ export const createChartSpace = (options: ChartRunOptions, data: ChartData, work
             createValue("c:lang", "en-US"),
             createValue("c:roundedCorners", false),
             createElement("c:chart", {}, [
-                ...(options.title === undefined ? [] : [createChartTitle(options.title)]),
+                ...(options.title === undefined ? [] : [createChartTitle(options.title, options.font)]),
                 // Without this, Office may use a single series' name as the title
                 createValue("c:autoTitleDeleted", options.title === undefined),
                 createPlotArea(options, data),
-                ...(options.legend === false ? [] : [createLegend(options.legend?.position ?? "bottom")]),
+                ...(options.legend === false ? [] : [createLegend(options.legend ?? {}, options.font)]),
                 createValue("c:plotVisOnly", true),
                 createValue("c:dispBlanksAs", "gap"),
             ]),
-            createChartAreaProperties(),
+            createChartAreaProperties(options.chartArea),
             createChartTextProperties(),
             // Word doesn't update the chart from the workbook when the document is opened
             new PartReference("c:externalData", workbook, { children: [createValue("c:autoUpdate", false)] }),

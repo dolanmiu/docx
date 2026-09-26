@@ -3,7 +3,7 @@ import xml from "xml";
 
 import { Formatter } from "@export/formatter";
 
-import { createAxisTitle, createChartTitle } from "./chart-text";
+import { createAxisTitle, createChartTitle, fontOf, titleOf } from "./chart-text";
 
 const TEXT_COLOR = '<a:solidFill><a:schemeClr val="tx1"><a:lumMod val="65000"/><a:lumOff val="35000"/></a:schemeClr></a:solidFill>';
 const FONTS = '<a:latin typeface="+mn-lt"/><a:ea typeface="+mn-ea"/><a:cs typeface="+mn-cs"/>';
@@ -36,5 +36,27 @@ describe("createAxisTitle", () => {
         expect(vertical).to.contain('<a:defRPr sz="1000" b="0" i="0" u="none" strike="noStrike" kern="1200" baseline="0">');
         expect(vertical).to.contain("<a:t>Units</a:t>");
         expect(xml(new Formatter().format(createAxisTitle("Month", false)))).to.contain(BODY(0));
+    });
+});
+
+describe("titles with fonts", () => {
+    it("should write a title's own font over the chart's", () => {
+        const title = xml(
+            new Formatter().format(createChartTitle({ text: "Sales", font: { size: 18, bold: true } }, { name: "Arial", bold: false })),
+        );
+
+        expect(title).to.contain('<a:defRPr sz="1800" b="1" i="0"');
+        expect(title).to.contain('<a:latin typeface="Arial"/>');
+        expect(xml(new Formatter().format(createAxisTitle({ text: "Units", font: { italics: true } }, true)))).to.contain(
+            'sz="1000" b="0" i="1"',
+        );
+    });
+
+    it("should read a title given as text or with a font, and merge fonts", () => {
+        expect(titleOf("Sales")).to.deep.equal({ text: "Sales" });
+        expect(titleOf({ text: "Sales", font: { bold: true } })).to.deep.equal({ text: "Sales", font: { bold: true } });
+        expect(fontOf(undefined, { bold: true })).to.deep.equal({ bold: true });
+        expect(fontOf({ name: "Arial", bold: true }, { bold: false })).to.deep.equal({ name: "Arial", bold: false });
+        expect(fontOf({ name: "Arial" }, undefined)).to.deep.equal({ name: "Arial" });
     });
 });

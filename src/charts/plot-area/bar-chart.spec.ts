@@ -7,7 +7,7 @@ import type { XmlComponent } from "docx";
 
 import { createChartData } from "../chart-data";
 import type { BarChartOptions, ColumnChartOptions } from "../chart-options";
-import { createBarChart } from "./bar-chart";
+import { createCategoryCharts } from "./category-chart";
 
 const parse = (component: XmlComponent): Element => (xml2js(xml(new Formatter().format(component))) as Element).elements![0];
 const names = (element: Element): readonly string[] => (element.elements ?? []).map(({ name }) => name!);
@@ -29,8 +29,8 @@ const chart = (
         ],
         ...options,
     } as ColumnChartOptions | BarChartOptions;
-    const { group, axes } = createBarChart(full, createChartData(full));
-    return { group: parse(group), axes: axes.map(parse) };
+    const { groups, axes } = createCategoryCharts(full, createChartData(full), undefined);
+    return { group: parse(groups[0]), axes: axes.map(parse) };
 };
 
 describe("createBarChart", () => {
@@ -69,7 +69,7 @@ describe("createBarChart", () => {
         expect(
             xml(
                 new Formatter().format(
-                    createBarChart(
+                    createCategoryCharts(
                         {
                             type: "column",
                             categories: ["A"],
@@ -86,7 +86,8 @@ describe("createBarChart", () => {
                                 { name: "B", values: [2], color: "FF0000" },
                             ],
                         }),
-                    ).group,
+                        undefined,
+                    ).groups[0],
                 ),
             ),
         )

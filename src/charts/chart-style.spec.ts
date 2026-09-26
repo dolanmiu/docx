@@ -1,4 +1,4 @@
-// cspell:ignore cmpd
+// cspell:ignore cmpd prst
 import { describe, expect, it } from "vitest";
 import xml from "xml";
 
@@ -8,6 +8,7 @@ import type { XmlComponent } from "docx";
 import {
     createAxisLine,
     createAxisProperties,
+    createBubbleSeriesProperties,
     createChartAreaProperties,
     createChartTextProperties,
     createFilledSeriesProperties,
@@ -15,6 +16,7 @@ import {
     createLineSeriesProperties,
     createMarker,
     createNoShapeProperties,
+    createPlotAreaProperties,
     createScatterSeriesProperties,
     createSeriesColor,
     createSliceProperties,
@@ -141,9 +143,89 @@ describe("chart look", () => {
         expect(labels).to.contain('<a:lumMod val="75000"/><a:lumOff val="25000"/>');
     });
 
+    it("should write a font given over Office's size and grey: bold, italic, coloured, and its typeface for Latin and complex scripts", () => {
+        expect(
+            toXml(
+                createTextProperties({
+                    size: 9,
+                    font: { name: "Georgia", size: 10.5, bold: true, italics: true, color: { theme: "accent2" } },
+                }),
+            ),
+        ).to.contain(
+            '<a:defRPr sz="1050" b="1" i="1" u="none" strike="noStrike" kern="1200" baseline="0">' +
+                '<a:solidFill><a:schemeClr val="accent2"/></a:solidFill>' +
+                '<a:latin typeface="Georgia"/><a:ea typeface="+mn-ea"/><a:cs typeface="Georgia"/>',
+        );
+    });
+
     it("should write the chart's own text properties empty, as Office does", () => {
         expect(toXml(createChartTextProperties())).to.equal(
             '<c:txPr><a:bodyPr/><a:lstStyle/><a:p><a:pPr><a:defRPr/></a:pPr><a:endParaRPr lang="en-US"/></a:p></c:txPr>',
+        );
+    });
+});
+
+describe("options over the look", () => {
+    it("should fill and border the chart area as given, or not at all", () => {
+        expect(toXml(createChartAreaProperties({ fill: "F2F2F2", border: { color: "1F4E79", width: 1.5, dash: "shortDash" } }))).to.equal(
+            '<c:spPr><a:solidFill><a:srgbClr val="F2F2F2"/></a:solidFill>' +
+                '<a:ln w="19050" cap="flat" cmpd="sng" algn="ctr"><a:solidFill><a:srgbClr val="1F4E79"/></a:solidFill><a:prstDash val="sysDash"/><a:round/></a:ln>' +
+                "<a:effectLst/></c:spPr>",
+        );
+        expect(toXml(createChartAreaProperties({ fill: "none", border: "none" }))).to.equal(
+            "<c:spPr><a:noFill/><a:ln><a:noFill/></a:ln><a:effectLst/></c:spPr>",
+        );
+        // A border's width alone keeps the grey
+        expect(toXml(createChartAreaProperties({ border: { width: 2 } }))).to.contain(
+            `<a:ln w="25400" cap="flat" cmpd="sng" algn="ctr">${GRIDLINE}`,
+        );
+    });
+
+    it("should leave the plot area without fill or border unless asked", () => {
+        expect(toXml(createPlotAreaProperties())).to.equal("<c:spPr><a:noFill/><a:ln><a:noFill/></a:ln><a:effectLst/></c:spPr>");
+        expect(toXml(createPlotAreaProperties({ border: "none" }))).to.equal(
+            "<c:spPr><a:noFill/><a:ln><a:noFill/></a:ln><a:effectLst/></c:spPr>",
+        );
+        expect(toXml(createPlotAreaProperties({ fill: { theme: "light2" }, border: {} }))).to.equal(
+            '<c:spPr><a:solidFill><a:schemeClr val="lt2"/></a:solidFill>' +
+                `<a:ln w="9525" cap="flat" cmpd="sng" algn="ctr">${GRIDLINE}<a:round/></a:ln><a:effectLst/></c:spPr>`,
+        );
+    });
+
+    it("should draw a series' line in its own colour, width and dashes", () => {
+        expect(toXml(createLineSeriesProperties(createSeriesColor(0), { width: 1, dash: "longDashDot" }))).to.equal(
+            `<c:spPr><a:ln w="12700" cap="rnd">${FILL}<a:prstDash val="lgDashDot"/><a:round/></a:ln><a:effectLst/></c:spPr>`,
+        );
+        expect(toXml(createScatterSeriesProperties(createSeriesColor(0), { color: "00FF00", width: 0 }))).to.equal(
+            '<c:spPr><a:ln w="0" cap="rnd"><a:solidFill><a:srgbClr val="00FF00"/></a:solidFill><a:round/></a:ln><a:effectLst/></c:spPr>',
+        );
+        // No dashes on a line that isn't drawn
+        expect(toXml(createScatterSeriesProperties(undefined, { dash: "dash" }))).to.not.contain("prstDash");
+    });
+
+    it("should throw for a dash pattern that isn't one", () => {
+        expect(() => createLineSeriesProperties(createSeriesColor(0), { dash: "wavy" as "dash" })).to.throw(
+            'Invalid line dash "wavy". Expected one of solid, dot, dash, longDash',
+        );
+    });
+
+    it("should draw markers of the shape and size given, rounded", () => {
+        expect(toXml(createMarker(() => createSeriesColor(0), { shape: "triangle", size: 7.6 }))).to.contain(
+            '<c:marker><c:symbol val="triangle"/><c:size val="8"/>',
+        );
+        expect(toXml(createMarker(() => createSeriesColor(0), { size: 3 }))).to.contain('<c:symbol val="circle"/><c:size val="3"/>');
+        expect(() => createMarker(() => createSeriesColor(0), { shape: "heart" as "x" })).to.throw(
+            'Invalid marker shape "heart". Expected one of circle, square, diamond, triangle, x, star, plus, dash, dot',
+        );
+    });
+
+    it("should fill bubbles with the series' colour at 75% opacity, and no line", () => {
+        expect(toXml(createBubbleSeriesProperties(6))).to.equal(
+            '<c:spPr><a:solidFill><a:schemeClr val="accent1"><a:lumMod val="60000"/><a:alpha val="75000"/></a:schemeClr></a:solidFill>' +
+                "<a:ln><a:noFill/></a:ln><a:effectLst/></c:spPr>",
+        );
+        expect(toXml(createBubbleSeriesProperties(0, { theme: "accent3" }))).to.contain(
+            '<a:schemeClr val="accent3"><a:alpha val="75000"/></a:schemeClr>',
         );
     });
 });

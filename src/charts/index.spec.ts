@@ -33,6 +33,26 @@ const CHARTS: readonly ChartRunOptions[] = [
             { name: " B ", points: [{ x: 0.1, y: 1e-7 }] },
         ],
     },
+    { type: "radar", categories, series, filled: true },
+    {
+        type: "bubble",
+        series: [
+            {
+                name: "A",
+                points: [
+                    { x: 1, y: 2, size: 3 },
+                    { x: -1, y: 0.5, size: 0 },
+                ],
+            },
+            { name: "B", points: [{ x: 4, y: 4, size: 12.5 }] },
+        ],
+    },
+    // A combo chart with a secondary axis, and dates as its categories
+    {
+        type: "column",
+        categories: [new Date("2025-01-01"), new Date("2025-02-01"), new Date("2025-03-01")],
+        series: [series[0], { ...series[1], type: "line", axis: "secondary" }],
+    },
 ];
 
 const paragraphWith = (options: ChartRunOptions): Paragraph => new Paragraph({ children: [new ChartRun(options)] });
@@ -120,8 +140,8 @@ describe("docx/charts in a document", () => {
             const cells = await readCells(workbook);
             const references = [...descendants(chart, "c:strRef"), ...descendants(chart, "c:numRef")];
 
-            // A name, categories and values for each series
-            expect(references.length).to.equal(descendants(chart, "c:ser").length * 3);
+            // A name, categories and values for each series, and a bubble series' sizes
+            expect(references.length).to.equal(descendants(chart, "c:ser").length * 3 + descendants(chart, "c:bubbleSize").length);
             for (const reference of references) {
                 const names = cellsOf(textOf(descendants(reference, "c:f")[0]));
                 const cache = new Map(

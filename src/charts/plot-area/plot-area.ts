@@ -1,5 +1,5 @@
 /**
- * The plot area (`c:plotArea`): the chart group and its axes.
+ * The plot area (`c:plotArea`): the chart's groups and their axes.
  *
  * @module
  */
@@ -7,34 +7,33 @@ import type { XmlComponent } from "docx";
 
 import type { ChartData } from "../chart-data";
 import { createElement } from "../chart-elements";
-import type { ChartRunOptions } from "../chart-options";
-import { createNoShapeProperties } from "../chart-style";
-import { createAreaChart } from "./area-chart";
-import { createBarChart } from "./bar-chart";
-import type { ChartGroup } from "./chart-group";
-import { createLineChart } from "./line-chart";
+import type { ChartFont, ChartRunOptions } from "../chart-options";
+import { createPlotAreaProperties } from "../chart-style";
+import { createBubbleChart } from "./bubble-chart";
+import { createCategoryCharts } from "./category-chart";
+import type { ChartGroups } from "./chart-group";
 import { createPieChart } from "./pie-chart";
+import { createRadarChart } from "./radar-chart";
 import { createScatterChart } from "./scatter-chart";
 
-const createChartGroup = (options: ChartRunOptions, data: ChartData): ChartGroup => {
+const createChartGroups = (options: ChartRunOptions, data: ChartData, font: ChartFont | undefined): ChartGroups => {
     switch (options.type) {
-        case "column":
-        case "bar":
-            return createBarChart(options, data);
-        case "line":
-            return createLineChart(options, data);
-        case "area":
-            return createAreaChart(options, data);
         case "pie":
         case "doughnut":
-            return createPieChart(options, data);
+            return createPieChart(options, data, font);
+        case "radar":
+            return createRadarChart(options, data, font);
+        case "scatter":
+            return createScatterChart(options, data, font);
+        case "bubble":
+            return createBubbleChart(options, data, font);
         default:
-            return createScatterChart(options, data);
+            return createCategoryCharts(options, data, font);
     }
 };
 
 /**
- * The plot area, laid out automatically, with no fill.
+ * The plot area, laid out automatically, with no fill or border unless asked for.
  *
  * ## XSD Schema
  * ```xml
@@ -48,6 +47,8 @@ const createChartGroup = (options: ChartRunOptions, data: ChartData): ChartGroup
  *       <xsd:element name="pieChart" type="CT_PieChart" minOccurs="1" maxOccurs="1"/>
  *       <xsd:element name="doughnutChart" type="CT_DoughnutChart" minOccurs="1" maxOccurs="1"/>
  *       <xsd:element name="barChart" type="CT_BarChart" minOccurs="1" maxOccurs="1"/>
+ *       <xsd:element name="radarChart" type="CT_RadarChart" minOccurs="1" maxOccurs="1"/>
+ *       <xsd:element name="bubbleChart" type="CT_BubbleChart" minOccurs="1" maxOccurs="1"/>
  *       ...
  *     </xsd:choice>
  *     <xsd:choice minOccurs="0" maxOccurs="unbounded">
@@ -64,6 +65,6 @@ const createChartGroup = (options: ChartRunOptions, data: ChartData): ChartGroup
  * ```
  */
 export const createPlotArea = (options: ChartRunOptions, data: ChartData): XmlComponent => {
-    const { group, axes } = createChartGroup(options, data);
-    return createElement("c:plotArea", {}, [createElement("c:layout"), group, ...axes, createNoShapeProperties()]);
+    const { groups, axes } = createChartGroups(options, data, options.font);
+    return createElement("c:plotArea", {}, [createElement("c:layout"), ...groups, ...axes, createPlotAreaProperties(options.plotArea)]);
 };

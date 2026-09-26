@@ -7,7 +7,7 @@ import type { XmlComponent } from "docx";
 
 import { createChartData } from "../chart-data";
 import type { LineChartOptions } from "../chart-options";
-import { createLineChart } from "./line-chart";
+import { createCategoryCharts } from "./category-chart";
 
 const parse = (component: XmlComponent): Element => (xml2js(xml(new Formatter().format(component))) as Element).elements![0];
 const names = (element: Element): readonly string[] => (element.elements ?? []).map(({ name }) => name!);
@@ -16,8 +16,8 @@ const value = (element: Element, name: string): unknown => children(element, nam
 
 const chart = (options: Partial<LineChartOptions> = {}): { readonly group: Element; readonly axes: readonly Element[] } => {
     const full: LineChartOptions = { type: "line", categories: ["Jan", "Feb"], series: [{ name: "2025", values: [1, 2] }], ...options };
-    const { group, axes } = createLineChart(full, createChartData(full));
-    return { group: parse(group), axes: axes.map(parse) };
+    const { groups, axes } = createCategoryCharts(full, createChartData(full), undefined);
+    return { group: parse(groups[0]), axes: axes.map(parse) };
 };
 
 describe("createLineChart", () => {
@@ -42,10 +42,11 @@ describe("createLineChart", () => {
         expect(
             xml(
                 new Formatter().format(
-                    createLineChart(
+                    createCategoryCharts(
                         { type: "line", categories: ["A"], series: [{ name: "A", values: [1] }] },
                         createChartData({ type: "line", categories: ["A"], series: [{ name: "A", values: [1] }] }),
-                    ).group,
+                        undefined,
+                    ).groups[0],
                 ),
             ),
         ).to.contain('<c:spPr><a:ln w="28575" cap="rnd"><a:solidFill><a:schemeClr val="accent1"/></a:solidFill><a:round/></a:ln>');
@@ -58,10 +59,11 @@ describe("createLineChart", () => {
         expect(value(group, "c:marker")).to.equal("1");
         const marker = xml(
             new Formatter().format(
-                createLineChart(
+                createCategoryCharts(
                     { type: "line", markers: true, categories: ["A"], series: [{ name: "Red", values: [1], color: "FF0000" }] },
                     createChartData({ type: "line", categories: ["A"], series: [{ name: "Red", values: [1] }] }),
-                ).group,
+                    undefined,
+                ).groups[0],
             ),
         );
         expect(marker).to.contain(

@@ -86,23 +86,59 @@ The defaults are Office's:
 | `gapWidth` | `219`        | `182`     | `150`                   |
 | `overlap`  | `-27`        | `0`       | `100`, and can't change |
 
+## Bar Colours
+
+Each series' bars take its colour. `colors` gives single bars colours of their own, in the order of the categories, such as to pick out the best result:
+
+```ts
+new ChartRun({
+    type: "column",
+    title: "Tickets closed",
+    categories: ["Ana", "Ben", "Cai", "Dee"],
+    series: [{ name: "Tickets", values: [42, 57, 38, 71], colors: [undefined, undefined, undefined, "70AD47"] }],
+});
+```
+
+A bar without a colour, or with `undefined`, keeps the series' colour. [Chart Colours](usage/chart-colors.md) explains the colours a chart can take.
+
+## Lines on a Column Chart
+
+A column chart's series can be drawn as lines or areas too, such as a target line over the columns, and against a second value axis. See [Combo Charts](usage/chart-combo.md).
+
 ## Options
 
 These are all the options of a column or bar chart. Each links to the page that explains it.
 
-| Property         | Type                                   | Notes    | Description                                                                                                 |
-| ---------------- | -------------------------------------- | -------- | ----------------------------------------------------------------------------------------------------------- |
-| `type`           | `"column"` \| `"bar"`                  | Required | Vertical or horizontal bars                                                                                 |
-| `categories`     | `(string \| number)[]`                 | Required | The categories, in order. See [Chart Data](usage/chart-data.md)                                             |
-| `series`         | `ChartSeries[]`                        | Required | `{ name, values, color? }`, with a value or `null` for each category. See [Chart Data](usage/chart-data.md) |
-| `stacking`       | `"none"` \| `"stacked"` \| `"percent"` | Optional | See [Stacking](#stacking). Default `"none"`                                                                 |
-| `gapWidth`       | `number`                               | Optional | The space between groups of bars, from 0 to 500. See [Spacing](#spacing)                                    |
-| `overlap`        | `number`                               | Optional | How much the bars in a group overlap, from -100 to 100. See [Spacing](#spacing)                             |
-| `title`          | `string`                               | Optional | See [Chart Titles and Legends](usage/chart-titles-and-legends.md)                                           |
-| `legend`         | `false` \| `ChartLegend`               | Optional | See [Chart Titles and Legends](usage/chart-titles-and-legends.md)                                           |
-| `categoryAxis`   | `ChartAxis`                            | Optional | The axis of categories. See [Chart Axes](usage/chart-axes.md)                                               |
-| `valueAxis`      | `ChartValueAxis`                       | Optional | The axis of values. See [Chart Axes](usage/chart-axes.md)                                                   |
-| `dataLabels`     | `ChartDataLabels`                      | Optional | See [Chart Data Labels](usage/chart-data-labels.md)                                                         |
-| `transformation` | `{ width, height }`                    | Optional | See [Chart Size and Position](usage/chart-size-and-position.md)                                             |
-| `floating`       | `IFloating`                            | Optional | See [Chart Size and Position](usage/chart-size-and-position.md)                                             |
-| `altText`        | `DocPropertiesOptions`                 | Optional | See [Chart Size and Position](usage/chart-size-and-position.md)                                             |
+| Property             | Type                                   | Notes    | Description                                                                                      |
+| -------------------- | -------------------------------------- | -------- | ------------------------------------------------------------------------------------------------ |
+| `type`               | `"column"` \| `"bar"`                  | Required | Vertical or horizontal bars                                                                      |
+| `categories`         | `(string \| number \| Date)[]`         | Required | The categories, in order. See [Chart Data](usage/chart-data.md)                                  |
+| `series`             | `ChartSeries[]`                        | Required | `{ name, values, color?, ... }`, with a value or `null` for each category. See [Series](#series) |
+| `stacking`           | `"none"` \| `"stacked"` \| `"percent"` | Optional | See [Stacking](#stacking). Default `"none"`                                                      |
+| `gapWidth`           | `number`                               | Optional | The space between groups of bars, from 0 to 500. See [Spacing](#spacing)                         |
+| `overlap`            | `number`                               | Optional | How much the bars in a group overlap, from -100 to 100. See [Spacing](#spacing)                  |
+| `title`              | `string` \| `ChartTitle`               | Optional | See [Chart Titles and Legends](usage/chart-titles-and-legends.md)                                |
+| `legend`             | `false` \| `ChartLegend`               | Optional | See [Chart Titles and Legends](usage/chart-titles-and-legends.md)                                |
+| `categoryAxis`       | `ChartAxis`                            | Optional | The axis of categories. See [Chart Axes](usage/chart-axes.md)                                    |
+| `valueAxis`          | `ChartValueAxis`                       | Optional | The axis of values. See [Chart Axes](usage/chart-axes.md)                                        |
+| `secondaryValueAxis` | `ChartValueAxis`                       | Optional | A second axis of values. See [Combo Charts](usage/chart-combo.md#a-secondary-axis)               |
+| `dataLabels`         | `ChartDataLabels`                      | Optional | See [Chart Data Labels](usage/chart-data-labels.md)                                              |
+| `font`               | `ChartFont`                            | Optional | See [Chart Fonts and Fills](usage/chart-fonts-and-fills.md)                                      |
+| `chartArea`          | `ChartAreaStyle`                       | Optional | See [Chart Fonts and Fills](usage/chart-fonts-and-fills.md)                                      |
+| `plotArea`           | `ChartAreaStyle`                       | Optional | See [Chart Fonts and Fills](usage/chart-fonts-and-fills.md)                                      |
+| `transformation`     | `{ width, height }`                    | Optional | See [Chart Size and Position](usage/chart-size-and-position.md)                                  |
+| `floating`           | `IFloating`                            | Optional | See [Chart Size and Position](usage/chart-size-and-position.md)                                  |
+| `altText`            | `DocPropertiesOptions`                 | Optional | See [Chart Size and Position](usage/chart-size-and-position.md)                                  |
+| `decorative`         | `boolean`                              | Optional | See [Chart Size and Position](usage/chart-size-and-position.md#alternative-text)                 |
+
+### Series
+
+| Property     | Type                                    | Notes    | Description                                                                                    |
+| ------------ | --------------------------------------- | -------- | ---------------------------------------------------------------------------------------------- |
+| `name`       | `string`                                | Required | The series' name, shown in the legend                                                          |
+| `values`     | `(number \| null)[]`                    | Required | A value for each category, or `null` for a gap                                                 |
+| `color`      | `string` \| `ThemeColor`                | Optional | See [Chart Colours](usage/chart-colors.md)                                                     |
+| `colors`     | `(string \| ThemeColor \| undefined)[]` | Optional | A colour for each bar. See [Bar Colours](#bar-colours)                                         |
+| `dataLabels` | `false` \| `ChartDataLabels`            | Optional | The series' own labels. See [Chart Data Labels](usage/chart-data-labels.md#each-series-labels) |
+| `type`       | `"column"` \| `"line"` \| `"area"`      | Optional | Column charts: draws the series another way. See [Combo Charts](usage/chart-combo.md)          |
+| `axis`       | `"primary"` \| `"secondary"`            | Optional | See [Combo Charts](usage/chart-combo.md#a-secondary-axis)                                      |

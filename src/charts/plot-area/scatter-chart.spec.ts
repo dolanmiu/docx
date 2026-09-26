@@ -28,8 +28,8 @@ const chart = (options: Partial<ScatterChartOptions> = {}): { readonly group: El
         ],
         ...options,
     };
-    const { group, axes } = createScatterChart(full, createChartData(full));
-    return { group: parse(group), axes: axes.map(parse) };
+    const { groups, axes } = createScatterChart(full, createChartData(full), undefined);
+    return { group: parse(groups[0]), axes: axes.map(parse) };
 };
 
 describe("createScatterChart", () => {

@@ -5,18 +5,31 @@
  */
 import type { XmlComponent } from "docx";
 
-import type { ChartData } from "../chart-data";
 import { createElement, createValue } from "../chart-elements";
-import type { LineChartOptions } from "../chart-options";
+import type { ChartMarker, ChartSeries } from "../chart-options";
 import { createLineSeriesProperties, createMarker, createSeriesColor } from "../chart-style";
-import { CATEGORY_AXIS_ID, VALUE_AXIS_ID, createCategoryAxis, createValueAxis } from "./axes";
-import { type ChartGroup, GROUPINGS } from "./chart-group";
+import { type CategoryGroup, GROUPINGS, labelsOf } from "./chart-group";
 import { createGroupDataLabels, createSeriesDataLabels } from "./data-labels";
 import { createCategoriesAndValues, createSeriesStart } from "./series";
 
+type LineGroup = CategoryGroup<ChartSeries> & {
+    /** The chart's markers, which a series' own replace */
+    readonly markers?: boolean | ChartMarker;
+    /** The chart's smooth lines, which a series' own replace */
+    readonly smooth?: boolean;
+};
+
 /**
- * A line chart, with its category and value axes. Its lines are 2.25 points wide, with a circle at each point when it
- * has markers.
+ * A marker for each point of a series, or none: the series' own markers, or the chart's.
+ *
+ * @param seriesColor - Creates the series' colour
+ */
+export const createSeriesMarker = (markers: boolean | ChartMarker | undefined, seriesColor: () => XmlComponent): XmlComponent =>
+    createMarker(markers ? seriesColor : undefined, typeof markers === "object" ? markers : undefined);
+
+/**
+ * A group of lines. Its lines are 2.25 points wide, with a circle at each point when they have markers, unless asked
+ * otherwise.
  *
  * ## XSD Schema
  * ```xml
@@ -48,43 +61,27 @@ import { createCategoriesAndValues, createSeriesStart } from "./series";
  * </xsd:complexType>
  * ```
  */
-export const createLineChart = (options: LineChartOptions, data: ChartData): ChartGroup => {
-    const stacking = options.stacking ?? "none";
-    const markers = options.markers ?? false;
+export const createLineChart = ({ series, stacking, axes, dataLabels, font, markers, smooth }: LineGroup): XmlComponent => {
+    const markersOf = (options: ChartSeries): boolean | ChartMarker | undefined => options.markers ?? markers;
 
-    return {
-        group: createElement("c:lineChart", {}, [
-            createValue("c:grouping", GROUPINGS[stacking]),
-            createValue("c:varyColors", false),
-            ...data.series.map((series, index) => {
-                const seriesColor = (): XmlComponent => createSeriesColor(index, options.series[index].color);
-                return createElement("c:ser", {}, [
-                    ...createSeriesStart(index, series),
-                    createLineSeriesProperties(seriesColor()),
-                    createMarker(markers ? seriesColor : undefined),
-                    ...createSeriesDataLabels(options.dataLabels, { position: "r" }),
-                    ...createCategoriesAndValues(series),
-                    createValue("c:smooth", options.smooth ?? false),
-                ]);
-            }),
-            createGroupDataLabels(),
-            // Word's "Line with Markers" writes this, and its plain "Line" doesn't
-            ...(markers ? [createValue("c:marker", true)] : []),
-            createValue("c:axId", CATEGORY_AXIS_ID),
-            createValue("c:axId", VALUE_AXIS_ID),
-        ]),
-        axes: [
-            createCategoryAxis({ id: CATEGORY_AXIS_ID, crossAxisId: VALUE_AXIS_ID, position: "b" }, options.categoryAxis),
-            createValueAxis(
-                {
-                    id: VALUE_AXIS_ID,
-                    crossAxisId: CATEGORY_AXIS_ID,
-                    position: "l",
-                    crossBetween: "between",
-                    percent: stacking === "percent",
-                },
-                options.valueAxis,
-            ),
-        ],
-    };
+    return createElement("c:lineChart", {}, [
+        createValue("c:grouping", GROUPINGS[stacking]),
+        createValue("c:varyColors", false),
+        ...series.map(({ index, options, data }) => {
+            const seriesColor = (): XmlComponent => createSeriesColor(index, options.color);
+            return createElement("c:ser", {}, [
+                ...createSeriesStart(index, data),
+                createLineSeriesProperties(seriesColor(), options.line),
+                createSeriesMarker(markersOf(options), seriesColor),
+                ...createSeriesDataLabels(labelsOf(options.dataLabels, dataLabels), { shape: "line", series: options.name, font }),
+                ...createCategoriesAndValues(data),
+                createValue("c:smooth", options.smooth ?? smooth ?? false),
+            ]);
+        }),
+        createGroupDataLabels(),
+        // Word's "Line with Markers" writes this, and its plain "Line" doesn't
+        ...(series.some(({ options }) => markersOf(options)) ? [createValue("c:marker", true)] : []),
+        createValue("c:axId", axes.category),
+        createValue("c:axId", axes.value),
+    ]);
 };

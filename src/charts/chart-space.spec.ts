@@ -89,6 +89,29 @@ describe("createChartSpace", () => {
         expect(value(child(child(chartSpace({ legend: {} }), "c:chart"), "c:legend"), "c:legendPos")).to.equal("b");
     });
 
+    it("should write the legend's font over the chart's, and the chart's font on the title", () => {
+        const full: ChartRunOptions = {
+            type: "pie",
+            categories: ["A"],
+            series: [{ name: "S", values: [1] }],
+            title: { text: "Sales", font: { size: 20 } },
+            font: { name: "Arial", color: "333333" },
+            legend: { position: "right", font: { size: 11 } },
+        };
+        const written = format(createChartSpace(full, createChartData(full), workbook));
+        const fonts = '<a:solidFill><a:srgbClr val="333333"/></a:solidFill><a:latin typeface="Arial"/>';
+
+        expect(written).to.contain(`<a:defRPr sz="2000" b="0" i="0" u="none" strike="noStrike" kern="1200" spc="0" baseline="0">${fonts}`);
+        expect(written).to.contain(`<c:legend><c:legendPos val="r"/>`);
+        expect(written).to.contain(`<a:defRPr sz="1100" b="0" i="0" u="none" strike="noStrike" kern="1200" baseline="0">${fonts}`);
+    });
+
+    it("should fill and border the chart area as asked", () => {
+        const area = child(chartSpace({ chartArea: { fill: "none", border: "none" } }), "c:spPr");
+        expect(names(area)).to.deep.equal(["a:noFill", "a:ln", "a:effectLst"]);
+        expect(names(child(area, "a:ln"))).to.deep.equal(["a:noFill"]);
+    });
+
     it("should add the workbook to the package, with a relationship from the chart, when it is written", () => {
         const relationships = new Relationships();
         const full: ChartRunOptions = { type: "pie", categories: ["A"], series: [{ name: "S", values: [1] }] };

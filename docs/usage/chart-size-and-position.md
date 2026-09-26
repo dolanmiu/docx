@@ -105,7 +105,9 @@ new Table({
 
 ## Alternative Text
 
-Give a chart `altText` so screen readers can describe it:
+A chart is described for screen readers from its type, title and data, such as "Column chart, Sales by quarter. Sales: Q1 120, Q2 135, Q3 150, Q4 170." Long descriptions are cut at 1,000 characters.
+
+`altText` gives the chart a description of your own, which is better when the chart has a point to make:
 
 ```ts
 altText: {
@@ -114,12 +116,15 @@ altText: {
 },
 ```
 
-`name` is required, and `description` and `title` are optional. The description is what a screen reader reads, so say what the chart shows.
+`name` is required, and `description` and `title` are optional. A chart with `altText` but no `description` is still described from its data.
+
+`decorative: true` marks a chart as decorative, as Word's "Mark as decorative" does, so screen readers skip it, and it isn't described.
 
 ## Options
 
-| Property         | Type                   | Notes    | Description                                                       |
-| ---------------- | ---------------------- | -------- | ----------------------------------------------------------------- |
-| `transformation` | `{ width, height }`    | Optional | Size in pixels. Default is 576 by 336                             |
-| `floating`       | `IFloating`            | Optional | Floats the chart. See [floating images](usage/images.md#floating) |
-| `altText`        | `DocPropertiesOptions` | Optional | `{ name, description?, title? }` for screen readers               |
+| Property         | Type                   | Notes    | Description                                                                             |
+| ---------------- | ---------------------- | -------- | --------------------------------------------------------------------------------------- |
+| `transformation` | `{ width, height }`    | Optional | Size in pixels. Default is 576 by 336                                                   |
+| `floating`       | `IFloating`            | Optional | Floats the chart. See [floating images](usage/images.md#floating)                       |
+| `altText`        | `DocPropertiesOptions` | Optional | `{ name, description?, title? }` for screen readers. Default is described from the data |
+| `decorative`     | `boolean`              | Optional | Marks the chart as decorative, so screen readers skip it. Default `false`               |

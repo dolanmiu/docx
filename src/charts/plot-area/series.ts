@@ -39,8 +39,8 @@ const createTextReference = ({ formula, points }: ChartTextData): XmlComponent =
     ]);
 
 /**
- * A reference to numbers (`c:numRef`) with its cache (`c:numCache`). The cache leaves out empty cells, so they are gaps,
- * and counts every cell.
+ * A reference to numbers (`c:numRef`) with its cache (`c:numCache`), in the cells' number format. The cache leaves out
+ * empty cells, so they are gaps, and counts every cell.
  *
  * ## XSD Schema
  * ```xml
@@ -53,11 +53,11 @@ const createTextReference = ({ formula, points }: ChartTextData): XmlComponent =
  * </xsd:complexType>
  * ```
  */
-const createNumberReference = ({ formula, points }: ChartNumberData): XmlComponent =>
+const createNumberReference = ({ formula, points, format = "General" }: ChartNumberData): XmlComponent =>
     createElement("c:numRef", {}, [
         createText("c:f", formula),
         createElement("c:numCache", {}, [
-            createText("c:formatCode", "General"),
+            createText("c:formatCode", format),
             createValue("c:ptCount", points.length),
             ...points.flatMap((point, index) =>
                 point === undefined ? [] : [createElement("c:pt", { idx: index }, [createText("c:v", formatNumber(point))])],
@@ -66,7 +66,7 @@ const createNumberReference = ({ formula, points }: ChartNumberData): XmlCompone
     ]);
 
 /**
- * A series' data (`c:cat`, `c:val`, `c:xVal` or `c:yVal`): a reference to text or numbers.
+ * A series' data (`c:cat`, `c:val`, `c:xVal`, `c:yVal` or `c:bubbleSize`): a reference to text or numbers.
  */
 export const createDataSource = (name: string, data: ChartTextData | ChartNumberData): XmlComponent =>
     createElement(name, {}, [data.type === "text" ? createTextReference(data) : createNumberReference(data)]);
