@@ -23,7 +23,7 @@ export type TemplateGroup = {
     readonly element: Element;
     /** How its series hold their data */
     readonly kind: TemplateSeriesKind;
-    /** The type of chart it is, by `docx/charts`' names. A 3-D chart is its flat type, and a pie of a pie is a pie */
+    /** The type of chart it is, by `docx/charts`' names. A 3-D chart is its flat type */
     readonly type: ChartType;
     /** Whether each point, such as each slice of a pie, has a colour of its own (`c:varyColors`) */
     readonly varyColors: boolean;
@@ -71,22 +71,26 @@ const GROUPS: ReadonlyMap<string, (group: Element) => ChartType> = new Map<strin
     ["c:area3DChart", () => "area"],
     ["c:pieChart", () => "pie"],
     ["c:pie3DChart", () => "pie"],
-    ["c:ofPieChart", () => "pie"],
+    ["c:ofPieChart", (group) => (valueOf(childOf(group, "c:ofPieType")) === "bar" ? "barOfPie" : "pieOfPie")],
     ["c:doughnutChart", () => "doughnut"],
     ["c:radarChart", () => "radar"],
     ["c:scatterChart", () => "scatter"],
     ["c:bubbleChart", () => "bubble"],
+    ["c:stockChart", () => "stock"],
 ]);
 
 // The groups whose series have a fixed meaning, which new data can't keep
 const UNSUPPORTED_GROUPS: ReadonlyMap<string, string> = new Map([
-    ["c:stockChart", "a stock chart, whose series are its prices"],
     ["c:surfaceChart", "a surface chart"],
     ["c:surface3DChart", "a 3-D surface chart"],
 ]);
 
-// The types whose data decides the checks for the whole chart, as they can't be combined with others
-const PIE_TYPES: readonly ChartType[] = ["pie", "doughnut", "radar"];
+// The types whose data decides the checks for the whole chart, as they can't be combined with others, or in a stock
+// chart, are combined with its volumes' columns
+const WHOLE_CHART_TYPES: readonly ChartType[] = ["pie", "doughnut", "pieOfPie", "barOfPie", "radar", "stock"];
+
+// The types whose points each have their own colour unless told not to
+const PIE_TYPES: readonly ChartType[] = ["pie", "doughnut", "pieOfPie", "barOfPie"];
 
 const kindOf = (type: ChartType): TemplateSeriesKind => {
     switch (type) {
@@ -106,7 +110,7 @@ const kindOf = (type: ChartType): TemplateSeriesKind => {
 const variesColors = (group: Element, type: ChartType): boolean => {
     const varyColors = childOf(group, "c:varyColors");
     if (varyColors === undefined) {
-        return type === "pie" || type === "doughnut";
+        return PIE_TYPES.includes(type);
     }
     const value = valueOf(varyColors);
     return value === undefined || value === "1" || value === "true";
@@ -180,7 +184,18 @@ export const readTemplateChart = (chartSpace: Element): TemplateChart => {
         .sort((a, b) => (a.one.order ?? Infinity) - (b.one.order ?? Infinity) || a.position - b.position)
         .map(({ one }) => one);
 
-    const type = groups.find((group) => PIE_TYPES.includes(group.type))?.type ?? groups[0].type;
+    const type = groups.find((group) => WHOLE_CHART_TYPES.includes(group.type))?.type ?? groups[0].type;
+    const stock = groups.find((group) => group.type === "stock");
+    if (stock !== undefined) {
+        const prices = childrenOf(stock.element, "c:ser").length;
+        if (prices !== 3 && prices !== 4) {
+            throw new Error(`It is a stock chart with ${prices} series of prices. A stock chart has 3, or 4 with opening prices`);
+        }
+        const others = groups.filter((group) => group !== stock);
+        if (others.length > 1 || others.some((group) => group.type !== "column" || childrenOf(group.element, "c:ser").length !== 1)) {
+            throw new Error("It is a stock chart combined with a chart other than its volumes' columns, which ChartDataPatch can't patch");
+        }
+    }
     return { chartSpace, chart, plotArea, groups, series, kind: kinds[0], type, title: titleOf(chart) };
 };
 

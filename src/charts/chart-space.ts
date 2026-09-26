@@ -7,7 +7,8 @@ import type { PackagePart, XmlComponent } from "docx";
 
 import type { ChartData } from "./chart-data";
 import { createElement, createValue } from "./chart-elements";
-import type { ChartFont, ChartLegend, ChartLegendPosition, ChartRunOptions } from "./chart-options";
+import { legendEntriesOf } from "./chart-legend";
+import type { ChartEmptyValues, ChartLegend, ChartLegendPosition, ChartRunOptions } from "./chart-options";
 import { PartReference } from "./chart-reference";
 import { createChartAreaProperties, createChartTextProperties, createNoShapeProperties, createTextProperties } from "./chart-style";
 import { createChartTitle, fontOf } from "./chart-text";
@@ -25,15 +26,36 @@ const LEGEND_POSITIONS: Readonly<Record<ChartLegendPosition, string>> = {
     topRight: "tr",
 };
 
+// Each way of drawing empty values mapped to its OOXML name (`ST_DispBlanksAs`)
+const EMPTY_VALUES: Readonly<Record<ChartEmptyValues, string>> = { gap: "gap", zero: "zero", connect: "span" };
+
 /**
- * The legend (`c:legend`), beside the plot rather than over it, in 9 point text.
+ * The legend (`c:legend`), beside the plot rather than over it, in 9 point text, without the entries it hides.
+ *
+ * ## XSD Schema
+ * ```xml
+ * <xsd:complexType name="CT_Legend">
+ *   <xsd:sequence>
+ *     <xsd:element name="legendPos" type="CT_LegendPos" minOccurs="0" maxOccurs="1"/>
+ *     <xsd:element name="legendEntry" type="CT_LegendEntry" minOccurs="0" maxOccurs="unbounded"/>
+ *     <xsd:element name="layout" type="CT_Layout" minOccurs="0" maxOccurs="1"/>
+ *     <xsd:element name="overlay" type="CT_Boolean" minOccurs="0" maxOccurs="1"/>
+ *     <xsd:element name="spPr" type="a:CT_ShapeProperties" minOccurs="0" maxOccurs="1"/>
+ *     <xsd:element name="txPr" type="a:CT_TextBody" minOccurs="0" maxOccurs="1"/>
+ *     <xsd:element name="extLst" type="CT_ExtensionList" minOccurs="0" maxOccurs="1"/>
+ *   </xsd:sequence>
+ * </xsd:complexType>
+ * ```
  */
-const createLegend = ({ position = "bottom", font }: ChartLegend, chartFont: ChartFont | undefined): XmlComponent =>
+const createLegend = (options: ChartRunOptions, { position = "bottom", font, hiddenEntries = [] }: ChartLegend): XmlComponent =>
     createElement("c:legend", {}, [
         createValue("c:legendPos", LEGEND_POSITIONS[position]),
+        ...legendEntriesOf(options)
+            .filter(({ text }) => hiddenEntries.some((entry) => String(entry) === text))
+            .map(({ index }) => createElement("c:legendEntry", {}, [createValue("c:idx", index), createValue("c:delete", true)])),
         createValue("c:overlay", false),
         createNoShapeProperties(),
-        createTextProperties({ size: 9, rotation: 0, font: fontOf(chartFont, font) }),
+        createTextProperties({ size: 9, rotation: 0, font: fontOf(options.font, font) }),
     ]);
 
 /**
@@ -99,9 +121,9 @@ export const createChartSpace = (options: ChartRunOptions, data: ChartData, work
                 // Without this, Office may use a single series' name as the title
                 createValue("c:autoTitleDeleted", options.title === undefined),
                 createPlotArea(options, data),
-                ...(options.legend === false ? [] : [createLegend(options.legend ?? {}, options.font)]),
+                ...(options.legend === false ? [] : [createLegend(options, options.legend ?? {})]),
                 createValue("c:plotVisOnly", true),
-                createValue("c:dispBlanksAs", "gap"),
+                createValue("c:dispBlanksAs", EMPTY_VALUES[(options as { readonly emptyValues?: ChartEmptyValues }).emptyValues ?? "gap"]),
             ]),
             createChartAreaProperties(options.chartArea),
             createChartTextProperties(),

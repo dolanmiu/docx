@@ -36,6 +36,42 @@ describe("describeChart", () => {
         expect(dated([new Date("2024-01-01"), new Date("2025-01-01")])).to.equal("Line chart. V: 2024 0, 2025 1.");
     });
 
+    it("should describe categories in groups with their groups, from the outermost in", () => {
+        expect(
+            describeChart({
+                type: "column",
+                categories: [
+                    { name: "2024", categories: ["Q3", "Q4"] },
+                    { name: "2025", categories: ["Q1"] },
+                ],
+                series: [{ name: "Sales", values: [5, null, 7] }],
+            }),
+        ).to.equal("Column chart. Sales: 2024 Q3 5, 2025 Q1 7.");
+    });
+
+    it("should describe a stock chart's series, in Word's order, with their names", () => {
+        expect(
+            describeChart({
+                type: "stock",
+                title: "Shares",
+                categories: [new Date("2025-01-06"), new Date("2025-01-07")],
+                close: [11, 12],
+                high: [12, 13],
+                low: [10, null],
+                volume: [100, 200],
+                names: { close: "Last" },
+            }),
+        ).to.equal(
+            "Stock chart, Shares. Volume: 6 Jan 2025 100, 7 Jan 2025 200. High: 6 Jan 2025 12, 7 Jan 2025 13. Low: 6 Jan 2025 10. Last: 6 Jan 2025 11, 7 Jan 2025 12.",
+        );
+    });
+
+    it("should name pie of pie and bar of pie charts", () => {
+        const pie = { categories: ["A", "B"], series: [{ name: "S", values: [1, 2] }] };
+        expect(describeChart({ type: "pieOfPie", ...pie })).to.equal("Pie of pie chart. S: A 1, B 2.");
+        expect(describeChart({ type: "barOfPie", ...pie })).to.equal("Bar of pie chart. S: A 1, B 2.");
+    });
+
     it("should describe the points of scatter and bubble charts", () => {
         expect(
             describeChart({

@@ -7,7 +7,13 @@ import type { XmlComponent } from "docx";
 
 import { createElement, createText, createValue } from "./chart-elements";
 import type { ChartFont, ChartTitle } from "./chart-options";
-import { createBodyProperties, createNoShapeProperties, createParagraphProperties, createTextProperties } from "./chart-style";
+import {
+    type TextOptions,
+    createBodyProperties,
+    createNoShapeProperties,
+    createParagraphProperties,
+    createTextProperties,
+} from "./chart-style";
 
 /**
  * The font of a piece of the chart's text: its own, over the chart's.
@@ -53,25 +59,43 @@ const createTitle = (title: string | ChartTitle, options: TitleOptions): XmlComp
     const { text, font } = titleOf(title);
     const textOptions = { ...options, rotation: options.rotation ?? 0, font: fontOf(options.font, font) };
     return createElement("c:title", {}, [
-        createElement("c:tx", {}, [
-            createElement("c:rich", {}, [
-                createBodyProperties(textOptions),
-                createElement("a:lstStyle"),
-                ...text
-                    .split("\n")
-                    .map((line) =>
-                        createElement("a:p", {}, [
-                            createParagraphProperties(textOptions),
-                            createElement("a:r", {}, [createElement("a:rPr", { lang: "en-US" }), createText("a:t", line)]),
-                        ]),
-                    ),
-            ]),
-        ]),
+        createRichText(text, textOptions),
         createValue("c:overlay", false),
         createNoShapeProperties(),
         createTextProperties(textOptions),
     ]);
 };
+
+/**
+ * Text of a title's or label's own (`c:tx` with `c:rich`), each line a paragraph, in the look given.
+ *
+ * ## XSD Schema
+ * ```xml
+ * <xsd:complexType name="CT_Tx">
+ *   <xsd:sequence>
+ *     <xsd:choice minOccurs="1" maxOccurs="1">
+ *       <xsd:element name="strRef" type="CT_StrRef" minOccurs="1" maxOccurs="1"/>
+ *       <xsd:element name="rich" type="a:CT_TextBody" minOccurs="1" maxOccurs="1"/>
+ *     </xsd:choice>
+ *   </xsd:sequence>
+ * </xsd:complexType>
+ * ```
+ */
+export const createRichText = (text: string, options: TextOptions): XmlComponent =>
+    createElement("c:tx", {}, [
+        createElement("c:rich", {}, [
+            createBodyProperties(options),
+            createElement("a:lstStyle"),
+            ...text
+                .split("\n")
+                .map((line) =>
+                    createElement("a:p", {}, [
+                        createParagraphProperties(options),
+                        createElement("a:r", {}, [createElement("a:rPr", { lang: "en-US" }), createText("a:t", line)]),
+                    ]),
+                ),
+        ]),
+    ]);
 
 /**
  * A chart's title, in 14 point text above the plot.

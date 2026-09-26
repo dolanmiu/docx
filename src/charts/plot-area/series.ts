@@ -5,7 +5,7 @@
  */
 import type { XmlComponent } from "docx";
 
-import type { ChartNumberData, ChartSeriesData, ChartTextData } from "../chart-data";
+import type { ChartLevelsData, ChartNumberData, ChartSeriesData, ChartTextData } from "../chart-data";
 import { createElement, createText, createValue } from "../chart-elements";
 
 /**
@@ -66,10 +66,59 @@ const createNumberReference = ({ formula, points, format = "General" }: ChartNum
     ]);
 
 /**
- * A series' data (`c:cat`, `c:val`, `c:xVal`, `c:yVal` or `c:bubbleSize`): a reference to text or numbers.
+ * A reference to categories in groups (`c:multiLvlStrRef`), with its cache: a level of labels (`c:lvl`) for the
+ * categories, then one for each level of their groups, out to the outermost. A group's label is at its first category.
+ *
+ * ## XSD Schema
+ * ```xml
+ * <xsd:complexType name="CT_MultiLvlStrRef">
+ *   <xsd:sequence>
+ *     <xsd:element name="f" type="xsd:string" minOccurs="1" maxOccurs="1"/>
+ *     <xsd:element name="multiLvlStrCache" type="CT_MultiLvlStrData" minOccurs="0" maxOccurs="1"/>
+ *     <xsd:element name="extLst" type="CT_ExtensionList" minOccurs="0" maxOccurs="1"/>
+ *   </xsd:sequence>
+ * </xsd:complexType>
+ *
+ * <xsd:complexType name="CT_MultiLvlStrData">
+ *   <xsd:sequence>
+ *     <xsd:element name="ptCount" type="CT_UnsignedInt" minOccurs="0" maxOccurs="1"/>
+ *     <xsd:element name="lvl" type="CT_Lvl" minOccurs="0" maxOccurs="unbounded"/>
+ *     <xsd:element name="extLst" type="CT_ExtensionList" minOccurs="0" maxOccurs="1"/>
+ *   </xsd:sequence>
+ * </xsd:complexType>
+ * ```
  */
-export const createDataSource = (name: string, data: ChartTextData | ChartNumberData): XmlComponent =>
-    createElement(name, {}, [data.type === "text" ? createTextReference(data) : createNumberReference(data)]);
+const createLevelsReference = ({ formula, count, levels }: ChartLevelsData): XmlComponent =>
+    createElement("c:multiLvlStrRef", {}, [
+        createText("c:f", formula),
+        createElement("c:multiLvlStrCache", {}, [
+            createValue("c:ptCount", count),
+            ...levels.map((level) =>
+                createElement(
+                    "c:lvl",
+                    {},
+                    level.flatMap((label, index) =>
+                        label === undefined ? [] : [createElement("c:pt", { idx: index }, [createText("c:v", label)])],
+                    ),
+                ),
+            ),
+        ]),
+    ]);
+
+/**
+ * A series' data (`c:cat`, `c:val`, `c:xVal`, `c:yVal`, `c:bubbleSize`, or an error bar's `c:plus` or `c:minus`): a
+ * reference to text, numbers, or categories in groups.
+ */
+export const createDataSource = (name: string, data: ChartTextData | ChartNumberData | ChartLevelsData): XmlComponent => {
+    switch (data.type) {
+        case "text":
+            return createElement(name, {}, [createTextReference(data)]);
+        case "levels":
+            return createElement(name, {}, [createLevelsReference(data)]);
+        default:
+            return createElement(name, {}, [createNumberReference(data)]);
+    }
+};
 
 /**
  * A series' name (`c:tx`): a reference to the cell it is in.

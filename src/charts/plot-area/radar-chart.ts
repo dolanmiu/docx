@@ -67,7 +67,12 @@ export const createRadarChart = (options: RadarChartOptions, data: ChartData, fo
                                   createLineSeriesProperties(seriesColor(), own.line),
                                   createSeriesMarker(own.markers ?? options.markers, seriesColor),
                               ]),
-                        ...createSeriesDataLabels(labelsOf(own.dataLabels, options.dataLabels), { shape: "radar", series: own.name, font }),
+                        ...createSeriesDataLabels(labelsOf(own.dataLabels, options.dataLabels), {
+                            shape: "radar",
+                            series: own.name,
+                            font,
+                            pointLabels: own.pointLabels,
+                        }),
                         ...createCategoriesAndValues(series),
                     ]);
                 }),

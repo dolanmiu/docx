@@ -441,6 +441,31 @@ describe("template-series", () => {
             expect(extended.match(/<c:explosion val="12"\/>/g)).to.have.length(2);
         });
 
+        it("should keep an explosion only every point has, as far, as a slice pulled out on its own is that slice's", () => {
+            const pulled = (explosions: readonly (number | undefined)[]): string =>
+                write(
+                    withPointsUpTo(
+                        parse(
+                            `<c:ser>${explosions
+                                .map((explosion, index) =>
+                                    slice(index, ACCENT2).replace(
+                                        '<c:bubble3D val="0"/>',
+                                        `<c:bubble3D val="0"/>${explosion === undefined ? "" : `<c:explosion val="${explosion}"/>`}`,
+                                    ),
+                                )
+                                .join("")}</c:ser>`,
+                        ),
+                        explosions.length + 2,
+                        explosions.length,
+                        colorOf,
+                    ),
+                );
+            expect(pulled([10, 10]).match(/<c:explosion val="10"\/>/g)).to.have.length(4);
+            expect(pulled([undefined, 25]).match(/<c:explosion/g)).to.have.length(1);
+            expect(pulled([5, 25]).match(/<c:explosion/g)).to.have.length(2);
+            expect(pulled([undefined, undefined]).match(/<c:explosion/g)).to.equal(null);
+        });
+
         it("should give a point without a colour of its own none", () => {
             const plain = parse('<c:ser><c:dPt><c:idx val="0"/><c:bubble3D val="0"/></c:dPt></c:ser>');
             expect(write(withPointsUpTo(plain, 2, 1, colorOf))).to.equal(

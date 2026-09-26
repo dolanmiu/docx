@@ -164,11 +164,12 @@ const createNumberFormat = (given: string | undefined, linked: string): XmlCompo
  * ```
  *
  * @param dates - The categories' dates, when they are dates
+ * @param byDate - Whether dates are spaced by date, on a date axis, or evenly, one for each category, on a text axis
  */
-export const createCategoryAxis = (placement: AxisPlacement, axis: ChartAxis = {}, dates?: DateCategories): XmlComponent => {
+export const createCategoryAxis = (placement: AxisPlacement, axis: ChartAxis = {}, dates?: DateCategories, byDate = true): XmlComponent => {
     const start = createAxisStart(placement, axis, {}, axis.gridlines ?? placement.radar ?? false);
     const end = createAxisEnd(placement, axis, createAxisLine());
-    return dates
+    return dates && byDate
         ? createElement("c:dateAx", {}, [
               ...start,
               createNumberFormat(axis.numberFormat, dates.format),
@@ -179,9 +180,10 @@ export const createCategoryAxis = (placement: AxisPlacement, axis: ChartAxis = {
           ])
         : createElement("c:catAx", {}, [
               ...start,
-              createNumberFormat(axis.numberFormat, "General"),
+              createNumberFormat(axis.numberFormat, dates?.format ?? "General"),
               ...end,
-              createValue("c:auto", true),
+              // An automatic axis of dates is a date axis, as Office and LibreOffice read it
+              createValue("c:auto", dates === undefined),
               createValue("c:lblAlgn", "ctr"),
               createValue("c:lblOffset", 100),
               createValue("c:noMultiLvlLbl", false),

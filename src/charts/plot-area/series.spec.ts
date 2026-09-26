@@ -53,4 +53,31 @@ describe("series", () => {
             '<c:val><c:numRef><c:f>Sheet1!$C$2</c:f><c:numCache><c:formatCode>General</c:formatCode><c:ptCount val="1"/><c:pt idx="0"><c:v>3</c:v></c:pt></c:numCache></c:numRef></c:val>',
         ]);
     });
+
+    it("should refer to categories in groups as a block of cells, caching a level of labels for the categories, then each level of groups", () => {
+        expect(
+            toXml(
+                createDataSource("c:cat", {
+                    type: "levels",
+                    formula: "Sheet1!$A$2:$B$4",
+                    count: 3,
+                    levels: [
+                        ["Q1", "Q2", "Q1"],
+                        ["2024", undefined, "2025"],
+                    ],
+                }),
+            ),
+        ).to.equal(
+            '<c:cat><c:multiLvlStrRef><c:f>Sheet1!$A$2:$B$4</c:f><c:multiLvlStrCache><c:ptCount val="3"/>' +
+                '<c:lvl><c:pt idx="0"><c:v>Q1</c:v></c:pt><c:pt idx="1"><c:v>Q2</c:v></c:pt><c:pt idx="2"><c:v>Q1</c:v></c:pt></c:lvl>' +
+                '<c:lvl><c:pt idx="0"><c:v>2024</c:v></c:pt><c:pt idx="2"><c:v>2025</c:v></c:pt></c:lvl>' +
+                "</c:multiLvlStrCache></c:multiLvlStrRef></c:cat>",
+        );
+    });
+
+    it("should write a level without labels as an empty level", () => {
+        expect(
+            toXml(createDataSource("c:cat", { type: "levels", formula: "Sheet1!$A$2:$B$2", count: 1, levels: [["A"], [undefined]] })),
+        ).to.contain("<c:lvl/>");
+    });
 });

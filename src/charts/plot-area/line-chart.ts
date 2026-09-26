@@ -10,7 +10,9 @@ import type { ChartMarker, ChartSeries } from "../chart-options";
 import { createLineSeriesProperties, createMarker, createSeriesColor } from "../chart-style";
 import { type CategoryGroup, GROUPINGS, labelsOf } from "./chart-group";
 import { createGroupDataLabels, createSeriesDataLabels } from "./data-labels";
+import { createErrorBars } from "./error-bars";
 import { createCategoriesAndValues, createSeriesStart } from "./series";
+import { createTrendlines } from "./trendline";
 
 type LineGroup = CategoryGroup<ChartSeries> & {
     /** The chart's markers, which a series' own replace */
@@ -73,7 +75,14 @@ export const createLineChart = ({ series, stacking, axes, dataLabels, font, mark
                 ...createSeriesStart(index, data),
                 createLineSeriesProperties(seriesColor(), options.line),
                 createSeriesMarker(markersOf(options), seriesColor),
-                ...createSeriesDataLabels(labelsOf(options.dataLabels, dataLabels), { shape: "line", series: options.name, font }),
+                ...createSeriesDataLabels(labelsOf(options.dataLabels, dataLabels), {
+                    shape: "line",
+                    series: options.name,
+                    font,
+                    pointLabels: options.pointLabels,
+                }),
+                ...createTrendlines(options.trendlines, seriesColor, font),
+                ...createErrorBars(options.errorBars, "y", data.errors?.y),
                 ...createCategoriesAndValues(data),
                 createValue("c:smooth", options.smooth ?? smooth ?? false),
             ]);

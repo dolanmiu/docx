@@ -12,8 +12,10 @@ import { createScatterSeriesProperties, createSeriesColor } from "../chart-style
 import { PRIMARY_AXES, createPointAxes } from "./axes";
 import { type ChartGroups, labelsOf } from "./chart-group";
 import { createGroupDataLabels, createSeriesDataLabels } from "./data-labels";
+import { createErrorBars } from "./error-bars";
 import { createSeriesMarker } from "./line-chart";
 import { createDataSource, createSeriesStart } from "./series";
+import { createTrendlines } from "./trendline";
 
 /**
  * A scatter chart, with two value axes. Applications draw a scatter series' line from the series' own line, whatever
@@ -68,7 +70,11 @@ export const createScatterChart = (options: ScatterChartOptions, data: ChartData
                             shape: "points",
                             series: own.name,
                             font,
+                            pointLabels: own.pointLabels,
                         }),
+                        ...createTrendlines(own.trendlines, seriesColor, font),
+                        ...createErrorBars(own.xErrorBars, "x", series.errors?.x),
+                        ...createErrorBars(own.yErrorBars, "y", series.errors?.y),
                         createDataSource("c:xVal", series.categories),
                         createDataSource("c:yVal", series.values),
                         createValue("c:smooth", lines === "smooth"),

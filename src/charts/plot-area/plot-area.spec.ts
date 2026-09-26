@@ -1,3 +1,4 @@
+// cspell:ignore cmpd
 import { describe, expect, it } from "vitest";
 import xml from "xml";
 import { type Element, xml2js } from "xml-js";
@@ -26,6 +27,9 @@ const CHARTS: readonly (readonly [ChartRunOptions, string, readonly string[]])[]
     [{ type: "radar", categories, series }, "c:radarChart", ["c:catAx", "c:valAx"]],
     [{ type: "scatter", series: [{ name: "S", points: [{ x: 1, y: 1 }] }] }, "c:scatterChart", ["c:valAx", "c:valAx"]],
     [{ type: "bubble", series: [{ name: "S", points: [{ x: 1, y: 1, size: 1 }] }] }, "c:bubbleChart", ["c:valAx", "c:valAx"]],
+    [{ type: "pieOfPie", categories, series }, "c:ofPieChart", []],
+    [{ type: "barOfPie", categories, series }, "c:ofPieChart", []],
+    [{ type: "stock", categories, high: [2, 3], low: [1, 2], close: [1.5, 2.5] }, "c:stockChart", ["c:catAx", "c:valAx"]],
 ];
 
 describe("createPlotArea", () => {
@@ -68,5 +72,58 @@ describe("createPlotArea's style", () => {
             ],
         });
         expect(names(area)).to.deep.equal(["c:layout", "c:barChart", "c:lineChart", "c:catAx", "c:valAx", "c:valAx", "c:catAx", "c:spPr"]);
+    });
+});
+
+describe("createPlotArea's data table", () => {
+    it("should write a data table after the axes, before the plot area's fill, with Office's borders and legend keys", () => {
+        const area = plotArea({ type: "column", categories, series, dataTable: true });
+        expect(names(area)).to.deep.equal(["c:layout", "c:barChart", "c:catAx", "c:valAx", "c:dTable", "c:spPr"]);
+        const table = children(area, "c:dTable")[0];
+        expect(names(table)).to.deep.equal(["c:showHorzBorder", "c:showVertBorder", "c:showOutline", "c:showKeys", "c:spPr", "c:txPr"]);
+        expect(["c:showHorzBorder", "c:showVertBorder", "c:showOutline", "c:showKeys"].map((name) => value(table, name))).to.deep.equal([
+            "1",
+            "1",
+            "1",
+            "1",
+        ]);
+        const written = xml(
+            new Formatter().format(
+                createPlotArea(
+                    { type: "column", categories, series, dataTable: true },
+                    createChartData({ type: "column", categories, series }),
+                ),
+            ),
+        );
+        expect(written).to.contain(
+            '<c:spPr><a:noFill/><a:ln w="9525" cap="flat" cmpd="sng" algn="ctr"><a:solidFill><a:schemeClr val="tx1"><a:lumMod val="15000"/><a:lumOff val="85000"/></a:schemeClr></a:solidFill><a:round/></a:ln><a:effectLst/></c:spPr><c:txPr>',
+        );
+    });
+
+    it("should leave out the borders and keys asked, and write its font over the chart's", () => {
+        const options: ChartRunOptions = {
+            type: "line",
+            categories,
+            series,
+            font: { name: "Arial" },
+            dataTable: { legendKeys: false, horizontalBorders: false, verticalBorders: false, outline: false, font: { size: 8 } },
+        };
+        const table = children(plotArea(options), "c:dTable")[0];
+        expect(["c:showHorzBorder", "c:showVertBorder", "c:showOutline", "c:showKeys"].map((name) => value(table, name))).to.deep.equal([
+            "0",
+            "0",
+            "0",
+            "0",
+        ]);
+        const written = xml(new Formatter().format(createPlotArea(options, createChartData(options))));
+        expect(written).to.contain('<a:defRPr sz="800"');
+        expect(written).to.contain('<a:latin typeface="Arial"/>');
+    });
+
+    it("should write no data table for false, and put a stock chart's after its axes", () => {
+        expect(names(plotArea({ type: "area", categories, series, dataTable: false }))).to.not.include("c:dTable");
+        expect(
+            names(plotArea({ type: "stock", categories, high: [2, 3], low: [1, 2], close: [1.5, 2.5], volume: [5, 6], dataTable: true })),
+        ).to.deep.equal(["c:layout", "c:barChart", "c:stockChart", "c:catAx", "c:valAx", "c:valAx", "c:catAx", "c:dTable", "c:spPr"]);
     });
 });

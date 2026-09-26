@@ -6,21 +6,27 @@
 import type { XmlComponent } from "docx";
 
 import type { ChartData } from "../chart-data";
-import { createElement } from "../chart-elements";
-import type { ChartFont, ChartRunOptions } from "../chart-options";
-import { createPlotAreaProperties } from "../chart-style";
+import { createElement, createValue } from "../chart-elements";
+import type { ChartDataTable, ChartFont, ChartRunOptions } from "../chart-options";
+import { createDataTableProperties, createPlotAreaProperties, createTextProperties } from "../chart-style";
+import { fontOf } from "../chart-text";
 import { createBubbleChart } from "./bubble-chart";
 import { createCategoryCharts } from "./category-chart";
 import type { ChartGroups } from "./chart-group";
 import { createPieChart } from "./pie-chart";
 import { createRadarChart } from "./radar-chart";
 import { createScatterChart } from "./scatter-chart";
+import { createStockChart } from "./stock-chart";
 
 const createChartGroups = (options: ChartRunOptions, data: ChartData, font: ChartFont | undefined): ChartGroups => {
     switch (options.type) {
         case "pie":
         case "doughnut":
+        case "pieOfPie":
+        case "barOfPie":
             return createPieChart(options, data, font);
+        case "stock":
+            return createStockChart(options, data, font);
         case "radar":
             return createRadarChart(options, data, font);
         case "scatter":
@@ -30,6 +36,37 @@ const createChartGroups = (options: ChartRunOptions, data: ChartData, font: Char
         default:
             return createCategoryCharts(options, data, font);
     }
+};
+
+/**
+ * A table of the chart's data under its plot, with light grey borders and 9 point text, and each series' legend key,
+ * unless asked otherwise.
+ *
+ * ## XSD Schema
+ * ```xml
+ * <xsd:complexType name="CT_DTable">
+ *   <xsd:sequence>
+ *     <xsd:element name="showHorzBorder" type="CT_Boolean" minOccurs="0" maxOccurs="1"/>
+ *     <xsd:element name="showVertBorder" type="CT_Boolean" minOccurs="0" maxOccurs="1"/>
+ *     <xsd:element name="showOutline" type="CT_Boolean" minOccurs="0" maxOccurs="1"/>
+ *     <xsd:element name="showKeys" type="CT_Boolean" minOccurs="0" maxOccurs="1"/>
+ *     <xsd:element name="spPr" type="a:CT_ShapeProperties" minOccurs="0" maxOccurs="1"/>
+ *     <xsd:element name="txPr" type="a:CT_TextBody" minOccurs="0" maxOccurs="1"/>
+ *     <xsd:element name="extLst" type="CT_ExtensionList" minOccurs="0" maxOccurs="1"/>
+ *   </xsd:sequence>
+ * </xsd:complexType>
+ * ```
+ */
+const createDataTable = (table: true | ChartDataTable, chartFont: ChartFont | undefined): XmlComponent => {
+    const { legendKeys = true, horizontalBorders = true, verticalBorders = true, outline = true, font } = table === true ? {} : table;
+    return createElement("c:dTable", {}, [
+        createValue("c:showHorzBorder", horizontalBorders),
+        createValue("c:showVertBorder", verticalBorders),
+        createValue("c:showOutline", outline),
+        createValue("c:showKeys", legendKeys),
+        createDataTableProperties(),
+        createTextProperties({ size: 9, rotation: 0, font: fontOf(chartFont, font) }),
+    ]);
 };
 
 /**
@@ -66,5 +103,12 @@ const createChartGroups = (options: ChartRunOptions, data: ChartData, font: Char
  */
 export const createPlotArea = (options: ChartRunOptions, data: ChartData): XmlComponent => {
     const { groups, axes } = createChartGroups(options, data, options.font);
-    return createElement("c:plotArea", {}, [createElement("c:layout"), ...groups, ...axes, createPlotAreaProperties(options.plotArea)]);
+    const { dataTable } = options as { readonly dataTable?: boolean | ChartDataTable };
+    return createElement("c:plotArea", {}, [
+        createElement("c:layout"),
+        ...groups,
+        ...axes,
+        ...(dataTable ? [createDataTable(dataTable, options.font)] : []),
+        createPlotAreaProperties(options.plotArea),
+    ]);
 };

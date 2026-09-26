@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { cellName, columnName, sheetReference } from "./cell-reference";
+import { cellName, columnName, sheetRangeReference, sheetReference } from "./cell-reference";
 
 describe("cell references", () => {
     it("should name columns with letters, and with more than one after Z", () => {
@@ -27,5 +27,12 @@ describe("cell references", () => {
         expect(sheetReference(1, 0)).to.equal("Sheet1!$B$1");
         expect(sheetReference(0, 1, 4)).to.equal("Sheet1!$A$2:$A$5");
         expect(sheetReference(26, 1, 1)).to.equal("Sheet1!$AA$2");
+    });
+
+    it("should refer to a block of cells, across columns and down rows, or to one cell", () => {
+        expect(sheetRangeReference(0, 1, 1, 8)).to.equal("Sheet1!$A$2:$B$9");
+        expect(sheetRangeReference(0, 2, 1)).to.equal("Sheet1!$A$2:$C$2");
+        expect(sheetRangeReference(3, 3, 4)).to.equal("Sheet1!$D$5");
+        expect(sheetRangeReference(3, 3, 4, 2)).to.equal("Sheet1!$D$5:$D$6");
     });
 });

@@ -53,6 +53,42 @@ const CHARTS: readonly ChartRunOptions[] = [
         categories: [new Date("2025-01-01"), new Date("2025-02-01"), new Date("2025-03-01")],
         series: [series[0], { ...series[1], type: "line", axis: "secondary" }],
     },
+    // Categories in groups, with custom error bars, whose amounts are cells too
+    {
+        type: "column",
+        categories: [
+            { name: "2024", categories: ["Q3", "Q4"] },
+            { name: "2025", categories: [1] },
+        ],
+        series: [
+            { ...series[0], errorBars: { type: "custom", plus: [1, null, 0.5], minus: [2] }, trendlines: [{ type: "linear" }] },
+            { ...series[1], errorBars: { type: "fixed", value: 1 } },
+        ],
+    },
+    {
+        type: "scatter",
+        series: [
+            {
+                name: "A",
+                points: [
+                    { x: 1, y: 2 },
+                    { x: 2, y: 3 },
+                ],
+                xErrorBars: { type: "custom", minus: [0.1, 0.2] },
+                yErrorBars: { type: "custom", plus: [1] },
+            },
+        ],
+    },
+    { type: "pieOfPie", categories, series: [{ name: "Share", values: [5, 3, 2], explosion: [10] }] },
+    {
+        type: "stock",
+        categories: [new Date("2025-01-06"), new Date("2025-01-07")],
+        volume: [100, 200],
+        open: [1, 2],
+        high: [3, 3],
+        low: [1, 1],
+        close: [2, 1.5],
+    },
 ];
 
 const paragraphWith = (options: ChartRunOptions): Paragraph => new Paragraph({ children: [new ChartRun(options)] });
@@ -77,11 +113,20 @@ const readCells = async (workbook: JSZip): Promise<ReadonlyMap<string, string>> 
     );
 };
 
-// The cells a formula such as Sheet1!$B$2:$B$4 refers to
-const cellsOf = (formula: string): readonly string[] => {
-    const [, column, first, last] = /^Sheet1!\$([A-Z]+)\$(\d+)(?::\$[A-Z]+\$(\d+))?$/.exec(formula)!;
-    return Array.from({ length: Number(last ?? first) - Number(first) + 1 }, (_, index) => `${column}${Number(first) + index}`);
+// The cells a formula such as Sheet1!$B$2:$B$4, or Sheet1!$A$2:$B$4, refers to, a column at a time
+const columnsOf = (formula: string): readonly (readonly string[])[] => {
+    const [, from, first, to, last] = /^Sheet1!\$([A-Z]+)\$(\d+)(?::\$([A-Z]+)\$(\d+))?$/.exec(formula)!;
+    const columns = Array.from({ length: (to ?? from).charCodeAt(0) - from.charCodeAt(0) + 1 }, (_, index) =>
+        String.fromCharCode(from.charCodeAt(0) + index),
+    );
+    return columns.map((column) =>
+        Array.from({ length: Number(last ?? first) - Number(first) + 1 }, (_, index) => `${column}${Number(first) + index}`),
+    );
 };
+
+// A cache's points, by their index
+const pointsOf = (cache: Element): ReadonlyMap<number, string> =>
+    new Map(descendants(cache, "c:pt").map((point) => [Number(point.attributes!.idx), textOf(descendants(point, "c:v")[0])]));
 
 describe("docx/charts in a document", () => {
     it("should write each chart and its workbook as parts, with a relationship from the part each chart is in", async () => {
@@ -139,17 +184,31 @@ describe("docx/charts in a document", () => {
             );
             const cells = await readCells(workbook);
             const references = [...descendants(chart, "c:strRef"), ...descendants(chart, "c:numRef")];
+            const levels = descendants(chart, "c:multiLvlStrRef");
 
-            // A name, categories and values for each series, and a bubble series' sizes
-            expect(references.length).to.equal(descendants(chart, "c:ser").length * 3 + descendants(chart, "c:bubbleSize").length);
+            // A name, categories and values for each series, a bubble series' sizes, and custom error bars' amounts
+            expect(references.length + levels.length).to.equal(
+                descendants(chart, "c:ser").length * 3 +
+                    ["c:bubbleSize", "c:plus", "c:minus"].reduce((count, name) => count + descendants(chart, name).length, 0),
+            );
             for (const reference of references) {
-                const names = cellsOf(textOf(descendants(reference, "c:f")[0]));
-                const cache = new Map(
-                    descendants(reference, "c:pt").map((point) => [Number(point.attributes!.idx), textOf(descendants(point, "c:v")[0])]),
-                );
+                const [names] = columnsOf(textOf(descendants(reference, "c:f")[0]));
+                const cache = pointsOf(reference);
 
                 expect(descendants(reference, "c:ptCount")[0].attributes!.val).to.equal(String(names.length));
                 expect(names.map((name) => cells.get(name))).to.deep.equal(names.map((_, point) => cache.get(point)));
+            }
+            // Categories in groups: a level of the cache for each column, the categories' own column first
+            for (const reference of levels) {
+                const columns = columnsOf(textOf(descendants(reference, "c:f")[0]));
+                const cached = descendants(reference, "c:lvl").map(pointsOf);
+
+                expect(descendants(reference, "c:ptCount")[0].attributes!.val).to.equal(String(columns[0].length));
+                expect(cached).to.have.length(columns.length);
+                for (const [level, cache] of cached.entries()) {
+                    const names = columns[columns.length - 1 - level];
+                    expect(names.map((name) => cells.get(name))).to.deep.equal(names.map((_, point) => cache.get(point)));
+                }
             }
         }
     });
