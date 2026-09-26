@@ -119,6 +119,18 @@ describe("createCategoryAxis", () => {
         ).to.deep.equal({ formatCode: "yyyy", sourceLinked: "0" });
     });
 
+    it("should write dates spaced evenly on a text axis, in their format, told not to become a date axis", () => {
+        const axis = parse(createCategoryAxis(CATEGORY, {}, { unit: "days", format: "d mmm yyyy" }, false));
+
+        expect(axis.name).to.equal("c:catAx");
+        expect(child(axis, "c:numFmt").attributes).to.deep.equal({ formatCode: "d mmm yyyy", sourceLinked: "1" });
+        expect(value(axis, "c:auto")).to.equal("0");
+        expect(names(axis).slice(-4)).to.deep.equal(["c:auto", "c:lblAlgn", "c:lblOffset", "c:noMultiLvlLbl"]);
+        // Categories that aren't dates stay automatic
+        expect(value(parse(createCategoryAxis(CATEGORY, {}, undefined, false)), "c:auto")).to.equal("1");
+        expect(value(parse(createCategoryAxis(CATEGORY)), "c:auto")).to.equal("1");
+    });
+
     it("should give a radar chart's category axis gridlines, the spokes, and tick marks", () => {
         const axis = parse(createCategoryAxis({ ...CATEGORY, radar: true }));
 

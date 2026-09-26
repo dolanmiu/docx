@@ -10,7 +10,9 @@ import type { ChartSeries } from "../chart-options";
 import { createFilledSeriesProperties, createSeriesColor } from "../chart-style";
 import { type CategoryGroup, GROUPINGS, labelsOf } from "./chart-group";
 import { createGroupDataLabels, createSeriesDataLabels } from "./data-labels";
+import { createErrorBars } from "./error-bars";
 import { createCategoriesAndValues, createSeriesStart } from "./series";
+import { createTrendlines } from "./trendline";
 
 /**
  * A group of areas.
@@ -49,7 +51,14 @@ export const createAreaChart = ({ series, stacking, axes, dataLabels, font }: Ca
                 ...createSeriesStart(index, data),
                 createFilledSeriesProperties(createSeriesColor(index, options.color)),
                 // Office gives an area's labels no position
-                ...createSeriesDataLabels(labelsOf(options.dataLabels, dataLabels), { shape: "area", series: options.name, font }),
+                ...createSeriesDataLabels(labelsOf(options.dataLabels, dataLabels), {
+                    shape: "area",
+                    series: options.name,
+                    font,
+                    pointLabels: options.pointLabels,
+                }),
+                ...createTrendlines(options.trendlines, () => createSeriesColor(index, options.color), font),
+                ...createErrorBars(options.errorBars, "y", data.errors?.y),
                 ...createCategoriesAndValues(data),
             ]),
         ),

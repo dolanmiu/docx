@@ -36,7 +36,19 @@ export const cellName = (column: number, row: number): string => `${columnName(c
  * @param firstRow - The first row's index, from 0
  * @param rows - The number of rows
  */
-export const sheetReference = (column: number, firstRow: number, rows = 1): string => {
-    const first = `$${columnName(column)}$${firstRow + 1}`;
-    return rows === 1 ? `${SHEET_NAME}!${first}` : `${SHEET_NAME}!${first}:$${columnName(column)}$${firstRow + rows}`;
+export const sheetReference = (column: number, firstRow: number, rows = 1): string => sheetRangeReference(column, column, firstRow, rows);
+
+/**
+ * A formula for a block of cells, such as `Sheet1!$A$2:$B$9`, or for one cell.
+ *
+ * @param firstColumn - The first column's index, from 0
+ * @param lastColumn - The last column's index, from 0
+ * @param firstRow - The first row's index, from 0
+ * @param rows - The number of rows
+ */
+export const sheetRangeReference = (firstColumn: number, lastColumn: number, firstRow: number, rows = 1): string => {
+    const first = `$${columnName(firstColumn)}$${firstRow + 1}`;
+    return rows === 1 && firstColumn === lastColumn
+        ? `${SHEET_NAME}!${first}`
+        : `${SHEET_NAME}!${first}:$${columnName(lastColumn)}$${firstRow + rows}`;
 };

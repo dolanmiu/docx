@@ -6,6 +6,7 @@
  */
 import type { XmlComponent } from "docx";
 
+import { type ChartCategories, leafCategoriesOf } from "../chart-categories";
 import type { ChartData } from "../chart-data";
 import { DATE_FORMATS, timeUnitOf } from "../chart-dates";
 import type {
@@ -68,8 +69,8 @@ const createGroup = (options: CategoryChartOptions, kind: GroupKind, group: Cate
 /**
  * The categories' dates, when they are dates: the unit to space them by, and how they are written.
  */
-const datesOf = (categories: CategoryChartOptions["categories"]): DateCategories | undefined => {
-    const dates = categories.filter((category): category is Date => category instanceof Date);
+export const datesOf = (categories: ChartCategories): DateCategories | undefined => {
+    const dates = leafCategoriesOf(categories).filter((category): category is Date => category instanceof Date);
     if (dates.length === 0) {
         return undefined;
     }

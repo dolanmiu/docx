@@ -242,6 +242,72 @@ export const createMarker = (
 };
 
 /**
+ * A trendline: 1.5 points wide with round ends, in short dots of the series' colour, as Office draws them, or as given.
+ *
+ * @param color - The series' colour
+ */
+export const createTrendlineProperties = (color: XmlComponent, line: ChartLine = {}): XmlComponent =>
+    createShapeProperties(
+        undefined,
+        createLine({
+            width: line.width ?? 1.5,
+            color: line.color === undefined ? color : createChartColor(line.color),
+            dash: line.dash ?? "shortDot",
+            round: true,
+        }),
+    );
+
+/**
+ * A line drawn between a chart's points or plots, such as error bars, a stock chart's high-low lines, or the lines
+ * joining a pie to its second plot: 0.75 points wide, with flat ends, a percentage of the way from the background to the
+ * text colour, or as given.
+ *
+ * @param percent - How far from the background to the text colour the line is, from 0 to 100
+ */
+export const createChartLinesProperties = (line: ChartLine = {}, percent: number): XmlComponent =>
+    createShapeProperties(undefined, createBorder(line, textColor(percent)));
+
+/**
+ * Error bars: dark grey lines 0.75 points wide, as Office draws them, or as given.
+ */
+export const createErrorBarsProperties = (line?: ChartLine): XmlComponent =>
+    createShapeProperties(createNoFill(), createBorder(line ?? {}, textColor(65)));
+
+/**
+ * The bars of a stock chart from each open to each close, as Office draws them: white where the price rose, and dark
+ * grey where it fell, each with a thin grey border, or as given.
+ *
+ * @param rising - Whether they are the bars where the price rose
+ */
+export const createUpDownBarProperties = ({ fill, border }: ChartAreaStyle = {}, rising: boolean): XmlComponent =>
+    createShapeProperties(
+        createAreaFill(fill, createSolidFill(rising ? createSchemeColor("lt1") : textColor(65))),
+        border === "none" ? createLine({}) : createBorder(border ?? {}, textColor(65)),
+    );
+
+/**
+ * The closing price of a stock chart without opening prices: a short dash across its high-low line, in its colour.
+ */
+export const createCloseMarker = (): XmlComponent => {
+    const color = (): XmlComponent => textColor(75);
+    return createElement("c:marker", {}, [
+        createValue("c:symbol", "dash"),
+        createValue("c:size", 7),
+        createShapeProperties(createSolidFill(color()), createLine({ width: 0.75, color: color() })),
+    ]);
+};
+
+/**
+ * A series drawn only by what joins its points, such as a stock chart's prices: no line.
+ */
+export const createHiddenSeriesProperties = (): XmlComponent => createShapeProperties(undefined, createLine({ width: 1.5, round: true }));
+
+/**
+ * The data table: no fill, with light grey borders, as Office draws it.
+ */
+export const createDataTableProperties = (): XmlComponent => createShapeProperties(createNoFill(), createBorder({}, textColor(15)));
+
+/**
  * Gridlines, or the line of an axis: 0.75 points wide, 15% of the way from the background to the text colour, or 25%
  * for a scatter chart's axes.
  */

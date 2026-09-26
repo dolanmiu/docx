@@ -177,6 +177,180 @@ export type BubbleChartDataLabels = ChartDataLabels & {
 };
 
 /**
+ * Text of a label's own, in place of what it would show.
+ *
+ * @publicApi
+ */
+export type ChartLabelText = {
+    /**
+     * The label's text, in place of the value, category or series' name, such as `"Record high"`. Each line of the text is
+     * a line of the label. A label with text shows nothing else
+     */
+    readonly text?: string;
+};
+
+/**
+ * The label of one bar or point, over its series' labels: its own text, or what it shows, where it is, its number
+ * format and its font. Anything left out is as the series' labels have it.
+ *
+ * @publicApi
+ */
+export type ChartPointLabel = ChartDataLabels & ChartLabelText;
+
+/**
+ * The label of one slice of a pie or doughnut chart: as {@link ChartPointLabel}, or the slice's percentage.
+ *
+ * @publicApi
+ */
+export type PieChartPointLabel = PieChartDataLabels & ChartLabelText;
+
+/**
+ * The label of one bubble of a bubble chart: as {@link ChartPointLabel}, or the bubble's size.
+ *
+ * @publicApi
+ */
+export type BubbleChartPointLabel = BubbleChartDataLabels & ChartLabelText;
+
+/**
+ * The kind of line a trendline fits to a series' values:
+ *
+ * - `"linear"`: a straight line;
+ * - `"exponential"`: a curve that rises or falls ever faster, for values above 0;
+ * - `"logarithmic"`: a curve that rises or falls quickly, then levels out;
+ * - `"polynomial"`: a curve with as many bends as its `order`, less one;
+ * - `"power"`: a curve for values that grow at a steady rate, above 0;
+ * - `"movingAverage"`: the average of each point and the points before it, which smooths out the ups and downs.
+ *
+ * @publicApi
+ */
+export type ChartTrendlineType = "linear" | "exponential" | "logarithmic" | "polynomial" | "power" | "movingAverage";
+
+/**
+ * The label of a trendline's equation and R² value.
+ *
+ * @publicApi
+ */
+export type ChartTrendlineLabel = {
+    /** How the numbers are written, as an Excel number format such as `"#,##0.00"`. Default is `"General"` */
+    readonly numberFormat?: string;
+    /** The label's font. Default is 9 points */
+    readonly font?: ChartFont;
+};
+
+/**
+ * A trendline: a line fitted to a series' values, which shows their trend, and can extend it forward or backward as a
+ * forecast. It is drawn as a dotted line in the series' colour, and has an entry in the legend.
+ *
+ * @publicApi
+ */
+export type ChartTrendline = {
+    /** The kind of line fitted to the values */
+    readonly type: ChartTrendlineType;
+    /** The order of a polynomial trendline, from 2 to 6: 2 has one bend, 3 has two, and so on. Default is 2 */
+    readonly order?: number;
+    /**
+     * How many points each point of a moving average averages, from 2 to one fewer than the series' values or points.
+     * Default is 2
+     */
+    readonly period?: number;
+    /** The trendline's name in the legend. Default is Office's, such as "Linear (Sales)" */
+    readonly name?: string;
+    /**
+     * Extends the trendline past the last point by this many categories, or on a scatter or bubble chart, this much along
+     * the x axis. Default is 0. Not for moving averages
+     */
+    readonly forecastForward?: number;
+    /**
+     * Extends the trendline before the first point by this many categories, or on a scatter or bubble chart, this much
+     * along the x axis. Default is 0. Not for moving averages
+     */
+    readonly forecastBackward?: number;
+    /**
+     * Where the trendline crosses the vertical axis: its value where x is 0. Default is where the values put it. Only for
+     * linear, exponential and polynomial trendlines, and above 0 for exponential ones
+     */
+    readonly intercept?: number;
+    /** Shows the trendline's equation on the chart, such as "y = 2.5x + 4". Default is `false`. Not for moving averages */
+    readonly equation?: boolean;
+    /** Shows how well the trendline fits the values, its R² value, on the chart. Default is `false`. Not for moving averages */
+    readonly rSquared?: boolean;
+    /** The equation's and R² value's number format and font */
+    readonly label?: ChartTrendlineLabel;
+    /** The line's colour, width and dashes. Default is the series' colour, 1.5 points wide, with short dots */
+    readonly line?: ChartLine;
+};
+
+/**
+ * What error bars share, whatever their size: which way they go, their end caps and their line.
+ *
+ * @publicApi
+ */
+export type ChartErrorBarsStyle = {
+    /** Whether the bars end with a short line across them. Default is `true` */
+    readonly endCaps?: boolean;
+    /** The bars' colour, width and dashes. Default is dark grey, 0.75 points wide */
+    readonly line?: ChartLine;
+};
+
+/**
+ * Error bars of a size that follows a rule: a fixed amount, a percentage of each value, a number of standard
+ * deviations, or the standard error.
+ *
+ * @publicApi
+ */
+export type ChartErrorBarsAmount = ChartErrorBarsStyle & {
+    /**
+     * Which way the bars go from each point: both ways, or only towards higher values (`"plus"`) or lower ones
+     * (`"minus"`). Default is `"both"`
+     */
+    readonly direction?: "both" | "plus" | "minus";
+} & (
+        | {
+              /** The same amount at each point */
+              readonly type: "fixed";
+              /** The amount, 0 or more */
+              readonly value: number;
+          }
+        | {
+              /** A percentage of each point's value */
+              readonly type: "percentage";
+              /** The percentage, 0 or more */
+              readonly value: number;
+          }
+        | {
+              /** A number of standard deviations of the series' values, from their average */
+              readonly type: "standardDeviation";
+              /** How many standard deviations, 0 or more. Default is 1 */
+              readonly value?: number;
+          }
+        | {
+              /** The standard error of the series' values */
+              readonly type: "standardError";
+          }
+    );
+
+/**
+ * Error bars of a size of each point's own, such as a range of uncertainty. The amounts are kept in the chart's
+ * workbook, beside the data.
+ *
+ * @publicApi
+ */
+export type ChartCustomErrorBars = ChartErrorBarsStyle & {
+    readonly type: "custom";
+    /** How far each bar goes towards higher values, one amount for each value or point, in order. `null` leaves none */
+    readonly plus?: readonly (number | null)[];
+    /** How far each bar goes towards lower values, one amount for each value or point, in order. `null` leaves none */
+    readonly minus?: readonly (number | null)[];
+};
+
+/**
+ * Error bars: a line from each point of a series, showing how far its value might be off.
+ *
+ * @publicApi
+ */
+export type ChartErrorBars = ChartErrorBarsAmount | ChartCustomErrorBars;
+
+/**
  * A series of a column, bar, line or area chart: one value for each category.
  *
  * `markers`, `smooth` and `line` are for series drawn as lines, and `colors` for series drawn as bars.
@@ -213,6 +387,15 @@ export type ChartSeries = {
     readonly smooth?: boolean;
     /** The line's colour, width and dashes. Only for lines */
     readonly line?: ChartLine;
+    /**
+     * Labels of single bars or points, in the order of the categories: a label of its own, `false` for none, or
+     * `undefined` for the series' own
+     */
+    readonly pointLabels?: readonly (false | ChartPointLabel | undefined)[];
+    /** Lines fitted to the values. Not for stacked series */
+    readonly trendlines?: readonly ChartTrendline[];
+    /** Error bars along the values: up and down from columns, lines and areas, or left and right from a bar chart's bars */
+    readonly errorBars?: ChartErrorBars;
 };
 
 /**
@@ -232,6 +415,16 @@ export type PieChartSeries = {
     readonly colors?: readonly (string | ThemeColor | undefined)[];
     /** The series' own labels, instead of the chart's `dataLabels`, or `false` for none */
     readonly dataLabels?: false | PieChartDataLabels;
+    /**
+     * Labels of single slices, in the order of the categories: a label of its own, `false` for none, or `undefined` for
+     * the series' own
+     */
+    readonly pointLabels?: readonly (false | PieChartPointLabel | undefined)[];
+    /**
+     * Pulls the slices out from the centre, by a percentage of the radius from 0 to 400: one amount for every slice, or
+     * one for each slice in the order of the categories, where `undefined` leaves a slice in. Default is 0
+     */
+    readonly explosion?: number | readonly (number | undefined)[];
 };
 
 /**
@@ -252,6 +445,11 @@ export type RadarChartSeries = {
     readonly markers?: boolean | ChartMarker;
     /** The line's colour, width and dashes. Not for filled charts */
     readonly line?: ChartLine;
+    /**
+     * Labels of single points, in the order of the categories: a label of its own, `false` for none, or `undefined` for
+     * the series' own
+     */
+    readonly pointLabels?: readonly (false | ChartPointLabel | undefined)[];
 };
 
 /**
@@ -284,6 +482,14 @@ export type ScatterChartSeries = {
     readonly markers?: boolean | ChartMarker;
     /** The line's colour, width and dashes. Only when the chart's `lines` join the points */
     readonly line?: ChartLine;
+    /** Labels of single points, in order: a label of its own, `false` for none, or `undefined` for the series' own */
+    readonly pointLabels?: readonly (false | ChartPointLabel | undefined)[];
+    /** Lines fitted to the points */
+    readonly trendlines?: readonly ChartTrendline[];
+    /** Error bars along the x axis, left and right of each point */
+    readonly xErrorBars?: ChartErrorBars;
+    /** Error bars along the y axis, up and down from each point */
+    readonly yErrorBars?: ChartErrorBars;
 };
 
 /**
@@ -310,6 +516,14 @@ export type BubbleChartSeries = {
     readonly color?: string | ThemeColor;
     /** The series' own labels, instead of the chart's `dataLabels`, or `false` for none */
     readonly dataLabels?: false | BubbleChartDataLabels;
+    /** Labels of single bubbles, in order: a label of its own, `false` for none, or `undefined` for the series' own */
+    readonly pointLabels?: readonly (false | BubbleChartPointLabel | undefined)[];
+    /** Lines fitted to the bubbles' centres */
+    readonly trendlines?: readonly ChartTrendline[];
+    /** Error bars along the x axis, left and right of each bubble's centre */
+    readonly xErrorBars?: ChartErrorBars;
+    /** Error bars along the y axis, up and down from each bubble's centre */
+    readonly yErrorBars?: ChartErrorBars;
 };
 
 /**
@@ -338,7 +552,51 @@ export type ChartLegend = {
     readonly position?: ChartLegendPosition;
     /** The legend's font. Default is 9 points */
     readonly font?: ChartFont;
+    /**
+     * Entries to leave out of the legend, by their text: a series' name, a trendline's name, or on a pie or doughnut
+     * chart, a category. The series stays in the chart
+     */
+    readonly hiddenEntries?: readonly (string | number)[];
 };
+
+/**
+ * A table of the chart's data under its plot, as Word's "Data Table" draws it: a row for each series, and a column for
+ * each category.
+ *
+ * @publicApi
+ */
+export type ChartDataTable = {
+    /** Shows each series' key, as in the legend, beside its name. Default is `true` */
+    readonly legendKeys?: boolean;
+    /** Lines between the rows. Default is `true` */
+    readonly horizontalBorders?: boolean;
+    /** Lines between the columns. Default is `true` */
+    readonly verticalBorders?: boolean;
+    /** A line around the table. Default is `true` */
+    readonly outline?: boolean;
+    /** The table's font. Default is 9 points */
+    readonly font?: ChartFont;
+};
+
+/**
+ * A group of categories, such as the quarters of a year, labelled below them on the category axis. A group holds
+ * categories, or groups of its own, such as the months of each quarter of each year.
+ *
+ * @publicApi
+ */
+export type ChartCategoryGroup = {
+    /** The group's name, such as `"2025"`, below its categories */
+    readonly name: string;
+    /** The categories in the group, in order, or the groups in it. Every group at the same depth holds the same kind */
+    readonly categories: readonly (string | number)[] | readonly ChartCategoryGroup[];
+};
+
+/**
+ * How empty values (`null`) are drawn: as gaps, as zero, or, for a line, by joining the points either side.
+ *
+ * @publicApi
+ */
+export type ChartEmptyValues = "gap" | "zero" | "connect";
 
 /**
  * Where an axis crosses the other axis: where Office puts it (`"auto"`, at zero, or at the minimum when zero is out of
@@ -468,9 +726,10 @@ export type ChartBaseOptions = {
 export type CategoryChartOptions = ChartBaseOptions & {
     /**
      * The categories along the chart's category axis, in order. If they are all numbers, they are written as numbers.
-     * If they are all dates, the axis is a date axis, which spaces them by date
+     * If they are all dates, the axis is a date axis, which spaces them by date. Groups of categories, such as quarters
+     * in years, are labelled in rows, the groups below their categories
      */
-    readonly categories: readonly (string | number | Date)[];
+    readonly categories: readonly (string | number | Date)[] | readonly ChartCategoryGroup[];
     /** The series, one value for each category */
     readonly series: readonly ChartSeries[];
     /** Whether the series of the chart's `type` are stacked. Default is `"none"` */
@@ -483,6 +742,10 @@ export type CategoryChartOptions = ChartBaseOptions & {
     readonly secondaryValueAxis?: ChartValueAxis;
     /** Labels on each bar or point */
     readonly dataLabels?: ChartDataLabels;
+    /** How empty values (`null`) are drawn: as gaps, as zero, or with a line joining the points either side. Default is `"gap"` */
+    readonly emptyValues?: ChartEmptyValues;
+    /** A table of the data under the plot, or `true` for one with Office's borders and legend keys. Default is none */
+    readonly dataTable?: boolean | ChartDataTable;
 };
 
 /**
@@ -605,6 +868,8 @@ export type RadarChartOptions = ChartBaseOptions & {
     readonly valueAxis?: ChartValueAxis;
     /** Labels on each point */
     readonly dataLabels?: ChartDataLabels;
+    /** How empty values (`null`) are drawn: as gaps, as zero, or with a line joining the points either side. Default is `"gap"` */
+    readonly emptyValues?: ChartEmptyValues;
 };
 
 /**
@@ -650,6 +915,143 @@ export type BubbleChartOptions = ChartBaseOptions & {
 };
 
 /**
+ * How a pie of pie or bar of pie chart picks the slices it moves from the pie to the second plot:
+ *
+ * - `"position"`: the last `count` categories;
+ * - `"value"`: the slices whose values are less than `lessThan`;
+ * - `"percentage"`: the slices less than `lessThan` percent of the whole;
+ * - `"categories"`: the slices of the categories given.
+ *
+ * @publicApi
+ */
+export type PieChartSplit =
+    | {
+          readonly by: "position";
+          /** How many of the last categories go to the second plot, from 1 to the number of categories */
+          readonly count: number;
+      }
+    | {
+          readonly by: "value";
+          /** Slices with values less than this go to the second plot */
+          readonly lessThan: number;
+      }
+    | {
+          readonly by: "percentage";
+          /** Slices less than this percentage of the whole, from 0 to 100, go to the second plot */
+          readonly lessThan: number;
+      }
+    | {
+          readonly by: "categories";
+          /** The categories whose slices go to the second plot */
+          readonly categories: readonly (string | number)[];
+      };
+
+/**
+ * Options of pie of pie and bar of pie charts: a pie with some of its slices taken out, and drawn beside it as a
+ * second pie or a stacked bar, joined to the slice of the pie that stands for them.
+ *
+ * @publicApi
+ */
+export type SplitPieChartBaseOptions = Omit<PieChartBaseOptions, "firstSliceAngle"> & {
+    /** The series. The chart has one */
+    readonly series: readonly PieChartSeries[];
+    /** Which slices go to the second plot. Default is the last third of the categories, rounded up */
+    readonly split?: PieChartSplit;
+    /** The size of the second plot, as a percentage of the pie's, from 5 to 200. Default is 75 */
+    readonly secondPlotSize?: number;
+    /** The gap between the pie and the second plot, as a percentage of the second plot's width, from 0 to 500. Default is 100 */
+    readonly gapWidth?: number;
+    /** The lines joining the pie to the second plot. Default is thin grey lines */
+    readonly seriesLines?: ChartLine;
+};
+
+/**
+ * A pie of pie chart (`c:ofPieChart` with `c:ofPieType="pie"`): the small slices of a pie drawn again as a second pie
+ * beside it.
+ *
+ * @publicApi
+ */
+export type PieOfPieChartOptions = SplitPieChartBaseOptions & {
+    readonly type: "pieOfPie";
+};
+
+/**
+ * A bar of pie chart (`c:ofPieChart` with `c:ofPieType="bar"`): the small slices of a pie drawn again as a stacked bar
+ * beside it.
+ *
+ * @publicApi
+ */
+export type BarOfPieChartOptions = SplitPieChartBaseOptions & {
+    readonly type: "barOfPie";
+};
+
+/**
+ * The names of a stock chart's series, as the legend shows them.
+ *
+ * @publicApi
+ */
+export type StockChartSeriesNames = {
+    /** Default is `"Volume"` */
+    readonly volume?: string;
+    /** Default is `"Open"` */
+    readonly open?: string;
+    /** Default is `"High"` */
+    readonly high?: string;
+    /** Default is `"Low"` */
+    readonly low?: string;
+    /** Default is `"Close"` */
+    readonly close?: string;
+};
+
+/**
+ * A stock chart (`c:stockChart`): each category's high and low prices joined by a line, with its closing price, and if
+ * given, its opening price and the volume traded, as Word's "High-Low-Close", "Open-High-Low-Close",
+ * "Volume-High-Low-Close" and "Volume-Open-High-Low-Close" charts. Each price list has one value for each category, in
+ * order, and `null` leaves a gap.
+ *
+ * @publicApi
+ */
+export type StockChartOptions = ChartBaseOptions & {
+    readonly type: "stock";
+    /**
+     * The categories, such as trading days, in order. Dates are spaced evenly, one for each category, so days without
+     * trading, such as weekends, leave no gaps
+     */
+    readonly categories: readonly (string | number | Date)[];
+    /**
+     * Each category's opening price. With it, a bar goes from the open to the close: hollow when the price rose, and
+     * filled when it fell
+     */
+    readonly open?: readonly (number | null)[];
+    /** Each category's highest price */
+    readonly high: readonly (number | null)[];
+    /** Each category's lowest price */
+    readonly low: readonly (number | null)[];
+    /** Each category's closing price */
+    readonly close: readonly (number | null)[];
+    /** Each category's volume traded, drawn as columns against an axis of its own on the left, with the prices' on the right */
+    readonly volume?: readonly (number | null)[];
+    /** The series' names, as the legend shows them */
+    readonly names?: StockChartSeriesNames;
+    /** The axis of categories */
+    readonly categoryAxis?: ChartAxis;
+    /** The axis of prices */
+    readonly valueAxis?: ChartValueAxis;
+    /** The axis of volumes, when there are volumes */
+    readonly volumeAxis?: ChartValueAxis;
+    /** The line from each high to each low. Default is a thin dark grey line */
+    readonly highLowLines?: ChartLine;
+    /** The fill and border of the bars where the price rose, when there are opening prices. Default is white, with a grey border */
+    readonly upBars?: ChartAreaStyle;
+    /** The fill and border of the bars where the price fell, when there are opening prices. Default is dark grey */
+    readonly downBars?: ChartAreaStyle;
+    /** How empty values (`null`) are drawn: as gaps, or as zero. Default is `"gap"` */
+    readonly emptyValues?: ChartEmptyValues;
+    /** A table of the data under the plot, or `true` for one with Office's borders and legend keys. Default is none */
+    readonly dataTable?: boolean | ChartDataTable;
+};
+
+/**
  * Options for creating a chart. `type` decides the other options: each type has its own.
  *
  * @see {@link ChartRun}
@@ -662,9 +1064,12 @@ export type ChartRunOptions =
     | AreaChartOptions
     | PieChartOptions
     | DoughnutChartOptions
+    | PieOfPieChartOptions
+    | BarOfPieChartOptions
     | RadarChartOptions
     | ScatterChartOptions
-    | BubbleChartOptions;
+    | BubbleChartOptions
+    | StockChartOptions;
 
 /**
  * The type of a chart, by the name Word gives it in Insert Chart.

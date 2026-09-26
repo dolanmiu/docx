@@ -43,6 +43,28 @@ categories: [new Date("2025-01-01"), new Date("2025-02-01"), new Date("2025-05-0
 
 The categories have to be all dates or none. Dates are read in UTC. See [Dates](usage/chart-axes.md#dates) on the axes page.
 
+## Categories in Groups
+
+A column, bar, line or area chart's categories can be in groups, such as quarters in years. The axis labels the categories, with each group's name below its categories:
+
+```ts
+new ChartRun({
+    type: "column",
+    title: "Sales by quarter",
+    categories: [
+        { name: "2024", categories: ["Q1", "Q2", "Q3", "Q4"] },
+        { name: "2025", categories: ["Q1", "Q2"] },
+    ],
+    series: [{ name: "Sales", values: [120, 135, 150, 170, 160, 180] }],
+});
+```
+
+- Each group has a `name` and its `categories`, text or numbers. The series have a value for each category in every group, in order: here, six.
+- A group can hold groups instead, such as months in quarters in years, for another row of labels. Every group at the same depth holds groups as deep, so each category has as many groups.
+- A group has at least one category. Categories in groups can't be dates.
+
+Pages shows only the groups' names. See [Chart Compatibility](usage/chart-compatibility.md).
+
 ## Points
 
 A [scatter chart](usage/chart-scatter.md) has no categories. Each of its series has `points`, and each point has its own `x` and `y`:
@@ -68,7 +90,10 @@ Each chart's data is saved twice: in the chart, which Word draws it from, and in
 The workbook has one sheet, laid out as Word lays out a new chart's data:
 
 - For a chart with categories, the sheet is the table above: the series' names in row 1 from column B, the categories in column A from row 2, and each series' values below its name.
+- Categories in groups take a column each for the groups and the categories, from column A, the outermost groups first. A group's name is in the row of its first category. The series start in the column after them.
+- A stock chart's series are in Word's order: the volumes, the opening, high and low prices, and the closing prices, those given.
 - For a scatter chart, each series has two columns: `X` above its x values, and its name above its y values. A bubble chart's series have a third, `Size`, above their sizes.
+- Custom error bars' lengths are in columns after the series: each series' `(+)` and `(-)` lengths, or for a scatter or bubble chart, its `x` and then its `y` lengths. See [Custom Error Bars](usage/chart-trendlines-and-error-bars.md#custom-error-bars).
 - Dates are numbers in the sheet, in a date format, as Excel keeps them.
 
 ## Mistakes
@@ -77,6 +102,7 @@ The workbook has one sheet, laid out as Word lays out a new chart's data:
 
 - a chart has no series, or no categories;
 - a category isn't text or a finite number, or only some of the categories are dates;
+- only some of the categories are groups, a group has no categories, or groups at the same depth aren't as deep as each other;
 - a value isn't a finite number or `null`;
 - a series has more values than there are categories;
 - a pie chart has more than one series;
@@ -85,7 +111,13 @@ The workbook has one sheet, laid out as Word lays out a new chart's data:
 - a scatter or bubble series has no points, a point's `x` or `y` isn't a finite number, or a bubble's `size` is negative;
 - a series has an option the way it is drawn doesn't have, such as `markers` on columns, or a `type` on a bar chart;
 - every series is on the secondary axis;
-- a data label `position` isn't one the chart has;
+- a data label `position` isn't one the chart has, or a label with `text` shows something else too;
+- a series has more `pointLabels`, `explosion`s or custom error bar lengths than it has points;
+- a trendline has an option its type doesn't have, or can't be fitted to the series' values, such as an exponential trendline to a value of 0;
+- a stacked series has a trendline;
+- a stock chart's high is below its low, its open or close isn't between them, or it has no high, low or close prices;
+- a legend's `hiddenEntries` has text that isn't one of the legend's entries;
+- a pie of pie's `split` picks categories the chart doesn't have;
 - an option is outside its range, such as `gapWidth: 600`, or a value axis' `minimum` isn't less than its `maximum`;
 - the chart's width or height isn't a positive number.
 

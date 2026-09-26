@@ -251,6 +251,25 @@ const checkPackage = async (zip: JSZip): Promise<void> => {
                     names.map((name) => cells.get(name)?.value),
                 );
             }
+            // Categories in groups: a level of the cache for each column, the categories' own column first
+            for (const reference of descendantsOf(chartSpace, "c:multiLvlStrRef")) {
+                const formula = textOf(childOf(reference, "c:f"));
+                const [, from, first, to, last] = /^Sheet1!\$([A-Z])\$(\d+):\$([A-Z])\$(\d+)$/.exec(formula)!;
+                const count = Number(valueOf(descendantsOf(reference, "c:ptCount")[0]));
+                const levels = descendantsOf(reference, "c:lvl");
+                expect(levels, `the levels of ${formula}`).to.have.length(to.charCodeAt(0) - from.charCodeAt(0) + 1);
+                expect(Number(last) - Number(first) + 1, `the categories of ${formula}`).to.equal(count);
+                for (const [level, labels] of levels.entries()) {
+                    const column = String.fromCharCode(to.charCodeAt(0) - level);
+                    const points = new Map(
+                        childrenOf(labels, "c:pt").map((point) => [Number(attributeOf(point, "idx")), textOf(childOf(point, "c:v"))]),
+                    );
+                    expect(
+                        Array.from({ length: count }, (_, index) => points.get(index)),
+                        `${path}: level ${level} of ${formula}`,
+                    ).to.deep.equal(Array.from({ length: count }, (_, index) => cells.get(`${column}${Number(first) + index}`)?.value));
+                }
+            }
         }
 
         const series = descendantsOf(childOf(chartSpace, "c:chart"), "c:ser").filter((one) =>
@@ -391,7 +410,7 @@ const dataFor = (template: TemplateName, series: number, points: number): ChartD
 
 // What a chart's series should hold for the data
 const expectedSeries = (data: ChartDataPatchOptions): readonly Pick<Series, "name" | "categories" | "values">[] =>
-    "categories" in data
+    "categories" in data && "series" in data
         ? data.series.map(({ name, values }) => ({
               name,
               categories: data.categories.map(String),
@@ -399,7 +418,7 @@ const expectedSeries = (data: ChartDataPatchOptions): readonly Pick<Series, "nam
                   values[index] === null || values[index] === undefined ? undefined : String(values[index]),
               ),
           }))
-        : data.series.map(({ name, points }) => ({
+        : (data as PointChartDataPatchOptions).series.map(({ name, points }) => ({
               name,
               categories: points.map(({ x }) => String(x)),
               values: points.map(({ y }) => String(y)),
@@ -1533,7 +1552,7 @@ describe("ChartDataPatch with templates from other applications", () => {
             ]);
         });
 
-        it("should patch 3-D charts and a pie of a pie", async () => {
+        it("should patch 3-D charts, and pie of pie and bar of pie charts", async () => {
             const series = (index: number): string => `<c:ser><c:idx val="${index}"/><c:order val="${index}"/><c:shape val="box"/></c:ser>`;
             const column3D = await patchPlotArea(
                 `<c:bar3DChart><c:barDir val="col"/><c:grouping val="clustered"/>${series(0)}</c:bar3DChart>`,
@@ -1561,15 +1580,24 @@ describe("ChartDataPatch with templates from other applications", () => {
                     group,
                 ).to.have.length(2);
             }
-            for (const group of ["pie3DChart", "ofPieChart"]) {
+            for (const [group, type] of [
+                ["pie3DChart", "Pie"],
+                ["ofPieChart", "Pie of pie"],
+            ]) {
                 const chart = await patchPlotArea(
                     `<c:${group}><c:varyColors val="1"/><c:ser><c:idx val="0"/><c:order val="0"/></c:ser></c:${group}>`,
                     categoryData(1, 4),
                     "",
                 );
                 expect(seriesIn(chart)[0].values, group).to.deep.equal(["10", "11", "12", "13"]);
-                expect(attributeOf(chart.properties, "descr"), group).to.match(/^Pie chart/);
+                expect(attributeOf(chart.properties, "descr"), group).to.match(new RegExp(`^${type} chart`));
             }
+            const barOfPie = await patchPlotArea(
+                '<c:ofPieChart><c:ofPieType val="bar"/><c:varyColors val="1"/><c:ser><c:idx val="0"/><c:order val="0"/></c:ser></c:ofPieChart>',
+                categoryData(1, 2),
+                "",
+            );
+            expect(attributeOf(barOfPie.properties, "descr")).to.match(/^Bar of pie chart/);
         });
 
         it("should give a chart without series the series docx/charts writes", async () => {
@@ -1904,10 +1932,10 @@ describe("ChartDataPatch with templates from other applications", () => {
             );
         });
 
-        it("should throw for stock, surface and pivot charts", async () => {
+        it("should throw for surface and pivot charts, and stock charts it can't read", async () => {
             await expectError(
                 await templateWithChart((part) => part.replace(/c:barChart/g, "c:stockChart")),
-                "It is a stock chart, whose series are its prices, which ChartDataPatch can't patch",
+                "It is a stock chart with 2 series of prices. A stock chart has 3, or 4 with opening prices",
             );
             await expectError(
                 await templateWithChart((part) => part.replace(/c:barChart/g, "c:surfaceChart")),
@@ -2320,5 +2348,419 @@ describe("ChartDataPatch with extreme data", () => {
                 ).to.deep.equal(expectedSeries(other));
             });
         }
+    });
+});
+
+// =====================================================================================================================
+// The chart types and options added after ChartDataPatch
+// =====================================================================================================================
+
+describe("ChartDataPatch with the newer chart types and options", () => {
+    const patchTemplate = async (
+        template: ChartRunOptions,
+        data: ChartDataPatchOptions,
+    ): Promise<{ readonly zip: JSZip; readonly chart: Chart }> => {
+        const zip = await patch(await templateOf({ chart: template }), { chart: new ChartDataPatch(data) });
+        await checkPackage(zip);
+        return { zip, chart: (await chartsIn(zip))[0] };
+    };
+    const expectError = async (template: ChartRunOptions, data: ChartDataPatchOptions, message: string): Promise<void> => {
+        await expect(patch(await templateOf({ chart: template }), { chart: new ChartDataPatch(data) })).rejects.toThrow(
+            `Can't patch the chart {{chart}}. ${message}`,
+        );
+    };
+    const plotAreaOf = (chart: Chart): Element => childOf(childOf(chart.chartSpace, "c:chart"), "c:plotArea")!;
+    const groupsOf = (chart: Chart): readonly string[] =>
+        elementsOf(plotAreaOf(chart))
+            .map(({ name }) => name ?? "")
+            .filter((name) => name.endsWith("Chart"));
+
+    describe("categories in groups", () => {
+        const grouped: CategoryChartDataPatchOptions = {
+            categories: [
+                { name: "2024", categories: ["Q3", "Q4"] },
+                { name: "2025", categories: ["Q1"] },
+            ],
+            series: [
+                { name: "North", values: [1, 2, 3] },
+                { name: "South", values: [4, 5] },
+            ],
+        };
+
+        it("should give a template's chart categories in groups, a column of the workbook for each level, and describe them", async () => {
+            const { chart } = await patchTemplate(TEMPLATES.column, grouped);
+            const [north, south] = descendantsOf(plotAreaOf(chart), "c:ser");
+
+            for (const series of [north, south]) {
+                const categories = childOf(childOf(series, "c:cat"), "c:multiLvlStrRef")!;
+                expect(textOf(childOf(categories, "c:f"))).to.equal("Sheet1!$A$2:$B$4");
+                expect(childrenOf(childOf(categories, "c:multiLvlStrCache"), "c:lvl")).to.have.length(2);
+            }
+            expect(textOf(descendantsOf(childOf(north, "c:val"), "c:f")[0])).to.equal("Sheet1!$C$2:$C$4");
+            expect(textOf(descendantsOf(childOf(south, "c:tx"), "c:f")[0])).to.equal("Sheet1!$D$1");
+            expect(attributeOf(chart.properties, "descr")).to.equal(
+                "Column chart, Sales. North: 2024 Q3 1, 2024 Q4 2, 2025 Q1 3. South: 2024 Q3 4, 2024 Q4 5.",
+            );
+            // The template's look stays
+            expect(descendantsOf(chart.chartSpace, "c:gapWidth").map(valueOf)).to.deep.equal(["80"]);
+        });
+
+        it("should give a chart whose categories were in groups plain categories", async () => {
+            const { chart } = await patchTemplate(
+                { type: "line", categories: grouped.categories, series: [{ name: "S", values: [1, 2, 3] }] },
+                categoryData(1, 2),
+            );
+            expect(descendantsOf(chart.chartSpace, "c:multiLvlStrRef")).to.deep.equal([]);
+            expect(seriesIn(chart)[0].categories).to.deep.equal(["C1", "C2"]);
+        });
+
+        it("should throw for groups for a chart whose categories can't be in groups", async () => {
+            for (const [template, type] of [
+                [TEMPLATES.pie, "pie"],
+                [TEMPLATES.radar, "radar"],
+                [{ ...TEMPLATES.pie, type: "barOfPie" }, "bar of pie"],
+            ] as const) {
+                await expectError(
+                    template as ChartRunOptions,
+                    { ...grouped, series: [grouped.series[0]] },
+                    `Invalid categories. A ${type} chart's categories can't be in groups`,
+                );
+            }
+        });
+
+        it("should keep the groups it was made with, whatever happens to them after", async () => {
+            // eslint-disable-next-line functional/prefer-readonly-type -- Changed after the patch is made
+            const categories = [{ name: "2025", categories: ["Q1", "Q2"] as string[] }];
+            const chartPatch = new ChartDataPatch({ categories, series: [{ name: "S", values: [1, 2] }] });
+            // eslint-disable-next-line functional/immutable-data
+            categories[0].categories.push("Q3");
+            // eslint-disable-next-line functional/immutable-data, functional/prefer-readonly-type -- Changed after the patch is made
+            (categories[0] as { name: string }).name = "Changed";
+            const zip = await patch(await templateOf({ chart: TEMPLATES.column }), { chart: chartPatch });
+            const [chart] = await chartsIn(zip);
+            expect(attributeOf(chart.properties, "descr")).to.equal("Column chart, Sales. S: 2025 Q1 1, 2025 Q2 2.");
+        });
+
+        it("should throw when it is made with groups that are wrong", () => {
+            expect(
+                () => new ChartDataPatch({ categories: [{ name: "2025", categories: [] }], series: [{ name: "S", values: [] }] }),
+            ).to.throw('Category group "2025" has no categories');
+            expect(
+                () =>
+                    new ChartDataPatch({
+                        categories: [{ name: "2025", categories: ["Q1"] }, "Q2"] as unknown as readonly string[],
+                        series: [{ name: "S", values: [1] }],
+                    }),
+            ).to.throw('Invalid category group "Q2"');
+            expect(
+                () =>
+                    new ChartDataPatch({
+                        categories: [{ name: "2025", categories: ["Q1"] }],
+                        series: [{ name: "S", values: [1, 2] }],
+                    }),
+            ).to.throw('Series "S" has 2 values, but there are 1 categories');
+        });
+    });
+
+    describe("stock charts", () => {
+        const days = ["Mon", "Tue", "Wed"];
+        const HIGH_LOW_CLOSE: ChartRunOptions = {
+            type: "stock",
+            title: "Shares",
+            categories: ["A", "B"],
+            high: [5, 6],
+            low: [1, 2],
+            close: [3, 4],
+        };
+        const WITH_EVERYTHING: ChartRunOptions = {
+            type: "stock",
+            categories: ["A", "B"],
+            volume: [10, 20],
+            open: [2, 3],
+            high: [5, 6],
+            low: [1, 2],
+            close: [3, 4],
+            upBars: { fill: "00B050" },
+        };
+        const prices = { categories: days, high: [12, 13, 14], low: [10, 11, 12], close: [11, 12, 13] };
+
+        it("should give a template's high-low-close chart new prices, keeping its look, and describe them", async () => {
+            const { chart } = await patchTemplate(HIGH_LOW_CLOSE, prices);
+
+            expect(seriesIn(chart).map(({ name, categories, values }) => [name, categories, values])).to.deep.equal([
+                ["High", days, ["12", "13", "14"]],
+                ["Low", days, ["10", "11", "12"]],
+                ["Close", days, ["11", "12", "13"]],
+            ]);
+            expect(groupsOf(chart)).to.deep.equal(["c:stockChart"]);
+            expect(descendantsOf(chart.chartSpace, "c:hiLowLines")).to.have.length(1);
+            expect(attributeOf(chart.properties, "descr")).to.equal(
+                "Stock chart, Shares. High: Mon 12, Tue 13, Wed 14. Low: Mon 10, Tue 11, Wed 12. Close: Mon 11, Tue 12, Wed 13.",
+            );
+        });
+
+        it("should give a template's volume-open-high-low-close chart new volumes and prices, with their own names", async () => {
+            const { chart } = await patchTemplate(WITH_EVERYTHING, {
+                ...prices,
+                open: [11.5, 11, null],
+                volume: [100, 200, 300],
+                names: { volume: "Shares traded" },
+            });
+
+            expect(seriesIn(chart).map(({ name, group }) => `${group} ${name}`)).to.deep.equal([
+                "c:barChart Shares traded",
+                "c:stockChart Open",
+                "c:stockChart High",
+                "c:stockChart Low",
+                "c:stockChart Close",
+            ]);
+            expect(seriesIn(chart)[1].values).to.deep.equal(["11.5", "11", undefined]);
+            expect(descendantsOf(chart.chartSpace, "c:upDownBars")).to.have.length(1);
+            expect(JSON.stringify(descendantsOf(chart.chartSpace, "c:upBars"))).to.contain("00B050");
+        });
+
+        it("should throw for prices without the opening prices or volumes the template's chart has, or with those it hasn't", async () => {
+            await expectError(WITH_EVERYTHING, { ...prices, volume: [1, 2, 3] }, "It is a stock chart with opening prices. Give open too");
+            await expectError(WITH_EVERYTHING, { ...prices, open: [11, 12, 13] }, "It is a stock chart with volumes. Give volume too");
+            await expectError(
+                HIGH_LOW_CLOSE,
+                { ...prices, open: [11, 12, 13] },
+                "It is a stock chart without opening prices, so it can't take open",
+            );
+            await expectError(
+                HIGH_LOW_CLOSE,
+                { ...prices, volume: [1, 2, 3] },
+                "It is a stock chart without volumes, so it can't take volume",
+            );
+        });
+
+        it("should throw for series for a stock chart, or prices for another chart", async () => {
+            await expectError(
+                HIGH_LOW_CLOSE,
+                categoryData(3, 3),
+                "It is a stock chart, whose data is each category's prices. Give categories, and high, low and close prices",
+            );
+            await expectError(HIGH_LOW_CLOSE, pointData(1, 2, false), "It is a stock chart, whose data is each category's prices");
+            await expectError(
+                TEMPLATES.column,
+                prices,
+                "It is a column chart, whose series have a value for each category. Give categories, and each series values",
+            );
+            await expectError(TEMPLATES.scatter, prices, "It is a scatter chart, whose series have points");
+        });
+
+        it("should give a stock chart made in Word, on a date axis, new dates or text", async () => {
+            const wordStock = (part: string): string =>
+                part
+                    .replace(/<c:catAx>(.*?)<\/c:catAx>/g, "<c:dateAx>$1</c:dateAx>")
+                    .replace(/<c:auto val="0"\/>/g, '<c:auto val="1"/>')
+                    .replace(/<c:lblAlgn val="ctr"\/>/g, "")
+                    .replace(/<c:noMultiLvlLbl val="0"\/>/g, '<c:baseTimeUnit val="days"/>');
+            const template = await templateWith({ chart: HIGH_LOW_CLOSE, changes: { "word/charts/chart1.xml": wordStock } });
+            const dated = await patchChart(template, {
+                ...prices,
+                categories: [new Date("2025-01-01"), new Date("2025-02-01"), new Date("2025-03-01")],
+            });
+            await checkPackage(dated);
+            const [datedChart] = await chartsIn(dated);
+            expect(descendantsOf(datedChart.chartSpace, "c:dateAx")).to.have.length(1);
+            expect(descendantsOf(datedChart.chartSpace, "c:baseTimeUnit").map(valueOf)).to.deep.equal(["days"]);
+
+            const text = await patchChart(template, prices);
+            await checkPackage(text);
+            const [textChart] = await chartsIn(text);
+            expect(descendantsOf(textChart.chartSpace, "c:dateAx")).to.deep.equal([]);
+            expect(descendantsOf(textChart.chartSpace, "c:catAx")).to.have.length(1);
+        });
+
+        it("should keep the prices it was made with, whatever happens to them after", async () => {
+            const high = [12, 13, 14];
+            const names = { close: "Last" };
+            const chartPatch = new ChartDataPatch({ ...prices, high, names });
+            // eslint-disable-next-line functional/immutable-data
+            high[0] = 99;
+            // eslint-disable-next-line functional/immutable-data, functional/prefer-readonly-type -- Changed after the patch is made
+            (names as { close: string }).close = "Changed";
+            const zip = await patch(await templateOf({ chart: HIGH_LOW_CLOSE }), { chart: chartPatch });
+            const [chart] = await chartsIn(zip);
+            expect(seriesIn(chart).map(({ name, values }) => `${name} ${values[0]}`)).to.deep.equal(["High 12", "Low 10", "Last 11"]);
+        });
+
+        it("should throw when it is made with prices that are wrong, or with series too", () => {
+            expect(() => new ChartDataPatch({ ...prices, high: [9, 13, 14] })).to.throw('The high 9 of "Mon" is below its low 10');
+            expect(() => new ChartDataPatch({ categories: days, high: [1], low: [1] } as unknown as ChartDataPatchOptions)).to.throw(
+                "A stock chart needs its close prices",
+            );
+            expect(() => new ChartDataPatch({ high: [1], low: [1], close: [1] } as unknown as ChartDataPatchOptions)).to.throw(
+                "Invalid option categories. A stock chart's prices need categories, one for each price",
+            );
+            expect(() => new ChartDataPatch({ ...prices, description: 5 } as unknown as ChartDataPatchOptions)).to.throw(
+                "Invalid description 5. Expected text",
+            );
+            expect(() => new ChartDataPatch({ ...categoryData(1, 3), high: [1, 2, 3] } as unknown as ChartDataPatchOptions)).to.throw(
+                "Invalid option high. A stock chart's data is its prices, and another chart's is its series, not both",
+            );
+            expect(() => new ChartDataPatch({ ...prices, volume: undefined, open: null } as unknown as ChartDataPatchOptions)).to.throw(
+                "Invalid open null",
+            );
+        });
+
+        it("should describe the chart as given", async () => {
+            const { chart } = await patchTemplate(HIGH_LOW_CLOSE, { ...prices, description: "Three days of prices" });
+            expect(attributeOf(chart.properties, "descr")).to.equal("Three days of prices");
+        });
+    });
+
+    describe("pie of pie and bar of pie charts", () => {
+        const PIE_OF_PIE: ChartRunOptions = {
+            type: "pieOfPie",
+            categories: ["A", "B", "C", "D"],
+            series: [{ name: "Share", values: [4, 3, 2, 1], explosion: [undefined, undefined, undefined, 30] }],
+            split: { by: "categories", categories: ["C", "D"] },
+            secondPlotSize: 50,
+        };
+
+        it("should give a template's pie of pie new slices, keeping its split and the look of its second plot", async () => {
+            const { chart } = await patchTemplate(PIE_OF_PIE, categoryData(1, 6));
+            const group = childOf(plotAreaOf(chart), "c:ofPieChart")!;
+
+            expect(seriesIn(chart)[0].values).to.deep.equal(["10", "11", "12", "13", "14", "15"]);
+            expect(childrenOf(childOf(group, "c:custSplit"), "c:secondPiePt").map(valueOf)).to.deep.equal(["2", "3"]);
+            expect(valueOf(childOf(group, "c:secondPieSize"))).to.equal("50");
+            // New slices take the next colours, and aren't pulled out as the last slice of the template was
+            const points = childrenOf(descendantsOf(group, "c:ser")[0], "c:dPt");
+            expect(points).to.have.length(6);
+            expect(points.map((point) => valueOf(childOf(point, "c:explosion")))).to.deep.equal([
+                undefined,
+                undefined,
+                undefined,
+                "30",
+                undefined,
+                undefined,
+            ]);
+            expect(attributeOf(chart.properties, "descr")).to.match(/^Pie of pie chart/);
+        });
+
+        it("should take the slices the new data doesn't have out of a split by categories", async () => {
+            const { chart } = await patchTemplate(PIE_OF_PIE, categoryData(1, 3));
+            const group = childOf(plotAreaOf(chart), "c:ofPieChart")!;
+            expect(childrenOf(childOf(group, "c:custSplit"), "c:secondPiePt").map(valueOf)).to.deep.equal(["2"]);
+            expect(childrenOf(descendantsOf(group, "c:ser")[0], "c:dPt")).to.have.length(3);
+        });
+
+        it("should take a split's slice without an index out", async () => {
+            const template = await templateWith({
+                chart: PIE_OF_PIE,
+                changes: { "word/charts/chart1.xml": (part: string) => part.replace('<c:secondPiePt val="2"/>', "<c:secondPiePt/>") },
+            });
+            const zip = await patchChart(template, categoryData(1, 4));
+            await checkPackage(zip);
+            const [chart] = await chartsIn(zip);
+            expect(descendantsOf(chart.chartSpace, "c:secondPiePt").map(valueOf)).to.deep.equal(["3"]);
+        });
+
+        it("should keep a split by position, value or percentage as it is", async () => {
+            for (const split of [
+                { by: "position", count: 3 },
+                { by: "value", lessThan: 2 },
+            ] as const) {
+                const { chart } = await patchTemplate({ ...PIE_OF_PIE, split }, categoryData(1, 2));
+                const group = childOf(plotAreaOf(chart), "c:ofPieChart")!;
+                expect(valueOf(childOf(group, "c:splitPos")), split.by).to.equal(
+                    String(split.by === "position" ? split.count : split.lessThan),
+                );
+            }
+        });
+
+        it("should throw for more than one series, as for a pie", async () => {
+            await expectError(PIE_OF_PIE, categoryData(2, 3), "A pie of pie chart has one series, but 2 were given");
+            await expectError(
+                { ...PIE_OF_PIE, type: "barOfPie" },
+                categoryData(2, 3),
+                "A bar of pie chart has one series, but 2 were given",
+            );
+        });
+    });
+
+    describe("templates with the newer options", () => {
+        const WITH_EVERYTHING: ChartRunOptions = {
+            type: "column",
+            categories: QUARTERS,
+            series: [
+                {
+                    name: "A",
+                    values: [1, 2, 3],
+                    trendlines: [{ type: "linear", equation: true }],
+                    errorBars: { type: "percentage", value: 5 },
+                    pointLabels: [{ text: "First" }, undefined, { value: true }],
+                },
+                { name: "B", values: [4, 5, 6], errorBars: { type: "fixed", value: 1 } },
+            ],
+            dataTable: true,
+            emptyValues: "zero",
+            legend: { hiddenEntries: ["B"] },
+        };
+
+        it("should keep the series' trendlines, error bars and labels of single points, the data table and how empty values are drawn", async () => {
+            const { chart } = await patchTemplate(WITH_EVERYTHING, categoryData(2, 3));
+            const [first, second] = descendantsOf(plotAreaOf(chart), "c:ser");
+
+            expect(childrenOf(first, "c:trendline")).to.have.length(1);
+            expect(valueOf(childOf(childOf(first, "c:errBars"), "c:errValType"))).to.equal("percentage");
+            expect(childrenOf(childOf(first, "c:dLbls"), "c:dLbl").map((label) => valueOf(childOf(label, "c:idx")))).to.deep.equal([
+                "0",
+                "2",
+            ]);
+            expect(valueOf(childOf(childOf(second, "c:errBars"), "c:errValType"))).to.equal("fixedVal");
+            expect(childrenOf(plotAreaOf(chart), "c:dTable")).to.have.length(1);
+            expect(valueOf(childOf(childOf(chart.chartSpace, "c:chart"), "c:dispBlanksAs"))).to.equal("zero");
+            expect(descendantsOf(chart.chartSpace, "c:legendEntry").map((entry) => valueOf(childOf(entry, "c:idx")))).to.deep.equal(["1"]);
+        });
+
+        it("should take out labels of single points past the new data, and legend entries of series that are gone", async () => {
+            const { chart } = await patchTemplate(WITH_EVERYTHING, categoryData(1, 1));
+            const [first] = descendantsOf(plotAreaOf(chart), "c:ser");
+
+            expect(childrenOf(childOf(first, "c:dLbls"), "c:dLbl").map((label) => valueOf(childOf(label, "c:idx")))).to.deep.equal(["0"]);
+            expect(descendantsOf(chart.chartSpace, "c:legendEntry")).to.deep.equal([]);
+        });
+
+        it("should give new series the template's last series' look, without its trendlines and error bars", async () => {
+            const { chart } = await patchTemplate(WITH_EVERYTHING, categoryData(3, 3));
+            const added = descendantsOf(plotAreaOf(chart), "c:ser")[2];
+            expect(elementsOf(added).map(({ name }) => name)).to.not.include.members(["c:trendline", "c:errBars"]);
+        });
+
+        it("should throw for custom error bars, whose amounts are cells of the workbook the new data replaces", async () => {
+            await expectError(
+                {
+                    type: "line",
+                    categories: QUARTERS,
+                    series: [{ name: "S", values: [1, 2, 3], errorBars: { type: "custom", plus: [1, 1, 1] } }],
+                },
+                categoryData(1, 3),
+                "Its error bars' custom values are cells of its workbook. Give them fixed values in Word, or remove them: the new data replaces the workbook",
+            );
+        });
+
+        it("should keep a trendline, which Word fits to the new values", async () => {
+            const { chart } = await patchTemplate(
+                {
+                    type: "scatter",
+                    series: [
+                        {
+                            name: "S",
+                            points: [
+                                { x: 1, y: 1 },
+                                { x: 2, y: 4 },
+                            ],
+                            trendlines: [{ type: "power" }],
+                        },
+                    ],
+                },
+                pointData(1, 3, false),
+            );
+            expect(descendantsOf(chart.chartSpace, "c:trendlineType").map(valueOf)).to.deep.equal(["power"]);
+        });
     });
 });

@@ -11,7 +11,9 @@ import type { ChartSeries } from "../chart-options";
 import { createFilledSeriesProperties, createSeriesColor } from "../chart-style";
 import { type CategoryGroup, GROUPINGS, labelsOf } from "./chart-group";
 import { createGroupDataLabels, createSeriesDataLabels } from "./data-labels";
+import { createErrorBars } from "./error-bars";
 import { createCategoriesAndValues, createSeriesStart } from "./series";
+import { createTrendlines } from "./trendline";
 
 type BarGroup = CategoryGroup<ChartSeries> & {
     /** Horizontal bars, of a bar chart */
@@ -98,7 +100,10 @@ export const createBarChart = ({ series, stacking, axes, dataLabels, font, horiz
                     shape: stacked ? "stackedBars" : "bars",
                     series: options.name,
                     font,
+                    pointLabels: options.pointLabels,
                 }),
+                ...createTrendlines(options.trendlines, () => createSeriesColor(index, options.color), font),
+                ...createErrorBars(options.errorBars, "y", data.errors?.y),
                 ...createCategoriesAndValues(data),
             ]),
         ),

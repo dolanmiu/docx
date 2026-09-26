@@ -119,6 +119,19 @@ const withTimeUnit = (axis: Element, unit: TimeUnit): Element =>
             : [child],
     );
 
+// The types whose points each have their own colour, which are the categories' colours rather than the series'
+const PIE_TYPES: readonly string[] = ["pie", "doughnut", "pieOfPie", "barOfPie"];
+
+/**
+ * A pie of pie or bar of pie chart whose own split (`c:custSplit`) has only the slices it has now.
+ */
+const withSplitUpTo = (group: Element, count: number): Element =>
+    mapChildren(group, (child) => [
+        child.name === "c:custSplit"
+            ? withoutChildren(child, (point) => point.name === "c:secondPiePt" && !((numberOf(point) ?? count) < count))
+            : child,
+    ]);
+
 const maxOf = (values: readonly (number | undefined)[]): number =>
     values.reduce<number>((max, value) => (value === undefined ? max : Math.max(max, value)), -1);
 
@@ -174,16 +187,22 @@ export const patchChartSpace = (
             model === undefined
                 ? created[position]
                 : withIndex(
-                      copySeries(model.element, group.type === "pie" || group.type === "doughnut", colorOf(position)),
+                      copySeries(model.element, PIE_TYPES.includes(group.type), colorOf(position)),
                       firstIndex + offset,
                       firstOrder + offset,
                   );
         return patch(base, group, series, model === undefined ? 0 : pointCountOf(model.element));
     });
 
-    // Groups left without series are removed, with the axes only they used
+    // Groups left without series are removed, with the axes only they used. A pie of pie's own split keeps only slices it has
     const groups = new Map(
-        chart.groups.map(({ element }) => [element, withSeries(element, patched, element === group.element ? added : [])] as const),
+        chart.groups.map(({ element }) => {
+            const withNewSeries = withSeries(element, patched, element === group.element ? added : []);
+            return [
+                element,
+                element.name === "c:ofPieChart" ? withSplitUpTo(withNewSeries, data.series[0].values.points.length) : withNewSeries,
+            ] as const;
+        }),
     );
     const removed = new Set(
         chart.groups

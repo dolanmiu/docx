@@ -5,8 +5,10 @@
  */
 import type { DocPropertiesOptions } from "docx";
 
+import { type ChartCategories, groupedCategoryLabelsOf, isCategoryGroups } from "./chart-categories";
 import { type TimeUnit, timeUnitOf } from "./chart-dates";
 import type { ChartRunOptions, ChartType } from "./chart-options";
+import { stockSeriesOf } from "./chart-stock";
 import { titleOf } from "./chart-text";
 
 /** The longest description written. A longer one is cut at the end of a value, and ends with an ellipsis */
@@ -20,9 +22,12 @@ const TYPE_NAMES: Readonly<Record<ChartType, string>> = {
     area: "Area",
     pie: "Pie",
     doughnut: "Doughnut",
+    pieOfPie: "Pie of pie",
+    barOfPie: "Bar of pie",
     radar: "Radar",
     scatter: "Scatter",
     bubble: "Bubble",
+    stock: "Stock",
 };
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -45,9 +50,12 @@ const dateText = (date: Date, unit: TimeUnit): string => {
 };
 
 /**
- * The categories as a screen reader reads them.
+ * The categories as a screen reader reads them. A category in groups is read with its groups, such as "2025 Q1".
  */
-const categoryTexts = (categories: readonly (string | number | Date)[]): readonly string[] => {
+const categoryTexts = (categories: ChartCategories): readonly string[] => {
+    if (isCategoryGroups(categories)) {
+        return groupedCategoryLabelsOf(categories);
+    }
     const dates = categories.filter((category): category is Date => category instanceof Date);
     const unit = timeUnitOf(dates);
     return categories.map((category) => (category instanceof Date ? dateText(category, unit) : String(category)));
@@ -76,7 +84,9 @@ const describeSeries = (options: ChartRunOptions): readonly string[] => {
             );
         default: {
             const categories = categoryTexts(options.categories);
-            return options.series.map(({ name, values }) =>
+            const series: readonly { readonly name: string; readonly values: readonly (number | null)[] }[] =
+                options.type === "stock" ? stockSeriesOf(options) : options.series;
+            return series.map(({ name, values }) =>
                 listOf(
                     name,
                     values.flatMap((value, index) => (value === null ? [] : [`${categories[index]} ${value}`])),

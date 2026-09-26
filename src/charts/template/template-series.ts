@@ -16,6 +16,7 @@ import {
     mapChildren,
     nameOf,
     numberOf,
+    valueOf,
     withChild,
     withoutChildren,
 } from "./template-xml";
@@ -165,7 +166,7 @@ export const withoutPointsPast = (series: Element, count: number): Element =>
 
 /**
  * A series whose points each have a look of their own, such as the slices of a pie, with a look for each new point: a
- * copy of the last point's, in the next colour. A series whose points don't all have one is left as it is, as the
+ * copy of the last point's, in the next colour, and pulled out of the pie only if every point is, as far. A series whose points don't all have one is left as it is, as the
  * points without one take the series' look.
  *
  * @param count - The number of points it has now
@@ -183,7 +184,11 @@ export const withPointsUpTo = (series: Element, count: number, templateCount: nu
     ) {
         return series;
     }
-    const model = withoutUniqueId(last);
+    // A slice pulled out of a pie on its own is that slice's, not a look for new slices. Slices all pulled out as far
+    // are the pie's look
+    const explosions = new Set(points.map((point) => valueOf(childOf(point, "c:explosion"))));
+    const model =
+        explosions.size === 1 ? withoutUniqueId(last) : withoutChildren(withoutUniqueId(last), (child) => child.name === "c:explosion");
     const added = Array.from({ length: count - templateCount }, (_, offset) => {
         const point = templateCount + offset;
         return withColor(withChild(copyOf(model), createXmlElement("c:idx", { val: point }), POINT_ORDER), colorOf(point));

@@ -100,6 +100,8 @@ The dates are spaced by days, months or years, as Excel chooses:
 
 `numberFormat` labels them in another format, such as `categoryAxis: { numberFormat: "mmm" }` for Jan, Feb and so on.
 
+A [stock chart](usage/chart-stock.md)'s dates are spaced evenly instead, one for each category, so days without trading leave no gaps.
+
 Dates are read in UTC, as `docx` writes every date, so `new Date("2025-01-31")` is 31 January 2025. Use `new Date(Date.UTC(2025, 0, 31))` to make a date from its year, month and day.
 
 ## Reverse Order

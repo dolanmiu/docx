@@ -120,3 +120,61 @@ describe("createChartSpace", () => {
         expect(relationships.RelationshipCount).to.equal(1);
     });
 });
+
+describe("createChartSpace's empty values and legend entries", () => {
+    const chart = (options: Partial<ChartRunOptions>): Element => child(chartSpace(options), "c:chart");
+
+    it("should draw empty values as gaps, zero or joined across, as asked", () => {
+        expect(value(chart({}), "c:dispBlanksAs")).to.equal("gap");
+        expect(value(chart({ emptyValues: "gap" } as Partial<ChartRunOptions>), "c:dispBlanksAs")).to.equal("gap");
+        expect(value(chart({ emptyValues: "zero" } as Partial<ChartRunOptions>), "c:dispBlanksAs")).to.equal("zero");
+        expect(value(chart({ emptyValues: "connect" } as Partial<ChartRunOptions>), "c:dispBlanksAs")).to.equal("span");
+    });
+
+    it("should hide the legend's entries asked, by their indexes, after its position", () => {
+        const legend = child(
+            chart({
+                type: "line",
+                categories: ["A", "B"],
+                series: [
+                    { name: "One", values: [1, 2], trendlines: [{ type: "linear" }] },
+                    { name: "Two", values: [1, 2] },
+                ],
+                legend: { hiddenEntries: ["Linear (One)", "Two"], position: "top" },
+            } as Partial<ChartRunOptions>),
+            "c:legend",
+        );
+
+        expect(names(legend)).to.deep.equal(["c:legendPos", "c:legendEntry", "c:legendEntry", "c:overlay", "c:spPr", "c:txPr"]);
+        const entries = legend.elements!.filter(({ name }) => name === "c:legendEntry");
+        expect(entries.map((entry) => names(entry))).to.deep.equal([
+            ["c:idx", "c:delete"],
+            ["c:idx", "c:delete"],
+        ]);
+        expect(entries.map((entry) => [value(entry, "c:idx"), value(entry, "c:delete")])).to.deep.equal([
+            ["1", "1"],
+            ["2", "1"],
+        ]);
+    });
+
+    it("should hide a pie's categories, text or numbers, and every entry with the text", () => {
+        const legend = child(
+            chart({
+                type: "pie",
+                categories: ["A", 2, "A"],
+                series: [{ name: "S", values: [1, 2, 3] }],
+                legend: { hiddenEntries: ["A", 2] },
+            } as Partial<ChartRunOptions>),
+            "c:legend",
+        );
+        expect(legend.elements!.filter(({ name }) => name === "c:legendEntry").map((entry) => value(entry, "c:idx"))).to.deep.equal([
+            "0",
+            "1",
+            "2",
+        ]);
+    });
+
+    it("should hide no entries when none are asked", () => {
+        expect(names(child(chart({ legend: { hiddenEntries: [] } }), "c:legend"))).to.not.include("c:legendEntry");
+    });
+});

@@ -8,11 +8,20 @@ import type { Element } from "xml-js";
 
 import { DrawingPatch, type TemplateDrawing, type TemplatePackage } from "docx";
 
-import { checkChartOptions } from "./chart-checks";
-import { type ChartData, type ChartNumberData, type ChartSheet, type ChartTextData, createChartData } from "./chart-data";
+import { leafCategoriesOf } from "./chart-categories";
+import { TYPE_NAMES, checkChartOptions } from "./chart-checks";
+import { type ChartData, type ChartSeriesData, type ChartSheet, createChartData } from "./chart-data";
 import { timeUnitOf } from "./chart-dates";
 import { describeChart } from "./chart-description";
-import type { BubbleChartPoint, ChartPoint, ChartRunOptions, ChartType } from "./chart-options";
+import type {
+    BubbleChartPoint,
+    ChartCategoryGroup,
+    ChartPoint,
+    ChartRunOptions,
+    ChartType,
+    StockChartOptions,
+    StockChartSeriesNames,
+} from "./chart-options";
 import { createPlotArea } from "./plot-area/plot-area";
 import {
     type TemplateChartData,
@@ -23,7 +32,7 @@ import {
     withWorkbook,
 } from "./template/patch-chart";
 import { type TemplateChart, formatCodeOf, isDateFormat, readTemplateChart } from "./template/template-chart";
-import { attributeOf, childOf, descendantsOf, valueOf, withAttributes } from "./template/template-xml";
+import { attributeOf, childOf, childrenOf, descendantsOf, valueOf, withAttributes } from "./template/template-xml";
 import { columnIndexOf } from "./workbook/cell-reference";
 import { createWorkbookPart } from "./workbook/workbook";
 
@@ -61,7 +70,7 @@ export type CategoryChartDataPatchOptions = {
      * The categories, in order. If they are all numbers, they are written as numbers. If they are all dates, a column,
      * bar, line or area chart spaces them by date
      */
-    readonly categories: readonly (string | number | Date)[];
+    readonly categories: readonly (string | number | Date)[] | readonly ChartCategoryGroup[];
     /** The series, one value for each category. A pie chart has one */
     readonly series: readonly CategoryChartDataSeries[];
     /**
@@ -87,19 +96,54 @@ export type PointChartDataPatchOptions = {
 };
 
 /**
- * The new data of a chart in a template: categories and each series' values, or for a scatter or bubble chart, each
- * series' points.
+ * New data for a stock chart: each category's prices, and if the chart has them, its opening prices and volumes.
  *
  * @publicApi
  */
-export type ChartDataPatchOptions = CategoryChartDataPatchOptions | PointChartDataPatchOptions;
+export type StockChartDataPatchOptions = {
+    /** The categories, such as trading days, in order */
+    readonly categories: readonly (string | number | Date)[];
+    /** Each category's opening price, for a chart with opening prices */
+    readonly open?: readonly (number | null)[];
+    /** Each category's highest price */
+    readonly high: readonly (number | null)[];
+    /** Each category's lowest price */
+    readonly low: readonly (number | null)[];
+    /** Each category's closing price */
+    readonly close: readonly (number | null)[];
+    /** Each category's volume traded, for a chart with volumes */
+    readonly volume?: readonly (number | null)[];
+    /** The series' names, as the legend shows them. Default is "Volume", "Open", "High", "Low" and "Close" */
+    readonly names?: StockChartSeriesNames;
+    /**
+     * The chart's alt text description. Default is a description of the chart from its new data, and none for a
+     * decorative chart. An empty description removes it
+     */
+    readonly description?: string;
+};
+
+/**
+ * The new data of a chart in a template: categories and each series' values, for a scatter or bubble chart each
+ * series' points, or for a stock chart its prices.
+ *
+ * @publicApi
+ */
+export type ChartDataPatchOptions = CategoryChartDataPatchOptions | PointChartDataPatchOptions | StockChartDataPatchOptions;
+
+// The prices and volumes of a stock chart
+const STOCK_OPTIONS = ["open", "high", "low", "close", "volume"] as const;
 
 // The data, copied, so changes to the options after the patch is made don't change it
 type PatchData =
     | {
           readonly kind: "category";
-          readonly categories: readonly (string | number | Date)[];
+          readonly categories: readonly (string | number | Date)[] | readonly ChartCategoryGroup[];
           readonly series: readonly CategoryChartDataSeries[];
+          readonly description: string | undefined;
+      }
+    | {
+          readonly kind: "stock";
+          readonly options: Omit<StockChartOptions, "type">;
           readonly description: string | undefined;
       }
     | {
@@ -118,6 +162,47 @@ const checkSize = ({ x, y, size }: ChartPoint & { readonly size?: number }, seri
     }
 };
 
+const copyValues = (values: unknown): unknown => (Array.isArray(values) ? [...(values as readonly unknown[])] : values);
+
+/**
+ * A copy of the categories, with their dates and groups copied too.
+ */
+const copyCategories = (categories: readonly unknown[]): readonly (string | number | Date)[] | readonly ChartCategoryGroup[] =>
+    categories.map((category: unknown) => {
+        if (category instanceof Date) {
+            return new Date(category.getTime());
+        }
+        if (typeof category === "object" && category !== null) {
+            const { name, categories: inner } = category as Partial<ChartCategoryGroup>;
+            return { name, categories: Array.isArray(inner) ? copyCategories(inner) : inner };
+        }
+        return category;
+    }) as readonly (string | number | Date)[] | readonly ChartCategoryGroup[];
+
+/**
+ * Checks a stock chart's prices, and copies them.
+ *
+ * @throws If there are no categories, a price is missing or wrong, or a high is below its low, as for `ChartRun`
+ */
+const readStockOptions = (options: StockChartDataPatchOptions): PatchData => {
+    const { categories, names, description } = options;
+    if (description !== undefined && typeof description !== "string") {
+        throw new Error(`Invalid description ${quoted(description)}. Expected text`);
+    }
+    if (!Array.isArray(categories)) {
+        throw new Error("Invalid option categories. A stock chart's prices need categories, one for each price");
+    }
+    const copied = {
+        categories: copyCategories(categories) as readonly (string | number | Date)[],
+        ...Object.fromEntries(
+            STOCK_OPTIONS.flatMap((option) => (options[option] === undefined ? [] : [[option, copyValues(options[option])]])),
+        ),
+        ...(names === undefined ? {} : { names: { ...names } }),
+    } as Omit<StockChartOptions, "type">;
+    checkChartOptions({ type: "stock", ...copied });
+    return { kind: "stock", options: copied, description };
+};
+
 /**
  * Checks the options, and copies the data.
  *
@@ -132,6 +217,13 @@ const readOptions = (options: ChartDataPatchOptions): PatchData => {
         );
     }
     const { series, description } = options as Partial<CategoryChartDataPatchOptions & PointChartDataPatchOptions>;
+    const prices = STOCK_OPTIONS.find((option) => option in options);
+    if (series === undefined && prices !== undefined) {
+        return readStockOptions(options as StockChartDataPatchOptions);
+    }
+    if (prices !== undefined) {
+        throw new Error(`Invalid option ${prices}. A stock chart's data is its prices, and another chart's is its series, not both`);
+    }
     if (!Array.isArray(series) || series.length === 0) {
         throw new Error("A chart needs at least one series");
     }
@@ -175,9 +267,7 @@ const readOptions = (options: ChartDataPatchOptions): PatchData => {
     if (!Array.isArray(categories)) {
         throw new Error("Invalid option categories. Series with values need categories, one for each value");
     }
-    const copiedCategories = categories.map((category: unknown) =>
-        category instanceof Date ? new Date(category.getTime()) : category,
-    ) as readonly (string | number | Date)[];
+    const copiedCategories = copyCategories(categories);
     const copied = (series as readonly CategoryChartDataSeries[]).map(({ name, values }) => ({ name, values: [...values] }));
     // A line chart has the checks every chart with categories has: dates, negative values and more than one series
     // are checked for the template's chart's type when it is patched
@@ -185,7 +275,35 @@ const readOptions = (options: ChartDataPatchOptions): PatchData => {
     return { kind: "category", categories: copiedCategories, series: copied, description };
 };
 
-const withArticle = (type: ChartType): string => `${type === "area" ? "an" : "a"} ${type} chart`;
+const withArticle = (type: ChartType): string => `${type === "area" ? "an" : "a"} ${TYPE_NAMES[type]} chart`;
+
+/**
+ * A stock chart's options from the template's chart and the new prices, which have to be the same kind of stock chart
+ * as the template's: with opening prices if it has them, and volumes if it has them.
+ *
+ * @throws If the data isn't for a stock chart, or has opening prices or volumes the template's chart doesn't, or not
+ * those it does
+ */
+const stockOptionsFor = (chart: TemplateChart, data: PatchData, title: string | undefined): ChartRunOptions => {
+    if (data.kind !== "stock") {
+        throw new Error("It is a stock chart, whose data is each category's prices. Give categories, and high, low and close prices");
+    }
+    const stock = chart.groups.find(({ type }) => type === "stock")!;
+    const kinds = [
+        ["open", "opening prices", childrenOf(stock.element, "c:ser").length === 4],
+        ["volume", "volumes", chart.groups.length > 1],
+    ] as const;
+    for (const [option, name, has] of kinds) {
+        const given = data.options[option] !== undefined;
+        if (has && !given) {
+            throw new Error(`It is a stock chart with ${name}. Give ${option} too`);
+        }
+        if (!has && given) {
+            throw new Error(`It is a stock chart without ${name}, so it can't take ${option}`);
+        }
+    }
+    return { type: "stock", title, ...data.options };
+};
 
 /**
  * The options `docx/charts` would draw the new data with in the template's chart's type, which check the data and
@@ -196,6 +314,9 @@ const withArticle = (type: ChartType): string => `${type === "area" ? "an" : "a"
  */
 const optionsFor = (chart: TemplateChart, data: PatchData): ChartRunOptions => {
     const title = chart.title?.trim() ? chart.title : undefined;
+    if (chart.type === "stock") {
+        return stockOptionsFor(chart, data, title);
+    }
     if (chart.kind === "category") {
         if (data.kind !== "category") {
             throw new Error(
@@ -243,7 +364,7 @@ const rangeOf = (formula: string): { readonly column: number; readonly first: nu
 /**
  * The sheet with a number format on the cells a reference refers to.
  */
-const withCellFormat = (sheet: ChartSheet, data: ChartTextData | ChartNumberData | undefined): ChartSheet => {
+const withCellFormat = (sheet: ChartSheet, data: ChartSeriesData["categories"] | undefined): ChartSheet => {
     if (data?.type !== "number" || data.format === undefined) {
         return sheet;
     }
@@ -268,10 +389,10 @@ const withCellFormat = (sheet: ChartSheet, data: ChartTextData | ChartNumberData
  * @param unit - The unit the categories are spaced by, if they are dates
  */
 const withTemplateFormats = (data: ChartData, chart: TemplateChart, unit: TemplateChartData["dates"]): TemplateChartData => {
-    const withFormat = <Data extends ChartTextData | ChartNumberData>(own: Data, format: string | undefined): Data =>
+    const withFormat = <Data extends ChartSeriesData["categories"]>(own: Data, format: string | undefined): Data =>
         own.type === "number" && format !== undefined ? { ...own, format } : own;
-    const categoryFormat = (own: ChartTextData | ChartNumberData, format: string | undefined): string | undefined => {
-        if (own.type === "text" || format === undefined || chart.kind !== "category") {
+    const categoryFormat = (own: ChartSeriesData["categories"], format: string | undefined): string | undefined => {
+        if (own.type !== "number" || format === undefined || chart.kind !== "category") {
             return format;
         }
         // Dates have their own format, which the template's replaces only if it is a date format too
@@ -357,9 +478,10 @@ const setAltText = ({ properties, placeholder }: TemplateDrawing, description: s
  * - The chart's workbook is replaced with one holding the new data, so Word's "Edit Data" opens it.
  * - The alt text's description is replaced with a description of the new data.
  *
- * The patch checks the data against the chart's type when the document is patched: a pie chart has one series, and a
- * scatter or bubble chart's series have points. Put the placeholder in the chart's alt text in Word, in "Alt Text" or
- * "Edit Alt Text". A placeholder in the document's text is left as it is.
+ * The patch checks the data against the chart's type when the document is patched: a pie chart has one series, a
+ * scatter or bubble chart's series have points, and a stock chart has prices, with opening prices and volumes if the
+ * template's has them. Put the placeholder in the chart's alt text in Word, in "Alt Text" or "Edit Alt Text". A
+ * placeholder in the document's text is left as it is.
  *
  * @publicApi
  *
@@ -395,7 +517,7 @@ export class ChartDataPatch extends DrawingPatch {
     /**
      * Replaces the chart's data, and its workbook, and describes it in its alt text.
      *
-     * @throws If the drawing isn't a chart, is a type of chart this can't patch, such as a stock chart, or has something
+     * @throws If the drawing isn't a chart, is a type of chart this can't patch, such as a surface chart, or has something
      * that refers to its workbook's cells other than its data, such as labels from cells, or the data isn't for the
      * chart's type, such as two series for a pie chart
      */
@@ -422,7 +544,7 @@ export class ChartDataPatch extends DrawingPatch {
         const options = optionsFor(chart, this.data);
 
         if (!this.patched.has(part.xml)) {
-            const categories: readonly (string | number | Date)[] = "categories" in options ? options.categories : [];
+            const categories = "categories" in options ? leafCategoriesOf(options.categories) : [];
             const dates = categories.filter((category): category is Date => category instanceof Date);
             const data = withTemplateFormats(createChartData(options), chart, dates.length > 0 ? timeUnitOf(dates) : undefined);
             const patched = patchChartSpace(chart, data, template.format, () =>

@@ -40,13 +40,28 @@ describe("template-chart", () => {
                 expect(typeOf(`<c:bubbleChart>${series(0)}</c:bubbleChart>`)).to.equal("bubble");
             });
 
-            it("should read a 3-D chart as its flat type, and a pie of a pie as a pie", () => {
+            it("should read a 3-D chart as its flat type", () => {
                 expect(typeOf(`<c:bar3DChart><c:barDir val="col"/>${series(0)}</c:bar3DChart>`)).to.equal("column");
                 expect(typeOf(`<c:bar3DChart><c:barDir val="bar"/>${series(0)}</c:bar3DChart>`)).to.equal("bar");
                 expect(typeOf(`<c:line3DChart>${series(0)}</c:line3DChart>`)).to.equal("line");
                 expect(typeOf(`<c:area3DChart>${series(0)}</c:area3DChart>`)).to.equal("area");
                 expect(typeOf(`<c:pie3DChart>${series(0)}</c:pie3DChart>`)).to.equal("pie");
-                expect(typeOf(`<c:ofPieChart><c:ofPieType val="bar"/>${series(0)}</c:ofPieChart>`)).to.equal("pie");
+            });
+
+            it("should read a pie of pie or bar of pie chart by its type, a pie of pie unless it says", () => {
+                expect(typeOf(`<c:ofPieChart><c:ofPieType val="bar"/>${series(0)}</c:ofPieChart>`)).to.equal("barOfPie");
+                expect(typeOf(`<c:ofPieChart><c:ofPieType val="pie"/>${series(0)}</c:ofPieChart>`)).to.equal("pieOfPie");
+                expect(typeOf(`<c:ofPieChart>${series(0)}</c:ofPieChart>`)).to.equal("pieOfPie");
+                // Its slices each have their own colour, unless it says otherwise
+                expect(readTemplateChart(chartSpaceOf(`<c:ofPieChart>${series(0)}</c:ofPieChart>`)).groups[0].varyColors).to.equal(true);
+            });
+
+            it("should read a stock chart, and one with its volumes' columns, as a stock chart", () => {
+                const prices = `<c:stockChart>${series(1)}${series(2)}${series(3)}</c:stockChart>`;
+                expect(typeOf(prices)).to.equal("stock");
+                expect(typeOf(`<c:barChart>${series(0)}</c:barChart>${prices}`)).to.equal("stock");
+                expect(typeOf(`<c:stockChart>${series(0)}${series(1)}${series(2)}${series(3)}</c:stockChart>`)).to.equal("stock");
+                expect(readTemplateChart(chartSpaceOf(prices)).kind).to.equal("category");
             });
 
             it("should read a bar chart without a direction as a column chart", () => {
@@ -71,10 +86,13 @@ describe("template-chart", () => {
         });
 
         describe("charts it can't patch", () => {
-            it("should throw for a stock chart", () => {
+            it("should throw for a stock chart without 3 or 4 series of prices", () => {
                 expect(() => readTemplateChart(chartSpaceOf(`<c:stockChart>${series(0)}</c:stockChart>`))).to.throw(
-                    "It is a stock chart, whose series are its prices, which ChartDataPatch can't patch",
+                    "It is a stock chart with 1 series of prices. A stock chart has 3, or 4 with opening prices",
                 );
+                expect(() =>
+                    readTemplateChart(chartSpaceOf(`<c:stockChart>${[0, 1, 2, 3, 4].map(series).join("")}</c:stockChart>`)),
+                ).to.throw("It is a stock chart with 5 series of prices");
             });
 
             it("should throw for a surface chart", () => {
@@ -98,10 +116,20 @@ describe("template-chart", () => {
                 );
             });
 
-            it("should throw for a stock chart combined with another", () => {
+            it("should throw for a stock chart combined with anything but its volumes' columns", () => {
+                const prices = `<c:stockChart>${series(1)}${series(2)}${series(3)}</c:stockChart>`;
+                const combined =
+                    "It is a stock chart combined with a chart other than its volumes' columns, which ChartDataPatch can't patch";
+                expect(() => readTemplateChart(chartSpaceOf(`<c:lineChart>${series(0)}</c:lineChart>${prices}`))).to.throw(combined);
                 expect(() =>
-                    readTemplateChart(chartSpaceOf(`<c:barChart>${series(0)}</c:barChart><c:stockChart>${series(1)}</c:stockChart>`)),
-                ).to.throw("stock chart");
+                    readTemplateChart(chartSpaceOf(`<c:barChart><c:barDir val="bar"/>${series(0)}</c:barChart>${prices}`)),
+                ).to.throw(combined);
+                expect(() => readTemplateChart(chartSpaceOf(`<c:barChart>${series(0)}${series(4)}</c:barChart>${prices}`))).to.throw(
+                    combined,
+                );
+                expect(() =>
+                    readTemplateChart(chartSpaceOf(`<c:barChart>${series(0)}</c:barChart><c:barChart>${series(4)}</c:barChart>${prices}`)),
+                ).to.throw(combined);
             });
 
             it("should throw for a pivot chart", () => {

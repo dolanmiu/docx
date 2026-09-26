@@ -89,6 +89,45 @@ new ChartRun({
 
 Here only the 2025 columns have labels.
 
+## Labels of Single Points
+
+A series' `pointLabels` give single bars, points or slices labels of their own, such as to mark the highest point, in the order of the categories, or of a scatter or bubble chart's points:
+
+```ts
+new ChartRun({
+    type: "line",
+    categories: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+    series: [
+        {
+            name: "Visitors",
+            values: [320, 410, 380, 380, 460, 610, 580],
+            pointLabels: [undefined, undefined, undefined, undefined, undefined, { text: "Record", position: "above" }],
+        },
+    ],
+});
+```
+
+Each point's label is one of:
+
+- `undefined`: the series' own labels, if it has any;
+- `false`: no label, even when the series has labels;
+- a label's options: what it shows, or `text` of its own, over the series' labels.
+
+A point's label has the options of the series' labels, and each it leaves out is the series' label's:
+
+```ts
+// Only the last column has a label, with its value
+pointLabels: [undefined, undefined, undefined, { value: true }],
+
+// Every column shows its value, and the first shows it inside, in bold
+dataLabels: { value: true },
+series: [{ name: "Sales", values: [120, 135, 150, 170], pointLabels: [{ position: "insideEnd", font: { bold: true } }] }],
+```
+
+`text` replaces what the label shows with text of its own, a line of the label for each line of the text. A label with text shows nothing else, so it has no `value`, `category`, `seriesName`, `percentage`, `bubbleSize` or `numberFormat`.
+
+A series can't have more point labels than it has points. Pages doesn't show a label's own text. See [Chart Compatibility](usage/chart-compatibility.md).
+
 ## Options
 
 | Property       | Type                     | Notes    | Description                                                           |
@@ -101,3 +140,9 @@ Here only the 2025 columns have labels.
 | `position`     | `ChartDataLabelPosition` | Optional | Where the labels go. See [Where the Labels Go](#where-the-labels-go)  |
 | `numberFormat` | `string`                 | Optional | An Excel number format, such as `"#,##0"`. Default is the values' own |
 | `font`         | `ChartFont`              | Optional | The labels' font. Default 9 points                                    |
+
+A point's label, in `pointLabels`, has these options too, and `text`:
+
+| Property | Type     | Notes    | Description                                               |
+| -------- | -------- | -------- | --------------------------------------------------------- |
+| `text`   | `string` | Optional | Text of its own, shown in place of anything else it shows |

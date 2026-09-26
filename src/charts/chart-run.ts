@@ -18,9 +18,11 @@ export type {
     AreaChartOptions,
     BarChartBaseOptions,
     BarChartOptions,
+    BarOfPieChartOptions,
     BubbleChartDataLabels,
     BubbleChartOptions,
     BubbleChartPoint,
+    BubbleChartPointLabel,
     BubbleChartSeries,
     CategoryChartOptions,
     ChartAreaStyle,
@@ -28,10 +30,18 @@ export type {
     ChartAxisCrossing,
     ChartAxisGroup,
     ChartBaseOptions,
+    ChartCategoryGroup,
+    ChartCustomErrorBars,
     ChartDataLabelPosition,
     ChartDataLabels,
+    ChartDataTable,
     ChartDisplayUnits,
+    ChartEmptyValues,
+    ChartErrorBars,
+    ChartErrorBarsAmount,
+    ChartErrorBarsStyle,
     ChartFont,
+    ChartLabelText,
     ChartLegend,
     ChartLegendPosition,
     ChartLine,
@@ -39,11 +49,15 @@ export type {
     ChartMarker,
     ChartMarkerShape,
     ChartPoint,
+    ChartPointLabel,
     ChartRunOptions,
     ChartSeries,
     ChartSize,
     ChartStacking,
     ChartTitle,
+    ChartTrendline,
+    ChartTrendlineLabel,
+    ChartTrendlineType,
     ChartType,
     ChartValueAxis,
     ColumnChartOptions,
@@ -53,17 +67,24 @@ export type {
     PieChartBaseOptions,
     PieChartDataLabels,
     PieChartOptions,
+    PieChartPointLabel,
     PieChartSeries,
+    PieChartSplit,
+    PieOfPieChartOptions,
     RadarChartOptions,
     RadarChartSeries,
     ScatterChartOptions,
     ScatterChartSeries,
+    SplitPieChartBaseOptions,
+    StockChartOptions,
+    StockChartSeriesNames,
 } from "./chart-options";
 
 /**
- * Represents a chart in a WordprocessingML document: a column, bar, line, area, pie, doughnut, radar, scatter or bubble
- * chart, drawn by Word from its data in the document's theme, as a chart made with Word's Insert Chart is. A column,
- * line or area chart's series can each be drawn another way, as Word's "Combo" charts are.
+ * Represents a chart in a WordprocessingML document: a column, bar, line, area, pie, doughnut, pie of pie, bar of pie,
+ * radar, scatter, bubble or stock chart, drawn by Word from its data in the document's theme, as a chart made with
+ * Word's Insert Chart is. A column, line or area chart's series can each be drawn another way, as Word's "Combo" charts
+ * are.
  *
  * The chart is a part of its own (`word/charts/chart1.xml`), with its data in an embedded workbook, so Word's "Edit
  * Data" opens it in Excel. It sits inline with text unless `floating` is set, and goes in a paragraph, including in a
@@ -96,7 +117,8 @@ export class ChartRun extends Run {
      * @throws If there are no series or categories, a value isn't a finite number or null, a series has more values
      * than there are categories or an option the way it is drawn doesn't have, a pie chart has more than one series or
      * a pie or doughnut chart a negative value, a scatter or bubble point isn't finite numbers, a data label position
-     * isn't one the chart's type has, or an option is out of its range
+     * isn't one the chart's type has, a trendline can't be fitted to its series' values, a stock chart's high is below
+     * its low, a hidden legend entry isn't one of the legend's, or an option is out of its range
      */
     public constructor(options: ChartRunOptions) {
         super({});

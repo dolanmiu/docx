@@ -6,11 +6,13 @@
 import type { ChartData } from "../chart-data";
 import { createElement, createValue } from "../chart-elements";
 import type { BubbleChartOptions, ChartFont } from "../chart-options";
-import { createBubbleSeriesProperties } from "../chart-style";
+import { createBubbleSeriesProperties, createSeriesColor } from "../chart-style";
 import { PRIMARY_AXES, createPointAxes } from "./axes";
 import { type ChartGroups, labelsOf } from "./chart-group";
 import { createGroupDataLabels, createSeriesDataLabels } from "./data-labels";
+import { createErrorBars } from "./error-bars";
 import { createDataSource, createSeriesStart } from "./series";
+import { createTrendlines } from "./trendline";
 
 /**
  * A bubble chart, with two value axes. Each bubble is filled with its series' colour at 75% opacity, as Office draws
@@ -59,7 +61,15 @@ export const createBubbleChart = (options: BubbleChartOptions, data: ChartData, 
                     ...createSeriesStart(index, series),
                     createBubbleSeriesProperties(index, own.color),
                     createValue("c:invertIfNegative", false),
-                    ...createSeriesDataLabels(labelsOf(own.dataLabels, options.dataLabels), { shape: "points", series: own.name, font }),
+                    ...createSeriesDataLabels(labelsOf(own.dataLabels, options.dataLabels), {
+                        shape: "points",
+                        series: own.name,
+                        font,
+                        pointLabels: own.pointLabels,
+                    }),
+                    ...createTrendlines(own.trendlines, () => createSeriesColor(index, own.color), font),
+                    ...createErrorBars(own.xErrorBars, "x", series.errors?.x),
+                    ...createErrorBars(own.yErrorBars, "y", series.errors?.y),
                     createDataSource("c:xVal", series.categories),
                     createDataSource("c:yVal", series.values),
                     // Every bubble series has sizes

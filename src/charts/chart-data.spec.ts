@@ -209,4 +209,220 @@ describe("createChartData", () => {
             ]);
         });
     });
+
+    describe("categories in groups", () => {
+        const quarters = column({
+            categories: [
+                { name: "2024", categories: ["Q1", "Q2", "Q3"] },
+                { name: "2025", categories: ["Q1"] },
+            ],
+            series: [
+                { name: "North", values: [10, 20, 30, 40] },
+                { name: "South", values: [5, null] },
+            ],
+        });
+
+        it("should lay out a column for each level, the groups' names in the row of their first category, and the series after", () => {
+            expect(createChartData(quarters).sheet).to.deep.equal([
+                [undefined, undefined, "North", "South"],
+                ["2024", "Q1", 10, 5],
+                [undefined, "Q2", 20, undefined],
+                [undefined, "Q3", 30, undefined],
+                ["2025", "Q1", 40, undefined],
+            ]);
+        });
+
+        it("should refer to the categories as a block of cells, with each level's labels, the categories' own first", () => {
+            const [north, south] = createChartData(quarters).series;
+            expect(north.categories).to.deep.equal({
+                type: "levels",
+                formula: "Sheet1!$A$2:$B$5",
+                count: 4,
+                levels: [
+                    ["Q1", "Q2", "Q3", "Q1"],
+                    ["2024", undefined, undefined, "2025"],
+                ],
+            });
+            expect(south.categories).to.equal(north.categories);
+            expect(north.name).to.deep.equal({ type: "text", formula: "Sheet1!$C$1", points: ["North"] });
+            expect(south.values).to.deep.equal({
+                type: "number",
+                formula: "Sheet1!$D$2:$D$5",
+                points: [5, undefined, undefined, undefined],
+            });
+        });
+
+        it("should lay out groups of groups, keeping numbers as numbers in the sheet and text in the chart", () => {
+            const data = createChartData(
+                column({
+                    categories: [
+                        { name: "Europe", categories: [{ name: "UK", categories: [1, 2] }] },
+                        { name: "Asia", categories: [{ name: "Japan", categories: [3] }] },
+                    ],
+                    series: [{ name: "S", values: [1, 2, 3] }],
+                }),
+            );
+
+            expect(data.sheet).to.deep.equal([
+                [undefined, undefined, undefined, "S"],
+                ["Europe", "UK", 1, 1],
+                [undefined, undefined, 2, 2],
+                ["Asia", "Japan", 3, 3],
+            ]);
+            expect(data.series[0].categories).to.deep.equal({
+                type: "levels",
+                formula: "Sheet1!$A$2:$C$4",
+                count: 3,
+                levels: [
+                    ["1", "2", "3"],
+                    ["UK", undefined, "Japan"],
+                    ["Europe", undefined, "Asia"],
+                ],
+            });
+            expect(data.series[0].values.formula).to.equal("Sheet1!$D$2:$D$4");
+        });
+
+        it("should refer to a single category in a group as a block of one row", () => {
+            const data = createChartData(
+                column({ categories: [{ name: "2025", categories: ["Q1"] }], series: [{ name: "S", values: [1] }] }),
+            );
+            expect(data.series[0].categories).to.deep.include({ formula: "Sheet1!$A$2:$B$2", count: 1 });
+            expect(data.series[0].values.formula).to.equal("Sheet1!$C$2");
+        });
+    });
+
+    describe("custom error bars", () => {
+        it("should put each series' plus and minus amounts in columns after the series, empty for null or none", () => {
+            const data = createChartData(
+                column({
+                    series: [
+                        { name: "A", values: [1, 2, 3], errorBars: { type: "custom", plus: [0.5, null], minus: [1, 1, 1] } },
+                        { name: "B", values: [4, 5, 6], errorBars: { type: "fixed", value: 1 } },
+                        { name: "C", values: [7, 8, 9], errorBars: { type: "custom", minus: [2] } },
+                    ],
+                }),
+            );
+
+            expect(data.sheet).to.deep.equal([
+                [undefined, "A", "B", "C", "A (+)", "A (-)", "C (-)"],
+                ["Jan", 1, 4, 7, 0.5, 1, 2],
+                ["Feb", 2, 5, 8, undefined, 1, undefined],
+                ["Mar", 3, 6, 9, undefined, 1, undefined],
+            ]);
+            expect(data.series.map(({ errors }) => errors)).to.deep.equal([
+                {
+                    y: {
+                        plus: { type: "number", formula: "Sheet1!$E$2:$E$4", points: [0.5, undefined, undefined] },
+                        minus: { type: "number", formula: "Sheet1!$F$2:$F$4", points: [1, 1, 1] },
+                    },
+                },
+                undefined,
+                { y: { minus: { type: "number", formula: "Sheet1!$G$2:$G$4", points: [2, undefined, undefined] } } },
+            ]);
+        });
+
+        it("should put a scatter or bubble series' x amounts, then its y amounts, after every series' points", () => {
+            const data = createChartData({
+                type: "bubble",
+                series: [
+                    {
+                        name: "A",
+                        points: [
+                            { x: 1, y: 2, size: 3 },
+                            { x: 4, y: 5, size: 6 },
+                        ],
+                        xErrorBars: { type: "custom", plus: [0.1, 0.2] },
+                        yErrorBars: { type: "custom", plus: [1], minus: [2, 3] },
+                    },
+                    { name: "B", points: [{ x: 7, y: 8, size: 9 }], yErrorBars: { type: "custom", minus: [4] } },
+                ],
+            });
+
+            expect(data.sheet).to.deep.equal([
+                ["X", "A", "Size", "X", "B", "Size", "A x (+)", "A y (+)", "A y (-)", "B y (-)"],
+                [1, 2, 3, 7, 8, 9, 0.1, 1, 2, 4],
+                [4, 5, 6, undefined, undefined, undefined, 0.2, undefined, 3, undefined],
+            ]);
+            expect(data.series[0].errors).to.deep.equal({
+                x: { plus: { type: "number", formula: "Sheet1!$G$2:$G$3", points: [0.1, 0.2] } },
+                y: {
+                    plus: { type: "number", formula: "Sheet1!$H$2:$H$3", points: [1, undefined] },
+                    minus: { type: "number", formula: "Sheet1!$I$2:$I$3", points: [2, 3] },
+                },
+            });
+            expect(data.series[1].errors).to.deep.equal({ y: { minus: { type: "number", formula: "Sheet1!$J$2", points: [4] } } });
+        });
+
+        it("should give a series only the error amounts it has in the sheet", () => {
+            const data = createChartData({
+                type: "scatter",
+                series: [
+                    {
+                        name: "A",
+                        points: [{ x: 1, y: 2 }],
+                        xErrorBars: { type: "custom", minus: [1] },
+                        yErrorBars: { type: "standardError" },
+                    },
+                ],
+            });
+            expect(data.series[0].errors).to.deep.equal({ x: { minus: { type: "number", formula: "Sheet1!$C$2", points: [1] } } });
+            expect(data.sheet).to.deep.equal([
+                ["X", "A", "A x (-)"],
+                [1, 2, 1],
+            ]);
+        });
+
+        it("should put amounts beside a single category's row", () => {
+            const data = createChartData(
+                column({ categories: ["A"], series: [{ name: "S", values: [1], errorBars: { type: "custom", plus: [2] } }] }),
+            );
+            expect(data.sheet).to.deep.equal([
+                [undefined, "S", "S (+)"],
+                ["A", 1, 2],
+            ]);
+        });
+    });
+
+    describe("a stock chart", () => {
+        it("should lay out its volumes, opens, highs, lows and closes in Word's order, with their names", () => {
+            const data = createChartData({
+                type: "stock",
+                categories: ["Mon", "Tue"],
+                close: [11, 12],
+                low: [10, 11],
+                high: [12, 13],
+                open: [10.5, null],
+                volume: [100, 200],
+                names: { open: "Opening" },
+            });
+
+            expect(data.sheet).to.deep.equal([
+                [undefined, "Volume", "Opening", "High", "Low", "Close"],
+                ["Mon", 100, 10.5, 12, 10, 11],
+                ["Tue", 200, undefined, 13, 11, 12],
+            ]);
+            expect(data.series.map(({ name }) => name.formula)).to.deep.equal([
+                "Sheet1!$B$1",
+                "Sheet1!$C$1",
+                "Sheet1!$D$1",
+                "Sheet1!$E$1",
+                "Sheet1!$F$1",
+            ]);
+        });
+
+        it("should leave out the opening prices and volumes it doesn't have", () => {
+            const data = createChartData({
+                type: "stock",
+                categories: [new Date("2025-01-06")],
+                high: [12],
+                low: [10],
+                close: [11],
+            });
+
+            expect(data.sheet).to.deep.equal([
+                [undefined, "High", "Low", "Close"],
+                [{ value: 45663, format: "d mmm yyyy" }, 12, 10, 11],
+            ]);
+        });
+    });
 });

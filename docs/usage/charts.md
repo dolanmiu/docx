@@ -47,49 +47,60 @@ This draws a column chart with a column for each year in each month, and a legen
 - `series` are the sets of values. Each has a `name`, which the legend shows, and one value for each category, in order.
 - `null` leaves a gap, so there is no 2025 column for March.
 
-Every chart needs a `type` and its `series`, and every type but a scatter chart needs `categories`. All the other options are optional.
+Every chart needs a `type` and its `series`, and every type but a scatter or bubble chart needs `categories`. A stock chart's data is its prices instead of `series`. All the other options are optional.
 
 ## Chart Types
 
 `type` is the name Word gives the chart in **Insert > Chart**. Each page shows a chart type's own options, such as stacking for column charts and markers for line charts.
 
-| Type         | Draws                                    | Use it to                               | Page                                                       |
-| ------------ | ---------------------------------------- | --------------------------------------- | ---------------------------------------------------------- |
-| `"column"`   | Vertical bars                            | Compare values across categories        | [Column and Bar Charts](usage/chart-column-and-bar.md)     |
-| `"bar"`      | Horizontal bars                          | Compare values with long category names | [Column and Bar Charts](usage/chart-column-and-bar.md)     |
-| `"line"`     | A line for each series                   | Show a trend over time                  | [Line and Area Charts](usage/chart-line-and-area.md)       |
-| `"area"`     | A filled area for each series            | Show a trend, and how the parts add up  | [Line and Area Charts](usage/chart-line-and-area.md)       |
-| `"pie"`      | Slices of a circle                       | Show the parts of one whole             | [Pie and Doughnut Charts](usage/chart-pie-and-doughnut.md) |
-| `"doughnut"` | A ring of slices for each series         | Compare the parts of several wholes     | [Pie and Doughnut Charts](usage/chart-pie-and-doughnut.md) |
-| `"radar"`    | A line round a spoke for each category   | Compare several qualities at once       | [Radar Charts](usage/chart-radar.md)                       |
-| `"scatter"`  | Points, each with its own x and y        | Show how two numbers relate             | [Scatter Charts](usage/chart-scatter.md)                   |
-| `"bubble"`   | Bubbles, each with its own x, y and size | Show how three numbers relate           | [Bubble Charts](usage/chart-bubble.md)                     |
+| Type         | Draws                                                   | Use it to                               | Page                                                                                 |
+| ------------ | ------------------------------------------------------- | --------------------------------------- | ------------------------------------------------------------------------------------ |
+| `"column"`   | Vertical bars                                           | Compare values across categories        | [Column and Bar Charts](usage/chart-column-and-bar.md)                               |
+| `"bar"`      | Horizontal bars                                         | Compare values with long category names | [Column and Bar Charts](usage/chart-column-and-bar.md)                               |
+| `"line"`     | A line for each series                                  | Show a trend over time                  | [Line and Area Charts](usage/chart-line-and-area.md)                                 |
+| `"area"`     | A filled area for each series                           | Show a trend, and how the parts add up  | [Line and Area Charts](usage/chart-line-and-area.md)                                 |
+| `"pie"`      | Slices of a circle                                      | Show the parts of one whole             | [Pie and Doughnut Charts](usage/chart-pie-and-doughnut.md)                           |
+| `"doughnut"` | A ring of slices for each series                        | Compare the parts of several wholes     | [Pie and Doughnut Charts](usage/chart-pie-and-doughnut.md)                           |
+| `"pieOfPie"` | A pie, and its smallest slices as a second pie          | Read small parts of one whole           | [Pie and Doughnut Charts](usage/chart-pie-and-doughnut.md#pie-of-pie-and-bar-of-pie) |
+| `"barOfPie"` | A pie, and its smallest slices as a bar                 | Read small parts of one whole           | [Pie and Doughnut Charts](usage/chart-pie-and-doughnut.md#pie-of-pie-and-bar-of-pie) |
+| `"radar"`    | A line round a spoke for each category                  | Compare several qualities at once       | [Radar Charts](usage/chart-radar.md)                                                 |
+| `"scatter"`  | Points, each with its own x and y                       | Show how two numbers relate             | [Scatter Charts](usage/chart-scatter.md)                                             |
+| `"bubble"`   | Bubbles, each with its own x, y and size                | Show how three numbers relate           | [Bubble Charts](usage/chart-bubble.md)                                               |
+| `"stock"`    | Each day's high, low and close, and its open and volume | Show how a price moved                  | [Stock Charts](usage/chart-stock.md)                                                 |
 
 Columns, lines and areas can be drawn together in one chart, with a second value axis on the right. See [Combo Charts](usage/chart-combo.md).
 
 ## Common Use Cases
 
-| I want to...                                 | Use                                            | Page                                                                         |
-| -------------------------------------------- | ---------------------------------------------- | ---------------------------------------------------------------------------- |
-| Give a chart its data                        | `categories` and `series`                      | [Chart Data](usage/chart-data.md)                                            |
-| Show dates along the bottom                  | `Date`s as the categories                      | [Chart Axes](usage/chart-axes.md#dates)                                      |
-| Draw a line over columns                     | A series' `type`                               | [Combo Charts](usage/chart-combo.md)                                         |
-| Show numbers on another scale on the right   | A series' `axis: "secondary"`                  | [Combo Charts](usage/chart-combo.md#a-secondary-axis)                        |
-| Change a series' colour                      | `color`, such as `"1F4E79"` or a theme colour  | [Chart Colours](usage/chart-colors.md)                                       |
-| Pick out one bar in another colour           | A series' `colors`                             | [Column and Bar Charts](usage/chart-column-and-bar.md#bar-colours)           |
-| Draw a dashed line, or change the markers    | A series' `line` and `markers`                 | [Line and Area Charts](usage/chart-line-and-area.md#markers)                 |
-| Add a title, or move or hide the legend      | `title` and `legend`                           | [Chart Titles and Legends](usage/chart-titles-and-legends.md)                |
-| Change the font or the background            | `font`, `chartArea` and `plotArea`             | [Chart Fonts and Fills](usage/chart-fonts-and-fills.md)                      |
-| Name an axis, or set its range or its format | `categoryAxis` and `valueAxis`                 | [Chart Axes](usage/chart-axes.md)                                            |
-| Use a logarithmic scale, or thousands        | `logarithmicBase` and `displayUnits`           | [Chart Axes](usage/chart-axes.md#logarithmic-scale)                          |
-| Show the numbers on the chart                | `dataLabels`                                   | [Chart Data Labels](usage/chart-data-labels.md)                              |
-| Make a chart bigger or smaller               | `transformation`                               | [Chart Size and Position](usage/chart-size-and-position.md)                  |
-| Float a chart beside its text                | `floating`                                     | [Chart Size and Position](usage/chart-size-and-position.md)                  |
-| Put a chart in a table, header or footer     | A `Paragraph` with the chart in it             | [Chart Size and Position](usage/chart-size-and-position.md)                  |
-| Put a chart in a template                    | `patchDocument`, with the chart in a patch     | [Chart Size and Position](usage/chart-size-and-position.md#in-templates)     |
-| Give a template's chart, made in Word, data  | `patchDocument`, with a `ChartDataPatch`       | [Charts in Templates](usage/chart-templates.md)                              |
-| Describe a chart for screen readers          | `altText`, or nothing: it is described for you | [Chart Size and Position](usage/chart-size-and-position.md#alternative-text) |
-| Know how a chart looks in other applications |                                                | [Chart Compatibility](usage/chart-compatibility.md)                          |
+| I want to...                                 | Use                                            | Page                                                                                   |
+| -------------------------------------------- | ---------------------------------------------- | -------------------------------------------------------------------------------------- |
+| Give a chart its data                        | `categories` and `series`                      | [Chart Data](usage/chart-data.md)                                                      |
+| Show dates along the bottom                  | `Date`s as the categories                      | [Chart Axes](usage/chart-axes.md#dates)                                                |
+| Group quarters within years                  | Groups as the categories                       | [Chart Data](usage/chart-data.md#categories-in-groups)                                 |
+| Draw a line over columns                     | A series' `type`                               | [Combo Charts](usage/chart-combo.md)                                                   |
+| Show numbers on another scale on the right   | A series' `axis: "secondary"`                  | [Combo Charts](usage/chart-combo.md#a-secondary-axis)                                  |
+| Change a series' colour                      | `color`, such as `"1F4E79"` or a theme colour  | [Chart Colours](usage/chart-colors.md)                                                 |
+| Pick out one bar in another colour           | A series' `colors`                             | [Column and Bar Charts](usage/chart-column-and-bar.md#bar-colours)                     |
+| Draw a dashed line, or change the markers    | A series' `line` and `markers`                 | [Line and Area Charts](usage/chart-line-and-area.md#markers)                           |
+| Add a title, or move or hide the legend      | `title` and `legend`                           | [Chart Titles and Legends](usage/chart-titles-and-legends.md)                          |
+| Change the font or the background            | `font`, `chartArea` and `plotArea`             | [Chart Fonts and Fills](usage/chart-fonts-and-fills.md)                                |
+| Name an axis, or set its range or its format | `categoryAxis` and `valueAxis`                 | [Chart Axes](usage/chart-axes.md)                                                      |
+| Use a logarithmic scale, or thousands        | `logarithmicBase` and `displayUnits`           | [Chart Axes](usage/chart-axes.md#logarithmic-scale)                                    |
+| Show the numbers on the chart                | `dataLabels`                                   | [Chart Data Labels](usage/chart-data-labels.md)                                        |
+| Label one point, such as the highest         | A series' `pointLabels`                        | [Chart Data Labels](usage/chart-data-labels.md#labels-of-single-points)                |
+| Show a trend, or a forecast                  | A series' `trendlines`                         | [Chart Trendlines and Error Bars](usage/chart-trendlines-and-error-bars.md)            |
+| Show how far values might be off             | A series' `errorBars`                          | [Chart Trendlines and Error Bars](usage/chart-trendlines-and-error-bars.md#error-bars) |
+| Join a line across a missing value           | `emptyValues: "connect"`                       | [Line and Area Charts](usage/chart-line-and-area.md#empty-values)                      |
+| Leave a series out of the legend             | `legend: { hiddenEntries }`                    | [Chart Titles and Legends](usage/chart-titles-and-legends.md#hiding-legend-entries)    |
+| Show a table of the data under the chart     | `dataTable`                                    | [Chart Titles and Legends](usage/chart-titles-and-legends.md#a-data-table)             |
+| Pull a slice out of a pie                    | A series' `explosion`                          | [Pie and Doughnut Charts](usage/chart-pie-and-doughnut.md#pulling-out-slices)          |
+| Make a chart bigger or smaller               | `transformation`                               | [Chart Size and Position](usage/chart-size-and-position.md)                            |
+| Float a chart beside its text                | `floating`                                     | [Chart Size and Position](usage/chart-size-and-position.md)                            |
+| Put a chart in a table, header or footer     | A `Paragraph` with the chart in it             | [Chart Size and Position](usage/chart-size-and-position.md)                            |
+| Put a chart in a template                    | `patchDocument`, with the chart in a patch     | [Chart Size and Position](usage/chart-size-and-position.md#in-templates)               |
+| Give a template's chart, made in Word, data  | `patchDocument`, with a `ChartDataPatch`       | [Charts in Templates](usage/chart-templates.md)                                        |
+| Describe a chart for screen readers          | `altText`, or nothing: it is described for you | [Chart Size and Position](usage/chart-size-and-position.md#alternative-text)           |
+| Know how a chart looks in other applications |                                                | [Chart Compatibility](usage/chart-compatibility.md)                                    |
 
 ## Importing
 
@@ -133,6 +144,14 @@ A combo chart with a secondary axis, dates, axes in reverse and on a logarithmic
 [Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/122-chart-options.ts ":include")
 
 _Source: https://github.com/dolanmiu/docx/blob/master/demo/122-chart-options.ts_
+
+### More Charts
+
+Stock charts, pie of pie and bar of pie charts, categories in groups, trendlines and error bars, the labels of single points, a pulled-out slice, a hidden legend entry, a data table, and a line joined across an empty value.
+
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/125-more-charts.ts ":include")
+
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/125-more-charts.ts_
 
 ### Charts in Templates
 
