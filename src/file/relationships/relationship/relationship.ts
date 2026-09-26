@@ -26,7 +26,9 @@ export type RelationshipType =
     | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments"
     | "http://schemas.microsoft.com/office/2011/relationships/commentsExtended"
     | "http://schemas.microsoft.com/office/2016/09/relationships/commentsIds"
-    | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/font";
+    | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/font"
+    | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/chart"
+    | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/package";
 
 /**
  * Target mode types for relationships.

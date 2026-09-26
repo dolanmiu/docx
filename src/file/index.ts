@@ -35,6 +35,9 @@ export * from "./checkbox";
 export * from "./fonts";
 export * from "./textbox";
 export * from "./theme";
+// Parts that drawings add to the package when it is written, such as docx/charts' charts
+export * from "./package-part";
+export { type RelationshipType } from "./relationships/relationship/relationship";
 // The VML shape that text boxes are drawn with, which docx/watermarks uses too
 export { type IVmlShapeOptions, type LengthUnit, type VmlShapeStyle, createVmlShape } from "./vml";
 export { type IPropertiesOptions } from "./core-properties";

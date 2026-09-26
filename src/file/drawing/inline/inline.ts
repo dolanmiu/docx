@@ -84,7 +84,7 @@ export const createInline = ({
                         : { top: 0, right: 0, bottom: 0, left: 0 }),
             ),
             new DocProperties(docProperties, { link, decorative }),
-            createGraphicFrameProperties(),
+            createGraphicFrameProperties(mediaData.type !== "graphic" || mediaData.lockAspectRatio !== false),
             new Graphic({ mediaData, transform, outline, solidFill, crop }),
         ],
     });

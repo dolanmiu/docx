@@ -1,6 +1,9 @@
 /**
  * Colours for shape fills and lines.
  *
+ * `src/charts/chart-color.ts` is a copy of this file, as `docx/charts` and `docx/shapes` are separate entries that import
+ * only `docx`. Make a fix in both.
+ *
  * @module
  */
 import { BuilderElement, type ThemeColor, type ThemeColorName, type XmlComponent, hexColorValue } from "docx";

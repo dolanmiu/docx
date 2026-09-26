@@ -21,6 +21,7 @@ import type { Footer, Header } from "./header";
 import { HeaderWrapper, type IDocumentHeader } from "./header-wrapper";
 import { Media } from "./media";
 import { Numbering } from "./numbering";
+import { PackageParts } from "./package-part/package-part";
 import { Comments } from "./paragraph/run/comment-run";
 import { CommentsExtended, CommentsIds } from "./paragraph/run/comments-extended";
 import { Relationships } from "./relationships";
@@ -173,6 +174,7 @@ export class File {
     private readonly commentsIds?: CommentsIds;
     private readonly fontWrapper: FontWrapper;
     private readonly theme: Theme;
+    private readonly packageParts: PackageParts;
 
     public constructor(options: IPropertiesOptions) {
         this.coreProperties = new CoreProperties({
@@ -199,6 +201,7 @@ export class File {
         this.footnotesWrapper = new FootnotesWrapper();
         this.endnotesWrapper = new EndnotesWrapper();
         this.contentTypes = new ContentTypes();
+        this.packageParts = new PackageParts(this.contentTypes);
         this.documentWrapper = new DocumentWrapper({ background: options.background });
         this.settings = new Settings({
             compatibilityModeVersion: options.compatabilityModeVersion,
@@ -510,5 +513,10 @@ export class File {
     /** The document's theme (word/theme/theme1.xml). */
     public get Theme(): Theme {
         return this.theme;
+    }
+
+    /** The parts that drawings, such as charts, add to the package when it is written. */
+    public get PackageParts(): PackageParts {
+        return this.packageParts;
     }
 }

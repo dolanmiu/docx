@@ -20,9 +20,11 @@ import { GraphicFrameLocks } from "./graphic-frame-locks/graphic-frame-locks";
  *   </xsd:sequence>
  * </xsd:complexType>
  * ```
+ *
+ * @param lockAspectRatio - Whether Word keeps the drawing's aspect ratio when it is resized
  */
-export const createGraphicFrameProperties = (): XmlComponent =>
+export const createGraphicFrameProperties = (lockAspectRatio = true): XmlComponent =>
     new BuilderElement({
         name: "wp:cNvGraphicFramePr",
-        children: [new GraphicFrameLocks()],
+        children: lockAspectRatio ? [new GraphicFrameLocks()] : [],
     });

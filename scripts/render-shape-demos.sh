@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# Runs the shape demos, checks where their drawings' Word 2010 extensions are and that their drawing ids are unique,
-# and draws each page as a PNG with LibreOffice. The Demos workflow checks them with the Open XML SDK validator.
+# Runs the shape and chart demos, checks where their drawings' Word 2010 extensions are and that their drawing ids are
+# unique, and draws each page as a PNG with LibreOffice. The Demos workflow checks them with the Open XML SDK validator.
 #
 # Usage: scripts/render-shape-demos.sh [output directory] [demo ...]
 #
 # The output directory (default build/shape-demos) gets each demo's .docx, .pdf and one PNG per page.
-# Without demo names, all the shape demos are run. Needs the package built (npm run build) and perl.
+# Without demo names, all the shape and chart demos are run. Needs the package built (npm run build) and perl.
 #
 # The pages are drawn with LibreOffice (set SOFFICE if soffice isn't on the PATH) and pdftoppm from Poppler.
 # When SHAPE_RENDER_IMAGE names a Docker image built from scripts/shape-demos/Dockerfile, they are drawn in
@@ -21,7 +21,7 @@ OUT="${1:-build/shape-demos}"
 shift || true
 DEMOS=("$@")
 if [ ${#DEMOS[@]} -eq 0 ]; then
-    DEMOS=(107-inline-shapes 108-shapes 109-shape-groups 110-shape-connectors 111-shape-styles 112-shape-diagrams 113-shape-layout 115-shape-document-styles 116-shape-swimlanes 117-shape-page-layout 118-theme 120-custom-shapes)
+    DEMOS=(107-inline-shapes 108-shapes 109-shape-groups 110-shape-connectors 111-shape-styles 112-shape-diagrams 113-shape-layout 115-shape-document-styles 116-shape-swimlanes 117-shape-page-layout 118-theme 120-custom-shapes 121-charts)
 fi
 SOFFICE="${SOFFICE:-soffice}"
 
