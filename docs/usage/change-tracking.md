@@ -457,7 +457,7 @@ The `insertion` and `deletion` options accept the same properties as text track 
 | author   | `string` | Required | Author of the change             |
 | date     | `string` | Required | ISO 8601 timestamp of the change |
 
-?> An `ImageRun` can have either `insertion` or `deletion`, but not both. If neither is provided, the image renders normally without track change markup.
+?> An `ImageRun` with both `insertion` and `deletion` was inserted and then deleted, such as by another author: its run is in a `<w:del>` inside the `<w:ins>`. If neither is provided, the image renders normally without track change markup.
 
 ## Demo
 

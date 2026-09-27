@@ -8,7 +8,7 @@
  *
  * @module
  */
-import { Drawing, Run, createTransformation } from "docx";
+import { Drawing, type IRunPropertiesOptions, Run, createTransformation } from "docx";
 
 import { SHAPE_URI } from "./drawing/shape-drawing-child";
 import { createStyledDrawing } from "./drawing/styled-drawing";
@@ -101,6 +101,8 @@ export type IShapeOptions = WithPresetShape<
          * `children`, and the text that doesn't fit flows on into the next shape of the flow, and so on
          */
         readonly textFlow?: string;
+        /** Formatting of the run the shape is in, such as `position` to raise or lower it from the text's baseline */
+        readonly run?: IRunPropertiesOptions;
     }
 >;
 
@@ -135,7 +137,8 @@ export type IShapeOptions = WithPresetShape<
  */
 export class ShapeRun extends Run {
     public constructor(options: IShapeOptions) {
-        super({});
+        // Only the run's formatting: a run's content, such as a TextRun's text, would be written next to the drawing
+        super({ ...options.run, break: undefined, text: undefined, children: undefined });
 
         const floating = options.floating && toImageFloating(options.floating);
         const drawingOptions = createDrawingProperties({ ...options, floating });

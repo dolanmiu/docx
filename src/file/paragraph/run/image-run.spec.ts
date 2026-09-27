@@ -7,6 +7,7 @@ import type { IContext, IXmlableObject } from "@file/xml-components";
 import * as convenienceFunctions from "@util/convenience-functions";
 
 import { ImageRun } from "./image-run";
+import type { IRunOptions } from "./run";
 import { ConcreteHyperlink } from "../links";
 
 describe("ImageRun", () => {
@@ -1419,6 +1420,196 @@ describe("ImageRun", () => {
                     "w:r": baseTree["w:r"],
                 },
             ],
+        });
+    });
+
+    it("should put the run in w:del inside w:ins when the image was inserted and then deleted", () => {
+        const base = new ImageRun({
+            type: "png",
+            data: Buffer.from(""),
+            transformation: { width: 100, height: 100 },
+        });
+        const withBoth = new ImageRun({
+            type: "png",
+            data: Buffer.from(""),
+            transformation: { width: 100, height: 100 },
+            insertion: { id: 7, author: "Firstname Lastname", date: "2026-01-01T12:00:00Z" },
+            deletion: { id: 8, author: "Another Author", date: "2026-01-02T12:00:00Z" },
+        });
+
+        const context = {
+            file: {
+                Media: {
+                    addImage: vi.fn(),
+                },
+            } as unknown as File,
+            viewWrapper: {} as unknown as IViewWrapper,
+            stack: [],
+        };
+
+        const baseTree = new Formatter().format(base, context);
+        const tree = new Formatter().format(withBoth, context);
+
+        expect(tree).to.deep.equal({
+            "w:ins": [
+                {
+                    _attr: {
+                        "w:author": "Firstname Lastname",
+                        "w:date": "2026-01-01T12:00:00Z",
+                        "w:id": 7,
+                    },
+                },
+                {
+                    "w:del": [
+                        {
+                            _attr: {
+                                "w:author": "Another Author",
+                                "w:date": "2026-01-02T12:00:00Z",
+                                "w:id": 8,
+                            },
+                        },
+                        {
+                            "w:r": baseTree["w:r"],
+                        },
+                    ],
+                },
+            ],
+        });
+    });
+
+    describe("run formatting", () => {
+        const format = (imageRun: ImageRun, addImage = vi.fn()): IXmlableObject =>
+            new Formatter().format(imageRun, {
+                file: { Media: { addImage } } as unknown as File,
+                viewWrapper: {} as unknown as IViewWrapper,
+                stack: [],
+            });
+        // The w:r of an image, inside the w:ins and w:del of one that is a tracked revision
+        const runOf = (tree: IXmlableObject): readonly IXmlableObject[] =>
+            "w:r" in tree ? tree["w:r"] : runOf((tree["w:ins"] ?? tree["w:del"])[1]);
+        const image = { type: "png", data: Buffer.from(""), transformation: { width: 100, height: 100 } } as const;
+        const revision = { id: 1, author: "Firstname Lastname", date: "2026-01-01T12:00:00Z" };
+        const tracking = [
+            ["an untracked image", {}],
+            ["an inserted image", { insertion: revision }],
+            ["a deleted image", { deletion: revision }],
+            ["an image inserted and then deleted", { insertion: revision, deletion: { ...revision, id: 2 } }],
+        ] as const;
+
+        it.each(tracking)("should write the formatting of %s before its drawing", (_, revisions) => {
+            const run = runOf(format(new ImageRun({ ...image, ...revisions, run: { noProof: true, position: "2pt" } })));
+
+            expect(run).toEqual([
+                { "w:rPr": [{ "w:noProof": {} }, { "w:position": { _attr: { "w:val": "2pt" } } }] },
+                { "w:drawing": expect.any(Array) },
+            ]);
+        });
+
+        it.each(tracking)("should ignore the breaks and text of a TextRun's options given as the formatting of %s", (_, revisions) => {
+            // Options shared with a TextRun, which can have breaks and text as well as formatting
+            const textRunOptions: IRunOptions = { bold: true, break: 1, text: "Caption" };
+            const run = runOf(format(new ImageRun({ ...image, ...revisions, run: textRunOptions })));
+
+            expect(run.map((child) => Object.keys(child)[0])).to.deep.equal(["w:rPr", "w:drawing"]);
+        });
+
+        it("should format the run of a floating image", () => {
+            const run = runOf(
+                format(
+                    new ImageRun({
+                        ...image,
+                        floating: { horizontalPosition: { offset: 0 }, verticalPosition: { offset: 0 } },
+                        run: { position: "-2pt" },
+                    }),
+                ),
+            );
+
+            expect(run).toEqual([
+                { "w:rPr": [{ "w:position": { _attr: { "w:val": "-2pt" } } }] },
+                { "w:drawing": [{ "wp:anchor": expect.any(Array) }] },
+            ]);
+        });
+
+        it("should format the run of an SVG image, and still add its fallback", () => {
+            const addImage = vi.fn();
+            const run = runOf(
+                format(
+                    new ImageRun({
+                        type: "svg",
+                        data: Buffer.from("<svg></svg>"),
+                        fallback: { type: "png", data: Buffer.from("") },
+                        transformation: { width: 100, height: 100 },
+                        run: { style: "ImageCharacter" },
+                    }),
+                    addImage,
+                ),
+            );
+
+            expect(run[0]).to.deep.equal({ "w:rPr": [{ "w:rStyle": { _attr: { "w:val": "ImageCharacter" } } }] });
+            expect(addImage.mock.calls.map(([fileName]) => fileName.split(".")[1])).to.deep.equal(["svg", "png"]);
+        });
+
+        it("should write a tracked change to the formatting of an inserted image, inside its w:ins", () => {
+            const run = runOf(
+                format(
+                    new ImageRun({
+                        ...image,
+                        insertion: revision,
+                        run: { position: "2pt", revision: { ...revision, id: 2, position: "0pt" } },
+                    }),
+                ),
+            );
+
+            expect(run[0]["w:rPr"].map((child: IXmlableObject) => Object.keys(child)[0])).to.deep.equal(["w:position", "w:rPrChange"]);
+        });
+    });
+
+    describe("solid fill", () => {
+        // The picture's shape properties, which hold its fill and outline
+        const shapePropertiesOf = (imageRun: ImageRun, placement: "wp:inline" | "wp:anchor"): readonly IXmlableObject[] => {
+            const tree = new Formatter().format(imageRun, {
+                file: { Media: { addImage: vi.fn() } } as unknown as File,
+                viewWrapper: {} as unknown as IViewWrapper,
+                stack: [],
+            });
+            const drawing = tree["w:r"][0]["w:drawing"][0][placement];
+            const graphicData = drawing.find((child: IXmlableObject) => "a:graphic" in child)["a:graphic"][1]["a:graphicData"];
+            const pic = graphicData.find((child: IXmlableObject) => "pic:pic" in child)["pic:pic"];
+            return pic.find((child: IXmlableObject) => "pic:spPr" in child)["pic:spPr"];
+        };
+        const image = { type: "png", data: Buffer.from(""), transformation: { width: 100, height: 100 } } as const;
+
+        it("should fill behind the picture, before its outline", () => {
+            const shapeProperties = shapePropertiesOf(
+                new ImageRun({
+                    ...image,
+                    solidFill: { type: "rgb", value: "FF0000" },
+                    outline: { type: "solidFill", solidFillType: "rgb", value: "000000" },
+                }),
+                "wp:inline",
+            );
+
+            expect(shapeProperties.map((child) => Object.keys(child)[0])).to.deep.equal([
+                "_attr",
+                "a:xfrm",
+                "a:prstGeom",
+                "a:solidFill",
+                "a:ln",
+            ]);
+            expect(shapeProperties[3]).to.deep.equal({ "a:solidFill": [{ "a:srgbClr": { _attr: { val: "FF0000" } } }] });
+        });
+
+        it("should fill behind a floating picture", () => {
+            const shapeProperties = shapePropertiesOf(
+                new ImageRun({
+                    ...image,
+                    solidFill: { type: "rgb", value: "FF0000" },
+                    floating: { horizontalPosition: { offset: 0 }, verticalPosition: { offset: 0 } },
+                }),
+                "wp:anchor",
+            );
+
+            expect(shapeProperties.map((child) => Object.keys(child)[0])).to.include("a:solidFill");
         });
     });
 });

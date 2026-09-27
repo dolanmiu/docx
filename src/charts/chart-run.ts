@@ -121,7 +121,8 @@ export class ChartRun extends Run {
      * its low, a hidden legend entry isn't one of the legend's, or an option is out of its range
      */
     public constructor(options: ChartRunOptions) {
-        super({});
+        // Only the run's formatting: a run's content, such as a TextRun's text, would be written next to the drawing
+        super({ ...options.run, break: undefined, text: undefined, children: undefined });
 
         const data = createChartData(options);
         const workbook = createWorkbookPart(data.sheet);

@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Formatter } from "@export/formatter";
 import { File } from "@file/file";
 import * as convenienceFunctions from "@util/convenience-functions";
-import { HorizontalPositionRelativeFrom, type IContext, type IXmlableObject, VerticalPositionRelativeFrom } from "docx";
+import { HorizontalPositionRelativeFrom, type IContext, type IRunOptions, type IXmlableObject, VerticalPositionRelativeFrom } from "docx";
 
 import { ShapeCanvasRun } from "./shape-canvas-run";
 
@@ -260,5 +260,16 @@ describe("ShapeCanvasRun", () => {
             "wp:docPr": { _attr: { id: "2", name: "", descr: "", title: "" } },
         });
         expect(tree["w:r"]).to.have.length(1);
+    });
+
+    it("should format the run the canvas is in, without the breaks and text of a TextRun's options", () => {
+        // Options shared with a TextRun, which can have breaks and text as well as formatting
+        const textRunOptions: IRunOptions = { position: "-4pt", break: 1, text: "Caption" };
+        const tree = new Formatter().format(
+            new ShapeCanvasRun({ children: [{ type: "ellipse", transformation: { width: 20, height: 20 } }], run: textRunOptions }),
+        );
+
+        expect(tree["w:r"].map((child: IXmlableObject) => Object.keys(child)[0])).to.deep.equal(["w:rPr", "mc:AlternateContent"]);
+        expect(tree["w:r"][0]).to.deep.equal({ "w:rPr": [{ "w:position": { _attr: { "w:val": "-4pt" } } }] });
     });
 });

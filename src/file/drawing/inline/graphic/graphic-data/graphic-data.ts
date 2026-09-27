@@ -83,7 +83,12 @@ export class GraphicData extends XmlComponent {
                         solidFill: child.solidFill,
                     });
                 } else {
-                    return new Pic({ mediaData: child, transform: child.transformation, outline: child.outline });
+                    return new Pic({
+                        mediaData: child,
+                        transform: child.transformation,
+                        outline: child.outline,
+                        solidFill: child.solidFill,
+                    });
                 }
             });
             // const wps = new WpsShape({ ...mediaData.data, transformation: transform, outline, solidFill });
@@ -96,7 +101,7 @@ export class GraphicData extends XmlComponent {
                 }),
             );
             const md = mediaData as IMediaData;
-            const pic = new Pic({ mediaData: md, transform, outline, crop });
+            const pic = new Pic({ mediaData: md, transform, outline, solidFill, crop });
             this.root.push(pic);
         }
 

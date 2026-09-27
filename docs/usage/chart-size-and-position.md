@@ -155,9 +155,10 @@ altText: {
 
 ## Options
 
-| Property         | Type                   | Notes    | Description                                                                             |
-| ---------------- | ---------------------- | -------- | --------------------------------------------------------------------------------------- |
-| `transformation` | `{ width, height }`    | Optional | Size in pixels. Default is 576 by 336                                                   |
-| `floating`       | `IFloating`            | Optional | Floats the chart. See [floating images](usage/images.md#floating)                       |
-| `altText`        | `DocPropertiesOptions` | Optional | `{ name, description?, title? }` for screen readers. Default is described from the data |
-| `decorative`     | `boolean`              | Optional | Marks the chart as decorative, so screen readers skip it. Default `false`               |
+| Property         | Type                    | Notes    | Description                                                                                                                          |
+| ---------------- | ----------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `transformation` | `{ width, height }`     | Optional | Size in pixels. Default is 576 by 336                                                                                                |
+| `floating`       | `IFloating`             | Optional | Floats the chart. See [floating images](usage/images.md#floating)                                                                    |
+| `altText`        | `DocPropertiesOptions`  | Optional | `{ name, description?, title? }` for screen readers. Default is described from the data                                              |
+| `decorative`     | `boolean`               | Optional | Marks the chart as decorative, so screen readers skip it. Default `false`                                                            |
+| `run`            | `IRunPropertiesOptions` | Optional | Formatting of the run the chart is in, such as `position` to raise or lower it. See [run formatting](usage/images.md#run-formatting) |
