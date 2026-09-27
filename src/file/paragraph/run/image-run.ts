@@ -10,11 +10,10 @@
 import type { DocPropertiesOptions } from "@file/drawing/doc-properties/doc-properties";
 import type { DrawingLinkOptions } from "@file/drawing/doc-properties/non-visual-drawing-properties";
 import { ChangeAttributes, type IChangedAttributesProperties } from "@file/track-revision/track-revision";
-import { type IContext, type IXmlableObject, XmlComponent } from "@file/xml-components";
+import { BuilderElement, type IContext, type IXmlableObject, XmlComponent } from "@file/xml-components";
 import { hashedId } from "@util/convenience-functions";
 
 import { type IRunPropertiesOptions, RunProperties } from "./properties";
-import { Run } from "./run";
 import { Drawing, type IFloating } from "../../drawing";
 import type { ICropOptions } from "../../drawing/inline/graphic/graphic-data/pic/blip/source-rectangle";
 import type { OutlineOptions } from "../../drawing/inline/graphic/graphic-data/pic/shape-properties/outline/outline";
@@ -42,11 +41,14 @@ type CoreImageOptions = DrawingLinkOptions & {
     readonly solidFill?: SolidFillOptions;
     /** Crops the image by trimming a percentage (0-100) off each edge before it is stretched to fill the frame. */
     readonly crop?: ICropOptions;
-    /** Formatting for the run containing the image, including vertical positioning with `position`. */
-    readonly runProperties?: IRunPropertiesOptions;
+    /** Formatting of the run the image is in, such as `position` to raise or lower it from the text's baseline. */
+    readonly run?: IRunPropertiesOptions;
     /** Marks the image as an inserted revision for change tracking. Requires an id, author name, and date. */
     readonly insertion?: IChangedAttributesProperties;
-    /** Marks the image as a deleted revision for change tracking. Requires an id, author name, and date. */
+    /**
+     * Marks the image as a deleted revision for change tracking. Requires an id, author name, and date. With
+     * `insertion`, the image was inserted and then deleted, such as by another author.
+     */
     readonly deletion?: IChangedAttributesProperties;
 };
 
@@ -108,12 +110,23 @@ const createImageData = (options: IImageOptions, key: string): Pick<IMediaData, 
     },
 });
 
+const createDeletion = ({ id, author, date }: IChangedAttributesProperties, run: XmlComponent): XmlComponent =>
+    new BuilderElement<IChangedAttributesProperties>({
+        name: "w:del",
+        attributes: {
+            id: { key: "w:id", value: id },
+            author: { key: "w:author", value: author },
+            date: { key: "w:date", value: date },
+        },
+        children: [run],
+    });
+
 /**
  * Represents an image in a WordprocessingML document.
  *
  * ImageRun embeds an image within a run, supporting various formats
  * including JPG, PNG, GIF, BMP, and SVG. Optionally wraps the run in
- * `<w:ins>` or `<w:del>` for track-change insertion/deletion markup.
+ * `<w:ins>` or `<w:del>`, or both, for track-change insertion/deletion markup.
  *
  * Reference: http://officeopenxml.com/drwPicInline.php
  *
@@ -163,38 +176,30 @@ export class ImageRun extends XmlComponent {
             floating: options.floating,
             docProperties: options.altText,
             outline: options.outline,
+            solidFill: options.solidFill,
             crop: options.crop,
             link: options.link,
             decorative: options.decorative,
         });
+        const properties = new RunProperties(options.run);
 
-        const run = new Run({ ...options.runProperties, children: [drawing] });
-
-        // Track-change wrappers: w:ins / w:del enclose the run so Word
-        // displays the image as an inserted or deleted revision.
-        if (options.insertion) {
-            super("w:ins");
+        // Track-change wrappers: w:ins / w:del enclose the run so Word displays the image as an inserted or deleted
+        // revision. An image inserted and then deleted is in both: w:ins > w:del > w:r
+        const revision = options.insertion ?? options.deletion;
+        if (revision) {
+            super(options.insertion ? "w:ins" : "w:del");
             this.root.push(
                 new ChangeAttributes({
-                    id: options.insertion.id,
-                    author: options.insertion.author,
-                    date: options.insertion.date,
+                    id: revision.id,
+                    author: revision.author,
+                    date: revision.date,
                 }),
             );
-            this.addChildElement(run);
-        } else if (options.deletion) {
-            super("w:del");
-            this.root.push(
-                new ChangeAttributes({
-                    id: options.deletion.id,
-                    author: options.deletion.author,
-                    date: options.deletion.date,
-                }),
-            );
-            this.addChildElement(run);
+            const run = new BuilderElement({ name: "w:r", children: [properties, drawing] });
+            this.addChildElement(options.insertion && options.deletion ? createDeletion(options.deletion, run) : run);
         } else {
             super("w:r");
-            this.root.push(new RunProperties(options.runProperties));
+            this.root.push(properties);
             this.root.push(drawing);
         }
 

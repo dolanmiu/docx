@@ -3,7 +3,7 @@
  *
  * @module
  */
-import type { DocPropertiesOptions, IFloating, ThemeColor } from "docx";
+import type { DocPropertiesOptions, IFloating, IRunPropertiesOptions, ThemeColor } from "docx";
 
 /**
  * A font for a chart's text. Anything left out is as Word writes a new chart's text: the theme's body font, not bold,
@@ -458,6 +458,8 @@ export type ChartBaseOptions = {
     readonly altText?: DocPropertiesOptions;
     /** Marks the chart as decorative, so screen readers skip it. Default is `false` */
     readonly decorative?: boolean;
+    /** Formatting of the run the chart is in, such as `position` to raise or lower it from the text's baseline */
+    readonly run?: IRunPropertiesOptions;
 };
 
 /**

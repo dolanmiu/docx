@@ -121,21 +121,6 @@ Three types of image positioning is supported:
 
 By default, images are exported as `Inline` elements.
 
-### Run properties
-
-Use `runProperties` to format the run containing an image. For example, `position` raises or lowers an inline image relative to its text baseline using `w:position`:
-
-```ts
-const image = new ImageRun({
-    type: "png",
-    data: fs.readFileSync("./demo/images/pizza.png"),
-    transformation: { width: 100, height: 100 },
-    runProperties: { position: "2pt" },
-});
-```
-
-The value can be a signed length such as `"2pt"` or `"-2pt"`. To place an image at page coordinates or control text wrapping, use [`floating`](#floating) instead.
-
 ### Usage
 
 Pass `options` into the `[POSITION_OPTIONS]` mentioned in the [Intro above](#Intro).
@@ -305,6 +290,21 @@ const image = new ImageRun({
 });
 ```
 
+## Run Formatting
+
+Use `run` to format the run the image is in, with the same options as a `TextRun`'s formatting. `position` raises or lowers an inline image from the text's baseline, by a signed length such as `"2pt"` or `"-2pt"`:
+
+```ts
+const image = new ImageRun({
+    type: "gif",
+    data: fs.readFileSync("./demo/images/pizza.gif"),
+    transformation: { width: 100, height: 100 },
+    run: { position: "-2pt" },
+});
+```
+
+To place an image at page coordinates or control text wrapping, use [`floating`](#floating) instead.
+
 ## Alternative Text
 
 Specifies common non-visual DrawingML properties. A name, title and description for a picture can be specified.
@@ -371,8 +371,8 @@ Crop an image by trimming a percentage off each edge before it's stretched to fi
 
 ```ts
 const image = new ImageRun({
-    type: "png",
-    data: fs.readFileSync("./demo/images/pizza.png"),
+    type: "gif",
+    data: fs.readFileSync("./demo/images/pizza.gif"),
     transformation: {
         width: 200,
         height: 200,
@@ -397,7 +397,7 @@ const image = new ImageRun({
 
 ## Track Changes
 
-Images can be marked as inserted or deleted revisions for change tracking. Pass an `insertion` or `deletion` property to `ImageRun`:
+Images can be marked as inserted or deleted revisions for change tracking. Pass an `insertion` or `deletion` property to `ImageRun`, or both for an image that was inserted and then deleted, such as by another author:
 
 ```ts
 new ImageRun({

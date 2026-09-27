@@ -11,6 +11,7 @@ import {
     Drawing,
     type DrawingLinkOptions,
     type IFloating,
+    type IRunPropertiesOptions,
     Run,
     type XmlComponent,
     docPropertiesUniqueNumericId,
@@ -78,6 +79,8 @@ export type IShapeCanvasOptions = DrawingLinkOptions & {
     readonly fallback?: boolean;
     /** Name, description and title used by screen readers */
     readonly altText?: DocPropertiesOptions;
+    /** Formatting of the run the canvas is in, such as `position` to raise or lower it from the text's baseline */
+    readonly run?: IRunPropertiesOptions;
 };
 
 const EMUS_PER_PIXEL = 9525;
@@ -109,7 +112,8 @@ const EMUS_PER_PIXEL = 9525;
  */
 export class ShapeCanvasRun extends Run {
     public constructor(options: IShapeCanvasOptions) {
-        super({});
+        // Only the run's formatting: a run's content, such as a TextRun's text, would be written next to the drawing
+        super({ ...options.run, break: undefined, text: undefined, children: undefined });
 
         // Drawing ids, in the order they are written: the canvas's shapes, the canvas, then the fallback's shapes, its
         // background and the group

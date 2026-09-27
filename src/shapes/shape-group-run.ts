@@ -15,6 +15,7 @@ import {
     type IFloating,
     type IMediaDataTransformation,
     type IMediaTransformation,
+    type IRunPropertiesOptions,
     Run,
     createTransformation,
 } from "docx";
@@ -60,6 +61,8 @@ export type IShapeGroupOptions = DrawingLinkOptions & {
     readonly floating?: IFloating;
     /** Name, description and title used by screen readers */
     readonly altText?: DocPropertiesOptions;
+    /** Formatting of the run the group is in, such as `position` to raise or lower it from the text's baseline */
+    readonly run?: IRunPropertiesOptions;
 };
 
 const EMUS_PER_PIXEL = 9525;
@@ -91,7 +94,8 @@ const EMUS_PER_PIXEL = 9525;
  */
 export class ShapeGroupRun extends Run {
     public constructor(options: IShapeGroupOptions) {
-        super({});
+        // Only the run's formatting: a run's content, such as a TextRun's text, would be written next to the drawing
+        super({ ...options.run, break: undefined, text: undefined, children: undefined });
 
         // The children's drawing ids come before the group's
         const nodes = createShapeDrawingNodes(options.children, options.layout);

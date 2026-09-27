@@ -17,6 +17,7 @@ import type { ICropOptions } from "./blip/source-rectangle";
 import { NonVisualPicProperties } from "./non-visual-pic-properties/non-visual-pic-properties";
 import { PicAttributes } from "./pic-attributes";
 import type { OutlineOptions } from "./shape-properties/outline/outline";
+import type { SolidFillOptions } from "./shape-properties/outline/solid-fill";
 import { ShapeProperties } from "./shape-properties/shape-properties";
 
 /**
@@ -52,11 +53,14 @@ export class Pic extends XmlComponent {
         mediaData,
         transform,
         outline,
+        solidFill,
         crop,
     }: {
         readonly mediaData: IMediaData;
         readonly transform: IMediaDataTransformation;
         readonly outline?: OutlineOptions;
+        /** A fill behind the picture, which shows through its transparent parts */
+        readonly solidFill?: SolidFillOptions;
         readonly crop?: ICropOptions;
     }) {
         super("pic:pic");
@@ -69,6 +73,6 @@ export class Pic extends XmlComponent {
 
         this.root.push(new NonVisualPicProperties());
         this.root.push(new BlipFill(mediaData, crop));
-        this.root.push(new ShapeProperties({ element: "pic", transform, outline }));
+        this.root.push(new ShapeProperties({ element: "pic", transform, outline, solidFill }));
     }
 }

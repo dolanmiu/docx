@@ -688,7 +688,7 @@ Groups, canvases and the shapes, pictures and groups inside them take `link` and
 
 ## Inline and Floating
 
-A shape sits in the line of text by default. It is aligned to the text baseline and its height adds to the height of the line.
+A shape sits in the line of text by default. It is aligned to the text baseline and its height adds to the height of the line. To raise or lower it from the baseline, give the run it is in a `position`, as for [images](usage/images.md#run-formatting): `run: { position: "-4pt" }`.
 
 Add `floating` to position it on the page instead. The options are the same as for [floating images](usage/images.md#floating), including `horizontalPosition`, `verticalPosition`, `wrap`, `margins`, `behindDocument` and `zIndex`. Offsets are in [EMUs](https://startbigthinksmall.wordpress.com/2010/01/04/points-inches-and-emus-measuring-units-in-office-open-xml/) (914400 per inch).
 
@@ -1011,6 +1011,7 @@ Each lane is as wide as its shapes and its name need. The shapes in each lane ar
 | `altText`          | `DocPropertiesOptions`          | Optional | `name`, `description` and `title` for screen readers                                              |
 | `link`             | `string`                        | Optional | A web address the shape opens when it is clicked                                                  |
 | `decorative`       | `boolean`                       | Optional | Marks the shape as decorative, so screen readers skip it                                          |
+| `run`              | `IRunPropertiesOptions`         | Optional | Formatting of the run the shape is in, such as `position` to raise or lower it                    |
 
 ### ShapeGroupRun
 
@@ -1021,6 +1022,7 @@ Each lane is as wide as its shapes and its name need. The shapes in each lane ar
 | `layout`         | `ShapeLayout`               | Optional | Places the children without an `offset`. See [Laying Out Diagrams](#laying-out-diagrams)                                |
 | `floating`       | `IFloating`                 | Optional | Positions the group on the page                                                                                         |
 | `altText`        | `DocPropertiesOptions`      | Optional | `name`, `description` and `title` for screen readers                                                                    |
+| `run`            | `IRunPropertiesOptions`     | Optional | Formatting of the run the group is in, such as `position` to raise or lower it                                          |
 
 ### ShapeCanvasRun
 
@@ -1034,6 +1036,7 @@ Each lane is as wide as its shapes and its name need. The shapes in each lane ar
 | `floating`       | `IFloating`                         | Optional | Positions the canvas on the page                                                                                                               |
 | `altText`        | `DocPropertiesOptions`              | Optional | `name`, `description` and `title` for screen readers                                                                                           |
 | `fallback`       | `boolean`                           | Optional | Whether to write the diagram as a group too, for applications that can't draw canvases. Default is `true`. See [Compatibility](#compatibility) |
+| `run`            | `IRunPropertiesOptions`             | Optional | Formatting of the run the canvas is in, such as `position` to raise or lower it                                                                |
 
 ### Connector
 
