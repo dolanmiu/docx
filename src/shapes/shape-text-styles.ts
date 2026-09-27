@@ -37,7 +37,7 @@ type ThemeFonts = {
 const OFFICE_THEME_FONTS: ThemeFonts = { headings: "Calibri Light", body: "Calibri" };
 
 type StyleDefinition = {
-    readonly type?: string;
+    readonly type: string;
     readonly basedOn?: string;
     readonly run: RunFormat;
     readonly paragraph: ParagraphFormat;
@@ -235,7 +235,8 @@ export const readTextStyles = (xml: XmlObject, themeFonts: ThemeFonts = OFFICE_T
                 id: stringOf(attributes["w:styleId"]),
                 isDefault: attributes["w:default"] !== undefined && !isOff(attributes["w:default"]),
                 definition: {
-                    type: stringOf(attributes["w:type"]),
+                    // A style without a type is a paragraph style, as Styles takes it
+                    type: stringOf(attributes["w:type"]) ?? "paragraph",
                     basedOn: valueOf(children, "w:basedOn"),
                     run: readRunFormat(find(children, "w:rPr"), themeFonts),
                     paragraph: readParagraphFormat(find(children, "w:pPr")),
