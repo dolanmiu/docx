@@ -39,8 +39,9 @@ export class MathAngledBrackets extends XmlComponent {
         this.root.push(
             createMathBracketProperties({
                 characters: {
-                    beginningCharacter: "〈",
-                    endingCharacter: "〉",
+                    // UnicodeMath's \langle and \rangle (U+27E8, U+27E9). LibreOffice doesn't draw U+2329 and U+232A
+                    beginningCharacter: "⟨",
+                    endingCharacter: "⟩",
                 },
             }),
         );

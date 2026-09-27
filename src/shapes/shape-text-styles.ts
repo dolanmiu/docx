@@ -37,7 +37,7 @@ type ThemeFonts = {
 const OFFICE_THEME_FONTS: ThemeFonts = { headings: "Calibri Light", body: "Calibri" };
 
 type StyleDefinition = {
-    readonly type?: string;
+    readonly type: string;
     readonly basedOn?: string;
     readonly run: RunFormat;
     readonly paragraph: ParagraphFormat;
@@ -61,9 +61,16 @@ export type TextStyles = {
 };
 
 /**
- * No styles: text is measured in Word's own defaults, 10pt Times New Roman with single spacing, and Office's theme.
+ * Word's own defaults: 10pt Times New Roman with single spacing, Office's theme, and a Normal paragraph style with no
+ * formatting as the default, as `docx` writes it.
  */
-export const WORD_DEFAULT_STYLES: TextStyles = { run: {}, paragraph: {}, styles: new Map(), themeFonts: OFFICE_THEME_FONTS };
+export const WORD_DEFAULT_STYLES: TextStyles = {
+    run: {},
+    paragraph: {},
+    styles: new Map([["Normal", { type: "paragraph", run: {}, paragraph: {} }]]),
+    defaultParagraphStyle: "Normal",
+    themeFonts: OFFICE_THEME_FONTS,
+};
 
 // Small capitals are drawn as capitals at 80% of the size of the text, as LibreOffice draws them
 const SMALL_CAPS_SCALE = 0.8;
@@ -228,7 +235,8 @@ export const readTextStyles = (xml: XmlObject, themeFonts: ThemeFonts = OFFICE_T
                 id: stringOf(attributes["w:styleId"]),
                 isDefault: attributes["w:default"] !== undefined && !isOff(attributes["w:default"]),
                 definition: {
-                    type: stringOf(attributes["w:type"]),
+                    // A style without a type is a paragraph style, as Styles takes it
+                    type: stringOf(attributes["w:type"]) ?? "paragraph",
                     basedOn: valueOf(children, "w:basedOn"),
                     run: readRunFormat(find(children, "w:rPr"), themeFonts),
                     paragraph: readParagraphFormat(find(children, "w:pPr")),
@@ -244,8 +252,8 @@ export const readTextStyles = (xml: XmlObject, themeFonts: ThemeFonts = OFFICE_T
         run: combine(defaults.map((children) => readRunFormat(find(childrenOf(find(children, "w:rPrDefault")), "w:rPr"), themeFonts))),
         paragraph: combine(defaults.map((children) => readParagraphFormat(find(childrenOf(find(children, "w:pPrDefault")), "w:pPr")))),
         styles: byId,
-        // Word uses "Normal" for paragraphs when no paragraph style is marked as the default
-        defaultParagraphStyle: defaultStyle("paragraph") ?? (byId.get("Normal")?.type === "paragraph" ? "Normal" : undefined),
+        // Styles marks Normal as the default when no paragraph style is, as Word takes it
+        defaultParagraphStyle: defaultStyle("paragraph"),
         defaultCharacterStyle: defaultStyle("character"),
         themeFonts,
     };

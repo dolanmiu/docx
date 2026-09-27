@@ -20,14 +20,14 @@ describe("MathAngledBrackets", () => {
                             {
                                 "m:begChr": {
                                     _attr: {
-                                        "m:val": "〈",
+                                        "m:val": "⟨",
                                     },
                                 },
                             },
                             {
                                 "m:endChr": {
                                     _attr: {
-                                        "m:val": "〉",
+                                        "m:val": "⟩",
                                     },
                                 },
                             },

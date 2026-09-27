@@ -42,10 +42,11 @@ describe("getTextStyles", () => {
         expect(getTextStyles(context)).to.equal(getTextStyles(context));
     });
 
-    it("should use the style marked as the default, or Normal", () => {
-        expect(stylesOf({}).defaultParagraphStyle).to.equal(undefined);
+    it("should use the style marked as the default, which is Normal unless another is", () => {
+        // docx writes Normal as the default paragraph style, and one in paragraphStyles takes its place
+        expect(stylesOf({}).defaultParagraphStyle).to.equal("Normal");
         expect(stylesOf({ paragraphStyles: [{ id: "Normal", name: "Normal" }] }).defaultParagraphStyle).to.equal("Normal");
-        // A character style called Normal isn't the default for paragraphs
+        // A character style called Normal isn't the default for paragraphs, and replaces docx's Normal, as ids are unique
         expect(stylesOf({ characterStyles: [{ id: "Normal", name: "Normal" }] }).defaultParagraphStyle).to.equal(undefined);
 
         const imported = getTextStyles(
@@ -65,6 +66,27 @@ describe("getTextStyles", () => {
         );
         expect(imported.defaultParagraphStyle).to.equal("Body");
         expect(imported.defaultCharacterStyle).to.equal("DefaultParagraphFont");
+    });
+
+    it("should take a style without a type as a paragraph style, as the schema does and as Styles writes it", () => {
+        const styles = getTextStyles(
+            contextOf(
+                new File({
+                    externalStyles: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+    <w:style w:default="1" w:styleId="Body"><w:name w:val="Body"/><w:rPr><w:sz w:val="28"/></w:rPr></w:style>
+    <w:style w:styleId="Quote"><w:name w:val="Quote"/><w:basedOn w:val="Body"/><w:rPr><w:b/></w:rPr></w:style>
+</w:styles>`,
+                    sections: [],
+                }),
+            ),
+        );
+        expect(styles.defaultParagraphStyle).to.equal("Body");
+        expect(readOne(new Paragraph({ children: [new TextRun("Body")] }), styles).spans).to.deep.equal([{ text: "Body", size: 14 }]);
+        // Quote is based on Body, and neither has a type
+        expect(readOne(new Paragraph({ style: "Quote", children: [new TextRun("Quote")] }), styles).spans).to.deep.equal([
+            { text: "Quote", size: 14, bold: true },
+        ]);
     });
 
     it("should read styles imported from another document, whose values are text", () => {
