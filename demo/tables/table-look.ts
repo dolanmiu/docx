@@ -108,5 +108,4 @@ const doc = new Document({
 
 Packer.toBuffer(doc).then((buffer) => {
     fs.writeFileSync("My Document.docx", buffer);
-    console.log("Document created successfully at 97-table-look.docx");
 });

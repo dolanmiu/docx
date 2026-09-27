@@ -39,9 +39,11 @@ const term = process.argv
     .replace(/^(\.\/)?demo\//, "")
     .replace(/\.ts$/, "");
 const topics = new Set(demos.map((demo) => path.dirname(demo)));
-// A demo's name runs it, but a topic's name lists its demos, even when one of them has the topic's name
+// A demo's name runs it, but a topic's name lists its demos, even when one of them has the topic's name.
+// Searching for "text/" rather than "text" leaves out the demos of other topics, such as text-boxes
+const query = topics.has(term) ? `${term}/` : term;
 const found = demos.includes(term) ? [term] : topics.has(term) ? [] : demos.filter((demo) => demo.endsWith(`/${term}`));
-const matches = found.length === 1 ? found : search(term);
+const matches = found.length === 1 ? found : search(query);
 
 let demo: string;
 if (matches.length === 0) {
@@ -56,7 +58,7 @@ if (matches.length === 0) {
             name: "demo",
             message: "Which demo do you want to run? Type to search",
             source: (input: string | undefined) => search(input ?? ""),
-            initialValue: term,
+            initialValue: query,
             pageSize: 20,
         },
     ]);
