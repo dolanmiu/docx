@@ -167,12 +167,12 @@ const doc = new Document({
 
 ### Basic Line Numbers
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/40-line-numbers.ts ":include")
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/page-layout/line-numbers.ts ":include")
 
-_Source: https://github.com/dolanmiu/docx/blob/master/demo/40-line-numbers.ts_
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/page-layout/line-numbers.ts_
 
 ### Line Number Suppression
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/70-line-numbers-suppression.ts ":include")
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/page-layout/line-numbers-suppression.ts ":include")
 
-_Source: https://github.com/dolanmiu/docx/blob/master/demo/70-line-numbers-suppression.ts_
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/page-layout/line-numbers-suppression.ts_

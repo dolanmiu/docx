@@ -83,4 +83,4 @@ Insert `EndnoteReferenceRun` in paragraphs to create reference markers:
 
 ## Demo
 
-_Source: https://github.com/dolanmiu/docx/blob/master/demo/97-endnotes.ts_
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/footnotes-and-endnotes/endnotes.ts_

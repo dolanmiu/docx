@@ -163,6 +163,6 @@ const doc = new Document({
 
 ## Demo
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/90-check-boxes.ts ":include")
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/text/check-boxes.ts ":include")
 
-_Source: https://github.com/dolanmiu/docx/blob/master/demo/90-check-boxes.ts_
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/text/check-boxes.ts_

@@ -85,9 +85,9 @@ const paragraph = new Paragraph({
 
 ## Demo
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/35-hyperlinks.ts ":include")
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/links-and-bookmarks/hyperlinks.ts ":include")
 
-_Source: https://github.com/dolanmiu/docx/blob/master/demo/35-hyperlinks.ts_
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/links-and-bookmarks/hyperlinks.ts_
 
 ## Styling hyperlinks
 

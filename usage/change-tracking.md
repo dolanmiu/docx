@@ -463,12 +463,12 @@ The `insertion` and `deletion` options accept the same properties as text track 
 
 ### Track Revisions (Text)
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/60-track-revisions.ts ":include")
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/track-changes/track-revisions.ts ":include")
 
-_Source: https://github.com/dolanmiu/docx/blob/master/demo/60-track-revisions.ts_
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/track-changes/track-revisions.ts_
 
 ### Track Change Images
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/103-track-change-images.ts ":include")
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/track-changes/track-image-revisions.ts ":include")
 
-_Source: https://github.com/dolanmiu/docx/blob/master/demo/103-track-change-images.ts_
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/track-changes/track-image-revisions.ts_

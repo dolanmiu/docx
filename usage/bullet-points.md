@@ -213,6 +213,6 @@ new Paragraph({
 
 ## Demo
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/3-numbering-and-bullet-points.ts ":include")
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/lists/numbering-and-bullet-points.ts ":include")
 
-_Source: https://github.com/dolanmiu/docx/blob/master/demo/3-numbering-and-bullet-points.ts_
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/lists/numbering-and-bullet-points.ts_

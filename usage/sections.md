@@ -204,12 +204,12 @@ const doc = new Document({
 
 ### Multiple Sections
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/16-multiple-sections.ts ":include")
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/page-layout/multiple-sections.ts ":include")
 
-_Source: https://github.com/dolanmiu/docx/blob/master/demo/16-multiple-sections.ts_
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/page-layout/multiple-sections.ts_
 
 ### Section Types
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/58-section-types.ts ":include")
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/page-layout/section-types.ts ":include")
 
-_Source: https://github.com/dolanmiu/docx/blob/master/demo/58-section-types.ts_
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/page-layout/section-types.ts_

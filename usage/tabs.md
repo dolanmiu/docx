@@ -185,10 +185,10 @@ new Paragraph({
 
 ## Demos
 
-[Tab Stops Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/75-tab-stops.ts ":include")
+[Tab Stops Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/paragraphs/tab-stops.ts ":include")
 
-_Source: https://github.com/dolanmiu/docx/blob/master/demo/75-tab-stops.ts_
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/paragraphs/tab-stops.ts_
 
-[Positional Tabs Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/84-positional-tabs.ts ":include")
+[Positional Tabs Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/paragraphs/positional-tabs.ts ":include")
 
-_Source: https://github.com/dolanmiu/docx/blob/master/demo/84-positional-tabs.ts_
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/paragraphs/positional-tabs.ts_
