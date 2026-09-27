@@ -2,8 +2,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { Formatter } from "@export/formatter";
 import { File } from "@file/file";
+import type { IRunOptions } from "@file/paragraph";
 import * as convenienceFunctions from "@util/convenience-functions";
-import { type IRunOptions, type IXmlableObject, Run } from "docx";
+import { Run } from "docx";
 
 import type { ChartRunOptions } from "./chart-options";
 import { ChartRun } from "./chart-run";
@@ -130,9 +131,9 @@ describe("ChartRun", () => {
     it("should format the run the chart is in, without the breaks and text of a TextRun's options", () => {
         // Options shared with a TextRun, which can have breaks and text as well as formatting
         const textRunOptions: IRunOptions = { position: "-4pt", break: 1, text: "Caption" };
-        const tree = format(new ChartRun({ ...column, run: textRunOptions })) as IXmlableObject;
+        const tree = format(new ChartRun({ ...column, run: textRunOptions }));
 
-        expect(tree["w:r"].map((child: IXmlableObject) => Object.keys(child)[0])).to.deep.equal(["w:rPr", "w:drawing"]);
-        expect(tree["w:r"][0]).to.deep.equal({ "w:rPr": [{ "w:position": { _attr: { "w:val": "-4pt" } } }] });
+        expect((tree["w:r"] as readonly object[]).map((child) => Object.keys(child)[0])).to.deep.equal(["w:rPr", "w:drawing"]);
+        expect(find(tree, "w:rPr")).to.deep.equal([{ "w:position": { _attr: { "w:val": "-4pt" } } }]);
     });
 });
