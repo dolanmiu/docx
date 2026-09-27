@@ -369,10 +369,11 @@ const config: Linter.Config<Linter.RulesRecord>[] = [
     },
     // docx's optional entries, docx/shapes (src/shapes), docx/watermarks (src/watermarks) and docx/charts (src/charts), are
     // built on docx's public API. They import docx by name, so their builds leave docx out and the package has one copy of
-    // each class and id counter. docx doesn't import them. Specs may import docx's internals, such as the Formatter
+    // each class and id counter. docx doesn't import them. Specs may import docx's internals, such as the Formatter.
+    // docx/math (src/math) re-exports docx's math, which docx still exports and keeps in src/file/paragraph/math
     {
         files: ["src/**/*.ts"],
-        ignores: ["src/shapes/**", "src/watermarks/**", "src/charts/**", "**/*.spec.ts"],
+        ignores: ["src/shapes/**", "src/watermarks/**", "src/charts/**", "src/math/**", "**/*.spec.ts"],
         rules: {
             "no-restricted-imports": [
                 "error",
@@ -387,7 +388,7 @@ const config: Linter.Config<Linter.RulesRecord>[] = [
         },
     },
     {
-        files: ["src/shapes/*.ts", "src/watermarks/*.ts", "src/charts/*.ts"],
+        files: ["src/shapes/*.ts", "src/watermarks/*.ts", "src/charts/*.ts", "src/math/*.ts"],
         ignores: ["**/*.spec.ts"],
         rules: {
             "no-restricted-imports": [

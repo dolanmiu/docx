@@ -17,5 +17,17 @@ describe("MathRun", () => {
                 ],
             });
         });
+
+        it("takes its text in options too", () => {
+            expect(new Formatter().format(new MathRun({ text: "2+2" }))).to.deep.equal({ "m:r": [{ "m:t": ["2+2"] }] });
+            expect(new Formatter().format(new MathRun({ text: "2+2", normalText: false }))).to.deep.equal({ "m:r": [{ "m:t": ["2+2"] }] });
+        });
+
+        it("writes normal text with m:nor, keeping its spaces", () => {
+            const tree = new Formatter().format(new MathRun({ text: "if ", normalText: true }));
+            expect(tree).to.deep.equal({
+                "m:r": [{ "m:rPr": [{ "m:nor": { _attr: { "m:val": 1 } } }] }, { "m:t": [{ _attr: { "xml:space": "preserve" } }, "if "] }],
+            });
+        });
     });
 });

@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# Runs the shape and chart demos, checks where their drawings' Word 2010 extensions are and that their drawing ids are
-# unique, and draws each page as a PNG with LibreOffice. The Demos workflow checks them with the Open XML SDK validator.
+# Runs the shape, chart and math demos, checks where their drawings' Word 2010 extensions are and that their drawing ids
+# are unique, and draws each page as a PNG with LibreOffice. The Demos workflow checks them with the Open XML SDK validator.
 #
 # Usage: scripts/render-shape-demos.sh [output directory] [demo ...]
 #
 # Each demo is its topic and name, such as shapes/shape-groups. The output directory (default build/shape-demos) gets
-# each demo's .docx, .pdf and one PNG per page, named after the demo. Without demos, all the shape and chart demos are
-# run. Needs the package built (npm run build) and perl.
+# each demo's .docx, .pdf and one PNG per page, named after the demo. Without demos, all the shape, chart and math demos
+# are run. Needs the package built (npm run build) and perl.
 #
 # The pages are drawn with LibreOffice (set SOFFICE if soffice isn't on the PATH) and pdftoppm from Poppler.
 # When SHAPE_RENDER_IMAGE names a Docker image built from scripts/shape-demos/Dockerfile, they are drawn in
@@ -22,7 +22,7 @@ OUT="${1:-build/shape-demos}"
 shift || true
 DEMOS=("$@")
 if [ ${#DEMOS[@]} -eq 0 ]; then
-    DEMOS=(shapes/inline-shapes shapes/shapes shapes/shape-groups shapes/shape-connectors shapes/shape-styles shapes/shape-diagrams shapes/shape-layout shapes/shape-document-styles shapes/shape-swimlanes shapes/shape-page-layout styles/theme shapes/custom-shapes charts/charts charts/chart-options charts/charts-in-templates charts/chart-data-in-templates charts/more-charts)
+    DEMOS=(shapes/inline-shapes shapes/shapes shapes/shape-groups shapes/shape-connectors shapes/shape-styles shapes/shape-diagrams shapes/shape-layout shapes/shape-document-styles shapes/shape-swimlanes shapes/shape-page-layout styles/theme shapes/custom-shapes charts/charts charts/chart-options charts/charts-in-templates charts/chart-data-in-templates charts/more-charts math/matrices-and-alignment)
 fi
 SOFFICE="${SOFFICE:-soffice}"
 
@@ -50,8 +50,8 @@ for demo in "${DEMOS[@]}"; do
         failed=1
     fi
 
-    # Drawing ids must be unique across the document
-    repeated="$(grep -ho '\(wp:docPr\|wps:cNvPr\|pic:cNvPr\|wpg:cNvPr\) id="[0-9]*"' "$extracted"/word/*.xml | sed 's/.*id=//' | sort | uniq -d)"
+    # Drawing ids must be unique across the document. grep finds none in a document without drawings, such as math's
+    repeated="$( (grep -ho '\(wp:docPr\|wps:cNvPr\|pic:cNvPr\|wpg:cNvPr\) id="[0-9]*"' "$extracted"/word/*.xml || true) | sed 's/.*id=//' | sort | uniq -d)"
     if [ -n "$repeated" ]; then
         echo "::error::$demo repeats drawing ids: $repeated"
         failed=1

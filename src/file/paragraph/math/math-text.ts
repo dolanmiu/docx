@@ -7,7 +7,10 @@
  *
  * @module
  */
+import { SpaceType } from "@file/shared";
 import { XmlComponent } from "@file/xml-components";
+
+import { TextAttributes } from "../run/text-attributes";
 
 /**
  * Represents text content within a math run.
@@ -31,6 +34,12 @@ import { XmlComponent } from "@file/xml-components";
 export class MathText extends XmlComponent {
     public constructor(text: string) {
         super("m:t");
+
+        // Spaces at either end are kept only when marked. LibreOffice drops them otherwise, and zero-width spaces too, which
+        // docx/math writes in empty arguments. Spaces matter in normal text
+        if (/^[\s\u200B]|[\s\u200B]$/.test(text)) {
+            this.root.push(new TextAttributes({ space: SpaceType.PRESERVE }));
+        }
 
         this.root.push(text);
     }
