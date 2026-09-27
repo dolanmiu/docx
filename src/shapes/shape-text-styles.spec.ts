@@ -42,10 +42,11 @@ describe("getTextStyles", () => {
         expect(getTextStyles(context)).to.equal(getTextStyles(context));
     });
 
-    it("should use the style marked as the default, or Normal", () => {
-        expect(stylesOf({}).defaultParagraphStyle).to.equal(undefined);
+    it("should use the style marked as the default, which is Normal unless another is", () => {
+        // docx writes Normal as the default paragraph style, and one in paragraphStyles takes its place
+        expect(stylesOf({}).defaultParagraphStyle).to.equal("Normal");
         expect(stylesOf({ paragraphStyles: [{ id: "Normal", name: "Normal" }] }).defaultParagraphStyle).to.equal("Normal");
-        // A character style called Normal isn't the default for paragraphs
+        // A character style called Normal isn't the default for paragraphs, and replaces docx's Normal, as ids are unique
         expect(stylesOf({ characterStyles: [{ id: "Normal", name: "Normal" }] }).defaultParagraphStyle).to.equal(undefined);
 
         const imported = getTextStyles(

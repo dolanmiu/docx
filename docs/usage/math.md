@@ -442,7 +442,7 @@ new Paragraph({
 Word is the reference. Other applications differ:
 
 - **LibreOffice** centres every column of a matrix, centres the rows of an equation array without lining them up, and shows the `&` between parts and the `#` before equation numbers.
-- **Pages** centres every column of a matrix and shows the `#` before equation numbers. It draws all math very small unless the document's default paragraph style has a size, which `docx` doesn't write.
+- **Pages** centres every column of a matrix and shows the `#` before equation numbers.
 - **Word 2013 and older** show the `#` before equation numbers.
 
 ## Demo

@@ -28,6 +28,7 @@ import {
     type IBaseParagraphStyleOptions,
     ListParagraph,
     StrongStyle,
+    StyleForParagraph,
     TitleStyle,
 } from "./style";
 import type { IStylesOptions } from "./styles";
@@ -88,13 +89,17 @@ export type IDefaultStylesOptions = {
 };
 
 /**
- * docx's default styles, each under the option of `styles.default` that configures it.
+ * docx's default styles, each under the option of `styles.default` that configures it, and Normal.
  *
  * @internal
  */
 export const createDefaultStyles = (
     options: IDefaultStylesOptions = {},
-): { readonly [Key in keyof IDefaultStylesOptions]-?: XmlComponent } => ({
+): { readonly normal: XmlComponent } & { readonly [Key in keyof IDefaultStylesOptions]-?: XmlComponent } => ({
+    // The style of paragraphs that don't name one, which the headings and others are based on. It has no formatting, so
+    // it changes nothing in Word, which takes Normal as the default paragraph style anyway. A style with its id, such as
+    // one in paragraphStyles or externalStyles, takes its place
+    normal: new StyleForParagraph({ id: "Normal", name: "Normal", quickFormat: true }),
     document: new DocumentDefaults(options.document ?? {}),
     title: new TitleStyle({
         run: {

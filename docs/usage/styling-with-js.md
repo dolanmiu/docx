@@ -152,6 +152,19 @@ const doc = new Document({
 
 Setting document defaults acts like a `*` rule in CSS: it applies to every paragraph and run in the document, but at a low priority level. Other styles affecting this property will override these defaults.
 
+### The Normal style
+
+Paragraphs that don't name a style use the default paragraph style, `Normal`, which the headings and other built-in styles are based on. `docx` writes a `Normal` with no formatting of its own, so paragraphs take the document defaults. To format it, give a paragraph style with the id `Normal`. It takes the place of `docx`'s and stays the default:
+
+```ts
+const doc = new Document({
+    styles: {
+        paragraphStyles: [{ id: "Normal", name: "Normal", run: { font: "Calibri", size: 22 } }],
+    },
+    sections: [],
+});
+```
+
 ## Advanced formatting
 
 ### Style inheritance
