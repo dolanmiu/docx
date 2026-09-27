@@ -34,5 +34,5 @@ Uses **Vitest**. Tests are co-located with source files as `*.spec.ts`.
 ## Running Demos
 
 ```bash
-npm run run-ts -- ./demo/<demo-file>.ts
+npm run run-ts -- ./demo/<topic>/<demo>.ts
 ```

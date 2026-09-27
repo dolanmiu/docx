@@ -284,18 +284,18 @@ const doc = new Document({
 
 ### Page Borders
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/71-page-borders-2.ts ":include")
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/page-layout/page-border-styles.ts ":include")
 
-_Source: https://github.com/dolanmiu/docx/blob/master/demo/71-page-borders-2.ts_
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/page-layout/page-border-styles.ts_
 
 ### Page Sizes
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/65-page-sizes.ts ":include")
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/page-layout/page-sizes.ts ":include")
 
-_Source: https://github.com/dolanmiu/docx/blob/master/demo/65-page-sizes.ts_
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/page-layout/page-sizes.ts_
 
 ### Landscape Orientation
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/7-landscape.ts ":include")
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/page-layout/landscape.ts ":include")
 
-_Source: https://github.com/dolanmiu/docx/blob/master/demo/7-landscape.ts_
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/page-layout/landscape.ts_

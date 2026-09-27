@@ -50,4 +50,4 @@ doc.add(paragraph);
 doc.createParagraph("Some normal text");
 ```
 
-Example: https://github.com/dolanmiu/docx/blob/master/demo/13-xml-styles.ts
+Example: https://github.com/dolanmiu/docx/blob/master/demo/styles/xml-styles.ts

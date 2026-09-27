@@ -110,14 +110,14 @@ Available separators: `COLON`, `EM_DASH`, `EN_DASH`, `HYPHEN`, `PERIOD`.
 
 Adding page numbers to Header and Footer
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/39-page-numbers.ts ":include")
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/page-numbers/page-number-format.ts ":include")
 
-_Source: https://github.com/dolanmiu/docx/blob/master/demo/39-page-numbers.ts_
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/page-numbers/page-number-format.ts_
 
 ### Restart Page Numbers
 
 Restarting page numbering in a new section
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/42-restart-page-numbers.ts ":include")
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/page-numbers/restart-page-numbers.ts ":include")
 
-_Source: https://github.com/dolanmiu/docx/blob/master/demo/42-restart-page-numbers.ts_
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/page-numbers/restart-page-numbers.ts_

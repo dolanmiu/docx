@@ -206,18 +206,18 @@ const doc = new Document({
 
 ### Multiple Columns
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/44-multiple-columns.ts ":include")
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/page-layout/multiple-columns.ts ":include")
 
-_Source: https://github.com/dolanmiu/docx/blob/master/demo/44-multiple-columns.ts_
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/page-layout/multiple-columns.ts_
 
 ### Column Break
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/67-column-break.ts ":include")
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/page-layout/column-break.ts ":include")
 
-_Source: https://github.com/dolanmiu/docx/blob/master/demo/67-column-break.ts_
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/page-layout/column-break.ts_
 
 ### Different Width Columns
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/69-different-width-columns.ts ":include")
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/page-layout/different-width-columns.ts ":include")
 
-_Source: https://github.com/dolanmiu/docx/blob/master/demo/69-different-width-columns.ts_
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/page-layout/different-width-columns.ts_

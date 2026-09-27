@@ -202,12 +202,12 @@ Word draws watermarks with VML (Vector Markup Language), the legacy drawing form
 
 ### Text Watermark
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/105-text-watermark.ts ":include")
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/watermarks/text-watermark.ts ":include")
 
-_Source: https://github.com/dolanmiu/docx/blob/master/demo/105-text-watermark.ts_
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/watermarks/text-watermark.ts_
 
 ### Image Watermark
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/106-image-watermark.ts ":include")
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/watermarks/image-watermark.ts ":include")
 
-_Source: https://github.com/dolanmiu/docx/blob/master/demo/106-image-watermark.ts_
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/watermarks/image-watermark.ts_

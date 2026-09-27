@@ -1079,94 +1079,94 @@ Apple Pages (checked with version 15.1) draws shapes and groups, and the group i
 
 Bars, rules and signature lines in the flow of text, as on a printed form.
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/107-inline-shapes.ts ":include")
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/shapes/inline-shapes.ts ":include")
 
-_Source: https://github.com/dolanmiu/docx/blob/master/demo/107-inline-shapes.ts_
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/shapes/inline-shapes.ts_
 
 ### Shapes, lines and arrows
 
 Preset shapes, dashes and arrowheads, gradients, transparency, text in shapes and floating shapes.
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/108-shapes.ts ":include")
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/shapes/shapes.ts ":include")
 
-_Source: https://github.com/dolanmiu/docx/blob/master/demo/108-shapes.ts_
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/shapes/shapes.ts_
 
 ### Shape groups
 
 A flowchart built from a group of shapes, the same group scaled down, and a floating, rotated group.
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/109-shape-groups.ts ":include")
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/shapes/shape-groups.ts ":include")
 
-_Source: https://github.com/dolanmiu/docx/blob/master/demo/109-shape-groups.ts_
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/shapes/shape-groups.ts_
 
 ### Connectors and canvases
 
 A flowchart on a canvas whose connectors stay attached, straight, elbow and curved routes, and connectors on chosen sides.
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/110-shape-connectors.ts ":include")
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/shapes/shape-connectors.ts ":include")
 
-_Source: https://github.com/dolanmiu/docx/blob/master/demo/110-shape-connectors.ts_
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/shapes/shape-connectors.ts_
 
 ### Shape styles
 
 Effects, pattern and picture fills, line styles, text layout and WordArt warps, custom shapes, links and decorative shapes.
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/111-shape-styles.ts ":include")
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/shapes/shape-styles.ts ":include")
 
-_Source: https://github.com/dolanmiu/docx/blob/master/demo/111-shape-styles.ts_
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/shapes/shape-styles.ts_
 
 ### Diagrams
 
 Pictures and groups on a canvas, connector labels, connecting to a point on a shape, and connectors that go around shapes.
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/112-shape-diagrams.ts ":include")
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/shapes/shape-diagrams.ts ":include")
 
-_Source: https://github.com/dolanmiu/docx/blob/master/demo/112-shape-diagrams.ts_
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/shapes/shape-diagrams.ts_
 
 ### Automatic layout
 
 Shapes sized to fit their text, a flowchart, an org chart and a grid laid out automatically, spread and side-by-side connectors, and labels at the start of a connector.
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/113-shape-layout.ts ":include")
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/shapes/shape-layout.ts ":include")
 
-_Source: https://github.com/dolanmiu/docx/blob/master/demo/113-shape-layout.ts_
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/shapes/shape-layout.ts_
 
 ### Shapes in the document's styles
 
 Shapes, a canvas and a group sized to fit their text in 11pt Calibri with space after each paragraph, with a heading, a character style and an indented paragraph in a shape.
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/115-shape-document-styles.ts ":include")
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/shapes/shape-document-styles.ts ":include")
 
-_Source: https://github.com/dolanmiu/docx/blob/master/demo/115-shape-document-styles.ts_
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/shapes/shape-document-styles.ts_
 
 ### Swimlanes
 
 A support process in swimlanes down the page, with a decision and a branch to another team, and a shorter process in lanes across the page.
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/116-shape-swimlanes.ts ":include")
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/shapes/shape-swimlanes.ts ":include")
 
-_Source: https://github.com/dolanmiu/docx/blob/master/demo/116-shape-swimlanes.ts_
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/shapes/shape-swimlanes.ts_
 
 ### Page layout
 
 A rule as wide as the text, a sidebar sized and placed as percentages of the text's width, and an article whose text flows from one box into the next.
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/117-shape-page-layout.ts ":include")
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/shapes/shape-page-layout.ts ":include")
 
-_Source: https://github.com/dolanmiu/docx/blob/master/demo/117-shape-page-layout.ts_
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/shapes/shape-page-layout.ts_
 
 ### Theme colours
 
 A document with a theme of its own, swatches of its colours and of lighter and darker versions of one, and a diagram in them.
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/118-theme.ts ":include")
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/styles/theme.ts ":include")
 
-_Source: https://github.com/dolanmiu/docx/blob/master/demo/118-theme.ts_
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/styles/theme.ts_
 
 ### Custom shapes
 
 Custom shapes drawn from several paths, with shaded faces, holes, text areas, and connection points of their own on a canvas.
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/120-custom-shapes.ts ":include")
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/shapes/custom-shapes.ts ":include")
 
-_Source: https://github.com/dolanmiu/docx/blob/master/demo/120-custom-shapes.ts_
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/shapes/custom-shapes.ts_

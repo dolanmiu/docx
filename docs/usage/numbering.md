@@ -290,12 +290,12 @@ The `style.style` value must match the `id` of a paragraph style defined in `sty
 
 ### Numbering and Bullet Points
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/3-numbering-and-bullet-points.ts ":include")
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/lists/numbering-and-bullet-points.ts ":include")
 
-_Source: https://github.com/dolanmiu/docx/blob/master/demo/3-numbering-and-bullet-points.ts_
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/lists/numbering-and-bullet-points.ts_
 
 ### Numbering with Paragraph Styles
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/102-numbering-level-paragraph-style.ts ":include")
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/lists/numbering-level-paragraph-style.ts ":include")
 
-_Source: https://github.com/dolanmiu/docx/blob/master/demo/102-numbering-level-paragraph-style.ts_
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/lists/numbering-level-paragraph-style.ts_

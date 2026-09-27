@@ -145,12 +145,12 @@ new ShapeRun({
 
 ### A theme of its own
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/118-theme.ts ":include")
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/styles/theme.ts ":include")
 
-_Source: https://github.com/dolanmiu/docx/blob/master/demo/118-theme.ts_
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/styles/theme.ts_
 
 ### Text, tables and borders in the theme's colors
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/119-theme-colors.ts ":include")
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/styles/theme-colors.ts ":include")
 
-_Source: https://github.com/dolanmiu/docx/blob/master/demo/119-theme-colors.ts_
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/styles/theme-colors.ts_

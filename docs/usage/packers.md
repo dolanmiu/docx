@@ -86,10 +86,10 @@ Packer.pack(doc, "string").then((string) => {
 
 ## Demos
 
-[Export to Base64 Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/19-export-to-base64.ts ":include")
+[Export to Base64 Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/exporting/base64-string.ts ":include")
 
-_Source: https://github.com/dolanmiu/docx/blob/master/demo/19-export-to-base64.ts_
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/exporting/base64-string.ts_
 
-[Node.js Stream Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/74-nodejs-stream.ts ":include")
+[Node.js Stream Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/exporting/node-stream.ts ":include")
 
-_Source: https://github.com/dolanmiu/docx/blob/master/demo/74-nodejs-stream.ts_
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/exporting/node-stream.ts_

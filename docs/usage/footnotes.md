@@ -158,6 +158,6 @@ const doc = new Document({
 
 ## Demo
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/17-footnotes.ts ":include")
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/footnotes-and-endnotes/footnotes.ts ":include")
 
-_Source: https://github.com/dolanmiu/docx/blob/master/demo/17-footnotes.ts_
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/footnotes-and-endnotes/footnotes.ts_
