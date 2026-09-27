@@ -7,9 +7,23 @@
  *
  * @module
  */
-import { XmlComponent } from "@file/xml-components";
+import { BuilderElement, XmlComponent } from "@file/xml-components";
 
 import { MathText } from "./math-text";
+
+/**
+ * Options for a {@link MathRun}.
+ */
+export type MathRunOptions = {
+    /** The text */
+    readonly text: string;
+    /**
+     * Writes the text as ordinary text rather than math, as Word's "Normal Text" button does (`m:nor`): upright and in
+     * the document's font, with its spaces kept. For words in an equation, such as "if" and "otherwise" in cases.
+     * @default false
+     */
+    readonly normalText?: boolean;
+};
 
 /**
  * Represents a run of text within a math equation.
@@ -38,11 +52,25 @@ import { MathText } from "./math-text";
  * @example
  * ```typescript
  * new MathRun("x + y");
+ * new MathRun({ text: "if ", normalText: true });
  * ```
  */
 export class MathRun extends XmlComponent {
-    public constructor(text: string) {
+    public constructor(options: string | MathRunOptions) {
         super("m:r");
+
+        const { text, normalText } = typeof options === "string" ? { text: options, normalText: false } : options;
+
+        if (normalText) {
+            this.root.push(
+                new BuilderElement({
+                    name: "m:rPr",
+                    children: [
+                        new BuilderElement<{ readonly on: number }>({ name: "m:nor", attributes: { on: { key: "m:val", value: 1 } } }),
+                    ],
+                }),
+            );
+        }
 
         this.root.push(new MathText(text));
     }
