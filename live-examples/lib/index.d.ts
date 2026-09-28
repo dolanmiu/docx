@@ -5743,6 +5743,11 @@ export declare type IMathFractionOptions = {
     readonly numerator: readonly MathComponent[];
     /** Math components for the denominator (bottom) of the fraction */
     readonly denominator: readonly MathComponent[];
+    /**
+     * How the fraction is drawn: stacked, skewed, linear, or stacked with no bar.
+     * @default "stacked"
+     */
+    readonly type?: MathFractionType;
 };
 
 /**
@@ -5769,6 +5774,11 @@ export declare type IMathIntegralOptions = {
     readonly subScript?: readonly MathComponent[];
     /** Optional upper bound of integration */
     readonly superScript?: readonly MathComponent[];
+    /**
+     * Where the limits go: above and below the ∫, or to its right.
+     * @default "side"
+     */
+    readonly limits?: MathLimitsPosition;
 };
 
 /**
@@ -5869,6 +5879,11 @@ export declare type IMathSumOptions = {
     readonly subScript?: readonly MathComponent[];
     /** Optional upper bound (superscript) of the sum */
     readonly superScript?: readonly MathComponent[];
+    /**
+     * Where the limits go: above and below the ∑, or to its right.
+     * @default "aboveBelow"
+     */
+    readonly limits?: MathLimitsPosition;
 };
 
 /**
@@ -8289,11 +8304,26 @@ export declare class MathDenominator extends XmlComponent {
  *   numerator: [new MathRun("a + b")],
  *   denominator: [new MathRun("c")],
  * });
+ *
+ * // n over k, as a binomial coefficient, in brackets
+ * new MathRoundBrackets({
+ *   children: [new MathFraction({ numerator: [new MathRun("n")], denominator: [new MathRun("k")], type: "noBar" })],
+ * });
  * ```
  */
 export declare class MathFraction extends XmlComponent {
     constructor(options: IMathFractionOptions);
 }
+
+/**
+ * How a fraction is drawn (`m:type`):
+ *
+ * - `"stacked"`: the numerator over the denominator, with a bar between them;
+ * - `"skewed"`: the numerator up and to the left of a slash, and the denominator down and to the right, as ½;
+ * - `"linear"`: on one line, with a slash between them, as a/b;
+ * - `"noBar"`: stacked, with no bar between them, as in a binomial coefficient.
+ */
+export declare type MathFractionType = "stacked" | "skewed" | "linear" | "noBar";
 
 /**
  * Represents a mathematical function in a math equation.
@@ -8478,6 +8508,14 @@ declare type MathLimitLocationOptions = {
 export declare class MathLimitLower extends XmlComponent {
     constructor(options: IMathLimitLowerOptions);
 }
+
+/**
+ * Where a large operator's limits go (`m:limLoc`):
+ *
+ * - `"aboveBelow"`: above and below it, as a sum's usually are;
+ * - `"side"`: to its right, as a superscript and subscript, as an integral's usually are.
+ */
+export declare type MathLimitsPosition = "aboveBelow" | "side";
 
 /**
  * Represents an upper limit structure in a math equation.
@@ -8691,6 +8729,8 @@ export declare class MathRoundBrackets extends XmlComponent {
  * ```typescript
  * new MathRun("x + y");
  * new MathRun({ text: "if ", normalText: true });
+ * new MathRun({ text: "R", script: "doubleStruck" });
+ * new MathRun({ text: "d", style: "plain" });
  * ```
  */
 export declare class MathRun extends XmlComponent {
@@ -8705,11 +8745,53 @@ export declare type MathRunOptions = {
     readonly text: string;
     /**
      * Writes the text as ordinary text rather than math, as Word's "Normal Text" button does (`m:nor`): upright and in
-     * the document's font, with its spaces kept. For words in an equation, such as "if" and "otherwise" in cases.
+     * the document's font, with its spaces kept. For words in an equation, such as "if" and "otherwise" in cases. It
+     * can't be given with `style` or `script`, which are for math.
      * @default false
      */
     readonly normalText?: boolean;
+    /**
+     * How the letters are drawn: plain (upright), bold, italic or both (`m:sty`).
+     * @default "plain" with a `script` other than roman, as LaTeX draws its alphabets upright; otherwise none, and Word
+     * draws letters in italic
+     */
+    readonly style?: MathRunStyle;
+    /**
+     * The alphabet the letters are drawn in, such as double-struck for ℝ (`m:scr`).
+     */
+    readonly script?: MathRunScript;
+    /**
+     * Takes the text as it is (`m:lit`), rather than as something Word builds up or lines up, such as an `&` in a
+     * `MathEquationArray`, which would otherwise be a point the rows line up at.
+     * @default false
+     */
+    readonly literal?: boolean;
 };
+
+/**
+ * The alphabet a {@link MathRun}'s letters are drawn in (`m:scr`):
+ *
+ * - `"roman"`: the math font's own letters, as Word draws them unless a run has an alphabet;
+ * - `"script"`: 𝒜, as LaTeX's `\mathcal` and `\mathscr`;
+ * - `"fraktur"`: 𝔄, as `\mathfrak`;
+ * - `"doubleStruck"`: 𝔸, as `\mathbb`, for sets such as ℝ;
+ * - `"sansSerif"`: 𝖠, as `\mathsf`;
+ * - `"monospace"`: 𝙰, as `\mathtt`.
+ */
+export declare type MathRunScript = "roman" | "script" | "fraktur" | "doubleStruck" | "sansSerif" | "monospace";
+
+/**
+ * How a {@link MathRun}'s letters are drawn (`m:sty`):
+ *
+ * - `"plain"`: upright, as LaTeX's `\mathrm`;
+ * - `"bold"`: bold and upright, as `\mathbf`;
+ * - `"italic"`: italic, as `\mathit`;
+ * - `"boldItalic"`: bold and italic, as `\boldsymbol`.
+ *
+ * Word draws letters in italic, and digits and capital Greek letters upright, unless a run has a style. A run in an
+ * alphabet other than roman is plain unless given a style, as LaTeX draws its alphabets upright.
+ */
+export declare type MathRunStyle = "plain" | "bold" | "italic" | "boldItalic";
 
 /**
  * Represents square brackets in a math equation.

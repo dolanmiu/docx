@@ -19218,6 +19218,28 @@ MAX: 9026 };
 		}
 	};
 	//#endregion
+	//#region \0@oxc-project+runtime@0.150.0/helpers/esm/objectWithoutPropertiesLoose.js
+	function _objectWithoutPropertiesLoose(r, e) {
+		if (null == r) return {};
+		var t = {};
+		for (var n in r) if ({}.hasOwnProperty.call(r, n)) {
+			if (e.includes(n)) continue;
+			t[n] = r[n];
+		}
+		return t;
+	}
+	//#endregion
+	//#region \0@oxc-project+runtime@0.150.0/helpers/esm/objectWithoutProperties.js
+	function _objectWithoutProperties(e, t) {
+		if (null == e) return {};
+		var o, r, i = _objectWithoutPropertiesLoose(e, t);
+		if (Object.getOwnPropertySymbols) {
+			var s = Object.getOwnPropertySymbols(e);
+			for (r = 0; r < s.length; r++) o = s[r], t.includes(o) || {}.propertyIsEnumerable.call(e, o) && (i[o] = e[o]);
+		}
+		return i;
+	}
+	//#endregion
 	//#region src/file/paragraph/math/math-run.ts
 	/**
 	* Math Run module for Office MathML.
@@ -19228,6 +19250,33 @@ MAX: 9026 };
 	*
 	* @module
 	*/
+	var _excluded$3 = [
+		"text",
+		"normalText",
+		"script",
+		"literal"
+	];
+	var STYLES = {
+		plain: "p",
+		bold: "b",
+		italic: "i",
+		boldItalic: "bi"
+	};
+	var SCRIPTS = {
+		roman: "roman",
+		script: "script",
+		fraktur: "fraktur",
+		doubleStruck: "double-struck",
+		sansSerif: "sans-serif",
+		monospace: "monospace"
+	};
+	var createValueElement = (name, value) => new BuilderElement({
+		name,
+		attributes: { value: {
+			key: "m:val",
+			value
+		} }
+	});
 	/**
 	* Represents a run of text within a math equation.
 	*
@@ -19256,24 +19305,28 @@ MAX: 9026 };
 	* ```typescript
 	* new MathRun("x + y");
 	* new MathRun({ text: "if ", normalText: true });
+	* new MathRun({ text: "R", script: "doubleStruck" });
+	* new MathRun({ text: "d", style: "plain" });
 	* ```
 	*/
 	var MathRun = class extends XmlComponent {
 		constructor(options) {
+			var _rest$style;
 			super("m:r");
-			const { text, normalText } = typeof options === "string" ? {
-				text: options,
-				normalText: false
-			} : options;
-			if (normalText) this.root.push(new BuilderElement({
+			const _ref = typeof options === "string" ? { text: options } : options, { text, normalText, script, literal } = _ref;
+			const style = (_rest$style = _objectWithoutProperties(_ref, _excluded$3).style) !== null && _rest$style !== void 0 ? _rest$style : script === void 0 || script === "roman" ? void 0 : "plain";
+			if (normalText && (style !== void 0 || script !== void 0)) throw new Error("MathRun: normalText can't be given with style or script, which are for math. Give one or the other");
+			if (style !== void 0 && !Object.keys(STYLES).includes(style)) throw new Error(`MathRun: style is "${style}", which isn't one of ${Object.keys(STYLES).join(", ")}`);
+			if (script !== void 0 && !Object.keys(SCRIPTS).includes(script)) throw new Error(`MathRun: script is "${script}", which isn't one of ${Object.keys(SCRIPTS).join(", ")}`);
+			const properties = [
+				...literal ? [createValueElement("m:lit", 1)] : [],
+				...normalText ? [createValueElement("m:nor", 1)] : [],
+				...script === void 0 ? [] : [createValueElement("m:scr", SCRIPTS[script])],
+				...style === void 0 ? [] : [createValueElement("m:sty", STYLES[style])]
+			];
+			if (properties.length > 0) this.root.push(new BuilderElement({
 				name: "m:rPr",
-				children: [new BuilderElement({
-					name: "m:nor",
-					attributes: { on: {
-						key: "m:val",
-						value: 1
-					} }
-				})]
+				children: properties
 			}));
 			this.root.push(new MathText(text));
 		}
@@ -19329,6 +19382,12 @@ MAX: 9026 };
 	*
 	* @module
 	*/
+	var TYPES = {
+		stacked: "bar",
+		skewed: "skw",
+		linear: "lin",
+		noBar: "noBar"
+	};
 	/**
 	* Represents a fraction in a math equation.
 	*
@@ -19355,11 +19414,29 @@ MAX: 9026 };
 	*   numerator: [new MathRun("a + b")],
 	*   denominator: [new MathRun("c")],
 	* });
+	*
+	* // n over k, as a binomial coefficient, in brackets
+	* new MathRoundBrackets({
+	*   children: [new MathFraction({ numerator: [new MathRun("n")], denominator: [new MathRun("k")], type: "noBar" })],
+	* });
 	* ```
 	*/
 	var MathFraction = class extends XmlComponent {
 		constructor(options) {
 			super("m:f");
+			if (options.type !== void 0) {
+				if (!Object.keys(TYPES).includes(options.type)) throw new Error(`MathFraction: type is "${options.type}", which isn't one of ${Object.keys(TYPES).join(", ")}`);
+				this.root.push(new BuilderElement({
+					name: "m:fPr",
+					children: [new BuilderElement({
+						name: "m:type",
+						attributes: { value: {
+							key: "m:val",
+							value: TYPES[options.type]
+						} }
+					})]
+				}));
+			}
 			this.root.push(new MathNumerator(options.numerator));
 			this.root.push(new MathDenominator(options.denominator));
 		}
@@ -19609,6 +19686,22 @@ MAX: 9026 };
 		children
 	});
 	//#endregion
+	//#region src/file/paragraph/math/n-ary/limit-location-value.ts
+	var LOCATIONS = {
+		aboveBelow: "undOvr",
+		side: "subSup"
+	};
+	/**
+	* The value of `m:limLoc` for where limits go, or the default when none is given.
+	*
+	* @throws If the position isn't one of those allowed, for code that isn't type checked
+	*/
+	var limitLocationValue = (owner, limits, defaultValue) => {
+		if (limits === void 0) return defaultValue;
+		if (!Object.keys(LOCATIONS).includes(limits)) throw new Error(`${owner}: limits is "${limits}", which isn't one of ${Object.keys(LOCATIONS).join(", ")}`);
+		return LOCATIONS[limits];
+	};
+	//#endregion
 	//#region src/file/paragraph/math/n-ary/math-super-script.ts
 	/**
 	* Math SuperScript Element module for Office MathML.
@@ -19691,7 +19784,8 @@ MAX: 9026 };
 			this.root.push(createMathNAryProperties({
 				accent: "∑",
 				hasSuperScript: !!options.superScript,
-				hasSubScript: !!options.subScript
+				hasSubScript: !!options.subScript,
+				limitLocationVal: limitLocationValue("MathSum", options.limits, "undOvr")
 			}));
 			this.root.push(createMathSubScriptElement({ children: (_options$subScript = options.subScript) !== null && _options$subScript !== void 0 ? _options$subScript : [] }));
 			this.root.push(createMathSuperScriptElement({ children: (_options$superScript = options.superScript) !== null && _options$superScript !== void 0 ? _options$superScript : [] }));
@@ -19748,7 +19842,7 @@ MAX: 9026 };
 				accent: "",
 				hasSuperScript: !!options.superScript,
 				hasSubScript: !!options.subScript,
-				limitLocationVal: "subSup"
+				limitLocationVal: limitLocationValue("MathIntegral", options.limits, "subSup")
 			}));
 			this.root.push(createMathSubScriptElement({ children: (_options$subScript = options.subScript) !== null && _options$subScript !== void 0 ? _options$subScript : [] }));
 			this.root.push(createMathSuperScriptElement({ children: (_options$superScript = options.superScript) !== null && _options$superScript !== void 0 ? _options$superScript : [] }));
@@ -29306,28 +29400,6 @@ MAX: 9026 };
 			if (alias) this.root.push(new StringValueElement("w:alias", alias));
 		}
 	};
-	//#endregion
-	//#region \0@oxc-project+runtime@0.150.0/helpers/esm/objectWithoutPropertiesLoose.js
-	function _objectWithoutPropertiesLoose(r, e) {
-		if (null == r) return {};
-		var t = {};
-		for (var n in r) if ({}.hasOwnProperty.call(r, n)) {
-			if (e.includes(n)) continue;
-			t[n] = r[n];
-		}
-		return t;
-	}
-	//#endregion
-	//#region \0@oxc-project+runtime@0.150.0/helpers/esm/objectWithoutProperties.js
-	function _objectWithoutProperties(e, t) {
-		if (null == e) return {};
-		var o, r, i = _objectWithoutPropertiesLoose(e, t);
-		if (Object.getOwnPropertySymbols) {
-			var s = Object.getOwnPropertySymbols(e);
-			for (r = 0; r < s.length; r++) o = s[r], t.includes(o) || {}.propertyIsEnumerable.call(e, o) && (i[o] = e[o]);
-		}
-		return i;
-	}
 	//#endregion
 	//#region src/file/table-of-contents/table-of-contents.ts
 	/**

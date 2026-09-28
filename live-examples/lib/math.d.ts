@@ -28,12 +28,14 @@ import { MathCurlyBrackets } from 'docx';
 import { MathDegree } from 'docx';
 import { MathDenominator } from 'docx';
 import { MathFraction } from 'docx';
+import { MathFractionType } from 'docx';
 import { MathFunction } from 'docx';
 import { MathFunctionName } from 'docx';
 import { MathFunctionProperties } from 'docx';
 import { MathIntegral } from 'docx';
 import { MathLimit } from 'docx';
 import { MathLimitLower } from 'docx';
+import { MathLimitsPosition } from 'docx';
 import { MathLimitUpper } from 'docx';
 import { MathNumerator } from 'docx';
 import { MathPreSubSuperScript } from 'docx';
@@ -42,6 +44,8 @@ import { MathRadicalProperties } from 'docx';
 import { MathRoundBrackets } from 'docx';
 import { MathRun } from 'docx';
 import { MathRunOptions } from 'docx';
+import { MathRunScript } from 'docx';
+import { MathRunStyle } from 'docx';
 import { MathSquareBrackets } from 'docx';
 import { MathSubScript } from 'docx';
 import { MathSubSuperScript } from 'docx';
@@ -92,9 +96,201 @@ export { IMathSumOptions }
 
 export { IMathSuperScriptOptions }
 
+/**
+ * Turns LaTeX math into docx's math, to go in a `Math`, as Word's own equations, which it shows and edits as it does
+ * those typed into it.
+ *
+ * It reads the math that LaTeX, MathJax and KaTeX write: fractions, scripts, roots, sums, integrals and other large
+ * operators, functions such as sin and lim, brackets that grow with `\left` and `\right`, accents, braces, boxes,
+ * fonts such as `\mathbb` and `\mathrm`, `\text`, Greek letters and symbols, and the environments for matrices,
+ * cases and aligned equations, with `\tag` for their numbers. The math can be given in `$…$`, `$$…$$`, `\(…\)` or
+ * `\[…\]`, which are left out.
+ *
+ * Colours, sizes and spacing that Word works out for itself are left out.
+ *
+ * @param latex - The LaTeX, such as `"\\frac{-b \\pm \\sqrt{b^2-4ac}}{2a}"`
+ * @returns The math, to be the children of a `Math`, or to go among other math components
+ * @throws If the LaTeX has a command or an environment it doesn't know, or isn't well formed, such as a `{` with no
+ * `}`. The error says where
+ *
+ * @example
+ * ```typescript
+ * new Math({ children: latexToMath("x = \\frac{-b \\pm \\sqrt{b^2-4ac}}{2a}") });
+ * ```
+ */
+export declare const latexToMath: (latex: string) => readonly MathComponent[];
+
 export { Math_2 as Math }
 
+/**
+ * An accent over math (`m:acc`), such as a hat, a tilde, dots or a vector's arrow, as LaTeX's `\hat`, `\tilde`,
+ * `\dot` and `\vec`. Word stretches the accent over what it goes over.
+ *
+ * For a line over or under math, as LaTeX's `\overline` and `\underline`, use a `MathBar`.
+ *
+ * @example
+ * ```typescript
+ * new MathAccent({ accent: "rightArrow", children: [new MathRun("v")] });
+ * ```
+ */
+export declare class MathAccent extends BuilderElement {
+    constructor({ accent, children }: MathAccentOptions);
+}
+
+/**
+ * An accent over math, as LaTeX writes it:
+ *
+ * - `"hat"`: x̂, `\hat` and `\widehat`;
+ * - `"check"`: x̌, `\check`;
+ * - `"tilde"`: x̃, `\tilde` and `\widetilde`;
+ * - `"acute"`: x́, `\acute`;
+ * - `"grave"`: x̀, `\grave`;
+ * - `"dot"`: ẋ, `\dot`;
+ * - `"doubleDot"`: ẍ, `\ddot`;
+ * - `"tripleDot"`: x⃛, `\dddot`;
+ * - `"breve"`: x̆, `\breve`;
+ * - `"bar"`: x̅, `\bar`;
+ * - `"ring"`: x̊, `\mathring`;
+ * - `"rightArrow"`: x⃗, `\vec` and `\overrightarrow`;
+ * - `"leftArrow"`: x⃖, `\overleftarrow`;
+ * - `"leftRightArrow"`: x⃡, `\overleftrightarrow`;
+ * - `"rightHarpoon"`: x⃑, `\overrightharpoon`;
+ * - `"leftHarpoon"`: x⃐, `\overleftharpoon`.
+ */
+export declare type MathAccentName = "hat" | "check" | "tilde" | "acute" | "grave" | "dot" | "doubleDot" | "tripleDot" | "breve" | "bar" | "ring" | "rightArrow" | "leftArrow" | "leftRightArrow" | "rightHarpoon" | "leftHarpoon";
+
+/**
+ * Options for {@link MathAccent}.
+ */
+export declare type MathAccentOptions = {
+    /**
+     * The accent.
+     * @default "hat"
+     */
+    readonly accent?: MathAccentName;
+    /** What the accent goes over */
+    readonly children: readonly MathComponent[];
+};
+
 export { MathAngledBrackets }
+
+/**
+ * A line over or under math (`m:bar`), as LaTeX's `\overline` and `\underline`, as long as what it goes over.
+ *
+ * @example
+ * ```typescript
+ * new MathBar({ children: [new MathRun("AB")] });
+ * new MathBar({ position: "below", children: [new MathRun("x")] });
+ * ```
+ */
+export declare class MathBar extends BuilderElement {
+    constructor({ position, children }: MathBarOptions);
+}
+
+/**
+ * Options for {@link MathBar}.
+ */
+export declare type MathBarOptions = {
+    /**
+     * Whether the line goes above or below.
+     * @default "above"
+     */
+    readonly position?: MathPosition;
+    /** What the line goes over or under */
+    readonly children: readonly MathComponent[];
+};
+
+/**
+ * A box around math (`m:borderBox`), as LaTeX's `\boxed`, with lines struck through it, as `\cancel`, `\bcancel` and
+ * `\xcancel`. Any of its sides can be left out.
+ *
+ * @example
+ * ```typescript
+ * new MathBox({ children: [new MathRun("E=mc²")] });
+ * new MathBox({ borders: [], strikes: ["diagonalUp"], children: [new MathRun("x")] });
+ * ```
+ */
+export declare class MathBox extends BuilderElement {
+    constructor({ children, borders, strikes }: MathBoxOptions);
+}
+
+/**
+ * Options for {@link MathBox}.
+ */
+export declare type MathBoxOptions = {
+    /** What goes in the box */
+    readonly children: readonly MathComponent[];
+    /**
+     * The sides of the box that are drawn. `[]` draws none, for lines struck through math with no box.
+     * @default ["top", "bottom", "left", "right"]
+     */
+    readonly borders?: readonly MathBoxSide[];
+    /**
+     * Lines struck through the box, such as `["diagonalUp"]` to cancel a term.
+     * @default []
+     */
+    readonly strikes?: readonly MathBoxStrike[];
+};
+
+/** A side of a box */
+export declare type MathBoxSide = "top" | "bottom" | "left" | "right";
+
+/**
+ * A line struck through a box:
+ *
+ * - `"horizontal"`: across its middle;
+ * - `"vertical"`: down its middle;
+ * - `"diagonalUp"`: from its bottom left corner to its top right, as LaTeX's `\cancel`;
+ * - `"diagonalDown"`: from its top left corner to its bottom right, as `\bcancel`.
+ */
+export declare type MathBoxStrike = "horizontal" | "vertical" | "diagonalUp" | "diagonalDown";
+
+/**
+ * A brace over or under math (`m:groupChr`), as long as what it goes over, as LaTeX's `\overbrace` and
+ * `\underbrace`. A label goes on the brace's other side, as Word writes it: in a limit above (`m:limUpp`) or below
+ * (`m:limLow`).
+ *
+ * @example
+ * ```typescript
+ * new MathBrace({
+ *   position: "below",
+ *   children: [new MathRun("1+2+⋯+n")],
+ *   label: [new MathRun("n terms")],
+ * });
+ * ```
+ */
+export declare class MathBrace extends BuilderElement {
+    constructor({ position, brace, children, label }: MathBraceOptions);
+}
+
+/**
+ * Options for {@link MathBrace}.
+ */
+export declare type MathBraceOptions = {
+    /**
+     * Whether the brace goes above or below.
+     * @default "above"
+     */
+    readonly position?: MathPosition;
+    /**
+     * The shape of the brace.
+     * @default "curly"
+     */
+    readonly brace?: MathBraceShape;
+    /** What the brace goes over or under */
+    readonly children: readonly MathComponent[];
+    /** A label on the brace's other side, such as `n times` */
+    readonly label?: readonly MathComponent[];
+};
+
+/**
+ * The shape of a brace:
+ *
+ * - `"curly"`: ⏞ and ⏟, as LaTeX's `\overbrace` and `\underbrace`;
+ * - `"square"`: ⎴ and ⎵, as `\overbracket` and `\underbracket`;
+ * - `"round"`: ⏜ and ⏝, as `\overparen` and `\underparen`.
+ */
+export declare type MathBraceShape = "curly" | "square" | "round";
 
 /**
  * Brackets of any characters around math (`m:d`), such as |x|, ‖v‖, ⟨a|b⟩ or a brace on one side only. They grow
@@ -255,6 +451,8 @@ export declare type MathEquationArrayRow = {
 
 export { MathFraction }
 
+export { MathFractionType }
+
 export { MathFunction }
 
 export { MathFunctionName }
@@ -263,9 +461,73 @@ export { MathFunctionProperties }
 
 export { MathIntegral }
 
+/**
+ * A large operator with limits (`m:nary`), such as ∏, ⋃ or ∮, as LaTeX's `\prod`, `\bigcup` and `\oint`, over what
+ * it applies to. `MathSum` and `MathIntegral` are two of these.
+ *
+ * @example
+ * ```typescript
+ * new MathLargeOperator({
+ *   operator: "product",
+ *   subScript: [new MathRun("i=1")],
+ *   superScript: [new MathRun("n")],
+ *   children: [new MathRun("i")],
+ * });
+ * ```
+ */
+export declare class MathLargeOperator extends BuilderElement {
+    constructor({ operator, children, subScript, superScript, limits }: MathLargeOperatorOptions);
+}
+
+/**
+ * A large operator, as LaTeX writes it:
+ *
+ * - `"sum"`: ∑, `\sum`;
+ * - `"product"`: ∏, `\prod`;
+ * - `"coproduct"`: ∐, `\coprod`;
+ * - `"union"`: ⋃, `\bigcup`;
+ * - `"intersection"`: ⋂, `\bigcap`;
+ * - `"squareUnion"`: ⨆, `\bigsqcup`;
+ * - `"multisetUnion"`: ⨄, `\biguplus`;
+ * - `"logicalOr"`: ⋁, `\bigvee`;
+ * - `"logicalAnd"`: ⋀, `\bigwedge`;
+ * - `"directSum"`: ⨁, `\bigoplus`;
+ * - `"tensorProduct"`: ⨂, `\bigotimes`;
+ * - `"circledDot"`: ⨀, `\bigodot`;
+ * - `"integral"`: ∫, `\int`;
+ * - `"doubleIntegral"`: ∬, `\iint`;
+ * - `"tripleIntegral"`: ∭, `\iiint`;
+ * - `"quadrupleIntegral"`: ⨌, `\iiiint`;
+ * - `"contourIntegral"`: ∮, `\oint`;
+ * - `"surfaceIntegral"`: ∯, `\oiint`;
+ * - `"volumeIntegral"`: ∰, `\oiiint`.
+ */
+export declare type MathLargeOperatorName = "sum" | "product" | "coproduct" | "union" | "intersection" | "squareUnion" | "multisetUnion" | "logicalOr" | "logicalAnd" | "directSum" | "tensorProduct" | "circledDot" | "integral" | "doubleIntegral" | "tripleIntegral" | "quadrupleIntegral" | "contourIntegral" | "surfaceIntegral" | "volumeIntegral";
+
+/**
+ * Options for {@link MathLargeOperator}.
+ */
+export declare type MathLargeOperatorOptions = {
+    /** The operator */
+    readonly operator: MathLargeOperatorName;
+    /** What the operator applies to, such as the terms of a sum */
+    readonly children: readonly MathComponent[];
+    /** The lower limit, such as `i=1` */
+    readonly subScript?: readonly MathComponent[];
+    /** The upper limit, such as `n` */
+    readonly superScript?: readonly MathComponent[];
+    /**
+     * Where the limits go: above and below the operator, or to its right.
+     * @default "side" for integrals, and "aboveBelow" for the others, as Word puts them
+     */
+    readonly limits?: MathLimitsPosition;
+};
+
 export { MathLimit }
 
 export { MathLimitLower }
+
+export { MathLimitsPosition }
 
 export { MathLimitUpper }
 
@@ -332,6 +594,56 @@ export declare type MathMatrixOptions = {
 
 export { MathNumerator }
 
+/**
+ * A phantom (`m:phant`): math that takes up room without being seen, as LaTeX's `\phantom`, to leave space for it or
+ * line things up with it. Or math that is seen but takes up no room, or less, as `\smash`.
+ *
+ * @example
+ * ```typescript
+ * // As much space as "x+y" takes up
+ * new MathPhantom({ children: [new MathRun("x+y")] });
+ *
+ * // A tall fraction that doesn't push its line apart
+ * new MathPhantom({ visible: true, height: false, depth: false, children: [fraction] });
+ * ```
+ */
+export declare class MathPhantom extends BuilderElement {
+    constructor({ children, visible, width, height, depth }: MathPhantomOptions);
+}
+
+/**
+ * Options for {@link MathPhantom}.
+ */
+export declare type MathPhantomOptions = {
+    /** The math */
+    readonly children: readonly MathComponent[];
+    /**
+     * Whether the math is seen (`m:show`).
+     * @default false
+     */
+    readonly visible?: boolean;
+    /**
+     * Whether it takes up its width. False gives it none (`m:zeroWid`), as LaTeX's `\vphantom`.
+     * @default true
+     */
+    readonly width?: boolean;
+    /**
+     * Whether it takes up its height above the line. False gives it none (`m:zeroAsc`), as LaTeX's `\hphantom` and
+     * `\smash`.
+     * @default true
+     */
+    readonly height?: boolean;
+    /**
+     * Whether it takes up its depth below the line. False gives it none (`m:zeroDesc`), as LaTeX's `\hphantom` and
+     * `\smash`.
+     * @default true
+     */
+    readonly depth?: boolean;
+};
+
+/** Whether something goes above or below the math it is on */
+export declare type MathPosition = "above" | "below";
+
 export { MathPreSubSuperScript }
 
 export { MathRadical }
@@ -343,6 +655,10 @@ export { MathRoundBrackets }
 export { MathRun }
 
 export { MathRunOptions }
+
+export { MathRunScript }
+
+export { MathRunStyle }
 
 export { MathSquareBrackets }
 
