@@ -28,10 +28,7 @@ describe("docx/math", () => {
     });
 
     it("exports every class and function of docx's math, so a new one isn't left out of docx/math", () => {
-        // WORKAROUND4 is an empty string, not part of the math API
-        const names = Object.keys(mathModule).filter((name) => name !== "WORKAROUND4");
-
-        expect(Object.keys(math).toSorted()).toEqual([...names, ...OWN].toSorted());
+        expect(Object.keys(math).toSorted()).toEqual([...Object.keys(mathModule), ...OWN].toSorted());
     });
 
     it("keeps its own components out of docx, so they don't add to docx's bundle", () => {
