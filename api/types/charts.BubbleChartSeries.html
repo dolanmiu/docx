@@ -19,7 +19,7 @@
 <h4 class="tsd-anchor-link" id="public-api">Public Api<a href="#public-api" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4></div></div></section>
 <div class="tsd-signature"><span class="tsd-signature-keyword">type</span> <span class="tsd-kind-type-alias">BubbleChartSeries</span> <span class="tsd-signature-symbol">=</span> <span class="tsd-signature-symbol">{</span><br/>    <a class="tsd-kind-property" href="#color">color</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span> <span class="tsd-signature-symbol">|</span> <a href="index.ThemeColor.html" class="tsd-signature-type tsd-kind-type-alias">ThemeColor</a><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#datalabels">dataLabels</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">false</span> <span class="tsd-signature-symbol">|</span> <a href="charts.BubbleChartDataLabels.html" class="tsd-signature-type tsd-kind-type-alias">BubbleChartDataLabels</a><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#name">name</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#pointlabels">pointLabels</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-keyword">readonly</span> (<span class="tsd-signature-type">false</span> <span class="tsd-signature-symbol">|</span> <a href="charts.BubbleChartPointLabel.html" class="tsd-signature-type tsd-kind-type-alias">BubbleChartPointLabel</a> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">undefined</span>)<span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#points">points</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-keyword">readonly</span> <a href="charts.BubbleChartPoint.html" class="tsd-signature-type tsd-kind-type-alias">BubbleChartPoint</a><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#trendlines">trendlines</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-keyword">readonly</span> <a href="charts.ChartTrendline.html" class="tsd-signature-type tsd-kind-type-alias">ChartTrendline</a><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#xerrorbars">xErrorBars</a><span class="tsd-signature-symbol">?:</span> <a href="charts.ChartErrorBars.html" class="tsd-signature-type tsd-kind-type-alias">ChartErrorBars</a><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#yerrorbars">yErrorBars</a><span class="tsd-signature-symbol">?:</span> <a href="charts.ChartErrorBars.html" class="tsd-signature-type tsd-kind-type-alias">ChartErrorBars</a><span class="tsd-signature-symbol">;</span><br/><span class="tsd-signature-symbol">}</span></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/a56f38383e642eea940a584d145068835a0c3627/src/charts/chart-options.ts#L510">charts/chart-options.ts:510</a></li></ul></aside>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/1a44038522f41b0d951370f572d39c0777ca4936/src/charts/chart-options.ts#L510">charts/chart-options.ts:510</a></li></ul></aside>
 <section class="tsd-panel-group tsd-index-group">
 <section class="tsd-panel tsd-index-panel">
 <details class="tsd-index-content tsd-accordion" open><summary class="tsd-accordion-summary tsd-index-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
@@ -45,56 +45,56 @@
 <div class="tsd-comment tsd-typography"><p>The colour of the series' bubbles. Default is the next of the theme's accent colours</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/a56f38383e642eea940a584d145068835a0c3627/src/charts/chart-options.ts#L516">charts/chart-options.ts:516</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/1a44038522f41b0d951370f572d39c0777ca4936/src/charts/chart-options.ts#L516">charts/chart-options.ts:516</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="datalabels"><code class="tsd-tag">Optional</code> <code class="tsd-tag">Readonly</code><span>data<wbr/>Labels</span><a href="#datalabels" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">dataLabels</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">false</span> <span class="tsd-signature-symbol">|</span> <a href="charts.BubbleChartDataLabels.html" class="tsd-signature-type tsd-kind-type-alias">BubbleChartDataLabels</a></div>
 <div class="tsd-comment tsd-typography"><p>The series' own labels, instead of the chart's <code>dataLabels</code>, or <code>false</code> for none</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/a56f38383e642eea940a584d145068835a0c3627/src/charts/chart-options.ts#L518">charts/chart-options.ts:518</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/1a44038522f41b0d951370f572d39c0777ca4936/src/charts/chart-options.ts#L518">charts/chart-options.ts:518</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="name"><code class="tsd-tag">Readonly</code><span>name</span><a href="#name" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">name</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 <div class="tsd-comment tsd-typography"><p>The series' name, shown in the legend</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/a56f38383e642eea940a584d145068835a0c3627/src/charts/chart-options.ts#L512">charts/chart-options.ts:512</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/1a44038522f41b0d951370f572d39c0777ca4936/src/charts/chart-options.ts#L512">charts/chart-options.ts:512</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="pointlabels"><code class="tsd-tag">Optional</code> <code class="tsd-tag">Readonly</code><span>point<wbr/>Labels</span><a href="#pointlabels" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">pointLabels</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-keyword">readonly</span> (<span class="tsd-signature-type">false</span> <span class="tsd-signature-symbol">|</span> <a href="charts.BubbleChartPointLabel.html" class="tsd-signature-type tsd-kind-type-alias">BubbleChartPointLabel</a> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">undefined</span>)<span class="tsd-signature-symbol">[]</span></div>
 <div class="tsd-comment tsd-typography"><p>Labels of single bubbles, in order: a label of its own, <code>false</code> for none, or <code>undefined</code> for the series' own</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/a56f38383e642eea940a584d145068835a0c3627/src/charts/chart-options.ts#L520">charts/chart-options.ts:520</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/1a44038522f41b0d951370f572d39c0777ca4936/src/charts/chart-options.ts#L520">charts/chart-options.ts:520</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="points"><code class="tsd-tag">Readonly</code><span>points</span><a href="#points" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">points</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-keyword">readonly</span> <a href="charts.BubbleChartPoint.html" class="tsd-signature-type tsd-kind-type-alias">BubbleChartPoint</a><span class="tsd-signature-symbol">[]</span></div>
 <div class="tsd-comment tsd-typography"><p>The series' bubbles</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/a56f38383e642eea940a584d145068835a0c3627/src/charts/chart-options.ts#L514">charts/chart-options.ts:514</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/1a44038522f41b0d951370f572d39c0777ca4936/src/charts/chart-options.ts#L514">charts/chart-options.ts:514</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="trendlines"><code class="tsd-tag">Optional</code> <code class="tsd-tag">Readonly</code><span>trendlines</span><a href="#trendlines" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">trendlines</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-keyword">readonly</span> <a href="charts.ChartTrendline.html" class="tsd-signature-type tsd-kind-type-alias">ChartTrendline</a><span class="tsd-signature-symbol">[]</span></div>
 <div class="tsd-comment tsd-typography"><p>Lines fitted to the bubbles' centres</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/a56f38383e642eea940a584d145068835a0c3627/src/charts/chart-options.ts#L522">charts/chart-options.ts:522</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/1a44038522f41b0d951370f572d39c0777ca4936/src/charts/chart-options.ts#L522">charts/chart-options.ts:522</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="xerrorbars"><code class="tsd-tag">Optional</code> <code class="tsd-tag">Readonly</code><span>x<wbr/>Error<wbr/>Bars</span><a href="#xerrorbars" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">xErrorBars</span><span class="tsd-signature-symbol">?:</span> <a href="charts.ChartErrorBars.html" class="tsd-signature-type tsd-kind-type-alias">ChartErrorBars</a></div>
 <div class="tsd-comment tsd-typography"><p>Error bars along the x axis, left and right of each bubble's centre</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/a56f38383e642eea940a584d145068835a0c3627/src/charts/chart-options.ts#L524">charts/chart-options.ts:524</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/1a44038522f41b0d951370f572d39c0777ca4936/src/charts/chart-options.ts#L524">charts/chart-options.ts:524</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="yerrorbars"><code class="tsd-tag">Optional</code> <code class="tsd-tag">Readonly</code><span>y<wbr/>Error<wbr/>Bars</span><a href="#yerrorbars" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">yErrorBars</span><span class="tsd-signature-symbol">?:</span> <a href="charts.ChartErrorBars.html" class="tsd-signature-type tsd-kind-type-alias">ChartErrorBars</a></div>
 <div class="tsd-comment tsd-typography"><p>Error bars along the y axis, up and down from each bubble's centre</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/a56f38383e642eea940a584d145068835a0c3627/src/charts/chart-options.ts#L526">charts/chart-options.ts:526</a></li></ul></aside></section></section></details></div>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/1a44038522f41b0d951370f572d39c0777ca4936/src/charts/chart-options.ts#L526">charts/chart-options.ts:526</a></li></ul></aside></section></section></details></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">
