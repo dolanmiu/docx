@@ -6,12 +6,27 @@ A chart's title says what it shows, and its legend says which colour is which se
 
 `title` is written above the chart. There is no title by default.
 
-```ts
-new ChartRun({
-    type: "column",
-    title: "Sales by quarter",
-    categories: ["Q1", "Q2", "Q3", "Q4"],
-    series: [{ name: "Sales", values: [120, 135, 150, 170] }],
+```ts live
+import { Document, Paragraph } from "docx";
+import { ChartRun } from "docx/charts";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new ChartRun({
+                            type: "column",
+                            title: "Sales by quarter",
+                            categories: ["Q1", "Q2", "Q3", "Q4"],
+                            series: [{ name: "Sales", values: [120, 135, 150, 170] }],
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
 });
 ```
 
@@ -19,8 +34,28 @@ Each line of the text is a line of the title, so `"Sales by quarter\n2024"` is a
 
 To give the title a font of its own, give `title` its `text` and a `font`:
 
-```ts
-title: { text: "Sales by quarter", font: { size: 18, bold: true, color: "1F4E79" } },
+```ts live
+import { Document, Paragraph } from "docx";
+import { ChartRun } from "docx/charts";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new ChartRun({
+                            type: "column",
+                            title: { text: "Sales by quarter", font: { size: 18, bold: true, color: "1F4E79" } },
+                            categories: ["Q1", "Q2", "Q3", "Q4"],
+                            series: [{ name: "Sales", values: [120, 135, 150, 170] }],
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
+});
 ```
 
 The title is 14 point text by default. See [Chart Fonts and Fills](usage/chart-fonts-and-fills.md).
@@ -39,21 +74,59 @@ The legend is below the chart by default. It shows each series' name, or on a pi
 | `"right"`            | To the right of the chart        |
 | `"topRight"`         | In the top right corner          |
 
-```ts
-legend: { position: "right" },
+```ts live
+import { Document, Paragraph } from "docx";
+import { ChartRun } from "docx/charts";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new ChartRun({
+                            type: "column",
+                            categories: ["Q1", "Q2", "Q3", "Q4"],
+                            series: [
+                                { name: "2024", values: [120, 135, 150, 170] },
+                                { name: "2025", values: [140, 150, 165, 180] },
+                            ],
+                            legend: { position: "right" },
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
+});
 ```
 
 The legend takes a `font` too, such as `legend: { position: "right", font: { size: 10 } }`. Its text is 9 point by default.
 
 `legend: false` leaves out the legend. A chart with one series often doesn't need one, as its title can say what the series is:
 
-```ts
-new ChartRun({
-    type: "column",
-    title: "Orders",
-    categories: ["Mon", "Tue", "Wed"],
-    series: [{ name: "Orders", values: [8, 12, 9] }],
-    legend: false,
+```ts live
+import { Document, Paragraph } from "docx";
+import { ChartRun } from "docx/charts";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new ChartRun({
+                            type: "column",
+                            title: "Orders",
+                            categories: ["Mon", "Tue", "Wed"],
+                            series: [{ name: "Orders", values: [8, 12, 9] }],
+                            legend: false,
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
 });
 ```
 
@@ -61,12 +134,31 @@ new ChartRun({
 
 `hiddenEntries` leaves entries out of the legend, by their text, such as a target line everyone knows:
 
-```ts
-series: [
-    { name: "Sales", values: [120, 135, 150, 170] },
-    { name: "Target", values: [140, 140, 140, 140], type: "line" },
-],
-legend: { hiddenEntries: ["Target"] },
+```ts live
+import { Document, Paragraph } from "docx";
+import { ChartRun } from "docx/charts";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new ChartRun({
+                            type: "column",
+                            categories: ["Q1", "Q2", "Q3", "Q4"],
+                            series: [
+                                { name: "Sales", values: [120, 135, 150, 170] },
+                                { name: "Target", values: [140, 140, 140, 140], type: "line" },
+                            ],
+                            legend: { hiddenEntries: ["Target"] },
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
+});
 ```
 
 An entry is a series' name, a [trendline's](usage/chart-trendlines-and-error-bars.md) name, such as "Linear (Sales)", or on a pie or doughnut chart, a category. The series stays in the chart. `new ChartRun(...)` throws for text that isn't an entry's, and lists the entries.
@@ -77,17 +169,32 @@ Pages shows every entry. See [Chart Compatibility](usage/chart-compatibility.md)
 
 `dataTable: true` puts a table of the chart's data under its plot, as Word's "Data Table" does: a row for each series, with its key from the legend, and a column for each category. It is often used in place of labels, or of the legend:
 
-```ts
-new ChartRun({
-    type: "column",
-    title: "Rainfall (mm)",
-    categories: ["Jan", "Feb", "Mar"],
-    series: [
-        { name: "2024", values: [78, 52, 61] },
-        { name: "2025", values: [83, 60, 49] },
+```ts live
+import { Document, Paragraph } from "docx";
+import { ChartRun } from "docx/charts";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new ChartRun({
+                            type: "column",
+                            title: "Rainfall (mm)",
+                            categories: ["Jan", "Feb", "Mar"],
+                            series: [
+                                { name: "2024", values: [78, 52, 61] },
+                                { name: "2025", values: [83, 60, 49] },
+                            ],
+                            dataTable: true,
+                            legend: false,
+                        }),
+                    ],
+                }),
+            ],
+        },
     ],
-    dataTable: true,
-    legend: false,
 });
 ```
 

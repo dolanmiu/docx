@@ -6,29 +6,44 @@ A scatter chart plots points, each with its own x and y. Use it to show how two 
 
 ## A Scatter Chart
 
-```ts
-new ChartRun({
-    type: "scatter",
-    title: "Height and weight",
-    series: [
+```ts live
+import { Document, Paragraph } from "docx";
+import { ChartRun } from "docx/charts";
+
+const doc = new Document({
+    sections: [
         {
-            name: "Group A",
-            points: [
-                { x: 150, y: 50 },
-                { x: 165, y: 61 },
-                { x: 180, y: 75 },
-            ],
-        },
-        {
-            name: "Group B",
-            points: [
-                { x: 155, y: 58 },
-                { x: 170, y: 72 },
+            children: [
+                new Paragraph({
+                    children: [
+                        new ChartRun({
+                            type: "scatter",
+                            title: "Height and weight",
+                            series: [
+                                {
+                                    name: "Group A",
+                                    points: [
+                                        { x: 150, y: 50 },
+                                        { x: 165, y: 61 },
+                                        { x: 180, y: 75 },
+                                    ],
+                                },
+                                {
+                                    name: "Group B",
+                                    points: [
+                                        { x: 155, y: 58 },
+                                        { x: 170, y: 72 },
+                                    ],
+                                },
+                            ],
+                            xAxis: { title: "Height (cm)" },
+                            yAxis: { title: "Weight (kg)" },
+                        }),
+                    ],
+                }),
             ],
         },
     ],
-    xAxis: { title: "Height (cm)" },
-    yAxis: { title: "Weight (kg)" },
 });
 ```
 
@@ -43,20 +58,60 @@ A scatter chart draws a circle at each point, and doesn't join them:
 
 Markers can have a shape and size, as on a line chart, and a series' `line` a colour, width and dash pattern. A series' own `markers` replace the chart's. See [Markers](usage/chart-line-and-area.md#markers) and [Lines](usage/chart-line-and-area.md#lines).
 
-```ts
-series: [
-    { name: "Group A", points: [{ x: 150, y: 50 }, { x: 165, y: 61 }], markers: { shape: "triangle", size: 7 } },
-],
+```ts live
+import { Document, Paragraph } from "docx";
+import { ChartRun } from "docx/charts";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new ChartRun({
+                            type: "scatter",
+                            series: [
+                                {
+                                    name: "Group A",
+                                    points: [
+                                        { x: 150, y: 50 },
+                                        { x: 165, y: 61 },
+                                    ],
+                                    markers: { shape: "triangle", size: 7 },
+                                },
+                            ],
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
+});
 ```
 
 A smooth line without markers draws a curve, such as a graph of a formula:
 
-```ts
-new ChartRun({
-    type: "scatter",
-    series: [{ name: "y = x²", points: [-2, -1, 0, 1, 2].map((x) => ({ x, y: x * x })) }],
-    markers: false,
-    lines: "smooth",
+```ts live
+import { Document, Paragraph } from "docx";
+import { ChartRun } from "docx/charts";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new ChartRun({
+                            type: "scatter",
+                            series: [{ name: "y = x²", points: [-2, -1, 0, 1, 2].map((x) => ({ x, y: x * x })) }],
+                            markers: false,
+                            lines: "smooth",
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
 });
 ```
 

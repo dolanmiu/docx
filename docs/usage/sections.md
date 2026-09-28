@@ -10,7 +10,9 @@ For example, you could have one section which is portrait with a header and foot
 
 This creates a simple section in a document with one paragraph inside:
 
-```ts
+```ts live
+import { Document, Paragraph, TextRun } from "docx";
+
 const doc = new Document({
     sections: [
         {
@@ -28,7 +30,9 @@ const doc = new Document({
 
 Create documents with multiple sections for different layouts:
 
-```ts
+```ts live
+import { Document, PageOrientation, Paragraph } from "docx";
+
 const doc = new Document({
     sections: [
         {
@@ -66,8 +70,8 @@ Setting the section type determines how the contents of the section will be plac
 | `ODD_PAGE`    | Start on the next odd-numbered page            |
 | `NEXT_COLUMN` | Start in the next column                       |
 
-```ts
-import { SectionType } from "docx";
+```ts live
+import { Document, Paragraph, SectionType } from "docx";
 
 const doc = new Document({
     sections: [
@@ -95,7 +99,9 @@ const doc = new Document({
 
 ### Different Headers Per Section
 
-```ts
+```ts live
+import { Document, Header, Paragraph } from "docx";
+
 const doc = new Document({
     sections: [
         {
@@ -120,8 +126,8 @@ const doc = new Document({
 
 ### Portrait and Landscape Mix
 
-```ts
-import { PageOrientation, convertMillimetersToTwip } from "docx";
+```ts live
+import { Document, PageOrientation, Paragraph, Table, TableCell, TableRow, convertMillimetersToTwip } from "docx";
 
 const doc = new Document({
     sections: [
@@ -135,15 +141,27 @@ const doc = new Document({
                 page: {
                     size: {
                         orientation: PageOrientation.LANDSCAPE,
-                        width: convertMillimetersToTwip(297),
-                        height: convertMillimetersToTwip(210),
+                        // The A4 portrait size, which LANDSCAPE turns on its side
+                        width: convertMillimetersToTwip(210),
+                        height: convertMillimetersToTwip(297),
                     },
                 },
             },
             children: [
                 new Table({
                     // Wide table that needs landscape
-                    rows: [/* ... */],
+                    rows: [
+                        new TableRow({
+                            children: ["January", "February", "March", "April", "May", "June", "July", "August"].map(
+                                (month) => new TableCell({ children: [new Paragraph(month)] }),
+                            ),
+                        }),
+                        new TableRow({
+                            children: ["120", "135", "150", "160", "155", "170", "180", "175"].map(
+                                (sales) => new TableCell({ children: [new Paragraph(sales)] }),
+                            ),
+                        }),
+                    ],
                 }),
             ],
         },
@@ -153,7 +171,9 @@ const doc = new Document({
 
 ### Multi-Column Section
 
-```ts
+```ts live
+import { Document, Paragraph, SectionType } from "docx";
+
 const doc = new Document({
     sections: [
         {
@@ -169,7 +189,11 @@ const doc = new Document({
                     space: 708,
                 },
             },
-            children: [new Paragraph("Two-column content...")],
+            children: [
+                new Paragraph(
+                    "Two-column content flows down the first column and then carries on at the top of the second, like the columns of a newspaper. The section breaks before and after it are continuous, so the columns sit on the same page as the paragraphs around them.",
+                ),
+            ],
         },
         {
             // Back to single column

@@ -24,8 +24,8 @@ Use `WpsShapeRun` when you need fills, outlines, rotation, or precise positionin
 
 A `WpsShapeRun` is added as a child of a `Paragraph`, similar to `ImageRun`:
 
-```ts
-import { Document, Paragraph, TextRun, WpsShapeRun } from "docx";
+```ts live
+import { Document, Paragraph, WpsShapeRun } from "docx";
 
 const doc = new Document({
     sections: [
@@ -66,15 +66,29 @@ const doc = new Document({
 
 Controls the size, offset, rotation, and flip of the text box. Dimensions are in **pixels** (converted to EMUs internally at 1px = 9525 EMUs).
 
-```ts
-new WpsShapeRun({
-    type: "wps",
-    children: [new Paragraph("Rotated text box")],
-    transformation: {
-        width: 300,
-        height: 150,
-        rotation: 45, // degrees
-    },
+```ts live
+import { Document, Paragraph, WpsShapeRun } from "docx";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new WpsShapeRun({
+                            type: "wps",
+                            children: [new Paragraph("Rotated text box")],
+                            transformation: {
+                                width: 300,
+                                height: 150,
+                                rotation: 45, // degrees
+                            },
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
 });
 ```
 
@@ -90,23 +104,37 @@ new WpsShapeRun({
 
 By default, a `WpsShapeRun` is rendered inline. Add the `floating` property to anchor it at a specific position on the page. Offset values are in EMUs (1 inch = 914400 EMUs).
 
-```ts
-new WpsShapeRun({
-    type: "wps",
-    children: [new Paragraph("Floating text box")],
-    transformation: {
-        width: 200,
-        height: 100,
-    },
-    floating: {
-        zIndex: 10,
-        horizontalPosition: {
-            offset: 1014400,
+```ts live
+import { Document, Paragraph, WpsShapeRun } from "docx";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new WpsShapeRun({
+                            type: "wps",
+                            children: [new Paragraph("Floating text box")],
+                            transformation: {
+                                width: 200,
+                                height: 100,
+                            },
+                            floating: {
+                                zIndex: 10,
+                                horizontalPosition: {
+                                    offset: 1014400,
+                                },
+                                verticalPosition: {
+                                    offset: 1014400,
+                                },
+                            },
+                        }),
+                    ],
+                }),
+            ],
         },
-        verticalPosition: {
-            offset: 1014400,
-        },
-    },
+    ],
 });
 ```
 
@@ -118,15 +146,29 @@ Set a background color using `solidFill`:
 
 ### RGB Color
 
-```ts
-new WpsShapeRun({
-    type: "wps",
-    children: [new Paragraph("Red background")],
-    transformation: { width: 200, height: 100 },
-    solidFill: {
-        type: "rgb",
-        value: "FF0000", // hex color
-    },
+```ts live
+import { Document, Paragraph, WpsShapeRun } from "docx";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new WpsShapeRun({
+                            type: "wps",
+                            children: [new Paragraph("Red background")],
+                            transformation: { width: 200, height: 100 },
+                            solidFill: {
+                                type: "rgb",
+                                value: "FF0000", // hex color
+                            },
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
 });
 ```
 
@@ -134,17 +176,29 @@ new WpsShapeRun({
 
 Use theme colors instead of hardcoded values:
 
-```ts
-import { SchemeColor } from "docx";
+```ts live
+import { Document, Paragraph, SchemeColor, WpsShapeRun } from "docx";
 
-new WpsShapeRun({
-    type: "wps",
-    children: [new Paragraph("Themed background")],
-    transformation: { width: 200, height: 100 },
-    solidFill: {
-        type: "scheme",
-        value: SchemeColor.ACCENT1,
-    },
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new WpsShapeRun({
+                            type: "wps",
+                            children: [new Paragraph("Themed background")],
+                            transformation: { width: 200, height: 100 },
+                            solidFill: {
+                                type: "scheme",
+                                value: SchemeColor.ACCENT1,
+                            },
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
 });
 ```
 
@@ -156,27 +210,61 @@ Add a border/outline to the text box:
 
 ### Solid Outline
 
-```ts
-new WpsShapeRun({
-    type: "wps",
-    children: [new Paragraph("Bordered text box")],
-    transformation: { width: 200, height: 100 },
-    outline: {
-        type: "solidFill",
-        solidFillType: "rgb",
-        value: "0000FF",
-        width: 9525, // width in EMUs (9525 = 1px)
-        cap: "ROUND",
-    },
+```ts live
+import { Document, Paragraph, WpsShapeRun } from "docx";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new WpsShapeRun({
+                            type: "wps",
+                            children: [new Paragraph("Bordered text box")],
+                            transformation: { width: 200, height: 100 },
+                            outline: {
+                                type: "solidFill",
+                                solidFillType: "rgb",
+                                value: "0000FF",
+                                width: 9525, // width in EMUs (9525 = 1px)
+                                cap: "ROUND",
+                            },
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
 });
 ```
 
 ### No Outline
 
-```ts
-outline: {
-    type: "noFill",
-},
+```ts live
+import { Document, Paragraph, WpsShapeRun } from "docx";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new WpsShapeRun({
+                            type: "wps",
+                            children: [new Paragraph("No outline")],
+                            transformation: { width: 200, height: 100 },
+                            solidFill: { type: "rgb", value: "DEEAF6" },
+                            outline: {
+                                type: "noFill",
+                            },
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
+});
 ```
 
 ### Outline Options
@@ -194,23 +282,35 @@ outline: {
 
 Configure text layout inside the text box:
 
-```ts
-import { VerticalAnchor } from "docx";
+```ts live
+import { Document, Paragraph, VerticalAnchor, WpsShapeRun } from "docx";
 
-new WpsShapeRun({
-    type: "wps",
-    children: [new Paragraph("Centered text")],
-    transformation: { width: 200, height: 200 },
-    bodyProperties: {
-        verticalAnchor: VerticalAnchor.CENTER,
-        margins: {
-            top: 45720, // in EMUs
-            bottom: 45720,
-            left: 91440,
-            right: 91440,
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new WpsShapeRun({
+                            type: "wps",
+                            children: [new Paragraph("Centered text")],
+                            transformation: { width: 200, height: 200 },
+                            bodyProperties: {
+                                verticalAnchor: VerticalAnchor.CENTER,
+                                margins: {
+                                    top: 45720, // in EMUs
+                                    bottom: 45720,
+                                    left: 91440,
+                                    right: 91440,
+                                },
+                                noAutoFit: true,
+                            },
+                        }),
+                    ],
+                }),
+            ],
         },
-        noAutoFit: true,
-    },
+    ],
 });
 ```
 
@@ -226,8 +326,8 @@ new WpsShapeRun({
 
 A floating callout box with background fill, outline, and centered text:
 
-```ts
-import { AlignmentType, Document, Packer, Paragraph, SchemeColor, TextRun, VerticalAnchor, WpsShapeRun } from "docx";
+```ts live
+import { AlignmentType, Document, Packer, Paragraph, TextRun, VerticalAnchor, WpsShapeRun } from "docx";
 import * as fs from "fs";
 
 const doc = new Document({

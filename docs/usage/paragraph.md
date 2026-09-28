@@ -8,51 +8,87 @@ You can create `Paragraphs` in the following ways:
 
 ### Shorthand
 
-```ts
-import { Paragraph } from "docx";
+```ts live
+import { Document, Paragraph } from "docx";
 
-const paragraph = new Paragraph("Short hand Hello World");
+const doc = new Document({
+    sections: [
+        {
+            children: [new Paragraph("Short hand Hello World")],
+        },
+    ],
+});
 ```
 
 ### Children Method
 
 This method is useful for adding different [text](usage/text.md) with different styles, [symbols](usage/symbols.md), or adding [images](usage/images.md) inline.
 
-```ts
-const paragraph = new Paragraph({
-    children: [new TextRun("Lorem Ipsum Foo Bar"), new TextRun("Hello World"), new SymbolRun("F071")],
+```ts live
+import { Document, Paragraph, SymbolRun, TextRun } from "docx";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [new TextRun("Lorem Ipsum Foo Bar"), new TextRun("Hello World"), new SymbolRun("F071")],
+                }),
+            ],
+        },
+    ],
 });
 ```
 
 ### Explicit
 
-```ts
-const paragraph = new Paragraph({
-    text: "Short hand notation for adding text.",
+```ts live
+import { Document, Paragraph } from "docx";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    text: "Short hand notation for adding text.",
+                }),
+            ],
+        },
+    ],
 });
 ```
 
 After you create the paragraph, you must add the paragraph into a `section`:
 
-```ts
+```ts live
+import { Document, Paragraph } from "docx";
+
+const paragraph = new Paragraph("Hello World");
+
 const doc = new Document({
-    sections: [{
-        children: [paragraph],
-    }];
+    sections: [
+        {
+            children: [paragraph],
+        },
+    ],
 });
 ```
 
 Or the preferred convention, define the paragraph inside the section and remove the usage of variables:
 
-```ts
+```ts live
+import { Document, Paragraph, TextRun } from "docx";
+
 const doc = new Document({
-    sections: [{
-        children: [
-            new Paragraph({
-                children: [new TextRun("Lorem Ipsum Foo Bar"), new TextRun("Hello World")],
-            }),
-        ],
-    }];
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [new TextRun("Lorem Ipsum Foo Bar"), new TextRun("Hello World")],
+                }),
+            ],
+        },
+    ],
 });
 ```
 
@@ -90,9 +126,19 @@ This is the text in a paragraph. You can also add text by using the `Paragraph` 
 
 **Example:**
 
-```ts
-const paragraph = new Paragraph({
-    text: "Hello World",
+```ts live
+import { Document, Paragraph } from "docx";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    text: "Hello World",
+                }),
+            ],
+        },
+    ],
 });
 ```
 
@@ -102,10 +148,20 @@ const paragraph = new Paragraph({
 
 Setting a Heading 1 paragraph with "Hello World" as it's text:
 
-```ts
-const paragraph = new Paragraph({
-    text: "Hello World",
-    heading: HeadingLevel.HEADING_1,
+```ts live
+import { Document, HeadingLevel, Paragraph } from "docx";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    text: "Hello World",
+                    heading: HeadingLevel.HEADING_1,
+                }),
+            ],
+        },
+    ],
 });
 ```
 
@@ -128,23 +184,33 @@ Add borders to a `Paragraph`. Good for making the `Paragraph` stand out. Border 
 
 Add border on the top and the bottom of the paragraph
 
-```ts
-const paragraph = new Paragraph({
-    text: "I have borders on my top and bottom sides!",
-    border: {
-        top: {
-            color: "auto",
-            space: 1,
-            style: "single",
-            size: 6,
+```ts live
+import { Document, Paragraph } from "docx";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    text: "I have borders on my top and bottom sides!",
+                    border: {
+                        top: {
+                            color: "auto",
+                            space: 1,
+                            style: "single",
+                            size: 6,
+                        },
+                        bottom: {
+                            color: "auto",
+                            space: 1,
+                            style: "single",
+                            size: 6,
+                        },
+                    },
+                }),
+            ],
         },
-        bottom: {
-            color: "auto",
-            space: 1,
-            style: "single",
-            size: 6,
-        },
-    },
+    ],
 });
 ```
 
@@ -154,14 +220,24 @@ Colors of borders and shading can be hex values, or colors of the document's the
 
 Add color to an entire paragraph block
 
-```ts
-const paragraph = new Paragraph({
-    text: "shading",
-    shading: {
-        type: ShadingType.REVERSE_DIAGONAL_STRIPE,
-        color: "00FFFF",
-        fill: "FF0000",
-    },
+```ts live
+import { Document, Paragraph, ShadingType } from "docx";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    text: "shading",
+                    shading: {
+                        type: ShadingType.REVERSE_DIAGONAL_STRIPE,
+                        color: "00FFFF",
+                        fill: "FF0000",
+                    },
+                }),
+            ],
+        },
+    ],
 });
 ```
 
@@ -169,10 +245,20 @@ const paragraph = new Paragraph({
 
 Allow First/Last Line to Display on a Separate Page
 
-```ts
-const paragraph = new Paragraph({
-    text: "shading",
-    widowControl: true,
+```ts live
+import { Document, Paragraph } from "docx";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    text: "widow control",
+                    widowControl: true,
+                }),
+            ],
+        },
+    ],
 });
 ```
 
@@ -195,12 +281,23 @@ Note: The `lineRule` property has different values depending on the version of W
 
 Add spacing before the paragraph:
 
-```ts
-const paragraph = new Paragraph({
-    text: "Paragraph with spacing before",
-    spacing: {
-        before: 200,
-    },
+```ts live
+import { Document, Paragraph } from "docx";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph("Paragraph without spacing"),
+                new Paragraph({
+                    text: "Paragraph with spacing before",
+                    spacing: {
+                        before: 200,
+                    },
+                }),
+            ],
+        },
+    ],
 });
 ```
 
@@ -224,12 +321,22 @@ Set paragraph indentation from the page margins using the `indent` property.
 
 **Example — first-line indent in twips:**
 
-```ts
-const paragraph = new Paragraph({
-    text: "Indented first line",
-    indent: {
-        firstLine: 720, // 720 twips = 0.5 inch
-    },
+```ts live
+import { Document, Paragraph } from "docx";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    text: "Indented first line. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque vehicula nec nulla vitae efficitur. Ut interdum mauris eu ipsum rhoncus, nec pharetra velit placerat.",
+                    indent: {
+                        firstLine: 720, // 720 twips = 0.5 inch
+                    },
+                }),
+            ],
+        },
+    ],
 });
 ```
 
@@ -237,24 +344,44 @@ const paragraph = new Paragraph({
 
 Use `firstLineChars` when you want Word to calculate the indent relative to the font's character width rather than a fixed measurement. The value is in hundredths of a character, so `200` means two characters.
 
-```ts
-const paragraph = new Paragraph({
-    text: "First line indented by two characters",
-    indent: {
-        firstLineChars: 200,
-    },
+```ts live
+import { Document, Paragraph } from "docx";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    text: "First line indented by two characters. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque vehicula nec nulla vitae efficitur. Ut interdum mauris eu ipsum rhoncus, nec pharetra velit placerat.",
+                    indent: {
+                        firstLineChars: 200,
+                    },
+                }),
+            ],
+        },
+    ],
 });
 ```
 
 **Example — left and hanging indent:**
 
-```ts
-const paragraph = new Paragraph({
-    text: "Hanging indent paragraph",
-    indent: {
-        left: 720,
-        hanging: 360, // first line hangs back 360 twips from the left indent
-    },
+```ts live
+import { Document, Paragraph } from "docx";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    text: "Hanging indent paragraph. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque vehicula nec nulla vitae efficitur. Ut interdum mauris eu ipsum rhoncus, nec pharetra velit placerat.",
+                    indent: {
+                        left: 720,
+                        hanging: 360, // first line hangs back 360 twips from the left indent
+                    },
+                }),
+            ],
+        },
+    ],
 });
 ```
 
@@ -262,9 +389,20 @@ const paragraph = new Paragraph({
 
 **Example:**
 
-```ts
-const paragraph = new Paragraph({
-    outlineLevel: 0,
+```ts live
+import { Document, Paragraph } from "docx";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    text: "Hello World",
+                    outlineLevel: 0,
+                }),
+            ],
+        },
+    ],
 });
 ```
 
@@ -274,12 +412,20 @@ To create styles, please refer to the [styling documentation](usage/styling-with
 
 ### Headings and titles
 
-```ts
-import { HeadingLevel, Paragraph } from "docx";
+```ts live
+import { Document, HeadingLevel, Paragraph } from "docx";
 
-const paragraph = new Paragraph({
-    text: "Hello World",
-    heading: HeadingLevel.TITLE,
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    text: "Hello World",
+                    heading: HeadingLevel.TITLE,
+                }),
+            ],
+        },
+    ],
 });
 ```
 
@@ -289,11 +435,21 @@ To change the text alignment of a paragraph, add an `AlignmentType` option on th
 
 **Example:**
 
-```ts
-const paragraph = new Paragraph({
-    text: "Hello World",
-    heading: HeadingLevel.HEADING_1,
-    alignment: AlignmentType.CENTER,
+```ts live
+import { AlignmentType, Document, HeadingLevel, Paragraph } from "docx";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    text: "Hello World",
+                    heading: HeadingLevel.HEADING_1,
+                    alignment: AlignmentType.CENTER,
+                }),
+            ],
+        },
+    ],
 });
 ```
 
@@ -303,7 +459,9 @@ The above will create a `heading 1` which is `centered`.
 
 When a paragraph is justified, incomplete lines ending in a soft line break are stretched to fill the full width by default. To prevent this, enable `doNotExpandShiftReturn` in the document's compatibility options:
 
-```ts
+```ts live
+import { AlignmentType, Document, Paragraph, TextRun } from "docx";
+
 const doc = new Document({
     compatibility: {
         doNotExpandShiftReturn: true,
@@ -312,7 +470,7 @@ const doc = new Document({
         {
             children: [
                 new Paragraph({
-                    text: "This justified paragraph won't stretch soft line breaks.",
+                    children: [new TextRun("This justified paragraph won't stretch"), new TextRun({ text: "soft line breaks.", break: 1 })],
                     alignment: AlignmentType.JUSTIFIED,
                 }),
             ],
@@ -325,23 +483,44 @@ const doc = new Document({
 
 To add a thematic break in the `Paragraph`:
 
-```ts
-const paragraph = new Paragraph({
-    text: "Amazing Heading",
-    heading: HeadingLevel.HEADING_1,
-    thematicBreak: true,
+```ts live
+import { Document, HeadingLevel, Paragraph } from "docx";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    text: "Amazing Heading",
+                    heading: HeadingLevel.HEADING_1,
+                    thematicBreak: true,
+                }),
+            ],
+        },
+    ],
 });
 ```
 
-The above example will create a heading with a page break directly under it.
+The above example will create a heading with a horizontal line directly under it.
 
 ## Page Break
 
 To move to a new page (insert a page break):
 
-```ts
-const paragraph = new docx.Paragraph({
-    children: [new TextRun("Amazing Heading"), new PageBreak()],
+```ts live
+import { Document, PageBreak, Paragraph, TextRun } from "docx";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [new TextRun("Amazing Heading"), new PageBreak()],
+                }),
+                new Paragraph("This text starts on the new page"),
+            ],
+        },
+    ],
 });
 ```
 
@@ -351,10 +530,21 @@ The above example will create a heading and start a new page immediately afterwa
 
 This option (available in word) will make sure that the paragraph will start on a new page (if it's not already on a new page).
 
-```ts
-const paragraph = new Paragraph({
-    text: "Hello World on another page",
-    pageBreakBefore: true,
+```ts live
+import { Document, Paragraph } from "docx";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph("Hello World"),
+                new Paragraph({
+                    text: "Hello World on another page",
+                    pageBreakBefore: true,
+                }),
+            ],
+        },
+    ],
 });
 ```
 
@@ -366,10 +556,20 @@ Example: https://github.com/dolanmiu/docx/blob/master/demo/paragraphs/page-break
 
 Paragraphs have `keepLines` and `keepNext` properties that allow restricting page breaks within and between paragraphs. See [this Microsoft article](https://support.microsoft.com/en-us/office/keep-text-together-in-word-af94e5b8-3a5a-4cb0-9c53-dea56b43d96d) for more details.
 
-```ts
-const paragraph = new Paragraph({
-    text: "Stay on the same page",
-    keepLines: true,
-    keepNext: true,
+```ts live
+import { Document, Paragraph } from "docx";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    text: "Stay on the same page",
+                    keepLines: true,
+                    keepNext: true,
+                }),
+            ],
+        },
+    ],
 });
 ```

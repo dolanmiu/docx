@@ -4,11 +4,19 @@
 
 You can add multiple `symbol runs` in `Paragraphs` along with [text runs](usage/text.md) using the Paragraph's `children` property.
 
-```ts
-import { Paragraph, TextRun, SymbolRun } from "docx";
+```ts live
+import { Document, Paragraph, TextRun, SymbolRun } from "docx";
 
-const paragraph = new Paragraph({
-    children: [new TextRun("This is a checkbox: "), new SymbolRun("F071")],
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [new TextRun("This is a checkbox: "), new SymbolRun("F071")],
+                }),
+            ],
+        },
+    ],
 });
 ```
 
@@ -16,10 +24,24 @@ const paragraph = new Paragraph({
 
 By default symbol runs will use the `Wingdings` font. To switch fonts, pass an object instead of a string to the `SymbolRun` constructor and specify `char` and `symbolfont` properties:
 
-```ts
-const symbol = new SymbolRun({
-    char: "F071",
-    symbolfont: "Arial",
+```ts live
+import { Document, Paragraph, SymbolRun } from "docx";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new SymbolRun({
+                            char: "F071",
+                            symbolfont: "Arial",
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
 });
 ```
 
@@ -39,11 +61,25 @@ Symbols are specified by their hexidecimal code. Ref http://officeopenxml.com/WP
 
 Symbol runs can have their display modified just like text runs. For example, they can be bolded and italicized:
 
-```ts
-const symbol = new SymbolRun({
-    char: "F071",
-    bold: true,
-    italics: true,
+```ts live
+import { Document, Paragraph, SymbolRun } from "docx";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new SymbolRun({
+                            char: "F071",
+                            bold: true,
+                            italics: true,
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
 });
 ```
 

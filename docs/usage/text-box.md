@@ -10,7 +10,7 @@ Similar to `Text Frames`, but the difference being that it is `VML` `Shape` base
 
 Create a text box with basic content:
 
-```ts
+```ts live
 import { Document, Paragraph, TextRun, Textbox } from "docx";
 
 const doc = new Document({
@@ -46,25 +46,45 @@ const doc = new Document({
 
 ### Fixed Size
 
-```ts
-new Textbox({
-    children: [new Paragraph("Fixed size textbox")],
-    style: {
-        width: "200pt",
-        height: "100pt",
-    },
+```ts live
+import { Document, Paragraph, Textbox } from "docx";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Textbox({
+                    children: [new Paragraph("Fixed size textbox")],
+                    style: {
+                        width: "200pt",
+                        height: "100pt",
+                    },
+                }),
+            ],
+        },
+    ],
 });
 ```
 
 ### Auto Height
 
-```ts
-new Textbox({
-    children: [new Paragraph("Auto height based on content")],
-    style: {
-        width: "200pt",
-        height: "auto",
-    },
+```ts live
+import { Document, Paragraph, Textbox } from "docx";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Textbox({
+                    children: [new Paragraph("Auto height based on content")],
+                    style: {
+                        width: "200pt",
+                        height: "auto",
+                    },
+                }),
+            ],
+        },
+    ],
 });
 ```
 
@@ -72,14 +92,24 @@ new Textbox({
 
 Align the textbox horizontally:
 
-```ts
-new Textbox({
-    alignment: "center",
-    children: [new Paragraph("Centered textbox")],
-    style: {
-        width: "200pt",
-        height: "auto",
-    },
+```ts live
+import { Document, Paragraph, Textbox } from "docx";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Textbox({
+                    alignment: "center",
+                    children: [new Paragraph("Centered textbox")],
+                    style: {
+                        width: "200pt",
+                        height: "auto",
+                    },
+                }),
+            ],
+        },
+    ],
 });
 ```
 
@@ -93,17 +123,27 @@ Available alignment values:
 
 A text box can also be one of a paragraph's children, such as after some text. It is then part of that paragraph, and its own paragraph options, such as `alignment`, don't apply:
 
-```ts
-new Paragraph({
-    children: [
-        new TextRun("See the note: "),
-        new Textbox({
-            children: [new Paragraph("A note")],
-            style: {
-                width: "200pt",
-                height: "auto",
-            },
-        }),
+```ts live
+import { Document, Paragraph, TextRun, Textbox } from "docx";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new TextRun("See the note: "),
+                        new Textbox({
+                            children: [new Paragraph("A note")],
+                            style: {
+                                width: "200pt",
+                                height: "auto",
+                            },
+                        }),
+                    ],
+                }),
+            ],
+        },
     ],
 });
 ```
@@ -112,20 +152,30 @@ new Paragraph({
 
 Text boxes can contain multiple paragraphs:
 
-```ts
-new Textbox({
-    children: [
-        new Paragraph({
-            text: "Title",
-            heading: HeadingLevel.HEADING_2,
-        }),
-        new Paragraph("First paragraph of content."),
-        new Paragraph("Second paragraph of content."),
+```ts live
+import { Document, HeadingLevel, Paragraph, Textbox } from "docx";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Textbox({
+                    children: [
+                        new Paragraph({
+                            text: "Title",
+                            heading: HeadingLevel.HEADING_2,
+                        }),
+                        new Paragraph("First paragraph of content."),
+                        new Paragraph("Second paragraph of content."),
+                    ],
+                    style: {
+                        width: "300pt",
+                        height: "auto",
+                    },
+                }),
+            ],
+        },
     ],
-    style: {
-        width: "300pt",
-        height: "auto",
-    },
 });
 ```
 
@@ -133,28 +183,38 @@ new Textbox({
 
 Apply formatting to text within the textbox:
 
-```ts
-new Textbox({
-    children: [
-        new Paragraph({
-            alignment: AlignmentType.CENTER,
+```ts live
+import { AlignmentType, Document, Paragraph, TextRun, Textbox } from "docx";
+
+const doc = new Document({
+    sections: [
+        {
             children: [
-                new TextRun({
-                    text: "Important Notice",
-                    bold: true,
-                    size: 28,
+                new Textbox({
+                    children: [
+                        new Paragraph({
+                            alignment: AlignmentType.CENTER,
+                            children: [
+                                new TextRun({
+                                    text: "Important Notice",
+                                    bold: true,
+                                    size: 28,
+                                }),
+                            ],
+                        }),
+                        new Paragraph({
+                            alignment: AlignmentType.CENTER,
+                            children: [new TextRun("This is highlighted information")],
+                        }),
+                    ],
+                    style: {
+                        width: "250pt",
+                        height: "auto",
+                    },
                 }),
             ],
-        }),
-        new Paragraph({
-            alignment: AlignmentType.CENTER,
-            children: [new TextRun("This is highlighted information")],
-        }),
+        },
     ],
-    style: {
-        width: "250pt",
-        height: "auto",
-    },
 });
 ```
 
@@ -162,8 +222,8 @@ new Textbox({
 
 Sidebar callout box:
 
-```ts
-import { AlignmentType, Document, HeadingLevel, Packer, Paragraph, TextRun, Textbox } from "docx";
+```ts live
+import { AlignmentType, Document, Packer, Paragraph, TextRun, Textbox } from "docx";
 import * as fs from "fs";
 
 const doc = new Document({

@@ -18,13 +18,28 @@ A category axis shows the categories. A value axis shows numbers, and takes a ra
 
 `title` names an axis. Axes have no titles by default.
 
-```ts
-new ChartRun({
-    type: "column",
-    categories: ["Q1", "Q2", "Q3", "Q4"],
-    series: [{ name: "Sales", values: [120, 135, 150, 170] }],
-    categoryAxis: { title: "Quarter" },
-    valueAxis: { title: "Units" },
+```ts live
+import { Document, Paragraph } from "docx";
+import { ChartRun } from "docx/charts";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new ChartRun({
+                            type: "column",
+                            categories: ["Q1", "Q2", "Q3", "Q4"],
+                            series: [{ name: "Sales", values: [120, 135, 150, 170] }],
+                            categoryAxis: { title: "Quarter" },
+                            valueAxis: { title: "Units" },
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
 });
 ```
 
@@ -38,8 +53,28 @@ By default, the application chooses a value axis' range from the values. To choo
 - `maximum` is the highest;
 - `interval` is the step between its labels and gridlines.
 
-```ts
-valueAxis: { minimum: 0, maximum: 200, interval: 50 },
+```ts live
+import { Document, Paragraph } from "docx";
+import { ChartRun } from "docx/charts";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new ChartRun({
+                            type: "column",
+                            categories: ["Q1", "Q2", "Q3", "Q4"],
+                            series: [{ name: "Sales", values: [120, 135, 150, 170] }],
+                            valueAxis: { minimum: 0, maximum: 200, interval: 50 },
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
+});
 ```
 
 This labels the axis 0, 50, 100, 150 and 200. Give any of the three, and the application chooses the others. The `minimum` has to be less than the `maximum`, and the `interval` more than 0.
@@ -48,8 +83,28 @@ This labels the axis 0, 50, 100, 150 and 200. Give any of the three, and the app
 
 `logarithmicBase` makes a value axis' scale logarithmic: each gridline is the one before it times the base. It suits values that grow many times over, such as 12, 95, 610 and 4,800:
 
-```ts
-valueAxis: { logarithmicBase: 10, minimum: 1 },
+```ts live
+import { Document, Paragraph } from "docx";
+import { ChartRun } from "docx/charts";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new ChartRun({
+                            type: "column",
+                            categories: [2022, 2023, 2024, 2025],
+                            series: [{ name: "Users", values: [12, 95, 610, 4800] }],
+                            valueAxis: { logarithmicBase: 10, minimum: 1 },
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
+});
 ```
 
 With base 10, the axis is labelled 1, 10, 100, 1,000 and so on. The base goes from `2` to `1000`. Values of 0 or less can't be shown on a logarithmic scale, so its `minimum` and `maximum` have to be above 0.
@@ -72,8 +127,28 @@ A percentage format multiplies by 100, as in Excel, so it suits values such as `
 
 `displayUnits` writes a value axis' labels in thousands, millions and so on, and names the units beside the axis:
 
-```ts
-valueAxis: { displayUnits: "thousands" },
+```ts live
+import { Document, Paragraph } from "docx";
+import { ChartRun } from "docx/charts";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new ChartRun({
+                            type: "column",
+                            categories: ["Q1", "Q2", "Q3", "Q4"],
+                            series: [{ name: "Revenue", values: [25000, 32000, 41000, 38000] }],
+                            valueAxis: { displayUnits: "thousands" },
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
+});
 ```
 
 This labels 25,000 as 25, and the axis "Thousands". The units are `"hundreds"`, `"thousands"`, `"tenThousands"`, `"hundredThousands"`, `"millions"`, `"tenMillions"`, `"hundredMillions"`, `"billions"` and `"trillions"`.
@@ -82,11 +157,26 @@ This labels 25,000 as 25, and the axis "Thousands". The units are `"hundreds"`, 
 
 When the categories are all `Date`s, the category axis is a date axis, as in Excel: it spaces the dates by how far apart they are, so a missing month leaves a gap.
 
-```ts
-new ChartRun({
-    type: "line",
-    categories: [new Date("2025-01-01"), new Date("2025-02-01"), new Date("2025-05-01")],
-    series: [{ name: "Sign-ups", values: [320, 410, 520] }],
+```ts live
+import { Document, Paragraph } from "docx";
+import { ChartRun } from "docx/charts";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new ChartRun({
+                            type: "line",
+                            categories: [new Date("2025-01-01"), new Date("2025-02-01"), new Date("2025-05-01")],
+                            series: [{ name: "Sign-ups", values: [320, 410, 520] }],
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
 });
 ```
 
@@ -108,9 +198,29 @@ Dates are read in UTC, as `docx` writes every date, so `new Date("2025-01-31")` 
 
 `reverseOrder: true` puts an axis' categories or values the other way round, as Word's "Categories in reverse order" does. A bar chart's first category is at the bottom, as in Word, so this puts it at the top:
 
-```ts
-categoryAxis: { reverseOrder: true },
-valueAxis: { crossesAt: "maximum" },
+```ts live
+import { Document, Paragraph } from "docx";
+import { ChartRun } from "docx/charts";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new ChartRun({
+                            type: "bar",
+                            categories: ["Design", "Build", "Test"],
+                            series: [{ name: "Hours", values: [30, 80, 40] }],
+                            categoryAxis: { reverseOrder: true },
+                            valueAxis: { crossesAt: "maximum" },
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
+});
 ```
 
 Reversing the categories moves the value axis to the other side too, as it crosses the category axis at its first category. `crossesAt: "maximum"` moves it back: see the next section.
@@ -127,17 +237,57 @@ Each axis crosses the other one. By default, it crosses where the other axis is 
 | A number           | At that value, or on a value axis crossing categories, at that category's number, from 1 |
 | A `Date`           | On a value axis crossing categories that are dates, at that date                         |
 
-```ts
-valueAxis: { crossesAt: "maximum" }, // The value axis on the right
-categoryAxis: { crossesAt: 50 }, // The category axis at 50, so the bars grow up or down from 50
+```ts live
+import { Document, Paragraph } from "docx";
+import { ChartRun } from "docx/charts";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new ChartRun({
+                            type: "column",
+                            categories: ["Q1", "Q2", "Q3", "Q4"],
+                            series: [{ name: "Score", values: [40, 65, 55, 30] }],
+                            valueAxis: { crossesAt: "maximum" }, // The value axis on the right
+                            categoryAxis: { crossesAt: 50 }, // The category axis at 50, so the bars grow up or down from 50
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
+});
 ```
 
 ## Label Rotation
 
 `labelRotation` turns an axis' labels, in degrees clockwise, from `-90` to `90`. `-45` slants them up to the right, which suits long category names:
 
-```ts
-categoryAxis: { labelRotation: -45 },
+```ts live
+import { Document, Paragraph } from "docx";
+import { ChartRun } from "docx/charts";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new ChartRun({
+                            type: "column",
+                            categories: ["North America", "South America", "Europe", "Middle East", "Asia Pacific"],
+                            series: [{ name: "Sales", values: [120, 60, 95, 40, 110] }],
+                            categoryAxis: { labelRotation: -45 },
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
+});
 ```
 
 By default, the application turns the labels when they don't fit.
@@ -146,8 +296,28 @@ By default, the application turns the labels when they don't fit.
 
 An axis' labels are 9 point text in dark grey, and its title 10 point. `font` changes the labels' font, and the title takes a font of its own:
 
-```ts
-categoryAxis: { font: { size: 11, bold: true } },
+```ts live
+import { Document, Paragraph } from "docx";
+import { ChartRun } from "docx/charts";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new ChartRun({
+                            type: "column",
+                            categories: ["Q1", "Q2", "Q3", "Q4"],
+                            series: [{ name: "Sales", values: [120, 135, 150, 170] }],
+                            categoryAxis: { font: { size: 11, bold: true } },
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
+});
 ```
 
 See [Chart Fonts and Fills](usage/chart-fonts-and-fills.md).
@@ -156,18 +326,58 @@ See [Chart Fonts and Fills](usage/chart-fonts-and-fills.md).
 
 Gridlines are the lines across the chart at each label of an axis. A value axis has them by default, and a category axis doesn't. `gridlines` turns them on or off:
 
-```ts
-categoryAxis: { gridlines: true },
-valueAxis: { gridlines: false },
+```ts live
+import { Document, Paragraph } from "docx";
+import { ChartRun } from "docx/charts";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new ChartRun({
+                            type: "column",
+                            categories: ["Q1", "Q2", "Q3", "Q4"],
+                            series: [{ name: "Sales", values: [120, 135, 150, 170] }],
+                            categoryAxis: { gridlines: true },
+                            valueAxis: { gridlines: false },
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
+});
 ```
 
 ## Hiding an Axis
 
 `visible: false` hides an axis and its labels. Its gridlines stay unless you turn them off too:
 
-```ts
-categoryAxis: { visible: false },
-valueAxis: { visible: false, gridlines: false },
+```ts live
+import { Document, Paragraph } from "docx";
+import { ChartRun } from "docx/charts";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new ChartRun({
+                            type: "column",
+                            categories: ["Q1", "Q2", "Q3", "Q4"],
+                            series: [{ name: "Sales", values: [120, 135, 150, 170] }],
+                            categoryAxis: { visible: false },
+                            valueAxis: { visible: false, gridlines: false },
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
+});
 ```
 
 A chart with no axes, legend or title can be as small as a word. See [Small Charts](usage/chart-size-and-position.md#small-charts).

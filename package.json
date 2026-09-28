@@ -89,6 +89,7 @@
         "prettier": "prettier -l \"{src,scripts,demo,docs}/**/*.{ts,html,md}\"",
         "prettier:fix": "npm run prettier -- --write",
         "cspell": "cspell \"{src,demo,docs,scripts}/**/*.{ts,scss,html,md}\" && cspell \"./*.*\"",
+        "build.docs": "npm run build && mkdir -p docs/live-examples/lib && cp dist/*.iife.js dist/*.d.ts docs/live-examples/lib/",
         "serve.docs": "cd docs && docsify serve",
         "extract": "tsx scripts/extract-document.ts",
         "check-api": "tsx scripts/check-api.ts",

@@ -8,14 +8,29 @@ A combo chart draws some series one way and some another, such as sales as colum
 
 Give a series a `type` to draw it as `"column"`, `"line"` or `"area"`, whatever the chart's own `type`:
 
-```ts
-new ChartRun({
-    type: "column",
-    title: "Sales and target",
-    categories: ["Jan", "Feb", "Mar", "Apr"],
-    series: [
-        { name: "Sales", values: [120, 135, 150, 170] },
-        { name: "Target", values: [130, 140, 150, 160], type: "line" },
+```ts live
+import { Document, Paragraph } from "docx";
+import { ChartRun } from "docx/charts";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new ChartRun({
+                            type: "column",
+                            title: "Sales and target",
+                            categories: ["Jan", "Feb", "Mar", "Apr"],
+                            series: [
+                                { name: "Sales", values: [120, 135, 150, 170] },
+                                { name: "Target", values: [130, 140, 150, 160], type: "line" },
+                            ],
+                        }),
+                    ],
+                }),
+            ],
+        },
     ],
 });
 ```
@@ -30,17 +45,32 @@ The options of each way of drawing a series work as they do on its own chart. A 
 
 `axis: "secondary"` draws a series against a second value axis, on the right side of the chart:
 
-```ts
-new ChartRun({
-    type: "column",
-    title: "Sales and growth",
-    categories: ["Jan", "Feb", "Mar", "Apr"],
-    series: [
-        { name: "Sales", values: [120, 135, 150, 170] },
-        { name: "Growth", values: [4, 12.5, 11.1, 13.3], type: "line", axis: "secondary" },
+```ts live
+import { Document, Paragraph } from "docx";
+import { ChartRun } from "docx/charts";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new ChartRun({
+                            type: "column",
+                            title: "Sales and growth",
+                            categories: ["Jan", "Feb", "Mar", "Apr"],
+                            series: [
+                                { name: "Sales", values: [120, 135, 150, 170] },
+                                { name: "Growth", values: [4, 12.5, 11.1, 13.3], type: "line", axis: "secondary" },
+                            ],
+                            valueAxis: { title: "Units" },
+                            secondaryValueAxis: { title: "Growth (%)" },
+                        }),
+                    ],
+                }),
+            ],
+        },
     ],
-    valueAxis: { title: "Units" },
-    secondaryValueAxis: { title: "Growth (%)" },
 });
 ```
 
@@ -56,12 +86,36 @@ A series drawn as columns on the secondary axis is drawn in front of those on th
 
 A chart's `dataLabels` are on every series, but their `position` is for the series drawn as the chart's `type`, as each way of drawing a series has positions of its own. The others keep Office's positions, unless their own `dataLabels` give one:
 
-```ts
-dataLabels: { value: true, position: "insideEnd" },
-series: [
-    { name: "Sales", values: [120, 135, 150, 170] },
-    { name: "Target", values: [130, 140, 150, 160], type: "line", dataLabels: { value: true, position: "above" } },
-],
+```ts live
+import { Document, Paragraph } from "docx";
+import { ChartRun } from "docx/charts";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new ChartRun({
+                            type: "column",
+                            categories: ["Jan", "Feb", "Mar", "Apr"],
+                            dataLabels: { value: true, position: "insideEnd" },
+                            series: [
+                                { name: "Sales", values: [120, 135, 150, 170] },
+                                {
+                                    name: "Target",
+                                    values: [130, 140, 150, 160],
+                                    type: "line",
+                                    dataLabels: { value: true, position: "above" },
+                                },
+                            ],
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
+});
 ```
 
 See [Where the Labels Go](usage/chart-data-labels.md#where-the-labels-go).
@@ -70,16 +124,31 @@ See [Where the Labels Go](usage/chart-data-labels.md#where-the-labels-go).
 
 `stacking` stacks the series drawn as the chart's `type`. The others aren't stacked, so a line can show the total of stacked columns:
 
-```ts
-new ChartRun({
-    type: "column",
-    categories: ["Q1", "Q2", "Q3"],
-    series: [
-        { name: "North", values: [40, 45, 50] },
-        { name: "South", values: [30, 35, 30] },
-        { name: "Total", values: [70, 80, 80], type: "line" },
+```ts live
+import { Document, Paragraph } from "docx";
+import { ChartRun } from "docx/charts";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new ChartRun({
+                            type: "column",
+                            categories: ["Q1", "Q2", "Q3"],
+                            series: [
+                                { name: "North", values: [40, 45, 50] },
+                                { name: "South", values: [30, 35, 30] },
+                                { name: "Total", values: [70, 80, 80], type: "line" },
+                            ],
+                            stacking: "stacked",
+                        }),
+                    ],
+                }),
+            ],
+        },
     ],
-    stacking: "stacked",
 });
 ```
 

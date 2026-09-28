@@ -6,8 +6,8 @@ Every document `docx` writes has a theme (`word/theme/theme1.xml`): Office's the
 
 ## A theme of your own
 
-```ts
-import { Document } from "docx";
+```ts live
+import { Document, Paragraph, TextRun } from "docx";
 
 const doc = new Document({
     theme: {
@@ -15,7 +15,30 @@ const doc = new Document({
         colors: { dark2: "1B3A4B", accent1: "1F6F8B", accent2: "E07A5F" },
         fonts: { headings: "Cambria", body: "Calibri" },
     },
-    sections: [],
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new TextRun({
+                            text: "In the theme's font for headings, and accent 1",
+                            font: { theme: "headings" },
+                            color: { theme: "accent1" },
+                        }),
+                    ],
+                }),
+                new Paragraph({
+                    children: [
+                        new TextRun({
+                            text: "In the theme's font for body text, and accent 2",
+                            font: { theme: "body" },
+                            color: { theme: "accent2" },
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
 });
 ```
 
@@ -54,7 +77,9 @@ Colors and fonts that aren't given are Office's.
 
 A run's or a style's `font` can be one of the theme's fonts: `{ theme: "headings" }` or `{ theme: "body" }`. It's the theme's font for every script, as Word's own styles use it.
 
-```ts
+```ts live
+import { Document, HeadingLevel, Paragraph, TextRun } from "docx";
+
 const doc = new Document({
     theme: { fonts: { headings: "Cambria", body: "Calibri" } },
     styles: {
@@ -85,7 +110,9 @@ Wherever text, underlines, borders and shading take a color, they can take one o
 
 `lighter` and `darker` make the color lighter or darker, from 0 (unchanged) to 100 (white or black), as Word's color menus do: "Blue, Accent 1, Lighter 80%" is `{ theme: "accent1", lighter: 80 }`, and "Blue, Accent 1, Darker 25%" is `{ theme: "accent1", darker: 25 }`.
 
-```ts
+```ts live
+import { BorderStyle, Document, HeadingLevel, Paragraph, ShadingType, TextRun, UnderlineType } from "docx";
+
 const doc = new Document({
     theme: { colors: { accent1: "1F6F8B" } },
     styles: {
@@ -96,6 +123,7 @@ const doc = new Document({
     sections: [
         {
             children: [
+                new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new TextRun("A heading in accent 1, darker 25%")] }),
                 new Paragraph({
                     // A rule under the paragraph, and a light background
                     border: { bottom: { style: BorderStyle.SINGLE, size: 6, color: { theme: "accent1" } } },
@@ -130,14 +158,27 @@ Word writes a theme color with the color it comes to, for applications that don'
 
 Shapes from `docx/shapes` can be filled and outlined in the theme's colors, lighter or darker if you like, as Word's color menus offer them. See [Theme colours](usage/shapes.md#theme-colours).
 
-```ts
+```ts live
+import { Document, Paragraph } from "docx";
 import { ShapeRun } from "docx/shapes";
 
-new ShapeRun({
-    type: "roundedRectangle",
-    transformation: { width: 120, height: 60 },
-    fill: { theme: "accent1", lighter: 80 },
-    line: { theme: "accent1", darker: 25 },
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new ShapeRun({
+                            type: "roundedRectangle",
+                            transformation: { width: 120, height: 60 },
+                            fill: { theme: "accent1", lighter: 80 },
+                            line: { theme: "accent1", darker: 25 },
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
 });
 ```
 

@@ -19,8 +19,8 @@ In a page without a bundler, load `dist/watermarks.umd.cjs` after `dist/index.um
 
 ## Text Watermark
 
-```ts
-import { Document, Header, Packer, Paragraph } from "docx";
+```ts live
+import { Document, Header, Paragraph } from "docx";
 import { TextWatermark } from "docx/watermarks";
 
 const doc = new Document({
@@ -61,22 +61,62 @@ By default the text is drawn diagonally across the page in semi-transparent silv
 
 ### Customising the Text
 
-```ts
-new TextWatermark({
-    text: "CONFIDENTIAL",
-    font: "Arial",
-    color: "FF0000",
-    opacity: 0.3,
-    bold: true,
+```ts live
+import { Document, Header, Paragraph } from "docx";
+import { TextWatermark } from "docx/watermarks";
+
+const doc = new Document({
+    sections: [
+        {
+            headers: {
+                default: new Header({
+                    children: [
+                        new Paragraph({
+                            children: [
+                                new TextWatermark({
+                                    text: "CONFIDENTIAL",
+                                    font: "Arial",
+                                    color: "FF0000",
+                                    opacity: 0.3,
+                                    bold: true,
+                                }),
+                            ],
+                        }),
+                    ],
+                }),
+            },
+            children: [new Paragraph("Document content")],
+        },
+    ],
 });
 ```
 
 ### Horizontal Layout
 
-```ts
-new TextWatermark({
-    text: "SAMPLE",
-    layout: "horizontal",
+```ts live
+import { Document, Header, Paragraph } from "docx";
+import { TextWatermark } from "docx/watermarks";
+
+const doc = new Document({
+    sections: [
+        {
+            headers: {
+                default: new Header({
+                    children: [
+                        new Paragraph({
+                            children: [
+                                new TextWatermark({
+                                    text: "SAMPLE",
+                                    layout: "horizontal",
+                                }),
+                            ],
+                        }),
+                    ],
+                }),
+            },
+            children: [new Paragraph("Document content")],
+        },
+    ],
 });
 ```
 
@@ -84,19 +124,39 @@ new TextWatermark({
 
 Word stretches watermark text to fill the shape, so the shape's width and height control how large the text appears. Because `docx` cannot measure fonts, the default height is estimated from the text length so that the letters keep their proportions. Set `width` and `height` explicitly to take full control:
 
-```ts
-new TextWatermark({
-    text: "DRAFT",
-    width: 400,
-    height: 100,
+```ts live
+import { Document, Header, Paragraph } from "docx";
+import { TextWatermark } from "docx/watermarks";
+
+const doc = new Document({
+    sections: [
+        {
+            headers: {
+                default: new Header({
+                    children: [
+                        new Paragraph({
+                            children: [
+                                new TextWatermark({
+                                    text: "DRAFT",
+                                    width: 400,
+                                    height: 100,
+                                }),
+                            ],
+                        }),
+                    ],
+                }),
+            },
+            children: [new Paragraph("Document content")],
+        },
+    ],
 });
 ```
 
 ## Image Watermark
 
-```ts
+```ts live
 import * as fs from "fs";
-import { Document, Header, Packer, Paragraph } from "docx";
+import { Document, Header, Paragraph } from "docx";
 import { ImageWatermark } from "docx/watermarks";
 
 const doc = new Document({
@@ -109,7 +169,7 @@ const doc = new Document({
                             children: [
                                 new ImageWatermark({
                                     type: "png",
-                                    data: fs.readFileSync("./logo.png"),
+                                    data: fs.readFileSync("./demo/assets/images/dog.png"),
                                     transformation: {
                                         width: 400,
                                         height: 400,
@@ -140,12 +200,33 @@ The image is centred on the page and, by default, washed out so that the documen
 
 ### Full-Strength Image
 
-```ts
-new ImageWatermark({
-    type: "png",
-    data: fs.readFileSync("./logo.png"),
-    transformation: { width: 300, height: 300 },
-    washout: false,
+```ts live
+import * as fs from "fs";
+import { Document, Header, Paragraph } from "docx";
+import { ImageWatermark } from "docx/watermarks";
+
+const doc = new Document({
+    sections: [
+        {
+            headers: {
+                default: new Header({
+                    children: [
+                        new Paragraph({
+                            children: [
+                                new ImageWatermark({
+                                    type: "png",
+                                    data: fs.readFileSync("./demo/assets/images/dog.png"),
+                                    transformation: { width: 300, height: 300 },
+                                    washout: false,
+                                }),
+                            ],
+                        }),
+                    ],
+                }),
+            },
+            children: [new Paragraph("Document content")],
+        },
+    ],
 });
 ```
 
@@ -153,7 +234,10 @@ new ImageWatermark({
 
 Watermarks live in headers, so they follow the header rules. Use a `first` header to watermark only the cover page, or omit the watermark from the `first` header to leave the cover page clean:
 
-```ts
+```ts live
+import { Document, Header, Paragraph } from "docx";
+import { TextWatermark } from "docx/watermarks";
+
 const doc = new Document({
     sections: [
         {
@@ -172,7 +256,7 @@ const doc = new Document({
                     ],
                 }),
             },
-            children: [/* ... */],
+            children: [new Paragraph("Cover page"), new Paragraph({ text: "Second page, with the watermark", pageBreakBefore: true })],
         },
     ],
 });
@@ -184,12 +268,24 @@ Each section has its own headers, so different sections can carry different wate
 
 The watermark is an inline element, so it can share a paragraph with ordinary header content:
 
-```ts
-new Header({
-    children: [
-        new Paragraph({
-            children: [new TextWatermark({ text: "DRAFT" }), new TextRun("Company Name")],
-        }),
+```ts live
+import { Document, Header, Paragraph, TextRun } from "docx";
+import { TextWatermark } from "docx/watermarks";
+
+const doc = new Document({
+    sections: [
+        {
+            headers: {
+                default: new Header({
+                    children: [
+                        new Paragraph({
+                            children: [new TextWatermark({ text: "DRAFT" }), new TextRun("Company Name")],
+                        }),
+                    ],
+                }),
+            },
+            children: [new Paragraph("Document content")],
+        },
     ],
 });
 ```

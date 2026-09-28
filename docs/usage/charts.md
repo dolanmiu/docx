@@ -8,7 +8,7 @@ Like an image, a chart is a run inside a `Paragraph`.
 
 ## Your First Chart
 
-```ts
+```ts live
 import * as fs from "fs";
 import { Document, Packer, Paragraph } from "docx";
 import { ChartRun } from "docx/charts";

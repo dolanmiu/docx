@@ -12,7 +12,9 @@ The patcher allows you to modify existing documents, and add new content to them
 import * as fs from "fs";
 import { patchDocument } from "docx";
 
-patchDocument(fs.readFileSync("My Document.docx"), {
+patchDocument({
+    outputType: "nodebuffer",
+    data: fs.readFileSync("My Document.docx"),
     patches: {
         // Patches here
     },
@@ -57,14 +59,21 @@ A patch can also be for a drawing whose alt text holds the placeholder, rather t
 
 The patch can be as simple as a string, or as complex as a table. Images, hyperlinks, charts from `docx/charts` (see [Charts in Templates](usage/chart-size-and-position.md#in-templates)), and other complex elements within the `docx` library are also supported.
 
-```ts
-patchDocument(fs.readFileSync("My Document.docx"), {
+This example patches `{{name}}` and `{{paragraph_replace}}` in [simple-template.docx](https://github.com/dolanmiu/docx/blob/master/demo/assets/simple-template.docx):
+
+```ts live
+import * as fs from "fs";
+import { ExternalHyperlink, ImageRun, Paragraph, patchDocument, PatchType, TextRun } from "docx";
+
+const doc = await patchDocument({
+    outputType: "nodebuffer",
+    data: fs.readFileSync("./demo/assets/simple-template.docx"),
     patches: {
-        my_patch: {
+        name: {
             type: PatchType.PARAGRAPH,
             children: [new TextRun("Sir. "), new TextRun("John Doe"), new TextRun("(The Conqueror)")],
         },
-        my_second_patch: {
+        paragraph_replace: {
             type: PatchType.DOCUMENT,
             children: [
                 new Paragraph("Lorem ipsum paragraph"),
@@ -91,6 +100,8 @@ patchDocument(fs.readFileSync("My Document.docx"), {
         },
     },
 });
+
+fs.writeFileSync("My Document.docx", doc);
 ```
 
 ---

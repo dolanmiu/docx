@@ -61,28 +61,38 @@ To make a `Text Frame`, add the `frame` property on a paragraph. Frames support 
 
 Position a frame using exact coordinates relative to the anchor:
 
-```ts
-new Paragraph({
-    frame: {
-        type: "absolute",
-        position: {
-            x: 1000,
-            y: 3000,
+```ts live
+import { BorderStyle, Document, FrameAnchorType, Paragraph, TextRun } from "docx";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    frame: {
+                        type: "absolute",
+                        position: {
+                            x: 1000,
+                            y: 3000,
+                        },
+                        width: 4000,
+                        height: 1000,
+                        anchor: {
+                            horizontal: FrameAnchorType.MARGIN,
+                            vertical: FrameAnchorType.MARGIN,
+                        },
+                    },
+                    border: {
+                        top: { color: "auto", space: 1, style: BorderStyle.SINGLE, size: 6 },
+                        bottom: { color: "auto", space: 1, style: BorderStyle.SINGLE, size: 6 },
+                        left: { color: "auto", space: 1, style: BorderStyle.SINGLE, size: 6 },
+                        right: { color: "auto", space: 1, style: BorderStyle.SINGLE, size: 6 },
+                    },
+                    children: [new TextRun("Hello World"), new TextRun({ text: "Foo Bar", bold: true })],
+                }),
+            ],
         },
-        width: 4000,
-        height: 1000,
-        anchor: {
-            horizontal: FrameAnchorType.MARGIN,
-            vertical: FrameAnchorType.MARGIN,
-        },
-    },
-    border: {
-        top: { color: "auto", space: 1, value: "single", size: 6 },
-        bottom: { color: "auto", space: 1, value: "single", size: 6 },
-        left: { color: "auto", space: 1, value: "single", size: 6 },
-        right: { color: "auto", space: 1, value: "single", size: 6 },
-    },
-    children: [new TextRun("Hello World"), new TextRun({ text: "Foo Bar", bold: true })],
+    ],
 });
 ```
 
@@ -90,23 +100,33 @@ new Paragraph({
 
 Position a frame using alignment values instead of exact coordinates:
 
-```ts
-new Paragraph({
-    frame: {
-        type: "alignment",
-        alignment: {
-            x: HorizontalPositionAlign.CENTER,
-            y: VerticalPositionAlign.TOP,
+```ts live
+import { Document, FrameAnchorType, FrameWrap, HorizontalPositionAlign, Paragraph, TextRun, VerticalPositionAlign } from "docx";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    frame: {
+                        type: "alignment",
+                        alignment: {
+                            x: HorizontalPositionAlign.CENTER,
+                            y: VerticalPositionAlign.TOP,
+                        },
+                        width: 4000,
+                        height: 1000,
+                        anchor: {
+                            horizontal: FrameAnchorType.PAGE,
+                            vertical: FrameAnchorType.PAGE,
+                        },
+                        wrap: FrameWrap.AROUND,
+                    },
+                    children: [new TextRun("Centered at top of page")],
+                }),
+            ],
         },
-        width: 4000,
-        height: 1000,
-        anchor: {
-            horizontal: FrameAnchorType.PAGE,
-            vertical: FrameAnchorType.PAGE,
-        },
-        wrap: FrameWrap.AROUND,
-    },
-    children: [new TextRun("Centered at top of page")],
+    ],
 });
 ```
 
@@ -114,21 +134,34 @@ new Paragraph({
 
 Create a decorative large initial letter using the `dropCap` and `lines` properties:
 
-```ts
-new Paragraph({
-    frame: {
-        type: "absolute",
-        position: { x: 0, y: 0 },
-        width: 1440,
-        height: 1440,
-        anchor: {
-            horizontal: FrameAnchorType.TEXT,
-            vertical: FrameAnchorType.TEXT,
+```ts live
+import { Document, DropCapType, FrameAnchorType, Paragraph, TextRun } from "docx";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    frame: {
+                        type: "absolute",
+                        position: { x: 0, y: 0 },
+                        width: 1440,
+                        height: 1440,
+                        anchor: {
+                            horizontal: FrameAnchorType.TEXT,
+                            vertical: FrameAnchorType.TEXT,
+                        },
+                        dropCap: DropCapType.DROP,
+                        lines: 3,
+                    },
+                    children: [new TextRun({ text: "O", size: 72 })],
+                }),
+                new Paragraph(
+                    "nce upon a time, there was a paragraph that began with a large letter. The letter dropped down three lines into the text, and the rest of the paragraph flowed around it, the way the first page of a chapter in a book often begins.",
+                ),
+            ],
         },
-        dropCap: DropCapType.DROP,
-        lines: 3,
-    },
-    children: [new TextRun({ text: "O", size: 72 })],
+    ],
 });
 ```
 

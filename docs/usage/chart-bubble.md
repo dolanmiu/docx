@@ -6,22 +6,37 @@ A bubble chart is a scatter chart whose points are bubbles of different sizes, s
 
 ## A Bubble Chart
 
-```ts
-new ChartRun({
-    type: "bubble",
-    title: "Markets",
-    series: [
+```ts live
+import { Document, Paragraph } from "docx";
+import { ChartRun } from "docx/charts";
+
+const doc = new Document({
+    sections: [
         {
-            name: "Europe",
-            points: [
-                { x: 12, y: 4.5, size: 740 },
-                { x: 18, y: 3.1, size: 330 },
+            children: [
+                new Paragraph({
+                    children: [
+                        new ChartRun({
+                            type: "bubble",
+                            title: "Markets",
+                            series: [
+                                {
+                                    name: "Europe",
+                                    points: [
+                                        { x: 12, y: 4.5, size: 740 },
+                                        { x: 18, y: 3.1, size: 330 },
+                                    ],
+                                },
+                                { name: "Asia", points: [{ x: 24, y: 6.8, size: 1400 }] },
+                            ],
+                            xAxis: { title: "Market share (%)" },
+                            yAxis: { title: "Growth (%)" },
+                        }),
+                    ],
+                }),
             ],
         },
-        { name: "Asia", points: [{ x: 24, y: 6.8, size: 1400 }] },
     ],
-    xAxis: { title: "Market share (%)" },
-    yAxis: { title: "Growth (%)" },
 });
 ```
 
@@ -34,17 +49,73 @@ new ChartRun({
 - `bubbleScale` makes every bubble bigger or smaller, as a percentage of Office's size, from `0` to `300`. The default is `100`.
 - `sizeRepresents` says whether a point's `size` is the bubble's area (`"area"`, the default) or its width (`"width"`). By area, a bubble of size 4 looks twice as wide as one of size 1; by width, four times as wide.
 
-```ts
-bubbleScale: 60,
-sizeRepresents: "width",
+```ts live
+import { Document, Paragraph } from "docx";
+import { ChartRun } from "docx/charts";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new ChartRun({
+                            type: "bubble",
+                            series: [
+                                {
+                                    name: "Europe",
+                                    points: [
+                                        { x: 12, y: 4.5, size: 740 },
+                                        { x: 18, y: 3.1, size: 330 },
+                                    ],
+                                },
+                                { name: "Asia", points: [{ x: 24, y: 6.8, size: 1400 }] },
+                            ],
+                            bubbleScale: 60,
+                            sizeRepresents: "width",
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
+});
 ```
 
 ## Labels
 
 A bubble's label can show its size, as well as what any label shows:
 
-```ts
-dataLabels: { bubbleSize: true },
+```ts live
+import { Document, Paragraph } from "docx";
+import { ChartRun } from "docx/charts";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new ChartRun({
+                            type: "bubble",
+                            series: [
+                                {
+                                    name: "Europe",
+                                    points: [
+                                        { x: 12, y: 4.5, size: 740 },
+                                        { x: 18, y: 3.1, size: 330 },
+                                    ],
+                                },
+                                { name: "Asia", points: [{ x: 24, y: 6.8, size: 1400 }] },
+                            ],
+                            dataLabels: { bubbleSize: true },
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
+});
 ```
 
 See [Chart Data Labels](usage/chart-data-labels.md).

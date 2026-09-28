@@ -24,16 +24,31 @@ In a page without a bundler, load `dist/math.umd.cjs` after `dist/index.umd.cjs`
 
 ## Example
 
-```ts
-new Math({
-    children: [
-        new MathRun("2+2"),
-        new MathFraction({
-            numerator: [new MathRun("hi")],
-            denominator: [new MathRun("2")],
-        }),
+```ts live
+import { Document, Paragraph } from "docx";
+import { Math, MathFraction, MathRun } from "docx/math";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new Math({
+                            children: [
+                                new MathRun("2+2"),
+                                new MathFraction({
+                                    numerator: [new MathRun("hi")],
+                                    denominator: [new MathRun("2")],
+                                }),
+                            ],
+                        }),
+                    ],
+                }),
+            ],
+        },
     ],
-}),
+});
 ```
 
 This will produce:
@@ -52,32 +67,94 @@ This will produce:
 
 #### Example
 
-```ts
-new MathRun("2+2");
+```ts live
+import { Document, Paragraph } from "docx";
+import { Math, MathRun } from "docx/math";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new Math({
+                            children: [new MathRun("2+2")],
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
+});
 ```
 
-```ts
-new MathRun("hello");
+```ts live
+import { Document, Paragraph } from "docx";
+import { Math, MathRun } from "docx/math";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new Math({
+                            children: [new MathRun("hello")],
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
+});
 ```
 
 An example of it being used inside `Math`:
 
-```ts
-new Math({
-    children: [
-        new MathRun("2"),
-        new MathRun("+"),
-        new MathRun("2"),
+```ts live
+import { Document, Paragraph } from "docx";
+import { Math, MathRun } from "docx/math";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new Math({
+                            children: [new MathRun("2"), new MathRun("+"), new MathRun("2")],
+                        }),
+                    ],
+                }),
+            ],
+        },
     ],
-}),
+});
 ```
 
 #### Normal text
 
 Letters in math are drawn in italics, as variables. For words, such as "if" and "otherwise", give the text as normal text, which is upright and in the document's font, with its spaces kept, as Word's "Normal Text" button does (`m:nor`):
 
-```ts
-new MathRun({ text: "if ", normalText: true });
+```ts live
+import { Document, Paragraph } from "docx";
+import { Math, MathRun } from "docx/math";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new Math({
+                            children: [new MathRun({ text: "if ", normalText: true }), new MathRun("x>0")],
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
+});
 ```
 
 ### Math Fraction
@@ -86,149 +163,373 @@ new MathRun({ text: "if ", normalText: true });
 
 #### Example
 
-```ts
-new MathFraction({
-    numerator: [new MathRun("1")],
-    denominator: [new MathRun("2")],
-}),
+```ts live
+import { Document, Paragraph } from "docx";
+import { Math, MathFraction, MathRun } from "docx/math";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new Math({
+                            children: [
+                                new MathFraction({
+                                    numerator: [new MathRun("1")],
+                                    denominator: [new MathRun("2")],
+                                }),
+                            ],
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
+});
 ```
 
-```ts
-new MathFraction({
-    numerator: [
-        new MathRun("1"),
-        new MathRadical({
-            children: [new MathRun("2")],
-        }),
+```ts live
+import { Document, Paragraph } from "docx";
+import { Math, MathFraction, MathRadical, MathRun } from "docx/math";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new Math({
+                            children: [
+                                new MathFraction({
+                                    numerator: [
+                                        new MathRun("1"),
+                                        new MathRadical({
+                                            children: [new MathRun("2")],
+                                        }),
+                                    ],
+                                    denominator: [new MathRun("2")],
+                                }),
+                            ],
+                        }),
+                    ],
+                }),
+            ],
+        },
     ],
-    denominator: [new MathRun("2")],
-}),
+});
 ```
 
 An example of it being used inside `Math`:
 
-```ts
-new Math({
-    children: [
-        new MathFraction({
-            numerator: [new MathRun("1")],
-            denominator: [new MathRun("2")],
-        }),
-        new MathText("+"),
-        new MathFraction({
-            numerator: [new MathRun("1")],
-            denominator: [new MathRun("2")],
-        }),
-        new MathText("= 1"),
+```ts live
+import { Document, Paragraph } from "docx";
+import { Math, MathFraction, MathRun } from "docx/math";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new Math({
+                            children: [
+                                new MathFraction({
+                                    numerator: [new MathRun("1")],
+                                    denominator: [new MathRun("2")],
+                                }),
+                                new MathRun("+"),
+                                new MathFraction({
+                                    numerator: [new MathRun("1")],
+                                    denominator: [new MathRun("2")],
+                                }),
+                                new MathRun("= 1"),
+                            ],
+                        }),
+                    ],
+                }),
+            ],
+        },
     ],
-}),
+});
 ```
 
 ### Sum
 
 A `MathComponent` for `Σ`. It can take a `superScript` and/or `subScript` as arguments to add `MathComponents` (usually limits) on the top and bottom
 
-```ts
-new MathSum({
-    children: [new MathRun("i")],
-}),
+```ts live
+import { Document, Paragraph } from "docx";
+import { Math, MathRun, MathSum } from "docx/math";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new Math({
+                            children: [
+                                new MathSum({
+                                    children: [new MathRun("i")],
+                                }),
+                            ],
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
+});
 ```
 
-```ts
-new MathSum({
-    children: [
-        new MathSuperScript({
-            children: [new MathRun("e")],
-            superScript: [new MathRun("2")],
-        })
+```ts live
+import { Document, Paragraph } from "docx";
+import { Math, MathRun, MathSum, MathSuperScript } from "docx/math";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new Math({
+                            children: [
+                                new MathSum({
+                                    children: [
+                                        new MathSuperScript({
+                                            children: [new MathRun("e")],
+                                            superScript: [new MathRun("2")],
+                                        }),
+                                    ],
+                                    subScript: [new MathRun("i")],
+                                    superScript: [new MathRun("10")],
+                                }),
+                            ],
+                        }),
+                    ],
+                }),
+            ],
+        },
     ],
-    subScript: [new MathRun("i")],
-    superScript: [new MathRun("10")],
-}),
+});
 ```
 
 ### Radicals
 
 A `MathComponent` for the `√` symbol. Examples include, square root, cube root etc. There is an optional `degree` parameter to specify the number of times the radicand is multiplied by itself. For example, `3` for cube root.
 
-```ts
-new MathRadical({
-    children: [new MathRun("2")],
-}),
+```ts live
+import { Document, Paragraph } from "docx";
+import { Math, MathRadical, MathRun } from "docx/math";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new Math({
+                            children: [
+                                new MathRadical({
+                                    children: [new MathRun("2")],
+                                }),
+                            ],
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
+});
 ```
 
 Cube root example:
 
-```ts
-new MathRadical({
-    children: [
-        new MathFraction({
-            numerator: [new MathRun("1")],
-            denominator: [new MathRun("2")],
-        }),
-        new MathRun('+ 1'),
+```ts live
+import { Document, Paragraph } from "docx";
+import { Math, MathFraction, MathRadical, MathRun } from "docx/math";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new Math({
+                            children: [
+                                new MathRadical({
+                                    children: [
+                                        new MathFraction({
+                                            numerator: [new MathRun("1")],
+                                            denominator: [new MathRun("2")],
+                                        }),
+                                        new MathRun("+ 1"),
+                                    ],
+                                    degree: [new MathRun("3")],
+                                }),
+                            ],
+                        }),
+                    ],
+                }),
+            ],
+        },
     ],
-    degree: [new MathRun("3")],
-}),
+});
 ```
 
 ### Super Script
 
 `MathSuperScripts` are the little numbers written to the top right of numbers or variables. It means the exponent or power if written by itself with the number or variable.
 
-```ts
-new MathSuperScript({
-    children: [new MathRun("x")],
-    superScript: [new MathRun("2")],
-}),
+```ts live
+import { Document, Paragraph } from "docx";
+import { Math, MathRun, MathSuperScript } from "docx/math";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new Math({
+                            children: [
+                                new MathSuperScript({
+                                    children: [new MathRun("x")],
+                                    superScript: [new MathRun("2")],
+                                }),
+                            ],
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
+});
 ```
 
 An example with cosine:
 
-```ts
-new MathSuperScript({
-    children: [new MathRun("cos")],
-    superScript: [new MathRun("-1")],
-}),
+```ts live
+import { Document, Paragraph } from "docx";
+import { Math, MathRun, MathSuperScript } from "docx/math";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new Math({
+                            children: [
+                                new MathSuperScript({
+                                    children: [new MathRun("cos")],
+                                    superScript: [new MathRun("-1")],
+                                }),
+                            ],
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
+});
 ```
 
 ### Sub Script
 
 `MathSubScripts` are similar to `MathSuperScripts`, except the little number is written below.
 
-```ts
-new MathSubScript({
-    children: [new MathRun("F")],
-    subScript: [new MathRun("n-1")],
-}),
+```ts live
+import { Document, Paragraph } from "docx";
+import { Math, MathRun, MathSubScript } from "docx/math";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new Math({
+                            children: [
+                                new MathSubScript({
+                                    children: [new MathRun("F")],
+                                    subScript: [new MathRun("n-1")],
+                                }),
+                            ],
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
+});
 ```
 
 ### Sub-Super Script
 
 `MathSubSuperScripts` are a combination of both `MathSuperScript` and `MathSubScript`.
 
-```ts
-new MathSubSuperScript({
-    children: [new MathRun("test")],
-    superScript: [new MathRun("hello")],
-    subScript: [new MathRun("world")],
-}),
+```ts live
+import { Document, Paragraph } from "docx";
+import { Math, MathRun, MathSubSuperScript } from "docx/math";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new Math({
+                            children: [
+                                new MathSubSuperScript({
+                                    children: [new MathRun("test")],
+                                    superScript: [new MathRun("hello")],
+                                    subScript: [new MathRun("world")],
+                                }),
+                            ],
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
+});
 ```
 
 ### Function
 
 `MathFunctions` are a way of describing what happens to an input variable, in order to get the output result. It takes a `name` parameter to specify the name of the function.
 
-```ts
-new MathFunction({
-    name: [
-        new MathSuperScript({
-            children: [new MathRun("cos")],
-            superScript: [new MathRun("-1")],
-        }),
+```ts live
+import { Document, Paragraph } from "docx";
+import { Math, MathFunction, MathRun, MathSuperScript } from "docx/math";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new Math({
+                            children: [
+                                new MathFunction({
+                                    name: [
+                                        new MathSuperScript({
+                                            children: [new MathRun("cos")],
+                                            superScript: [new MathRun("-1")],
+                                        }),
+                                    ],
+                                    children: [new MathRun("100")],
+                                }),
+                            ],
+                        }),
+                    ],
+                }),
+            ],
+        },
     ],
-    children: [new MathRun("100")],
-}),
+});
 ```
 
 ### Brackets
@@ -237,12 +538,25 @@ new MathFunction({
 
 `MathBrackets` puts brackets of any single characters around math, such as bars for an absolute value, double bars for a norm, or a brace on one side only (`""` for no bracket). The brackets grow with what they hold. Give `items` instead of `children` for several things with a `separator` between them:
 
-```ts
-new MathBrackets({ open: "|", close: "|", children: [new MathRun("x")] }); // |x|
-new MathBrackets({ open: "‖", close: "‖", children: [new MathRun("v")] }); // ‖v‖
-new MathBrackets({ open: "⟨", close: "⟩", separator: "|", items: [[new MathRun("a")], [new MathRun("b")]] }); // ⟨a|b⟩
-new MathBrackets({ open: "[", close: ")", children: [new MathRun("0,1")] }); // [0,1)
-new MathBrackets({ open: "{", close: "", children: [new MathRun("x")] }); // a brace on the left only
+```ts live
+import { Document, Paragraph } from "docx";
+import { Math, MathBrackets, MathRun } from "docx/math";
+
+const brackets = [
+    new MathBrackets({ open: "|", close: "|", children: [new MathRun("x")] }), // |x|
+    new MathBrackets({ open: "‖", close: "‖", children: [new MathRun("v")] }), // ‖v‖
+    new MathBrackets({ open: "⟨", close: "⟩", separator: "|", items: [[new MathRun("a")], [new MathRun("b")]] }), // ⟨a|b⟩
+    new MathBrackets({ open: "[", close: ")", children: [new MathRun("0,1")] }), // [0,1)
+    new MathBrackets({ open: "{", close: "", children: [new MathRun("x")] }), // a brace on the left only
+];
+
+const doc = new Document({
+    sections: [
+        {
+            children: brackets.map((bracket) => new Paragraph({ children: [new Math({ children: [bracket] })] })),
+        },
+    ],
+});
 ```
 
 | Option      | Type                | Default | Notes                                                                                 |
@@ -258,86 +572,219 @@ The four kinds below are fixed pairs of these.
 
 #### Square brackets
 
-```ts
-new MathSquareBrackets({
-    children: [
-        new MathFraction({
-            numerator: [new MathRun("1")],
-            denominator: [new MathRun("2")],
-        }),
+```ts live
+import { Document, Paragraph } from "docx";
+import { Math, MathFraction, MathRun, MathSquareBrackets } from "docx/math";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new Math({
+                            children: [
+                                new MathSquareBrackets({
+                                    children: [
+                                        new MathFraction({
+                                            numerator: [new MathRun("1")],
+                                            denominator: [new MathRun("2")],
+                                        }),
+                                    ],
+                                }),
+                            ],
+                        }),
+                    ],
+                }),
+            ],
+        },
     ],
-}),
+});
 ```
 
 #### Round brackets
 
-```ts
-new MathRoundBrackets({
-    children: [
-        new MathFraction({
-            numerator: [new MathRun("1")],
-            denominator: [new MathRun("2")],
-        }),
+```ts live
+import { Document, Paragraph } from "docx";
+import { Math, MathFraction, MathRoundBrackets, MathRun } from "docx/math";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new Math({
+                            children: [
+                                new MathRoundBrackets({
+                                    children: [
+                                        new MathFraction({
+                                            numerator: [new MathRun("1")],
+                                            denominator: [new MathRun("2")],
+                                        }),
+                                    ],
+                                }),
+                            ],
+                        }),
+                    ],
+                }),
+            ],
+        },
     ],
-}),
+});
 ```
 
 #### Curly brackets
 
-```ts
-new MathCurlyBrackets({
-    children: [
-        new MathFraction({
-            numerator: [new MathRun("1")],
-            denominator: [new MathRun("2")],
-        }),
+```ts live
+import { Document, Paragraph } from "docx";
+import { Math, MathCurlyBrackets, MathFraction, MathRun } from "docx/math";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new Math({
+                            children: [
+                                new MathCurlyBrackets({
+                                    children: [
+                                        new MathFraction({
+                                            numerator: [new MathRun("1")],
+                                            denominator: [new MathRun("2")],
+                                        }),
+                                    ],
+                                }),
+                            ],
+                        }),
+                    ],
+                }),
+            ],
+        },
     ],
-}),
+});
 ```
 
 #### Angled brackets
 
-```ts
-new MathAngledBrackets({
-    children: [
-        new MathFraction({
-            numerator: [new MathRun("1")],
-            denominator: [new MathRun("2")],
-        }),
+```ts live
+import { Document, Paragraph } from "docx";
+import { Math, MathAngledBrackets, MathFraction, MathRun } from "docx/math";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new Math({
+                            children: [
+                                new MathAngledBrackets({
+                                    children: [
+                                        new MathFraction({
+                                            numerator: [new MathRun("1")],
+                                            denominator: [new MathRun("2")],
+                                        }),
+                                    ],
+                                }),
+                            ],
+                        }),
+                    ],
+                }),
+            ],
+        },
     ],
-}),
+});
 ```
 
 ### Limit
 
 #### Limit Upper
 
-```ts
-new MathLimitUpper({
-    children: [new MathRun("x")],
-    limit: [new MathRun("-")],
-}),
+```ts live
+import { Document, Paragraph } from "docx";
+import { Math, MathLimitUpper, MathRun } from "docx/math";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new Math({
+                            children: [
+                                new MathLimitUpper({
+                                    children: [new MathRun("x")],
+                                    limit: [new MathRun("-")],
+                                }),
+                            ],
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
+});
 ```
 
 #### Limit Lower
 
-```ts
-new MathLimitLower({
-    children: [new MathRun("lim")],
-    limit: [new MathRun("x→0")],
-}),
+```ts live
+import { Document, Paragraph } from "docx";
+import { Math, MathLimitLower, MathRun } from "docx/math";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new Math({
+                            children: [
+                                new MathLimitLower({
+                                    children: [new MathRun("lim")],
+                                    limit: [new MathRun("x→0")],
+                                }),
+                            ],
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
+});
 ```
 
 ### Matrices
 
 `MathMatrix` writes a matrix (`m:m`): rows of cells, each cell a list of `MathComponents`, in brackets or none. A row shorter than the longest gets empty cells at its end.
 
-```ts
-new MathMatrix({
-    brackets: "round",
-    rows: [
-        [[new MathRun("1")], [new MathRun("2")], [new MathRun("3")]],
-        [[new MathRun("4")], [new MathRun("5")], [new MathRun("6")]],
+```ts live
+import { Document, Paragraph } from "docx";
+import { Math, MathMatrix, MathRun } from "docx/math";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new Math({
+                            children: [
+                                new MathMatrix({
+                                    brackets: "round",
+                                    rows: [
+                                        [[new MathRun("1")], [new MathRun("2")], [new MathRun("3")]],
+                                        [[new MathRun("4")], [new MathRun("5")], [new MathRun("6")]],
+                                    ],
+                                }),
+                            ],
+                        }),
+                    ],
+                }),
+            ],
+        },
     ],
 });
 ```
@@ -353,16 +800,34 @@ new MathMatrix({
 
 `MathCases` writes values, each with its condition, one to a line, in a brace on the left, as LaTeX's `cases`:
 
-```ts
-new Math({
-    children: [
-        new MathRun("f(x)="),
-        new MathCases({
-            cases: [
-                { value: [new MathRun("1,")], condition: [new MathRun({ text: "if ", normalText: true }), new MathRun("x>0")] },
-                { value: [new MathRun("0,")], condition: [new MathRun({ text: "otherwise", normalText: true })] },
+```ts live
+import { Document, Paragraph } from "docx";
+import { Math, MathCases, MathRun } from "docx/math";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new Math({
+                            children: [
+                                new MathRun("f(x)="),
+                                new MathCases({
+                                    cases: [
+                                        {
+                                            value: [new MathRun("1,")],
+                                            condition: [new MathRun({ text: "if ", normalText: true }), new MathRun("x>0")],
+                                        },
+                                        { value: [new MathRun("0,")], condition: [new MathRun({ text: "otherwise", normalText: true })] },
+                                    ],
+                                }),
+                            ],
+                        }),
+                    ],
+                }),
             ],
-        }),
+        },
     ],
 });
 ```
@@ -373,23 +838,61 @@ A case's `condition` can be left out. The cases are written as a matrix of two c
 
 `MathEquationArray` writes rows of math, one to a line, lined up at the points between their parts, as LaTeX's `align` and `aligned` (`m:eqArr`). Each row is a list of `parts`: the first, third and every other point between them line up with the same points in the other rows, such as at an `=` sign, and the others are where space goes between columns, as LaTeX's `&`. A part can be empty, such as the first part of a row that goes on from the row before:
 
-```ts
-new MathEquationArray({
-    rows: [
-        { parts: [[new MathRun("(a+b)²")], [new MathRun("=(a+b)(a+b)")]] },
-        { parts: [[], [new MathRun("=a²+ab+ba+b²")]] },
-        { parts: [[], [new MathRun("=a²+2ab+b²")]] },
+```ts live
+import { Document, Paragraph } from "docx";
+import { Math, MathEquationArray, MathRun } from "docx/math";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new Math({
+                            children: [
+                                new MathEquationArray({
+                                    rows: [
+                                        { parts: [[new MathRun("(a+b)²")], [new MathRun("=(a+b)(a+b)")]] },
+                                        { parts: [[], [new MathRun("=a²+ab+ba+b²")]] },
+                                        { parts: [[], [new MathRun("=a²+2ab+b²")]] },
+                                    ],
+                                }),
+                            ],
+                        }),
+                    ],
+                }),
+            ],
+        },
     ],
 });
 ```
 
 A row's `equationNumber` is put at the right margin by Word 2016 and later, as Word's own equation numbers (`#` then the number):
 
-```ts
-new MathEquationArray({
-    rows: [
-        { parts: [[new MathRun("y")], [new MathRun("=mx+b")]], equationNumber: "(1)" },
-        { parts: [[new MathRun("y′")], [new MathRun("=m")]], equationNumber: "(2)" },
+```ts live
+import { Document, Paragraph } from "docx";
+import { Math, MathEquationArray, MathRun } from "docx/math";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new Math({
+                            children: [
+                                new MathEquationArray({
+                                    rows: [
+                                        { parts: [[new MathRun("y")], [new MathRun("=mx+b")]], equationNumber: "(1)" },
+                                        { parts: [[new MathRun("y′")], [new MathRun("=m")]], equationNumber: "(2)" },
+                                    ],
+                                }),
+                            ],
+                        }),
+                    ],
+                }),
+            ],
+        },
     ],
 });
 ```
@@ -405,16 +908,27 @@ new MathEquationArray({
 
 Word 2013 and older, LibreOffice and Pages show the `#` before the number. For numbers that every application puts at the margin, put the equation in a paragraph with a centre tab stop and a right tab stop, and the number after a tab. Word then draws the equation at the size of inline math:
 
-```ts
-new Paragraph({
-    tabStops: [
-        { type: TabStopType.CENTER, position: TabStopPosition.MAX / 2 },
-        { type: TabStopType.RIGHT, position: TabStopPosition.MAX },
-    ],
-    children: [
-        new TextRun({ children: [new Tab()] }),
-        new Math({ children: [new MathRun("E=mc²")] }),
-        new TextRun({ children: [new Tab(), "(1)"] }),
+```ts live
+import { Document, Paragraph, Tab, TabStopPosition, TabStopType, TextRun } from "docx";
+import { Math, MathRun } from "docx/math";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    tabStops: [
+                        { type: TabStopType.CENTER, position: TabStopPosition.MAX / 2 },
+                        { type: TabStopType.RIGHT, position: TabStopPosition.MAX },
+                    ],
+                    children: [
+                        new TextRun({ children: [new Tab()] }),
+                        new Math({ children: [new MathRun("E=mc²")] }),
+                        new TextRun({ children: [new Tab(), "(1)"] }),
+                    ],
+                }),
+            ],
+        },
     ],
 });
 ```

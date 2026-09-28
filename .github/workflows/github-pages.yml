@@ -16,6 +16,7 @@ jobs:
             - name: Build 🔧
               run: |
                   npm run typedoc
+                  npm run build.docs
                   echo "docx.js.org" > docs/.nojekyll
                   echo "docx.js.org" > docs/CNAME
             - name: Archive Production Artifact

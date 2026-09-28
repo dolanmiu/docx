@@ -39,6 +39,7 @@ build
 # Documentation
 docs/api/
 docs/.nojekyll
+docs/live-examples/lib/
 
 # VSCode
 .vscode/*

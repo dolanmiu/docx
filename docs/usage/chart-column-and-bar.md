@@ -6,14 +6,29 @@ A column chart draws a vertical bar for each value, and a bar chart a horizontal
 
 ## A Column Chart
 
-```ts
-new ChartRun({
-    type: "column",
-    title: "Sales by quarter",
-    categories: ["Q1", "Q2", "Q3", "Q4"],
-    series: [
-        { name: "2024", values: [120, 135, 150, 170] },
-        { name: "2025", values: [140, 150, 165, null] },
+```ts live
+import { Document, Paragraph } from "docx";
+import { ChartRun } from "docx/charts";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new ChartRun({
+                            type: "column",
+                            title: "Sales by quarter",
+                            categories: ["Q1", "Q2", "Q3", "Q4"],
+                            series: [
+                                { name: "2024", values: [120, 135, 150, 170] },
+                                { name: "2025", values: [140, 150, 165, null] },
+                            ],
+                        }),
+                    ],
+                }),
+            ],
+        },
     ],
 });
 ```
@@ -24,11 +39,26 @@ Each category has a group of columns, one for each series, side by side. The fir
 
 A bar chart takes the same options, with `type: "bar"`:
 
-```ts
-new ChartRun({
-    type: "bar",
-    categories: ["Design", "Build", "Test"],
-    series: [{ name: "Hours", values: [30, 80, 40] }],
+```ts live
+import { Document, Paragraph } from "docx";
+import { ChartRun } from "docx/charts";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new ChartRun({
+                            type: "bar",
+                            categories: ["Design", "Build", "Test"],
+                            series: [{ name: "Hours", values: [30, 80, 40] }],
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
 });
 ```
 
@@ -44,16 +74,31 @@ The categories run up the left side, so the first category is at the bottom, as 
 | `"stacked"`        | The bars on top of each other, so each stack is as long as the category's total              |
 | `"percent"`        | The bars on top of each other, as percentages of the category's total, so each stack is 100% |
 
-```ts
-new ChartRun({
-    type: "bar",
-    title: "Hours by team",
-    categories: ["Design", "Build", "Test"],
-    series: [
-        { name: "Planned", values: [30, 80, 40] },
-        { name: "Extra", values: [5, 20, 15] },
+```ts live
+import { Document, Paragraph } from "docx";
+import { ChartRun } from "docx/charts";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new ChartRun({
+                            type: "bar",
+                            title: "Hours by team",
+                            categories: ["Design", "Build", "Test"],
+                            series: [
+                                { name: "Planned", values: [30, 80, 40] },
+                                { name: "Extra", values: [5, 20, 15] },
+                            ],
+                            stacking: "stacked",
+                        }),
+                    ],
+                }),
+            ],
+        },
     ],
-    stacking: "stacked",
 });
 ```
 
@@ -66,16 +111,31 @@ On a 100% stacked chart, the value axis is labelled as percentages. See [Chart A
 - `gapWidth` goes from `0` (no space between groups) to `500` (five bars' width). A smaller gap makes the bars wider.
 - `overlap` goes from `-100` (a bar's width apart) to `100` (each bar on top of the one before). `0` puts them side by side, touching.
 
-```ts
-new ChartRun({
-    type: "column",
-    categories: ["Q1", "Q2", "Q3", "Q4"],
-    series: [
-        { name: "2024", values: [120, 135, 150, 170] },
-        { name: "2025", values: [140, 150, 165, 180] },
+```ts live
+import { Document, Paragraph } from "docx";
+import { ChartRun } from "docx/charts";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new ChartRun({
+                            type: "column",
+                            categories: ["Q1", "Q2", "Q3", "Q4"],
+                            series: [
+                                { name: "2024", values: [120, 135, 150, 170] },
+                                { name: "2025", values: [140, 150, 165, 180] },
+                            ],
+                            gapWidth: 50,
+                            overlap: 0,
+                        }),
+                    ],
+                }),
+            ],
+        },
     ],
-    gapWidth: 50,
-    overlap: 0,
 });
 ```
 
@@ -90,12 +150,27 @@ The defaults are Office's:
 
 Each series' bars take its colour. `colors` gives single bars colours of their own, in the order of the categories, such as to pick out the best result:
 
-```ts
-new ChartRun({
-    type: "column",
-    title: "Tickets closed",
-    categories: ["Ana", "Ben", "Cai", "Dee"],
-    series: [{ name: "Tickets", values: [42, 57, 38, 71], colors: [undefined, undefined, undefined, "70AD47"] }],
+```ts live
+import { Document, Paragraph } from "docx";
+import { ChartRun } from "docx/charts";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new ChartRun({
+                            type: "column",
+                            title: "Tickets closed",
+                            categories: ["Ana", "Ben", "Cai", "Dee"],
+                            series: [{ name: "Tickets", values: [42, 57, 38, 71], colors: [undefined, undefined, undefined, "70AD47"] }],
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
 });
 ```
 

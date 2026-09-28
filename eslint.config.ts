@@ -11,7 +11,16 @@ import tsEslint from "typescript-eslint";
 
 const config: Linter.Config<Linter.RulesRecord>[] = [
     {
-        ignores: ["**/vite*.config.ts", "**/dist/**", "**/coverage/**", "**/*.js", "eslint.config.ts", "**/demo/**", "**/scripts/**"],
+        ignores: [
+            "**/vite*.config.ts",
+            "**/dist/**",
+            "docs/live-examples/lib/**",
+            "**/coverage/**",
+            "**/*.js",
+            "eslint.config.ts",
+            "**/demo/**",
+            "**/scripts/**",
+        ],
     },
     eslint.configs.recommended,
     importX.flatConfigs.recommended,
@@ -109,10 +118,13 @@ const config: Linter.Config<Linter.RulesRecord>[] = [
             ],
 
             "@typescript-eslint/consistent-type-assertions": "error",
-            "@typescript-eslint/consistent-type-imports": ["error", {
-                prefer: "type-imports",
-                fixStyle: "inline-type-imports",
-            }],
+            "@typescript-eslint/consistent-type-imports": [
+                "error",
+                {
+                    prefer: "type-imports",
+                    fixStyle: "inline-type-imports",
+                },
+            ],
             "@typescript-eslint/dot-notation": "error",
 
             "@typescript-eslint/explicit-function-return-type": [
@@ -381,7 +393,10 @@ const config: Linter.Config<Linter.RulesRecord>[] = [
                     paths: [{ name: "docx", message: "docx doesn't import itself by name. Use a path alias such as @file/" }],
                     patterns: [
                         { group: ["docx/*"], message: "docx doesn't import its optional entries, such as docx/shapes" },
-                        { regex: "(^|/)(shapes|watermarks|charts)(/|$)", message: "docx doesn't import its optional entries, such as docx/shapes" },
+                        {
+                            regex: "(^|/)(shapes|watermarks|charts)(/|$)",
+                            message: "docx doesn't import its optional entries, such as docx/shapes",
+                        },
                     ],
                 },
             ],
@@ -395,7 +410,10 @@ const config: Linter.Config<Linter.RulesRecord>[] = [
                 "error",
                 {
                     patterns: [
-                        { group: ["@file/*", "@util/*", "@export/*", "@shared", "@shared/*"], message: 'Optional entries import docx from "docx"' },
+                        {
+                            group: ["@file/*", "@util/*", "@export/*", "@shared", "@shared/*"],
+                            message: 'Optional entries import docx from "docx"',
+                        },
                         { regex: "^\\.\\./", message: 'Optional entries import docx from "docx"' },
                     ],
                 },
@@ -410,7 +428,10 @@ const config: Linter.Config<Linter.RulesRecord>[] = [
                 "error",
                 {
                     patterns: [
-                        { group: ["@file/*", "@util/*", "@export/*", "@shared", "@shared/*"], message: 'Optional entries import docx from "docx"' },
+                        {
+                            group: ["@file/*", "@util/*", "@export/*", "@shared", "@shared/*"],
+                            message: 'Optional entries import docx from "docx"',
+                        },
                         { regex: "^\\.\\./\\.\\./", message: 'Optional entries import docx from "docx"' },
                     ],
                 },

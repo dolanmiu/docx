@@ -8,7 +8,7 @@ Endnotes allow you to add references that appear at the end of the document. The
 
 ## Example
 
-```ts
+```ts live
 import { Document, EndnoteReferenceRun, Paragraph, TextRun } from "docx";
 
 const doc = new Document({
@@ -82,5 +82,7 @@ Insert `EndnoteReferenceRun` in paragraphs to create reference markers:
 | endnotes | `Record<string, { children: Paragraph[] }>` | Optional | Endnote definitions keyed by reference number |
 
 ## Demo
+
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/footnotes-and-endnotes/endnotes.ts ":include")
 
 _Source: https://github.com/dolanmiu/docx/blob/master/demo/footnotes-and-endnotes/endnotes.ts_
