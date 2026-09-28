@@ -22,7 +22,7 @@ OUT="${1:-build/shape-demos}"
 shift || true
 DEMOS=("$@")
 if [ ${#DEMOS[@]} -eq 0 ]; then
-    DEMOS=(shapes/inline-shapes shapes/shapes shapes/shape-groups shapes/shape-connectors shapes/shape-styles shapes/shape-diagrams shapes/shape-layout shapes/shape-document-styles shapes/shape-swimlanes shapes/shape-page-layout styles/theme shapes/custom-shapes charts/charts charts/chart-options charts/charts-in-templates charts/chart-data-in-templates charts/more-charts math/matrices-and-alignment)
+    DEMOS=(shapes/inline-shapes shapes/shapes shapes/shape-groups shapes/shape-connectors shapes/shape-styles shapes/shape-diagrams shapes/shape-layout shapes/shape-document-styles shapes/shape-swimlanes shapes/shape-page-layout styles/theme shapes/custom-shapes charts/charts charts/chart-options charts/charts-in-templates charts/chart-data-in-templates charts/more-charts math/matrices-and-alignment math/latex)
 fi
 SOFFICE="${SOFFICE:-soffice}"
 

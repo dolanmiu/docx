@@ -1,10 +1,12 @@
 /**
- * Math for docx documents: equations, such as fractions, sums, integrals, radicals, scripts, brackets, matrices, cases
- * and aligned equations with numbers, written as Office Math, which Word shows and edits as equations.
+ * Math for docx documents: equations, such as fractions, sums, integrals and other large operators, radicals, scripts,
+ * brackets, accents, braces, boxes, matrices, cases and aligned equations with numbers, written as Office Math, which
+ * Word shows and edits as equations. `latexToMath` turns LaTeX into the same math.
  *
  * Math comes with the `docx` package, from `docx/math`. Everything else, such as the document and its paragraphs,
  * comes from `docx`. `docx` still exports the math it had before `docx/math`, as the same classes, not copies, so the
- * two can be mixed. Matrices, cases, equation arrays and brackets of any characters come from `docx/math` only.
+ * two can be mixed. Matrices, cases, equation arrays, brackets of any characters, accents, bars, braces, boxes,
+ * phantoms, large operators and `latexToMath` come from `docx/math` only.
  *
  * @module
  *
@@ -85,11 +87,20 @@ export type {
     IMathSumOptions,
     IMathSuperScriptOptions,
     MathComponent,
+    MathFractionType,
+    MathLimitsPosition,
     MathRunOptions,
+    MathRunScript,
+    MathRunStyle,
 } from "docx";
+export { MathAccent, type MathAccentName, type MathAccentOptions } from "./math-accent";
+export { MathBar, type MathBarOptions, type MathPosition } from "./math-bar";
+export { MathBox, type MathBoxOptions, type MathBoxSide, type MathBoxStrike } from "./math-box";
+export { MathBrace, type MathBraceOptions, type MathBraceShape } from "./math-brace";
 export { MathBrackets, type MathBracketsOptions } from "./math-brackets";
 export { MathCases, type MathCase, type MathCasesOptions } from "./math-cases";
 export { MathEquationArray, type MathEquationArrayOptions, type MathEquationArrayRow } from "./math-equation-array";
+export { MathLargeOperator, type MathLargeOperatorName, type MathLargeOperatorOptions } from "./math-large-operator";
 export {
     MathMatrix,
     type MathColumnAlignment,
@@ -97,3 +108,5 @@ export {
     type MathMatrixOptions,
     type MathVerticalAlignment,
 } from "./math-matrix";
+export { MathPhantom, type MathPhantomOptions } from "./math-phantom";
+export { latexToMath } from "./latex-to-math";

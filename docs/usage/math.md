@@ -1,5 +1,7 @@
 # Math
 
+<!-- cspell:ignore binom -->
+
 !> Math requires an understanding of [Sections](usage/sections.md) and [Paragraphs](usage/paragraph.md).
 
 ## Intro
@@ -18,7 +20,9 @@ import { Document, Packer, Paragraph } from "docx";
 import { Math, MathFraction, MathRun } from "docx/math";
 ```
 
-Types such as `IMathOptions` and `MathComponent` come from `docx/math` too. `docx` still exports the math it had before `docx/math`, so code that imports it from `docx` keeps working. The two export the same classes, so they can be mixed. `MathMatrix`, `MathCases`, `MathEquationArray` and `MathBrackets` come from `docx/math` only.
+Types such as `IMathOptions` and `MathComponent` come from `docx/math` too. `docx` still exports the math it had before `docx/math`, so code that imports it from `docx` keeps working. The two export the same classes, so they can be mixed. `MathMatrix`, `MathCases`, `MathEquationArray`, `MathBrackets`, `MathLargeOperator`, `MathAccent`, `MathBar`, `MathBrace`, `MathBox`, `MathPhantom` and `latexToMath` come from `docx/math` only.
+
+To write math from LaTeX, such as `\frac{a}{b}`, see [Math from LaTeX](usage/math-latex.md).
 
 In a page without a bundler, load `dist/math.umd.cjs` after `dist/index.umd.cjs` (or `dist/math.iife.js` after `dist/index.iife.js`). It adds a `docxMath` global, such as `new docxMath.MathRun("2+2")`.
 
@@ -157,6 +161,45 @@ const doc = new Document({
 });
 ```
 
+#### Styles and alphabets
+
+A run's letters can be upright, bold or both, as LaTeX's `\mathrm`, `\mathbf` and `\boldsymbol` (`style`), and in another alphabet, such as double-struck for ℝ or script for ℒ (`script`):
+
+```ts live
+import { Document, Paragraph } from "docx";
+import { Math, MathRun } from "docx/math";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new Math({
+                            children: [
+                                new MathRun({ text: "R", script: "doubleStruck" }),
+                                new MathRun({ text: "L", script: "script" }),
+                                new MathRun({ text: "F", style: "bold" }),
+                                new MathRun("=m"),
+                                new MathRun({ text: "a", style: "bold" }),
+                            ],
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
+});
+```
+
+| Option       | Type                                                                               | Default | Notes                                                                                                                            |
+| ------------ | ---------------------------------------------------------------------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `text`       | `string`                                                                           |         |                                                                                                                                  |
+| `normalText` | `boolean`                                                                          | `false` | Upright, in the document's font, with its spaces kept (`m:nor`). Not with `style` or `script`                                    |
+| `style`      | `"plain"`, `"bold"`, `"italic"`, `"boldItalic"`                                    |         | Upright, bold, italic, or both (`m:sty`). Word draws letters in italic unless a run has a style                                  |
+| `script`     | `"roman"`, `"script"`, `"fraktur"`, `"doubleStruck"`, `"sansSerif"`, `"monospace"` |         | The alphabet (`m:scr`): 𝒜, 𝔄, 𝔸, 𝖠 and 𝙰                                                                                         |
+| `literal`    | `boolean`                                                                          | `false` | Takes the text as it is (`m:lit`), such as an `&` in a `MathEquationArray`, which would otherwise be a point the rows line up at |
+
 ### Math Fraction
 
 `MathFractions` require a `numerator` and a `denominator`, which are both a list of `MathComponents`
@@ -254,6 +297,41 @@ const doc = new Document({
 });
 ```
 
+#### Fraction types
+
+A fraction can be skewed, as ½, linear, as a/b, or stacked with no bar, as in a binomial coefficient (`type`, `m:type`):
+
+```ts live
+import { Document, Paragraph } from "docx";
+import { Math, MathFraction, MathRoundBrackets, MathRun } from "docx/math";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new Math({
+                            children: [
+                                new MathFraction({ numerator: [new MathRun("1")], denominator: [new MathRun("2")], type: "skewed" }),
+                                new MathFraction({ numerator: [new MathRun("a")], denominator: [new MathRun("b")], type: "linear" }),
+                                new MathRoundBrackets({
+                                    children: [
+                                        new MathFraction({ numerator: [new MathRun("n")], denominator: [new MathRun("k")], type: "noBar" }),
+                                    ],
+                                }),
+                            ],
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
+});
+```
+
+`type` is `"stacked"` (the default), `"skewed"`, `"linear"` or `"noBar"`.
+
 ### Sum
 
 A `MathComponent` for `Σ`. It can take a `superScript` and/or `subScript` as arguments to add `MathComponents` (usually limits) on the top and bottom
@@ -314,6 +392,8 @@ const doc = new Document({
     ],
 });
 ```
+
+`MathSum` and `MathIntegral` take `limits`: `"aboveBelow"`, as a sum's limits usually are, or `"side"`, as an integral's usually are (`m:limLoc`). For other operators, such as ∏ and ⋃, see [Large operators](#large-operators).
 
 ### Radicals
 
@@ -756,6 +836,228 @@ const doc = new Document({
 });
 ```
 
+### Large operators
+
+`MathLargeOperator` writes a large operator with limits (`m:nary`), such as ∏, ⋃ or ∮, over what it applies to. `MathSum` and `MathIntegral` are two of these.
+
+```ts live
+import { Document, Paragraph } from "docx";
+import { Math, MathLargeOperator, MathRun } from "docx/math";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new Math({
+                            children: [
+                                new MathLargeOperator({
+                                    operator: "product",
+                                    subScript: [new MathRun("i=1")],
+                                    superScript: [new MathRun("n")],
+                                    children: [new MathRun("i")],
+                                }),
+                                new MathLargeOperator({
+                                    operator: "contourIntegral",
+                                    subScript: [new MathRun("C")],
+                                    children: [new MathRun("F⋅dr")],
+                                }),
+                            ],
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
+});
+```
+
+| Option        | Type                     | Default                                         | Notes                            |
+| ------------- | ------------------------ | ----------------------------------------------- | -------------------------------- |
+| `operator`    | See below                |                                                 |                                  |
+| `children`    | `MathComponent[]`        |                                                 | What the operator applies to     |
+| `subScript`   | `MathComponent[]`        |                                                 | The lower limit                  |
+| `superScript` | `MathComponent[]`        |                                                 | The upper limit                  |
+| `limits`      | `"aboveBelow"`, `"side"` | `"side"` for integrals, and `"aboveBelow"` else | Where the limits go (`m:limLoc`) |
+
+The operators, with LaTeX's names for them:
+
+| `operator`                                                                  | Operator | LaTeX                                          |
+| --------------------------------------------------------------------------- | -------- | ---------------------------------------------- |
+| `"sum"`, `"product"`, `"coproduct"`                                         | ∑ ∏ ∐    | `\sum`, `\prod`, `\coprod`                     |
+| `"union"`, `"intersection"`, `"squareUnion"`, `"multisetUnion"`             | ⋃ ⋂ ⨆ ⨄  | `\bigcup`, `\bigcap`, `\bigsqcup`, `\biguplus` |
+| `"logicalOr"`, `"logicalAnd"`                                               | ⋁ ⋀      | `\bigvee`, `\bigwedge`                         |
+| `"directSum"`, `"tensorProduct"`, `"circledDot"`                            | ⨁ ⨂ ⨀    | `\bigoplus`, `\bigotimes`, `\bigodot`          |
+| `"integral"`, `"doubleIntegral"`, `"tripleIntegral"`, `"quadrupleIntegral"` | ∫ ∬ ∭ ⨌  | `\int`, `\iint`, `\iiint`, `\iiiint`           |
+| `"contourIntegral"`, `"surfaceIntegral"`, `"volumeIntegral"`                | ∮ ∯ ∰    | `\oint`, `\oiint`, `\oiiint`                   |
+
+### Accents
+
+`MathAccent` puts an accent over math (`m:acc`), which Word stretches over what it goes over:
+
+```ts live
+import { Document, Paragraph } from "docx";
+import { Math, MathAccent, MathRun } from "docx/math";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new Math({
+                            children: [
+                                new MathAccent({ accent: "hat", children: [new MathRun("x")] }),
+                                new MathAccent({ accent: "rightArrow", children: [new MathRun("v")] }),
+                                new MathAccent({ accent: "doubleDot", children: [new MathRun("x")] }),
+                            ],
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
+});
+```
+
+`accent` is `"hat"` (the default, as `\hat`), `"check"`, `"tilde"`, `"acute"`, `"grave"`, `"dot"`, `"doubleDot"`, `"tripleDot"`, `"breve"`, `"bar"`, `"ring"`, `"rightArrow"` (as `\vec`), `"leftArrow"`, `"leftRightArrow"`, `"rightHarpoon"` or `"leftHarpoon"`.
+
+### Bars
+
+`MathBar` draws a line over or under math (`m:bar`), as long as what it goes over, as LaTeX's `\overline` and `\underline`:
+
+```ts live
+import { Document, Paragraph } from "docx";
+import { Math, MathBar, MathRun } from "docx/math";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new Math({
+                            children: [
+                                new MathBar({ children: [new MathRun("AB")] }),
+                                new MathBar({ position: "below", children: [new MathRun("x")] }),
+                            ],
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
+});
+```
+
+`position` is `"above"` (the default) or `"below"`.
+
+### Braces
+
+`MathBrace` draws a brace over or under math (`m:groupChr`), with a label on its other side, as LaTeX's `\overbrace` and `\underbrace`:
+
+```ts live
+import { Document, Paragraph } from "docx";
+import { Math, MathBrace, MathRun } from "docx/math";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new Math({
+                            children: [
+                                new MathBrace({
+                                    position: "below",
+                                    children: [new MathRun("1+2+⋯+n")],
+                                    label: [new MathRun({ text: "n terms", normalText: true })],
+                                }),
+                            ],
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
+});
+```
+
+| Option     | Type                             | Default   | Notes                                                                               |
+| ---------- | -------------------------------- | --------- | ----------------------------------------------------------------------------------- |
+| `children` | `MathComponent[]`                |           | What the brace goes over or under                                                   |
+| `position` | `"above"`, `"below"`             | `"above"` |                                                                                     |
+| `brace`    | `"curly"`, `"square"`, `"round"` | `"curly"` | ⏞ ⏟, ⎴ ⎵ and ⏜ ⏝                                                                    |
+| `label`    | `MathComponent[]`                |           | On the brace's other side, in a limit (`m:limUpp` or `m:limLow`), as Word writes it |
+
+### Boxes
+
+`MathBox` draws a box around math (`m:borderBox`), as LaTeX's `\boxed`, or lines struck through it, as `\cancel`:
+
+```ts live
+import { Document, Paragraph } from "docx";
+import { Math, MathBox, MathRun } from "docx/math";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new Math({
+                            children: [
+                                new MathBox({ children: [new MathRun("E=mc²")] }),
+                                new MathBox({ borders: [], strikes: ["diagonalUp"], children: [new MathRun("x")] }),
+                            ],
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
+});
+```
+
+| Option     | Type                                                                     | Default                              | Notes                                                                         |
+| ---------- | ------------------------------------------------------------------------ | ------------------------------------ | ----------------------------------------------------------------------------- |
+| `children` | `MathComponent[]`                                                        |                                      |                                                                               |
+| `borders`  | A list of `"top"`, `"bottom"`, `"left"`, `"right"`                       | `["top", "bottom", "left", "right"]` | The sides drawn. `[]` draws none, for lines struck through with no box        |
+| `strikes`  | A list of `"horizontal"`, `"vertical"`, `"diagonalUp"`, `"diagonalDown"` | `[]`                                 | `"diagonalUp"` is `\cancel`, `"diagonalDown"` `\bcancel`, and both `\xcancel` |
+
+### Phantoms
+
+`MathPhantom` writes math that takes up room without being seen (`m:phant`), as LaTeX's `\phantom`, to leave space for it or line things up with it. Or math that is seen but takes up less room, as `\smash`:
+
+```ts live
+import { Document, Paragraph } from "docx";
+import { Math, MathPhantom, MathRun } from "docx/math";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new Math({
+                            children: [new MathRun("a"), new MathPhantom({ children: [new MathRun("+b")] }), new MathRun("+c")],
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
+});
+```
+
+| Option     | Type              | Default | Notes                                                               |
+| ---------- | ----------------- | ------- | ------------------------------------------------------------------- |
+| `children` | `MathComponent[]` |         |                                                                     |
+| `visible`  | `boolean`         | `false` | Whether the math is seen (`m:show`)                                 |
+| `width`    | `boolean`         | `true`  | Whether it takes up its width. `false` as `\vphantom` (`m:zeroWid`) |
+| `height`   | `boolean`         | `true`  | Whether it takes up its height above the line (`m:zeroAsc`)         |
+| `depth`    | `boolean`         | `true`  | Whether it takes up its depth below the line (`m:zeroDesc`)         |
+
 ### Matrices
 
 `MathMatrix` writes a matrix (`m:m`): rows of cells, each cell a list of `MathComponents`, in brackets or none. A row shorter than the longest gets empty cells at its end.
@@ -935,6 +1237,8 @@ const doc = new Document({
 
 ## From LaTeX
 
+`latexToMath` turns LaTeX into these components: see [Math from LaTeX](usage/math-latex.md). By hand, LaTeX's environments and commands are these:
+
 | LaTeX                                   | `docx/math`                                                            |
 | --------------------------------------- | ---------------------------------------------------------------------- |
 | `\begin{matrix}`                        | `new MathMatrix({ rows })`                                             |
@@ -950,6 +1254,14 @@ const doc = new Document({
 | `\left\| x \right\|`, `\lVert v \rVert` | `new MathBrackets({ open: "\|", close: "\|", children })`, `open: "‖"` |
 | `\langle a \mid b \rangle`              | `new MathBrackets({ open: "⟨", close: "⟩", separator: "\|", items })`  |
 | `\text{if}`                             | `new MathRun({ text: "if", normalText: true })`                        |
+| `\mathbb{R}`, `\mathbf{F}`              | `new MathRun({ text: "R", script: "doubleStruck" })`, `style: "bold"`  |
+| `\prod`, `\bigcup`, `\oint`             | `new MathLargeOperator({ operator: "product", children })`             |
+| `\hat{x}`, `\vec{v}`                    | `new MathAccent({ accent: "hat", children })`                          |
+| `\overline{AB}`                         | `new MathBar({ children })`                                            |
+| `\underbrace{…}_{n}`                    | `new MathBrace({ position: "below", children, label })`                |
+| `\boxed{…}`, `\cancel{…}`               | `new MathBox({ children })`, `borders: [], strikes: ["diagonalUp"]`    |
+| `\phantom{…}`                           | `new MathPhantom({ children })`                                        |
+| `\binom{n}{k}`                          | `MathFraction` with `type: "noBar"` in `MathRoundBrackets`             |
 
 ## Compatibility
 
@@ -958,6 +1270,8 @@ Word is the reference. Other applications differ:
 - **LibreOffice** centres every column of a matrix, centres the rows of an equation array without lining them up, and shows the `&` between parts and the `#` before equation numbers.
 - **Pages** centres every column of a matrix and shows the `#` before equation numbers.
 - **Word 2013 and older** show the `#` before equation numbers.
+- **LibreOffice** draws only ∑, ∏, ∐ and the integrals as large operators, and draws `¿` for others, such as ⋃. Of the alphabets, it draws only double-struck letters, and of the styles none. It doesn't draw boxes or lines struck through.
+- **Pages** doesn't draw a box's sides.
 
 ## Demo
 
@@ -970,3 +1284,9 @@ Matrices, equations lined up with numbers, cases, and brackets of any characters
 [Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/math/matrices-and-alignment.ts ":include")
 
 _Source: https://github.com/dolanmiu/docx/blob/master/demo/math/matrices-and-alignment.ts_
+
+Math from LaTeX:
+
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/math/latex.ts ":include")
+
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/math/latex.ts_

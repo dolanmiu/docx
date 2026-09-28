@@ -10,7 +10,9 @@
 import { XmlComponent } from "@file/xml-components";
 
 import type { MathComponent } from "../math-component";
+import { limitLocationValue } from "./limit-location-value";
 import { createMathBase } from "./math-base";
+import type { MathLimitsPosition } from "./math-limit-location";
 import { createMathNAryProperties } from "./math-n-ary-properties";
 import { createMathSubScriptElement } from "./math-sub-script";
 import { createMathSuperScriptElement } from "./math-super-script";
@@ -27,6 +29,11 @@ export type IMathSumOptions = {
     readonly subScript?: readonly MathComponent[];
     /** Optional upper bound (superscript) of the sum */
     readonly superScript?: readonly MathComponent[];
+    /**
+     * Where the limits go: above and below the ∑, or to its right.
+     * @default "aboveBelow"
+     */
+    readonly limits?: MathLimitsPosition;
 };
 
 /**
@@ -69,6 +76,7 @@ export class MathSum extends XmlComponent {
                 accent: "∑",
                 hasSuperScript: !!options.superScript,
                 hasSubScript: !!options.subScript,
+                limitLocationVal: limitLocationValue("MathSum", options.limits, "undOvr"),
             }),
         );
 

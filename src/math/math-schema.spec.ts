@@ -3,12 +3,19 @@ import xml from "xml";
 import { type Element, xml2js } from "xml-js";
 
 import { Formatter } from "@export/formatter";
-import { Math, type MathComponent, MathFraction, MathRun, MathSuperScript } from "docx";
+import { Math, type MathComponent, MathFraction, MathIntegral, MathRun, MathSum, MathSuperScript } from "docx";
 
+import { latexToMath } from "./latex-to-math";
+import { MathAccent } from "./math-accent";
+import { MathBar } from "./math-bar";
+import { MathBox } from "./math-box";
+import { MathBrace } from "./math-brace";
 import { MathBrackets } from "./math-brackets";
 import { MathCases } from "./math-cases";
 import { MathEquationArray } from "./math-equation-array";
+import { MathLargeOperator } from "./math-large-operator";
 import { MathMatrix, type MathMatrixBrackets } from "./math-matrix";
+import { MathPhantom } from "./math-phantom";
 // @ts-expect-error -- Vite reads the schema as text, which TypeScript has no type for
 import mathSchema from "../../ooxml-schemas/ISO-IEC29500-4_2016/shared-math.xsd?raw";
 
@@ -103,6 +110,22 @@ const problemsOf = (children: readonly MathComponent[]): readonly string[] => {
 const run = (text: string): MathRun => new MathRun(text);
 const cell = (text: string): readonly MathComponent[] => [run(text)];
 
+// LaTeX of every kind latexToMath reads, as the demo has it
+const LATEX: readonly string[] = [
+    "x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a} \\quad \\sqrt[3]{x} \\quad \\binom{n}{k} \\quad \\nicefrac12 \\quad {a \\atop b}",
+    "{}^{14}_{6}\\mathrm{C} \\quad f''(x) \\quad x_i^2 \\quad a \\& b \\# c",
+    "\\sum_{i=1}^{n} i^2 \\quad \\int\\limits_0^1 f(x)\\,dx \\quad \\bigcup_{i} A_i \\quad \\oint",
+    "\\sin^2\\theta \\quad \\lim_{h \\to 0} \\frac{1}{h} \\quad \\sup_a^b f \\quad \\operatorname*{arg\\,max}_x f \\quad a \\pmod{n}",
+    "\\left\\langle \\psi \\middle| \\phi \\right\\rangle \\left( a \\middle| b \\middle/ c \\right) \\left. x \\right|",
+    "\\hat{x} \\vec{v} \\overline{AB} \\underline{x} \\overbrace{a}^{n} \\underbrace{b}_{m} \\overset{!}{=} \\xrightarrow[g]{f}",
+    "\\boxed{x} \\cancel{y} \\xcancel{z} \\phantom{x} \\smash[t]{y} \\vphantom{z}",
+    "\\mathbb{R} \\mathbf{\\mathcal{A}} \\boldsymbol{\\alpha} \\Gamma \\text{if $x$ then} \\not\\in",
+    "\\begin{pmatrix} 1 & 2 \\\\ 3 \\end{pmatrix} \\begin{array}{lc} a & b \\end{array} \\sum_{\\substack{i \\\\ j}} a",
+    "|x| = \\begin{cases} x & \\text{if } x \\ge 0 \\\\ -x \\end{cases} \\begin{rcases} a \\end{rcases}",
+    "\\begin{align} y &= mx + b \\tag{1} \\\\ y' &= m \\end{align}",
+    "a &= b \\\\ &= c \\tag{2}",
+];
+
 const BRACKETS: readonly MathMatrixBrackets[] = ["none", "round", "square", "curly", "angled", "verticalBars", "doubleVerticalBars"];
 
 const EQUATIONS: readonly (readonly [string, () => readonly MathComponent[]])[] = [
@@ -155,6 +178,39 @@ const EQUATIONS: readonly (readonly [string, () => readonly MathComponent[]])[] 
             }),
         ],
     ],
+    [
+        "runs in every style and alphabet, literal, and as normal text",
+        () => [
+            new MathRun({ text: "R", literal: true, script: "doubleStruck", style: "bold" }),
+            new MathRun({ text: "&", literal: true, normalText: true }),
+            new MathRun({ text: "x", style: "boldItalic" }),
+        ],
+    ],
+    [
+        "fractions of every type, and sums and integrals with their limits either way",
+        () => [
+            ...(["stacked", "skewed", "linear", "noBar"] as const).map(
+                (type) => new MathFraction({ numerator: cell("a"), denominator: cell("b"), type }),
+            ),
+            new MathSum({ children: cell("i"), subScript: cell("i"), limits: "side" }),
+            new MathIntegral({ children: cell("x"), superScript: cell("1"), limits: "aboveBelow" }),
+        ],
+    ],
+    [
+        "accents, bars, braces with and without labels, boxes, phantoms and large operators",
+        () => [
+            new MathAccent({ accent: "doubleDot", children: cell("x") }),
+            new MathBar({ position: "below", children: [] }),
+            new MathBrace({ children: cell("a") }),
+            new MathBrace({ position: "below", brace: "square", children: cell("a"), label: cell("n") }),
+            new MathBrace({ label: [], children: [] }),
+            new MathBox({ children: cell("x") }),
+            new MathBox({ borders: ["top"], strikes: ["horizontal", "vertical", "diagonalUp", "diagonalDown"], children: cell("x") }),
+            new MathPhantom({ visible: true, width: false, height: false, depth: false, children: cell("x") }),
+            new MathLargeOperator({ operator: "product", subScript: cell("i"), superScript: cell("n"), limits: "side", children: [] }),
+        ],
+    ],
+    ...LATEX.map((latex) => [`the LaTeX ${latex}`, () => latexToMath(latex)] as const),
     [
         "everything inside everything",
         () => [
