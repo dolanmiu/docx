@@ -8224,12 +8224,6 @@ var docx = (function(exports) {
 		}
 	};
 	//#endregion
-	//#region src/file/xml-components/xmlable-object.ts
-	/**
-	* @ignore
-	*/
-	var WORKAROUND3 = "";
-	//#endregion
 	//#region src/file/xml-components/initializable-xml-component.ts
 	/**
 	* Initializable XML Component module.
@@ -20302,12 +20296,6 @@ MAX: 9026 };
 		}
 	};
 	//#endregion
-	//#region src/file/paragraph/math/math-component.ts
-	/**
-	* @ignore
-	*/
-	var WORKAROUND4 = "";
-	//#endregion
 	//#region src/file/paragraph/math/radical/math-degree.ts
 	/**
 	* Math Degree module for Office MathML.
@@ -26061,12 +26049,6 @@ MAX: 9026 };
 			return Array.from(this.map.values());
 		}
 	};
-	//#endregion
-	//#region src/file/media/data.ts
-	/**
-	* @ignore
-	*/
-	var WORKAROUND2 = "";
 	//#endregion
 	//#region src/file/numbering/level.ts
 	/**
@@ -36150,9 +36132,6 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 	exports.VerticalMergeType = VerticalMergeType;
 	exports.VerticalPositionAlign = VerticalPositionAlign;
 	exports.VerticalPositionRelativeFrom = VerticalPositionRelativeFrom;
-	exports.WORKAROUND2 = WORKAROUND2;
-	exports.WORKAROUND3 = WORKAROUND3;
-	exports.WORKAROUND4 = WORKAROUND4;
 	exports.WidthType = WidthType;
 	exports.WpgGroupRun = WpgGroupRun;
 	exports.WpsShapeRun = WpsShapeRun;

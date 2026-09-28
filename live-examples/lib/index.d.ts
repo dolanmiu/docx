@@ -13210,21 +13210,6 @@ declare type WithHexColors<T> = Omit<T, "borders" | "shading"> & {
     };
 };
 
-/**
- * @ignore
- */
-export declare const WORKAROUND2 = "";
-
-/**
- * @ignore
- */
-export declare const WORKAROUND3 = "";
-
-/**
- * @ignore
- */
-export declare const WORKAROUND4 = "";
-
 export declare type WpgCommonMediaData = {
     readonly outline?: OutlineOptions;
     readonly solidFill?: SolidFillOptions;
