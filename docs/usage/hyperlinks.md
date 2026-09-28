@@ -10,7 +10,9 @@ To create an internal hyperlink you need first to create a `Bookmark`, which con
 
 A bookmark is composed of an anchor (an identifier) and the text displayed. After creating a bookmark just add it to a paragraph. For example, creating a bookmarked heading:
 
-```ts
+```ts live
+import { Bookmark, Document, HeadingLevel, Paragraph, TextRun } from "docx";
+
 const chapter1 = new Paragraph({
     heading: HeadingLevel.HEADING_1,
     children: [
@@ -20,11 +22,21 @@ const chapter1 = new Paragraph({
         }),
     ],
 });
+
+const doc = new Document({
+    sections: [
+        {
+            children: [chapter1],
+        },
+    ],
+});
 ```
 
 Then you can create an hyperlink pointing to that bookmark with an `InternalHyperLink`:
 
-```ts
+```ts live
+import { Bookmark, Document, HeadingLevel, InternalHyperlink, Paragraph, TextRun } from "docx";
+
 const link = new InternalHyperlink({
     children: [
         new TextRun({
@@ -34,15 +46,47 @@ const link = new InternalHyperlink({
     ],
     anchor: "anchorForChapter1",
 });
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({ children: [link] }),
+                new Paragraph({
+                    heading: HeadingLevel.HEADING_1,
+                    pageBreakBefore: true,
+                    children: [new Bookmark({ id: "anchorForChapter1", children: [new TextRun("Chapter 1")] })],
+                }),
+            ],
+        },
+    ],
+});
 ```
 
 ### Page reference
 
 You can also get the page number of the bookmark by creating a page reference to it:
 
-```ts
+```ts live
+import { Bookmark, Document, HeadingLevel, PageReference, Paragraph, TextRun } from "docx";
+
 const paragraph = new Paragraph({
     children: [new TextRun("Chapter 1 can be seen on page "), new PageReference("anchorForChapter1")],
+});
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                paragraph,
+                new Paragraph({
+                    heading: HeadingLevel.HEADING_1,
+                    pageBreakBefore: true,
+                    children: [new Bookmark({ id: "anchorForChapter1", children: [new TextRun("Chapter 1")] })],
+                }),
+            ],
+        },
+    ],
 });
 ```
 
@@ -50,9 +94,37 @@ const paragraph = new Paragraph({
 
 You can also create cross references for numbered items with `NumberedItemReference`.
 
-```ts
+```ts live
+import { AlignmentType, Bookmark, Document, LevelFormat, NumberedItemReference, Paragraph, TextRun } from "docx";
+
 const paragraph = new Paragraph({
     children: [new TextRun("See Paragraph "), new NumberedItemReference("anchorForParagraph1", "1.1")],
+});
+
+const doc = new Document({
+    numbering: {
+        config: [
+            {
+                reference: "paragraph-numbering",
+                levels: [
+                    { level: 0, format: LevelFormat.DECIMAL, text: "%1.", alignment: AlignmentType.START },
+                    { level: 1, format: LevelFormat.DECIMAL, text: "%1.%2.", alignment: AlignmentType.START },
+                ],
+            },
+        ],
+    },
+    sections: [
+        {
+            children: [
+                paragraph,
+                new Paragraph({ text: "Introduction", numbering: { reference: "paragraph-numbering", level: 0 } }),
+                new Paragraph({
+                    numbering: { reference: "paragraph-numbering", level: 1 },
+                    children: [new Bookmark({ id: "anchorForParagraph1", children: [new TextRun("The paragraph being referenced")] })],
+                }),
+            ],
+        },
+    ],
 });
 ```
 
@@ -63,7 +135,9 @@ const paragraph = new Paragraph({
 
 To create an external hyperlink you just need to specify the url and the text of the link, then add it to a paragraph:
 
-```ts
+```ts live
+import { Document, ExternalHyperlink, Paragraph, TextRun } from "docx";
+
 const paragraph = new Paragraph({
     children: [
         new ExternalHyperlink({
@@ -75,6 +149,14 @@ const paragraph = new Paragraph({
             ],
             link: "https://docx.js.org",
         }),
+    ],
+});
+
+const doc = new Document({
+    sections: [
+        {
+            children: [paragraph],
+        },
     ],
 });
 ```
@@ -95,7 +177,9 @@ It is possible to set the style of the text of both internal and external hyperl
 
 Example:
 
-```ts
+```ts live
+import { Document, ExternalHyperlink, Paragraph, TextRun } from "docx";
+
 const styledLink = new ExternalHyperlink({
     children: [
         new TextRun({
@@ -113,5 +197,13 @@ const styledLink = new ExternalHyperlink({
         }),
     ],
     link: "https://docx.js.org",
+});
+
+const doc = new Document({
+    sections: [
+        {
+            children: [new Paragraph({ children: [styledLink] })],
+        },
+    ],
 });
 ```

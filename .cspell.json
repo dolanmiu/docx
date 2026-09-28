@@ -91,6 +91,7 @@
     "ignorePaths": [
         "package.json",
         "docs/api",
+        "docs/live-examples/lib",
         "*.docx",
         "build"
     ],

@@ -1,0 +1,137 @@
+/* Live examples: see live-examples.js. The colours are the docs theme's, so they follow it between light and dark */
+
+.markdown-section .live-example {
+    margin: 1em 0;
+    border: 1px solid var(--borderColor);
+    border-radius: 4px;
+    /* Clipped rather than hidden, which would stop the pages sticking to the top of the window in the split view */
+    overflow: clip;
+    container-type: inline-size;
+}
+
+.live-example__panes {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    background: var(--codeBackgroundColor);
+}
+
+.markdown-section .live-example pre {
+    margin: 0;
+    border-radius: 0;
+    cursor: text;
+}
+
+.markdown-section .live-example pre:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: -2px;
+}
+
+.live-example__editor {
+    min-height: 60px;
+}
+
+.live-example__bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    border-bottom: 1px solid var(--borderColor);
+    font-size: 0.8rem;
+}
+
+.live-example__status {
+    flex: 1;
+    color: var(--blockQuoteColor);
+}
+
+.live-example__status--error {
+    color: var(--highlightColor);
+    font-family: var(--codeFontFamily);
+    white-space: pre-wrap;
+}
+
+.live-example__bar button {
+    padding: 4px 12px;
+    border: 1px solid var(--accent);
+    border-radius: 4px;
+    background: transparent;
+    color: var(--accent);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.live-example__bar button:hover:not(:disabled),
+.live-example__bar button[aria-pressed="true"] {
+    background: var(--accent);
+    color: #fff;
+}
+
+.live-example__bar button:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.live-example__views {
+    display: inline-flex;
+}
+
+.live-example__bar .live-example__views button {
+    border-radius: 0;
+}
+
+.live-example__bar .live-example__views button + button {
+    margin-left: -1px;
+}
+
+.live-example__bar .live-example__views button:first-child {
+    border-radius: 4px 0 0 4px;
+}
+
+.live-example__bar .live-example__views button:last-child {
+    border-radius: 0 4px 4px 0;
+}
+
+.live-example__preview {
+    max-height: 70vh;
+    min-height: 80px;
+    overflow: auto;
+    border-top: 1px solid var(--borderColor);
+    transition: opacity 0.2s;
+}
+
+.live-example[data-view="code"] .live-example__preview,
+.live-example[data-view="preview"] .live-example__code {
+    display: none;
+}
+
+/* Only the pages are shown, so all of them are */
+.live-example[data-view="preview"] .live-example__preview {
+    max-height: none;
+    border-top: none;
+}
+
+/* Side by side when there's room, with the pages kept in sight as the code scrolls past. Otherwise the pages are under the code */
+@container (min-width: 720px) {
+    .live-example[data-view="split"] .live-example__panes {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    }
+
+    .live-example[data-view="split"] .live-example__code {
+        border-right: 1px solid var(--borderColor);
+    }
+
+    .live-example[data-view="split"] .live-example__preview {
+        position: sticky;
+        top: 0;
+        align-self: start;
+        max-height: 100vh;
+        border-top: none;
+    }
+}
+
+/* The code doesn't run, so the pages are what it last drew */
+.live-example__preview--stale {
+    opacity: 0.5;
+}

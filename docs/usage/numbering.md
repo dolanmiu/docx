@@ -53,11 +53,12 @@ Levels define the numbering definition itself, what it looks like, the indention
 
 ## Using ordered lists in `docx`
 
-Add a `numbering` section to the `Document` to numbering style, define your levels. Use `LevelFormat.UPPER_ROMAN` for the `format` in `levels`:
+Add a `numbering` section to the `Document` to numbering style, define your levels. Use `LevelFormat.UPPER_ROMAN` for the `format` in `levels`. And then on a `Paragraph`, we can use the numbering created:
 
-```ts
+```ts live
+import { AlignmentType, Document, LevelFormat, Paragraph } from "docx";
+
 const doc = new Document({
-    ...
     numbering: {
         config: [
             {
@@ -74,25 +75,31 @@ const doc = new Document({
                             },
                         },
                     },
-                    ...
                 ],
             },
         ],
     },
-    ...
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    text: "Hey you!",
+                    numbering: {
+                        reference: "my-numbering",
+                        level: 0,
+                    },
+                }),
+                new Paragraph({
+                    text: "Hey you again!",
+                    numbering: {
+                        reference: "my-numbering",
+                        level: 0,
+                    },
+                }),
+            ],
+        },
+    ],
 });
-```
-
-And then on a `Paragraph`, we can add use the numbering created:
-
-```ts
-new Paragraph({
-    text: "Hey you!",
-    numbering: {
-        reference: "my-numbering",
-        level: 0,
-    },
-}),
 ```
 
 ### Numbering options
@@ -107,30 +114,59 @@ Along with `reference` and `level`, the `numbering` object supports an optional 
 
 Example:
 
-```ts
-new Paragraph({
-    text: "First list item",
-    numbering: { reference: "my-numbering", level: 0, instance: 1 },
-});
+```ts live
+import { AlignmentType, Document, LevelFormat, Paragraph } from "docx";
 
-new Paragraph({
-    text: "Second list item",
-    numbering: { reference: "my-numbering", level: 0, instance: 1 },
-});
-
-new Paragraph({
-    text: "New list, starts again at 1",
-    numbering: { reference: "my-numbering", level: 0, instance: 2 },
+const doc = new Document({
+    numbering: {
+        config: [
+            {
+                reference: "my-numbering",
+                levels: [
+                    {
+                        level: 0,
+                        format: LevelFormat.DECIMAL,
+                        text: "%1.",
+                        alignment: AlignmentType.START,
+                        style: {
+                            paragraph: {
+                                indent: { left: 720, hanging: 260 },
+                            },
+                        },
+                    },
+                ],
+            },
+        ],
+    },
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    text: "First list item",
+                    numbering: { reference: "my-numbering", level: 0, instance: 1 },
+                }),
+                new Paragraph({
+                    text: "Second list item",
+                    numbering: { reference: "my-numbering", level: 0, instance: 1 },
+                }),
+                new Paragraph({
+                    text: "New list, starts again at 1",
+                    numbering: { reference: "my-numbering", level: 0, instance: 2 },
+                }),
+            ],
+        },
+    ],
 });
 ```
 
 ## Un-ordered lists / Bullet points
 
-Add a `numbering` section to the `Document` to numbering style, define your levels. Use `LevelFormat.BULLET` for the `format` in `levels`:
+Add a `numbering` section to the `Document` to numbering style, define your levels. Use `LevelFormat.BULLET` for the `format` in `levels`. And then on a `Paragraph`, we can use the numbering created:
 
-```ts
+```ts live
+import { AlignmentType, convertInchesToTwip, Document, LevelFormat, Paragraph } from "docx";
+
 const doc = new Document({
-    ...
     numbering: {
         config: [
             {
@@ -139,7 +175,7 @@ const doc = new Document({
                     {
                         level: 0,
                         format: LevelFormat.BULLET,
-                        text: "\u1F60",
+                        text: "\u2022",
                         alignment: AlignmentType.LEFT,
                         style: {
                             paragraph: {
@@ -151,29 +187,37 @@ const doc = new Document({
             },
         ],
     },
-    ...
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    text: "Hey you!",
+                    numbering: {
+                        reference: "my-bullet-points",
+                        level: 0,
+                    },
+                }),
+                new Paragraph({
+                    text: "Hey you again!",
+                    numbering: {
+                        reference: "my-bullet-points",
+                        level: 0,
+                    },
+                }),
+            ],
+        },
+    ],
 });
-```
-
-And then on a `Paragraph`, we can add use the numbering created:
-
-```ts
-new Paragraph({
-    text: "Hey you!",
-    numbering: {
-        reference: "my-bullet-points",
-        level: 0,
-    },
-}),
 ```
 
 ## Disabling numbering inherited from paragraph style
 
 If the numbering is set on a paragraph style, you may wish to disable it for a specific paragraph:
 
-```ts
+```ts live
+import { AlignmentType, convertInchesToTwip, Document, LevelFormat, Paragraph } from "docx";
+
 const doc = new Document({
-    ...
     numbering: {
         config: [
             {
@@ -182,7 +226,7 @@ const doc = new Document({
                     {
                         level: 0,
                         format: LevelFormat.BULLET,
-                        text: "\u1F60",
+                        text: "\u2022",
                         alignment: AlignmentType.LEFT,
                         style: {
                             paragraph: {
@@ -197,30 +241,36 @@ const doc = new Document({
     styles: {
         paragraphStyles: [
             {
-                id: 'bullet',
-                name: 'Bullet',
-                basedOn: 'Normal',
-                next: 'Normal',
+                id: "bullet",
+                name: "Bullet",
+                basedOn: "Normal",
+                next: "Normal",
                 run: {},
                 paragraph: {
                     numbering: {
-                        reference: 'my-bullet-points',
+                        reference: "my-bullet-points",
                         level: 0,
                     },
                 },
             },
         ],
     },
-    ...
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    text: "A bullet point from the style",
+                    style: "bullet",
+                }),
+                new Paragraph({
+                    text: "No bullet points!",
+                    style: "bullet",
+                    numbering: false,
+                }),
+            ],
+        },
+    ],
 });
-```
-
-```ts
-new Paragraph({
-    text: "No bullet points!",
-    style: "Bullet",
-    numbering: false,
-}),
 ```
 
 ## Associating a level with a paragraph style
@@ -229,7 +279,9 @@ You can link a numbering level to a paragraph style using `style.style`. Any par
 
 This is useful for creating reusable list styles — define the numbering once and apply it via the paragraph style:
 
-```ts
+```ts live
+import { AlignmentType, Document, LevelFormat, Paragraph } from "docx";
+
 const doc = new Document({
     styles: {
         paragraphStyles: [

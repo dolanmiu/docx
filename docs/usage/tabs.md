@@ -12,19 +12,36 @@ Simply declare the tab stops on the paragraph, as shown below. Use the tab chara
 
 ### Example
 
-```ts
-const paragraph = new Paragraph({
-    children: [
-        new TextRun({ text: "Hey everyone", bold: true }),
-        new TextRun("\t11th November 1999"),
-        new TextRun({
-            children: [new Tab(), "11th November 1999"],
-        }),
-    ],
-    tabStops: [
+```ts live
+import { Document, Paragraph, Tab, TabStopPosition, TabStopType, TextRun } from "docx";
+
+const tabStops = [
+    {
+        type: TabStopType.RIGHT,
+        position: TabStopPosition.MAX,
+    },
+];
+
+const doc = new Document({
+    sections: [
         {
-            type: TabStopType.RIGHT,
-            position: TabStopPosition.MAX,
+            children: [
+                // With the tab character
+                new Paragraph({
+                    children: [new TextRun({ text: "Hey everyone", bold: true }), new TextRun("\t11th November 1999")],
+                    tabStops,
+                }),
+                // Or with a Tab
+                new Paragraph({
+                    children: [
+                        new TextRun({ text: "Hey everyone", bold: true }),
+                        new TextRun({
+                            children: [new Tab(), "11th November 1999"],
+                        }),
+                    ],
+                    tabStops,
+                }),
+            ],
         },
     ],
 });
@@ -32,7 +49,9 @@ const paragraph = new Paragraph({
 
 The example above will create a left aligned text, and a right aligned text on the same line. The laymans approach to this problem would be to either use text boxes or tables. Not ideal!
 
-```ts
+```ts live
+import { Document, Paragraph, TabStopPosition, TabStopType, TextRun } from "docx";
+
 const paragraph = new Paragraph({
     children: [new TextRun("\t\tSecond tab stop here I come!")],
     tabStops: [
@@ -46,14 +65,24 @@ const paragraph = new Paragraph({
         },
     ],
 });
+
+const doc = new Document({
+    sections: [
+        {
+            children: [paragraph],
+        },
+    ],
+});
 ```
 
 The above shows the use of two tab stops, and how to select/use it.
 
 You can add multiple tab stops of the same `type` too.
 
-```ts
-const paragraph = new Paragraph({
+```ts live
+import { Document, Paragraph, Tab, TabStopPosition, TabStopType, TextRun } from "docx";
+
+const withTabCharacters = new Paragraph({
     children: [new TextRun("Multiple \ttab \tstops!")],
     tabStops: [
         {
@@ -67,7 +96,7 @@ const paragraph = new Paragraph({
     ],
 });
 
-const paragraph = new Paragraph({
+const withTabChildren = new Paragraph({
     children: [
         new TextRun({
             children: ["Multiple ", new Tab(), "tab ", new Tab(), "stops!"],
@@ -84,16 +113,35 @@ const paragraph = new Paragraph({
         },
     ],
 });
+
+const doc = new Document({
+    sections: [
+        {
+            children: [withTabCharacters, withTabChildren],
+        },
+    ],
+});
 ```
 
 ### Left Tab Stop
 
-```ts
+```ts live
+import { Document, Paragraph, TabStopType, TextRun } from "docx";
+
 const paragraph = new Paragraph({
+    children: [new TextRun("Before\tLeft aligned at 2268")],
     tabStops: [
         {
             type: TabStopType.LEFT,
             position: 2268,
+        },
+    ],
+});
+
+const doc = new Document({
+    sections: [
+        {
+            children: [paragraph],
         },
     ],
 });
@@ -103,12 +151,23 @@ const paragraph = new Paragraph({
 
 ### Center Tab Stop
 
-```ts
+```ts live
+import { Document, Paragraph, TabStopType, TextRun } from "docx";
+
 const paragraph = new Paragraph({
+    children: [new TextRun("\tCentered on 2268")],
     tabStops: [
         {
             type: TabStopType.CENTER,
             position: 2268,
+        },
+    ],
+});
+
+const doc = new Document({
+    sections: [
+        {
+            children: [paragraph],
         },
     ],
 });
@@ -118,12 +177,23 @@ const paragraph = new Paragraph({
 
 ### Right Tab Stop
 
-```ts
+```ts live
+import { Document, Paragraph, TabStopType, TextRun } from "docx";
+
 const paragraph = new Paragraph({
+    children: [new TextRun("\tEnds at 2268")],
     tabStops: [
         {
             type: TabStopType.RIGHT,
             position: 2268,
+        },
+    ],
+});
+
+const doc = new Document({
+    sections: [
+        {
+            children: [paragraph],
         },
     ],
 });
@@ -133,12 +203,23 @@ const paragraph = new Paragraph({
 
 ### Max Right Tab Stop
 
-```ts
+```ts live
+import { Document, Paragraph, TabStopPosition, TabStopType, TextRun } from "docx";
+
 const paragraph = new Paragraph({
+    children: [new TextRun("Left aligned\tRight aligned")],
     tabStops: [
         {
             type: TabStopType.RIGHT,
             position: TabStopPosition.MAX,
+        },
+    ],
+});
+
+const doc = new Document({
+    sections: [
+        {
+            children: [paragraph],
         },
     ],
 });
@@ -156,8 +237,10 @@ They are easier to use than the normal tab stops, as you can use the `Positional
 
 ### Example
 
-```ts
-new Paragraph({
+```ts live
+import { Document, Paragraph, PositionalTab, PositionalTabAlignment, PositionalTabLeader, PositionalTabRelativeTo, TextRun } from "docx";
+
+const paragraph = new Paragraph({
     children: [
         new TextRun("Full name"),
         new TextRun({
@@ -172,7 +255,15 @@ new Paragraph({
             bold: true,
         }),
     ],
-}),
+});
+
+const doc = new Document({
+    sections: [
+        {
+            children: [paragraph],
+        },
+    ],
+});
 ```
 
 ### Options

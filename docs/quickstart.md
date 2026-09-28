@@ -19,7 +19,7 @@ npm install --save docx
 
 Create a "Hello World" document in just a few lines:
 
-```ts
+```ts live
 import { Document, Packer, Paragraph, TextRun } from "docx";
 import * as fs from "fs";
 
@@ -47,18 +47,28 @@ That's it! Run this code to create your first Word document.
 
 ### Bold and Styled Text
 
-```ts
-new Paragraph({
-    children: [
-        new TextRun("Normal text, "),
-        new TextRun({
-            text: "bold text, ",
-            bold: true,
-        }),
-        new TextRun({
-            text: "italic text",
-            italics: true,
-        }),
+```ts live
+import { Document, Paragraph, TextRun } from "docx";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new TextRun("Normal text, "),
+                        new TextRun({
+                            text: "bold text, ",
+                            bold: true,
+                        }),
+                        new TextRun({
+                            text: "italic text",
+                            italics: true,
+                        }),
+                    ],
+                }),
+            ],
+        },
     ],
 });
 ```
@@ -67,46 +77,74 @@ See the [Text guide](usage/text.md) for all formatting options.
 
 ### Headings
 
-```ts
-import { HeadingLevel } from "docx";
+```ts live
+import { Document, HeadingLevel, Paragraph } from "docx";
 
-new Paragraph({
-    text: "My Heading",
-    heading: HeadingLevel.HEADING_1,
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    text: "My Heading",
+                    heading: HeadingLevel.HEADING_1,
+                }),
+                new Paragraph("Some text under the heading."),
+            ],
+        },
+    ],
 });
 ```
 
 ### Bullet Points
 
-```ts
-[
-    new Paragraph({
-        text: "First item",
-        bullet: { level: 0 },
-    }),
-    new Paragraph({
-        text: "Second item",
-        bullet: { level: 0 },
-    }),
-    new Paragraph({
-        text: "Nested item",
-        bullet: { level: 1 },
-    }),
-];
+```ts live
+import { Document, Paragraph } from "docx";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    text: "First item",
+                    bullet: { level: 0 },
+                }),
+                new Paragraph({
+                    text: "Second item",
+                    bullet: { level: 0 },
+                }),
+                new Paragraph({
+                    text: "Nested item",
+                    bullet: { level: 1 },
+                }),
+            ],
+        },
+    ],
+});
 ```
 
 See the [Bullet Points guide](usage/bullet-points.md) for more options.
 
 ### Tables
 
-```ts
-import { Table, TableRow, TableCell } from "docx";
+```ts live
+import { Document, Paragraph, Table, TableCell, TableRow } from "docx";
 
-new Table({
-    rows: [
-        new TableRow({
-            children: [new TableCell({ children: [new Paragraph("Cell 1")] }), new TableCell({ children: [new Paragraph("Cell 2")] })],
-        }),
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Table({
+                    rows: [
+                        new TableRow({
+                            children: [
+                                new TableCell({ children: [new Paragraph("Cell 1")] }),
+                                new TableCell({ children: [new Paragraph("Cell 2")] }),
+                            ],
+                        }),
+                    ],
+                }),
+            ],
+        },
     ],
 });
 ```
@@ -115,19 +153,28 @@ See the [Tables guide](usage/tables.md) for advanced table features.
 
 ### Images
 
-```ts
-import { ImageRun } from "docx";
+```ts live
+import { Document, ImageRun, Paragraph } from "docx";
+import * as fs from "fs";
 
-new Paragraph({
-    children: [
-        new ImageRun({
-            type: "png",
-            data: fs.readFileSync("./image.png"),
-            transformation: {
-                width: 200,
-                height: 200,
-            },
-        }),
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new ImageRun({
+                            type: "png",
+                            data: fs.readFileSync("./demo/assets/images/dog.png"),
+                            transformation: {
+                                width: 200,
+                                height: 200,
+                            },
+                        }),
+                    ],
+                }),
+            ],
+        },
     ],
 });
 ```

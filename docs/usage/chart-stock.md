@@ -8,14 +8,29 @@ A stock chart shows how a price moved over each day, or other period: its highes
 
 ## A Stock Chart
 
-```ts
-new ChartRun({
-    type: "stock",
-    title: "Share price",
-    categories: [new Date("2025-01-06"), new Date("2025-01-07"), new Date("2025-01-08")],
-    high: [103.1, 104.8, 105.0],
-    low: [100.4, 101.9, 102.6],
-    close: [102.4, 104.2, 102.9],
+```ts live
+import { Document, Paragraph } from "docx";
+import { ChartRun } from "docx/charts";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new ChartRun({
+                            type: "stock",
+                            title: "Share price",
+                            categories: [new Date("2025-01-06"), new Date("2025-01-07"), new Date("2025-01-08")],
+                            high: [103.1, 104.8, 105.0],
+                            low: [100.4, 101.9, 102.6],
+                            close: [102.4, 104.2, 102.9],
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
 });
 ```
 
@@ -29,10 +44,32 @@ Each high has to be at least its low, and each open and close between them. `new
 
 `open` adds each category's opening price. A bar goes from the open to the close: white where the price rose, and dark grey where it fell. This is Word's "Open-High-Low-Close" chart, also known as a candlestick chart:
 
-```ts
-open: [101.2, 102.5, 104.1],
-upBars: { fill: "70AD47" },
-downBars: { fill: "C00000" },
+```ts live
+import { Document, Paragraph } from "docx";
+import { ChartRun } from "docx/charts";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new ChartRun({
+                            type: "stock",
+                            categories: [new Date("2025-01-06"), new Date("2025-01-07"), new Date("2025-01-08")],
+                            high: [103.1, 104.8, 105.0],
+                            low: [100.4, 101.9, 102.6],
+                            close: [102.4, 104.2, 102.9],
+                            open: [101.2, 102.5, 104.1],
+                            upBars: { fill: "70AD47" },
+                            downBars: { fill: "C00000" },
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
+});
 ```
 
 `upBars` and `downBars` are the fill and border of the bars where the price rose and fell, as `{ fill, border }`, like the [chart area's](usage/chart-fonts-and-fills.md).
@@ -41,10 +78,32 @@ downBars: { fill: "C00000" },
 
 `volume` adds each category's volume traded, as columns against an axis of their own on the left. The prices' axis moves to the right. This is Word's "Volume-High-Low-Close" chart, or with `open`, its "Volume-Open-High-Low-Close" chart:
 
-```ts
-volume: [18200, 21500, 26400],
-volumeAxis: { displayUnits: "thousands" },
-valueAxis: { minimum: 90 },
+```ts live
+import { Document, Paragraph } from "docx";
+import { ChartRun } from "docx/charts";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new ChartRun({
+                            type: "stock",
+                            categories: [new Date("2025-01-06"), new Date("2025-01-07"), new Date("2025-01-08")],
+                            high: [103.1, 104.8, 105.0],
+                            low: [100.4, 101.9, 102.6],
+                            close: [102.4, 104.2, 102.9],
+                            volume: [18200, 21500, 26400],
+                            volumeAxis: { displayUnits: "thousands" },
+                            valueAxis: { minimum: 90 },
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
+});
 ```
 
 `volumeAxis` is the volumes' axis, and `valueAxis` is always the prices' axis. Volumes can't be negative.
@@ -57,8 +116,30 @@ A stock chart's dates are spaced evenly, one for each category, rather than by d
 
 The legend shows the series by Word's names: "Volume", "Open", "High", "Low" and "Close". `names` changes them, such as to another language:
 
-```ts
-names: { high: "Haut", low: "Bas", close: "Clôture" },
+```ts live
+import { Document, Paragraph } from "docx";
+import { ChartRun } from "docx/charts";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new ChartRun({
+                            type: "stock",
+                            categories: [new Date("2025-01-06"), new Date("2025-01-07"), new Date("2025-01-08")],
+                            high: [103.1, 104.8, 105.0],
+                            low: [100.4, 101.9, 102.6],
+                            close: [102.4, 104.2, 102.9],
+                            names: { high: "Haut", low: "Bas", close: "Clôture" },
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
+});
 ```
 
 Only the volumes, and the closing price when there are no opening prices, have a key in the legend, so a stock chart without volumes often has `legend: false`.

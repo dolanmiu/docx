@@ -6,16 +6,31 @@ A radar chart has a spoke for each category, and draws each series as a line aro
 
 ## A Radar Chart
 
-```ts
-new ChartRun({
-    type: "radar",
-    title: "Skills",
-    categories: ["Speed", "Strength", "Range", "Stamina", "Skill"],
-    series: [
-        { name: "Alice", values: [4, 3, 5, 2, 4] },
-        { name: "Bob", values: [3, 5, 2, 4, 3] },
+```ts live
+import { Document, Paragraph } from "docx";
+import { ChartRun } from "docx/charts";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new ChartRun({
+                            type: "radar",
+                            title: "Skills",
+                            categories: ["Speed", "Strength", "Range", "Stamina", "Skill"],
+                            series: [
+                                { name: "Alice", values: [4, 3, 5, 2, 4] },
+                                { name: "Bob", values: [3, 5, 2, 4, 3] },
+                            ],
+                            valueAxis: { minimum: 0, maximum: 5, interval: 1 },
+                        }),
+                    ],
+                }),
+            ],
+        },
     ],
-    valueAxis: { minimum: 0, maximum: 5, interval: 1 },
 });
 ```
 
@@ -28,12 +43,27 @@ new ChartRun({
 - `markers: true` draws a circle at each point, as Word's "Radar with Markers" does. Markers can have a shape and size of their own. See [Markers](usage/chart-line-and-area.md#markers).
 - `filled: true` fills the area inside each series' line, as Word's "Filled Radar" does. A filled radar chart has no markers, and its series no lines.
 
-```ts
-new ChartRun({
-    type: "radar",
-    categories: ["Speed", "Strength", "Range", "Stamina", "Skill"],
-    series: [{ name: "Alice", values: [4, 3, 5, 2, 4] }],
-    filled: true,
+```ts live
+import { Document, Paragraph } from "docx";
+import { ChartRun } from "docx/charts";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new ChartRun({
+                            type: "radar",
+                            categories: ["Speed", "Strength", "Range", "Stamina", "Skill"],
+                            series: [{ name: "Alice", values: [4, 3, 5, 2, 4] }],
+                            filled: true,
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
 });
 ```
 

@@ -10,30 +10,64 @@ More info: https://en.wikipedia.org/wiki/Twip
 
 ### Convert Inches to Twip
 
-```ts
-import { convertInchesToTwip } from "docx";
+```ts live
+import { Document, Paragraph, convertInchesToTwip } from "docx";
 
-convertInchesToTwip(1); // returns 1440
-convertInchesToTwip(0.5); // returns 720
-convertInchesToTwip(2); // returns 2880
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    text: "Indented 1 inch",
+                    indent: { left: convertInchesToTwip(1) }, // returns 1440
+                }),
+                new Paragraph({
+                    text: "Indented 0.5 inches",
+                    indent: { left: convertInchesToTwip(0.5) }, // returns 720
+                }),
+                new Paragraph({
+                    text: "Indented 2 inches",
+                    indent: { left: convertInchesToTwip(2) }, // returns 2880
+                }),
+            ],
+        },
+    ],
+});
 ```
 
 ### Convert Millimeters to Twip
 
-```ts
-import { convertMillimetersToTwip } from "docx";
+```ts live
+import { Document, Paragraph, convertMillimetersToTwip } from "docx";
 
-convertMillimetersToTwip(25.4); // returns 1440 (1 inch = 25.4mm)
-convertMillimetersToTwip(50); // returns 2834
-convertMillimetersToTwip(10); // returns 567
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    text: "Indented 25.4mm",
+                    indent: { left: convertMillimetersToTwip(25.4) }, // returns 1440 (1 inch = 25.4mm)
+                }),
+                new Paragraph({
+                    text: "Indented 50mm",
+                    indent: { left: convertMillimetersToTwip(50) }, // returns 2834
+                }),
+                new Paragraph({
+                    text: "Indented 10mm",
+                    indent: { left: convertMillimetersToTwip(10) }, // returns 567
+                }),
+            ],
+        },
+    ],
+});
 ```
 
 ## Common Use Cases
 
 ### Setting Page Margins
 
-```ts
-import { Document, convertInchesToTwip } from "docx";
+```ts live
+import { Document, Paragraph, convertInchesToTwip } from "docx";
 
 const doc = new Document({
     sections: [
@@ -48,7 +82,7 @@ const doc = new Document({
                     },
                 },
             },
-            children: [/* ... */],
+            children: [new Paragraph("The margins are 1 inch, with 1.5 inches on the left for binding.")],
         },
     ],
 });
@@ -56,8 +90,8 @@ const doc = new Document({
 
 ### Setting Page Size
 
-```ts
-import { Document, convertMillimetersToTwip, PageOrientation } from "docx";
+```ts live
+import { Document, Paragraph, convertMillimetersToTwip, PageOrientation } from "docx";
 
 // A4 paper size
 const doc = new Document({
@@ -72,7 +106,7 @@ const doc = new Document({
                     },
                 },
             },
-            children: [/* ... */],
+            children: [new Paragraph("This page is A4.")],
         },
     ],
 });
@@ -80,8 +114,8 @@ const doc = new Document({
 
 ### Column Spacing
 
-```ts
-import { Document, convertMillimetersToTwip } from "docx";
+```ts live
+import { ColumnBreak, Document, Paragraph, TextRun, convertMillimetersToTwip } from "docx";
 
 const doc = new Document({
     sections: [
@@ -92,7 +126,15 @@ const doc = new Document({
                     space: convertMillimetersToTwip(10), // 10mm between columns
                 },
             },
-            children: [/* ... */],
+            children: [
+                new Paragraph({
+                    children: [
+                        new TextRun("This text is in the first column."),
+                        new ColumnBreak(),
+                        new TextRun("This text is in the second column, 10mm away."),
+                    ],
+                }),
+            ],
         },
     ],
 });
@@ -100,22 +142,30 @@ const doc = new Document({
 
 ### Table Cell Width
 
-```ts
-import { Table, TableCell, TableRow, WidthType, convertInchesToTwip } from "docx";
+```ts live
+import { Document, Paragraph, Table, TableCell, TableRow, WidthType, convertInchesToTwip } from "docx";
 
-new Table({
-    rows: [
-        new TableRow({
+const doc = new Document({
+    sections: [
+        {
             children: [
-                new TableCell({
-                    width: {
-                        size: convertInchesToTwip(2), // 2 inch wide cell
-                        type: WidthType.DXA,
-                    },
-                    children: [new Paragraph("Cell content")],
+                new Table({
+                    rows: [
+                        new TableRow({
+                            children: [
+                                new TableCell({
+                                    width: {
+                                        size: convertInchesToTwip(2), // 2 inch wide cell
+                                        type: WidthType.DXA,
+                                    },
+                                    children: [new Paragraph("Cell content")],
+                                }),
+                            ],
+                        }),
+                    ],
                 }),
             ],
-        }),
+        },
     ],
 });
 ```
@@ -148,16 +198,39 @@ new Table({
 
 For image positioning, OOXML uses EMUs (English Metric Units). One inch equals 914400 EMUs.
 
-```ts
-// Image offset of 1 inch
-floating: {
-    horizontalPosition: {
-        offset: 914400,  // 1 inch in EMUs
-    },
-    verticalPosition: {
-        offset: 914400,
-    },
-}
+```ts live
+import * as fs from "fs";
+import { Document, ImageRun, Paragraph } from "docx";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new ImageRun({
+                            type: "gif",
+                            data: fs.readFileSync("./demo/assets/images/pizza.gif"),
+                            transformation: {
+                                width: 200,
+                                height: 200,
+                            },
+                            // Image offset of 1 inch
+                            floating: {
+                                horizontalPosition: {
+                                    offset: 914400, // 1 inch in EMUs
+                                },
+                                verticalPosition: {
+                                    offset: 914400,
+                                },
+                            },
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
+});
 ```
 
 ?> Unlike twips, there are currently no built-in conversion functions for EMUs. You can calculate them manually: `inches * 914400` or `mm * 36000`.

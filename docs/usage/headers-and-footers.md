@@ -6,7 +6,7 @@ Every section has headers and footers that appear on each page within that secti
 
 ## Basic Headers and Footers
 
-```ts
+```ts live
 import { Document, Footer, Header, Paragraph } from "docx";
 
 const doc = new Document({
@@ -40,7 +40,9 @@ const doc = new Document({
 
 To have a different header/footer on the first page:
 
-```ts
+```ts live
+import { Document, Footer, Header, Paragraph } from "docx";
+
 const doc = new Document({
     sections: [
         {
@@ -63,7 +65,13 @@ const doc = new Document({
                     children: [], // No footer on first page
                 }),
             },
-            children: [/* ... */],
+            children: [
+                new Paragraph("First page"),
+                new Paragraph({
+                    text: "Second page",
+                    pageBreakBefore: true,
+                }),
+            ],
         },
     ],
 });
@@ -73,7 +81,9 @@ const doc = new Document({
 
 For documents like books with different left/right pages:
 
-```ts
+```ts live
+import { AlignmentType, Document, Header, Paragraph } from "docx";
+
 const doc = new Document({
     evenAndOddHeaderAndFooters: true, // Enable at document level
     sections: [
@@ -96,7 +106,11 @@ const doc = new Document({
                     ],
                 }),
             },
-            children: [/* ... */],
+            children: [
+                new Paragraph("Page 1"),
+                new Paragraph({ text: "Page 2", pageBreakBefore: true }),
+                new Paragraph({ text: "Page 3", pageBreakBefore: true }),
+            ],
         },
     ],
 });
@@ -106,8 +120,8 @@ const doc = new Document({
 
 Add page numbers using the `PageNumber` class:
 
-```ts
-import { AlignmentType, Footer, PageNumber, Paragraph, TextRun } from "docx";
+```ts live
+import { AlignmentType, Document, Footer, PageNumber, Paragraph, TextRun } from "docx";
 
 const footer = new Footer({
     children: [
@@ -126,32 +140,65 @@ const footer = new Footer({
         }),
     ],
 });
+
+const doc = new Document({
+    sections: [
+        {
+            footers: {
+                default: footer,
+            },
+            children: [new Paragraph("First page"), new Paragraph({ text: "Second page", pageBreakBefore: true })],
+        },
+    ],
+});
 ```
 
 ### Common Page Number Patterns
 
 **Centered page number:**
 
-```ts
-new Footer({
-    children: [
-        new Paragraph({
-            alignment: AlignmentType.CENTER,
-            children: [new TextRun({ children: [PageNumber.CURRENT] })],
-        }),
+```ts live
+import { AlignmentType, Document, Footer, PageNumber, Paragraph, TextRun } from "docx";
+
+const doc = new Document({
+    sections: [
+        {
+            footers: {
+                default: new Footer({
+                    children: [
+                        new Paragraph({
+                            alignment: AlignmentType.CENTER,
+                            children: [new TextRun({ children: [PageNumber.CURRENT] })],
+                        }),
+                    ],
+                }),
+            },
+            children: [new Paragraph("Document content")],
+        },
     ],
 });
 ```
 
 **Right-aligned page number:**
 
-```ts
-new Footer({
-    children: [
-        new Paragraph({
-            alignment: AlignmentType.RIGHT,
-            children: [new TextRun("Page "), new TextRun({ children: [PageNumber.CURRENT] })],
-        }),
+```ts live
+import { AlignmentType, Document, Footer, PageNumber, Paragraph, TextRun } from "docx";
+
+const doc = new Document({
+    sections: [
+        {
+            footers: {
+                default: new Footer({
+                    children: [
+                        new Paragraph({
+                            alignment: AlignmentType.RIGHT,
+                            children: [new TextRun("Page "), new TextRun({ children: [PageNumber.CURRENT] })],
+                        }),
+                    ],
+                }),
+            },
+            children: [new Paragraph("Document content")],
+        },
     ],
 });
 ```
@@ -160,8 +207,8 @@ new Footer({
 
 Headers and footers can contain numbered or bulleted lists:
 
-```ts
-import { AlignmentType, convertInchesToTwip, Document, Footer, LevelFormat, Packer, Paragraph } from "docx";
+```ts live
+import { AlignmentType, convertInchesToTwip, Document, Footer, LevelFormat, Paragraph } from "docx";
 
 const doc = new Document({
     numbering: {
@@ -210,8 +257,9 @@ const doc = new Document({
 
 Add logos or images:
 
-```ts
-import { Header, ImageRun, Paragraph } from "docx";
+```ts live
+import { Document, Header, ImageRun, Paragraph } from "docx";
+import * as fs from "fs";
 
 const header = new Header({
     children: [
@@ -219,14 +267,25 @@ const header = new Header({
             children: [
                 new ImageRun({
                     type: "png",
-                    data: fs.readFileSync("./logo.png"),
+                    data: fs.readFileSync("./demo/assets/images/linux-png.png"),
                     transformation: {
-                        width: 100,
-                        height: 50,
+                        width: 50,
+                        height: 60,
                     },
                 }),
             ],
         }),
+    ],
+});
+
+const doc = new Document({
+    sections: [
+        {
+            headers: {
+                default: header,
+            },
+            children: [new Paragraph("Document content")],
+        },
     ],
 });
 ```
@@ -235,8 +294,8 @@ const header = new Header({
 
 Watermarks are placed in headers so that they repeat on every page:
 
-```ts
-import { Header, Paragraph } from "docx";
+```ts live
+import { Document, Header, Paragraph } from "docx";
 import { TextWatermark } from "docx/watermarks";
 
 const header = new Header({
@@ -244,6 +303,17 @@ const header = new Header({
         new Paragraph({
             children: [new TextWatermark({ text: "DRAFT" })],
         }),
+    ],
+});
+
+const doc = new Document({
+    sections: [
+        {
+            headers: {
+                default: header,
+            },
+            children: [new Paragraph("Document content")],
+        },
     ],
 });
 ```
@@ -254,37 +324,52 @@ See [Watermarks](usage/watermarks.md) for text and image watermark options.
 
 Control the distance from the edge of the page:
 
-```ts
-sections: [
-    {
-        properties: {
-            page: {
-                margin: {
-                    header: 720, // Distance from top edge to header (in twips)
-                    footer: 720, // Distance from bottom edge to footer
+```ts live
+import { Document, Footer, Header, Paragraph } from "docx";
+
+const doc = new Document({
+    sections: [
+        {
+            properties: {
+                page: {
+                    margin: {
+                        header: 720, // Distance from top edge to header (in twips)
+                        footer: 720, // Distance from bottom edge to footer
+                    },
                 },
             },
+            headers: {
+                default: new Header({
+                    children: [new Paragraph("Header text")],
+                }),
+            },
+            footers: {
+                default: new Footer({
+                    children: [new Paragraph("Footer text")],
+                }),
+            },
+            children: [new Paragraph("Document content")],
         },
-        headers: {/* ... */},
-        footers: {/* ... */},
-        children: [/* ... */],
-    },
-];
+    ],
+});
 ```
 
 ## Multiple Elements in Headers/Footers
 
 Headers and footers can contain multiple paragraphs, tables, and images:
 
-```ts
+```ts live
+import { AlignmentType, Document, Header, ImageRun, Paragraph } from "docx";
+import * as fs from "fs";
+
 const header = new Header({
     children: [
         new Paragraph({
             children: [
                 new ImageRun({
                     type: "png",
-                    data: fs.readFileSync("./logo.png"),
-                    transformation: { width: 80, height: 40 },
+                    data: fs.readFileSync("./demo/assets/images/linux-png.png"),
+                    transformation: { width: 40, height: 48 },
                 }),
             ],
         }),
@@ -298,14 +383,25 @@ const header = new Header({
         }),
     ],
 });
+
+const doc = new Document({
+    sections: [
+        {
+            headers: {
+                default: header,
+            },
+            children: [new Paragraph("Document content")],
+        },
+    ],
+});
 ```
 
 ## Using Tables for Layout
 
 Create complex header layouts with tables:
 
-```ts
-import { AlignmentType, BorderStyle, Header, Paragraph, Table, TableCell, TableRow, WidthType } from "docx";
+```ts live
+import { AlignmentType, BorderStyle, Document, Header, Paragraph, Table, TableCell, TableRow, WidthType } from "docx";
 
 // Helper to create invisible borders for layout tables
 const noBorders = {
@@ -350,13 +446,26 @@ const header = new Header({
         }),
     ],
 });
+
+const doc = new Document({
+    sections: [
+        {
+            headers: {
+                default: header,
+            },
+            children: [new Paragraph("Document content")],
+        },
+    ],
+});
 ```
 
 ## Multiple Sections with Different Headers
 
 Each section can have its own headers and footers:
 
-```ts
+```ts live
+import { Document, Header, Paragraph } from "docx";
+
 const doc = new Document({
     sections: [
         {
@@ -383,7 +492,7 @@ const doc = new Document({
 
 Professional document with company header:
 
-```ts
+```ts live
 import { AlignmentType, Document, Footer, Header, ImageRun, PageNumber, Packer, Paragraph, TextRun } from "docx";
 import * as fs from "fs";
 
@@ -401,8 +510,8 @@ const doc = new Document({
                             children: [
                                 new ImageRun({
                                     type: "png",
-                                    data: fs.readFileSync("./logo.png"),
-                                    transformation: { width: 150, height: 75 },
+                                    data: fs.readFileSync("./demo/assets/images/linux-png.png"),
+                                    transformation: { width: 75, height: 90 },
                                 }),
                             ],
                         }),
@@ -434,7 +543,7 @@ const doc = new Document({
                     ],
                 }),
             },
-            children: [new Paragraph("Document content...")],
+            children: [new Paragraph("Cover page"), new Paragraph({ text: "Document content...", pageBreakBefore: true })],
         },
     ],
 });

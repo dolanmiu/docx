@@ -21,17 +21,37 @@ Word uses field codes to identify what the result of the field should be. You ca
 
 Fields can be added as a child of a paragraph:
 
-```ts
+```ts live
+import { Document, Paragraph, SimpleField, TextRun } from "docx";
+
 const paragraph = new Paragraph({
     children: [new TextRun("This document was created by: "), new SimpleField("AUTHOR")],
+});
+
+const doc = new Document({
+    sections: [
+        {
+            children: [paragraph],
+        },
+    ],
 });
 ```
 
 Fields can contain a cached value that gives the word processor a text to show without having to calculate all fields. The cached value can be updated by selecting the field and pressing F9. A cached value can be passed in as the second argument to the constructor.
 
-```ts
+```ts live
+import { Document, Paragraph, SimpleField, TextRun } from "docx";
+
 const paragraph = new Paragraph({
     children: [new TextRun("This document was created by: "), new SimpleField("AUTHOR", "Richard Brodie")],
+});
+
+const doc = new Document({
+    sections: [
+        {
+            children: [paragraph],
+        },
+    ],
 });
 ```
 
@@ -39,7 +59,9 @@ const paragraph = new Paragraph({
 
 One type of field is the formula that can be used to do some basic calculations. This can be done with static values, e.g. `12 + 34`, but a value from a bookmark can also be used in a calculation. This can be seen in the following example:
 
-```ts
+```ts live
+import { Bookmark, Document, Paragraph, SimpleField, TextRun } from "docx";
+
 const paragraph = new Paragraph({
     children: [
         new TextRun("Value one is: "),
@@ -50,6 +72,14 @@ const paragraph = new Paragraph({
         new SimpleField("=One+Two"),
     ],
 });
+
+const doc = new Document({
+    sections: [
+        {
+            children: [paragraph],
+        },
+    ],
+});
 ```
 
 ### Mail merge fields
@@ -58,17 +88,37 @@ Fields are often used in a mail merge where a template document is created and d
 
 A convenience class was added to add these mail merge fields to the document easily. You can add these to a paragraph like any other field and only have to supply the name of the field in your data set:
 
-```ts
+```ts live
+import { Document, Paragraph, SimpleMailMergeField, TextRun } from "docx";
+
 const paragraph = new Paragraph({
     children: [new TextRun("Your score was "), new SimpleMailMergeField("Score"), new TextRun(" of 100 points")],
+});
+
+const doc = new Document({
+    sections: [
+        {
+            children: [paragraph],
+        },
+    ],
 });
 ```
 
 This code is equivalent to:
 
-```ts
+```ts live
+import { Document, Paragraph, SimpleField, TextRun } from "docx";
+
 const paragraph = new Paragraph({
     children: [new TextRun("Your score was "), new SimpleField("MERGEFIELD Score", "«Score»"), new TextRun(" of 100 points")],
+});
+
+const doc = new Document({
+    sections: [
+        {
+            children: [paragraph],
+        },
+    ],
 });
 ```
 

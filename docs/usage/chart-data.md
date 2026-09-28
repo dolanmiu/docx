@@ -6,13 +6,28 @@ A chart's data is its categories and its series, or for a scatter or bubble char
 
 Column, bar, line, area, pie, doughnut and radar charts take their data as a table: a row for each category, and a column for each series.
 
-```ts
-new ChartRun({
-    type: "column",
-    categories: ["Q1", "Q2", "Q3", "Q4"],
-    series: [
-        { name: "2024", values: [120, 135, 150, 170] },
-        { name: "2025", values: [140, 150, 165, null] },
+```ts live
+import { Document, Paragraph } from "docx";
+import { ChartRun } from "docx/charts";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new ChartRun({
+                            type: "column",
+                            categories: ["Q1", "Q2", "Q3", "Q4"],
+                            series: [
+                                { name: "2024", values: [120, 135, 150, 170] },
+                                { name: "2025", values: [140, 150, 165, null] },
+                            ],
+                        }),
+                    ],
+                }),
+            ],
+        },
     ],
 });
 ```
@@ -37,8 +52,27 @@ Each series can also have a `color`. See [Chart Colours](usage/chart-colors.md).
 
 When a column, bar, line or area chart's categories are all `Date`s, the category axis spaces them by date, as Excel does, and labels them as dates:
 
-```ts
-categories: [new Date("2025-01-01"), new Date("2025-02-01"), new Date("2025-05-01")],
+```ts live
+import { Document, Paragraph } from "docx";
+import { ChartRun } from "docx/charts";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new ChartRun({
+                            type: "line",
+                            categories: [new Date("2025-01-01"), new Date("2025-02-01"), new Date("2025-05-01")],
+                            series: [{ name: "Sign-ups", values: [320, 410, 520] }],
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
+});
 ```
 
 The categories have to be all dates or none. Dates are read in UTC. See [Dates](usage/chart-axes.md#dates) on the axes page.
@@ -47,15 +81,30 @@ The categories have to be all dates or none. Dates are read in UTC. See [Dates](
 
 A column, bar, line or area chart's categories can be in groups, such as quarters in years. The axis labels the categories, with each group's name below its categories:
 
-```ts
-new ChartRun({
-    type: "column",
-    title: "Sales by quarter",
-    categories: [
-        { name: "2024", categories: ["Q1", "Q2", "Q3", "Q4"] },
-        { name: "2025", categories: ["Q1", "Q2"] },
+```ts live
+import { Document, Paragraph } from "docx";
+import { ChartRun } from "docx/charts";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new ChartRun({
+                            type: "column",
+                            title: "Sales by quarter",
+                            categories: [
+                                { name: "2024", categories: ["Q1", "Q2", "Q3", "Q4"] },
+                                { name: "2025", categories: ["Q1", "Q2"] },
+                            ],
+                            series: [{ name: "Sales", values: [120, 135, 150, 170, 160, 180] }],
+                        }),
+                    ],
+                }),
+            ],
+        },
     ],
-    series: [{ name: "Sales", values: [120, 135, 150, 170, 160, 180] }],
 });
 ```
 
@@ -69,16 +118,34 @@ Pages shows only the groups' names. See [Chart Compatibility](usage/chart-compat
 
 A [scatter chart](usage/chart-scatter.md) has no categories. Each of its series has `points`, and each point has its own `x` and `y`:
 
-```ts
-series: [
-    {
-        name: "Group A",
-        points: [
-            { x: 150, y: 50 },
-            { x: 165, y: 61 },
-        ],
-    },
-],
+```ts live
+import { Document, Paragraph } from "docx";
+import { ChartRun } from "docx/charts";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new ChartRun({
+                            type: "scatter",
+                            series: [
+                                {
+                                    name: "Group A",
+                                    points: [
+                                        { x: 150, y: 50 },
+                                        { x: 165, y: 61 },
+                                    ],
+                                },
+                            ],
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
+});
 ```
 
 A [bubble chart](usage/chart-bubble.md)'s points have a `size` too: `{ x: 150, y: 50, size: 12 }`.

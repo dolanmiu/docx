@@ -2,12 +2,27 @@
 
 Data labels write the numbers on a chart: a label on each bar, point or slice. There are no labels by default.
 
-```ts
-new ChartRun({
-    type: "column",
-    categories: ["Q1", "Q2", "Q3", "Q4"],
-    series: [{ name: "Sales", values: [120, 135, 150, 170] }],
-    dataLabels: { value: true },
+```ts live
+import { Document, Paragraph } from "docx";
+import { ChartRun } from "docx/charts";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new ChartRun({
+                            type: "column",
+                            categories: ["Q1", "Q2", "Q3", "Q4"],
+                            series: [{ name: "Sales", values: [120, 135, 150, 170] }],
+                            dataLabels: { value: true },
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
 });
 ```
 
@@ -27,16 +42,56 @@ Turn on what each label shows:
 
 Turn on more than one to show them all in each label:
 
-```ts
-dataLabels: { category: true, percentage: true },
+```ts live
+import { Document, Paragraph } from "docx";
+import { ChartRun } from "docx/charts";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new ChartRun({
+                            type: "pie",
+                            categories: ["North", "South", "East", "West"],
+                            series: [{ name: "Share", values: [40, 25, 20, 15] }],
+                            dataLabels: { category: true, percentage: true },
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
+});
 ```
 
 ## Where the Labels Go
 
 By default, the labels go where Office puts them. `position` puts them somewhere else:
 
-```ts
-dataLabels: { value: true, position: "insideEnd" },
+```ts live
+import { Document, Paragraph } from "docx";
+import { ChartRun } from "docx/charts";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new ChartRun({
+                            type: "column",
+                            categories: ["Q1", "Q2", "Q3", "Q4"],
+                            series: [{ name: "Sales", values: [120, 135, 150, 170] }],
+                            dataLabels: { value: true, position: "insideEnd" },
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
+});
 ```
 
 Each type of chart has its own positions, and the first is where Office puts the labels:
@@ -55,8 +110,28 @@ Word reports a document whose labels are somewhere their chart can't have them a
 
 `numberFormat` is how the labels' values are written, as an Excel number format, as for an [axis](usage/chart-axes.md#number-format):
 
-```ts
-dataLabels: { value: true, numberFormat: "#,##0" },
+```ts live
+import { Document, Paragraph } from "docx";
+import { ChartRun } from "docx/charts";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new ChartRun({
+                            type: "column",
+                            categories: ["Q1", "Q2", "Q3", "Q4"],
+                            series: [{ name: "Sales", values: [12000, 13500, 15000, 17000] }],
+                            dataLabels: { value: true, numberFormat: "#,##0" },
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
+});
 ```
 
 On a pie or doughnut chart, it is how the percentages are written too: `"0.0%"` writes 12.5%.
@@ -65,8 +140,28 @@ On a pie or doughnut chart, it is how the percentages are written too: `"0.0%"` 
 
 Labels are 9 point text in dark grey. `font` changes it, such as white bold labels inside dark bars:
 
-```ts
-dataLabels: { value: true, position: "insideEnd", font: { color: "FFFFFF", bold: true } },
+```ts live
+import { Document, Paragraph } from "docx";
+import { ChartRun } from "docx/charts";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new ChartRun({
+                            type: "column",
+                            categories: ["Q1", "Q2", "Q3", "Q4"],
+                            series: [{ name: "Sales", values: [120, 135, 150, 170] }],
+                            dataLabels: { value: true, position: "insideEnd", font: { color: "FFFFFF", bold: true } },
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
+});
 ```
 
 See [Chart Fonts and Fills](usage/chart-fonts-and-fills.md).
@@ -75,15 +170,30 @@ See [Chart Fonts and Fills](usage/chart-fonts-and-fills.md).
 
 A series' own `dataLabels` replace the chart's for that series, and `dataLabels: false` gives it none:
 
-```ts
-new ChartRun({
-    type: "column",
-    categories: ["Q1", "Q2", "Q3", "Q4"],
-    series: [
-        { name: "2024", values: [120, 135, 150, 170], dataLabels: false },
-        { name: "2025", values: [140, 150, 165, 180] },
+```ts live
+import { Document, Paragraph } from "docx";
+import { ChartRun } from "docx/charts";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new ChartRun({
+                            type: "column",
+                            categories: ["Q1", "Q2", "Q3", "Q4"],
+                            series: [
+                                { name: "2024", values: [120, 135, 150, 170], dataLabels: false },
+                                { name: "2025", values: [140, 150, 165, 180] },
+                            ],
+                            dataLabels: { value: true },
+                        }),
+                    ],
+                }),
+            ],
+        },
     ],
-    dataLabels: { value: true },
 });
 ```
 
@@ -93,15 +203,37 @@ Here only the 2025 columns have labels.
 
 A series' `pointLabels` give single bars, points or slices labels of their own, such as to mark the highest point, in the order of the categories, or of a scatter or bubble chart's points:
 
-```ts
-new ChartRun({
-    type: "line",
-    categories: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
-    series: [
+```ts live
+import { Document, Paragraph } from "docx";
+import { ChartRun } from "docx/charts";
+
+const doc = new Document({
+    sections: [
         {
-            name: "Visitors",
-            values: [320, 410, 380, 380, 460, 610, 580],
-            pointLabels: [undefined, undefined, undefined, undefined, undefined, { text: "Record", position: "above" }],
+            children: [
+                new Paragraph({
+                    children: [
+                        new ChartRun({
+                            type: "line",
+                            categories: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+                            series: [
+                                {
+                                    name: "Visitors",
+                                    values: [320, 410, 380, 380, 460, 610, 580],
+                                    pointLabels: [
+                                        undefined,
+                                        undefined,
+                                        undefined,
+                                        undefined,
+                                        undefined,
+                                        { text: "Record", position: "above" },
+                                    ],
+                                },
+                            ],
+                        }),
+                    ],
+                }),
+            ],
         },
     ],
 });
@@ -115,13 +247,51 @@ Each point's label is one of:
 
 A point's label has the options of the series' labels, and each it leaves out is the series' label's:
 
-```ts
-// Only the last column has a label, with its value
-pointLabels: [undefined, undefined, undefined, { value: true }],
+```ts live
+import { Document, Paragraph } from "docx";
+import { ChartRun } from "docx/charts";
 
-// Every column shows its value, and the first shows it inside, in bold
-dataLabels: { value: true },
-series: [{ name: "Sales", values: [120, 135, 150, 170], pointLabels: [{ position: "insideEnd", font: { bold: true } }] }],
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new ChartRun({
+                            type: "column",
+                            categories: ["Q1", "Q2", "Q3", "Q4"],
+                            series: [
+                                {
+                                    name: "Sales",
+                                    values: [120, 135, 150, 170],
+                                    // Only the last column has a label, with its value
+                                    pointLabels: [undefined, undefined, undefined, { value: true }],
+                                },
+                            ],
+                        }),
+                    ],
+                }),
+                new Paragraph({
+                    children: [
+                        new ChartRun({
+                            type: "column",
+                            categories: ["Q1", "Q2", "Q3", "Q4"],
+                            // Every column shows its value, and the first shows it inside, in bold
+                            dataLabels: { value: true },
+                            series: [
+                                {
+                                    name: "Sales",
+                                    values: [120, 135, 150, 170],
+                                    pointLabels: [{ position: "insideEnd", font: { bold: true } }],
+                                },
+                            ],
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
+});
 ```
 
 `text` replaces what the label shows with text of its own, a line of the label for each line of the text. A label with text shows nothing else, so it has no `value`, `category`, `seriesName`, `percentage`, `bubbleSize` or `numberFormat`.

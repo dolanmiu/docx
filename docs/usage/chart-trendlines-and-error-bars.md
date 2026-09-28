@@ -8,16 +8,31 @@ A trendline is a line fitted to a series' values, which shows their trend and ca
 
 A series' `trendlines` fit lines to its values:
 
-```ts
-new ChartRun({
-    type: "line",
-    title: "Visitors",
-    categories: ["Mon", "Tue", "Wed", "Thu", "Fri"],
-    series: [
+```ts live
+import { Document, Paragraph } from "docx";
+import { ChartRun } from "docx/charts";
+
+const doc = new Document({
+    sections: [
         {
-            name: "Visitors",
-            values: [320, 410, 380, 460, 610],
-            trendlines: [{ type: "linear", forecastForward: 2, equation: true, rSquared: true }],
+            children: [
+                new Paragraph({
+                    children: [
+                        new ChartRun({
+                            type: "line",
+                            title: "Visitors",
+                            categories: ["Mon", "Tue", "Wed", "Thu", "Fri"],
+                            series: [
+                                {
+                                    name: "Visitors",
+                                    values: [320, 410, 380, 460, 610],
+                                    trendlines: [{ type: "linear", forecastForward: 2, equation: true, rSquared: true }],
+                                },
+                            ],
+                        }),
+                    ],
+                }),
+            ],
         },
     ],
 });
@@ -62,8 +77,27 @@ A moving average has none of these but `name` and `line`.
 
 A series' `errorBars` draw a line from each point, up and down, or on a bar chart, left and right:
 
-```ts
-series: [{ name: "Average", values: [72, 65, 81], errorBars: { type: "percentage", value: 10 } }],
+```ts live
+import { Document, Paragraph } from "docx";
+import { ChartRun } from "docx/charts";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new ChartRun({
+                            type: "column",
+                            categories: ["Class A", "Class B", "Class C"],
+                            series: [{ name: "Average", values: [72, 65, 81], errorBars: { type: "percentage", value: 10 } }],
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
+});
 ```
 
 `type` is how long the bars are, as in Word's "Format Error Bars":
@@ -88,8 +122,33 @@ Column, bar, line, area, scatter and bubble charts have error bars, stacked or n
 
 Custom error bars have a length of each point's own, such as a range of uncertainty. `plus` is how far each bar goes towards higher values, and `minus` towards lower ones, in the order of the categories or points:
 
-```ts
-errorBars: { type: "custom", plus: [6, 9, 4], minus: [5, 8, 6] },
+```ts live
+import { Document, Paragraph } from "docx";
+import { ChartRun } from "docx/charts";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new ChartRun({
+                            type: "column",
+                            categories: ["Class A", "Class B", "Class C"],
+                            series: [
+                                {
+                                    name: "Average",
+                                    values: [72, 65, 81],
+                                    errorBars: { type: "custom", plus: [6, 9, 4], minus: [5, 8, 6] },
+                                },
+                            ],
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
+});
 ```
 
 - Give `plus`, `minus` or both. Bars go only the ways given, so custom error bars have no `direction`.
@@ -100,18 +159,36 @@ errorBars: { type: "custom", plus: [6, 9, 4], minus: [5, 8, 6] },
 
 A scatter or bubble chart's points can have error bars both ways: `xErrorBars` go left and right, along the x axis, and `yErrorBars` up and down:
 
-```ts
-series: [
-    {
-        name: "Samples",
-        points: [
-            { x: 1, y: 2.1 },
-            { x: 2, y: 3.9 },
-        ],
-        xErrorBars: { type: "fixed", value: 0.2 },
-        yErrorBars: { type: "standardError" },
-    },
-],
+```ts live
+import { Document, Paragraph } from "docx";
+import { ChartRun } from "docx/charts";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new ChartRun({
+                            type: "scatter",
+                            series: [
+                                {
+                                    name: "Samples",
+                                    points: [
+                                        { x: 1, y: 2.1 },
+                                        { x: 2, y: 3.9 },
+                                    ],
+                                    xErrorBars: { type: "fixed", value: 0.2 },
+                                    yErrorBars: { type: "standardError" },
+                                },
+                            ],
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
+});
 ```
 
 ## Compatibility
