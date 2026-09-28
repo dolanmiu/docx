@@ -20,7 +20,8 @@ import { MathText } from "./math-text";
  * - `"italic"`: italic, as `\mathit`;
  * - `"boldItalic"`: bold and italic, as `\boldsymbol`.
  *
- * Word draws letters in italic, and digits and capital Greek letters upright, unless a run has a style.
+ * Word draws letters in italic, and digits and capital Greek letters upright, unless a run has a style. A run in an
+ * alphabet other than roman is plain unless given a style, as LaTeX draws its alphabets upright.
  */
 export type MathRunStyle = "plain" | "bold" | "italic" | "boldItalic";
 
@@ -51,6 +52,8 @@ export type MathRunOptions = {
     readonly normalText?: boolean;
     /**
      * How the letters are drawn: plain (upright), bold, italic or both (`m:sty`).
+     * @default "plain" with a `script` other than roman, as LaTeX draws its alphabets upright; otherwise none, and Word
+     * draws letters in italic
      */
     readonly style?: MathRunStyle;
     /**
@@ -115,7 +118,9 @@ export class MathRun extends XmlComponent {
     public constructor(options: string | MathRunOptions) {
         super("m:r");
 
-        const { text, normalText, style, script, literal } = typeof options === "string" ? { text: options } : options;
+        const { text, normalText, script, literal, ...rest } = typeof options === "string" ? { text: options } : options;
+        // Word draws a run with no style in italic, even in another alphabet, which would make sansSerif italic
+        const style = rest.style ?? (script === undefined || script === "roman" ? undefined : "plain");
 
         if (normalText && (style !== undefined || script !== undefined)) {
             throw new Error("MathRun: normalText can't be given with style or script, which are for math. Give one or the other");

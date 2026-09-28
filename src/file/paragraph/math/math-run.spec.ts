@@ -51,15 +51,32 @@ describe("MathRun", () => {
         });
 
         it.each([
-            ["roman", "roman"],
             ["script", "script"],
             ["fraktur", "fraktur"],
             ["doubleStruck", "double-struck"],
             ["sansSerif", "sans-serif"],
             ["monospace", "monospace"],
-        ] as const)("writes the %s alphabet as %s", (script, value) => {
+        ] as const)("writes the %s alphabet as %s, upright unless given a style, as LaTeX draws it", (script, value) => {
             expect(new Formatter().format(new MathRun({ text: "A", script }))).to.deep.equal({
-                "m:r": [{ "m:rPr": [{ "m:scr": { _attr: { "m:val": value } } }] }, { "m:t": ["A"] }],
+                "m:r": [
+                    { "m:rPr": [{ "m:scr": { _attr: { "m:val": value } } }, { "m:sty": { _attr: { "m:val": "p" } } }] },
+                    { "m:t": ["A"] },
+                ],
+            });
+        });
+
+        it("writes the roman alphabet with no style, leaving Word's italic letters", () => {
+            expect(new Formatter().format(new MathRun({ text: "A", script: "roman" }))).to.deep.equal({
+                "m:r": [{ "m:rPr": [{ "m:scr": { _attr: { "m:val": "roman" } } }] }, { "m:t": ["A"] }],
+            });
+        });
+
+        it("keeps a style given with an alphabet, such as italic sans-serif", () => {
+            expect(new Formatter().format(new MathRun({ text: "A", script: "sansSerif", style: "italic" }))).to.deep.equal({
+                "m:r": [
+                    { "m:rPr": [{ "m:scr": { _attr: { "m:val": "sans-serif" } } }, { "m:sty": { _attr: { "m:val": "i" } } }] },
+                    { "m:t": ["A"] },
+                ],
             });
         });
 

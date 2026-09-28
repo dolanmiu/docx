@@ -196,7 +196,7 @@ const doc = new Document({
 | ------------ | ---------------------------------------------------------------------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------- |
 | `text`       | `string`                                                                           |         |                                                                                                                                  |
 | `normalText` | `boolean`                                                                          | `false` | Upright, in the document's font, with its spaces kept (`m:nor`). Not with `style` or `script`                                    |
-| `style`      | `"plain"`, `"bold"`, `"italic"`, `"boldItalic"`                                    |         | Upright, bold, italic, or both (`m:sty`). Word draws letters in italic unless a run has a style                                  |
+| `style`      | `"plain"`, `"bold"`, `"italic"`, `"boldItalic"`                                    |         | Upright, bold, italic, or both (`m:sty`). Word draws letters in italic unless a run has a style, or an alphabet other than roman |
 | `script`     | `"roman"`, `"script"`, `"fraktur"`, `"doubleStruck"`, `"sansSerif"`, `"monospace"` |         | The alphabet (`m:scr`): 𝒜, 𝔄, 𝔸, 𝖠 and 𝙰                                                                                         |
 | `literal`    | `boolean`                                                                          | `false` | Takes the text as it is (`m:lit`), such as an `&` in a `MathEquationArray`, which would otherwise be a point the rows line up at |
 
