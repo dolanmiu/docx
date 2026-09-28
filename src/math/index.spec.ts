@@ -5,8 +5,20 @@ import * as docx from "docx";
 
 import * as math from ".";
 
-// docx/math's own components, which docx doesn't export
-const OWN = ["MathBrackets", "MathCases", "MathEquationArray", "MathMatrix"];
+// docx/math's own components and functions, which docx doesn't export
+const OWN = [
+    "MathAccent",
+    "MathBar",
+    "MathBox",
+    "MathBrace",
+    "MathBrackets",
+    "MathCases",
+    "MathEquationArray",
+    "MathLargeOperator",
+    "MathMatrix",
+    "MathPhantom",
+    "latexToMath",
+];
 
 describe("docx/math", () => {
     it("exports docx's own math classes and functions, not copies of them", () => {
@@ -34,6 +46,13 @@ describe("docx/math", () => {
         expectTypeOf<math.MathBrackets>().toExtend<docx.MathComponent>();
         expectTypeOf<math.MathCases>().toExtend<docx.MathComponent>();
         expectTypeOf<math.MathEquationArray>().toExtend<docx.MathComponent>();
+        expectTypeOf<math.MathAccent>().toExtend<docx.MathComponent>();
+        expectTypeOf<math.MathBar>().toExtend<docx.MathComponent>();
+        expectTypeOf<math.MathBox>().toExtend<docx.MathComponent>();
+        expectTypeOf<math.MathBrace>().toExtend<docx.MathComponent>();
+        expectTypeOf<math.MathLargeOperator>().toExtend<docx.MathComponent>();
+        expectTypeOf<math.MathPhantom>().toExtend<docx.MathComponent>();
+        expectTypeOf(math.latexToMath).returns.toExtend<docx.IMathOptions["children"]>();
         expectTypeOf<docx.Math>().toExtend<docx.ParagraphChild>();
 
         const paragraph = new docx.Paragraph({

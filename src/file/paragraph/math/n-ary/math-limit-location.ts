@@ -10,6 +10,14 @@
 import { BuilderElement, type XmlComponent } from "@file/xml-components";
 
 /**
+ * Where a large operator's limits go (`m:limLoc`):
+ *
+ * - `"aboveBelow"`: above and below it, as a sum's usually are;
+ * - `"side"`: to its right, as a superscript and subscript, as an integral's usually are.
+ */
+export type MathLimitsPosition = "aboveBelow" | "side";
+
+/**
  * Options for creating a limit location element.
  */
 type MathLimitLocationOptions = {

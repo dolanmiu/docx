@@ -4,7 +4,7 @@
  *
  * @module
  */
-import { BuilderElement, type MathComponent, MathRun, Math as OfficeMath, Paragraph, Run, type XmlComponent, createMathBase } from "docx";
+import { BuilderElement, type MathComponent, MathRun, Math as OfficeMath, Paragraph, Run, type XmlComponent } from "docx";
 
 /** The options of a {@link BuilderElement}, to build an element before its class calls `super` */
 export type ElementOptions = {
@@ -65,11 +65,16 @@ export const checkOneOf = (owner: string, option: string, value: string, allowed
 };
 
 /**
- * An argument (`m:e`). An empty one gets a zero-width space, as LibreOffice can't read an equation with an empty
- * argument, and draws "¿" in its place.
+ * An argument of any name, such as a limit (`m:lim`). An empty one gets a zero-width space, as LibreOffice can't read
+ * an equation with an empty argument, and draws "¿" in its place.
  */
-export const createArgument = (children: readonly MathComponent[]): XmlComponent =>
-    createMathBase({ children: children.length === 0 ? [new MathRun("​")] : children });
+export const createNamedArgument = (name: string, children: readonly MathComponent[]): XmlComponent =>
+    new BuilderElement({ name, children: children.length === 0 ? [new MathRun("\u200B")] : children });
+
+/**
+ * An argument (`m:e`). An empty one gets a zero-width space, as {@link createNamedArgument} says.
+ */
+export const createArgument = (children: readonly MathComponent[]): XmlComponent => createNamedArgument("m:e", children);
 
 /**
  * Brackets (`m:d`) around arguments, with a separator between them. They grow with their content unless `grow` is

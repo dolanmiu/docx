@@ -118,5 +118,20 @@ describe("MathIntegral", () => {
                 ],
             });
         });
+
+        it.each([
+            ["aboveBelow", "undOvr"],
+            ["side", "subSup"],
+        ] as const)("puts the limits %s with m:limLoc %s", (limits, value) => {
+            const tree = new Formatter().format(new MathIntegral({ children: [new MathRun("x")], subScript: [new MathRun("a")], limits }));
+            expect(tree["m:nary"][0]["m:naryPr"]).toContainEqual({ "m:limLoc": { _attr: { "m:val": value } } });
+        });
+
+        it("throws for limits it doesn't know, for code that isn't type checked", () => {
+            // @ts-expect-error -- not a position
+            expect(() => new MathIntegral({ children: [], limits: "undOvr" })).toThrow(
+                'MathIntegral: limits is "undOvr", which isn\'t one of aboveBelow, side',
+            );
+        });
     });
 });
