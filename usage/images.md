@@ -35,14 +35,17 @@
 
 To create a `floating` image on top of text:
 
-```ts
+```ts live
+import { Document, ImageRun, Paragraph, TextRun } from "docx";
+import * as fs from "fs";
+
 const image = new ImageRun({
-    type: 'gif',
+    type: "gif",
     data: fs.readFileSync("./demo/assets/images/pizza.gif"),
     transformation: {
         width: 200,
         height: 200,
-    }
+    },
     floating: {
         horizontalPosition: {
             offset: 1014400,
@@ -52,11 +55,26 @@ const image = new ImageRun({
         },
     },
 });
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [image, new TextRun("The image floats on top of this text, instead of making room for it in the line.")],
+                }),
+            ],
+        },
+    ],
+});
 ```
 
-By default with no arguments, its an `inline` image:
+By default with no arguments, its an `inline` image. Add it into the document by adding the image into a paragraph:
 
-```ts
+```ts live
+import { Document, ImageRun, Paragraph } from "docx";
+import * as fs from "fs";
+
 const image = new ImageRun({
     type: "gif",
     data: fs.readFileSync("./demo/assets/images/pizza.gif"),
@@ -65,19 +83,17 @@ const image = new ImageRun({
         height: 100,
     },
 });
-```
 
-Add it into the document by adding the image into a paragraph:
-
-```ts
 const doc = new Document({
-    sections: [{
-        children: [
-            new Paragraph({
-                children: [image],
-            }),
-        ],
-    }];
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [image],
+                }),
+            ],
+        },
+    ],
 });
 ```
 
@@ -85,24 +101,29 @@ const doc = new Document({
 
 Adding images can be easily done by creating an instance of `ImageRun`. This can be added in a `Paragraph` or `Hyperlink`:
 
-```ts
+```ts live
+import { Document, ImageRun, Paragraph } from "docx";
+import * as fs from "fs";
+
 const doc = new Document({
-    sections: [{
-        children: [
-            new Paragraph({
-                children: [
-                    new ImageRun({
-                        type: [IMAGE_TYPE],
-                        data: [IMAGE_BUFFER],
-                        transformation: {
-                            width: [IMAGE_SIZE],
-                            height: [IMAGE_SIZE],
-                        },
-                    }),
-                ],
-            }),
-        ],
-    }];
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new ImageRun({
+                            type: "png",
+                            data: fs.readFileSync("./demo/assets/images/dog.png"),
+                            transformation: {
+                                width: 166,
+                                height: 150,
+                            },
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
 });
 ```
 
@@ -114,7 +135,7 @@ const doc = new Document({
 
 ![Word Image Positioning](https://user-images.githubusercontent.com/34742290/41765548-b0946302-7604-11e8-96f9-166a9f0b8f39.png)
 
-Three types of image positioning is supported:
+Two types of image positioning are supported:
 
 - Floating
 - Inline
@@ -123,19 +144,22 @@ By default, images are exported as `Inline` elements.
 
 ### Usage
 
-Pass `options` into the `[POSITION_OPTIONS]` mentioned in the [Intro above](#Intro).
+To float an image, give the `ImageRun` a `floating` option, as the examples below do.
 
 ## Floating
 
 To change the position the image to be on top of the text, simply add the `floating` property to the last argument. By default, the offsets are relative to the top left corner of the `page`. Offset units are in [emus](https://startbigthinksmall.wordpress.com/2010/01/04/points-inches-and-emus-measuring-units-in-office-open-xml/):
 
-```ts
+```ts live
+import { Document, ImageRun, Paragraph, TextRun } from "docx";
+import * as fs from "fs";
+
 const image = new ImageRun({
     type: "png",
-    data: buffer,
+    data: fs.readFileSync("./demo/assets/images/linux-png.png"),
     transformation: {
-        width: 903,
-        height: 1149,
+        width: 200,
+        height: 240,
     },
     floating: {
         horizontalPosition: {
@@ -146,26 +170,56 @@ const image = new ImageRun({
         },
     },
 });
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        image,
+                        new TextRun("The image is placed 1014400 EMUs from the top left corner of the page, on top of this text."),
+                    ],
+                }),
+            ],
+        },
+    ],
+});
 ```
 
-```ts
+```ts live
+import { Document, HorizontalPositionRelativeFrom, ImageRun, Paragraph, TextRun, VerticalPositionRelativeFrom } from "docx";
+import * as fs from "fs";
+
 const image = new ImageRun({
     type: "png",
-    data: buffer,
+    data: fs.readFileSync("./demo/assets/images/linux-png.png"),
     transformation: {
-        width: 903,
-        height: 1149,
+        width: 60,
+        height: 72,
     },
     floating: {
         horizontalPosition: {
             relative: HorizontalPositionRelativeFrom.RIGHT_MARGIN,
-            offset: 1014400,
+            offset: 182880,
         },
         verticalPosition: {
             relative: VerticalPositionRelativeFrom.BOTTOM_MARGIN,
-            offset: 1014400,
+            offset: 182880,
         },
     },
+});
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [image, new TextRun("The image is placed in the bottom right corner, in the right and bottom margins.")],
+                }),
+            ],
+        },
+    ],
 });
 ```
 
@@ -214,7 +268,10 @@ wrap: {
 
 For example:
 
-```ts
+```ts live
+import { Document, ImageRun, Paragraph, TextRun, TextWrappingSide, TextWrappingType } from "docx";
+import * as fs from "fs";
+
 const image = new ImageRun({
     type: "gif",
     data: fs.readFileSync("./demo/assets/images/pizza.gif"),
@@ -234,6 +291,18 @@ const image = new ImageRun({
             side: TextWrappingSide.BOTH_SIDES,
         },
     },
+});
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [image, new TextRun("This text wraps around both sides of the image. ".repeat(40))],
+                }),
+            ],
+        },
+    ],
 });
 ```
 
@@ -263,7 +332,10 @@ margins: {
 
 For example:
 
-```ts
+```ts live
+import { Document, ImageRun, Paragraph, TextRun, TextWrappingSide, TextWrappingType } from "docx";
+import * as fs from "fs";
+
 const image = new ImageRun({
     type: "gif",
     data: fs.readFileSync("./demo/assets/images/pizza.gif"),
@@ -288,18 +360,45 @@ const image = new ImageRun({
         },
     },
 });
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [image, new TextRun("The margins keep this text further from the top and bottom of the image. ".repeat(40))],
+                }),
+            ],
+        },
+    ],
+});
 ```
 
 ## Run Formatting
 
 Use `run` to format the run the image is in, with the same options as a `TextRun`'s formatting. `position` raises or lowers an inline image from the text's baseline, by a signed length such as `"2pt"` or `"-2pt"`:
 
-```ts
+```ts live
+import { Document, ImageRun, Paragraph, TextRun } from "docx";
+import * as fs from "fs";
+
 const image = new ImageRun({
     type: "gif",
     data: fs.readFileSync("./demo/assets/images/pizza.gif"),
     transformation: { width: 100, height: 100 },
     run: { position: "-2pt" },
+});
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [new TextRun("Text before "), image, new TextRun(" text after")],
+                }),
+            ],
+        },
+    ],
 });
 ```
 
@@ -309,15 +408,27 @@ To place an image at page coordinates or control text wrapping, use [`floating`]
 
 Specifies common non-visual DrawingML properties. A name, title and description for a picture can be specified.
 
-```ts
+```ts live
+import { Document, ImageRun, Paragraph } from "docx";
+import * as fs from "fs";
+
 const image = new ImageRun({
     type: "gif",
     data: fs.readFileSync("./demo/assets/images/pizza.gif"),
+    transformation: { width: 100, height: 100 },
     altText: {
         title: "This is an ultimate title",
         description: "This is an ultimate image",
         name: "My Ultimate Image",
     },
+});
+
+const doc = new Document({
+    sections: [
+        {
+            children: [new Paragraph({ children: [image] })],
+        },
+    ],
 });
 ```
 
@@ -333,13 +444,24 @@ const image = new ImageRun({
 
 Give an image a `link` to open a web page when it is clicked (with Ctrl in Word), the same as Word's **Insert > Link** on a picture:
 
-```ts
+```ts live
+import { Document, ImageRun, Paragraph } from "docx";
+import * as fs from "fs";
+
 const image = new ImageRun({
     type: "png",
-    data: fs.readFileSync("./logo.png"),
-    transformation: { width: 120, height: 40 },
+    data: fs.readFileSync("./demo/assets/images/linux-png.png"),
+    transformation: { width: 100, height: 120 },
     altText: { name: "Logo", description: "Company logo", title: "Logo" },
     link: "https://example.com",
+});
+
+const doc = new Document({
+    sections: [
+        {
+            children: [new Paragraph({ children: [image] })],
+        },
+    ],
 });
 ```
 
@@ -347,12 +469,23 @@ An image inside an `ExternalHyperlink` links to the hyperlink's address already.
 
 Mark an image as `decorative` when it carries no information, such as a border or a flourish, so screen readers skip it. It is the same as Word's **Mark as decorative**, and is used instead of alternative text:
 
-```ts
+```ts live
+import { Document, ImageRun, Paragraph } from "docx";
+import * as fs from "fs";
+
 const flourish = new ImageRun({
-    type: "png",
-    data: fs.readFileSync("./flourish.png"),
-    transformation: { width: 300, height: 20 },
+    type: "jpg",
+    data: fs.readFileSync("./demo/assets/images/cat.jpg"),
+    transformation: { width: 300, height: 200 },
     decorative: true,
+});
+
+const doc = new Document({
+    sections: [
+        {
+            children: [new Paragraph({ children: [flourish] })],
+        },
+    ],
 });
 ```
 
@@ -369,7 +502,10 @@ Both work for inline and floating images.
 
 Crop an image by trimming a percentage off each edge before it's stretched to fill its frame. Pass a `crop` property to `ImageRun` with `left`, `top`, `right` and/or `bottom` percentages (`0` to `100`):
 
-```ts
+```ts live
+import { Document, ImageRun, Paragraph } from "docx";
+import * as fs from "fs";
+
 const image = new ImageRun({
     type: "gif",
     data: fs.readFileSync("./demo/assets/images/pizza.gif"),
@@ -383,6 +519,14 @@ const image = new ImageRun({
         right: 10,
         bottom: 5,
     },
+});
+
+const doc = new Document({
+    sections: [
+        {
+            children: [new Paragraph({ children: [image] })],
+        },
+    ],
 });
 ```
 
@@ -399,16 +543,31 @@ const image = new ImageRun({
 
 Images can be marked as inserted or deleted revisions for change tracking. Pass an `insertion` or `deletion` property to `ImageRun`, or both for an image that was inserted and then deleted, such as by another author:
 
-```ts
-new ImageRun({
-    type: "png",
-    data: fs.readFileSync("./image.png"),
-    transformation: { width: 120, height: 120 },
-    insertion: {
-        id: 30,
-        author: "Firstname Lastname",
-        date: "2020-10-06T09:00:00Z",
-    },
+```ts live
+import { Document, ImageRun, Paragraph } from "docx";
+import * as fs from "fs";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new ImageRun({
+                            type: "png",
+                            data: fs.readFileSync("./demo/assets/images/dog.png"),
+                            transformation: { width: 120, height: 120 },
+                            insertion: {
+                                id: 30,
+                                author: "Firstname Lastname",
+                                date: "2020-10-06T09:00:00Z",
+                            },
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
 });
 ```
 

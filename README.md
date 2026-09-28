@@ -50,7 +50,7 @@ import { ChartRun } from "docx/charts";
 
 ## Basic Usage
 
-```ts
+```ts live
 import * as fs from "fs";
 import { Document, Packer, Paragraph, TextRun } from "docx";
 

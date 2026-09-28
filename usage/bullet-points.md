@@ -6,7 +6,9 @@
 
 Create bullet points by adding the `bullet` property to paragraphs:
 
-```ts
+```ts live
+import { Document, Paragraph } from "docx";
+
 const doc = new Document({
     sections: [
         {
@@ -45,7 +47,9 @@ const doc = new Document({
 
 Create nested lists using different `level` values (0-9):
 
-```ts
+```ts live
+import { Document, Paragraph } from "docx";
+
 const doc = new Document({
     sections: [
         {
@@ -94,7 +98,9 @@ const doc = new Document({
 
 Generate bullet lists from data:
 
-```ts
+```ts live
+import { Document, Paragraph } from "docx";
+
 const items = ["Apple", "Banana", "Cherry", "Date"];
 
 const doc = new Document({
@@ -116,7 +122,9 @@ const doc = new Document({
 
 Create hierarchical lists from nested data:
 
-```ts
+```ts live
+import { Document, Paragraph } from "docx";
+
 interface MenuItem {
     name: string;
     children?: MenuItem[];
@@ -165,7 +173,9 @@ const doc = new Document({
 
 Combine bullet points with regular paragraphs:
 
-```ts
+```ts live
+import { Document, HeadingLevel, Paragraph } from "docx";
+
 const doc = new Document({
     sections: [
         {
@@ -198,10 +208,20 @@ const doc = new Document({
 
 Apply text formatting to bullet items:
 
-```ts
-new Paragraph({
-    bullet: { level: 0 },
-    children: [new TextRun({ text: "Important: ", bold: true }), new TextRun("This item requires attention")],
+```ts live
+import { Document, Paragraph, TextRun } from "docx";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    bullet: { level: 0 },
+                    children: [new TextRun({ text: "Important: ", bold: true }), new TextRun("This item requires attention")],
+                }),
+            ],
+        },
+    ],
 });
 ```
 

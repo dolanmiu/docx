@@ -47,8 +47,8 @@ In a page without a bundler, load the shapes after `docx`: `dist/shapes.umd.cjs`
 
 ## Basic Usage
 
-```ts
-import { Document, Packer, Paragraph, TextRun } from "docx";
+```ts live
+import { Document, Paragraph, TextRun } from "docx";
 import { ShapeRun } from "docx/shapes";
 
 const doc = new Document({
@@ -76,8 +76,21 @@ This draws a black bar 200 pixels wide and 4 pixels tall after the text "Name: "
 
 With no `fill` or `line`, a shape has no fill and a black line 1pt wide, so it is always visible:
 
-```ts
-new ShapeRun({ type: "ellipse", transformation: { width: 100, height: 60 } });
+```ts live
+import { Document, Paragraph } from "docx";
+import { ShapeRun } from "docx/shapes";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [new ShapeRun({ type: "ellipse", transformation: { width: 100, height: 60 } })],
+                }),
+            ],
+        },
+    ],
+});
 ```
 
 ## Shape Types
@@ -122,15 +135,30 @@ A line runs from the top-left corner of its box to the bottom-right corner:
 
 To join two shapes, use a [connector](#connectors) instead. It is drawn from one shape to the other for you.
 
-```ts
-// Horizontal
-new ShapeRun({ type: "line", transformation: { width: 300, height: 0 } });
+```ts live
+import { Document, Paragraph } from "docx";
+import { ShapeRun } from "docx/shapes";
 
-// Up and to the right, with an arrowhead at the top
-new ShapeRun({
-    type: "line",
-    transformation: { width: 120, height: 60, flip: { vertical: true } },
-    line: { endArrow: "triangle" },
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        // Horizontal
+                        new ShapeRun({ type: "line", transformation: { width: 300, height: 0 } }),
+
+                        // Up and to the right, with an arrowhead at the top
+                        new ShapeRun({
+                            type: "line",
+                            transformation: { width: 120, height: 60, flip: { vertical: true } },
+                            line: { endArrow: "triangle" },
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
 });
 ```
 
@@ -138,15 +166,34 @@ new ShapeRun({
 
 `fill` can be a colour, `"none"`, a solid fill, a gradient, a pattern or a picture. Colours are 6-digit hex values, with or without a `#`, or [colours of the document's theme](#theme-colours).
 
-```ts
-// A colour
-new ShapeRun({ type: "rectangle", transformation: { width: 100, height: 50 }, fill: "4472C4" });
+```ts live
+import { Document, Paragraph } from "docx";
+import { ShapeRun } from "docx/shapes";
 
-// A colour with transparency, from 0 (opaque) to 100 (invisible)
-new ShapeRun({ type: "ellipse", transformation: { width: 90, height: 90 }, fill: { color: "FF0000", transparency: 50 } });
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        // A colour
+                        new ShapeRun({ type: "rectangle", transformation: { width: 100, height: 50 }, fill: "4472C4" }),
 
-// No fill (the default)
-new ShapeRun({ type: "rectangle", transformation: { width: 100, height: 50 }, fill: "none" });
+                        // A colour with transparency, from 0 (opaque) to 100 (invisible)
+                        new ShapeRun({
+                            type: "ellipse",
+                            transformation: { width: 90, height: 90 },
+                            fill: { color: "FF0000", transparency: 50 },
+                        }),
+
+                        // No fill (the default)
+                        new ShapeRun({ type: "rectangle", transformation: { width: 100, height: 50 }, fill: "none" }),
+                    ],
+                }),
+            ],
+        },
+    ],
+});
 ```
 
 ### Theme colours
@@ -155,22 +202,37 @@ Anywhere a shape takes a colour, it can take one of the colours of the document'
 
 `lighter` and `darker` make the colour lighter or darker, from 0 (unchanged) to 100 (white or black), as Word's colour menus do: "Blue, Accent 1, Lighter 80%" is `{ theme: "accent1", lighter: 80 }`. Text, borders and shading take the same colours: see [Themes](usage/themes.md#text-tables-and-borders-in-the-themes-colors).
 
-```ts
-// Filled in a light version of the theme's first accent colour, with a darker outline
-new ShapeRun({
-    type: "roundedRectangle",
-    transformation: { width: 120, height: 60 },
-    fill: { theme: "accent1", lighter: 80 },
-    line: { theme: "accent1", darker: 25 },
-});
+```ts live
+import { Document, Paragraph } from "docx";
+import { ShapeRun } from "docx/shapes";
 
-// Theme colours with transparency, and in gradients, patterns, lines and effects
-new ShapeRun({
-    type: "ellipse",
-    transformation: { width: 90, height: 90 },
-    fill: { color: { theme: "accent2" }, transparency: 40 },
-    line: { color: { theme: "dark2" }, width: 2 },
-    effects: { glow: { color: { theme: "accent4" }, size: 6 } },
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        // Filled in a light version of the theme's first accent colour, with a darker outline
+                        new ShapeRun({
+                            type: "roundedRectangle",
+                            transformation: { width: 120, height: 60 },
+                            fill: { theme: "accent1", lighter: 80 },
+                            line: { theme: "accent1", darker: 25 },
+                        }),
+
+                        // Theme colours with transparency, and in gradients, patterns, lines and effects
+                        new ShapeRun({
+                            type: "ellipse",
+                            transformation: { width: 90, height: 90 },
+                            fill: { color: { theme: "accent2" }, transparency: 40 },
+                            line: { color: { theme: "dark2" }, width: 2 },
+                            effects: { glow: { color: { theme: "accent4" }, size: 6 } },
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
 });
 ```
 
@@ -199,33 +261,48 @@ They are written as `a:schemeClr`, and `lighter` and `darker` as Word writes the
 
 A gradient needs at least two `stops`. Each stop has a `position` from 0 to 100 along the gradient, a `color` and an optional `transparency`.
 
-```ts
-// Linear, from top to bottom
-new ShapeRun({
-    type: "rectangle",
-    transformation: { width: 160, height: 80 },
-    fill: {
-        type: "gradient",
-        angle: 90,
-        stops: [
-            { position: 0, color: "9DC3E6" },
-            { position: 100, color: "1F4E79" },
-        ],
-    },
-});
+```ts live
+import { Document, Paragraph } from "docx";
+import { ShapeRun } from "docx/shapes";
 
-// Radial, from the centre outwards
-new ShapeRun({
-    type: "ellipse",
-    transformation: { width: 80, height: 80 },
-    fill: {
-        type: "gradient",
-        path: "circle",
-        stops: [
-            { position: 0, color: "FFFFFF" },
-            { position: 100, color: "ED7D31" },
-        ],
-    },
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        // Linear, from top to bottom
+                        new ShapeRun({
+                            type: "rectangle",
+                            transformation: { width: 160, height: 80 },
+                            fill: {
+                                type: "gradient",
+                                angle: 90,
+                                stops: [
+                                    { position: 0, color: "9DC3E6" },
+                                    { position: 100, color: "1F4E79" },
+                                ],
+                            },
+                        }),
+
+                        // Radial, from the centre outwards
+                        new ShapeRun({
+                            type: "ellipse",
+                            transformation: { width: 80, height: 80 },
+                            fill: {
+                                type: "gradient",
+                                path: "circle",
+                                stops: [
+                                    { position: 0, color: "FFFFFF" },
+                                    { position: 100, color: "ED7D31" },
+                                ],
+                            },
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
 });
 ```
 
@@ -240,11 +317,26 @@ new ShapeRun({
 
 A pattern fill repeats lines or dots in one colour over another. [Shape Patterns and Text Warps](usage/shape-patterns-and-warps.md#patterns) lists all 54 patterns.
 
-```ts
-new ShapeRun({
-    type: "rectangle",
-    transformation: { width: 80, height: 60 },
-    fill: { type: "pattern", pattern: "wideUpwardDiagonal", color: "2F5597", backgroundColor: "DEEBF7" },
+```ts live
+import { Document, Paragraph } from "docx";
+import { ShapeRun } from "docx/shapes";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new ShapeRun({
+                            type: "rectangle",
+                            transformation: { width: 80, height: 60 },
+                            fill: { type: "pattern", pattern: "wideUpwardDiagonal", color: "2F5597", backgroundColor: "DEEBF7" },
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
 });
 ```
 
@@ -259,20 +351,40 @@ new ShapeRun({
 
 A picture fill puts a picture inside the shape, and the shape's outline crops it. `image` takes the same `type` and `data` as an [`ImageRun`](usage/images.md), including SVG with a `fallback`. The picture is stretched to fill the shape unless you `tile` it.
 
-```ts
-// A photo cropped to a circle
-new ShapeRun({
-    type: "ellipse",
-    transformation: { width: 80, height: 80 },
-    fill: { type: "picture", image: { type: "jpg", data: fs.readFileSync("./photo.jpg") } },
-    line: { color: "FFFFFF", width: 3 },
-});
+```ts live
+import { Document, Paragraph } from "docx";
+import { ShapeRun } from "docx/shapes";
+import * as fs from "fs";
 
-// A picture repeated across a heart, at a fifth of its size, with every other tile mirrored
-new ShapeRun({
-    type: "heart",
-    transformation: { width: 80, height: 80 },
-    fill: { type: "picture", image: { type: "png", data: pattern }, tile: { scale: 20, mirror: "both" } },
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        // A photo cropped to a circle
+                        new ShapeRun({
+                            type: "ellipse",
+                            transformation: { width: 80, height: 80 },
+                            fill: { type: "picture", image: { type: "jpg", data: fs.readFileSync("./demo/assets/images/cat.jpg") } },
+                            line: { color: "FFFFFF", width: 3 },
+                        }),
+
+                        // A picture repeated across a heart, at a fifth of its size, with every other tile mirrored
+                        new ShapeRun({
+                            type: "heart",
+                            transformation: { width: 80, height: 80 },
+                            fill: {
+                                type: "picture",
+                                image: { type: "png", data: fs.readFileSync("./demo/assets/images/dog.png") },
+                                tile: { scale: 20, mirror: "both" },
+                            },
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
 });
 ```
 
@@ -290,17 +402,32 @@ new ShapeRun({
 
 `line` is the shape's outline, or the line itself for `line` and connector shapes. It can be a colour, a [theme colour](#theme-colours), `"none"` or an object:
 
-```ts
-new ShapeRun({
-    type: "line",
-    transformation: { width: 300, height: 0 },
-    line: {
-        color: "C00000",
-        width: 2,
-        dash: "dash",
-        startArrow: "oval",
-        endArrow: { type: "triangle", width: "large", length: "large" },
-    },
+```ts live
+import { Document, Paragraph } from "docx";
+import { ShapeRun } from "docx/shapes";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new ShapeRun({
+                            type: "line",
+                            transformation: { width: 300, height: 0 },
+                            line: {
+                                color: "C00000",
+                                width: 2,
+                                dash: "dash",
+                                startArrow: "oval",
+                                endArrow: { type: "triangle", width: "large", length: "large" },
+                            },
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
 });
 ```
 
@@ -337,9 +464,35 @@ new ShapeRun({
 
 A custom dash is a list of dashes and the gaps after them, each measured in multiples of the line's width. With round caps, a dash of length `0` draws a round dot:
 
-```ts
-// Round dots, then dashes three times as long as the line is wide
-line: { width: 3, cap: "round", dash: [{ length: 0, gap: 2 }, { length: 3, gap: 2 }] },
+```ts live
+import { Document, Paragraph } from "docx";
+import { ShapeRun } from "docx/shapes";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new ShapeRun({
+                            type: "line",
+                            transformation: { width: 300, height: 0 },
+                            // Round dots, then dashes three times as long as the line is wide
+                            line: {
+                                width: 3,
+                                cap: "round",
+                                dash: [
+                                    { length: 0, gap: 2 },
+                                    { length: 3, gap: 2 },
+                                ],
+                            },
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
+});
 ```
 
 An `Arrowhead` is one of `"triangle"`, `"stealth"`, `"diamond"`, `"oval"` or `"arrow"`, or an object with a `type` and a `width` and `length` of `"small"`, `"medium"` (the default) or `"large"`.
@@ -350,23 +503,58 @@ An `Arrowhead` is one of `"triangle"`, `"stealth"`, `"diamond"`, `"oval"` or `"a
 
 `text` puts a line of text in the middle of a shape, in the document's default font. Each `\n` starts a new, centred paragraph. If the document's paragraphs have space before or after them, these paragraphs don't, so the text stays in the middle:
 
-```ts
-new ShapeRun({ type: "flowChartProcess", text: "Review", transformation: { width: 120, height: 40 }, fill: "DEEBF7" });
+```ts live
+import { Document, Paragraph } from "docx";
+import { ShapeRun } from "docx/shapes";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new ShapeRun({
+                            type: "flowChartProcess",
+                            text: "Review",
+                            transformation: { width: 120, height: 40 },
+                            fill: "DEEBF7",
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
+});
 ```
 
 For text with formatting, add paragraphs to `children`. The text is centred vertically. Use the paragraph's `alignment` to centre it horizontally. `text` comes before `children` when a shape has both.
 
-```ts
-new ShapeRun({
-    type: "flowChartTerminator",
-    transformation: { width: 120, height: 48 },
-    fill: "4472C4",
-    line: "none",
-    children: [
-        new Paragraph({
-            alignment: AlignmentType.CENTER,
-            children: [new TextRun({ text: "Start", color: "FFFFFF", bold: true })],
-        }),
+```ts live
+import { AlignmentType, Document, Paragraph, TextRun } from "docx";
+import { ShapeRun } from "docx/shapes";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new ShapeRun({
+                            type: "flowChartTerminator",
+                            transformation: { width: 120, height: 48 },
+                            fill: "4472C4",
+                            line: "none",
+                            children: [
+                                new Paragraph({
+                                    alignment: AlignmentType.CENTER,
+                                    children: [new TextRun({ text: "Start", color: "FFFFFF", bold: true })],
+                                }),
+                            ],
+                        }),
+                    ],
+                }),
+            ],
+        },
     ],
 });
 ```
@@ -375,15 +563,34 @@ new ShapeRun({
 
 Set `width` or `height` to `"fitText"` to size a shape to its text:
 
-```ts
-// As wide as "Write the draft" on one line, and 40 pixels tall
-new ShapeRun({ type: "flowChartProcess", text: "Write the draft", transformation: { width: "fitText", height: 40 } });
+```ts live
+import { Document, Paragraph } from "docx";
+import { ShapeRun } from "docx/shapes";
 
-// 160 pixels wide, and as tall as the text wrapped at that width
-new ShapeRun({
-    type: "rectangle",
-    children: [new Paragraph("A longer note that wraps")],
-    transformation: { width: 160, height: "fitText" },
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        // As wide as "Write the draft" on one line, and 40 pixels tall
+                        new ShapeRun({
+                            type: "flowChartProcess",
+                            text: "Write the draft",
+                            transformation: { width: "fitText", height: 40 },
+                        }),
+
+                        // 160 pixels wide, and as tall as the text wrapped at that width
+                        new ShapeRun({
+                            type: "rectangle",
+                            children: [new Paragraph("A longer note that wraps")],
+                            transformation: { width: 160, height: "fitText" },
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
 });
 ```
 
@@ -400,7 +607,10 @@ The text is measured in the document's styles, as Word formats it:
 - The paragraph's space before and after, line spacing and indents, from the same styles and the paragraph's own formatting. Contextual spacing leaves out the space between paragraphs of the same style.
 - Text in a document with no default font or size is measured in Word's own defaults, 10pt Times New Roman.
 
-```ts
+```ts live
+import { Document, Paragraph } from "docx";
+import { ShapeRun } from "docx/shapes";
+
 const doc = new Document({
     // Word's defaults for new documents: 11pt Calibri, with space after each paragraph
     styles: { default: { document: { run: { font: "Calibri", size: 22 }, paragraph: { spacing: { after: 160, line: 259 } } } } },
@@ -431,15 +641,30 @@ The estimate is close for the built-in fonts and rougher for others. For an exac
 
 `textOptions` sets how the text is laid out in the shape:
 
-```ts
-new ShapeRun({
-    type: "rectangle",
-    transformation: { width: 200, height: 100 },
-    children: [new Paragraph("Top left")],
-    textOptions: {
-        verticalAlignment: "top",
-        margins: { top: 4, right: 8, bottom: 4, left: 8 }, // points
-    },
+```ts live
+import { Document, Paragraph } from "docx";
+import { ShapeRun } from "docx/shapes";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new ShapeRun({
+                            type: "rectangle",
+                            transformation: { width: 200, height: 100 },
+                            children: [new Paragraph("Top left")],
+                            textOptions: {
+                                verticalAlignment: "top",
+                                margins: { top: 4, right: 8, bottom: 4, left: 8 }, // points
+                            },
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
 });
 ```
 
@@ -456,14 +681,34 @@ new ShapeRun({
 
 [Shape Patterns and Text Warps](usage/shape-patterns-and-warps.md) lists every warp and direction. Word applies `resizeShapeToFitText` and `shrinkTextOnOverflow` when it next lays the shape out, such as when the text is edited.
 
-```ts
-// WordArt: text bent into an arch
-new ShapeRun({
-    type: "rectangle",
-    transformation: { width: 200, height: 80 },
-    line: "none",
-    children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: "WordArt", size: 48, bold: true })] })],
-    textOptions: { warp: "archUp", wrap: false },
+```ts live
+import { AlignmentType, Document, Paragraph, TextRun } from "docx";
+import { ShapeRun } from "docx/shapes";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        // WordArt: text bent into an arch
+                        new ShapeRun({
+                            type: "rectangle",
+                            transformation: { width: 200, height: 80 },
+                            line: "none",
+                            children: [
+                                new Paragraph({
+                                    alignment: AlignmentType.CENTER,
+                                    children: [new TextRun({ text: "WordArt", size: 48, bold: true })],
+                                }),
+                            ],
+                            textOptions: { warp: "archUp", wrap: false },
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
 });
 ```
 
@@ -489,19 +734,34 @@ Many shapes have handles in Word that change their proportions, such as the corn
 
 Lengths and positions are percentages, and angles are in degrees clockwise from 3 o'clock. Most lengths are a percentage of the shape's shorter side, so a `cornerRadius` of `50` makes the ends of a rounded rectangle fully round. [Shape Adjustments](usage/shape-adjustments.md) lists the adjustments of all 120 shapes that have them, with what each percentage is of and its default.
 
-```ts
-new ShapeRun({
-    type: "roundedRectangle",
-    adjustments: { cornerRadius: 30 },
-    transformation: { width: 120, height: 60 },
-    fill: "ED7D31",
-});
+```ts live
+import { Document, Paragraph } from "docx";
+import { ShapeRun } from "docx/shapes";
 
-new ShapeRun({
-    type: "pie",
-    adjustments: { startAngle: 0, endAngle: 270 },
-    transformation: { width: 60, height: 60 },
-    fill: "7030A0",
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new ShapeRun({
+                            type: "roundedRectangle",
+                            adjustments: { cornerRadius: 30 },
+                            transformation: { width: 120, height: 60 },
+                            fill: "ED7D31",
+                        }),
+
+                        new ShapeRun({
+                            type: "pie",
+                            adjustments: { startAngle: 0, endAngle: 270 },
+                            transformation: { width: 60, height: 60 },
+                            fill: "7030A0",
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
 });
 ```
 
@@ -511,15 +771,30 @@ In TypeScript, `adjustments` only accepts the names that belong to the shape's `
 
 `effects` adds shadows, a glow, soft edges and a reflection. They can be combined, and each takes sizes in points and angles in degrees:
 
-```ts
-new ShapeRun({
-    type: "roundedRectangle",
-    transformation: { width: 120, height: 60 },
-    fill: "DEEBF7",
-    effects: {
-        shadow: {}, // Word's "Offset: Bottom Right" shadow
-        glow: { color: "FFC000", size: 8 },
-    },
+```ts live
+import { Document, Paragraph } from "docx";
+import { ShapeRun } from "docx/shapes";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new ShapeRun({
+                            type: "roundedRectangle",
+                            transformation: { width: 120, height: 60 },
+                            fill: "DEEBF7",
+                            effects: {
+                                shadow: {}, // Word's "Offset: Bottom Right" shadow
+                                glow: { color: "FFC000", size: 8 },
+                            },
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
 });
 ```
 
@@ -539,21 +814,36 @@ The drawing's box grows to make room for the effects, so they aren't cut off.
 
 For a shape that isn't one of the presets, give `type: "custom"` and the outline as SVG path data. The path can be in any units: it is scaled so the box around it fills the shape's `transformation`.
 
-```ts
-// A star
-new ShapeRun({
-    type: "custom",
-    path: "M 50 0 L 61 35 L 98 35 L 68 57 L 79 91 L 50 70 L 21 91 L 32 57 L 2 35 L 39 35 Z",
-    transformation: { width: 80, height: 76 },
-    fill: "FFC000",
-});
+```ts live
+import { Document, Paragraph } from "docx";
+import { ShapeRun } from "docx/shapes";
 
-// An open curve, with arrowheads
-new ShapeRun({
-    type: "custom",
-    path: "M 0 50 C 30 0 70 100 100 50",
-    transformation: { width: 120, height: 50 },
-    line: { width: 2, endArrow: "triangle" },
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        // A star
+                        new ShapeRun({
+                            type: "custom",
+                            path: "M 50 0 L 61 35 L 98 35 L 68 57 L 79 91 L 50 70 L 21 91 L 32 57 L 2 35 L 39 35 Z",
+                            transformation: { width: 80, height: 76 },
+                            fill: "FFC000",
+                        }),
+
+                        // An open curve, with arrowheads
+                        new ShapeRun({
+                            type: "custom",
+                            path: "M 0 50 C 30 0 70 100 100 50",
+                            transformation: { width: 120, height: 50 },
+                            line: { width: 2, endArrow: "triangle" },
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
 });
 ```
 
@@ -565,30 +855,45 @@ Custom shapes can hold text like any other shape. Connectors attach to the corne
 
 `paths` draws a shape from several paths, in the same units, such as the faces of a box or the body and top of a cylinder. The box around all of them is scaled to fill the shape, and later paths are drawn over earlier ones.
 
-```ts
-// A box whose top is lighter and whose right side is darker than its fill
-new ShapeRun({
-    type: "custom",
-    paths: [
-        { path: "M 0 25 L 50 0 L 100 25 L 50 50 Z", fill: "lighter" },
-        { path: "M 0 25 L 50 50 L 50 110 L 0 85 Z" },
-        { path: "M 50 50 L 100 25 L 100 85 L 50 110 Z", fill: "darker" },
-    ],
-    transformation: { width: 80, height: 88 },
-    fill: "4472C4",
-});
+```ts live
+import { Document, Paragraph } from "docx";
+import { ShapeRun } from "docx/shapes";
 
-// A page with a folded corner, and lines that are drawn but not filled
-new ShapeRun({
-    type: "custom",
-    paths: [
-        { path: "M 0 0 H 70 L 100 30 V 130 H 0 Z" },
-        { path: "M 70 0 V 30 H 100", fill: "darker" },
-        { path: "M 15 55 H 85 M 15 75 H 85 M 15 95 H 60", fill: false },
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        // A box whose top is lighter and whose right side is darker than its fill
+                        new ShapeRun({
+                            type: "custom",
+                            paths: [
+                                { path: "M 0 25 L 50 0 L 100 25 L 50 50 Z", fill: "lighter" },
+                                { path: "M 0 25 L 50 50 L 50 110 L 0 85 Z" },
+                                { path: "M 50 50 L 100 25 L 100 85 L 50 110 Z", fill: "darker" },
+                            ],
+                            transformation: { width: 80, height: 88 },
+                            fill: "4472C4",
+                        }),
+
+                        // A page with a folded corner, and lines that are drawn but not filled
+                        new ShapeRun({
+                            type: "custom",
+                            paths: [
+                                { path: "M 0 0 H 70 L 100 30 V 130 H 0 Z" },
+                                { path: "M 70 0 V 30 H 100", fill: "darker" },
+                                { path: "M 15 55 H 85 M 15 75 H 85 M 15 95 H 60", fill: false },
+                            ],
+                            transformation: { width: 68, height: 88 },
+                            fill: "F2F2F2",
+                            line: "7F7F7F",
+                        }),
+                    ],
+                }),
+            ],
+        },
     ],
-    transformation: { width: 68, height: 88 },
-    fill: "F2F2F2",
-    line: "7F7F7F",
 });
 ```
 
@@ -606,13 +911,28 @@ A shape has one fill and one line, so paths can't have colours of their own. For
 
 A closed part of a path inside another part is a hole in it, and a part inside a hole is filled again. This works whichever way round each part is drawn: parts are turned round where they need to be, so that applications that fill paths by the non-zero rule, which needs a hole to go the other way, cut the same holes as LibreOffice, which fills by the even-odd rule.
 
-```ts
-// A ring
-new ShapeRun({
-    type: "custom",
-    path: "M 0 50 A 50 50 0 0 1 100 50 A 50 50 0 0 1 0 50 Z M 22 50 A 28 28 0 0 1 78 50 A 28 28 0 0 1 22 50 Z",
-    transformation: { width: 88, height: 88 },
-    fill: "70AD47",
+```ts live
+import { Document, Paragraph } from "docx";
+import { ShapeRun } from "docx/shapes";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        // A ring
+                        new ShapeRun({
+                            type: "custom",
+                            path: "M 0 50 A 50 50 0 0 1 100 50 A 50 50 0 0 1 0 50 Z M 22 50 A 28 28 0 0 1 78 50 A 28 28 0 0 1 22 50 Z",
+                            transformation: { width: 88, height: 88 },
+                            fill: "70AD47",
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
 });
 ```
 
@@ -622,14 +942,29 @@ Holes are cut within a path. Separate paths in `paths` are filled one after the 
 
 The text of a custom shape uses the whole shape, unless `textArea` gives the box it goes in, in the units of the paths. A speech bubble's text can then go in the bubble and not its tail. `"fitText"` sizes the shape so its text fits in the text area.
 
-```ts
-new ShapeRun({
-    type: "custom",
-    path: "M 10 0 H 150 A 10 10 0 0 1 160 10 V 70 A 10 10 0 0 1 150 80 H 60 L 35 105 L 40 80 H 10 A 10 10 0 0 1 0 70 V 10 A 10 10 0 0 1 10 0 Z",
-    textArea: { left: 0, top: 0, right: 160, bottom: 80 },
-    transformation: { width: 180, height: "fitText" },
-    fill: "FBE5D6",
-    text: "Clear of the tail",
+```ts live
+import { Document, Paragraph } from "docx";
+import { ShapeRun } from "docx/shapes";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new ShapeRun({
+                            type: "custom",
+                            path: "M 10 0 H 150 A 10 10 0 0 1 160 10 V 70 A 10 10 0 0 1 150 80 H 60 L 35 105 L 40 80 H 10 A 10 10 0 0 1 0 70 V 10 A 10 10 0 0 1 10 0 Z",
+                            textArea: { left: 0, top: 0, right: 160, bottom: 80 },
+                            transformation: { width: 180, height: "fitText" },
+                            fill: "FBE5D6",
+                            text: "Clear of the tail",
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
 });
 ```
 
@@ -637,31 +972,51 @@ new ShapeRun({
 
 Connectors attach to the corners and ends of a custom shape's paths. For a shape whose corners aren't where connectors should meet it, such as a cylinder, `connectionPoints` gives the points of its own, in the units of the paths. Each point faces the side of the shape it is nearest, or the `side` given, and connectors leave it towards that side. A connector's end with a `side` attaches to the point facing that side, and one with a `point` to the nearest point. An empty list leaves the shape without connection points, and connectors end at the middles of its sides.
 
-```ts
-new ShapeCanvasRun({
-    children: [
-        { id: "server", type: "rectangle", text: "Server", transformation: { offset: { top: 28 }, width: 110, height: 44 } },
+```ts live
+import { Document, Paragraph } from "docx";
+import { ShapeCanvasRun } from "docx/shapes";
+
+const doc = new Document({
+    sections: [
         {
-            id: "database",
-            type: "custom",
-            paths: [
-                { path: "M 0 12 A 50 12 0 0 0 100 12 V 88 A 50 12 0 0 1 0 88 Z" },
-                { path: "M 0 12 A 50 12 0 0 1 100 12 A 50 12 0 0 1 0 12 Z", fill: "lighter" },
+            children: [
+                new Paragraph({
+                    children: [
+                        new ShapeCanvasRun({
+                            children: [
+                                {
+                                    id: "server",
+                                    type: "rectangle",
+                                    text: "Server",
+                                    transformation: { offset: { top: 28 }, width: 110, height: 44 },
+                                },
+                                {
+                                    id: "database",
+                                    type: "custom",
+                                    paths: [
+                                        { path: "M 0 12 A 50 12 0 0 0 100 12 V 88 A 50 12 0 0 1 0 88 Z" },
+                                        { path: "M 0 12 A 50 12 0 0 1 100 12 A 50 12 0 0 1 0 12 Z", fill: "lighter" },
+                                    ],
+                                    // The middles of its top, right side, bottom and left side
+                                    connectionPoints: [
+                                        { x: 50, y: 0 },
+                                        { x: 100, y: 50 },
+                                        { x: 50, y: 100 },
+                                        { x: 0, y: 50 },
+                                    ],
+                                    // Below the top
+                                    textArea: { left: 0, top: 24, right: 100, bottom: 100 },
+                                    text: "Orders",
+                                    transformation: { offset: { left: 200 }, width: 90, height: 100 },
+                                    fill: "FFC000",
+                                },
+                                { type: "connector", from: "server", to: "database", line: { endArrow: "triangle" } },
+                            ],
+                        }),
+                    ],
+                }),
             ],
-            // The middles of its top, right side, bottom and left side
-            connectionPoints: [
-                { x: 50, y: 0 },
-                { x: 100, y: 50 },
-                { x: 50, y: 100 },
-                { x: 0, y: 50 },
-            ],
-            // Below the top
-            textArea: { left: 0, top: 24, right: 100, bottom: 100 },
-            text: "Orders",
-            transformation: { offset: { left: 200 }, width: 90, height: 100 },
-            fill: "FFC000",
         },
-        { type: "connector", from: "server", to: "database", line: { endArrow: "triangle" } },
     ],
 });
 ```
@@ -672,16 +1027,40 @@ The connection points and text area keep their place in the shape when it is res
 
 `link` makes a shape open a web address when it is clicked (with Ctrl, in Word). `decorative: true` is Word's **Mark as decorative**: screen readers skip the shape, which suits divider bars and other shapes that don't carry meaning.
 
-```ts
-new ShapeRun({
-    type: "roundedRectangle",
-    transformation: { width: 160, height: 40 },
-    fill: "4472C4",
-    children: [new Paragraph("Visit docx.js.org")],
-    link: "https://docx.js.org",
-});
+```ts live
+import { Document, Paragraph } from "docx";
+import { ShapeRun } from "docx/shapes";
 
-new ShapeRun({ type: "rectangle", transformation: { width: 600, height: 3 }, fill: "BFBFBF", line: "none", decorative: true });
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new ShapeRun({
+                            type: "roundedRectangle",
+                            transformation: { width: 160, height: 40 },
+                            fill: "4472C4",
+                            children: [new Paragraph("Visit docx.js.org")],
+                            link: "https://docx.js.org",
+                        }),
+                    ],
+                }),
+                new Paragraph({
+                    children: [
+                        new ShapeRun({
+                            type: "rectangle",
+                            transformation: { width: 600, height: 3 },
+                            fill: "BFBFBF",
+                            line: "none",
+                            decorative: true,
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
+});
 ```
 
 Groups, canvases and the shapes, pictures and groups inside them take `link` and `decorative` too.
@@ -692,17 +1071,43 @@ A shape sits in the line of text by default. It is aligned to the text baseline 
 
 Add `floating` to position it on the page instead. The options are the same as for [floating images](usage/images.md#floating), including `horizontalPosition`, `verticalPosition`, `wrap`, `margins`, `behindDocument` and `zIndex`. Offsets are in [EMUs](https://startbigthinksmall.wordpress.com/2010/01/04/points-inches-and-emus-measuring-units-in-office-open-xml/) (914400 per inch).
 
-```ts
-new ShapeRun({
-    type: "roundedRectangularCallout",
-    transformation: { width: 180, height: 80 },
-    fill: "FFF2CC",
-    children: [new Paragraph("Shapes can float, too!")],
-    floating: {
-        horizontalPosition: { relative: HorizontalPositionRelativeFrom.COLUMN, offset: 4000000 },
-        verticalPosition: { relative: VerticalPositionRelativeFrom.PARAGRAPH, offset: 0 },
-        wrap: { type: TextWrappingType.SQUARE, side: TextWrappingSide.LEFT },
-    },
+```ts live
+import {
+    Document,
+    HorizontalPositionRelativeFrom,
+    Paragraph,
+    TextRun,
+    TextWrappingSide,
+    TextWrappingType,
+    VerticalPositionRelativeFrom,
+} from "docx";
+import { ShapeRun } from "docx/shapes";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new ShapeRun({
+                            type: "roundedRectangularCallout",
+                            transformation: { width: 180, height: 80 },
+                            fill: "FFF2CC",
+                            children: [new Paragraph("Shapes can float, too!")],
+                            floating: {
+                                horizontalPosition: { relative: HorizontalPositionRelativeFrom.COLUMN, offset: 4000000 },
+                                verticalPosition: { relative: VerticalPositionRelativeFrom.PARAGRAPH, offset: 0 },
+                                wrap: { type: TextWrappingType.SQUARE, side: TextWrappingSide.LEFT },
+                            },
+                        }),
+                        new TextRun(
+                            "This paragraph wraps on the left of the callout, which floats at the right of the column. The text runs down beside it until it is below the callout, and then goes on across the whole column again.",
+                        ),
+                    ],
+                }),
+            ],
+        },
+    ],
 });
 ```
 
@@ -712,15 +1117,32 @@ new ShapeRun({
 
 A floating shape's `width` and `height` can be percentages, such as `"100%"`, and so can its offsets. Word keeps them as percentages, so the shape grows and moves with the page if its size or margins change. A rule as wide as the text:
 
-```ts
-new ShapeRun({
-    type: "line",
-    transformation: { width: "100%", height: 0 },
-    line: { color: "2E74B5", width: 2 },
-    floating: {
-        horizontalPosition: { relative: HorizontalPositionRelativeFrom.MARGIN, offset: 0 },
-        verticalPosition: { relative: VerticalPositionRelativeFrom.PARAGRAPH, offset: 380000 },
-    },
+```ts live
+import { Document, HeadingLevel, HorizontalPositionRelativeFrom, Paragraph, TextRun, VerticalPositionRelativeFrom } from "docx";
+import { ShapeRun } from "docx/shapes";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    heading: HeadingLevel.HEADING_1,
+                    children: [
+                        new TextRun("Page layout"),
+                        new ShapeRun({
+                            type: "line",
+                            transformation: { width: "100%", height: 0 },
+                            line: { color: "2E74B5", width: 2 },
+                            floating: {
+                                horizontalPosition: { relative: HorizontalPositionRelativeFrom.MARGIN, offset: 0 },
+                                verticalPosition: { relative: VerticalPositionRelativeFrom.PARAGRAPH, offset: 380000 },
+                            },
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
 });
 ```
 
@@ -734,7 +1156,10 @@ The shape is written with the percentages, as Word 2010 and later read them (`wp
 
 Give shapes the same `textFlow` to make their text flow from one to the next, as the columns of a newsletter do. The first shape of the flow in the document holds the text, and what doesn't fit flows on into the next shape with the same `textFlow`, in the order they are in the document:
 
-```ts
+```ts live
+import { Document, HorizontalPositionRelativeFrom, Paragraph, VerticalPositionRelativeFrom } from "docx";
+import { ShapeRun } from "docx/shapes";
+
 const column = (offset: `${number}%`, children?: readonly Paragraph[]): ShapeRun =>
     new ShapeRun({
         type: "rectangle",
@@ -747,7 +1172,18 @@ const column = (offset: `${number}%`, children?: readonly Paragraph[]): ShapeRun
         },
     });
 
-new Paragraph({ children: [column("0%", articleParagraphs), column("34%")] });
+const articleParagraphs = [
+    "Shapes can hold text that flows from one to the next, as the columns of a newsletter do. The text starts in the first shape of the flow, and what doesn't fit carries on in the next one, wherever it is in the document. Word lays the text out when it opens the document, so the flow follows the fonts and styles the document uses.",
+    "This article starts in the box on the left and carries on in the box on the right.",
+].map((text) => new Paragraph(text));
+
+const doc = new Document({
+    sections: [
+        {
+            children: [new Paragraph({ children: [column("0%", articleParagraphs), column("34%")] })],
+        },
+    ],
+});
 ```
 
 The shapes after the first continue its text, so their own `text` and `children` aren't written. Word and LibreOffice lay out the text when they open the document, so it follows the document's fonts. A flow is only for a `ShapeRun`: shapes in groups and canvases can't be in one.
@@ -756,12 +1192,27 @@ The shapes after the first continue its text, so their own `text` and `children`
 
 Give a shape `altText` so screen readers can describe it:
 
-```ts
-new ShapeRun({
-    type: "star5",
-    transformation: { width: 60, height: 60 },
-    fill: "FFC000",
-    altText: { name: "Gold star", description: "A gold star awarded for good work" },
+```ts live
+import { Document, Paragraph } from "docx";
+import { ShapeRun } from "docx/shapes";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new ShapeRun({
+                            type: "star5",
+                            transformation: { width: 60, height: 60 },
+                            fill: "FFC000",
+                            altText: { name: "Gold star", description: "A gold star awarded for good work" },
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
 });
 ```
 
@@ -773,21 +1224,54 @@ The rectangle behind a canvas's group, for applications that can't draw canvases
 
 A `ShapeGroupRun` keeps several shapes together, so they move, resize and wrap as one drawing. Each shape takes the same options as a `ShapeRun`, except `floating`, and its `transformation.offset` positions it in pixels.
 
-```ts
-new ShapeGroupRun({
-    children: [
-        { type: "ellipse", transformation: { width: 80, height: 80 }, fill: "5B9BD5", line: "none" },
-        { type: "star5", transformation: { offset: { left: 15, top: 12 }, width: 50, height: 50 }, fill: "FFC000" },
+```ts live
+import { Document, Paragraph } from "docx";
+import { ShapeGroupRun } from "docx/shapes";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new ShapeGroupRun({
+                            children: [
+                                { type: "ellipse", transformation: { width: 80, height: 80 }, fill: "5B9BD5", line: "none" },
+                                { type: "star5", transformation: { offset: { left: 15, top: 12 }, width: 50, height: 50 }, fill: "FFC000" },
+                            ],
+                        }),
+                    ],
+                }),
+            ],
+        },
     ],
 });
 ```
 
 The group is as big as the box around its shapes. Give it a `transformation` to scale every shape in it to a different size, or to rotate or flip them together:
 
-```ts
-new ShapeGroupRun({
-    children: [/* ... */],
-    transformation: { width: 40, height: 40, rotation: 20 }, // half the size, turned by 20 degrees
+```ts live
+import { Document, Paragraph } from "docx";
+import { ShapeGroupRun } from "docx/shapes";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new ShapeGroupRun({
+                            children: [
+                                { type: "ellipse", transformation: { width: 80, height: 80 }, fill: "5B9BD5", line: "none" },
+                                { type: "star5", transformation: { offset: { left: 15, top: 12 }, width: 50, height: 50 }, fill: "FFC000" },
+                            ],
+                            transformation: { width: 40, height: 40, rotation: 20 }, // half the size, turned by 20 degrees
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
 });
 ```
 
@@ -797,22 +1281,73 @@ A group can be `floating`, and can have `altText`, just like a single shape.
 
 A group or canvas can also hold pictures and other groups. A picture takes an `image`, as for an `ImageRun`, and a `transformation`. Connectors attach to the middle of its sides, and it can have a `line`, `effects` and a `crop`:
 
-```ts
-{ id: "logo", type: "picture", image: { type: "png", data: fs.readFileSync("./logo.png") }, transformation: { width: 60, height: 70 } }
+```ts live
+import { Document, Paragraph } from "docx";
+import { ShapeGroupRun } from "docx/shapes";
+import * as fs from "fs";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new ShapeGroupRun({
+                            children: [
+                                {
+                                    id: "logo",
+                                    type: "picture",
+                                    image: { type: "png", data: fs.readFileSync("./demo/assets/images/linux-png.png") },
+                                    transformation: { width: 60, height: 70 },
+                                },
+                                {
+                                    id: "name",
+                                    type: "rectangle",
+                                    text: "Linux",
+                                    transformation: { offset: { left: 140, top: 15 }, width: 100, height: 40 },
+                                },
+                                { type: "connector", from: "logo", to: "name", line: { endArrow: "triangle" } },
+                            ],
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
+});
 ```
 
 A group inside a group keeps its children together. Its children are positioned relative to each other, and its `transformation.offset` places the group. Give it a `width` and `height` to scale its children, or a `rotation` or `flip`:
 
-```ts
-new ShapeGroupRun({
-    children: [
-        { type: "rectangle", transformation: { width: 200, height: 100 }, fill: "F2F2F2" },
+```ts live
+import { Document, Paragraph } from "docx";
+import { ShapeGroupRun } from "docx/shapes";
+
+const doc = new Document({
+    sections: [
         {
-            type: "group",
-            transformation: { offset: { left: 60, top: 10 }, width: 40, height: 40, rotation: 20 }, // half size, turned
             children: [
-                { type: "ellipse", transformation: { width: 80, height: 80 }, fill: "5B9BD5", line: "none" },
-                { type: "star5", transformation: { offset: { left: 15, top: 12 }, width: 50, height: 50 }, fill: "FFC000" },
+                new Paragraph({
+                    children: [
+                        new ShapeGroupRun({
+                            children: [
+                                { type: "rectangle", transformation: { width: 200, height: 100 }, fill: "F2F2F2" },
+                                {
+                                    type: "group",
+                                    transformation: { offset: { left: 60, top: 10 }, width: 40, height: 40, rotation: 20 }, // half size, turned
+                                    children: [
+                                        { type: "ellipse", transformation: { width: 80, height: 80 }, fill: "5B9BD5", line: "none" },
+                                        {
+                                            type: "star5",
+                                            transformation: { offset: { left: 15, top: 12 }, width: 50, height: 50 },
+                                            fill: "FFC000",
+                                        },
+                                    ],
+                                },
+                            ],
+                        }),
+                    ],
+                }),
             ],
         },
     ],
@@ -825,27 +1360,104 @@ Connectors can attach to shapes and pictures inside groups, so every `id` must b
 
 A connector is a line from one shape to another. Give each shape an `id`, then add a child with `type: "connector"` that names the shapes it joins. The connector is drawn between them, so it needs no size or position:
 
-```ts
-new ShapeCanvasRun({
-    children: [
-        { id: "start", type: "flowChartTerminator", transformation: { width: 120, height: 40 }, fill: "4472C4" },
-        { id: "step", type: "flowChartProcess", transformation: { offset: { top: 90 }, width: 120, height: 44 }, fill: "ED7D31" },
-        { type: "connector", from: "start", to: "step", line: { endArrow: "triangle" } },
+```ts live
+import { Document, Paragraph } from "docx";
+import { ShapeCanvasRun } from "docx/shapes";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new ShapeCanvasRun({
+                            children: [
+                                { id: "start", type: "flowChartTerminator", transformation: { width: 120, height: 40 }, fill: "4472C4" },
+                                {
+                                    id: "step",
+                                    type: "flowChartProcess",
+                                    transformation: { offset: { top: 90 }, width: 120, height: 44 },
+                                    fill: "ED7D31",
+                                },
+                                { type: "connector", from: "start", to: "step", line: { endArrow: "triangle" } },
+                            ],
+                        }),
+                    ],
+                }),
+            ],
+        },
     ],
 });
 ```
 
 A connector attaches to the sides of the shapes that face each other. To choose a side, give an object with the shape's `id` and a `side` of `"top"`, `"right"`, `"bottom"` or `"left"`:
 
-```ts
-{ type: "connector", from: { id: "fix", side: "top" }, to: { id: "draft", side: "right" }, route: "elbow" }
+```ts live
+import { Document, Paragraph } from "docx";
+import { ShapeCanvasRun } from "docx/shapes";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new ShapeCanvasRun({
+                            children: [
+                                {
+                                    id: "draft",
+                                    type: "flowChartProcess",
+                                    text: "Write the draft",
+                                    transformation: { width: 130, height: 40 },
+                                },
+                                {
+                                    id: "fix",
+                                    type: "flowChartProcess",
+                                    text: "Fix it",
+                                    transformation: { offset: { left: 200, top: 100 }, width: 100, height: 40 },
+                                },
+                                { type: "connector", from: { id: "fix", side: "top" }, to: { id: "draft", side: "right" }, route: "elbow" },
+                            ],
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
+});
 ```
 
 To attach to a particular point, give a `point` instead of a `side`, as percentages of the shape's width and height before it is rotated. The connector attaches to the connection point nearest it, such as the tip of a diamond:
 
-```ts
-// From the right-hand point of a decision diamond
-{ type: "connector", from: { id: "ask", point: { x: 100, y: 50 } }, to: "wait" }
+```ts live
+import { Document, Paragraph } from "docx";
+import { ShapeCanvasRun } from "docx/shapes";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new ShapeCanvasRun({
+                            children: [
+                                { id: "ask", type: "flowChartDecision", text: "Ready?", transformation: { width: 110, height: 70 } },
+                                {
+                                    id: "wait",
+                                    type: "flowChartProcess",
+                                    text: "Wait",
+                                    transformation: { offset: { left: 200, top: 15 }, width: 100, height: 40 },
+                                },
+                                // From the right-hand point of a decision diamond
+                                { type: "connector", from: { id: "ask", point: { x: 100, y: 50 } }, to: "wait" },
+                            ],
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
+});
 ```
 
 `route` sets the path the connector takes:
@@ -864,8 +1476,34 @@ Without a `route`, a connector is straight, unless a straight line would go thro
 
 `label` puts text on a connector, in a box centred on its route. Give a background `fill` to hide the line behind the text:
 
-```ts
-{ type: "connector", from: "ask", to: "go", label: { text: "Yes", fill: "FFFFFF" } }
+```ts live
+import { Document, Paragraph } from "docx";
+import { ShapeCanvasRun } from "docx/shapes";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new ShapeCanvasRun({
+                            children: [
+                                { id: "ask", type: "flowChartDecision", text: "Ready?", transformation: { width: 110, height: 70 } },
+                                {
+                                    id: "go",
+                                    type: "flowChartProcess",
+                                    text: "Go",
+                                    transformation: { offset: { left: 5, top: 150 }, width: 100, height: 40 },
+                                },
+                                { type: "connector", from: "ask", to: "go", label: { text: "Yes", fill: "FFFFFF" } },
+                            ],
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
+});
 ```
 
 A label is a string, or an object with:
@@ -895,12 +1533,44 @@ A `ShapeCanvasRun` is a drawing canvas: an area of the document that holds shape
 
 Word only keeps connectors attached on a canvas. When you move a shape on a canvas in Word, its connectors follow it. In a group, connectors are drawn in the same way, but they stay where they are when a shape is moved, so use a canvas for diagrams that people will edit.
 
-```ts
-new ShapeCanvasRun({
-    children: [/* shapes and connectors */],
-    transformation: { width: 400, height: 300 },
-    fill: "F7F7F7",
-    line: "BFBFBF",
+```ts live
+import { Document, Paragraph } from "docx";
+import { ShapeCanvasRun } from "docx/shapes";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new ShapeCanvasRun({
+                            children: [
+                                // Shapes and connectors
+                                {
+                                    id: "idea",
+                                    type: "ellipse",
+                                    text: "Idea",
+                                    transformation: { offset: { left: 40, top: 40 }, width: 120, height: 60 },
+                                    fill: "DEEBF7",
+                                },
+                                {
+                                    id: "plan",
+                                    type: "rectangle",
+                                    text: "Plan",
+                                    transformation: { offset: { left: 240, top: 200 }, width: 120, height: 60 },
+                                    fill: "FBE5D6",
+                                },
+                                { type: "connector", from: "idea", to: "plan", route: "curved", line: { endArrow: "triangle" } },
+                            ],
+                            transformation: { width: 400, height: 300 },
+                            fill: "F7F7F7",
+                            line: "BFBFBF",
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
 });
 ```
 
@@ -910,18 +1580,49 @@ Shapes are positioned with `transformation.offset`, in pixels from the canvas's 
 
 Give a canvas or group a `layout` to place its shapes for you. Shapes, pictures and groups without an `offset` are placed by the layout, and connectors are routed between them afterwards:
 
-```ts
-new ShapeCanvasRun({
-    layout: { type: "flow", direction: "down" },
-    children: [
-        { id: "start", type: "flowChartTerminator", text: "Start", transformation: { width: 100, height: 36 } },
-        { id: "review", type: "flowChartDecision", text: "Approved?", transformation: { width: "fitText", height: 70 } },
-        { id: "publish", type: "flowChartProcess", text: "Publish", transformation: { width: "fitText", height: 40 } },
-        { id: "fix", type: "flowChartProcess", text: "Fix it", transformation: { width: "fitText", height: 40 } },
-        { type: "connector", from: "start", to: "review", line: { endArrow: "triangle" } },
-        { type: "connector", from: "review", to: "publish", route: "elbow", label: { text: "Yes", position: "start" } },
-        { type: "connector", from: "review", to: "fix", route: "elbow", label: { text: "No", position: "start" } },
-        { type: "connector", from: "fix", to: "review", route: "elbow", line: { endArrow: "triangle" } },
+```ts live
+import { Document, Paragraph } from "docx";
+import { ShapeCanvasRun } from "docx/shapes";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new ShapeCanvasRun({
+                            layout: { type: "flow", direction: "down" },
+                            children: [
+                                { id: "start", type: "flowChartTerminator", text: "Start", transformation: { width: 100, height: 36 } },
+                                {
+                                    id: "review",
+                                    type: "flowChartDecision",
+                                    text: "Approved?",
+                                    transformation: { width: "fitText", height: 70 },
+                                },
+                                {
+                                    id: "publish",
+                                    type: "flowChartProcess",
+                                    text: "Publish",
+                                    transformation: { width: "fitText", height: 40 },
+                                },
+                                { id: "fix", type: "flowChartProcess", text: "Fix it", transformation: { width: "fitText", height: 40 } },
+                                { type: "connector", from: "start", to: "review", line: { endArrow: "triangle" } },
+                                {
+                                    type: "connector",
+                                    from: "review",
+                                    to: "publish",
+                                    route: "elbow",
+                                    label: { text: "Yes", position: "start" },
+                                },
+                                { type: "connector", from: "review", to: "fix", route: "elbow", label: { text: "No", position: "start" } },
+                                { type: "connector", from: "fix", to: "review", route: "elbow", line: { endArrow: "triangle" } },
+                            ],
+                        }),
+                    ],
+                }),
+            ],
+        },
     ],
 });
 ```
@@ -954,24 +1655,51 @@ The positions are worked out when the document is written, and written as ordina
 
 Give a flow `lanes` to draw a process in bands, one for each person or team that does its steps. Each shape with a `lane` goes in the band of that name, and shapes without one go in the first. The bands are side by side across the flow, each with a header, with its name, at the start of the flow. Connectors cross between the bands.
 
-```ts
-new ShapeCanvasRun({
-    layout: {
-        type: "flow",
-        lanes: [{ name: "Customer", fill: "F2F2F2" }, { name: "Support", fill: "DEEBF7" }, "Engineering"],
-    },
-    children: [
+```ts live
+import { Document, Paragraph } from "docx";
+import { ShapeCanvasRun } from "docx/shapes";
+
+const doc = new Document({
+    sections: [
         {
-            id: "report",
-            lane: "Customer",
-            type: "flowChartTerminator",
-            text: "Report a problem",
-            transformation: { width: "fitText", height: 36 },
+            children: [
+                new Paragraph({
+                    children: [
+                        new ShapeCanvasRun({
+                            layout: {
+                                type: "flow",
+                                lanes: [{ name: "Customer", fill: "F2F2F2" }, { name: "Support", fill: "DEEBF7" }, "Engineering"],
+                            },
+                            children: [
+                                {
+                                    id: "report",
+                                    lane: "Customer",
+                                    type: "flowChartTerminator",
+                                    text: "Report a problem",
+                                    transformation: { width: "fitText", height: 36 },
+                                },
+                                {
+                                    id: "log",
+                                    lane: "Support",
+                                    type: "flowChartProcess",
+                                    text: "Log the ticket",
+                                    transformation: { width: "fitText", height: 40 },
+                                },
+                                {
+                                    id: "fix",
+                                    lane: "Engineering",
+                                    type: "flowChartProcess",
+                                    text: "Fix the bug",
+                                    transformation: { width: "fitText", height: 40 },
+                                },
+                                { type: "connector", from: "report", to: "log", route: "elbow", line: { endArrow: "triangle" } },
+                                { type: "connector", from: "log", to: "fix", route: "elbow", line: { endArrow: "triangle" } },
+                            ],
+                        }),
+                    ],
+                }),
+            ],
         },
-        { id: "log", lane: "Support", type: "flowChartProcess", text: "Log the ticket", transformation: { width: "fitText", height: 40 } },
-        { id: "fix", lane: "Engineering", type: "flowChartProcess", text: "Fix the bug", transformation: { width: "fitText", height: 40 } },
-        { type: "connector", from: "report", to: "log", route: "elbow", line: { endArrow: "triangle" } },
-        { type: "connector", from: "log", to: "fix", route: "elbow", line: { endArrow: "triangle" } },
     ],
 });
 ```

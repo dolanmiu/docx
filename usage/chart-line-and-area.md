@@ -6,14 +6,29 @@ A line chart draws a line through each series' values, and an area chart fills t
 
 ## A Line Chart
 
-```ts
-new ChartRun({
-    type: "line",
-    title: "Temperature",
-    categories: ["Mon", "Tue", "Wed", "Thu", "Fri"],
-    series: [
-        { name: "High", values: [21, 23, 25, 24, 22] },
-        { name: "Low", values: [12, 13, 15, 14, 13] },
+```ts live
+import { Document, Paragraph } from "docx";
+import { ChartRun } from "docx/charts";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new ChartRun({
+                            type: "line",
+                            title: "Temperature",
+                            categories: ["Mon", "Tue", "Wed", "Thu", "Fri"],
+                            series: [
+                                { name: "High", values: [21, 23, 25, 24, 22] },
+                                { name: "Low", values: [12, 13, 15, 14, 13] },
+                            ],
+                        }),
+                    ],
+                }),
+            ],
+        },
     ],
 });
 ```
@@ -30,9 +45,28 @@ A `null` value leaves a gap in its line.
 | `"zero"`          | Zero                                                                 |
 | `"connect"`       | Nothing, with the line joined from the point before to the one after |
 
-```ts
-series: [{ name: "Visitors", values: [320, 410, null, 380, 460] }],
-emptyValues: "connect",
+```ts live
+import { Document, Paragraph } from "docx";
+import { ChartRun } from "docx/charts";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new ChartRun({
+                            type: "line",
+                            categories: ["Mon", "Tue", "Wed", "Thu", "Fri"],
+                            series: [{ name: "Visitors", values: [320, 410, null, 380, 460] }],
+                            emptyValues: "connect",
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
+});
 ```
 
 Column, bar, line, area, radar and stock charts take `emptyValues`. Only lines are joined: a column chart's `"connect"` is a gap. Pages draws every empty value as a gap. See [Chart Compatibility](usage/chart-compatibility.md).
@@ -43,12 +77,27 @@ Column, bar, line, area, radar and stock charts take `emptyValues`. Only lines a
 
 Markers can have a shape and size of their own. Give `markers` a `shape`, a `size` in points, or both:
 
-```ts
-new ChartRun({
-    type: "line",
-    categories: ["Mon", "Tue", "Wed", "Thu", "Fri"],
-    series: [{ name: "High", values: [21, 23, 25, 24, 22] }],
-    markers: { shape: "diamond", size: 8 },
+```ts live
+import { Document, Paragraph } from "docx";
+import { ChartRun } from "docx/charts";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new ChartRun({
+                            type: "line",
+                            categories: ["Mon", "Tue", "Wed", "Thu", "Fri"],
+                            series: [{ name: "High", values: [21, 23, 25, 24, 22] }],
+                            markers: { shape: "diamond", size: 8 },
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
 });
 ```
 
@@ -72,11 +121,30 @@ new ChartRun({
 
 A series' `line` gives its line a colour, width or dash pattern of its own, such as a dashed line for a target:
 
-```ts
-series: [
-    { name: "Sales", values: [120, 135, 150, 170] },
-    { name: "Target", values: [130, 140, 150, 160], line: { dash: "dash", width: 1.5 } },
-],
+```ts live
+import { Document, Paragraph } from "docx";
+import { ChartRun } from "docx/charts";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new ChartRun({
+                            type: "line",
+                            categories: ["Q1", "Q2", "Q3", "Q4"],
+                            series: [
+                                { name: "Sales", values: [120, 135, 150, 170] },
+                                { name: "Target", values: [130, 140, 150, 160], line: { dash: "dash", width: 1.5 } },
+                            ],
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
+});
 ```
 
 - `width` is in points, from `0` to `1584`. Lines are 2.25 points wide by default.
@@ -87,15 +155,30 @@ series: [
 
 A series' own `markers` and `smooth` replace the chart's, so one series can be different:
 
-```ts
-new ChartRun({
-    type: "line",
-    categories: ["Mon", "Tue", "Wed", "Thu", "Fri"],
-    series: [
-        { name: "High", values: [21, 23, 25, 24, 22] },
-        { name: "Low", values: [12, 13, 15, 14, 13], markers: { shape: "square" }, smooth: true },
+```ts live
+import { Document, Paragraph } from "docx";
+import { ChartRun } from "docx/charts";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new ChartRun({
+                            type: "line",
+                            categories: ["Mon", "Tue", "Wed", "Thu", "Fri"],
+                            series: [
+                                { name: "High", values: [21, 23, 25, 24, 22] },
+                                { name: "Low", values: [12, 13, 15, 14, 13], markers: { shape: "square" }, smooth: true },
+                            ],
+                            markers: true,
+                        }),
+                    ],
+                }),
+            ],
+        },
     ],
-    markers: true,
 });
 ```
 
@@ -105,17 +188,32 @@ Here the highs have circles and straight lines, and the lows squares and a smoot
 
 An area chart takes the same options as a line chart, with `type: "area"` and without markers or lines:
 
-```ts
-new ChartRun({
-    type: "area",
-    title: "Energy mix",
-    categories: [2021, 2022, 2023, 2024, 2025],
-    series: [
-        { name: "Wind", values: [20, 24, 28, 31, 35] },
-        { name: "Solar", values: [10, 13, 17, 21, 26] },
-        { name: "Gas", values: [45, 40, 35, 30, 25] },
+```ts live
+import { Document, Paragraph } from "docx";
+import { ChartRun } from "docx/charts";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new ChartRun({
+                            type: "area",
+                            title: "Energy mix",
+                            categories: [2021, 2022, 2023, 2024, 2025],
+                            series: [
+                                { name: "Wind", values: [20, 24, 28, 31, 35] },
+                                { name: "Solar", values: [10, 13, 17, 21, 26] },
+                                { name: "Gas", values: [45, 40, 35, 30, 25] },
+                            ],
+                            stacking: "stacked",
+                        }),
+                    ],
+                }),
+            ],
+        },
     ],
-    stacking: "stacked",
 });
 ```
 

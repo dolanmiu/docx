@@ -14,7 +14,9 @@ All you need to do is create a `TableOfContents` object and assign it to the doc
 
 **Note**: updateFields feature must be enabled for TableOfContents to update correctly.
 
-```ts
+```ts live
+import { Document, HeadingLevel, Paragraph, TableOfContents } from "docx";
+
 const doc = new Document({
     features: {
         updateFields: true,
@@ -75,7 +77,9 @@ Each entry is a `ToCEntry` object with the following properties:
 
 Entry indentation comes from paragraph styles applied to each level. The defaults are `TOC1`, `TOC2`, etc. You can override these with the `stylesWithLevels` (`\t`) option — entries will use the style whose `level` matches the entry's `level`.
 
-```ts
+```ts live
+import { Bookmark, Document, HeadingLevel, Paragraph, TableOfContents } from "docx";
+
 const doc = new Document({
     features: {
         updateFields: true,
@@ -134,11 +138,26 @@ These options control the TOC structure rather than field switches:
 
 You can provide placeholder content that will be displayed until the TOC is updated:
 
-```ts
-new TableOfContents("Summary", {
-    hyperlink: true,
-    headingStyleRange: "1-5",
-    contentChildren: [new Paragraph({ text: "Chapter 1..........1" }), new Paragraph({ text: "Chapter 2..........5" })],
+```ts live
+import { Document, HeadingLevel, Paragraph, TableOfContents } from "docx";
+
+const doc = new Document({
+    features: {
+        updateFields: true,
+    },
+    sections: [
+        {
+            children: [
+                new TableOfContents("Summary", {
+                    hyperlink: true,
+                    headingStyleRange: "1-5",
+                    contentChildren: [new Paragraph({ text: "Chapter 1..........1" }), new Paragraph({ text: "Chapter 2..........5" })],
+                }),
+                new Paragraph({ text: "Chapter 1", heading: HeadingLevel.HEADING_1, pageBreakBefore: true }),
+                new Paragraph({ text: "Chapter 2", heading: HeadingLevel.HEADING_1, pageBreakBefore: true }),
+            ],
+        },
+    ],
 });
 ```
 

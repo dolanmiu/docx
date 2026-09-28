@@ -8,7 +8,7 @@ Line numbers are useful for legal documents, code listings, scripts, and any doc
 
 Add line numbers to a section:
 
-```ts
+```ts live
 import { Document, LineNumberRestartFormat, Paragraph } from "docx";
 
 const doc = new Document({
@@ -39,60 +39,117 @@ const doc = new Document({
 
 Control when line numbers restart:
 
-```ts
-import { LineNumberRestartFormat } from "docx";
+```ts live
+import { Document, LineNumberRestartFormat, Paragraph } from "docx";
 
-// Continuous - numbers continue throughout document
-lineNumbers: {
-    countBy: 1,
-    restart: LineNumberRestartFormat.CONTINUOUS,
-}
-
-// Restart each page
-lineNumbers: {
-    countBy: 1,
-    restart: LineNumberRestartFormat.NEW_PAGE,
-}
-
-// Restart each section
-lineNumbers: {
-    countBy: 1,
-    restart: LineNumberRestartFormat.NEW_SECTION,
-}
+const doc = new Document({
+    sections: [
+        {
+            properties: {
+                // Continuous - numbers continue throughout document
+                lineNumbers: {
+                    countBy: 1,
+                    restart: LineNumberRestartFormat.CONTINUOUS,
+                },
+            },
+            children: [new Paragraph("Numbered continuously"), new Paragraph("Numbered continuously")],
+        },
+        {
+            properties: {
+                // Restart each page
+                lineNumbers: {
+                    countBy: 1,
+                    restart: LineNumberRestartFormat.NEW_PAGE,
+                },
+            },
+            children: [new Paragraph("Numbered from the top of each page"), new Paragraph("Numbered from the top of each page")],
+        },
+        {
+            properties: {
+                // Restart each section
+                lineNumbers: {
+                    countBy: 1,
+                    restart: LineNumberRestartFormat.NEW_SECTION,
+                },
+            },
+            children: [new Paragraph("Numbered from the start of the section"), new Paragraph("Numbered from the start of the section")],
+        },
+    ],
+});
 ```
 
 ## Count Interval
 
 Show line numbers at specific intervals:
 
-```ts
-// Show every 5th line number (5, 10, 15...)
-lineNumbers: {
-    countBy: 5,
-    restart: LineNumberRestartFormat.CONTINUOUS,
-}
+```ts live
+import { Document, LineNumberRestartFormat, Paragraph } from "docx";
+
+const doc = new Document({
+    sections: [
+        {
+            properties: {
+                // Show every 5th line number (5, 10, 15...)
+                lineNumbers: {
+                    countBy: 5,
+                    restart: LineNumberRestartFormat.CONTINUOUS,
+                },
+            },
+            children: Array.from({ length: 15 }, (_, index) => new Paragraph(`Line ${index + 1}`)),
+        },
+    ],
+});
 ```
 
 ## Starting Number
 
 Start from a specific line number:
 
-```ts
-lineNumbers: {
-    countBy: 1,
-    start: 100,  // First line is 100
-    restart: LineNumberRestartFormat.CONTINUOUS,
-}
+```ts live
+import { Document, LineNumberRestartFormat, Paragraph } from "docx";
+
+const doc = new Document({
+    sections: [
+        {
+            properties: {
+                lineNumbers: {
+                    countBy: 1,
+                    start: 100, // First line is 100
+                    restart: LineNumberRestartFormat.CONTINUOUS,
+                },
+            },
+            children: [new Paragraph("The first line"), new Paragraph("The second line"), new Paragraph("The third line")],
+        },
+    ],
+});
 ```
 
 ## Suppressing Line Numbers
 
 Suppress line numbers for specific paragraphs:
 
-```ts
-new Paragraph({
-    text: "This paragraph will not have a line number",
-    suppressLineNumbers: true,
+```ts live
+import { Document, LineNumberRestartFormat, Paragraph } from "docx";
+
+const doc = new Document({
+    sections: [
+        {
+            properties: {
+                lineNumbers: {
+                    countBy: 1,
+                    restart: LineNumberRestartFormat.CONTINUOUS,
+                },
+            },
+            children: [
+                new Paragraph("This paragraph has a line number"),
+                new Paragraph({
+                    text: "This paragraph will not have a line number",
+                    suppressLineNumbers: true,
+                }),
+                new Paragraph("This paragraph has a line number too"),
+            ],
+        },
+    ],
 });
 ```
 
@@ -102,8 +159,8 @@ This is useful for headings, titles, or any content that shouldn't be numbered.
 
 Legal document with line numbers:
 
-```ts
-import { Document, HeadingLevel, LineNumberRestartFormat, Packer, Paragraph } from "docx";
+```ts live
+import { Document, HeadingLevel, LineNumberRestartFormat, Paragraph } from "docx";
 
 const doc = new Document({
     sections: [
@@ -139,7 +196,7 @@ const doc = new Document({
 
 ## Multiple Sections with Different Settings
 
-```ts
+```ts live
 import { Document, LineNumberRestartFormat, Paragraph, SectionType } from "docx";
 
 const doc = new Document({

@@ -8,17 +8,25 @@
 - `Rows` contain a list of `TableCells`
 - `TableCells` contain a list of `Paragraphs` and/or `Tables`. You can add `Tables` as tables can be nested inside each other
 
-Create a simple table like so:
+Create a simple table, then add the table in the `section`:
 
-```ts
+```ts live
+import { Document, Paragraph, Table, TableCell, TableRow } from "docx";
+
 const table = new Table({
-    rows: [Array of `TableRow`s]
+    rows: [
+        new TableRow({
+            children: [new TableCell({ children: [new Paragraph("Name")] }), new TableCell({ children: [new Paragraph("Age")] })],
+        }),
+        new TableRow({
+            children: [new TableCell({ children: [new Paragraph("Alice")] }), new TableCell({ children: [new Paragraph("32")] })],
+        }),
+        new TableRow({
+            children: [new TableCell({ children: [new Paragraph("Bob")] }), new TableCell({ children: [new Paragraph("27")] })],
+        }),
+    ],
 });
-```
 
-Then add the table in the `section`
-
-```ts
 const doc = new Document({
     sections: [
         {
@@ -44,14 +52,27 @@ const table = new Table({
 
 For example:
 
-```ts
+```ts live
+import { Document, Paragraph, Table, TableCell, TableRow, WidthType } from "docx";
 
 const table = new Table({
-    ...,
+    rows: [
+        new TableRow({
+            children: [new TableCell({ children: [new Paragraph("Hello")] }), new TableCell({ children: [new Paragraph("World")] })],
+        }),
+    ],
     width: {
         size: 4535,
         type: WidthType.DXA,
-    }
+    },
+});
+
+const doc = new Document({
+    sections: [
+        {
+            children: [table],
+        },
+    ],
 });
 ```
 
@@ -59,10 +80,27 @@ const table = new Table({
 
 A table's columns are defined by its grid (`w:tblGrid`), whose widths are always in twips (twentieths of a point). You can set them explicitly with `columnWidths`:
 
-```ts
+```ts live
+import { Document, Paragraph, Table, TableCell, TableRow } from "docx";
+
 const table = new Table({
-    ...,
+    rows: [
+        new TableRow({
+            children: [
+                new TableCell({ children: [new Paragraph("3505 twips wide")] }),
+                new TableCell({ children: [new Paragraph("5505 twips wide")] }),
+            ],
+        }),
+    ],
     columnWidths: [3505, 5505],
+});
+
+const doc = new Document({
+    sections: [
+        {
+            children: [table],
+        },
+    ],
 });
 ```
 
@@ -72,13 +110,27 @@ When `columnWidths` is omitted, `docx` derives the grid for you from the table's
 
 ### Set Indent
 
-```ts
+```ts live
+import { Document, Paragraph, Table, TableCell, TableRow, WidthType } from "docx";
+
 const table = new Table({
-    ...,
+    rows: [
+        new TableRow({
+            children: [new TableCell({ children: [new Paragraph("Hello")] }), new TableCell({ children: [new Paragraph("World")] })],
+        }),
+    ],
     indent: {
         size: 600,
         type: WidthType.DXA,
-    }
+    },
+});
+
+const doc = new Document({
+    sections: [
+        {
+            children: [new Paragraph("This paragraph starts at the margin, and the table below is indented from it."), table],
+        },
+    ],
 });
 ```
 
@@ -86,7 +138,9 @@ const table = new Table({
 
 A table consists of multiple `table rows`. Table rows have a list of `children` which accepts a list of `table cells` explained below. You can create a simple `table row` like so:
 
-```ts
+```ts live
+import { Document, Paragraph, Table, TableCell, TableRow } from "docx";
+
 const tableRow = new TableRow({
     children: [
         new TableCell({
@@ -94,11 +148,21 @@ const tableRow = new TableRow({
         }),
     ],
 });
+
+const doc = new Document({
+    sections: [
+        {
+            children: [new Table({ rows: [tableRow] })],
+        },
+    ],
+});
 ```
 
 Or preferably, add the tableRow directly into the `table` without declaring a variable:
 
-```ts
+```ts live
+import { Document, Paragraph, Table, TableCell, TableRow } from "docx";
+
 const table = new Table({
     rows: [
         new TableRow({
@@ -108,6 +172,14 @@ const table = new Table({
                 }),
             ],
         }),
+    ],
+});
+
+const doc = new Document({
+    sections: [
+        {
+            children: [table],
+        },
     ],
 });
 ```
@@ -127,10 +199,37 @@ Here is a list of options you can add to the `table row`:
 
 If a table is paginated on multiple pages, it is possible to repeat a row at the top of each new page by setting `tableHeader` to `true`:
 
-```ts
+```ts live
+import { Document, Paragraph, Table, TableCell, TableRow } from "docx";
+
 const row = new TableRow({
-    ...,
+    children: [new TableCell({ children: [new Paragraph("Item")] }), new TableCell({ children: [new Paragraph("Quantity")] })],
     tableHeader: true,
+});
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Table({
+                    rows: [
+                        row,
+                        // Enough rows to run onto a second page, where the header row repeats
+                        ...Array.from(
+                            { length: 60 },
+                            (_, index) =>
+                                new TableRow({
+                                    children: [
+                                        new TableCell({ children: [new Paragraph(`Item ${index + 1}`)] }),
+                                        new TableCell({ children: [new Paragraph(`${index + 1}`)] }),
+                                    ],
+                                }),
+                        ),
+                    ],
+                }),
+            ],
+        },
+    ],
 });
 ```
 
@@ -140,10 +239,28 @@ const row = new TableRow({
 
 To prevent breaking contents of a row across multiple pages, call `cantSplit`:
 
-```ts
-const row = new Row({
-    ...,
+```ts live
+import { Document, Paragraph, Table, TableCell, TableRow } from "docx";
+
+const row = new TableRow({
+    children: [
+        new TableCell({
+            children: [
+                new Paragraph("The lines of this row stay together."),
+                new Paragraph("If the row doesn't fit at the bottom of a page,"),
+                new Paragraph("the whole row moves to the next page."),
+            ],
+        }),
+    ],
     cantSplit: true,
+});
+
+const doc = new Document({
+    sections: [
+        {
+            children: [new Table({ rows: [row] })],
+        },
+    ],
 });
 ```
 
@@ -151,20 +268,40 @@ const row = new Row({
 
 Cells need to be added in the `table row`, you can create a table cell like:
 
-```ts
+```ts live
+import { Document, Paragraph, Table, TableCell, TableRow } from "docx";
+
 const tableCell = new TableCell({
     children: [new Paragraph("hello")],
+});
+
+const doc = new Document({
+    sections: [
+        {
+            children: [new Table({ rows: [new TableRow({ children: [tableCell] })] })],
+        },
+    ],
 });
 ```
 
 Or preferably, add the tableRow directly into the `table row` without declaring a variable:
 
-```ts
+```ts live
+import { Document, Paragraph, Table, TableCell, TableRow } from "docx";
+
 const tableRow = new TableRow({
     children: [
         new TableCell({
             children: [new Paragraph("hello")],
         }),
+    ],
+});
+
+const doc = new Document({
+    sections: [
+        {
+            children: [new Table({ rows: [tableRow] })],
+        },
     ],
 });
 ```
@@ -193,9 +330,11 @@ const tableRow = new TableRow({
 
 ##### Example
 
-```ts
+```ts live
+import { BorderStyle, Document, Paragraph, Table, TableCell, TableRow } from "docx";
+
 const cell = new TableCell({
-    ...,
+    children: [new Paragraph("Hello")],
     borders: {
         top: {
             style: BorderStyle.DASH_DOT_STROKED,
@@ -209,15 +348,25 @@ const cell = new TableCell({
         },
     },
 });
+
+const doc = new Document({
+    sections: [
+        {
+            children: [new Table({ rows: [new TableRow({ children: [cell] })] })],
+        },
+    ],
+});
 ```
 
 ##### Google DOCS
 
 Google DOCS does not support start and end borders, instead they use left and right borders. So to set left and right borders for Google DOCS you should use:
 
-```ts
+```ts live
+import { BorderStyle, Document, Paragraph, Table, TableCell, TableRow } from "docx";
+
 const cell = new TableCell({
-    ...,
+    children: [new Paragraph("Hello")],
     borders: {
         left: {
             style: BorderStyle.DOT_DOT_DASH,
@@ -231,15 +380,33 @@ const cell = new TableCell({
         },
     },
 });
+
+const doc = new Document({
+    sections: [
+        {
+            children: [new Table({ rows: [new TableRow({ children: [cell] })] })],
+        },
+    ],
+});
 ```
 
 ### Add paragraph to a cell
 
 Once you have got the cell, you can add data to it:
 
-```ts
+```ts live
+import { Document, Paragraph, Table, TableCell, TableRow } from "docx";
+
 const cell = new TableCell({
     children: [new Paragraph("Hello")],
+});
+
+const doc = new Document({
+    sections: [
+        {
+            children: [new Table({ rows: [new TableRow({ children: [cell] })] })],
+        },
+    ],
 });
 ```
 
@@ -270,9 +437,34 @@ const cell = new TableCell({
 
 To have a table within a table, simply add it in the `children` block of a `table cell`:
 
-```ts
+```ts live
+import { Document, Paragraph, Table, TableCell, TableRow } from "docx";
+
 const cell = new TableCell({
-    children: [new Table(...)],
+    children: [
+        new Table({
+            rows: [
+                new TableRow({
+                    children: [
+                        new TableCell({ children: [new Paragraph("Inner cell 1")] }),
+                        new TableCell({ children: [new Paragraph("Inner cell 2")] }),
+                    ],
+                }),
+            ],
+        }),
+    ],
+});
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Table({
+                    rows: [new TableRow({ children: [new TableCell({ children: [new Paragraph("Outer cell")] }), cell] })],
+                }),
+            ],
+        },
+    ],
 });
 ```
 
@@ -297,9 +489,31 @@ const cell = new TableCell({
 
 For example, to center align a cell:
 
-```ts
+```ts live
+import { Document, Paragraph, Table, TableCell, TableRow, VerticalAlignTable } from "docx";
+
 const cell = new TableCell({
+    children: [new Paragraph("Centered")],
     verticalAlign: VerticalAlignTable.CENTER,
+});
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Table({
+                    rows: [
+                        new TableRow({
+                            children: [
+                                new TableCell({ children: [new Paragraph("Line 1"), new Paragraph("Line 2"), new Paragraph("Line 3")] }),
+                                cell,
+                            ],
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
 });
 ```
 
@@ -321,10 +535,29 @@ const cell = new TableCell({
 
 The example will merge three rows together.
 
-```ts
+```ts live
+import { Document, Paragraph, Table, TableCell, TableRow } from "docx";
+
 const cell = new TableCell({
-    ...,
+    children: [new Paragraph("Merged across three rows")],
     rowSpan: 3,
+});
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Table({
+                    rows: [
+                        new TableRow({ children: [cell, new TableCell({ children: [new Paragraph("Row 1")] })] }),
+                        // The merged cell takes the first place in the next two rows, so they have one cell each
+                        new TableRow({ children: [new TableCell({ children: [new Paragraph("Row 2")] })] }),
+                        new TableRow({ children: [new TableCell({ children: [new Paragraph("Row 3")] })] }),
+                    ],
+                }),
+            ],
+        },
+    ],
 });
 ```
 
@@ -344,10 +577,33 @@ const cell = new TableCell({
 
 The example will merge three columns together.
 
-```ts
+```ts live
+import { Document, Paragraph, Table, TableCell, TableRow } from "docx";
+
 const cell = new TableCell({
-    ...,
+    children: [new Paragraph("Merged across three columns")],
     columnSpan: 3,
+});
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Table({
+                    rows: [
+                        new TableRow({ children: [cell] }),
+                        new TableRow({
+                            children: [
+                                new TableCell({ children: [new Paragraph("Column 1")] }),
+                                new TableCell({ children: [new Paragraph("Column 2")] }),
+                                new TableCell({ children: [new Paragraph("Column 3")] }),
+                            ],
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
 });
 ```
 
@@ -355,9 +611,28 @@ const cell = new TableCell({
 
 It is possible to reverse how the cells of the table are displayed. The table direction. More info here: https://superuser.com/questions/996912/how-to-change-a-table-direction-in-microsoft-word
 
-```ts
+```ts live
+import { Document, Paragraph, Table, TableCell, TableRow } from "docx";
+
 const table = new Table({
+    rows: [
+        new TableRow({
+            children: [
+                new TableCell({ children: [new Paragraph("1")] }),
+                new TableCell({ children: [new Paragraph("2")] }),
+                new TableCell({ children: [new Paragraph("3")] }),
+            ],
+        }),
+    ],
     visuallyRightToLeft: true,
+});
+
+const doc = new Document({
+    sections: [
+        {
+            children: [table],
+        },
+    ],
 });
 ```
 
@@ -365,9 +640,36 @@ const table = new Table({
 
 Control which conditional formatting from a table style is applied. Table styles can define special formatting for the first row, first column, etc. Use `tableLook` to toggle these formatting options.
 
-```ts
+```ts live
+import { Document, Paragraph, Table, TableCell, TableRow } from "docx";
+import * as fs from "fs";
+
 const table = new Table({
-    style: "GridTable5Dark-Accent3",
+    rows: [
+        new TableRow({
+            children: [
+                new TableCell({ children: [new Paragraph("Header 1")] }),
+                new TableCell({ children: [new Paragraph("Header 2")] }),
+                new TableCell({ children: [new Paragraph("Header 3")] }),
+            ],
+        }),
+        new TableRow({
+            children: [
+                new TableCell({ children: [new Paragraph("Row 1, Col 1")] }),
+                new TableCell({ children: [new Paragraph("Row 1, Col 2")] }),
+                new TableCell({ children: [new Paragraph("Row 1, Col 3")] }),
+            ],
+        }),
+        new TableRow({
+            children: [
+                new TableCell({ children: [new Paragraph("Row 2, Col 1")] }),
+                new TableCell({ children: [new Paragraph("Row 2, Col 2")] }),
+                new TableCell({ children: [new Paragraph("Row 2, Col 3")] }),
+            ],
+        }),
+    ],
+    // A table style from the document's styles, here the ones in demo/assets/custom-styles.xml
+    style: "MyCustomTableStyle",
     tableLook: {
         firstRow: true, // Apply first row formatting
         lastRow: false, // Don't apply last row formatting
@@ -376,6 +678,15 @@ const table = new Table({
         noHBand: false, // Apply horizontal banding (row stripes)
         noVBand: true, // Don't apply vertical banding (column stripes)
     },
+});
+
+const doc = new Document({
+    externalStyles: fs.readFileSync("./demo/assets/custom-styles.xml", "utf-8"),
+    sections: [
+        {
+            children: [table],
+        },
+    ],
 });
 ```
 

@@ -8,7 +8,7 @@ Footnotes allow you to add references that appear at the bottom of each page. Th
 
 ## Example
 
-```ts
+```ts live
 import { Document, FootnoteReferenceRun, Paragraph, TextRun } from "docx";
 
 const doc = new Document({
@@ -59,8 +59,8 @@ Insert `FootnoteReferenceRun` in paragraphs to create reference markers:
 
 Footnotes can contain images using `ImageRun`:
 
-```ts
-import { Document, FootnoteReferenceRun, ImageRun, Packer, Paragraph, TextRun } from "docx";
+```ts live
+import { Document, FootnoteReferenceRun, ImageRun, Paragraph, TextRun } from "docx";
 import * as fs from "fs";
 
 const doc = new Document({
@@ -71,10 +71,10 @@ const doc = new Document({
                     children: [
                         new ImageRun({
                             type: "jpg",
-                            data: fs.readFileSync("./image.jpg"),
+                            data: fs.readFileSync("./demo/assets/images/cat.jpg"),
                             transformation: {
                                 width: 100,
-                                height: 100,
+                                height: 67,
                             },
                         }),
                         new TextRun("Caption for the image"),
@@ -99,8 +99,8 @@ const doc = new Document({
 
 Footnotes support numbered and bulleted lists:
 
-```ts
-import { AlignmentType, convertInchesToTwip, Document, FootnoteReferenceRun, LevelFormat, Packer, Paragraph, TextRun } from "docx";
+```ts live
+import { AlignmentType, convertInchesToTwip, Document, FootnoteReferenceRun, LevelFormat, Paragraph, TextRun } from "docx";
 
 const doc = new Document({
     numbering: {

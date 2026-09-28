@@ -19,14 +19,29 @@ pie title Pets adopted by volunteers
 
 is this chart:
 
-```ts
-new ChartRun({
-    type: "pie",
-    title: "Pets adopted by volunteers",
-    categories: ["Dogs", "Cats", "Rats"],
-    series: [{ name: "Pets", values: [386, 85, 15] }],
-    dataLabels: { percentage: true },
-    legend: { position: "right" },
+```ts live
+import { Document, Paragraph } from "docx";
+import { ChartRun } from "docx/charts";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new ChartRun({
+                            type: "pie",
+                            title: "Pets adopted by volunteers",
+                            categories: ["Dogs", "Cats", "Rats"],
+                            series: [{ name: "Pets", values: [386, 85, 15] }],
+                            dataLabels: { percentage: true },
+                            legend: { position: "right" },
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
 });
 ```
 
@@ -48,7 +63,8 @@ A Word chart's series has a name, which Mermaid's pie has none of, so give it on
 
 When the Mermaid text is what you have, a few lines of your own code can turn a pie chart into a `ChartRun`:
 
-```ts
+```ts live
+import { Document, Paragraph } from "docx";
 import { ChartRun } from "docx/charts";
 
 // A Mermaid pie chart as a ChartRun: its title, and a slice for each "label" : value line
@@ -69,6 +85,19 @@ const pieFromMermaid = (mermaid: string): ChartRun => {
         legend: { position: "right" },
     });
 };
+
+const mermaid = `pie title Pets adopted by volunteers
+    "Dogs" : 386
+    "Cats" : 85
+    "Rats" : 15`;
+
+const doc = new Document({
+    sections: [
+        {
+            children: [new Paragraph({ children: [pieFromMermaid(mermaid)] })],
+        },
+    ],
+});
 ```
 
 It reads Mermaid's pie syntax only. It leaves out the Mermaid config above the chart, such as its colours and `donutHole`.
@@ -88,19 +117,34 @@ xychart
 
 is this column chart, with its line drawn as a line, as a [combo chart](usage/chart-combo.md):
 
-```ts
+```ts live
+import { Document, Paragraph } from "docx";
+import { ChartRun } from "docx/charts";
+
 const revenue = [5000, 6000, 7500, 8200, 9500, 10500, 11000, 10200, 9200, 8500, 7000, 6000];
 
-new ChartRun({
-    type: "column",
-    title: "Sales Revenue",
-    categories: ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"],
-    series: [
-        { name: "Revenue", values: revenue },
-        { name: "Trend", values: revenue, type: "line" },
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new ChartRun({
+                            type: "column",
+                            title: "Sales Revenue",
+                            categories: ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"],
+                            series: [
+                                { name: "Revenue", values: revenue },
+                                { name: "Trend", values: revenue, type: "line" },
+                            ],
+                            valueAxis: { title: "Revenue (in $)", minimum: 4000, maximum: 11000 },
+                            legend: false,
+                        }),
+                    ],
+                }),
+            ],
+        },
     ],
-    valueAxis: { title: "Revenue (in $)", minimum: 4000, maximum: 11000 },
-    legend: false,
 });
 ```
 

@@ -10,7 +10,7 @@ Checkboxes allow you to add interactive checkbox controls to your Word documents
 
 Create a simple checkbox:
 
-```ts
+```ts live
 import { CheckBox, Document, Paragraph, TextRun } from "docx";
 
 const doc = new Document({
@@ -30,9 +30,19 @@ const doc = new Document({
 
 Create a pre-checked checkbox:
 
-```ts
-new Paragraph({
-    children: [new CheckBox({ checked: true }), new TextRun(" Completed task")],
+```ts live
+import { CheckBox, Document, Paragraph, TextRun } from "docx";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [new CheckBox({ checked: true }), new TextRun(" Completed task")],
+                }),
+            ],
+        },
+    ],
 });
 ```
 
@@ -40,17 +50,31 @@ new Paragraph({
 
 You can customize the symbols used for checked and unchecked states. This is useful for branding consistency, platform compatibility, or when the default symbols don't render correctly on certain systems:
 
-```ts
-new CheckBox({
-    checked: true,
-    checkedState: {
-        value: "2611", // Unicode ballot box with check
-        font: "MS Gothic",
-    },
-    uncheckedState: {
-        value: "2610", // Unicode ballot box
-        font: "MS Gothic",
-    },
+```ts live
+import { CheckBox, Document, Paragraph } from "docx";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new CheckBox({
+                            checked: true,
+                            checkedState: {
+                                value: "2611", // Unicode ballot box with check
+                                font: "MS Gothic",
+                            },
+                            uncheckedState: {
+                                value: "2610", // Unicode ballot box
+                                font: "MS Gothic",
+                            },
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
 });
 ```
 
@@ -84,16 +108,26 @@ new CheckBox({
 
 Use the `alias` property to provide an accessibility label:
 
-```ts
-new Paragraph({
-    children: [
-        new TextRun("Do you agree to the terms?"),
-        new TextRun({ break: 1 }),
-        new CheckBox({
-            checked: false,
-            alias: "Terms agreement checkbox",
-        }),
-        new TextRun(" Yes, I agree"),
+```ts live
+import { CheckBox, Document, Paragraph, TextRun } from "docx";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new TextRun("Do you agree to the terms?"),
+                        new TextRun({ break: 1 }),
+                        new CheckBox({
+                            checked: false,
+                            alias: "Terms agreement checkbox",
+                        }),
+                        new TextRun(" Yes, I agree"),
+                    ],
+                }),
+            ],
+        },
     ],
 });
 ```
@@ -102,7 +136,7 @@ new Paragraph({
 
 Create a complete checklist:
 
-```ts
+```ts live
 import { CheckBox, Document, Paragraph, TextRun } from "docx";
 
 const tasks = [
@@ -128,7 +162,7 @@ const doc = new Document({
 
 ## Form with Multiple Checkboxes
 
-```ts
+```ts live
 import { CheckBox, Document, HeadingLevel, Paragraph, TextRun } from "docx";
 
 const doc = new Document({

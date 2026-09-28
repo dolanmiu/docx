@@ -13,14 +13,36 @@
 2. Right-click the chart, choose **Edit Alt Text**, and type a placeholder as its description, such as `{{sales}}`.
 3. Patch the template with a `ChartDataPatch` for the placeholder's key:
 
-```ts
+```ts live
 import * as fs from "fs";
-import { patchDocument } from "docx";
-import { ChartDataPatch } from "docx/charts";
+import { Document, Packer, Paragraph, patchDocument } from "docx";
+import { ChartDataPatch, ChartRun } from "docx/charts";
+
+// The template, made here as it would be in Word: a styled chart, with {{sales}} as its alt text's description
+const template = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new ChartRun({
+                            type: "column",
+                            title: "Sales by quarter",
+                            categories: ["Q1", "Q2"],
+                            series: [{ name: "Last year", values: [100, 120], color: "1F4E79" }],
+                            dataLabels: { value: true },
+                            altText: { name: "Sales", description: "{{sales}}" },
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
+});
 
 const doc = await patchDocument({
     outputType: "nodebuffer",
-    data: fs.readFileSync("Template.docx"),
+    data: await Packer.toBuffer(template),
     patches: {
         sales: new ChartDataPatch({
             categories: ["Q1", "Q2", "Q3", "Q4"],
@@ -31,6 +53,8 @@ const doc = await patchDocument({
         }),
     },
 });
+
+fs.writeFileSync("My Document.docx", doc);
 ```
 
 Text patches, new charts and `ChartDataPatch`es go in the same `patches`. A `ChartDataPatch` only looks in charts' alt text, and a text patch only in text, so `{{sales}}` typed in the document's text stays as it is.
@@ -41,33 +65,86 @@ Every chart whose alt text holds the placeholder gets the data, wherever it is: 
 
 The data is given as it is to [`ChartRun`](usage/chart-data.md), without the chart's `type`, which is the template's:
 
-```ts
-// A column, bar, line, area, pie, doughnut or radar chart
-new ChartDataPatch({
-    categories: ["Jan", "Feb", "Mar"],
-    series: [{ name: "Visitors", values: [320, 410, null] }],
-});
+```ts live
+import * as fs from "fs";
+import { Document, Packer, Paragraph, patchDocument } from "docx";
+import { ChartDataPatch, ChartRun } from "docx/charts";
 
-// A scatter chart, or with each point's size, a bubble chart
-new ChartDataPatch({
-    series: [
+// The template, made here as it would be in Word: a line, a bubble and a stock chart, each with a placeholder as its alt text
+const template = new Document({
+    sections: [
         {
-            name: "Stores",
-            points: [
-                { x: 12, y: 340, size: 4 },
-                { x: 30, y: 510, size: 9 },
+            children: [
+                new Paragraph({
+                    children: [
+                        new ChartRun({
+                            type: "line",
+                            categories: ["A", "B"],
+                            series: [{ name: "Series 1", values: [1, 2] }],
+                            altText: { name: "Visitors", description: "{{visitors}}" },
+                        }),
+                    ],
+                }),
+                new Paragraph({
+                    children: [
+                        new ChartRun({
+                            type: "bubble",
+                            series: [{ name: "Series 1", points: [{ x: 1, y: 1, size: 1 }] }],
+                            altText: { name: "Stores", description: "{{stores}}" },
+                        }),
+                    ],
+                }),
+                new Paragraph({
+                    children: [
+                        new ChartRun({
+                            type: "stock",
+                            categories: ["A", "B"],
+                            high: [2, 3],
+                            low: [1, 2],
+                            close: [1.5, 2.5],
+                            altText: { name: "Prices", description: "{{prices}}" },
+                        }),
+                    ],
+                }),
             ],
         },
     ],
 });
 
-// A stock chart: its prices, and its opening prices and volumes if it has them
-new ChartDataPatch({
-    categories: [new Date("2025-01-06"), new Date("2025-01-07")],
-    high: [103.1, 104.8],
-    low: [100.4, 101.9],
-    close: [102.4, 104.2],
+const doc = await patchDocument({
+    outputType: "nodebuffer",
+    data: await Packer.toBuffer(template),
+    patches: {
+        // A column, bar, line, area, pie, doughnut or radar chart
+        visitors: new ChartDataPatch({
+            categories: ["Jan", "Feb", "Mar"],
+            series: [{ name: "Visitors", values: [320, 410, null] }],
+        }),
+
+        // A scatter chart, or with each point's size, a bubble chart
+        stores: new ChartDataPatch({
+            series: [
+                {
+                    name: "Stores",
+                    points: [
+                        { x: 12, y: 340, size: 4 },
+                        { x: 30, y: 510, size: 9 },
+                    ],
+                },
+            ],
+        }),
+
+        // A stock chart: its prices, and its opening prices and volumes if it has them
+        prices: new ChartDataPatch({
+            categories: [new Date("2025-01-06"), new Date("2025-01-07")],
+            high: [103.1, 104.8],
+            low: [100.4, 101.9],
+            close: [102.4, 104.2],
+        }),
+    },
 });
+
+fs.writeFileSync("My Document.docx", doc);
 ```
 
 | Option                                | Type                                                          | Notes                                                                                                                                                               |

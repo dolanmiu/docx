@@ -8,7 +8,7 @@ Create multi-column layouts like newspapers or newsletters by configuring column
 
 Create equal-width columns:
 
-```ts
+```ts live
 import { Document, Paragraph } from "docx";
 
 const doc = new Document({
@@ -20,7 +20,11 @@ const doc = new Document({
                     space: 708, // Space between columns (~0.5 inches in twips; 1440 twips = 1 inch)
                 },
             },
-            children: [new Paragraph("This text will flow across two columns...")],
+            children: [
+                new Paragraph(
+                    "This text will flow across two columns. When it reaches the bottom of the first column, it carries on at the top of the second, the way the text of a newspaper or a newsletter does. Add more text to see it flow from one column into the next.",
+                ),
+            ],
         },
     ],
 });
@@ -40,21 +44,34 @@ const doc = new Document({
 
 Add a vertical line between columns:
 
-```ts
-properties: {
-    column: {
-        count: 2,
-        space: 708,
-        separate: true, // Adds a line between columns
-    },
-}
+```ts live
+import { ColumnBreak, Document, Paragraph, TextRun } from "docx";
+
+const doc = new Document({
+    sections: [
+        {
+            properties: {
+                column: {
+                    count: 2,
+                    space: 708,
+                    separate: true, // Adds a line between columns
+                },
+            },
+            children: [
+                new Paragraph({
+                    children: [new TextRun("This text is in column 1."), new ColumnBreak(), new TextRun("This text is in column 2.")],
+                }),
+            ],
+        },
+    ],
+});
 ```
 
 ## Different Width Columns
 
 Create columns with custom widths:
 
-```ts
+```ts live
 import { Column, Document, Paragraph } from "docx";
 
 const doc = new Document({
@@ -71,7 +88,11 @@ const doc = new Document({
                     ],
                 },
             },
-            children: [new Paragraph("Content flows through unequal columns...")],
+            children: [
+                new Paragraph(
+                    "Content flows through unequal columns. The first column is two inches wide, with half an inch of space after it, and the second column is four inches wide, so the text fills a narrow column and then a wide one.",
+                ),
+            ],
         },
     ],
 });
@@ -88,7 +109,7 @@ const doc = new Document({
 
 Force content to the next column using `ColumnBreak`:
 
-```ts
+```ts live
 import { ColumnBreak, Document, Paragraph, TextRun } from "docx";
 
 const doc = new Document({
@@ -112,20 +133,33 @@ const doc = new Document({
 
 ## Three Columns
 
-```ts
-properties: {
-    column: {
-        count: 3,
-        space: 708,
-    },
-}
+```ts live
+import { Document, Paragraph } from "docx";
+
+const doc = new Document({
+    sections: [
+        {
+            properties: {
+                column: {
+                    count: 3,
+                    space: 708,
+                },
+            },
+            children: [
+                new Paragraph(
+                    "This text flows across three columns. Three narrow columns suit lists, glossaries and short news items, where each line holds only a few words. The text fills the first column, then the second, and then the third.",
+                ),
+            ],
+        },
+    ],
+});
 ```
 
 ## Mixing Column Layouts
 
 Use multiple sections to mix column layouts:
 
-```ts
+```ts live
 import { Document, Paragraph, SectionType } from "docx";
 
 const doc = new Document({
@@ -143,7 +177,11 @@ const doc = new Document({
                     space: 708,
                 },
             },
-            children: [new Paragraph("This content flows in two columns...")],
+            children: [
+                new Paragraph(
+                    "This content flows in two columns. The continuous section breaks before and after it keep the columns on the same page as the full-width paragraphs above and below them.",
+                ),
+            ],
         },
         // Back to single column
         {
@@ -160,7 +198,7 @@ const doc = new Document({
 
 Newsletter-style layout with unequal columns:
 
-```ts
+```ts live
 import { Column, ColumnBreak, Document, HeadingLevel, Paragraph, TextRun } from "docx";
 
 const doc = new Document({

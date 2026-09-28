@@ -6,12 +6,27 @@ A chart's text is in the theme's body font, in dark grey, and the chart has a wh
 
 `font` sets the font of all the chart's text: its title, legend, axes and labels.
 
-```ts
-new ChartRun({
-    type: "column",
-    categories: ["Q1", "Q2", "Q3", "Q4"],
-    series: [{ name: "Sales", values: [120, 135, 150, 170] }],
-    font: { name: "Georgia", color: "404040" },
+```ts live
+import { Document, Paragraph } from "docx";
+import { ChartRun } from "docx/charts";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new ChartRun({
+                            type: "column",
+                            categories: ["Q1", "Q2", "Q3", "Q4"],
+                            series: [{ name: "Sales", values: [120, 135, 150, 170] }],
+                            font: { name: "Georgia", color: "404040" },
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
 });
 ```
 
@@ -35,15 +50,30 @@ The title, the legend, each axis and the labels take a `font` of their own, with
 | Axis titles | `valueAxis: { title: { text, font } }`          | 10 points    |
 | Data labels | `dataLabels: { font }`                          | 9 points     |
 
-```ts
-new ChartRun({
-    type: "line",
-    title: { text: "Rainfall", font: { size: 18, bold: true } },
-    categories: ["Jan", "Feb", "Mar"],
-    series: [{ name: "2025", values: [78, 62, 55] }],
-    font: { name: "Georgia" },
-    legend: { position: "top", font: { italics: true } },
-    valueAxis: { title: { text: "mm", font: { italics: true } }, font: { size: 8 } },
+```ts live
+import { Document, Paragraph } from "docx";
+import { ChartRun } from "docx/charts";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new ChartRun({
+                            type: "line",
+                            title: { text: "Rainfall", font: { size: 18, bold: true } },
+                            categories: ["Jan", "Feb", "Mar"],
+                            series: [{ name: "2025", values: [78, 62, 55] }],
+                            font: { name: "Georgia" },
+                            legend: { position: "top", font: { italics: true } },
+                            valueAxis: { title: { text: "mm", font: { italics: true } }, font: { size: 8 } },
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
 });
 ```
 
@@ -53,9 +83,29 @@ Here every piece of text is in Georgia, the title is 18 point bold, and the valu
 
 The chart area is the whole chart, and the plot area is the part inside the axes. `chartArea` and `plotArea` give each a `fill` and a `border`:
 
-```ts
-chartArea: { fill: "F7F9FC", border: { color: { theme: "accent1" }, width: 1.5 } },
-plotArea: { fill: "FFFFFF" },
+```ts live
+import { Document, Paragraph } from "docx";
+import { ChartRun } from "docx/charts";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new ChartRun({
+                            type: "column",
+                            categories: ["Q1", "Q2", "Q3", "Q4"],
+                            series: [{ name: "Sales", values: [120, 135, 150, 170] }],
+                            chartArea: { fill: "F7F9FC", border: { color: { theme: "accent1" }, width: 1.5 } },
+                            plotArea: { fill: "FFFFFF" },
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
+});
 ```
 
 - `fill` is a hex colour, a theme colour, or `"none"` for no fill.

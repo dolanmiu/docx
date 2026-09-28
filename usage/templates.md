@@ -31,13 +31,28 @@ Best regards,
 
 ## Basic Usage
 
-```ts
+```ts live
 import * as fs from "fs";
-import { patchDocument, PatchType, TextRun } from "docx";
+import { Document, Packer, Paragraph, patchDocument, PatchType, TextRun } from "docx";
 
-patchDocument({
+// The template, made here as it would be in Word
+const template = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph("Dear {{customer_name}},"),
+                new Paragraph("Thank you for your order #{{order_number}}."),
+                new Paragraph("Your items will ship on {{ship_date}}."),
+                new Paragraph("Best regards,"),
+                new Paragraph("{{company_name}}"),
+            ],
+        },
+    ],
+});
+
+const doc = await patchDocument({
     outputType: "nodebuffer",
-    data: fs.readFileSync("template.docx"),
+    data: await Packer.toBuffer(template), // or fs.readFileSync("template.docx")
     patches: {
         customer_name: {
             type: PatchType.PARAGRAPH,
@@ -56,149 +71,227 @@ patchDocument({
             children: [new TextRun("Acme Corp")],
         },
     },
-}).then((doc) => {
-    fs.writeFileSync("output.docx", doc);
 });
+
+fs.writeFileSync("output.docx", doc);
 ```
 
 ## Patch Types
+
+The examples below patch [simple-template.docx](https://github.com/dolanmiu/docx/blob/master/demo/assets/simple-template.docx), which has placeholders such as `{{name}}`, `{{paragraph_replace}}` and `{{table}}`.
 
 ### PARAGRAPH Type
 
 Use `PatchType.PARAGRAPH` to replace with inline content (TextRun, images, hyperlinks):
 
-```ts
-my_patch: {
-    type: PatchType.PARAGRAPH,
-    children: [
-        new TextRun("Hello "),
-        new TextRun({ text: "World", bold: true }),
-    ],
-}
+```ts live
+import * as fs from "fs";
+import { patchDocument, PatchType, TextRun } from "docx";
+
+const doc = await patchDocument({
+    outputType: "nodebuffer",
+    data: fs.readFileSync("./demo/assets/simple-template.docx"),
+    patches: {
+        name: {
+            type: PatchType.PARAGRAPH,
+            children: [new TextRun("Hello "), new TextRun({ text: "World", bold: true })],
+        },
+    },
+});
+
+fs.writeFileSync("My Document.docx", doc);
 ```
 
 ### DOCUMENT Type
 
 Use `PatchType.DOCUMENT` to replace with block-level content (paragraphs, tables):
 
-```ts
-my_patch: {
-    type: PatchType.DOCUMENT,
-    children: [
-        new Paragraph("First paragraph"),
-        new Paragraph("Second paragraph"),
-        new Table({
-            rows: [/* ... */],
-        }),
-    ],
-}
+```ts live
+import * as fs from "fs";
+import { Paragraph, patchDocument, PatchType, Table, TableCell, TableRow } from "docx";
+
+const doc = await patchDocument({
+    outputType: "nodebuffer",
+    data: fs.readFileSync("./demo/assets/simple-template.docx"),
+    patches: {
+        paragraph_replace: {
+            type: PatchType.DOCUMENT,
+            children: [
+                new Paragraph("First paragraph"),
+                new Paragraph("Second paragraph"),
+                new Table({
+                    rows: [
+                        new TableRow({
+                            children: [
+                                new TableCell({ children: [new Paragraph("First cell")] }),
+                                new TableCell({ children: [new Paragraph("Second cell")] }),
+                            ],
+                        }),
+                    ],
+                }),
+            ],
+        },
+    },
+});
+
+fs.writeFileSync("My Document.docx", doc);
 ```
 
 ## Advanced Patches
 
 ### Images
 
-```ts
-import { ImageRun, PatchType } from "docx";
+```ts live
+import * as fs from "fs";
+import { ImageRun, patchDocument, PatchType } from "docx";
 
-image_placeholder: {
-    type: PatchType.PARAGRAPH,
-    children: [
-        new ImageRun({
-            type: "png",
-            data: fs.readFileSync("./logo.png"),
-            transformation: { width: 100, height: 50 },
-        }),
-    ],
-}
+const doc = await patchDocument({
+    outputType: "nodebuffer",
+    data: fs.readFileSync("./demo/assets/simple-template.docx"),
+    patches: {
+        image_test: {
+            type: PatchType.PARAGRAPH,
+            children: [
+                new ImageRun({
+                    type: "png",
+                    data: fs.readFileSync("./demo/assets/images/dog.png"),
+                    transformation: { width: 100, height: 90 },
+                }),
+            ],
+        },
+    },
+});
+
+fs.writeFileSync("My Document.docx", doc);
 ```
 
 ### Hyperlinks
 
-```ts
-import { ExternalHyperlink, PatchType, TextRun } from "docx";
+```ts live
+import * as fs from "fs";
+import { ExternalHyperlink, patchDocument, PatchType, TextRun } from "docx";
 
-link_placeholder: {
-    type: PatchType.PARAGRAPH,
-    children: [
-        new ExternalHyperlink({
+const doc = await patchDocument({
+    outputType: "nodebuffer",
+    data: fs.readFileSync("./demo/assets/simple-template.docx"),
+    patches: {
+        item_1: {
+            type: PatchType.PARAGRAPH,
             children: [
-                new TextRun({
-                    text: "Visit our website",
-                    style: "Hyperlink",
+                new ExternalHyperlink({
+                    children: [
+                        new TextRun({
+                            text: "Visit our website",
+                            style: "Hyperlink",
+                        }),
+                    ],
+                    link: "https://example.com",
                 }),
             ],
-            link: "https://example.com",
-        }),
-    ],
-}
+        },
+    },
+});
+
+fs.writeFileSync("My Document.docx", doc);
 ```
 
 ### Tables
 
-```ts
-import { Paragraph, PatchType, Table, TableCell, TableRow } from "docx";
+```ts live
+import * as fs from "fs";
+import { Paragraph, patchDocument, PatchType, Table, TableCell, TableRow } from "docx";
 
-table_placeholder: {
-    type: PatchType.DOCUMENT,
-    children: [
-        new Table({
-            rows: [
-                new TableRow({
-                    children: [
-                        new TableCell({ children: [new Paragraph("Item")] }),
-                        new TableCell({ children: [new Paragraph("Price")] }),
-                    ],
-                }),
-                new TableRow({
-                    children: [
-                        new TableCell({ children: [new Paragraph("Widget")] }),
-                        new TableCell({ children: [new Paragraph("$9.99")] }),
+const doc = await patchDocument({
+    outputType: "nodebuffer",
+    data: fs.readFileSync("./demo/assets/simple-template.docx"),
+    patches: {
+        table: {
+            type: PatchType.DOCUMENT,
+            children: [
+                new Table({
+                    rows: [
+                        new TableRow({
+                            children: [
+                                new TableCell({ children: [new Paragraph("Item")] }),
+                                new TableCell({ children: [new Paragraph("Price")] }),
+                            ],
+                        }),
+                        new TableRow({
+                            children: [
+                                new TableCell({ children: [new Paragraph("Widget")] }),
+                                new TableCell({ children: [new Paragraph("$9.99")] }),
+                            ],
+                        }),
                     ],
                 }),
             ],
-        }),
-    ],
-}
+        },
+    },
+});
+
+fs.writeFileSync("My Document.docx", doc);
 ```
 
 ## Preserving Styles
 
 Set `keepOriginalStyles: true` to preserve the formatting of the placeholder text:
 
-```ts
-patchDocument({
+```ts live
+import * as fs from "fs";
+import { patchDocument, PatchType, TextRun } from "docx";
+
+const doc = await patchDocument({
     outputType: "nodebuffer",
-    data: fs.readFileSync("template.docx"),
+    data: fs.readFileSync("./demo/assets/simple-template-3.docx"),
     keepOriginalStyles: true, // Preserve template formatting
     patches: {
-        // ...
+        salutation: {
+            type: PatchType.PARAGRAPH,
+            children: [new TextRun("Mr.")],
+        },
+        "first-name": {
+            type: PatchType.PARAGRAPH,
+            children: [new TextRun("John")],
+        },
     },
 });
+
+fs.writeFileSync("My Document.docx", doc);
 ```
 
 ## Headers and Footers
 
 Placeholders in headers and footers are also replaced:
 
-```ts
-header_title: {
-    type: PatchType.PARAGRAPH,
-    children: [new TextRun("Company Report 2024")],
-},
-footer_text: {
-    type: PatchType.PARAGRAPH,
-    children: [new TextRun("Confidential")],
-}
+```ts live
+import * as fs from "fs";
+import { patchDocument, PatchType, TextRun } from "docx";
+
+const doc = await patchDocument({
+    outputType: "nodebuffer",
+    data: fs.readFileSync("./demo/assets/simple-template.docx"),
+    patches: {
+        header_adjective: {
+            type: PatchType.PARAGRAPH,
+            children: [new TextRun("great header")],
+        },
+        footer_text: {
+            type: PatchType.PARAGRAPH,
+            children: [new TextRun("Confidential")],
+        },
+    },
+});
+
+fs.writeFileSync("My Document.docx", doc);
 ```
 
 ## Complete Example
 
 Invoice template:
 
-```ts
+```ts live
 import * as fs from "fs";
-import { ExternalHyperlink, ImageRun, Paragraph, patchDocument, PatchType, Table, TableCell, TableRow, TextRun } from "docx";
+import { Document, Packer, Paragraph, patchDocument, PatchType, Table, TableCell, TableRow, TextRun } from "docx";
 
 // Invoice data
 const invoice = {
@@ -212,9 +305,24 @@ const invoice = {
     total: 95.0,
 };
 
-patchDocument({
+// The template, made here as it would be in Word
+const template = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph("Invoice {{invoice_number}}"),
+                new Paragraph("Date: {{invoice_date}}"),
+                new Paragraph("Bill to: {{customer_name}}"),
+                new Paragraph("{{line_items}}"),
+                new Paragraph("Total: {{total}}"),
+            ],
+        },
+    ],
+});
+
+const doc = await patchDocument({
     outputType: "nodebuffer",
-    data: fs.readFileSync("invoice-template.docx"),
+    data: await Packer.toBuffer(template), // or fs.readFileSync("invoice-template.docx")
     patches: {
         invoice_number: {
             type: PatchType.PARAGRAPH,
@@ -264,9 +372,9 @@ patchDocument({
             ],
         },
     },
-}).then((doc) => {
-    fs.writeFileSync("invoice-output.docx", doc);
 });
+
+fs.writeFileSync("invoice-output.docx", doc);
 ```
 
 ## Tips

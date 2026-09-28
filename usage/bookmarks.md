@@ -8,8 +8,8 @@ Bookmarks allow you to create anchors within a document that can be referenced b
 
 A bookmark is an anchor point in your document with a unique identifier. Create one using the `Bookmark` component:
 
-```ts
-import { Bookmark, Paragraph, TextRun, HeadingLevel } from "docx";
+```ts live
+import { Bookmark, Document, Paragraph, TextRun, HeadingLevel } from "docx";
 
 const bookmarkedHeading = new Paragraph({
     heading: HeadingLevel.HEADING_1,
@@ -18,6 +18,14 @@ const bookmarkedHeading = new Paragraph({
             id: "chapter1",
             children: [new TextRun("Chapter 1: Introduction")],
         }),
+    ],
+});
+
+const doc = new Document({
+    sections: [
+        {
+            children: [bookmarkedHeading],
+        },
     ],
 });
 ```
@@ -33,8 +41,8 @@ const bookmarkedHeading = new Paragraph({
 
 Use `InternalHyperlink` to create clickable links that navigate to bookmarks:
 
-```ts
-import { InternalHyperlink, Paragraph, TextRun } from "docx";
+```ts live
+import { Bookmark, Document, HeadingLevel, InternalHyperlink, Paragraph, TextRun } from "docx";
 
 const linkToChapter = new Paragraph({
     children: [
@@ -49,6 +57,21 @@ const linkToChapter = new Paragraph({
         }),
     ],
 });
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                linkToChapter,
+                new Paragraph({
+                    heading: HeadingLevel.HEADING_1,
+                    pageBreakBefore: true,
+                    children: [new Bookmark({ id: "chapter1", children: [new TextRun("Chapter 1: Introduction")] })],
+                }),
+            ],
+        },
+    ],
+});
 ```
 
 ?> Use `style: "Hyperlink"` on your TextRun to apply the default hyperlink styling (blue text, underlined).
@@ -57,11 +80,26 @@ const linkToChapter = new Paragraph({
 
 Get the page number where a bookmark appears using `PageReference`:
 
-```ts
-import { PageReference, Paragraph, TextRun } from "docx";
+```ts live
+import { Bookmark, Document, HeadingLevel, PageReference, Paragraph, TextRun } from "docx";
 
 const pageRef = new Paragraph({
     children: [new TextRun("See Chapter 1 on page "), new PageReference("chapter1")],
+});
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                pageRef,
+                new Paragraph({
+                    heading: HeadingLevel.HEADING_1,
+                    pageBreakBefore: true,
+                    children: [new Bookmark({ id: "chapter1", children: [new TextRun("Chapter 1: Introduction")] })],
+                }),
+            ],
+        },
+    ],
 });
 ```
 
@@ -71,8 +109,8 @@ This creates dynamic text like "See Chapter 1 on page 5" that updates automatica
 
 Here's a full example with a table of contents linking to bookmarked sections:
 
-```ts
-import { Bookmark, Document, HeadingLevel, InternalHyperlink, Packer, PageBreak, PageReference, Paragraph, TextRun } from "docx";
+```ts live
+import { Bookmark, Document, HeadingLevel, InternalHyperlink, PageBreak, PageReference, Paragraph, TextRun } from "docx";
 
 const doc = new Document({
     sections: [
@@ -143,8 +181,8 @@ const doc = new Document({
 
 Bookmarks and internal hyperlinks work in headers and footers too:
 
-```ts
-import { Footer, InternalHyperlink, Paragraph, TextRun } from "docx";
+```ts live
+import { Bookmark, Document, Footer, InternalHyperlink, Paragraph, TextRun } from "docx";
 
 const footer = new Footer({
     children: [
@@ -158,26 +196,58 @@ const footer = new Footer({
         }),
     ],
 });
+
+const doc = new Document({
+    sections: [
+        {
+            footers: { default: footer },
+            children: [
+                new Paragraph({
+                    children: [new Bookmark({ id: "documentStart", children: [new TextRun("Start of the document")] })],
+                }),
+                new Paragraph({ text: "Second page", pageBreakBefore: true }),
+            ],
+        },
+    ],
+});
 ```
 
 ## Styling Internal Hyperlinks
 
 You can apply custom formatting to internal hyperlinks:
 
-```ts
-new InternalHyperlink({
-    children: [
-        new TextRun({
-            text: "Bold ",
-            bold: true,
-            style: "Hyperlink",
-        }),
-        new TextRun({
-            text: "Link",
-            style: "Hyperlink",
-        }),
+```ts live
+import { Bookmark, Document, InternalHyperlink, Paragraph, TextRun } from "docx";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new InternalHyperlink({
+                            children: [
+                                new TextRun({
+                                    text: "Bold ",
+                                    bold: true,
+                                    style: "Hyperlink",
+                                }),
+                                new TextRun({
+                                    text: "Link",
+                                    style: "Hyperlink",
+                                }),
+                            ],
+                            anchor: "myBookmark",
+                        }),
+                    ],
+                }),
+                new Paragraph({
+                    pageBreakBefore: true,
+                    children: [new Bookmark({ id: "myBookmark", children: [new TextRun("The bookmarked text")] })],
+                }),
+            ],
+        },
     ],
-    anchor: "myBookmark",
 });
 ```
 
