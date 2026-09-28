@@ -19,6 +19,14 @@
             .github-corner {
                 z-index: 2;
             }
+
+            /* A page's child pages (Charts has nineteen) stay hidden in the sidebar until the
+               reader opens that page or one of its children. docsify marks the open page's <li>
+               as active, then moves that mark onto a heading's <li> inside it while scrolling.
+               Section titles without a link of their own, like Styling, always stay open. */
+            .sidebar-nav li:has(> a):not(.active):not(:has(li.active)) > ul {
+                display: none;
+            }
         </style>
     </head>
 
