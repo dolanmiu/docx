@@ -175,7 +175,7 @@ const doc = new Document({
                     {
                         level: 0,
                         format: LevelFormat.BULLET,
-                        text: "\u1F60",
+                        text: "\u2022",
                         alignment: AlignmentType.LEFT,
                         style: {
                             paragraph: {
@@ -226,7 +226,7 @@ const doc = new Document({
                     {
                         level: 0,
                         format: LevelFormat.BULLET,
-                        text: "\u1F60",
+                        text: "\u2022",
                         alignment: AlignmentType.LEFT,
                         style: {
                             paragraph: {

@@ -12,13 +12,15 @@ The patcher allows you to modify existing documents, and add new content to them
 import * as fs from "fs";
 import { patchDocument } from "docx";
 
-patchDocument({
+const doc = await patchDocument({
     outputType: "nodebuffer",
     data: fs.readFileSync("My Document.docx"),
     patches: {
         // Patches here
     },
 });
+
+fs.writeFileSync("My Patched Document.docx", doc);
 ```
 
 ## Patches
