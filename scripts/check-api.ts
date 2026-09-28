@@ -204,6 +204,8 @@ type ExportInfo = {
     readonly isValue: boolean;
     readonly isClass: boolean;
     readonly typeParameters: number;
+    /** Declared in the entry point's own file, rather than imported from another entry point */
+    readonly isDeclaredInFile: boolean;
 };
 
 const COMPILER_OPTIONS: ts.CompilerOptions = {
@@ -234,6 +236,7 @@ const exportsOf = (fileName: string): readonly ExportInfo[] => {
             isValue: (target.flags & ts.SymbolFlags.Value) !== 0,
             isClass: (target.flags & ts.SymbolFlags.Class) !== 0,
             typeParameters,
+            isDeclaredInFile: declaration?.getSourceFile() === file,
         };
     });
 };
@@ -252,8 +255,12 @@ const checkTypes = (release: string, releaseEntry: Entry, builtEntry: Entry, ind
 
     const releasedExports = exportsOf(releasedTypes);
     const builtNames = new Set(exportsOf(builtTypes).map(({ name }) => name));
+    // Only the classes this entry point declares. The ones it imports from another, such as docx/math's from docx,
+    // resolve to the build's declarations here, and are checked with the entry point that declares them
     const classes = new Map(
-        releasedExports.filter(({ isClass, name }) => isClass && builtNames.has(name)).map(({ localName, name }) => [localName, name]),
+        releasedExports
+            .filter(({ isClass, isDeclaredInFile, name }) => isClass && isDeclaredInFile && builtNames.has(name))
+            .map(({ localName, name }) => [localName, name]),
     );
     writeFileSync(join(directory, "released-types", "index.d.ts"), withBuiltClasses("index.d.ts", released, classes));
 
