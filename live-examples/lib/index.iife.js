@@ -15621,6 +15621,18 @@ EXTERNAL: "External" };
 	* @module
 	*/
 	/**
+	* The largest width or height, in EMUs, Word opens a drawing at. The standard allows `ST_PositiveCoordinate` up to
+	* 27273042316900, but Word and PowerPoint restrict it to 2147483647 and won't open a document with a larger drawing.
+	*
+	* Reference: [MS-OI29500] Part 1 Section 20.1.10.42, ST_PositiveCoordinate
+	*/
+	var MAX_EXTENT = 2147483647;
+	var EMUS_PER_PIXEL = 9525;
+	var checkExtent = (dimension, value) => {
+		if (value !== void 0 && value > MAX_EXTENT) throw new Error(`Invalid drawing ${dimension} ${value} EMUs (${Math.round(value / EMUS_PER_PIXEL)} pixels). Word won't open a drawing with a ${dimension} over ${MAX_EXTENT} EMUs (${Math.floor(MAX_EXTENT / EMUS_PER_PIXEL)} pixels). Sizes such as an ImageRun's transformation are in pixels, not EMUs`);
+		return value;
+	};
+	/**
 	* Creates an extent element for inline drawings.
 	*
 	* This element specifies the extents of the parent DrawingML object within
@@ -15644,17 +15656,19 @@ EXTERNAL: "External" };
 	*   y: 914400
 	* });
 	* ```
+	*
+	* @throws Error if the width or height is over 2147483647 EMUs, which Word won't open
 	*/
 	var createExtent = ({ x, y }) => new BuilderElement({
 		name: "wp:extent",
 		attributes: {
 			x: {
 				key: "cx",
-				value: x
+				value: checkExtent("width", x)
 			},
 			y: {
 				key: "cy",
-				value: y
+				value: checkExtent("height", y)
 			}
 		}
 	});
