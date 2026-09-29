@@ -27,6 +27,11 @@ export const DATE_FORMATS: Readonly<Record<TimeUnit, string>> = {
 };
 
 /**
+ * A date as an error message writes it: ISO text in UTC, which is the same in every time zone, or "Invalid Date".
+ */
+export const dateText = (date: Date): string => (Number.isFinite(date.getTime()) ? date.toISOString() : String(date));
+
+/**
  * Checks that a category is a date Excel can hold.
  *
  * @throws If it isn't a valid date from 1 March 1900 to 31 December 9999
@@ -34,7 +39,7 @@ export const DATE_FORMATS: Readonly<Record<TimeUnit, string>> = {
 export const checkDate = (date: Date): void => {
     const time = date.getTime();
     if (!(time >= FIRST_DATE && time < LAST_DATE + MILLISECONDS_PER_DAY)) {
-        throw new Error(`Invalid category date ${String(date)}. Expected a date from 1900-03-01 to 9999-12-31`);
+        throw new Error(`Invalid category date ${dateText(date)}. Expected a date from 1900-03-01 to 9999-12-31`);
     }
 };
 

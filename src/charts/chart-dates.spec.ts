@@ -27,4 +27,11 @@ describe("checkDate", () => {
         expect(() => checkDate(new Date("9999-12-31T23:59:59.999Z"))).to.not.throw();
         expect(() => checkDate(new Date("10000-01-01"))).to.throw("Invalid category date");
     });
+
+    it("should write the date in UTC, so the message is the same in every time zone", () => {
+        expect(() => checkDate(new Date("1900-02-28"))).to.throw(
+            "Invalid category date 1900-02-28T00:00:00.000Z. Expected a date from 1900-03-01 to 9999-12-31",
+        );
+        expect(() => checkDate(new Date("invalid"))).to.throw("Invalid category date Invalid Date");
+    });
 });

@@ -4,7 +4,7 @@
  * @module
  */
 import { type ChartCategories, isCategoryGroups, leafCategoriesOf } from "./chart-categories";
-import { checkDate } from "./chart-dates";
+import { checkDate, dateText } from "./chart-dates";
 import { legendEntriesOf } from "./chart-legend";
 import type {
     BubbleChartSeries,
@@ -48,9 +48,15 @@ export const checkRange = (value: number | undefined, option: string, minimum: n
 };
 
 /**
- * A value as an error message writes it: text in quotes, so "5" isn't mistaken for a number.
+ * A value as an error message writes it: text in quotes, so "5" isn't mistaken for a number, and a date as ISO text, so
+ * the message is the same in every time zone.
  */
-const quoted = (value: unknown): string => (typeof value === "string" ? `"${value}"` : String(value));
+const quoted = (value: unknown): string => {
+    if (typeof value === "string") {
+        return `"${value}"`;
+    }
+    return value instanceof Date ? dateText(value) : String(value);
+};
 
 /**
  * Checks that an option is a whole number in a range, if it is given.
@@ -258,7 +264,7 @@ const checkGroups = (groups: readonly unknown[]): number => {
             }
             if (category instanceof Date) {
                 throw new Error(
-                    `Invalid category ${String(category)} in group "${name}". Categories in groups are text or numbers, not dates`,
+                    `Invalid category ${quoted(category)} in group "${name}". Categories in groups are text or numbers, not dates`,
                 );
             }
             if (typeof category !== "string" && !Number.isFinite(category)) {
@@ -315,7 +321,7 @@ const checkCategories = (categories: ChartCategories, { dates, groups, type }: C
     }
     for (const category of plain) {
         if (typeof category !== "string" && !Number.isFinite(category)) {
-            throw new Error(`Invalid category ${String(category)}. Expected text or a finite number`);
+            throw new Error(`Invalid category ${quoted(category)}. Expected text or a finite number`);
         }
     }
 };
