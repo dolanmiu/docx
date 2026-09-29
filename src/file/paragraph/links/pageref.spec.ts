@@ -32,6 +32,13 @@ describe("PageReference", () => {
                     {
                         "w:fldChar": {
                             _attr: {
+                                "w:fldCharType": "separate",
+                            },
+                        },
+                    },
+                    {
+                        "w:fldChar": {
+                            _attr: {
                                 "w:fldCharType": "end",
                             },
                         },
@@ -62,6 +69,13 @@ describe("PageReference", () => {
                             },
                             "PAGEREF some_bookmark \\h \\p",
                         ],
+                    },
+                    {
+                        "w:fldChar": {
+                            _attr: {
+                                "w:fldCharType": "separate",
+                            },
+                        },
                     },
                     {
                         "w:fldChar": {
