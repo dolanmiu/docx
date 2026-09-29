@@ -209,6 +209,7 @@ export class File {
             evenAndOddHeaders: options.evenAndOddHeaderAndFooters ? true : false,
             trackRevisions: options.features?.trackRevisions,
             updateFields: options.features?.updateFields,
+            embedFonts: options.fonts?.length ? true : undefined,
             defaultTabStop: options.defaultTabStop,
             hyphenation: {
                 autoHyphenation: options.hyphenation?.autoHyphenation,

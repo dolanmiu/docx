@@ -48,6 +48,17 @@ describe("Settings", () => {
             });
         });
 
+        it("should add embedTrueTypeFonts setting", () => {
+            const settings = new Settings({
+                embedFonts: true,
+            });
+
+            const tree = new Formatter().format(settings);
+            expect(tree["w:settings"]).to.deep.include({
+                "w:embedTrueTypeFonts": {},
+            });
+        });
+
         it("should add trackRevisions setting", () => {
             const settings = new Settings({
                 trackRevisions: true,
@@ -209,6 +220,7 @@ describe("Settings", () => {
                 },
                 defaultTabStop: 100,
                 trackRevisions: true,
+                embedFonts: true,
             });
 
             const tree = new Formatter().format(settings);
@@ -216,6 +228,7 @@ describe("Settings", () => {
             expect(elements).to.deep.equal([
                 "_attr",
                 "w:displayBackgroundShape",
+                "w:embedTrueTypeFonts",
                 "w:trackRevisions",
                 "w:defaultTabStop",
                 "w:autoHyphenation",

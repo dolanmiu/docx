@@ -409,6 +409,28 @@ describe("File", () => {
         expect(tree["w:settings"][2]).to.deep.equal({ "w:evenAndOddHeaders": {} });
     });
 
+    it("should tell Word to keep embedded fonts when the document is saved again", () => {
+        const doc = new File({
+            sections: [],
+            fonts: [{ name: "Pacifico", data: Buffer.from("") }],
+        });
+
+        const tree = new Formatter().format(doc.Settings);
+
+        expect(tree["w:settings"]).to.deep.include({ "w:embedTrueTypeFonts": {} });
+    });
+
+    it("should not write embedTrueTypeFonts when no fonts are embedded", () => {
+        for (const fonts of [undefined, []]) {
+            const doc = new File({ sections: [], fonts });
+
+            const tree = new Formatter().format(doc.Settings);
+            const elements = (tree["w:settings"] as readonly Record<string, unknown>[]).map((child) => Object.keys(child)[0]);
+
+            expect(elements).to.not.include("w:embedTrueTypeFonts");
+        }
+    });
+
     describe("#comments", () => {
         it("should create comments", () => {
             const doc = new File({
