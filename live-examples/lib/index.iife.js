@@ -34105,12 +34105,22 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 					encoding: "UTF-8"
 				}
 			});
+			const endnoteXmlData = (0, import_xml.default)(this.formatter.format(file.Endnotes.View, {
+				viewWrapper: file.Endnotes,
+				file,
+				stack: []
+			}), {
+				indent: prettify,
+				declaration: { encoding: "UTF-8" }
+			});
 			const documentRelationshipCount = file.Document.Relationships.RelationshipCount + 1;
 			const commentRelationshipCount = file.Comments.Relationships.RelationshipCount + 1;
 			const footnoteRelationshipCount = file.FootNotes.Relationships.RelationshipCount + 1;
+			const endnoteRelationshipCount = file.Endnotes.Relationships.RelationshipCount + 1;
 			const documentMediaDatas = this.imageReplacer.getMediaData(documentXmlData, file.Media);
 			const commentMediaDatas = this.imageReplacer.getMediaData(commentXmlData, file.Media);
 			const footnoteMediaDatas = this.imageReplacer.getMediaData(footnoteXmlData, file.Media);
+			const endnoteMediaDatas = this.imageReplacer.getMediaData(endnoteXmlData, file.Media);
 			return _objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2({
 				Relationships: {
 					data: (() => {
@@ -34316,25 +34326,27 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 					path: "word/_rels/footnotes.xml.rels"
 				},
 				Endnotes: {
-					data: (0, import_xml.default)(this.formatter.format(file.Endnotes.View, {
-						viewWrapper: file.Endnotes,
-						file,
-						stack: []
-					}), {
-						indent: prettify,
-						declaration: { encoding: "UTF-8" }
-					}),
+					data: (() => {
+						const xmlData = this.imageReplacer.replace(endnoteXmlData, endnoteMediaDatas, endnoteRelationshipCount);
+						return this.numberingReplacer.replace(xmlData, file.Numbering.ConcreteNumbering);
+					})(),
 					path: "word/endnotes.xml"
 				},
 				EndnotesRelationships: {
-					data: (0, import_xml.default)(this.formatter.format(file.Endnotes.Relationships, {
-						viewWrapper: file.Endnotes,
-						file,
-						stack: []
-					}), {
-						indent: prettify,
-						declaration: { encoding: "UTF-8" }
-					}),
+					data: (() => {
+						const relationships = Relationships.copy(file.Endnotes.Relationships);
+						endnoteMediaDatas.forEach((mediaData, i) => {
+							relationships.addRelationship(endnoteRelationshipCount + i, "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image", `media/${mediaData.fileName}`);
+						});
+						return (0, import_xml.default)(this.formatter.format(relationships, {
+							viewWrapper: file.Endnotes,
+							file,
+							stack: []
+						}), {
+							indent: prettify,
+							declaration: { encoding: "UTF-8" }
+						});
+					})(),
 					path: "word/_rels/endnotes.xml.rels"
 				},
 				Settings: {
