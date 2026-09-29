@@ -10816,6 +10816,16 @@ declare class Relationships extends XmlComponent {
      */
     addRelationship(id: number | string, type: RelationshipType, target: string, targetMode?: (typeof TargetModeType)[keyof typeof TargetModeType]): void;
     /**
+     * Creates a copy of the relationships given. Relationships added to the copy aren't added to them, so the compiler
+     * adds the ones it writes for a part, such as to its images, to a copy, and packing a document again doesn't add
+     * them a second time.
+     *
+     * Static, as `IContext` is public and has `Relationships`, so a new instance member would change the public API.
+     *
+     * @param relationships - The relationships to copy
+     */
+    static copy(relationships: Relationships): Relationships;
+    /**
      * Gets the count of relationships in this collection.
      * Excludes the attributes element from the count.
      */

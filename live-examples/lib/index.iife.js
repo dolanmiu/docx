@@ -14674,7 +14674,9 @@ DOT: "dot" };
 				this.root.push(createHyperlinkClick(element.linkId, false));
 				break;
 			}
-			return super.prepForXml(context);
+			const result = super.prepForXml(context);
+			this.root.splice(1);
+			return result;
 		}
 	};
 	//#endregion
@@ -16405,7 +16407,7 @@ EXTERNAL: "External" };
 	* );
 	* ```
 	*/
-	var Relationships = class extends XmlComponent {
+	var Relationships = class Relationships extends XmlComponent {
 		constructor() {
 			super("Relationships");
 			this.root.push(new RelationshipsAttributes({ xmlns: "http://schemas.openxmlformats.org/package/2006/relationships" }));
@@ -16420,6 +16422,20 @@ EXTERNAL: "External" };
 		*/
 		addRelationship(id, type, target, targetMode) {
 			this.root.push(createRelationship(`rId${id}`, type, target, targetMode));
+		}
+		/**
+		* Creates a copy of the relationships given. Relationships added to the copy aren't added to them, so the compiler
+		* adds the ones it writes for a part, such as to its images, to a copy, and packing a document again doesn't add
+		* them a second time.
+		*
+		* Static, as `IContext` is public and has `Relationships`, so a new instance member would change the public API.
+		*
+		* @param relationships - The relationships to copy
+		*/
+		static copy(relationships) {
+			const copy = new Relationships();
+			copy.root.push(...relationships.root.slice(1));
+			return copy;
 		}
 		/**
 		* Gets the count of relationships in this collection.
@@ -24774,7 +24790,7 @@ MAX: 9026 };
 			for (const property of properties) this.addCustomProperty(property);
 		}
 		prepForXml(context) {
-			this.properties.forEach((x) => this.root.push(x));
+			this.root.splice(1, this.root.length - 1, ...this.properties);
 			return super.prepForXml(context);
 		}
 		addCustomProperty(property) {
@@ -27002,8 +27018,7 @@ MAX: 9026 };
 		* @returns The prepared XML object
 		*/
 		prepForXml(context) {
-			for (const numbering of this.abstractNumberingMap.values()) this.root.push(numbering);
-			for (const numbering of this.concreteNumberingMap.values()) this.root.push(numbering);
+			this.root.splice(1, this.root.length - 1, ...this.abstractNumberingMap.values(), ...this.concreteNumberingMap.values());
 			return super.prepForXml(context);
 		}
 		/**
@@ -34054,7 +34069,6 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 			return zip;
 		}
 		xmlifyFile(file, prettify) {
-			const documentRelationshipCount = file.Document.Relationships.RelationshipCount + 1;
 			const documentXmlData = (0, import_xml.default)(this.formatter.format(file.Document.View, {
 				viewWrapper: file.Document,
 				file,
@@ -34066,7 +34080,6 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 					encoding: "UTF-8"
 				}
 			});
-			const commentRelationshipCount = file.Comments.Relationships.RelationshipCount + 1;
 			const commentXmlData = (0, import_xml.default)(this.formatter.format(file.Comments, {
 				viewWrapper: {
 					View: file.Comments,
@@ -34081,7 +34094,6 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 					encoding: "UTF-8"
 				}
 			});
-			const footnoteRelationshipCount = file.FootNotes.Relationships.RelationshipCount + 1;
 			const footnoteXmlData = (0, import_xml.default)(this.formatter.format(file.FootNotes.View, {
 				viewWrapper: file.FootNotes,
 				file,
@@ -34093,17 +34105,21 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 					encoding: "UTF-8"
 				}
 			});
+			const documentRelationshipCount = file.Document.Relationships.RelationshipCount + 1;
+			const commentRelationshipCount = file.Comments.Relationships.RelationshipCount + 1;
+			const footnoteRelationshipCount = file.FootNotes.Relationships.RelationshipCount + 1;
 			const documentMediaDatas = this.imageReplacer.getMediaData(documentXmlData, file.Media);
 			const commentMediaDatas = this.imageReplacer.getMediaData(commentXmlData, file.Media);
 			const footnoteMediaDatas = this.imageReplacer.getMediaData(footnoteXmlData, file.Media);
 			return _objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2({
 				Relationships: {
 					data: (() => {
+						const relationships = Relationships.copy(file.Document.Relationships);
 						documentMediaDatas.forEach((mediaData, i) => {
-							file.Document.Relationships.addRelationship(documentRelationshipCount + i, "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image", `media/${mediaData.fileName}`);
+							relationships.addRelationship(documentRelationshipCount + i, "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image", `media/${mediaData.fileName}`);
 						});
-						file.Document.Relationships.addRelationship(file.Document.Relationships.RelationshipCount + 1, "http://schemas.openxmlformats.org/officeDocument/2006/relationships/fontTable", "fontTable.xml");
-						return (0, import_xml.default)(this.formatter.format(file.Document.Relationships, {
+						relationships.addRelationship(relationships.RelationshipCount + 1, "http://schemas.openxmlformats.org/officeDocument/2006/relationships/fontTable", "fontTable.xml");
+						return (0, import_xml.default)(this.formatter.format(relationships, {
 							viewWrapper: file.Document,
 							file,
 							stack: []
@@ -34152,20 +34168,6 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 					}),
 					path: "docProps/core.xml"
 				},
-				Numbering: {
-					data: (0, import_xml.default)(this.formatter.format(file.Numbering, {
-						viewWrapper: file.Document,
-						file,
-						stack: []
-					}), {
-						indent: prettify,
-						declaration: {
-							standalone: "yes",
-							encoding: "UTF-8"
-						}
-					}),
-					path: "word/numbering.xml"
-				},
 				FileRelationships: {
 					data: (0, import_xml.default)(this.formatter.format(file.FileRelationships, {
 						viewWrapper: file.Document,
@@ -34186,11 +34188,13 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 						indent: prettify,
 						declaration: { encoding: "UTF-8" }
 					});
-					this.imageReplacer.getMediaData(xmlData, file.Media).forEach((mediaData, i) => {
-						headerWrapper.Relationships.addRelationship(i, "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image", `media/${mediaData.fileName}`);
+					const mediaDatas = this.imageReplacer.getMediaData(xmlData, file.Media);
+					const relationships = Relationships.copy(headerWrapper.Relationships);
+					mediaDatas.forEach((mediaData, i) => {
+						relationships.addRelationship(i, "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image", `media/${mediaData.fileName}`);
 					});
 					return {
-						data: (0, import_xml.default)(this.formatter.format(headerWrapper.Relationships, {
+						data: (0, import_xml.default)(this.formatter.format(relationships, {
 							viewWrapper: headerWrapper,
 							file,
 							stack: []
@@ -34210,11 +34214,13 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 						indent: prettify,
 						declaration: { encoding: "UTF-8" }
 					});
-					this.imageReplacer.getMediaData(xmlData, file.Media).forEach((mediaData, i) => {
-						footerWrapper.Relationships.addRelationship(i, "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image", `media/${mediaData.fileName}`);
+					const mediaDatas = this.imageReplacer.getMediaData(xmlData, file.Media);
+					const relationships = Relationships.copy(footerWrapper.Relationships);
+					mediaDatas.forEach((mediaData, i) => {
+						relationships.addRelationship(i, "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image", `media/${mediaData.fileName}`);
 					});
 					return {
-						data: (0, import_xml.default)(this.formatter.format(footerWrapper.Relationships, {
+						data: (0, import_xml.default)(this.formatter.format(relationships, {
 							viewWrapper: footerWrapper,
 							file,
 							stack: []
@@ -34294,10 +34300,11 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 				},
 				FootNotesRelationships: {
 					data: (() => {
+						const relationships = Relationships.copy(file.FootNotes.Relationships);
 						footnoteMediaDatas.forEach((mediaData, i) => {
-							file.FootNotes.Relationships.addRelationship(footnoteRelationshipCount + i, "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image", `media/${mediaData.fileName}`);
+							relationships.addRelationship(footnoteRelationshipCount + i, "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image", `media/${mediaData.fileName}`);
 						});
-						return (0, import_xml.default)(this.formatter.format(file.FootNotes.Relationships, {
+						return (0, import_xml.default)(this.formatter.format(relationships, {
 							viewWrapper: file.FootNotes,
 							file,
 							stack: []
@@ -34354,10 +34361,11 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 				},
 				CommentsRelationships: {
 					data: (() => {
+						const relationships = Relationships.copy(file.Comments.Relationships);
 						commentMediaDatas.forEach((mediaData, i) => {
-							file.Comments.Relationships.addRelationship(commentRelationshipCount + i, "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image", `media/${mediaData.fileName}`);
+							relationships.addRelationship(commentRelationshipCount + i, "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image", `media/${mediaData.fileName}`);
 						});
-						return (0, import_xml.default)(this.formatter.format(file.Comments.Relationships, {
+						return (0, import_xml.default)(this.formatter.format(relationships, {
 							viewWrapper: {
 								View: file.Comments,
 								Relationships: file.Comments.Relationships
@@ -34444,6 +34452,20 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 					path: "word/theme/theme1.xml"
 				},
 				PackageParts: xmlifyPackageParts(file, prettify),
+				Numbering: {
+					data: (0, import_xml.default)(this.formatter.format(file.Numbering, {
+						viewWrapper: file.Document,
+						file,
+						stack: []
+					}), {
+						indent: prettify,
+						declaration: {
+							standalone: "yes",
+							encoding: "UTF-8"
+						}
+					}),
+					path: "word/numbering.xml"
+				},
 				ContentTypes: {
 					data: (0, import_xml.default)(this.formatter.format(file.ContentTypes, {
 						viewWrapper: file.Document,
