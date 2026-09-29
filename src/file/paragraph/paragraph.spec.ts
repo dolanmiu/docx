@@ -857,6 +857,85 @@ describe("Paragraph", () => {
                 "w:p": [{ "w:pPr": [{ "w:bidi": EMPTY_OBJECT }] }],
             });
         });
+
+        // Word reads w:jc left and right as the start and end of the paragraph, so in a w:bidi paragraph left is the right of the page
+        it("writes RIGHT as w:jc left so a right-to-left paragraph lands on the right of the page", () => {
+            const paragraph = new Paragraph({
+                bidirectional: true,
+                alignment: AlignmentType.RIGHT,
+            });
+            const tree = new Formatter().format(paragraph);
+            expect(tree).to.deep.equal({
+                "w:p": [{ "w:pPr": [{ "w:bidi": EMPTY_OBJECT }, { "w:jc": { _attr: { "w:val": "left" } } }] }],
+            });
+        });
+
+        it("writes LEFT as w:jc right so a right-to-left paragraph lands on the left of the page", () => {
+            const paragraph = new Paragraph({
+                bidirectional: true,
+                alignment: AlignmentType.LEFT,
+            });
+            const tree = new Formatter().format(paragraph);
+            expect(tree).to.deep.equal({
+                "w:p": [{ "w:pPr": [{ "w:bidi": EMPTY_OBJECT }, { "w:jc": { _attr: { "w:val": "right" } } }] }],
+            });
+        });
+
+        it.each([
+            ["START", AlignmentType.START, "start"],
+            ["END", AlignmentType.END, "end"],
+            ["CENTER", AlignmentType.CENTER, "center"],
+            ["JUSTIFIED", AlignmentType.JUSTIFIED, "both"],
+        ])("keeps %s unchanged in a right-to-left paragraph, since it does not name a side of the page", (_, alignment, expected) => {
+            const paragraph = new Paragraph({
+                bidirectional: true,
+                alignment,
+            });
+            const tree = new Formatter().format(paragraph);
+            expect(tree).to.deep.equal({
+                "w:p": [{ "w:pPr": [{ "w:bidi": EMPTY_OBJECT }, { "w:jc": { _attr: { "w:val": expected } } }] }],
+            });
+        });
+
+        it("keeps RIGHT as w:jc right when bidirectional is turned off", () => {
+            const paragraph = new Paragraph({
+                bidirectional: false,
+                alignment: AlignmentType.RIGHT,
+            });
+            const tree = new Formatter().format(paragraph);
+            expect(tree).to.deep.equal({
+                "w:p": [{ "w:pPr": [{ "w:bidi": { _attr: { "w:val": false } } }, { "w:jc": { _attr: { "w:val": "right" } } }] }],
+            });
+        });
+
+        it("swaps the alignment in a tracked change by the direction the change itself records", () => {
+            const paragraph = new Paragraph({
+                alignment: AlignmentType.RIGHT,
+                revision: {
+                    id: 1,
+                    author: "Firstname Lastname",
+                    date: "123",
+                    bidirectional: true,
+                    alignment: AlignmentType.RIGHT,
+                },
+            });
+            const tree = new Formatter().format(paragraph);
+            expect(tree).to.deep.equal({
+                "w:p": [
+                    {
+                        "w:pPr": [
+                            { "w:jc": { _attr: { "w:val": "right" } } },
+                            {
+                                "w:pPrChange": [
+                                    { _attr: { "w:author": "Firstname Lastname", "w:date": "123", "w:id": 1 } },
+                                    { "w:pPr": [{ "w:bidi": EMPTY_OBJECT }, { "w:jc": { _attr: { "w:val": "left" } } }] },
+                                ],
+                            },
+                        ],
+                    },
+                ],
+            });
+        });
     });
 
     describe("#suppressLineNumbers", () => {

@@ -105,7 +105,7 @@ This is the list of options for a paragraph. A detailed explanation is below:
 | [outlineLevel](#outline-level) | `number`                                                                                                            | Optional   |                                                                                                                                                             |
 | alignment                      | `AlignmentType`                                                                                                     | Optional   | `START`, `CENTER`, `END`, `BOTH`, `MEDIUM_KASHIDA`, `DISTRIBUTE`, `NUM_TAB`, `HIGH_KASHIDA`, `LOW_KASHIDA`, `THAI_DISTRIBUTE`, `LEFT`, `RIGHT`, `JUSTIFIED` |
 | heading                        | `HeadingLevel`                                                                                                      | Optional   |                                                                                                                                                             |
-| bidirectional                  | `boolean`                                                                                                           | Optional   |                                                                                                                                                             |
+| bidirectional                  | `boolean`                                                                                                           | Optional   | Lays the paragraph out right to left. See [Right-to-left text](#right-to-left-text)                                                                         |
 | thematicBreak                  | `boolean`                                                                                                           | Optional   |                                                                                                                                                             |
 | pageBreakBefore                | `boolean`                                                                                                           | Optional   |                                                                                                                                                             |
 | contextualSpacing              | `boolean`                                                                                                           | Optional   |                                                                                                                                                             |
@@ -478,6 +478,46 @@ const doc = new Document({
     ],
 });
 ```
+
+### Right-to-left text
+
+For languages written right to left, such as Arabic and Hebrew, set `bidirectional` on the paragraph. The paragraph is then laid out from the right of the page, so it is right-aligned without an `alignment`. `rightToLeft` on a `TextRun` only orders that run's characters. It does not change the paragraph's direction, so a paragraph without `bidirectional` stays left-aligned.
+
+`LEFT` and `RIGHT` always mean those sides of the page. `START` and `END` follow the paragraph's direction, so in a right-to-left paragraph `START` is the right and `END` is the left.
+
+```ts live
+import { AlignmentType, Document, Paragraph, TextRun } from "docx";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    bidirectional: true,
+                    children: [new TextRun({ text: "مرحبا بالعالم (no alignment)", rightToLeft: true })],
+                }),
+                new Paragraph({
+                    bidirectional: true,
+                    alignment: AlignmentType.RIGHT,
+                    children: [new TextRun({ text: "مرحبا بالعالم (RIGHT)", rightToLeft: true })],
+                }),
+                new Paragraph({
+                    bidirectional: true,
+                    alignment: AlignmentType.LEFT,
+                    children: [new TextRun({ text: "مرحبا بالعالم (LEFT)", rightToLeft: true })],
+                }),
+                new Paragraph({
+                    bidirectional: true,
+                    alignment: AlignmentType.END,
+                    children: [new TextRun({ text: "مرحبا بالعالم (END)", rightToLeft: true })],
+                }),
+            ],
+        },
+    ],
+});
+```
+
+!> Word reads `left` and `right` in the XML as the start and end of the paragraph. So docx writes `AlignmentType.RIGHT` as `left` in a `bidirectional` paragraph, which Word puts on the right. This only happens when `alignment` and `bidirectional` are set on the same paragraph. If either one comes from a style or a template, `LEFT` and `RIGHT` act like `START` and `END`.
 
 ## Thematic Break
 
