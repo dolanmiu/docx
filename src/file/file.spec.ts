@@ -7,6 +7,7 @@ import { File } from "./file";
 import { Footer, Header } from "./header";
 import { Paragraph, TextRun } from "./paragraph";
 import { createDefaultStyles } from "./styles/factory";
+import { StyleForCharacter, StyleForParagraph } from "./styles/style";
 
 const PAGE_SIZE_DEFAULTS = {
     "w:h": sectionPageSizeDefaults.HEIGHT,
@@ -714,6 +715,82 @@ describe("File", () => {
                 new Formatter().format(createDefaultStyles({ heading1: { run: { size: 28 } } }).heading1),
             );
             expect(ids).to.include("Heading2");
+        });
+
+        it("should keep the external styles in place of docx's default styles of the same id", () => {
+            const doc = new File({
+                sections: [],
+                externalStyles: `
+                    <w:styles xmlns:w="main">
+                        <w:docDefaults>
+                            <w:rPrDefault><w:rPr><w:sz w:val="24"/></w:rPr></w:rPrDefault>
+                            <w:pPrDefault/>
+                        </w:docDefaults>
+                        <w:style w:type="paragraph" w:styleId="Title">
+                            <w:name w:val="Title"/>
+                            <w:basedOn w:val="Heading1"/>
+                            <w:rPr><w:sz w:val="32"/></w:rPr>
+                        </w:style>
+                    </w:styles>`,
+            });
+
+            // A style id may be written only once, as may the document defaults. When docx's own Title or document
+            // defaults are written as well as the template's, Word can show docx's formatting instead of the template's,
+            // so only the external ones may be written
+            const tree = new Formatter().format(doc.Styles)["w:styles"];
+            const titles = tree.filter(
+                (child: { readonly "w:style"?: readonly { readonly _attr?: Record<string, string> }[] }) =>
+                    child["w:style"]?.find((part) => part._attr)?._attr?.["w:styleId"] === "Title",
+            );
+            expect(titles).to.deep.equal([
+                {
+                    "w:style": [
+                        { _attr: { "w:type": "paragraph", "w:styleId": "Title" } },
+                        { "w:name": { _attr: { "w:val": "Title" } } },
+                        { "w:basedOn": { _attr: { "w:val": "Heading1" } } },
+                        { "w:rPr": [{ "w:sz": { _attr: { "w:val": "32" } } }] },
+                    ],
+                },
+            ]);
+            expect(tree.filter((child: object) => "w:docDefaults" in child)).to.deep.equal([
+                {
+                    "w:docDefaults": [
+                        { "w:rPrDefault": [{ "w:rPr": [{ "w:sz": { _attr: { "w:val": "24" } } }] }] },
+                        { "w:pPrDefault": {} },
+                    ],
+                },
+            ]);
+        });
+
+        it("should keep the paragraph and character styles given with external styles, in place of those of the same id", () => {
+            const doc = new File({
+                sections: [],
+                externalStyles: `
+                    <w:styles xmlns:w="main">
+                        <w:style w:type="paragraph" w:styleId="Quote">
+                            <w:name w:val="Quote"/>
+                        </w:style>
+                    </w:styles>`,
+                styles: {
+                    paragraphStyles: [{ id: "Quote", name: "Quote", run: { italics: true } }],
+                    characterStyles: [{ id: "Highlight", name: "Highlight", run: { color: "FF0000" } }],
+                },
+            });
+
+            const tree = new Formatter().format(doc.Styles)["w:styles"];
+            const ids = tree.map(
+                (child: { readonly "w:style"?: readonly { readonly _attr?: Record<string, string> }[] }) =>
+                    child["w:style"]?.find((part) => part._attr)?._attr?.["w:styleId"],
+            );
+            // The paragraph style with the external style's id replaces it, rather than being dropped or written
+            // alongside it, and the character style with a new id is added next to the template's styles
+            expect(ids.filter((id: string) => id === "Quote")).to.have.length(1);
+            expect(tree[ids.indexOf("Quote")]).to.deep.equal(
+                new Formatter().format(new StyleForParagraph({ id: "Quote", name: "Quote", run: { italics: true } })),
+            );
+            expect(tree[ids.indexOf("Highlight")]).to.deep.equal(
+                new Formatter().format(new StyleForCharacter({ id: "Highlight", name: "Highlight", run: { color: "FF0000" } })),
+            );
         });
 
         it("should replace the external document defaults with those given in styles.default", () => {

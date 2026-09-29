@@ -44,7 +44,7 @@ const doc = new Document({
 });
 ```
 
-Your styles take the place of the library's default styles with the same ids, and your document defaults take the place of the library's. The library's default styles fill in the ones your `styles.xml` leaves out, such as `Hyperlink` or `FootnoteText`. A default style you set in `styles.default`, such as `heading1` or `document`, takes the place of yours.
+Your styles take the place of the library's default styles with the same ids, and your document defaults take the place of the library's. The library's default styles fill in the ones your `styles.xml` leaves out, such as `Hyperlink` or `FootnoteText`. A default style you set in `styles.default`, such as `heading1` or `document`, takes the place of yours, and so does a style in `styles.paragraphStyles` or `styles.characterStyles` with the same id. Styles with new ids are added alongside yours.
 
 You can use paragraphs, `HeadingLevel.HEADING_1`, `HeadingLevel.HEADING_2` etc and it will be styled according to your `styles.xml` created earlier. You can even use your new style you made with the `style` option:
 
